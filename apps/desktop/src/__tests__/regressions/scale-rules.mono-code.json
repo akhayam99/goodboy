@@ -13,7 +13,6 @@
   "apps/desktop/src/features/chat/components/ToolCallCard/index.tsx": "command",
   "apps/desktop/src/features/diff/components/DiffView/DiffRows.tsx": "code",
   "apps/desktop/src/features/diff/components/DiffView/LineGutter.tsx": "code",
-  "apps/desktop/src/features/explore/components/ExplorePane/ExplorePreviewPanel.tsx": "path",
   "apps/desktop/src/features/explore/components/ExplorePane/ExploreSpawnPopover.tsx": "path",
   "apps/desktop/src/features/history/components/CommitsHistory/HistoryAbsorbedGroup.tsx": "sha",
   "apps/desktop/src/features/history/components/CommitsHistory/HistoryBackups.tsx": "sha",

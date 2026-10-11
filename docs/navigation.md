@@ -1938,7 +1938,22 @@ hl/ledger-rounding`, and with two or more mounts opens a menu grouped by
   agent (files), Open in editor or Open, Show in Finder and Copy path. A folder
   offers Open only when an editor can take it (a repository with an editor),
   and a linked folder is listed as a folder; the Rust containment check on
-  read and open stays. Diff and the other branch lenses need a
+  read and open stays. A file opens in a reader drawer whose header reads like
+  the diff drawer's: the type glyph, the file name, the one labelled open
+  button (`openActionOf`), then 28px ghost buttons for Copy path, Wrap lines
+  (code only, `aria-pressed`) and Close. A second row of `Preview | Source`
+  tabs shows only for Markdown and SVG, which open as Preview. The open
+  failure line and its Choose editor link sit under the header. The body starts
+  with the relative path in `text-code`, the folders cut first so the file name
+  stays whole, then the size and age faint; there is no divider and no button
+  in the body. Code and Source render in `SourceView`: a `bg-muted` well that
+  scrolls both ways, a gutter of line numbers drawn by a CSS counter so a copy
+  never holds them, and colours from the shared highlighter. Wrap is off for
+  code and on for prose, and the code choice is kept in
+  `goodboy:explore-wrap:v1`. Past 5,000 lines or a line over 1,000 characters
+  the text stays plain and one line says so. A file that is not an image or a
+  PDF and is not text says "This file is binary. Open it in the app that owns it."
+  Diff and the other branch lenses need a
   branch. Pull request is listed on every code host, GitHub included. A tool
   lens appears once that tool is connected.
 - **A lens surface is reached from the overview or from the trail's

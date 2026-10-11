@@ -269,6 +269,12 @@ status` directly. A branch cut from a remote-tracking ref (`worktree add -b
   three apart: a probe with no answer never changes the standing, a lost sign-in needs two
   answers 10 seconds apart, and only a refused run or a `verified` answer speaks for the
   server. Do not collapse them back into one connected flag.
+- Explore decides text from content, not from the extension. `explore_read`
+  sends an image or a PDF extension as a data URL, and reads the first 8 KB of
+  anything else: a NUL byte or invalid UTF-8 returns `Binary { size }` with no
+  payload; a multibyte sequence cut at the 8 KB edge still counts as text. Do
+  not bring back an extension list, and do not widen the data URL list: a
+  `.mts`, a `.jsonc` or a file with no extension must stay readable.
 
 ## Hand-maintained lists the compiler does not check
 

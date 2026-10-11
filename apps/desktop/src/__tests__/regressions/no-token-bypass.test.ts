@@ -135,7 +135,7 @@ const RULES = [
       'apps/desktop/src/app/components/MockScene/scenes/InboxScene.tsx',
       'apps/desktop/src/app/components/MockScene/scenes/brand/CompareScene.tsx',
       'apps/desktop/src/app/components/MockScene/scenes/brand/kickoffIssues.ts',
-      'apps/desktop/src/features/diff/lib/highlight/theme.ts',
+      'apps/desktop/src/shared/lib/highlight/theme.ts',
     ],
     why: 'raw colour lives only in the xterm, wireframe, seeded label and highlight sentinel quarantines',
   },

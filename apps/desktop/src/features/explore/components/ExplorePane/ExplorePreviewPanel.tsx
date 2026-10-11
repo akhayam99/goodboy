@@ -1,102 +1,45 @@
-import { useMemo, useState, type ReactNode } from 'react';
-import { Button, CopyButton, Divider, Markdown, Skeleton, EmptyState, Tooltip } from '@goodboy/ui';
-import { ExternalLink } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
+import { Button, Markdown, ScrollFade, Skeleton, EmptyState } from '@goodboy/ui';
 import { ImageLightbox } from '../../../chat/components/ImageLightbox';
 import { type ExploreEntry } from '../../explore';
 import type { ExplorePreviewState } from '../../hooks/useExplorePreview';
-import type { ExploreOpenAction } from '../../openAction';
-import type { ExploreOpenFailure } from '../../openFailure';
-import { ExploreOpenError } from '../ExploreOpenError';
-import { formatAge } from '../../../../shared/utils/time/formatAge';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { formatBytes } from '../../../../shared/utils/formatBytes';
-import { useNow } from '../../../../shared/hooks/useNow';
+import type { ExplorePreviewKind } from '../../previewKindOf';
+import { ExplorePathLine } from './ExplorePathLine';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { SourceView } from '../../../../shared/components/SourceView';
+
+export type ExplorePreviewView = 'preview' | 'source';
 
 type Props = {
   readonly entry: ExploreEntry;
   readonly previewState: ExplorePreviewState;
-  readonly absolutePath: string;
-  readonly openAction: ExploreOpenAction;
-  readonly openFailure: ExploreOpenFailure | null;
-  readonly onOpen: () => void;
+  readonly previewKind: ExplorePreviewKind;
+  readonly view: ExplorePreviewView;
+  readonly isWrapped: boolean;
 };
 
-const MARKDOWN_EXTENSIONS = new Set(['md', 'markdown']);
-
-const extensionOf = ({ fileName }: { readonly fileName: string }): string => {
-  const dot = fileName.lastIndexOf('.');
-  if (dot < 0) {
-    return '';
-  }
-  return fileName.slice(dot + 1).toLowerCase();
+type SvgParams = {
+  readonly text: string;
 };
 
-const mimeFromDataUrl = ({ url }: { readonly url: string }): string => {
-  const match = /^data:([^;]+);base64,/.exec(url);
-  if (match?.[1] == null) {
-    return 'application/octet-stream';
-  }
-  return match[1];
-};
+const svgDataUrl = ({ text }: SvgParams): string =>
+  `data:image/svg+xml;charset=utf-8,${encodeURIComponent(text)}`;
 
-const previewKindOf = ({
-  entry,
-  previewState,
-}: {
-  readonly entry: ExploreEntry;
-  readonly previewState: ExplorePreviewState;
-}): 'markdown' | 'text' | 'image' | 'pdf' | 'unsupported' => {
-  if (previewState.status !== 'ready') {
-    return 'unsupported';
-  }
-  if (previewState.content.type === 'text') {
-    if (MARKDOWN_EXTENSIONS.has(extensionOf({ fileName: entry.name }))) {
-      return 'markdown';
-    }
-    return 'text';
-  }
-  const mimeType = mimeFromDataUrl({ url: previewState.content.url });
-  if (mimeType.startsWith('image/')) {
-    return 'image';
-  }
-  if (mimeType === 'application/pdf') {
-    return 'pdf';
-  }
-  return 'unsupported';
-};
+const TRUNCATED_LINE = 'Preview is truncated to 256 KB.';
 
 export const ExplorePreviewPanel = ({
   entry,
   previewState,
-  absolutePath,
-  openAction,
-  openFailure,
-  onOpen,
+  previewKind,
+  view,
+  isWrapped,
 }: Props) => {
-  const now = useNow(30_000);
-  const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
-  const previewKind = useMemo(() => previewKindOf({ entry, previewState }), [entry, previewState]);
-  const modifiedLabel =
-    entry.modifiedAt == null ? 'unknown age' : formatAge({ from: entry.modifiedAt, now });
-  const sizeLabel = formatBytes({ bytes: entry.sizeBytes });
-  const previewText =
-    previewState.status === 'ready' && previewState.content.type === 'text'
-      ? previewState.content.text
-      : '';
-  const isTruncated =
-    previewState.status === 'ready' &&
-    previewState.content.type === 'text' &&
-    previewState.content.truncated;
-  const pdfDataUrl =
-    previewState.status === 'ready' &&
-    previewState.content.type === 'dataUrl' &&
-    previewKind === 'pdf'
-      ? previewState.content.url
-      : null;
-  const renderPreviewBody = (): ReactNode => {
+  const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
+
+  const renderBody = (): ReactNode => {
     if (previewState.status === 'loading') {
       return (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 px-4 pb-3">
           <Skeleton className="h-4 w-3/4 rounded-md" />
           <Skeleton className="h-4 w-full rounded-md" />
           <Skeleton className="h-4 w-11/12 rounded-md" />
@@ -106,100 +49,107 @@ export const ExplorePreviewPanel = ({
     }
     if (previewState.status === 'error') {
       return (
-        <EmptyState
-          size="section"
-          icon={CONCEPT_ICONS.errors}
-          tone={CONCEPT_TONE.errors}
-          title="Couldn't read this file"
-          description={previewState.message}
-        />
-      );
-    }
-    if (previewKind === 'markdown') {
-      return (
-        <div className="flex flex-col gap-2">
-          {isTruncated ? (
-            <p className="text-label text-muted-foreground">Preview is truncated to 256 KB.</p>
-          ) : null}
-          <Markdown text={previewText} className="text-body text-foreground" />
+        <div className="px-4 pb-3">
+          <EmptyState
+            size="section"
+            icon={CONCEPT_ICONS.errors}
+            tone={CONCEPT_TONE.errors}
+            title="Couldn't read this file"
+            description={previewState.message}
+          />
         </div>
       );
     }
-    if (previewKind === 'text') {
+    if (previewState.status === 'unsupported') {
       return (
-        <div className="flex flex-col gap-2">
+        <p className="px-4 pb-3 text-label text-muted-foreground">
+          This file is binary. Open it in the app that owns it.
+        </p>
+      );
+    }
+    const { content } = previewState;
+    if (content.type === 'text') {
+      const isTruncated = content.truncated;
+      const truncatedLine = isTruncated ? (
+        <p className="text-label text-muted-foreground">{TRUNCATED_LINE}</p>
+      ) : null;
+      if (previewKind === 'markdown' && view === 'preview') {
+        return (
+          <ScrollFade
+            className="min-h-0 flex-1"
+            viewportClassName="flex flex-col gap-2 px-4 pb-3"
+            fadeSize={24}
+          >
+            {truncatedLine}
+            <Markdown text={content.text} className="text-body text-foreground" />
+          </ScrollFade>
+        );
+      }
+      if (previewKind === 'svg' && view === 'preview') {
+        return (
+          <ScrollFade
+            className="min-h-0 flex-1"
+            viewportClassName="flex flex-col gap-2 px-4 pb-3"
+            fadeSize={24}
+          >
+            {truncatedLine}
+            <img
+              src={svgDataUrl({ text: content.text })}
+              alt={entry.name}
+              className="max-h-[30rem] w-full rounded-md object-contain ring-1 ring-border-soft"
+            />
+          </ScrollFade>
+        );
+      }
+      return (
+        <>
           {isTruncated ? (
-            <p className="text-label text-muted-foreground">Preview is truncated to 256 KB.</p>
+            <p className="px-4 pb-2 text-label text-muted-foreground">{TRUNCATED_LINE}</p>
           ) : null}
-          <pre className="whitespace-pre-wrap break-words rounded-md bg-subtle p-3 text-code text-foreground">
-            {previewText}
-          </pre>
-        </div>
+          <SourceView text={content.text} path={entry.name} isWrapped={isWrapped} />
+        </>
       );
     }
-    if (
-      previewKind === 'image' &&
-      previewState.status === 'ready' &&
-      previewState.content.type === 'dataUrl'
-    ) {
+    if (previewKind === 'image' && content.type === 'dataUrl') {
       return (
-        <img
-          src={previewState.content.url}
-          alt={entry.name}
-          className="max-h-[30rem] w-full rounded-md object-contain ring-1 ring-border-soft"
-        />
+        <ScrollFade className="min-h-0 flex-1" viewportClassName="px-4 pb-3" fadeSize={24}>
+          <img
+            src={content.url}
+            alt={entry.name}
+            className="max-h-[30rem] w-full rounded-md object-contain ring-1 ring-border-soft"
+          />
+        </ScrollFade>
       );
     }
-    if (previewKind === 'pdf' && pdfDataUrl != null) {
+    if (previewKind === 'pdf' && content.type === 'dataUrl') {
       return (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col items-start gap-2 px-4 pb-3">
           <p className="text-label text-muted-foreground">PDF previews open in a focused viewer.</p>
-          <Button size="sm" variant="secondary" onClick={() => setPdfViewerOpen(true)}>
+          <Button size="sm" variant="secondary" onClick={() => setIsPdfViewerOpen(true)}>
             Open PDF preview
           </Button>
-          {pdfViewerOpen ? (
+          {isPdfViewerOpen ? (
             <ImageLightbox
               media="pdf"
-              src={pdfDataUrl}
+              src={content.url}
               alt={entry.name}
-              onClose={() => setPdfViewerOpen(false)}
+              onClose={() => setIsPdfViewerOpen(false)}
             />
           ) : null}
         </div>
       );
     }
     return (
-      <p className="text-label text-muted-foreground">
-        Preview is not available for this format. Open it in the app that owns it.
+      <p className="px-4 pb-3 text-label text-muted-foreground">
+        This file is binary. Open it in the app that owns it.
       </p>
     );
   };
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-col gap-1 text-label text-muted-foreground">
-        <p className="truncate font-mono text-meta">{entry.relPath}</p>
-        <div className="flex flex-wrap items-center gap-2">
-          <span>{sizeLabel}</span>
-          <span>{modifiedLabel}</span>
-        </div>
-      </div>
-      <div className="flex items-center gap-2">
-        <Tooltip content={openAction.tooltip}>
-          <Button size="sm" variant="secondary" onClick={onOpen}>
-            {openAction.editor === null ? (
-              <ExternalLink size={ICON_SIZE.row} aria-hidden />
-            ) : (
-              <CONCEPT_ICONS.editor size={ICON_SIZE.row} aria-hidden />
-            )}
-            {openAction.label}
-          </Button>
-        </Tooltip>
-        <CopyButton value={absolutePath} label={`path for ${entry.name}`} />
-      </div>
-      {openFailure === null ? null : <ExploreOpenError failure={openFailure} />}
-      <Divider />
-      {renderPreviewBody()}
+    <div className="flex min-h-0 flex-1 flex-col">
+      <ExplorePathLine entry={entry} />
+      {renderBody()}
     </div>
   );
 };

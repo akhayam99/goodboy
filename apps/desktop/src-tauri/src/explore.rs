@@ -11,6 +11,7 @@ use serde::Serialize;
 use thiserror::Error;
 
 const TEXT_MAX_BYTES: usize = 256 * 1024;
+const SNIFF_BYTES: usize = 8192;
 
 #[derive(Debug, Error)]
 pub enum ExploreError {
@@ -58,6 +59,7 @@ pub struct ExploreEntry {
 pub enum ExploreContent {
     Text { text: String, truncated: bool },
     DataUrl { url: String },
+    Binary { size: u64 },
 }
 
 fn resolve_path(session_dir: &str, rel_path: &str) -> Result<PathBuf, ExploreError> {
@@ -98,73 +100,28 @@ fn entry_order(left: &ExploreEntry, right: &ExploreEntry) -> Ordering {
         .then_with(|| left.name.cmp(&right.name))
 }
 
-fn is_text_path(path: &Path) -> bool {
-    let extension = path
-        .extension()
-        .and_then(|value| value.to_str())
-        .map(str::to_ascii_lowercase);
-    if matches!(
-        extension.as_deref(),
-        Some(
-            "bash"
-                | "c"
-                | "cc"
-                | "cfg"
-                | "conf"
-                | "cpp"
-                | "cs"
-                | "css"
-                | "csv"
-                | "env"
-                | "fish"
-                | "go"
-                | "gql"
-                | "graphql"
-                | "h"
-                | "hpp"
-                | "htm"
-                | "html"
-                | "ini"
-                | "java"
-                | "js"
-                | "json"
-                | "jsonl"
-                | "jsx"
-                | "kt"
-                | "kts"
-                | "less"
-                | "lock"
-                | "log"
-                | "markdown"
-                | "md"
-                | "mjs"
-                | "properties"
-                | "py"
-                | "rb"
-                | "rs"
-                | "sass"
-                | "scss"
-                | "sh"
-                | "sql"
-                | "svg"
-                | "swift"
-                | "toml"
-                | "ts"
-                | "tsv"
-                | "tsx"
-                | "txt"
-                | "xml"
-                | "yaml"
-                | "yml"
-                | "zsh"
-        )
-    ) {
-        return true;
-    }
+fn is_dataurl_path(path: &Path) -> bool {
     matches!(
-        path.file_name().and_then(|value| value.to_str()),
-        Some("Dockerfile" | "Gemfile" | "Makefile" | "Procfile")
+        path.extension()
+            .and_then(|value| value.to_str())
+            .map(str::to_ascii_lowercase)
+            .as_deref(),
+        Some("bmp" | "gif" | "ico" | "jpeg" | "jpg" | "pdf" | "png" | "webp")
     )
+}
+
+fn looks_like_text(path: &Path) -> Result<bool, ExploreError> {
+    let mut head = Vec::with_capacity(SNIFF_BYTES);
+    File::open(path)?
+        .take(SNIFF_BYTES as u64)
+        .read_to_end(&mut head)?;
+    if head.contains(&0) {
+        return Ok(false);
+    }
+    match std::str::from_utf8(&head) {
+        Ok(_) => Ok(true),
+        Err(error) => Ok(error.error_len().is_none() && head.len() == SNIFF_BYTES),
+    }
 }
 
 fn mime_for(path: &Path) -> &'static str {
@@ -181,7 +138,6 @@ fn mime_for(path: &Path) -> &'static str {
         Some("pdf") => "application/pdf",
         Some("png") => "image/png",
         Some("webp") => "image/webp",
-        Some("zip") => "application/zip",
         _ => "application/octet-stream",
     }
 }
@@ -316,10 +272,15 @@ fn explore_read_blocking(
     if !metadata.is_file() {
         return Err(ExploreError::NotFile);
     }
-    if is_text_path(&path) {
+    if is_dataurl_path(&path) {
+        return read_binary(&path, &metadata);
+    }
+    if looks_like_text(&path)? {
         return read_text(&path);
     }
-    read_binary(&path, &metadata)
+    Ok(ExploreContent::Binary {
+        size: metadata.len(),
+    })
 }
 
 #[tauri::command]
@@ -385,7 +346,7 @@ mod tests {
 
     use super::{
         explore_list_blocking, explore_open_blocking, explore_read_blocking, ExploreContent,
-        ExploreError, TEXT_MAX_BYTES,
+        ExploreError, SNIFF_BYTES, TEXT_MAX_BYTES,
     };
 
     fn test_root(name: &str) -> std::path::PathBuf {
@@ -473,7 +434,106 @@ mod tests {
                 assert_eq!(text.len(), TEXT_MAX_BYTES);
                 assert!(truncated);
             }
-            ExploreContent::DataUrl { .. } => panic!("expected text content"),
+            ExploreContent::DataUrl { .. } | ExploreContent::Binary { .. } => {
+                panic!("expected text content")
+            }
+        }
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    fn read_in(root: &std::path::Path, name: &str) -> ExploreContent {
+        explore_read_blocking(root.to_string_lossy().into_owned(), name.to_string()).unwrap()
+    }
+
+    #[test]
+    fn reads_unknown_extensions_and_extensionless_files_as_text() {
+        let root = test_root("text-by-content");
+        fs::create_dir_all(&root).unwrap();
+        fs::write(root.join("mod.mts"), "export const a = 1;").unwrap();
+        fs::write(root.join("tsconfig.jsonc"), "{ \"a\": 1 }").unwrap();
+        fs::write(root.join("LICENSE"), "MIT").unwrap();
+
+        for name in ["mod.mts", "tsconfig.jsonc", "LICENSE"] {
+            assert!(matches!(read_in(&root, name), ExploreContent::Text { .. }));
+        }
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_nul_byte_in_the_first_8kb_is_binary_without_a_payload() {
+        let root = test_root("binary-nul");
+        fs::create_dir_all(&root).unwrap();
+        let mut bytes = b"header".to_vec();
+        bytes.push(0);
+        bytes.extend_from_slice(b"tail");
+        fs::write(root.join("data.dat"), &bytes).unwrap();
+
+        match read_in(&root, "data.dat") {
+            ExploreContent::Binary { size } => assert_eq!(size, bytes.len() as u64),
+            _ => panic!("expected binary"),
+        }
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn invalid_utf8_is_binary_and_a_zip_is_no_longer_a_data_url() {
+        let root = test_root("binary-utf8");
+        fs::create_dir_all(&root).unwrap();
+        fs::write(root.join("latin.txt"), [0x63, 0x61, 0x66, 0xE9, 0x20, 0x61]).unwrap();
+        fs::write(root.join("a.zip"), b"PK\x03\x04\x00\x00").unwrap();
+
+        assert!(matches!(
+            read_in(&root, "latin.txt"),
+            ExploreContent::Binary { .. }
+        ));
+        assert!(matches!(
+            read_in(&root, "a.zip"),
+            ExploreContent::Binary { .. }
+        ));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_utf8_sequence_cut_at_the_8kb_edge_is_still_text() {
+        let root = test_root("cut-sequence");
+        fs::create_dir_all(&root).unwrap();
+        let mut text = "a".repeat(SNIFF_BYTES - 1);
+        text.push('\u{00e8}');
+        text.push_str("tail");
+        fs::write(root.join("cut.txt"), &text).unwrap();
+
+        assert!(matches!(
+            read_in(&root, "cut.txt"),
+            ExploreContent::Text { .. }
+        ));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_truncated_sequence_at_the_end_of_a_short_file_is_binary() {
+        let root = test_root("short-cut");
+        fs::create_dir_all(&root).unwrap();
+        fs::write(root.join("short.txt"), [0x61, 0xC3]).unwrap();
+
+        assert!(matches!(
+            read_in(&root, "short.txt"),
+            ExploreContent::Binary { .. }
+        ));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn image_and_pdf_extensions_stay_data_urls() {
+        let root = test_root("data-urls");
+        fs::create_dir_all(&root).unwrap();
+        fs::write(root.join("a.png"), [0x89, 0x50, 0x4E, 0x47, 0]).unwrap();
+        fs::write(root.join("b.pdf"), b"%PDF-1.4").unwrap();
+
+        for name in ["a.png", "b.pdf"] {
+            assert!(matches!(
+                read_in(&root, name),
+                ExploreContent::DataUrl { .. }
+            ));
         }
         fs::remove_dir_all(root).unwrap();
     }

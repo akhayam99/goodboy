@@ -17,6 +17,10 @@ export type ExploreContent =
   | {
       readonly type: 'dataUrl';
       readonly url: string;
+    }
+  | {
+      readonly type: 'binary';
+      readonly size: number;
     };
 
 type ExploreListParams = {

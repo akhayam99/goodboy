@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { highlightCode, languageForName, languageForPath, peekHighlight } from '.';
 import { SENTINEL_THEME, kindForColor } from './theme';
-import { MAX_HIGHLIGHT_LINES, MAX_HIGHLIGHT_LINE_LENGTH, exceedsHighlightCap } from './tokenize';
+import { MAX_HIGHLIGHT_LINES, MAX_HIGHLIGHT_LINE_LENGTH, exceedsHighlightCap } from './caps';
 
 const kindsOf = (line: ReadonlyArray<{ text: string; kind: string }> | undefined) =>
   (line ?? []).filter((token) => token.text.trim().length > 0).map((token) => token.kind);

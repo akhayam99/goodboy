@@ -1,10 +1,8 @@
 import { createHighlighterCore, type HighlighterCore } from 'shiki/core';
 import { createJavaScriptRegexEngine } from 'shiki/engine/javascript';
+import { exceedsHighlightCap } from './caps';
 import { LANGUAGE_LOADERS, type SyntaxLang } from './languages';
 import { SENTINEL_THEME, kindForColor, type SyntaxLines, type SyntaxToken } from './theme';
-
-export const MAX_HIGHLIGHT_LINES = 5000;
-export const MAX_HIGHLIGHT_LINE_LENGTH = 1000;
 
 let highlighter: Promise<HighlighterCore> | null = null;
 const loadedLangs = new Map<SyntaxLang, Promise<void>>();
@@ -22,25 +20,6 @@ const ensureLang = async (core: HighlighterCore, lang: SyntaxLang): Promise<void
   const pending = loadedLangs.get(lang) ?? core.loadLanguage(LANGUAGE_LOADERS[lang]);
   loadedLangs.set(lang, pending);
   await pending;
-};
-
-export const exceedsHighlightCap = (code: string): boolean => {
-  let lines = 1;
-  let lineStart = 0;
-  for (let i = 0; i < code.length; i++) {
-    if (code.charCodeAt(i) !== 10) {
-      continue;
-    }
-    if (i - lineStart > MAX_HIGHLIGHT_LINE_LENGTH) {
-      return true;
-    }
-    lines += 1;
-    lineStart = i + 1;
-    if (lines > MAX_HIGHLIGHT_LINES) {
-      return true;
-    }
-  }
-  return code.length - lineStart > MAX_HIGHLIGHT_LINE_LENGTH;
 };
 
 const mergeLine = (
