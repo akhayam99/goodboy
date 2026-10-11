@@ -12,6 +12,63 @@ use std::path::{Path, PathBuf};
 const STALE_TRIAL_SECS: u64 = 10 * 60;
 
 const STALE_REWRITER_SECS: u64 = 24 * 60 * 60;
+const REVIEW_FILE: &str = "goodboy-history-review";
+
+#[derive(Debug, Serialize, Deserialize)]
+pub(super) struct KeptReview {
+    pub(super) kept_until: u64,
+    pub(super) copy_head: String,
+}
+
+pub(super) fn now_secs() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|duration| duration.as_secs())
+        .unwrap_or_default()
+}
+
+fn review_of(root: &Path) -> Option<KeptReview> {
+    let path = root.join(REVIEW_FILE);
+    if !is_regular_file(&path) {
+        return None;
+    }
+    serde_json::from_str(&std::fs::read_to_string(path).ok()?).ok()
+}
+
+pub(super) fn kept_review(copy: &Path) -> Option<KeptReview> {
+    review_of(&reservation_root_of(copy)?)
+}
+
+pub(super) fn keep_review(copy: &Path, copy_head: &str) -> Result<u64, WorktreeError> {
+    let root = reservation_root_of(copy)
+        .filter(|_| is_owned_copy(copy))
+        .ok_or_else(|| plan_error("that folder is not a history copy Goodboy made"))?;
+    let lock = held_locks()
+        .lock()
+        .map_err(|_| plan_error("couldn't read the history copy lock"))?
+        .get(&root)
+        .map(std::fs::File::try_clone)
+        .transpose()?
+        .or_else(|| open_lock(&root))
+        .ok_or_else(|| plan_error("the history copy is in use; try again"))?;
+    let kept_until = review_of(&root)
+        .filter(|review| review.copy_head == copy_head)
+        .map(|review| review.kept_until)
+        .unwrap_or_else(|| now_secs() + STALE_REWRITER_SECS);
+    let review = KeptReview {
+        kept_until,
+        copy_head: copy_head.to_string(),
+    };
+    let staged = root.join(format!("{REVIEW_FILE}.next"));
+    std::fs::write(
+        &staged,
+        serde_json::to_vec(&review).map_err(|error| plan_error(&error.to_string()))?,
+    )?;
+    std::fs::rename(staged, root.join(REVIEW_FILE))?;
+    drop(super::reservation::take_held(&root));
+    drop(lock);
+    Ok(kept_until)
+}
 
 pub(super) struct CopyGuard {
     pub(super) root: PathBuf,
@@ -126,6 +183,9 @@ pub(crate) fn clean_stale_copies_in(
             continue;
         };
         let root = entry.path();
+        if review_of(&root).is_some_and(|review| review.kept_until > now_secs()) {
+            continue;
+        }
         if owner_repo(&root).is_none() || is_held(&root) {
             continue;
         }
@@ -136,12 +196,15 @@ pub(crate) fn clean_stale_copies_in(
         } else {
             other_after_secs
         };
-        if age_secs(&root.join(RESERVATION_FILE)) < limit {
+        if review_of(&root).is_none() && age_secs(&root.join(RESERVATION_FILE)) < limit {
             continue;
         }
         let Some(lock) = open_lock(&root) else {
             continue;
         };
+        if review_of(&root).is_some_and(|review| review.kept_until > now_secs()) {
+            continue;
+        }
         if remove_reservation(&root, Some(lock)) {
             cleaned += 1;
         }
@@ -165,6 +228,9 @@ pub struct CopyGitDirs {
 }
 
 pub(crate) fn copy_git_dirs(copy: &Path) -> Option<CopyGitDirs> {
+    if kept_review(copy).is_some_and(|review| review.kept_until <= now_secs()) {
+        return None;
+    }
     let root = reservation_root_of(copy)?;
     let repo = owner_repo(&root)?;
     if !is_regular_file(&copy.join(".git")) {
@@ -204,6 +270,9 @@ pub async fn history_copy_discard(
             return Err(plan_error("that folder is not a history copy Goodboy made"));
         }
         discard_copy(&copy_path);
+        if Path::new(&copy_path).exists() {
+            return Err(plan_error("couldn't remove the history copy"));
+        }
         Ok(())
     })
     .await

@@ -341,6 +341,7 @@ rebase-done-carried
 rebase-origin-moved
 rebase-push-failed
 rebase-restore-conflict
+rebase-review-change
 rebase-stuck-note
 rebasedirty
 repo-status
