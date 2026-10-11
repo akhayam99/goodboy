@@ -145,6 +145,32 @@ cwd, startedAt }`. A turn, a chat, a planner or a summary joins it in
   workspaces, not only the open one. Runs the backend still holds and runs
   this window can reattach to are kept.
 
+### Terminal and script output
+
+A pty never loses what it printed. Each terminal and each script run owns an
+`OutputRing` (`pty_ring.rs`): the last 262144 bytes it wrote and `total`, the
+running count of every byte since the start. The reader thread pushes each
+read into the ring first, then emits `terminal-output` or `script-output`
+with `offset`, the running offset of the chunk's first byte. A ring survives
+its process: on exit the pair (ring, exit code) stays in the `exited` store
+for 10 minutes, and the entry leaves the registry before `terminal-exit` or
+`script-exit` fires, so a snapshot read after the event always carries the
+exit code.
+
+`terminal_snapshot(sessionId)` and `workspace_script_snapshot(runId)` return
+`{ data, offset, exitCode }`: the ring as base64, the offset of its first
+byte, and the exit code once the process ended (`null` while it runs). An
+unknown id returns an empty snapshot at offset 0.
+
+The app listens once per event kind. `features/terminal/outputBus.ts` is
+registered at boot (`reattachTerminalTabs`) and by every terminal driver; it
+keeps a 256KB tail per terminal and hands each chunk to that terminal's
+subscribers. `GenericTerminalPanel` subscribes first, buffers what arrives,
+writes the snapshot, then writes only the bytes past the snapshot's end. When
+the snapshot call fails the bus tail stands in. The scripts slice does the
+same for every live run on boot (`registerScriptRunListeners` with
+`shouldReplay`); what a script's transcript shows stays capped at 64KB.
+
 ### Launching git
 
 Every git process the Rust shell starts goes through one builder,

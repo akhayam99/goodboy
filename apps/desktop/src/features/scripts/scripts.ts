@@ -40,6 +40,13 @@ export type ScriptGroup = {
 export type ScriptOutputPayload = {
   readonly runId: string;
   readonly data: string;
+  readonly offset: number;
+};
+
+export type ScriptSnapshot = {
+  readonly data: string;
+  readonly offset: number;
+  readonly exitCode: number | null;
 };
 
 export type ScriptExitPayload = {
@@ -159,6 +166,10 @@ export const discoveredScriptCwd = ({
 
 export const invokeScriptListLive = (): Promise<ReadonlyArray<LiveScriptRun>> => {
   return invokeCommand<ReadonlyArray<LiveScriptRun>>('workspace_script_list_live');
+};
+
+export const invokeScriptSnapshot = (runId: string): Promise<ScriptSnapshot> => {
+  return invokeCommand<ScriptSnapshot>('workspace_script_snapshot', { runId });
 };
 
 export const invokeScriptCancel = (runId: string): Promise<void> => {

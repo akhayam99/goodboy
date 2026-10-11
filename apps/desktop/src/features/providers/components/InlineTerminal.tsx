@@ -48,7 +48,7 @@ export const InlineTerminal = ({ runId, isActive, heightClass = 'h-44' }: Props)
           if (payload.runId !== runId) {
             return;
           }
-          handler(base64ToBytes(payload.data));
+          handler({ bytes: base64ToBytes(payload.data), offset: null });
         }),
       onExit: (handler) =>
         listenLifecycleExit((payload) => {
