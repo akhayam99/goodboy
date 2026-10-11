@@ -3248,29 +3248,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/diff/lib/highlight/index.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/diff/lib/highlight/languages.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/diff/lib/highlight/theme.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/diff/lib/highlight/worker.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/diff/lib/reviewedFiles.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 3
@@ -3281,11 +3258,6 @@
       "count": 1
     },
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/explore/components/ExplorePane/ExplorePreviewPanel.tsx": {
-    "@typescript-eslint/naming-convention": {
       "count": 1
     }
   },
@@ -9274,6 +9246,29 @@
   "apps/desktop/src/shared/lib/dbBoot.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 3
+    }
+  },
+  "apps/desktop/src/shared/lib/highlight/index.ts": {
+    "@typescript-eslint/naming-convention": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/shared/lib/highlight/languages.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/shared/lib/highlight/theme.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    },
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/shared/lib/highlight/worker.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
     }
   },
   "apps/desktop/src/shared/lib/projectGitPresentation.ts": {

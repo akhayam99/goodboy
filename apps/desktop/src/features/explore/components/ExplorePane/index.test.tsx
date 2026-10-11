@@ -496,9 +496,7 @@ describe('ExplorePane previews', () => {
 
     fireEvent.click(await rowNamed('budget.xlsx'));
     expect(
-      await screen.findByText(
-        'Preview is not available for this format. Open it in the app that owns it.',
-      ),
+      await screen.findByText('This file is binary. Open it in the app that owns it.'),
     ).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Open' }));
     await waitFor(() =>
@@ -507,6 +505,80 @@ describe('ExplorePane previews', () => {
         { sessionDir: DIR, relPath: 'budget.xlsx', reveal: false, editor: null },
       ]),
     );
+  });
+
+  it('holds the actions in the drawer header and none in the body', async () => {
+    listFiles('page.tsx');
+    h.reads.push({
+      type: 'text',
+      text: 'export const a = 1;\nexport const b = 2;',
+      truncated: false,
+    });
+    mount();
+
+    fireEvent.click(await rowNamed('page.tsx'));
+    const drawer = await screen.findByRole('region', { name: 'page.tsx' });
+    await screen.findByText(/export const b/);
+
+    const header = drawer.querySelector('header');
+    if (header === null) {
+      throw new Error('missing drawer header');
+    }
+    const inHeader = within(header);
+    expect(inHeader.getByRole('button', { name: 'Open' })).toBeDefined();
+    expect(inHeader.getByRole('button', { name: 'Copy path' })).toBeDefined();
+    expect(inHeader.getByRole('button', { name: 'Wrap lines' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
+    expect(inHeader.getByRole('button', { name: 'Close' })).toBeDefined();
+    const body = within(drawer)
+      .queryAllByRole('button')
+      .filter((button) => !header.contains(button));
+    expect(body).toEqual([]);
+    expect(drawer.querySelectorAll('hr, [role="separator"]').length).toBe(1);
+  });
+
+  it('toggles wrap for code and remembers the choice', async () => {
+    listFiles('page.tsx');
+    h.reads.push({ type: 'text', text: 'export const a = 1;', truncated: false });
+    mount();
+
+    fireEvent.click(await rowNamed('page.tsx'));
+    fireEvent.click(await screen.findByRole('button', { name: 'Wrap lines' }));
+
+    expect(screen.getByRole('button', { name: 'Wrap lines' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(localStorage.getItem('goodboy:explore-wrap:v1')).toBe('true');
+  });
+
+  it('offers Preview and Source for markdown and no wrap button on prose', async () => {
+    listFiles('README.md');
+    h.reads.push({ type: 'text', text: '# Read me\n\nBody', truncated: false });
+    mount();
+
+    fireEvent.click(await rowNamed('README.md'));
+    expect(await screen.findByRole('heading', { name: 'Read me' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Wrap lines' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Source' }));
+
+    expect(screen.queryByRole('heading', { name: 'Read me' })).toBeNull();
+    expect(screen.getByText('# Read me')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Wrap lines' })).toBeNull();
+  });
+
+  it('says a binary file is binary and keeps the open button in the header', async () => {
+    listFiles('blob.dat');
+    h.reads.push({ type: 'binary', size: 4096 });
+    mount();
+
+    fireEvent.click(await rowNamed('blob.dat'));
+
+    expect(
+      await screen.findByText('This file is binary. Open it in the app that owns it.'),
+    ).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Wrap lines' })).toBeNull();
   });
 
   it('labels truncated text previews', async () => {
