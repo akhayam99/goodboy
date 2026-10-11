@@ -588,21 +588,37 @@ card. The row, the card and the board card all read `useSessionSummary`, so they
 say the same things in the same words. The board card keeps the whole summary
 and the session header keeps its chips.
 
-**The user chooses the order of the list.** The Sessions header holds one `⋯`
-menu: Sort (Needs you first then the session you opened last [default],
-Alphabetical, Last activity, Created), Group (None [default], PR state, Stage,
-Project), Filter by project (the same selection as the board's project filter)
-and Show archived. The choices persist per workspace in the browser storage
-(`goodboy:session-view:<workspace id>`, version 2); nothing goes to the
-database. By default the sessions that need you sit on top, the one that has
-waited longest first, and the rest follow `sessions.last_opened_at`, written
-when a session opens (a session never opened falls back to its last activity).
-A running session does not move, and a row moves only when you open a session
-or a session starts needing you. With no grouping the first eight rows show and
-the rest sit under **Show N more**, remembered per workspace. A session that
-needs you and the open session are never folded. A grouped list shows every
-group, finished groups start collapsed, and nothing folds. `⌘⇧[` and `⌘⇧]` walk
-this same order and skip folded rows, so they match what you see.
+**The user chooses what the list shows and in what order.** The Sessions header
+holds one funnel button, **Filter sessions** (`SessionFilterPopover`), with the
+count of active filters as a small badge, like the Board's project filter. Its
+popover is a labelled dialog, not a menu of menus. Status lists Needs you,
+Running, In review, Building and Done with their counts (`statusFilter` in the
+prefs). Project lists the projects of the sessions with their counts and shows
+only when two or more projects have sessions (the same selection as the board's
+project filter). Archive holds Show archived. Sort offers Needs you first
+[default], Alphabetical, Last activity and Created; Group offers None
+[default], PR state, Stage and Project. **Clear filters** shows while a filter
+is active. The choices persist per workspace in the browser storage
+(`goodboy:session-view:<workspace id>`, version 3: a version 2 record loads with
+an empty status filter); nothing goes to the database.
+
+A filter never hides a pinned session or the open session
+(`withExemptSessions`, `filterSessionsByStatus`). When filters hide other
+sessions, one quiet line under the list reads "N hidden by filters" with a
+ghost **Clear**; a list that filters out everything says "No sessions match".
+
+By default the sessions that need you sit on top, the one that has waited longest
+first, and the rest follow their last activity (`activityKeyOf`: the later of
+the last finished turn and `sessions.updated_at`). Opening a session writes
+`sessions.last_opened_at` and never moves a row, so the list holds still while
+you click through it. A row moves only when its session has new activity or
+starts needing you. `last_opened_at` feeds `⌃Tab` and the switcher's recents
+only. The Board's default order uses the same key. With no grouping the first
+eight rows show and the rest sit under **Show N more**, remembered per
+workspace. A session that needs you and the open session are never folded. A
+grouped list shows every group, finished groups start collapsed, and nothing
+folds. `⌘⇧[` and `⌘⇧]` walk this same displayed order and skip folded rows, so
+pressing `⌘⇧]` four times from the first row visits the next four sessions.
 
 **Pin a session and it stays at the top of the list.** **Pin session** and
 **Unpin session** are session actions (the row's right-click menu, `⌘K` and
