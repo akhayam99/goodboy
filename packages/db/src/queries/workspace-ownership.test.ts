@@ -17,7 +17,7 @@ const FATES: Readonly<Record<string, Fate>> = {
   sessions: 'moved',
   session_context_items: 'moved',
   integration_bindings: 'moved',
-  workspace_external_tasks: 'moved',
+  workspace_starred_issues: 'moved',
   workspace_profiles: 'deleted-by-merge',
   notifications: 'detached',
   retained_worktree_paths: 'detached',
@@ -40,7 +40,6 @@ const FATES: Readonly<Record<string, Fate>> = {
   skills: 'lost-with-the-source',
   step_library: 'lost-with-the-source',
   workflows: 'lost-with-the-source',
-  workspace_starred_issues: 'lost-with-the-source',
 };
 
 const MERGE_SOURCE = readFileSync(join(import.meta.dirname, 'workspace-merge.ts'), 'utf8');

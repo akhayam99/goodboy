@@ -34,7 +34,7 @@ artifacts-rows
 board
 board-delete-confirm
 board-empty-lanes
-board-ongoing
+board-no-ongoing
 board-selected
 board-shell
 board-stacked
@@ -238,6 +238,7 @@ integration-issue-focused
 lens-switcher
 lens-switcher-closed
 link-scope
+linkwork-star
 listbox
 model-picker
 model-picker-claude

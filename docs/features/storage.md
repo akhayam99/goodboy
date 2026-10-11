@@ -36,6 +36,8 @@ Decide what to keep from sessions you deleted: their plans, reports and wirefram
 
 The same goes for the role and task models a project had before the project layer went away: they stay in the settings table under `legacy.projectModels.<projectId>` (migration m228), one small row per project, until you apply or discard them on **Models**. Nothing else reads them.
 
+The tasks a workspace used to track in the Board's Ongoing row are stars now: migration m229 copied each one into the workspace's starred issues (open, dated by when it was linked, and an existing star wins) and dropped the old table. The next refresh fills in their state.
+
 ### Goodboy can free N GB
 
 Hear about reclaimable space once, when idle safe folders pass 10 GB or the disk runs low. After a notice it waits 14 days and another 10 GB before speaking again.

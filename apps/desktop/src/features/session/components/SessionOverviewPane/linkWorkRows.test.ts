@@ -25,7 +25,7 @@ const keysOf = (items: ReadonlyArray<LinkWorkItem>): ReadonlyArray<string> => {
     source: 'all',
     items,
     lookedUp: [],
-    linkedScopes: new Map(),
+    linkedKeys: new Set(),
   });
   return view.kind === 'list' ? view.rows.map((row) => row.key) : [];
 };
@@ -47,27 +47,34 @@ describe('linkWorkView', () => {
   });
 });
 
-describe('linkWorkView with linked scopes', () => {
-  const rowsOf = (linkedScopes: ReadonlyMap<string, ReadonlyArray<'session' | 'workspace'>>) => {
+describe('linkWorkView with linked keys', () => {
+  const rowsOf = (linkedKeys: ReadonlySet<string>) => {
     const view = linkWorkView({
       query: '',
       source: 'all',
-      items: [item({ key: 'revamp', updatedAt: '2026-09-29T08:00:00Z' })],
+      items: [
+        item({ key: 'revamp', updatedAt: '2026-09-29T08:00:00Z' }),
+        item({ key: 'cleanup', updatedAt: '2026-09-28T08:00:00Z' }),
+      ],
       lookedUp: [],
-      linkedScopes,
+      linkedKeys,
     });
     return view.kind === 'list'
-      ? view.rows.map((row) => ({ key: row.key, linkedScopes: row.linkedScopes }))
+      ? view.rows.map((row) => ({ key: row.key, isLinked: row.isLinked }))
       : [];
   };
 
-  it('keeps a task linked to the session, carrying that scope', () => {
-    expect(rowsOf(new Map([['revamp', ['session']]]))).toEqual([
-      { key: 'revamp', linkedScopes: ['session'] },
+  it('keeps a task linked to the session and flags it', () => {
+    expect(rowsOf(new Set(['revamp']))).toEqual([
+      { key: 'revamp', isLinked: true },
+      { key: 'cleanup', isLinked: false },
     ]);
   });
 
-  it('drops a task once every scope has it', () => {
-    expect(rowsOf(new Map([['revamp', ['session', 'workspace']]]))).toEqual([]);
+  it('flags nothing when no task is linked', () => {
+    expect(rowsOf(new Set())).toEqual([
+      { key: 'revamp', isLinked: false },
+      { key: 'cleanup', isLinked: false },
+    ]);
   });
 });
