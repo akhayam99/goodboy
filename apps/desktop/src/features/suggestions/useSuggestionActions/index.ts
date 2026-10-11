@@ -1,3 +1,4 @@
+import { analyzeFailingChecks } from '../../branch/checks/analyzeFailingChecks';
 import { NAMES } from '../../../shared/names';
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
@@ -76,6 +77,10 @@ export type SuggestionActionResolver = (params: {
 }) => SuggestionActions;
 
 const NO_ACTIONS: SuggestionActions = { primary: null, onDismiss: null };
+
+type AnalyzeParams = {
+  readonly routing?: AgentKindRouting;
+};
 
 type StartRebaseParams = {
   readonly target: RebaseSuggestionTarget;
@@ -404,28 +409,56 @@ export const useSuggestionActions = ({
       };
     }
     if (suggestion.kind === 'fix-checks') {
+      const analyze = async ({ routing }: AnalyzeParams = {}) => {
+        const state = useAppStore.getState();
+        let github = state.mountGithub[suggestion.payload.mountId];
+        if (
+          github?.pr?.number === suggestion.payload.prNumber &&
+          (github.detail === null || github.detail.prNumber !== suggestion.payload.prNumber)
+        ) {
+          await state.refreshSessionPrDetail(sessionId, {
+            mountId: suggestion.payload.mountId,
+            force: true,
+          });
+          github = useAppStore.getState().mountGithub[suggestion.payload.mountId];
+        }
+        const port = state.pullRequestViews[sessionId];
+        const portView = port?.mountId === suggestion.payload.mountId ? port.view : null;
+        const pullRequest = github?.pr ?? portView;
+        const detail = github?.detail;
+        const checks =
+          detail?.prNumber === pullRequest?.number
+            ? detail?.checks
+            : portView?.number === pullRequest?.number
+              ? portView?.checks.runs
+              : undefined;
+        if (
+          pullRequest === undefined ||
+          pullRequest === null ||
+          pullRequest.number !== suggestion.payload.prNumber ||
+          checks === undefined
+        ) {
+          throw new Error('Refresh the failing checks and try Analyze again.');
+        }
+        await analyzeFailingChecks({
+          sessionId,
+          mountId: suggestion.payload.mountId,
+          pullRequest,
+          checks: checks.filter((check) =>
+            ['failure', 'timed_out', 'cancelled'].includes(check.conclusion),
+          ),
+          ...(routing !== undefined && { routing }),
+        });
+      };
       return {
         primary: {
-          label: 'Start debugger',
+          label: 'Analyze',
           isDisabled: false,
-          failureTitle: "Couldn't start the debugger",
-          run: async () => {
-            await spawnAgent(sessionId, {
-              kindOverride: 'debugger',
-              mountId: suggestion.payload.mountId,
-              focus: 'none',
-            });
-          },
+          failureTitle: "Couldn't start the Debugger",
+          run: () => analyze(),
           runsOn: {
             kind: 'debugger',
-            runWith: async (routing) => {
-              await spawnAgent(sessionId, {
-                kindOverride: 'debugger',
-                mountId: suggestion.payload.mountId,
-                focus: 'none',
-                ...routing,
-              });
-            },
+            runWith: (routing) => analyze({ routing }),
           },
         },
         onDismiss: null,

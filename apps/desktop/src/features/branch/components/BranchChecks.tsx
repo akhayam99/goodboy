@@ -17,6 +17,7 @@ import { ChecksMode } from '../../review/components/ReviewPane/modes/ChecksMode'
 import { checksViewOf, type ChecksHost, type ChecksHostKind } from '../checksViewOf';
 import { usePullRequestView } from '../hooks/usePullRequestView';
 import { repoNameOf } from '../repoNameOf';
+import { CheckAnalysisActions } from './CheckAnalysisActions';
 import { ChecksDeniedNotice } from './ChecksDeniedNotice';
 import { ChecksFailedNotice } from './ChecksFailedNotice';
 
@@ -68,6 +69,7 @@ export const BranchChecks = ({ sessionId }: Props) => {
 
   const pr = github?.pr ?? null;
   const detail = github?.detail ?? null;
+  const analysisRequest = isPortHost ? portView.view : pr;
   const isChecking = isPortHost ? portView.isLoading : github?.detailLoading === true;
   const prNumber = pr?.number ?? null;
   const hasDetail = detail !== null && detail.prNumber === prNumber;
@@ -172,6 +174,18 @@ export const BranchChecks = ({ sessionId }: Props) => {
     <PageColumn width="column">
       {notice === null ? (
         <ChecksMode
+          renderCheckActions={(check) =>
+            analysisRequest !== null &&
+            repo !== null &&
+            ['failure', 'timed_out', 'cancelled'].includes(check.conclusion) ? (
+              <CheckAnalysisActions
+                sessionId={sessionId}
+                mountId={repo.mountId}
+                pullRequest={analysisRequest}
+                check={check}
+              />
+            ) : null
+          }
           checks={view.kind === 'ready' ? view.checks : []}
           fallbackUrl={pr?.url ?? host.url ?? ''}
           hostLabel={REVIEW_SOURCE_LABEL[isPortHost ? host.kind : 'github']}

@@ -334,7 +334,12 @@ export const SessionActivityBar = ({
           ) : null}
 
           {column.hiddenByFilters > 0 ? (
-            <div className="flex items-center justify-between gap-2 pl-7 pr-1 text-meta text-faint-foreground">
+            <div
+              className={cn(
+                'flex items-center justify-between gap-2 text-meta text-faint-foreground',
+                PANE_RHYTHM.sessionList.rowInset,
+              )}
+            >
               <span>{column.hiddenByFilters} hidden by filters</span>
               <Button variant="ghost" size="xs" onClick={clearFilters}>
                 Clear

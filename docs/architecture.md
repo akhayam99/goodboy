@@ -206,6 +206,8 @@ replays it through the same snapshot path, so a remount during a login still
 shows the device code once. The buffer of an exited run is dropped when its
 terminal unmounts, and only the newest four exited runs are kept.
 
+`shared/components/GenericTerminalPanel/index.tsx` keeps the normal terminal renderer when WebGL addon construction or activation fails, and disposes the failed addon. Acceleration is optional; an unavailable WebGL2 context does not close the terminal.
+
 ### Launching git
 
 Every git process the Rust shell starts goes through one builder,
