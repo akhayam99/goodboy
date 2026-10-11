@@ -13,6 +13,7 @@ import { setAgentDraft } from './setAgentDraft';
 import { setAgentDone } from './setAgentDone';
 import { setAgentEffortOverride } from './setAgentEffortOverride';
 import { spawnAgent } from './spawnAgent';
+import { startFollowUp } from './startFollowUp';
 import type { SliceDeps } from '../../slice-types';
 
 export const createAgentsSlice = ({ set, get }: SliceDeps) => {
@@ -31,6 +32,7 @@ export const createAgentsSlice = ({ set, get }: SliceDeps) => {
     clearAgentDone: clearAgentDone(set, get),
     renameAgent: renameAgent(set),
     spawnAgent: spawnAgent(set, get),
+    startFollowUp: startFollowUp(get),
     deleteAgent: deleteAgent(set, get),
     forceCloseResolver: forceCloseResolver(set, get),
   };

@@ -19,6 +19,7 @@ export const createInitialSessionViewState = ({}: Params) => ({
   diffMountPath: {},
   branchTab: {},
   sessionPagesFolded: {},
+  dismissedCheckProposals: {},
   branchThreadId: {},
   terminalMountPath: {},
   resolveQueueView: {},

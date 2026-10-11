@@ -4,7 +4,7 @@ import { agentPlace, useAppStore } from '../../../../store';
 import { useFollowToast } from '../../../../shared/hooks/useFollowToast';
 import type { AgentKind, AgentKindRouting } from '../../agent-kind';
 import { AGENT_KIND_META } from '../../agent-kind';
-import { agentFollowUpMoves, composeFollowUpSeed } from '../../followUpMoves';
+import { agentFollowUpMoves } from '../../followUpMoves';
 import type { FollowUpChild } from './followUpChildren';
 import { AgentFollowUpChild } from './AgentFollowUpChild';
 import { routingShortText } from '../../../../shared/components/RoutingPicker/routingSummary';
@@ -27,7 +27,7 @@ export const AgentFollowUps = ({
   followUps,
   activePlanId,
 }: Props) => {
-  const spawnAgent = useAppStore((state) => state.spawnAgent);
+  const startFollowUp = useAppStore((state) => state.startFollowUp);
   const followAgent = useFollowToast();
 
   const moves = agentFollowUpMoves({ sourceKind });
@@ -47,14 +47,13 @@ export const AgentFollowUps = ({
   const onSpawn = (nextKind: AgentKind, routing: AgentKindRouting) => {
     const planDriven = nextKind === 'implementer' && activePlanId != null;
     void (async () => {
-      const agentId = await spawnAgent(sessionId, {
-        kindOverride: nextKind,
-        ...routing,
-        ...(planDriven
-          ? { triggeredPlanId: activePlanId }
-          : { initialPrompt: composeFollowUpSeed({ sourceAgent, summary }) }),
-        parentAgentId: sourceAgent.id,
-        focus: 'agent',
+      const agentId = await startFollowUp({
+        sessionId,
+        sourceAgentId: sourceAgent.id,
+        kind: nextKind,
+        routing,
+        summary,
+        ...(planDriven && { triggeredPlanId: activePlanId }),
       });
       followAgent({
         title: `${AGENT_KIND_META[nextKind].label} started`,

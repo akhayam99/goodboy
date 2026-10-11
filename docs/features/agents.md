@@ -71,6 +71,8 @@ Follow one agent's work in order. The plan, report and wireframe it writes show 
 
 When an agent recommends another role, its transcript shows **Agent suggests** with the reason. Pick the provider, model and effort on the card, then press **Start**. The new agent starts with that reason and what the previous agent wrote.
 
+A follow-up under **Continue** on a finished agent's page and **Start fix** on a failed check's row start the same way: one Implementer under the agent it continues, seeded with its output or proposal, listed nested under it in Activity. Starting the same follow-up twice, from two places, starts it once.
+
 ### Queue or send now
 
 Keep talking while an agent works. **Enter** queues your message for its next turn, **⌘Enter** interrupts and sends it now, and the queue survives a restart.

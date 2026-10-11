@@ -12,6 +12,7 @@ export const selectCheckAnalysis = ({ state, sessionId, url }: Params): Agent | 
     if (
       agent.sourceKind !== 'failed_check' ||
       agent.sourceCommentUrl !== url ||
+      agent.parentAgentId !== undefined ||
       agent.deletedAt !== undefined
     ) {
       return latest;

@@ -1,4 +1,6 @@
 import { analyzeFailingChecks } from '../../branch/checks/analyzeFailingChecks';
+import { startCheckFix } from '../../branch/checks/startCheckFix';
+import { selectCheckChain } from '../../../store/slices/agents/selectCheckChain';
 import { NAMES } from '../../../shared/names';
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
@@ -106,6 +108,17 @@ export const useSuggestionActions = ({
     ),
   );
   const spawnAgent = useAppStore((state) => state.spawnAgent);
+  useAppStore((state) =>
+    (state.sessionPhaseRuns[sessionId] ?? [])
+      .flatMap((agent) =>
+        agent.sourceKind === 'failed_check' && agent.sourceCommentUrl !== undefined
+          ? [
+              `${agent.id}:${selectCheckChain({ state, sessionId, url: agent.sourceCommentUrl }).state}`,
+            ]
+          : [],
+      )
+      .join(),
+  );
   const resumeStoppedAgents = useAppStore((state) => state.resumeStoppedAgents);
   const navigate = useAppStore((state) => state.navigate);
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
@@ -382,19 +395,9 @@ export const useSuggestionActions = ({
       };
     }
     if (suggestion.kind === 'fix-checks') {
-      const analyze = async ({ routing }: AnalyzeParams = {}) => {
+      const readFailing = () => {
         const state = useAppStore.getState();
-        let github = state.mountGithub[suggestion.payload.mountId];
-        if (
-          github?.pr?.number === suggestion.payload.prNumber &&
-          (github.detail === null || github.detail.prNumber !== suggestion.payload.prNumber)
-        ) {
-          await state.refreshSessionPrDetail(sessionId, {
-            mountId: suggestion.payload.mountId,
-            force: true,
-          });
-          github = useAppStore.getState().mountGithub[suggestion.payload.mountId];
-        }
+        const github = state.mountGithub[suggestion.payload.mountId];
         const port = state.pullRequestViews[sessionId];
         const portView = port?.mountId === suggestion.payload.mountId ? port.view : null;
         const pullRequest = github?.pr ?? portView;
@@ -411,18 +414,80 @@ export const useSuggestionActions = ({
           pullRequest.number !== suggestion.payload.prNumber ||
           checks === undefined
         ) {
+          return null;
+        }
+        return {
+          pullRequest,
+          checks: checks.filter((check) =>
+            ['failure', 'timed_out', 'cancelled'].includes(check.conclusion),
+          ),
+        };
+      };
+      const analyze = async ({ routing }: AnalyzeParams = {}) => {
+        const state = useAppStore.getState();
+        const github = state.mountGithub[suggestion.payload.mountId];
+        if (
+          github?.pr?.number === suggestion.payload.prNumber &&
+          (github.detail === null || github.detail.prNumber !== suggestion.payload.prNumber)
+        ) {
+          await state.refreshSessionPrDetail(sessionId, {
+            mountId: suggestion.payload.mountId,
+            force: true,
+          });
+        }
+        const failing = readFailing();
+        if (failing === null) {
           throw new Error('Refresh the failing checks and try Analyze again.');
         }
         await analyzeFailingChecks({
           sessionId,
           mountId: suggestion.payload.mountId,
-          pullRequest,
-          checks: checks.filter((check) =>
-            ['failure', 'timed_out', 'cancelled'].includes(check.conclusion),
-          ),
+          pullRequest: failing.pullRequest,
+          checks: failing.checks,
           ...(routing !== undefined && { routing }),
         });
       };
+      const failing = readFailing();
+      const url = failing?.checks[0]?.detailsUrl ?? failing?.pullRequest.url;
+      const chain =
+        url === undefined
+          ? null
+          : selectCheckChain({ state: useAppStore.getState(), sessionId, url });
+      if (url !== undefined && chain !== null && chain.state === 'proposal') {
+        return {
+          primary: {
+            label: 'Start fix',
+            isDisabled: false,
+            failureTitle: "Couldn't start the Implementer",
+            run: async () => {
+              await startCheckFix({ sessionId, url, mountId: suggestion.payload.mountId });
+            },
+          },
+          onDismiss: null,
+        };
+      }
+      if (
+        url !== undefined &&
+        chain !== null &&
+        chain.state !== 'none' &&
+        chain.state !== 'no-fix'
+      ) {
+        return {
+          primary: {
+            label: 'Open',
+            isDisabled: false,
+            failureTitle: "Couldn't open the analysis",
+            run: async () => {
+              useAppStore.getState().openDrawer({
+                kind: 'check-analysis',
+                sessionId,
+                payload: { sessionId, checkUrl: url },
+              });
+            },
+          },
+          onDismiss: null,
+        };
+      }
       return {
         primary: {
           label: 'Analyze',
