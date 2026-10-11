@@ -188,16 +188,15 @@ describe('CommitsHistory toolbar', () => {
     return slot;
   };
 
-  it('puts Refresh, Backups and Open terminal here in the tab row actions, once, with no menu', () => {
+  it('puts Backups alone in the tab row actions, with no Refresh, terminal or menu', () => {
     const slot = mountWithSlot();
 
     const inSlot = within(slot);
-    expect(inSlot.getByRole('button', { name: 'Refresh' })).toBeDefined();
+    expect(inSlot.getAllByRole('button')).toHaveLength(1);
     expect(inSlot.getByRole('button', { name: 'Backups' })).toBeDefined();
-    expect(inSlot.getAllByRole('button', { name: 'Open terminal here' })).toHaveLength(1);
-    expect(screen.getAllByRole('button', { name: 'Refresh' })).toHaveLength(1);
     expect(screen.getAllByRole('button', { name: 'Backups' })).toHaveLength(1);
-    expect(screen.getAllByRole('button', { name: 'Open terminal here' })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'Refresh' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open terminal here' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'More history actions' })).toBeNull();
     slot.remove();
   });
@@ -211,23 +210,48 @@ describe('CommitsHistory toolbar', () => {
     slot.remove();
   });
 
-  it('keeps the legend on its own row outside the scroller that fades', () => {
+  it('draws no legend, no After column and no planned changes at rest', () => {
     const slot = mountWithSlot();
 
-    const legend = screen.getByRole('group', { name: 'Legend' });
-    const list = screen.getByRole('list', { name: 'Commits' });
-    const row = legend.closest('[data-slot="history-legend"]') as HTMLElement;
-    const scroller = row.previousElementSibling as HTMLElement;
-    expect(scroller.contains(list)).toBe(true);
-    expect(scroller.contains(legend)).toBe(false);
+    expect(screen.queryByRole('group', { name: 'Legend' })).toBeNull();
+    expect(document.querySelector('[data-after-node]')).toBeNull();
+    expect(screen.queryByRole('list', { name: 'After Apply' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Planned changes' })).toBeNull();
+    expect(screen.queryByText('none yet')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Apply/ })).toBeNull();
+    expect(screen.queryByText('Now')).toBeNull();
+    expect(screen.queryByText('your branch as it is')).toBeNull();
     slot.remove();
   });
 
-  it('keeps the toolbar inline when no tab row hands it a slot', () => {
+  it('draws one node graphic only, the 72px lane', () => {
+    const slot = mountWithSlot();
+
+    const lanes = document.querySelectorAll('[data-history-lane]');
+    expect(lanes).toHaveLength(1);
+    expect(lanes[0]?.getAttribute('width')).toBe('72');
+    slot.remove();
+  });
+
+  it('says how to drag at rest and lists the keys from a Keys popover', () => {
+    const slot = mountWithSlot();
+
+    expect(
+      screen.getByText('Drag a commit to move it, drop it on another to fold it in.'),
+    ).toBeDefined();
+    expect(screen.queryByText('Fold in')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Keys' }));
+    expect(screen.getByText('Fold in')).toBeDefined();
+    expect(screen.getByText('Rename')).toBeDefined();
+    expect(screen.getByText('Remove')).toBeDefined();
+    slot.remove();
+  });
+
+  it('keeps Backups inline when no tab row hands it a slot', () => {
     seed({});
     render(<CommitsHistory sessionId={SESSION_ID} worktreePath="/w/payments" />);
 
-    expect(screen.getByRole('button', { name: 'Refresh' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Refresh' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Backups' })).toBeDefined();
   });
 });
@@ -240,8 +264,9 @@ describe('CommitsHistory', () => {
       .getAllByRole('listitem')
       .map((item) => item.getAttribute('aria-label'));
     expect(labels).toEqual(LEDGER_COMMITS.map((entry) => entry.subject));
-    expect(screen.getByText('3 commits newer than where your branch started')).toBeDefined();
+    expect(screen.getByText('3 newer')).toBeDefined();
     expect(screen.getByText('Your branch starts here')).toBeDefined();
+    expect(screen.queryByText('online')).toBeNull();
     expect(screen.queryByText(/already online/)).toBeNull();
     expect(screen.queryByText(/of your own/)).toBeNull();
     expect(screen.queryByRole('checkbox')).toBeNull();
@@ -471,9 +496,8 @@ describe('CommitsHistory', () => {
         '2 files have changes that are not committed. Commit or stash them first.',
       ).length,
     ).toBeGreaterThan(0);
-    expect(screen.getByRole('button', { name: 'Apply here only' }).hasAttribute('disabled')).toBe(
-      true,
-    );
+    expect(screen.getByRole('button', { name: 'Apply' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Apply here only' })).toBeNull();
   });
 
   it('says it is working on a temporary copy, step by step, while the plan is tried', () => {
@@ -501,9 +525,7 @@ describe('CommitsHistory', () => {
     expect(within(status).getByText('Trying your changes on a temporary copy')).toBeDefined();
     expect(within(status).getByText('Your branch is untouched until this finishes.')).toBeDefined();
     expect(within(status).getByText('Step 3 of 7 · Add retries to the export job')).toBeDefined();
-    expect(
-      screen.getByRole('button', { name: 'Apply and update online' }).hasAttribute('disabled'),
-    ).toBe(true);
+    expect(screen.getByRole('button', { name: 'Apply' }).hasAttribute('disabled')).toBe(true);
     expect(screen.queryByRole('button', { name: /^Undo:/ })).toBeNull();
   });
 
@@ -649,6 +671,67 @@ describe('CommitsHistory', () => {
       .getAllByRole('listitem')
       .map((item) => item.getAttribute('data-history-row'));
     expect(labels).toEqual([x, c, d, b, a]);
+  });
+});
+
+describe('CommitsHistory plan panel', () => {
+  const reducedMotion = () => {
+    vi.stubGlobal('matchMedia', () => ({
+      matches: true,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }));
+  };
+
+  it('shows Not pushed only on commits that are not on the online copy', () => {
+    setup();
+    for (const entry of LEDGER_COMMITS) {
+      const chip = within(row(entry.sha)).queryByText('Not pushed');
+      expect(chip === null).toBe(entry.pushed);
+    }
+    expect(screen.queryByText('online')).toBeNull();
+  });
+
+  it('adds the After column and one enabled Apply after one edit, and Reset all removes both', async () => {
+    reducedMotion();
+    const edited = setVerb({ items: BASE, sha: x, verb: 'drop' });
+    seed({});
+    const view = render(<CommitsHistory sessionId={SESSION_ID} worktreePath="/w/payments" />);
+    expect(document.querySelector('[data-after-node]')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Apply' })).toBeNull();
+
+    seed({ items: edited });
+    view.rerender(<CommitsHistory sessionId={SESSION_ID} worktreePath="/w/payments" />);
+    await act(async () => undefined);
+    expect(document.querySelector('[data-after-node]')).not.toBeNull();
+    expect(screen.getByRole('heading', { name: /After Apply/ }).textContent).toBe(
+      'After Apply· 7 commits become 6',
+    );
+    expect(screen.getByRole('heading', { name: 'Planned changes' })).toBeDefined();
+    const applies = screen.getAllByRole('button', { name: 'Apply' });
+    expect(applies).toHaveLength(1);
+    expect(applies[0]?.hasAttribute('disabled')).toBe(false);
+    expect(screen.getByRole('button', { name: 'Reset all' })).toBeDefined();
+
+    seed({});
+    view.rerender(<CommitsHistory sessionId={SESSION_ID} worktreePath="/w/payments" />);
+    await act(async () => undefined);
+    expect(document.querySelector('[data-after-node]')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Apply' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Reset all' })).toBeNull();
+  });
+
+  it('reloads the draft by itself when the branch moved and nothing is planned', () => {
+    h.status = { ...h.status, head: 'moved-head' };
+    const actions = setup();
+    expect(actions.loadHistoryDraft).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps the planned draft when the branch moved', () => {
+    h.status = { ...h.status, head: 'moved-head' };
+    const actions = setup({ items: LEDGER_PRESET });
+    const calls = actions.loadHistoryDraft.mock.calls.length;
+    expect(calls).toBe(1);
   });
 });
 

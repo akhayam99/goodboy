@@ -65,12 +65,12 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: branchTab('commits'),
   },
   {
-    name: 'the Commits tab draws the branch and its planned changes',
+    name: 'the Commits tab draws the branch and the keys hint, with no plan at rest',
     covers: ['openRewriteHistory'],
     open: openDiffHistory,
     lands: both(
       () => visible('list', 'Commits'),
-      () => heading('Planned changes'),
+      () => visible('button', 'Keys'),
     ),
   },
   {

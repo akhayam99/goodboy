@@ -3283,7 +3283,7 @@
   },
   "apps/desktop/src/features/history/components/CommitsHistory/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 12
+      "count": 10
     }
   },
   "apps/desktop/src/features/history/components/CommitsHistory/useHistoryFocus/index.ts": {

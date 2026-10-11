@@ -21,7 +21,6 @@ type Props = {
   readonly laneX: number;
   readonly mainY: number | null;
   readonly forkY: number | null;
-  readonly mainDots: ReadonlyArray<string>;
   readonly nodes: ReadonlyArray<LaneNode>;
   readonly isDashed: boolean;
   readonly isForkOnMain: boolean;
@@ -41,7 +40,6 @@ export const HistoryLaneSvg = ({
   laneX,
   mainY,
   forkY,
-  mainDots,
   nodes,
   isDashed,
   isForkOnMain,
@@ -50,10 +48,10 @@ export const HistoryLaneSvg = ({
   const top = mainY ?? forkY ?? 0;
   const low = nodes[nodes.length - 1];
   const high = nodes[0];
-  const dotCount = mainDots.length;
   return (
     <svg
       aria-hidden
+      data-history-lane
       width={width}
       height={height}
       className="pointer-events-none absolute left-0 top-0 overflow-visible"
@@ -66,19 +64,6 @@ export const HistoryLaneSvg = ({
         strokeWidth={1.75}
         className="stroke-idle"
       />
-      {mainY !== null && forkY !== null
-        ? mainDots.map((title, index) => (
-            <circle
-              key={title + String(index)}
-              cx={trunkX}
-              cy={mainY + (forkY - mainY) * ((index + 1) / (dotCount + 1))}
-              r={3}
-              className="fill-idle"
-            >
-              <title>{title}</title>
-            </circle>
-          ))
-        : null}
       {mainY !== null ? (
         <g>
           <circle
