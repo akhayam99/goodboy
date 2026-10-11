@@ -1,12 +1,10 @@
 import { useCallback, useContext, useMemo, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { PencilLine } from 'lucide-react';
 import { Button, ErrorStrip, EmptyState, PageColumn, Skeleton, formatError } from '@goodboy/ui';
 import type { FileDiff, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectMountBaseBranch } from '../../../../store/slices/project-mounts/selectors';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { reviewNotesDrawer } from '../../../resolve/notes/notesDrawer';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { openFileInWorkspace } from '../../../../shared/lib/editor';
 import { resolveEditorBinary } from '../../../../shared/lib/editorSettings';
 import { DiffViewSelector } from '../../../permissions/components/DiffViewSelector';
@@ -27,8 +25,8 @@ type Props = {
   readonly workingDir: string | null;
   readonly worktreePath: string;
   readonly diff: SessionDiff;
-  readonly onWriteReview: (() => void) | null;
-  readonly toolbarExtra?: ReactNode;
+  readonly isReadOnly?: boolean;
+  readonly toolbarEnd?: ReactNode;
 };
 
 export const SessionDiffPane = ({
@@ -36,8 +34,8 @@ export const SessionDiffPane = ({
   workingDir,
   worktreePath,
   diff,
-  onWriteReview,
-  toolbarExtra = null,
+  isReadOnly = false,
+  toolbarEnd,
 }: Props) => {
   const review = useReviewState({ sessionId, worktreePath, diff });
   const editorBinary = useAppStore((s) => resolveEditorBinary({ settings: s.settings }));
@@ -59,8 +57,8 @@ export const SessionDiffPane = ({
       onQuery: review.setQuery,
       unviewedOnly: review.unviewedOnly,
       onUnviewedOnly: review.setUnviewedOnly,
-      notesOnly: review.notesOnly,
-      onNotesOnly: review.setNotesOnly,
+      commentedOnly: review.commentedOnly,
+      onCommentedOnly: review.setCommentedOnly,
       group: review.group,
       onGroup: review.setGroup,
       isFiltering: review.isFiltering,
@@ -70,10 +68,10 @@ export const SessionDiffPane = ({
       review.clearFilters,
       review.group,
       review.isFiltering,
-      review.notesOnly,
+      review.commentedOnly,
       review.query,
+      review.setCommentedOnly,
       review.setGroup,
-      review.setNotesOnly,
       review.setQuery,
       review.setUnviewedOnly,
       review.unviewedOnly,
@@ -87,22 +85,7 @@ export const SessionDiffPane = ({
     onFocusFilter: panel.focusFilter,
   });
 
-  const commentOnFile = useCallback(
-    (path: string) => {
-      review.commentOnFile(path);
-      panel.dismiss();
-    },
-    [panel, review],
-  );
-
   const openDrawer = useAppStore((s) => s.openDrawer);
-  const openNotes = useCallback(
-    (path: string) => {
-      openDrawer(reviewNotesDrawer({ sessionId, mountPath: worktreePath, focusPath: path }));
-      panel.dismiss();
-    },
-    [openDrawer, panel, sessionId, worktreePath],
-  );
 
   const pickFile = useCallback(
     (path: string) => {
@@ -132,10 +115,21 @@ export const SessionDiffPane = ({
     },
     [editorBinary, emitNotification, sessionId, workingDir],
   );
+  const openInDrawer = useCallback(
+    (path: string) =>
+      openDrawer({
+        kind: 'file-diff',
+        sessionId,
+        payload: { source: { kind: 'worktree', worktreePath }, path },
+      }),
+    [openDrawer, sessionId, worktreePath],
+  );
   const fileActions = useMemo(
-    () =>
-      workingDir === null ? null : { onOpenInEditor: (path: string) => void openInEditor(path) },
-    [openInEditor, workingDir],
+    () => ({
+      onOpenInDrawer: openInDrawer,
+      ...(workingDir !== null && { onOpenInEditor: (path: string) => void openInEditor(path) }),
+    }),
+    [openInDrawer, openInEditor, workingDir],
   );
 
   const isCommitView = diff.view.kind === 'commit';
@@ -193,7 +187,6 @@ export const SessionDiffPane = ({
       commits={diff.commits}
       status={diff.status}
       baseBranch={baseBranch}
-      branch={diff.status?.branch ?? null}
       loading={diff.loading}
     />
   );
@@ -252,27 +245,16 @@ export const SessionDiffPane = ({
       viewed={review.viewed}
       fileActions={fileActions}
       focusPath={diff.focusPath}
+      focusThreadId={diff.focusThreadId}
       onFocusHandled={diff.clearFocus}
       registerScroller={review.registerScroller}
+      registerFileFocus={review.registerFileFocus}
       onActivePathChange={review.setActivePath}
-      fileCommentPath={review.fileCommentPath}
-      onFileCommentOpened={review.clearFileComment}
+      isReadOnly={isReadOnly}
       columnWidth="full"
       identifierPeek={identifierPeek}
       toolbarStart={selector}
-      toolbarEnd={
-        onWriteReview === null && toolbarExtra === null ? undefined : (
-          <>
-            {toolbarExtra}
-            {onWriteReview === null ? null : (
-              <Button size="sm" variant="secondary" onClick={onWriteReview}>
-                <PencilLine size={ICON_SIZE.row} aria-hidden />
-                Write review
-              </Button>
-            )}
-          </>
-        )
-      }
+      toolbarEnd={toolbarEnd}
     />
   );
 
@@ -288,6 +270,18 @@ export const SessionDiffPane = ({
     }
   }, [pickFile, review.activePath, review.tree.files, review.viewed.stateOf]);
 
+  const leaveTree = useCallback(() => {
+    if (review.activePath !== null) {
+      review.focusFile(review.activePath);
+    }
+    panel.dismiss();
+  }, [panel, review]);
+
+  const toggleViewed = useCallback(
+    (file: FileDiff) => review.viewed.onToggle(file, review.viewed.stateOf(file) !== 'viewed'),
+    [review.viewed],
+  );
+
   const tree = (
     <ChangeTree
       tree={review.tree}
@@ -298,12 +292,13 @@ export const SessionDiffPane = ({
       collapsed={review.collapsed}
       onToggleFolder={review.toggleFolder}
       onPick={pickFile}
-      onCommentOnFile={review.comments.allowFileLevel ? commentOnFile : null}
-      onOpenNotes={openNotes}
-      hasNotesIn={review.hasNotesIn}
       stateOf={review.viewed.stateOf}
-      noteCountOf={review.noteCountOf}
+      commentCountOf={review.commentCountOf}
+      kindsOf={review.kindsOf}
+      isReadOnly={isReadOnly}
+      onToggleViewed={toggleViewed}
       onNextUnviewed={nextUnviewed}
+      onLeave={leaveTree}
     />
   );
 

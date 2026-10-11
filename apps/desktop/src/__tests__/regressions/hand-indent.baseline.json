@@ -7,7 +7,6 @@
   "apps/desktop/src/features/plans/components/PlanParts/PlanPartDrawer.tsx": 1,
   "apps/desktop/src/features/resolve/components/ReviewFlow/ThreadRecheckLine.tsx": 1,
   "apps/desktop/src/features/resolve/components/ReviewFlow/ThreadRecheckLive.tsx": 1,
-  "apps/desktop/src/features/resolve/notes/components/ReviewNotesDrawer/NoteItem.tsx": 1,
   "apps/desktop/src/features/session/ask/components/AskDrawer/AskAnswer.tsx": 1,
   "apps/desktop/src/features/wireframes/components/WireframeViewer/ScreenRail.tsx": 1,
   "apps/desktop/src/features/workflows/components/AddStepMenu/index.tsx": 1,

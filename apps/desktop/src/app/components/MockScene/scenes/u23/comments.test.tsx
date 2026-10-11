@@ -73,7 +73,6 @@ describe('the u23 comments scenes', () => {
       'Working',
       'Ready to push',
       'Open',
-      'Done',
       'Left open on GitHub',
     ]);
     const counts = Object.fromEntries(
@@ -90,9 +89,11 @@ describe('the u23 comments scenes', () => {
       Working: 1,
       'Ready to push': 1,
       Open: 1,
-      Done: 1,
       'Left open on GitHub': 1,
     });
+    fireEvent.click(screen.getByRole('tab', { name: 'Resolved' }));
+    expect(regionTitles()).toEqual(['Done']);
+    expect(within(list()).getByRole('region', { name: 'Done' }).textContent).toContain('Done 1');
   });
 
   it("orders Needs you as Question, Push failed, To review, and never calls a failed push Couldn't fix", async () => {

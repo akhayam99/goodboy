@@ -72,7 +72,13 @@ const EMPTY_RECHECKS: Readonly<Record<string, ThreadRecheck>> = {};
 const EMPTY_CANDIDATES: ReadonlyArray<ResolveCandidateWithItems> = [];
 const EMPTY_CHECK_RUNS: ReadonlyArray<ResolveCheckRun> = [];
 
-export type ReviewEntryScope = 'comments' | 'notes' | 'all';
+export type ReviewEntryScope = 'comments' | 'notes' | 'branch' | 'all';
+
+export type ReviewEntryCounts = {
+  readonly all: number;
+  readonly notes: number;
+  readonly host: number;
+};
 
 export const useReviewEntries = ({
   sessionId,
@@ -84,6 +90,7 @@ export const useReviewEntries = ({
   readonly entries: ReadonlyArray<ReviewEntry>;
   readonly groups: ReadonlyArray<ReviewGroup>;
   readonly all: ReadonlyArray<ReviewEntry>;
+  readonly counts: ReviewEntryCounts;
 } => {
   const rows = useResolveQueueRows({ sessionId, scope: 'displayed' });
   const changes = useAppStore((s) => s.sessionResolveSourceSnapshots[sessionId] ?? EMPTY_CHANGES);
@@ -147,16 +154,25 @@ export const useReviewEntries = ({
     });
   }, [candidates, changes, checkRuns, drafts, rechecks, rows, threadGit]);
   return useMemo(() => {
-    const shown = all.filter(({ row }) => {
+    const isNote = ({ row }: ReviewEntry): boolean => row.thread.originKind === 'diff_comment';
+    const isHost = ({ row }: ReviewEntry): boolean =>
+      kind !== null && rowBelongsToSource({ row: row.thread, entry: { kind, projectId, number } });
+    const counts: ReviewEntryCounts = {
+      all: all.filter((entry) => isNote(entry) || isHost(entry)).length,
+      notes: all.filter(isNote).length,
+      host: all.filter((entry) => !isNote(entry) && isHost(entry)).length,
+    };
+    const shown = all.filter((entry) => {
       if (scope === 'all') {
         return true;
       }
       if (scope === 'notes') {
-        return row.thread.originKind === 'diff_comment';
+        return isNote(entry);
       }
-      return (
-        kind !== null && rowBelongsToSource({ row: row.thread, entry: { kind, projectId, number } })
-      );
+      if (scope === 'branch') {
+        return isNote(entry) || isHost(entry);
+      }
+      return isHost(entry);
     });
     const groups = RESOLVE_LIST_GROUPS.map((group) => ({
       group,
@@ -167,6 +183,6 @@ export const useReviewEntries = ({
             RESOLVE_WORD_RANK[left.resolveWord] - RESOLVE_WORD_RANK[right.resolveWord],
         ),
     })).filter((group) => group.entries.length > 0);
-    return { entries: groups.flatMap((group) => group.entries), groups, all };
+    return { entries: groups.flatMap((group) => group.entries), groups, all, counts };
   }, [all, kind, number, projectId, scope]);
 };

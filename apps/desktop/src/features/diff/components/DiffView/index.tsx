@@ -38,13 +38,14 @@ type Props = {
   readonly viewed?: DiffViewed | null;
   readonly fileActions?: DiffFileActions | null;
   readonly focusPath?: string | null;
+  readonly focusThreadId?: string | null;
   readonly onFocusHandled?: () => void;
   readonly registerScroller?: (scroll: ((path: string) => void) | null) => void;
+  readonly registerFileFocus?: (focus: ((path: string) => void) | null) => void;
   readonly onActivePathChange?: (path: string) => void;
   readonly presentation?: 'pane' | 'peek' | 'inline';
   readonly footer?: ReactNode;
-  readonly fileCommentPath?: string | null;
-  readonly onFileCommentOpened?: () => void;
+  readonly isReadOnly?: boolean;
   readonly toolbarStart?: ReactNode;
   readonly toolbarEnd?: ReactNode;
   readonly belowToolbar?: ReactNode;
@@ -55,8 +56,6 @@ type Props = {
 const EMPTY_THREADS: ReadonlyArray<DiffThread> = [];
 
 const SPLIT_TOO_NARROW = 'Split needs a wider window';
-
-const NOOP = () => undefined;
 
 const matchPath = (files: ReadonlyArray<FileDiff>, path: string): string | null =>
   files.find((file) => file.path === path || path.endsWith(`/${file.path}`))?.path ?? null;
@@ -75,13 +74,14 @@ export const DiffView = ({
   viewed = null,
   fileActions = null,
   focusPath = null,
+  focusThreadId = null,
   onFocusHandled,
   registerScroller,
+  registerFileFocus,
   onActivePathChange,
   presentation = 'pane',
   footer,
-  fileCommentPath = null,
-  onFileCommentOpened = NOOP,
+  isReadOnly = false,
   toolbarStart,
   toolbarEnd,
   belowToolbar = null,
@@ -98,6 +98,8 @@ export const DiffView = ({
   const [mountedCount, setMountedCount] = useState(BATCH_SIZE);
   const [activePath, setActivePath] = useState<string | null>(null);
   const [seen, setSeen] = useState<ReadonlySet<string>>(() => new Set());
+  const [pendingThreadId, setPendingThreadId] = useState<string | null>(null);
+  const clearPendingThread = useCallback(() => setPendingThreadId(null), []);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const fileRefs = useRef(new Map<string, HTMLElement>());
   const refCallbacks = useRef(new Map<string, RefCallback<HTMLElement>>());
@@ -124,15 +126,44 @@ export const DiffView = ({
   filesRef.current = files;
   const pathsKey = useMemo(() => files.map((file) => file.path).join('\n'), [files]);
 
+  const shownComments = useMemo<DiffComments | null>(() => {
+    if (comments === null || !isReadOnly) {
+      return comments;
+    }
+    return {
+      threads: comments.threads,
+      submitLabel: comments.submitLabel,
+      composerLabel: comments.composerLabel,
+      allowFileLevel: false,
+      onSubmit: comments.onSubmit,
+      ...(comments.noun !== undefined && { noun: comments.noun }),
+      ...(comments.onOpenInComments !== undefined && {
+        onOpenInComments: comments.onOpenInComments,
+      }),
+    };
+  }, [comments, isReadOnly]);
+
   const threadsByFile = useMemo(() => {
     const map = new Map<string, DiffThread[]>();
-    for (const thread of comments?.threads ?? []) {
+    for (const thread of shownComments?.threads ?? []) {
       const list = map.get(thread.filePath) ?? [];
       list.push(thread);
       map.set(thread.filePath, list);
     }
     return map;
-  }, [comments?.threads]);
+  }, [shownComments?.threads]);
+
+  const threadFocusOf = useMemo(() => {
+    const map = new Map<string, string>();
+    const thread =
+      pendingThreadId === null
+        ? undefined
+        : (shownComments?.threads ?? []).find((candidate) => candidate.id === pendingThreadId);
+    if (thread !== undefined) {
+      map.set(thread.filePath, thread.id);
+    }
+    return map;
+  }, [pendingThreadId, shownComments?.threads]);
 
   useEffect(() => {
     if (activePath !== null) {
@@ -361,6 +392,18 @@ export const DiffView = ({
     return () => registerScroller?.(null);
   }, [registerScroller, scrollToFile]);
 
+  const focusFile = useCallback((path: string) => {
+    fileRefs.current
+      .get(path)
+      ?.querySelector<HTMLElement>('[data-slot="diff-file-header"] button')
+      ?.focus({ preventScroll: true });
+  }, []);
+
+  useEffect(() => {
+    registerFileFocus?.(focusFile);
+    return () => registerFileFocus?.(null);
+  }, [focusFile, registerFileFocus]);
+
   useEffect(() => {
     const path = pendingScroll.current;
     if (path === null) {
@@ -388,6 +431,7 @@ export const DiffView = ({
       return;
     }
     const target = matchPath(filesRef.current, focusPath);
+    setPendingThreadId(target === null ? null : focusThreadId);
     onFocusHandled?.();
     if (target === null) {
       return;
@@ -399,10 +443,10 @@ export const DiffView = ({
       focusFrame.current = null;
       scrollToFile(target);
     });
-  }, [focusPath, onFocusHandled, pathsKey, scrollToFile]);
+  }, [focusPath, focusThreadId, onFocusHandled, pathsKey, scrollToFile]);
 
   const body = (
-    <div ref={inner.ref} className="flex flex-col gap-3 pb-6">
+    <div ref={inner.ref} className="flex flex-col gap-2 pb-6">
       {files.slice(0, mountedCount).map((file) => (
         <DiffFile
           key={file.path}
@@ -412,13 +456,14 @@ export const DiffView = ({
           layout={layout}
           wrap={wrap}
           threads={threadsByFile.get(file.path) ?? EMPTY_THREADS}
-          comments={comments}
+          comments={shownComments}
           viewed={viewed}
           fileActions={fileActions}
           registerRef={registerRef(file.path)}
           isVisible={seen.has(file.path)}
-          wantsFileComment={fileCommentPath === file.path}
-          onFileCommentOpened={onFileCommentOpened}
+          isReadOnly={isReadOnly}
+          focusThreadId={threadFocusOf.get(file.path) ?? null}
+          onThreadFocused={clearPendingThread}
         />
       ))}
       {mountedCount < files.length ? (

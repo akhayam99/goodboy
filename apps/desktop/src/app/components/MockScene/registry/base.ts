@@ -159,7 +159,6 @@ import { BrandDiffEditsOnlyScene } from '../scenes/brand/DiffEditsOnlyScene';
 import { BrandDiffEmptyScene } from '../scenes/brand/DiffEmptyScene';
 import { BrandDiffManyFilesScene } from '../scenes/brand/DiffManyFilesScene';
 import { DiffNotesScene } from '../scenes/brand/DiffNotesScene';
-import { ResolveNotesScene } from '../scenes/ResolveNotesScene';
 import { BrandHistoryScene } from '../scenes/brand/HistoryScene';
 import { BrandHistoryPlanScene } from '../scenes/brand/HistoryPlanScene';
 import { BrandHistoryResultScene } from '../scenes/brand/HistoryResultScene';
@@ -344,7 +343,6 @@ export const BASE_SCENES = {
   'brand-diff-edits-only': BrandDiffEditsOnlyScene,
   'brand-diff-large': BrandDiffLargeScene,
   'diff-notes': DiffNotesScene,
-  'resolve-notes': ResolveNotesScene,
   'brand-history': BrandHistoryScene,
   'brand-history-plan': BrandHistoryPlanScene,
   'brand-history-trial': BrandHistoryTrialScene,

@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import type { PrComment, ResolveStage, ResolveThread, ResolveThreadState } from '@goodboy/types';
 import type { SessionGithubState } from '../../store/types';
-import { eligibleReviewThreadCount, eligibleReviewThreads } from './eligibleThreads';
+import { eligibleReviewThreadCount } from './eligibleThreads';
 
 const comment = ({
   id,
@@ -44,14 +44,14 @@ const row = ({
   readonly stateReason?: string | null;
 }): ResolveThread => ({ threadId, stage, state, stateReason }) as unknown as ResolveThread;
 
-describe('eligibleReviewThreads', () => {
+describe('eligibleReviewThreadCount', () => {
   it('keeps an unresolved review thread that has no durable row yet', () => {
-    const threads = eligibleReviewThreads({
+    const count = eligibleReviewThreadCount({
       github: githubWith({ comments: [comment({ id: '1', threadId: 't1' })] }),
       rows: [],
     });
 
-    expect(threads.map((thread) => thread.head.threadId)).toEqual(['t1']);
+    expect(count).toBe(1);
   });
 
   it('excludes threads resolved on GitHub, issue comments, and threads already worked', () => {

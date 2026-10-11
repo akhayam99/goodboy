@@ -1,28 +1,52 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react';
-import type { MountId, SessionId } from '@goodboy/types';
-
-const SESSION_ID = 'session-1' as SessionId;
-const MOUNT_ID = 'mount-payments' as MountId;
-
-const h = vi.hoisted(() => ({
-  state: {} as Record<string, unknown>,
-  openReviewTarget: vi.fn(async () => ({ kind: 'opened' as const })),
+vi.mock('@tauri-apps/api/core', () => ({
+  invoke: vi.fn(() => new Promise<never>(() => undefined)),
 }));
+vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
-vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (state: Record<string, unknown>) => T) => selector(h.state),
-}));
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, cleanup, renderHook } from '@testing-library/react';
+import type { PrComment } from '@goodboy/types';
+import { TEST_NOW } from '@goodboy/types/testing';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../../../store/storyHarness';
+import type { MountGithubState } from '../../../../store/types';
+import {
+  CTX_PAYMENTS_ID,
+  CTX_PAYMENTS_MOUNT_ID,
+  CTX_SESSION_ID,
+} from '../../../../app/components/MockScene/scenes/brand/contextBase';
+import { seedResolveGitlabScene } from '../../../../app/components/MockScene/scenes/resolveGitlabSeed';
+import { SESSION } from '../../../../app/components/MockScene/scenes/resolveSeed';
+import { useDiffReviewThreads } from './index';
 
-import { REVIEW_MARKER_LABEL, useDiffReviewThreads } from './index';
+const SESSION_ID = CTX_SESSION_ID;
+const MOUNT_ID = CTX_PAYMENTS_MOUNT_ID;
+
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+});
+
+afterEach(cleanup);
 
 type CommentParams = {
   readonly threadId: string;
   readonly resolved?: boolean;
   readonly outdated?: boolean;
   readonly onFile?: boolean;
+  readonly id?: string;
+  readonly createdAt?: string;
 };
 
 const comment = ({
@@ -30,97 +54,149 @@ const comment = ({
   resolved = false,
   outdated = false,
   onFile = false,
-}: CommentParams) => ({
-  id: `c-${threadId}`,
+  id = `c-${threadId}`,
+  createdAt = '2026-09-27T10:00:00.000Z',
+}: CommentParams): PrComment => ({
+  id,
   author: 'kenji-w',
   authorAvatarUrl: null,
   body: 'Cap the retries at three.',
-  createdAt: '2026-09-27T10:00:00.000Z',
+  createdAt,
   url: '',
   source: 'review',
   path: 'src/webhooks.ts',
-  line: onFile ? undefined : 42,
+  ...(onFile ? {} : { line: 42 }),
   resolved,
   outdated,
   threadId,
 });
 
-const seed = (comments: ReadonlyArray<ReturnType<typeof comment>>): void => {
-  h.state = {
-    mountGithub: { [MOUNT_ID]: { pr: { number: 318 }, detail: { comments } } },
-    sessionGithub: {},
-    sessionResolveThreads: {},
-    sessionActiveMount: {},
-    openReviewTarget: h.openReviewTarget,
-  };
-};
-
-afterEach(() => {
-  cleanup();
-  h.openReviewTarget.mockClear();
+const githubMount = (comments: ReadonlyArray<PrComment>): MountGithubState => ({
+  mountId: MOUNT_ID,
+  projectId: CTX_PAYMENTS_ID,
+  revision: 1,
+  repository: 'harborline/payments-api',
+  host: null,
+  branch: 'hl/fix-duplicate-credit',
+  prs: [],
+  links: [],
+  pr: {
+    number: 318,
+    title: 'Stop retried webhooks posting a second credit',
+    url: 'https://example.invalid/harborline/payments-api/pull/318',
+    state: 'open',
+    mergeable: true,
+    checks: 'success',
+    baseBranch: 'main',
+    headBranch: 'hl/fix-duplicate-credit',
+    isDraft: false,
+    reviewDecision: null,
+    body: '',
+    updatedAt: '2026-09-27T10:00:00.000Z',
+  },
+  linkedIssues: [],
+  fetchedAt: null,
+  failedAt: null,
+  loading: false,
+  error: null,
+  detail: { prNumber: 318, comments, reviews: [], reviewRequests: [], checks: [] },
+  detailFetchedAt: TEST_NOW,
+  detailLoading: false,
+  detailError: null,
 });
 
+const seed = (comments: ReadonlyArray<PrComment>): void => {
+  useAppStore.setState({ mountGithub: { [MOUNT_ID]: githubMount(comments) } });
+};
+
+const read = () =>
+  renderHook(() => useDiffReviewThreads({ sessionId: SESSION_ID, mountId: MOUNT_ID }));
+
 describe('useDiffReviewThreads', () => {
-  it('marks each open review comment on its line, read only', () => {
+  it('lists open and resolved threads as host threads and leaves outdated ones to Comments', () => {
     seed([
       comment({ threadId: 'PRRT_1' }),
       comment({ threadId: 'PRRT_2', resolved: true }),
       comment({ threadId: 'PRRT_3', outdated: true }),
     ]);
 
-    const { result } = renderHook(() =>
-      useDiffReviewThreads({ sessionId: SESSION_ID, mountId: MOUNT_ID }),
-    );
+    const { result } = read();
 
-    expect(result.current).toHaveLength(1);
-    expect(result.current[0]).toMatchObject({
-      id: 'review:PRRT_1',
+    expect(result.current.threads.map((thread) => thread.id)).toEqual([
+      'review:PRRT_1',
+      'review:PRRT_2',
+    ]);
+    expect(result.current.threads[0]).toMatchObject({
+      source: 'host',
+      host: 'github',
       filePath: 'src/webhooks.ts',
       anchor: { side: 'new', lineNumber: 42 },
-      statusLabel: REVIEW_MARKER_LABEL,
+      statusLabel: 'Open',
+      isResolved: false,
+      canReply: true,
+      canResolve: true,
       canEdit: false,
       canClose: false,
-      canReopen: false,
       canDelete: false,
     });
+    expect(result.current.threads[1]).toMatchObject({ statusLabel: 'Resolved', isResolved: true });
   });
 
-  it('marks a review comment that sits on the whole file under its header, with no line', () => {
+  it('puts a comment on the whole file under its header, with no line', () => {
     seed([comment({ threadId: 'PRRT_FILE', onFile: true })]);
 
-    const { result } = renderHook(() =>
-      useDiffReviewThreads({ sessionId: SESSION_ID, mountId: MOUNT_ID }),
-    );
+    const { result } = read();
 
-    expect(result.current).toHaveLength(1);
-    expect(result.current[0]).toMatchObject({
-      id: 'review:PRRT_FILE',
-      filePath: 'src/webhooks.ts',
-      anchor: null,
-    });
+    expect(result.current.threads).toHaveLength(1);
+    expect(result.current.threads[0]).toMatchObject({ id: 'review:PRRT_FILE', anchor: null });
   });
 
-  it('opens Review on that comment from the marker', () => {
-    seed([comment({ threadId: 'PRRT_1' })]);
+  it('carries the replies of a thread in order', () => {
+    seed([
+      comment({ threadId: 'PRRT_1', id: 'c-head' }),
+      {
+        ...comment({ threadId: 'PRRT_1', id: 'c-late', createdAt: '2026-09-27T12:00:00.000Z' }),
+        author: 'maya-o',
+        body: 'Done in 3f2a9c1',
+      },
+    ]);
+
+    const { result } = read();
+
+    expect(result.current.threads[0]?.replies).toEqual([
+      { id: 'c-late', author: 'maya-o', body: 'Done in 3f2a9c1' },
+    ]);
+  });
+
+  it('lists nothing for a mount with no pull request', () => {
+    const { result } = read();
+
+    expect(result.current.threads).toEqual([]);
+  });
+
+  it('reads the threads of a GitLab merge request through the review source', () => {
+    seedResolveGitlabScene({ selected: 'gitlab' });
+
     const { result } = renderHook(() =>
-      useDiffReviewThreads({ sessionId: SESSION_ID, mountId: MOUNT_ID }),
+      useDiffReviewThreads({ sessionId: SESSION.id, mountId: null }),
     );
 
-    render(<>{result.current[0]?.footer}</>);
-    fireEvent.click(screen.getByRole('button', { name: /Open in Comments/ }));
+    expect(result.current.threads.length).toBeGreaterThan(0);
+    expect(result.current.threads.every((thread) => thread.host === 'gitlab')).toBe(true);
+    expect(result.current.threads.every((thread) => thread.source === 'host')).toBe(true);
+  });
 
-    expect(h.openReviewTarget).toHaveBeenCalledWith({
+  it('opens a thread in Comments through the review target', () => {
+    seed([comment({ threadId: 'PRRT_1' })]);
+    const openReviewTarget = vi.fn(async () => ({ kind: 'opened' as const }));
+    useAppStore.setState({ openReviewTarget });
+    const { result } = read();
+
+    act(() => result.current.onOpenInComments('review:PRRT_1'));
+
+    expect(openReviewTarget).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
       destination: { kind: 'thread', mountId: MOUNT_ID, prNumber: 318, threadId: 'PRRT_1' },
     });
-  });
-
-  it('marks nothing without a mount', () => {
-    seed([comment({ threadId: 'PRRT_1' })]);
-    const { result } = renderHook(() =>
-      useDiffReviewThreads({ sessionId: SESSION_ID, mountId: null }),
-    );
-
-    expect(result.current).toEqual([]);
   });
 });

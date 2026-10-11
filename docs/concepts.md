@@ -798,13 +798,14 @@ answer it.
 Review exists with or without a pull request. Without one, Comments reads `No
 pull request yet` with `Create pull request`. On GitLab the words are `merge
 request`, `MR` and `!42` (`PULL_REQUEST_NOUNS`), and the Branch page, its
-header and its merge ask read them from the host. With a pull request, Comments holds
-the GitHub threads only. Your notes never mix with them: they live in the Notes
-drawer of the Files tab, where every open note gets a conversation, and deleting
-or resolving the note closes it. An agent reviewer's comments on a branch without
-a pull request are kept as notes. When a pull request arrives the notes stay
-notes; `Move N to review draft` in the drawer turns them into draft review
-comments (a note on a whole file too), never on its own.
+header and its merge ask read them from the host. Comments exists whenever a
+pull request or a comment does, so a branch with only your notes has the section too. It lists the
+pull request threads and your notes together, told apart by a chip (`Note`, `On GitHub`) and
+filtered by `All`, `Notes` and `On GitHub`. Your notes also sit under their line in Files, where
+every open note gets a conversation, and deleting or resolving the note closes it. An agent
+reviewer's comments on a branch without a pull request are kept as notes. When a pull request
+arrives the notes stay notes; `Post to GitHub` on a note in Comments turns it into a draft review
+comment (a note on a whole file too), never on its own.
 
 A note goes through the same flow with the same resolver, but there is no
 reply to write: `Accept` keeps the fix on the branch and closes the note, with

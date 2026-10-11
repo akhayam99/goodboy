@@ -62,9 +62,23 @@ const mount = async ({ selected }: { readonly selected: Source }): Promise<void>
 const list = (): HTMLElement => screen.getByRole('navigation', { name: 'Comments' });
 
 const rowsOf = (): ReadonlyArray<string> =>
-  Array.from(list().querySelectorAll('button[data-thread-id]')).map(
-    (button) => button.textContent ?? '',
-  );
+  Array.from(
+    screen
+      .queryByRole('navigation', { name: 'Comments' })
+      ?.querySelectorAll('button[data-thread-id]') ?? [],
+  ).map((button) => button.textContent ?? '');
+
+const rowsAcrossStates = (): ReadonlyArray<string> => {
+  const open = rowsOf();
+  fireEvent.click(screen.getByRole('tab', { name: 'Resolved' }));
+  const resolved = rowsOf();
+  fireEvent.click(screen.getByRole('tab', { name: 'Open' }));
+  return [...open, ...resolved];
+};
+
+const showHostOnly = (): void => {
+  fireEvent.click(screen.getByRole('tab', { name: /^On (GitHub|GitLab)/ }));
+};
 
 const CASES: ReadonlyArray<{
   readonly source: Source;
@@ -76,20 +90,32 @@ const CASES: ReadonlyArray<{
 ];
 
 describe.each(CASES)('Comments on the $source source', ({ source, first, rows }) => {
-  it('lists the comments of the request only', async () => {
+  it('lists the comments of the request only under its own name', async () => {
     await mount({ selected: source });
+    showHostOnly();
 
-    expect(rowsOf()).toHaveLength(rows);
-    expect(rowsOf().some((text) => first.test(text))).toBe(true);
+    const listed = rowsAcrossStates();
+    expect(listed).toHaveLength(rows);
+    expect(listed.some((text) => first.test(text))).toBe(true);
   });
 
-  it('lists none of the local notes, which live in the Notes drawer of Files', async () => {
+  it('lists the local notes beside the comments under All, each with its kind chip', async () => {
     await mount({ selected: source });
 
-    for (const note of NOTES) {
-      expect(screen.queryByText(note.body, { exact: false })).toBeNull();
-    }
-    expect(rowsOf().every((text) => !text.includes('Local'))).toBe(true);
+    const listed = rowsAcrossStates();
+    expect(listed.length).toBe(rows + NOTES.length);
+    expect(listed.filter((text) => text.includes('Note'))).toHaveLength(NOTES.length);
+  });
+
+  it('lists only the notes under Notes and counts each kind on its tab', async () => {
+    await mount({ selected: source });
+
+    expect(screen.getByRole('tab', { name: /^Notes/ }).textContent).toContain(String(NOTES.length));
+    fireEvent.click(screen.getByRole('tab', { name: /^Notes/ }));
+
+    const listed = rowsAcrossStates();
+    expect(listed).toHaveLength(NOTES.length);
+    expect(listed.every((text) => text.includes('Note'))).toBe(true);
   });
 
   it('has no source picker and no pull request link of its own', async () => {

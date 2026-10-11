@@ -12,14 +12,16 @@ vi.mock('../../../../shared/lib/db', async () =>
 );
 
 vi.mock('../../hooks/useDiffReviewThreads', () => ({
-  useDiffReviewThreads: () => [],
+  useDiffReviewThreads: () => ({
+    threads: [],
+    onReply: vi.fn(),
+    onResolve: vi.fn(),
+    onOpenInComments: vi.fn(),
+  }),
 }));
 
 vi.mock('../../hooks/useDiffNotes', () => ({
-  useDiffNotes: () => ({
-    comments: { threads: [], allowFileLevel: false },
-    fixes: [],
-  }),
+  useDiffNotes: () => ({ threads: [], allowFileLevel: false }),
 }));
 
 vi.mock('../../hooks/useDiffTokens', () => ({
@@ -99,6 +101,7 @@ const Host = ({ initialFocus = null, isOverlay = false }: HostProps) => {
           ),
       },
       focusPath,
+      focusThreadId: null,
       clearFocus: () => setFocusPath(null),
     }),
     [focusPath, viewedPaths],
@@ -110,7 +113,6 @@ const Host = ({ initialFocus = null, isOverlay = false }: HostProps) => {
         workingDir={WORKTREE}
         worktreePath={WORKTREE}
         diff={diff}
-        onWriteReview={null}
       />
     </DiffRailHarness>
   );
@@ -137,9 +139,16 @@ afterEach(() => {
 
 const sections = () => document.querySelectorAll('[data-file-path]');
 
+const nameOf = (index: number): RegExp => new RegExp(`f${String(index).padStart(2, '0')}\\.ts`);
+
+const treeItem = (index: number) =>
+  within(screen.getByRole('navigation', { name: 'Changed files' })).getByRole('treeitem', {
+    name: nameOf(index),
+  });
+
 const treeRow = (index: number) =>
-  within(screen.getByRole('navigation', { name: 'Changed files' })).getByRole('button', {
-    name: new RegExp(`f${String(index).padStart(2, '0')}\\.ts`),
+  within(treeItem(index)).getByRole('button', {
+    name: new RegExp(`^f${String(index).padStart(2, '0')}\\.ts`),
   });
 
 describe('SessionDiffPane with the real DiffView', () => {
@@ -187,8 +196,8 @@ describe('SessionDiffPane with the real DiffView', () => {
     await waitFor(() => expect(scrolled.at(-1)).toBe(fileAt(0).path));
 
     pressShortcut({ id: 'diff.focusTree' });
-    expect(treeRow(0).getAttribute('aria-current')).toBe('true');
-    expect(treeRow(1).getAttribute('aria-current')).toBeNull();
+    expect(treeItem(0).getAttribute('aria-current')).toBe('true');
+    expect(treeItem(1).getAttribute('aria-current')).toBeNull();
   });
 
   it('keeps j and k moving after the hidden rail opens and a pick closes it', async () => {
@@ -202,7 +211,7 @@ describe('SessionDiffPane with the real DiffView', () => {
     await waitFor(() => expect(scrolled).toContain(fileAt(11).path));
 
     pressShortcut({ id: 'diff.focusTree' });
-    expect(treeRow(11).getAttribute('aria-current')).toBe('true');
+    expect(treeItem(11).getAttribute('aria-current')).toBe('true');
   });
 
   it('marks the file viewed and scrolls to the next unviewed one', async () => {

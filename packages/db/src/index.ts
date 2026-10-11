@@ -381,6 +381,7 @@ export {
   listDiffCommentsForSession,
   resolveDiffComment,
   reopenDiffComment,
+  updateDiffCommentBody,
   deleteDiffComment,
   restoreDiffComment,
   assignDiffCommentTarget,

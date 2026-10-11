@@ -1066,7 +1066,7 @@ const rememberSearch = (text: string): void => {
 
 const openDiff = async (): Promise<void> => {
   await press('lens.files')();
-  expect(await screen.findByRole('button', { name: /Comparing .* ← .*/ }, WAIT)).toBeDefined();
+  expect(await screen.findByRole('button', { name: /^Compared with / }, WAIT)).toBeDefined();
 };
 
 const activeTreeFile = async (): Promise<string> =>

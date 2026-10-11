@@ -178,12 +178,14 @@ describe('every ⋯ menu and its right click list the same actions in the same o
           binary: false,
           hunks: [],
         }}
-        collapsed={false}
+        isCollapsed={false}
         onToggleCollapsed={vi.fn()}
         commentCount={0}
         viewed={null}
         onToggleViewed={null}
         onOpenInEditor={vi.fn()}
+        onShowWhole={vi.fn()}
+        onOpenInDrawer={vi.fn()}
         onCommentOnFile={vi.fn()}
       />,
     );
@@ -192,7 +194,12 @@ describe('every ⋯ menu and its right click list the same actions in the same o
       overflow: screen.getByRole('button', { name: /More actions for/ }),
       context: header,
     });
-    expect(fromOverflow).toEqual(['Open in editor', 'Comment on file', 'Copy path']);
+    expect(fromOverflow).toEqual([
+      'Open in editor',
+      'Open in a drawer',
+      'Show whole file',
+      'Copy path',
+    ]);
     expect(fromContext).toEqual(fromOverflow);
   });
 

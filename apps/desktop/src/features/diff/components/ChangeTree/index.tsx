@@ -1,26 +1,22 @@
-import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
-import { Check, ChevronRight, MessageSquare, MessageSquarePlus } from 'lucide-react';
 import {
-  EmptyLine,
-  Button,
-  FOCUS_RING,
-  ROW_INTERACTIVE,
-  ScrollFade,
-  Tooltip,
-  cn,
-  tintClasses,
-} from '@goodboy/ui';
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type RefObject,
+} from 'react';
+import { EmptyLine, Button, ScrollFade, useEscapeLayer } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { MiddleText } from '../../../../shared/components/MiddleText';
+import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import {
-  folderPathOf,
   foldedAncestorOf,
   visibleRows,
   type ChangeTree as ChangeTreeModel,
   type TreeGroup,
 } from '../../lib/changeTree';
-import { STATUS_LETTER, STATUS_TONE, STATUS_WORD } from '../../lib/fileStatus';
+import type { CommentKinds } from '../../lib/commentKinds';
 import type { ViewedState } from '../../lib/reviewedFiles';
 import { rowHeightOf } from '../../lib/rowHeightOf';
 import {
@@ -29,18 +25,20 @@ import {
   scrollTopToReveal,
   windowOf,
 } from '../../../../shared/utils/windowRows';
-import { Delta } from './Delta';
+import { FileRow } from './FileRow';
+import { FolderRow } from './FolderRow';
 import { KeyHints } from './KeyHints';
-import { ViewedRing } from '../../../../shared/components/ViewedRing';
+import { TREE_BASE_PX, TREE_INDENT_PX } from './TreeGuides';
 import { TreeHead } from './TreeHead';
+import { treeKeyAction } from './treeKeys';
 
 type TreeFilter = {
   readonly query: string;
   readonly onQuery: (query: string) => void;
   readonly unviewedOnly: boolean;
   readonly onUnviewedOnly: (next: boolean) => void;
-  readonly notesOnly: boolean;
-  readonly onNotesOnly: (next: boolean) => void;
+  readonly commentedOnly: boolean;
+  readonly onCommentedOnly: (next: boolean) => void;
   readonly group: TreeGroup;
   readonly onGroup: (group: TreeGroup) => void;
   readonly isFiltering: boolean;
@@ -56,18 +54,33 @@ type Props = {
   readonly collapsed: ReadonlySet<string>;
   readonly onToggleFolder: (id: string) => void;
   readonly onPick: (path: string) => void;
-  readonly onCommentOnFile: ((path: string) => void) | null;
-  readonly onOpenNotes: ((path: string) => void) | null;
-  readonly hasNotesIn: (path: string) => boolean;
   readonly stateOf: (file: FileDiff) => ViewedState;
-  readonly noteCountOf: (path: string) => number;
+  readonly commentCountOf: (path: string) => number;
+  readonly kindsOf: (path: string) => CommentKinds;
+  readonly isReadOnly: boolean;
+  readonly onToggleViewed: (file: FileDiff) => void;
   readonly onNextUnviewed: () => void;
+  readonly onLeave: () => void;
 };
 
-const INDENT_PX = 12;
-const BASE_PX = 8;
-const EXTENSION = /\.[^./]*$/;
-const LAST_SEGMENT = /[^/]*$/;
+const DELTA_MIN_RAIL_PX = 340;
+const CHAR_PX = 6.8;
+const TOGGLE_SLOT_PX = 22;
+const STATUS_PX = 20;
+const CHIP_PX = 36;
+const DELTA_PX = 72;
+const GUTTER_PX = 24;
+
+type RowIdParams = {
+  readonly id: string;
+};
+
+type NameLengthParams = {
+  readonly depth: number;
+  readonly count: number;
+};
+
+const domIdOf = ({ id }: RowIdParams): string => `change-tree-row:${id}`;
 
 export const ChangeTree = ({
   tree,
@@ -78,12 +91,13 @@ export const ChangeTree = ({
   collapsed,
   onToggleFolder,
   onPick,
-  onCommentOnFile,
-  onOpenNotes,
-  hasNotesIn,
   stateOf,
-  noteCountOf,
+  commentCountOf,
+  kindsOf,
+  isReadOnly,
+  onToggleViewed,
   onNextUnviewed,
+  onLeave,
 }: Props) => {
   const rows = useMemo(() => visibleRows({ rows: tree.rows, collapsed }), [tree.rows, collapsed]);
   const markedId = useMemo(
@@ -104,12 +118,17 @@ export const ChangeTree = ({
   );
   const unviewedCount = allFiles.length - viewedCount;
   const commentedCount = useMemo(
-    () => allFiles.filter((file) => noteCountOf(file.path) > 0).length,
-    [allFiles, noteCountOf],
+    () => allFiles.filter((file) => commentCountOf(file.path) > 0).length,
+    [allFiles, commentCountOf],
   );
-  const activeRef = useRef<HTMLButtonElement | null>(null);
+  const stage = useElementWidth();
+  const railWidth = stage.width ?? 0;
+  const hasDelta = railWidth >= DELTA_MIN_RAIL_PX;
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const revealed = useRef(false);
+  const [cursorId, setCursorId] = useState<string | null>(null);
+  const [isTreeFocused, setIsTreeFocused] = useState(false);
+  useEscapeLayer(onLeave, isTreeFocused);
   const [scrollTop, setScrollTop] = useState(0);
   const [viewport, setViewport] = useState(0);
   const layout = useMemo(() => layoutRows({ rows, heightOf: rowHeightOf }), [rows]);
@@ -120,6 +139,31 @@ export const ChangeTree = ({
   const shownRows = isWindowed ? rows.slice(start, end) : rows;
   const padTop = isWindowed ? (layout.offsets[start] ?? 0) : 0;
   const padBottom = isWindowed ? layout.total - (layout.offsets[end] ?? layout.total) : 0;
+  const cursorRowId =
+    cursorId !== null && rows.some((row) => row.id === cursorId) ? cursorId : null;
+
+  const startCursorId =
+    trackedId !== null && rows.some((row) => row.id === trackedId)
+      ? trackedId
+      : (rows[0]?.id ?? null);
+
+  const nameLengthFor = useCallback(
+    ({ depth, count }: NameLengthParams): number | null => {
+      if (railWidth === 0) {
+        return null;
+      }
+      const fixed =
+        TREE_BASE_PX +
+        depth * TREE_INDENT_PX +
+        TOGGLE_SLOT_PX +
+        STATUS_PX +
+        GUTTER_PX +
+        (count > 0 ? CHIP_PX : 0) +
+        (hasDelta ? DELTA_PX : 0);
+      return Math.max(10, Math.floor((railWidth - fixed) / CHAR_PX));
+    },
+    [hasDelta, railWidth],
+  );
 
   useEffect(() => {
     const element = viewportRef.current;
@@ -140,40 +184,97 @@ export const ChangeTree = ({
     };
   }, [isWindowed]);
 
+  const reveal = useCallback(
+    (id: string) => {
+      const element = viewportRef.current;
+      if (!isWindowed || element === null) {
+        document.getElementById(domIdOf({ id }))?.scrollIntoView?.({ block: 'nearest' });
+        return;
+      }
+      const index = rows.findIndex((row) => row.id === id);
+      const row = rows[index];
+      if (row === undefined) {
+        return;
+      }
+      const next = scrollTopToReveal({
+        layout,
+        index,
+        rowPx: rowHeightOf(row),
+        scrollTop: element.scrollTop,
+        viewport: element.clientHeight,
+      });
+      if (next !== element.scrollTop) {
+        element.scrollTop = next;
+      }
+    },
+    [isWindowed, layout, rows],
+  );
+
   useEffect(() => {
     revealed.current = false;
   }, [activePath]);
 
   useEffect(() => {
-    const element = viewportRef.current;
     if (revealed.current || trackedId === null) {
       return;
     }
-    if (!isWindowed || element === null) {
-      activeRef.current?.scrollIntoView?.({ block: 'nearest' });
-      revealed.current = activeRef.current !== null;
-      return;
-    }
-    const index = rows.findIndex((row) => row.id === trackedId);
-    const row = rows[index];
-    if (row === undefined) {
-      return;
-    }
     revealed.current = true;
-    const next = scrollTopToReveal({
-      layout,
-      index,
-      rowPx: rowHeightOf(row),
-      scrollTop: element.scrollTop,
-      viewport: element.clientHeight,
-    });
-    if (next !== element.scrollTop) {
-      element.scrollTop = next;
+    reveal(trackedId);
+  }, [reveal, trackedId]);
+
+  const moveCursor = useCallback(
+    (id: string) => {
+      setCursorId(id);
+      reveal(id);
+    },
+    [reveal],
+  );
+
+  const onKeyDown = (event: KeyboardEvent<HTMLUListElement>) => {
+    if (event.altKey || event.ctrlKey || event.metaKey) {
+      return;
     }
-  }, [trackedId, isWindowed, layout, rows]);
+    const action = treeKeyAction({
+      key: event.key,
+      rows,
+      cursorId: cursorRowId,
+      collapsed,
+    });
+    if (action === null) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    switch (action.kind) {
+      case 'cursor':
+        moveCursor(action.id);
+        return;
+      case 'fold':
+        onToggleFolder(action.id);
+        return;
+      case 'pick':
+        onPick(action.id);
+        return;
+      case 'viewed': {
+        const file = allFiles.find((candidate) => candidate.path === action.id);
+        if (file !== undefined && !isReadOnly) {
+          onToggleViewed(file);
+        }
+        return;
+      }
+      default: {
+        const exhaustive: never = action;
+        return exhaustive;
+      }
+    }
+  };
 
   return (
-    <nav aria-label="Changed files" className="flex min-h-0 w-full min-w-0 flex-col">
+    <nav
+      ref={stage.ref}
+      aria-label="Changed files"
+      className="flex min-h-0 w-full min-w-0 flex-col"
+    >
       <TreeHead
         total={allFiles.length}
         unviewed={unviewedCount}
@@ -183,8 +284,8 @@ export const ChangeTree = ({
         filterRef={filterRef}
         unviewedOnly={filter.unviewedOnly}
         onUnviewedOnly={filter.onUnviewedOnly}
-        notesOnly={filter.notesOnly}
-        onNotesOnly={filter.onNotesOnly}
+        commentedOnly={filter.commentedOnly}
+        onCommentedOnly={filter.onCommentedOnly}
         group={filter.group}
         onGroup={filter.onGroup}
         shown={tree.files.length}
@@ -201,194 +302,65 @@ export const ChangeTree = ({
           </div>
         ) : null}
         <ul
-          className="flex min-w-0 flex-col px-1 pb-4"
+          role="tree"
+          aria-label="Changed files"
+          tabIndex={0}
+          aria-activedescendant={cursorRowId === null ? undefined : domIdOf({ id: cursorRowId })}
+          onKeyDown={onKeyDown}
+          onFocus={() => {
+            setIsTreeFocused(true);
+            if (cursorRowId === null) {
+              setCursorId(startCursorId);
+            }
+          }}
+          onBlur={() => setIsTreeFocused(false)}
+          className="flex min-w-0 flex-col rounded-sm px-1 pb-4 focus-visible:outline-none"
           style={isWindowed ? { paddingTop: padTop, paddingBottom: padBottom + 16 } : undefined}
         >
           {shownRows.map((row) => {
-            const indent = BASE_PX + row.depth * INDENT_PX;
+            const domId = domIdOf({ id: row.id });
+            const isCursor = row.id === cursorRowId;
             if (row.kind === 'folder') {
-              const isOpen = !collapsed.has(row.id);
-              const isMarked = row.id === markedId;
-              const folderPath = folderPathOf({ id: row.id });
-              const folderButton = (
-                <button
-                  ref={isMarked ? activeRef : undefined}
-                  type="button"
-                  aria-expanded={isOpen}
-                  onClick={() => onToggleFolder(row.id)}
-                  style={{ paddingLeft: indent }}
-                  className={cn(
-                    'flex h-7 w-full min-w-0 items-center gap-2 rounded-sm pr-2 text-left text-row',
-                    ROW_INTERACTIVE,
-                  )}
-                >
-                  <ChevronRight
-                    size={ICON_SIZE.row}
-                    aria-hidden
-                    className={cn(
-                      'shrink-0 text-muted-foreground duration-150 motion-safe:transition-transform',
-                      isOpen && 'rotate-90',
-                    )}
-                  />
-                  <ViewedRing
-                    viewed={row.paths.filter((path) => states.get(path) === 'viewed').length}
-                    total={row.fileCount}
-                  />
-                  <span className="min-w-0 flex-1 truncate">{row.label}</span>
-                  {isMarked ? (
-                    <span
-                      role="img"
-                      aria-label="contains the file in view"
-                      className="size-1.5 shrink-0 rounded-full bg-primary"
-                    />
-                  ) : null}
-                  {isOpen ? null : (
-                    <>
-                      <span
-                        data-tone="muted"
-                        className="shrink-0 text-meta tabular-nums text-faint-foreground"
-                      >
-                        {row.fileCount}
-                      </span>
-                      <Delta additions={row.additions} deletions={row.deletions} isMuted />
-                    </>
-                  )}
-                </button>
-              );
               return (
-                <li key={row.id} className="list-none">
-                  {folderPath === null ? (
-                    folderButton
-                  ) : (
-                    <Tooltip content={<span className="text-code">{folderPath}</span>}>
-                      {folderButton}
-                    </Tooltip>
-                  )}
-                </li>
+                <FolderRow
+                  key={row.id}
+                  row={row}
+                  domId={domId}
+                  isOpen={!collapsed.has(row.id)}
+                  isMarked={row.id === markedId}
+                  isCursor={isCursor}
+                  isTreeFocused={isTreeFocused}
+                  viewedCount={row.paths.filter((path) => states.get(path) === 'viewed').length}
+                  onToggle={() => {
+                    setCursorId(row.id);
+                    onToggleFolder(row.id);
+                  }}
+                />
               );
             }
-            const isActive = row.id === activePath;
-            const state = states.get(row.id) ?? 'none';
-            const viewed = state === 'viewed';
-            const notes = noteCountOf(row.id);
-            const canOpenNotes = notes > 0 && onOpenNotes !== null && hasNotesIn(row.id);
-            const notesLabel = `${notes} ${notes === 1 ? 'note' : 'notes'}`;
-            const tone = tintClasses(STATUS_TONE[row.file.status]);
+            const kinds = kindsOf(row.id);
             return (
-              <li key={row.id} className="group relative list-none">
-                <Tooltip content={<span className="text-code">{row.id}</span>}>
-                  <button
-                    ref={isActive ? activeRef : undefined}
-                    type="button"
-                    aria-current={isActive ? 'true' : undefined}
-                    onClick={() => onPick(row.id)}
-                    style={{ paddingLeft: indent + ICON_SIZE.row + 8, height: rowHeightOf(row) }}
-                    className={cn(
-                      'flex w-full min-w-0 items-center gap-2 rounded-sm pr-2 text-left text-body',
-                      ROW_INTERACTIVE,
-                      isActive && 'bg-overlay-selected',
-                      viewed ? 'text-muted-foreground' : 'text-foreground',
-                      canOpenNotes && 'pr-11',
-                    )}
-                  >
-                    <span className="flex w-4 shrink-0 items-center justify-center">
-                      {viewed ? (
-                        <Check
-                          size={ICON_SIZE.row}
-                          aria-label="Viewed"
-                          className="text-muted-foreground"
-                        />
-                      ) : state === 'stale' ? (
-                        <span
-                          role="img"
-                          aria-label="Changed since viewed"
-                          className="size-2 rounded-full bg-warning"
-                        />
-                      ) : null}
-                    </span>
-                    <span className="flex min-w-0 flex-1 flex-col">
-                      <span className="flex min-w-0 items-baseline gap-2">
-                        <span
-                          className={cn(
-                            'truncate',
-                            row.file.status === 'deleted' && 'text-faint-foreground line-through',
-                          )}
-                        >
-                          <MiddleText value={row.name} tail={EXTENSION} />
-                        </span>
-                        {row.dir === null ? null : (
-                          <span className="min-w-0 truncate text-meta text-faint-foreground">
-                            {row.dir}
-                          </span>
-                        )}
-                      </span>
-                      {row.fromPath === null ? null : (
-                        <span className="flex min-w-0 gap-1 text-meta text-faint-foreground">
-                          <span className="sr-only">from {row.fromPath}</span>
-                          <span aria-hidden className="shrink-0">
-                            from
-                          </span>
-                          <MiddleText value={row.fromPath} tail={LAST_SEGMENT} />
-                        </span>
-                      )}
-                    </span>
-                    {notes > 0 && !canOpenNotes ? (
-                      <span
-                        aria-label={notesLabel}
-                        className="flex shrink-0 items-center gap-0.5 text-meta tabular-nums text-faint-foreground"
-                      >
-                        <MessageSquare size={ICON_SIZE.row} aria-hidden />
-                        {notes}
-                      </span>
-                    ) : null}
-                    <Delta additions={row.file.additions} deletions={row.file.deletions} />
-                    <span
-                      aria-label={STATUS_WORD[row.file.status]}
-                      className={cn('w-3 shrink-0 text-center text-chip', tone.text)}
-                    >
-                      {STATUS_LETTER[row.file.status]}
-                    </span>
-                  </button>
-                </Tooltip>
-                {canOpenNotes ? (
-                  <Tooltip
-                    content="Open notes"
-                    anchorClassName="absolute right-1 top-1/2 -translate-y-1/2"
-                  >
-                    <Button
-                      size="xs"
-                      variant="quiet"
-                      aria-label={notesLabel}
-                      onClick={() => onOpenNotes(row.id)}
-                      className="tabular-nums"
-                    >
-                      <MessageSquare size={ICON_SIZE.row} aria-hidden />
-                      {notes}
-                    </Button>
-                  </Tooltip>
-                ) : null}
-                {onCommentOnFile === null ? null : (
-                  <Tooltip
-                    content="Comment on file"
-                    anchorClassName={cn(
-                      'absolute top-1/2 -translate-y-1/2 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100',
-                      canOpenNotes ? 'right-11' : 'right-1',
-                    )}
-                  >
-                    <button
-                      type="button"
-                      aria-label={`Comment on ${row.name}`}
-                      onClick={() => onCommentOnFile(row.id)}
-                      className={cn(
-                        'inline-flex size-6 items-center justify-center rounded-sm bg-subtle text-muted-foreground hover:text-foreground',
-                        FOCUS_RING,
-                      )}
-                    >
-                      <MessageSquarePlus size={ICON_SIZE.row} aria-hidden />
-                    </button>
-                  </Tooltip>
-                )}
-              </li>
+              <FileRow
+                key={row.id}
+                row={row}
+                domId={domId}
+                isActive={row.id === activePath}
+                isCursor={isCursor}
+                isTreeFocused={isTreeFocused}
+                state={states.get(row.id) ?? 'none'}
+                kinds={kinds}
+                nameLength={nameLengthFor({
+                  depth: row.depth,
+                  count: kinds.notes + kinds.host,
+                })}
+                hasDelta={hasDelta}
+                canToggleViewed={!isReadOnly}
+                onPick={() => {
+                  setCursorId(row.id);
+                  onPick(row.id);
+                }}
+                onToggleViewed={() => onToggleViewed(row.file)}
+              />
             );
           })}
         </ul>
