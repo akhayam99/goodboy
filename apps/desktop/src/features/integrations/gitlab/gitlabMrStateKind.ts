@@ -10,5 +10,5 @@ export const gitlabMrStateKind = ({ mr }: Params): PullRequestStateKind =>
   gitlabStateKindOf({
     state: mr.state,
     draft: mr.draft,
-    mergeWhenPipelineSucceeds: mr.mergeWhenPipelineSucceeds ?? false,
+    isMergeWhenPipelineSucceeds: mr.isMergeWhenPipelineSucceeds ?? false,
   });

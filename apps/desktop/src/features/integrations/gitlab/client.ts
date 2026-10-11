@@ -145,7 +145,7 @@ export type GitlabMergeRequest = {
   sourceBranch: string;
   targetBranch: string;
   draft: boolean;
-  mergeWhenPipelineSucceeds?: boolean;
+  isMergeWhenPipelineSucceeds?: boolean;
   hasConflicts: boolean;
   mergeStatus: GitlabMergeStatus;
   updatedAt: string;
@@ -202,7 +202,7 @@ export const gitlabCreateMr = async (args: {
   title: string;
   description: string;
   draft: boolean;
-  mergeWhenPipelineSucceeds?: boolean;
+  isMergeWhenPipelineSucceeds?: boolean;
 }): Promise<GitlabMergeRequest> => {
   const { projectId, ...payload } = args;
   return invokeCommand<GitlabMergeRequest>('gitlab_create_mr', {

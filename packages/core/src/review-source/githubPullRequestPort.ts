@@ -303,7 +303,7 @@ export const githubPullRequestPort = ({
         url: raw.url,
         state: state.state,
         isDraft: raw.isDraft,
-        autoMerge: state.autoMerge,
+        isAutoMerge: state.isAutoMerge,
         mergeQueue: state.mergeQueue,
         author:
           raw.author?.login == null

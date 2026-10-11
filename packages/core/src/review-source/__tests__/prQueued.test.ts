@@ -38,7 +38,7 @@ describe('queued pull request ports', () => {
     expect(await port.read()).toMatchObject({
       state: 'queued',
       mergeQueue: { position: 3 },
-      autoMerge: false,
+      isAutoMerge: false,
     });
     expect(calls.find((args) => args[1] === 'graphql')).toContain(
       `branch=${PR_VIEW_JSON.headRefName}`,
@@ -58,7 +58,11 @@ describe('queued pull request ports', () => {
       prNumber: 318,
       prUrl: GITHUB_PR_URL,
     });
-    expect(await port.read()).toMatchObject({ state: 'queued', autoMerge: true, mergeQueue: null });
+    expect(await port.read()).toMatchObject({
+      state: 'queued',
+      isAutoMerge: true,
+      mergeQueue: null,
+    });
   });
 
   it('disables GitHub auto-merge with the named pull request', async () => {
@@ -80,17 +84,17 @@ describe('queued pull request ports', () => {
     ['merged', true, 'merged'],
     ['closed', true, 'closed'],
   ] as const)('maps GitLab %s with auto-merge %s to %s', (state, isAutoMerge, expected) => {
-    expect(gitlabStateKindOf({ state, draft: false, mergeWhenPipelineSucceeds: isAutoMerge })).toBe(
-      expected,
-    );
+    expect(
+      gitlabStateKindOf({ state, draft: false, isMergeWhenPipelineSucceeds: isAutoMerge }),
+    ).toBe(expected);
   });
 
   it('reads GitLab auto-merge and cancels it through the transport', async () => {
     const { transport } = fakeGitlabTransport({
-      mr: { ...MR_JSON, mergeWhenPipelineSucceeds: true },
+      mr: { ...MR_JSON, isMergeWhenPipelineSucceeds: true },
     });
     const port = gitlabPullRequestPort({ transport, mrUrl: MR_JSON.webUrl });
-    expect(await port.read()).toMatchObject({ state: 'queued', autoMerge: true });
+    expect(await port.read()).toMatchObject({ state: 'queued', isAutoMerge: true });
     await port.cancelAutoMerge?.();
     expect(transport.cancelAutoMerge).toHaveBeenCalledOnce();
   });

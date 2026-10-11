@@ -390,7 +390,7 @@ pub struct GitlabMergeRequest {
     #[serde(default)]
     pub draft: bool,
     #[serde(
-        rename = "mergeWhenPipelineSucceeds",
+        rename = "isMergeWhenPipelineSucceeds",
         alias = "merge_when_pipeline_succeeds",
         default
     )]

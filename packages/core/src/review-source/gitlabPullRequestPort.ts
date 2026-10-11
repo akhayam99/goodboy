@@ -37,7 +37,7 @@ export type GitlabMergeRequestPayload = Readonly<{
   sourceBranch: string;
   targetBranch: string;
   draft: boolean;
-  mergeWhenPipelineSucceeds?: boolean;
+  isMergeWhenPipelineSucceeds?: boolean;
   hasConflicts: boolean;
   mergeStatus: string | null;
   updatedAt: string;
@@ -141,13 +141,13 @@ export const gitlabJobConclusion = ({
 type StateKindParams = {
   readonly state: string;
   readonly draft: boolean;
-  readonly mergeWhenPipelineSucceeds?: boolean;
+  readonly isMergeWhenPipelineSucceeds?: boolean;
 };
 
 export const gitlabStateKindOf = ({
   state,
   draft,
-  mergeWhenPipelineSucceeds = false,
+  isMergeWhenPipelineSucceeds = false,
 }: StateKindParams): PullRequestStateKind => {
   if (state === 'merged') {
     return 'merged';
@@ -155,7 +155,7 @@ export const gitlabStateKindOf = ({
   if (state === 'closed') {
     return 'closed';
   }
-  if (state === 'locked' || mergeWhenPipelineSucceeds) {
+  if (state === 'locked' || isMergeWhenPipelineSucceeds) {
     return 'queued';
   }
   return draft ? 'draft' : 'open';
@@ -371,9 +371,9 @@ export const gitlabPullRequestPort = ({
         state: gitlabStateKindOf({
           state: mr.state,
           draft: mr.draft,
-          mergeWhenPipelineSucceeds: mr.mergeWhenPipelineSucceeds ?? false,
+          isMergeWhenPipelineSucceeds: mr.isMergeWhenPipelineSucceeds ?? false,
         }),
-        autoMerge: mr.mergeWhenPipelineSucceeds ?? false,
+        isAutoMerge: mr.isMergeWhenPipelineSucceeds ?? false,
         isDraft: mr.draft,
         author: mr.author == null ? null : personOf({ person: mr.author }),
         baseBranch: mr.targetBranch,

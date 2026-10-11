@@ -463,7 +463,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
     icon: XCircle,
     group: 'act',
     when: ({ facts }) =>
-      facts.pr?.autoMerge === true && can({ facts, capability: 'canCancelAutoMerge' }),
+      facts.pr?.isAutoMerge === true && can({ facts, capability: 'canCancelAutoMerge' }),
     blockedReason: writeBlock,
     slot: () => 'menu',
     pendingLabel: () => 'Cancelling auto-merge…',

@@ -30,7 +30,7 @@ const PR: PullRequestState = {
   title: 'Guard duplicate credits',
   url: 'https://github.com/harborline/payments-api/pull/318',
   state: 'queued',
-  autoMerge: true,
+  isAutoMerge: true,
   isDraft: false,
   mergeable: true,
   checks: 'success',
@@ -80,7 +80,7 @@ const factsOf = ({ host = 'github', isAutoMerge = true }: FactsParams = {}) =>
   pullRequestFacts({
     sessionId: SESSION.id,
     host,
-    pr: { ...PR, autoMerge: isAutoMerge },
+    pr: { ...PR, isAutoMerge: isAutoMerge },
     checks: [],
     comments: [],
     reviews: [],

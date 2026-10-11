@@ -53,7 +53,7 @@ export type PullRequestView = {
   readonly url: string;
   readonly state: PullRequestStateKind;
   readonly isDraft: boolean;
-  readonly autoMerge?: boolean;
+  readonly isAutoMerge?: boolean;
   readonly mergeQueue?: { readonly position: number | null } | null;
   readonly author: PullRequestPerson | null;
   readonly baseBranch: string;
