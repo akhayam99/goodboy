@@ -1751,15 +1751,25 @@ const GIT_STATES: ReadonlyArray<readonly [string, ObjectTarget, ReadonlyArray<st
     'diff file in the Diff lens',
     {
       kind: 'diffFile',
-      facts: { path: 'src/importer.ts', onOpenInEditor: noop, onCommentOnFile: noop },
+      facts: {
+        path: 'src/importer.ts',
+        onOpenInEditor: noop,
+        onShowWhole: noop,
+        onOpenInDrawer: noop,
+      },
     },
-    ['diffFile.openInEditor', 'diffFile.comment', 'diffFile.copyPath'],
+    ['diffFile.openInEditor', 'diffFile.openInDrawer', 'diffFile.showWhole', 'diffFile.copyPath'],
   ],
   [
     'diff file in the drawer',
     {
       kind: 'diffFile',
-      facts: { path: 'src/importer.ts', onOpenInEditor: null, onCommentOnFile: null },
+      facts: {
+        path: 'src/importer.ts',
+        onOpenInEditor: null,
+        onShowWhole: null,
+        onOpenInDrawer: null,
+      },
     },
     ['diffFile.copyPath'],
   ],

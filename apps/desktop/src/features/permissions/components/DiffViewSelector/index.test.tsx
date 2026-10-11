@@ -35,7 +35,7 @@ describe('DiffViewSelector', () => {
     expect(screen.getByText('Working tree')).toBeDefined();
   });
 
-  it('reads the real base and the branch above a branch diff, with its commit count', () => {
+  it('reads the real base above a branch diff, with its commit count', () => {
     render(
       <DiffViewSelector
         view={{ kind: 'branch' }}
@@ -43,11 +43,10 @@ describe('DiffViewSelector', () => {
         commits={commits}
         status={null}
         baseBranch="develop"
-        branch="feat/ledger-export"
       />,
     );
 
-    expect(screen.getByText('Comparing develop ← feat/ledger-export')).toBeDefined();
+    expect(screen.getByText('Compared with develop')).toBeDefined();
     expect(screen.getByText('· All 2 commits')).toBeDefined();
     expect(screen.queryByText(/\bmain\b/)).toBeNull();
   });
@@ -60,10 +59,9 @@ describe('DiffViewSelector', () => {
         commits={[]}
         status={null}
         baseBranch="release/2026.10"
-        branch="feat/a"
       />,
     );
-    fireEvent.click(screen.getByTitle(/change diff view/i));
+    fireEvent.click(screen.getByRole('button', { expanded: false }));
 
     expect(screen.getByText('branch vs release/2026.10')).toBeDefined();
     expect(screen.getByText(/everything this branch changes vs release\/2026.10/)).toBeDefined();
@@ -77,24 +75,23 @@ describe('DiffViewSelector', () => {
         commits={commits}
         status={null}
         baseBranch="main"
-        branch="feat/a"
       />,
     );
 
     expect(screen.getByText('Commit abc1234')).toBeDefined();
-    expect(screen.queryByText(/Comparing/)).toBeNull();
+    expect(screen.queryByText(/Compared with/)).toBeNull();
   });
 
   it('opens the menu and shows the staged-only option', () => {
     render(<DiffViewSelector view={workingView} onChange={vi.fn()} commits={[]} status={null} />);
-    fireEvent.click(screen.getByTitle(/change diff view/i));
+    fireEvent.click(screen.getByRole('button', { expanded: false }));
     expect(screen.getByText('staged only')).toBeDefined();
   });
 
   it('fires onChange with a new view when an option is picked', () => {
     const onChange = vi.fn();
     render(<DiffViewSelector view={workingView} onChange={onChange} commits={[]} status={null} />);
-    fireEvent.click(screen.getByTitle(/change diff view/i));
+    fireEvent.click(screen.getByRole('button', { expanded: false }));
     fireEvent.click(screen.getByText('staged only'));
     expect(onChange).toHaveBeenCalledWith({ kind: 'working', scope: 'staged' });
   });
@@ -103,7 +100,7 @@ describe('DiffViewSelector', () => {
     render(
       <DiffViewSelector view={workingView} onChange={vi.fn()} commits={commits} status={null} />,
     );
-    fireEvent.click(screen.getByTitle(/change diff view/i));
+    fireEvent.click(screen.getByRole('button', { expanded: false }));
 
     expect(screen.getByText('ready to push')).toBeDefined();
     expect(screen.getByText('abc1234')).toBeDefined();
@@ -121,7 +118,7 @@ describe('DiffViewSelector', () => {
         status={null}
       />,
     );
-    fireEvent.click(screen.getByTitle(/change diff view/i));
+    fireEvent.click(screen.getByRole('button', { expanded: false }));
     const filter = screen.getByRole('textbox', { name: 'Filter commits' });
     fireEvent.keyDown(filter, { key: 'ArrowDown' });
     fireEvent.keyDown(filter, { key: 'Enter' });
@@ -133,7 +130,7 @@ describe('DiffViewSelector', () => {
     render(
       <DiffViewSelector view={workingView} onChange={vi.fn()} commits={commits} status={null} />,
     );
-    fireEvent.click(screen.getByTitle(/change diff view/i));
+    fireEvent.click(screen.getByRole('button', { expanded: false }));
 
     const labels = ['branch', 'currently editing', 'ready to push', 'on origin'].map(
       (label) => screen.getByText(label) as HTMLElement,
@@ -152,7 +149,7 @@ describe('DiffViewSelector', () => {
     render(
       <DiffViewSelector view={workingView} onChange={vi.fn()} commits={commits} status={null} />,
     );
-    fireEvent.click(screen.getByTitle(/change diff view/i));
+    fireEvent.click(screen.getByRole('button', { expanded: false }));
     const filter = screen.getByRole('textbox', { name: 'Filter commits' });
     fireEvent.change(filter, { target: { value: 'zzz-no-such-commit' } });
 
@@ -167,7 +164,7 @@ describe('DiffViewSelector', () => {
     render(
       <DiffViewSelector view={workingView} onChange={vi.fn()} commits={commits} status={null} />,
     );
-    fireEvent.click(screen.getByTitle(/change diff view/i));
+    fireEvent.click(screen.getByRole('button', { expanded: false }));
     const filter = screen.getByRole('textbox', { name: 'Filter commits' });
     fireEvent.change(filter, { target: { value: 'origin change' } });
 

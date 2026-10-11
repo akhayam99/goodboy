@@ -12,8 +12,6 @@ const HAND_BUILT_MENU = /OverflowMenuItem|<OverflowMenu\b|<MenuItems\b|<MenuList
 const ALLOWED: Readonly<Record<string, string>> = {
   'features/branch/components/BranchHeader/BranchOverflow.tsx':
     'branch header menu: its entries come from the pull request and diff kinds of the registry',
-  'features/resolve/notes/components/ReviewNotesDrawer/ReviewNotesMenu.tsx':
-    'notes drawer chrome: Show closed belongs to the drawer, Move to review draft runs review.postNotes',
   'features/artifacts/components/ArtifactList/ArtifactNewMenu.tsx':
     'creation menu: picks the kind of artifact to create',
   'features/session/components/SessionOverviewPane/OverviewActions/index.tsx':
