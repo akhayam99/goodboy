@@ -67,7 +67,7 @@ export const useDiffNotes = ({ sessionId }: Params): DiffComments => {
         void closeResolvedNote({ sessionId, threadId });
       },
       onReopen: (id) => void reopenDiffComment(sessionId, id),
-      onEdit: (id, body) => void editDiffComment(sessionId, id, body),
+      onEdit: (id, body) => editDiffComment(sessionId, id, body),
       onDelete: (id) => {
         const note = fixes.find((fix) => fix.note.id === id)?.note;
         void deleteDiffComment(sessionId, id).then(() => {

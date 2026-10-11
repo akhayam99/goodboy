@@ -553,13 +553,15 @@ describe('useReviewState file-level comments', () => {
     expect(result.current.comments.threads.map((thread) => thread.id)).not.toContain('line-draft');
   });
 
-  it('edits and discards a file draft through the draft store, and other threads through notes', () => {
+  it('edits and discards a file draft through the draft store, and other threads through notes', async () => {
     const drafts = stubDrafts();
     withPullRequest();
     store.setState({ reviewDrafts: { [SESSION]: [FILE_DRAFT] } });
     const { result } = run();
 
-    act(() => result.current.comments.onEdit?.('draft-file', 'Split it in two'));
+    await act(async () => {
+      await result.current.comments.onEdit?.('draft-file', 'Split it in two');
+    });
     act(() => result.current.comments.onDelete?.('draft-file'));
     act(() => result.current.comments.onDelete?.('a-note'));
 
