@@ -169,6 +169,10 @@ export type HistoryMoveOutcome =
   | { readonly kind: 'head-moved'; readonly head: string }
   | { readonly kind: 'blocked'; readonly reason: string };
 
+export type HistoryForgetOutcome =
+  | { readonly kind: 'forgotten'; readonly stash: string }
+  | { readonly kind: 'blocked'; readonly reason: string };
+
 export type HistoryBackup = {
   readonly refName: string;
   readonly sha: string;

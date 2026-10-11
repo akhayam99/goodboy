@@ -216,7 +216,7 @@ describe('dirty rebase policy through the real store', () => {
     expect(requests).toHaveLength(1);
     expect(store.getState().historyRuns[A_REBASE_MOUNT_ID]?.stop?.reason).toBe('head-moved');
   });
-  it('drops a bring-back response after the mount identity changed', async () => {
+  it('still records the restored files after the mount identity changed', async () => {
     const savedStash = { sha: 'a'.repeat(40), identity, expectedHead: 'old-head', files: [] };
     store.setState({
       historyRuns: { [A_REBASE_MOUNT_ID]: aRebaseRun({ phase: 'set-aside', savedStash }) },
@@ -230,7 +230,118 @@ describe('dirty rebase policy through the real store', () => {
       },
     });
     await store.getState().bringBackHistoryFiles(input);
+    expect(store.getState().historyRuns[A_REBASE_MOUNT_ID]).toMatchObject({
+      phase: 'restored',
+      savedStash: undefined,
+    });
+  });
+  it('shows a conflicted tree even when the mount identity changed during the move', async () => {
+    stubStoryInvoke({
+      worktree_status: () => status,
+      history_remote_lease: () => ({ kind: 'absent' }),
+      history_plan_apply: () => {
+        store.setState({
+          sessionProjectMounts: { [A_REBASE_SESSION_ID]: [{ ...mount, branch: 'hl/other' }] },
+        });
+        return {
+          kind: 'restore-conflict',
+          stash: 'a'.repeat(40),
+          files: ['ledger.ts'],
+          head: 'new-head',
+          backupRef: 'backup',
+        };
+      },
+    });
+    await expect(store.getState().applyHistoryRewrite(applyInput)).resolves.toBe('stopped');
+    expect(store.getState().historyRuns[A_REBASE_MOUNT_ID]).toMatchObject({
+      phase: 'restore-conflict',
+      savedStash: { sha: 'a'.repeat(40), files: ['ledger.ts'] },
+    });
+  });
+  it('shows set-aside files even when the run was replaced during the move', async () => {
+    stubStoryInvoke({
+      worktree_status: () => status,
+      history_remote_lease: () => ({ kind: 'absent' }),
+      history_plan_apply: () => {
+        store.getState().dismissHistoryRun(input);
+        return { kind: 'set-aside', stash: 'a'.repeat(40), reason: 'The branch changed.' };
+      },
+    });
+    await store.getState().applyHistoryRewrite(applyInput);
+    expect(store.getState().historyRuns[A_REBASE_MOUNT_ID]).toMatchObject({
+      phase: 'set-aside',
+      savedStash: { sha: 'a'.repeat(40) },
+    });
+  });
+  it('records a completed move after an identity change but never pushes it', async () => {
+    const pushes: unknown[] = [];
+    stubStoryInvoke({
+      worktree_status: () => status,
+      history_remote_lease: () => ({ kind: 'included', sha: 'remote-sha' }),
+      history_plan_apply: () => {
+        store.setState({
+          sessionProjectMounts: { [A_REBASE_SESSION_ID]: [{ ...mount, branch: 'hl/other' }] },
+        });
+        return { kind: 'moved', head: 'new-head', backupRef: 'backup', carriedCount: 0 };
+      },
+      history_push_lease: (args: unknown) => {
+        pushes.push(args);
+        return { kind: 'pushed' };
+      },
+    });
+    await expect(
+      store.getState().applyHistoryRewrite({ ...applyInput, shouldPush: true }),
+    ).resolves.toBe('applied');
+    expect(store.getState().historyRuns[A_REBASE_MOUNT_ID]?.phase).toBe('applied');
+    expect(pushes).toHaveLength(0);
+  });
+  it('undo shows a conflicted tree even when the mount identity changed', async () => {
+    stubStoryInvoke({
+      worktree_status: () => status,
+      history_remote_lease: () => ({ kind: 'absent' }),
+      history_restore: () => {
+        store.setState({
+          sessionProjectMounts: { [A_REBASE_SESSION_ID]: [{ ...mount, branch: 'hl/other' }] },
+        });
+        return {
+          kind: 'restore-conflict',
+          stash: 'a'.repeat(40),
+          files: ['ledger.ts'],
+          head: 'backup-head',
+          backupRef: 'backup',
+        };
+      },
+    });
+    await store.getState().restoreHistory({ ...input, backupRef: 'backup', shouldPush: false });
+    expect(store.getState().historyRuns[A_REBASE_MOUNT_ID]).toMatchObject({
+      phase: 'restore-conflict',
+      savedStash: { files: ['ledger.ts'] },
+    });
+  });
+  it('forgets saved files by SHA, clears the run and keeps a failed attempt recoverable', async () => {
+    const savedStash = { sha: 'a'.repeat(40), identity, expectedHead: 'old-head', files: ['a.ts'] };
+    store.setState({
+      historyRuns: {
+        [A_REBASE_MOUNT_ID]: aRebaseRun({ phase: 'restore-conflict', savedStash }),
+      },
+    });
+    stubStoryInvoke({
+      history_plan_apply: (args: unknown) => {
+        requests.push(args);
+        return requests.length === 1
+          ? { kind: 'blocked', reason: 'Finish the merge first.' }
+          : { kind: 'forgotten', stash: savedStash.sha };
+      },
+    });
+    await expect(store.getState().forgetHistoryFiles(input)).rejects.toThrow(
+      'Finish the merge first.',
+    );
     expect(store.getState().historyRuns[A_REBASE_MOUNT_ID]?.savedStash).toEqual(savedStash);
+    await store.getState().forgetHistoryFiles(input);
+    expect(requests[1]).toMatchObject({
+      args: { forgetStash: savedStash.sha, branch: identity.branch, expectedHead: 'old-head' },
+    });
+    expect(store.getState().historyRuns[A_REBASE_MOUNT_ID]).toBeUndefined();
   });
   it('does not apply a response to a dismissed run', async () => {
     stubStoryInvoke({

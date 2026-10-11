@@ -99,12 +99,25 @@ const status: WorktreeStatus = {
   inProgress: null,
 };
 
+type ForgetParams = { readonly payload: unknown };
+
+const forgetStashOf = ({ payload }: ForgetParams): string | undefined => {
+  if (typeof payload !== 'object' || payload === null || !('args' in payload)) {
+    return undefined;
+  }
+  const { args } = payload;
+  if (typeof args !== 'object' || args === null || !('forgetStash' in args)) {
+    return undefined;
+  }
+  return typeof args.forgetStash === 'string' ? args.forgetStash : undefined;
+};
+
 export const RebaseStashScene = ({ state }: Props) => {
   const [isReady, setIsReady] = useState(false);
   useEffect(() => {
     installSceneDatabase();
     installScenePlanEngine({ sessionId: A_REBASE_SESSION_ID });
-    mockSceneIpc((command) => {
+    mockSceneIpc((command, payload) => {
       if (command === 'worktree_status') {
         return status;
       }
@@ -112,6 +125,10 @@ export const RebaseStashScene = ({ state }: Props) => {
         return { kind: 'absent' };
       }
       if (command === 'history_plan_apply') {
+        const forgotten = forgetStashOf({ payload });
+        if (forgotten !== undefined) {
+          return { kind: 'forgotten', stash: forgotten };
+        }
         return state === 'set-aside'
           ? { kind: 'files-restored', stash: 'a'.repeat(40) }
           : {

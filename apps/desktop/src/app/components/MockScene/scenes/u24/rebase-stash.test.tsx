@@ -5,7 +5,7 @@ vi.mock('@tauri-apps/api/core', async () => {
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -64,6 +64,23 @@ describe.each([false, true])('rebase stash scenes with dark theme %s', (isDark) 
     await screen.findByText('Rebased on main, but 2 of your files conflict');
     screen.getByRole('button', { name: 'Copy the stash command' });
     screen.getByRole('button', { name: 'Open terminal' });
+  });
+  it('forgets conflicted files after one anchored confirm', async () => {
+    show({ name: 'rebase-restore-conflict', isDark });
+    fireEvent.click(await screen.findByRole('button', { name: 'Done, forget it' }));
+    const confirm = await screen.findByRole('dialog');
+    expect(confirm.textContent).toContain('They stay in the stash');
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Done, forget it' }));
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Rebase job' })).toBeNull());
+  });
+  it('forgets set-aside files without bringing them back', async () => {
+    show({ name: 'rebase-bring-back', isDark });
+    fireEvent.click(await screen.findByRole('button', { name: 'Done, forget it' }));
+    fireEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Done, forget it' }),
+    );
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Rebase job' })).toBeNull());
+    expect(screen.queryByText('Rebased on main')).toBeNull();
   });
   it('brings saved files back after an interrupted move', async () => {
     show({ name: 'rebase-bring-back', isDark });

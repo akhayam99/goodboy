@@ -1,6 +1,7 @@
 import { Button } from '@goodboy/ui';
 import type { RebaseJobControls } from '../useRebaseJob';
 import type { useJobBannerActions } from '../hooks/useJobBannerActions';
+import { ForgetSavedButton } from './ForgetSavedButton';
 import { JobBannerDetails } from './JobBannerDetails';
 
 type Props = {
@@ -50,6 +51,10 @@ export const JobBannerActions = ({ controls, actions, isNoteOpen, onToggleNote }
           <Button size="sm" variant="ghost" onClick={actions.copyStashCommand}>
             Copy the stash command
           </Button>
+          <ForgetSavedButton
+            isBusy={pendingKeys.has('forget-saved')}
+            onConfirm={actions.forgetSaved}
+          />
         </>
       );
     case 'set-aside':
@@ -61,6 +66,10 @@ export const JobBannerActions = ({ controls, actions, isNoteOpen, onToggleNote }
           <Button size="sm" variant="ghost" onClick={controls.openTerminal}>
             Open terminal
           </Button>
+          <ForgetSavedButton
+            isBusy={pendingKeys.has('forget-saved')}
+            onConfirm={actions.forgetSaved}
+          />
         </>
       );
     case 'merging':

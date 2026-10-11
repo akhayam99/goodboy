@@ -2,6 +2,7 @@ import { Channel } from '@tauri-apps/api/core';
 import { invokeCommand } from '../../shared/lib/invokeCommand';
 import type {
   HistoryBackup,
+  HistoryForgetOutcome,
   HistoryGraph,
   HistoryMoveOutcome,
   HistoryOriginAhead,
@@ -103,6 +104,21 @@ export const applyHistoryPlan = async ({
 }: MoveBranchParams): Promise<HistoryMoveOutcome> =>
   invokeCommand<HistoryMoveOutcome>('history_plan_apply', {
     args: { ...args, ...(shouldStash === true ? { stash: true } : {}) },
+  });
+
+type ForgetParams = {
+  readonly worktreePath: string;
+  readonly branch: string;
+  readonly expectedHead: string;
+  readonly stash: string;
+};
+
+export const forgetSavedFiles = async ({
+  stash,
+  ...args
+}: ForgetParams): Promise<HistoryForgetOutcome> =>
+  invokeCommand<HistoryForgetOutcome>('history_plan_apply', {
+    args: { ...args, newHead: args.expectedHead, forgetStash: stash },
   });
 
 export const restoreHistoryBackup = async ({

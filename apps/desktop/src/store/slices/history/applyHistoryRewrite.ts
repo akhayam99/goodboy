@@ -8,6 +8,7 @@ import { identityChange } from './historyIdentity';
 import { editPostedReplies } from '../resolve/editPostedReplies';
 import { remoteForPush } from './remoteForPush';
 import { remapRewrittenCommits } from './remapRewrittenCommits';
+import { shouldHandleLateOutcome } from './shouldHandleLateOutcome';
 import { setHistoryRun } from './setHistoryRun';
 import { recordHistoryEvent } from './recordHistoryEvent';
 import { reportHistoryStop } from './reportHistoryStop';
@@ -60,6 +61,7 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
     }
     const startedAt = Date.now();
     let cleanupError: string | undefined;
+    let isLateMove = false;
     setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'applying', planId } });
     while (true) {
       const requestRun = get().historyRuns[mountId];
@@ -70,9 +72,15 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
         newHead: input.newHead,
         ...(input.shouldStash === true ? { shouldStash: true } : {}),
       }).catch((error: unknown) => ({ kind: 'failed' as const, message: formatError(error) }));
-      if (
+      const isLate =
         get().historyRuns[mountId] !== requestRun ||
-        identityChange({ get, sessionId, mountId, identity: input.identity }) !== null
+        identityChange({ get, sessionId, mountId, identity: input.identity }) !== null;
+      if (
+        isLate &&
+        !shouldHandleLateOutcome({
+          outcome,
+          isRunDismissed: get().historyRuns[mountId] === undefined,
+        })
       ) {
         return 'stopped';
       }
@@ -169,12 +177,6 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
           remoteShaAtApply: remote.sha,
         }).catch(() => undefined);
       }
-      if (
-        get().historyRuns[mountId] !== requestRun ||
-        identityChange({ get, sessionId, mountId, identity: input.identity }) !== null
-      ) {
-        return 'stopped';
-      }
       setHistoryRun({
         set,
         sessionId,
@@ -209,9 +211,13 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
         return 'stopped';
       }
       cleanupError = outcome.cleanupError;
+      isLateMove = isLate;
       break;
     }
     await refreshWorktreeStatuses({ worktreePaths: [target.worktreePath] }).catch(() => undefined);
+    if (isLateMove) {
+      return 'applied';
+    }
     if (cleanupError !== undefined) {
       await get().reportError({
         title: 'Your files are back, but stash cleanup needs attention',

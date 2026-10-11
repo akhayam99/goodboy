@@ -5,6 +5,7 @@ import { assertCleanTree } from './assertCleanTree';
 import { identityOf, identityChange } from './historyIdentity';
 import { historyTargetOf } from './historyTargetOf';
 import { remoteForPush } from './remoteForPush';
+import { shouldHandleLateOutcome } from './shouldHandleLateOutcome';
 import { recordHistoryEvent } from './recordHistoryEvent';
 import { reportHistoryStop } from './reportHistoryStop';
 import { setHistoryRun } from './setHistoryRun';
@@ -93,9 +94,15 @@ export const restoreHistory = (set: SetFn, get: GetFn) => {
       backupRef,
       ...(shouldStash === true ? { shouldStash: true } : {}),
     }).catch((error: unknown) => ({ kind: 'failed' as const, message: formatError(error) }));
-    if (
+    const isLate =
       get().historyRuns[mountId] !== requestRun ||
-      identityChange({ get, sessionId, mountId, identity: capturedIdentity }) !== null
+      identityChange({ get, sessionId, mountId, identity: capturedIdentity }) !== null;
+    if (
+      isLate &&
+      !shouldHandleLateOutcome({
+        outcome: moved,
+        isRunDismissed: get().historyRuns[mountId] === undefined,
+      })
     ) {
       return 'stopped';
     }
@@ -181,12 +188,6 @@ export const restoreHistory = (set: SetFn, get: GetFn) => {
           .catch(() => false);
       }
     }
-    if (
-      get().historyRuns[mountId] !== requestRun ||
-      identityChange({ get, sessionId, mountId, identity: capturedIdentity }) !== null
-    ) {
-      return 'stopped';
-    }
     setHistoryRun({
       set,
       sessionId,
@@ -222,6 +223,9 @@ export const restoreHistory = (set: SetFn, get: GetFn) => {
     });
     if (moved.kind === 'restore-conflict') {
       return 'stopped';
+    }
+    if (isLate) {
+      return 'restored';
     }
     await get().loadHistoryDraft({ sessionId, mountId });
     if (moved.cleanupError !== undefined) {

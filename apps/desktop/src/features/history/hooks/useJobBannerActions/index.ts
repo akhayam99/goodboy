@@ -58,6 +58,16 @@ export const useJobBannerActions = ({ sessionId, worktreePath, agentId }: Params
         task: () => useAppStore.getState().bringBackHistoryFiles({ sessionId, mountId }),
       });
     },
+    forgetSaved: () => {
+      if (mountId === null) {
+        return;
+      }
+      attempt({
+        key: 'forget-saved',
+        failureTitle: "Couldn't clear the saved files.",
+        task: () => useAppStore.getState().forgetHistoryFiles({ sessionId, mountId }),
+      });
+    },
     copyStashCommand: () => {
       if (run?.savedStash === undefined) {
         return;

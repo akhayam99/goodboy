@@ -2,6 +2,7 @@ import { applyHistoryPlan } from '../../../features/history/historyEngine';
 import type { SliceDeps } from '../../slice-types';
 import { identityChange } from './historyIdentity';
 import { setHistoryRun } from './setHistoryRun';
+import { shouldHandleLateOutcome } from './shouldHandleLateOutcome';
 import type { HistoryMountInput } from './types';
 
 type DepsParams = SliceDeps;
@@ -25,10 +26,11 @@ export const bringBackHistoryFiles = ({ set, get }: DepsParams) => {
       newHead: saved.expectedHead,
       restoreStash: saved.sha,
     });
-    if (
+    const isLate =
       get().historyRuns[mountId] !== run ||
-      identityChange({ get, sessionId, mountId, identity: saved.identity }) !== null
-    ) {
+      identityChange({ get, sessionId, mountId, identity: saved.identity }) !== null;
+    const isRunDismissed = get().historyRuns[mountId] === undefined;
+    if (isLate && !shouldHandleLateOutcome({ outcome, isRunDismissed })) {
       return;
     }
     if (outcome.kind === 'files-restored') {
