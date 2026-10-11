@@ -9,6 +9,10 @@ const state = vi.hoisted(() => ({
   agentTurnState: {} as Record<string, unknown>,
   openQuestions: [] as ReadonlyArray<OpenQuestion>,
   spawnAgent: vi.fn(async () => 'agent-2' as AgentId),
+  sessionPhaseRuns: {} as Record<string, ReadonlyArray<Agent>>,
+  startFollowUp: (() => Promise.resolve('agent-2' as AgentId)) as (
+    params: never,
+  ) => Promise<AgentId>,
   navigate: vi.fn(),
   loadAgentTranscript: vi.fn(async () => undefined),
   providers: [],
@@ -34,6 +38,7 @@ vi.mock('../../../../shared/hooks/useFollowToast', () => ({
   useFollowToast: () => announce,
 }));
 
+import { startFollowUp } from '../../../../store/slices/agents/startFollowUp';
 import { AgentFollowUps } from './AgentFollowUps';
 import type { FollowUpChild } from './followUpChildren';
 
@@ -69,6 +74,8 @@ const makeChild = (over: Partial<Agent>): FollowUpChild => {
 afterEach(cleanup);
 
 beforeEach(() => {
+  state.sessionPhaseRuns = { [sessionId]: [source] };
+  state.startFollowUp = startFollowUp(() => state as never);
   state.agentTurnState = {};
   state.openQuestions = [];
   state.spawnAgent.mockClear();
