@@ -171,6 +171,13 @@ the snapshot call fails the bus tail stands in. The scripts slice does the
 same for every live run on boot (`registerScriptRunListeners` with
 `shouldReplay`); what a script's transcript shows stays capped at 64KB.
 
+Provider login and CLI update runs have no Rust ring. `invokeProviderLifecycleRun`
+starts `features/providers/lifecycleOutputBuffer.ts` before the run, which keeps
+the last 256KB per `runId` with the same running `offset`, and `InlineTerminal`
+replays it through the same snapshot path, so a remount during a login still
+shows the device code once. The buffer of an exited run is dropped when its
+terminal unmounts, and only the newest four exited runs are kept.
+
 ### Launching git
 
 Every git process the Rust shell starts goes through one builder,
