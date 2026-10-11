@@ -14,7 +14,9 @@ export const StopControl = ({ pid, name, folder, spawnId }: Props) => {
   const stopProcess = useAppStore((state) => state.stopProcess);
   const stopGoodboyRow = useAppStore((state) => state.stopGoodboyRow);
 
-  if (progress === 'stopping') {
+  const isStopping = progress === 'stopping';
+
+  if (isStopping) {
     return <span className="text-meta text-faint-foreground">Stopping</span>;
   }
   if (progress === 'still-running') {
@@ -22,8 +24,9 @@ export const StopControl = ({ pid, name, folder, spawnId }: Props) => {
       <Button
         size="xs"
         variant="ghost-danger"
+        disabled={isStopping}
         aria-label={`Force stop ${name}`}
-        onClick={() => void stopProcess({ pid, force: true })}
+        onClick={() => void stopProcess({ pid, isForced: true })}
       >
         Force stop
       </Button>
@@ -34,6 +37,7 @@ export const StopControl = ({ pid, name, folder, spawnId }: Props) => {
       <Button
         size="xs"
         variant="ghost"
+        disabled={isStopping}
         aria-label={`Stop ${name}`}
         onClick={() => void stopGoodboyRow({ spawnId })}
       >
@@ -48,7 +52,7 @@ export const StopControl = ({ pid, name, folder, spawnId }: Props) => {
       title="Goodboy did not start this process. Stop it?"
       description={folder === null ? `${name}.` : `${name} in ${folder}.`}
       confirmLabel="Stop"
-      onConfirm={() => void stopProcess({ pid, force: false })}
+      onConfirm={() => void stopProcess({ pid, isForced: false })}
       trigger={({ isArmed, arm }) => (
         <Button
           size="xs"

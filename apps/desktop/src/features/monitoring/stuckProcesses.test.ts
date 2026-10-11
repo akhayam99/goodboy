@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { MonitorProcess, MonitorSnapshot } from '@goodboy/core';
-import { STUCK_AFTER_MS, isStuck, nextIdleCounts } from './stuckProcesses';
+import { isStuck, nextIdleCounts } from './stuckProcesses';
+
+const STUCK_AFTER_MS = 2 * 60 * 60 * 1000;
 
 const processOf = ({ pid, cpuPercent }: { readonly pid: number; readonly cpuPercent: number }) =>
   ({

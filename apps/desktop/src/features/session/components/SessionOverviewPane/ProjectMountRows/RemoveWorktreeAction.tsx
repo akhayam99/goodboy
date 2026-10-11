@@ -125,7 +125,7 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
           .getState()
           .monitorLedger.find((candidate) => candidate.pid === process.pid);
         if (entry === undefined) {
-          await stopProcess({ pid: process.pid, force: false });
+          await stopProcess({ pid: process.pid, isForced: false });
           continue;
         }
         await stopGoodboyRow({ spawnId: entry.spawnId });

@@ -29,7 +29,7 @@ export const stopGoodboyRow = (set: SetFn, get: GetFn) => {
     }
     const route = goodboyStopRoute({ entry, state: get() });
     if (route.kind === 'process') {
-      await get().stopProcess({ pid: route.pid, force: false });
+      await get().stopProcess({ pid: route.pid, isForced: false });
       return;
     }
     set(settleStopping({ pid: entry.pid, progress: 'stopping' }));

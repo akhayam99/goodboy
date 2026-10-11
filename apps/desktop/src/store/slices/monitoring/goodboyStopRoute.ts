@@ -3,7 +3,7 @@ import type { AgentId, SessionId } from '@goodboy/types';
 import type { TerminalOwner, TerminalTabId } from '../../../shared/types/terminal';
 import type { AppState } from '../../types';
 
-export type RouteState = Pick<
+type RouteState = Pick<
   AppState,
   'scriptRuns' | 'terminalTabs' | 'sessionPhaseRuns' | 'agentTurnState' | 'sessionMounts'
 >;

@@ -5,7 +5,7 @@ export type WatchPortParams = {
   readonly port: number;
 };
 
-export type StopOutcome = 'stopped' | 'still-running' | 'refused';
+type StopOutcome = 'stopped' | 'still-running' | 'refused';
 
 export type StopResult = {
   readonly outcome: StopOutcome;
@@ -16,7 +16,7 @@ export type StopProgress = 'stopping' | 'still-running';
 
 export type StopProcessParams = {
   readonly pid: number;
-  readonly force: boolean;
+  readonly isForced: boolean;
 };
 
 export type StopGoodboyRowParams = {

@@ -1,7 +1,7 @@
 import type { LedgerKind, MonitorSnapshot } from '@goodboy/core';
 
-export const STUCK_AFTER_MS = 2 * 60 * 60 * 1000;
-export const STUCK_SNAPSHOTS = 3;
+const STUCK_AFTER_MS = 2 * 60 * 60 * 1000;
+const STUCK_SNAPSHOTS = 3;
 const IDLE_CPU_PERCENT = 0.1;
 const STUCK_KINDS: ReadonlyArray<LedgerKind> = ['turn', 'chat', 'planner', 'summary'];
 

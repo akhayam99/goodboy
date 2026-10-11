@@ -113,7 +113,7 @@ describe('stopProcess', () => {
       monitor_stop: { outcome: 'still-running', reason: 'The process did not exit in time.' },
     });
 
-    await useAppStore.getState().stopProcess({ pid: 77, force: false });
+    await useAppStore.getState().stopProcess({ pid: 77, isForced: false });
 
     expect(useAppStore.getState().monitorStopping).toEqual({ 77: 'still-running' });
   });
@@ -126,7 +126,7 @@ describe('stopProcess', () => {
     });
     useAppStore.setState({ monitorStopping: { 77: 'still-running' } });
 
-    await useAppStore.getState().stopProcess({ pid: 77, force: true });
+    await useAppStore.getState().stopProcess({ pid: 77, isForced: true });
 
     expect(callsTo('monitor_stop')).toEqual([['monitor_stop', { pid: 77, force: true }]]);
     expect(useAppStore.getState().monitorStopping).toEqual({});
@@ -141,7 +141,7 @@ describe('stopProcess', () => {
     });
     useAppStore.setState({ reportError });
 
-    await useAppStore.getState().stopProcess({ pid: 1, force: false });
+    await useAppStore.getState().stopProcess({ pid: 1, isForced: false });
 
     expect(reportError).toHaveBeenCalledWith(
       expect.objectContaining({ title: "Couldn't stop the process" }),
@@ -156,7 +156,7 @@ describe('stopProcess', () => {
     });
     useAppStore.setState({ reportError });
 
-    const result = await useAppStore.getState().stopProcess({ pid: 5, force: false });
+    const result = await useAppStore.getState().stopProcess({ pid: 5, isForced: false });
 
     expect(result).toBeNull();
     expect(reportError).toHaveBeenCalled();
