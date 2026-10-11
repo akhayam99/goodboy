@@ -155,8 +155,8 @@ describe('NextStepSlot', () => {
       suggestion({ id: 'mount-project:1', kind: 'mount-project', title: 'Add web' }),
     ];
     render(<NextStepSlot session={SESSION} onSelectLens={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: /More actions/ }));
-    fireEvent.click(screen.getByText('Not now'));
+    expect(screen.queryByRole('button', { name: /More actions/ })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
     expect(suggestionState.onDismiss).toHaveBeenCalledWith('mount-project:1');
     expect(screen.queryByText('Add web')).toBeNull();
     expect(recordNextStepOutcome).toHaveBeenCalledWith({

@@ -1,5 +1,5 @@
 import { RefreshCw, SquareTerminal } from 'lucide-react';
-import { Button, OverflowMenu, type OverflowMenuItem } from '@goodboy/ui';
+import { Button, IconButton } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -11,15 +11,6 @@ type Props = {
 
 export const HistoryActions = ({ isBusy, onRefresh, onShowBackups, onOpenTerminal }: Props) => {
   const BackupIcon = CONCEPT_ICONS.backup;
-  const overflow: OverflowMenuItem[] = [
-    {
-      kind: 'item',
-      key: 'terminal',
-      label: 'Open terminal here',
-      icon: SquareTerminal,
-      onClick: onOpenTerminal,
-    },
-  ];
   return (
     <>
       <Button size="xs" variant="ghost" disabled={isBusy} onClick={onRefresh}>
@@ -30,7 +21,12 @@ export const HistoryActions = ({ isBusy, onRefresh, onShowBackups, onOpenTermina
         <BackupIcon size={ICON_SIZE.row} aria-hidden />
         Backups
       </Button>
-      <OverflowMenu items={overflow} label="More history actions" align="right" />
+      <IconButton
+        icon={SquareTerminal}
+        label="Open terminal here"
+        size="sm"
+        onClick={onOpenTerminal}
+      />
     </>
   );
 };

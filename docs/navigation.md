@@ -398,7 +398,11 @@ never exists on one surface only.
   keeps its own `review.select` and `review.selectAll`. The scroller of a
   surface takes a bottom margin while something is selected, so the bar never
   covers the last row.
-- **Confirm and undo.** A verb that loses work confirms inside the menu with
+- **Confirm and undo.** A confirm is one placement, anchored to its trigger
+  (`ConfirmPopover`): Cancel has focus on a danger confirm, `Cmd+Enter` confirms,
+  and a card still drawn by a call site is counted in
+  `inline-confirm-placement.baseline.json`, which only falls. A verb that loses
+  work confirms inside the menu with
   `InlineConfirm` (Delete, Delete permanently, Discard, Close run, Merge, Close pull request,
   Delete script, Close branch, Remove from session, Abort rebase). Remove
   from session and a storage worktree's Remove keep their detailed confirm (the
@@ -1558,8 +1562,8 @@ pageKeys.ts`), typed so a new override key does not compile until it has
   permission history or `bootstrap.*` keys. Restoring writes `null`; every
   override change of one copy or restore is one `patchWorkspaceOverrides`
   through the queued workspace writer. A field whose value differs from the
-  default shows a faint dot after its label (`Changed from default. Default:
-X`) and a `Reset` in its own ⋯ menu (`WorkspaceFieldRow`). Precedent:
+  default shows a small Reset button after its label (tooltip `Reset to
+default`, hidden while the value is the default, `WorkspaceFieldRow`). Precedent:
   JetBrains Copy to Project and VS Code's Modified marker with Reset Setting.
 - **Storage is the one place for disk space, scoped by a picker.** App >
   Storage lists every worktree folder Goodboy made, grouped by repository,
@@ -1780,8 +1784,9 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   (`danger`, title `Couldn't <verb> <project>`, `Details`, `Retry`) under its
   row; a branch mismatch is a `warning` `Notice` with `Use this branch here`,
   `Keep both branches` and `Not now`. A card whose mounts have not loaded
-  draws skeleton rows on the same tracks. `Add project` leaves the header once
-  nothing is left to add and becomes an item of the `Project actions` menu.
+  draws skeleton rows on the same tracks. `Add project` stays a button in the
+  header; once nothing is left to add its popover says every project is already in
+  and offers `Add workspace project`.
   `Mark all seen` is a ghost button in the Activity header and shows only
   while an agent is unseen; a waiting question is answered from its Needs you row, never from a
   second `Answer` on the timeline row.
@@ -2726,8 +2731,9 @@ left of `Write review`, N being the open notes of the displayed branch, hidden a
 to that file. Saving a note never opens the drawer, it only updates the count and
 the tree row. The drawer reads `Your notes` with `N open`; `Fix N` is its one
 primary (one fix run on the selected notes, all the open and fixable ones by
-default, each with a check when there are two or more) and `⋯` holds `Move N to
-review draft` (only with a pull request) and `Show closed`. Notes are grouped by
+default, each with a check when there are two or more) and `Show closed`
+is a labelled toggle; with a pull request, `⋯` holds `Move N to review draft` and
+`Show closed`. Notes are grouped by
 file, each the same review comment thread Comments draws, with `Jump to file`
 (the Files tab at the file): `Open note` (`Fix`, `Close`, `Delete` with Undo),
 working (the run line above the list holds `Stop` and `Open transcript`), ready

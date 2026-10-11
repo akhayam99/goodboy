@@ -508,7 +508,7 @@ describe('ProjectMountRows', () => {
     expect(screen.queryByText(/No project yet/)).toBeNull();
   });
 
-  it('never offers the first lap project in Add project, and moves the action to the overflow', () => {
+  it('never offers the first lap project in Add project, and says every project is already in', () => {
     seed({
       projects: [PAYMENTS],
       mounts: [],
@@ -526,9 +526,10 @@ describe('ProjectMountRows', () => {
     });
     renderRows();
 
-    expect(screen.queryByRole('button', { name: 'Add project' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Project actions' }));
-    screen.getByRole('menuitem', { name: /Add project/ });
+    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
+    const popover = screen.getByRole('dialog', { name: 'Add project' });
+    within(popover).getByText('Every workspace project is already in this session.');
+    expect(screen.queryByRole('button', { name: 'Project actions' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Add payments-api' })).toBeNull();
   });
 

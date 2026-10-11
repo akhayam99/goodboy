@@ -15,7 +15,7 @@ import {
 import { newArtifactEventName } from '../../newArtifactEventName';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { ArtifactFilterTabs } from '../ArtifactStudio/ArtifactFilterTabs';
-import { ArtifactListOverflowMenu } from './ArtifactListOverflowMenu';
+import { ArtifactListFolderButton } from './ArtifactListFolderButton';
 import { ArtifactListGroup } from './ArtifactListGroup';
 import { ArtifactNewMenu } from './ArtifactNewMenu';
 import { useArtifactGroups } from './useArtifactGroups';
@@ -91,7 +91,7 @@ export const ArtifactList = ({
           <ArtifactFilterTabs value={filter} counts={counts} onChange={onFilterChange} />
           <div className="ml-auto flex shrink-0 items-center gap-1">
             <ArtifactNewMenu sessionId={sessionId} onImportWireframe={importer.pick} />
-            <ArtifactListOverflowMenu sessionId={sessionId} />
+            <ArtifactListFolderButton sessionId={sessionId} />
           </div>
         </div>
       }

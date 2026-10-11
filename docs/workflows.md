@@ -109,7 +109,7 @@ A copy whose name is taken here gets its workspace name added, for example
 **Restore built-in workflows** asks first and names only the built-ins you
 edited or deleted in this workspace. It puts back their name and steps, drops
 the steps you added to them, and leaves your own workflows alone. With nothing
-changed the menu item is off and says so. A built-in whose name one of your
+changed the button is not shown. A built-in whose name one of your
 own workflows now holds is left out. When an update brings a new built-in,
 every workspace gets it at the next launch, unless one of your workflows
 already has that name. A built-in you never had is not counted as deleted.

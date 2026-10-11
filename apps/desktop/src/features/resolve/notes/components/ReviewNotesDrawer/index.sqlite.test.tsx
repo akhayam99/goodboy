@@ -160,9 +160,8 @@ describe('the review notes drawer on sqlite', () => {
     });
 
     await waitFor(() => within(panel).getByText('2 open'));
-    await openMenu();
     await act(async () => {
-      fireEvent.click(screen.getByRole('menuitem', { name: 'Show closed' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Show closed' }));
     });
     const closed = within(panel).getByRole('region', { name: 'Closed' });
     await act(async () => {
@@ -252,14 +251,16 @@ describe('the review notes drawer on sqlite', () => {
     });
   });
 
-  it('offers Move N to review draft only when a pull request is open', async () => {
+  it('offers Move N to review draft only when a pull request is open, else a Show closed toggle', async () => {
     renderDrawer();
     const panel = await drawer();
     await waitFor(() => within(panel).getByText('3 open'));
 
-    await openMenu();
+    expect(screen.queryByRole('button', { name: 'More note actions' })).toBeNull();
     expect(screen.queryByRole('menuitem', { name: /to review draft/ })).toBeNull();
-    expect(screen.getByRole('menuitem', { name: 'Show closed' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Show closed' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
   });
 
   it('moves every open note to the review draft when a pull request is open', async () => {

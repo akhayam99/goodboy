@@ -5,8 +5,8 @@ import {
   cn,
   AnchoredPopover,
   Button,
-  IconButton,
   InlineConfirm,
+  MenuTriggerButton,
   tintClasses,
   useDropdown,
 } from '@goodboy/ui';
@@ -26,7 +26,6 @@ import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 const warningTint = tintClasses('warning');
 const resolvedTint = tintClasses('success');
-const MoreIcon = CONCEPT_ICONS.more;
 
 type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'permission_request' }>;
@@ -250,15 +249,15 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
             ariaLabel="More permission actions"
             className={overflowView === 'menu' ? 'py-1' : undefined}
             trigger={
-              <IconButton
-                icon={MoreIcon}
+              <MenuTriggerButton
                 label="More permission actions"
-                variant="ghost"
+                isOpen={open}
+                size="control"
                 disabled={busy}
-                aria-haspopup="menu"
-                aria-expanded={open}
                 onClick={toggle}
-              />
+              >
+                <CONCEPT_ICONS.more size={ICON_SIZE.control} aria-hidden />
+              </MenuTriggerButton>
             }
           >
             {overflowView === 'menu' && (

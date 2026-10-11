@@ -1,7 +1,8 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { Ellipsis } from 'lucide-react';
 import { AnchoredPopover } from './AnchoredPopover';
 import { MenuTriggerButton, type MenuTriggerSize } from './MenuTriggerButton';
+import { isProduction } from '../isProduction';
 import { useDropdown } from '../useDropdown';
 import { MenuItems, type OverflowMenuItem } from './MenuItems';
 
@@ -15,6 +16,8 @@ type Props = {
   readonly align?: 'left' | 'right';
   readonly size?: MenuTriggerSize;
 };
+
+const MIN_DRAWN_ITEMS = 2;
 
 export const OverflowMenu = ({
   items,
@@ -32,8 +35,17 @@ export const OverflowMenu = ({
     width: 'min-w-50',
     expectedHeight: 220,
   });
+  const drawn = items.filter((item) => item.kind === 'item').length;
+  const isTooShort = drawn < MIN_DRAWN_ITEMS;
 
-  if (items.length === 0) {
+  useEffect(() => {
+    if (!isTooShort || isProduction()) {
+      return;
+    }
+    console.error('OverflowMenu needs two items');
+  }, [isTooShort]);
+
+  if (isTooShort) {
     return null;
   }
 

@@ -1,5 +1,5 @@
 import { FolderOpen } from 'lucide-react';
-import { OverflowMenu } from '@goodboy/ui';
+import { IconButton } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { openArtifactsFolder } from '../../artifactMirror/artifactMirrorInvoke';
@@ -9,31 +9,23 @@ type Props = {
   readonly sessionId: SessionId;
 };
 
-export const ArtifactListOverflowMenu = ({ sessionId }: Props) => {
+export const ArtifactListFolderButton = ({ sessionId }: Props) => {
   const workspaceSlug = useAppStore((s) => {
     const workspaceId = sessionById(s.sessions, sessionId)?.workspaceId;
     return s.workspaces.find((workspace) => workspace.id === workspaceId)?.slug ?? null;
   });
 
   return (
-    <OverflowMenu
-      label="More"
-      tooltip="More actions"
-      size="control"
-      items={[
-        {
-          kind: 'item',
-          key: 'open-artifacts-folder',
-          label: 'Open artifacts folder',
-          icon: FolderOpen,
-          disabled: workspaceSlug === null,
-          onClick: () => {
-            if (workspaceSlug !== null) {
-              void openArtifactsFolder({ workspaceSlug });
-            }
-          },
-        },
-      ]}
+    <IconButton
+      icon={FolderOpen}
+      label="Show in Finder"
+      size="sm"
+      disabled={workspaceSlug === null}
+      onClick={() => {
+        if (workspaceSlug !== null) {
+          void openArtifactsFolder({ workspaceSlug });
+        }
+      }}
     />
   );
 };

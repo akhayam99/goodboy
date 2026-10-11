@@ -84,7 +84,7 @@ describe('MountProjectAction', () => {
     window.removeEventListener('goodboy:open-settings', onOpenWorkspaceSettings);
   });
 
-  it('moves Add project to the overflow once every workspace project is mounted', () => {
+  it('keeps Add project a button whose popover says every project is already in', () => {
     let settingsDetail: unknown = null;
     const onOpenWorkspaceSettings = (event: Event) => {
       if (event instanceof CustomEvent) {
@@ -104,9 +104,10 @@ describe('MountProjectAction', () => {
       />,
     );
 
-    expect(screen.queryByRole('button', { name: 'Add project' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Project actions' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: /Add project/ }));
+    openPicker();
+    expect(screen.queryByRole('button', { name: 'Project actions' })).toBeNull();
+    expect(screen.getByText('Every workspace project is already in this session.')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Add workspace project' }));
 
     expect(settingsDetail).toEqual({ scope: 'workspace', section: 'projects' });
     window.removeEventListener('goodboy:open-settings', onOpenWorkspaceSettings);

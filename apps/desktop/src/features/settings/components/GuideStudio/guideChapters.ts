@@ -255,7 +255,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Workflows',
-        desc: 'Start from Refactor, Plan and ship or Fix a bug, or build your own. Each step follows its role or pins a model, and its menu holds Duplicate, Save as step, Move and Delete, with Undo. Restore built-in workflows, in the menu next to New workflow, brings back a built-in you deleted or changed. Deleting a run deletes its agents and their open questions.',
+        desc: 'Start from Refactor, Plan and ship or Fix a bug, or build your own. Each step follows its role or pins a model, and its menu holds Duplicate, Save as step, Move and Delete, with Undo. Restore built-in workflows, a button next to New workflow that shows when a built-in was deleted or changed, brings it back. Deleting a run deletes its agents and their open questions.',
       },
       {
         term: 'Run defaults',

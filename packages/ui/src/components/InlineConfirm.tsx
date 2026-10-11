@@ -157,6 +157,7 @@ export const InlineConfirm = ({
           <Button
             variant={ROLE_VARIANT[role]}
             size="sm"
+            data-confirm-action
             onClick={() => void confirm()}
             disabled={busy || isConfirmDisabled}
           >

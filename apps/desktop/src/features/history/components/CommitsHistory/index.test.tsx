@@ -188,16 +188,17 @@ describe('CommitsHistory toolbar', () => {
     return slot;
   };
 
-  it('puts Refresh, Backups and one horizontal overflow in the tab row actions, once', () => {
+  it('puts Refresh, Backups and Open terminal here in the tab row actions, once, with no menu', () => {
     const slot = mountWithSlot();
 
     const inSlot = within(slot);
     expect(inSlot.getByRole('button', { name: 'Refresh' })).toBeDefined();
     expect(inSlot.getByRole('button', { name: 'Backups' })).toBeDefined();
-    expect(inSlot.getAllByRole('button', { name: 'More history actions' })).toHaveLength(1);
+    expect(inSlot.getAllByRole('button', { name: 'Open terminal here' })).toHaveLength(1);
     expect(screen.getAllByRole('button', { name: 'Refresh' })).toHaveLength(1);
     expect(screen.getAllByRole('button', { name: 'Backups' })).toHaveLength(1);
-    expect(screen.getAllByRole('button', { name: 'More history actions' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Open terminal here' })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'More history actions' })).toBeNull();
     slot.remove();
   });
 

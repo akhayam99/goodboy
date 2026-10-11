@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { AnchoredPopover, IconButton, cn, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, MenuTriggerButton, useDropdown } from '@goodboy/ui';
 import type { MountId, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { useToast } from '../../../../../shared/components/Toast';
 import { useAppStore } from '../../../../../store';
@@ -255,11 +255,10 @@ export const MountActionsMenu = ({
       ariaLabel={label}
       anchorClassName="shrink-0"
       trigger={
-        <IconButton
-          variant="ghost"
-          icon={CONCEPT_ICONS.more}
-          iconSize={ICON_SIZE.row}
+        <MenuTriggerButton
           label={label}
+          isOpen={dropdown.open}
+          size="control"
           onClick={() => {
             if (dropdown.open) {
               dropdown.close();
@@ -268,10 +267,9 @@ export const MountActionsMenu = ({
             }
             dropdown.toggle();
           }}
-          aria-haspopup="menu"
-          aria-expanded={dropdown.open}
-          className={cn(dropdown.open && 'bg-muted')}
-        />
+        >
+          <CONCEPT_ICONS.more size={ICON_SIZE.row} aria-hidden />
+        </MenuTriggerButton>
       }
     >
       {isConfirming ? (

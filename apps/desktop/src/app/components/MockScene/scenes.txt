@@ -124,6 +124,7 @@ comments-working
 commits-empty
 commits-loading
 companion
+confirmpopover
 context-drawer
 controls-fields
 controls-hints
