@@ -232,8 +232,12 @@ status` directly. A branch cut from a remote-tracking ref (`worktree add -b
   with `--no-track` and the in-app push passes `--set-upstream`, but old
   branches still track main, so do not "simplify" back to `@{u}`.
 
-- Rewrite history drags rows with pointer events and its own hit testing
-  (`useHistoryDrag`), not HTML5 drag and drop. In the Tauri window the native
+- Rewrite history and the issue chip drag with pointer events on one shared
+  engine (`usePointerDrag`: 5 px threshold, window listeners that are removed
+  on finish, an Esc layer, an opt-in to start on a button that still clicks).
+  Each keeps its own hit test (`useHistoryDrag` for commit rows,
+  `useTaskDrag` for `data-task-drop` targets). Neither uses HTML5 drag and
+  drop. In the Tauri window the native
   file drop handler owns every drag session while `dragDropEnabled` is on, so
   WebKit never sends `dragover` or `drop` to the page: an HTML5 drag starts and
   then does nothing, while jsdom tests stay green. Turning `dragDropEnabled`

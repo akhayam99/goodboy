@@ -2763,8 +2763,8 @@ Separate`: `Keep both` combines (squash) and `Separate` makes it its own commit
 again, the same edit as `Separate` in its menu; its planned change keeps
 `Keep title | Keep both`. The row buttons (icons) and the `⋯` menu sit in a
 slot reserved at the end of the row, so they never cover the control; a folded
-row shows only the menu. The drag is pointer events with our own hit testing
-(`useHistoryDrag`), never HTML5 drag and drop: the window's native file drop
+row shows only the menu. The drag is pointer events on the shared `usePointerDrag` engine with our
+own hit testing (`useHistoryDrag`), never HTML5 drag and drop: the window's native file drop
 owns the drag session on macOS, and the composer's file drop needs it on. Keys
 on a focused row: Alt with the arrows moves, C folds into the one below, S
 combines keeping both messages, R or Enter renames, Delete or Backspace

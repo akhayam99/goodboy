@@ -11,6 +11,8 @@ import { LinkIssueAction } from './LinkIssueAction';
 import { ContextChip } from './ContextChip';
 import { GoalTeaser } from './GoalTeaser';
 import { LinkedWorkChips } from './LinkedWorkChips';
+import { SessionDropPill } from './SessionDropPill';
+import { TaskDragLayer } from './TaskDragLayer';
 import { ArtifactsChip } from './ArtifactsChip';
 import { ChatOriginRow } from './ChatOriginRow';
 import { ArchivedRestore } from './ArchivedRestore';
@@ -104,7 +106,9 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
         <ArtifactsChip sessionId={sessionId} onSelectLens={onSelectLens} />
         <LinkedWorkChips sessionId={sessionId} onSelectLens={onSelectLens} />
         {isArchived ? null : <LinkIssueAction session={session} />}
+        <SessionDropPill />
       </div>
+      <TaskDragLayer />
     </div>
   );
 };

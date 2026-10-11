@@ -12,6 +12,7 @@ import { useActionControls } from '../../../../actions/useActionControls';
 import { useObjectMenuTrigger } from '../../../../actions/useObjectMenuTrigger';
 import type { MountActionTarget } from '../../../../actions/types';
 import { useMountRemoteHostKind } from '../../../../worktree/useMountRemoteHostKind';
+import { useTaskDropState } from '../../../hooks/useTaskDropState';
 import { AlsoInChip } from './AlsoInChip';
 import { PutOnBranchPopover } from '../../TaskPlacement/PutOnBranchPopover';
 import { BranchTaskChips } from './BranchTaskChips';
@@ -79,6 +80,9 @@ export const ProjectMountRow = ({
   );
   const controls = useActionControls({ target });
   const menuTrigger = useObjectMenuTrigger({ target });
+  const isDropTarget = row.branch !== '' && row.isAttached && !row.isFinished;
+  const dropState = useTaskDropState({ target: { projectId: row.projectId, branch: row.branch } });
+  const isDragLive = isDropTarget && dropState !== 'idle';
   const isPutTaskShown = row.branch !== '' && row.isAttached && !row.isFinished;
   const hasInlineClose = controls
     .inSlot({ slot: 'inline' })
@@ -110,13 +114,19 @@ export const ProjectMountRow = ({
         data-testid="project-mount-cells"
         data-slot="mount-child"
         data-row-height={MOUNT_ROW_HEIGHT}
+        data-task-drop={isDropTarget ? 'branch' : undefined}
+        data-task-project={isDropTarget ? row.projectId : undefined}
+        data-task-branch={isDropTarget ? row.branch : undefined}
         style={{
           height: MOUNT_ROW_HEIGHT,
           paddingLeft: MOUNT_CHILD_PAD,
           paddingRight: MOUNT_ROW_PAD,
         }}
         className={cn(
-          'col-span-full grid grid-cols-subgrid items-center gap-x-3 rounded-md hover:bg-hover',
+          'col-span-full grid grid-cols-subgrid items-center gap-x-3 rounded-md',
+          !isDragLive && 'hover:bg-hover',
+          isDragLive && dropState === 'over' && 'bg-selected',
+          isDragLive && (dropState === 'dim' || dropState === 'refused') && 'opacity-50',
           row.isFinished && 'opacity-70 hover:opacity-100',
         )}
       >
