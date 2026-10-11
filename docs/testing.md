@@ -121,6 +121,8 @@ A test that needs a `Session`, `Agent`, `Project`, `Workspace` or `WorkflowRun` 
 
 The `apps/desktop/src/__tests__/surfaces/navigation-flows/` folder mounts the whole `App` on the real store, with only the Tauri bridge mocked. Each row of its tables clicks a real control (crumb menu, palette, footer, settings rail, mount row, back arrow) and checks that a heading or landmark of the destination renders. A row fails on React #185, "Maximum update depth", "getSnapshot should be cached", the error boundary, or a store action it lists in `covers` that the click never called.
 
+The `target-identity` rows are the template for "view mount A, act on mount B": open mount A, trigger an action that names mount B, and assert that B is the mount shown or written (`docs/typescript/state-writes.md`).
+
 `__tests__/surfaces/one-home.test.tsx` guards the "one home per thing" rule of `docs/navigation.md`. It renders the board, the linked-work row and the providers menu from the mock scene seeds, on the real store, and fails when the workspace name shows outside the top bar, a task id shows twice in one row, a stage default (`no PR yet`, `awaiting review`) is given as a reason, or a limit figure shows twice in the providers menu. When a scene seed changes, change the test with it.
 
 - The rows live in the `*.rows.tsx` files of the folder, one per group of controls; each has a `*.test.tsx` twin that runs them, so the suite splits across workers. The ratchet finds every `*.rows.tsx` in the folder and fails when one has no twin that calls `runNavigationRows`. `harness.tsx` holds the bridge mock, `boot` and the click helpers. A new page, studio, lens, settings section or navigation action adds one row to the group it belongs to, in the same commit.

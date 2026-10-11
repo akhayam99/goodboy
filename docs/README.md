@@ -109,6 +109,8 @@ Below is the full index. Other docs and agents use it to find their way.
   component's exports, props or ref pattern, or a function's parameters.
 - [typescript/control-flow.md](typescript/control-flow.md): when you
   structure conditionals, branches or early returns.
+- [typescript/state-writes.md](typescript/state-writes.md): when you write a
+  store action, a navigation address, a loader, an undo or a retry.
 - [typescript/readability.md](typescript/readability.md): when you name a
   variable or callback, or feel like adding a code comment.
 - [testing.md](testing.md): when you write or review tests, and how to

@@ -11,6 +11,7 @@ import {
   useWorkspaces,
   type LensKind,
 } from '../../../store';
+import { doorMountPath } from '../../../store/slices/navigation/doorMountPath';
 import { branchTabOf } from '../../../store/slices/session-view/branchTabOf';
 import { requestNewSession } from '../../../features/session/requestNewSession';
 import { openLens } from '../../../features/session/openLens';
@@ -105,7 +106,13 @@ export const useAppShortcuts = ({
       branchTabOf({ state, sessionId, mountPath: null }) === doorTabOf({ kind });
     const isLeaving = kind != null && (active === kind || isBranchDoor);
     if (kind === 'review' && !isLeaving) {
-      state.navigate({ to: branchPlace({ sessionId, tab: 'comments' }) });
+      state.navigate({
+        to: branchPlace({
+          sessionId,
+          mountPath: doorMountPath({ state, sessionId }),
+          tab: 'comments',
+        }),
+      });
       return;
     }
     openLens({ sessionId, lens: isLeaving ? null : kind });

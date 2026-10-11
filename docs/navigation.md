@@ -264,6 +264,16 @@ provider })` returning the tabs the page shows in order. `BranchTab` includes
   `canonicalLocation` lands it, and the pull request page request, on
   `comments` (a review being written still lands on `files`), so a pasted or
   restored `pr` address never errors.
+- **An address carries its own mount.** `canonicalLocation` rewrites aliases
+  and never fills a missing mount: a Branch address with `mountPath: null`
+  stays `null`, and the page shows the active mount when it renders. A caller
+  that acts on a mount passes it (`branchPlace({ mountPath })`,
+  `lensPlace({ mountPath })`); a page door that means "the mount on screen"
+  leaves it out and `lensPlace` reads it once, through `doorMountPath`, at the
+  click. Back to an address with no mount does not move the write destination.
+  `docs/typescript/state-writes.md` has the rule; the rows of
+  `__tests__/surfaces/navigation-flows/target-identity.rows.tsx` hold the
+  journeys.
 - **Push, amend, replace.** A new place pushes: board and session, session to
   session, lens, a child, a sibling from a switcher, a session studio. Pushing
   the place you are on replaces it. Page state amends the current entry and
