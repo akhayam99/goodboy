@@ -444,8 +444,17 @@ export const worktreeRemoteUrl = async (repoPath: string): Promise<string | null
   return invokeCommand<string | null>('worktree_remote_url', { repoPath });
 };
 
+export type ChangedEntryStatus = 'added' | 'modified' | 'deleted' | 'renamed';
+
+export type ChangedEntry = {
+  readonly path: string;
+  readonly status: ChangedEntryStatus;
+  readonly from: string | null;
+};
+
 export type ChangedFilesSummary = {
   readonly paths: ReadonlyArray<string>;
+  readonly entries: ReadonlyArray<ChangedEntry>;
   readonly additions: number;
   readonly deletions: number;
   // Raw per-file numstat lines ("<adds>\t<dels>\t<path>", binary: "-\t-\t<path>")
