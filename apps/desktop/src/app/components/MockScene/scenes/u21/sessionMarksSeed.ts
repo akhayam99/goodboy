@@ -328,6 +328,7 @@ export const seedSessionMarks = (): Session => {
         group: 'none',
         isArchivedShown: false,
         isFoldOpen: true,
+        statusFilter: [],
       },
     },
   });

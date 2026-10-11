@@ -4,21 +4,21 @@ import { cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
-  readonly role: 'menuitemradio' | 'menuitemcheckbox';
+  readonly role: 'radio' | 'checkbox';
   readonly label: string;
   readonly isChecked: boolean;
   readonly onSelect: () => void;
   readonly trailing?: ReactNode;
 };
 
-export const MenuChoice = ({ role, label, isChecked, onSelect, trailing }: Props) => (
+export const FilterChoice = ({ role, label, isChecked, onSelect, trailing }: Props) => (
   <button
     type="button"
     role={role}
     aria-checked={isChecked}
     onClick={onSelect}
     className={cn(
-      'flex h-7 w-full items-center gap-2 rounded-sm px-2 text-left text-label motion-safe:transition-colors hover:bg-hover focus-visible:bg-hover focus-visible:outline-none',
+      'flex min-h-7 w-full items-center gap-2 rounded-sm px-2 text-left text-label motion-safe:transition-colors hover:bg-hover focus-visible:bg-hover focus-visible:outline-none',
       isChecked ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
     )}
   >

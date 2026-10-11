@@ -17,10 +17,13 @@ import { pullRequestGroupOf } from './pullRequestGroup';
 
 type Compare = (a: Session, b: Session) => number;
 
+type LastTurnBySession = Readonly<Record<string, string>>;
+
 type SortParams = {
   readonly sessions: ReadonlyArray<Session>;
   readonly sort: SessionSortKey;
   readonly stageBySession: Readonly<Record<SessionId, SessionStage>>;
+  readonly lastTurnBySession: LastTurnBySession;
 };
 
 type Params = {
@@ -29,6 +32,17 @@ type Params = {
   readonly githubState: Readonly<Record<SessionId, SessionGithubState>>;
   readonly stageBySession?: Readonly<Record<SessionId, SessionStage>>;
   readonly projectBySession?: Readonly<Record<SessionId, SessionProjectRef | null>>;
+  readonly lastTurnBySession?: LastTurnBySession;
+};
+
+type ActivityKeyParams = {
+  readonly session: Session;
+  readonly lastTurnBySession: LastTurnBySession;
+};
+
+export const activityKeyOf = ({ session, lastTurnBySession }: ActivityKeyParams): string => {
+  const lastTurn = lastTurnBySession[session.id];
+  return lastTurn !== undefined && lastTurn > session.updatedAt ? lastTurn : session.updatedAt;
 };
 
 const compareText = (a: string, b: string): number =>
@@ -51,6 +65,24 @@ const byOpenedDesc: Compare = (a, b) =>
       byId(a, b),
     ],
   });
+
+type ActivityCompareParams = {
+  readonly lastTurnBySession: LastTurnBySession;
+};
+
+const byActivityDesc =
+  ({ lastTurnBySession }: ActivityCompareParams): Compare =>
+  (a, b) =>
+    firstDifference({
+      results: [
+        compareIso(
+          activityKeyOf({ session: b, lastTurnBySession }),
+          activityKeyOf({ session: a, lastTurnBySession }),
+        ),
+        compareIso(b.createdAt, a.createdAt),
+        byId(a, b),
+      ],
+    });
 
 const byWaitingSinceAsc: Compare = (a, b) =>
   firstDifference({
@@ -81,16 +113,25 @@ const byCreatedDesc: Compare = (a, b) =>
 export const recentlyOpenedFirst = (sessions: ReadonlyArray<Session>): Session[] =>
   [...sessions].sort(byOpenedDesc);
 
-const sortNeedsYouFirst = ({ sessions, stageBySession }: Omit<SortParams, 'sort'>): Session[] => {
+const sortNeedsYouFirst = ({
+  sessions,
+  stageBySession,
+  lastTurnBySession,
+}: Omit<SortParams, 'sort'>): Session[] => {
   const needs = sessions.filter((session) => stageBySession[session.id] === 'attention');
   const rest = sessions.filter((session) => stageBySession[session.id] !== 'attention');
-  return [...needs.sort(byWaitingSinceAsc), ...rest.sort(byOpenedDesc)];
+  return [...needs.sort(byWaitingSinceAsc), ...rest.sort(byActivityDesc({ lastTurnBySession }))];
 };
 
-const sortSessions = ({ sessions, sort, stageBySession }: SortParams): Session[] => {
+const sortSessions = ({
+  sessions,
+  sort,
+  stageBySession,
+  lastTurnBySession,
+}: SortParams): Session[] => {
   switch (sort) {
     case 'needsYou':
-      return sortNeedsYouFirst({ sessions, stageBySession });
+      return sortNeedsYouFirst({ sessions, stageBySession, lastTurnBySession });
     case 'updatedAt':
       return [...sessions].sort(byUpdatedDesc);
     case 'goal':
@@ -166,8 +207,9 @@ export const sortAndGroupSessions = ({
   githubState,
   stageBySession = {},
   projectBySession = {},
+  lastTurnBySession = {},
 }: Params): ReadonlyArray<GroupedSessions> => {
-  const sorted = sortSessions({ sessions, sort: prefs.sort, stageBySession });
+  const sorted = sortSessions({ sessions, sort: prefs.sort, stageBySession, lastTurnBySession });
 
   switch (prefs.group) {
     case 'none':

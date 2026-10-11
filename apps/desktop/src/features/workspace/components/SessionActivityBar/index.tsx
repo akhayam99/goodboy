@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
+  Button,
   Eyebrow,
   EmptyState,
   PANE_RHYTHM,
@@ -30,7 +31,8 @@ import { useSidebarPeekHold } from '../SidebarPeekOverlay/hold';
 import { SessionHoverCard } from '../SessionHoverCard';
 import { useHoverCardTarget } from '../SessionHoverCard/useHoverCardTarget';
 import { sessionGroupPresentation } from './groupPresentation';
-import { SessionViewMenu } from './SessionViewMenu';
+import { SessionFilterPopover } from './SessionFilterPopover';
+import { useClearSessionFilters } from './useClearSessionFilters';
 import { SessionActivityItem } from './SessionActivityItem';
 import { SessionGroupHeader } from './SessionGroupHeader';
 import { OpenSessionCard } from './OpenSessionCard';
@@ -68,6 +70,7 @@ export const SessionActivityBar = ({
   const navigate = useAppStore((s) => s.navigate);
   const prefs = useSessionViewPrefs(workspaceId);
   const column = useSessionColumn(workspaceId, sessions);
+  const clearFilters = useClearSessionFilters({ workspaceId });
   const hover = useHoverCardTarget();
   const { close: closeHover } = hover;
 
@@ -262,7 +265,7 @@ export const SessionActivityBar = ({
         )}
       >
         <Eyebrow label="Sessions" muted />
-        <SessionViewMenu
+        <SessionFilterPopover
           workspaceId={workspaceId}
           sessions={filterSessions}
           archivedCount={archivedSessions.length}
@@ -330,6 +333,15 @@ export const SessionActivityBar = ({
             </button>
           ) : null}
 
+          {column.hiddenByFilters > 0 ? (
+            <div className="flex items-center justify-between gap-2 pl-7 pr-1 text-meta text-faint-foreground">
+              <span>{column.hiddenByFilters} hidden by filters</span>
+              <Button variant="ghost" size="xs" onClick={clearFilters}>
+                Clear
+              </Button>
+            </div>
+          ) : null}
+
           {shownArchived.length > 0 ? (
             <div className="flex flex-col gap-0.5">
               {column.isGrouped ? (
@@ -365,7 +377,7 @@ export const SessionActivityBar = ({
               size="section"
               icon={CONCEPT_ICONS.sessions}
               tone={CONCEPT_TONE.sessions}
-              title="No sessions yet"
+              title={column.hiddenByFilters > 0 ? 'No sessions match' : 'No sessions yet'}
             />
           ) : null}
         </div>

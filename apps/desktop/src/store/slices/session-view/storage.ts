@@ -2,13 +2,15 @@ import type {
   PersistedSessionViewPrefs,
   SessionGroupKey,
   SessionSortKey,
+  SessionStage,
   SessionViewPrefs,
   WorkspaceId,
 } from '@goodboy/types';
 import { STORAGE_PREFIXES } from '../../../shared/lib/storage-keys';
-import { DEFAULT_PREFS, VALID_GROUPS, VALID_SORTS } from './types';
+import { DEFAULT_PREFS, VALID_GROUPS, VALID_SORTS, VALID_STAGES } from './types';
 
-const PREFS_VERSION = 2;
+const PREFS_VERSION = 3;
+const PREVIOUS_PREFS_VERSION = 2;
 
 const storageKey = (workspaceId: WorkspaceId): string =>
   `${STORAGE_PREFIXES.sessionView}${workspaceId}`;
@@ -31,6 +33,9 @@ const sortOf = (value: unknown): SessionSortKey =>
 const groupOf = (value: unknown): SessionGroupKey =>
   VALID_GROUPS.find((key) => key === value) ?? DEFAULT_PREFS.group;
 
+const stagesOf = (value: unknown): ReadonlyArray<SessionStage> =>
+  Array.isArray(value) ? VALID_STAGES.filter((stage) => value.includes(stage)) : [];
+
 const flagOf = ({ value, fallback }: { readonly value: unknown; readonly fallback: boolean }) =>
   typeof value === 'boolean' ? value : fallback;
 
@@ -41,7 +46,9 @@ export const readFromStorage = (workspaceId: WorkspaceId): SessionViewPrefs => {
       return DEFAULT_PREFS;
     }
     const parsed: unknown = JSON.parse(raw);
-    if (!isRecord(parsed) || parsed['v'] !== PREFS_VERSION) {
+    const isCurrent = isRecord(parsed) && parsed['v'] === PREFS_VERSION;
+    const isPrevious = isRecord(parsed) && parsed['v'] === PREVIOUS_PREFS_VERSION;
+    if (!isRecord(parsed) || (!isCurrent && !isPrevious)) {
       writeToStorage(workspaceId, DEFAULT_PREFS);
       return DEFAULT_PREFS;
     }
@@ -53,7 +60,11 @@ export const readFromStorage = (workspaceId: WorkspaceId): SessionViewPrefs => {
         fallback: DEFAULT_PREFS.isArchivedShown,
       }),
       isFoldOpen: flagOf({ value: parsed['isFoldOpen'], fallback: DEFAULT_PREFS.isFoldOpen }),
+      statusFilter: isCurrent ? stagesOf(parsed['statusFilter']) : [],
     };
+    if (isPrevious) {
+      writeToStorage(workspaceId, prefs);
+    }
     return prefs;
   } catch {
     return DEFAULT_PREFS;

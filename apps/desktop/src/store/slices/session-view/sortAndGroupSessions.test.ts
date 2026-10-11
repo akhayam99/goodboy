@@ -40,7 +40,7 @@ const order = (
     stageBySession,
   });
 
-describe('needs you first, then recently opened', () => {
+describe('needs you first, then last activity', () => {
   const opened = session('opened-today', {
     lastOpenedAt: at('2026-10-06T08:00:00.000Z'),
     updatedAt: at('2026-09-02T09:00:00.000Z'),
@@ -63,16 +63,28 @@ describe('needs you first, then recently opened', () => {
     expect(ids(group?.sessions ?? []).slice(0, 2)).toEqual(['waiting-long', 'waiting-short']);
   });
 
-  it('follows the last time you opened a session for the rest', () => {
-    const [group] = order([openedLast, waitingShort, opened, waitingLong], {}, stages);
-    expect(ids(group?.sessions ?? []).slice(2)).toEqual(['opened-today', 'opened-last-week']);
+  it('follows the last activity for the rest', () => {
+    const [group] = order([opened, waitingShort, openedLast, waitingLong], {}, stages);
+    expect(ids(group?.sessions ?? []).slice(2)).toEqual(['opened-last-week', 'opened-today']);
   });
 
-  it('does not move a running session when its agent writes', () => {
+  it('moves a session up when its agent writes', () => {
     const before = order([opened, openedLast], {}, stages)[0]?.sessions ?? [];
-    const busy = { ...openedLast, updatedAt: at('2026-10-06T10:00:00.000Z') };
-    const after = order([opened, busy], {}, stages)[0]?.sessions ?? [];
-    expect(ids(after)).toEqual(ids(before));
+    expect(ids(before)).toEqual(['opened-last-week', 'opened-today']);
+    const busy = { ...opened, updatedAt: at('2026-10-06T10:00:00.000Z') };
+    const after = order([busy, openedLast], {}, stages)[0]?.sessions ?? [];
+    expect(ids(after)).toEqual(['opened-today', 'opened-last-week']);
+  });
+
+  it('counts the last finished turn as activity', () => {
+    const groups = sortAndGroupSessions({
+      sessions: [opened, openedLast],
+      prefs: DEFAULT_PREFS,
+      githubState: {},
+      stageBySession: stages,
+      lastTurnBySession: { [opened.id]: '2026-10-06T10:00:00.000Z' },
+    });
+    expect(ids(groups[0]?.sessions ?? [])).toEqual(['opened-today', 'opened-last-week']);
   });
 
   it('falls back to the last activity for a session never opened', () => {
@@ -82,10 +94,21 @@ describe('needs you first, then recently opened', () => {
     expect(ids(group?.sessions ?? [])).toEqual(['never-opened', 'older']);
   });
 
-  it('moves a session to the top of the rest the moment it is opened', () => {
-    const reopened = { ...openedLast, lastOpenedAt: at('2026-10-06T11:00:00.000Z') };
-    const [group] = order([opened, reopened], {}, stages);
+  it('keeps the order when a session is opened', () => {
+    const reopened = { ...opened, lastOpenedAt: at('2026-10-06T11:00:00.000Z') };
+    const [group] = order([reopened, openedLast], {}, stages);
     expect(ids(group?.sessions ?? [])).toEqual(['opened-last-week', 'opened-today']);
+  });
+
+  it('keeps a five session list still while each one is opened in turn', () => {
+    const five = ['a', 'b', 'c', 'd', 'e'].map((id, index) =>
+      session(id, { updatedAt: at(`2026-10-0${5 - index}T09:00:00.000Z`) }),
+    );
+    const before = ids(order(five, {})[0]?.sessions ?? []);
+    const afterOpeningD = five.map((entry) =>
+      entry.id === 'd' ? { ...entry, lastOpenedAt: at('2026-10-06T12:00:00.000Z') } : entry,
+    );
+    expect(ids(order(afterOpeningD, {})[0]?.sessions ?? [])).toEqual(before);
   });
 });
 
