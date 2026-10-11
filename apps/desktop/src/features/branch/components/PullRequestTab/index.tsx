@@ -37,7 +37,6 @@ type Props = {
   readonly onConnected: () => void;
   readonly onReload: () => void;
   readonly onSelectTab: (tab: BranchTab) => void;
-  readonly onOpenFiles: (path: string | null) => void;
 };
 
 export const PullRequestTab = ({
@@ -64,7 +63,6 @@ export const PullRequestTab = ({
   onConnected,
   onReload,
   onSelectTab,
-  onOpenFiles,
 }: Props) => {
   if (pr === null && isBitbucketRemote) {
     return <BitbucketNoPullRequest url={newPullRequestUrl} isConnected={isBitbucketConnected} />;
@@ -99,7 +97,6 @@ export const PullRequestTab = ({
       onMutated={onMutated}
       onReload={onReload}
       onSelectTab={onSelectTab}
-      onOpenFiles={onOpenFiles}
     />
   );
 };
