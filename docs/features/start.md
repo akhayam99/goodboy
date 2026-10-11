@@ -63,5 +63,20 @@ outside text fields. Session unlink removes every branch placement as one
 operation, and Undo restores the entire snapshot atomically. A later re-link
 makes Undo do nothing and say why. The unlink event keeps **Re-link**.
 
+### Move an issue between the session and a branch
+
+One verb moves an issue: **Move to**. Open the menu of a linked task chip (right
+click or Shift+F10), or use the **Linked to** row under the header of an open
+issue, and pick **This session** or one of the open branches of the issue's
+project. It moves at once, with an Undo toast that names the new place
+(**HL-204 is on the session again**). Branch to branch is one move and one
+Undo. An issue of another project is refused with the project it belongs to.
+The same entries are in the command palette while an issue is open.
+
+On a branch row the chip's x says what it does: **Move to session** when that
+branch is the only place, **Take off payments-api / hl/fix-duplicate-credit**
+when the issue is somewhere else too. On the session it stays **Unlink from
+session**.
+
 Activity shows each linked task once, even across several branches. Tasks
 with the same issue number in different projects keep separate rows.
