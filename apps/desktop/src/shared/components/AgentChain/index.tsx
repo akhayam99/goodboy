@@ -16,7 +16,7 @@ export const AgentChain = ({ sessionId, steps }: Props) => (
   <ul aria-label="Agent chain" className="flex flex-col gap-2">
     {steps.map((step) => (
       <AgentChainStep
-        key={step.name}
+        key={step.agent === null ? step.name : step.agent.id}
         sessionId={sessionId}
         name={step.name}
         agent={step.agent}
