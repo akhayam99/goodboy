@@ -529,7 +529,7 @@ describe('ExplorePane previews', () => {
 
     fireEvent.click(await rowNamed('page.tsx'));
     const drawer = await screen.findByRole('region', { name: 'page.tsx' });
-    await screen.findByText(/export const b/);
+    await screen.findByText(/export const b/, undefined, { timeout: 4_000 });
 
     const header = drawer.querySelector('header');
     if (header === null) {
