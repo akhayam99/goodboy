@@ -31,6 +31,8 @@ import { capabilityReasonOf } from '../../pullRequestCapabilityReason';
 import { distanceBehind } from '../../../../shared/lib/gitStatus';
 import type { BranchReviewCounts } from '../../branchPrimary';
 import { branchTabsOf } from '../../branchTabs';
+import { branchScopeOf } from '../../../../store/slices/session-view/branchTabOf';
+import { pullRequestKindOf } from '../../../../shared/pullRequestKind';
 import { BranchChecks } from '../BranchChecks';
 import { BranchCommits } from '../BranchCommits';
 import { BranchFiles } from '../BranchFiles';
@@ -121,9 +123,10 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   const remoteHost: PullRequestHost =
     remoteKind === 'gitlab' ? 'gitlab' : bitbucketRemote.isBitbucket ? 'bitbucket' : 'github';
   const host: PullRequestHost = activeSource?.kind ?? (pr === null ? remoteHost : identity.host);
+  const hasComments = useAppStore((s) => branchScopeOf({ state: s, sessionId }).hasComments);
   const tabs = branchTabsOf({
-    hasPullRequest: pr !== null,
-    provider: activeSource?.kind ?? 'local',
+    state: pr === null ? 'none' : pullRequestKindOf({ state: pr.state, isDraft: pr.isDraft }),
+    hasComments,
   });
   const hasPushFailure = entries.some((entry) => isPushFailure({ row: entry.row }));
   const isPushBusy =
