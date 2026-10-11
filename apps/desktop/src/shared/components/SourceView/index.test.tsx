@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { SourceView } from '.';
 
@@ -14,6 +14,20 @@ const wellOf = (container: HTMLElement): HTMLElement => {
 };
 
 describe('SourceView', () => {
+  it('scrolls to the requested line and marks it', () => {
+    const scroll = vi.fn();
+    Element.prototype.scrollIntoView = scroll;
+    const { container } = render(
+      <SourceView text={'a1\nb2\nc3'} path="allocate.txt" isWrapped={false} line={2} />,
+    );
+
+    const marked = container.querySelector('[aria-current="location"]');
+
+    expect(marked?.getAttribute('data-source-line')).toBe('2');
+    expect(container.querySelectorAll('[aria-current="location"]')).toHaveLength(1);
+    expect(scroll).toHaveBeenCalledTimes(1);
+  });
+
   it('keeps the line numbers out of the copied text', () => {
     const { container } = render(
       <SourceView text={'const a = 1;\nconst b = 2;'} path="allocate.ts" isWrapped={false} />,

@@ -18,7 +18,11 @@ export type DrawerContent =
     }
   | {
       readonly kind: 'explore-file';
-      readonly payload: { readonly sessionDir: string; readonly entry: ExploreEntry };
+      readonly payload: {
+        readonly sessionDir: string;
+        readonly entry: ExploreEntry;
+        readonly line?: number;
+      };
     }
   | {
       readonly kind: 'artifact';

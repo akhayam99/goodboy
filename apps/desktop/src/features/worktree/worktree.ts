@@ -912,3 +912,27 @@ export const worktreeFileSides = async ({
   });
   return { old: sides.old, new: sides.new, isTooLarge: sides.too_large };
 };
+
+export type GrepMatch = {
+  readonly path: string;
+  readonly line: number;
+  readonly column: number;
+  readonly text: string;
+};
+
+export type GrepResult = {
+  readonly matches: ReadonlyArray<GrepMatch>;
+  readonly isTruncated: boolean;
+};
+
+type RawGrepResult = Pick<GrepResult, 'matches'> & Readonly<Record<'truncated', boolean>>;
+
+type WorktreeGrepWordParams = { readonly worktreePath: string; readonly word: string };
+
+export const worktreeGrepWord = async ({
+  worktreePath,
+  word,
+}: WorktreeGrepWordParams): Promise<GrepResult> => {
+  const result = await invokeCommand<RawGrepResult>('worktree_grep_word', { worktreePath, word });
+  return { matches: result.matches, isTruncated: result.truncated };
+};

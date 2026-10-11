@@ -31,7 +31,11 @@ export const LineGutter = ({
     'relative select-none px-2 text-right font-mono text-meta tabular-nums leading-5 text-faint-foreground';
   if (lineNumber === null || !canComment) {
     return (
-      <div role="gridcell" className={cn(base, className)}>
+      <div
+        role="gridcell"
+        data-line={lineNumber === null ? undefined : `${side}:${lineNumber}`}
+        className={cn(base, className)}
+      >
         {lineNumber ?? ''}
       </div>
     );
@@ -44,7 +48,7 @@ export const LineGutter = ({
     onPress(side, lineNumber, event.shiftKey);
   };
   return (
-    <div role="gridcell" className={cn('relative', className)}>
+    <div role="gridcell" data-line={`${side}:${lineNumber}`} className={cn('relative', className)}>
       <button
         type="button"
         aria-label={`Comment on ${side} line ${lineNumber}`}

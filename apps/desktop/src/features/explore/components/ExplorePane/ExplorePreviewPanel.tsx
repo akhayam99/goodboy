@@ -16,6 +16,7 @@ type Props = {
   readonly previewKind: ExplorePreviewKind;
   readonly view: ExplorePreviewView;
   readonly isWrapped: boolean;
+  readonly line?: number;
 };
 
 type SvgParams = {
@@ -33,6 +34,7 @@ export const ExplorePreviewPanel = ({
   previewKind,
   view,
   isWrapped,
+  line,
 }: Props) => {
   const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false);
 
@@ -99,7 +101,7 @@ export const ExplorePreviewPanel = ({
           {isTruncated ? (
             <p className="px-4 pb-2 text-label text-muted-foreground">{TRUNCATED_LINE}</p>
           ) : null}
-          <SourceView text={content.text} path={entry.name} isWrapped={isWrapped} />
+          <SourceView text={content.text} path={entry.name} isWrapped={isWrapped} line={line} />
         </>
       );
     }
