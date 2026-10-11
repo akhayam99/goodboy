@@ -40,7 +40,7 @@ type ActivityKeyParams = {
   readonly lastTurnBySession: LastTurnBySession;
 };
 
-export const activityKeyOf = ({ session, lastTurnBySession }: ActivityKeyParams): string => {
+const activityKeyOf = ({ session, lastTurnBySession }: ActivityKeyParams): string => {
   const lastTurn = lastTurnBySession[session.id];
   return lastTurn !== undefined && lastTurn > session.updatedAt ? lastTurn : session.updatedAt;
 };
