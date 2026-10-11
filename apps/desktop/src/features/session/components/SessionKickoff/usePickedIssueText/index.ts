@@ -12,8 +12,8 @@ type Text = {
 };
 
 type Params = {
-  readonly candidate: IssueCandidate;
-  readonly source: IssueBriefSource;
+  readonly candidates: ReadonlyArray<IssueCandidate>;
+  readonly sources: ReadonlyArray<IssueBriefSource>;
   readonly entry: IssueBriefEntry | null;
 };
 
@@ -29,11 +29,22 @@ type Result = Text & {
 const isSame = (left: Text, right: Text): boolean =>
   left.title === right.title && left.goal === right.goal;
 
-export const usePickedIssueText = ({ candidate, source, entry }: Params): Result => {
-  const verbatim: Text = { title: candidate.title, goal: candidate.goal.trim() };
+export const usePickedIssueText = ({ candidates, sources, entry }: Params): Result => {
+  const [first] = candidates;
+  const [firstSource, ...otherSources] = sources;
+  const verbatim: Text = {
+    title: first?.title ?? '',
+    goal: candidates
+      .map((candidate) => candidate.goal.trim())
+      .filter((goal) => goal !== '')
+      .join('\n\n'),
+  };
   const brief: Text | null =
-    entry?.status === 'ready'
-      ? { title: entry.brief.title, goal: briefGoalText({ brief: entry.brief, source }) }
+    entry?.status === 'ready' && firstSource !== undefined
+      ? {
+          title: entry.brief.title,
+          goal: briefGoalText({ brief: entry.brief, source: firstSource, more: otherSources }),
+        }
       : null;
   const [text, setText] = useState<Text>(verbatim);
   const seeded = useRef<Text>(verbatim);

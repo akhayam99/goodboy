@@ -138,8 +138,8 @@ const seedKickoff = (): void => {
       [WORKSPACE_ID]: {
         ...EMPTY_SESSION_DRAFT,
         choice: 'task',
-        issueKey: `${PICKED.provider}:${PICKED.externalId}`,
-        pickedIssue: PICKED,
+        pickedIssues: [PICKED],
+        hasPickedStep: true,
       },
     },
     openSessionDraftWorkspaceId: WORKSPACE_ID,

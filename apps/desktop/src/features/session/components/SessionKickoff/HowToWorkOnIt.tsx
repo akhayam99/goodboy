@@ -10,6 +10,7 @@ import type {
   SessionDraftThen,
 } from '../../../../store/slices/sessionDraft/startSessionFromDraft';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { draftIssueKey } from '../../../../store/slices/sessionDraft/draftIssueKey';
 import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates';
 import { LaunchMountRow } from '../../../integrations/components/LaunchSessionPanel/LaunchMountRow';
 import { useLaunchMount } from '../../../inbox/useLaunchMount';
@@ -21,11 +22,12 @@ import {
   type BuilderKickoff,
 } from '../../../workflows/components/WorkflowBuilderView';
 import { KICKOFF_GOAL_PLACEHOLDER } from './WorkflowStart';
+import { CrossProjectNote } from './CrossProjectNote';
 import { StartFooter } from './StartFooter';
 import { useDraftStart } from './useDraftStart';
 import { useStartFromDraft } from './useStartFromDraft';
 import { NAMES } from '../../../../shared/names';
-import { startFromLabel } from '../../../../shared/lib/startCopy';
+import { startFromIssuesLabel, willCloseLine } from '../../../../shared/lib/startCopy';
 import { useWorkspaceKindRouting } from '../../../../shared/hooks/useWorkspaceKindRouting';
 import { PromptField } from '../../../../shared/components/PromptField';
 import { usePromptFiles } from '../../../../shared/hooks/usePromptFiles';
@@ -40,13 +42,15 @@ const HOW_OPTIONS: ReadonlyArray<SegmentedTabOption<How>> = [
 
 type Props = {
   readonly workspaceId: WorkspaceId;
-  readonly candidate: IssueCandidate;
+  readonly candidates: ReadonlyArray<IssueCandidate>;
   readonly title: string;
   readonly goal: string;
   readonly onGoalChange: (goal: string) => void;
 };
 
-export const HowToWorkOnIt = ({ workspaceId, candidate, title, goal, onGoalChange }: Props) => {
+export const HowToWorkOnIt = ({ workspaceId, candidates, title, goal, onGoalChange }: Props) => {
+  const first = candidates[0];
+  const identifiers = candidates.map((candidate) => candidate.identifier);
   const [how, setHow] = useState<How>('workflow');
   const text = goal;
   const setText = onGoalChange;
@@ -55,15 +59,15 @@ export const HowToWorkOnIt = ({ workspaceId, candidate, title, goal, onGoalChang
   const [pickedProjectId, setPickedProjectId] = useState<ProjectId | null | undefined>(undefined);
   const loadPhaseTemplates = useAppStore((state) => state.loadPhaseTemplates);
   const startSessionFromDraft = useStartFromDraft();
-  const startLabel = startFromLabel({ identifier: candidate.identifier });
+  const startLabel = startFromIssuesLabel({ identifiers });
+  const closeLine = willCloseLine({ identifiers });
   const { start: startAgent, isStarting, error } = useDraftStart({ workspaceId });
   const mount = useLaunchMount({
     workspaceId,
-    source: {
-      provider: candidate.provider,
-      url: candidate.url,
-      sentryProject: candidate.sentryProject ?? null,
-    },
+    source:
+      first === undefined
+        ? null
+        : { provider: first.provider, url: first.url, sentryProject: first.sentryProject ?? null },
   });
 
   useEffect(() => {
@@ -100,8 +104,8 @@ export const HowToWorkOnIt = ({ workspaceId, candidate, title, goal, onGoalChang
 
   const taskStart = (then: SessionDraftThen): SessionDraftStart => ({
     kind: 'task',
-    candidate,
-    title: title.trim() === '' ? candidate.title : title,
+    candidates,
+    title: title.trim() === '' ? (first?.title ?? '') : title,
     goal: trimmed,
     then,
     ...(draftMount !== null && { mount: draftMount }),
@@ -148,6 +152,14 @@ export const HowToWorkOnIt = ({ workspaceId, candidate, title, goal, onGoalChang
             onChange={setPickedProjectId}
           />
         )}
+        {candidates.slice(1).map((candidate) => (
+          <CrossProjectNote
+            key={draftIssueKey({ candidate })}
+            workspaceId={workspaceId}
+            candidate={candidate}
+            projectId={projectId}
+          />
+        ))}
         <SegmentedTabs
           size="sm"
           ariaLabel="How to work on it"
@@ -199,6 +211,9 @@ export const HowToWorkOnIt = ({ workspaceId, candidate, title, goal, onGoalChang
             </Button>
           </StartFooter>
         </div>
+      )}
+      {closeLine === null ? null : (
+        <p className="text-right text-meta text-faint-foreground">{closeLine}</p>
       )}
     </div>
   );
