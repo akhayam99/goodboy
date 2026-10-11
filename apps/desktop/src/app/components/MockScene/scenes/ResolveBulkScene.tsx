@@ -1,8 +1,18 @@
 import { useEffect, useState } from 'react';
+import { AppShell } from '@goodboy/ui';
+import { DrawerHost } from '../../DrawerHost';
+import { shellArrangement } from '../../../shellArrangement';
+import { openFixComments } from '../../../../store/slices/resolve/openFixComments';
 import { BranchPage } from '../../../../features/branch/components/BranchPage';
 import { useAppStore } from '../../../../store';
 import { SESSION } from './resolveSeed';
 import { BULK_LAUNCH_THREAD_IDS, seedBulkScene, type BulkStage } from './bulkSeed';
+
+const arrangement = shellArrangement({
+  hasWorkspace: true,
+  hasActiveSession: true,
+  isSidebarCollapsed: false,
+});
 
 const ANSWERS_BUTTON = /^Use the recommended answers/;
 const OPEN_ATTEMPTS = 20;
@@ -26,9 +36,12 @@ export const ResolveBulkScene = ({ stage }: { readonly stage: BulkStage }) => {
   useEffect(() => {
     seedBulkScene({ stage });
     if (stage === 'launch') {
-      const state = useAppStore.getState();
-      state.setReviewSelection({ sessionId: SESSION.id, threadIds: BULK_LAUNCH_THREAD_IDS });
-      state.requestReviewLaunch({ sessionId: SESSION.id, threadIds: BULK_LAUNCH_THREAD_IDS });
+      openFixComments({
+        openDrawer: useAppStore.getState().openDrawer,
+        sessionId: SESSION.id,
+        mountId: null,
+        threadIds: BULK_LAUNCH_THREAD_IDS,
+      });
     }
     setIsReady(true);
     if (stage === 'answers') {
@@ -38,6 +51,21 @@ export const ResolveBulkScene = ({ stage }: { readonly stage: BulkStage }) => {
 
   if (!isReady) {
     return null;
+  }
+
+  if (stage === 'launch') {
+    return (
+      <div className="[&>div]:w-full" style={{ width: 1440 }}>
+        <AppShell
+          leftHidden={arrangement.leftHidden}
+          leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
+          leftSidebar={<div aria-hidden />}
+          main={<BranchPage session={SESSION} workingDir={null} />}
+          drawer={<DrawerHost />}
+          drawerSizing="side"
+        />
+      </div>
+    );
   }
 
   return (

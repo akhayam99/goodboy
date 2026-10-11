@@ -441,8 +441,8 @@ pushed yet` when origin has no copy, and `Branch diverged from origin`
   resolver replaced it in E7-5, restored here.
 - The resolve-threads card ("Fix N") never starts an agent: it
   sends a `fix` request (`requestReview`) with the fixable comments and opens
-  the launch panel on the Comments tab, pre-filled. The board card "Fix N"
-  does the same. N and the comments come from the fixable part of `reviewTally`
+  the **Fix comments** drawer on the Comments tab, with those comments checked.
+  The board card "Fix N" does the same. N and the comments come from the fixable part of `reviewTally`
   (`useFixableThreadIds`) for the selected review source, so a GitLab or Bitbucket
   pull request counts like a GitHub one.
 
@@ -906,7 +906,7 @@ Each comment has four verbs, with single keys while the list has focus:
 `Accept` (A), `Edit` (E, `Answer` when the agent asked, `Redraft with the new
 comment` when the reviewer changed it, `Add a hint` when the run failed), `Reply only` (R, drops the change and sends a reply; `Reply`, which opens the text box, where there is no change to drop) and `Skip` (S), plus `Undo` (U, `Undo skip` on a skipped
 comment) until the push and `Fix` (F) on a comment nobody started, which opens
-the launch panel. They sit in the bar at the bottom of the thread (`ReviewActionBar`). `Retry push` shows on a comment whose push failed. J and K move. A checkbox appears on hover on the comments you
+the Fix comments drawer. They sit in the bar at the bottom of the thread (`ReviewActionBar`). `Retry push` shows on a comment whose push failed. J and K move. A checkbox appears on hover on the comments you
 can fix (open, or couldn't fix) and on comments to review (X toggles the focused
 row, Cmd+A picks every fixable one, Esc clears): the bar `3 selected · Fix 3`
 opens the panel for the fixable pick and `Accept 3` accepts the pick to review, and
@@ -969,16 +969,24 @@ with a local commit and never pushes.
   needs you is answered, never relaunched, and a failed push is retried from
   the push. The header has no separate fix button: a batch is
   born from the comments you pick. Opening Review never starts an agent.
-  `Fix` opens the **launch panel** in the right column of the Comments tab, in
-  place of the thread (never above the columns, never a dialog): the page does
-  not move and the comment you had open stays selected. It is bound to the
-  selection: the included comments are checked rows (uncheck one to drop it,
-  check another in the list to add it), `Runs on <model> · <effort> · Change`
-  (the shared picker with every connected provider and a **Suggested** row), an
-  optional note that lands in Operator notes (no autofocus), and `Start fixing
-N` on Cmd+Enter (Esc closes, Cancel too). The commit style has no control in
-  the panel: it comes from the settings or the last batch. Clicking another
-  comment closes the panel. The palette and the object menu do not raise a
+  `Fix` opens the **Fix comments** drawer (kind `fix-comments`, side tier, never
+  a dialog; `openFixComments`): the page does not move and the comment you had
+  open stays selected. The drawer lists every open comment, host threads and
+  local notes together, grouped by file, each with a check, the `Note` or
+  `On GitHub` chip, the author and `file:line`; `All`, `Notes` and `On GitHub`
+  filter and `Select all` checks the shown ones. The comments that opened it
+  start checked. The header model chip opens the shared picker for the resolver
+  role (every connected provider and a **Suggested** row). Two actions sit at the
+  end of the list: `Analyze only`, a resolver run in `propose` mode that edits
+  nothing on the branch and keeps its changes as proposals, and `Start fix for
+N`, the `apply` mode of today. The choice is `ResolveLaunchChoice.mode`
+  (`apply` when absent, so older batches and callers are unchanged); the
+  candidate is captured as a proposal in `recordResolveAttempt` when the batch
+  says `propose`. Activity shows each launch as a chain row: the resolver is
+  named `Fix comments · N comments`, and a later launch on a comment of an
+  earlier batch is spawned with `parentAgentId` of that resolver so it nests under
+  it. The commit style has no control in the drawer: it comes from the settings
+  or the last batch. Clicking another comment leaves the drawer open.
   window event: `requestReview` with a `fix` request writes a pending launch
   request into the `review-launch` slice (`reviewLaunchRequests`) and the
   Comments tab consumes it when it mounts, so a request raised from another
@@ -1524,7 +1532,7 @@ before a change adds a word.
 
 - **Fix**: start fixing comments. The count is the comments a fix can start now
   (`Fix 3`), the same on the Board card, in Next steps, on the Branch bar and as
-  the launch panel title. The panel's own button, **Start fixing 3**, stays.
+  the **Fix comments** button (**Fix comments 3**). The drawer's own button, **Start fix for 3**, stays.
 - **Reply**: answer a thread yourself. **Reply only** drops the code change and
   keeps the reply. **Publish reply** sends a decided reply that did not go out.
   **Resolve** ends a thread without a reply (a note says **Close**).
