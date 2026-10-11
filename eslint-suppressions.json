@@ -11607,11 +11607,6 @@
       "count": 5
     }
   },
-  "apps/desktop/src/store/slices/session-view/workSurface.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/store/slices/session-view/workSurfaceFocus.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2

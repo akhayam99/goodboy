@@ -95,7 +95,6 @@ export const SESSION_EVICTION = [
   { key: 'discoveredScriptScans', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionPanelExpanded', keyedBy: 'session', evictOn: 'archive' },
   { key: 'activeLens', keyedBy: 'session', evictOn: 'archive' },
-  { key: 'workflowExpand', keyedBy: 'session', evictOn: 'archive' },
   { key: 'exploreExpanded', keyedBy: 'session', evictOn: 'archive' },
   { key: 'exploreMountPath', keyedBy: 'session', evictOn: 'archive' },
   { key: 'focusedWorkflowRunId', keyedBy: 'session', evictOn: 'archive' },

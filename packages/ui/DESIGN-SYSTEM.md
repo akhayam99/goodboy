@@ -1149,7 +1149,7 @@ Impact`): there is no Impact icon and no theme toggle in the bar. The command
 centre says `Search` with its chord as bare text; the workspace name lives in its
 tooltip. The Limits overflow chip prints a word, `+2 providers`, never a bare
 number. The trail keeps the first crumb's word until every other ancestor has
-shrunk to an icon and folded (`compactTrail`). The bell's count badge sits 2px
+shrunk to an icon and folded (`compactTrail`). `Trail` has no lead slot: nothing sits before the first segment, and no crumb carries a back glyph. The bell's count badge sits 2px
 inside the bell's box. The session trail band keeps its 24 controls, and trail,
 rail and tree-row buttons are 24.
 
