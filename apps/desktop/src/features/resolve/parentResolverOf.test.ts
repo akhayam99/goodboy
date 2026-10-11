@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { Agent, ResolveAttempt } from '@goodboy/types';
-import { agentIdOf, isoDateTimeOf, sessionIdOf } from '../../shared/lib/brandedIds';
+import { agentIdOf } from '../../shared/lib/brandedIds';
+import { sceneClock } from '../../app/components/MockScene/sceneClock';
+import { SESSION_ID } from '../../app/components/MockScene/scenes/resolveSeed';
 import { parentResolverOf } from './parentResolverOf';
 
-const SESSION_ID = sessionIdOf({ value: 'session-1' });
+const clock = sceneClock({ anchor: '2026-10-10T09:40:00.000Z' });
 
 const agentOf = ({
   id,
@@ -17,7 +19,7 @@ const agentOf = ({
   ordinal: 0,
   name: 'Fix comments · 1 comment',
   status: 'completed',
-  ...(isDeleted && { deletedAt: isoDateTimeOf({ value: '2026-10-10T09:00:00.000Z' }) }),
+  ...(isDeleted && { deletedAt: clock.iso({ at: '2026-10-10T09:00:00.000Z' }) }),
 });
 
 const attemptOf = ({
