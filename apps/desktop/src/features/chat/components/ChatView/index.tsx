@@ -63,6 +63,8 @@ type Props = {
   readonly agentId?: AgentId | null;
   readonly topInset?: 'roomy' | 'tight';
   readonly hasComposer?: boolean;
+  readonly composerPlaceholder?: string;
+  readonly composerNotice?: ReactNode;
 };
 
 type RetrySource = {
@@ -120,6 +122,8 @@ export const ChatView = ({
   agentId,
   topInset = 'roomy',
   hasComposer = true,
+  composerPlaceholder,
+  composerNotice,
 }: Props) => {
   const storedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null) as AgentId | null;
   const selectedAgentId = agentId === undefined ? storedAgentId : agentId;
@@ -603,7 +607,11 @@ export const ChatView = ({
       {hasComposer && !isEnded && selectedAgentId != null ? (
         <WorkflowAdvanceRow session={session} />
       ) : null}
-      {!hasComposer ? null : isEnded ? (
+      {!hasComposer ? (
+        composerNotice === undefined ? null : (
+          <PageColumn className="py-3">{composerNotice}</PageColumn>
+        )
+      ) : isEnded ? (
         <>
           <Divider />
           <PageColumn className="py-3 text-label text-muted-foreground">
@@ -615,6 +623,7 @@ export const ChatView = ({
           key={session.id}
           session={session}
           providerDisconnected={isProviderDisconnected}
+          placeholderOverride={composerPlaceholder}
         />
       ) : null}
     </div>

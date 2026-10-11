@@ -17,6 +17,8 @@ const state = vi.hoisted(() => ({
   },
   sessionOpenQuestions: {} as Record<string, ReadonlyArray<{ createdByAgentId?: string }>>,
   sessionResolveAttempts: {} as Record<string, ReadonlyArray<unknown>>,
+  historyRewriters: {},
+  historyRuns: {},
 }));
 
 const executedRouting = vi.hoisted(() => ({

@@ -23,6 +23,8 @@ import { AgentHeaderTime } from './AgentHeaderTime';
 import { AgentTitle } from './AgentTitle';
 import { AgentNextAction } from './AgentNextAction';
 import { AgentStoppedNotice } from './AgentStoppedNotice';
+import { RewriterFinishedNotice } from './RewriterFinishedNotice';
+import { useRewriterComposer } from '../../hooks/useRewriterComposer';
 
 type Props = {
   readonly session: Session;
@@ -31,6 +33,8 @@ type Props = {
   readonly onBack: () => void;
   readonly context?: ReactNode;
 };
+
+const REWRITER_PLACEHOLDER = 'Tell History rewriter what to do next';
 
 const TABS = [
   { value: 'brief', label: 'Brief' },
@@ -47,6 +51,12 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
   const status = effectiveAgentStatus({ agent, turnState });
   const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
   const kind = classifyAgent({ agent, override: kindOverride });
+  const rewriter = useRewriterComposer({
+    sessionId: session.id,
+    agentId: agent.id,
+    isRewriter: kind === 'rewriter',
+  });
+  const isRewriterFinished = rewriter !== null && !rewriter.isLive;
   const requestedPane = useAppStore((state) => state.agentPane?.[session.id] ?? null);
   const rememberedTab = useAppStore((state) => state.agentTab[agent.id] ?? null);
   const setAgentTab = useAppStore((state) => state.setAgentTab);
@@ -169,7 +179,18 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
       }
     >
       {isTranscript ? (
-        <ChatView session={session} isActive={isChatActive} topInset="tight" />
+        <ChatView
+          session={session}
+          isActive={isChatActive}
+          topInset="tight"
+          hasComposer={!isRewriterFinished}
+          composerPlaceholder={rewriter?.isLive === true ? REWRITER_PLACEHOLDER : undefined}
+          composerNotice={
+            isRewriterFinished ? (
+              <RewriterFinishedNotice sessionId={session.id} worktreePath={rewriter.worktreePath} />
+            ) : undefined
+          }
+        />
       ) : (
         <>
           {lead}

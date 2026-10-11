@@ -23,7 +23,6 @@ export type RebaseJobControls = {
   readonly agentId: AgentId | null;
   readonly canUndo: boolean;
   readonly dismiss: () => void;
-  readonly refresh: () => void;
   readonly undo: () => void;
   readonly checkAgain: () => void;
   readonly openTerminal: () => void;
@@ -70,7 +69,6 @@ export const useRebaseJob = ({ sessionId, worktreePath }: Params): RebaseJobCont
     agentId,
     canUndo: run.backupRef !== null,
     dismiss: flow.dismiss,
-    refresh: flow.refresh,
     undo: () => flow.restoreApplied(run),
     checkAgain: () => void refreshWorktreeStatuses({ worktreePaths: [worktreePath] }),
     openTerminal: () => openMountTerminal(sessionId, worktreePath),
