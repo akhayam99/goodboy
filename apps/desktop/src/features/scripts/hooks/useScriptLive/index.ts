@@ -67,7 +67,7 @@ export const useScriptLive = ({ runs }: Params): ScriptLive => {
       })
       .catch((error: unknown) => {
         if (isCurrent) {
-          reportError({ title: "Couldn't read the running scripts", error });
+          void reportError({ title: "Couldn't read the running scripts", error });
         }
       });
     return () => {

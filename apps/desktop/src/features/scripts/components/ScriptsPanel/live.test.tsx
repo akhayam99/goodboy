@@ -15,7 +15,6 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { insertProject, insertWorkspace } from '@goodboy/db';
 import type { MonitorSnapshot } from '@goodboy/core';
 import type {
-  IsoDateTime,
   MountId,
   Project,
   SessionId,
@@ -23,7 +22,7 @@ import type {
   SessionProjectMount,
   Workspace,
 } from '@goodboy/types';
-import { aProject, aSession, aWorkspace } from '@goodboy/types/testing';
+import { TEST_NOW, aProject, aSession, aWorkspace } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -38,6 +37,19 @@ import { scriptPinId } from '../../scriptPinId';
 import { scriptPinsKey } from '../../scriptPinsKey';
 import { discoveredScriptId, type ScriptRunRecord } from '../../scripts';
 import { ScriptsPanel } from './index';
+
+type MountIdParams = {
+  readonly value: string;
+};
+
+const isMountId = (value: string): value is MountId => value.startsWith('mount-');
+
+const mountIdOf = ({ value }: MountIdParams): MountId => {
+  if (!isMountId(value)) {
+    throw new Error(`Not a mount id: ${value}`);
+  }
+  return value;
+};
 
 let useAppStore: StoryStore;
 
@@ -66,7 +78,7 @@ const mountOf = ({
   readonly worktreePath: string;
   readonly branch: string;
 }): SessionProjectMount => ({
-  mountId: `mount-${sessionId}` as MountId,
+  mountId: mountIdOf({ value: `mount-${sessionId}` }),
   sessionId,
   projectId: PAYMENTS.id,
   mountName: PAYMENTS.name,
@@ -85,8 +97,8 @@ const viewOf = ({ mount }: { readonly mount: SessionProjectMount }): SessionMoun
   ...mount,
   id: mount.mountId,
   repoSlug: null,
-  createdAt: '2026-10-11T09:00:00.000Z' as IsoDateTime,
-  updatedAt: '2026-10-11T09:00:00.000Z' as IsoDateTime,
+  createdAt: TEST_NOW,
+  updatedAt: TEST_NOW,
 });
 
 const SCRIPTS = [
@@ -164,7 +176,7 @@ const RUNNING_DEV: ScriptRunRecord = {
   result: null,
   runId: 'run-dev',
   startedAt: NOW - 72_000,
-  mountId: `mount-${FIRST.id}` as MountId,
+  mountId: mountIdOf({ value: `mount-${FIRST.id}` }),
   output: 'vite ready in 312 ms\nlistening on 5005\n',
 };
 

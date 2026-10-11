@@ -71,7 +71,7 @@ describe('isService', () => {
     ['lint', 'lint', false],
     ['db:migrate', 'db', false],
     ['replay', 'other', false],
-  ] as const)('reads %s (%s) as service: %s', (name, category, expected) => {
-    expect(isService({ script: { name, category } })).toBe(expected);
+  ] as const)('reads %s (%s) as service: %s', (name, category, isExpected) => {
+    expect(isService({ script: { name, category } })).toBe(isExpected);
   });
 });

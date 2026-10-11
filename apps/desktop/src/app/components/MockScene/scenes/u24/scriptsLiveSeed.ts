@@ -1,13 +1,12 @@
 import type { MonitorSnapshot } from '@goodboy/core';
+import { aProject, aSession, aWorkspace } from '@goodboy/types/testing';
 import type {
   MountId,
   Project,
-  ProjectId,
   Session,
   SessionId,
   SessionMountView,
   SessionProjectMount,
-  WorkspaceId,
 } from '@goodboy/types';
 import { parseScriptPins } from '../../../../../features/scripts/parseScriptPins';
 import { scriptPinId } from '../../../../../features/scripts/scriptPinId';
@@ -55,12 +54,25 @@ type TickParams = {
   readonly tick: number;
 };
 
-export const SCRIPTS_LIVE_WORKSPACE_ID = 'mock-sl-workspace' as WorkspaceId;
-export const SCRIPTS_LIVE_SESSION_ID = 'mock-sl-session' as SessionId;
-const OTHER_SESSION_ID = 'mock-sl-session-other' as SessionId;
-const PROJECT_ID = 'mock-sl-project-payments' as ProjectId;
-const MOUNT_ID = 'mock-sl-mount' as MountId;
-const OTHER_MOUNT_ID = 'mock-sl-mount-other' as MountId;
+type MountIdParams = {
+  readonly value: string;
+};
+
+const isMountId = (value: string): value is MountId => value.startsWith('mock-');
+
+const mountIdOf = ({ value }: MountIdParams): MountId => {
+  if (!isMountId(value)) {
+    throw new Error(`Not a mock mount id: ${value}`);
+  }
+  return value;
+};
+
+export const SCRIPTS_LIVE_WORKSPACE_ID = aWorkspace({ name: 'Harborline' }).id;
+export const SCRIPTS_LIVE_SESSION_ID = aSession().id;
+const OTHER_SESSION_ID = aSession().id;
+const PROJECT_ID = aProject().id;
+const MOUNT_ID = mountIdOf({ value: 'mock-sl-mount' });
+const OTHER_MOUNT_ID = mountIdOf({ value: 'mock-sl-mount-other' });
 
 const WORKTREE = '/mock/harborline/payments-api-settlement';
 const OTHER_WORKTREE = '/mock/harborline/payments-api-rounding';
