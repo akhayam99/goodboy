@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { ChevronRight } from './icons';
 import { Chip, StateBadge } from './kit';
 import { MockStage } from './MockStage';
+import { DiffReviewRail } from './DiffReviewRail';
 import { DiffReviewTree } from './DiffReviewTree';
 import { MockWindow } from './MockWindow';
 
@@ -83,25 +84,19 @@ const LINES: readonly Line[] = [
 
 const SIGN: Record<LineKind, string> = { context: ' ', del: '-', add: '+' };
 
-const TABS = ['Pull request', 'Comments', 'Files', 'Commits', 'Checks'] as const;
-
 const BLOCKS: readonly ('add' | 'del')[] = ['add', 'add', 'add', 'del', 'del'];
 
 export const DiffReviewMock = ({ className }: Props) => (
   <MockStage
-    label="The Branch page for a payments-api branch, with the tabs Pull request, Comments, Files, Commits and Checks. The Files tab shows a tree of the changed files with a reading progress, and a line changed to dedupe on the event id, with an open note under it."
+    label="The Branch page for a payments-api branch, with a rail of the sections Overview, Comments, Files, Commits and Checks. The Files section shows a tree of the changed files with a reading progress, and a line changed to dedupe on the event id, with an open note under it."
     className={className}
   >
     <MockWindow className="dfrWin">
-      <div className="dfrTabs" role="presentation">
-        {TABS.map((tab) => (
-          <span key={tab} className="dfrTab" data-active={tab === 'Files' ? 'true' : undefined}>
-            {tab}
-          </span>
-        ))}
-      </div>
       <div className="dfrBody">
-        <DiffReviewTree />
+        <div className="dfrSide">
+          <DiffReviewRail />
+          <DiffReviewTree />
+        </div>
         <div className="dfrMain">
           <div className="dfrFile">
             <ChevronRight size={14} className="dfrOpen" />

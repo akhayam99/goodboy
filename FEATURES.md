@@ -26,6 +26,7 @@ Begin from an issue, a workflow or a question, in one draft that turns into a se
 - Review a pull request
 - Run a workflow
 - Ask an agent
+- Start one session from several issues
 
 [More on starting a task](docs/features/start.md)
 
@@ -84,7 +85,7 @@ Keep your repos together, and let sessions work across them.
 
 ## Commits and history
 
-The Commits tab of the Branch page shapes a branch before it goes to review: fold, move, reword and drop commits, see what would conflict, and apply with a backup one click away.
+The Commits section of the Branch page shapes a branch before it goes to review: fold, move, reword and drop commits, see what would conflict, and apply with a backup one click away.
 
 - Shape the history
 - Safe apply
@@ -235,7 +236,7 @@ The best support is running Goodboy on the work you already have. When something
 
 ## Keyboard and terminal
 
-Open a real login shell in the session's worktree. **⌘⌥T** opens the Terminal view, **⌘T** adds a tab, and the shell is still there after a reload. **⌘F** finds in its scrollback.
+Open a real login shell in the workspace folder or in any worktree. **⌃`** opens the Terminal studio with every terminal of the workspace, **⌘T** adds one, and the shells and their output are still there after a reload. **⌘F** finds in its scrollback.
 
 - Terminal
 - Keyboard shortcuts, back and forward
