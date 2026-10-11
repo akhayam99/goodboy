@@ -5924,19 +5924,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/session/components/DeleteSessionConfirm/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/session/components/DeleteSessionConfirm/index.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/session/components/RoleSelect/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
@@ -8077,11 +8064,6 @@
   },
   "apps/desktop/src/features/workspace-chat/components/ChatRoom/ChatHeaderDelete.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/workspace-chat/components/ChatRoom/ChatHeaderDelete.tsx": {
-    "@typescript-eslint/naming-convention": {
       "count": 1
     }
   },
