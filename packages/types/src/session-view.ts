@@ -9,9 +9,10 @@ export type SessionViewPrefs = Readonly<{
   group: SessionGroupKey;
   isArchivedShown: boolean;
   isFoldOpen: boolean;
+  statusFilter: ReadonlyArray<SessionStage>;
 }>;
 
-export type PersistedSessionViewPrefs = SessionViewPrefs & Readonly<{ v: 2 }>;
+export type PersistedSessionViewPrefs = SessionViewPrefs & Readonly<{ v: 3 }>;
 
 export type SessionStage = 'attention' | 'running' | 'review' | 'building' | 'done';
 

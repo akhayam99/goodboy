@@ -8226,11 +8226,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionViewMenu/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/workspace/components/SessionActivityBar/branchRowModels.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
@@ -11536,7 +11531,7 @@
   },
   "apps/desktop/src/store/slices/session-view/selectors.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
+      "count": 2
     }
   },
   "apps/desktop/src/store/slices/session-view/sessionCreation.ts": {
