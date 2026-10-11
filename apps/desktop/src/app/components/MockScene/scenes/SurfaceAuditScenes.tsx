@@ -37,6 +37,7 @@ import {
   seedResolveScene,
 } from './resolveSeed';
 import { sceneClock } from '../sceneClock';
+import { PageSheet } from './PageSheet';
 
 const scriptsClock = sceneClock({ anchor: '2026-09-16T11:24:00.000Z' });
 const reviewClock = sceneClock({ anchor: '2026-09-04T14:20:00.000Z' });
@@ -641,8 +642,10 @@ export const ScriptsLensScene = () => {
 
   return (
     <ToastProvider>
-      <main className="h-screen overflow-hidden bg-background p-4 text-foreground">
-        <ScriptsPanel workspaceId={SCRIPTS_WORKSPACE_ID} sessionId={SCRIPTS_SESSION_ID} />
+      <main className="flex h-screen overflow-hidden bg-background p-4 text-foreground">
+        <PageSheet>
+          <ScriptsPanel workspaceId={SCRIPTS_WORKSPACE_ID} sessionId={SCRIPTS_SESSION_ID} />
+        </PageSheet>
       </main>
     </ToastProvider>
   );

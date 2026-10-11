@@ -14,6 +14,7 @@ import { selectDrawerPanel } from '../../../../store/slices/drawer/selectDrawerP
 import { AppTopBar } from '../../AppTopBar';
 import { ShellLeft } from '../../SideColumn/ShellLeft';
 import { ToastProvider } from '../../../../shared/components/Toast';
+import { StudioBandContext } from '../../../../shared/components/StudioShell/studioBandContext';
 import { TrailBar } from '../../../../features/session/components/SessionWorkspace/parts/TrailBar';
 import { AskTrailButton } from '../../../../features/session/ask/components/AskTrailButton';
 import { useAppStore, type LensKind } from '../../../../store';
@@ -104,6 +105,7 @@ type ShellFrameProps = {
   readonly main: ReactNode;
   readonly sidebar?: 'collapsed' | 'expanded';
   readonly hasOwnTrail?: boolean;
+  readonly isTrailInDetail?: boolean;
 };
 
 export const ShellFrame = ({
@@ -111,6 +113,7 @@ export const ShellFrame = ({
   main,
   sidebar = 'collapsed',
   hasOwnTrail = false,
+  isTrailInDetail = false,
 }: ShellFrameProps) => {
   const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
   const arrangement = shellArrangement({
@@ -147,6 +150,18 @@ export const ShellFrame = ({
         main={
           hasOwnTrail ? (
             main
+          ) : isTrailInDetail ? (
+            <div className="@container flex h-full w-full min-w-0 flex-col">
+              <UnderTrailContext.Provider value>
+                <StudioBandContext.Provider
+                  value={
+                    <TrailBar session={session} end={<AskTrailButton sessionId={session.id} />} />
+                  }
+                >
+                  <div className="min-h-0 flex-1">{main}</div>
+                </StudioBandContext.Provider>
+              </UnderTrailContext.Provider>
+            </div>
           ) : (
             <div className="@container flex h-full w-full min-w-0 flex-col">
               <TrailBar session={session} end={<AskTrailButton sessionId={session.id} />} />
