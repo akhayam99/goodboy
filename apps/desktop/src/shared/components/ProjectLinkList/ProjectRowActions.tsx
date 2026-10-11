@@ -10,7 +10,7 @@ import { NAMES } from '../../names';
 type Props = {
   readonly project: Project;
   readonly busy: boolean;
-  readonly onArmUnlink: () => void;
+  readonly onUnlink: () => void;
 };
 
 const actionButtonClass = cn(
@@ -18,7 +18,7 @@ const actionButtonClass = cn(
   FOCUS_RING,
 );
 
-export const ProjectRowActions = ({ project, busy, onArmUnlink }: Props) => {
+export const ProjectRowActions = ({ project, busy, onUnlink }: Props) => {
   const reportError = useAppStore((state) => state.reportError);
   const editor = useAppStore((state) => resolveEditorBinary({ settings: state.settings }));
 
@@ -59,7 +59,7 @@ export const ProjectRowActions = ({ project, busy, onArmUnlink }: Props) => {
           disabled={busy}
           onClick={(event) => {
             event.stopPropagation();
-            onArmUnlink();
+            onUnlink();
           }}
           className={cn(actionButtonClass, 'hover:text-danger')}
         >

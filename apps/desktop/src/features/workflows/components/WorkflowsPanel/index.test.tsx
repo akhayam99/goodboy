@@ -190,6 +190,36 @@ describe('WorkflowsPanel home', () => {
   });
 });
 
+describe('WorkflowsPanel restore and discard popovers', () => {
+  it('asks in a popover before it restores the built-in workflows', async () => {
+    removed.ids = new Set(['wf_seed_refactor-example_ws-1']);
+    renderPanel();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Restore built-in workflows' }));
+
+    const dialog = screen.getByRole('dialog', {
+      name: 'Restore built-in workflows in this workspace?',
+    });
+    expect(dialog.closest('[data-dropdown-portal]')).not.toBeNull();
+    expect(state.copyWorkflowsFromWorkspaces).not.toHaveBeenCalled();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('asks in a popover before it discards a workflow that was never saved', async () => {
+    renderPanel();
+    fireEvent.click(screen.getByRole('button', { name: /new workflow/i }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Discard this workflow?' });
+    expect(dialog.closest('[data-dropdown-portal]')).not.toBeNull();
+    expect(state.deleteWorkflow).not.toHaveBeenCalled();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Discard' }));
+    expect(await screen.findByRole('button', { name: /new workflow/i })).toBeDefined();
+  });
+});
+
 describe('WorkflowsPanel editor', () => {
   it('opens a workflow in the editor and goes back with the breadcrumb', () => {
     state.phaseTemplates = { 'ws-1': [makeWorkflow({ name: 'Plan and build' })] };
@@ -250,7 +280,7 @@ describe('WorkflowsPanel editor', () => {
     expect(screen.queryByRole('button', { name: 'Workflow actions' })).toBeNull();
   });
 
-  it('asks before redrafting existing steps', async () => {
+  it('redrafts existing steps at once without a confirm', async () => {
     connectProvider();
     const original = makeWorkflow({ name: 'Plan and build', goal: 'Ship the ledger export' });
     state.phaseTemplates = { 'ws-1': [original] };
@@ -258,9 +288,8 @@ describe('WorkflowsPanel editor', () => {
     openWorkflow('Plan and build');
 
     fireEvent.click(screen.getByRole('button', { name: /Redraft steps/ }));
-    expect(state.startWorkflowGeneration).not.toHaveBeenCalled();
-    const confirm = screen.getByRole('group', { name: 'Redraft these steps from the goal?' });
-    fireEvent.click(within(confirm).getByRole('button', { name: 'Redraft steps' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Redraft these steps from the goal?' })).toBeNull();
 
     await waitFor(() => expect(state.startWorkflowGeneration).toHaveBeenCalledOnce());
     expect(state.startWorkflowGeneration.mock.calls[0]?.[0]).toMatchObject({
@@ -404,16 +433,24 @@ describe('WorkflowsPanel editor', () => {
     expect(name.value).toBe('Plan and build');
   });
 
-  it('deletes a workflow after an inline confirm', async () => {
-    state.phaseTemplates = { 'ws-1': [makeWorkflow({ name: 'Plan and build' })] };
+  it('deletes a workflow at once and offers Undo that restores it', async () => {
+    const workflow = makeWorkflow({ name: 'Plan and build' });
+    state.phaseTemplates = { 'ws-1': [workflow] };
     renderPanel();
     openWorkflow('Plan and build');
     openMenuItem('Delete');
-    const confirm = screen.getByRole('group', { name: 'Delete Plan and build?' });
-    fireEvent.click(within(confirm).getByRole('button', { name: 'Delete' }));
 
+    expect(screen.queryByRole('dialog')).toBeNull();
     await waitFor(() => expect(state.deleteWorkflow).toHaveBeenCalledWith('wf-1', 'ws-1'));
     expect(await screen.findByRole('button', { name: 'Open Plan and build' })).toBeDefined();
+    fireEvent.click(await screen.findByRole('button', { name: 'Undo' }));
+
+    await waitFor(() =>
+      expect(state.restoreWorkflowSnapshot).toHaveBeenCalledWith({
+        workspaceId: 'ws-1',
+        snapshot: workflow,
+      }),
+    );
   });
 
   it('flushes a restored draft with unsaved edits without a further edit', async () => {
@@ -719,16 +756,24 @@ describe('WorkflowsPanel saved steps', () => {
     expect(state.saveStepDef).not.toHaveBeenCalled();
   });
 
-  it('removes a saved step after an inline confirm', async () => {
+  it('removes a saved step at once and offers Undo that saves it back', async () => {
     state.stepLibrary = { 'ws-1': [savedStep()] };
     renderPanel();
     openSavedSteps();
 
     fireEvent.click(screen.getByRole('button', { name: 'Open Dry run replay' }));
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Remove step' }));
 
+    expect(screen.queryByRole('dialog')).toBeNull();
     await waitFor(() => expect(state.deleteStepDef).toHaveBeenCalledWith('lib-replay', 'ws-1'));
+    fireEvent.click(await screen.findByRole('button', { name: 'Undo' }));
+
+    await waitFor(() => expect(state.saveStepDef).toHaveBeenCalledOnce());
+    expect(state.saveStepDef.mock.calls[0]?.[0]).toMatchObject({
+      id: 'lib-replay',
+      workspaceId: 'ws-1',
+      name: 'Dry run replay',
+    });
   });
 
   it('asks for a name before it saves a new step', async () => {

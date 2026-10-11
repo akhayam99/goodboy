@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type {
   GitlabIntegrationBinding,
   IntegrationCredentialId,
@@ -191,7 +191,11 @@ describe('GitlabFormBody', () => {
     it('disconnects GitLab for the workspace once the confirm is confirmed', async () => {
       render(<GitlabFormBody workspaceId={WS_ID} />);
       fireEvent.click(await screen.findByRole('button', { name: /disconnect gitlab/i }));
-      fireEvent.click(await screen.findByRole('button', { name: /^disconnect gitlab$/i }));
+      fireEvent.click(
+        within(await screen.findByRole('dialog')).getByRole('button', {
+          name: /^disconnect gitlab$/i,
+        }),
+      );
       await waitFor(() =>
         expect(state.disconnectIntegration).toHaveBeenCalledWith({
           workspaceId: WS_ID,

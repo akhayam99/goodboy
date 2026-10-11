@@ -286,7 +286,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
         kind="plan"
         title="Speed up the payout export"
         chip={null}
-        actions={<ArtifactShellActions target={target} onArm={() => undefined} />}
+        actions={<ArtifactShellActions target={target} />}
         meta={null}
       />,
     );

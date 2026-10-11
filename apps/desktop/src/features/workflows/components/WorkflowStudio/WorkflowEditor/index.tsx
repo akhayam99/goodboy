@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { RotateCcw, Trash2 } from 'lucide-react';
-import { Button, InlineConfirm, Notice } from '@goodboy/ui';
+import { Trash2 } from 'lucide-react';
+import { Button, Notice } from '@goodboy/ui';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/core';
 import { modelOnProvider } from '../../../../providers/roleResolution';
 import type { ProviderId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
+import { AnchoredConfirm } from '../../../../../shared/components/AnchoredConfirm';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { ROLE_LABEL, classifyStep } from '../../../../session/agent-kind';
 import { BuilderTitleField } from '../../WorkflowBuilderView/parts/BuilderTitleField';
@@ -42,7 +43,7 @@ const IDENTITY_INDEX = 0;
 export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, editor }: Props) => {
   const overrides = useAppStore((state) => state.workspaceOverrides?.[workspaceId] ?? null);
   const roleModels = overrides?.roleModels ?? null;
-  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [isConfirmingDiscard, setIsConfirmingDiscard] = useState(false);
   const { form, setForm, expandedKey, setExpandedKey } = editor;
   const steps = form.steps;
   const polishDeps = useProsePolishDeps({ workspaceId, workingDir });
@@ -125,38 +126,20 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
             ? 'Write a goal first'
             : undefined
       }
-      onClick={() => {
-        if (steps.length === 0) {
-          void editor.draftSteps();
-          return;
-        }
-        editor.setIsConfirmingRedraft(true);
-      }}
+      onClick={() => void editor.draftSteps()}
     >
       <CONCEPT_ICONS.enhance size={ICON_SIZE.row} aria-hidden />
       {draftLabel}
     </Button>
   );
 
-  const banner = editor.isConfirmingRedraft ? (
-    <InlineConfirm
-      role="alert"
-      icon={<RotateCcw size={ICON_SIZE.row} aria-hidden />}
-      title="Redraft these steps from the goal?"
-      description="An agent rewrites every step. Undo from the notice that follows."
-      confirmLabel="Redraft steps"
-      onConfirm={() => void editor.draftSteps()}
-      onCancel={() => editor.setIsConfirmingRedraft(false)}
-    />
-  ) : blocked && steps.length > 0 ? (
-    <PlanDraftingBanner />
-  ) : null;
+  const banner = blocked && steps.length > 0 ? <PlanDraftingBanner /> : null;
 
   const error = editor.formError ?? editor.generationError ?? polishError ?? saveError;
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <div className="flex flex-col gap-3">
+      <div className="relative flex flex-col gap-3">
         <EditorTrail
           name={form.name}
           saveStatus={editor.saveStatus}
@@ -166,26 +149,27 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
           onBack={editor.close}
           onDuplicate={() => void editor.duplicate()}
           onUndo={editor.undoSinceOpened}
-          onDelete={() => setIsConfirmingDelete(true)}
-        />
-        {isConfirmingDelete ? (
-          <InlineConfirm
-            role="danger"
-            icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
-            title={
-              editor.isSavedWorkflow
-                ? `Delete ${form.name.trim() === '' ? 'this workflow' : form.name.trim()}?`
-                : 'Discard this workflow?'
+          onDelete={() => {
+            if (editor.isSavedWorkflow) {
+              void editor.remove();
+              return;
             }
-            description="Sessions that already ran it keep their history."
-            confirmLabel={editor.isSavedWorkflow ? 'Delete' : 'Discard'}
-            onConfirm={async () => {
-              await editor.remove();
-              setIsConfirmingDelete(false);
-            }}
-            onCancel={() => setIsConfirmingDelete(false)}
-          />
-        ) : null}
+            setIsConfirmingDiscard(true);
+          }}
+        />
+        <AnchoredConfirm
+          role="danger"
+          icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
+          title="Discard this workflow?"
+          description="Nothing is saved yet. The draft is lost."
+          confirmLabel="Discard"
+          isOpen={isConfirmingDiscard}
+          onConfirm={async () => {
+            await editor.remove();
+            setIsConfirmingDiscard(false);
+          }}
+          onCancel={() => setIsConfirmingDiscard(false)}
+        />
       </div>
       <div className="flex flex-col gap-3">
         <BuilderTitleField

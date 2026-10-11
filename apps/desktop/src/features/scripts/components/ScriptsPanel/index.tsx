@@ -655,10 +655,22 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
         secondary={<ScriptsFilterInput value={query} onChange={setQuery} />}
         button={
           activeGroup === null ? null : (
-            <Button variant="secondary" size="sm" onClick={() => openNew({ group: activeGroup })}>
-              <Plus size={ICON_SIZE.row} aria-hidden />
-              New script
-            </Button>
+            <DiscardDraftConfirm
+              isOpen={draft.hasPending}
+              onSave={draft.saveAndContinue}
+              onDiscard={draft.discardAndContinue}
+              onCancel={draft.keepEditing}
+              trigger={() => (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => openNew({ group: activeGroup })}
+                >
+                  <Plus size={ICON_SIZE.row} aria-hidden />
+                  New script
+                </Button>
+              )}
+            />
           )
         }
       />
@@ -744,13 +756,6 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
           {pageError}
         </p>
       )}
-      {draft.hasPending ? (
-        <DiscardDraftConfirm
-          onSave={draft.saveAndContinue}
-          onDiscard={draft.discardAndContinue}
-          onCancel={draft.keepEditing}
-        />
-      ) : null}
       {query.trim() !== '' && visibleGroups.length === 0 ? (
         <EmptyLine
           action={

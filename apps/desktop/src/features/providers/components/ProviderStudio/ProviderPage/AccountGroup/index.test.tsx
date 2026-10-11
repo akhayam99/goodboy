@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { useAppStore } from '../../../../../../store';
 import { INITIAL_LIFECYCLE_MAP } from '../../../../../../store/slices/providers/types';
 import { buildProviderList } from '../../../../providers';
@@ -31,7 +31,19 @@ const seedClaude = ({ version }: { readonly version: string }) => {
   });
 };
 
-const renderAccount = () => {
+type AccountParams = {
+  readonly confirm?: 'none' | 'reauth' | 'disconnect';
+  readonly onConfirmChange?: () => void;
+  readonly onConfirmReauth?: () => void;
+  readonly onDisconnect?: () => void;
+};
+
+const renderAccount = ({
+  confirm = 'none',
+  onConfirmChange = vi.fn(),
+  onConfirmReauth = vi.fn(),
+  onDisconnect = vi.fn(),
+}: AccountParams = {}) => {
   const info = useAppStore.getState().providers.find((item) => item.id === 'anthropic');
   if (info === undefined) {
     throw new Error('seed missing');
@@ -42,11 +54,11 @@ const renderAccount = () => {
       planLabel={null}
       canReauth
       autoUpdate={false}
-      confirm="none"
-      onConfirmChange={vi.fn()}
+      confirm={confirm}
+      onConfirmChange={onConfirmChange}
       onReauth={vi.fn()}
-      onConfirmReauth={vi.fn()}
-      onDisconnect={vi.fn()}
+      onConfirmReauth={onConfirmReauth}
+      onDisconnect={onDisconnect}
     />,
   );
 };
@@ -86,5 +98,35 @@ describe('AccountGroup CLI row', () => {
     ).toBeGreaterThan(0);
     expect(container.contains(notice)).toBe(true);
     expect(screen.getByRole('button', { name: 'Update Claude CLI' })).toBeDefined();
+  });
+});
+
+describe('AccountGroup sign out and sign in again', () => {
+  it('keeps the signed in row while Disconnect asks in a popover', () => {
+    const onDisconnect = vi.fn();
+    const onConfirmChange = vi.fn();
+    const { container } = renderAccount({
+      confirm: 'disconnect',
+      onDisconnect,
+      onConfirmChange,
+    });
+
+    const dialog = screen.getByRole('dialog', { name: /^Disconnect .+\?$/ });
+    expect(container.contains(dialog)).toBe(false);
+    expect(screen.getByText('Signed in')).toBeDefined();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Disconnect' }));
+
+    expect(onConfirmChange).toHaveBeenCalledWith('none');
+    expect(onDisconnect).toHaveBeenCalledOnce();
+  });
+
+  it('asks before signing in again and runs it on confirm', () => {
+    const onConfirmReauth = vi.fn();
+    renderAccount({ confirm: 'reauth', onConfirmReauth });
+
+    const dialog = screen.getByRole('dialog', { name: /^Sign in to .+ again\?$/ });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Sign in again' }));
+
+    expect(onConfirmReauth).toHaveBeenCalledOnce();
   });
 });

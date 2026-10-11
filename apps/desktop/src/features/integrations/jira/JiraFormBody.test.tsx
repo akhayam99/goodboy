@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { IntegrationCredentialId, JiraIntegrationBinding, WorkspaceId } from '@goodboy/types';
 import { chooseListboxValue } from '../../../__tests__/helpers/listbox';
 
@@ -146,7 +146,9 @@ describe('JiraFormBody', () => {
       render(<JiraFormBody workspaceId={WS_ID} />);
       fireEvent.click(screen.getByRole('button', { name: /disconnect jira/i }));
       expect(state.disconnectIntegration).not.toHaveBeenCalled();
-      fireEvent.click(screen.getByRole('button', { name: /^disconnect jira$/i }));
+      fireEvent.click(
+        within(screen.getByRole('dialog')).getByRole('button', { name: /^disconnect jira$/i }),
+      );
       await waitFor(() =>
         expect(state.disconnectIntegration).toHaveBeenCalledWith({
           workspaceId: WS_ID,

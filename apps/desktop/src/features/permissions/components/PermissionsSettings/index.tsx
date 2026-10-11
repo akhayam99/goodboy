@@ -11,6 +11,8 @@ import {
   cn,
 } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
+import { useToast } from '../../../../shared/components/Toast';
+import { undoable } from '../../../../shared/utils/undoable';
 import { usePermissionRules } from '../../hooks/usePermissionRules';
 import { DEFAULT_PERMISSION_MODE, pickerModeOf, type PickerMode } from '../../modeCopy';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -51,6 +53,7 @@ export const PermissionsSettings = ({ workspaceId, renderDefaultRow = asIs }: Pr
   );
   const setWorkspacePermissionDefault = useAppStore((s) => s.setWorkspacePermissionDefault);
   const reportError = useAppStore((s) => s.reportError);
+  const { showToast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [isSupportOpen, setIsSupportOpen] = useState(false);
   const rules = usePermissionRules({ workspaceId });
@@ -79,6 +82,11 @@ export const PermissionsSettings = ({ workspaceId, renderDefaultRow = asIs }: Pr
   const removeRule = async (rule: Parameters<typeof rules.remove>[0]) => {
     try {
       await rules.remove(rule);
+      undoable({
+        showToast,
+        message: 'Rule removed',
+        undo: () => rules.restore(rule),
+      });
     } catch (error) {
       void reportError({ title: "Couldn't remove the rule", error, workspaceId });
     }

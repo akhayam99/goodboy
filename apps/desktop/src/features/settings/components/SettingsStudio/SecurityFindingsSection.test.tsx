@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { SecurityFindingId, WorkspaceId } from '@goodboy/types';
 
 const WORKSPACE_ID = 'ws-1' as WorkspaceId;
@@ -103,7 +103,7 @@ describe('SecurityFindingsSection', () => {
     );
   });
 
-  it('dismisses a finding as not a secret through an inline confirm', async () => {
+  it('dismisses a finding as not a secret through a popover confirm', async () => {
     storeStateRef.value = {
       ...storeStateRef.value,
       openSecurityFindings: {
@@ -125,8 +125,9 @@ describe('SecurityFindingsSection', () => {
     render(<SecurityFindingsSection workspaceId={WORKSPACE_ID} />);
     await waitFor(() => expect(screen.getByText('Not a secret')).toBeDefined());
 
-    fireEvent.click(screen.getByText('Not a secret'));
-    fireEvent.click(screen.getByText('Not a secret'));
+    fireEvent.click(screen.getByRole('button', { name: 'Not a secret' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Stop flagging this value?' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Not a secret' }));
 
     await waitFor(() =>
       expect(h.dismissSecurityFinding).toHaveBeenCalledWith({

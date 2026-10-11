@@ -27,7 +27,6 @@ export const PlanCommentBar = ({ count, guard, isSending, error, onSend, approve
       data-testid="plan-comment-bar"
       className="sticky bottom-0 z-10 flex min-w-0 flex-col gap-2"
     >
-      {approve?.confirm == null ? null : <PlanApproveConfirm confirm={approve.confirm} />}
       <div className="flex min-w-0 items-center justify-between gap-3 rounded-md bg-subtle px-3 py-2">
         {hasDrafts ? (
           <div className="flex min-w-0 flex-col">
@@ -56,17 +55,22 @@ export const PlanCommentBar = ({ count, guard, isSending, error, onSend, approve
         )}
         <div className="flex shrink-0 items-center gap-2">
           {approve === null ? null : (
-            <Button
-              variant="secondary"
-              size="sm"
-              isBusy={approve.isBusy}
-              onClick={approve.press}
-              data-testid="plan-bar-approve"
-              data-filled="false"
-            >
-              <Check size={ICON_SIZE.row} aria-hidden />
-              Approve
-            </Button>
+            <PlanApproveConfirm
+              confirm={approve.confirm}
+              trigger={() => (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  isBusy={approve.isBusy}
+                  onClick={approve.press}
+                  data-testid="plan-bar-approve"
+                  data-filled="false"
+                >
+                  <Check size={ICON_SIZE.row} aria-hidden />
+                  Approve
+                </Button>
+              )}
+            />
           )}
           {hasDrafts ? (
             <Button

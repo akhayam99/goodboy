@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import { Button, FieldRow, InlineConfirm } from '@goodboy/ui';
+import { Button, ConfirmPopover, FieldRow } from '@goodboy/ui';
 import { Unplug } from 'lucide-react';
 import { useAppStore } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -51,25 +51,24 @@ export const WorkspaceDisconnectBand = ({ workspaceId, requestClose }: Props) =>
 
   return (
     <section aria-label="Disconnect workspace" className="flex flex-col gap-2">
-      {isConfirming ? (
-        <InlineConfirm
+      <FieldRow label="Disconnect this workspace" help={DISCONNECT_NOTE}>
+        <ConfirmPopover
           role="danger"
           icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
           title={disconnectTitle({ name: workspaceName ?? 'this workspace', runningCount })}
           description={DISCONNECT_NOTE}
           confirmLabel="Disconnect"
           isBusy={isDisconnecting}
+          isOpen={isConfirming}
           onConfirm={onDisconnect}
           onCancel={() => setIsConfirming(false)}
-          className="self-stretch text-left"
+          trigger={() => (
+            <Button variant="ghost-danger" size="sm" onClick={() => setIsConfirming(true)}>
+              Disconnect
+            </Button>
+          )}
         />
-      ) : (
-        <FieldRow label="Disconnect this workspace" help={DISCONNECT_NOTE}>
-          <Button variant="ghost-danger" size="sm" onClick={() => setIsConfirming(true)}>
-            Disconnect
-          </Button>
-        </FieldRow>
-      )}
+      </FieldRow>
     </section>
   );
 };
