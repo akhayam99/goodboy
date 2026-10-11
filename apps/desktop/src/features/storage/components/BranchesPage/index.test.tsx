@@ -198,7 +198,7 @@ describe('BranchesPage', () => {
     within(group).getByText('goodboy/new-spike');
   });
 
-  it('deletes a branch for good only after the inline confirmation', async () => {
+  it('deletes a branch for good only after the popover confirmation', async () => {
     const db = storySqlite();
     await insertDeletedBranch({
       db,
@@ -211,7 +211,11 @@ describe('BranchesPage', () => {
     );
     expect(invokes('branch_forget_deleted')).toHaveLength(0);
 
-    fireEvent.click(within(group).getByRole('button', { name: 'Delete permanently' }));
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Delete goodboy/fee-rounding permanently?',
+    });
+    expect(group.contains(dialog)).toBe(false);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete permanently' }));
 
     await waitFor(() => expect(invokes('branch_forget_deleted')).toHaveLength(1));
     await waitFor(async () => expect(await deletedRows()).toEqual([]));

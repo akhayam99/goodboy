@@ -3,11 +3,11 @@ import type { KeyboardEvent } from 'react';
 import { AlertTriangle, Pencil, Trash2 } from 'lucide-react';
 import {
   Button,
+  ConfirmPopover,
   EmptyState,
   FieldRow,
   FormActions,
   formatError,
-  InlineConfirm,
   Input,
   SectionHeader,
   Textarea,
@@ -266,14 +266,29 @@ const SkillRow = ({ skill, onEdit, onDelete }: SkillRowProps) => {
         </button>
         <div className="col-start-2 row-start-1 flex items-start gap-1 px-2 py-2">
           <CardActionSlot label="Skill lifecycle actions">
-            <CardAction
-              icon={Trash2}
-              label={`Delete ${skill.name}`}
-              tone="danger"
-              size="default"
-              highlighted={isDeleteArmed}
-              expanded={isDeleteArmed}
-              onClick={() => setIsDeleteArmed(true)}
+            <ConfirmPopover
+              role="danger"
+              icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
+              title={`Delete "${skill.name}"?`}
+              description="Permanently removes this skill from the workspace."
+              confirmLabel={`Delete ${skill.name}`}
+              isOpen={isDeleteArmed}
+              onConfirm={async () => {
+                await onDelete();
+                setIsDeleteArmed(false);
+              }}
+              onCancel={() => setIsDeleteArmed(false)}
+              trigger={() => (
+                <CardAction
+                  icon={Trash2}
+                  label={`Delete ${skill.name}`}
+                  tone="danger"
+                  size="default"
+                  highlighted={isDeleteArmed}
+                  expanded={isDeleteArmed}
+                  onClick={() => setIsDeleteArmed(true)}
+                />
+              )}
             />
           </CardActionSlot>
           <CardActionSlot label="Skill navigation actions">
@@ -286,22 +301,6 @@ const SkillRow = ({ skill, onEdit, onDelete }: SkillRowProps) => {
           </CardActionSlot>
         </div>
       </div>
-
-      {isDeleteArmed ? (
-        <InlineConfirm
-          role="danger"
-          icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
-          title={`Delete "${skill.name}"?`}
-          description="Permanently removes this skill from the workspace."
-          confirmLabel={`Delete ${skill.name}`}
-          autoDisarmMs={4000}
-          onConfirm={async () => {
-            await onDelete();
-            setIsDeleteArmed(false);
-          }}
-          onCancel={() => setIsDeleteArmed(false)}
-        />
-      ) : null}
     </li>
   );
 };

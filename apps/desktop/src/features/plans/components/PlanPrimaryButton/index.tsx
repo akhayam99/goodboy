@@ -3,6 +3,7 @@ import { Check, Play } from 'lucide-react';
 import { Button } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { PlanPrimaryAction } from '../../usePlanPrimaryAction';
+import { PlanApproveConfirm } from './PlanApproveConfirm';
 
 type Props = {
   readonly action: PlanPrimaryAction;
@@ -12,7 +13,7 @@ type Props = {
 const APPROVING_LABEL = 'Approving';
 
 export const PlanPrimaryButton = ({ action, isReasonShown = true }: Props) => {
-  const { primary, isBusy, isApproving, error, press } = action;
+  const { primary, isBusy, isApproving, error, press, confirm } = action;
   if (isApproving) {
     return (
       <Button
@@ -37,20 +38,25 @@ export const PlanPrimaryButton = ({ action, isReasonShown = true }: Props) => {
 
   return (
     <>
-      <Button
-        variant={primary.isSecondary ? 'secondary' : 'primary'}
-        size="sm"
-        onClick={press}
-        disabled={isDisabled}
-        isBusy={isBusy}
-        title={primary.reason ?? error ?? undefined}
-        data-testid="plan-primary"
-        data-plan-primary={primary.kind}
-        data-filled={primary.isSecondary ? 'false' : 'true'}
-      >
-        <Icon size={ICON_SIZE.row} aria-hidden />
-        {primary.label}
-      </Button>
+      <PlanApproveConfirm
+        confirm={confirm}
+        trigger={() => (
+          <Button
+            variant={primary.isSecondary ? 'secondary' : 'primary'}
+            size="sm"
+            onClick={press}
+            disabled={isDisabled}
+            isBusy={isBusy}
+            title={primary.reason ?? error ?? undefined}
+            data-testid="plan-primary"
+            data-plan-primary={primary.kind}
+            data-filled={primary.isSecondary ? 'false' : 'true'}
+          >
+            <Icon size={ICON_SIZE.row} aria-hidden />
+            {primary.label}
+          </Button>
+        )}
+      />
       {isDisabled && isReasonShown && primary.reason !== null ? (
         <span
           data-testid="plan-primary-reason"

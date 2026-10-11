@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { PlanWithCount, ProviderRunId } from '@goodboy/types';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { PLAN_FIXTURE_AT, PLAN_FIXTURE_SESSION } from '../../../../test/planFixtures';
@@ -10,6 +10,7 @@ import {
   seedPlanDrawer,
   type PlanDrawerSeed,
 } from '../../../../test/planDrawerFixtures';
+import { unsentCommentsQuestion } from '../../../plans/unsentCommentsQuestion';
 import type { ArtifactListRow as Row } from '../../artifactListRows';
 import { ArtifactListRow } from './ArtifactListRow';
 
@@ -122,5 +123,35 @@ describe('an artifact row shows one action', () => {
     renderRow({ run: 'none' });
 
     expect(screen.getByTestId('artifact-row-kind').textContent).toBe('Plan');
+  });
+});
+
+describe('an artifact row asks beside its button', () => {
+  it('opens Approve anyway as a popover outside the row and leaves the row as it was', () => {
+    renderRow({ run: 'held', drafts: [aPlanDraft()] });
+    const frame = screen.getByTestId('artifact-row-frame');
+    const childCount = frame.children.length;
+    const height = frame.getBoundingClientRect().height;
+
+    fireEvent.click(primary('Approve'));
+
+    const dialog = screen.getByRole('dialog', { name: unsentCommentsQuestion({ count: 1 }) });
+    expect(frame.contains(dialog)).toBe(false);
+    expect(dialog.closest('[data-dropdown-portal]')).not.toBeNull();
+    expect(within(dialog).getByRole('button', { name: 'Approve anyway' })).toBeDefined();
+    expect(frame.children.length).toBe(childCount);
+    expect(frame.getBoundingClientRect().height).toBe(height);
+  });
+
+  it('closes on Escape and gives focus back to the row button', async () => {
+    renderRow({ run: 'held', drafts: [aPlanDraft()] });
+    const approve = primary('Approve');
+    approve.focus();
+
+    fireEvent.click(approve);
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Cancel' }), { key: 'Escape' });
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(document.activeElement).toBe(approve);
   });
 });

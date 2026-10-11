@@ -590,24 +590,27 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
   const renderGroupBands = ({ group }: { readonly group: SessionScriptGroup }) => {
     const services = group.scripts.filter((script) => isService({ script }));
     const tasks = group.scripts.filter((script) => !isService({ script }));
+    const groupScope =
+      group.branch === '' ? group.projectName : `${group.projectName} · ${group.branch}`;
     const hasManifestScripts = (discovered?.[group.worktreePath] ?? []).some(
       (entry) => entry.scripts.length > 0,
     );
     return (
       <>
         {services.length === 0 ? null : (
-          <ScriptBand label="Services" count={services.length}>
+          <ScriptBand label="Services" scope={groupScope} count={services.length}>
             {renderScripts({ group, scripts: services, band: 'services' })}
           </ScriptBand>
         )}
         {tasks.length === 0 ? null : (
-          <ScriptBand label="Tasks" count={tasks.length}>
+          <ScriptBand label="Tasks" scope={groupScope} count={tasks.length}>
             {renderScripts({ group, scripts: tasks, band: 'tasks' })}
           </ScriptBand>
         )}
         {group.suggested.length === 0 ? null : (
           <ScriptBand
             label="Suggested"
+            scope={groupScope}
             count={group.suggested.length}
             hint="Pin the ones you run here."
             action={
@@ -653,10 +656,22 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
         secondary={<ScriptsFilterInput value={query} onChange={setQuery} />}
         button={
           activeGroup === null ? null : (
-            <Button variant="secondary" size="sm" onClick={() => openNew({ group: activeGroup })}>
-              <Plus size={ICON_SIZE.row} aria-hidden />
-              New script
-            </Button>
+            <DiscardDraftConfirm
+              isOpen={draft.hasPending}
+              onSave={draft.saveAndContinue}
+              onDiscard={draft.discardAndContinue}
+              onCancel={draft.keepEditing}
+              trigger={() => (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => openNew({ group: activeGroup })}
+                >
+                  <Plus size={ICON_SIZE.row} aria-hidden />
+                  New script
+                </Button>
+              )}
+            />
           )
         }
       />
@@ -742,13 +757,6 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
           {pageError}
         </p>
       )}
-      {draft.hasPending ? (
-        <DiscardDraftConfirm
-          onSave={draft.saveAndContinue}
-          onDiscard={draft.discardAndContinue}
-          onCancel={draft.keepEditing}
-        />
-      ) : null}
       {query.trim() !== '' && visibleGroups.length === 0 ? (
         <EmptyLine
           action={

@@ -74,6 +74,7 @@ vi.mock('./GoodboyIgnoreField', () => ({
   GoodboyIgnoreField: () => null,
 }));
 
+import { useAppStore as realStore } from '../../../../store/store';
 import { WorkspaceProjectsSection } from './WorkspaceProjectsSection';
 
 const WORKSPACE_ID = 'ws-target' as WorkspaceId;
@@ -316,7 +317,7 @@ describe('WorkspaceProjectsSection', () => {
     );
   });
 
-  it('unlinks a project from its row only after the inline confirm', async () => {
+  it('unlinks a project from its row at once and Undo links the same folder again', async () => {
     state.projects = [
       {
         id: 'proj-docs',
@@ -329,35 +330,19 @@ describe('WorkspaceProjectsSection', () => {
     render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Remove link to notify-relay' }));
-    expect(state.removeProject).not.toHaveBeenCalled();
 
-    const confirm = screen.getByRole('group', { name: 'Remove link to notify-relay?' });
-    fireEvent.click(within(confirm).getByRole('button', { name: 'Remove link' }));
-
+    expect(screen.queryByRole('dialog')).toBeNull();
     await waitFor(() =>
       expect(state.removeProject).toHaveBeenCalledWith({ projectId: 'proj-docs' }),
     );
-  });
+    await waitFor(() => expect(realStore.getState().undoStack.length).toBeGreaterThan(0));
+    await realStore.getState().undoLastOperation();
 
-  it('keeps the project when the unlink confirm is cancelled', async () => {
-    state.projects = [
-      {
-        id: 'proj-docs',
-        name: 'notify-relay',
-        rootPath: '/repos/notify-relay',
-        kind: 'folder',
-        workspaceId: WORKSPACE_ID,
-      },
-    ];
-    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Remove link to notify-relay' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-
-    await waitFor(() =>
-      expect(screen.queryByRole('group', { name: 'Remove link to notify-relay?' })).toBeNull(),
-    );
-    expect(state.removeProject).not.toHaveBeenCalled();
+    expect(state.addProject).toHaveBeenCalledWith({
+      workspaceId: WORKSPACE_ID,
+      rootPath: '/repos/notify-relay',
+      requireRepo: false,
+    });
   });
 
   it('stars a project from its row', async () => {

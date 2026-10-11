@@ -1,7 +1,6 @@
-import { useState } from 'react';
-import { Folder, FolderGit2, Unplug, X } from 'lucide-react';
+import { Folder, FolderGit2, X } from 'lucide-react';
 import type { Project } from '@goodboy/types';
-import { Chip, InlineConfirm, Tooltip } from '@goodboy/ui';
+import { Chip, Tooltip } from '@goodboy/ui';
 import { ICON_SIZE } from '../conceptIcons';
 import { NAMES } from '../../names';
 
@@ -12,7 +11,6 @@ type Props = {
 };
 
 export const ProjectLinkRow = ({ project, busy, onUnlink }: Props) => {
-  const [isConfirming, setConfirming] = useState(false);
   const isRepo = project.kind === 'repo';
   const KindIcon = isRepo ? FolderGit2 : Folder;
   return (
@@ -39,28 +37,13 @@ export const ProjectLinkRow = ({ project, busy, onUnlink }: Props) => {
             type="button"
             aria-label={`${NAMES.removeLink} to ${project.name}`}
             disabled={busy}
-            onClick={() => setConfirming(true)}
+            onClick={() => void onUnlink({ project })}
             className="rounded-md p-1 text-faint-foreground hover:bg-hover hover:text-foreground"
           >
             <X size={ICON_SIZE.control} aria-hidden />
           </button>
         </Tooltip>
       </div>
-      {isConfirming ? (
-        <InlineConfirm
-          role="danger"
-          icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
-          title={`${NAMES.removeLink} to ${project.name}?`}
-          description="The folder stays on disk. Link it again any time."
-          confirmLabel={NAMES.removeLink}
-          isBusy={busy}
-          onConfirm={async () => {
-            await onUnlink({ project });
-            setConfirming(false);
-          }}
-          onCancel={() => setConfirming(false)}
-        />
-      ) : null}
     </li>
   );
 };

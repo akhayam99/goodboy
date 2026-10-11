@@ -465,8 +465,8 @@ describe('ArtifactStudio shell', () => {
     expect(state.setFocusedArtifactId).not.toHaveBeenCalled();
     fireEvent.click(screen.getByTestId('artifact-action-runAgain'));
     expect(state.runPlan).not.toHaveBeenCalled();
-    const confirm = screen.getByRole('group', { name: 'Run this plan again?' });
-    expect(confirm.getAttribute('data-surface')).toBe('card');
+    const confirm = screen.getByRole('dialog', { name: 'Run this plan again?' });
+    expect(screen.getByTestId('artifact-shell-header').contains(confirm)).toBe(false);
     fireEvent.click(within(confirm).getByRole('button', { name: 'Run again' }));
     await waitFor(() => expect(state.runPlan).toHaveBeenCalledWith('sess-1', 'plan-1'));
   });

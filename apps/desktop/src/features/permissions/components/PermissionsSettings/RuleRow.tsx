@@ -1,8 +1,6 @@
 import { useState } from 'react';
-import { Trash2 } from 'lucide-react';
 import type { PermissionRule, ProviderId } from '@goodboy/types';
-import { Button, InlineConfirm, cn, tintClasses } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Button, cn, tintClasses } from '@goodboy/ui';
 import { describeRule } from '../../utils/describeRule';
 import { RuleProviderChips } from './RuleProviderChips';
 
@@ -19,34 +17,10 @@ const DECISION_COPY = {
 } as const;
 
 export const RuleRow = ({ rule, activeProviders, onRemove }: Props) => {
-  const [isConfirming, setIsConfirming] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
   const decision = DECISION_COPY[rule.decision];
   const what = describeRule({ pattern: rule.pattern });
   const where = rule.scope === 'global' ? 'All workspaces' : 'This workspace';
-
-  if (isConfirming) {
-    return (
-      <InlineConfirm
-        role="danger"
-        icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
-        title={`Remove "${decision.word}: ${what}"?`}
-        description="Agents follow the mode alone from the next turn."
-        confirmLabel="Remove"
-        isBusy={isRemoving}
-        onConfirm={async () => {
-          setIsRemoving(true);
-          try {
-            await onRemove(rule);
-          } finally {
-            setIsRemoving(false);
-            setIsConfirming(false);
-          }
-        }}
-        onCancel={() => setIsConfirming(false)}
-      />
-    );
-  }
 
   return (
     <div className="flex min-w-0 items-center gap-3 px-3 py-2">
@@ -68,7 +42,15 @@ export const RuleRow = ({ rule, activeProviders, onRemove }: Props) => {
         variant="ghost"
         size="sm"
         aria-label={`Remove rule: ${what}`}
-        onClick={() => setIsConfirming(true)}
+        disabled={isRemoving}
+        onClick={async () => {
+          setIsRemoving(true);
+          try {
+            await onRemove(rule);
+          } finally {
+            setIsRemoving(false);
+          }
+        }}
       >
         Remove
       </Button>

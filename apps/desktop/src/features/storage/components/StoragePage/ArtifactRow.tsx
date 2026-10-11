@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { EmptyLine, InlineConfirm, SelectionCheckbox, cn } from '@goodboy/ui';
+import { EmptyLine, SelectionCheckbox, cn } from '@goodboy/ui';
+import { AnchoredConfirm } from '../../../../shared/components/AnchoredConfirm';
 import { useAppStore } from '../../../../store';
 import {
   isStorageArtifactKept,
@@ -140,20 +141,18 @@ export const ArtifactRow = ({
             />
           )}
         </span>
-      </div>
-      {isArmed ? (
-        <InlineConfirm
+        <AnchoredConfirm
           role="danger"
           icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
           title={`Delete this ${kindLabel.toLowerCase()}?`}
           description="Its copy on disk and its record in Goodboy go away."
           confirmLabel="Delete"
           isBusy={isDeleting}
+          isOpen={isArmed}
           onConfirm={onConfirm}
           onCancel={() => setIsArmed(false)}
-          className="ml-9"
         />
-      ) : null}
+      </div>
     </div>
   );
 };

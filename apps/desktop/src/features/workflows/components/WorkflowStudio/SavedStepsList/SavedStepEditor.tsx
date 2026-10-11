@@ -1,6 +1,6 @@
-import { useState, type KeyboardEvent } from 'react';
-import { Copy, Trash2 } from 'lucide-react';
-import { Button, FormActions, InlineConfirm } from '@goodboy/ui';
+import type { KeyboardEvent } from 'react';
+import { Copy } from 'lucide-react';
+import { Button, FormActions } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import type { StepDraft } from '../../../engine';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
@@ -35,7 +35,6 @@ export const SavedStepEditor = ({
   onRemove,
   onDone,
 }: Props) => {
-  const [isConfirmingRemove, setIsConfirmingRemove] = useState(false);
   const isReadOnly = mode === 'builtin';
   const disabled = isReadOnly || isBusy;
 
@@ -68,65 +67,52 @@ export const SavedStepEditor = ({
         onRoutingReset={() => onChange({ provider: '', model: '' })}
         onPin={() => onChange({ provider: recommendedProvider, model: recommendedModel })}
       />
-      {isConfirmingRemove ? (
-        <InlineConfirm
-          role="danger"
-          icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
-          title={`Remove ${draft.name.trim() === '' ? 'this step' : draft.name.trim()}?`}
-          description="Workflows that already use it keep their own copy."
-          confirmLabel="Remove step"
-          isBusy={isBusy}
-          onConfirm={onRemove}
-          onCancel={() => setIsConfirmingRemove(false)}
-        />
-      ) : (
-        <FormActions
-          leading={
-            error === null ? null : (
-              <p role="alert" className="min-w-0 truncate text-meta text-danger">
-                {error}
-              </p>
-            )
-          }
-        >
-          {mode === 'builtin' ? (
-            <Button variant="ghost" size="sm" onClick={onSaveCopy} isBusy={isBusy}>
-              <Copy size={ICON_SIZE.row} aria-hidden />
-              Save a copy
-            </Button>
-          ) : null}
-          {mode === 'saved' ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsConfirmingRemove(true)}
-              disabled={isBusy}
-              className="text-danger"
-            >
-              Remove
-            </Button>
-          ) : null}
-          {mode === 'new' ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onRemove}
-              disabled={isBusy}
-              className="text-muted-foreground"
-            >
-              Discard
-            </Button>
-          ) : null}
-          <Button
-            variant={mode === 'new' ? 'primary' : 'secondary'}
-            size="sm"
-            onClick={onDone}
-            isBusy={mode !== 'builtin' && isBusy}
-          >
-            {mode === 'new' ? 'Save step' : 'Done'}
+      <FormActions
+        leading={
+          error === null ? null : (
+            <p role="alert" className="min-w-0 truncate text-meta text-danger">
+              {error}
+            </p>
+          )
+        }
+      >
+        {mode === 'builtin' ? (
+          <Button variant="ghost" size="sm" onClick={onSaveCopy} isBusy={isBusy}>
+            <Copy size={ICON_SIZE.row} aria-hidden />
+            Save a copy
           </Button>
-        </FormActions>
-      )}
+        ) : null}
+        {mode === 'saved' ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onRemove}
+            disabled={isBusy}
+            className="text-danger"
+          >
+            Remove
+          </Button>
+        ) : null}
+        {mode === 'new' ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onRemove}
+            disabled={isBusy}
+            className="text-muted-foreground"
+          >
+            Discard
+          </Button>
+        ) : null}
+        <Button
+          variant={mode === 'new' ? 'primary' : 'secondary'}
+          size="sm"
+          onClick={onDone}
+          isBusy={mode !== 'builtin' && isBusy}
+        >
+          {mode === 'new' ? 'Save step' : 'Done'}
+        </Button>
+      </FormActions>
     </div>
   );
 };

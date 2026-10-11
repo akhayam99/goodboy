@@ -49,7 +49,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
   }, [hasSentry, loadProjectSentryLinks, workspaceId]);
 
   return (
-    <section aria-label="Projects" className="flex flex-col gap-2">
+    <section aria-label="Workspace projects" className="flex flex-col gap-2">
       {!isRelocationOpen && missing.length > 0 && (
         <Notice
           tone="warning"

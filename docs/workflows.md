@@ -116,7 +116,10 @@ already has that name. A built-in you never had is not counted as deleted.
 A row opens the editor: the builder without its launch bar, with the same step
 tree, a breadcrumb back to the list, and autosave. **Draft steps** asks an
 agent to write the steps from the goal. With steps already there it reads
-**Redraft steps**, asks first, and offers an undo once the new steps land.
+**Redraft steps**, starts at once, and offers an undo once the new steps land.
+**Delete** on a workflow, **Delete** on a preset in the launch picker and
+**Remove** on a saved step act at once and the toast offers **Undo**; only a
+workflow that was never saved asks before it is discarded.
 
 **Add step**, in the Studio and in the builder, opens a menu: a search field,
 **Blank step**, then the built-in steps and the steps saved in this workspace.

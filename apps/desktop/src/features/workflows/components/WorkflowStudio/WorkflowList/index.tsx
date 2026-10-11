@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Plus, RotateCcw } from 'lucide-react';
-import { Button, InlineConfirm, EmptyState } from '@goodboy/ui';
+import { Button, ConfirmPopover, EmptyState } from '@goodboy/ui';
 import type { Workflow } from '@goodboy/types';
 import {
   CONCEPT_ICONS,
@@ -62,27 +62,28 @@ export const WorkflowList = ({
           New workflow
         </Button>
         {hasRestorable ? (
-          <Button size="sm" variant="ghost" onClick={() => setIsConfirmingRestore(true)}>
-            <RotateCcw size={ICON_SIZE.row} aria-hidden />
-            Restore built-in workflows
-          </Button>
+          <ConfirmPopover
+            role="alert"
+            icon={<RotateCcw size={ICON_SIZE.row} aria-hidden />}
+            title={`Restore built-in workflows in ${workspaceName ?? 'this workspace'}?`}
+            description={restoreDescription(restorable)}
+            confirmLabel={`Restore ${restorable.length}`}
+            isBusy={isRestoring}
+            isOpen={isConfirmingRestore}
+            onConfirm={async () => {
+              await onRestore(restorable.map(({ entry }) => entry.slug));
+              setIsConfirmingRestore(false);
+            }}
+            onCancel={() => setIsConfirmingRestore(false)}
+            trigger={() => (
+              <Button size="sm" variant="ghost" onClick={() => setIsConfirmingRestore(true)}>
+                <RotateCcw size={ICON_SIZE.row} aria-hidden />
+                Restore built-in workflows
+              </Button>
+            )}
+          />
         ) : null}
       </div>
-      {isConfirmingRestore && hasRestorable ? (
-        <InlineConfirm
-          role="alert"
-          icon={<RotateCcw size={ICON_SIZE.row} aria-hidden />}
-          title={`Restore built-in workflows in ${workspaceName ?? 'this workspace'}?`}
-          description={restoreDescription(restorable)}
-          confirmLabel={`Restore ${restorable.length}`}
-          isBusy={isRestoring}
-          onConfirm={async () => {
-            await onRestore(restorable.map(({ entry }) => entry.slug));
-            setIsConfirmingRestore(false);
-          }}
-          onCancel={() => setIsConfirmingRestore(false)}
-        />
-      ) : null}
       {workflows.length === 0 ? (
         <EmptyState
           size="section"

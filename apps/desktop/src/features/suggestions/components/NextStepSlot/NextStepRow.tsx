@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, cn, tintClasses } from '@goodboy/ui';
+import { Button, ConfirmPopover, cn, tintClasses, type ConfirmRole } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { SUGGESTION_ICONS } from '../../suggestionIcons';
 import type { NextStepBand, SessionSuggestion } from '../../types';
@@ -25,6 +25,10 @@ type Props = {
 };
 
 const NO_PENDING_CHOICES: ReadonlySet<string> = new Set();
+
+const CONFIRM_ROLE: Partial<Record<SessionSuggestion['kind'], ConfirmRole>> = {
+  'close-worktree': 'danger',
+};
 
 const choiceText = ({
   choice,
@@ -57,10 +61,41 @@ export const NextStepRow = ({
   }, [suggestion.id]);
 
   const primary = actions.primary;
-  const isArmed = primary?.requiresConfirm === true && isConfirming;
+  const shouldConfirm = primary?.requiresConfirm === true;
   const choices = primary?.choices ?? [];
   const runsOn = primary?.runsOn ?? null;
   const isChoicePending = pendingChoiceIds.size > 0;
+
+  const runPrimary = () => {
+    if (primary == null) {
+      return;
+    }
+    setIsConfirming(false);
+    if (runsOn !== null && routingOverride !== null) {
+      void runsOn.runWith(routingOverride);
+      return;
+    }
+    void primary.run();
+  };
+
+  const primaryButton =
+    primary == null ? null : (
+      <Button
+        size="sm"
+        variant={suggestion.band === 0 ? 'primary' : 'secondary'}
+        disabled={primary.isDisabled || (isChoicePending && !isPending)}
+        isBusy={isPending}
+        onClick={() => {
+          if (shouldConfirm) {
+            setIsConfirming(true);
+            return;
+          }
+          runPrimary();
+        }}
+      >
+        {primary.label}
+      </Button>
+    );
 
   return (
     <div
@@ -99,13 +134,7 @@ export const NextStepRow = ({
           {extra.label}
         </Button>
       ))}
-      {isArmed && !isPending && (
-        <Button size="sm" variant="ghost" onClick={() => setIsConfirming(false)}>
-          Cancel
-        </Button>
-      )}
-      {!isArmed &&
-        primary != null &&
+      {primary != null &&
         choices.map((choice) => {
           const isBusy = pendingChoiceIds.has(choice.id);
           const hint = [choice.description, choice.detail].filter((part) => part !== '');
@@ -125,27 +154,20 @@ export const NextStepRow = ({
             </Button>
           );
         })}
-      {primary != null && (
-        <Button
-          size="sm"
-          variant={suggestion.band === 0 || isArmed ? 'primary' : 'secondary'}
-          disabled={primary.isDisabled || (isChoicePending && !isPending)}
-          isBusy={isPending}
-          onClick={() => {
-            if (primary.requiresConfirm === true && !isConfirming) {
-              setIsConfirming(true);
-              return;
-            }
-            setIsConfirming(false);
-            if (runsOn !== null && routingOverride !== null) {
-              void runsOn.runWith(routingOverride);
-              return;
-            }
-            void primary.run();
-          }}
-        >
-          {primary.label}
-        </Button>
+      {primary != null && shouldConfirm ? (
+        <ConfirmPopover
+          role={CONFIRM_ROLE[suggestion.kind] ?? 'primary'}
+          icon={<Icon size={ICON_SIZE.row} aria-hidden />}
+          title={`${primary.label}?`}
+          description={suggestion.title}
+          confirmLabel={primary.label}
+          isOpen={isConfirming}
+          onConfirm={runPrimary}
+          onCancel={() => setIsConfirming(false)}
+          trigger={() => primaryButton}
+        />
+      ) : (
+        primaryButton
       )}
       <Button size="sm" variant="ghost" onClick={onNotNow}>
         Not now

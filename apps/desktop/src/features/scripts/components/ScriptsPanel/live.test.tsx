@@ -268,7 +268,7 @@ describe('Scripts page live state', () => {
     });
     renderLens();
 
-    const services = await screen.findByRole('region', { name: 'Services' });
+    const services = await screen.findByRole('region', { name: /^Services of /u });
     expect(within(services).getByText('listening on 5005')).toBeDefined();
     expect(within(services).getByText(/^1m \d+s$/)).toBeDefined();
     const link = await within(services).findByRole('button', { name: 'Open localhost:5005' });
@@ -284,7 +284,7 @@ describe('Scripts page live state', () => {
     useAppStore.setState({ monitorSnapshot: HELD_SNAPSHOT });
     renderLens();
 
-    const services = await screen.findByRole('region', { name: 'Services' });
+    const services = await screen.findByRole('region', { name: /^Services of /u });
     expect(await within(services).findByText(':5005 in use')).toBeDefined();
     expect(within(services).getByRole('button', { name: 'Run dev' }).hasAttribute('disabled')).toBe(
       false,
@@ -295,7 +295,7 @@ describe('Scripts page live state', () => {
     stubMonitor({ snapshot: { ...HELD_SNAPSHOT, listeners: [], processes: [] } });
     renderLens();
 
-    const services = await screen.findByRole('region', { name: 'Services' });
+    const services = await screen.findByRole('region', { name: /^Services of /u });
     expect(await within(services).findByText(':5005')).toBeDefined();
     expect(within(services).queryByText(':5005 in use')).toBeNull();
   });
@@ -306,7 +306,7 @@ describe('Scripts page live state', () => {
       scriptRuns: { [FIRST.id]: { [DEV_KEY]: { ...RUNNING_DEV, startedAt: Date.now() } } },
     });
     renderLens();
-    await screen.findByRole('region', { name: 'Services' });
+    await screen.findByRole('region', { name: /^Services of /u });
 
     press({ code: 'KeyJ' });
     const devRow = screen.getByRole('button', { name: 'Show dev output' });
@@ -329,7 +329,7 @@ describe('Scripts page live state', () => {
       scriptRuns: { [FIRST.id]: { [DEV_KEY]: { ...RUNNING_DEV, startedAt: Date.now() } } },
     });
     renderLens();
-    await screen.findByRole('region', { name: 'Services' });
+    await screen.findByRole('region', { name: /^Services of /u });
 
     press({ code: 'KeyJ' });
     press({ code: 'KeyX' });
@@ -344,7 +344,7 @@ describe('Scripts page live state', () => {
   it('opens the output drawer of the selected row with Enter', async () => {
     stubMonitor({ snapshot: HELD_SNAPSHOT });
     renderLens();
-    await screen.findByRole('region', { name: 'Services' });
+    await screen.findByRole('region', { name: /^Services of /u });
 
     press({ code: 'KeyJ' });
     fireEvent.keyDown(window, { code: 'Enter', key: 'Enter' });
@@ -360,7 +360,7 @@ describe('Scripts page live state', () => {
   it('runs an idle selected row with R', async () => {
     stubMonitor({ snapshot: HELD_SNAPSHOT });
     renderLens();
-    await screen.findByRole('region', { name: 'Tasks' });
+    await screen.findByRole('region', { name: /^Tasks of /u });
 
     press({ code: 'KeyJ' });
     press({ code: 'KeyJ' });

@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
 const QR_SVG = '<svg data-testid="pairing-qr"></svg>';
 
@@ -74,15 +74,15 @@ describe('CompanionStudio', () => {
     expect(await screen.findByTestId('pairing-qr')).toBeTruthy();
   });
 
-  it('disconnects only after the inline confirm', async () => {
+  it('disconnects only after the popover confirm', async () => {
     mocks.enrolledCount = 2;
     render(<CompanionStudio onClose={() => undefined} />);
 
     fireEvent.click(await screen.findByRole('button', { name: /Disconnect/ }));
     expect(invokedCommands()).not.toContain('bridge_revoke');
-    expect(screen.getByText('Disconnect all paired devices?')).toBeTruthy();
+    const dialog = screen.getByRole('dialog', { name: 'Disconnect all paired devices?' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Disconnect' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Disconnect' }));
 
     await waitFor(() => expect(invokedCommands()).toContain('bridge_revoke'));
     expect(await screen.findByTestId('pairing-qr')).toBeTruthy();

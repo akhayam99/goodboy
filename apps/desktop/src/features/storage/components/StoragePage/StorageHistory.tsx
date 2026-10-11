@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FolderOpen, Trash2 } from 'lucide-react';
-import { Band, BandRow, Button, InlineConfirm, SectionHeader, cn, tintClasses } from '@goodboy/ui';
+import { Band, BandRow, Button, ConfirmPopover, SectionHeader, cn, tintClasses } from '@goodboy/ui';
 import { useToast } from '../../../../shared/components/Toast';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -76,28 +76,30 @@ export const StorageHistory = () => {
           <span className="text-meta tabular-nums text-muted-foreground">
             {formatBytes({ bytes: stats.archivedTranscriptBytes })}
           </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={stats.archivedTranscriptRows === 0 || isConfirming}
-            onClick={() => setIsConfirming(true)}
-            className={cn('text-danger hover:text-danger', tintClasses('danger').hoverBg)}
-          >
-            Prune
-          </Button>
-        </BandRow>
-        {isConfirming ? (
-          <InlineConfirm
+          <ConfirmPopover
             role="danger"
             icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
             title="Prune archived transcripts?"
             description={PRUNE_CONFIRM}
             confirmLabel="Prune"
+            width="w-96"
             isBusy={isBusy}
+            isOpen={isConfirming}
             onConfirm={onPrune}
             onCancel={() => setIsConfirming(false)}
+            trigger={() => (
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={stats.archivedTranscriptRows === 0}
+                onClick={() => setIsConfirming(true)}
+                className={cn('text-danger hover:text-danger', tintClasses('danger').hoverBg)}
+              >
+                Prune
+              </Button>
+            )}
           />
-        ) : null}
+        </BandRow>
         <BandRow>
           <span className="flex min-w-0 flex-1 flex-col">
             <span className="text-row text-foreground">App data</span>

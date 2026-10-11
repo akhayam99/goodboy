@@ -143,8 +143,12 @@ commits-rest
 commits-rest-1920
 companion
 confirm-action-panel
+confirm-artifact-delete
 confirm-chat-delete
+confirm-folder-remove
+confirm-reset-app
 confirm-session-delete
+confirm-signout
 confirm-worktree-remove
 confirmpopover
 context-drawer

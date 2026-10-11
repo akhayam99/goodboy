@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Chip, formatError, IconButton, InlineConfirm } from '@goodboy/ui';
+import { Chip, ConfirmPopover, formatError, IconButton } from '@goodboy/ui';
 import { TriangleAlert, Unplug } from 'lucide-react';
 import type { IntegrationCredentialId } from '@goodboy/types';
 import { useCredentialSecret } from '../../useCredentialSecret';
@@ -59,28 +59,26 @@ export const IntegrationConnectedRow = ({
           ) : null}
         </div>
         {badge != null ? <Chip tone="neutral" size="xs" bordered label={badge} /> : null}
-        {isArmed ? null : (
-          <IconButton
-            icon={Unplug}
-            label={`Disconnect ${label}`}
-            onClick={() => setIsArmed(true)}
-            disabled={isBusy}
-          />
-        )}
-      </div>
-      {isArmed ? (
-        <InlineConfirm
+        <ConfirmPopover
           role="danger"
           icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
           title={`Disconnect ${label}?`}
           description={disconnectDescription}
           confirmLabel={`Disconnect ${label}`}
-          autoDisarmMs={4000}
           isBusy={isBusy}
+          isOpen={isArmed}
           onConfirm={disconnect}
           onCancel={() => setIsArmed(false)}
+          trigger={() => (
+            <IconButton
+              icon={Unplug}
+              label={`Disconnect ${label}`}
+              onClick={() => setIsArmed(true)}
+              disabled={isBusy}
+            />
+          )}
         />
-      ) : null}
+      </div>
       {secret === 'missing' ? (
         <p className="flex items-start gap-1 text-meta text-warning">
           <TriangleAlert size={ICON_SIZE.row} aria-hidden className="mt-0.5 shrink-0" />

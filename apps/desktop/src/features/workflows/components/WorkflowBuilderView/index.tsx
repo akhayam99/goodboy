@@ -37,6 +37,7 @@ import type {
 } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
+import { deleteWorkflowWithUndo } from '../../deleteWorkflowWithUndo';
 import { createWorkflowPlanner, polishWorkflowGoalText } from '../../workflows';
 import { usePolish } from '../../hooks/usePolish';
 import { useStepDeleteUndo } from '../../hooks/useStepDeleteUndo';
@@ -190,6 +191,7 @@ export const WorkflowBuilderView = (props: Props) => {
       : kickoffDraftKey({ workspaceId, lane: props.kickoff.lane ?? 'workflow' });
   const savePhaseTemplate = useAppStore((s) => s.savePhaseTemplate);
   const deleteWorkflow = useAppStore((s) => s.deleteWorkflow);
+  const restoreWorkflowSnapshot = useAppStore((s) => s.restoreWorkflowSnapshot);
   const attachWorkflowToSession = useAppStore((s) => s.attachWorkflowToSession);
   const generateWorkflowTitle = useAppStore((s) => s.generateWorkflowTitle);
   const suggestWorkflowTitle = useAppStore((s) => s.suggestWorkflowTitle);
@@ -718,14 +720,19 @@ export const WorkflowBuilderView = (props: Props) => {
   const onDeletePreset = async (t: Workflow) => {
     setError(null);
     try {
-      await deleteWorkflow(t.id, workspaceId);
+      await deleteWorkflowWithUndo({
+        workflow: t,
+        workspaceId,
+        showToast,
+        deleteWorkflow,
+        restoreWorkflowSnapshot,
+      });
       if (selectedPresetId === t.id) {
         setSelectedPresetId(null);
         setBasePresetId(null);
         setSteps([]);
         setExpandedKey(null);
       }
-      showToast({ kind: 'success', message: `Deleted the ${t.name} preset.` });
     } catch (err) {
       setError({ title: "Couldn't delete the preset", message: formatError(err) });
     }
