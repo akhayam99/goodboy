@@ -116,6 +116,34 @@ cwd, startedAt }`. A turn, a chat, a planner or a summary joins it in
   `foregroundPid`, the leader of its foreground process group when the
   platform reports it. A script's exit code is the real one: a signal reads as
   128 plus its number (a SIGKILL is 137), where it used to collapse to 1.
+- **The monitor snapshot.** `monitor/mod.rs` answers `monitor_snapshot` with
+  `{ listeners, processes, taken_at, platform_supported }` from one read of the
+  machine: on macOS `lsof -nP -iTCP -sTCP:LISTEN -Fpn`, one `ps -axo`, one
+  batched `lsof -a -d cwd -p` and one `ps -o pid=,args=`; on Linux
+  `/proc/net/tcp`, `tcp6` and the `/proc/<pid>/fd` socket inodes; on Windows
+  nothing and `platform_supported: false`. Every tool call runs through
+  `proc::probe::run` with a 2 second deadline. `processes` holds only the
+  listener holders and every process in a process group the ledger knows, so
+  the page can tell a leftover from a stranger. `args_masked` replaces the
+  value of `--token=`, `--password=`, `--secret=`, a bare flag followed by its
+  value, and any `KEY=value` whose key contains TOKEN, SECRET, PASSWORD or KEY
+  with `***`; it is never logged. `monitor_watched_ports(project_root)` reads
+  the ports a project declares (package.json scripts, `PORT` and `*_PORT`
+  integers in `.env`, `.env.local`, `.env.development`, `server.port` in the
+  vite config, published compose ports) and keeps nothing else from those
+  files.
+- **The port join.** `attributePorts` (`packages/core/src/monitoring`) joins
+  the snapshot, the ledger, the sessions' worktrees and the projects into one
+  row per listener, first match wins: a Goodboy script, terminal or agent turn
+  (the ledger row holding the pid, its parent or its group), a session
+  worktree by the longest cwd prefix, a project's main checkout, else an
+  external process by name. A watched port held by one worktree while another
+  worktree of the same project is running carries `collision: { others }`.
+  Watched ports nobody holds come back as `free` rows. A port a Goodboy-owned
+  process held joins the project's learned set (`monitor.learnedPorts.<id>`);
+  the user's own set lives in `monitor.watchedPorts.<id>`. The store slice
+  `store/slices/monitoring/` keeps the snapshot and applies a result only if
+  its `takenAt` is not older than the one held.
 - **Windows.** Each CLI spawn is assigned to its own Job Object with
   kill-on-close (`process_group::Job`), so a cancel ends the whole tree
   (`TerminateJobObject`) and so does the app dying. The assignment happens

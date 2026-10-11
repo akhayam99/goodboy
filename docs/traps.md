@@ -434,3 +434,7 @@ fails silently at runtime.
   that builds an object (`{ project, stage }`) loops the render; select the
   project and the stage separately. The mock scenes catch this, unit tests with
   a mocked store do not.
+- `lsof` exits 1 when it finds nothing: no listener, or a pid that died between
+  the two reads. The monitor reads exit 0 and 1 as success and anything else,
+  or a timeout, as a failed snapshot; treating 1 as an error would show a
+  broken monitor on a quiet machine.

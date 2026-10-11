@@ -184,8 +184,9 @@
       },
       "ignoreDependencies": ["tailwindcss"],
       "ignore": [
-        "src/store/slices/state-writes/commitAfterConfirm.ts",
-        "src/store/slices/models/index.ts"
+        "src/store/slices/models/index.ts",
+        "src/features/monitoring/hooks/useMonitorPolling/index.ts",
+        "src/store/slices/monitoring/selectLeftovers.ts"
       ]
     },
     "packages/core": {

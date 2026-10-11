@@ -45,6 +45,7 @@ state and shows the error.
   the control.
 - A bare `.catch(() => undefined)`, `null` or `{}` hides the failure. The
   `catch-swallow` ratchet counts them and only falls.
+- In use: `watchPort` and `unwatchPort` in `store/slices/monitoring/`.
 - Test: `commitAfterConfirm.sqlite.test.ts` (nothing committed while pending,
   nothing committed on failure, the error stored on the target).
 
@@ -56,6 +57,7 @@ A response applies only while it is the answer to the newest request.
   One instance per loader; `run({ key, request, apply })` takes a token per
   key and drops a late result as `'stale'`. A stale failure is dropped too;
   the latest failure is thrown. `cancel({ key })` invalidates a pending request.
+- In use: `refreshMonitorSnapshot` in `store/slices/monitoring/`.
 - Test: `latestOnly.test.ts` (a newer request wins, tokens are per key, a stale
   error is dropped).
 
