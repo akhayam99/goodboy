@@ -350,14 +350,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
   it('agent header: the ⋯ lists every action, buttons included, never Open agent', async () => {
     const agent = agentFixture({ status: 'failed' });
     seedActionState({ useAppStore, seed: { agents: [agent], mounts: [mountFixture()] } });
-    withMenus(
-      <AgentHeaderActions
-        agent={agent}
-        sessionId={SESSION}
-        allowInterrupt
-        onArm={() => undefined}
-      />,
-    );
+    withMenus(<AgentHeaderActions agent={agent} sessionId={SESSION} allowInterrupt />);
     const registry = (
       bindTarget({
         state: useAppStore.getState(),

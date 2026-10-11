@@ -340,7 +340,8 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   }),
   pressRow({
     id: 'session.delete',
-    lands: async () => expect(await screen.findByText('Delete session?', {}, WAIT)).toBeDefined(),
+    lands: async () =>
+      expect(await screen.findByRole('dialog', { name: /^Delete .+\?$/ }, WAIT)).toBeDefined(),
   }),
   keyRow({
     id: 'lens.overview',

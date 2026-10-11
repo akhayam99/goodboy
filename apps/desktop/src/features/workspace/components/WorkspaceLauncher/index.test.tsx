@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { Workspace, WorkspaceId } from '@goodboy/types';
 import { SETTING_REOPEN_LAST } from '../../../settings/settings';
 
@@ -107,7 +107,9 @@ describe('WorkspaceLauncher', () => {
     render(<WorkspaceLauncher />);
     fireEvent.click(screen.getByLabelText('Disconnect alpha'));
     expect(state.disconnectWorkspace).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Disconnect' }));
+    const dialog = screen.getByRole('dialog', { name: 'Disconnect alpha?' });
+    expect(dialog.closest('[data-dropdown-portal]')).not.toBeNull();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Disconnect workspace' }));
     expect(state.disconnectWorkspace).toHaveBeenCalledWith('ws-a');
     expect(state.openWorkspace).not.toHaveBeenCalled();
   });

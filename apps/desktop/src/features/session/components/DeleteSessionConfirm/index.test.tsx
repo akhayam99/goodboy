@@ -1,33 +1,32 @@
 // @vitest-environment happy-dom
 
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(async () => new Promise<never>(() => undefined)),
-}));
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
-
-const { archiveMock } = vi.hoisted(() => ({
-  archiveMock: vi.fn(async () => undefined),
-}));
-
-vi.mock('../../hooks/useSessionArchive', () => ({
-  useSessionArchive: () => ({ archive: archiveMock, restore: vi.fn(async () => undefined) }),
-}));
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
+vi.mock('../../../../shared/lib/db', async () =>
+  (await import('../../../../store/storyHarness')).dbLibModuleMock(),
+);
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { SessionId } from '@goodboy/types';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { Button } from '@goodboy/ui';
 import { aSession } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  stubStoryInvoke,
   type StoryStore,
 } from '../../../../store/storyHarness';
+import { ToastProvider } from '../../../../shared/components/Toast';
 import { DeleteSessionConfirm } from '.';
 
-const SESSION_ID = 'session-ledger-export' as SessionId;
-
 let useAppStore: StoryStore;
+const session = aSession({ goal: 'Reconcile the Harborline ledger export' });
 
 beforeAll(async () => {
   useAppStore = await importStore();
@@ -35,43 +34,66 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
+  stubStoryInvoke({ workflows_for_session: () => [] });
+  useAppStore.setState({
+    sessions: [session],
+    currentSessionId: session.id,
+    currentWorkspaceId: session.workspaceId,
+  });
 });
 
-afterEach(() => {
-  cleanup();
-  archiveMock.mockClear();
-});
+afterEach(cleanup);
 
-const session = aSession({ id: SESSION_ID, goal: 'Reconcile the ledger export' });
+const mount = () => {
+  const result = render(
+    <ToastProvider>
+      <DeleteSessionConfirm
+        session={session}
+        onClose={() => undefined}
+        trigger={({ arm }) => <Button onClick={arm}>Delete session</Button>}
+      />
+    </ToastProvider>,
+  );
+  const trigger = screen.getByRole('button', { name: 'Delete session' });
+  trigger.focus();
+  fireEvent.click(trigger);
+  return { ...result, trigger };
+};
 
-describe('DeleteSessionConfirm copy', () => {
-  it('says in two short lines what is removed and what is kept, branches included', () => {
-    useAppStore.setState({ sessionBranches: { [SESSION_ID]: 'mq/ledger-export' } });
-
-    render(<DeleteSessionConfirm session={session} onClose={vi.fn()} />);
-
-    screen.getByText('Removed: transcript, file versions, images.');
-    screen.getByText('Kept: branches, cost, uncommitted worktrees.');
-    screen.getByText('This cannot be undone.');
-    expect(screen.queryByText(/archive instead/i, { selector: 'p' })).toBeNull();
+describe('DeleteSessionConfirm', () => {
+  it('opens in the portal and explains what is removed and kept', () => {
+    useAppStore.setState({ sessionBranches: { [session.id]: 'ledger-core' } });
+    const { container } = mount();
+    const dialog = screen.getByRole('dialog', { name: `Delete ${session.goal}?` });
+    expect(dialog.closest('[data-dropdown-portal]')).not.toBeNull();
+    expect(container.contains(dialog)).toBe(false);
+    within(dialog).getByText('Removed: transcript, file versions, images.');
+    within(dialog).getByText('Kept: branches, cost, uncommitted worktrees.');
+    within(dialog).getByText('This cannot be undone.');
   });
 
-  it('keeps only the cost for a branchless session, without a branch to keep', () => {
-    useAppStore.setState({ sessionBranches: { [SESSION_ID]: '' } });
-
-    render(<DeleteSessionConfirm session={session} onClose={vi.fn()} />);
-
-    screen.getByText('Removed: transcript, file versions, images.');
+  it('keeps only cost for a branchless session', () => {
+    useAppStore.setState({ sessionBranches: { [session.id]: '' } });
+    mount();
     screen.getByText('Kept: cost.');
-    expect(screen.queryByText(/branches/)).toBeNull();
+    expect(screen.queryByText(/Kept: branches/)).toBeNull();
   });
-});
 
-describe('DeleteSessionConfirm archive instead', () => {
-  it('archives through the shared path, so the safer option still offers an undo', async () => {
-    render(<DeleteSessionConfirm session={session} onClose={vi.fn()} />);
+  it('Escape returns focus to the unchanged trigger', async () => {
+    const { trigger } = mount();
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Cancel' }), { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it('archives immediately through the real store and Undo restores the session', async () => {
+    mount();
     fireEvent.click(screen.getByRole('button', { name: 'Archive instead' }));
-
-    await waitFor(() => expect(archiveMock).toHaveBeenCalledWith({ sessions: [session] }));
+    await waitFor(() => expect(useAppStore.getState().sessions).toEqual([]));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Undo' })).toBeDefined());
+    expect(useAppStore.getState().archivedSessions[session.workspaceId]?.[0]?.id).toBe(session.id);
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    await waitFor(() => expect(useAppStore.getState().sessions[0]?.id).toBe(session.id));
+    expect(useAppStore.getState().archivedSessions[session.workspaceId]).toEqual([]);
   });
 });

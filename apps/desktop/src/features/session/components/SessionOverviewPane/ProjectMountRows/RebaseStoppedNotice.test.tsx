@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MountId, SessionId, WorktreeStatus } from '@goodboy/types';
 
@@ -108,13 +108,14 @@ describe('RebaseStoppedNotice', () => {
     expect(onOpenTerminal).toHaveBeenCalled();
   });
 
-  it('aborts only after the inline confirmation', async () => {
+  it('aborts only after the popover confirmation', async () => {
     renderNotice(statusOf());
 
     fireEvent.click(screen.getByRole('button', { name: 'Abort rebase' }));
     expect(worktreeAbortRebase).not.toHaveBeenCalled();
-    expect(screen.getByText('Abort the rebase?')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Abort rebase' }));
+    const dialog = screen.getByRole('dialog', { name: 'Abort the rebase?' });
+    expect(dialog.closest('[data-dropdown-portal]')).not.toBeNull();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Abort rebase' }));
 
     await waitFor(() =>
       expect(worktreeAbortRebase).toHaveBeenCalledWith({ worktreePath: '/worktrees/api' }),

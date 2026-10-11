@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Button, InlineConfirm, Tooltip, cn } from '@goodboy/ui';
+import { Button, ConfirmPopover, Tooltip, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../conceptIcons';
 import { runRecordVerb } from './runRecordVerb';
 import type { RecordSecondaryVerbs, RecordVerb } from './types';
@@ -14,7 +14,6 @@ type Props = {
 
 export const RecordActions = ({ primary, secondary, armed, onArm, onDisarm }: Props) => {
   const hasRow = primary != null || secondary.length > 0;
-  const confirm = armed?.confirm ?? null;
 
   return (
     <>
@@ -24,8 +23,8 @@ export const RecordActions = ({ primary, secondary, armed, onArm, onDisarm }: Pr
           {secondary.map((verb) => {
             const Icon = verb.icon;
             const isBlocked = verb.blockedReason != null;
-            return (
-              <Tooltip key={verb.key} content={verb.blockedReason ?? verb.label}>
+            const button = (
+              <Tooltip content={verb.blockedReason ?? verb.label}>
                 <Button
                   variant="secondary"
                   size="sm"
@@ -40,24 +39,34 @@ export const RecordActions = ({ primary, secondary, armed, onArm, onDisarm }: Pr
                 </Button>
               </Tooltip>
             );
+            if (verb.confirm === null || verb.confirm === undefined) {
+              return (
+                <span key={verb.key} className="contents">
+                  {button}
+                </span>
+              );
+            }
+            return (
+              <ConfirmPopover
+                key={verb.key}
+                role="danger"
+                icon={<Icon size={ICON_SIZE.row} aria-hidden />}
+                title={verb.confirm.title}
+                description={verb.confirm.description}
+                confirmLabel={verb.confirm.confirmLabel}
+                isOpen={armed?.key === verb.key}
+                isBusy={verb.isBusy}
+                isConfirmDisabled={isBlocked}
+                onConfirm={async () => {
+                  await verb.onRun();
+                  onDisarm();
+                }}
+                onCancel={onDisarm}
+                trigger={() => button}
+              />
+            );
           })}
         </div>
-      ) : null}
-      {armed != null && confirm != null ? (
-        <InlineConfirm
-          role="danger"
-          icon={<armed.icon size={ICON_SIZE.row} aria-hidden />}
-          title={confirm.title}
-          description={confirm.description}
-          confirmLabel={armed.isBusy ? `${armed.label}…` : confirm.confirmLabel}
-          isBusy={armed.isBusy}
-          isConfirmDisabled={armed.blockedReason != null}
-          onConfirm={async () => {
-            await armed.onRun();
-            onDisarm();
-          }}
-          onCancel={onDisarm}
-        />
       ) : null}
     </>
   );

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   BranchIntegration,
@@ -115,7 +115,8 @@ describe('RemoveWorktreeAction', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Close branch for API' }));
 
-    await waitFor(() => expect(screen.getByText('Close branch?')).toBeDefined());
+    const dialog = await screen.findByRole('dialog', { name: 'Close branch for API?' });
+    expect(dialog.closest('[data-dropdown-portal]')).not.toBeNull();
     expect(
       screen.getByText('1 ignored file at risk, not tracked by git: .env.local.'),
     ).toBeDefined();
@@ -137,7 +138,7 @@ describe('RemoveWorktreeAction', () => {
         mode: 'safe',
       }),
     );
-    expect(screen.queryByText('Close branch?')).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('asks the base the mount carries rather than assuming main', async () => {
@@ -190,7 +191,8 @@ describe('RemoveWorktreeAction', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Close branch for API' }));
 
-    await waitFor(() => expect(screen.getByText('Close branch?')).toBeDefined());
+    const dialog = await screen.findByRole('dialog', { name: 'Close branch for API?' });
+    expect(dialog.closest('[data-dropdown-portal]')).not.toBeNull();
     expect(screen.getByText('ak/feat is not merged into origin/main yet.')).toBeDefined();
     expect(removeMountWorktree).not.toHaveBeenCalled();
   });
@@ -207,14 +209,18 @@ describe('RemoveWorktreeAction', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Close branch for API' }));
 
-    await waitFor(() => expect(screen.getByText('Close branch?')).toBeDefined());
+    const dialog = await screen.findByRole('dialog', { name: 'Close branch for API?' });
+    expect(dialog.closest('[data-dropdown-portal]')).not.toBeNull();
     expect(
       screen.getByText(
         'Whether ak/feat is merged into its base branch is unknown; the worktree stays until that can be read.',
       ),
     ).toBeDefined();
     expect(screen.getByRole('button', { name: 'Check again' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Close branch' })).toHaveProperty('disabled', true);
+    expect(within(dialog).getByRole('button', { name: 'Close branch' })).toHaveProperty(
+      'disabled',
+      true,
+    );
     expect(removeMountWorktree).not.toHaveBeenCalled();
   });
 });
