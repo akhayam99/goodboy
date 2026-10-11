@@ -2134,11 +2134,11 @@ describe('actions run against the real store', () => {
     expect(useAppStore.getState().sessions).toEqual([]);
   });
 
-  it('opens Review and Diff through the one door', async () => {
+  it('opens Review and Diff through the one door, Review landing on Files while nothing is commented', async () => {
     seed({ mounts: [mountFixture()] });
     await run(SESSION_TARGET, 'session.review');
     expect(useAppStore.getState().activeLens[SESSION]).toBe('branch');
-    expect(useAppStore.getState().branchTab[SESSION]).toBe('comments');
+    expect(useAppStore.getState().branchTab[SESSION]).toBe('files');
     await run(SESSION_TARGET, 'session.diff');
     expect(useAppStore.getState().activeLens[SESSION]).toBe('branch');
     expect(useAppStore.getState().branchTab[SESSION]).toBe('files');

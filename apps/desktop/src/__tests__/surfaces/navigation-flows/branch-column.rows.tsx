@@ -10,6 +10,8 @@ import {
   branchTab,
   click,
   clickFirstButton,
+  findSection,
+  getSection,
   settle,
   useAppStore,
 } from './harness';
@@ -39,11 +41,8 @@ const bodyColumns = (): ReadonlyArray<string | null> =>
     .map((column) => column.getAttribute('data-width'));
 
 const visitTab = async (name: RegExp): Promise<void> => {
-  await click(await screen.findByRole('tab', { name }));
-  await waitFor(
-    () => expect(screen.getByRole('tab', { name }).getAttribute('aria-selected')).toBe('true'),
-    WAIT,
-  );
+  await click(await findSection(name));
+  await waitFor(() => expect(getSection(name).getAttribute('aria-current')).toBe('page'), WAIT);
 };
 
 const addSecondBranch = ({ sessionId }: Ctx): void => {
@@ -102,12 +101,12 @@ export const BRANCH_COLUMN_ROWS: ReadonlyArray<Row> = [
     open: async (ctx) => {
       await openBranchPage();
       await branchTab('pr')(ctx);
-      for (const name of [/^Pull request/, /^Comments/, /^Files/, /^Commits/, /^Checks/]) {
+      for (const name of [/^Overview/, /^Comments/, /^Files/, /^Commits/, /^Checks/]) {
         await visitTab(name);
         expect(trailColumn()).toBe('column');
         expect(headerColumn()).toBe('column');
       }
-      for (const name of [/^Pull request/, /^Comments/, /^Files/, /^Commits/]) {
+      for (const name of [/^Overview/, /^Comments/, /^Files/, /^Commits/]) {
         await visitTab(name);
         expect(bodyColumns().length).toBeGreaterThan(0);
         expect(bodyColumns().every((width) => width === 'column')).toBe(true);

@@ -79,7 +79,7 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'headers: opening Push turns the header primary secondary and the confirm pushes once',
+    name: 'headers: opening Push keeps the header Push secondary, yields the header primary, and the confirm pushes once',
     covers: ['navigate'],
     open: async (ctx) => {
       installComments({ sessionId: ctx.sessionId, seeds: SEEDS });
@@ -87,7 +87,7 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
       useAppStore.setState({ publishConversations: publish });
       await openComments(ctx);
       await click(within(group('Needs you')).getByRole('button', { name: 'Accept 2' }));
-      expect(headerPush().getAttribute('data-variant')).toBe('primary');
+      expect(headerPush().getAttribute('data-variant')).toBe('secondary');
       await click(headerPush());
     },
     lands: async () => {
@@ -95,6 +95,9 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
         name: 'Push 1 commit to hl/fix-duplicate-credit?',
       });
       expect(headerPush().getAttribute('data-variant')).toBe('secondary');
+      expect(
+        document.querySelectorAll('[data-slot="header-actions"] button[data-variant="primary"]'),
+      ).toHaveLength(0);
       const confirmButton = within(confirm).getByRole('button', { name: 'Push' });
       expect(confirmButton.getAttribute('data-variant')).toBe('primary');
       expect(confirm.querySelector('[data-testid="tone-bar"]')).not.toBeNull();
