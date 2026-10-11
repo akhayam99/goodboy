@@ -11,6 +11,10 @@ vi.mock('../../../features/session/taskModelAgentSpawnConfig', () => ({
   }),
 }));
 
+const stopAgentForDelete = vi.hoisted(() => vi.fn(async (): Promise<boolean> => true));
+
+vi.mock('../agents/stopAgentForDelete', () => ({ stopAgentForDelete }));
+
 import { createScribeSlice } from './index';
 import { scribeInitialState } from './state';
 import { isUntouchedScribeBody, referenceLinesOf, signScribeBody } from './scribeSignature';
@@ -226,6 +230,37 @@ describe('scribe slice', () => {
     });
     expect(built.read().scribeWork[PR_KEY]).toBeUndefined();
     expect(built.read().createPrForSession).not.toHaveBeenCalled();
+  });
+
+  it('keeps the job with a note when the agent cannot be confirmed stopped, then clears it on a retry', async () => {
+    const built = harness({ prBody: '', hasPr: false });
+    await built.slice.requestScribe({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      task: {
+        kind: 'pr',
+        closedPrNumber: null,
+        references: [],
+        isDraft: false,
+        base: null,
+        isTextOnly: true,
+      },
+    });
+    stopAgentForDelete.mockResolvedValueOnce(false);
+
+    await built.slice.stopScribe({ key: PR_KEY });
+
+    expect(built.read().scribeWork[PR_KEY]).toMatchObject({
+      status: 'writing',
+      agentId: AGENT_ID,
+      error: "Couldn't stop the writing. Stop it again.",
+    });
+    expect(built.read().scribeAgents[AGENT_ID]).toBe(PR_KEY);
+
+    await built.slice.stopScribe({ key: PR_KEY });
+
+    expect(built.read().scribeWork[PR_KEY]).toBeUndefined();
+    expect(built.read().scribeAgents[AGENT_ID]).toBeUndefined();
   });
 
   it('forgets a ready job when the person discards the text, and leaves one that is opening', async () => {
