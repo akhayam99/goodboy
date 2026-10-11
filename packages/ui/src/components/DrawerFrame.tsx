@@ -7,6 +7,7 @@ import { lastFocusedElement } from '../useLastFocused';
 import { Divider } from './Divider';
 import { IconButton } from './IconButton';
 import { ScrollFade } from './ScrollFade';
+import { FRAME_DRAWER_INSET_PX, FRAME_DRAWER_ROW_PX } from '../frameGeometry';
 import { ICON_SIZE } from '../iconSize';
 
 export type DrawerFrameProps = {
@@ -135,17 +136,20 @@ export const DrawerFrame = ({
       className="flex h-full min-h-0 min-w-0 flex-col bg-subtle motion-safe:animate-nav-step-in"
     >
       <header
-        className={
-          hasToolbar
-            ? 'flex shrink-0 flex-col gap-2 py-2'
-            : 'flex h-11 shrink-0 items-center gap-2 pl-4 pr-2'
-        }
+        data-drawer-header=""
+        style={{ paddingTop: FRAME_DRAWER_INSET_PX, paddingBottom: FRAME_DRAWER_INSET_PX }}
+        className={hasToolbar ? 'flex shrink-0 flex-col gap-2' : 'flex shrink-0 flex-col'}
       >
-        {hasToolbar ? (
-          <div className="flex min-w-0 items-start gap-2 pl-4 pr-2">{titleRow}</div>
-        ) : (
-          titleRow
-        )}
+        <div
+          data-drawer-header-row=""
+          style={{ minHeight: FRAME_DRAWER_ROW_PX }}
+          className={cn(
+            'flex min-w-0 gap-2 pl-4 pr-2',
+            hasToolbar ? 'items-start' : 'items-center',
+          )}
+        >
+          {titleRow}
+        </div>
         {hasToolbar ? (
           <div data-drawer-toolbar="" className="flex min-w-0 flex-col gap-2 px-4">
             {toolbar}

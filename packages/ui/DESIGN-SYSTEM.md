@@ -1461,7 +1461,10 @@ left, Ask or Close at its right edge), a 32px title row directly under it with t
 page's `h1` at `text-title` and the actions at its right, and an optional 12px muted
 meta line 4px under the row. The title's centre is therefore 56px under the pane top
 and its left edge is the column's content edge on every page; `frameGeometryOf`
-(`packages/ui/src/frameGeometry.ts`) is the table and the journey test reads it. Inside
+(`packages/ui/src/frameGeometry.ts`) is the table and the journey test reads it. Every
+page has one of four frame types in `PAGE_FRAME` (column 1008, reader 768, stage, split
+`[rail 288][detail]`), see [the frame map](../../docs/styling.md#the-frame-map); in a split page the
+band is the first child of the detail, never over the rail. Inside
 a session the band is the `TrailBar`, and in a studio `StudioFrame` draws it inside a
 `PageColumn` of the studio's tier and hands its body `UnderTrailContext`, so the header
 adds no top padding; outside both, a bare page keeps 12px above. The Board has an
@@ -1525,7 +1528,8 @@ page under it is `inert`, a click on the scrim dismisses the top escape layer
 like Esc, and focus moves into the card on open and back to the trigger on
 close.
 
-**The drawer container.** `DrawerFrame` is its one frame: a 44px header, a
+**The drawer container.** `DrawerFrame` is its one frame: a header whose 28px row is centred on the
+band's centre line (`FRAME_DRAWER_ROW_PX`), a
 divider, a body and an optional `dock`. The title row reads icon, title, count
 (a number or a version, never a session title), at most one labelled action,
 then Close. Close always reads `Close` and is a 28px target (`size-7`, 14px

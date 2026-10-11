@@ -201,6 +201,10 @@ frame-studio-guide
 frame-studio-impact
 frame-studio-inbox
 frame-studio-workflows
+frames-chat-rail
+frames-guide-pinned
+frames-guide-rail
+frames-overview-rail-1920
 goalhint
 goalproposal
 goalreplace

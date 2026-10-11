@@ -203,14 +203,38 @@ pane is under 720px wide. The gutter switch is a container query on the pane
 (`@container` on the `PaneShell` root, `@max-[720px]:` on the column), never a
 media query on the window, because the space that counts is the pane's.
 
-The band above the title sits on that same column. The session trail band draws
-inside the page's `PageColumn`, and a studio's band does too, at the studio's tier
-(`STUDIO_META[kind].tier`: `column` for the page studios, `full` for the rail-plus-detail
-Chat and pairing), so the crumb starts where the title starts and Close ends where the
-column ends. The title row under it is one fixed 32px row (`PaneTitleRow`: `h-8`,
-centred, no wrap, a long title truncates), 40px below the pane top, which puts every
-title centre at 56px with its left edge on the column. A banner for the page (the first
-lap notice) is the first block of the body, inside the same column.
+## The frame map
+
+`packages/ui/src/frameGeometry.ts` holds one typed map, `PAGE_FRAME: Record<FramePage, FrameType>`.
+A page with no entry fails typecheck. Four frame types:
+
+| Type   | Pages                                                                                                                                     | Width                               | Title left                         |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ---------------------------------- |
+| column | Overview, Runs, a run, Agents, an agent, Questions, Workflows, Impact, Settings, Scripts, Artifacts, Explore, Branch, Storage, Monitoring | 1008, centred                       | column + 24                        |
+| reader | a plan, a report, a wireframe page, a release, a Guide chapter body                                                                       | 768, centred in its detail          | reader + 24                        |
+| stage  | Board, Terminal                                                                                                                           | fluid from the sheet inset, to 1856 | 24                                 |
+| split  | Chat, Guide, What's new, Tasks, Notifications                                                                                             | `[rail 288][detail]`                | the detail's column, in its detail |
+
+`frameGeometryOf({ page })` returns the type, the band (40px), the title row (32px),
+the title centre (56px), the drawer row (28px) and `titleLeft` read from the type.
+`STUDIO_META[kind].page` names the page of a studio and `frameTierOf` gives the tier its band
+draws at; a test fails when the two disagree.
+
+Five rules:
+
+1. **Crumb, title and first body edge share one x.** In a split page the crumb band moves
+   into the detail (`StudioDetail`, first child of the detail) and the rail starts at the top of
+   the sheet, so the crumb never sits over the rail. A split studio wraps its detail in
+   `StudioDetail`; `StudioFrame` hands it the band through `StudioBandContext`.
+2. **One page rail.** Every split page uses `StudioRailLayout` with `railWidth="standard"`
+   (288, resizable 220 to 420). No page draws a second rail column.
+3. **Stage pages are only the Board and the Terminal.** Nothing else is fluid.
+4. **The crumb row and the drawer header share one centre line.** `DrawerFrame` draws a 28px
+   row centred in the band's 40px (`FRAME_DRAWER_ROW_PX`, `FRAME_DRAWER_INSET_PX`), with one
+   close control.
+5. **First-time states centre in the body**, in one `EmptyState` layout.
+
+The pull request page joins the split type in its own unit.
 
 Centring lives in `PageColumn` alone (`mx-auto` on `column` and `measure`, none
 on `full`). No view centres itself. Sub-pages follow the same tiers as their

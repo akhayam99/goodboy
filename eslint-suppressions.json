@@ -1525,7 +1525,7 @@
   },
   "apps/desktop/src/app/components/StudioFrame/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 6
+      "count": 5
     }
   },
   "apps/desktop/src/app/components/StudioFrame/popoverEscape.test.tsx": {

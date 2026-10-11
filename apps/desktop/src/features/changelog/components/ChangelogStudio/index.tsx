@@ -3,6 +3,7 @@ import { Button, ScrollFade } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioRailLayout } from '@goodboy/ui';
 import { StudioShell } from '../../../../shared/components/StudioShell';
+import { StudioDetail } from '../../../../shared/components/StudioShell/StudioDetail';
 import { NAMES } from '../../../../shared/names';
 import { useAppStore } from '../../../../store';
 import { changelogCatchUp } from '../../changelogCatchUp';
@@ -178,17 +179,23 @@ export const ChangelogStudio = ({ onClose, onOpenScreen }: Props) => {
             </ScrollFade>
           }
           detail={
-            showCatchUp && catchUp !== null ? (
-              <CatchUpReader catchUp={catchUp} dates={dates} installedVersion={installedVersion} />
-            ) : selected !== null ? (
-              <ReleaseReader
-                release={selected}
-                dateLabel={dates[selected.version] ?? null}
-                installedVersion={installedVersion}
-                onOpenScreen={onOpenScreen}
-                action={updateAction}
-              />
-            ) : null
+            <StudioDetail>
+              {showCatchUp && catchUp !== null ? (
+                <CatchUpReader
+                  catchUp={catchUp}
+                  dates={dates}
+                  installedVersion={installedVersion}
+                />
+              ) : selected !== null ? (
+                <ReleaseReader
+                  release={selected}
+                  dateLabel={dates[selected.version] ?? null}
+                  installedVersion={installedVersion}
+                  onOpenScreen={onOpenScreen}
+                  action={updateAction}
+                />
+              ) : null}
+            </StudioDetail>
           }
         />
       )}
