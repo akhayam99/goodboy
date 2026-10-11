@@ -83,17 +83,19 @@ describe('ChatHeaderDelete', () => {
     await open();
 
     expect(screen.getByRole('button', { name: 'Delete chat' })).toBeDefined();
-    expect(screen.queryByText('Delete chat?')).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('asks in place after one click, with Archive instead', async () => {
+  it('asks in a popover beside the button after one click, with Archive instead', async () => {
     await open();
+    const trigger = screen.getByRole('button', { name: 'Delete chat' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Delete chat' }));
+    fireEvent.click(trigger);
 
-    expect(screen.getByText('Delete chat?')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Archive instead' })).toBeDefined();
-    expect(screen.getByText('Where is the consent step?')).toBeDefined();
+    const dialog = screen.getByRole('dialog', { name: 'Delete "Where is the consent step?"?' });
+    expect(dialog.closest('[data-dropdown-portal]')).not.toBeNull();
+    expect(trigger.parentElement?.contains(dialog)).toBe(false);
+    expect(within(dialog).getByRole('button', { name: 'Archive instead' })).toBeDefined();
   });
 
   it('closes on Cancel and keeps the chat', async () => {
@@ -102,7 +104,7 @@ describe('ChatHeaderDelete', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
-    expect(screen.queryByText('Delete chat?')).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
     expect(onRemoved).not.toHaveBeenCalled();
     expect(await remaining()).toHaveLength(1);
   });
@@ -111,7 +113,9 @@ describe('ChatHeaderDelete', () => {
     const { onRemoved } = await open();
     fireEvent.click(screen.getByRole('button', { name: 'Delete chat' }));
 
-    fireEvent.click(within(screen.getByRole('group')).getByRole('button', { name: 'Delete' }));
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete chat' }),
+    );
 
     await waitFor(() => expect(onRemoved).toHaveBeenCalledTimes(1));
     expect(await remaining()).toHaveLength(0);

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Undo2 } from 'lucide-react';
-import { Button, InlineConfirm, Notice, formatError } from '@goodboy/ui';
+import { Button, ConfirmPopover, Notice } from '@goodboy/ui';
 import type { MountId, SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { worktreeAbortRebase } from '../../../../worktree/worktree';
@@ -46,40 +46,17 @@ export const RebaseStoppedNotice = ({
   }
 
   const abort = async () => {
-    try {
-      await worktreeAbortRebase({ worktreePath });
-      setIsAborted(true);
-      setIsConfirming(false);
-      await ensure({
-        key: worktreeStatusKey({ worktreePath, baseBranch: baseBranch ?? undefined }),
-        worktreePath,
-        baseBranch: baseBranch ?? undefined,
-        maxAgeMs: 0,
-      });
-      setIsAborted(false);
-    } catch (error) {
-      setIsConfirming(false);
-      void reportError({
-        title: "Couldn't abort the rebase",
-        error: formatError(error),
-        sessionId,
-      });
-    }
+    await worktreeAbortRebase({ worktreePath });
+    setIsAborted(true);
+    setIsConfirming(false);
+    await ensure({
+      key: worktreeStatusKey({ worktreePath, baseBranch: baseBranch ?? undefined }),
+      worktreePath,
+      baseBranch: baseBranch ?? undefined,
+      maxAgeMs: 0,
+    });
+    setIsAborted(false);
   };
-
-  if (isConfirming) {
-    return (
-      <InlineConfirm
-        role="danger"
-        icon={<Undo2 size={ICON_SIZE.row} aria-hidden />}
-        title="Abort the rebase?"
-        description="The branch goes back to where it was before the rebase started. Conflict fixes made so far are lost."
-        confirmLabel="Abort rebase"
-        onConfirm={abort}
-        onCancel={() => setIsConfirming(false)}
-      />
-    );
-  }
 
   return (
     <Notice
@@ -100,9 +77,21 @@ export const RebaseStoppedNotice = ({
           <Button size="sm" variant="ghost" onClick={onOpenTerminal}>
             Open terminal
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => setIsConfirming(true)}>
-            Abort rebase
-          </Button>
+          <ConfirmPopover
+            role="danger"
+            icon={<Undo2 size={ICON_SIZE.row} aria-hidden />}
+            title="Abort the rebase?"
+            description="The branch returns to where it was before the rebase. Conflict fixes are lost."
+            confirmLabel="Abort rebase"
+            isOpen={isConfirming}
+            onConfirm={abort}
+            onCancel={() => setIsConfirming(false)}
+            trigger={() => (
+              <Button size="sm" variant="ghost" onClick={() => setIsConfirming(true)}>
+                Abort rebase
+              </Button>
+            )}
+          />
         </>
       }
     />

@@ -469,7 +469,7 @@ drawer header (`HeaderActions`): secondary controls, at most one secondary
 button, at most one filled primary, then the overflow `...`, all 28 tall, the
 last one on the column edge. The Session overview holds only the overflow
 (Refresh, Pin session, Archive session, Delete session...); Delete session...
-opens its confirm as a card under the title row, and Escape or Cancel gives
+opens its confirm beside the overflow trigger without moving the page, and Escape or Cancel gives
 focus back to the overflow. The Agent page keeps Interrupt, Close or Reopen as
 one ghost button with its word (it folds into the overflow below 560px) and
 `Delete agent` in the overflow. The artifact header reads

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { HeaderActions, Input, Tooltip, InlineMarkdown, inlineMarkdownText } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -7,7 +7,6 @@ import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
 import { sessionTitle } from '../../sessionTitle';
 import { SessionHeaderMenu } from './SessionHeaderMenu';
 import { DeleteSessionConfirm } from '../DeleteSessionConfirm';
-import { HeaderPanel } from '../../../../shared/components/HeaderPanel';
 import { LinkIssueAction } from './LinkIssueAction';
 import { ContextChip } from './ContextChip';
 import { GoalTeaser } from './GoalTeaser';
@@ -32,7 +31,6 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
     anchorKeys: [null, SESSION_HEADER_ANCHOR],
     onRename: rename.start,
   });
-  const titleRowRef = useRef<HTMLDivElement>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const titleText = sessionTitle({ session });
   const isNamedByGoodboy = useAppStore(
@@ -42,7 +40,6 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
   return (
     <div className="flex min-w-0 flex-col gap-2">
       <div
-        ref={titleRowRef}
         data-slot="pane-title-row"
         className={
           rename.editing ? 'flex min-h-8 items-center gap-2' : 'flex h-8 items-center gap-2'
@@ -87,14 +84,18 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
           <span className="shrink-0 text-meta text-faint-foreground">Named by Goodboy</span>
         ) : null}
         <HeaderActions
-          overflow={<SessionHeaderMenu session={session} onDelete={() => setIsDeleteOpen(true)} />}
+          overflow={
+            <DeleteSessionConfirm
+              session={session}
+              isOpen={isDeleteOpen}
+              onClose={() => setIsDeleteOpen(false)}
+              trigger={() => (
+                <SessionHeaderMenu session={session} onDelete={() => setIsDeleteOpen(true)} />
+              )}
+            />
+          }
         />
       </div>
-      {isDeleteOpen ? (
-        <HeaderPanel triggerWithin={titleRowRef} onClose={() => setIsDeleteOpen(false)}>
-          <DeleteSessionConfirm session={session} onClose={() => setIsDeleteOpen(false)} />
-        </HeaderPanel>
-      ) : null}
       <ChatOriginRow session={session} />
       <GoalTeaser session={session} />
       <div aria-label="Session facts" className="flex min-w-0 flex-wrap items-center gap-2">

@@ -8,7 +8,6 @@ vi.mock('@tauri-apps/api/event', () => ({
   emit: vi.fn(async () => undefined),
 }));
 
-import { useRef, useState } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { Agent, ProviderRunId } from '@goodboy/types';
@@ -27,8 +26,6 @@ import {
   seedActionState,
 } from '../../../__tests__/helpers/actionFixtures';
 import { bindTarget } from '../../actions/registry';
-import { HeaderConfirm } from '../../../shared/components/HeaderConfirm';
-import type { ArmedAction } from '../../../shared/components/HeaderConfirm/armedAction';
 import { AgentHeaderActions } from './AgentHeaderActions';
 
 type BridgeArgs = {
@@ -63,31 +60,11 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
-type HarnessProps = {
-  readonly agent: Agent;
-  readonly onDeleted?: () => void;
-};
-
-const Harness = ({ agent, onDeleted }: HarnessProps) => {
-  const [armed, setArmed] = useState<ArmedAction | null>(null);
-  const ref = useRef<HTMLDivElement>(null);
-  return (
-    <div ref={ref}>
-      <AgentHeaderActions
-        agent={agent}
-        sessionId={SESSION}
-        allowInterrupt
-        onArm={setArmed}
-        {...(onDeleted === undefined ? {} : { onDeleted })}
-      />
-      <HeaderConfirm armed={armed} triggerWithin={ref} onClose={() => setArmed(null)} />
-    </div>
-  );
-};
-
 const renderFor = (agent: Agent, onDeleted = vi.fn()) => {
   seedActionState({ useAppStore, seed: { agents: [agent], mounts: [mountFixture()] } });
-  render(<Harness agent={agent} onDeleted={onDeleted} />);
+  render(
+    <AgentHeaderActions agent={agent} sessionId={SESSION} allowInterrupt onDeleted={onDeleted} />,
+  );
   return { onDeleted };
 };
 
@@ -115,10 +92,11 @@ describe('AgentHeaderActions', () => {
     expect(screen.getByRole('button', { name: 'More agent actions' })).toBeDefined();
   });
 
-  it('asks before delete under the header, deletes through the registry and leaves the page', async () => {
+  it('asks before delete in a popover anchored to the overflow, deletes through the registry and leaves the page', async () => {
     const { onDeleted } = renderFor(agentFixture({ status: 'completed' }));
     openDeleteConfirm();
-    const confirm = screen.getByRole('group', { name: 'Delete agent?' });
+    const confirm = screen.getByRole('dialog', { name: 'Delete agent?' });
+    expect(confirm.closest('[data-dropdown-portal]')).not.toBeNull();
     await act(async () => {
       fireEvent.click(within(confirm).getByRole('button', { name: 'Delete' }));
     });
@@ -134,18 +112,18 @@ describe('AgentHeaderActions', () => {
     renderFor(agentFixture({ status: 'completed' }));
     expect(screen.queryByRole('button', { name: 'Delete agent' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Delete' })).toBeNull();
-    expect(screen.queryByRole('group', { name: 'Delete agent?' })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Delete agent?' })).toBeNull();
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('closes the delete confirm on Escape and returns focus to the overflow trigger', () => {
     renderFor(agentFixture({ status: 'completed' }));
     openDeleteConfirm();
-    expect(screen.getByRole('group', { name: 'Delete agent?' })).toBeDefined();
+    expect(screen.getByRole('dialog', { name: 'Delete agent?' })).toBeDefined();
 
     fireEvent.keyDown(screen.getByRole('button', { name: 'Cancel' }), { key: 'Escape' });
 
-    expect(screen.queryByRole('group', { name: 'Delete agent?' })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Delete agent?' })).toBeNull();
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'More agent actions' }));
   });
 
@@ -155,7 +133,7 @@ describe('AgentHeaderActions', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
-    expect(screen.queryByRole('group', { name: 'Delete agent?' })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Delete agent?' })).toBeNull();
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'More agent actions' }));
   });
 
@@ -184,7 +162,7 @@ describe('AgentHeaderActions', () => {
         },
       },
     });
-    render(<Harness agent={agent} />);
+    render(<AgentHeaderActions agent={agent} sessionId={SESSION} allowInterrupt />);
     expect(screen.getByRole('button', { name: 'Interrupt' })).toBeDefined();
     cleanup();
     renderFor(agentFixture({ status: 'completed' }));

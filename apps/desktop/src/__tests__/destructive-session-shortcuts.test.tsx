@@ -64,7 +64,10 @@ vi.mock('../app/components/AppTopBar', () => ({ AppTopBar: () => null }));
 vi.mock('../app/components/AppEmptyState', () => ({ NoWorkspaceScreen: () => null }));
 vi.mock('../features/workspace/components/StageBoard', () => ({ StageBoard: () => null }));
 vi.mock('../features/session/components/DeleteSessionConfirm', () => ({
-  DeleteSessionConfirm: ({ session }: { session: { id: string } }) => {
+  DeleteSessionConfirm: ({ session, isOpen }: { session: { id: string }; isOpen?: boolean }) => {
+    if (isOpen !== true) {
+      return null;
+    }
     deleteConfirmCalls.push({ sessionId: session.id });
     return <div data-testid="delete-confirm">{session.id}</div>;
   },

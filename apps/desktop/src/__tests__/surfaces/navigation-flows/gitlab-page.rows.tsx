@@ -201,7 +201,9 @@ export const GITLAB_PAGE_ROWS: ReadonlyArray<Row> = [
         expect(tab.hasAttribute('disabled')).toBe(true);
         expect(within(tab).getByText('Set by the project')).toBeDefined();
       }
-      const confirm = within(screen.getByRole('group', { name: /^Merge !42 into main/ }));
+      const confirm = within(
+        await screen.findByRole('dialog', { name: /^Merge !42 into main/ }, WAIT),
+      );
       await click(confirm.getByRole('button', { name: 'Merge' }));
       await settle(8);
     },
