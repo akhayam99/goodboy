@@ -15,6 +15,7 @@ const { store, worktreeStatus, listNudgeEvents, openQuestions, tally } = vi.hois
     planConsumptions: {} as Record<string, ReadonlyArray<unknown>>,
     sessionGithub: {} as Record<string, unknown>,
     mountGithub: {} as Record<string, unknown>,
+    scribeWork: {} as Record<string, unknown>,
     mountGitlabMr: {} as Record<string, unknown>,
     mountBitbucketPr: {} as Record<string, unknown>,
     mountCleanupProposals: {} as Record<string, ReadonlyArray<unknown>>,

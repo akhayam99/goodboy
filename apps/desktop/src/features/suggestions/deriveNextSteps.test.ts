@@ -788,6 +788,23 @@ describe('deriveNextSteps eleven new kinds', () => {
     expect(suggestion?.detail).toBe('7 commits ahead');
   });
 
+  it.each([
+    ['writing', 'Scribe is writing the text'],
+    ['creating', 'Opening the pull request'],
+    ['ready', 'Scribe wrote the text, review it'],
+  ] as const)(
+    'says what the %s text job is doing on the open pull request row',
+    (scribe, detail) => {
+      const suggestions = deriveNextSteps({
+        ...BASE_PARAMS,
+        mounts: [mount({ pr: null, aheadOfBase: 7, scribe })],
+      });
+      const suggestion = suggestions.find((candidate) => candidate.kind === 'open-pr');
+      expect(suggestion?.detail).toBe(detail);
+      expect(suggestion?.payload).toMatchObject({ scribe });
+    },
+  );
+
   it('suggests pushing unpushed commits on a clean worktree', () => {
     const suggestions = deriveNextSteps({
       ...BASE_PARAMS,
