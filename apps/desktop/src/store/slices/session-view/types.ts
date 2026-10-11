@@ -107,6 +107,7 @@ export const DEFAULT_PREFS: SessionViewPrefs = {
   group: 'none',
   isArchivedShown: false,
   isFoldOpen: false,
+  statusFilter: [],
 };
 
 export const VALID_SORTS: ReadonlyArray<SessionSortKey> = [
@@ -114,6 +115,14 @@ export const VALID_SORTS: ReadonlyArray<SessionSortKey> = [
   'updatedAt',
   'goal',
   'createdAt',
+];
+
+export const VALID_STAGES: ReadonlyArray<SessionStage> = [
+  'attention',
+  'running',
+  'review',
+  'building',
+  'done',
 ];
 
 export const VALID_GROUPS: ReadonlyArray<SessionGroupKey> = ['none', 'pr', 'stage', 'project'];

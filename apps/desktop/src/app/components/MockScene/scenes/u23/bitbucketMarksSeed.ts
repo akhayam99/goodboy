@@ -179,6 +179,7 @@ export const seedBitbucketMarks = (): Session => {
         group: 'none',
         isArchivedShown: false,
         isFoldOpen: true,
+        statusFilter: [],
       },
     },
   });

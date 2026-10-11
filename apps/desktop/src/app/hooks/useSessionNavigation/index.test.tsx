@@ -12,7 +12,7 @@ vi.mock('../../../shared/lib/db', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, renderHook } from '@testing-library/react';
+import { act, cleanup, renderHook } from '@testing-library/react';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -31,6 +31,7 @@ import {
 import { useSessionNavigation } from '.';
 
 let useAppStore: StoryStore;
+type Navigate = ReturnType<StoryStore['getState']>['navigate'];
 const navigate = vi.fn();
 
 beforeAll(async () => {
@@ -48,7 +49,7 @@ afterEach(cleanup);
 const opened = (hour: number, goal: string): Session =>
   sessionOf({
     goal,
-    lastOpenedAt: `2026-10-06T${String(hour).padStart(2, '0')}:00:00.000Z`,
+    updatedAt: `2026-10-06T${String(hour).padStart(2, '0')}:00:00.000Z`,
   });
 
 const idOf = (session: Session) => session.id as SessionId;
@@ -117,6 +118,31 @@ describe('stepping from session to session', () => {
   });
 });
 
+describe('walking a list while opening each row', () => {
+  const first = opened(20, 'A');
+  const rows = [first, opened(19, 'B'), opened(18, 'C'), opened(17, 'D'), opened(16, 'E')];
+
+  it('visits four different sessions in four presses', () => {
+    seedColumn({ store: useAppStore, sessions: rows, currentSessionId: first.id });
+    const visited: string[] = [];
+    const navigateAndOpen: Navigate = ({ to }) => {
+      if (to.at !== 'session') {
+        return;
+      }
+      visited.push(rows.find((row) => row.id === to.sessionId)?.goal ?? '');
+      useAppStore.getState().markSessionOpened({ sessionId: to.sessionId });
+      useAppStore.setState({ currentSessionId: to.sessionId });
+    };
+    useAppStore.setState({ navigate: navigateAndOpen });
+    const { result, rerender } = renderHook(() => useSessionNavigation());
+    for (let press = 0; press < 4; press += 1) {
+      act(() => result.current({ delta: 1 }));
+      rerender();
+    }
+    expect(visited).toEqual(['B', 'C', 'D', 'E']);
+  });
+});
+
 describe('the rows the list folds', () => {
   const twelve = Array.from({ length: 12 }, (_, index) =>
     opened(23 - index, `Session ${index + 1}`),
@@ -161,7 +187,7 @@ describe('a grouped list', () => {
   const running = sessionOf({
     goal: 'Still going',
     state: runningState(),
-    lastOpenedAt: '2026-10-06T12:00:00.000Z',
+    updatedAt: '2026-10-06T12:00:00.000Z',
   });
   const merged = opened(11, 'Merged long ago');
   const idle = opened(10, 'Quiet');

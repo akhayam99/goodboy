@@ -306,6 +306,7 @@ export const seedSessionColumn = ({
         group: 'none',
         isArchivedShown,
         isFoldOpen: false,
+        statusFilter: [],
       },
     },
     loadArchivedSessions: async () => undefined,

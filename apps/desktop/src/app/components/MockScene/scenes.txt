@@ -371,7 +371,11 @@ session-start
 session-states
 session-studio-over
 session-switcher
+sessions-funnel
+sessions-funnel-open
+sessions-hidden
 sessions-menu
+sessions-nomatch
 settings-app
 settings-general-legacy
 settings-general-pinned

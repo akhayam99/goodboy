@@ -212,6 +212,7 @@ describe('store contract', () => {
         group: 'none',
         isArchivedShown: false,
         isFoldOpen: false,
+        statusFilter: [],
       });
     });
 
