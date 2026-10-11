@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { MonitorSnapshot } from '@goodboy/core';
 import type { MountId, MountOperation, SessionId, WorkspaceId } from '@goodboy/types';
 import type { AppStore } from '../../store';
 import type { StorageFolder } from './types';
@@ -102,6 +103,7 @@ type Harness = {
     storageRemovingPaths: Readonly<Record<string, true>>;
     storageOutcome: unknown;
     settings: Readonly<Record<string, string>>;
+    monitorSnapshot?: MonitorSnapshot;
   };
   loadStorage: ReturnType<typeof vi.fn>;
   saveSetting: ReturnType<typeof vi.fn>;
@@ -211,6 +213,43 @@ describe('removeStorageFolders', () => {
     expect(deleteWorktreeLedgerEntries).not.toHaveBeenCalled();
     expect(harness.state.storageFolders).toEqual([orphan]);
     expect(harness.state.storageRemovingPaths).toEqual({});
+  });
+
+  it('keeps a folder a process still runs in and says so', async () => {
+    const harness = makeHarness([orphan]);
+    harness.state.monitorSnapshot = {
+      listeners: [],
+      processes: [
+        {
+          pid: 90,
+          ppid: 1,
+          pgid: 90,
+          name: 'next-server',
+          cwd: `${orphan.path}/apps/web`,
+          startedAt: 1,
+          cpuPercent: 0,
+          rssBytes: 0,
+          uid: 501,
+          argsMasked: '',
+        },
+      ],
+      takenAt: 1,
+      isPlatformSupported: true,
+    };
+    const { set, get } = wire(harness);
+
+    const summary = await removeStorageFolders(set, get)({ paths: [orphan.path], mode: 'safe' });
+
+    expect(summary.removed).toBe(0);
+    expect(summary.kept).toEqual([
+      {
+        kind: 'kept',
+        path: orphan.path,
+        reasons: [],
+        message: 'a process is running in the worktree',
+      },
+    ]);
+    expect(removeWorktreeFolder).not.toHaveBeenCalled();
   });
 
   it('reports a thrown removal as failed and never touches a folder in use', async () => {

@@ -2,6 +2,7 @@
 
 mod mask;
 mod parse;
+pub(crate) mod stop;
 pub(crate) mod watched;
 
 use std::collections::{BTreeSet, HashMap};

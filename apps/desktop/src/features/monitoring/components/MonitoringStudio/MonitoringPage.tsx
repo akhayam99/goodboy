@@ -4,6 +4,8 @@ import { EmptyState, HeaderActions, PaneShell, ScrollFade, SearchField } from '@
 import { useAppStore } from '../../../../store';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { defaultProjectId } from '../../defaultProjectId';
+import { useIdleCounts } from '../../hooks/useIdleCounts';
+import { useLeftoverRows } from '../../hooks/useLeftoverRows';
 import { useMonitoringModel } from '../../hooks/useMonitoringModel';
 import { useMonitorPolling } from '../../hooks/useMonitorPolling';
 import { summaryMeta } from '../../summaryMeta';
@@ -18,6 +20,9 @@ export const MonitoringPage = () => {
   useMonitorPolling();
   const model = useMonitoringModel();
   const now = useNow(5_000);
+  const leftovers = useLeftoverRows();
+  const idleCounts = useIdleCounts();
+  const sweptCount = useAppStore((state) => state.monitorSweptCount);
   const watchPort = useAppStore((state) => state.watchPort);
   const fallbackProjectId = defaultProjectId({ projects: model.projects });
   const isReady = model.status === 'ready';
@@ -89,8 +94,14 @@ export const MonitoringPage = () => {
         {isReady && model.ports.length > 0 ? (
           <PortsSection rows={model.ports} processOf={model.processOf} now={now} />
         ) : null}
-        {isReady && model.started.length > 0 ? (
-          <StartedSection rows={model.started} now={now} />
+        {isReady && (model.started.length > 0 || leftovers.length > 0) ? (
+          <StartedSection
+            rows={model.started}
+            leftovers={leftovers}
+            sweptCount={sweptCount}
+            idleCounts={idleCounts}
+            now={now}
+          />
         ) : null}
         {isReady && model.also.length > 0 ? (
           <AlsoListeningSection
