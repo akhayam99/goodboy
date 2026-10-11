@@ -11,7 +11,7 @@ Free disk space and clean up branches, with what is safe to remove spelled out.
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
-Free disk space without guessing. **Worktrees** lists the checkout folders of archived, deleted or gone sessions by repo, with their size, when each last changed, why it exists and whether it is safe to remove. **Remove 3 safe folders in Harborline** clears them together, and it takes only clean folders idle for over 30 days. Folders with changes, running agents or a git operation in progress are skipped, with the reason.
+Free disk space without guessing. **Worktrees** lists the checkout folders of archived, deleted or gone sessions by repo, with their size, when each last changed, why it exists and whether it is safe to remove. **Remove 3 safe folders in Harborline** clears them together, and it takes only clean folders idle for over 30 days. Folders with changes, running agents, a git operation in progress or a process running inside them (a dev server, say) are skipped, with the reason. Closing a branch from a session says the same and offers **Stop it**, which stops the processes and checks again.
 
 ### Branches
 

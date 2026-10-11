@@ -30,6 +30,7 @@ import { primaryProjectRoot } from './features/workspace/primaryProjectRoot';
 import { ReleaseNoticeBridge } from './features/changelog/components/ReleaseNoticeBridge';
 import { openRunningScript } from './features/scripts/openRunningScript';
 import type { RunningScript } from './features/scripts/hooks/useRunningScripts';
+import { listenOrphansSwept } from './features/monitoring/listenOrphansSwept';
 import { listenBridgeCommands } from './features/companion/commandExecutor';
 import { listenProjectMaterializeRequests } from './features/session/projectMaterializeBridge';
 import { listenMountCommands } from './features/session/mountQueryBridge';
@@ -196,6 +197,7 @@ export const App = () => {
   useKeepFullScreenOnEscape();
   useUnhandledRejectionNotice();
   useAsyncSubscription({ start: listenBridgeCommands });
+  useAsyncSubscription({ start: listenOrphansSwept });
   useAsyncSubscription({ start: listenProjectMaterializeRequests });
   useAsyncSubscription({ start: listenMountCommands });
   useAsyncSubscription({ start: startWorktreeWriterBridge });

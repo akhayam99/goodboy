@@ -116,6 +116,7 @@ chat-list-idle
 chat-list-loading
 chat-room
 chat-shell
+cleanup-process-blocked
 code-layers
 column-rail
 command-palette
@@ -253,7 +254,10 @@ modelswilluse-cleared
 monitoring-alsolistening
 monitoring-empty
 monitoring-failed
+monitoring-forcestop
+monitoring-leftovers
 monitoring-ports
+monitoring-stopconfirm
 mount-mismatch
 mounts
 needs-you-card
