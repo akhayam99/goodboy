@@ -9,25 +9,48 @@ type Props = {
   readonly files: ReadonlyArray<FileDiff>;
   readonly isLoading: boolean;
   readonly error: string | null;
+  readonly isCompact?: boolean;
 };
+
+const COMPACT_LINE_LIMIT = 8;
 
 const SIGN = { add: '+', del: '-', context: ' ' } as const;
 
-export const ProposedChange = ({ files, isLoading, error }: Props) => {
+export const ProposedChange = ({ files, isLoading, error, isCompact = false }: Props) => {
   const plan = inlineChangePlan({ files });
+  let budget = COMPACT_LINE_LIMIT;
+  const shownFiles = isCompact
+    ? plan.files.flatMap((file) =>
+        budget <= 0
+          ? []
+          : [
+              {
+                ...file,
+                hunks: file.hunks.flatMap((hunk) => {
+                  if (budget <= 0) {
+                    return [];
+                  }
+                  const lines = hunk.lines.slice(0, budget);
+                  budget -= lines.length;
+                  return [{ ...hunk, lines }];
+                }),
+              },
+            ],
+      )
+    : plan.files;
   return (
     <div
       role="group"
       aria-label={REVIEW_FLOW_LABEL.proposedChange}
       className="flex min-w-0 flex-col gap-2"
     >
-      <SectionHeader label={REVIEW_FLOW_LABEL.proposedChange} headingLevel={2} />
+      {!isCompact && <SectionHeader label={REVIEW_FLOW_LABEL.proposedChange} headingLevel={2} />}
       {isLoading && <Skeleton className="h-16 w-full rounded-md" />}
       {error !== null && <p className="text-meta text-warning">{error}</p>}
       {!isLoading && error === null && files.length === 0 && (
         <p className="text-meta text-muted-foreground">{REVIEW_FLOW_LABEL.noChangeCaptured}</p>
       )}
-      {plan.files.map((file) => (
+      {shownFiles.map((file) => (
         <div key={file.path} className="min-w-0 overflow-hidden rounded-lg bg-subtle">
           <p className="truncate px-3 pt-2 font-mono text-meta text-muted-foreground">
             {file.path}
@@ -52,7 +75,7 @@ export const ProposedChange = ({ files, isLoading, error }: Props) => {
           ))}
         </div>
       ))}
-      {plan.kind !== 'whole' && files.length > 0 && (
+      {!isCompact && plan.kind !== 'whole' && files.length > 0 && (
         <p className="text-meta text-muted-foreground">
           {plan.kind === 'too_large' ? `${REVIEW_FLOW_LABEL.tooLarge} ` : ''}
           {changeSummaryLine({ fileCount: files.length, changedLines: plan.changedLines })}
