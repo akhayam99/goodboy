@@ -3,18 +3,20 @@ import { Check } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
+const ROLE_OF_KIND = { single: 'radio', multiple: 'checkbox' } as const;
+
 type Props = {
-  readonly role: 'radio' | 'checkbox';
+  readonly kind: 'single' | 'multiple';
   readonly label: string;
   readonly isChecked: boolean;
   readonly onSelect: () => void;
   readonly trailing?: ReactNode;
 };
 
-export const FilterChoice = ({ role, label, isChecked, onSelect, trailing }: Props) => (
+export const FilterChoice = ({ kind, label, isChecked, onSelect, trailing }: Props) => (
   <button
     type="button"
-    role={role}
+    role={ROLE_OF_KIND[kind]}
     aria-checked={isChecked}
     onClick={onSelect}
     className={cn(

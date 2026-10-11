@@ -155,7 +155,7 @@ export const SessionFilterPopover = ({
         {STATUS_OPTIONS.map((option) => (
           <FilterChoice
             key={option.stage}
-            role="checkbox"
+            kind="multiple"
             label={option.label}
             isChecked={prefs.statusFilter.includes(option.stage)}
             onSelect={() => toggleStatus(option.stage)}
@@ -168,7 +168,7 @@ export const SessionFilterPopover = ({
           {projectOptions.map((option) => (
             <FilterChoice
               key={option.id}
-              role="checkbox"
+              kind="multiple"
               label={option.label}
               isChecked={selectedProjectIds.includes(option.id)}
               onSelect={() => toggleProject(option.id)}
@@ -179,7 +179,7 @@ export const SessionFilterPopover = ({
       ) : null}
       <FilterSection title="Archive">
         <FilterChoice
-          role="checkbox"
+          kind="multiple"
           label={`Show archived (${archivedCount})`}
           isChecked={prefs.isArchivedShown}
           onSelect={() => onArchivedShownChange(!prefs.isArchivedShown)}
@@ -189,7 +189,7 @@ export const SessionFilterPopover = ({
         {SORT_OPTIONS.map((option) => (
           <FilterChoice
             key={option.key}
-            role="radio"
+            kind="single"
             label={option.label}
             isChecked={prefs.sort === option.key}
             onSelect={() => setSessionViewPrefs({ workspaceId, patch: { sort: option.key } })}
@@ -200,7 +200,7 @@ export const SessionFilterPopover = ({
         {GROUP_OPTIONS.map((option) => (
           <FilterChoice
             key={option.key}
-            role="radio"
+            kind="single"
             label={option.label}
             isChecked={prefs.group === option.key}
             onSelect={() => setSessionViewPrefs({ workspaceId, patch: { group: option.key } })}
