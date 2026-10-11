@@ -43,8 +43,11 @@ const OPENCODE: ProviderDisplayInfo = {
 
 const chatIdOf = (key: string): ChatId => `mock-chat-${WORKSPACE_ID}-${key}` as ChatId;
 
-const initialChatId = (): ChatId | null => {
-  const key = sceneParam({ key: 'chat' });
+type ChatKeyParams = {
+  readonly key: string | null;
+};
+
+const initialChatId = ({ key }: ChatKeyParams): ChatId | null => {
   if (key === 'new') {
     return null;
   }
@@ -69,7 +72,11 @@ const seedChatActivity = (): void => {
   }
 };
 
-export const ChatRoomScene = () => {
+type Props = {
+  readonly chat?: string;
+};
+
+export const ChatRoomScene = ({ chat }: Props) => {
   const [isReady, setIsReady] = useState(false);
   const [paletteQuery, setPaletteQuery] = useState<string | null>(() => sceneParam({ key: 'ask' }));
   const chatId = useAppStore((state) =>
@@ -97,9 +104,14 @@ export const ChatRoomScene = () => {
       })),
     }));
     seedChatActivity();
-    useAppStore.getState().openStudio({ studio: { kind: 'chat', chatId: initialChatId() } });
+    useAppStore.getState().openStudio({
+      studio: {
+        kind: 'chat',
+        chatId: initialChatId({ key: chat ?? sceneParam({ key: 'chat' }) }),
+      },
+    });
     setIsReady(true);
-  }, []);
+  }, [chat]);
 
   useEffect(() => {
     const stage = sceneParam({ key: 'work' });
