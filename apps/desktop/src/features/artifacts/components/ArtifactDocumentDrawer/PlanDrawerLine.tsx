@@ -1,18 +1,12 @@
 import { Info } from 'lucide-react';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { PlanApproveConfirm } from '../../../plans/planSurfaces';
-import type { PlanApproveConfirm as PlanApproveConfirmState } from '../../../plans/usePlanPrimaryAction';
 
 type Props = {
-  readonly confirm: PlanApproveConfirmState | null;
   readonly reason: string | null;
   readonly note: string | null;
 };
 
-export const PlanDrawerLine = ({ confirm, reason, note }: Props) => {
-  if (confirm !== null) {
-    return <PlanApproveConfirm confirm={confirm} />;
-  }
+export const PlanDrawerLine = ({ reason, note }: Props) => {
   if (reason !== null) {
     return (
       <p

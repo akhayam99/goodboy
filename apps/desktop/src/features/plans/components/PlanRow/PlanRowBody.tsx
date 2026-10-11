@@ -7,7 +7,6 @@ import { ArtifactStateChip } from '../../../artifacts/artifactSurfaces';
 import { NEW_VERSION_LABEL } from '../../planRevising';
 import type { PlanModel } from '../../usePlanModel';
 import { usePlanPrimaryAction } from '../../usePlanPrimaryAction';
-import { PlanApproveConfirm } from '../PlanPrimaryButton/PlanApproveConfirm';
 import { PlanPrimaryButton } from '../PlanPrimaryButton';
 import { PlanRowFrame } from './PlanRowFrame';
 
@@ -24,14 +23,7 @@ export const PlanRowBody = ({ sessionId, model }: Props) => {
   const action = usePlanPrimaryAction({ sessionId, plan, revising, isRunning: false });
 
   return (
-    <PlanRowFrame
-      trailing={<PlanPrimaryButton action={action} isReasonShown={false} />}
-      below={
-        action.confirm === null ? null : (
-          <PlanApproveConfirm confirm={action.confirm} className="w-full" />
-        )
-      }
-    >
+    <PlanRowFrame trailing={<PlanPrimaryButton action={action} isReasonShown={false} />}>
       <button
         type="button"
         data-testid="plan-row-open"

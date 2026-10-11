@@ -93,7 +93,6 @@ export const PlanDrawerFrame = ({ sessionId, model, revision, onClose }: Props) 
   });
   const line = (
     <PlanDrawerLine
-      confirm={editor.isEditing ? null : action.confirm}
       reason={reason}
       note={note === null || pastVersion !== null ? null : planVersionNoteLabel({ note })}
     />
