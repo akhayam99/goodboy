@@ -106,6 +106,18 @@ project. It moves at once, with an Undo toast that names the new place
 Undo. An issue of another project is refused with the project it belongs to.
 The same entries are in the command palette while an issue is open.
 
+Drag works as a third door. Press an issue chip on the session or on a branch
+row and pull past a few pixels: a ghost chip follows the pointer with a pill
+that names the result (**Move to the session**, **Move to payments-api /
+hl/fix-duplicate-credit**, **Already here**, **Only payments-api branches**).
+A **Session** pill appears on the facts row while the drag is live, and each
+branch row of the issue's project is a target; the one under the pointer is
+highlighted and rows of another project dim and refuse. Release to drop: one
+write, one Undo. Hold Alt to copy, which adds the place and keeps the source
+(**Copy to ...**). Esc, or a release outside a target, cancels. A click under
+5 px still opens the issue. A live region announces the drag, the target and
+the result; the keyboard path is the **Move to** menu.
+
 On a branch row the chip's x says what it does: **Move to session** when that
 branch is the only place, **Take off payments-api / hl/fix-duplicate-credit**
 when the issue is somewhere else too. On the session it stays **Unlink from

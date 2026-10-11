@@ -8,6 +8,7 @@ import { ObjectMenuArea } from '../../features/actions/components/ObjectMenuArea
 import { taskKeyOf } from '../../features/actions/kinds/task';
 import type { ObjectTarget } from '../../features/actions/types';
 import { taskPlacementLabel } from '../utils/taskPlacementLabel';
+import { useTaskDrag } from '../../features/session/hooks/useTaskDrag';
 import { TaskLinkChip } from './TaskLinkChip';
 
 type Props = {
@@ -43,6 +44,7 @@ export const LinkedTaskChip = ({ sessionId, task, branch, branches, size = 'cont
     branch,
   } satisfies ObjectTarget;
   const placement = taskPlacementLabel({ branches });
+  const drag = useTaskDrag({ sessionId, task, branch });
   const isSolePlacement = branch !== null && otherPlacements === 0;
   const dismissLabel =
     branch === null
@@ -72,6 +74,7 @@ export const LinkedTaskChip = ({ sessionId, task, branch, branches, size = 'cont
   return (
     <ObjectMenuArea target={target} anchorKey={taskKeyOf(target)}>
       <span
+        onPointerDown={drag.onPointerDown}
         className={cn(
           'group/task-link relative shrink-0',
           chipClasses({ tone: 'neutral', shape: 'badge', size }),

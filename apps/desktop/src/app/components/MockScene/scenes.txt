@@ -434,6 +434,10 @@ switcher-pinned
 task-links
 task-links-hover
 task-links-undo
+taskdrag-copy
+taskdrag-overbranch
+taskdrag-oversession
+taskdrag-refused
 taskmove-issuepage
 taskmove-menu
 tasks-cursor
