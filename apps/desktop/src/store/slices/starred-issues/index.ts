@@ -7,11 +7,17 @@ import {
 } from '@goodboy/db';
 import type { IsoDateTime, JiraIntegrationConfig, WorkspaceId } from '@goodboy/types';
 import { refreshStarredIssues as runRefresh } from '../../../features/integrations/starred/refreshStarredIssues';
-import { starredIssueOf, starKey } from '../../../features/integrations/starred/starredIssueOf';
+import {
+  starredIssueOf,
+  starredIssueOfTask,
+  starKey,
+} from '../../../features/integrations/starred/starredIssueOf';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { starredIssuesInitialState } from './state';
 import type { SetFn, StarredIssuesSlice } from './types';
 import type { SliceDeps } from '../../slice-types';
+
+const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
 const REFRESH_AFTER_MS = 5 * 60 * 1000;
 
@@ -29,7 +35,7 @@ export const createStarredIssuesSlice = ({ set, get }: SliceDeps): StarredIssues
     const issue = starredIssueOf({
       workspaceId,
       record,
-      now: new Date().toISOString() as IsoDateTime,
+      now: nowIso(),
     });
     if (issue === null) {
       return;
@@ -42,6 +48,37 @@ export const createStarredIssuesSlice = ({ set, get }: SliceDeps): StarredIssues
       },
     }));
     await reload(set, workspaceId);
+  },
+  starExternalTask: async ({ workspaceId, task }) => {
+    const issue = starredIssueOfTask({
+      workspaceId,
+      task,
+      now: nowIso(),
+    });
+    if (issue === null) {
+      return false;
+    }
+    const existing = await listStarredIssues({ db: tauriDatabase, workspaceId });
+    if (existing.some((star) => starKey(star) === starKey(issue))) {
+      set((state) => ({ starredIssues: { ...state.starredIssues, [workspaceId]: existing } }));
+      return false;
+    }
+    await starIssue({ db: tauriDatabase, issue });
+    await reload(set, workspaceId);
+    get().undoable({
+      message: `${issue.identifier} is starred. Find it in Tasks, Starred.`,
+      undo: async () => {
+        await removeStar({
+          db: tauriDatabase,
+          workspaceId,
+          provider: issue.provider,
+          externalId: issue.externalId,
+        });
+        await reload(set, workspaceId);
+        return true;
+      },
+    });
+    return true;
   },
   unstarIssue: async ({ workspaceId, provider, externalId }) => {
     await removeStar({ db: tauriDatabase, workspaceId, provider, externalId });
@@ -83,7 +120,7 @@ export const createStarredIssuesSlice = ({ set, get }: SliceDeps): StarredIssues
       issues,
       gitlabHost,
       jiraConfig,
-      now: new Date().toISOString() as IsoDateTime,
+      now: nowIso(),
     });
     await updateStarredIssueSnapshots({ db: tauriDatabase, issues: refreshed.snapshots });
     set((state) => ({

@@ -44,7 +44,6 @@ import { FixRunMultiDoneScene } from '../scenes/FixRunMultiDoneScene';
 import { SpaceDiffCommentScene } from '../scenes/SpaceDiffCommentScene';
 import { SpaceDiffSplitScene } from '../scenes/SpaceDiffSplitScene';
 import { BoardScene } from '../scenes/BoardScene';
-import { BoardOngoingScene } from '../scenes/BoardOngoingScene';
 import { BoardSelectedScene } from '../scenes/BoardSelectedScene';
 import { BoardDeleteConfirmScene } from '../scenes/BoardDeleteConfirmScene';
 import { TranscriptMountScene } from '../scenes/TranscriptMountScene';
@@ -235,7 +234,6 @@ export const BASE_SCENES = {
   'resolve-gitlab': ResolveGitlabScene,
   'resolve-bitbucket': ResolveBitbucketScene,
   board: BoardScene,
-  'board-ongoing': BoardOngoingScene,
   'board-selected': BoardSelectedScene,
   'board-delete-confirm': BoardDeleteConfirmScene,
   'transcript-mount': TranscriptMountScene,

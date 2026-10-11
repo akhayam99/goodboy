@@ -26,7 +26,7 @@ export const LinkWorkPanel = ({
   const [error, setError] = useState<string | null>(null);
   const [isLinking, setIsLinking] = useState(false);
   const linkSessionExternalTask = useAppStore((state) => state.linkSessionExternalTask);
-  const linkWorkspaceExternalTask = useAppStore((state) => state.linkWorkspaceExternalTask);
+  const starExternalTask = useAppStore((state) => state.starExternalTask);
   const work = useLinkWorkItems({
     sessionId: session.id,
     workspaceId: session.workspaceId,
@@ -38,18 +38,27 @@ export const LinkWorkPanel = ({
     setIsLinking(true);
     const createdAt = new Date().toISOString() as IsoDateTime;
     try {
-      await (choice.scope === 'workspace'
-        ? linkWorkspaceExternalTask({
-            task: { ...task, workspaceId: session.workspaceId, createdAt },
-          })
-        : linkSessionExternalTask(session.id, {
-            ...task,
-            createdAt,
-            relation: choice.relation,
-          }));
+      await linkSessionExternalTask(session.id, {
+        ...task,
+        createdAt,
+        relation: choice.relation,
+      });
       onLinked();
     } catch (linkError: unknown) {
       setError(formatError(linkError));
+    } finally {
+      setIsLinking(false);
+    }
+  };
+
+  const star = async (task: LaunchExternalTask): Promise<void> => {
+    setError(null);
+    setIsLinking(true);
+    try {
+      await starExternalTask({ workspaceId: session.workspaceId, task });
+      onLinked();
+    } catch (starError: unknown) {
+      setError(formatError(starError));
     } finally {
       setIsLinking(false);
     }
@@ -61,13 +70,15 @@ export const LinkWorkPanel = ({
       onQueryChange={setQuery}
       items={work.items}
       lookedUp={work.lookedUp}
-      linkedScopes={work.linkedScopes}
+      linkedKeys={work.linkedKeys}
+      starredKeys={work.starredKeys}
       sources={work.sources}
       {...(initialSource !== undefined ? { initialSource } : {})}
       isLoading={work.isLoading}
       isLinking={isLinking}
       error={error}
       onLink={(task, choice) => void link(task, choice)}
+      onStar={(task) => void star(task)}
       onClose={onClose}
     />
   );

@@ -1,52 +1,43 @@
 import { Button } from '@goodboy/ui';
 import type { SessionExternalTaskProvider } from '@goodboy/types';
 import { TaskLinkChip } from '../../../../shared/components/TaskLinkChip';
-import { linkedLabel, type LinkScope } from './linkScope';
+import { LINKED_LABEL } from './linkScope';
 
 type Props = {
   readonly provider: SessionExternalTaskProvider;
   readonly identifier: string;
-  readonly title: string;
-  readonly scope: LinkScope;
   readonly isClosing: boolean;
   readonly isLinking: boolean;
-  readonly duplicate?: {
-    readonly scopes: ReadonlyArray<LinkScope>;
-  };
+  readonly isDuplicate: boolean;
+  readonly canStar: boolean;
+  readonly isStarred: boolean;
+  readonly onStar: () => void;
   readonly onToggleClosing: () => void;
   readonly onLink: () => void;
   readonly onCancel: () => void;
 };
 
-const placeOf = ({ scope }: Pick<Props, 'scope'>): string =>
-  scope === 'workspace' ? 'on the Board' : 'not on a branch yet';
-
 export const LinkScopePreview = ({
   provider,
   identifier,
-  title,
-  scope,
   isClosing,
   isLinking,
-  duplicate,
+  isDuplicate,
+  canStar,
+  isStarred,
+  onStar,
   onToggleClosing,
   onLink,
   onCancel,
 }: Props) => (
   <div aria-label="Link preview" className="flex flex-col gap-2 px-3 py-3">
     <div className="flex min-w-0 items-center gap-2">
-      <TaskLinkChip
-        provider={provider}
-        identifier={identifier}
-        {...(scope === 'workspace' ? { title } : {})}
-      />
-      <span className="truncate text-label text-muted-foreground">{placeOf({ scope })}</span>
+      <TaskLinkChip provider={provider} identifier={identifier} />
+      <span className="truncate text-label text-muted-foreground">not on a branch yet</span>
     </div>
     <p className="text-label text-foreground">
-      {duplicate !== undefined ? (
-        `${linkedLabel({ scopes: duplicate.scopes })} already.`
-      ) : scope === 'workspace' ? (
-        'Stays open. Shows under Ongoing on the Board, not on this session.'
+      {isDuplicate ? (
+        `${LINKED_LABEL} already.`
       ) : isClosing ? (
         <>
           {`Will close ${identifier} when merged · `}
@@ -72,14 +63,14 @@ export const LinkScopePreview = ({
       )}
     </p>
     <div className="flex items-center gap-2">
-      <Button
-        size="sm"
-        variant="primary"
-        disabled={isLinking || duplicate !== undefined}
-        onClick={onLink}
-      >
+      <Button size="sm" variant="primary" disabled={isLinking || isDuplicate} onClick={onLink}>
         {`Link ${identifier}`}
       </Button>
+      {canStar ? (
+        <Button size="sm" variant="ghost" disabled={isLinking || isStarred} onClick={onStar}>
+          {isStarred ? 'Starred' : 'Star it'}
+        </Button>
+      ) : null}
       <Button size="sm" variant="ghost" onClick={onCancel}>
         Cancel
       </Button>

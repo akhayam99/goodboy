@@ -45,7 +45,7 @@ const ITEMS: ReadonlyArray<LinkWorkItem> = [
   item({ identifier: 'HBL-388', title: 'Ledger cleanup', status: 'Ongoing', hoursAgo: 50 }),
 ];
 
-const LINKED = new Map([['linear:HBL-400', ['session' as const]]]);
+const LINKED = new Set(['linear:HBL-400']);
 
 export const LinkScopeScene = () => {
   const [query, setQuery] = useState('');
@@ -57,12 +57,14 @@ export const LinkScopeScene = () => {
           onQueryChange={setQuery}
           items={ITEMS}
           lookedUp={[]}
-          linkedScopes={LINKED}
+          linkedKeys={LINKED}
+          starredKeys={new Set()}
           sources={['linear']}
           isLoading={false}
           isLinking={false}
           error={null}
           onLink={() => undefined}
+          onStar={() => undefined}
           onClose={() => undefined}
         />
       </Popover>

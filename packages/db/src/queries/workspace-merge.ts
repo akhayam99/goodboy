@@ -230,14 +230,16 @@ const planBindingMerge = ({
         params: [targetId, source.id],
       },
       {
-        sql: `INSERT OR IGNORE INTO workspace_external_tasks
-           (workspace_id, provider, external_id, identifier, url, title, created_at)
-         SELECT ?, provider, external_id, identifier, url, title, created_at
-           FROM workspace_external_tasks
+        sql: `INSERT OR IGNORE INTO workspace_starred_issues
+           (workspace_id, provider, external_id, identifier, container, title, url, state,
+            state_label, starred_at, refreshed_at)
+         SELECT ?, provider, external_id, identifier, container, title, url, state,
+                state_label, starred_at, refreshed_at
+           FROM workspace_starred_issues
           WHERE workspace_id = ?`,
         params: [targetId, source.id],
       },
-      { sql: 'DELETE FROM workspace_external_tasks WHERE workspace_id = ?', params: [source.id] },
+      { sql: 'DELETE FROM workspace_starred_issues WHERE workspace_id = ?', params: [source.id] },
       { sql: 'DELETE FROM workspace_profiles WHERE workspace_id = ?', params: [source.id] },
       {
         sql: 'DELETE FROM settings WHERE key = ?',

@@ -21,7 +21,7 @@ const ITEMS: ReadonlyArray<LinkWorkItem> = [
   },
   {
     key: 'linear:lin-400',
-    status: 'Ongoing',
+    status: 'In progress',
     updatedAt: '2026-10-01T09:00:00.000Z',
     task: {
       provider: 'linear',
@@ -35,90 +35,121 @@ const ITEMS: ReadonlyArray<LinkWorkItem> = [
 
 type Linked = { readonly task: LaunchExternalTask; readonly choice: LinkChoice };
 
-const renderPicker = () => {
+type RenderParams = {
+  readonly items?: ReadonlyArray<LinkWorkItem>;
+  readonly linkedKeys?: ReadonlySet<string>;
+  readonly starredKeys?: ReadonlySet<string>;
+};
+
+const renderPicker = ({
+  items = ITEMS,
+  linkedKeys = new Set(),
+  starredKeys = new Set(),
+}: RenderParams = {}) => {
   const linked: Array<Linked> = [];
+  const starred: Array<LaunchExternalTask> = [];
   render(
     <LinkWorkPicker
       query=""
       onQueryChange={vi.fn()}
-      items={ITEMS}
+      items={items}
       lookedUp={[]}
-      linkedScopes={new Map()}
+      linkedKeys={linkedKeys}
+      starredKeys={starredKeys}
       sources={['linear']}
       isLoading={false}
       isLinking={false}
       error={null}
       onLink={(task, choice) => linked.push({ task, choice })}
+      onStar={(task) => starred.push(task)}
       onClose={vi.fn()}
     />,
   );
-  return linked;
+  return { linked, starred };
 };
-
-const scope = () => within(screen.getByRole('tablist', { name: 'Link scope' }));
 
 const preview = () => within(screen.getByLabelText('Link preview'));
 
 afterEach(cleanup);
 
-describe('LinkWorkPicker scope', () => {
-  it('links to the session by default and says it will close the task when merged', () => {
-    const linked = renderPicker();
+describe('LinkWorkPicker', () => {
+  it('links to the session and says it will close the task when merged', () => {
+    const { linked } = renderPicker();
 
-    expect(
-      scope()
-        .getByRole('tab', { name: /This session/ })
-        .getAttribute('aria-selected'),
-    ).toBe('true');
     expect(preview().getByText('not on a branch yet').tagName).toBe('SPAN');
-    expect(scope().queryByRole('tab', { name: /This branch/ })).toBeNull();
     expect(preview().getByText(/Will close HAR-212 when merged/).tagName).toBe('P');
 
     fireEvent.click(preview().getByRole('button', { name: 'Link HAR-212' }));
 
-    expect(linked).toEqual([
-      { task: ITEMS[0]?.task, choice: { scope: 'session', relation: 'closes' } },
-    ]);
+    expect(linked).toEqual([{ task: ITEMS[0]?.task, choice: { relation: 'closes' } }]);
   });
 
   it('keeps the session task open on Don’t close', () => {
-    const linked = renderPicker();
+    const { linked } = renderPicker();
 
     fireEvent.click(preview().getByRole('button', { name: 'Don’t close' }));
     expect(preview().getByText(/Part of HAR-212\. It stays open when merged\./).tagName).toBe('P');
     fireEvent.click(preview().getByRole('button', { name: 'Link HAR-212' }));
 
-    expect(linked.map((entry) => entry.choice)).toEqual([
-      { scope: 'session', relation: 'part-of' },
-    ]);
+    expect(linked.map((entry) => entry.choice)).toEqual([{ relation: 'part-of' }]);
   });
 
-  it('puts a task on the whole workspace without ever closing it', () => {
-    const linked = renderPicker();
+  it('has no scope tabs and no Whole workspace choice', () => {
+    renderPicker();
+
+    expect(screen.queryByRole('tablist', { name: 'Link scope' })).toBeNull();
+    expect(screen.queryByRole('tab', { name: /Whole workspace/ })).toBeNull();
+    expect(screen.queryByText(/Ongoing/)).toBeNull();
+  });
+
+  it('stars a tracker issue for the workspace without linking it', () => {
+    const { linked, starred } = renderPicker();
     fireEvent.mouseMove(screen.getByRole('option', { name: /Payments revamp/ }));
 
-    fireEvent.click(scope().getByRole('tab', { name: /Whole workspace/ }));
+    fireEvent.click(preview().getByRole('button', { name: 'Star it' }));
 
-    expect(preview().getByText('on the Board').tagName).toBe('SPAN');
-    expect(
-      preview().getByText('Stays open. Shows under Ongoing on the Board, not on this session.')
-        .tagName,
-    ).toBe('P');
-    expect(preview().queryByRole('button', { name: 'Don’t close' })).toBeNull();
-    fireEvent.click(preview().getByRole('button', { name: 'Link HBL-400' }));
-
-    expect(linked).toEqual([
-      { task: ITEMS[1]?.task, choice: { scope: 'workspace', relation: 'part-of' } },
-    ]);
+    expect(starred).toEqual([ITEMS[1]?.task]);
+    expect(linked).toEqual([]);
   });
 
-  it('turns the closing back on when the scope changes', () => {
-    renderPicker();
-    fireEvent.click(preview().getByRole('button', { name: 'Don’t close' }));
+  it('shows an already starred issue as Starred and cannot star it again', () => {
+    const { starred } = renderPicker({ starredKeys: new Set(['linear:lin-212']) });
 
-    fireEvent.click(scope().getByRole('tab', { name: /Whole workspace/ }));
-    fireEvent.click(scope().getByRole('tab', { name: /This session/ }));
+    const button = preview().getByRole('button', { name: 'Starred' });
+    fireEvent.click(button);
 
-    expect(preview().getByText(/Will close HAR-212 when merged/).tagName).toBe('P');
+    expect(button.hasAttribute('disabled')).toBe(true);
+    expect(starred).toEqual([]);
+  });
+
+  it('offers no star on a pull request', () => {
+    renderPicker({
+      items: [
+        {
+          key: 'github:42',
+          status: 'Open',
+          updatedAt: '2026-10-02T09:00:00.000Z',
+          task: {
+            provider: 'github',
+            externalId: '42',
+            identifier: 'northwind/ledger-core#42',
+            url: 'https://github.com/northwind/ledger-core/pull/42',
+            title: 'Retry webhook delivery',
+          },
+        },
+      ],
+    });
+
+    expect(preview().queryByRole('button', { name: 'Star it' })).toBeNull();
+    expect(preview().getByRole('button', { name: /^Link / })).toBeDefined();
+  });
+
+  it('flags a task already linked to the session and will not link it twice', () => {
+    const { linked } = renderPicker({ linkedKeys: new Set(['linear:lin-212']) });
+
+    expect(preview().getByText('Linked to this session already.')).toBeDefined();
+    fireEvent.click(preview().getByRole('button', { name: 'Link HAR-212' }));
+
+    expect(linked).toEqual([]);
   });
 });

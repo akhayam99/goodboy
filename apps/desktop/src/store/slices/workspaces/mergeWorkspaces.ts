@@ -1,6 +1,6 @@
 import type { SessionContextItem, SessionId, WorkspaceId } from '@goodboy/types';
 import {
-  listWorkspaceExternalTasks,
+  listStarredIssues,
   listWorkspaceLearnings,
   mergeWorkspaces as mergeWorkspacesInDb,
 } from '@goodboy/db';
@@ -31,9 +31,9 @@ export const mergeWorkspaces = (set: SetFn, get: GetFn) => {
       targetWorkspaceId,
     });
     await pruneChatImages();
-    const [targetLearnings, targetTasks] = await Promise.all([
+    const [targetLearnings, targetStars] = await Promise.all([
       listWorkspaceLearnings({ db: tauriDatabase, workspaceId: targetWorkspaceId }),
-      listWorkspaceExternalTasks({ db: tauriDatabase, workspaceId: targetWorkspaceId }),
+      listStarredIssues({ db: tauriDatabase, workspaceId: targetWorkspaceId }),
     ]);
 
     const sourceSet = new Set<WorkspaceId>(sources);
@@ -45,17 +45,17 @@ export const mergeWorkspaces = (set: SetFn, get: GetFn) => {
       const projectScripts = { ...current.projectScripts };
       const workspaceOverrides = { ...current.workspaceOverrides };
       const workspaceLearnings = { ...current.workspaceLearnings };
-      const workspaceExternalTasks = { ...current.workspaceExternalTasks };
+      const starredIssues = { ...current.starredIssues };
       for (const id of sources) {
         delete archivedSessions[id];
         delete workspaceIntegrations[id];
         delete projectScripts[id];
         delete workspaceOverrides[id];
         delete workspaceLearnings[id];
-        delete workspaceExternalTasks[id];
+        delete starredIssues[id];
       }
       workspaceLearnings[targetWorkspaceId] = targetLearnings;
-      workspaceExternalTasks[targetWorkspaceId] = targetTasks;
+      starredIssues[targetWorkspaceId] = targetStars;
       const sessionContextItems = Object.fromEntries(
         Object.entries(current.sessionContextItems).map(([sessionId, items]) => [
           sessionId,
@@ -74,7 +74,7 @@ export const mergeWorkspaces = (set: SetFn, get: GetFn) => {
         projectScripts,
         workspaceOverrides,
         workspaceLearnings,
-        workspaceExternalTasks,
+        starredIssues,
         sessionContextItems,
       };
     });

@@ -8,11 +8,13 @@ import type { LinkWorkItem } from './linkWorkRows';
 const { store, work } = vi.hoisted(() => ({
   store: {
     linkSessionExternalTask: vi.fn(async () => undefined),
+    starExternalTask: vi.fn(async () => true),
   },
   work: {
     items: [] as ReadonlyArray<LinkWorkItem>,
     lookedUp: [] as ReadonlyArray<LinkWorkItem>,
-    linkedScopes: new Map<string, ReadonlyArray<'session' | 'branch' | 'workspace'>>(),
+    linkedKeys: new Set<string>(),
+    starredKeys: new Set<string>(),
     sources: [] as ReadonlyArray<SessionExternalTaskProvider>,
     isLoading: false,
   },
@@ -106,7 +108,8 @@ beforeEach(() => {
   store.linkSessionExternalTask.mockClear();
   work.items = INBOX_ITEMS;
   work.lookedUp = [];
-  work.linkedScopes = new Map();
+  work.linkedKeys = new Set();
+  work.starredKeys = new Set();
   work.sources = ['linear', 'sentry', 'github'];
   work.isLoading = false;
 });
@@ -194,12 +197,15 @@ describe('LinkIssueAction', () => {
     expect(screen.queryByText('Paste a link or search')).toBeNull();
   });
 
-  it('hides a task linked to every scope', () => {
-    work.linkedScopes = new Map([['sentry:LEDGER-2M', ['session', 'branch', 'workspace']]]);
+  it('keeps a task linked to the session in the list and says so', () => {
+    work.linkedKeys = new Set(['sentry:LEDGER-2M']);
     render(<LinkIssueAction session={session} />);
     fireEvent.click(trigger());
 
-    expect(optionNames()).not.toContain('Timeout in ledger sync job (LEDGER-2M)');
+    expect(optionNames()).toContain('Timeout in ledger sync job (LEDGER-2M)');
+    expect(
+      screen.getByRole('option', { name: 'Timeout in ledger sync job (LEDGER-2M)' }).textContent,
+    ).toContain('Linked to this session');
   });
 
   it('links a pasted URL even with no tracker connected', async () => {
