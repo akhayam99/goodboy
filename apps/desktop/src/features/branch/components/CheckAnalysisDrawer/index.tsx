@@ -1,17 +1,18 @@
-import { useEffect } from 'react';
+import { useState } from 'react';
 import { Bug } from 'lucide-react';
-import { Chip, DrawerFrame, Markdown, SectionHeader, ScrollFade } from '@goodboy/ui';
-import type { SessionId, TurnEvent } from '@goodboy/types';
+import { Button, Chip, DrawerFrame, Markdown, SectionHeader, ScrollFade } from '@goodboy/ui';
+import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { selectCheckAnalysis } from '../../../../store/slices/agents/selectCheckAnalysis';
 import { isReportedError } from '../../../../store/slices/notifications/reportedError';
 import { AgentChain } from '../../../../shared/components/AgentChain';
+import { useKindRouting } from '../../../../shared/hooks/useKindRouting';
+import { routingShortText } from '../../../../shared/components/RoutingPicker/routingSummary';
 import { modelLabel } from '../../../chat/utils/chat-constants';
 import { checkAnalysisOf } from '../../checks/checkAnalysisOf';
 import { sectionOf } from '../../checks/sectionOf';
+import { startCheckFix } from '../../checks/startCheckFix';
+import { useCheckChain } from '../../hooks/useCheckChain';
 import { Proposal } from './Proposal';
-
-const NO_EVENTS: ReadonlyArray<TurnEvent> = [];
 
 type Props = {
   readonly sessionId: SessionId;
@@ -20,31 +21,29 @@ type Props = {
 };
 
 export const CheckAnalysisDrawer = ({ sessionId, checkUrl, onClose }: Props) => {
-  const agent = useAppStore((state) => selectCheckAnalysis({ state, sessionId, url: checkUrl }));
-  const events = useAppStore((state) =>
-    agent === null ? NO_EVENTS : (state.transcripts[agent.id] ?? NO_EVENTS),
-  );
-  const turnState = useAppStore((state) =>
-    agent === null ? undefined : state.agentTurnState[agent.id],
-  );
-  const loadAgentTranscript = useAppStore((state) => state.loadAgentTranscript);
+  const { chain, events, turnState } = useCheckChain({ sessionId, url: checkUrl });
+  const agent = chain.debugger;
+  const fixRouting = useKindRouting({ sessionId, kind: 'implementer' });
+  const dismissCheckProposal = useAppStore((state) => state.dismissCheckProposal);
   const reportError = useAppStore((state) => state.reportError);
-  const hasTranscript = useAppStore(
-    (state) => agent !== null && state.transcripts[agent.id] !== undefined,
-  );
-  useEffect(() => {
-    if (agent === null || hasTranscript) {
+  const [isStarting, setIsStarting] = useState(false);
+  const startFix = async () => {
+    if (isStarting) {
       return;
     }
-    void loadAgentTranscript(sessionId, agent.id, { isSelecting: false }).catch(
-      (error: unknown) => {
-        if (!isReportedError(error)) {
-          void reportError({ title: "Couldn't read the analysis", error, sessionId });
-        }
-      },
-    );
-  }, [agent, hasTranscript, loadAgentTranscript, reportError, sessionId]);
-  const analysis = agent === null ? null : checkAnalysisOf({ agent, events, turnState });
+    setIsStarting(true);
+    try {
+      await startCheckFix({ sessionId, url: checkUrl });
+    } catch (error: unknown) {
+      if (!isReportedError(error)) {
+        void reportError({ title: "Couldn't start the Implementer", error, sessionId });
+      }
+    } finally {
+      setIsStarting(false);
+    }
+  };
+  const analysis =
+    agent === null ? null : checkAnalysisOf({ agent, events: events ?? [], turnState });
   const given =
     sectionOf({ text: analysis?.kickoff ?? '', heading: 'What it was given' })?.body ??
     'The kickoff is not available.';
@@ -55,6 +54,18 @@ export const CheckAnalysisDrawer = ({ sessionId, checkUrl, onClose }: Props) => 
     sectionOf({ text: analysis?.text ?? '', heading: 'Proposed fix' })?.before ??
     analysis?.text ??
     '';
+  const outcome =
+    chain.state === 'fixing'
+      ? 'Implementer is applying it on the branch.'
+      : chain.state === 'fixed'
+        ? chain.commit === null
+          ? 'Applied on the branch. The check runs again.'
+          : `Applied and committed ${chain.commit} on the branch. The check runs again.`
+        : chain.state === 'fix-failed'
+          ? 'The fix stopped. Open the Implementer to see why.'
+          : chain.isDismissed
+            ? 'Dismissed. Analyze again for another proposal.'
+            : null;
   const checkName =
     given
       .split('\n')
@@ -79,7 +90,33 @@ export const CheckAnalysisDrawer = ({ sessionId, checkUrl, onClose }: Props) => 
             <SectionHeader headingLevel={3} label="Activity" />
             <AgentChain
               sessionId={sessionId}
-              steps={[{ name: `Analyze ${checkName}`, agent, isRunning: analysis.isRunning }]}
+              steps={[
+                { name: `Analyze ${checkName}`, agent, isRunning: analysis.isRunning },
+                ...(analysis.proposal === null
+                  ? []
+                  : [
+                      {
+                        name: 'Proposal',
+                        agent: null,
+                        isRunning: false,
+                        detail: chain.isDismissed
+                          ? 'Dismissed'
+                          : chain.fix === null
+                            ? 'Waiting for you'
+                            : 'Accepted',
+                        tone: chain.fix === null && !chain.isDismissed ? 'warning' : 'neutral',
+                      } as const,
+                      {
+                        name: 'Fix',
+                        agent: chain.fix,
+                        isRunning: chain.state === 'fixing',
+                        ...(chain.fix === null && { detail: 'Not started' }),
+                        ...(chain.state === 'fixed' &&
+                          chain.commit !== null && { detail: `Committed ${chain.commit}` }),
+                        ...(chain.fix === null && { tone: 'neutral' as const }),
+                      },
+                    ]),
+              ]}
             />
           </section>
           <section className="flex flex-col gap-2">
@@ -105,7 +142,36 @@ export const CheckAnalysisDrawer = ({ sessionId, checkUrl, onClose }: Props) => 
                   : 'No fix was proposed.'}
               </p>
             ) : (
-              <Proposal text={analysis.proposal} />
+              <div className="flex flex-col gap-3">
+                <Proposal text={analysis.proposal} />
+                {chain.state === 'proposal' ? (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      disabled={isStarting}
+                      onClick={() => void startFix()}
+                    >
+                      Start fix
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => dismissCheckProposal({ sessionId, agentId: agent.id })}
+                    >
+                      Dismiss
+                    </Button>
+                    <span className="text-meta text-faint-foreground">
+                      Implementer · {routingShortText(fixRouting)}
+                    </span>
+                  </div>
+                ) : null}
+                {outcome === null ? null : (
+                  <p role="status" className="text-body text-muted-foreground">
+                    {outcome}
+                  </p>
+                )}
+              </div>
             )}
           </section>
           <section className="flex flex-col gap-2">

@@ -1,4 +1,5 @@
 activity
+activity-check-chain
 activity-empty
 activity-groups
 activity-jobs
@@ -126,6 +127,8 @@ chat-list-idle
 chat-list-loading
 chat-room
 chat-shell
+checks-fixing
+checks-proposal
 cleanup-process-blocked
 code-layers
 column-rail

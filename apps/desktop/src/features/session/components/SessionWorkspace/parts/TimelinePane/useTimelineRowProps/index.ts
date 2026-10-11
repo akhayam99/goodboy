@@ -27,6 +27,11 @@ import type { TimelineRowProps } from '../TimelineRow';
 import type { TimelineRowAction } from '../TimelineStreamRow';
 import type { NeedsYouOwner } from '../../../../../timeline/needsYou';
 import { openReview } from '../../../../../../review/openReview';
+import {
+  fixOfferKey,
+  selectFixOffers,
+} from '../../../../../../../store/slices/agents/selectFixOffers';
+import { startCheckFix } from '../../../../../../branch/checks/startCheckFix';
 import type { TimelineRows } from '../useTimelineRows';
 
 const NO_WORKTREES: ReadonlyArray<string> = [];
@@ -72,6 +77,7 @@ export const useTimelineRowProps = ({
   const sessionProvider = session.providerPreference?.defaultProvider ?? null;
   const sessionEffort = session.effort ?? null;
   const { worktrees, laneRuns, stream } = rows;
+  const fixOffers = useAppStore((state) => selectFixOffers({ state, sessionId }));
 
   const latestLaneRuns = useRef(laneRuns);
   latestLaneRuns.current = laneRuns;
@@ -180,6 +186,22 @@ export const useTimelineRowProps = ({
           return null;
         }
         return { label: ROW_ACTION_LABEL.relink, onAct: target.open };
+      }
+    }
+    if (entry.kind === 'agent' && entry.agent.sourceCommentUrl !== undefined) {
+      const url = entry.agent.sourceCommentUrl;
+      if (fixOffers.split('\n').includes(fixOfferKey({ agentId: entry.agent.id, url }))) {
+        return {
+          label: ROW_ACTION_LABEL.startFix,
+          variant: 'secondary',
+          isBusy: pending.pendingKeys.has(`fix:${entry.agent.id}`),
+          onAct: () =>
+            void pending.run({
+              key: `fix:${entry.agent.id}`,
+              failureTitle: "Couldn't start the Implementer",
+              task: () => startCheckFix({ sessionId, url }),
+            }),
+        };
       }
     }
     const mountPath = mountPathFor({ item });

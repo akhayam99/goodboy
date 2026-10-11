@@ -88,6 +88,7 @@ const { storeState, spies, fixable } = vi.hoisted(() => {
     },
     storeState: {
       sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
+      sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
       mountGithub: {} as Record<string, unknown>,
       mountGitlabMr: {} as Record<string, unknown>,
       mountBitbucketPr: {} as Record<string, unknown>,
