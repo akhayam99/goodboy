@@ -88,8 +88,7 @@ export const HistoryBackups = ({
                   note={
                     hasUpstream ? (
                       <p className="text-muted-foreground">
-                        It goes online only if the online copy has nothing newer than this backup;
-                        otherwise it stays here and you are told.
+                        It goes online only if nothing newer is there.
                       </p>
                     ) : undefined
                   }
