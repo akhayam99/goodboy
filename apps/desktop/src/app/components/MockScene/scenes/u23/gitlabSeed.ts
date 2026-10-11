@@ -224,6 +224,7 @@ const transportOf = ({ seed }: { readonly seed: Seed }): GitlabPullRequestTransp
   updateMergeRequest: async () => undefined,
   setState: async () => undefined,
   merge: async () => undefined,
+  cancelAutoMerge: async () => undefined,
   projectMergeSettings: async () => SETTINGS,
   searchUsers: async () => [KENJI, PRIYA, OMAR],
 });

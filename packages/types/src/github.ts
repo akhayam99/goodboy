@@ -45,6 +45,7 @@ export type PullRequestState = {
   baseBranch: string;
   headBranch: string;
   isDraft: boolean;
+  autoMerge?: boolean;
   reviewDecision: 'approved' | 'changes_requested' | 'review_required' | null;
   body: string;
   updatedAt: string;
