@@ -1,6 +1,7 @@
 import { Button } from '@goodboy/ui';
 import type { RebaseJobControls } from '../useRebaseJob';
 import type { useJobBannerActions } from '../hooks/useJobBannerActions';
+import { ForgetSavedButton } from './ForgetSavedButton';
 import { JobBannerDetails } from './JobBannerDetails';
 
 type Props = {
@@ -25,6 +26,52 @@ export const JobBannerActions = ({ controls, actions, isNoteOpen, onToggleNote }
     </Button>
   );
   switch (job.state) {
+    case 'choosing':
+      return (
+        <>
+          <Button size="sm" isBusy={pendingKeys.has('stash-move')} onClick={actions.stashAndMove}>
+            Stash and rebase
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={pendingKeys.has('stash-move')}
+            onClick={controls.dismiss}
+          >
+            Cancel
+          </Button>
+        </>
+      );
+    case 'restore-conflict':
+      return (
+        <>
+          <Button size="sm" variant="ghost" onClick={controls.openTerminal}>
+            Open terminal
+          </Button>
+          <Button size="sm" variant="ghost" onClick={actions.copyStashCommand}>
+            Copy the stash command
+          </Button>
+          <ForgetSavedButton
+            isBusy={pendingKeys.has('forget-saved')}
+            onConfirm={actions.forgetSaved}
+          />
+        </>
+      );
+    case 'set-aside':
+      return (
+        <>
+          <Button size="sm" isBusy={pendingKeys.has('bring-back')} onClick={actions.bringBack}>
+            Bring them back
+          </Button>
+          <Button size="sm" variant="ghost" onClick={controls.openTerminal}>
+            Open terminal
+          </Button>
+          <ForgetSavedButton
+            isBusy={pendingKeys.has('forget-saved')}
+            onConfirm={actions.forgetSaved}
+          />
+        </>
+      );
     case 'merging':
       return seeWhatItDid;
     case 'done':

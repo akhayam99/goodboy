@@ -20,6 +20,7 @@ pub struct RebasePlan {
     pub commits: Vec<RebaseCommit>,
     pub behind: u32,
     pub fetch_error: Option<String>,
+    pub set_aside: Option<String>,
 }
 
 pub(crate) fn rebase_plan(
@@ -82,6 +83,7 @@ pub(crate) fn rebase_plan(
         commits,
         behind,
         fetch_error,
+        set_aside: super::journal::pending_stash(cwd)?.map(|(sha, _)| sha),
     })
 }
 

@@ -417,21 +417,21 @@ describe('deriveNextSteps', () => {
         projects,
       }).find((suggestion) => suggestion.kind === 'rebase-project');
 
-    it('states the count on its line and offers no Rebase target', () => {
+    it('offers a dirty target and leaves overlap classification to Git', () => {
       const rebase = rebaseOf([
         behindProject({ id: 'ledger-core', isClean: false, changedCount: 11 }),
       ]);
 
-      expect(rebase?.detail).toBe('11 files not committed');
+      expect(rebase?.detail).toBe('4 behind');
       expect(rebase?.payload.targets.map((target) => target.dirtyCount)).toEqual([11]);
     });
 
-    it('says one file in the singular', () => {
+    it('keeps the behind line when one file is dirty', () => {
       const rebase = rebaseOf([
         behindProject({ id: 'ledger-core', isClean: false, changedCount: 1 }),
       ]);
 
-      expect(rebase?.detail).toBe('1 file not committed');
+      expect(rebase?.detail).toBe('4 behind');
     });
 
     it('keeps the plain behind line and a clean target when the tree is clean', () => {
@@ -452,27 +452,30 @@ describe('deriveNextSteps', () => {
       expect(rebase?.payload.targets.map((target) => target.dirtyCount)).toEqual([0]);
     });
 
-    it('offers only the clean branches while another one is dirty', () => {
+    it('offers dirty and clean branches in distance order', () => {
       const rebase = rebaseOf([
         behindProject({ id: 'notify-relay', isClean: false, changedCount: 3, mainDistance: 9 }),
         behindProject({ id: 'payments-api', isClean: true, changedCount: 0, mainDistance: 2 }),
       ]);
 
-      expect(rebase?.title).toBe('Rebase payments-api on main');
-      expect(rebase?.payload.targets.map((target) => target.mountId)).toEqual(['payments-api']);
+      expect(rebase?.title).toBe('Rebase 2 branches');
+      expect(rebase?.payload.targets.map((target) => target.mountId)).toEqual([
+        'notify-relay',
+        'payments-api',
+      ]);
     });
 
-    it('counts the dirty branches on one line when none is clean', () => {
+    it('offers all branches when both are dirty', () => {
       const rebase = rebaseOf([
         behindProject({ id: 'notify-relay', isClean: false, changedCount: 3 }),
         behindProject({ id: 'payments-api', isClean: false, changedCount: 5 }),
       ]);
 
-      expect(rebase?.detail).toBe('2 branches have changes not committed');
+      expect(rebase?.detail).toBe('2 projects behind');
       expect(rebase?.payload.targets.every((target) => target.dirtyCount > 0)).toBe(true);
     });
 
-    it('changes its fingerprint when the tree turns clean so a dismissal does not hide it', () => {
+    it('keeps its fingerprint stable when only local dirty files change', () => {
       const dirty = rebaseOf([
         behindProject({ id: 'ledger-core', isClean: false, changedCount: 11 }),
       ]);
@@ -480,7 +483,7 @@ describe('deriveNextSteps', () => {
         behindProject({ id: 'ledger-core', isClean: true, changedCount: 0 }),
       ]);
 
-      expect(dirty?.fingerprint).not.toBe(clean?.fingerprint);
+      expect(dirty?.fingerprint).toBe(clean?.fingerprint);
     });
   });
 });

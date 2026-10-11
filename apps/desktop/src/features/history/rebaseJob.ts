@@ -3,6 +3,9 @@ import type { HistoryRun } from '../../store/slices/history/types';
 import { historyStopCause } from './historyStopCause';
 
 type RebaseJobState =
+  | 'choosing'
+  | 'restore-conflict'
+  | 'set-aside'
   | 'checking'
   | 'replaying'
   | 'merging'
@@ -191,6 +194,9 @@ const stoppedStateOf = ({ run }: StoppedStateOfParams): RebaseJobState => {
 };
 
 const WORDS: Readonly<Record<RebaseJobState, string>> = {
+  choosing: 'Choose',
+  'restore-conflict': 'Saved',
+  'set-aside': 'Saved',
   checking: 'Checking',
   replaying: 'Replaying',
   merging: 'Merging',
@@ -236,6 +242,24 @@ const copyOf = ({
   const stop = run.stop;
   const message = stop?.message ?? '';
   switch (state) {
+    case 'choosing':
+      return {
+        tone: 'warn',
+        title: dirtyTitleOf({ count: run.dirtyChoice?.dirtyCount ?? null }),
+        line: `${run.dirtyChoice?.files.length ?? 0} of them are also changed on ${baseBranch}. Goodboy sets them aside and brings them back.`,
+      };
+    case 'restore-conflict':
+      return {
+        tone: 'warn',
+        title: `Rebased on ${baseBranch}, but ${run.savedStash?.files.length ?? 0} of your files conflict`,
+        line: 'They are saved in a stash. Nothing is lost.',
+      };
+    case 'set-aside':
+      return {
+        tone: 'warn',
+        title: 'Your files from the last rebase are still set aside.',
+        line: 'Bring them back when you are ready.',
+      };
     case 'checking':
       return { tone: 'info', title: running, line: 'Checking the branch' };
     case 'replaying':
@@ -270,7 +294,7 @@ const copyOf = ({
       return {
         tone: 'ok',
         title: `Rebased on ${baseBranch}`,
-        line: `${commitsOf({ count: commitCount })}${keptFilesOf({ count: dirtyCount })} Backup kept for 30 days.`.trim(),
+        line: `${commitsOf({ count: commitCount })}${keptFilesOf({ count: run.carriedCount ?? dirtyCount })} Backup kept for 30 days.`.trim(),
       };
     case 'dirty':
       return {
@@ -341,6 +365,9 @@ type RebaseJobStateOfParams = {
 };
 
 const rebaseJobStateOf = ({ run }: RebaseJobStateOfParams): RebaseJobState => {
+  if (run.phase === 'choosing' || run.phase === 'restore-conflict' || run.phase === 'set-aside') {
+    return run.phase;
+  }
   if (run.phase === 'stopped') {
     return stoppedStateOf({ run });
   }
@@ -352,7 +379,14 @@ const rebaseJobStateOf = ({ run }: RebaseJobStateOfParams): RebaseJobState => {
 
 export const rebaseJobOf = (params: Params): RebaseJob | null => {
   const { run } = params;
-  if (run.origin !== 'rebase' || run.phase === 'restored' || run.phase === 'rewritten') {
+  if (
+    (run.origin !== 'rebase' &&
+      run.phase !== 'choosing' &&
+      run.phase !== 'restore-conflict' &&
+      run.phase !== 'set-aside') ||
+    run.phase === 'restored' ||
+    run.phase === 'rewritten'
+  ) {
     return null;
   }
   const state = rebaseJobStateOf({ run });

@@ -3,7 +3,7 @@ use crate::worktree::{
 };
 use std::path::Path;
 
-pub(super) fn blocking_reason(cwd: &Path) -> Option<String> {
+pub(super) fn blocking_reason(cwd: &Path, can_carry_dirty: bool) -> Option<String> {
     if let Some(operation) = in_progress_operation(cwd) {
         return Some(format!(
             "A git {} is in progress in this worktree. Finish or abort it first.",
@@ -23,7 +23,7 @@ pub(super) fn blocking_reason(cwd: &Path) -> Option<String> {
             ..
         } => {
             let pending = staged + unstaged + unmerged;
-            if pending == 0 {
+            if unmerged == 0 && (can_carry_dirty || pending == 0) {
                 return None;
             }
             Some(format!(
@@ -90,7 +90,7 @@ pub(crate) fn preflight(cwd: &Path, branch: &str, expected_head: &str) -> Option
             "This worktree is on {current_branch}, not {branch}. Nothing was changed."
         ));
     }
-    if let Some(reason) = blocking_reason(cwd) {
+    if let Some(reason) = blocking_reason(cwd, true) {
         return Some(reason);
     }
     let head = resolve_commit(cwd, "HEAD").ok()?;

@@ -337,6 +337,7 @@ export type {
   HistoryCommitFiles,
   HistoryGraph,
   HistoryGraphCommit,
+  HistoryForgetOutcome,
   HistoryMoveOutcome,
   HistoryOriginAhead,
   HistoryPlan,
