@@ -5151,7 +5151,7 @@
   },
   "apps/desktop/src/features/resolve/components/ReviewFlow/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 10
+      "count": 7
     },
     "@typescript-eslint/naming-convention": {
       "count": 2
@@ -7177,7 +7177,7 @@
       "count": 36
     },
     "@typescript-eslint/no-floating-promises": {
-      "count": 23
+      "count": 22
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
