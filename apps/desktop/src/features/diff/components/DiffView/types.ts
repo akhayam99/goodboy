@@ -26,6 +26,7 @@ export type DiffThread = {
   readonly canClose: boolean;
   readonly canReopen: boolean;
   readonly canDelete?: boolean;
+  readonly canRestore?: boolean;
   readonly actions?: ReadonlyArray<DiffThreadAction>;
   readonly lockReason?: string | null;
   readonly meta?: string | null;

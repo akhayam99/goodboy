@@ -66,7 +66,7 @@ When a step stops on a conflict, the notice says which step and file, and your b
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
-Open the `⋯` menu and choose **Backups** to see the older histories of this branch. **Restore previous history** puts one back, and **Hide** closes the list.
+Open the `⋯` menu and choose **Backups** to see the older histories of this branch. **Restore previous history** asks beside the button ("Restore the backup from 3 Oct?") and then puts one back, keeping the history you leave as a new backup, and **Hide** closes the list.
 
 ### Suggest a message
 

@@ -26,10 +26,7 @@ export type ConfirmReturnFocus = {
 
 type InlineConfirmProps = ComponentProps<typeof InlineConfirm>;
 
-export type ConfirmPopoverProps = Omit<
-  InlineConfirmProps,
-  'onCancel' | 'surface' | 'className' | 'autoDisarmMs'
-> & {
+export type ConfirmPopoverProps = Omit<InlineConfirmProps, 'onCancel' | 'className'> & {
   readonly trigger: (params: ConfirmPopoverTriggerParams) => ReactNode;
   readonly onCancel?: () => void;
   readonly isOpen?: boolean;
@@ -232,7 +229,6 @@ export const ConfirmPopover = ({
           {...confirmProps}
           title={title}
           isBusy={isWorking}
-          surface="plain"
           onConfirm={confirm}
           onCancel={cancel}
         />
