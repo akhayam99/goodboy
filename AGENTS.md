@@ -34,7 +34,7 @@ Rules 12 to 16 are written out, each with its helper and its test, in [docs/type
 
 ## Before you write code
 
-1. Find your recipe or the owner doc through [docs/README.md](./docs/README.md) and read it.
+1. Find your recipe in [docs/recipes/](./docs/recipes/) and the owner doc through [docs/README.md](./docs/README.md), and read them.
 2. Fill the failure-mode table: for every write or state change, the target it names, when the state changes and after which result, what the user sees on failure, the retry, undo and resume path, what a second window does, which hosts it touches (GitHub, GitLab, Bitbucket), what a late response does, who owns every number it shows, and which names a rename must move (`aria-label` included). Each row ends in a test or "not applicable" with a reason.
 3. Run the quick gate before each commit.
 4. Never touch a baseline. A ratchet only falls; if your right change grows a count, stop and ask the owner.

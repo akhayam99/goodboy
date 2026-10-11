@@ -47,31 +47,67 @@ Below is the full index. Other docs and agents use it to find their way.
 - [FEATURES.md](../FEATURES.md): when you want the main features in task order.
   Each entry links to its focused page in [features](features/).
 
-## Feature-area ownership
+## Code-area ownership
 
-`pnpm check:doc-refs` checks the current index and area files. Run `node scripts/split-features.mjs --check` to verify the ongoing feature-doc contract.
+`pnpm check:doc-refs` fails when a glob below matches no file. Run `node scripts/split-features.mjs --check` to verify the feature-doc contract, which reads the first two columns of the 19 feature areas.
 
-| Area           | Source glob                                   |
-| -------------- | --------------------------------------------- |
-| inbox          | `apps/desktop/src/features/inbox/**`          |
-| workflows      | `apps/desktop/src/features/workflows/**`      |
-| agents         | `apps/desktop/src/features/workspace-chat/**` |
-| board          | `apps/desktop/src/components/StageBoard/**`   |
-| review         | `apps/desktop/src/features/review/**`         |
-| providers      | `apps/desktop/src/features/providers/**`      |
-| storage        | `apps/desktop/src/features/storage/**`        |
-| setup          | `apps/desktop/src/features/onboarding/**`     |
-| start          | `apps/desktop/src/features/session/**`        |
-| overview       | `apps/desktop/src/features/file-versions/**`  |
-| switching      | `apps/desktop/src/features/notifications/**`  |
-| search         | `apps/desktop/src/features/search/**`         |
-| workspace      | `apps/desktop/src/features/workspace/**`      |
-| branch-history | `apps/desktop/src/features/history/**`        |
-| artifacts      | `apps/desktop/src/features/artifacts/**`      |
-| context        | `apps/desktop/src/features/context/**`        |
-| security       | `apps/desktop/src/features/backup/**`         |
-| support        | `apps/desktop/src/features/bug-report/**`     |
-| keyboard       | `apps/desktop/src/features/terminal/**`       |
+The recipe column links the steps for the change you are about to make: [recipes](recipes/). The guards column names what fails if a step is skipped: `rules` is `check:rules`, `ratchets` is `check:baselines`, `doc-refs` is `check:doc-refs`, `scenes` is the scene registry test.
+
+| Area           | Source glob                                                    | Owner doc                                                          | Recipes                                                                                  | Guards                           |
+| -------------- | -------------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- | -------------------------------- |
+| inbox          | `apps/desktop/src/features/inbox/**`                           | [features/inbox.md](features/inbox.md)                             | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| workflows      | `apps/desktop/src/features/workflows/**`                       | [features/workflows.md](features/workflows.md)                     | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| agents         | `apps/desktop/src/features/workspace-chat/**`                  | [features/agents.md](features/agents.md)                           | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| board          | `apps/desktop/src/features/workspace/components/StageBoard/**` | [features/board.md](features/board.md)                             | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| review         | `apps/desktop/src/features/review/**`                          | [features/review.md](features/review.md)                           | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| providers      | `apps/desktop/src/features/providers/**`                       | [features/providers.md](features/providers.md)                     | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| storage        | `apps/desktop/src/features/storage/**`                         | [features/storage.md](features/storage.md)                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| setup          | `apps/desktop/src/features/onboarding/**`                      | [features/setup.md](features/setup.md)                             | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| start          | `apps/desktop/src/features/session/**`                         | [features/start.md](features/start.md)                             | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| overview       | `apps/desktop/src/features/file-versions/**`                   | [features/overview.md](features/overview.md)                       | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| switching      | `apps/desktop/src/features/notifications/**`                   | [features/switching.md](features/switching.md)                     | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| search         | `apps/desktop/src/features/search/**`                          | [features/search.md](features/search.md)                           | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| workspace      | `apps/desktop/src/features/workspace/**`                       | [features/workspace.md](features/workspace.md)                     | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| branch-history | `apps/desktop/src/features/history/**`                         | [features/branch-history.md](features/branch-history.md)           | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| artifacts      | `apps/desktop/src/features/artifacts/**`                       | [features/artifacts.md](features/artifacts.md)                     | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| context        | `apps/desktop/src/features/context/**`                         | [features/context.md](features/context.md)                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| security       | `apps/desktop/src/features/backup/**`                          | [features/security.md](features/security.md)                       | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| support        | `apps/desktop/src/features/bug-report/**`                      | [features/support.md](features/support.md)                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| keyboard       | `apps/desktop/src/features/terminal/**`                        | [features/keyboard.md](features/keyboard.md)                       | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| actions        | `apps/desktop/src/features/actions/**`                         | [concepts.md](concepts.md)                                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| attachments    | `apps/desktop/src/features/attachments/**`                     | [concepts.md](concepts.md)                                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| bootstrap      | `apps/desktop/src/features/bootstrap/**`                       | [architecture.md](architecture.md)                                 | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| branch         | `apps/desktop/src/features/branch/**`                          | [hosts.md](hosts.md)                                               | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| budget         | `apps/desktop/src/features/budget/**`                          | [concepts.md](concepts.md)                                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| changelog      | `apps/desktop/src/features/changelog/**`                       | [release.md](release.md)                                           | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| chat           | `apps/desktop/src/features/chat/**`                            | [turns.md](turns.md)                                               | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| companion      | `apps/desktop/src/features/companion/**`                       | [companion.md](companion.md)                                       | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| diff           | `apps/desktop/src/features/diff/**`                            | [navigation.md](navigation.md)                                     | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| explore        | `apps/desktop/src/features/explore/**`                         | [navigation.md](navigation.md)                                     | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| impact         | `apps/desktop/src/features/impact/**`                          | [concepts.md](concepts.md)                                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| integrations   | `apps/desktop/src/features/integrations/**`                    | [hosts.md](hosts.md)                                               | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| monitoring     | `apps/desktop/src/features/monitoring/**`                      | [concepts.md](concepts.md)                                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| palette        | `apps/desktop/src/features/palette/**`                         | [navigation.md](navigation.md)                                     | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| permissions    | `apps/desktop/src/features/permissions/**`                     | [concepts.md](concepts.md)                                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| plans          | `apps/desktop/src/features/plans/**`                           | [concepts.md](concepts.md)                                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| quick-actions  | `apps/desktop/src/features/quick-actions/**`                   | [navigation.md](navigation.md)                                     | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| reports        | `apps/desktop/src/features/reports/**`                         | [concepts.md](concepts.md)                                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| resolve        | `apps/desktop/src/features/resolve/**`                         | [hosts.md](hosts.md)                                               | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| scripts        | `apps/desktop/src/features/scripts/**`                         | [concepts.md](concepts.md)                                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| settings       | `apps/desktop/src/features/settings/**`                        | [concepts.md](concepts.md)                                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| skills         | `apps/desktop/src/features/skills/**`                          | [concepts.md](concepts.md)                                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| suggestions    | `apps/desktop/src/features/suggestions/**`                     | [concepts.md](concepts.md)                                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| updater        | `apps/desktop/src/features/updater/**`                         | [release.md](release.md)                                           | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| wireframes     | `apps/desktop/src/features/wireframes/**`                      | [concepts.md](concepts.md)                                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| workTreeModel  | `apps/desktop/src/features/workTreeModel/**`                   | [mounts.md](mounts.md)                                             | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| worktree       | `apps/desktop/src/features/worktree/**`                        | [mounts.md](mounts.md)                                             | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| store-slices   | `apps/desktop/src/store/slices/**`                             | [typescript/state-writes.md](typescript/state-writes.md)           | [store-slice-action](recipes/store-slice-action.md)                                      | rules, ratchets, store-mocks     |
+| shared         | `apps/desktop/src/shared/**`                                   | [file-system.md](file-system.md)                                   | [shared-hook](recipes/shared-hook.md)                                                    | rules, doc-refs                  |
+| ui             | `packages/ui/src/**`                                           | [../packages/ui/DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md) | [ui-primitive](recipes/ui-primitive.md)                                                  | rules, ratchets                  |
+| core           | `packages/core/src/**`                                         | [architecture.md](architecture.md)                                 | [shared-hook](recipes/shared-hook.md)                                                    | rules, lint                      |
+| db             | `packages/db/src/**`                                           | [architecture.md](architecture.md)                                 | [migration](recipes/migration.md)                                                        | registry test, rules             |
+| tauri          | `apps/desktop/src-tauri/src/**`                                | [architecture.md](architecture.md)                                 | [tauri-command](recipes/tauri-command.md), [host-adapter](recipes/host-adapter.md)       | cargo test, check-tauri-commands |
+| website        | `website/src/**`                                               | [release.md](release.md)                                           | [website-page](recipes/website-page.md)                                                  | doc-refs                         |
 
 - [concepts.md](./concepts.md): when you need to know what something in the
   app is, or how far an integration goes.
