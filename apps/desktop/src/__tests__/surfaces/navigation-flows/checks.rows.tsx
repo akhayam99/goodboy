@@ -9,6 +9,7 @@ import {
   click,
   openBranchFiles,
   useAppStore,
+  findSection,
 } from './harness';
 import { setGhChecksMode } from './checks.runner';
 
@@ -36,7 +37,7 @@ const activateFirstMount = ({ sessionId }: Ctx): void => {
 const openChecks = async (ctx: Ctx): Promise<void> => {
   activateFirstMount(ctx);
   await openBranchFiles();
-  await click(await screen.findByRole('tab', { name: /^Checks/ }));
+  await click(await findSection(/^Checks/));
 };
 
 const deniedNotice = async (): Promise<void> => {
@@ -58,7 +59,7 @@ const rowsAppear = async (): Promise<void> => {
 };
 
 const reviewersStayListed = async (): Promise<void> => {
-  await click(await screen.findByRole('tab', { name: /^Pull request/ }));
+  await click(await findSection(/^Overview/));
   const properties = await screen.findByRole('complementary', { name: 'Properties' }, WAIT);
   expect(within(properties).getByText('Reviewers')).toBeDefined();
   expect(within(properties).getByText('mara-l')).toBeDefined();

@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { ToastProvider } from '../../shared/components/Toast';
 import { MOCK_SCENES } from '../../app/components/MockScene';
 import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../store/storyHarness';
@@ -26,7 +26,7 @@ const mount = ({
   scene,
   paneWidth,
 }: {
-  readonly scene: 'branch-files-docked' | 'branch-files-strip' | 'branch-files-button';
+  readonly scene: 'branch-files-docked' | 'branch-overlay-rail';
   readonly paneWidth: number;
 }): HTMLElement => {
   vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue(
@@ -46,35 +46,18 @@ const mount = ({
 const violationsOf = async (container: HTMLElement): Promise<ReadonlyArray<string>> =>
   (await runA11yCheck(container)).violations.map((violation) => violation.id).sort();
 
-describe('a11y, the files rail in each mode', () => {
-  it('has no violation docked, with the fold button and the resize handle', async () => {
+describe('a11y, the sections rail in each mode', () => {
+  it('has no violation docked, with the Files group and the resize handle', async () => {
     const container = mount({ scene: 'branch-files-docked', paneWidth: 1676 });
-    await screen.findByRole('separator', { name: 'Resize the file rail' }, WAIT);
+    await screen.findByRole('navigation', { name: 'Changed files' }, WAIT);
+    await screen.findByRole('separator', { name: /^Resize branch sections/i }, WAIT);
 
     expect(await violationsOf(container)).toEqual([]);
   });
 
-  it('has no violation as a strip, closed and then open over the diff', async () => {
-    const container = mount({ scene: 'branch-files-strip', paneWidth: 1196 });
-    const strip = await screen.findByRole('button', { name: 'Files, 1 of 6 viewed' }, WAIT);
-    expect(await violationsOf(container)).toEqual([]);
-
-    fireEvent.click(strip);
-    await screen.findByRole('navigation', { name: 'Changed files' }, WAIT);
-
-    expect(screen.getByRole('complementary', { name: 'Files' }).getAttribute('data-rail')).toBe(
-      'overlay',
-    );
-    expect(await violationsOf(container)).toEqual([]);
-  });
-
-  it('has no violation as a toolbar button, closed and then open over the diff', async () => {
-    const container = mount({ scene: 'branch-files-button', paneWidth: 1100 });
-    const button = await screen.findByRole('button', { name: 'Files, 1 of 6 viewed' }, WAIT);
-    expect(await violationsOf(container)).toEqual([]);
-
-    fireEvent.click(button);
-    await screen.findByRole('navigation', { name: 'Changed files' }, WAIT);
+  it('has no violation as an overlay over the page', async () => {
+    const container = mount({ scene: 'branch-overlay-rail', paneWidth: 700 });
+    await screen.findByRole('navigation', { name: 'Sections' }, WAIT);
 
     expect(await violationsOf(container)).toEqual([]);
   });

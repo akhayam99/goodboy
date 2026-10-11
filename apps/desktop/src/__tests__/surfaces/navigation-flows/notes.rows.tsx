@@ -16,6 +16,7 @@ import {
   openCrumb,
   settle,
   useAppStore,
+  findSection,
 } from './harness';
 
 export const notesBridge = filesRailBridge;
@@ -254,7 +255,7 @@ export const NOTES_ROWS: ReadonlyArray<Row> = [
     open: async (ctx) => {
       installNotesStore(ctx);
       await openCrumb(/^Branch/);
-      await click(await screen.findByRole('tab', { name: /^Files/ }));
+      await click(await findSection(/^Files/));
       await branchTab('files')(ctx);
       await addNoteOnFile({ file: FIRST_FILE, body: 'Cap the retries at three' });
       await addNoteOnFile({ file: SECOND_FILE, body: 'Log the duplicate once' });
@@ -278,7 +279,7 @@ export const NOTES_ROWS: ReadonlyArray<Row> = [
       await click(within(panel).getAllByRole('button', { name: 'Close the note' })[0]!);
       await hasNoteCount(1);
 
-      await click(await screen.findByRole('tab', { name: /^Comments/ }));
+      await click(await findSection(/^Comments/));
     },
     lands: async (ctx) => {
       await branchTab('comments')(ctx);
@@ -295,10 +296,10 @@ export const NOTES_ROWS: ReadonlyArray<Row> = [
     open: async (ctx) => {
       installNotesStore(ctx);
       await openCrumb(/^Branch/);
-      await click(await screen.findByRole('tab', { name: /^Files/ }));
+      await click(await findSection(/^Files/));
       await branchTab('files')(ctx);
       await addNoteOnFile({ file: FIRST_FILE, body: 'Cap the retries at three' });
-      await click(await screen.findByRole('tab', { name: /^Commits/ }));
+      await click(await findSection(/^Commits/));
       const threadId = fakeNotes[0]?.threadId ?? '';
       await openReviewThread({ sessionId: ctx.sessionId, threadId });
       await settle();
@@ -316,14 +317,14 @@ export const NOTES_ROWS: ReadonlyArray<Row> = [
     open: async (ctx) => {
       installNotesStore(ctx);
       await openCrumb(/^Branch/);
-      await click(await screen.findByRole('tab', { name: /^Files/ }));
+      await click(await findSection(/^Files/));
       await branchTab('files')(ctx);
       await addNoteOnFile({ file: FIRST_FILE, body: 'Cap the retries at three' });
       await startFakeNoteFix({
         sessionId: ctx.sessionId,
         threadIds: [fakeNotes[0]?.threadId ?? ''],
       });
-      await click(await screen.findByRole('tab', { name: /^Commits/ }));
+      await click(await findSection(/^Commits/));
       useAppStore.getState().navigate({
         to: agentPlace({ sessionId: ctx.sessionId, agentId: 'journey-agent-0' as AgentId }),
       });

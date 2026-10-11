@@ -37,7 +37,7 @@ import { useMemo, useState } from 'react';
 import type { FileDiff, SessionId } from '@goodboy/types';
 import { pressShortcut } from '../../../../__tests__/helpers/pressKey';
 import type { SessionDiff } from '../../hooks/useSessionDiff';
-import { DiffRailScope } from '../../DiffRailScope';
+import { DiffRailHarness } from '../../../../__tests__/helpers/DiffRailHarness';
 import { SessionDiffPane } from './index';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -71,9 +71,10 @@ const FILES: ReadonlyArray<FileDiff> = Array.from({ length: FILE_COUNT }, (_, in
 
 type HostProps = {
   readonly initialFocus?: string | null;
+  readonly isOverlay?: boolean;
 };
 
-const Host = ({ initialFocus = null }: HostProps) => {
+const Host = ({ initialFocus = null, isOverlay = false }: HostProps) => {
   const [focusPath, setFocusPath] = useState<string | null>(initialFocus);
   const [viewedPaths, setViewedPaths] = useState<ReadonlyArray<string>>([]);
   const diff = useMemo<SessionDiff>(
@@ -103,7 +104,7 @@ const Host = ({ initialFocus = null }: HostProps) => {
     [focusPath, viewedPaths],
   );
   return (
-    <DiffRailScope isActive>
+    <DiffRailHarness isOverlay={isOverlay}>
       <SessionDiffPane
         sessionId={SESSION_ID}
         workingDir={WORKTREE}
@@ -111,7 +112,7 @@ const Host = ({ initialFocus = null }: HostProps) => {
         diff={diff}
         onWriteReview={null}
       />
-    </DiffRailScope>
+    </DiffRailHarness>
   );
 };
 
@@ -174,12 +175,8 @@ describe('SessionDiffPane with the real DiffView', () => {
     await waitFor(() => expect(scrolled).toContain(fileAt(9).path));
   });
 
-  it('follows j and k with the tree in a strip or a button, closed, and marks the file in the tree', async () => {
-    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
-      width: 1100,
-      height: 600,
-    } as DOMRect);
-    render(<Host />);
+  it('follows j and k with the rail hidden, and marks the file in the tree once it opens', async () => {
+    render(<Host isOverlay />);
     expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
 
     pressShortcut({ id: 'diff.fileDown' });
@@ -189,22 +186,22 @@ describe('SessionDiffPane with the real DiffView', () => {
     pressShortcut({ id: 'diff.fileUp' });
     await waitFor(() => expect(scrolled.at(-1)).toBe(fileAt(0).path));
 
-    pressShortcut({ id: 'diff.toggleTree' });
+    pressShortcut({ id: 'diff.focusTree' });
     expect(treeRow(0).getAttribute('aria-current')).toBe('true');
     expect(treeRow(1).getAttribute('aria-current')).toBeNull();
   });
 
-  it('keeps j and k moving after the rail folds to the strip, and after the overlay opens and closes', async () => {
-    render(<Host />);
+  it('keeps j and k moving after the hidden rail opens and a pick closes it', async () => {
+    render(<Host isOverlay />);
+    pressShortcut({ id: 'diff.focusTree' });
     fireEvent.click(treeRow(10));
     await waitFor(() => expect(scrolled).toContain(fileAt(10).path));
-
-    pressShortcut({ id: 'diff.toggleTree' });
     expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
+
     pressShortcut({ id: 'diff.fileDown' });
     await waitFor(() => expect(scrolled).toContain(fileAt(11).path));
 
-    pressShortcut({ id: 'diff.toggleTree' });
+    pressShortcut({ id: 'diff.focusTree' });
     expect(treeRow(11).getAttribute('aria-current')).toBe('true');
   });
 

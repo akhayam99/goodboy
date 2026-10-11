@@ -33,6 +33,7 @@ import {
   settle,
   useAppStore,
   visible,
+  findSection,
 } from './harness';
 
 const LATEST_ACTIVITY = sceneClock({ anchor: '2099-01-01T00:00:00.000Z' }).iso({
@@ -377,9 +378,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     id: 'pullRequest.edit',
     open: async () => {
       await press('lens.pr')();
-      expect(
-        await screen.findByRole('tab', { name: /^Pull request/, selected: true }, WAIT),
-      ).toBeDefined();
+      expect((await findSection(/^Overview/)).getAttribute('aria-current')).toBe('page');
       await pressed('pullRequest.edit', document.body);
     },
     lands: async () =>
@@ -718,7 +717,7 @@ const threadRow = (threadId: string): HTMLElement => {
 
 const openReview = async (): Promise<void> => {
   await press('lens.review')();
-  await visible('tab', /^Comments/);
+  expect((await findSection(/^Comments/)).getAttribute('aria-current')).toBe('page');
 };
 
 const neighbourOf = (threadId: string, step: 1 | -1): string | null => {
@@ -1177,7 +1176,9 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
     lands: async () => {
       expect(await activeTreeFile()).toContain('notify.ts');
       await visible('navigation', 'Changed files');
-      expect(screen.getByText('1 of 3 viewed')).toBeDefined();
+      expect(
+        within(await findSection(/^Files/)).getByRole('img', { name: '1 of 3 viewed' }),
+      ).toBeDefined();
     },
   }),
   keyRow({
@@ -1221,18 +1222,6 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       expect(
         screen.getByRole('navigation', { name: 'Changed files' }).contains(document.activeElement),
       ).toBe(true),
-  }),
-  keyRow({
-    id: 'diff.toggleTree',
-    open: async () => {
-      await openDiff();
-      await pressed('diff.toggleTree', document.body);
-    },
-    lands: async () =>
-      waitFor(
-        () => expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull(),
-        WAIT,
-      ),
   }),
   keyRow({
     id: 'diff.focusFilter',

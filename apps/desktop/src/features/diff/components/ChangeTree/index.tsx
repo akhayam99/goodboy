@@ -31,7 +31,7 @@ import {
 } from '../../../../shared/utils/windowRows';
 import { Delta } from './Delta';
 import { KeyHints } from './KeyHints';
-import { ProgressRing } from './ProgressRing';
+import { ViewedRing } from '../../../../shared/components/ViewedRing';
 import { TreeHead } from './TreeHead';
 
 type TreeFilter = {
@@ -61,6 +61,7 @@ type Props = {
   readonly hasNotesIn: (path: string) => boolean;
   readonly stateOf: (file: FileDiff) => ViewedState;
   readonly noteCountOf: (path: string) => number;
+  readonly onNextUnviewed: () => void;
 };
 
 const INDENT_PX = 12;
@@ -82,6 +83,7 @@ export const ChangeTree = ({
   hasNotesIn,
   stateOf,
   noteCountOf,
+  onNextUnviewed,
 }: Props) => {
   const rows = useMemo(() => visibleRows({ rows: tree.rows, collapsed }), [tree.rows, collapsed]);
   const markedId = useMemo(
@@ -99,6 +101,11 @@ export const ChangeTree = ({
   const viewedCount = useMemo(
     () => [...states.values()].filter((state) => state === 'viewed').length,
     [states],
+  );
+  const unviewedCount = allFiles.length - viewedCount;
+  const commentedCount = useMemo(
+    () => allFiles.filter((file) => noteCountOf(file.path) > 0).length,
+    [allFiles, noteCountOf],
   );
   const activeRef = useRef<HTMLButtonElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
@@ -168,8 +175,9 @@ export const ChangeTree = ({
   return (
     <nav aria-label="Changed files" className="flex min-h-0 w-full min-w-0 flex-col">
       <TreeHead
-        viewed={viewedCount}
         total={allFiles.length}
+        unviewed={unviewedCount}
+        commented={commentedCount}
         query={filter.query}
         onQuery={filter.onQuery}
         filterRef={filterRef}
@@ -222,7 +230,7 @@ export const ChangeTree = ({
                       isOpen && 'rotate-90',
                     )}
                   />
-                  <ProgressRing
+                  <ViewedRing
                     viewed={row.paths.filter((path) => states.get(path) === 'viewed').length}
                     total={row.fileCount}
                   />
@@ -385,6 +393,14 @@ export const ChangeTree = ({
           })}
         </ul>
       </ScrollFade>
+      <div className="flex shrink-0 items-center px-2 pb-1">
+        <Button size="xs" variant="quiet" disabled={unviewedCount === 0} onClick={onNextUnviewed}>
+          Next unviewed
+          {unviewedCount === 0 ? null : (
+            <span className="tabular-nums text-faint-foreground">{unviewedCount}</span>
+          )}
+        </Button>
+      </div>
       <KeyHints />
     </nav>
   );

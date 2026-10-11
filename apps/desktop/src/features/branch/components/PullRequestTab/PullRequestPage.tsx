@@ -40,7 +40,6 @@ export type PullRequestPageProps = {
   readonly onMutated: () => void;
   readonly onReload: () => void;
   readonly onSelectTab: (tab: BranchTab) => void;
-  readonly onOpenFiles: (path: string | null) => void;
 };
 
 const ACTIVITY_LOADING = 'Reading the activity';
@@ -62,11 +61,10 @@ export const PullRequestPage = ({
   onMutated,
   onReload,
   onSelectTab,
-  onOpenFiles,
 }: PullRequestPageProps) => {
   const sessionId = session.id;
   const port = usePullRequestPort({ sessionId });
-  const { readiness, commentsNeedYou } = usePullRequestReadiness({ sessionId });
+  const { commentsNeedYou } = usePullRequestReadiness({ sessionId });
   const items = useMemo(
     () =>
       view === null ? [] : pullRequestActivityOf({ view, detail, needYou: commentsNeedYou, edits }),
@@ -75,24 +73,10 @@ export const PullRequestPage = ({
   const nouns = port?.nouns ?? PULL_REQUEST_NOUNS[host];
 
   return (
-    <div className="flex min-w-0 flex-col gap-6 @[928px]:grid @[928px]:grid-cols-[minmax(0,1fr)_280px] @[928px]:items-start @[928px]:gap-8">
-      <PullRequestProperties
-        sessionId={sessionId}
-        host={host}
-        pr={pr}
-        detail={detail}
-        view={view}
-        readiness={readiness}
-        port={port}
-        request={request}
-        canEdit={canEdit}
-        behind={behind}
-        distanceBase={distanceBase}
-        onRebase={onRebase}
-        onOpenChecks={() => onSelectTab('checks')}
-        onOpenFiles={onOpenFiles}
-        onMutated={onMutated}
-      />
+    <div
+      data-slot="overview-grid"
+      className="flex min-w-0 flex-col gap-6 @[800px]:grid @[800px]:grid-cols-[minmax(0,640px)_296px] @[800px]:items-start"
+    >
       <div className="flex min-w-0 flex-col gap-8">
         <PullRequestDescription
           sessionId={sessionId}
@@ -116,6 +100,20 @@ export const PullRequestPage = ({
           />
         )}
       </div>
+      <PullRequestProperties
+        sessionId={sessionId}
+        pr={pr}
+        detail={detail}
+        view={view}
+        port={port}
+        request={request}
+        canEdit={canEdit}
+        behind={behind}
+        distanceBase={distanceBase}
+        onRebase={onRebase}
+        onOpenChecks={() => onSelectTab('checks')}
+        onMutated={onMutated}
+      />
     </div>
   );
 };
