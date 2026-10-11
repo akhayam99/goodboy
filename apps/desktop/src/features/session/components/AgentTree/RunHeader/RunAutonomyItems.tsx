@@ -1,8 +1,8 @@
 import { Check } from 'lucide-react';
 import type { WorkflowAutonomy } from '@goodboy/types';
 import { ROW_INTERACTIVE, cn } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { RUN_AUTONOMY_HEADER, RUN_AUTONOMY_OPTIONS } from '../../runAutonomy';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { RUN_AUTONOMY_HEADER, RUN_AUTONOMY_OPTIONS } from '../../../../workflows/runAutonomy';
 
 type Props = {
   readonly autonomy: WorkflowAutonomy;

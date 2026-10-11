@@ -41,7 +41,6 @@ const renderButton = ({ onStart }: { readonly onStart: () => void | Promise<void
   render(
     <ToastProvider>
       <WorkflowRunStartButton
-        variant="detail"
         sessionId={sessionId}
         runId={runId}
         blockReason={null}
@@ -52,7 +51,7 @@ const renderButton = ({ onStart }: { readonly onStart: () => void | Promise<void
 
 const pressStart = async () => {
   await act(async () => {
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start run' }));
   });
 };
 

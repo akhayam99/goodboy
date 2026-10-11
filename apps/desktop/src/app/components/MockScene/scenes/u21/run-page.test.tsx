@@ -75,7 +75,7 @@ const scrollerOf = (edge: HTMLElement): HTMLElement => {
 const stripPhase = (): string | null =>
   screen.getByTestId('orchestrator-strip').getAttribute('data-phase');
 
-const header = () => screen.getByRole('group', { name: 'Run lifecycle actions' });
+const header = () => screen.getByTestId('run-header');
 
 describe('the u21 run page scenes', () => {
   it('registers exactly the three scenes the plan names', () => {
@@ -129,7 +129,7 @@ describe('the u21 run page scenes', () => {
       .filter((name) => /^Stop\b/.test(name));
 
     expect(names).toEqual(['Stop run', 'Stop step']);
-    expect(screen.getByRole('button', { name: 'Show run summary' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Show run summary' })).toBeNull();
   });
 
   it('opens at the top and reveals the live row without ever scrolling past the header', async () => {
@@ -204,7 +204,7 @@ describe('the u21 run page scenes', () => {
     expect(screen.getByRole('button', { name: 'Send to planner' })).toBeDefined();
   });
 
-  it('says what the planner asked and offers Answer in the strip', async () => {
+  it('says what the planner asked in the strip and offers Answer once, in the header', async () => {
     renderScene('workflow-run-plan-question');
 
     const strip = await screen.findByTestId('orchestrator-strip');
@@ -213,8 +213,9 @@ describe('the u21 run page scenes', () => {
     expect(within(strip).getByTestId('orchestrator-state').textContent).toContain(
       'The planner asked: Should the plan keep the retry window',
     );
-    expect(within(strip).getByRole('button', { name: 'Answer' })).toBeDefined();
-    expect(within(strip).queryByRole('button', { name: 'Review plan' })).toBeNull();
+    expect(within(header()).getByRole('button', { name: 'Answer' })).toBeDefined();
+    expect(within(strip).queryByRole('button', { name: 'Answer' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Review plan' })).toBeNull();
   });
 
   it('keeps the static plan hold reachable as workflow-run with run=plan-hold', async () => {
@@ -225,8 +226,8 @@ describe('the u21 run page scenes', () => {
       </ToastProvider>,
     );
 
-    expect(await screen.findByTestId('run-review-plan')).toBeDefined();
-    expect(screen.getByTestId('workflow-run-plan-ready').tagName).toBe('BUTTON');
+    expect(await within(header()).findByRole('button', { name: 'Review plan' })).toBeDefined();
+    expect(screen.getByTestId('workflow-run-plan-ready').tagName).not.toBe('BUTTON');
     expect(screen.queryByTestId('orchestrator-strip')).toBeNull();
     expect(screen.queryByTestId('orchestrator-hint-input')).toBeNull();
   });

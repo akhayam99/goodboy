@@ -1,19 +1,16 @@
 import type { ReactNode } from 'react';
-import { BookmarkPlus } from 'lucide-react';
 import type { Agent, Session, SessionId, Workflow, WorkflowRun } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
-import { EmptyState, PaneShell } from '@goodboy/ui';
+import { EmptyState, PaneShell, useEscapeLayer } from '@goodboy/ui';
 import { splitWorkflowRuns } from '../../../../workflows/activeWorkflowRuns';
 import { useAttachedWorkflowRuns } from '../../../../workflows/useAttachedWorkflowRuns';
 import { WorkflowAttachButton } from '../../../../workflows/components/WorkflowAttachButton';
-import { OrchestratorDock } from '../../../../workflows/components/OrchestratorStrip/OrchestratorDock';
 import { WorkflowStartButton } from '../../AgentTree/WorkflowStartButton';
 import { workflowKindName } from '../../../../workspace/components/WorkspacesSidebar/lib';
 import { WorkflowRailCard } from './WorkflowRailCard';
 import { WorkflowRunDetail } from './WorkflowRunDetail';
 import { useAgentMetrics } from '../../../hooks/useAgentMetrics';
-import { GhostActionButton } from '@goodboy/ui';
 import { FinishedRegister } from '../../../../../shared/components/FinishedRegister';
 import { NAMES } from '../../../../../shared/names';
 
@@ -21,12 +18,12 @@ const VISIBLE_FINISHED_COUNT = 30;
 
 type Props = {
   readonly session: Session;
+  readonly isActive?: boolean;
 };
 
-export const WorkflowsPane = ({ session }: Props) => {
+export const WorkflowsPane = ({ session, isActive = true }: Props) => {
   const sessionId = session.id as SessionId;
   const attachedRuns = useAttachedWorkflowRuns({ session });
-  const makeWorkflowPreset = useAppStore((s) => s.makeWorkflowPreset);
   const phaseRuns = useAppStore(
     (state) => state.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
@@ -45,10 +42,11 @@ export const WorkflowsPane = ({ session }: Props) => {
     attachedRuns.map(({ run, workflow }) => [run.id, run.title ?? workflowKindName(workflow)]),
   );
   const focusedRun = attachedRuns.find(({ run }) => run.id === focusedWorkflowRunId) ?? null;
+  useEscapeLayer(() => setFocusedWorkflowRun(sessionId, null), focusedRun !== null && isActive);
   const hasRuns = attachedRuns.length > 0;
   const hasActiveRuns = active.length > 0;
-  const shouldShowHeaderAttach = hasRuns && (focusedRun != null || hasActiveRuns);
-  const shouldShowEmptyCard = hasRuns && focusedRun == null && !hasActiveRuns;
+  const shouldShowHeaderAttach = hasRuns && hasActiveRuns;
+  const shouldShowEmptyCard = hasRuns && !hasActiveRuns;
   const finishedRunIds = new Set([...completed, ...discarded].map(({ run }) => run.id));
   const finished = attachedRuns.filter(({ run }) => finishedRunIds.has(run.id));
 
@@ -79,42 +77,8 @@ export const WorkflowsPane = ({ session }: Props) => {
   };
 
   if (focusedRun != null) {
-    const hasComposer =
-      focusedRun.run.executionMode === 'dynamic' && focusedRun.run.discardedAt == null;
-    const conversation = {
-      composer: hasComposer ? (
-        <OrchestratorDock
-          sessionId={sessionId}
-          run={focusedRun.run}
-          agents={agentsByRunId.get(focusedRun.run.id) ?? EMPTY_ARRAY}
-        />
-      ) : undefined,
-    };
     return (
-      <PaneShell
-        scroll="self"
-        dock={conversation.composer}
-        title={focusedRun.run.title ?? workflowKindName(focusedRun.workflow)}
-        actions={
-          <>
-            {focusedRun.workflow != null && focusedRun.workflow.isPreset === false ? (
-              <GhostActionButton
-                icon={BookmarkPlus}
-                label="Make preset"
-                title="Keep this configuration in the workspace presets"
-                onClick={() =>
-                  void makeWorkflowPreset(session.workspaceId, focusedRun.workflow!.id)
-                }
-              />
-            ) : null}
-            {shouldShowHeaderAttach ? (
-              <WorkflowAttachButton sessionId={sessionId} placement="header" />
-            ) : null}
-          </>
-        }
-      >
-        <WorkflowRunDetail session={session} workflowRunId={focusedRun.run.id} />
-      </PaneShell>
+      <WorkflowRunDetail session={session} run={focusedRun.run} workflow={focusedRun.workflow} />
     );
   }
 

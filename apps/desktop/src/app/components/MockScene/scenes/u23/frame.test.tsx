@@ -49,11 +49,27 @@ const STUDIO_SCENES = [
   'frame-studio-guide',
 ] as const;
 
+const RUN_SCENES = [
+  'header-run',
+  'workflow-run',
+  'workflow-run-finished-sets',
+  'workflow-run-nested',
+  'workflow-run-plan-question',
+  'workflow-run-plan-review',
+  'workflow-run-scrolled',
+  'workflow-run-step-question',
+  'run-header-held',
+  'run-header-paused',
+  'run-header-failed',
+  'run-header-archived',
+] as const;
+
 const ONE_H1_SCENES: ReadonlyArray<string> = [
   'workflow-studio',
   'inbox-states',
   'impact-scopes',
   ...STUDIO_SCENES,
+  ...RUN_SCENES,
 ];
 
 type SceneId = string;

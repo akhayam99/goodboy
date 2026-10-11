@@ -55,10 +55,15 @@ const Harness = () => {
   const session =
     useAppStore((state) => state.sessions.find((candidate) => candidate.id === FLOW_SESSION_ID)) ??
     PLAN_HOLD_SESSION;
-  return <WorkflowRunDetail session={session} workflowRunId={DYNAMIC_RUN_ID} />;
+  const run = session.workflowRuns.find((candidate) => candidate.id === DYNAMIC_RUN_ID);
+  const workflow = useAppStore((state) =>
+    state.sessionWorkflows[session.id]?.find((candidate) => candidate.id === run?.workflowId),
+  );
+  if (run === undefined || workflow === undefined) {
+    return null;
+  }
+  return <WorkflowRunDetail session={session} run={run} workflow={workflow} />;
 };
-
-const nextStep = () => screen.queryByTestId('workflow-next-step-cta');
 
 const renderPage = () =>
   render(
@@ -67,23 +72,27 @@ const renderPage = () =>
     </ToastProvider>,
   );
 
-const lifecycle = () => screen.getByRole('group', { name: 'Run lifecycle actions' });
+const header = () => screen.getByTestId('run-header');
+
+const primaries = (): ReadonlyArray<string> =>
+  Array.from(header().querySelectorAll('button[data-variant="primary"]')).map(
+    (button) => button.textContent ?? '',
+  );
 
 const openedDrawer = () => useAppStore.getState().drawer;
 
 describe('WorkflowRunDetail while the plan waits', () => {
-  it('offers Review plan and no step to run until the plan is approved', async () => {
+  it('offers Review plan as the one entry and no step to run until the plan is approved', async () => {
     renderPage();
 
-    expect(within(lifecycle()).getByRole('button', { name: 'Review plan' })).toBeDefined();
-    expect(within(lifecycle()).queryByRole('button', { name: 'Approve plan' })).toBeNull();
-    expect(nextStep()).toBeNull();
+    expect(primaries()).toEqual(['Review plan']);
+    expect(screen.queryByRole('button', { name: /^Start step/ })).toBeNull();
 
     await act(async () => {
       await useAppStore.getState().approveWorkflowRunPlan(FLOW_SESSION_ID, DYNAMIC_RUN_ID);
     });
 
-    await waitFor(() => expect(nextStep()?.textContent).toContain('Run next step'));
+    await waitFor(() => expect(primaries()).toEqual([expect.stringMatching(/^Start step \d/)]));
     expect(screen.queryByRole('button', { name: 'Review plan' })).toBeNull();
     expect(screen.queryByTestId('workflow-run-plan-ready')).toBeNull();
   });
@@ -92,38 +101,28 @@ describe('WorkflowRunDetail while the plan waits', () => {
     renderPage();
     expect(openedDrawer()).toBeNull();
 
-    fireEvent.click(within(lifecycle()).getByRole('button', { name: 'Review plan' }));
+    fireEvent.click(within(header()).getByRole('button', { name: 'Review plan' }));
 
     expect(openedDrawer()).toMatchObject({
       kind: 'artifact-document',
       sessionId: FLOW_SESSION_ID,
       payload: { artifactId: PLAN_HOLD_PLAN.id },
     });
-    expect(screen.getByRole('heading', { name: 'Duplicate credit fix' })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 1, name: 'Duplicate credit fix' })).toBeDefined();
   });
 
-  it('opens the same drawer from the Plan ready status of the static run', () => {
+  it('says the plan is ready as a status, never as a second button', () => {
     renderPage();
 
-    fireEvent.click(screen.getByTestId('workflow-run-plan-ready'));
-
-    expect(openedDrawer()).toMatchObject({
-      kind: 'artifact-document',
-      payload: { artifactId: PLAN_HOLD_PLAN.id },
-    });
+    const status = screen.getByTestId('workflow-run-plan-ready');
+    expect(status.tagName).not.toBe('BUTTON');
+    expect(status.textContent).toBe('Plan ready');
   });
 
-  it('approves from the overflow, lifts the hold and says so in one toast', async () => {
+  it('draws no second entry to the plan on the planner row while the plan waits', () => {
     renderPage();
 
-    fireEvent.click(screen.getByRole('button', { name: /run controls$/ }));
-    await act(async () => {
-      fireEvent.click(screen.getByRole('menuitem', { name: 'Approve plan' }));
-    });
-
-    await waitFor(() => expect(nextStep()?.textContent).toContain('Run next step'));
-    expect(screen.getAllByText('Plan approved')).toHaveLength(1);
-    expect(screen.getByText('The run goes on')).toBeDefined();
-    expect(screen.queryByRole('menuitem', { name: 'Approve plan' })).toBeNull();
+    const entries = screen.queryAllByRole('button', { name: /^(Review|Open|Approve) plan$/ });
+    expect(entries.map((entry) => entry.textContent)).toEqual(['Review plan']);
   });
 });
