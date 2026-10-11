@@ -11,9 +11,11 @@ vi.mock('../../../features/session/taskModelAgentSpawnConfig', () => ({
   }),
 }));
 
-const stopAgentForDelete = vi.hoisted(() => vi.fn(async (): Promise<boolean> => true));
+const liveRuns = vi.hoisted((): { ids: Array<string> } => ({ ids: [] }));
 
-vi.mock('../agents/stopAgentForDelete', () => ({ stopAgentForDelete }));
+vi.mock('@tauri-apps/api/core', () => ({
+  invoke: vi.fn(async (command: string) => (command === 'turn_list_live' ? liveRuns.ids : null)),
+}));
 
 import { createScribeSlice } from './index';
 import { scribeInitialState } from './state';
@@ -88,7 +90,10 @@ const harness = ({
   const get = (() => state) as unknown as GetFn;
   const slice = createScribeSlice({ set, get });
   state = { ...state, ...slice };
-  return { slice, read: () => state as unknown as ReturnType<GetFn> };
+  const patch = (next: Record<string, unknown>): void => {
+    state = { ...state, ...next };
+  };
+  return { slice, patch, read: () => state as unknown as ReturnType<GetFn> };
 };
 
 const PR_KEY = 'pr:mount-ledger';
@@ -246,9 +251,14 @@ describe('scribe slice', () => {
         isTextOnly: true,
       },
     });
-    stopAgentForDelete.mockResolvedValueOnce(false);
+    built.patch({ agentTurnState: { [AGENT_ID]: { kind: 'running', runId: 'run-scribe' } } });
+    liveRuns.ids = ['run-scribe'];
+    vi.useFakeTimers();
 
-    await built.slice.stopScribe({ key: PR_KEY });
+    const stopping = built.slice.stopScribe({ key: PR_KEY });
+    await vi.advanceTimersByTimeAsync(5000);
+    await stopping;
+    vi.useRealTimers();
 
     expect(built.read().scribeWork[PR_KEY]).toMatchObject({
       status: 'writing',
@@ -257,6 +267,7 @@ describe('scribe slice', () => {
     });
     expect(built.read().scribeAgents[AGENT_ID]).toBe(PR_KEY);
 
+    liveRuns.ids = [];
     await built.slice.stopScribe({ key: PR_KEY });
 
     expect(built.read().scribeWork[PR_KEY]).toBeUndefined();

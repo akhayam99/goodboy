@@ -106,9 +106,11 @@ const keptFor = ({
 }) => ({ kind: 'kept', path: folder.path, reasons: [], message }) satisfies StorageRemoval;
 
 const removeOne = async ({ get, folder, mode }: FolderRemovalParams): Promise<StorageRemoval> => {
-  await get()
-    .refreshMonitorSnapshot()
-    .catch(() => undefined);
+  try {
+    await get().refreshMonitorSnapshot();
+  } catch {
+    return keptFor({ folder, message: MONITOR_UNREADABLE_REASON });
+  }
   const { monitorSnapshot, monitorError } = get();
   if (monitorError !== null || monitorSnapshot === null || !monitorSnapshot.isPlatformSupported) {
     return keptFor({ folder, message: MONITOR_UNREADABLE_REASON });

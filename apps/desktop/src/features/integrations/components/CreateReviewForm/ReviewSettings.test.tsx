@@ -33,7 +33,7 @@ describe('ReviewSettings', () => {
     );
 
     expect(screen.getByRole('alert').textContent).toBe("Couldn't load branches");
-    expect(screen.getByRole('textbox', { name: 'Target branch' })).toBeTruthy();
+    screen.getByRole('textbox', { name: 'Target branch' });
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     expect(onBasesRetry).toHaveBeenCalledTimes(1);
   });
