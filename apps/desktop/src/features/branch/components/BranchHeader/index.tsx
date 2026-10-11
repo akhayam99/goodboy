@@ -39,6 +39,12 @@ type Props = {
   readonly onMutated: () => void;
 };
 
+type ButtonParams = {
+  readonly action: BranchPrimary;
+  readonly slot: 'primary' | 'secondary';
+  readonly variant: 'primary' | 'secondary';
+};
+
 const capitalized = (text: string): string => `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
 
 const stateOf = (pr: PullRequestState | null): PullRequestPresentationState =>
@@ -88,19 +94,13 @@ export const BranchHeader = ({
         ? `#${pr.number}`
         : `${PULL_REQUEST_NOUNS[host].short} ${PULL_REQUEST_NOUNS[host].numberPrefix}${pr.number}`;
 
-  const buttonOf = ({
-    action,
-    variant,
-  }: {
-    readonly action: BranchPrimary;
-    readonly variant: 'primary' | 'secondary';
-  }) => {
+  const buttonOf = ({ action, slot, variant }: ButtonParams) => {
     const button = (
       <Button
         size="sm"
         variant={variant}
-        data-branch-primary={variant === 'primary' ? action.actionId : undefined}
-        data-branch-secondary={variant === 'secondary' ? action.actionId : undefined}
+        data-branch-primary={slot === 'primary' ? action.actionId : undefined}
+        data-branch-secondary={slot === 'secondary' ? action.actionId : undefined}
         disabled={action.blockedReason !== null}
         isBusy={action.isBusy || isPushBusy}
         onClick={() => controls.press(action)}
@@ -208,7 +208,9 @@ export const BranchHeader = ({
         actions={
           <HeaderActions
             secondary={
-              secondary === null ? null : buttonOf({ action: secondary, variant: 'secondary' })
+              secondary === null
+                ? null
+                : buttonOf({ action: secondary, slot: 'secondary', variant: 'secondary' })
             }
             button={
               abort === null ? null : (
@@ -223,7 +225,9 @@ export const BranchHeader = ({
               )
             }
             primary={
-              primary === null ? null : buttonOf({ action: primary, variant: primaryVariant })
+              primary === null
+                ? null
+                : buttonOf({ action: primary, slot: 'primary', variant: primaryVariant })
             }
             overflow={
               <BranchOverflow

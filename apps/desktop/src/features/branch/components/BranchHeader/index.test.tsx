@@ -773,11 +773,13 @@ describe('BranchHeader action row', () => {
     withRequest(open);
     status = statusOf({});
     renderHeader({ pr: open, isPrimaryYielding: true });
-    expect(primaries()).toHaveLength(0);
+    expect(primaries()).toHaveLength(1);
+    expect(primaries()[0]?.getAttribute('data-variant')).toBe('secondary');
     expect(document.querySelectorAll('button[data-variant="primary"]')).toHaveLength(0);
     cleanup();
 
     renderHeader({ pr: open, isPrimaryYielding: false });
+    expect(primaries()[0]?.getAttribute('data-variant')).toBe('primary');
     expect(document.querySelectorAll('button[data-variant="primary"]')).toHaveLength(1);
   });
 });

@@ -304,6 +304,7 @@ describe('Branch page sections by state', () => {
     await settle();
 
     expect(sectionNames()).toEqual(['Overview', 'Comments', 'Files', 'Commits']);
+    expect(railRow(/^Comments/).textContent).toBe('Comments1');
   });
 
   it.each(['draft', 'open', 'merged', 'closed', 'queued'] as const)(

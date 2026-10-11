@@ -14,6 +14,7 @@ import {
   importStore,
   resetStoryStore,
 } from '../../../../../store/storyHarness';
+import { findSectionRow, sectionNames } from '../../../../../test/branchRail';
 import { U23_PR_PAGE_SCENES } from './pr-page';
 import { prPageGhStdout, prPageHandlers } from './prPageSeed';
 
@@ -68,32 +69,31 @@ describe('the pull request page scenes', () => {
   it('branch-pr-github leads with the Pull request tab and its title as the one heading', async () => {
     draw({ name: 'branch-pr-github' });
 
-    expect(
-      (await screen.findByRole('tab', { name: /^Pull request/ })).getAttribute('aria-selected'),
-    ).toBe('true');
-    expect(screen.getAllByRole('tab')[0]?.textContent).toMatch(/^Pull request/);
+    expect((await findSectionRow(/^Overview/)).getAttribute('aria-current')).toBe('page');
+    expect(sectionNames()[0]).toBe('Overview');
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
       'Stop retried webhooks posting a second credit',
     );
   });
 
-  it('branch-pr-github reads the status, reviewers, checks, branch and files in the properties', async () => {
+  it('branch-pr-github reads reviewers, checks, linked issues and base in the properties', async () => {
     draw({ name: 'branch-pr-github' });
     await screen.findByRole('complementary', { name: 'Properties' });
     const side = within(properties());
 
-    expect(side.getByText('Blocked: 1 check failing')).toBeDefined();
+    expect(screen.getByTestId('branch-blocked-reason').textContent).toBe('1 check failing: lint.');
     expect(side.getByText('#412')).toBeDefined();
+    expect(side.getByText('Closes')).toBeDefined();
     expect(side.getByText('kenji-w')).toBeDefined();
     expect(side.getByText('Approved')).toBeDefined();
     expect(side.getByText('Changes requested')).toBeDefined();
     expect(side.getByText('Pending')).toBeDefined();
-    expect(side.getByText('1 failing, 5 passed')).toBeDefined();
-    expect(side.getByText('hl/fix-duplicate-credit')).toBeDefined();
+    expect(side.getByText('5 passed · 1 failing · 1 running')).toBeDefined();
+    expect(side.getByRole('region', { name: 'Base' }).textContent).toContain('main');
     expect(await side.findByText('3 behind main')).toBeDefined();
     expect(side.getByRole('button', { name: 'Rebase on main' })).toBeDefined();
-    expect(side.getByText('5 files')).toBeDefined();
-    expect(side.getByText('applyWebhook.ts')).toBeDefined();
+    expect(side.queryByRole('region', { name: 'Status' })).toBeNull();
+    expect(side.queryByRole('region', { name: 'Files changed' })).toBeNull();
   });
 
   it('branch-pr-github shows the description with Edit beside its heading', async () => {
@@ -119,7 +119,7 @@ describe('the pull request page scenes', () => {
     draw({ name: 'branch-pr-draft' });
 
     const side = within(await screen.findByRole('complementary', { name: 'Properties' }));
-    expect(side.getByText('Draft, not open for review yet')).toBeDefined();
+    expect(document.querySelector('[data-slot="branch-state"]')?.textContent).toBe('Draft');
     expect(side.getByText('None requested')).toBeDefined();
   });
 
@@ -191,8 +191,10 @@ describe('the pull request page scenes', () => {
   it('branch-pr-merged says it merged into main and offers no merge', async () => {
     draw({ name: 'branch-pr-merged' });
 
-    const side = within(await screen.findByRole('complementary', { name: 'Properties' }));
-    expect(side.getAllByText('Merged').length).toBeGreaterThan(0);
+    await screen.findByRole('complementary', { name: 'Properties' });
+    expect(document.querySelector('[data-slot="branch-state"]')?.getAttribute('data-tone')).toBe(
+      'merged',
+    );
     expect(
       within(screen.getByRole('region', { name: 'Activity' })).getByText(
         /merged this pull request/,

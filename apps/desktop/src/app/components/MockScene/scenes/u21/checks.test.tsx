@@ -6,7 +6,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -79,11 +79,14 @@ describe('the checks scenes', () => {
     ).toBeDefined();
   });
 
-  it('branch-checks-no-pr waits for the pull request', async () => {
+  it('branch-checks-no-pr lands on Overview and the rail has no Checks without a pull request', async () => {
     draw({ name: 'branch-checks-no-pr' });
 
-    expect(await screen.findByText('Checks run once the pull request exists')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Create pull request' })).toBeDefined();
+    const rail = within(await screen.findByRole('navigation', { name: 'Sections' }));
+    expect(rail.getByRole('button', { name: /^Overview/ }).getAttribute('aria-current')).toBe(
+      'page',
+    );
+    expect(rail.queryByRole('button', { name: /^Checks/ })).toBeNull();
   });
 
   it('branch-checks-loading reads the checks and stays there', async () => {

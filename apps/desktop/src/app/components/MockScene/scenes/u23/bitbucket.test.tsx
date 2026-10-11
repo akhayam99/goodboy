@@ -22,6 +22,7 @@ import {
 } from '../../../../../store/storyHarness';
 import { SESSION } from '../resolveSeed';
 import { BitbucketPageScene } from './BitbucketPageScene';
+import { findSectionRow, sectionRow } from '../../../../../test/branchRail';
 import { U23_BITBUCKET_SCENES } from './bitbucket';
 import { bitbucketPageHandlers, type BitbucketPageVariant } from './bitbucketSeed';
 
@@ -94,7 +95,7 @@ const show = async (variant: BitbucketPageVariant = 'pr') => {
       <BitbucketPageScene variant={variant} />
     </ToastProvider>,
   );
-  await screen.findByRole('tab', { name: /^Pull request/ });
+  await findSectionRow(/^Overview/);
   act(() => {
     useAppStore.setState(stubs);
   });
@@ -120,26 +121,23 @@ describe('the Bitbucket scenes', () => {
   it('leads with the Pull request tab and the title as the one heading', async () => {
     await show();
 
-    expect(screen.getByRole('tab', { name: /^Pull request/ }).getAttribute('aria-selected')).toBe(
-      'true',
-    );
+    expect(sectionRow(/^Overview/).getAttribute('aria-current')).toBe('page');
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
       'Stop retried webhooks posting a second credit',
     );
   });
 
-  it('reads the status, reviewers, checks, branch and files in the properties', async () => {
+  it('reads the reviewers, checks and base in the properties and the block in the meta line', async () => {
     await show();
     const side = within(properties());
 
-    expect(side.getByText('Blocked: 1 check failing')).toBeDefined();
-    expect(side.getByText('Bitbucket checks this when you merge')).toBeDefined();
+    expect(screen.getByTestId('branch-blocked-reason').textContent).toMatch(/1 check failing/);
     expect(side.getByText('kenji-w')).toBeDefined();
     expect(side.getByText('Approved')).toBeDefined();
     expect(side.getByText('Changes requested')).toBeDefined();
     expect(side.getByText('Pending')).toBeDefined();
-    expect(side.getByText('hl/fix-duplicate-credit')).toBeDefined();
-    expect(side.getByText('5 files')).toBeDefined();
+    expect(side.getByRole('region', { name: 'Base' }).textContent).toContain('main');
+    expect(side.queryByRole('region', { name: 'Files changed' })).toBeNull();
   });
 
   it('uses the words of the host and none of GitHub', async () => {
@@ -258,8 +256,7 @@ describe('the Pull request tab on Bitbucket, merge and close', () => {
   it('shows a declined pull request as closed with no Reopen, Close or Merge', async () => {
     await show('declined');
 
-    const side = within(properties());
-    expect(side.getAllByText('Closed').length).toBeGreaterThan(0);
+    expect(document.querySelector('[data-slot="branch-state"]')?.textContent).toBe('Closed');
     expect(screen.queryByRole('button', { name: /^Merge/ })).toBeNull();
     await openOverflow();
     const menu = await screen.findByRole('menu', { name: 'Branch actions' });

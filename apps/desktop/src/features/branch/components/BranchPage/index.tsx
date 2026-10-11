@@ -18,6 +18,7 @@ import { useMountRemoteHostKind } from '../../../worktree/useMountRemoteHostKind
 import { PushBanner } from '../../../resolve/components/ReviewFlow/PushBanner';
 import { ReviewFlow } from '../../../resolve/components/ReviewFlow';
 import { useReviewEntries } from '../../../resolve/components/ReviewFlow/useReviewEntries';
+import { useBranchNotes } from '../../../resolve/notes/useBranchNotes';
 import { useReviewPush } from '../../../resolve/components/ReviewFlow/useReviewPush';
 import { useActiveReviewSource } from '../../../resolve/hooks/useActiveReviewSource';
 import { isPushFailure } from '../../../resolve/reviewCommentState';
@@ -89,6 +90,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   const githubConnection = useGithubConnection({ workspaceId: session.workspaceId });
   const { entries: sources, source: activeSource } = useActiveReviewSource({ sessionId });
   const { entries } = useReviewEntries({ sessionId });
+  const { all: notes } = useBranchNotes({ sessionId });
   const push = useReviewPush({ sessionId });
   const diff = useSessionDiff({
     sessionId,
@@ -258,7 +260,8 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     githubConnection.isResolved === false || githubConnection.isAuthenticated;
   const hasRemote = sources.length > 0;
   const filesCount = diff.loading || diff.error !== null ? null : diff.files.length;
-  const commentsCount = activeSource !== null && !activeSource.hasDetail ? null : entries.length;
+  const commentsCount =
+    activeSource === null ? notes.length : activeSource.hasDetail ? entries.length : null;
 
   const body = () => {
     if ((tab === 'pr' || tab === 'comments') && !hasRemote && repo === null) {

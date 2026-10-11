@@ -13,6 +13,7 @@ import {
 const { openUrl } = vi.hoisted(() => ({ openUrl: vi.fn(async () => undefined) }));
 vi.mock('../../../../../shared/lib/editor', () => ({ openUrl }));
 
+import { findSectionRow } from '../../../../../test/branchRail';
 import { U23_GITLAB_SCENES } from './gitlab';
 import { clearGitlabSceneWrites, gitlabSceneWrites } from './gitlabSeed';
 
@@ -56,17 +57,15 @@ describe('the gitlab page scenes', () => {
   it('branch-pr-gitlab says merge request, MR and the number with the host nouns', async () => {
     draw({ name: 'branch-pr-gitlab' });
 
-    expect(
-      (await screen.findByRole('tab', { name: /^Merge request/ })).getAttribute('aria-selected'),
-    ).toBe('true');
+    expect((await findSectionRow(/^Overview/)).getAttribute('aria-current')).toBe('page');
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
       'Stop retried webhooks posting a second credit',
     );
-    expect(screen.getByText('MR !42')).toBeDefined();
+    expect(screen.getByText(/MR !42/)).toBeDefined();
     expect(screen.queryByText(/pull request/i)).toBeNull();
   });
 
-  it('branch-pr-gitlab reads reviewers, approvals, pipeline jobs and files from GitLab', async () => {
+  it('branch-pr-gitlab reads reviewers, approvals and the pipeline from GitLab', async () => {
     draw({ name: 'branch-pr-gitlab' });
     const side = within(await screen.findByRole('complementary', { name: 'Properties' }));
 
@@ -74,7 +73,6 @@ describe('the gitlab page scenes', () => {
     expect(side.getByText('Approved')).toBeDefined();
     expect(side.getByText('omar-t')).toBeDefined();
     expect(side.getByText('priya-n')).toBeDefined();
-    expect(await side.findByText('5 files')).toBeDefined();
     expect(await side.findByText(/1 failing/)).toBeDefined();
   });
 
