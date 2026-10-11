@@ -103,6 +103,7 @@ fn assemble(
         .collect()
 }
 
+#[cfg(target_os = "macos")]
 fn csv(pids: impl IntoIterator<Item = u32>) -> String {
     pids.into_iter()
         .map(|pid| pid.to_string())
