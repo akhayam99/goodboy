@@ -55,6 +55,7 @@ export const DrawerHost = () => {
           sessionId={drawer.sessionId}
           sessionDir={drawer.payload.sessionDir}
           entry={drawer.payload.entry}
+          line={drawer.payload.line}
           renderChanges={({ sessionDir, relPath, baseBranch }) => (
             <ExploreFileChanges sessionDir={sessionDir} relPath={relPath} baseBranch={baseBranch} />
           )}

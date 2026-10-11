@@ -16,6 +16,7 @@ type Props = {
   readonly text: string;
   readonly path: string;
   readonly isWrapped: boolean;
+  readonly line?: number;
 };
 
 type Highlighted = {
@@ -62,7 +63,11 @@ const plainReasonOf = ({ lineCount, source }: ReasonParams): string | null => {
   return null;
 };
 
-export const SourceView = ({ text, path, isWrapped }: Props) => {
+const scrollRowIntoView = (node: HTMLElement | null) => {
+  node?.scrollIntoView?.({ block: 'center' });
+};
+
+export const SourceView = ({ text, path, isWrapped, line: targetLine }: Props) => {
   const lang = useMemo(() => languageForPath(path), [path]);
   const lines = useMemo(() => linesOf({ text }), [text]);
   const source = useMemo(() => lines.join('\n'), [lines]);
@@ -99,7 +104,13 @@ export const SourceView = ({ text, path, isWrapped }: Props) => {
       )}
     >
       {lines.map((line, index) => (
-        <div key={index} className={cn(LINE_CLASS, gutterClass)}>
+        <div
+          key={index}
+          ref={targetLine === index + 1 ? scrollRowIntoView : undefined}
+          data-source-line={index + 1}
+          aria-current={targetLine === index + 1 ? 'location' : undefined}
+          className={cn(LINE_CLASS, gutterClass, targetLine === index + 1 && 'bg-hover')}
+        >
           <span
             className={cn(
               'min-w-0',

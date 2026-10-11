@@ -21,7 +21,7 @@ import { TreeLoading } from '../ChangeTree/TreeLoading';
 import { TreeRail } from '../ChangeTree/TreeRail';
 import { TreeResizer } from '../ChangeTree/TreeResizer';
 import { TreeStrip } from '../ChangeTree/TreeStrip';
-import { worktreeFileSides } from '../../../worktree/worktree';
+import { worktreeFileSides, type GrepMatch } from '../../../worktree/worktree';
 import { DiffView } from '../DiffView';
 import { DiffEmptyState } from './DiffEmptyState';
 
@@ -147,6 +147,33 @@ export const SessionDiffPane = ({
     [openInEditor, workingDir],
   );
 
+  const isCommitView = diff.view.kind === 'commit';
+  const identifierPeek = useMemo(
+    () =>
+      isCommitView
+        ? null
+        : {
+            worktreePath,
+            onOpenElsewhere: (match: GrepMatch) =>
+              openDrawer({
+                kind: 'explore-file',
+                sessionId,
+                payload: {
+                  sessionDir: worktreePath,
+                  entry: {
+                    name: match.path.slice(match.path.lastIndexOf('/') + 1),
+                    relPath: match.path,
+                    isDir: false,
+                    sizeBytes: 0,
+                    modifiedAt: null,
+                  },
+                  line: match.line,
+                },
+              }),
+          },
+    [isCommitView, openDrawer, sessionId, worktreePath],
+  );
+
   const loadFileSides = useCallback(
     (file: FileDiff) => {
       const oldRev =
@@ -251,6 +278,7 @@ export const SessionDiffPane = ({
       fileCommentPath={review.fileCommentPath}
       onFileCommentOpened={review.clearFileComment}
       columnWidth="full"
+      identifierPeek={identifierPeek}
       toolbarStart={
         <>
           {filesButton}

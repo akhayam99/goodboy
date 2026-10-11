@@ -265,6 +265,20 @@ per file and diff refresh, and discards late results after its source changes.
 The command lives in `apps/desktop/src-tauri/src/worktree/file_sides.rs`;
 `features/diff/hooks/useFileSides` owns the expansion cache and retry state.
 
+### Identifier peek
+
+`worktree_grep_word` backs the double click on a name in a diff line. It refuses
+a word that is not an identifier of 2 to 128 characters (`A-Za-z_$` first, then
+`A-Za-z0-9_$`) before any process starts, then runs
+`git grep -n --column -z -w -I -F --untracked -e <word> --` in the worktree
+through the `Git` helper with an argument array and a 3 second deadline. It keeps
+the first 300 matches (`truncated` says more existed) and trims each line to 240
+characters. Exit 1 is an empty list. The definition guess is
+`features/diff/lib/definitionOf.ts`: it reads declaration keywords for TS and JS,
+Rust, Python and Go, and does not guess class methods or Go receivers. The
+command lives in `apps/desktop/src-tauri/src/worktree/grep.rs`;
+`features/diff/hooks/useIdentifierUses` keeps only the latest answer.
+
 ### History module
 
 Rewrite history and Rebase on main run in one Rust module,
