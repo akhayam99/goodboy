@@ -3,7 +3,7 @@ import type { HistoryStep } from '@goodboy/types';
 import { moveFacts, type MoveFact } from './historyEdits';
 import { isFolded, messageOf, targetOf, type CombineMode } from './historyPlan';
 
-export type HistoryRowAction = 'pick' | 'fixup' | 'squash' | 'move' | 'reword' | 'drop';
+type HistoryRowAction = 'pick' | 'fixup' | 'squash' | 'move' | 'reword' | 'drop';
 
 export type HistoryAction = HistoryRowAction | 'rebase';
 
