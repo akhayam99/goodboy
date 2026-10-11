@@ -83,7 +83,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Budget',
-        desc: 'A spend limit you set on a session or a provider. Goodboy warns you as the spend nears it.',
+        desc: 'A spend cap you set on a session or a provider. Goodboy warns you as the spend nears it.',
       },
     ],
     links: [],
