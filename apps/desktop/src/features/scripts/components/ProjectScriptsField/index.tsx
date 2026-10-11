@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { Project } from '@goodboy/types';
 import { Button, EmptyLine, Notice } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
@@ -23,6 +23,7 @@ export const ProjectScriptsField = ({ project }: Props) => {
   const toggleScriptPin = useAppStore((state) => state.toggleScriptPin);
   const reportError = useAppStore((state) => state.reportError);
   const pins = useScriptPins({ projectIds: [project.id] })[project.id] ?? [];
+  const [isRetrying, setIsRetrying] = useState(false);
   const base = project.baseBranch ?? 'main';
   const groups =
     scan?.status === 'ready' ? scan.groups.filter((group) => group.scripts.length > 0) : [];
@@ -31,6 +32,15 @@ export const ProjectScriptsField = ({ project }: Props) => {
   useEffect(() => {
     void loadProjectRootScripts({ rootPath: project.rootPath });
   }, [loadProjectRootScripts, project.rootPath]);
+
+  const retry = async (): Promise<void> => {
+    setIsRetrying(true);
+    try {
+      await loadProjectRootScripts({ rootPath: project.rootPath });
+    } finally {
+      setIsRetrying(false);
+    }
+  };
 
   const togglePin = (pinId: string) =>
     void toggleScriptPin({ projectId: project.id, pinId }).catch((error: unknown) =>
@@ -54,7 +64,8 @@ export const ProjectScriptsField = ({ project }: Props) => {
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => void loadProjectRootScripts({ rootPath: project.rootPath })}
+              disabled={isRetrying}
+              onClick={() => void retry()}
             >
               Retry
             </Button>
