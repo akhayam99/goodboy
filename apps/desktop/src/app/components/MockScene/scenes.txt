@@ -392,6 +392,11 @@ tasks-rail
 tasks-rail-folded
 tasks-rail-open
 terminal-empty
+terminal-studio
+terminal-studio-closeconfirm
+terminal-studio-empty
+terminal-studio-newmenu
+terminal-studio-session
 toast-over-drawer
 toast-over-drawer-overlay
 toasts

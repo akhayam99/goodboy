@@ -198,7 +198,7 @@ describe('shortcut registry', () => {
     for (const [id, entry] of entries) {
       const key = entry.combo.split('+').at(-1) ?? '';
       expect(
-        /^(Key[A-Z]|Digit[0-9]|F[0-9]{1,2}|Comma|Period|Slash|Minus|Equal|BracketLeft|BracketRight|Backspace|Delete|Escape|Enter|Tab|Arrow(Up|Down|Left|Right))$/.test(
+        /^(Key[A-Z]|Digit[0-9]|F[0-9]{1,2}|Comma|Period|Slash|Minus|Equal|Backquote|BracketLeft|BracketRight|Backspace|Delete|Escape|Enter|Tab|Arrow(Up|Down|Left|Right))$/.test(
           key,
         ),
         `${id} uses ${key}, which is a character rather than a key code`,

@@ -29,6 +29,7 @@ type AppShortcutsParams = {
   readonly armDeleteConfirm: () => void;
   readonly openPalette: (params?: OpenPaletteParams) => void;
   readonly openSettings: () => void;
+  readonly openTerminalStudio: () => void;
   readonly openShortcutHelp: () => void;
   readonly toggleSidebar: () => void;
   readonly sidebarToggleScope?: 'everywhere' | 'session';
@@ -57,6 +58,7 @@ export const useAppShortcuts = ({
   armDeleteConfirm,
   openPalette,
   openSettings,
+  openTerminalStudio,
   openShortcutHelp,
   toggleSidebar,
   sidebarToggleScope = 'session',
@@ -195,6 +197,7 @@ export const useAppShortcuts = ({
   useShortcut('session.prev', () => navigateSession({ delta: -1 }));
   useShortcut('session.next', () => navigateSession({ delta: 1 }));
   useShortcut('session.board', goToBoard);
+  useShortcut('terminal.studio', openTerminalStudio);
 
   useShortcut('lens.overview', () => goToLens({ kind: null }));
   useShortcut('lens.context', () => toggleContext({}));

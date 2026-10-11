@@ -36,7 +36,6 @@
   "apps/desktop/src/features/settings/components/SettingsStudio/SettingsColumnNav.tsx": 1,
   "apps/desktop/src/features/storage/components/StoragePage/StorageLegendItem.tsx": 1,
   "apps/desktop/src/features/storage/components/StoragePage/WorktreeGroup.tsx": 1,
-  "apps/desktop/src/features/terminal/components/TerminalTabStrip.tsx": 1,
   "apps/desktop/src/features/workflows/components/AddStepMenu/index.tsx": 1,
   "apps/desktop/src/features/workflows/components/OrchestratorStrip/OrchestratorHintLog.tsx": 1,
   "apps/desktop/src/features/workflows/components/RunTree/RunStepSkip.tsx": 1,

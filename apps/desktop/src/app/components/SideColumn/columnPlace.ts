@@ -1,6 +1,6 @@
 import type { StudioKind } from '../../../store';
 
-export type ColumnDoorId = 'board' | 'inbox' | 'chat' | 'workflows';
+export type ColumnDoorId = 'board' | 'inbox' | 'chat' | 'workflows' | 'terminal';
 
 export type ColumnPlace = ColumnDoorId | 'new' | 'settings' | 'impact' | null;
 
@@ -18,6 +18,8 @@ const studioPlace = ({ studio }: { readonly studio: StudioKind }): ColumnPlace =
       return 'chat';
     case 'workflow':
       return 'workflows';
+    case 'terminal':
+      return 'terminal';
     case 'settings':
       return 'settings';
     case 'impact':
@@ -49,6 +51,7 @@ const STUDIO_OVER_SESSION: ReadonlySet<ColumnPlace> = new Set<ColumnPlace>([
   'inbox',
   'chat',
   'workflows',
+  'terminal',
   'impact',
 ]);
 
