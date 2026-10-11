@@ -384,14 +384,14 @@ export const SHORTCUTS = {
     combo: 'KeyR',
     label: 'Run or restart the script',
     plane: 'pane',
-    group: 'lists',
+    group: 'session',
     scope: 'scripts',
   },
   'scripts.stop': {
     combo: 'KeyX',
     label: 'Stop the script',
     plane: 'pane',
-    group: 'lists',
+    group: 'session',
     scope: 'scripts',
   },
 
