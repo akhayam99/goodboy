@@ -75,7 +75,7 @@ describe('the start many scenes', () => {
     const list = await screen.findByRole('list', { name: 'Picked issues' }, WAIT);
     const rows = within(list).getAllByRole('listitem');
     expect(rows).toHaveLength(3);
-    expect(within(rows[0] as HTMLElement).getByText('Names the branch')).toBeDefined();
+    expect(rows[0]?.textContent).toContain('Names the branch');
     expect(screen.getByRole('region', { name: 'Brief from HBL-412 and 2 more' })).toBeDefined();
     expect(screen.getByText('Will close HBL-412, HBL-398, HBL-405 when merged')).toBeDefined();
   });

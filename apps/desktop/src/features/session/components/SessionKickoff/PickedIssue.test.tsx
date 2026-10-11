@@ -258,9 +258,8 @@ describe('PickedIssue', () => {
     const list = screen.getByRole('list', { name: 'Picked issues' });
     expect(within(list).getAllByRole('listitem')).toHaveLength(3);
     expect(within(list).getAllByText('Names the branch')).toHaveLength(1);
-    expect(
-      within(within(list).getAllByRole('listitem')[0] as HTMLElement).getByText('Names the branch'),
-    ).toBeDefined();
+    const [firstRow] = within(list).getAllByRole('listitem');
+    expect(firstRow?.textContent).toContain('Names the branch');
     expect(screen.getByRole('region', { name: 'Brief from HBL-412 and 2 more' })).toBeDefined();
 
     fireEvent.click(screen.getByRole('button', { name: 'Remove HBL-413' }));

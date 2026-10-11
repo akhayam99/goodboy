@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { StoreApi, UseBoundStore } from 'zustand';
 import type { IsoDateTime, Project, ProjectId, WorkspaceId } from '@goodboy/types';
@@ -198,11 +198,16 @@ const resetStore = () => {
 
 const renderKickoff = () => render(<SessionKickoff workspaceId={WORKSPACE_ID} />);
 
+const isSessionDraft = (value: unknown): value is SessionDraft =>
+  typeof value === 'object' && value !== null && 'pickedIssues' in value;
+
 const draftOf = (): SessionDraft => {
-  const draft = (store().getState().sessionDrafts as Record<string, SessionDraft | undefined>)[
-    WORKSPACE_ID
-  ];
-  return draft ?? EMPTY_SESSION_DRAFT;
+  const drafts: unknown = store().getState().sessionDrafts;
+  if (typeof drafts !== 'object' || drafts === null) {
+    return EMPTY_SESSION_DRAFT;
+  }
+  const entry = Object.entries(drafts).find(([key]) => key === WORKSPACE_ID)?.[1];
+  return isSessionDraft(entry) ? entry : EMPTY_SESSION_DRAFT;
 };
 
 const tab = (name: string) => screen.getByRole('tab', { name: new RegExp(name) });
@@ -542,8 +547,13 @@ describe('SessionKickoff', () => {
   });
 
   describe('picking several issues', () => {
-    const manyIssues = async (count = 3) => {
-      store().setState({ workspaceIntegrations: { 'ws-1': [{ provider: 'linear' }] } });
+    const manyIssues = async (count = 3, held: ReadonlyArray<IssueCandidate> = []) => {
+      store().setState({
+        workspaceIntegrations: { 'ws-1': [{ provider: 'linear' }] },
+        sessionDrafts: {
+          [WORKSPACE_ID]: { ...EMPTY_SESSION_DRAFT, choice: 'task', pickedIssues: held },
+        },
+      });
       spies.fetchIssueCandidates.mockResolvedValue(
         Array.from({ length: count }, (_, index) =>
           candidate({
@@ -616,22 +626,16 @@ describe('SessionKickoff', () => {
     });
 
     it('refuses a sixth issue with one line and keeps the five', async () => {
-      await manyIssues(2);
-      act(() => {
-        patchSessionDraft(store().setState as never)({
-          workspaceId: WORKSPACE_ID,
-          patch: {
-            choice: 'task',
-            pickedIssues: Array.from({ length: 4 }, (_, index) =>
-              candidate({
-                externalId: `held-${index}`,
-                identifier: `HELD-${index}`,
-                title: `Held ${index}`,
-              }),
-            ),
-          },
-        });
-      });
+      await manyIssues(
+        2,
+        Array.from({ length: 4 }, (_, index) =>
+          candidate({
+            externalId: `held-${index}`,
+            identifier: `HELD-${index}`,
+            title: `Held ${index}`,
+          }),
+        ),
+      );
 
       fireEvent.click(screen.getByRole('checkbox', { name: /ENG-1/ }));
       expect(screen.queryByRole('status')).toBeNull();

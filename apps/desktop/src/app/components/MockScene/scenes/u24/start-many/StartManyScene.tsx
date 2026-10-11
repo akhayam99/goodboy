@@ -147,7 +147,7 @@ const seedStartMany = ({ mode }: Props): void => {
       },
     },
     requestIssueBrief: async () => undefined,
-  } as never);
+  });
 };
 
 export const StartManyScene = ({ mode }: Props) => {
