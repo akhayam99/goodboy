@@ -1,11 +1,10 @@
-import { useAppliedTheme, useThemeStore } from '../../shared/lib/theme';
+import { oppositeOfApplied, switchTheme, useAppliedTheme } from '../../shared/lib/theme';
 
 export const ThemeSwitchProbe = () => {
   const theme = useAppliedTheme();
-  const toggleTheme = useThemeStore((s) => s.toggleTheme);
 
   return (
-    <button type="button" onClick={toggleTheme}>
+    <button type="button" onClick={() => switchTheme({ to: oppositeOfApplied() })}>
       Switch to {theme === 'dark' ? 'light' : 'dark'}
     </button>
   );

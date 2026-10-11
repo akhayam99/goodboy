@@ -419,6 +419,9 @@ toasts
 topbar-1100
 topbar-limits-overflow
 topbar-states
+topbar-theme-dark
+topbar-theme-light
+topbar-theme-system
 trail-agent
 trail-artifact
 trail-artifact-create

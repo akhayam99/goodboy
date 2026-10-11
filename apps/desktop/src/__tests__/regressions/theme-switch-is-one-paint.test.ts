@@ -50,4 +50,10 @@ describe('a theme switch is one paint', () => {
       /html\[data-theme-switching\] \*::after \{\s*transition: none !important;/,
     );
   });
+
+  it('keeps switchTheme the only writer of the stored preference', () => {
+    expect(filesMentioning({ needle: 'STORAGE_KEYS.theme' })).toEqual(['shared/lib/theme.ts']);
+    expect(filesMentioning({ needle: 'setPreference' })).toEqual([]);
+    expect(filesMentioning({ needle: 'toggleTheme' })).toEqual([]);
+  });
 });

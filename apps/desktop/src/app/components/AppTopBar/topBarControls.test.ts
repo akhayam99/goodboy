@@ -12,6 +12,7 @@ const CONTROL_SOURCES: ReadonlyArray<string> = [
   'app/components/AppTopBar/NavCluster/ChatButton.tsx',
   'app/components/AppTopBar/CommandCenter.tsx',
   'app/components/AppTopBar/SpendButton.tsx',
+  'app/components/AppTopBar/ThemeToggle.tsx',
   'app/components/AppTopBar/NowChip/index.tsx',
   'app/components/AppTopBar/LimitsStrip/LimitsChip.tsx',
   'app/components/AppTopBar/LimitsStrip/LimitsOverflowPopover.tsx',

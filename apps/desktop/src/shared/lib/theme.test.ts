@@ -5,8 +5,10 @@ import { STORAGE_KEYS } from './storage-keys';
 import {
   bootstrapTheme,
   getAppliedTheme,
+  oppositeOfApplied,
   resolveTheme,
   subscribeAppliedTheme,
+  switchTheme,
   useThemeStore,
 } from './theme';
 
@@ -81,7 +83,7 @@ describe('theme store', () => {
   it('ignores system changes under an explicit choice', () => {
     const system = mockSystem({ isLight: false });
     stop = bootstrapTheme();
-    useThemeStore.getState().setPreference('dark');
+    switchTheme({ to: 'dark' });
 
     system.flip({ toLight: true });
 
@@ -93,7 +95,7 @@ describe('theme store', () => {
     localStorage.setItem(STORAGE_KEYS.theme, 'system');
     stop = bootstrapTheme();
 
-    useThemeStore.getState().toggleTheme();
+    switchTheme({ to: oppositeOfApplied() });
 
     expect(useThemeStore.getState().preference).toBe('dark');
     expect(getAppliedTheme()).toBe('dark');
@@ -158,7 +160,7 @@ describe('theme switch paint', () => {
     vi.useFakeTimers();
     const frames = stubFrames();
 
-    useThemeStore.getState().setPreference('light');
+    switchTheme({ to: 'light' });
 
     expect(isLightApplied()).toBe(true);
     expect(isSwitching()).toBe(true);
@@ -172,7 +174,7 @@ describe('theme switch paint', () => {
     vi.useFakeTimers();
     vi.stubGlobal('requestAnimationFrame', () => 0);
 
-    useThemeStore.getState().setPreference('light');
+    switchTheme({ to: 'light' });
     expect(isSwitching()).toBe(true);
     vi.advanceTimersByTime(500);
 
@@ -183,9 +185,9 @@ describe('theme switch paint', () => {
     vi.useFakeTimers();
     const frames = stubFrames();
 
-    useThemeStore.getState().setPreference('light');
+    switchTheme({ to: 'light' });
     frames.runFrame();
-    useThemeStore.getState().setPreference('dark');
+    switchTheme({ to: 'dark' });
     frames.runFrame();
     expect(isSwitching()).toBe(true);
     frames.runFrame();
@@ -197,10 +199,10 @@ describe('theme switch paint', () => {
   it('leaves transitions alone when the resolved theme does not change', () => {
     vi.useFakeTimers();
     mockSystem({ isLight: false });
-    useThemeStore.getState().setPreference('dark');
+    switchTheme({ to: 'dark' });
     vi.runAllTimers();
 
-    useThemeStore.getState().setPreference('system');
+    switchTheme({ to: 'system' });
 
     expect(isLightApplied()).toBe(false);
     expect(isSwitching()).toBe(false);
@@ -219,8 +221,8 @@ describe('theme switch paint', () => {
       value: startViewTransition,
     });
 
-    useThemeStore.getState().setPreference('light');
-    useThemeStore.getState().toggleTheme();
+    switchTheme({ to: 'light' });
+    switchTheme({ to: oppositeOfApplied() });
     window.dispatchEvent(
       new StorageEvent('storage', { key: STORAGE_KEYS.theme, newValue: 'light' }),
     );
@@ -230,10 +232,10 @@ describe('theme switch paint', () => {
   });
 
   it('swaps the palette inside the call that asked for it', () => {
-    useThemeStore.getState().setPreference('light');
+    switchTheme({ to: 'light' });
     expect(isLightApplied()).toBe(true);
 
-    useThemeStore.getState().toggleTheme();
+    switchTheme({ to: oppositeOfApplied() });
     expect(isLightApplied()).toBe(false);
   });
 });
@@ -261,11 +263,11 @@ describe('applied theme', () => {
   };
 
   it('writes the class, data-theme and color-scheme once each per swap, to light and back', () => {
-    useThemeStore.getState().setPreference('dark');
+    switchTheme({ to: 'dark' });
     document.documentElement.removeAttribute('data-theme-switching');
     const writes = collectWrites();
 
-    useThemeStore.getState().setPreference('light');
+    switchTheme({ to: 'light' });
     expect(writes.count()).toEqual({
       class: 1,
       'data-theme': 1,
@@ -276,7 +278,7 @@ describe('applied theme', () => {
 
     document.documentElement.removeAttribute('data-theme-switching');
     const back = collectWrites();
-    useThemeStore.getState().setPreference('dark');
+    switchTheme({ to: 'dark' });
 
     expect(back.count()).toEqual({
       class: 1,
@@ -288,11 +290,11 @@ describe('applied theme', () => {
   });
 
   it('writes nothing at all when the resolved theme is already applied', () => {
-    useThemeStore.getState().setPreference('dark');
+    switchTheme({ to: 'dark' });
     const writes = collectWrites();
 
-    useThemeStore.getState().setPreference('dark');
-    useThemeStore.getState().setPreference('dark');
+    switchTheme({ to: 'dark' });
+    switchTheme({ to: 'dark' });
 
     expect(writes.count()).toEqual({});
     writes.stop();
@@ -301,9 +303,9 @@ describe('applied theme', () => {
   it('keeps every other class on html when it swaps the theme class', () => {
     const root = document.documentElement;
     root.classList.add('tauri-window');
-    useThemeStore.getState().setPreference('dark');
+    switchTheme({ to: 'dark' });
 
-    useThemeStore.getState().setPreference('light');
+    switchTheme({ to: 'light' });
 
     expect([...root.classList].sort()).toEqual(['light', 'tauri-window']);
     root.classList.remove('tauri-window');
@@ -312,14 +314,14 @@ describe('applied theme', () => {
   it('swaps the html class, data-theme and color-scheme together', () => {
     const root = document.documentElement;
 
-    useThemeStore.getState().setPreference('light');
+    switchTheme({ to: 'light' });
 
     expect(root.classList.contains('light')).toBe(true);
     expect(root.classList.contains('dark')).toBe(false);
     expect(root.style.colorScheme).toBe('light');
     expect(isLightApplied()).toBe(true);
 
-    useThemeStore.getState().setPreference('dark');
+    switchTheme({ to: 'dark' });
 
     expect(root.classList.contains('dark')).toBe(true);
     expect(root.classList.contains('light')).toBe(false);
@@ -328,18 +330,18 @@ describe('applied theme', () => {
   });
 
   it('tells painters once per real swap and never for a no-op', () => {
-    useThemeStore.getState().setPreference('dark');
+    switchTheme({ to: 'dark' });
     const painter = vi.fn();
     const unsubscribe = subscribeAppliedTheme(painter);
 
-    useThemeStore.getState().setPreference('dark');
+    switchTheme({ to: 'dark' });
     expect(painter).not.toHaveBeenCalled();
 
-    useThemeStore.getState().toggleTheme();
+    switchTheme({ to: oppositeOfApplied() });
     expect(painter).toHaveBeenCalledTimes(1);
 
     unsubscribe();
-    useThemeStore.getState().toggleTheme();
+    switchTheme({ to: oppositeOfApplied() });
     expect(painter).toHaveBeenCalledTimes(1);
   });
 });

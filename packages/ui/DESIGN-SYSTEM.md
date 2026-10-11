@@ -2116,8 +2116,8 @@ A theme switch is one paint, a class swap on `<html>` and nothing else:
 page in that frame. There is no React state for it (the zustand store keeps
 only the preference, set in the same call, so the palette, the Settings field
 and the footer chip commit once together). Every route into a switch (the
-palette, Settings, the system, another window) goes through that
-one function, and it writes nothing when the resolved theme is already
+top bar toggle, the palette, Settings, the system, another window) goes through
+that one function (`switchTheme`), and it writes nothing when the resolved theme is already
 applied. `html[data-theme-switching]` turns every element transition off from
 before the swap until two painted frames later (a timer guards a window that
 never paints), so no `transition-colors` surface animates on its own and a
@@ -2130,7 +2130,11 @@ against 16, 7 and 114ms for the instant swap; WebKit dropped to 28 frames
 with a 500ms freeze on a large diff, against 80 frames with the swap alone),
 and a window that repaints for a fade reads as the UI flickering, worst on
 the busiest pages. A circular reveal and a cross-fade were both tried and
-dropped for that reason. The few things
+dropped for that reason. A fixed full-window cover fading over the swap
+(`opacity` only, 100ms in, 200ms out) was specified as a third try, gated on
+a WebKit frame-gap spike (no gap above 50ms on Settings, an Overview of 30
+sessions and a 3,000 line diff). The spike was not measured, so the cover did
+not ship and the switch stays the instant swap. The few things
 that paint with JS colors (the xterm terminal, the changelog image) listen through `subscribeAppliedTheme` or `useAppliedTheme` and
 update only themselves.
 

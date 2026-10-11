@@ -8,6 +8,7 @@ import { LimitsStrip } from './LimitsStrip';
 import { NowChip } from './NowChip';
 import { NavCluster } from './NavCluster';
 import { SpendButton } from './SpendButton';
+import { ThemeToggle } from './ThemeToggle';
 
 type Props = {
   readonly onOpenSpend: () => void;
@@ -45,6 +46,8 @@ export const AppTopBar = ({
         <LimitsStrip openProviderId={openProviderId} opensProvidersMenu={mode === 'column'} />
 
         <SpendButton onOpenSpend={onOpenSpend} />
+
+        <ThemeToggle />
 
         <NotificationCenter />
       </div>
