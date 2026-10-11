@@ -14,7 +14,6 @@ import {
   resetStoryStore,
 } from '../../../../store/storyHarness';
 import { PlannerTranscriptDrawerScene } from './PlannerTranscriptDrawerScene';
-import { PlannerTranscriptExpandedScene } from './PlannerTranscriptExpandedScene';
 import { PlannerTranscriptReplacedScene } from './PlannerTranscriptReplacedScene';
 import { PlannerTranscriptRevisingScene } from './PlannerTranscriptRevisingScene';
 import { PlannerTranscriptScene } from './PlannerTranscriptScene';
@@ -76,14 +75,5 @@ describe('planner transcript scenes', () => {
     await screen.findByTestId('plan-drawer');
     expect(panel().getAttribute('data-drawer-sizing')).toBe('reader');
     expect(screen.getByTestId('plan-row').textContent).toContain('Retry-safe webhook credits');
-  });
-
-  it('expanded: the drawer takes the full pane', async () => {
-    mount(PlannerTranscriptExpandedScene);
-
-    await screen.findByTestId('plan-drawer');
-    expect(panel().getAttribute('data-drawer-sizing')).toBe('full');
-    fireEvent.click(screen.getByRole('button', { name: 'More plan actions' }));
-    screen.getByRole('menuitem', { name: 'Collapse' });
   });
 });

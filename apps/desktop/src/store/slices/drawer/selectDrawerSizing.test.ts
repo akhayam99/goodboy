@@ -26,7 +26,6 @@ const SIDEBARS = [LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_MAX] as const;
 const SAVED_WIDTHS: Readonly<Record<DrawerSizing, ReadonlyArray<number>>> = {
   side: [RIGHT_DRAWER_DEFAULT, RIGHT_DRAWER_MAX],
   reader: [READER_DRAWER_DEFAULT, READER_DRAWER_MAX],
-  full: [RIGHT_DRAWER_DEFAULT, RIGHT_DRAWER_MAX],
 };
 
 const EVERY_KIND: ReadonlyArray<DrawerRequest> = [
@@ -71,17 +70,14 @@ const EVERY_KIND: ReadonlyArray<DrawerRequest> = [
   },
 ];
 
-const sizingsOf = (drawer: DrawerRequest): ReadonlyArray<DrawerSizing> =>
-  [false, true].map((isExpanded) =>
-    selectDrawerSizing({
-      drawer,
-      currentSessionId: SESSION_ID,
-      documentDrawerExpanded: { [SESSION_ID]: isExpanded },
-    } satisfies Pick<AppState, 'drawer' | 'currentSessionId' | 'documentDrawerExpanded'>),
-  );
+const sizingOf = (drawer: DrawerRequest): DrawerSizing =>
+  selectDrawerSizing({
+    drawer,
+    currentSessionId: SESSION_ID,
+  } satisfies Pick<AppState, 'drawer' | 'currentSessionId'>);
 
 const CASES = EVERY_KIND.flatMap((drawer) =>
-  [...new Set(sizingsOf(drawer))].flatMap((sizing) =>
+  [sizingOf(drawer)].flatMap((sizing) =>
     WINDOWS.flatMap((windowPx) =>
       SIDEBARS.flatMap((sidebarPx) =>
         SAVED_WIDTHS[sizing].map((savedPx) => ({
@@ -127,7 +123,7 @@ describe('the tier of every drawer', () => {
     if (drawer === undefined) {
       throw new Error(`${kind} is listed`);
     }
-    expect(sizingsOf(drawer)[0]).toBe(sizing);
+    expect(sizingOf(drawer)).toBe(sizing);
   });
 
   it('lists a tier for every drawer kind', () => {
@@ -136,12 +132,12 @@ describe('the tier of every drawer', () => {
     );
   });
 
-  it('covers the page with an expanded plan, and rests in the reader tier otherwise', () => {
+  it('keeps a plan in the reader tier, with no way to expand it over the page', () => {
     const plan = EVERY_KIND.find((drawer) => drawer.kind === 'artifact-document');
     if (plan === undefined) {
       throw new Error('the plan request is listed');
     }
-    expect(sizingsOf(plan)).toEqual(['reader', 'full']);
+    expect(sizingOf(plan)).toBe('reader');
   });
 
   it('keeps a closed drawer in the side tier', () => {
@@ -149,8 +145,7 @@ describe('the tier of every drawer', () => {
       selectDrawerSizing({
         drawer: null,
         currentSessionId: SESSION_ID,
-        documentDrawerExpanded: {},
-      } satisfies Pick<AppState, 'drawer' | 'currentSessionId' | 'documentDrawerExpanded'>),
+      } satisfies Pick<AppState, 'drawer' | 'currentSessionId'>),
     ).toBe('side');
   });
 });
@@ -162,8 +157,8 @@ describe('every drawer fits inside its aside at 1280 and 1440', () => {
     if (ask === undefined || transcript === undefined) {
       throw new Error('ask and transcript requests are listed');
     }
-    expect(sizingsOf(transcript)).toEqual(sizingsOf(ask));
-    expect(sizingsOf(transcript)).toEqual(['side', 'side']);
+    expect(sizingOf(transcript)).toBe(sizingOf(ask));
+    expect(sizingOf(transcript)).toBe('side');
   });
 
   it('slides a card in by at most its 8px inset, so it never passes the window edge', () => {

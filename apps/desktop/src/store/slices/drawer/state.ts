@@ -73,10 +73,8 @@ export type OpenDrawer = DrawerRequest;
 
 export type DrawerSliceState = {
   readonly drawer: OpenDrawer | null;
-  readonly documentDrawerExpanded: Readonly<Record<SessionId, boolean>>;
 };
 
 export const initialDrawerState: DrawerSliceState = {
   drawer: null,
-  documentDrawerExpanded: {},
 };

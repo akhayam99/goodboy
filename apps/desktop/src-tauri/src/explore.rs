@@ -343,18 +343,8 @@ fn open_folder(path: &Path, reveal: bool, editor: Option<String>) -> Result<(), 
     let Some(binary) = editor else {
         return Err(ExploreError::NotFile);
     };
-    let mut command = crate::path_env::command(&binary);
-    command.arg(path);
-    match command.spawn() {
-        Ok(child) => {
-            crate::proc::detach::detach(child);
-            Ok(())
-        }
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-            Err(crate::editor::EditorError::NotFound(binary).into())
-        }
-        Err(source) => Err(crate::editor::EditorError::Spawn { binary, source }.into()),
-    }
+    crate::editor::open_in_editor_blocking(path.to_string_lossy().to_string(), Some(binary))?;
+    Ok(())
 }
 
 fn spawn_and_reap(path: &Path, reveal: bool) -> Result<(), ExploreError> {

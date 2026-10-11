@@ -44,7 +44,6 @@ type Harness = {
 const harness = (): Harness => {
   let state = {
     drawer: null,
-    documentDrawerExpanded: {},
     currentSessionId: SESSION_ID,
     activeLens: { [SESSION_ID]: 'explore' },
     lensHistory: {},
@@ -160,7 +159,7 @@ describe('drawer slice', () => {
     expect(selectOpenDrawer(h.get())?.kind).toBe('artifact-document');
   });
 
-  it('sizes a plan document drawer in the reader tier, full once expanded, per session', () => {
+  it('sizes a plan document drawer in the reader tier, whichever plan opens', () => {
     h.slice.openDrawer({
       kind: 'artifact-document',
       sessionId: SESSION_ID,
@@ -168,25 +167,16 @@ describe('drawer slice', () => {
     });
     expect(selectDrawerSizing(h.get())).toBe('reader');
 
-    h.slice.setDocumentDrawerExpanded(SESSION_ID, true);
-    expect(selectDrawerSizing(h.get())).toBe('full');
-
     h.slice.closeDrawer();
     h.slice.openDrawer({
       kind: 'artifact-document',
       sessionId: SESSION_ID,
       payload: { artifactId: 'plan-2' as ArtifactId, revision: null },
     });
-    expect(selectDrawerSizing(h.get())).toBe('full');
-
-    h.slice.setDocumentDrawerExpanded(OTHER_SESSION_ID, true);
-    h.slice.setDocumentDrawerExpanded(SESSION_ID, false);
     expect(selectDrawerSizing(h.get())).toBe('reader');
-    expect(h.get().documentDrawerExpanded[OTHER_SESSION_ID]).toBe(true);
   });
 
   it('keeps every other drawer in the side tier', () => {
-    h.slice.setDocumentDrawerExpanded(SESSION_ID, true);
     h.slice.openDrawer(GOAL_HISTORY);
 
     expect(selectDrawerSizing(h.get())).toBe('side');
