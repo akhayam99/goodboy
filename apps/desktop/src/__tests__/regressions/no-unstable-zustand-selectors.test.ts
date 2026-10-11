@@ -2,6 +2,11 @@
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { join, relative, sep } from 'path';
 import { describe, expect, it } from 'vitest';
+import { AGENTS_HOT_KEYS } from '../../store/slices/agents/hotKeys';
+import { PROJECT_MOUNTS_HOT_KEYS } from '../../store/slices/project-mounts/hotKeys';
+import { SCRIPTS_HOT_KEYS } from '../../store/slices/scripts/hotKeys';
+import { SESSIONS_HOT_KEYS } from '../../store/slices/sessions/hotKeys';
+import { TRANSCRIPTS_HOT_KEYS } from '../../store/slices/transcripts/hotKeys';
 
 const SRC_ROOT = join(__dirname, '..', '..');
 const SKIP_SEGMENTS = new Set(['__tests__', 'node_modules', 'dist']);
@@ -57,15 +62,12 @@ const UNSTABLE_TAIL_PATTERNS: ReadonlyArray<RegExp> = [
   /\{\s*\.\.\.[^}]*\}\s*$/,
 ];
 
-const HOT_SLICE_KEYS: ReadonlySet<string> = new Set([
-  'transcripts',
-  'agentTurnState',
-  'agentRunHistory',
-  'unknownPayloadCounts',
-  'sessionProjectMounts',
-  'sessionTelemetry',
-  'scriptRuns',
-  'sessionExternalTasks',
+const HOT_SLICE_KEYS: ReadonlySet<string> = new Set<string>([
+  ...TRANSCRIPTS_HOT_KEYS,
+  ...AGENTS_HOT_KEYS,
+  ...PROJECT_MOUNTS_HOT_KEYS,
+  ...SESSIONS_HOT_KEYS,
+  ...SCRIPTS_HOT_KEYS,
 ]);
 
 const WHOLE_SLICE_TAIL = /^(?:state|s|store)\.([A-Za-z_$][\w$]*)$/;

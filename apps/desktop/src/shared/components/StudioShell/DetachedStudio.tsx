@@ -1,5 +1,6 @@
 import { cn, OverlayHeader, PageColumn, SHEET_CLASSES } from '@goodboy/ui';
 import { useStudioOverlay } from '../../hooks/useStudioOverlay';
+import { closeLabelOf } from './closeLabelOf';
 import type { StudioShellProps } from './types';
 
 export const DetachedStudio = ({
@@ -45,7 +46,7 @@ export const DetachedStudio = ({
             title={title}
             {...(subtitle !== undefined && { subtitle })}
             onClose={requestClose}
-            closeLabel={closeLabel}
+            closeLabel={closeLabelOf({ title, closeLabel })}
             variant="fullscreen"
           >
             {headerAccessory}

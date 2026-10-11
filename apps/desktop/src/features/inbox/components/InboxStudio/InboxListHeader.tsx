@@ -89,7 +89,7 @@ export const InboxListHeader = ({
       ) : null}
       <IconButton
         icon={RefreshCw}
-        label="Refresh inbox"
+        label="Refresh tasks"
         onClick={onRefresh}
         disabled={isRefreshing}
         busy={isRefreshing}
