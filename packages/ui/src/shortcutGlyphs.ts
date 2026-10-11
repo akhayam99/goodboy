@@ -1,9 +1,17 @@
-export type ShortcutGlyphLookup = (id: string) => string;
-
-let lookup: ShortcutGlyphLookup = () => '';
-
-export const registerShortcutGlyphs = (next: ShortcutGlyphLookup): void => {
-  lookup = next;
+type LookupParams = {
+  readonly id: string;
 };
 
-export const glyphsOfShortcut = (id: string): string => lookup(id);
+export type ShortcutGlyphLookup = (params: LookupParams) => string;
+
+type RegisterParams = {
+  readonly lookup: ShortcutGlyphLookup;
+};
+
+let current: ShortcutGlyphLookup = () => '';
+
+export const registerShortcutGlyphs = ({ lookup }: RegisterParams): void => {
+  current = lookup;
+};
+
+export const glyphsOfShortcut = ({ id }: LookupParams): string => current({ id });
