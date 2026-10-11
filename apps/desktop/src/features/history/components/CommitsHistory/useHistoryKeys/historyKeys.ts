@@ -5,7 +5,7 @@ export type HistoryKeyHint = {
 
 export const HISTORY_KEYS: ReadonlyArray<HistoryKeyHint> = [
   { keys: ['Alt ↑', 'Alt ↓'], label: 'Move the commit' },
-  { keys: ['C'], label: 'Fold into the one below' },
+  { keys: ['C'], label: 'Fold in' },
   { keys: ['S'], label: 'Combine, keep both' },
   { keys: ['R'], label: 'Rename' },
   { keys: ['⌫'], label: 'Remove' },

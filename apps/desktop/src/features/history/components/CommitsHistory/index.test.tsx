@@ -239,9 +239,9 @@ describe('CommitsHistory toolbar', () => {
     expect(
       screen.getByText('Drag a commit to move it, drop it on another to fold it in.'),
     ).toBeDefined();
-    expect(screen.queryByText('Fold into the one below')).toBeNull();
+    expect(screen.queryByText('Fold in')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Keys' }));
-    expect(screen.getByText('Fold into the one below')).toBeDefined();
+    expect(screen.getByText('Fold in')).toBeDefined();
     expect(screen.getByText('Rename')).toBeDefined();
     expect(screen.getByText('Remove')).toBeDefined();
     slot.remove();
