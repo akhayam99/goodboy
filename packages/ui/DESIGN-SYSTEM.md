@@ -810,8 +810,8 @@ string on their one clickable element. `InteractiveRow` splits it, because its
 frame is not the control: the frame takes `ROW_HOVER` so the wash stays while
 the pointer is over an inner link or button, and the overlay button that opens
 the row takes the ring. A row that opens nothing carries none of it, and no
-pseudo-element stands in for the layer. The Files tree rows and strip of a
-diff (`ChangeTree`, `TreeStrip`) take the shared string; a Board card washes
+pseudo-element stands in for the layer. The Files tree rows of a
+diff (`ChangeTree`) take the shared string; a Board card washes
 whole through `sessionCardShell` and its title button shows the pointer. An unread row keeps its tint under the
 pointer: hovering it for 450ms marks it seen when the pointer leaves, never
 while it is still on the row.
@@ -2029,8 +2029,11 @@ What "empty" means, and the copy rule for it, are product rules and live in
 
 ## Pull request page
 
-The Pull request tab of the Branch page is a document on the 960px column with
-a properties column: Linear's pull request page in our register. The main column
+The Overview of the Branch page is a document on the 960px column with
+a properties column, the page example of the split frame: a rail of sections on the left
+(`BranchRail` in `StudioRailLayout`, 288, `aria-current="page"` on the section on screen) and,
+on its right, the crumb band, the header with its state chip and one 640 + 296 grid with a 24px gap
+that ends at the column's right edge: Linear's pull request page in our register. The main column
 is the description (`SectionHeader` with `Edit` beside it, a markdown editor with
 Write and Preview and `Save`, `Cancel` at its end) and the Activity: plain rows
 of a 20px glyph, one muted line with the person in `text-row`, and the age at the
@@ -2038,13 +2041,12 @@ right in `tabular-nums`; a row that opens something takes `ROW_INTERACTIVE` and
 says what it opens (`Open Comments`, `View checks`), a row that opens nothing has
 no hover. The title is the page's `h1` in the fixed 32px title row
 (`PaneTitleRow`): editing swaps its content for an input of the same height, so
-the page never jumps. The properties column is 280px from 928px of pane
-(`@container` query, not the window) and a two-column compact grid above the
-description below it. Each block is a faint label, one value row of 28px or
-more and nothing else: Status carries the state word and the one readiness word
-(a `StatusDot` only where the tone says something: danger for a failing check or
-a conflict, warning for changes requested or comments that wait, info for a live
-run, a check for ready). Labels are not headings, so the outline reads `h1`, then
+the page never jumps. The properties column is 296px from 800px of pane
+(`@container` query, not the window) and follows the main column below it. Each block is a
+faint label, one value row of 28px or more and nothing else: Reviewers, Checks as one line (`4
+passed · 1 failing`, a `StatusDot` only where the tone says something: danger for a failing
+check, info for a live run, a check for passed), Linked issues with their relation and Base.
+The state is the chip after the title, never a block. Labels are not headings, so the outline reads `h1`, then
 the `h2`s of Description and Activity.
 
 **The capability rule.** The page never branches on the host. It reads the

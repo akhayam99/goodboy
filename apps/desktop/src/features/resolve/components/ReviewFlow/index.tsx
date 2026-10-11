@@ -7,7 +7,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from 'react';
-import { AlertTriangle, ChevronLeft } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import {
   Button,
   EmptyState,
@@ -50,7 +50,6 @@ import { useReviewCommentController } from '../../hooks/useReviewCommentControll
 import { isUndoableAccept } from '../../bulkAccept';
 import { REVIEW_BULK_LABEL, bulkAcceptFailureLine } from '../../reviewBulkCopy';
 import { resolveQueueRefreshLabel } from '../../resolveQueueCopy';
-import { REVIEW_FLOW_LABEL } from '../../reviewFlowCopy';
 import { isPushFailure } from '../../reviewCommentState';
 import { bulkRunOf } from './bulkRun';
 import { AnswersPanel } from './AnswersPanel';
@@ -205,7 +204,6 @@ export const ReviewFlow = ({ session, push }: Props) => {
   const addressThreadId = useAppStore((s) => s.branchThreadId[sessionId] ?? null);
   const navigate = useAppStore((s) => s.navigate);
   const openDrawer = useAppStore((s) => s.openDrawer);
-  const up = useAppStore((s) => s.up);
   const loadResolveSession = useAppStore((s) => s.loadResolveSession);
   const refreshReviewSource = useAppStore((s) => s.refreshReviewSource);
   const refreshThreadGitState = useAppStore((s) => s.refreshThreadGitState);
@@ -695,16 +693,6 @@ export const ReviewFlow = ({ session, push }: Props) => {
               viewportClassName="pb-8 pr-4"
               fadeSize="h-6"
             >
-              {isSingle && (
-                <button
-                  type="button"
-                  onClick={isLaunching ? closeLaunch : isPanelOpen ? closeAnswers : () => up()}
-                  className="mb-4 inline-flex items-center gap-1 rounded-sm text-meta text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                >
-                  <ChevronLeft size={ICON_SIZE.row} aria-hidden />
-                  {REVIEW_FLOW_LABEL.list}
-                </button>
-              )}
               {isLaunching ? (
                 <LaunchPanel
                   sessionId={sessionId}

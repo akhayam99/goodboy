@@ -21,6 +21,7 @@ import {
   openCrumb,
   settle,
   useAppStore,
+  findSection,
 } from './harness';
 
 const PUBLISH_ERROR = JSON.stringify({ error: 'rejected: the remote has newer commits' });
@@ -306,7 +307,7 @@ const nodeText = (node: HTMLElement): string => node.textContent ?? '';
 export const openComments = async (ctx: Ctx): Promise<void> => {
   await openCrumb(/^Branch/);
   await branchTab('pr')(ctx);
-  await click(await screen.findByRole('tab', { name: /^Comments/ }));
+  await click(await findSection(/^Comments/));
   await branchTab('comments')(ctx);
   await waitFor(() => expect(list()).toBeDefined(), WAIT);
 };

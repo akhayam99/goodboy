@@ -87,7 +87,10 @@ export const BranchSceneShell = ({
       return;
     }
     const timer = window.setTimeout(
-      () => document.querySelector<HTMLElement>('[data-branch-primary]')?.click(),
+      () =>
+        document
+          .querySelector<HTMLElement>('[data-branch-secondary], [data-branch-primary]')
+          ?.click(),
       300,
     );
     return () => window.clearTimeout(timer);

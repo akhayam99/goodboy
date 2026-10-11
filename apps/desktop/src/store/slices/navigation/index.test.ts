@@ -385,6 +385,7 @@ describe('navigation slice', () => {
 
   it('opens a resolver with no attempt on Branch Comments, its transcript in the drawer', () => {
     const store = makeStore();
+    store.setState({ sessionGithub: { [S1]: githubWithPr(528) } });
     store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
     store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: RESOLVER }) });
 
@@ -980,6 +981,7 @@ describe('Branch page', () => {
 
   it('sends Up to the crumb on the left, one level at a time', () => {
     const store = makeStore();
+    store.setState({ sessionGithub: { [S1]: githubWithPr(528) } });
     store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
     store
       .getState()
@@ -1009,6 +1011,7 @@ describe('Branch page', () => {
 
   it('sends Up from a Fix run to the Comments of its Branch', () => {
     const store = makeStore();
+    store.setState({ sessionGithub: { [S1]: githubWithPr(528) } });
     store.setState({
       sessionResolveAttempts: {
         [S1]: [resolveAttemptFor({ agentId: RESOLVER, threadIds: ['thread-9'] })],

@@ -8,8 +8,8 @@ import { resolverThread } from './resolverThread';
 import { CONTEXT_LENS_TAB } from './contextLensTab';
 import { DEFAULT_CONTEXT_TAB } from '../contextDrawer/state';
 import { branchLandingTabOf } from '../../../features/branch/branchLandingTab';
-import { isBranchTabAvailable } from '../../../features/branch/branchTabs';
-import { branchHasPullRequest } from '../session-view/branchTabOf';
+import { resolveBranchTab } from '../../../features/branch/branchTabs';
+import { branchHasPullRequest, branchScopeOf } from '../session-view/branchTabOf';
 import type { BranchTab, CanonicalPlace, Place, PlaceRequest } from './types';
 
 type SessionPlace = Extract<Place, { readonly at: 'session' }>;
@@ -99,22 +99,35 @@ const requestedMountPath = ({ request }: RequestParams): string | null => {
   return target?.kind === 'diff' || target?.kind === 'branch' ? target.mountPath : null;
 };
 
-const prLensTab = ({ mode }: { readonly mode: string }): BranchTab => {
-  if (mode === 'write_review') {
-    return 'files';
-  }
-  return isBranchTabAvailable('pr') ? 'pr' : 'comments';
-};
+const prLensTab = ({ mode }: { readonly mode: string }): BranchTab =>
+  mode === 'write_review' ? 'files' : 'pr';
 
-const unavailableBranchTab = ({ request }: { readonly request: SessionPlace }): SessionPlace => {
+const unavailableBranchTab = ({
+  state,
+  request,
+}: {
+  readonly state: AppState;
+  readonly request: SessionPlace;
+}): SessionPlace => {
   const { view } = request;
-  if (view.target?.kind !== 'branch' || isBranchTabAvailable(view.target.tab)) {
+  if (view.target?.kind !== 'branch') {
     return request;
   }
-  return { ...request, view: { ...view, target: { ...view.target, tab: 'comments' } } };
+  const tab = resolveBranchTab({
+    tab: view.target.tab,
+    scope: branchScopeOf({
+      state,
+      sessionId: request.sessionId,
+      hasThread: view.target.threadId !== null,
+    }),
+  });
+  if (tab === view.target.tab) {
+    return request;
+  }
+  return { ...request, view: { ...view, target: { ...view.target, tab } } };
 };
 
-const formerBranchPlace = ({
+const formerBranchTarget = ({
   state,
   request,
 }: {
@@ -158,11 +171,25 @@ const formerBranchPlace = ({
   return null;
 };
 
+const formerBranchPlace = ({
+  state,
+  request,
+}: {
+  readonly state: AppState;
+  readonly request: SessionPlace;
+}): Place | null => {
+  const place = formerBranchTarget({ state, request });
+  if (place === null || place.at !== 'session') {
+    return place;
+  }
+  return unavailableBranchTab({ state, request: place });
+};
+
 const canonicalPlace = ({ state, request: asked }: PlaceParams): Place => {
   if (asked.at === 'board' || asked.at === 'session-draft') {
     return asked;
   }
-  const request = unavailableBranchTab({ request: asked });
+  const request = unavailableBranchTab({ state, request: asked });
   const { view, sessionId } = request;
   const branch = formerBranchPlace({ state, request });
   if (branch !== null) {

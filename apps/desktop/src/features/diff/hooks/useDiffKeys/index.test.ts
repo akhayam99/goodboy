@@ -30,7 +30,6 @@ const mount = ({ activePath, collapsed = [], viewedPaths = [] }: Setup) => {
   const stepTo = vi.fn();
   const toggleFolder = vi.fn();
   const onToggle = vi.fn();
-  const onToggleTree = vi.fn();
   const onFocusTree = vi.fn();
   const onFocusFilter = vi.fn();
   const tree = buildChangeTree({ files: PATHS.map(fileAt) });
@@ -47,10 +46,8 @@ const mount = ({ activePath, collapsed = [], viewedPaths = [] }: Setup) => {
       onToggle,
     },
   } satisfies Parameters<typeof useDiffKeys>[0]['review'];
-  renderHook(() =>
-    useDiffKeys({ enabled: true, review, onToggleTree, onFocusTree, onFocusFilter }),
-  );
-  return { jumpTo, stepTo, toggleFolder, onToggle, onToggleTree, onFocusTree, onFocusFilter };
+  renderHook(() => useDiffKeys({ enabled: true, review, onFocusTree, onFocusFilter }));
+  return { jumpTo, stepTo, toggleFolder, onToggle, onFocusTree, onFocusFilter };
 };
 
 afterEach(() => {
@@ -137,15 +134,13 @@ describe('useDiffKeys', () => {
     expect(toggleFolder).not.toHaveBeenCalled();
   });
 
-  it('asks for the tree focus, the filter focus and the tree toggle', () => {
-    const { onFocusTree, onFocusFilter, onToggleTree } = mount({ activePath: null });
+  it('asks for the tree focus and the filter focus', () => {
+    const { onFocusTree, onFocusFilter } = mount({ activePath: null });
     pressShortcut({ id: 'diff.focusTree' });
     pressShortcut({ id: 'diff.focusFilter' });
     pressShortcut({ id: 'diff.focusFilterAlias' });
-    pressShortcut({ id: 'diff.toggleTree' });
     expect(onFocusTree).toHaveBeenCalledTimes(1);
     expect(onFocusFilter).toHaveBeenCalledTimes(2);
-    expect(onToggleTree).toHaveBeenCalledTimes(1);
   });
 
   it('ignores the keys while typing in a field', () => {

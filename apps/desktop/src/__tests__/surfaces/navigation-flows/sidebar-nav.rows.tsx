@@ -19,6 +19,7 @@ import {
   openCrumb,
   settle,
   useAppStore,
+  findSection,
 } from './harness';
 
 const SECOND_MOUNT_ID = 'navigation-mount-sidebar-second' as MountId;
@@ -156,7 +157,7 @@ export const SIDEBAR_NAV_ROWS: ReadonlyArray<Row> = [
     open: async (ctx) => {
       addSecondBranch(ctx);
       await openCrumb(/^Branch/);
-      await click(await screen.findByRole('tab', { name: /^Commits/ }, WAIT));
+      await click(await findSection(/^Commits/));
       await waitFor(
         () => expect(useAppStore.getState().branchTab[ctx.sessionId]).toBe('commits'),
         WAIT,

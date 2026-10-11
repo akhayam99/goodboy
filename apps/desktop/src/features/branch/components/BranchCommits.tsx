@@ -6,9 +6,10 @@ import { CommitsHistory } from '../../history/components/CommitsHistory';
 type Props = {
   readonly sessionId: SessionId;
   readonly worktreePath: string | null;
+  readonly isReadOnly: boolean;
 };
 
-export const BranchCommits = ({ sessionId, worktreePath }: Props) => {
+export const BranchCommits = ({ sessionId, worktreePath, isReadOnly }: Props) => {
   if (worktreePath === null) {
     return (
       <PageColumn width="column">
@@ -24,7 +25,7 @@ export const BranchCommits = ({ sessionId, worktreePath }: Props) => {
   }
   return (
     <PageColumn width="column" className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <CommitsHistory sessionId={sessionId} worktreePath={worktreePath} />
+      <CommitsHistory sessionId={sessionId} worktreePath={worktreePath} isReadOnly={isReadOnly} />
     </PageColumn>
   );
 };
