@@ -23,7 +23,6 @@ export const WorkflowStudio = ({ workspaceId, onClose }: Props) => {
       icon={CONCEPT_ICONS.workflows}
       tone={CONCEPT_TONE.workflows}
       title="Workflows"
-      closeLabel="Close workflows"
       onClose={onClose}
     >
       {() => (

@@ -1,4 +1,5 @@
 import { useLayoutEffect } from 'react';
+import { closeLabelOf } from './closeLabelOf';
 import type { StudioFrameHandle } from './studioFrameContext';
 import type { StudioShellProps } from './types';
 
@@ -27,7 +28,7 @@ export const FramedStudio = ({
       ...(glyph !== undefined && { glyph }),
       title,
       ...(subtitle !== undefined && { subtitle }),
-      closeLabel,
+      closeLabel: closeLabelOf({ title, closeLabel }),
       ...(headerAccessory !== undefined && { accessory: headerAccessory }),
       isEscapeEnabled,
     });

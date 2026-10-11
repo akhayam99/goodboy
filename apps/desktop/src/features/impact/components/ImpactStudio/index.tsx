@@ -188,7 +188,6 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
       icon={CONCEPT_ICONS.impact}
       tone={CONCEPT_TONE.impact}
       title="Impact"
-      closeLabel="Close impact"
       onClose={onClose}
     >
       {(requestClose) => (

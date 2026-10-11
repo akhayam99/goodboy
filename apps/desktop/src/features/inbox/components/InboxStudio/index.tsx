@@ -443,7 +443,6 @@ export const InboxStudio = ({
       icon={CONCEPT_ICONS.inbox}
       tone={CONCEPT_TONE.inbox}
       title={NAMES.tasks}
-      closeLabel="Close tasks"
       isEscapeEnabled={openRecord == null}
       onClose={onClose}
     >
