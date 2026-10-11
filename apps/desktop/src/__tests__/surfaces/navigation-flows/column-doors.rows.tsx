@@ -1,6 +1,7 @@
 import { expect, vi } from 'vitest';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import type { ChatId } from '@goodboy/types';
+import { brandedId } from '../../../features/history/testing/brandedId';
 import {
   type Row,
   WAIT,
@@ -27,8 +28,10 @@ const doorIn = (name: string): HTMLElement => {
 
 const createIn = (name: string): HTMLElement => {
   const button = document.querySelector<HTMLElement>(`[data-side-column] [data-create="${name}"]`);
-  expect(button).not.toBeNull();
-  return button as HTMLElement;
+  if (button === null) {
+    throw new Error(`The column has no create button ${name}`);
+  }
+  return button;
 };
 
 export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
@@ -191,7 +194,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
       useAppStore.setState({
         lastChatByWorkspace: {
           ...state.lastChatByWorkspace,
-          [workspaceId]: 'doors-last-chat' as ChatId,
+          [workspaceId]: brandedId<ChatId>({ value: 'doors-last-chat' }),
         },
       });
       await click(createIn('chat'));

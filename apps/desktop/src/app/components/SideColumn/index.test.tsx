@@ -197,13 +197,12 @@ describe('SideColumn', () => {
 
   it('lays the three create buttons in one grid row', () => {
     mountColumn();
-    const row = navLayer().querySelector('[data-column-create]') as HTMLElement;
+    const buttons = ['New session', 'New chat', 'New terminal'].map((name) =>
+      within(navLayer()).getByRole('button', { name }),
+    );
 
-    expect(
-      within(row)
-        .getAllByRole('button')
-        .map((button) => button.getAttribute('aria-label')),
-    ).toEqual(['New session', 'New chat', 'New terminal']);
+    expect(new Set(buttons.map((button) => button.parentElement)).size).toBe(1);
+    expect(buttons[0]?.parentElement?.hasAttribute('data-column-create')).toBe(true);
   });
 
   it('opens the report sheet from the bug button beside the Goodboy row', () => {

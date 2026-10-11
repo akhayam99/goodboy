@@ -13,6 +13,7 @@ import { App } from '../../../App';
 import { seedActivityRunScene } from '../../../app/components/MockScene/scenes/activityRunSeed';
 import { seedResolveScene } from '../../../app/components/MockScene/scenes/resolveSeed';
 import { sceneClock } from '../../../app/components/MockScene/sceneClock';
+import { brandedId } from '../../../features/history/testing/brandedId';
 import { pressShortcut } from '../../helpers/pressKey';
 import { openQuestionFor } from '../../../features/workspace/testing/sessionColumn';
 import { reloads, spawnedWindows, worldDatabase, zoomFactors } from './keys.effects';
@@ -262,7 +263,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
       useAppStore.setState({
         lastChatByWorkspace: {
           ...state.lastChatByWorkspace,
-          [workspaceId]: 'keys-last-chat' as ChatId,
+          [workspaceId]: brandedId<ChatId>({ value: 'keys-last-chat' }),
         },
       });
       await press('chat.new')();
@@ -1140,10 +1141,14 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
     id: 'terminal.newTab',
     open: async () => {
       await press('lens.terminal')();
-      const rail = await screen.findByRole('complementary', { name: 'Terminals' }, WAIT);
-      fireEvent.click(
-        within(rail).getAllByRole('button', { name: /^New terminal$/ })[0] as HTMLElement,
-      );
+      await screen.findByRole('complementary', { name: 'Terminals' }, WAIT);
+      const [newTerminal] = screen
+        .getAllByRole('button', { name: /^New terminal$/ })
+        .filter((button) => button.closest('[data-side-column]') === null);
+      if (newTerminal === undefined) {
+        throw new Error('The terminal rail has no New terminal button');
+      }
+      fireEvent.click(newTerminal);
       await waitFor(() => expect(terminalRows().length).toBeGreaterThan(0), WAIT);
       const first = terminalRows()[0]?.querySelector('button');
       expect(first).toBeDefined();
