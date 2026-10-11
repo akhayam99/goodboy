@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { SessionId } from '@goodboy/types';
+import { nextSessionId } from '@goodboy/types/testing';
 import { ReviewSettings } from './ReviewSettings';
 
 afterEach(cleanup);
@@ -12,7 +12,7 @@ describe('ReviewSettings', () => {
     const onBasesRetry = vi.fn();
     render(
       <ReviewSettings
-        sessionId={'session-1' as SessionId}
+        sessionId={nextSessionId()}
         base=""
         branches={[]}
         isBasesLoading={false}
