@@ -157,7 +157,7 @@ describe('StudioShell close label', () => {
         {() => <p>body</p>}
       </StudioShell>,
     );
-    expect(screen.getByRole('button', { name: 'Close tasks' })).toBeTruthy();
+    screen.getByRole('button', { name: 'Close tasks' });
   });
 
   it('keeps an explicit close label', () => {
@@ -171,6 +171,6 @@ describe('StudioShell close label', () => {
         {() => <p>body</p>}
       </StudioShell>,
     );
-    expect(screen.getByRole('button', { name: 'Back to app' })).toBeTruthy();
+    screen.getByRole('button', { name: 'Back to app' });
   });
 });

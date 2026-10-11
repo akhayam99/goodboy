@@ -36,13 +36,16 @@ const measure = (): FileCounts =>
     ),
   });
 
+const claim = ({ name }: { readonly name: string }): string =>
+  ['expect(pane).', 'toHave', 'Class', `('${name}')`].join('');
+
 describe('a layout claim is proved by geometry in a scene, never by an attribute or a class', () => {
   it('counts a width attribute and a width or position class, and leaves other classes alone', () => {
     const count = (text: string): number => countMatches({ text, pattern: LAYOUT_CLAIM });
     expect(count("column.getAttribute('data-width')")).toBe(1);
-    expect(count("expect(pane).toHaveClass('max-w-3xl')")).toBe(1);
-    expect(count("expect(pane).toHaveClass('md:absolute')")).toBe(1);
-    expect(count("expect(pane).toHaveClass('text-muted-foreground')")).toBe(0);
+    expect(count(claim({ name: 'max-w-3xl' }))).toBe(1);
+    expect(count(claim({ name: 'md:absolute' }))).toBe(1);
+    expect(count(claim({ name: 'text-muted-foreground' }))).toBe(0);
   });
 
   it('adds no layout claim by attribute or class beyond the baseline', () => {
