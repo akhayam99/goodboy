@@ -91,7 +91,7 @@ describe('the settings projects scenes', () => {
     mount({ id: 'settings-projects-nostar' });
 
     await screen.findByText('Star the ones you use most.', undefined, WAIT);
-    expect(screen.getByRole('heading', { name: 'Projects', level: 3 })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Projects', level: 2 })).toBeDefined();
     expect(screen.queryByRole('heading', { name: 'Starred' })).toBeNull();
   });
 

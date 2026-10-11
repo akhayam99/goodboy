@@ -63,6 +63,13 @@ export const ExploreFileDrawer = ({
   const wrap = useExploreWrap();
   const [openFailure, setOpenFailure] = useState<ExploreOpenFailure | null>(null);
   const [view, setView] = useState<DrawerView>(line === undefined ? 'preview' : 'source');
+  const [seenLine, setSeenLine] = useState(line);
+  if (seenLine !== line) {
+    setSeenLine(line);
+    if (line !== undefined) {
+      setView('source');
+    }
+  }
   const isMount = useAppStore(
     (state) => selectMountForPath({ state, sessionId, path: sessionDir }) !== null,
   );

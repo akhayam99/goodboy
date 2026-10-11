@@ -75,25 +75,33 @@ export const useScriptLive = ({ runs }: Params): ScriptLive => {
       setPids(NO_PIDS);
       return undefined;
     }
+    const pendingIds = pendingKey.split(',');
     let isCurrent = true;
-    invokeScriptListLive()
-      .then((live) => {
-        if (!isCurrent) {
-          return;
-        }
-        setPids(
-          Object.fromEntries(
+    let timer: number | undefined;
+    const discover = (): void => {
+      invokeScriptListLive()
+        .then((live) => {
+          if (!isCurrent) {
+            return;
+          }
+          const found = Object.fromEntries(
             live.flatMap((run) => (run.pid === null ? [] : [[run.runId, run.pid] as const])),
-          ),
-        );
-      })
-      .catch((error: unknown) => {
-        if (isCurrent) {
-          void reportError({ title: "Couldn't read the running scripts", error });
-        }
-      });
+          );
+          setPids(found);
+          if (pendingIds.some((runId) => found[runId] === undefined)) {
+            timer = window.setTimeout(discover, POLL_INTERVAL_MS);
+          }
+        })
+        .catch((error: unknown) => {
+          if (isCurrent) {
+            void reportError({ title: "Couldn't read the running scripts", error });
+          }
+        });
+    };
+    discover();
     return () => {
       isCurrent = false;
+      window.clearTimeout(timer);
     };
   }, [pendingKey, reportError]);
 

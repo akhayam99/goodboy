@@ -248,8 +248,8 @@ describe('ScriptsPanel', () => {
       'Show test output',
       'Show lint output',
     ]);
-    expect(within(settlement).getByRole('region', { name: 'Tasks' })).toBeDefined();
-    expect(within(settlement).queryByRole('region', { name: 'Services' })).toBeNull();
+    expect(within(settlement).getByRole('region', { name: /^Tasks of /u })).toBeDefined();
+    expect(within(settlement).queryByRole('region', { name: /^Services of /u })).toBeNull();
     expect(within(settlement).queryByText('package.json')).toBeNull();
     expect(within(rounding).getByText('Replay settlement batch')).toBeDefined();
   });
@@ -302,11 +302,11 @@ describe('ScriptsPanel', () => {
         .getAllByRole('region')
         .map((region) => region.getAttribute('aria-label')),
     ).toEqual([
-      'Services',
+      'Services of ledger-core · nw/settlement',
       'northwind scripts',
       '@acme/api scripts',
       '@northwind/web scripts',
-      'Tasks',
+      'Tasks of ledger-core · nw/settlement',
       'Saved scripts',
     ]);
     const web = within(settlement).getByRole('region', { name: '@northwind/web scripts' });
@@ -328,7 +328,7 @@ describe('ScriptsPanel', () => {
       within(group('ledger-core · nw/settlement'))
         .getAllByRole('region')
         .map((region) => region.getAttribute('aria-label')),
-    ).toEqual(['Services', '@acme/api scripts']);
+    ).toEqual(['Services of ledger-core · nw/settlement', '@acme/api scripts']);
   });
 
   it('copies the workspace-scoped invocation for a nested package, not the package-local one', () => {
@@ -661,7 +661,7 @@ describe('ScriptsPanel', () => {
     const relay = group('notify-relay · nw/retry-backoff');
     expect(within(relay).queryByText('No scripts in notify-relay')).toBeNull();
     expect(within(relay).queryByRole('button', { name: /^Show .* output$/ })).toBeNull();
-    const suggested = within(relay).getByRole('region', { name: 'Suggested' });
+    const suggested = within(relay).getByRole('region', { name: /^Suggested of /u });
     expect(within(suggested).getByText('Pin the ones you run here.')).toBeDefined();
     expect(within(suggested).getByText('test')).toBeDefined();
     expect(within(suggested).queryByText('db:migrate')).toBeNull();
@@ -708,7 +708,7 @@ describe('ScriptsPanel', () => {
 
     const relay = group('notify-relay · nw/retry-backoff');
     expect(within(relay).getByText('No scripts in notify-relay')).toBeDefined();
-    expect(within(relay).queryByRole('region', { name: 'Suggested' })).toBeNull();
+    expect(within(relay).queryByRole('region', { name: /^Suggested of /u })).toBeNull();
 
     fireEvent.click(within(relay).getByRole('button', { name: 'Pin a script of notify-relay' }));
 
@@ -730,7 +730,7 @@ describe('ScriptsPanel', () => {
     expect(screen.queryByRole('region', { name: 'Pinned scripts' })).toBeNull();
     const settlement = group('ledger-core · nw/settlement');
     expect(within(settlement).getAllByRole('button', { name: 'Run test' })).toHaveLength(1);
-    expect(within(settlement).queryByRole('region', { name: 'Suggested' })).toBeNull();
+    expect(within(settlement).queryByRole('region', { name: /^Suggested of /u })).toBeNull();
   });
 
   it('splits a project into Services and Tasks with a count on each band', () => {
@@ -746,8 +746,8 @@ describe('ScriptsPanel', () => {
     renderPanel();
 
     const settlement = group('ledger-core · nw/settlement');
-    const services = within(settlement).getByRole('region', { name: 'Services' });
-    const tasks = within(settlement).getByRole('region', { name: 'Tasks' });
+    const services = within(settlement).getByRole('region', { name: /^Services of /u });
+    const tasks = within(settlement).getByRole('region', { name: /^Tasks of /u });
     expect(within(services).getAllByRole('button', { name: /^Show .* output$/ })).toHaveLength(2);
     expect(within(services).getByText('2')).toBeDefined();
     expect(within(tasks).getAllByRole('button', { name: /^Show .* output$/ })).toHaveLength(1);
