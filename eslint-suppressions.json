@@ -418,11 +418,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/__tests__/surfaces/navigation-flows/ratchet.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/__tests__/surfaces/navigation-flows/run-page.rows.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 7

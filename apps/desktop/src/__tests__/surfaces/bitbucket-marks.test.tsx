@@ -112,7 +112,12 @@ describe.each(REASONS)('a Bitbucket session says %s the same way on every surfac
     const { session, info } = waitingFor({ reason });
     const words = attentionWordsOf({ reason, counts: info });
     const { container } = render(
-      <SessionHoverCardBody session={session} isArchived={false} onOpenAttention={noop} />,
+      <SessionHoverCardBody
+        session={session}
+        isArchived={false}
+        onOpenAttention={noop}
+        onOpenLegend={noop}
+      />,
     );
 
     expect(nodeOf(container)).toEqual({ tone, words });
@@ -159,7 +164,12 @@ describe('a Bitbucket approval next to a failed status', () => {
     }
     const info = stageInfoOf(state, session);
     const { container } = render(
-      <SessionHoverCardBody session={session} isArchived={false} onOpenAttention={noop} />,
+      <SessionHoverCardBody
+        session={session}
+        isArchived={false}
+        onOpenAttention={noop}
+        onOpenLegend={noop}
+      />,
     );
 
     expect(info).toMatchObject({ attention: 'ci-failed', otherReasons: ['pr-approved'] });

@@ -101,6 +101,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
   {
     name: 'column: inbox',
     covers: ['openInbox', 'studio:inbox'],
+    door: 'visible',
     open: () => click(doorIn('inbox')),
     lands: both(
       () => heading('Tasks'),
@@ -110,12 +111,14 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
   {
     name: 'column: workflow library',
     covers: ['openWorkflows', 'studio:workflow'],
+    door: 'visible',
     open: () => click(doorIn('workflows')),
     lands: () => visible('button', 'New workflow'),
   },
   {
     name: 'column: terminal',
     covers: ['openTerminalStudio', 'studio:terminal'],
+    door: 'visible',
     open: () => click(doorIn('terminal')),
     lands: both(
       () => band('Terminal'),
@@ -126,6 +129,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
   {
     name: 'column: monitoring',
     covers: ['openMonitoring', 'studio:monitoring'],
+    door: 'visible',
     open: () => click(doorIn('monitoring')),
     lands: both(
       () => band('Monitoring'),
@@ -141,6 +145,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
   {
     name: 'column: chat',
     covers: ['openChat', 'studio:chat'],
+    door: 'visible',
     open: () => click(doorIn('chat')),
     lands: both(
       () => band('Chat'),
@@ -151,6 +156,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
   {
     name: 'column: settings swaps the column',
     covers: ['openSettings', 'studio:settings', 'scope:home'],
+    door: 'visible',
     open: () => click(doorIn('settings')),
     lands: both(
       () => visible('navigation', 'Settings scopes'),
@@ -225,6 +231,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
   {
     name: 'column: goodboy chip to the changelog',
     covers: ['openChangelog', 'studio:changelog'],
+    door: 'visible',
     open: async () => {
       await clickButton(/^Goodboy: setup/);
       await clickButton(/^What's new/);
@@ -260,6 +267,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
   {
     name: 'classic footer: impact',
     covers: ['openImpact', 'studio:impact'],
+    door: 'visible',
     bars: 'classic',
     open: () => clickButton('Impact'),
     lands: () => band('Impact'),
@@ -267,12 +275,14 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
   {
     name: 'top bar: spend',
     covers: ['openSpend', 'studio:impact'],
+    door: 'visible',
     open: () => clickButton(/^Spend today/),
     lands: () => heading('Spend'),
   },
   {
     name: 'classic footer: inbox',
     covers: ['studio:inbox'],
+    door: 'visible',
     bars: 'classic',
     open: () => clickButton('Tasks'),
     lands: () => heading('Tasks'),
@@ -287,6 +297,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
   {
     name: 'classic top bar: chat',
     covers: ['openStudio', 'studio:chat'],
+    door: 'visible',
     bars: 'classic',
     open: () => clickButton(/^Chat$/),
     lands: both(
@@ -297,6 +308,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
   {
     name: 'top bar: all notifications',
     covers: ['studio:notifications'],
+    door: 'visible',
     open: async () => {
       await clickButton(/^Notifications$/);
       await clickButton(/^Open all notifications/);
@@ -306,6 +318,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
   {
     name: 'workspace switcher: workspace settings',
     covers: ['studio:settings', 'scope:workspace'],
+    door: 'visible',
     open: async () => {
       await clickButton(/^Switch workspace/);
       await clickButton(/^Workspace settings/);
