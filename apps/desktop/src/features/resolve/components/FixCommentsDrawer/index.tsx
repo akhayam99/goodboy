@@ -127,7 +127,7 @@ export const FixCommentsDrawer = ({ sessionId, focusThreadId, threadIds, onClose
               <ul aria-label={FIX_COMMENTS_LABEL.list} className="flex flex-col gap-3">
                 {groups.map((group) => (
                   <li key={group.key} className="flex min-w-0 flex-col gap-0.5">
-                    <span className="truncate px-2 font-mono text-meta text-faint-foreground">
+                    <span className="truncate px-2 text-meta text-faint-foreground">
                       {group.path ?? 'General'}
                     </span>
                     <ul className="flex flex-col gap-0.5">

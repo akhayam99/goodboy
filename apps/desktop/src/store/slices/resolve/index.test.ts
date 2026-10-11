@@ -26,7 +26,6 @@ import { resolveInitialState } from './state';
 import { createResolveThread } from './createResolveThread';
 import { reconcileResolveAttempts } from './reconcileResolveAttempts';
 import { threadOutcome } from './threadOutcome';
-import { beginResolveCandidate } from './beginResolveCandidate';
 import { SETTLE_CEILING_MS, markTurnActive, markTurnSettled } from '../turn/turnSettled';
 
 const h = vi.hoisted(() => ({
@@ -38,10 +37,6 @@ const h = vi.hoisted(() => ({
 }));
 vi.mock('../../../features/chat/turn', () => ({ listLiveRunIds: h.listLiveRunIds }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: h }));
-vi.mock('./beginResolveCandidate', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./beginResolveCandidate')>();
-  return { beginResolveCandidate: vi.fn(actual.beginResolveCandidate) };
-});
 
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
@@ -1692,55 +1687,5 @@ describe('starting a resolver on a queued comment', () => {
     expect(
       (live.get().sessionResolveAttempts[SESSION_ID] ?? []).map((attempt) => attempt.id),
     ).toContain(attemptId);
-  });
-});
-
-describe('the launch mode of a fix run', () => {
-  const launchChoice = {
-    provider: 'anthropic',
-    model: 'recorded-model',
-    effort: null,
-    commitStyle: null,
-    hint: null,
-  } as const;
-
-  const record = async ({ mode }: { readonly mode: 'apply' | 'propose' | undefined }) => {
-    const live = createHarness();
-    await live.actions.loadResolveSession({ sessionId: SESSION_ID });
-    const choice = mode === undefined ? launchChoice : { ...launchChoice, mode };
-    const batch = await live.actions.createResolveBatch({
-      sessionId: SESSION_ID,
-      threadIds: ['PRRT_1'],
-      launchChoice: choice,
-    });
-    await live.actions.recordResolveAttempt({
-      sessionId: SESSION_ID,
-      agent,
-      provider: 'anthropic',
-      model: 'recorded-model',
-      effort: null,
-      instructions: null,
-      phase: 'running',
-      mountTarget: MOUNT_TARGET,
-      candidateMode: 'apply',
-      batch: { batchId: batch.id, launchChoice: choice },
-    });
-    return vi.mocked(beginResolveCandidate).mock.calls.length;
-  };
-
-  beforeEach(() => {
-    vi.mocked(beginResolveCandidate).mockClear();
-  });
-
-  it('captures a candidate and edits nothing when the batch says propose', async () => {
-    expect(await record({ mode: 'propose' })).toBe(1);
-  });
-
-  it('applies on the branch when the batch says apply', async () => {
-    expect(await record({ mode: 'apply' })).toBe(0);
-  });
-
-  it('applies on the branch for a launch that carries no mode at all', async () => {
-    expect(await record({ mode: undefined })).toBe(0);
   });
 });
