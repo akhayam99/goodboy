@@ -17,6 +17,7 @@ import type {
   TimelineRowItem,
   TimelineStreamEntry,
 } from '../../../../timeline/buildTimelineStream';
+import type { RowStateReason } from '../../../../../workTreeModel/rowState';
 import type { TimelineRowGrade } from '../../../../../workTreeModel/timelineRhythm';
 import { TimelineRoleGlyph } from './TimelineRoleGlyph';
 import type { TimelineRowIdentity } from './timelineRowIdentity';
@@ -191,6 +192,17 @@ const chipOf = ({ entry, identity, isCardOpen }: ChipParams) => {
   );
 };
 
+type ReasonTitleOfParams = {
+  readonly reason: RowStateReason | null;
+};
+
+const reasonTitleOf = ({ reason }: ReasonTitleOfParams): string | null => {
+  if (reason?.kind === 'review') {
+    return reason.runTitle ?? null;
+  }
+  return reason?.kind === 'job' ? reason.title : null;
+};
+
 export const TimelineRowLabel = ({
   item,
   diffStat = null,
@@ -208,10 +220,9 @@ export const TimelineRowLabel = ({
     entry.kind === 'event' ? sessionEventEmphasis({ kind: entry.event.kind }) : 'plain';
   const head = factHeadOf({ entry, grade });
   const detail = detailOf({ entry, grade });
-  const runTitle =
-    entry.kind === 'agent' && item.rowState.reason?.kind === 'review'
-      ? (item.rowState.reason.runTitle ?? null)
-      : null;
+  const reason = item.rowState.reason;
+  const runTitle = entry.kind !== 'agent' ? null : reasonTitleOf({ reason });
+  const isMutedJob = reason?.kind === 'job' && reason.isMuted;
   const segments: ReadonlyArray<TimelineLabelSegment> =
     runTitle !== null
       ? [{ kind: 'text', text: runTitle }]
@@ -227,7 +238,7 @@ export const TimelineRowLabel = ({
         'flex items-center overflow-hidden',
         isAgent ? cn(WORK_ROW.title, 'flex-1') : 'min-w-0',
         isStep ? 'text-label' : 'text-body',
-        emphasis === 'muted' || isQueued || grade === 'fact'
+        emphasis === 'muted' || isQueued || grade === 'fact' || isMutedJob
           ? 'text-muted-foreground'
           : item.rowState.phase === 'running' || item.hasUnread
             ? 'font-medium text-foreground'

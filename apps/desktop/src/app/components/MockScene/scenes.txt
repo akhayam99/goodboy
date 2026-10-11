@@ -1,6 +1,7 @@
 activity
 activity-empty
 activity-groups
+activity-jobs
 activity-log
 activity-mark-seen
 activity-one-signal
@@ -81,6 +82,7 @@ branch-pr-narrow
 branch-pr-none
 branch-pr-scribe-writing
 branch-push
+branch-rebase-job
 branch-reply-alone
 branch-reply-bundled
 branch-reply-posted

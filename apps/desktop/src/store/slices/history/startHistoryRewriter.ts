@@ -130,7 +130,7 @@ export const startHistoryRewriter = (set: SetFn, get: GetFn) => {
     if (config.provider === '') {
       await discard();
       return stopWith({
-        reason: prepared.stop.kind === 'hook' ? 'hook' : 'conflict',
+        reason: 'no-provider',
         message: 'No provider is connected to hand the conflict to History rewriter.',
         files: prepared.stop.files,
         sha: prepared.stop.sha,

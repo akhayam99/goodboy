@@ -2363,7 +2363,12 @@ method the repository forbids shown disabled with its reason
 (`Turned off in payments-api`). Merging raises one plain `info` toast with no
 Follow. Push, Publish and Retry go through the existing publish
 machinery: a frozen preview in line under the header (`PushBanner`, the only
-one), drift and the result per thread. Only the header pushes: a thread has no
+push one), drift and the result per thread. Under it sits the rebase job banner
+(`JobBanner`, `features/history/JobBanner`): one strip for a rebase
+on main, on every tab of the page, which replaces the red line that used to
+tell a stop. It reads the run of the branch (`historyRuns`), never local state,
+and its stops carry only the actions that exist today (Dismiss, Refresh, Open
+terminal, Open providers, Check again, Undo rewrite, See what it did). Only the header pushes: a thread has no
 Push, Push again or Sync button. With an accepted thread opened in Comments the
 primary reads `Push 1` (it counts threads) and pushes just that fix
 (`preparePublication` with `isolated`, `isolatedPushOf` unchanged); the preview

@@ -51,6 +51,7 @@ import {
 import { keepEqualById } from '../../../../../../../shared/utils/keepEqualById';
 import type { ExplodeGroups } from '../../../../../hooks/useExplodeGroups';
 import { useResolveActivity } from '../../../../../hooks/useResolveActivity';
+import { useJobActivity } from '../../../../../hooks/useJobActivity';
 
 const NO_EXPANDED_ROWS: ReadonlySet<string> = new Set();
 
@@ -105,6 +106,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
   const loadSessionDismissedQuestions = useAppStore((s) => s.loadSessionDismissedQuestions);
   const workflows = useAttachedWorkflowRuns({ session });
   const resolveActivity = useResolveActivity({ sessionId });
+  const jobActivity = useJobActivity({ sessionId });
   const telemetry = useAppStore(
     (s) => s.sessionTelemetry[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
   );
@@ -233,12 +235,21 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
           dayLabelFor: dayLabel,
           showQuestions: false,
           resolveFactsByAgentId: resolveActivity.factsByAgentId,
+          jobFactsByAgentId: jobActivity.factsByAgentId,
         }).items,
         entries: model.entries,
         events,
         resolveFactsByAgentId: resolveActivity.factsByAgentId,
       }),
-    [advanceByRunId, decidingRunIds, events, model.entries, resolveActivity, unreadAgentIds],
+    [
+      advanceByRunId,
+      decidingRunIds,
+      events,
+      jobActivity,
+      model.entries,
+      resolveActivity,
+      unreadAgentIds,
+    ],
   );
 
   const viewEntries = useMemo(() => {
@@ -256,6 +267,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
         dayLabelFor: dayLabel,
         showQuestions: view === 'log',
         resolveFactsByAgentId: resolveActivity.factsByAgentId,
+        jobFactsByAgentId: jobActivity.factsByAgentId,
         expandedGroupIds: explode.expandedIds,
         fullGroupIds: explode.fullIds,
         foldsFinished: true,
@@ -265,6 +277,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
       decidingRunIds,
       explode.expandedIds,
       explode.fullIds,
+      jobActivity,
       resolveActivity,
       unreadAgentIds,
       view,

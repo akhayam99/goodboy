@@ -31,7 +31,6 @@ export type BranchControls = {
   readonly press: () => void;
   readonly isChangingBase: boolean;
   readonly closeChangingBase: () => void;
-  readonly rebaseError: string | null;
   readonly projectId: ProjectId | null;
   readonly projectRoot: string;
   readonly projectBaseBranch: string | null;
@@ -156,7 +155,6 @@ export const useBranchControls = ({
     press,
     isChangingBase,
     closeChangingBase,
-    rebaseError: rebase.error,
     projectId,
     projectRoot,
     projectBaseBranch,

@@ -55,6 +55,8 @@ const { storeState, diffStats, unread, questions, agentsLoaded, attachedRuns, re
       sessionExternalTasks: {},
       sessionWorktreeRecords: {} as Record<string, ReadonlyArray<unknown>>,
       sessionEvents: {} as Record<string, ReadonlyArray<unknown>>,
+      historyRuns: {},
+      scribeWork: {},
       selectedAgentId: {} as Record<string, string | null>,
       transcripts: {} as Record<string, ReadonlyArray<unknown>>,
       projects: [] as ReadonlyArray<unknown>,

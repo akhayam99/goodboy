@@ -20,7 +20,6 @@ type RunParams = {
 type Result = {
   readonly canRebase: boolean;
   readonly isRunning: boolean;
-  readonly error: string | null;
   readonly rewriterId: AgentId | null;
   readonly run: (params: RunParams) => Promise<void>;
 };
@@ -46,7 +45,6 @@ export const useRebaseBranch = ({ sessionId, mountId, status }: Params): Result 
   });
   const isRebaseRun = run !== null && run.origin === 'rebase';
   const isRunning = isStarting || (isRebaseRun && isHistoryRunActive({ phase: run.phase }));
-  const error = isRebaseRun && run.phase === 'stopped' ? (run.stop?.message ?? null) : null;
   const rewriterId = isRebaseRun && run.phase === 'rewriting' ? run.agentId : null;
   const behindMain = status != null ? distanceBehind({ distance: status.mainDistance }) : null;
   const canRebase = sessionId != null && behindMain != null && behindMain > 0;
@@ -82,5 +80,5 @@ export const useRebaseBranch = ({ sessionId, mountId, status }: Params): Result 
     }
   };
 
-  return { canRebase, isRunning, error, rewriterId, run: start };
+  return { canRebase, isRunning, rewriterId, run: start };
 };

@@ -53,6 +53,7 @@ const REASON_ICON: Record<RowStateReason['kind'], LucideIcon | null> = {
   chained: null,
   awaitingFirstMessage: null,
   discarded: null,
+  job: null,
   review: null,
 };
 
