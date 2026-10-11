@@ -2568,11 +2568,22 @@ issues; `Link issue` opens the popover), Reviewers (a glyph and a word each; `+`
 opens the picker that searches the host's collaborators), Checks (the rollup,
 opens the tab; `Checks unknown` when the read failed), Branch (`3 behind main`
 with `Rebase on main`) and Files changed (the count and the first seven with
-`+N -N`, each opens Files at that file). Without a pull request the tab is a
-first-time empty state (`No pull request yet`, one sentence) over the create
-form (title from the session goal, description with `Draft with an agent`, base
-branch, `Open as draft`, `Create pull request`); creating it raises a `Follow`
-toast only when the page is not already on screen. Every write goes through the
+`+N -N`, each opens Files at that file). Without a pull request the tab is the
+create form: one input card (the title from the session goal as a large
+borderless field, the description growing from 6 to 16 lines, and in the card's
+bottom row `Write with Scribe` with its routing and a faint `Markdown`), then
+the settings as labelled properties in a side column (`Into`; `Opens as` with
+`Ready for review | Draft` only where the host can set a draft; `Reviewers` only
+where it can request them, requested right after creation; `Closes` with the
+linked issues as chips; the changelog entry under `More options` when Scribe
+wrote one) and the actions inline at the end, right aligned, with no bar:
+`Discard text` (with Undo) and `Create pull request`, which reads `Create draft
+pull request` with Draft. Scribe's job shows inside the card (skeleton lines
+while it writes, a running dot with the seconds and `Stop`, a danger notice with
+`Retry` when it failed); creating shows `Pushed <branch>` and `Opening the pull
+request` in the same row, and a failure keeps the text under a danger notice
+with `Details`. Creating it raises a `Follow` toast ("Pull request #318 opened")
+only when the page is not already on screen. Every write goes through the
 host-neutral `PullRequestPort` (`packages/core/src/review-source`), a facet of
 the review source built per host in
 `store/slices/review-source/pullRequestPortFor.ts`; the page reads the
@@ -2586,7 +2597,8 @@ Tauri commands that hold the stored token, `Mark ready` and `Convert to draft`
 change the `Draft:` prefix of the title, Merge lists the ways the project
 allows, and a token without the `api` scope reads `Goodboy can't read this merge
 request` with `Open GitLab settings`. A branch with no merge request shows the
-GitLab create form under `No merge request yet`. Bitbucket uses the same page through its own adapter
+same create form with `Create merge request`, the same Scribe job and no
+reviewers. Bitbucket uses the same page through its own adapter
 (`bitbucketPullRequestPort`, built by `bitbucketPortOf` from the mount's
 request): merge offers its three strategies, `Close` declines, and the draft and
 reopen controls are left out. `E` edits the title in scope

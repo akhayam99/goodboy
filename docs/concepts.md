@@ -508,13 +508,21 @@ pick it when you start the agent.
   `<<history-stuck>>`; the engine rebuilds its commits with the plan messages
   and authors, checks the count, and moves the branch itself
 - **Scribe** is hidden too: it writes text about the code and never code.
-  `Write it` in the pull request panel asks it for the title and body; when
-  its first turn ends, `settleScribe` hands them to `openScribePullRequest`,
-  which calls `createPrForSession` (that pushes the branch with
-  `--set-upstream` first, for every writer: the panel, the suggestion and an
-  agent through the bridge). The work moves `writing`, `creating`, then
-  `created` with the request number, or `failed` with the reason and the text
-  kept, and `Retry` runs the same step again. It can also
+  `Write with Scribe` in the create form asks it for the title and body as a
+  text-only job (`isTextOnly`): when its first turn ends the work is `ready`
+  and `settleScribe` stops, so writing never creates. The form hydrates its
+  two fields from `scribeWork[key]`, which is why leaving the page and coming
+  back shows the same state, and `stopScribe` drops a running job. Creating is
+  the form's own step: `createPrForSession` (that pushes the branch with
+  `--set-upstream` first, for every writer: the form, the suggestion and an
+  agent through the bridge) or `createMrForSession` on GitLab, with the text
+  you kept. A Scribe started from its own chat card still opens the request:
+  `settleScribe` hands the text to `openScribePullRequest`, and the work moves
+  `writing`, `creating`, then `created` with the request number, or `failed`
+  with the reason and the text kept, and `Retry` runs the same step again. The
+  Next row's Open PR opens the create form and never creates; while the job
+  writes or creates its line shows the state with no button, and `Review text`
+  once it is ready. It can also
   write a commit message for a squash or a reword and a changelog entry. It
   answers only with `<<pr-title>>`, `<<pr-body>>`, `<<commit-message>>` and
   `<<changelog-entry>>` blocks, runs with push blocked like History rewriter,
