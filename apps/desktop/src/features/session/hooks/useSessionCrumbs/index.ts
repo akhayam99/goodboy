@@ -93,6 +93,9 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
     if (pullRequestMode === 'create_pr') {
       return { id: 'branch-new-pr', label: 'New pull request', icon: CONCEPT_ICONS.pr };
     }
+    if (pullRequestMode === 'write_review' && branchTab === 'files') {
+      return { id: 'branch-write-review', label: 'Write review', icon: CONCEPT_ICONS.pr };
+    }
     if (branchTab === 'comments' && branchThreadId !== null) {
       return {
         id: 'review-thread',

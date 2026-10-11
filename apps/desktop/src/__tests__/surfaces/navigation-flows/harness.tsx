@@ -356,20 +356,30 @@ export const lens = (lensName: string | null) => async (ctx: Ctx) => {
 type BranchTabName = 'pr' | 'comments' | 'files' | 'commits' | 'checks';
 
 const BRANCH_TAB_LABEL: Readonly<Record<BranchTabName, RegExp>> = {
-  pr: /^Pull request/,
+  pr: /^Overview/,
   comments: /^Comments/,
   files: /^Files/,
   commits: /^Commits/,
   checks: /^Checks/,
 };
 
+export const getSection = (name: RegExp): HTMLElement =>
+  within(screen.getByRole('navigation', { name: 'Sections' })).getByRole('button', { name });
+
+export const sectionLabels = (): ReadonlyArray<string> =>
+  within(screen.getByRole('navigation', { name: 'Sections' }))
+    .getAllByRole('button')
+    .filter((button) => button.closest('[data-slot="branch-rail-files"]') === null)
+    .map((button) => (button.textContent ?? '').replace(/[\d/-]+$/, '').trim());
+
+export const findSection = (name: RegExp): Promise<HTMLElement> =>
+  waitFor(() => getSection(name), WAIT);
+
 export const branchTab = (tab: BranchTabName) => async (ctx: Ctx) => {
   await lens('branch')(ctx);
   await waitFor(() => {
     expect(useAppStore.getState().branchTab[ctx.sessionId]).toBe(tab);
-    expect(
-      screen.getByRole('tab', { name: BRANCH_TAB_LABEL[tab] }).getAttribute('aria-selected'),
-    ).toBe('true');
+    expect(getSection(BRANCH_TAB_LABEL[tab]).getAttribute('aria-current')).toBe('page');
   }, WAIT);
 };
 
@@ -464,7 +474,7 @@ export const LENS_ROWS: ReadonlyArray<LensRow> = [
 
 export const openBranchFiles = async (): Promise<void> => {
   await openCrumb(/^Branch/);
-  await click(await screen.findByRole('tab', { name: /^Files/ }));
+  await click(await findSection(/^Files/));
 };
 
 const expectNoCrash = (): void => {

@@ -54,6 +54,7 @@ const renderTree = (overrides: Partial<Parameters<typeof ChangeTree>[0]> = {}) =
       hasNotesIn={() => false}
       stateOf={() => 'none'}
       noteCountOf={() => 0}
+      onNextUnviewed={vi.fn()}
       {...overrides}
     />,
   );
@@ -73,7 +74,7 @@ describe('ChangeTree on a big change', () => {
     const drawn = screen.getAllByRole('button', { name: /f\d{3}\.ts/ });
     expect(drawn.length).toBeGreaterThan(10);
     expect(drawn.length).toBeLessThan(80);
-    expect(screen.getByText('0 of 600 viewed')).toBeDefined();
+    expect(screen.queryByText(/of 600 viewed/)).toBeNull();
   });
 
   it('swaps the drawn rows as the list scrolls and keeps the scroll height', () => {
@@ -171,6 +172,7 @@ describe('ChangeTree', () => {
         hasNotesIn={() => false}
         stateOf={() => 'none'}
         noteCountOf={() => 0}
+        onNextUnviewed={vi.fn()}
       />,
     );
     expect(screen.queryByRole('button', { name: /page\.tsx/ })).toBeNull();
@@ -278,17 +280,40 @@ describe('ChangeTree', () => {
 
     expect(screen.getByRole('img', { name: 'Changed since viewed' })).toBeDefined();
     expect(screen.queryByLabelText('Viewed')).toBeNull();
-    expect(screen.getByText('0 of 4 viewed')).toBeDefined();
+    expect(screen.getByRole('tab', { name: /^Unviewed/ }).textContent).toContain('4');
   });
 
-  it('counts viewed files in the head and shows notes on a file', () => {
+  it('counts the unviewed and the commented files on the filter and shows notes on a file', () => {
     renderTree({
       stateOf: (file) => (file.path === 'package.json' ? 'viewed' : 'none'),
       noteCountOf: (path) => (path === 'src/ledger/export/page.tsx' ? 2 : 0),
     });
 
-    expect(screen.getByText('1 of 4 viewed')).toBeDefined();
+    expect(screen.getByRole('tab', { name: /^Unviewed/ }).textContent).toContain('3');
+    expect(screen.getByRole('tab', { name: /^Commented/ }).textContent).toContain('1');
     expect(screen.getByLabelText('2 notes')).toBeDefined();
+    expect(screen.queryByText(/of 4 viewed/)).toBeNull();
+  });
+
+  it('jumps to the next unviewed file from its footer button and says how many are left', () => {
+    const onNextUnviewed = vi.fn();
+    renderTree({
+      stateOf: (file) => (file.path === 'package.json' ? 'viewed' : 'none'),
+      onNextUnviewed,
+    });
+
+    const next = screen.getByRole('button', { name: /^Next unviewed/ });
+    expect(next.textContent).toContain('3');
+    fireEvent.click(next);
+    expect(onNextUnviewed).toHaveBeenCalledTimes(1);
+  });
+
+  it('disables Next unviewed once every file is viewed', () => {
+    renderTree({ stateOf: () => 'viewed' });
+
+    expect(screen.getByRole('button', { name: /^Next unviewed/ }).hasAttribute('disabled')).toBe(
+      true,
+    );
   });
 
   it('opens the notes of a file from its note count when the file has notes of its own', () => {
@@ -315,7 +340,7 @@ describe('ChangeTree', () => {
     expect(screen.queryByRole('button', { name: '1 note' })).toBeNull();
   });
 
-  it('keeps the head on every file while the tree shows only the filtered ones', () => {
+  it('keeps the counts on every file while the tree shows only the filtered ones', () => {
     const onClear = vi.fn();
     const shown = FILES.filter((file) => file.path === 'package.json');
     renderTree({
@@ -323,7 +348,7 @@ describe('ChangeTree', () => {
       filter: { ...NO_FILTER, query: 'pack', isFiltering: true, onClear },
     });
 
-    expect(screen.getByText('0 of 4 viewed')).toBeDefined();
+    expect(screen.getByRole('tab', { name: /^Unviewed/ }).textContent).toContain('4');
     expect(screen.getByText('Showing 1 of 4')).toBeDefined();
     expect(screen.queryByRole('button', { name: /page\.tsx/ })).toBeNull();
 
@@ -344,20 +369,36 @@ describe('ChangeTree', () => {
     expect(onClear).toHaveBeenCalled();
   });
 
-  it('toggles the Unviewed and With notes chips and switches the grouping', () => {
+  it('shows all, unviewed or commented files one at a time and switches the grouping', () => {
     const onUnviewedOnly = vi.fn();
     const onNotesOnly = vi.fn();
     const onGroup = vi.fn();
     renderTree({ filter: { ...NO_FILTER, onUnviewedOnly, onNotesOnly, onGroup } });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Unviewed' }));
-    fireEvent.click(screen.getByRole('button', { name: 'With notes' }));
+    expect(screen.getByRole('tab', { name: 'All' }).getAttribute('aria-selected')).toBe('true');
+    fireEvent.click(screen.getByRole('tab', { name: /^Unviewed/ }));
+    expect(onUnviewedOnly).toHaveBeenLastCalledWith(true);
+    expect(onNotesOnly).toHaveBeenLastCalledWith(false);
+    fireEvent.click(screen.getByRole('tab', { name: /^Commented/ }));
+    expect(onUnviewedOnly).toHaveBeenLastCalledWith(false);
+    expect(onNotesOnly).toHaveBeenLastCalledWith(true);
     fireEvent.click(screen.getByRole('button', { name: 'Group files' }));
     fireEvent.click(screen.getByRole('menuitemradio', { name: /Kind/ }));
 
-    expect(onUnviewedOnly).toHaveBeenCalledWith(true);
-    expect(onNotesOnly).toHaveBeenCalledWith(true);
     expect(onGroup).toHaveBeenCalledWith('kind');
+  });
+
+  it('reads the filter back from the two switches, unviewed first', () => {
+    renderTree({ filter: { ...NO_FILTER, unviewedOnly: true } });
+    expect(screen.getByRole('tab', { name: /^Unviewed/ }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
+    cleanup();
+
+    renderTree({ filter: { ...NO_FILTER, notesOnly: true } });
+    expect(screen.getByRole('tab', { name: /^Commented/ }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
   });
 
   it('sends the typed query to the filter and clears it on Escape', () => {

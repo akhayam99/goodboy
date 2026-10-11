@@ -19,6 +19,7 @@ import {
   settingsColumn,
   useAppStore,
   visible,
+  getSection,
 } from './harness';
 
 const SHIP_ID = 'flow-workflow-ship-a-fix' as WorkflowId;
@@ -152,10 +153,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     },
     lands: async () => {
       await waitFor(
-        () =>
-          expect(
-            screen.getByRole('tab', { name: /^Pull request/ }).getAttribute('aria-selected'),
-          ).toBe('true'),
+        () => expect(getSection(/^Overview/).getAttribute('aria-current')).toBe('page'),
         WAIT,
       );
       expect(opened).not.toHaveBeenCalled();

@@ -1,8 +1,7 @@
-import { ChevronLeft } from 'lucide-react';
 import { EmptyState, PageColumn } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import { SessionDiffPane } from '../../diff/components/SessionDiffPane';
 import type { SessionDiff } from '../../diff/hooks/useSessionDiff';
 import { WriteReview } from '../../review/components/ReviewPane/WriteReview';
@@ -37,19 +36,7 @@ export const BranchFiles = ({ session, workingDir, worktreePath, diff, hasPullRe
   if (mode === 'write_review' && hasPullRequest) {
     return (
       <BranchBodyColumn>
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
-          <PageColumn width="full">
-            <button
-              type="button"
-              onClick={() => setPullRequestMode({ sessionId, mode: 'overview' })}
-              className="inline-flex items-center gap-1 rounded-sm text-meta text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-            >
-              <ChevronLeft size={ICON_SIZE.row} aria-hidden />
-              Files
-            </button>
-          </PageColumn>
-          <WriteReview session={session} />
-        </div>
+        <WriteReview session={session} />
       </BranchBodyColumn>
     );
   }

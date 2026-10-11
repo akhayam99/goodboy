@@ -1,6 +1,7 @@
 import { NAMES } from '../../shared/names';
 import type { LucideIcon } from 'lucide-react';
-import { ArrowUp, GitBranch, GitMerge, GitPullRequestCreate, RotateCw, Send } from 'lucide-react';
+import { ArrowUp, GitBranch, GitMerge, RotateCcw, RotateCw, Send } from 'lucide-react';
+import type { PullRequestPresentationState } from '../../shared/pullRequestPresentation';
 import type { ResolvedAction } from '../actions/types';
 
 type BranchPrimarySource = 'diff' | 'pullRequest' | 'review';
@@ -28,6 +29,12 @@ type Params = {
   readonly pullRequest: ReadonlyArray<ResolvedAction>;
   readonly review: BranchReviewCounts;
   readonly hasPullRequest: boolean;
+  readonly state: PullRequestPresentationState;
+};
+
+export type BranchActions = {
+  readonly primary: BranchPrimary | null;
+  readonly secondary: BranchPrimary | null;
 };
 
 const REVIEW_PUSH_ID = 'review.push';
@@ -61,93 +68,102 @@ const fromAction = ({
 const plural = ({ count, one, many }: { count: number; one: string; many: string }): string =>
   `${count} ${count === 1 ? one : many}`;
 
-export const branchPrimaryOf = ({
-  diff,
-  pullRequest,
-  review,
-  hasPullRequest,
-}: Params): BranchPrimary | null => {
-  const rebase = find(diff, 'diff.rebase') ?? find(diff, 'diff.continueRebase');
-  if (rebase !== null) {
-    return fromAction({ source: 'diff', action: rebase, icon: GitBranch });
+const reviewAction = ({
+  label,
+  icon,
+  blockedReason = null,
+  isBusy = false,
+}: {
+  readonly label: string;
+  readonly icon: LucideIcon;
+  readonly blockedReason?: string | null;
+  readonly isBusy?: boolean;
+}): BranchPrimary => ({
+  source: 'review',
+  actionId: REVIEW_PUSH_ID,
+  label,
+  icon,
+  blockedReason,
+  isBusy,
+  isSecondary: false,
+  note: null,
+});
+
+const secondaryOf = ({ diff, review, hasPullRequest, state }: Params): BranchPrimary | null => {
+  if (state === 'merged' || state === 'closed') {
+    return null;
   }
   if (hasPullRequest && (review.accepted > 0 || review.isPushing)) {
-    return {
-      source: 'review',
-      actionId: REVIEW_PUSH_ID,
+    return reviewAction({
       label: `Push ${review.accepted}`,
       icon: ArrowUp,
       blockedReason: review.isPushing ? 'Pushing now.' : null,
       isBusy: review.isPushing,
-      isSecondary: false,
-      note: null,
-    };
+    });
   }
   const push = find(diff, 'diff.push');
   if (push !== null) {
     return fromAction({ source: 'diff', action: push, icon: ArrowUp });
   }
   if (hasPullRequest && review.replies > 0) {
-    return {
-      source: 'review',
-      actionId: REVIEW_PUSH_ID,
+    return reviewAction({
       label: `Publish ${plural({ count: review.replies, one: 'reply', many: 'replies' })}`,
       icon: ArrowUp,
-      blockedReason: null,
-      isBusy: false,
-      isSecondary: false,
-      note: null,
-    };
+    });
   }
   if (hasPullRequest && review.failed > 0) {
-    return {
-      source: 'review',
-      actionId: REVIEW_PUSH_ID,
-      label: NAMES.retryPush,
-      icon: RotateCw,
-      blockedReason: null,
-      isBusy: false,
-      isSecondary: false,
-      note: null,
-    };
-  }
-  const createOnDiff = find(diff, 'diff.createPullRequest');
-  const create = createOnDiff ?? find(pullRequest, 'pullRequest.create');
-  if (create !== null) {
-    return fromAction({
-      source: createOnDiff === null ? 'pullRequest' : 'diff',
-      action: create,
-      label: createOnDiff === null ? 'Create PR' : createOnDiff.shortLabel,
-      icon: GitPullRequestCreate,
-    });
-  }
-  const ready = find(pullRequest, 'pullRequest.markReady');
-  if (ready !== null) {
-    return fromAction({
-      source: 'pullRequest',
-      action: ready,
-      label: 'Ready for review',
-      icon: Send,
-    });
-  }
-  const merge = find(pullRequest, 'pullRequest.merge');
-  if (merge !== null) {
-    return fromAction({
-      source: 'pullRequest',
-      action: merge,
-      icon: GitMerge,
-      isSecondary: merge.slot === 'secondary',
-    });
+    return reviewAction({ label: NAMES.retryPush, icon: RotateCw });
   }
   return null;
 };
+
+const primaryOf = ({ diff, pullRequest, state }: Params): BranchPrimary | null => {
+  const resume = find(diff, 'diff.continueRebase');
+  if (resume !== null) {
+    return fromAction({ source: 'diff', action: resume, icon: GitBranch });
+  }
+  if (state === 'draft') {
+    const ready = find(pullRequest, 'pullRequest.markReady');
+    return ready === null
+      ? null
+      : fromAction({
+          source: 'pullRequest',
+          action: ready,
+          label: 'Mark ready for review',
+          icon: Send,
+        });
+  }
+  if (state === 'open' || state === 'approved') {
+    const merge = find(pullRequest, 'pullRequest.merge');
+    return merge === null
+      ? null
+      : fromAction({
+          source: 'pullRequest',
+          action: merge,
+          icon: GitMerge,
+          isSecondary: merge.slot === 'secondary',
+        });
+  }
+  if (state === 'closed') {
+    const reopen = find(pullRequest, 'pullRequest.reopen');
+    return reopen === null
+      ? null
+      : fromAction({ source: 'pullRequest', action: reopen, icon: RotateCcw });
+  }
+  return null;
+};
+
+export const branchActionsOf = (params: Params): BranchActions => ({
+  primary: primaryOf(params),
+  secondary: secondaryOf(params),
+});
 
 export const BRANCH_MENU_PULL_REQUEST: ReadonlyArray<string> = [
   'pullRequest.editDetails',
   'pullRequest.requestReview',
   'pullRequest.convertToDraft',
+  'pullRequest.cancelAutoMerge',
   'pullRequest.close',
-  'pullRequest.reopen',
   'pullRequest.openOnGithub',
   'pullRequest.copyLink',
 ];

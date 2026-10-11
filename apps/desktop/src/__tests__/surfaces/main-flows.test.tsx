@@ -239,16 +239,17 @@ describe('main flows on the real store', () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
 
     await mountFlow(<KeepAliveWorkSurface sessionId={sessionId} isActive />);
-    expect(screen.queryByRole('tab', { name: /^Files/ })).toBeNull();
+    expect(screen.queryByRole('navigation', { name: 'Sections' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /Session/ }));
     fireEvent.click(await screen.findByRole('menuitemradio', { name: /^Branch/ }));
     await settle();
-    fireEvent.click(await screen.findByRole('tab', { name: /^Files/ }));
+    const rail = within(await screen.findByRole('navigation', { name: 'Sections' }));
+    fireEvent.click(rail.getByRole('button', { name: /^Files/ }));
     await settle();
 
     expect(useAppStore.getState().activeLens[sessionId]).toBe('branch');
     expect(useAppStore.getState().branchTab[sessionId]).toBe('files');
-    expect(screen.getByRole('tab', { name: /^Files/ }).getAttribute('aria-selected')).toBe('true');
+    expect(rail.getByRole('button', { name: /^Files/ }).getAttribute('aria-current')).toBe('page');
     expectNoRenderLoop();
   });
 

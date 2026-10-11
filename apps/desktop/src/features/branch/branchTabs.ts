@@ -1,5 +1,6 @@
 import type { ShortcutId } from '../../shared/keyboard/registry';
 import { NAMES } from '../../shared/names';
+import type { PullRequestPresentationState } from '../../shared/pullRequestPresentation';
 import type { BranchTab } from '../../store/slices/navigation/types';
 
 export type BranchTabEntry = {
@@ -12,17 +13,15 @@ export type BranchTabEntry = {
 
 export type BranchTabRegistry = Readonly<Record<BranchTab, BranchTabEntry>>;
 
-type BranchProvider = 'local' | 'github' | 'gitlab' | 'bitbucket';
-
 export type BranchScope = {
-  readonly hasPullRequest: boolean;
-  readonly provider: BranchProvider;
+  readonly state: PullRequestPresentationState;
+  readonly hasComments: boolean;
 };
 
 export const BRANCH_TAB_REGISTRY: BranchTabRegistry = {
   pr: {
     id: 'pr',
-    label: NAMES.pullRequest,
+    label: NAMES.overview,
     address: 'pr',
     shortcut: 'lens.pr',
     isAvailable: true,
@@ -59,11 +58,49 @@ export const BRANCH_TAB_REGISTRY: BranchTabRegistry = {
 
 const BRANCH_TAB_ORDER: ReadonlyArray<BranchTab> = ['pr', 'comments', 'files', 'commits', 'checks'];
 
+type ShownParams = {
+  readonly tab: BranchTab;
+  readonly scope: BranchScope;
+};
+
+const isBranchTabShown = ({ tab, scope }: ShownParams): boolean => {
+  if (tab === 'checks') {
+    return scope.state !== 'none';
+  }
+  if (tab === 'comments') {
+    return scope.state !== 'none' || scope.hasComments;
+  }
+  return true;
+};
+
 export const branchTabsOf = (
-  _scope: BranchScope,
+  scope: BranchScope,
   registry: BranchTabRegistry = BRANCH_TAB_REGISTRY,
 ): ReadonlyArray<BranchTabEntry> =>
-  BRANCH_TAB_ORDER.map((id) => registry[id]).filter((entry) => entry.isAvailable);
+  BRANCH_TAB_ORDER.map((id) => registry[id]).filter(
+    (entry) => entry.isAvailable && isBranchTabShown({ tab: entry.id, scope }),
+  );
 
 export const isBranchTabAvailable = (tab: BranchTab): boolean =>
   BRANCH_TAB_REGISTRY[tab].isAvailable;
+
+export const isBranchReadOnly = ({ state }: Pick<BranchScope, 'state'>): boolean =>
+  state === 'merged' || state === 'closed';
+
+type ResolveParams = ShownParams & {
+  readonly isAvailable?: (tab: BranchTab) => boolean;
+};
+
+export const resolveBranchTab = ({
+  tab,
+  scope,
+  isAvailable = isBranchTabAvailable,
+}: ResolveParams): BranchTab => {
+  if (!isAvailable(tab)) {
+    return resolveBranchTab({ tab: 'comments', scope, isAvailable });
+  }
+  if (isBranchTabShown({ tab, scope })) {
+    return tab;
+  }
+  return tab === 'comments' ? 'files' : 'pr';
+};

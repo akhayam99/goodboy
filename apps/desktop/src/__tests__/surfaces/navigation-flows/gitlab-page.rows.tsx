@@ -15,6 +15,7 @@ import {
   openCrumb,
   settle,
   useAppStore,
+  sectionLabels,
 } from './harness';
 import { gitlabCalls, gitlabPageBridge, resetGitlabMr } from './gitlab-page.runner';
 
@@ -122,9 +123,6 @@ const openMergeRequestPage = async (ctx: Ctx): Promise<void> => {
   await lens('branch')(ctx);
 };
 
-const tabLabels = (): ReadonlyArray<string> =>
-  screen.getAllByRole('tab').map((tab) => tab.textContent ?? '');
-
 const activity = (): Promise<HTMLElement> =>
   screen.findByRole('region', { name: 'Activity' }, WAIT);
 
@@ -133,7 +131,7 @@ const selectedBranchTab = (ctx: Ctx): string | undefined =>
 
 export const GITLAB_PAGE_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'gitlab page: a GitLab branch lands on the Merge request tab, first of the five, with its number',
+    name: 'gitlab page: a GitLab branch lands on the Overview, first of the five sections, with its number',
     covers: ['navigate', 'tab:pr', 'gitlab-page:identity'],
     seed: 'issue',
     open: openMergeRequestPage,
@@ -141,10 +139,10 @@ export const GITLAB_PAGE_ROWS: ReadonlyArray<Row> = [
       await heading(/Stop retried webhooks/);
       await waitFor(() => {
         expect(selectedBranchTab(ctx)).toBe('pr');
-        expect(tabLabels()[0]).toMatch(/^Merge request/);
-        expect(tabLabels()).toHaveLength(5);
+        expect(sectionLabels()[0]).toBe('Overview');
+        expect(sectionLabels()).toHaveLength(5);
       }, WAIT);
-      expect(await screen.findByText('MR !42', undefined, WAIT)).toBeDefined();
+      expect(await screen.findByText(/MR !42/, undefined, WAIT)).toBeDefined();
       expect(screen.queryByText(/pull request/i)).toBeNull();
     },
   },

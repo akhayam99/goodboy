@@ -19,7 +19,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import type { ProviderId } from '@goodboy/types';
 import {
@@ -317,7 +317,11 @@ describe('primary surfaces mount on real store selectors', () => {
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
 
-    expect(screen.getByRole('tab', { name: /^Files/ }).getAttribute('aria-selected')).toBe('true');
+    expect(
+      within(screen.getByRole('navigation', { name: 'Sections' }))
+        .getByRole('button', { name: /^Files/ })
+        .getAttribute('aria-current'),
+    ).toBe('page');
     expect(screen.queryByText('No worktree for this session')).toBeNull();
     expectNoRenderLoop();
   });

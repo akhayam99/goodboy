@@ -43,6 +43,7 @@ import {
   visible,
   useAppStore,
   type BridgeArgs,
+  getSection,
 } from './harness';
 
 installNavigationHooks();
@@ -918,7 +919,7 @@ describe('moving across every place keeps one frame', () => {
 
       await click(pageRow('Branch'));
       for (const tab of ['Files', 'Comments'] as const) {
-        await click(screen.getByRole('tab', { name: new RegExp(`^${tab}`) }));
+        await click(getSection(new RegExp(`^${tab}`)));
         expect(useAppStore.getState().branchTab[sessionId]).toBe(tab.toLowerCase());
         expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
       }

@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from './conceptIcons';
 
 type Props = {
   readonly viewed: number;
@@ -11,7 +11,7 @@ const STROKE = 1.75;
 const RADIUS = (SIZE - STROKE) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-export const ProgressRing = ({ viewed, total }: Props) => {
+export const ViewedRing = ({ viewed, total }: Props) => {
   const label = `${viewed} of ${total} viewed`;
   if (total > 0 && viewed >= total) {
     return (
