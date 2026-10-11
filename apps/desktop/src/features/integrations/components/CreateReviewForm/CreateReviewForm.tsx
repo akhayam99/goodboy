@@ -150,7 +150,7 @@ export const CreateReviewForm = ({
   const isCreating = phase.kind === 'creating';
   const isLocked = isWriting || isCreating;
   const scribeFailure =
-    job.status === 'failed' ? (job.error ?? 'Scribe wrote no text.') : writeError;
+    job.status === 'failed' ? (job.error ?? 'Scribe wrote no text.') : (job.error ?? writeError);
   const changelogEntry = job.output?.changelogEntry ?? null;
   const hasText = title !== defaultTitle || body !== '';
 
@@ -355,6 +355,8 @@ export const CreateReviewForm = ({
         base={base}
         branches={branchOptions}
         isBasesLoading={bases.isLoading}
+        basesError={bases.error}
+        onBasesRetry={bases.retry}
         isLocked={isLocked}
         canSetDraft={canSetDraft}
         isDraft={isDraft}

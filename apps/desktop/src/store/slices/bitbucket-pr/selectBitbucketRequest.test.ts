@@ -16,7 +16,8 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../storyHarness';
-import { branchHasPullRequest, branchTabOf } from '../session-view/branchTabOf';
+import { branchHasPullRequest } from '../session-view/branchHasPullRequest';
+import { branchTabOf } from '../session-view/branchTabOf';
 import { selectBitbucketRequest } from './selectBitbucketRequest';
 import type { MountBitbucketPrState } from './state';
 
