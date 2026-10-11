@@ -168,10 +168,19 @@ const depthOf = (): number => {
   return state.navigation[state.currentWorkspaceId ?? '']?.entries.length ?? 0;
 };
 
+const headerColumnElement = (): HTMLElement => {
+  const column = document
+    .querySelector('[data-slot="pane-header"]')
+    ?.closest<HTMLElement>('[data-page-column]');
+  if (column === null || column === undefined) {
+    throw new Error('the page has no header column');
+  }
+  return column;
+};
+
 const railOf = (): HTMLElement => screen.getByRole('navigation', { name: 'Sections' });
 
-const railRow = (name: RegExp): HTMLElement =>
-  within(railOf()).getByRole('button', { name }) as HTMLElement;
+const railRow = (name: RegExp): HTMLElement => within(railOf()).getByRole('button', { name });
 
 const sectionNames = (): ReadonlyArray<string> =>
   within(railOf())
@@ -441,9 +450,7 @@ describe('Branch page column', () => {
 
   it('keeps one h1 on one column element from Overview through every section and back', async () => {
     await mount();
-    const column = document
-      .querySelector('[data-slot="pane-header"]')
-      ?.closest<HTMLElement>('[data-page-column]') as HTMLElement;
+    const column = headerColumnElement();
     const title = screen.getByRole('heading', { level: 1 });
 
     for (const name of [
@@ -723,6 +730,22 @@ describe('Branch page rail', () => {
   const filesGroup = (): HTMLElement | null =>
     document.querySelector<HTMLElement>('[data-slot="branch-rail-files"]');
 
+  const pressSections = (): void => {
+    const button = sectionsButton();
+    if (button === null) {
+      throw new Error('the page has no Sections button');
+    }
+    fireEvent.click(button);
+  };
+
+  const pressScrim = (): void => {
+    const scrim = document.querySelector<HTMLElement>('[data-branch-rail-scrim]');
+    if (scrim === null) {
+      throw new Error('the page has no scrim');
+    }
+    fireEvent.click(scrim);
+  };
+
   it('docks the rail at a sheet of 780 and hides it behind a Sections button at 760', async () => {
     await mountFiles({ width: 780 });
     expect(dockedRail()).not.toBeNull();
@@ -739,7 +762,7 @@ describe('Branch page rail', () => {
   it('opens the hidden rail over the detail with a scrim, and closes it on Esc, a scrim click or a pick', async () => {
     await mountFiles({ width: 700 });
 
-    fireEvent.click(sectionsButton() as HTMLElement);
+    pressSections();
     await settle();
     expect(screen.getByRole('navigation', { name: 'Sections' })).toBeDefined();
     expect(document.querySelector('[data-branch-rail-scrim]')).not.toBeNull();
@@ -749,13 +772,13 @@ describe('Branch page rail', () => {
     await settle();
     expect(screen.queryByRole('navigation', { name: 'Sections' })).toBeNull();
 
-    fireEvent.click(sectionsButton() as HTMLElement);
+    pressSections();
     await settle();
-    fireEvent.click(document.querySelector('[data-branch-rail-scrim]') as HTMLElement);
+    pressScrim();
     await settle();
     expect(screen.queryByRole('navigation', { name: 'Sections' })).toBeNull();
 
-    fireEvent.click(sectionsButton() as HTMLElement);
+    pressSections();
     await settle();
     await visit(/^Commits/);
     expect(screen.queryByRole('navigation', { name: 'Sections' })).toBeNull();
@@ -781,12 +804,13 @@ describe('Branch page rail', () => {
     expect(filesGroup()?.childElementCount ?? 0).toBe(0);
 
     await visit(/^Files/);
-    const group = filesGroup() as HTMLElement;
+    const group = filesGroup();
+    if (group === null) {
+      throw new Error('the rail has no Files group');
+    }
     const tree = within(group).getByRole('navigation', { name: 'Changed files' });
     expect(railOf().contains(tree)).toBe(true);
-    const column = document
-      .querySelector('[data-slot="pane-header"]')
-      ?.closest<HTMLElement>('[data-page-column]') as HTMLElement;
+    const column = headerColumnElement();
     expect(column.contains(tree)).toBe(false);
     expect(within(group).getByRole('textbox', { name: 'Filter files' })).toBeDefined();
     expect(within(group).getByRole('tablist', { name: 'Show files' })).toBeDefined();
@@ -805,12 +829,14 @@ describe('Branch page rail', () => {
     await settle();
     expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
 
-    fireEvent.click(sectionsButton() as HTMLElement);
+    pressSections();
     await settle();
     const tree = screen.getByRole('navigation', { name: 'Changed files' });
-    fireEvent.click(
-      within(tree).getAllByRole('button', { name: /credit\.ts|webhook\.ts/ })[0] as HTMLElement,
-    );
+    const first = within(tree).getAllByRole('button', { name: /credit\.ts|webhook\.ts/ })[0];
+    if (first === undefined) {
+      throw new Error('the tree has no file row');
+    }
+    fireEvent.click(first);
     await settle();
 
     expect(screen.queryByRole('navigation', { name: 'Sections' })).toBeNull();

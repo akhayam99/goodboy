@@ -26,15 +26,6 @@ type Props = {
 
 type Show = 'all' | 'unviewed' | 'commented';
 
-type ShowParams = Pick<Props, 'unviewedOnly' | 'notesOnly'>;
-
-const showOf = ({ unviewedOnly, notesOnly }: ShowParams): Show => {
-  if (unviewedOnly) {
-    return 'unviewed';
-  }
-  return notesOnly ? 'commented' : 'all';
-};
-
 type BadgeParams = {
   readonly count: number;
 };
@@ -68,6 +59,12 @@ export const TreeHead = ({
     }
     filterRef.current?.blur();
   }, isTyping);
+  const showNow = (): Show => {
+    if (unviewedOnly) {
+      return 'unviewed';
+    }
+    return notesOnly ? 'commented' : 'all';
+  };
   const choose = (next: Show): void => {
     onUnviewedOnly(next === 'unviewed');
     onNotesOnly(next === 'commented');
@@ -99,7 +96,7 @@ export const TreeHead = ({
         ariaLabel="Show files"
         size="xs"
         fill
-        value={showOf({ unviewedOnly, notesOnly })}
+        value={showNow()}
         onChange={choose}
         options={[
           { value: 'all', label: 'All' },

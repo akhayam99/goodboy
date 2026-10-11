@@ -311,9 +311,9 @@ describe('ChangeTree', () => {
   it('disables Next unviewed once every file is viewed', () => {
     renderTree({ stateOf: () => 'viewed' });
 
-    expect(
-      (screen.getByRole('button', { name: /^Next unviewed/ }) as HTMLButtonElement).disabled,
-    ).toBe(true);
+    expect(screen.getByRole('button', { name: /^Next unviewed/ }).hasAttribute('disabled')).toBe(
+      true,
+    );
   });
 
   it('opens the notes of a file from its note count when the file has notes of its own', () => {
