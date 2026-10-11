@@ -767,59 +767,6 @@ const TRIED = {
 describe('preflight on a dirty tree', () => {
   const dirtyOnce = () => worktree.worktreeStatus.mockResolvedValueOnce(DIRTY_TREE);
 
-  it('refuses a rebase before any try, copy or agent and records a dirty stop', async () => {
-    const { slice, read, spawnAgent } = harness();
-    dirtyOnce();
-
-    await expect(slice.rebaseBranch({ sessionId: SESSION_ID, mountId: MOUNT_ID })).resolves.toBe(
-      'stopped',
-    );
-
-    expect(engine.readRebasePlan).not.toHaveBeenCalled();
-    expect(engine.predictHistoryPlan).not.toHaveBeenCalled();
-    expect(engine.tryHistoryPlan).not.toHaveBeenCalled();
-    expect(spawnAgent).not.toHaveBeenCalled();
-    expect(read().historyRuns[MOUNT_ID]).toMatchObject({
-      origin: 'rebase',
-      phase: 'stopped',
-      stop: { reason: 'dirty', message: DIRTY_SENTENCE },
-    });
-    expect(read().recordSessionEvent).toHaveBeenCalledWith(
-      expect.objectContaining({
-        kind: 'history_stopped',
-        payload: expect.objectContaining({ origin: 'rebase', reason: 'dirty' }),
-      }),
-    );
-  });
-
-  it('raises the notification for a dirty stop when the user is not on the Branch page', async () => {
-    const { slice, read } = harness();
-    dirtyOnce();
-
-    await slice.rebaseBranch({ sessionId: SESSION_ID, mountId: MOUNT_ID });
-
-    expect(read().reportError).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: "Couldn't rebase fix/ledger-postings",
-        sessionId: SESSION_ID,
-      }),
-    );
-  });
-
-  it('keeps the notification quiet while the Branch page of that session is open', async () => {
-    const { slice, read, seed } = harness();
-    seed({
-      currentSessionId: SESSION_ID,
-      activeLens: { [SESSION_ID]: 'branch' },
-    });
-    dirtyOnce();
-
-    await slice.rebaseBranch({ sessionId: SESSION_ID, mountId: MOUNT_ID });
-
-    expect(read().historyRuns[MOUNT_ID]?.stop?.reason).toBe('dirty');
-    expect(read().reportError).not.toHaveBeenCalled();
-  });
-
   it('refuses to sync with the remote and says why', async () => {
     const { slice } = harness();
     dirtyOnce();
@@ -830,23 +777,6 @@ describe('preflight on a dirty tree', () => {
 
     expect(engine.readRebasePlan).not.toHaveBeenCalled();
     expect(engine.tryHistoryPlan).not.toHaveBeenCalled();
-  });
-
-  it('refuses a restore before it moves the branch', async () => {
-    const { slice, read } = harness();
-    dirtyOnce();
-
-    await expect(
-      slice.restoreHistory({
-        sessionId: SESSION_ID,
-        mountId: MOUNT_ID,
-        backupRef: 'refs/goodboy/backup/fix-ledger-postings/1',
-        shouldPush: false,
-      }),
-    ).rejects.toThrow(DIRTY_SENTENCE);
-
-    expect(engine.restoreHistoryBackup).not.toHaveBeenCalled();
-    expect(read().historyRuns[MOUNT_ID]).toBeUndefined();
   });
 
   it('refuses to bring origin in before it reads or tries anything', async () => {

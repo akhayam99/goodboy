@@ -81,3 +81,14 @@ fn a_crash_after_the_files_moved_finishes_the_ref_move() {
     assert_eq!(git_ok(&l.root, &["rev-parse", "HEAD"]), head);
     assert_eq!(git_ok(&l.root, &["status", "--porcelain"]), "");
 }
+
+#[test]
+fn a_crash_during_journal_replacement_keeps_the_previous_record() {
+    let b = branch("atomic-journal");
+    let journal = journal_of(&b.root).unwrap();
+    let old = format!("{}\n{}\nref\nfeature\n", b.c, b.b);
+    super::write_journal(&journal, &old).unwrap();
+    super::BEFORE_JOURNAL_RENAME.with(|should_stop| should_stop.set(true));
+    assert!(std::panic::catch_unwind(|| super::write_journal(&journal, "incomplete")).is_err());
+    assert_eq!(std::fs::read_to_string(journal).unwrap(), old);
+}

@@ -255,19 +255,16 @@ fn progress_reports_the_copy_every_step_the_check_and_the_cleanup() {
 }
 
 #[test]
-fn a_dirty_worktree_blocks_the_run_before_any_copy_is_made() {
+fn a_dirty_worktree_is_untouched_while_the_plan_is_tried_on_a_copy() {
     let l = ledger("run-dirty");
     std::fs::write(l.root.join("export.ts"), "half done\n").unwrap();
     let outcome = run_plan(
         &run_args(&l.root, ledger_plan(&l, picks(&[&l.export]))),
         &slug("run-dirty"),
-        &|_| panic!("a blocked run must not start"),
+        &|_| {},
     )
     .unwrap();
-    let RunOutcome::Blocked { reason } = outcome else {
-        panic!("expected the dirty worktree to block the run");
-    };
-    assert!(reason.contains("not committed"), "{reason}");
+    assert!(matches!(outcome, RunOutcome::Tried { .. }));
     assert_eq!(worktree_count(&l.root), 1);
     assert_eq!(
         std::fs::read_to_string(l.root.join("export.ts")).unwrap(),

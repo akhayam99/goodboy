@@ -47,17 +47,16 @@ const waitForSettledReads = (): Promise<void> =>
   act(() => new Promise<void>((resolve) => window.setTimeout(resolve, SETTLE_MS)));
 
 describe('the u24 preflight scenes', () => {
-  it('shows the Next row with the count of files not committed and no Rebase button', async () => {
+  it('keeps Rebase available in Next while files are not committed', async () => {
     renderScene('rebasedirty');
 
-    expect(
-      await screen.findByText('11 files not committed', undefined, { timeout: 3_000 }),
-    ).toBeDefined();
+    expect(await screen.findByRole('button', { name: 'Rebase' }, { timeout: 3_000 })).toBeDefined();
 
     await waitForSettledReads();
-    expect(screen.getByRole('button', { name: 'Check again' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Open terminal' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Rebase' })).toBeNull();
+    expect(screen.getByText('18 behind')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Rebase' }).hasAttribute('disabled')).toBe(false);
+    expect(screen.queryByRole('button', { name: 'Check again' })).toBeNull();
+    expect(screen.queryByText('11 files not committed')).toBeNull();
   });
 
   it('locks the creation mode while Scribe writes the text', async () => {
