@@ -8901,7 +8901,7 @@
   },
   "apps/desktop/src/shared/components/RoutingLabel/index.tsx": {
     "@typescript-eslint/naming-convention": {
-      "count": 4
+      "count": 2
     }
   },
   "apps/desktop/src/shared/components/RoutingLabel/routingLabelModel.ts": {

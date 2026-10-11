@@ -73,7 +73,7 @@ describe('the u23 step row scenes', () => {
     expect(container.querySelector('[data-meta-column="stack"]')).not.toBeNull();
   });
 
-  it('keeps a long title on one line and shows a handoff chain compactly', async () => {
+  it('keeps a long title on one line and names where a handoff chain started', async () => {
     renderScene('step-rows-runs');
 
     const tree = await screen.findByTestId('run-tree', undefined, WAIT);
@@ -82,7 +82,7 @@ describe('the u23 step row scenes', () => {
     expect(title.getAttribute('title')).toBe(
       'Agree where the dedupe belongs between the webhook handler, the credit writer and the ledger posting in payments-api',
     );
-    expect(namesIn({ root: tree }).some((text) => text?.includes('→'))).toBe(true);
+    expect(effortsIn({ root: tree }).some((text) => text?.startsWith('from '))).toBe(true);
   });
 
   it('turns the time warm on a slow running step without a note word in the row', async () => {

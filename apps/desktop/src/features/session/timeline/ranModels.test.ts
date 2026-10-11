@@ -264,20 +264,18 @@ describe('modelsSummary', () => {
 
   it('prints one model by its name', () => {
     expect(
-      modelsSummary({ models: [route({ name: 'Sonnet 5.5', provider: 'anthropic' })] })?.text,
+      modelsSummary({ models: [route({ name: 'Sonnet 5.5', provider: 'anthropic' })] })?.name,
     ).toBe('Sonnet 5.5');
   });
 
-  it('carries the effort of a single model and drops it for a chain and for a run', () => {
+  it('carries the effort of a single model and drops it for a run', () => {
     const single = { ...route({ name: 'Opus 5.5', provider: 'anthropic' }), effort: 'High' };
-    const other = { ...route({ name: 'Kimi K3', provider: 'moonshot' }), effort: 'Low' };
 
-    expect(modelsSummary({ models: [single] })?.effort).toBe('High');
-    expect(modelsSummary({ models: [single, other] })?.effort).toBeNull();
-    expect(modelsSummary({ models: [single], isRun: true })?.effort).toBeNull();
+    expect(modelsSummary({ models: [single] })?.detail).toBe('High');
+    expect(modelsSummary({ models: [single], isRun: true })?.detail).toBeNull();
   });
 
-  it('prints a fallback as an arrow in the order the models ran', () => {
+  it('prints the model an agent ended on and names the one it started on', () => {
     const summary = modelsSummary({
       models: [
         route({ name: 'Kimi K3', provider: 'moonshot' }),
@@ -285,11 +283,12 @@ describe('modelsSummary', () => {
       ],
     });
 
-    expect(summary?.text).toBe('Kimi K3 → Sonnet 5.5');
+    expect(summary?.name).toBe('Sonnet 5.5');
+    expect(summary?.detail).toBe('from Kimi K3');
     expect(summary?.providers).toEqual(['moonshot', 'anthropic']);
   });
 
-  it('counts the models once there are more than two', () => {
+  it('counts the models once an agent ran on three or more', () => {
     const summary = modelsSummary({
       models: [
         route({ name: 'Kimi K3', provider: 'moonshot' }),
@@ -298,7 +297,8 @@ describe('modelsSummary', () => {
       ],
     });
 
-    expect(summary?.text).toBe('3 models');
+    expect(summary?.name).toBe('3 models');
+    expect(summary?.detail).toBeNull();
     expect(summary?.providers).toEqual(['moonshot', 'anthropic', 'codex']);
   });
 
@@ -311,43 +311,45 @@ describe('modelsSummary', () => {
       ],
     });
 
-    expect(summary?.text).toBe('Sonnet 5.5 → Kimi K3');
+    expect(summary?.name).toBe('Kimi K3');
+    expect(summary?.detail).toBe('from Sonnet 5.5');
   });
 
-  it('sums a run on two models up as the first model plus one', () => {
+  it('sums a run on two models up as the busiest model plus one', () => {
     const summary = modelsSummary({
       isRun: true,
       models: [
-        route({ name: 'Sonnet 5.5', provider: 'anthropic' }),
-        route({ name: 'GPT-6.1', provider: 'codex' }),
+        { ...route({ name: 'Sonnet 5.5', provider: 'anthropic' }), stepCount: 1 },
+        { ...route({ name: 'GPT-6.1', provider: 'codex' }), stepCount: 3 },
       ],
     });
 
-    expect(summary?.text).toBe('Sonnet 5.5 + 1');
+    expect(summary?.name).toBe('GPT-6.1');
+    expect(summary?.detail).toBe('+ 1 model');
     expect(summary?.providers).toEqual(['anthropic', 'codex']);
   });
 
-  it('counts the models of a run once there are more than two, never a clipped name', () => {
+  it('names the model with most steps on a run and counts the others, never a clipped name', () => {
     const summary = modelsSummary({
       isRun: true,
       models: [
-        route({ name: 'Composer 2', provider: 'cursor' }),
-        route({ name: 'Sonnet 5.5', provider: 'anthropic' }),
-        route({ name: 'GPT-6.1', provider: 'codex' }),
-        route({ name: 'Haiku 4.5', provider: 'anthropic' }),
+        { ...route({ name: 'Composer 2', provider: 'cursor' }), stepCount: 1 },
+        { ...route({ name: 'Sonnet 5.5', provider: 'anthropic' }), stepCount: 4 },
+        { ...route({ name: 'GPT-6.1', provider: 'codex' }), stepCount: 2 },
       ],
     });
 
-    expect(summary?.text).toBe('4 models');
-    expect(summary?.providers).toEqual(['cursor', 'anthropic', 'codex']);
+    expect(summary?.name).toBe('Sonnet 5.5');
+    expect(summary?.detail).toBe('+ 2 models');
   });
 
   it('prints a run on one model by that name alone', () => {
-    expect(
-      modelsSummary({
-        isRun: true,
-        models: [route({ name: 'Sonnet 5.5', provider: 'anthropic' })],
-      })?.text,
-    ).toBe('Sonnet 5.5');
+    const summary = modelsSummary({
+      isRun: true,
+      models: [route({ name: 'Sonnet 5.5', provider: 'anthropic' })],
+    });
+
+    expect(summary?.name).toBe('Sonnet 5.5');
+    expect(summary?.detail).toBeNull();
   });
 });

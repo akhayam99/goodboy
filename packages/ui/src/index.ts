@@ -297,6 +297,7 @@ export { Tooltip } from './components/Tooltip';
 export type { TooltipProps, TooltipSide, TooltipVariant } from './components/Tooltip';
 export { tintClasses } from './tint';
 export type { TintClasses, Tone } from './tint';
+export { ModelBlock } from './components/WorkTree/ModelBlock';
 export { WorkMeta } from './components/WorkTree/WorkMeta';
 export { WORK_META_COLUMN, WORK_ROW } from './components/WorkTree/workMetaSpec';
 export { WorkNode } from './components/WorkTree/WorkNode';

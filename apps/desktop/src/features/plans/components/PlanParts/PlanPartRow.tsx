@@ -1,13 +1,6 @@
-import {
-  InteractiveRow,
-  WORK_META_COLUMN,
-  WORK_ROW,
-  WorkNode,
-  cn,
-  type WorkNodeMark,
-} from '@goodboy/ui';
+import { InteractiveRow, ModelBlock, WORK_ROW, WorkNode, cn, type WorkNodeMark } from '@goodboy/ui';
 import type { PlanPartRow as Row } from './planPartRows';
-import { partRoutingLabel } from './partRoutingLabel';
+import { RoutingModelBlock } from '../../../../shared/components/RoutingModelBlock';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import type { PlanPartActionTarget } from '../../../actions/types';
 
@@ -68,9 +61,11 @@ export const PlanPartRow = ({ row, hasRun, onOpen, target }: Props) => {
         <span className="w-14 shrink-0 truncate text-right @max-[520px]:hidden">
           {filesLabel({ count: row.touches.length })}
         </span>
-        <span className={cn(WORK_META_COLUMN.routing, 'justify-end')}>
-          <span className="min-w-0 truncate">{partRoutingLabel({ row })}</span>
-        </span>
+        {row.model === null ? (
+          <ModelBlock glyphs={[]} name="Auto" />
+        ) : (
+          <RoutingModelBlock model={row.model} effort={row.effort} />
+        )}
         {hasRun ? (
           <span className="w-24 shrink-0 truncate text-right @max-[640px]:hidden">
             {row.node.label}

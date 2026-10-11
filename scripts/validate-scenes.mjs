@@ -13,6 +13,13 @@ import {
   readDevToolsPort,
   summaryLine,
 } from './validateScenesBrowser.mjs';
+import {
+  COLUMN_NAMES,
+  COLUMN_SCENES,
+  COLUMN_WIDTHS,
+  columnDriftFailures,
+  columnEdgesProbe,
+} from './validateScenesColumns.mjs';
 import { menuRowsFailures, menuRowsProbe } from './validateScenesMenus.mjs';
 
 const CHROME =
@@ -23,7 +30,6 @@ const HEIGHT = 1000;
 const WORKFLOW_SCROLL_HEIGHT = 520;
 const STILL_CAP_PX = 1;
 const SEAM_TOLERANCE_PX = 0.05;
-const META_GAP_CAP_PX = 80;
 const PLAN_DRAWER_SCENES = [
   { scene: 'plan-drawer-waiting', until: null },
   { scene: 'plan-drawer-drafts', until: null },
@@ -453,20 +459,6 @@ const railSeams = ({ tolerance }) => {
   return seams;
 };
 
-const metaGaps = ({ cap }) =>
-  [...document.querySelectorAll('[data-row-id]')].flatMap((row) => {
-    const routing = row.querySelector('[data-meta-column="routing"]');
-    const time = row.querySelector('[data-testid="work-time"]');
-    if (routing === null || time === null) return [];
-    const parts = [...routing.querySelectorAll('[data-routing-part]')].filter(
-      (part) => part.getBoundingClientRect().width > 0,
-    );
-    if (parts.length === 0) return [];
-    const modelEnd = Math.max(...parts.map((part) => part.getBoundingClientRect().right));
-    const gap = time.getBoundingClientRect().left - modelEnd;
-    return gap > cap ? [{ row: row.dataset.rowId, gap: Math.round(gap) }] : [];
-  });
-
 const clippedTimes = () =>
   [...document.querySelectorAll('[data-meta-column="time"]')].flatMap((cell) =>
     cell.scrollWidth > cell.clientWidth + 0.5
@@ -564,15 +556,22 @@ const measureActivity = async ({ send, scene }) => {
   }
   for (const width of WIDTHS) {
     await open({ send, scene, width, zoom: 1 });
-    const gaps = await run(send, metaGaps, { cap: META_GAP_CAP_PX });
-    if (gaps.length > 0) {
-      failures.push({ scene, width, check: 'meta gap over the cap', gaps });
-    }
     const clipped = await run(send, clippedTimes, null);
     if (clipped.length > 0) {
       failures.push({ scene, width, check: 'time wider than its column', clipped });
     }
   }
+  return { failures, wraps: 0 };
+};
+
+const measureColumns = async ({ send, scene }) => {
+  const failures = [];
+  for (const width of COLUMN_WIDTHS) {
+    await open({ send, scene, width, zoom: 1 });
+    const rows = await run(send, columnEdgesProbe, COLUMN_NAMES);
+    failures.push(...columnDriftFailures({ scene, width, rows }));
+  }
+  console.log(`${scene}: ${COLUMN_WIDTHS.length} widths, ${failures.length} column drifts`);
   return { failures, wraps: 0 };
 };
 
@@ -755,6 +754,9 @@ const main = async () => {
     await warmUp({ send });
     for (const scene of only === undefined ? ['activity-run', 'activity-resolves'] : []) {
       await measure({ scene, task: () => measureActivity({ send, scene }) });
+    }
+    for (const scene of only === undefined || only === 'columns' ? COLUMN_SCENES : []) {
+      await measure({ scene, task: () => measureColumns({ send, scene }) });
     }
     for (const width of only === undefined ? WIDTHS : []) {
       const inbox = await measure({
