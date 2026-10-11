@@ -51,6 +51,32 @@ describe('GuideStudio', () => {
     });
   });
 
+  it('starts with What is Goodboy, then Words with its nine terms', () => {
+    render(<GuideStudio onClose={vi.fn()} />);
+
+    const startHere = within(rail())
+      .getByText('Start here')
+      .parentElement?.querySelectorAll('button');
+    expect(Array.from(startHere ?? []).map((button) => button.textContent)).toEqual([
+      'What is Goodboy',
+      'Words',
+    ]);
+    const words = within(screen.getByRole('region', { name: 'Words' }));
+    expect(words.getByText('The words Goodboy uses, one sentence each.')).toBeDefined();
+    [
+      'Workspace',
+      'Project',
+      'Session',
+      'Agent',
+      'Turn',
+      'Run',
+      'Worktree and branch',
+      'Plan',
+      'Budget',
+    ].forEach((term) => expect(words.getByText(term)).toBeDefined());
+    expect(GUIDE_CHAPTERS.find((chapter) => chapter.id === 'words')?.points).toHaveLength(9);
+  });
+
   it('narrows the rail and the chapters to what the search matches', () => {
     render(<GuideStudio onClose={vi.fn()} />);
 
