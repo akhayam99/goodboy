@@ -63,7 +63,7 @@ export const SideColumn = ({
           <>
             <CreateRow
               workspaceId={workspaceId}
-              isNewCurrent={place === 'new'}
+              place={place}
               actions={actions}
               {...(onNavigate !== undefined && { onNavigate })}
             />
