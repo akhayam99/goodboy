@@ -444,7 +444,7 @@ export const worktreeRemoteUrl = async (repoPath: string): Promise<string | null
   return invokeCommand<string | null>('worktree_remote_url', { repoPath });
 };
 
-export type ChangedEntryStatus = 'added' | 'modified' | 'deleted' | 'renamed';
+type ChangedEntryStatus = 'added' | 'modified' | 'deleted' | 'renamed';
 
 export type ChangedEntry = {
   readonly path: string;

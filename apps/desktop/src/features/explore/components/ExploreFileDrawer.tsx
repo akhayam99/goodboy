@@ -12,7 +12,7 @@ import { useExploreOpen } from '../hooks/useExploreOpen';
 import { useExplorePreview } from '../hooks/useExplorePreview';
 import { ExplorePreviewPanel } from './ExplorePane/ExplorePreviewPanel';
 
-export type RenderChangesParams = {
+type RenderChangesParams = {
   readonly sessionDir: string;
   readonly relPath: string;
   readonly baseBranch: string | null;
