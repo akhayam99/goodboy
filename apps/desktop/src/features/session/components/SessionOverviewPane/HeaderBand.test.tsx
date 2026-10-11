@@ -238,28 +238,28 @@ describe('HeaderBand', () => {
     screen.getByRole('menuitem', { name: /Unarchive session/ });
   });
 
-  it('shows the delete confirm inline under the title row, closes it on Escape and refocuses the overflow', () => {
+  it('asks in a popover beside the overflow, closes it on Escape and refocuses the overflow', () => {
     render(<HeaderBand session={session} onSelectLens={vi.fn()} />);
     const trigger = screen.getByRole('button', { name: 'More session actions' });
+    const titleRow = document.querySelector('[data-slot="pane-title-row"]') as HTMLElement;
+    const heightBefore = titleRow.getBoundingClientRect().height;
 
     fireEvent.click(trigger);
     fireEvent.click(screen.getByRole('menuitem', { name: /Delete session…/ }));
 
-    const confirm = screen.getByRole('group', { name: 'Delete session?' });
-    expect(screen.queryByRole('dialog')).toBeNull();
-    const titleRow = document.querySelector('[data-slot="pane-title-row"]') as HTMLElement;
-    expect(
-      titleRow.compareDocumentPosition(confirm) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-    expect(titleRow.contains(confirm)).toBe(false);
-
-    fireEvent.keyDown(within(confirm).getByRole('button', { name: 'Cancel' }), { key: 'Escape' });
-
+    const dialog = screen.getByRole('dialog', { name: /^Delete .+\?$/ });
+    expect(dialog.closest('[data-dropdown-portal]')).not.toBeNull();
+    expect(titleRow.contains(dialog)).toBe(false);
     expect(screen.queryByRole('group', { name: 'Delete session?' })).toBeNull();
+    expect(titleRow.getBoundingClientRect().height).toBe(heightBefore);
+
+    fireEvent.keyDown(within(dialog).getByRole('button', { name: 'Cancel' }), { key: 'Escape' });
+
+    expect(screen.queryByRole('dialog')).toBeNull();
     expect(document.activeElement).toBe(trigger);
   });
 
-  it('deletes the session once through the store when the inline confirm is accepted', async () => {
+  it('deletes the session once through the store when the popover confirm is accepted', async () => {
     const deleteTask = vi.fn(async () => undefined);
     useAppStore.setState({ deleteTask });
     render(<HeaderBand session={session} onSelectLens={vi.fn()} />);
@@ -268,8 +268,8 @@ describe('HeaderBand', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: /Delete session…/ }));
     await act(async () => {
       fireEvent.click(
-        within(screen.getByRole('group', { name: 'Delete session?' })).getByRole('button', {
-          name: 'Delete',
+        within(screen.getByRole('dialog', { name: /^Delete .+\?$/ })).getByRole('button', {
+          name: 'Delete session',
         }),
       );
     });

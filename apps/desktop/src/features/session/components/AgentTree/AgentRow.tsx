@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CircleCheck, PanelRight, RotateCcw, Trash2 } from 'lucide-react';
-import { Chip, InlineConfirm } from '@goodboy/ui';
+import { Chip, ConfirmPopover } from '@goodboy/ui';
 import { contextTokensForUsage } from '@goodboy/core';
 import type { Agent, TelemetryRecord } from '@goodboy/types';
 import { modelLabel } from '../../../chat/utils/chat-constants';
@@ -189,13 +189,29 @@ export const AgentRow = ({
             )}
           </span>
           <span className="flex size-6 shrink-0 items-center justify-center">
-            <AgentCardAction
-              icon={Trash2}
-              label="Delete agent"
-              tone="danger"
-              highlighted={isConfirmingDelete}
-              reveal={!isConfirmingDelete}
-              onClick={() => setIsConfirmingDelete(true)}
+            <ConfirmPopover
+              role="danger"
+              icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
+              title={`Delete ${run.name}?`}
+              description="Removes this agent and its transcript from the session."
+              confirmLabel="Delete agent"
+              isOpen={isConfirmingDelete}
+              onConfirm={async () => {
+                await onDelete();
+                setIsConfirmingDelete(false);
+              }}
+              onCancel={() => setIsConfirmingDelete(false)}
+              returnFocusTo={{ rowSelector: '[data-agent-card]' }}
+              trigger={() => (
+                <AgentCardAction
+                  icon={Trash2}
+                  label="Delete agent"
+                  tone="danger"
+                  highlighted={isConfirmingDelete}
+                  reveal={!isConfirmingDelete}
+                  onClick={() => setIsConfirmingDelete(true)}
+                />
+              )}
             />
           </span>
         </>
@@ -229,22 +245,6 @@ export const AgentRow = ({
           activeDelegatedChildCount={activeDelegatedChildCount}
           density="lane"
         />
-      }
-      confirmation={
-        isConfirmingDelete ? (
-          <InlineConfirm
-            role="danger"
-            icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
-            title="Delete agent?"
-            description="Removes this agent and its transcript from the session."
-            confirmLabel="Delete"
-            onConfirm={() => {
-              setIsConfirmingDelete(false);
-              onDelete();
-            }}
-            onCancel={() => setIsConfirmingDelete(false)}
-          />
-        ) : null
       }
     />
   );

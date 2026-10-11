@@ -357,20 +357,22 @@ describe('ChatList', () => {
 
       fireEvent.click(await screen.findByRole('button', { name: /Archived · 2/ }));
       fireEvent.click(screen.getByRole('button', { name: 'Delete Acme webhook signing' }));
-      expect(screen.queryByRole('button', { name: 'Archive instead' })).toBeNull();
-      fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+      const dialog = screen.getByRole('dialog', { name: 'Delete "Acme webhook signing"?' });
+      expect(within(dialog).queryByRole('button', { name: 'Archive instead' })).toBeNull();
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Delete chat' }));
 
       await waitFor(() => expect(onDeleted).toHaveBeenCalledWith([chatIdOf({ key: 'sign' })]));
       expect(screen.queryByRole('button', { name: 'Acme webhook signing' })).toBeNull();
     });
 
-    it('deletes every archived chat after one inline confirm', async () => {
+    it('deletes every archived chat after one popover confirm', async () => {
       const { onDeleted } = await renderList(ARCHIVED);
 
       fireEvent.click(await screen.findByRole('button', { name: /Archived · 2/ }));
       fireEvent.click(screen.getByRole('button', { name: 'Delete all archived' }));
-      expect(screen.getByText('Delete 2 chats for good?')).toBeDefined();
-      fireEvent.click(screen.getByRole('button', { name: 'Delete 2' }));
+      const dialog = screen.getByRole('dialog', { name: 'Delete 2 archived chats?' });
+      expect(dialog.closest('[data-dropdown-portal]')).not.toBeNull();
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Delete 2 chats' }));
 
       await waitFor(() => expect(onDeleted).toHaveBeenCalledTimes(1));
       expect(onDeleted).toHaveBeenCalledWith(

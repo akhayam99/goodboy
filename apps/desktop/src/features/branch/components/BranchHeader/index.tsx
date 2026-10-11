@@ -139,7 +139,7 @@ export const BranchHeader = ({
       </Button>
     );
   return (
-    <div className="flex min-w-0 flex-col gap-2">
+    <div className="relative flex min-w-0 flex-col gap-2">
       <HeaderBand
         title={
           <PullRequestTitle

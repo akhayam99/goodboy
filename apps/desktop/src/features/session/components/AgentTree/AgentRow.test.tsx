@@ -216,22 +216,23 @@ describe('AgentRow', () => {
 
     expect(navigationIndex).toBeGreaterThanOrEqual(0);
     expect(lifecycleIndex).toBeGreaterThan(navigationIndex);
-    expect(screen.queryByRole('group', { name: 'Delete agent?' })).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    const rectBefore = card.getBoundingClientRect().height;
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete agent' }));
 
-    const panel = screen.getByRole('group', { name: 'Delete agent?' });
+    const panel = screen.getByRole('dialog', { name: /^Delete .+\?$/ });
     const armedNavigationSlot = screen.getByRole('group', { name: 'Agent navigation actions' });
     const armedLifecycleSlot = screen.getByRole('group', { name: 'Agent lifecycle actions' });
-    expect(within(panel).getByRole('button', { name: 'Delete' })).toBeTruthy();
+    expect(within(panel).getByRole('button', { name: 'Delete agent' })).toBeTruthy();
     expect(within(panel).getByRole('button', { name: 'Cancel' })).toBeTruthy();
     expect(armedNavigationSlot.parentElement).toBe(card);
     expect(armedLifecycleSlot.parentElement).toBe(card);
     expect(Array.from(card.children).indexOf(armedNavigationSlot)).toBe(navigationIndex);
     expect(Array.from(card.children).indexOf(armedLifecycleSlot)).toBe(lifecycleIndex);
     expect(card.contains(panel)).toBe(false);
-    expect(panel.parentElement).toBe(card.parentElement);
-    expect(panel.previousElementSibling).toBe(card);
+    expect(panel.closest('[data-dropdown-portal]')).not.toBeNull();
+    expect(card.getBoundingClientRect().height).toBe(rectBefore);
   });
 
   it('deletes only after the confirm step', () => {
@@ -239,8 +240,8 @@ describe('AgentRow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Delete agent' }));
     expect(remove).not.toHaveBeenCalled();
 
-    const panel = screen.getByRole('group', { name: 'Delete agent?' });
-    fireEvent.click(within(panel).getByRole('button', { name: 'Delete' }));
+    const panel = screen.getByRole('dialog', { name: /^Delete .+\?$/ });
+    fireEvent.click(within(panel).getByRole('button', { name: 'Delete agent' }));
     expect(remove).toHaveBeenCalledOnce();
   });
 

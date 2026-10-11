@@ -1,6 +1,6 @@
 import { NAMES } from '../../../../../shared/names';
 import { useState } from 'react';
-import { AnchoredPopover, InlineConfirm, cn, useDropdown, type ConfirmRole } from '@goodboy/ui';
+import { ConfirmPopover, cn, type ConfirmRole } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
@@ -38,7 +38,6 @@ type RemoveParams = {
   readonly mode: 'safe' | 'confirmed';
 };
 
-const AlertIcon = CONCEPT_ICONS.errors;
 const WorktreeIcon = CONCEPT_ICONS.worktree;
 const CONFIRM_ROLE = {
   blocked: 'alert',
@@ -58,7 +57,6 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
   );
   const reportError = useAppStore((state) => state.reportError);
   const { showToast } = useToast();
-  const dropdown = useDropdown({ align: 'end', width: 'w-80', expectedHeight: 170 });
   const [isChecking, setIsChecking] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
   const [confirm, setConfirm] = useState<Confirm | null>(null);
@@ -75,13 +73,6 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
 
   const cancel = () => {
     setConfirm(null);
-    dropdown.close();
-  };
-
-  const reveal = () => {
-    if (!dropdown.open) {
-      dropdown.toggle();
-    }
   };
 
   const remove = async ({ mode }: RemoveParams) => {
@@ -97,19 +88,19 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
           break;
         case 'kept':
         case 'failed':
-          void reportError({
-            title: `Couldn't close the branch for ${label}`,
-            error: result.reason ?? '',
-            sessionId,
-          });
-          break;
+          throw new Error(result.reason ?? `Couldn't remove the worktree for ${label}`);
       }
       setConfirm(null);
-      dropdown.close();
-    } catch (error) {
-      void reportError({ title: `Couldn't close the branch for ${label}`, error, sessionId });
     } finally {
       setIsBusy(false);
+    }
+  };
+
+  const removeAtOnce = async () => {
+    try {
+      await remove({ mode: 'safe' });
+    } catch (error) {
+      void reportError({ title: `Couldn't close the branch for ${label}`, error, sessionId });
     }
   };
 
@@ -122,7 +113,6 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
         kind: 'blocked',
         lines: blockers.map((blocker) => BLOCKER_SENTENCE[blocker]({ projectName: label })),
       });
-      reveal();
       return;
     }
     setIsChecking(true);
@@ -137,11 +127,10 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
           kind: 'unread',
           lines: [`The safety of the worktree at ${worktreePath} could not be verified.`],
         });
-        reveal();
         return;
       }
       if (measured.isAbsent) {
-        await remove({ mode: 'safe' });
+        await removeAtOnce();
         return;
       }
       const integration = measured.integration;
@@ -153,12 +142,11 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
             'Check again, or set the base branch for this project in Settings.',
           ],
         });
-        reveal();
         return;
       }
       if (!isMountRisky({ measured })) {
         if (integration.kind === 'merged') {
-          await remove({ mode: 'safe' });
+          await removeAtOnce();
           return;
         }
         setConfirm({
@@ -169,7 +157,6 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
             'Removing the worktree deletes its directory. The branch and its commits stay in the repository.',
           ],
         });
-        reveal();
         return;
       }
       const files = countLabel({ count: measured.affectedFiles, singular: 'uncommitted file' });
@@ -188,7 +175,6 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
           'The branch and its commits stay in the repository.',
         ],
       });
-      reveal();
     } catch (error) {
       void reportError({ title: `Couldn't check the branch for ${label}`, error, sessionId });
     } finally {
@@ -197,23 +183,28 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
   };
 
   return (
-    <AnchoredPopover
-      dropdown={dropdown}
-      role="dialog"
-      ariaLabel={`${NAMES.closeBranch} for ${label}`}
-      anchorClassName="shrink-0"
-      trigger={
+    <ConfirmPopover
+      isOpen={confirm !== null}
+      width="w-96"
+      role={confirm === null ? 'danger' : CONFIRM_ROLE[confirm.kind]}
+      icon={<WorktreeIcon size={ICON_SIZE.row} aria-hidden />}
+      title={`${NAMES.closeBranch} for ${label}?`}
+      confirmLabel={NAMES.closeBranch}
+      isBusy={isBusy}
+      isConfirmDisabled={
+        confirm === null || confirm.kind === 'blocked' || confirm.kind === 'unread'
+      }
+      onConfirm={() => remove({ mode: confirm?.kind === 'unmerged' ? 'safe' : 'confirmed' })}
+      onCancel={cancel}
+      {...(confirm?.kind === 'unread'
+        ? { altAction: { label: 'Check again', onClick: () => void check(), disabled: isChecking } }
+        : {})}
+      trigger={() => (
         <button
           type="button"
           disabled={isChecking || isBusy}
           aria-label={`${NAMES.closeBranch} for ${label}`}
-          onClick={() => {
-            if (dropdown.open) {
-              cancel();
-              return;
-            }
-            void check();
-          }}
+          onClick={() => void check()}
           className={cn(
             'shrink-0 rounded-md px-2 py-1 text-label text-faint-foreground hover:bg-hover hover:text-danger',
             'disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-faint-foreground',
@@ -222,46 +213,15 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
         >
           {isChecking ? 'Checking' : NAMES.closeBranch}
         </button>
-      }
-    >
-      {confirm === null ? null : (
-        <InlineConfirm
-          role={CONFIRM_ROLE[confirm.kind]}
-          icon={
-            confirm.kind === 'unmerged' ? (
-              <WorktreeIcon size={ICON_SIZE.row} />
-            ) : (
-              <AlertIcon size={ICON_SIZE.row} />
-            )
-          }
-          title={`${NAMES.closeBranch}?`}
-          confirmLabel={NAMES.closeBranch}
-          surface="plain"
-          isBusy={isBusy}
-          isConfirmDisabled={confirm.kind === 'blocked' || confirm.kind === 'unread'}
-          onConfirm={() =>
-            void remove({ mode: confirm.kind === 'unmerged' ? 'safe' : 'confirmed' })
-          }
-          onCancel={() => cancel()}
-          {...(confirm.kind === 'unread'
-            ? {
-                altAction: {
-                  label: 'Check again',
-                  onClick: () => void check(),
-                  disabled: isChecking,
-                },
-              }
-            : {})}
-        >
-          <div className="flex min-w-0 flex-col gap-1 text-muted-foreground">
-            {confirm.lines.map((line) => (
-              <p key={line} className="break-words">
-                {line}
-              </p>
-            ))}
-          </div>
-        </InlineConfirm>
       )}
-    </AnchoredPopover>
+    >
+      <div className="flex min-w-0 flex-col gap-1 text-muted-foreground">
+        {(confirm?.lines ?? []).map((line) => (
+          <p key={line} className="break-words">
+            {line}
+          </p>
+        ))}
+      </div>
+    </ConfirmPopover>
   );
 };
