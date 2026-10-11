@@ -10,12 +10,13 @@ vi.mock('../../../../shared/lib/db', async () =>
   (await import('../../../../store/storyHarness')).dbLibModuleMock(),
 );
 
-const noteFixes = vi.hoisted(() => ({ current: [] as ReadonlyArray<unknown> }));
+const noteFixes = vi.hoisted((): { current: unknown[] } => ({ current: [] }));
 vi.mock('../useNoteFixes', () => ({ useNoteFixes: () => noteFixes.current }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import type { DiffComment, IsoDateTime, SessionId } from '@goodboy/types';
+import type { DiffComment } from '@goodboy/types';
+import { aSession } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -27,8 +28,9 @@ import { ToastProvider } from '../../../../shared/components/Toast';
 import type { NoteFix } from '../../lib/noteFixes';
 import { useDiffNotes } from './index';
 
-const SESSION_ID = 'session-1' as SessionId;
-const STAMP = '2026-10-07T08:00:00.000Z' as IsoDateTime;
+const SESSION = aSession();
+const SESSION_ID = SESSION.id;
+const STAMP = SESSION.createdAt;
 
 const NOTE: DiffComment = {
   id: 'n1',

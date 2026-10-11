@@ -3062,7 +3062,7 @@
   },
   "apps/desktop/src/features/diff/components/DiffView/CommentThread.tsx": {
     "@typescript-eslint/naming-convention": {
-      "count": 2
+      "count": 1
     }
   },
   "apps/desktop/src/features/diff/components/DiffView/DiffFile.tsx": {
@@ -3095,7 +3095,7 @@
   },
   "apps/desktop/src/features/diff/components/DiffView/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 9
+      "count": 8
     },
     "@typescript-eslint/naming-convention": {
       "count": 1
@@ -14828,11 +14828,6 @@
   },
   "packages/ui/src/__tests__/GhostActionButton.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "packages/ui/src/__tests__/InlineConfirm.test.tsx": {
-    "@typescript-eslint/no-floating-promises": {
       "count": 1
     }
   },
