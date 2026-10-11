@@ -37,6 +37,7 @@ import { SessionActivityItem } from './SessionActivityItem';
 import { SessionGroupHeader } from './SessionGroupHeader';
 import { OpenSessionCard } from './OpenSessionCard';
 
+const SUB_ROW_INSET = 'pl-7';
 const SELECTION_VERB_IDS = ['sessions.archive', 'sessions.restore', 'sessions.delete'];
 
 const EMPTY_SESSIONS: ReadonlyArray<Session> = [];
@@ -325,7 +326,8 @@ export const SessionActivityBar = ({
               aria-expanded={prefs.isFoldOpen}
               onClick={toggleFold}
               className={cn(
-                'flex h-7 w-full items-center gap-2 rounded-md pl-7 pr-2 text-left text-meta text-faint-foreground hover:text-foreground',
+                'flex h-7 w-full items-center gap-2 rounded-md pr-2 text-left text-meta text-faint-foreground hover:text-foreground',
+                SUB_ROW_INSET,
                 ROW_INTERACTIVE,
               )}
             >
@@ -334,7 +336,12 @@ export const SessionActivityBar = ({
           ) : null}
 
           {column.hiddenByFilters > 0 ? (
-            <div className="flex items-center justify-between gap-2 pl-7 pr-1 text-meta text-faint-foreground">
+            <div
+              className={cn(
+                'flex items-center justify-between gap-2 pr-1 text-meta text-faint-foreground',
+                SUB_ROW_INSET,
+              )}
+            >
               <span>{column.hiddenByFilters} hidden by filters</span>
               <Button variant="ghost" size="xs" onClick={clearFilters}>
                 Clear
