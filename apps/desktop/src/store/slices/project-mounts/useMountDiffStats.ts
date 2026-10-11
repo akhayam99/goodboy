@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { SessionId } from '@goodboy/types';
-import { worktreeChangedFiles } from '../../../features/worktree/worktree';
 import { readMockMountDiffStat } from '../../mock-data';
 import { useAppStore } from '../../store';
-import { useSessionLastTurnFinishedAt } from '../agents/selectors';
+import { loadMountChangedFiles } from './loadMountChangedFiles';
 import { selectMountBaseBranch } from './selectors';
+import { useMountDiffRevision } from './useMountDiffRevision';
 
 export type MountDiffStat = {
   readonly additions: number;
@@ -13,42 +13,6 @@ export type MountDiffStat = {
 };
 
 const EMPTY_MOUNT_DIFF_STATS: ReadonlyMap<string, MountDiffStat> = new Map();
-const MOUNT_DIFF_POLL_MS = 30_000;
-
-let mountDiffTick = 0;
-let mountDiffTimer: number | null = null;
-const mountDiffTickListeners = new Set<() => void>();
-
-const bumpMountDiffTick = (): void => {
-  if (typeof document !== 'undefined' && document.visibilityState !== 'visible') {
-    return;
-  }
-  mountDiffTick += 1;
-  for (const listener of mountDiffTickListeners) {
-    listener();
-  }
-};
-
-const readMountDiffTick = (): number => mountDiffTick;
-
-const subscribeMountDiffTick = (listener: () => void): (() => void) => {
-  mountDiffTickListeners.add(listener);
-  if (mountDiffTimer === null && typeof window !== 'undefined') {
-    mountDiffTimer = window.setInterval(bumpMountDiffTick, MOUNT_DIFF_POLL_MS);
-    document.addEventListener('visibilitychange', bumpMountDiffTick);
-  }
-  return () => {
-    mountDiffTickListeners.delete(listener);
-    if (mountDiffTickListeners.size > 0 || mountDiffTimer === null) {
-      return;
-    }
-    window.clearInterval(mountDiffTimer);
-    mountDiffTimer = null;
-    document.removeEventListener('visibilitychange', bumpMountDiffTick);
-  };
-};
-
-const inFlightMountDiffStats = new Map<string, Promise<MountDiffStat>>();
 
 type LoadMountDiffStatParams = {
   readonly worktreePath: string;
@@ -56,28 +20,22 @@ type LoadMountDiffStatParams = {
   readonly revision: string;
 };
 
-const loadMountDiffStat = ({
+const NO_MOUNT_DIFF_STAT: MountDiffStat = { additions: 0, deletions: 0 };
+
+const loadMountDiffStat = async ({
   worktreePath,
   baseBranch,
   revision,
 }: LoadMountDiffStatParams): Promise<MountDiffStat> => {
   const mocked = readMockMountDiffStat(worktreePath);
   if (mocked !== null) {
-    return Promise.resolve(mocked);
+    return mocked;
   }
-  const key = `${revision}@${worktreePath}@${baseBranch ?? ''}`;
-  const pending = inFlightMountDiffStats.get(key);
-  if (pending !== undefined) {
-    return pending;
+  const summary = await loadMountChangedFiles({ worktreePath, baseBranch, revision });
+  if (summary === null) {
+    return NO_MOUNT_DIFF_STAT;
   }
-  const request = worktreeChangedFiles({ worktreePath, baseBranch })
-    .then((summary) => ({ additions: summary.additions, deletions: summary.deletions }))
-    .catch(() => ({ additions: 0, deletions: 0 }));
-  inFlightMountDiffStats.set(key, request);
-  void request.finally(() => {
-    inFlightMountDiffStats.delete(key);
-  });
-  return request;
+  return { additions: summary.additions, deletions: summary.deletions };
 };
 
 type MountStatTarget = {
@@ -123,12 +81,7 @@ export const useMountDiffStats = (
     }),
   );
   const targets = useMemo(() => decodeMountTargets(targetCells), [targetCells]);
-  const lastTurnFinishedAt = useSessionLastTurnFinishedAt(sessionId);
-  const summarizerLastUpdate = useAppStore((s) =>
-    sessionId == null ? null : (s.summarizerStatus[sessionId]?.lastUpdate ?? null),
-  );
-
-  const tick = useSyncExternalStore(subscribeMountDiffTick, readMountDiffTick, readMountDiffTick);
+  const revision = useMountDiffRevision(sessionId);
 
   const [stats, setStats] = useState<ReadonlyMap<string, MountDiffStat>>(EMPTY_MOUNT_DIFF_STATS);
 
@@ -137,7 +90,6 @@ export const useMountDiffStats = (
       setStats(EMPTY_MOUNT_DIFF_STATS);
       return;
     }
-    const revision = `${String(lastTurnFinishedAt)}|${String(summarizerLastUpdate)}|${tick}`;
     let cancelled = false;
     void Promise.all(
       targets.map(async ({ worktreePath, baseBranch }) => {
@@ -153,7 +105,7 @@ export const useMountDiffStats = (
     return () => {
       cancelled = true;
     };
-  }, [targets, lastTurnFinishedAt, summarizerLastUpdate, tick]);
+  }, [targets, revision]);
 
   return stats;
 };

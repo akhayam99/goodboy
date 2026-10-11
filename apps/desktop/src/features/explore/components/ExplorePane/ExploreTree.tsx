@@ -19,6 +19,7 @@ import {
   scrollTopToReveal,
   windowOf,
 } from '../../../../shared/utils/windowRows';
+import type { ExploreChanges } from '../../exploreChanges';
 import { exploreFileTargetOf } from '../../exploreFileTarget';
 import type {
   FailureParams,
@@ -51,6 +52,7 @@ type Props = {
   readonly expanded: Readonly<Record<string, boolean>>;
   readonly selectedRelPath: string | null;
   readonly now: number;
+  readonly changes: ExploreChanges;
   readonly onSetExpanded: (params: SetExpandedParams) => void;
   readonly onLoad: (params: LoadFolderParams) => void;
   readonly onSelectFile: (params: SelectFileParams) => void;
@@ -63,6 +65,7 @@ export const ExploreTree = ({
   expanded,
   selectedRelPath,
   now,
+  changes,
   onSetExpanded,
   onLoad,
   onSelectFile,
@@ -279,6 +282,8 @@ export const ExploreTree = ({
               isActive={row.id === effectiveActiveId}
               isSelected={!row.entry.isDir && row.entry.relPath === selectedRelPath}
               isAskOpen={askPath === row.entry.relPath}
+              change={changes.byPath.get(row.entry.relPath) ?? null}
+              folderChangeCount={changes.countByFolder.get(row.entry.relPath) ?? 0}
               onToggle={onSetExpanded}
               onSelectFile={onSelectFile}
               onRun={handleRun}
