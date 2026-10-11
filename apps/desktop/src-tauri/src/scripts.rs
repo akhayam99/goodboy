@@ -8,7 +8,7 @@ use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use serde::Serialize;
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Emitter, Runtime, State};
 
 use crate::db::{Db, DbError};
 
@@ -56,6 +56,7 @@ pub struct LiveScriptRun {
     script_id: String,
     name: String,
     session_id: String,
+    pid: Option<u32>,
     started_at: u64,
 }
 
@@ -135,6 +136,34 @@ impl From<DbError> for ScriptError {
 // Command — run a workspace script in a pty
 // ---------------------------------------------------------------------------
 
+#[cfg(unix)]
+fn signal_number(name: &str) -> Option<i32> {
+    if name.is_empty() {
+        return None;
+    }
+    (1..32).find(|signal| {
+        let described = unsafe { libc::strsignal(*signal) };
+        if described.is_null() {
+            return false;
+        }
+        unsafe { std::ffi::CStr::from_ptr(described) }.to_string_lossy() == name
+    })
+}
+
+#[cfg(unix)]
+fn exit_code_of(status: &portable_pty::ExitStatus) -> i32 {
+    let signalled = status.signal().and_then(signal_number);
+    if let Some(signal) = signalled {
+        return 128 + signal;
+    }
+    i32::try_from(status.exit_code()).unwrap_or(1)
+}
+
+#[cfg(not(unix))]
+fn exit_code_of(status: &portable_pty::ExitStatus) -> i32 {
+    i32::try_from(status.exit_code()).unwrap_or(1)
+}
+
 fn build_script_command(body: &str, cwd: &str, login_env: &[(String, String)]) -> CommandBuilder {
     let mut cmd = CommandBuilder::new("bash");
     cmd.arg("-c");
@@ -148,8 +177,8 @@ fn build_script_command(body: &str, cwd: &str, login_env: &[(String, String)]) -
     cmd
 }
 
-struct ScriptSpawnRequest {
-    app: AppHandle,
+struct ScriptSpawnRequest<R: Runtime> {
+    app: AppHandle<R>,
     registry: Arc<Mutex<HashMap<String, ScriptSlot>>>,
     script_id: String,
     name: String,
@@ -161,7 +190,7 @@ struct ScriptSpawnRequest {
     rows: u16,
 }
 
-fn spawn_script(request: ScriptSpawnRequest) -> Result<(), ScriptError> {
+fn spawn_script<R: Runtime>(request: ScriptSpawnRequest<R>) -> Result<(), ScriptError> {
     let pty_system = native_pty_system();
     let pair = pty_system
         .openpty(PtySize {
@@ -189,6 +218,19 @@ fn spawn_script(request: ScriptSpawnRequest) -> Result<(), ScriptError> {
         .master
         .take_writer()
         .map_err(|error| ScriptError::Io(error.to_string()))?;
+    let pid = child.process_id();
+    if let Some(pid) = pid {
+        crate::proc::ledger::record(
+            &tag,
+            pid,
+            crate::proc::ledger::LedgerContext {
+                session_id: Some(request.session_id.clone()),
+                cwd: Some(request.cwd.clone()),
+                ..Default::default()
+            },
+        );
+    }
+    let spawn_id = tag.id.clone();
     let slot: PtySlot = Arc::new(Mutex::new(Some(PtyRun {
         spawn_id: tag.id,
         _writer: writer,
@@ -204,6 +246,7 @@ fn spawn_script(request: ScriptSpawnRequest) -> Result<(), ScriptError> {
         script_id: request.script_id,
         name: request.name,
         session_id: request.session_id,
+        pid,
         started_at,
     };
 
@@ -253,16 +296,14 @@ fn spawn_script(request: ScriptSpawnRequest) -> Result<(), ScriptError> {
                 guard
                     .as_mut()
                     .and_then(|run| run.child.wait().ok())
-                    .map(|status| match status.success() {
-                        true => 0_i32,
-                        false => 1_i32,
-                    })
+                    .map(|status| exit_code_of(&status))
                     .unwrap_or(-1)
             } else {
                 -1
             }
         };
 
+        crate::proc::ledger::forget(&spawn_id);
         let _ = app.emit(
             "script-exit",
             ScriptExitPayload {
@@ -278,7 +319,7 @@ fn spawn_script(request: ScriptSpawnRequest) -> Result<(), ScriptError> {
     Ok(())
 }
 
-async fn spawn_script_blocking(request: ScriptSpawnRequest) -> Result<(), ScriptError> {
+async fn spawn_script_blocking(request: ScriptSpawnRequest<tauri::Wry>) -> Result<(), ScriptError> {
     tauri::async_runtime::spawn_blocking(move || spawn_script(request))
         .await
         .map_err(|error| ScriptError::Io(error.to_string()))?
@@ -469,6 +510,7 @@ mod tests {
             script_id: "script-1".to_string(),
             name: "Script one".to_string(),
             session_id: "session-1".to_string(),
+            pid: Some(4321),
             started_at: 1234,
         };
         registry.0.lock().unwrap().insert(
@@ -575,5 +617,119 @@ mod tests {
         stop_run(run);
 
         assert!(is_gone(orphan), "the orphan outlived Stop");
+    }
+
+    #[cfg(unix)]
+    fn run_script_to_exit_code(body: &str) -> i32 {
+        use tauri::Listener;
+        let dir = crate::proc::ledger::test_support::scratch_dir("exit");
+        let app = tauri::test::mock_app();
+        let (sender, receiver) = std::sync::mpsc::channel::<String>();
+        app.handle().listen("script-exit", move |event| {
+            let _ = sender.send(event.payload().to_string());
+        });
+        spawn_script(ScriptSpawnRequest {
+            app: app.handle().clone(),
+            registry: Arc::new(Mutex::new(HashMap::new())),
+            script_id: "script-1".to_string(),
+            name: "Exit probe".to_string(),
+            body: body.to_string(),
+            run_id: "run-exit".to_string(),
+            session_id: "session-1".to_string(),
+            cwd: dir.to_string_lossy().into_owned(),
+            cols: 80,
+            rows: 24,
+        })
+        .expect("spawn the script");
+        let payload = receiver
+            .recv_timeout(std::time::Duration::from_secs(10))
+            .expect("script-exit");
+        let _ = std::fs::remove_dir_all(&dir);
+        let value: serde_json::Value = serde_json::from_str(&payload).expect("payload json");
+        value["exitCode"].as_i64().expect("exit code") as i32
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_script_reports_its_real_exit_code() {
+        assert_eq!(run_script_to_exit_code("exit 0"), 0);
+        assert_eq!(run_script_to_exit_code("exit 3"), 3);
+        assert_eq!(run_script_to_exit_code("exit 255"), 255);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_script_killed_by_sigkill_reports_137() {
+        assert_eq!(run_script_to_exit_code("kill -9 $$"), 137);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_script_killed_by_sigterm_reports_143() {
+        assert_eq!(run_script_to_exit_code("kill -15 $$"), 143);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn signal_names_map_back_to_their_number() {
+        let killed = unsafe { std::ffi::CStr::from_ptr(libc::strsignal(libc::SIGKILL)) }
+            .to_string_lossy()
+            .into_owned();
+        assert_eq!(signal_number(&killed), Some(libc::SIGKILL));
+        assert_eq!(signal_number(""), None);
+        assert_eq!(signal_number("   "), None);
+        assert_eq!(signal_number("not a signal"), None);
+        assert_eq!(signal_number(&"x".repeat(100_000)), None);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn an_unknown_signal_name_keeps_the_pty_exit_code() {
+        assert_eq!(
+            exit_code_of(&portable_pty::ExitStatus::with_signal("not a signal")),
+            1
+        );
+        assert_eq!(
+            exit_code_of(&portable_pty::ExitStatus::with_exit_code(7)),
+            7
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_running_script_is_in_the_ledger_with_its_pid_and_cwd_until_it_ends() {
+        let dir = crate::proc::ledger::test_support::scratch_dir("script");
+        let cwd = dir.to_string_lossy().into_owned();
+        let flag = dir.join("stop");
+        let body = format!("while [ ! -e '{}' ]; do sleep 0.05; done", flag.display());
+        let app = tauri::test::mock_app();
+        let registry = ScriptRegistry::new();
+
+        spawn_script(ScriptSpawnRequest {
+            app: app.handle().clone(),
+            registry: Arc::clone(&registry.0),
+            script_id: "script-1".to_string(),
+            name: "Wait for flag".to_string(),
+            body,
+            run_id: "run-ledger".to_string(),
+            session_id: "session-3".to_string(),
+            cwd: cwd.clone(),
+            cols: 80,
+            rows: 24,
+        })
+        .expect("spawn the script");
+
+        let row = crate::proc::ledger::test_support::wait_for_row(&cwd);
+        assert_eq!(row.kind, "script");
+        assert_eq!(row.session_id.as_deref(), Some("session-3"));
+        assert!(row.pid > 0);
+        let live = registry.list_live().expect("list");
+        assert_eq!(live.len(), 1);
+        assert_eq!(live[0].pid, Some(row.pid));
+
+        std::fs::write(&flag, "").expect("write the flag");
+
+        crate::proc::ledger::test_support::assert_row_gone(&cwd);
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

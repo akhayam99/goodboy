@@ -324,7 +324,15 @@ fn spawn_one<E: TurnEmitter>(
         .take()
         .ok_or_else(|| TurnError::Io(std::io::Error::other("no stderr")))?;
 
-    let live = LiveChild::tagged(child, &tag);
+    let live = LiveChild::tagged(
+        child,
+        &tag,
+        crate::proc::ledger::LedgerContext {
+            session_id: args.session_id.map(str::to_string),
+            mount_path: args.writer_lease.map(|binding| binding.path.clone()),
+            ..crate::proc::ledger::LedgerContext::from_command(&command)
+        },
+    );
     backlog.open(args.run_id);
     registry
         .lock()
