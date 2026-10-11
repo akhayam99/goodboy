@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { LedgerRow, MonitorProcess, PortRow } from '@goodboy/core';
 import type { Project } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { projectById } from '../../../../store/slices/projects/projectIndex';
 import { selectPortRows } from '../../../../store/slices/monitoring/selectPortRows';
 import { filterPortRows } from '../../filterPortRows';
 import { portSummary, type PortSummary } from '../../portSummary';
@@ -57,7 +58,7 @@ export const useMonitoringModel = (): MonitoringModel => {
     const watchedPorts = watchedPortSet({ scanned, watched, learned });
     const split = splitPortRows({ rows, watchedPorts });
     const projectNameOf = (projectId: string | null): string | null =>
-      projects.find((project) => project.id === projectId)?.name ?? null;
+      projectById(projects, projectId)?.name ?? null;
     const processes = new Map<number, MonitorProcess>();
     for (const process of snapshot?.processes ?? []) {
       processes.set(process.pid, process);

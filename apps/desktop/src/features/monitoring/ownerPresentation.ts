@@ -1,5 +1,6 @@
 import type { PortOwner } from '@goodboy/core';
 import type { Project, SessionMountView } from '@goodboy/types';
+import { projectById } from '../../store/slices/projects/projectIndex';
 import { ledgerKindWord } from './ledgerKindWord';
 
 type Params = {
@@ -29,7 +30,7 @@ const whereOf = ({
   projects,
   sessionMounts,
 }: WhereParams): string | null => {
-  const project = projects.find((item) => item.id === projectId);
+  const project = projectById(projects, projectId);
   if (project === undefined) {
     return null;
   }

@@ -1,6 +1,7 @@
 import { Chip } from '@goodboy/ui';
 import type { PortOwner } from '@goodboy/core';
 import { sessionPlace, useAppStore } from '../../../../store';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import { ownerPresentation } from '../../ownerPresentation';
 
 type Props = {
@@ -15,7 +16,7 @@ export const OwnerChip = ({ owner }: Props) => {
   const session = useAppStore((state) =>
     presentation.sessionId === null
       ? undefined
-      : state.sessions.find((item) => item.id === presentation.sessionId),
+      : sessionById(state.sessions, presentation.sessionId),
   );
 
   if (!presentation.isGoodboy) {

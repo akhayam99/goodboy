@@ -216,7 +216,6 @@ export const NowChip = ({ onOpenScript }: Props) => {
           </NowGroup>
         ) : null}
       </ScrollFade>
-      <Divider />
       <div className="flex px-1 py-1">
         <Button size="sm" variant="ghost" onClick={openMonitoring}>
           Open Monitoring

@@ -40,7 +40,7 @@ export const PortRowView = ({ row, process, now, onWatch }: Props) => {
           role="status"
           ariaLabel={hasCollision ? 'Collision' : 'In use'}
         />
-        <span className="font-mono tabular-nums text-foreground">:{row.port}</span>
+        <span className="tabular-nums text-foreground">:{row.port}</span>
         {onWatch === undefined ? (
           <span className="min-w-0 truncate text-muted-foreground">{portLabel({ row })}</span>
         ) : (
@@ -59,9 +59,7 @@ export const PortRowView = ({ row, process, now, onWatch }: Props) => {
         <div className="flex min-w-0 items-center gap-1">
           <span className="min-w-0 truncate text-muted-foreground">{row.processName ?? ''}</span>
           {row.pid === null ? null : (
-            <span className="shrink-0 font-mono text-meta tabular-nums text-faint-foreground">
-              {row.pid}
-            </span>
+            <span className="shrink-0 text-meta tabular-nums text-faint-foreground">{row.pid}</span>
           )}
           {process === null ? null : (
             <IconButton

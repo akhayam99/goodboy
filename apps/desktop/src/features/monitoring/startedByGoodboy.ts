@@ -1,5 +1,6 @@
 import type { LedgerRow, MonitorProcess, MonitorSnapshot } from '@goodboy/core';
 import type { Project, SessionMountView } from '@goodboy/types';
+import { projectById } from '../../store/slices/projects/projectIndex';
 import { ledgerKindWord } from './ledgerKindWord';
 
 type Params = {
@@ -30,7 +31,7 @@ const whereOf = ({ entry, projects, sessionMounts }: WhereParams): string => {
   if (mount === undefined) {
     return entry.cwd ?? 'Workspace';
   }
-  const project = projects.find((item) => item.id === mount.projectId);
+  const project = projectById(projects, mount.projectId);
   return project === undefined ? mount.branch : `${project.name} · ${mount.branch}`;
 };
 

@@ -1,14 +1,6 @@
 import { Activity } from 'lucide-react';
 import type { PortRow } from '@goodboy/core';
-import {
-  Button,
-  EmptyState,
-  HeaderActions,
-  Notice,
-  PaneShell,
-  ScrollFade,
-  SearchField,
-} from '@goodboy/ui';
+import { EmptyState, HeaderActions, PaneShell, ScrollFade, SearchField } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { defaultProjectId } from '../../defaultProjectId';
@@ -18,6 +10,7 @@ import { summaryMeta } from '../../summaryMeta';
 import { AlsoListeningSection } from './AlsoListeningSection';
 import { MonitoringSkeleton } from './MonitoringSkeleton';
 import { PortsSection } from './PortsSection';
+import { ReadFailedNotice } from './ReadFailedNotice';
 import { StartedSection } from './StartedSection';
 import { WatchPortPopover } from './WatchPortPopover';
 
@@ -25,7 +18,6 @@ export const MonitoringPage = () => {
   useMonitorPolling();
   const model = useMonitoringModel();
   const now = useNow(5_000);
-  const refresh = useAppStore((state) => state.refreshMonitorSnapshot);
   const watchPort = useAppStore((state) => state.watchPort);
   const fallbackProjectId = defaultProjectId({ projects: model.projects });
   const isReady = model.status === 'ready';
@@ -74,36 +66,12 @@ export const MonitoringPage = () => {
     >
       <ScrollFade viewportClassName="flex flex-col gap-6 pb-6">
         {model.status === 'loading' ? <MonitoringSkeleton /> : null}
-        {model.status === 'failed' ? (
-          <Notice
-            tone="danger"
-            placement="inline"
-            role="alert"
-            title="Couldn't read ports"
-            detail={model.error}
-            actions={
-              <Button size="sm" variant="secondary" onClick={() => void refresh()}>
-                Retry
-              </Button>
-            }
-          />
-        ) : null}
+        {model.status === 'failed' ? <ReadFailedNotice tone="danger" detail={model.error} /> : null}
         {model.status === 'unsupported' ? (
           <EmptyState icon={Activity} title="Monitoring needs macOS or Linux." />
         ) : null}
         {isReady && model.error !== null ? (
-          <Notice
-            tone="warning"
-            placement="inline"
-            role="alert"
-            title="Couldn't read ports"
-            detail={model.error}
-            actions={
-              <Button size="sm" variant="secondary" onClick={() => void refresh()}>
-                Retry
-              </Button>
-            }
-          />
+          <ReadFailedNotice tone="warning" detail={model.error} />
         ) : null}
         {isEmpty ? (
           <EmptyState

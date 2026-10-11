@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ScrollFade } from '@goodboy/ui';
-import { useTerminalPorts } from '../../../monitoring/hooks/useTerminalPorts';
+import { useTerminalPorts } from '../../../monitoring/useTerminalPorts';
 import type { TerminalStudioModel } from '../../hooks/useTerminalStudioModel';
 import { TerminalGroupSection } from './TerminalGroupSection';
 import { TerminalRow } from './TerminalRow';

@@ -33,6 +33,7 @@
   "apps/desktop/src/features/integrations/sentry/SentryStackTrace.tsx": "code",
   "apps/desktop/src/features/integrations/slack/SlackConnectGuide.tsx": "command",
   "apps/desktop/src/features/integrations/slack/SlackFormBody.tsx": "command",
+  "apps/desktop/src/features/monitoring/components/MonitoringStudio/CommandLine.tsx": "command",
   "apps/desktop/src/features/onboarding/OnboardingWizard/steps/FolderCard.tsx": "path",
   "apps/desktop/src/features/permissions/components/DiffViewSelector/index.tsx": "path",
   "apps/desktop/src/features/permissions/components/PermissionDecisionCard/index.tsx": "command",

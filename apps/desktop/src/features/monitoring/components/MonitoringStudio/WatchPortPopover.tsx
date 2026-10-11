@@ -11,6 +11,7 @@ import {
 } from '@goodboy/ui';
 import type { Project } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { projectById } from '../../../../store/slices/projects/projectIndex';
 import { isValidPort } from '../../../../store/slices/monitoring/isValidPort';
 
 type Props = {
@@ -20,7 +21,7 @@ type Props = {
 };
 
 export const WatchPortPopover = ({ projects, defaultProjectId, variant }: Props) => {
-  const dropdown = useDropdown({ align: 'end', width: 'w-72', expectedWidth: 288 });
+  const dropdown = useDropdown({ align: 'end', width: 'w-80', expectedWidth: 320 });
   const watchPort = useAppStore((state) => state.watchPort);
   const [portText, setPortText] = useState('');
   const [projectId, setProjectId] = useState<string | null>(null);
@@ -28,7 +29,7 @@ export const WatchPortPopover = ({ projects, defaultProjectId, variant }: Props)
   const port = Number(portText);
   const isPortValid = portText.trim() !== '' && isValidPort({ port });
   const hasError = portText.trim() !== '' && !isPortValid;
-  const project = projects.find((item) => item.id === chosenId);
+  const project = projectById(projects, chosenId);
 
   const submit = async (event: FormEvent): Promise<void> => {
     event.preventDefault();

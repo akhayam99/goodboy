@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useAppStore } from '../../../../store';
-import { createLatestOnly } from '../../../../store/slices/state-writes/latestOnly';
-import { invokeTerminalListLive } from '../../../terminal/terminal';
-import { portsOfProcessTree } from '../../portsOfProcessTree';
-import { useMonitorPolling } from '../useMonitorPolling';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useAppStore } from '../../../store';
+import { createLatestOnly } from '../../../store/slices/state-writes/latestOnly';
+import { invokeTerminalListLive } from '../../terminal/terminal';
+import { portsOfProcessTree } from '../portsOfProcessTree';
+import { useMonitorPolling } from '../hooks/useMonitorPolling';
 
 const POLL_MS = 5000;
 const LIVE_KEY = 'terminal-ports-live';
@@ -17,6 +17,7 @@ export const useTerminalPorts = (): ReadonlyMap<string, ReadonlyArray<number>> =
   useMonitorPolling();
   const snapshot = useAppStore((state) => state.monitorSnapshot);
   const [roots, setRoots] = useState<Roots>(NO_ROOTS);
+  const hasReported = useRef(false);
 
   useEffect(() => {
     const latest = createLatestOnly();
@@ -34,7 +35,17 @@ export const useTerminalPorts = (): ReadonlyMap<string, ReadonlyArray<number>> =
               ),
             ),
         })
-        .catch(() => undefined);
+        .catch((error) => {
+          if (hasReported.current) {
+            return;
+          }
+          hasReported.current = true;
+          void useAppStore.getState().reportError({
+            title: "Couldn't read which terminals listen on a port",
+            error,
+            severity: 'warning',
+          });
+        });
     };
     poll();
     const timer = window.setInterval(poll, POLL_MS);
