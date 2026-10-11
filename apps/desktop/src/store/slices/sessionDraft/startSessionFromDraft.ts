@@ -36,7 +36,7 @@ export type SessionDraftThen =
 export type SessionDraftStart =
   | {
       readonly kind: 'task';
-      readonly candidate: IssueCandidate;
+      readonly candidates: ReadonlyArray<IssueCandidate>;
       readonly title: string;
       readonly goal: string;
       readonly then?: SessionDraftThen;
@@ -168,7 +168,7 @@ const launch = async ({ get, session, start }: LaunchParams): Promise<void> => {
 export const startSessionFromDraft = (set: SetFn, get: GetFn) => {
   return async ({ workspaceId, start }: StartSessionFromDraftParams): Promise<Session> => {
     const { title, goal } = seedOf({ start });
-    const candidate = start.kind === 'task' ? start.candidate : null;
+    const candidates = start.kind === 'task' ? start.candidates : [];
     const mount = start.kind === 'task' ? (start.mount ?? null) : null;
     const projectId =
       mount === null ? (get().sessionDrafts[workspaceId]?.projectId ?? null) : mount.projectId;
@@ -186,16 +186,14 @@ export const startSessionFromDraft = (set: SetFn, get: GetFn) => {
         existingBranch: checkout.existingBranch,
         fallbackRef: checkout.fallbackRef,
       }),
-      ...(candidate !== null && {
-        externalTasks: [
-          {
-            provider: candidate.provider,
-            externalId: candidate.externalId,
-            identifier: candidate.identifier,
-            url: candidate.url,
-            title: candidate.title,
-          },
-        ],
+      ...(candidates.length > 0 && {
+        externalTasks: candidates.map((candidate) => ({
+          provider: candidate.provider,
+          externalId: candidate.externalId,
+          identifier: candidate.identifier,
+          url: candidate.url,
+          title: candidate.title,
+        })),
       }),
     });
     set({ openSessionDraftWorkspaceId: null });

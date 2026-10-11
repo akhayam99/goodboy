@@ -484,20 +484,20 @@ describe('tasks and sessions on the real store', () => {
 
       const draft = useAppStore.getState().sessionDrafts[WORKSPACE_ID];
       expect(draft).toMatchObject({ choice: 'task' });
-      expect(draft?.pickedIssue).toMatchObject({
+      expect(draft?.pickedIssues[0]).toMatchObject({
         provider: entry.provider,
         externalId: entry.externalId,
       });
       expect(requestIssueBrief).toHaveBeenCalledOnce();
       expect(createSession).not.toHaveBeenCalled();
-      const picked = draft?.pickedIssue;
-      if (picked == null) {
+      const picked = draft?.pickedIssues[0];
+      if (picked === undefined) {
         throw new Error('the draft picked no issue');
       }
 
       await useAppStore.getState().startSessionFromDraft({
         workspaceId: WORKSPACE_ID,
-        start: { kind: 'task', candidate: picked, title: picked.title, goal: 'Fix it' },
+        start: { kind: 'task', candidates: [picked], title: picked.title, goal: 'Fix it' },
       });
 
       expect(createSession).toHaveBeenCalledWith(

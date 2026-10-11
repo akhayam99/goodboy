@@ -1,9 +1,14 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { StoreApi, UseBoundStore } from 'zustand';
 import type { IsoDateTime, Project, ProjectId, WorkspaceId } from '@goodboy/types';
+import {
+  EMPTY_SESSION_DRAFT,
+  type SessionDraft,
+} from '../../../../store/slices/sessionDraft/state';
 import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates';
 
 type TestState = Record<string, unknown>;
@@ -192,6 +197,13 @@ const resetStore = () => {
 };
 
 const renderKickoff = () => render(<SessionKickoff workspaceId={WORKSPACE_ID} />);
+
+const draftOf = (): SessionDraft => {
+  const draft = (store().getState().sessionDrafts as Record<string, SessionDraft | undefined>)[
+    WORKSPACE_ID
+  ];
+  return draft ?? EMPTY_SESSION_DRAFT;
+};
 
 const tab = (name: string) => screen.getByRole('tab', { name: new RegExp(name) });
 
@@ -469,7 +481,7 @@ describe('SessionKickoff', () => {
       target: { value: 'login' },
     });
     expect(screen.queryByText('ENG-3')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /ENG-1/ }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /ENG-1/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Pick ENG-1' }));
 
     expect(spies.requestIssueBrief).toHaveBeenCalledWith(
@@ -501,7 +513,7 @@ describe('SessionKickoff', () => {
       workspaceId: WORKSPACE_ID,
       start: {
         kind: 'task',
-        candidate: candidate({}),
+        candidates: [candidate({})],
         title: 'Stop the login redirect loop',
         goal: 'Fix the login redirect loop',
         then: { kind: 'workflow-run', run: spies.runBuilder },
@@ -514,21 +526,152 @@ describe('SessionKickoff', () => {
     );
   });
 
-  it('puts Dismiss back on the list and clears the picked issue', async () => {
+  it('returns to the list and clears the selection when the last picked issue is removed', async () => {
     store().setState({ workspaceIntegrations: { 'ws-1': [{ provider: 'linear' }] } });
     spies.fetchIssueCandidates.mockResolvedValue([candidate({})]);
     renderKickoff();
     await screen.findByText('ENG-1');
 
-    fireEvent.click(screen.getByRole('button', { name: /ENG-1/ }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /ENG-1/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Pick ENG-1' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove ENG-1' }));
 
     expect(screen.getByRole('textbox', { name: 'Search issues' })).toBeDefined();
-    expect(
-      (store().getState().sessionDrafts as Record<string, { pickedIssue: unknown }>)['ws-1']
-        ?.pickedIssue,
-    ).toBeNull();
+    expect(draftOf().pickedIssues).toEqual([]);
+    expect(draftOf().hasPickedStep).toBe(false);
+  });
+
+  describe('picking several issues', () => {
+    const manyIssues = async (count = 3) => {
+      store().setState({ workspaceIntegrations: { 'ws-1': [{ provider: 'linear' }] } });
+      spies.fetchIssueCandidates.mockResolvedValue(
+        Array.from({ length: count }, (_, index) =>
+          candidate({
+            externalId: `issue-${index + 1}`,
+            identifier: `ENG-${index + 1}`,
+            title: `Issue number ${index + 1}`,
+          }),
+        ),
+      );
+      renderKickoff();
+      await screen.findByText('ENG-1');
+    };
+
+    it('toggles a row on click instead of picking it', async () => {
+      await manyIssues();
+
+      fireEvent.click(screen.getByRole('checkbox', { name: /ENG-1/ }));
+      fireEvent.click(screen.getByRole('checkbox', { name: /ENG-2/ }));
+
+      expect(screen.getByRole('checkbox', { name: /ENG-1/ }).getAttribute('aria-checked')).toBe(
+        'true',
+      );
+      expect(screen.getByRole('button', { name: 'Pick 2 issues' })).toBeDefined();
+      expect(screen.getByRole('textbox', { name: 'Search issues' })).toBeDefined();
+      expect(spies.requestIssueBrief).not.toHaveBeenCalled();
+
+      fireEvent.click(screen.getByRole('checkbox', { name: /ENG-1/ }));
+      expect(screen.getByRole('button', { name: 'Pick ENG-2' })).toBeDefined();
+    });
+
+    it('picks one row alone on a double click', async () => {
+      await manyIssues();
+      fireEvent.click(screen.getByRole('checkbox', { name: /ENG-3/ }));
+
+      const row = screen.getByRole('checkbox', { name: /ENG-1/ });
+      fireEvent.click(row);
+      fireEvent.click(row);
+      fireEvent.doubleClick(row);
+
+      expect(draftOf().pickedIssues.map((entry) => entry.identifier)).toEqual(['ENG-1']);
+      expect(draftOf().hasPickedStep).toBe(true);
+      expect(screen.getByRole('list', { name: 'Picked issues' })).toBeDefined();
+    });
+
+    it('toggles the focused row with Space and goes to the picked step with Enter', async () => {
+      const user = userEvent.setup();
+      await manyIssues();
+
+      await user.tab();
+      await user.tab();
+      expect(document.activeElement).toBe(screen.getByRole('checkbox', { name: /ENG-1/ }));
+      await user.keyboard(' ');
+      await user.tab();
+      await user.keyboard(' ');
+      expect(draftOf().pickedIssues.map((entry) => entry.identifier)).toEqual(['ENG-1', 'ENG-2']);
+      expect(draftOf().focusedIssueKey).toBe('linear:issue-2');
+
+      await user.keyboard('{Enter}');
+
+      expect(draftOf().hasPickedStep).toBe(true);
+      expect(spies.requestIssueBrief).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sources: [
+            expect.objectContaining({ identifier: 'ENG-1' }),
+            expect.objectContaining({ identifier: 'ENG-2' }),
+          ],
+        }),
+      );
+      expect(screen.getByRole('region', { name: 'Brief from ENG-1 and 1 more' })).toBeDefined();
+    });
+
+    it('refuses a sixth issue with one line and keeps the five', async () => {
+      await manyIssues(2);
+      act(() => {
+        patchSessionDraft(store().setState as never)({
+          workspaceId: WORKSPACE_ID,
+          patch: {
+            choice: 'task',
+            pickedIssues: Array.from({ length: 4 }, (_, index) =>
+              candidate({
+                externalId: `held-${index}`,
+                identifier: `HELD-${index}`,
+                title: `Held ${index}`,
+              }),
+            ),
+          },
+        });
+      });
+
+      fireEvent.click(screen.getByRole('checkbox', { name: /ENG-1/ }));
+      expect(screen.queryByRole('status')).toBeNull();
+      fireEvent.click(screen.getByRole('checkbox', { name: /ENG-2/ }));
+
+      expect(draftOf().pickedIssues).toHaveLength(5);
+      expect(screen.getByRole('status').textContent).toBe('Up to 5 issues start one session');
+      expect(screen.getByRole('button', { name: 'Pick 5 issues' })).toBeDefined();
+    });
+
+    it('keeps the selection when Add another issue goes back to the list', async () => {
+      await manyIssues();
+      fireEvent.click(screen.getByRole('checkbox', { name: /ENG-1/ }));
+      fireEvent.click(screen.getByRole('button', { name: 'Pick ENG-1' }));
+
+      fireEvent.click(screen.getByRole('button', { name: 'Add another issue' }));
+
+      expect(screen.getByRole('checkbox', { name: /ENG-1/ }).getAttribute('aria-checked')).toBe(
+        'true',
+      );
+      fireEvent.click(screen.getByRole('checkbox', { name: /ENG-2/ }));
+      fireEvent.click(screen.getByRole('button', { name: 'Pick 2 issues' }));
+      expect(screen.getByRole('button', { name: /^Remove ENG-2/ })).toBeDefined();
+    });
+
+    it('moves the branch chip to the next issue when the first is removed', async () => {
+      await manyIssues();
+      fireEvent.click(screen.getByRole('checkbox', { name: /ENG-1/ }));
+      fireEvent.click(screen.getByRole('checkbox', { name: /ENG-2/ }));
+      fireEvent.click(screen.getByRole('button', { name: 'Pick 2 issues' }));
+
+      fireEvent.click(screen.getByRole('button', { name: 'Remove ENG-1' }));
+
+      const rows = within(screen.getByRole('list', { name: 'Picked issues' })).getAllByRole(
+        'listitem',
+      );
+      expect(rows).toHaveLength(1);
+      expect(rows[0]?.textContent).toContain('ENG-2');
+      expect(screen.queryByText('Names the branch')).toBeNull();
+    });
   });
 
   it('mounts the project of a github issue and lets you pick none before starting', async () => {
@@ -547,7 +690,7 @@ describe('SessionKickoff', () => {
     renderKickoff();
     await screen.findByText('#7');
 
-    fireEvent.click(screen.getByRole('button', { name: /#7/ }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /#7/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Pick #7' }));
 
     expect(screen.getByText('from GitHub repo acme/ledger-core')).toBeDefined();
@@ -558,7 +701,7 @@ describe('SessionKickoff', () => {
       workspaceId: WORKSPACE_ID,
       start: expect.objectContaining({
         kind: 'task',
-        candidate: githubIssue,
+        candidates: [githubIssue],
         mount: { projectId: 'project-ledger-core', reason: 'from GitHub repo acme/ledger-core' },
       }),
     });
@@ -584,7 +727,7 @@ describe('SessionKickoff', () => {
     renderKickoff();
     await screen.findByText('LEDGER-API-4');
 
-    fireEvent.click(screen.getByRole('button', { name: /LEDGER-API-4/ }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /LEDGER-API-4/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Pick LEDGER-API-4' }));
 
     expect(screen.getByText('from Sentry project ledger-api')).toBeDefined();
@@ -606,7 +749,7 @@ describe('SessionKickoff', () => {
     renderKickoff();
     await screen.findByText('ENG-1');
 
-    fireEvent.click(screen.getByRole('button', { name: /ENG-1/ }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /ENG-1/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Pick ENG-1' }));
     fireEvent.click(screen.getByRole('tab', { name: 'Ask an agent' }));
     fireEvent.click(screen.getByRole('button', { name: 'Start from ENG-1' }));
@@ -616,7 +759,7 @@ describe('SessionKickoff', () => {
       workspaceId: WORKSPACE_ID,
       start: {
         kind: 'task',
-        candidate: candidate({}),
+        candidates: [candidate({})],
         title: 'Fix the login redirect',
         goal: '[ENG-1] Fix the login redirect\n\nThe redirect loops.',
         then: {

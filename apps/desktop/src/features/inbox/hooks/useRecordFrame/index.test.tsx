@@ -268,8 +268,8 @@ describe('useRecordFrame', () => {
       workspaceId: WORKSPACE_ID,
       patch: {
         choice: 'task',
-        issueKey: 'github:42',
-        pickedIssue: expect.objectContaining({ identifier: '#42', externalId: '42' }),
+        pickedIssues: [expect.objectContaining({ identifier: '#42', externalId: '42' })],
+        hasPickedStep: true,
       },
     });
     expect(h.requestIssueBrief).toHaveBeenCalledWith({

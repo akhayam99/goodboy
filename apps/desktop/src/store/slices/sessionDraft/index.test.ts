@@ -246,16 +246,18 @@ describe('session draft slice', () => {
       workspaceId: WORKSPACE_ID,
       start: {
         kind: 'task',
-        candidate: {
-          provider: 'linear',
-          externalId: 'issue-214',
-          identifier: 'NW-214',
-          title: 'Invoices credited twice',
-          url: 'https://linear.app/northwind/issue/NW-214',
-          goal: 'Stop crediting twice.',
-          body: '',
-          branchSlug: 'invoices-credited-twice',
-        },
+        candidates: [
+          {
+            provider: 'linear',
+            externalId: 'issue-214',
+            identifier: 'NW-214',
+            title: 'Invoices credited twice',
+            url: 'https://linear.app/northwind/issue/NW-214',
+            goal: 'Stop crediting twice.',
+            body: '',
+            branchSlug: 'invoices-credited-twice',
+          },
+        ],
         title: 'Invoices credited twice',
         goal: 'Stop crediting twice.',
       },
@@ -280,6 +282,33 @@ describe('session draft slice', () => {
     expect(h.spies.spawnAgent).not.toHaveBeenCalled();
   });
 
+  it('links three issues in order, so the first names the branch, in one createSession', async () => {
+    const issue = (index: number) => ({
+      provider: 'linear' as const,
+      externalId: `issue-${index}`,
+      identifier: `NW-${index}`,
+      title: `Northwind issue ${index}`,
+      url: `https://linear.app/northwind/issue/NW-${index}`,
+      goal: '',
+      body: '',
+      branchSlug: `northwind-issue-${index}`,
+    });
+    await h.slice.startSessionFromDraft({
+      workspaceId: WORKSPACE_ID,
+      start: {
+        kind: 'task',
+        candidates: [issue(214), issue(215), issue(216)],
+        title: 'Northwind issue 214',
+        goal: 'Fix the three together.',
+      },
+    });
+
+    expect(h.spies.createSession).toHaveBeenCalledOnce();
+    expect(
+      h.spies.createSession.mock.calls[0]?.[0].externalTasks?.map((task) => task.identifier),
+    ).toEqual(['NW-214', 'NW-215', 'NW-216']);
+  });
+
   it('links the issue, mounts the issue project and runs the workflow in one gesture', async () => {
     h.slice.patchSessionDraft({
       workspaceId: WORKSPACE_ID,
@@ -290,16 +319,18 @@ describe('session draft slice', () => {
       workspaceId: WORKSPACE_ID,
       start: {
         kind: 'task',
-        candidate: {
-          provider: 'linear',
-          externalId: 'issue-214',
-          identifier: 'NW-214',
-          title: 'Invoices credited twice',
-          url: 'https://linear.app/northwind/issue/NW-214',
-          goal: 'Stop crediting twice.',
-          body: '',
-          branchSlug: 'invoices-credited-twice',
-        },
+        candidates: [
+          {
+            provider: 'linear',
+            externalId: 'issue-214',
+            identifier: 'NW-214',
+            title: 'Invoices credited twice',
+            url: 'https://linear.app/northwind/issue/NW-214',
+            goal: 'Stop crediting twice.',
+            body: '',
+            branchSlug: 'invoices-credited-twice',
+          },
+        ],
         title: 'Invoices credited twice',
         goal: 'Stop crediting twice.',
         then: { kind: 'workflow-run', run },
@@ -327,16 +358,18 @@ describe('session draft slice', () => {
       workspaceId: WORKSPACE_ID,
       start: {
         kind: 'task',
-        candidate: {
-          provider: 'linear',
-          externalId: 'issue-214',
-          identifier: 'NW-214',
-          title: 'Invoices credited twice',
-          url: 'https://linear.app/northwind/issue/NW-214',
-          goal: 'Stop crediting twice.',
-          body: '',
-          branchSlug: 'invoices-credited-twice',
-        },
+        candidates: [
+          {
+            provider: 'linear',
+            externalId: 'issue-214',
+            identifier: 'NW-214',
+            title: 'Invoices credited twice',
+            url: 'https://linear.app/northwind/issue/NW-214',
+            goal: 'Stop crediting twice.',
+            body: '',
+            branchSlug: 'invoices-credited-twice',
+          },
+        ],
         title: 'Invoices credited twice',
         goal: 'Stop crediting twice.',
         mount: { projectId: null, reason: 'from GitHub repo acme/ledger' },
@@ -353,16 +386,18 @@ describe('session draft slice', () => {
       workspaceId: WORKSPACE_ID,
       start: {
         kind: 'task',
-        candidate: {
-          provider: 'linear',
-          externalId: 'issue-214',
-          identifier: 'NW-214',
-          title: 'Invoices credited twice',
-          url: 'https://linear.app/northwind/issue/NW-214',
-          goal: 'Stop crediting twice.',
-          body: '',
-          branchSlug: 'invoices-credited-twice',
-        },
+        candidates: [
+          {
+            provider: 'linear',
+            externalId: 'issue-214',
+            identifier: 'NW-214',
+            title: 'Invoices credited twice',
+            url: 'https://linear.app/northwind/issue/NW-214',
+            goal: 'Stop crediting twice.',
+            body: '',
+            branchSlug: 'invoices-credited-twice',
+          },
+        ],
         title: 'Invoices credited twice',
         goal: 'Stop crediting twice.',
         then: {

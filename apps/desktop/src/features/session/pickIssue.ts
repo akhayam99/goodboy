@@ -8,14 +8,11 @@ type PickParams = {
   readonly candidate: IssueCandidate;
 };
 
-export const candidateKey = ({ candidate }: Pick<PickParams, 'candidate'>): string =>
-  `${candidate.provider}:${candidate.externalId}`;
-
 export const pickIssue = ({ workspaceId, candidate }: PickParams): void => {
   const { patchSessionDraft, requestIssueBrief } = useAppStore.getState();
   patchSessionDraft({
     workspaceId,
-    patch: { choice: 'task', issueKey: candidateKey({ candidate }), pickedIssue: candidate },
+    patch: { choice: 'task', pickedIssues: [candidate], hasPickedStep: true },
   });
   void requestIssueBrief({
     sources: [issueBriefSource({ candidate })],

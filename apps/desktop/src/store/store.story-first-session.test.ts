@@ -113,16 +113,18 @@ describe('story: a first-run user opens their workspace and starts a session', (
       workspaceId: WORKSPACE_ID,
       start: {
         kind: 'task',
-        candidate: {
-          provider: 'linear',
-          externalId: 'issue-214',
-          identifier: 'NW-214',
-          title: 'Invoices credited twice',
-          url: 'https://linear.app/northwind/issue/NW-214',
-          goal: 'Stop crediting an invoice twice.',
-          body: '',
-          branchSlug: 'invoices-credited-twice',
-        },
+        candidates: [
+          {
+            provider: 'linear',
+            externalId: 'issue-214',
+            identifier: 'NW-214',
+            title: 'Invoices credited twice',
+            url: 'https://linear.app/northwind/issue/NW-214',
+            goal: 'Stop crediting an invoice twice.',
+            body: '',
+            branchSlug: 'invoices-credited-twice',
+          },
+        ],
         title: 'Invoices credited twice',
         goal: 'Stop crediting an invoice twice.',
       },

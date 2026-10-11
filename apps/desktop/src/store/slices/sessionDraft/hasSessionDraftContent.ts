@@ -6,8 +6,8 @@ type Params = {
 
 export const hasSessionDraftContent = ({ draft }: Params): boolean =>
   draft.issueQuery.trim() !== '' ||
-  draft.issueKey !== null ||
-  draft.pickedIssue !== null ||
+  draft.pickedIssues.length > 0 ||
+  draft.focusedIssueKey !== null ||
   draft.workflowGoal.trim() !== '' ||
   draft.workflowId !== null ||
   draft.agentPrompt.trim() !== '';
