@@ -91,7 +91,7 @@ At rest, Commits is the branch as it is, with Rebase on main on its first row an
 #### Explore shows the project and what changed
 <!-- gb area=sessions image=explore-changes -->
 
-A chip says which project you are browsing, and opens a list when the session has several. Changed files carry M, A or D, and Changed lists only those. A file opens in a drawer with coloured code, and the same drawer shows Preview, Source or Changes. Browse files on a project in the Overview opens Explore there.
+A chip says which project you are browsing, and opens a list when the session has several. Changed files carry M, A or D, and Changed lists only those. A file opens in a drawer with colored code, and a changed file adds a Changes view. Browse files on a project in the Overview opens Explore there.
 
 #### Scripts shows what is running
 <!-- gb area=scripts image=scripts-live -->
