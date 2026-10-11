@@ -9,7 +9,7 @@ type Params = {
   readonly mountId?: MountId;
 };
 
-export const FIX_INSTRUCTION = 'Make this fix on this branch, commit it, and push nothing.';
+const FIX_INSTRUCTION = 'Make this fix on this branch, commit it, and push nothing.';
 
 export const startCheckFix = ({ sessionId, url, mountId }: Params): Promise<AgentId> => {
   const state = useAppStore.getState();
