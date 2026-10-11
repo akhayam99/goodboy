@@ -231,12 +231,14 @@ goalproposal
 goalreplace
 goaltitlesonly
 guide
+guide-words
 header-agent
 header-artifact-details
 header-branch-push-confirm
 header-overview-overflow
 header-run
 header-scripts
+hovercard-legend-link
 impact
 impact-deleted
 impact-loading
