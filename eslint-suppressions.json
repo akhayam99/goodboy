@@ -8338,11 +8338,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/workspace/components/StageBoard/OngoingTasksRow.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    }
-  },
   "apps/desktop/src/features/workspace/components/StageBoard/StageBoard.perf.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
@@ -11820,7 +11815,7 @@
   },
   "apps/desktop/src/store/slices/starred-issues/index.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
+      "count": 1
     },
     "@typescript-eslint/naming-convention": {
       "count": 1
@@ -14713,16 +14708,6 @@
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 6
-    }
-  },
-  "packages/db/src/queries/workspace-external-task.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    }
-  },
-  "packages/db/src/queries/workspace-external-task.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
     }
   },
   "packages/db/src/queries/workspace-merge.test.ts": {

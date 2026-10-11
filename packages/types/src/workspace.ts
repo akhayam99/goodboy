@@ -388,13 +388,3 @@ export type SessionExternalTask = Readonly<{
   title: string;
   createdAt: IsoDateTime;
 }>;
-
-export type WorkspaceExternalTask = Readonly<{
-  workspaceId: WorkspaceId;
-  provider: SessionExternalTaskProvider;
-  externalId: string;
-  identifier: string;
-  url: string;
-  title: string;
-  createdAt: IsoDateTime;
-}>;

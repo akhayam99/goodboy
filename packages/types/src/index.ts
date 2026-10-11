@@ -143,7 +143,6 @@ export type {
   Workspace,
   WorkspaceGitState,
   WorkspaceGitStatus,
-  WorkspaceExternalTask,
   WorkspaceProfile,
   WorkflowRun,
   WorkflowExecutionMode,

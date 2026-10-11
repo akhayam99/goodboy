@@ -150,14 +150,14 @@ describe('mergeWorkspaces', () => {
     ]);
   });
 
-  it('carries the board task links to the target and keeps the target copy on a clash', async () => {
+  it('carries the starred issues to the target and keeps the target copy on a clash', async () => {
     const db = await seed();
     const addTask = async (externalId: string, workspaceId: WorkspaceId, title: string) =>
       db.execute(
-        `INSERT INTO workspace_external_tasks
-           (workspace_id, provider, external_id, identifier, url, title, created_at)
-         VALUES (?, 'linear', ?, ?, ?, ?, ?)`,
-        [workspaceId, externalId, externalId, `https://linear.example/${externalId}`, title, NOW],
+        `INSERT INTO workspace_starred_issues
+           (workspace_id, provider, external_id, identifier, container, title, url, state, state_label, starred_at, refreshed_at)
+         VALUES (?, 'linear', ?, ?, NULL, ?, ?, 'open', NULL, ?, NULL)`,
+        [workspaceId, externalId, externalId, title, `https://linear.example/${externalId}`, NOW],
       );
     await addTask('NW-1', target, 'target copy');
     await addTask('NW-1', source, 'source copy');
@@ -166,7 +166,7 @@ describe('mergeWorkspaces', () => {
     await mergeWorkspaces({ db, sourceWorkspaceIds: [source], targetWorkspaceId: target });
 
     const tasks = await db.select<{ workspace_id: string; external_id: string; title: string }>(
-      'SELECT workspace_id, external_id, title FROM workspace_external_tasks ORDER BY external_id',
+      'SELECT workspace_id, external_id, title FROM workspace_starred_issues ORDER BY external_id',
     );
     expect(tasks).toEqual([
       { workspace_id: target, external_id: 'NW-1', title: 'target copy' },
