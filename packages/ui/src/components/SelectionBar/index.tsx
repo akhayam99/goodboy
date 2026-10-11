@@ -1,3 +1,5 @@
+import { OptionalTooltip } from '../OptionalTooltip';
+import { Tooltip } from '../Tooltip';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '../../cn';
@@ -32,8 +34,8 @@ export type SelectionBarProps = {
   readonly confirm?: ReactNode;
   readonly onDismissConfirm?: () => void;
   readonly note?: ReactNode;
-  readonly clearHint?: string;
-  readonly selectAllHint?: string;
+  readonly clearShortcut?: string;
+  readonly selectAllShortcut?: string;
   readonly onFocusReturn?: () => void;
   readonly onHeightChange?: (height: number) => void;
   readonly placement?: SelectionBarPlacement;
@@ -49,9 +51,6 @@ const PLACEMENT_CLASSES: Record<SelectionBarPlacement, string> = {
   flow: 'flex flex-col items-center gap-2',
 };
 
-const withHint = ({ text, hint }: { readonly text: string; readonly hint?: string }): string =>
-  hint === undefined ? text : `${text} (${hint})`;
-
 export const SelectionBar = ({
   count,
   total,
@@ -61,8 +60,8 @@ export const SelectionBar = ({
   confirm = null,
   onDismissConfirm,
   note = null,
-  clearHint,
-  selectAllHint,
+  clearShortcut,
+  selectAllShortcut,
   onFocusReturn,
   onHeightChange,
   placement = 'overlay',
@@ -170,48 +169,49 @@ export const SelectionBar = ({
               icon={X}
               size="xs"
               label="Clear selection"
-              tooltip={withHint({ text: 'Clear selection', hint: clearHint })}
+              shortcut={clearShortcut}
               onClick={onClear}
             />
             <span className="whitespace-nowrap text-row tabular-nums text-foreground">
               {count} selected
             </span>
             {count < total ? (
-              <button
-                type="button"
-                title={withHint({ text: 'Select all', hint: selectAllHint })}
-                onClick={onSelectAll}
-                className={cn(
-                  'whitespace-nowrap rounded-md px-2 py-1 text-label text-muted-foreground hover:bg-hover hover:text-foreground motion-safe:transition-colors',
-                  FOCUS_RING,
-                )}
-              >
-                Select all {total}
-              </button>
+              <Tooltip content="Select all" shortcut={selectAllShortcut}>
+                <button
+                  type="button"
+                  onClick={onSelectAll}
+                  className={cn(
+                    'whitespace-nowrap rounded-md px-2 py-1 text-label text-muted-foreground hover:bg-hover hover:text-foreground motion-safe:transition-colors',
+                    FOCUS_RING,
+                  )}
+                >
+                  Select all {total}
+                </button>
+              </Tooltip>
             ) : null}
           </span>
           {verbs.length === 0 ? null : (
             <span className="ml-2 flex flex-wrap items-center gap-1">
               {verbs.map((verb) => (
-                <Button
-                  key={verb.id}
-                  variant={verb.tone === 'primary' ? 'primary' : 'ghost'}
-                  size="sm"
-                  aria-label={verb.ariaLabel ?? verb.label}
-                  title={verb.title}
-                  isBusy={verb.isBusy}
-                  disabled={verb.isDisabled}
-                  onClick={verb.onRun}
-                  className={cn(
-                    'gap-2 whitespace-nowrap',
-                    verb.tone === 'danger' &&
-                      cn(tintClasses('danger').text, tintClasses('danger').hoverBg),
-                  )}
-                >
-                  {verb.icon}
-                  {verb.label}
-                  {verb.hint === undefined ? null : <KeyHint keys={verb.hint} isOnTone />}
-                </Button>
+                <OptionalTooltip key={verb.id} content={verb.title}>
+                  <Button
+                    variant={verb.tone === 'primary' ? 'primary' : 'ghost'}
+                    size="sm"
+                    aria-label={verb.ariaLabel ?? verb.label}
+                    isBusy={verb.isBusy}
+                    disabled={verb.isDisabled}
+                    onClick={verb.onRun}
+                    className={cn(
+                      'gap-2 whitespace-nowrap',
+                      verb.tone === 'danger' &&
+                        cn(tintClasses('danger').text, tintClasses('danger').hoverBg),
+                    )}
+                  >
+                    {verb.icon}
+                    {verb.label}
+                    {verb.hint === undefined ? null : <KeyHint keys={verb.hint} isOnTone />}
+                  </Button>
+                </OptionalTooltip>
               ))}
             </span>
           )}

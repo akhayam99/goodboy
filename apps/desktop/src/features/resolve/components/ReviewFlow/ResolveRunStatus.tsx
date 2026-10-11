@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Button, Chip, StatusDot, WorkNode, type Tone } from '@goodboy/ui';
+import { Button, Chip, StatusDot, WorkNode, type Tone, TruncatedText } from '@goodboy/ui';
 import type { LaneStatus } from '../../laneStatus';
 import { FIX_RUN_CHIPS, fixRunTitle, type FixRun, type FixRunChipKey } from '../../fixRun';
 import { StopRunButton } from './StopRunButton';
@@ -43,9 +43,7 @@ export const ResolveRunStatus = ({
     >
       <span className="flex min-w-0 max-w-full items-center gap-2 text-label text-foreground">
         {isLive && <WorkNode state="running" label={title} mark={{ kind: 'dot' }} />}
-        <span className="min-w-0 truncate" title={title}>
-          {title}
-        </span>
+        <TruncatedText className="min-w-0 truncate">{title}</TruncatedText>
       </span>
       <ul aria-label="Filter by state" className="flex min-w-0 flex-wrap items-center gap-1">
         {FIX_RUN_CHIPS.map(({ key, phrase, countOf }) => {

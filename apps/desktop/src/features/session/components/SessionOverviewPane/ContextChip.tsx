@@ -5,8 +5,8 @@ import type { SessionId } from '@goodboy/types';
 import { useAppStore, useSummarizerStatus } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 import { selectHasContextChange } from '../../../../store/slices/contextDrawer/selectHasContextChange';
+import type { ShortcutId } from '../../../../shared/keyboard/registry';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { withShortcutHint } from '../../../../shared/keyboard/registry';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -17,17 +17,22 @@ type TooltipParams = {
   readonly hasChange: boolean;
 };
 
-const tooltipFor = ({ status, hasChange }: TooltipParams): string => {
+type TooltipCopy = {
+  readonly content: string;
+  readonly shortcut?: ShortcutId;
+};
+
+const tooltipFor = ({ status, hasChange }: TooltipParams): TooltipCopy => {
   if (status === 'running') {
-    return 'Updating context';
+    return { content: 'Updating context' };
   }
   if (status === 'error') {
-    return "Couldn't update the context. Open to retry.";
+    return { content: "Couldn't update the context. Open to retry." };
   }
-  return withShortcutHint({
-    label: hasChange ? 'Decisions changed since you last looked' : 'Goal, decisions and summary',
+  return {
+    content: hasChange ? 'Decisions changed since you last looked' : 'Goal, decisions and summary',
     shortcut: 'lens.context',
-  });
+  };
 };
 
 export const ContextChip = ({ sessionId }: Props) => {
@@ -63,7 +68,7 @@ export const ContextChip = ({ sessionId }: Props) => {
     );
 
   return (
-    <Tooltip content={tooltipFor({ status, hasChange })}>
+    <Tooltip {...tooltipFor({ status, hasChange })}>
       <Chip
         as="button"
         tone="neutral"

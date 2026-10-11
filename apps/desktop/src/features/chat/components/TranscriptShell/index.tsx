@@ -1,5 +1,5 @@
 import type { MouseEventHandler, ReactNode } from 'react';
-import { cn, tintClasses, type Tone } from '@goodboy/ui';
+import { cn, tintClasses, type Tone, Tooltip } from '@goodboy/ui';
 
 type Variant = 'boxed' | 'leftBorder' | 'pill' | 'plain';
 
@@ -50,17 +50,18 @@ export const TranscriptShell = ({
 
   if (as === 'button') {
     return (
-      <button
-        type={type}
-        onClick={onClick}
-        title={title}
-        aria-label={ariaLabel}
-        aria-expanded={ariaExpanded}
-        data-testid={testId}
-        className={shellClassName}
-      >
-        {children}
-      </button>
+      <Tooltip content={title}>
+        <button
+          type={type}
+          onClick={onClick}
+          aria-label={ariaLabel}
+          aria-expanded={ariaExpanded}
+          data-testid={testId}
+          className={shellClassName}
+        >
+          {children}
+        </button>
+      </Tooltip>
     );
   }
 

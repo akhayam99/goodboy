@@ -1,4 +1,12 @@
-import { InteractiveRow, ModelBlock, WORK_ROW, WorkNode, cn, type WorkNodeMark } from '@goodboy/ui';
+import {
+  InteractiveRow,
+  ModelBlock,
+  WORK_ROW,
+  WorkNode,
+  cn,
+  type WorkNodeMark,
+  TruncatedText,
+} from '@goodboy/ui';
 import type { PlanPartRow as Row } from './planPartRows';
 import { RoutingModelBlock } from '../../../../shared/components/RoutingModelBlock';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
@@ -38,8 +46,7 @@ export const PlanPartRow = ({ row, hasRun, onOpen, target }: Props) => {
     >
       <WorkNode state={row.node.state} mark={mark} label={row.node.label} />
       <span className="flex min-w-0 flex-1 flex-col">
-        <span
-          title={row.title}
+        <TruncatedText
           className={cn(
             WORK_ROW.title,
             'truncate text-body',
@@ -47,11 +54,11 @@ export const PlanPartRow = ({ row, hasRun, onOpen, target }: Props) => {
           )}
         >
           {row.title}
-        </span>
+        </TruncatedText>
         {doneWhen.length === 0 ? null : (
-          <span title={doneWhen} className="truncate text-label text-faint-foreground">
+          <TruncatedText tooltip={doneWhen} className="truncate text-label text-faint-foreground">
             {`Done when: ${doneWhen}`}
-          </span>
+          </TruncatedText>
         )}
       </span>
       <span

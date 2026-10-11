@@ -125,7 +125,7 @@ const foldButton = async (): Promise<HTMLElement> =>
 const scoutRows = (): ReadonlyArray<string> =>
   screen
     .queryAllByTestId(/^run-tree-row-journey-run-tree-scout-/u)
-    .map((row) => row.querySelector('[title]')?.getAttribute('title') ?? '');
+    .map((row) => SCOUT_NAMES.find((name) => row.textContent?.includes(name)) ?? '');
 
 const foldAndOpenFromTheKeyboard = async (): Promise<void> => {
   const user = userEvent.setup();

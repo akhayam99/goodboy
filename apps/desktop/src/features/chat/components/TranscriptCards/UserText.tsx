@@ -1,4 +1,4 @@
-import { Markdown, MetaRow } from '@goodboy/ui';
+import { Markdown, MetaRow, Tooltip } from '@goodboy/ui';
 import type {
   AgentId,
   MessageAttachment,
@@ -132,12 +132,11 @@ const ProviderFootnote = ({ provider, model }: ProviderFootnoteProps) => {
   const Icon = PROVIDER_BRAND[provider].icon;
   const label = PROVIDER_LABEL[provider];
   return (
-    <span
-      className="inline-flex items-center gap-1"
-      title={`Sent to ${label}${model ? ` · ${modelLabel(model, provider)}` : ''}`}
-    >
-      <Icon size={ICON_SIZE.row} className="text-muted-foreground" aria-hidden />
-      <span>{label}</span>
-    </span>
+    <Tooltip content={`Sent to ${label}${model ? ` · ${modelLabel(model, provider)}` : ''}`}>
+      <span className="inline-flex items-center gap-1">
+        <Icon size={ICON_SIZE.row} className="text-muted-foreground" aria-hidden />
+        <span>{label}</span>
+      </span>
+    </Tooltip>
   );
 };

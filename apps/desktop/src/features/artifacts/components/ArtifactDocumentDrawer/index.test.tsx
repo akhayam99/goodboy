@@ -27,6 +27,7 @@ import {
   seedPlanDrawer,
   type PlanDrawerSeed,
 } from '../../../../test/planDrawerFixtures';
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { ArtifactDocumentDrawer } from './index';
 
 const REVISING_REASON = 'The planner is revising this plan';
@@ -772,7 +773,8 @@ describe('editing the plan by hand in the drawer', () => {
     expect(screen.getByTestId('artifact-save').hasAttribute('disabled')).toBe(true);
     const version = screen.getByTestId('plan-drawer-version');
     expect(version.textContent).toBe('v2 · v3');
-    expect(version.getAttribute('title')).toBe('Version 3 is available');
+    expect(version.getAttribute('title')).toBeNull();
+    expect(tooltipTextOf({ element: version })).toBe('Version 3 is available');
     expect(toolbarButtons()).toEqual(['Cancel', 'Save']);
     fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
     expect(screen.queryByRole('textbox')).toBeNull();

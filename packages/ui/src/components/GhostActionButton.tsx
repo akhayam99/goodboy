@@ -1,3 +1,4 @@
+import { OptionalTooltip } from './OptionalTooltip';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '../cn';
 import { tintClasses, type Tone } from '../tint';
@@ -39,28 +40,29 @@ export const GhostActionButton = ({
     labelClassName == null ? text : <span className={labelClassName}>{text}</span>;
 
   return (
-    <button
-      type="button"
-      title={title}
-      aria-label={ariaLabel}
-      aria-pressed={pressed}
-      aria-busy={isBusy ? true : undefined}
-      disabled={disabled || isBusy}
-      onClick={onClick}
-      className={cn(
-        'inline-flex min-h-7 items-center gap-1 rounded-md px-2 text-meta font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:pointer-events-none disabled:opacity-40',
-        tone === 'neutral'
-          ? 'text-muted-foreground hover:bg-hover hover:text-foreground'
-          : cn(tint.text, tint.hoverBg),
-        highlighted && cn(tint.bg, tint.text),
-      )}
-    >
-      {isBusy ? (
-        <StatusDot tone="neutral" size="sm" pulsing className="bg-current" />
-      ) : (
-        <Icon size={ICON_SIZE.control} aria-hidden />
-      )}
-      {labelContent}
-    </button>
+    <OptionalTooltip content={title}>
+      <button
+        type="button"
+        aria-label={ariaLabel}
+        aria-pressed={pressed}
+        aria-busy={isBusy ? true : undefined}
+        disabled={disabled || isBusy}
+        onClick={onClick}
+        className={cn(
+          'inline-flex min-h-7 items-center gap-1 rounded-md px-2 text-meta font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:pointer-events-none disabled:opacity-40',
+          tone === 'neutral'
+            ? 'text-muted-foreground hover:bg-hover hover:text-foreground'
+            : cn(tint.text, tint.hoverBg),
+          highlighted && cn(tint.bg, tint.text),
+        )}
+      >
+        {isBusy ? (
+          <StatusDot tone="neutral" size="sm" pulsing className="bg-current" />
+        ) : (
+          <Icon size={ICON_SIZE.control} aria-hidden />
+        )}
+        {labelContent}
+      </button>
+    </OptionalTooltip>
   );
 };

@@ -65,6 +65,7 @@ vi.mock('../../../context/components/ContextPanel/strips/GoalAttachmentsStrip', 
   GoalAttachmentsStrip: () => null,
 }));
 
+import { queryTooltipTextOf, tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { ContextDrawer } from './index';
 
 const SID = 'sess-1' as SessionId;
@@ -185,8 +186,8 @@ describe('ContextDrawer', () => {
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(toggle);
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
-    expect(screen.getByText('Scout').getAttribute('title')).toBe('Does not receive this');
-    expect(screen.getByText('Reviewer').getAttribute('title')).toBeNull();
+    expect(tooltipTextOf({ element: screen.getByText('Scout') })).toBe('Does not receive this');
+    expect(queryTooltipTextOf({ element: screen.getByText('Reviewer') })).toBeNull();
     expect(screen.getByText('Agents only.').tagName).toBe('P');
   });
 

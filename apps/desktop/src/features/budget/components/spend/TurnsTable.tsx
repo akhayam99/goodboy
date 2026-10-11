@@ -13,6 +13,7 @@ import {
   cn,
   type SegmentedTabOption,
   EmptyState,
+  IconButton,
 } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { ArrowUpRight } from 'lucide-react';
@@ -21,7 +22,7 @@ import { DeletedSessionTag } from '../../../../shared/components/DeletedSessionT
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { StudioWidget } from '@goodboy/ui';
 import { sortTurns, type SortKey, type WorkspaceTurn } from './lib';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly turns: ReadonlyArray<WorkspaceTurn>;
@@ -127,15 +128,14 @@ export const TurnsTable = ({
                       <RoutingLabel provider={record.provider} model={record.model} />
                     </td>
                     {showSession ? (
-                      <td
-                        className="max-w-[12rem] truncate px-2 py-2 text-muted-foreground"
-                        title={sessionGoal}
-                      >
-                        <span className="flex items-center gap-2">
-                          <span className="min-w-0 truncate">{sessionGoal}</span>
-                          {isSessionDeleted ? <DeletedSessionTag /> : null}
-                        </span>
-                      </td>
+                      <Tooltip content={sessionGoal}>
+                        <td className="max-w-[12rem] truncate px-2 py-2 text-muted-foreground">
+                          <span className="flex items-center gap-2">
+                            <span className="min-w-0 truncate">{sessionGoal}</span>
+                            {isSessionDeleted ? <DeletedSessionTag /> : null}
+                          </span>
+                        </td>
+                      </Tooltip>
                     ) : null}
                     <td className="px-2 py-2 text-right tabular-nums text-muted-foreground">
                       {formatTokens(record.inputTokens)}
@@ -143,24 +143,20 @@ export const TurnsTable = ({
                     <td className="px-2 py-2 text-right tabular-nums text-muted-foreground">
                       {formatTokens(record.outputTokens)}
                     </td>
-                    <td
-                      title={formatUsdPrecise(record.estimatedCostUsd)}
-                      className="px-2 py-2 text-right tabular-nums font-medium text-foreground"
-                    >
-                      {formatSpent(record.estimatedCostUsd)}
-                    </td>
+                    <Tooltip content={formatUsdPrecise(record.estimatedCostUsd)}>
+                      <td className="px-2 py-2 text-right tabular-nums font-medium text-foreground">
+                        {formatSpent(record.estimatedCostUsd)}
+                      </td>
+                    </Tooltip>
                     <td className="px-2 py-2">
                       {isSessionDeleted ? null : (
-                        <Tooltip content={`Open session ${sessionGoal}`}>
-                          <button
-                            type="button"
-                            aria-label={`Open session ${sessionGoal}`}
-                            onClick={() => onOpenSession(sessionId)}
-                            className="inline-flex size-5 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-hover hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring group-hover:opacity-100"
-                          >
-                            <ArrowUpRight size={ICON_SIZE.row} aria-hidden />
-                          </button>
-                        </Tooltip>
+                        <IconButton
+                          icon={ArrowUpRight}
+                          label={`Open session ${sessionGoal}`}
+                          size="xs"
+                          onClick={() => onOpenSession(sessionId)}
+                          className="size-5 opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
+                        />
                       )}
                     </td>
                   </tr>

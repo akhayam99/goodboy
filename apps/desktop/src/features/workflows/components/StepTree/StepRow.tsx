@@ -117,10 +117,12 @@ export const StepRow = ({
               </span>
             ) : null}
             {isPinned ? (
-              <span className="inline-flex shrink-0 items-center" title="Pinned model">
-                <span aria-hidden className="size-1.5 rounded-full bg-primary" />
-                <span className="sr-only">Pinned model</span>
-              </span>
+              <Tooltip content="Pinned model">
+                <span className="inline-flex shrink-0 items-center">
+                  <span aria-hidden className="size-1.5 rounded-full bg-primary" />
+                  <span className="sr-only">Pinned model</span>
+                </span>
+              </Tooltip>
             ) : null}
           </button>
           <WorkMeta

@@ -18,7 +18,7 @@ import { RoutingPicker } from './index';
 import { resolveRouting } from './resolveRouting';
 import { useAppStore } from '../../../store';
 import { SETTING_HIDDEN_MODELS } from '../../../features/settings/settings';
-import { withShortcutHint } from '../../keyboard/registry';
+import { shortcutGlyphs } from '../../keyboard/registry';
 
 const baseProps = {
   connectedProviders: [
@@ -87,7 +87,7 @@ describe('RoutingPicker', () => {
       />,
     );
     expect(tooltipTextOf({ element: screen.getByRole('button', { name: /routing/i }) })).toBe(
-      withShortcutHint({ label: 'Claude · Opus 5 · High · Short', shortcut: 'session.model' }),
+      `Claude · Opus 5 · High · Short${shortcutGlyphs('session.model')}`,
     );
   });
 
@@ -325,7 +325,7 @@ describe('RoutingPicker', () => {
       name: /4\.6/,
     });
     expect(current.getAttribute('aria-pressed')).toBe('true');
-    expect(current.getAttribute('title')).toBe('Hidden in the picker');
+    expect(tooltipTextOf({ element: current })).toBe('Hidden in the picker');
   });
 
   it('opens the page of the provider in view from the gear', () => {
@@ -731,7 +731,7 @@ describe('RoutingPicker', () => {
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     const high = screen.getByRole('button', { name: 'High' });
     expect(high.hasAttribute('disabled')).toBe(true);
-    expect(high.getAttribute('title')).toBe(
+    expect(tooltipTextOf({ element: high })).toBe(
       'High is unavailable for this model with the current toggles',
     );
     expect(

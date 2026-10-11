@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { BandRow, cn } from '@goodboy/ui';
+import { BandRow, cn, TruncatedText } from '@goodboy/ui';
 
 type Props = {
   readonly label: string;
@@ -22,15 +22,14 @@ export const DefaultRow = ({
     <span data-default-row={anchor} className="w-36 shrink-0 truncate text-body text-foreground">
       {label}
     </span>
-    <span
+    <TruncatedText
       className={cn(
         'min-w-0 flex-1 truncate text-label',
         isSummaryNoted ? 'text-muted-foreground' : 'text-faint-foreground',
       )}
-      title={summary}
     >
       {summary}
-    </span>
+    </TruncatedText>
     {status === undefined ? null : <span className="flex shrink-0 items-center">{status}</span>}
     <div className="w-[220px] min-w-0 shrink-0">{children}</div>
   </BandRow>

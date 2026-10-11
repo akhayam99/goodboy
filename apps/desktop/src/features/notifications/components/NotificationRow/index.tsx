@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Check, Trash2 } from 'lucide-react';
 import type { Notification } from '@goodboy/db';
-import { FOCUS_RING, StatusDot, Tooltip, cn, tintClasses } from '@goodboy/ui';
+import { FOCUS_RING, StatusDot, Tooltip, cn, tintClasses, IconButton } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
@@ -60,13 +60,14 @@ export const NotificationRow = ({
     onActed?.();
   };
   const age = (
-    <time
-      dateTime={latest.ts}
-      title={formatDateTime({ at: latest.ts, hasYear: true })}
-      className="pointer-events-none relative text-right text-meta text-faint-foreground"
-    >
-      {formatAge({ from: latest.ts, now })}
-    </time>
+    <Tooltip content={formatDateTime({ at: latest.ts, hasYear: true })}>
+      <time
+        dateTime={latest.ts}
+        className="pointer-events-none relative text-right text-meta text-faint-foreground"
+      >
+        {formatAge({ from: latest.ts, now })}
+      </time>
+    </Tooltip>
   );
   const count =
     notifications.length > 1 ? (
@@ -130,16 +131,7 @@ export const NotificationRow = ({
         {age}
         <span className="relative flex items-center justify-end gap-0.5">
           {action != null && ActionIcon != null && (
-            <Tooltip content={action.label}>
-              <button
-                type="button"
-                onClick={runAction}
-                aria-label={action.label}
-                className={cn(ICON_BUTTON, 'hover:bg-hover hover:text-foreground')}
-              >
-                <ActionIcon size={ICON_SIZE.row} aria-hidden />
-              </button>
-            </Tooltip>
+            <IconButton icon={ActionIcon} label={action.label} size="xs" onClick={runAction} />
           )}
           <span className="flex opacity-0 motion-safe:transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
             {deleteControl(<Trash2 size={ICON_SIZE.row} aria-hidden />)}
@@ -222,16 +214,13 @@ export const NotificationRow = ({
             )}
           >
             {isUnread && onMarkRead != null && (
-              <Tooltip content="Mark read">
-                <button
-                  type="button"
-                  onClick={onMarkRead}
-                  aria-label={`Mark "${latest.title}" read`}
-                  className={cn(ICON_BUTTON, 'hover:bg-hover hover:text-foreground')}
-                >
-                  <Check size={ICON_SIZE.row} aria-hidden />
-                </button>
-              </Tooltip>
+              <IconButton
+                icon={Check}
+                label={`Mark "${latest.title}" read`}
+                tooltip="Mark read"
+                size="xs"
+                onClick={onMarkRead}
+              />
             )}
             {deleteControl(<Trash2 size={ICON_SIZE.row} aria-hidden />)}
           </span>

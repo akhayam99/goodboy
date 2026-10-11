@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { RotateCcw } from 'lucide-react';
-import { cn, tintClasses } from '@goodboy/ui';
+import { cn, tintClasses, Tooltip } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -40,23 +40,24 @@ export const RetryButton = ({ sessionId, agentId, toolName }: Props) => {
   const disabled = busy || isRunning;
 
   return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={() => void handle()}
-      title="Re-run the turn so the agent retries the tool with the new rule in place"
-      className={cn(
-        cn(
-          'flex items-center gap-1 rounded-sm border',
-          tintClasses('primary').border,
-          'px-2 py-0.5 text-chip text-primary transition-colors',
-          tintClasses('primary').hoverBg,
-        ),
-        disabled && 'cursor-not-allowed opacity-50',
-      )}
-    >
-      <RotateCcw size={ICON_SIZE.mark} aria-hidden />
-      retry {toolName}
-    </button>
+    <Tooltip content="Re-run the turn so the agent retries the tool with the new rule in place">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => void handle()}
+        className={cn(
+          cn(
+            'flex items-center gap-1 rounded-sm border',
+            tintClasses('primary').border,
+            'px-2 py-0.5 text-chip text-primary transition-colors',
+            tintClasses('primary').hoverBg,
+          ),
+          disabled && 'cursor-not-allowed opacity-50',
+        )}
+      >
+        <RotateCcw size={ICON_SIZE.mark} aria-hidden />
+        retry {toolName}
+      </button>
+    </Tooltip>
   );
 };

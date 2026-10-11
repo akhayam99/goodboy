@@ -178,15 +178,16 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
           size={ICON_SIZE.control}
           className={cn(ARTIFACT_ROW_GRID.glyph, row.isFaint && 'text-faint-foreground')}
         />
-        <span
-          title={row.title}
-          className={cn(
-            ARTIFACT_ROW_GRID.title,
-            row.isFaint ? 'text-faint-foreground' : 'text-foreground',
-          )}
-        >
-          {row.title}
-        </span>
+        <Tooltip content={row.title}>
+          <span
+            className={cn(
+              ARTIFACT_ROW_GRID.title,
+              row.isFaint ? 'text-faint-foreground' : 'text-foreground',
+            )}
+          >
+            {row.title}
+          </span>
+        </Tooltip>
         <span data-testid="artifact-row-kind" className={ARTIFACT_ROW_GRID.kind}>
           {ARTIFACT_KIND_MARKER_LABEL[row.kind]}
         </span>

@@ -33,7 +33,7 @@ import { capabilityReasonOf } from '../../pullRequestCapabilityReason';
 import { distanceBehind } from '../../../../shared/lib/gitStatus';
 import type { BranchReviewCounts } from '../../branchPrimary';
 import { branchTabsOf, isBranchReadOnly, resolveBranchTab } from '../../branchTabs';
-import { branchScopeOf } from '../../../../store/slices/session-view/branchTabOf';
+import { branchScopeOf } from '../../../../store/slices/session-view/branchScopeOf';
 import { pullRequestKindOf } from '../../../../shared/pullRequestKind';
 import { BRANCH_RAIL_SURFACE } from '../../branchRailSurface';
 import { useBranchRailDock } from '../../hooks/useBranchRailDock';

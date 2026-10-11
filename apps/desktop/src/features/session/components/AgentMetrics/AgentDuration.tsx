@@ -1,3 +1,4 @@
+import { Tooltip } from '@goodboy/ui';
 import type { Agent } from '@goodboy/types';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
@@ -13,9 +14,9 @@ export const AgentDuration = ({ run }: Props) => {
 
   if (run.startedAt == null) {
     return (
-      <span className="text-faint-foreground tabular-nums" title="Not started yet">
-        0
-      </span>
+      <Tooltip content="Not started yet">
+        <span className="text-faint-foreground tabular-nums">0</span>
+      </Tooltip>
     );
   }
 
@@ -27,8 +28,8 @@ export const AgentDuration = ({ run }: Props) => {
       : `Started ${startedAt}\nWorking for ${worked}`;
 
   return (
-    <span className="tabular-nums" title={tooltip}>
-      {worked}
-    </span>
+    <Tooltip content={tooltip}>
+      <span className="tabular-nums">{worked}</span>
+    </Tooltip>
   );
 };

@@ -25,6 +25,7 @@ import { WORK_META_COLUMN } from '@goodboy/ui';
 import { carriesSpec } from '../../../../test/classTokens';
 import { brandColor } from '../../../providers/components/provider-brand';
 import { useAppStore } from '../../../../store';
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { RunTree } from './index';
 import { useRunTree } from './useRunTree';
 
@@ -376,9 +377,9 @@ describe('RunTree', () => {
     renderTree({ questions: [asked], onAnswer });
 
     expect(within(rowOf('agent-2')).getByRole('img', { name: 'Needs you' })).toBeDefined();
-    expect(within(rowOf('agent-2')).getByTestId('timeline-row-state').getAttribute('title')).toBe(
-      'Needs your answer',
-    );
+    expect(
+      tooltipTextOf({ element: within(rowOf('agent-2')).getByTestId('timeline-row-state') }),
+    ).toBe('Needs your answer');
     const answers = screen.getAllByRole('button', { name: 'Answer' });
     expect(answers).toHaveLength(1);
 

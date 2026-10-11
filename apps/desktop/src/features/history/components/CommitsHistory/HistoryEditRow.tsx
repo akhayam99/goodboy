@@ -8,7 +8,7 @@ import {
   TriangleAlert,
   Undo2,
 } from 'lucide-react';
-import { Button, cn } from '@goodboy/ui';
+import { Button, cn, Tooltip, TruncatedText } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { HistoryEdit } from '../../historyEdits';
 import { HISTORY_ACTION_TERM } from '../../historyRowMarks';
@@ -89,17 +89,16 @@ export const HistoryEditRow = ({
     <HistoryChangeMark action={edit.kind} label={text}>
       {glyphOf({ edit })}
     </HistoryChangeMark>
-    <span className="min-w-0 flex-1 truncate text-body text-foreground" title={text}>
+    <TruncatedText className="min-w-0 flex-1 truncate text-body text-foreground">
       {text}
-    </span>
+    </TruncatedText>
     {conflict === null ? null : (
-      <span
-        title={conflict}
-        className="inline-flex shrink-0 items-center gap-1 text-label text-warning"
-      >
-        <TriangleAlert size={ICON_SIZE.row} aria-hidden />
-        may conflict
-      </span>
+      <Tooltip content={conflict}>
+        <span className="inline-flex shrink-0 items-center gap-1 text-label text-warning">
+          <TriangleAlert size={ICON_SIZE.row} aria-hidden />
+          may conflict
+        </span>
+      </Tooltip>
     )}
     {edit.kind === 'fixup' || edit.kind === 'squash' ? (
       <HistoryModeSwitch mode={edit.kind} isDisabled={!isInteractive} onChange={onModeChange} />

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { cn, Eyebrow } from '@goodboy/ui';
+import { cn, Eyebrow, Tooltip } from '@goodboy/ui';
 import type { AgentId, ArtifactId } from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { ReportSourceLink } from '../../reportSourceLinks';
@@ -36,22 +36,22 @@ export const ReportProvenanceRow = ({ reportType, links, onOpenAgent, onOpenArti
         const Glyph = link.kind === 'agent' ? CONCEPT_ICONS.agents : CONCEPT_ICONS.plans;
         const hint = link.kind === 'agent' ? 'open the agent' : 'open the plan';
         return (
-          <button
-            key={`${link.kind}-${link.id}`}
-            type="button"
-            className={cn(chipClass)}
-            title={`${hint} ${link.label}`}
-            aria-label={`${hint} ${link.label}`}
-            data-testid="report-source-chip"
-            onClick={() =>
-              link.kind === 'agent'
-                ? onOpenAgent(link.id as AgentId)
-                : onOpenArtifact(link.id as ArtifactId)
-            }
-          >
-            <Glyph size={ICON_SIZE.row} className="shrink-0" aria-hidden />
-            <span className="truncate">{link.label}</span>
-          </button>
+          <Tooltip key={`${link.kind}-${link.id}`} content={`${hint} ${link.label}`}>
+            <button
+              type="button"
+              className={cn(chipClass)}
+              aria-label={`${hint} ${link.label}`}
+              data-testid="report-source-chip"
+              onClick={() =>
+                link.kind === 'agent'
+                  ? onOpenAgent(link.id as AgentId)
+                  : onOpenArtifact(link.id as ArtifactId)
+              }
+            >
+              <Glyph size={ICON_SIZE.row} className="shrink-0" aria-hidden />
+              <span className="truncate">{link.label}</span>
+            </button>
+          </Tooltip>
         );
       })}
       {overflow > 0 && !isExpanded && (

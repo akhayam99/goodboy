@@ -11,6 +11,7 @@ import { ORCHESTRATOR_DECIDING_SENTENCE } from '../../../../../workflows/orchest
 import { resolveRunRowState } from '../../../../../workTreeModel/rowState';
 import { runOpenQuestion } from '../../../../timeline/runOpenQuestion';
 import { TimelineRowStateLine } from './TimelineRowStateLine';
+import { tooltipTextOf } from '../../../../../../__tests__/helpers/tooltip';
 import { TimelineRunLabel } from './TimelineRunLabel';
 
 afterEach(cleanup);
@@ -94,10 +95,11 @@ const stepOf = ({ stepLabel, questionAt = null, children = [] }: StepParams) => 
   children,
 });
 
-const chipOf = () => {
-  const chip = screen.getByTitle(`Refactor (example) ${LABEL_OF.preset.toLowerCase()}`);
-  return chip;
-};
+const chipOf = () =>
+  screen.getByRole('img', { name: `Refactor (example) ${LABEL_OF.preset.toLowerCase()}` });
+
+const glyphTip = ({ name }: { readonly name: string }): string =>
+  tooltipTextOf({ element: screen.getByRole('img', { name }) });
 
 describe('TimelineRunLabel', () => {
   it('spends no word on the run kind, the glyph says it', () => {
@@ -157,19 +159,19 @@ describe('TimelineRunLabel', () => {
 
     expect(screen.getByText('Fix Safari OAuth login loop').className).toContain('truncate');
     expect(screen.queryByText('Feature')).toBeNull();
-    expect(screen.getByTitle('Feature preset run')).toBeDefined();
+    expect(glyphTip({ name: 'Feature preset run' })).toBe('Feature preset run');
   });
 
   it('names a preset in the chip tooltip and leaves the row to the title', () => {
     render(<Label entry={entryOf({ name: 'Feature' })} />);
 
-    expect(screen.getByTitle('Feature preset run')).toBeDefined();
+    expect(glyphTip({ name: 'Feature preset run' })).toBe('Feature preset run');
   });
 
   it('keeps the plain kind in the tooltip of an orchestrated run', () => {
     render(<Label entry={entryOf({ kind: 'orchestrator', name: 'Fix login' })} />);
 
-    expect(screen.getByTitle(LABEL_OF.orchestrator)).toBeDefined();
+    expect(glyphTip({ name: LABEL_OF.orchestrator })).toBe(LABEL_OF.orchestrator);
   });
 
   it('says which step needs an answer when one of its steps asks', () => {
@@ -186,7 +188,7 @@ describe('TimelineRunLabel', () => {
 
     const state = screen.getByTestId('timeline-row-state');
     expect(state.className).toContain('text-warning');
-    expect(state.getAttribute('title')).toBe('Needs your answer in step 2');
+    expect(tooltipTextOf({ element: state })).toBe('Needs your answer in step 2');
     expect(screen.getByText('Needs your answer in step 2').className).toContain('sr-only');
     expect(screen.getByText('Needs you').getAttribute('aria-hidden')).toBe('true');
   });

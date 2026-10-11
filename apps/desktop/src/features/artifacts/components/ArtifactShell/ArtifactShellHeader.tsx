@@ -1,3 +1,4 @@
+import { Tooltip } from '@goodboy/ui';
 import { useCallback, useRef, useState, type ReactNode } from 'react';
 import type { ArtifactKind } from '@goodboy/types';
 import type { ArtifactActionTarget } from '../../../actions/types';
@@ -43,13 +44,14 @@ export const ArtifactShellHeader = ({ kind, title, chip, actions, meta }: Props)
       >
         <div className="flex min-h-8 min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           <ArtifactKindGlyph kind={kind} size={ICON_SIZE.control} />
-          <h1
-            data-testid="artifact-title"
-            title={title}
-            className="min-w-0 flex-1 truncate text-title text-foreground"
-          >
-            {title}
-          </h1>
+          <Tooltip content={title}>
+            <h1
+              data-testid="artifact-title"
+              className="min-w-0 flex-1 truncate text-title text-foreground"
+            >
+              {title}
+            </h1>
+          </Tooltip>
           {chip}
           {actions}
         </div>

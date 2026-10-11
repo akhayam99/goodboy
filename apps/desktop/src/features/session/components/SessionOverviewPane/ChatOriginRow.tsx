@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { FOCUS_RING, cn } from '@goodboy/ui';
+import { FOCUS_RING, cn, Tooltip } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
@@ -66,19 +66,20 @@ export const ChatOriginRow = ({ session }: Props) => {
 
   return (
     <div className="flex min-w-0 items-center gap-2">
-      <button
-        type="button"
-        onClick={() => open(primary)}
-        title={`Open the chat ${primary.title}`}
-        className={cn(
-          'flex min-w-0 items-center gap-2 rounded-sm text-left text-label text-muted-foreground motion-safe:transition-colors hover:text-foreground',
-          FOCUS_RING,
-        )}
-      >
-        <CONCEPT_ICONS.chat size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-        <span className="shrink-0">{`${KIND_LABEL[primary.kind]}: `}</span>
-        <span className="min-w-0 truncate text-foreground">{primary.title}</span>
-      </button>
+      <Tooltip content={`Open the chat ${primary.title}`}>
+        <button
+          type="button"
+          onClick={() => open(primary)}
+          className={cn(
+            'flex min-w-0 items-center gap-2 rounded-sm text-left text-label text-muted-foreground motion-safe:transition-colors hover:text-foreground',
+            FOCUS_RING,
+          )}
+        >
+          <CONCEPT_ICONS.chat size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+          <span className="shrink-0">{`${KIND_LABEL[primary.kind]}: `}</span>
+          <span className="min-w-0 truncate text-foreground">{primary.title}</span>
+        </button>
+      </Tooltip>
       {others.length === 0 ? null : (
         <MoreChatOrigins origins={others} onOpen={open} labelOf={labelOf} />
       )}

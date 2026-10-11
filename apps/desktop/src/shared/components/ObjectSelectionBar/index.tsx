@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef } from 'react';
 import { Button, SelectionBar, SelectionConfirm, type SelectionVerb } from '@goodboy/ui';
 import type { SelectionBarPlacement } from '@goodboy/ui';
 import { ICON_SIZE } from '../conceptIcons';
-import { shortcutGlyphs } from '../../keyboard/registry';
 import type { ActionControls } from '../../../features/actions/useActionControls';
 
 type Props = {
@@ -125,8 +124,8 @@ export const ObjectSelectionBar = ({
       confirm={confirmNode}
       onDismissConfirm={controls.cancel}
       note={note}
-      clearHint={shortcutGlyphs('selection.clear')}
-      selectAllHint={shortcutGlyphs('selection.all')}
+      clearShortcut="selection.clear"
+      selectAllShortcut="selection.all"
       onFocusReturn={onFocusReturn}
       placement={placement}
       className={className}

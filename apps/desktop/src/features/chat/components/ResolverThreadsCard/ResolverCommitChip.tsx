@@ -1,5 +1,5 @@
 import { GitCommit } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn, Tooltip } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -24,17 +24,18 @@ export const ResolverCommitChip = ({ sha, onOpen }: Props) => {
   }
 
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      title={`Open commit ${shortSha}`}
-      aria-label={`Open commit ${shortSha}`}
-      className={cn(
-        CHIP_CLASS,
-        'cursor-pointer underline-offset-2 motion-safe:transition-colors hover:border-border hover:text-foreground hover:underline',
-      )}
-    >
-      {content}
-    </button>
+    <Tooltip content={`Open commit ${shortSha}`}>
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-label={`Open commit ${shortSha}`}
+        className={cn(
+          CHIP_CLASS,
+          'cursor-pointer underline-offset-2 motion-safe:transition-colors hover:border-border hover:text-foreground hover:underline',
+        )}
+      >
+        {content}
+      </button>
+    </Tooltip>
   );
 };

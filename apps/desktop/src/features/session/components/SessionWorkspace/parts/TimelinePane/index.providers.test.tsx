@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { Agent, ProviderId, Session, SessionId, WorkspaceId } from '@goodboy/types';
 import { aSession, anAgent } from '@goodboy/types/testing';
 import {
@@ -193,8 +193,7 @@ const AGENTS: ReadonlyArray<Agent> = [
 ];
 
 const rowOf = ({ name }: { readonly name: string }): HTMLElement => {
-  const title = document.querySelector(`[title="${name}"]`);
-  const row = title?.closest('[data-row-id]');
+  const row = screen.getAllByText(name)[0]?.closest('[data-row-id]');
   if (!(row instanceof HTMLElement)) {
     throw new Error(`no activity row titled ${name}`);
   }
@@ -245,7 +244,7 @@ describe('TimelinePane, provider icon on agent rows', () => {
 
     const row = rowOf({ name: 'Solo cursor' });
     const glyph = slotIn({ row });
-    const title = row.querySelector('[title="Solo cursor"]');
+    const title = within(row).getAllByText('Solo cursor')[0] ?? null;
 
     expect(providerNameIn({ row })).toBe('Cursor');
     expect(

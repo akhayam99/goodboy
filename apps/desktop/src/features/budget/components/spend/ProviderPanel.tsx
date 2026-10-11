@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { StatCard, formatUsd, formatUsdPrecise, PaneShell } from '@goodboy/ui';
+import { StatCard, formatUsd, formatUsdPrecise, PaneShell, Tooltip } from '@goodboy/ui';
 import type { BudgetRule, ProviderName, SessionId } from '@goodboy/types';
 import { ErrorStrip } from '@goodboy/ui';
 import { PanelLoading } from '@goodboy/ui';
@@ -94,9 +94,11 @@ export const ProviderPanel = ({
               warnAt={budgetWarnFraction({ status: budget })}
             />
             <div className="grid flex-1 grid-cols-3 gap-3">
-              <div title={formatUsdPrecise(budget.spentUsd)}>
-                <StatCard label="spent this month" value={formatUsd(budget.spentUsd)} />
-              </div>
+              <Tooltip content={formatUsdPrecise(budget.spentUsd)}>
+                <div>
+                  <StatCard label="spent this month" value={formatUsd(budget.spentUsd)} />
+                </div>
+              </Tooltip>
               <StatCard label="cap" value={formatUsd(capUsd)} />
               <StatCard
                 label="remaining"
@@ -108,9 +110,11 @@ export const ProviderPanel = ({
         </section>
       ) : (
         <section className="grid grid-cols-3 gap-3">
-          <div title={formatUsdPrecise(spent)}>
-            <StatCard label="spent" value={formatUsd(spent)} />
-          </div>
+          <Tooltip content={formatUsdPrecise(spent)}>
+            <div>
+              <StatCard label="spent" value={formatUsd(spent)} />
+            </div>
+          </Tooltip>
           <StatCard label="turns" value={String(filtered.length)} />
           <StatCard label="models" value={String(models.length)} />
         </section>

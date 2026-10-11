@@ -1,4 +1,4 @@
-import { cn, tintClasses, Eyebrow } from '@goodboy/ui';
+import { cn, tintClasses, Eyebrow, Tooltip } from '@goodboy/ui';
 import type { WireframeArtifact } from '@goodboy/types';
 import { asWireframeFidelity, requestedWireframeFidelity } from '../wireframeFidelity';
 
@@ -16,12 +16,15 @@ export const WireframeDivergenceChip = ({ artifact, creatorName }: Props) => {
   }
 
   return (
-    <span
-      data-testid="wireframe-fidelity-divergence"
-      title={`this wireframe was asked for at ${requested} fidelity and came back at ${fidelity}`}
-      className={cn('shrink-0 rounded-sm', tintClasses('warning').bg, 'px-2 py-0.5')}
+    <Tooltip
+      content={`this wireframe was asked for at ${requested} fidelity and came back at ${fidelity}`}
     >
-      <Eyebrow label={`${requested} asked, ${fidelity} produced`} className="text-warning" />
-    </span>
+      <span
+        data-testid="wireframe-fidelity-divergence"
+        className={cn('shrink-0 rounded-sm', tintClasses('warning').bg, 'px-2 py-0.5')}
+      >
+        <Eyebrow label={`${requested} asked, ${fidelity} produced`} className="text-warning" />
+      </span>
+    </Tooltip>
   );
 };

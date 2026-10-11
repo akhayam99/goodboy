@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render } from '@testing-library/react';
+import { tooltipTextOf } from '../../../__tests__/helpers/tooltip';
 import { RelativeTime } from './index';
 
 afterEach(() => {
@@ -25,6 +26,7 @@ describe('RelativeTime', () => {
     const { container } = render(<RelativeTime iso="2026-09-29T09:59:30Z" title="Sep 29, 12:00" />);
     const element = container.querySelector('time');
     expect(element?.getAttribute('datetime')).toBe('2026-09-29T09:59:30Z');
-    expect(element?.getAttribute('title')).toBe('Sep 29, 12:00');
+    expect(element?.getAttribute('title')).toBeNull();
+    expect(element === null ? null : tooltipTextOf({ element })).toBe('Sep 29, 12:00');
   });
 });

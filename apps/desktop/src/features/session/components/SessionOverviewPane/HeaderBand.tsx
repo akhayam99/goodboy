@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { HeaderActions, Input, Tooltip, InlineMarkdown, inlineMarkdownText } from '@goodboy/ui';
+import { HeaderActions, Input, Tooltip, InlineMarkdown } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
@@ -72,7 +72,6 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
               <button
                 type="button"
                 onClick={rename.start}
-                title={inlineMarkdownText({ text: titleText })}
                 className="min-w-0 flex-1 cursor-text truncate rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
                 <span key={titleText} className="motion-safe:animate-fade-in">

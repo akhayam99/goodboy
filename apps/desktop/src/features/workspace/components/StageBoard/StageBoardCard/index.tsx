@@ -209,27 +209,28 @@ export const StageBoardCard = memo(function StageBoardCard({
               className="min-w-0 flex-1"
             />
           ) : (
-            <button
-              type="button"
-              title={inlineMarkdownText({ text: title })}
-              aria-pressed={selected === true}
-              aria-keyshortcuts="Alt+Enter Shift+F10"
-              onKeyDown={(event) => {
-                menu.onKeyDown(event);
-                if (event.key !== 'Enter' && event.key !== ' ') {
-                  return;
-                }
-                event.preventDefault();
-                event.stopPropagation();
-                if (event.altKey && selectFromEvent(event)) {
-                  return;
-                }
-                nav.selectCard(session);
-              }}
-              className="min-w-0 flex-1 cursor-pointer rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-            >
-              <InlineMarkdown text={title} className="line-clamp-2 min-h-10 text-row" />
-            </button>
+            <Tooltip content={inlineMarkdownText({ text: title })}>
+              <button
+                type="button"
+                aria-pressed={selected === true}
+                aria-keyshortcuts="Alt+Enter Shift+F10"
+                onKeyDown={(event) => {
+                  menu.onKeyDown(event);
+                  if (event.key !== 'Enter' && event.key !== ' ') {
+                    return;
+                  }
+                  event.preventDefault();
+                  event.stopPropagation();
+                  if (event.altKey && selectFromEvent(event)) {
+                    return;
+                  }
+                  nav.selectCard(session);
+                }}
+                className="min-w-0 flex-1 cursor-pointer rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+              >
+                <InlineMarkdown text={title} className="line-clamp-2 min-h-10 text-row" />
+              </button>
+            </Tooltip>
           )}
           <ChatOriginGlyph sessionId={session.id} />
         </span>

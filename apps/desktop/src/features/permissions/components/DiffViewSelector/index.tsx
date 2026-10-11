@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, Search } from 'lucide-react';
-import { AnchoredPopover, Chip, cn, ScrollFade, useDropdown, tintClasses } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  Chip,
+  cn,
+  ScrollFade,
+  useDropdown,
+  tintClasses,
+  Tooltip,
+  TruncatedText,
+} from '@goodboy/ui';
 import type { BranchCommit, DiffView, WorktreeStatus } from '@goodboy/types';
 import { PickerSection } from '../../../../shared/components/RoutingPicker/PickerSection';
 import { formatAdaptiveAge } from '../../../../shared/utils/time/formatAdaptiveAge';
@@ -329,28 +338,29 @@ export const DiffViewSelector = ({
       ariaLabel="Diff view"
       className="flex flex-col bg-subtle"
       trigger={
-        <button
-          type="button"
-          onClick={toggle}
-          className={cn(
-            'inline-flex min-w-0 items-center gap-2 rounded-md px-2 py-1 text-label text-muted-foreground',
-            'hover:bg-hover hover:text-foreground',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-          )}
-          title="Change diff view"
-        >
-          <span className="truncate">{label}</span>
-          {loading ? (
-            <span className="text-faint-foreground">…</span>
-          ) : countLabel === null ? null : (
-            <span className="shrink-0 text-faint-foreground tabular-nums">· {countLabel}</span>
-          )}
-          <ChevronDown
-            size={ICON_SIZE.row}
-            aria-hidden
-            className="shrink-0 text-faint-foreground"
-          />
-        </button>
+        <Tooltip content="Change diff view" isSuppressed={open}>
+          <button
+            type="button"
+            onClick={toggle}
+            className={cn(
+              'inline-flex min-w-0 items-center gap-2 rounded-md px-2 py-1 text-label text-muted-foreground',
+              'hover:bg-hover hover:text-foreground',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+            )}
+          >
+            <span className="truncate">{label}</span>
+            {loading ? (
+              <span className="text-faint-foreground">…</span>
+            ) : countLabel === null ? null : (
+              <span className="shrink-0 text-faint-foreground tabular-nums">· {countLabel}</span>
+            )}
+            <ChevronDown
+              size={ICON_SIZE.row}
+              aria-hidden
+              className="shrink-0 text-faint-foreground"
+            />
+          </button>
+        </Tooltip>
       }
     >
       <div className="flex items-center gap-2 px-3 py-2">
@@ -418,9 +428,9 @@ export const DiffViewSelector = ({
                           <span className="shrink-0 font-mono text-meta text-muted-foreground">
                             {row.commit.shortSha}
                           </span>
-                          <span className="min-w-0 flex-1 truncate" title={row.commit.subject}>
+                          <TruncatedText className="min-w-0 flex-1 truncate">
                             {row.commit.subject}
-                          </span>
+                          </TruncatedText>
                           {row.commit.pushed && (
                             <Chip
                               tone="neutral"

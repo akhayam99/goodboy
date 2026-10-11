@@ -1,4 +1,4 @@
-import { IconButton, Input } from '@goodboy/ui';
+import { IconButton, Input, Tooltip } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { useObjectMenuTrigger } from '../../../../actions/useObjectMenuTrigger';
@@ -56,9 +56,9 @@ export const RunHeader = ({ session, view }: Props) => {
               className="group/name flex min-w-0 items-center gap-2"
               onContextMenu={menu.onContextMenu}
             >
-              <h1 title={name} className="min-w-0 truncate text-title text-foreground">
-                {name}
-              </h1>
+              <Tooltip content={name}>
+                <h1 className="min-w-0 truncate text-title text-foreground">{name}</h1>
+              </Tooltip>
               <IconButton
                 icon={CONCEPT_ICONS.rename}
                 size="xs"

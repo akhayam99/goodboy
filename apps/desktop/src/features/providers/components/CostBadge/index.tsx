@@ -1,4 +1,4 @@
-import { cn, formatUsd } from '@goodboy/ui';
+import { cn, formatUsd, Tooltip } from '@goodboy/ui';
 
 export type Props = {
   readonly value: number;
@@ -7,7 +7,7 @@ export type Props = {
 };
 
 export const CostBadge = ({ value, className, title }: Props) => (
-  <span className={cn('tabular-nums', className)} title={title}>
-    {formatUsd(value)}
-  </span>
+  <Tooltip content={title}>
+    <span className={cn('tabular-nums', className)}>{formatUsd(value)}</span>
+  </Tooltip>
 );

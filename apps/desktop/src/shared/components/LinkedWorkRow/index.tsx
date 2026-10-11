@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { ArrowRight, ArrowUpRight, type LucideIcon } from 'lucide-react';
-import { cn, tintClasses } from '@goodboy/ui';
+import { cn, tintClasses, Tooltip } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
 import {
   IntegrationGlyph,
@@ -70,38 +70,39 @@ export const LinkedWorkRow = ({
           : 'border-border-soft hover:border-border',
       )}
     >
-      <button
-        type="button"
-        onClick={(event) => {
-          event.stopPropagation();
-          onClick();
-        }}
-        title={tooltip}
-        aria-label={ariaLabel}
-        className="flex min-w-0 flex-1 items-center gap-2 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-      >
-        {glyph}
-        <span className="shrink-0 font-mono text-label font-semibold text-foreground">
-          {identifier}
-        </span>
-        {title != null ? (
-          <span className="min-w-0 flex-1 truncate text-body text-foreground">{title}</span>
-        ) : null}
-        {attribution}
-        {navigation === 'internal' ? (
-          <ArrowRight
-            size={ICON_SIZE.control}
-            aria-hidden
-            className="shrink-0 text-faint-foreground motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
-          />
-        ) : (
-          <ArrowUpRight
-            size={ICON_SIZE.control}
-            aria-hidden
-            className="shrink-0 text-faint-foreground group-hover:text-muted-foreground"
-          />
-        )}
-      </button>
+      <Tooltip content={tooltip}>
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onClick();
+          }}
+          aria-label={ariaLabel}
+          className="flex min-w-0 flex-1 items-center gap-2 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+        >
+          {glyph}
+          <span className="shrink-0 font-mono text-label font-semibold text-foreground">
+            {identifier}
+          </span>
+          {title != null ? (
+            <span className="min-w-0 flex-1 truncate text-body text-foreground">{title}</span>
+          ) : null}
+          {attribution}
+          {navigation === 'internal' ? (
+            <ArrowRight
+              size={ICON_SIZE.control}
+              aria-hidden
+              className="shrink-0 text-faint-foreground motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
+            />
+          ) : (
+            <ArrowUpRight
+              size={ICON_SIZE.control}
+              aria-hidden
+              className="shrink-0 text-faint-foreground group-hover:text-muted-foreground"
+            />
+          )}
+        </button>
+      </Tooltip>
       {actions}
     </div>
   );

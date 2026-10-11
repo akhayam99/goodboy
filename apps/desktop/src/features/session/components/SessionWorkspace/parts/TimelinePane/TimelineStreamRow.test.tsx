@@ -494,7 +494,7 @@ describe('TimelineStreamRow, hover cards', () => {
     fireEvent.mouseEnter(screen.getByText('Implement the parser'));
     advance({ ms: 3_000 });
 
-    expect(screen.queryByRole('tooltip')).toBeNull();
+    expect(screen.queryByText('Identity card body')).toBeNull();
   });
 
   it('opens the identity card from the keyboard with i on the focused row', () => {

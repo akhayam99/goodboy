@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { EffortLevel, Session, Workflow } from '@goodboy/types';
 import type { Mode, WorkflowBuilderDraft } from '../../../../store/slices/workflowDrafts/types';
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { writeLastWorkflowMode } from './lastWorkflowMode';
 
 const {
@@ -812,7 +813,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
       'Pick a workflow',
     ]);
     expect(tabs[0]!.getAttribute('aria-selected')).toBe('true');
-    expect(tabs[0]!.getAttribute('title')).toBe('Goodboy picks each next agent');
+    expect(tooltipTextOf({ element: tabs[0]! })).toBe('Goodboy picks each next agent');
     expect(screen.queryByText(/workflow approach/i)).toBeNull();
   });
 

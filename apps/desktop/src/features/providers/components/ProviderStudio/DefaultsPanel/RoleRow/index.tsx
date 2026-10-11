@@ -12,7 +12,7 @@ import type {
   RoleModelPreference,
   WorkspaceId,
 } from '@goodboy/types';
-import { Chip, Collapsible, cn } from '@goodboy/ui';
+import { Chip, Collapsible, cn, TruncatedText } from '@goodboy/ui';
 import { useHiddenModels } from '../../../../hooks/useHiddenModels';
 import { useResolution } from '../../../../hooks/useResolution';
 import { hiddenModelNote } from '../hiddenModelNote';
@@ -105,15 +105,14 @@ export const RoleRow = ({
       trigger={
         <span className="flex min-w-0 items-center gap-3">
           <span className="w-32 shrink-0 truncate text-body text-foreground">{label}</span>
-          <span
+          <TruncatedText
             className={cn(
               'min-w-0 flex-1 truncate text-label',
               isSummaryNoted ? 'text-muted-foreground' : 'text-faint-foreground',
             )}
-            title={summary}
           >
             {summary}
-          </span>
+          </TruncatedText>
           <span className="flex max-w-[45%] shrink-0 justify-end">{trailing}</span>
         </span>
       }

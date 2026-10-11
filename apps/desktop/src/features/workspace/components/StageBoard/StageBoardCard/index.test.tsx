@@ -166,6 +166,13 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
+const slotOf = (element: HTMLElement): HTMLElement | null =>
+  (element.closest('[data-tooltip]') ?? element).parentElement;
+
+const costBadge = (): Element | null =>
+  document.querySelector('[data-tooltip="Session spend: $1.25 (excludes summarizer)"]')
+    ?.firstElementChild ?? null;
+
 const cardTitle = () => screen.getByRole('button', { name: session.goal });
 
 describe('StageBoardCard layout', () => {
@@ -181,7 +188,8 @@ describe('StageBoardCard layout', () => {
     expect(title.className).toContain('line-clamp-2');
     expect(title.className).toContain('min-h-10');
     expect(title.className).toContain('text-row');
-    expect(cardTitle().getAttribute('title')).toBe(session.goal);
+    expect(cardTitle().getAttribute('title')).toBeNull();
+    expect(cardTitle().closest('[data-tooltip]')?.getAttribute('data-tooltip')).toBe(session.goal);
     expect(metaRow?.className).toContain('col-span-2');
     expect(metaRow?.className).toContain('col-start-1');
     expect(metaRow?.className).toContain('row-start-2');
@@ -189,9 +197,9 @@ describe('StageBoardCard layout', () => {
     expect(metaRow?.className).not.toContain('self-center');
   });
 
-  it('shows the reason under the goal without a title tooltip or status dot', () => {
+  it('shows the reason under the goal without a native title or status dot', () => {
     render(<StageBoardCard session={session} nav={nav} />);
-    expect(screen.getByText(session.goal).closest('[data-tooltip]')).toBeNull();
+    expect(cardTitle().getAttribute('title')).toBeNull();
     expect(screen.queryByTestId('status-dot')).toBeNull();
     expect(screen.getByText('no PR yet').className).toContain('truncate');
     expect(screen.getByText('no PR yet').parentElement?.children.length).toBe(2);
@@ -256,7 +264,9 @@ describe('StageBoardCard layout', () => {
     const title = screen.getByText(/run/);
     expect(title.querySelector('code')?.textContent).toBe('/explore');
     expect(title.textContent).not.toContain('`');
-    expect(title.closest('[data-tooltip]')).toBeNull();
+    expect(title.closest('[data-tooltip]')?.getAttribute('data-tooltip')).toBe(
+      'run /explore first',
+    );
   });
 
   it('points at the session with a trailing chevron', () => {
@@ -444,7 +454,7 @@ describe('StageBoardCard actions visibility', () => {
     });
     render(<StageBoardCard session={updated} nav={nav} />);
 
-    expect(screen.getByText('2h ago').parentElement).toBe(screen.getByText('$1.23').parentElement);
+    expect(slotOf(screen.getByText('2h ago'))).toBe(slotOf(screen.getByText('$1.23')));
   });
 
   it('keeps nothing hover-only on the card', () => {
@@ -518,7 +528,7 @@ describe('StageBoardCard footer', () => {
     render(<StageBoardCard session={autoSession} nav={nav} />);
     const agents = screen.getByLabelText('2 agents');
     const task = screen.getByLabelText('GB-123 from Linear');
-    const cost = document.querySelector('[title="Session spend: $1.25 (excludes summarizer)"]');
+    const cost = costBadge();
     const auto = screen.getByLabelText('Run on its own');
     const metaRow = agents.closest('[data-tooltip]')?.parentElement?.parentElement;
     const left = metaRow?.firstElementChild;
@@ -535,9 +545,9 @@ describe('StageBoardCard footer', () => {
     expect(Array.from(left?.children ?? [])).toEqual([
       agents.closest('[data-tooltip]'),
       auto.closest('[data-tooltip]'),
-      task,
+      task.closest('[data-tooltip]'),
     ]);
-    expect(right?.firstElementChild).toBe(cost);
+    expect(right?.firstElementChild).toBe(cost?.closest('[data-tooltip]'));
     expect(right?.children.length).toBe(2);
     expect(right?.lastElementChild?.textContent).toMatch(/ago$/);
     expect(right?.className).not.toContain('opacity-0');
@@ -611,7 +621,7 @@ describe('StageBoardCard footer', () => {
       updatedAt: new Date(Date.now() - 7_200_000).toISOString() as IsoDateTime,
     });
     render(<StageBoardCard session={updated} nav={nav} />);
-    const cost = document.querySelector('[title="Session spend: $1.25 (excludes summarizer)"]');
+    const cost = costBadge();
     expect(cost?.className).toContain('text-meta');
     expect(screen.getByText('2h ago').className).toContain('text-meta');
   });
@@ -619,9 +629,7 @@ describe('StageBoardCard footer', () => {
   it('keeps the cost badge in the card, revealed on hover or focus', () => {
     hooks.cost = 1.25;
     render(<StageBoardCard session={session} nav={nav} />);
-    expect(
-      document.querySelector('[title="Session spend: $1.25 (excludes summarizer)"]'),
-    ).not.toBeNull();
+    expect(costBadge()).not.toBeNull();
   });
 
   it('singularizes the agent count label at one agent', () => {

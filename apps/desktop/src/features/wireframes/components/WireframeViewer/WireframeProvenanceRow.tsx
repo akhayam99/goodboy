@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { cn, Eyebrow } from '@goodboy/ui';
+import { cn, Eyebrow, Tooltip } from '@goodboy/ui';
 import type { WireframeTheme } from '@goodboy/core';
 import type { WireframeFidelity } from '../../wireframeFidelity';
 
@@ -62,15 +62,15 @@ export const WireframeProvenanceRow = ({ fidelity, theme, designProfile }: Props
         <span className="shrink-0">from</span>
       )}
       {visible.map((ref) => (
-        <span
-          key={ref}
-          data-testid="wireframe-source-chip"
-          title={ref}
-          aria-label={ref}
-          className={cn(chipClass, 'font-mono')}
-        >
-          <span className="truncate">{refLeaf({ ref })}</span>
-        </span>
+        <Tooltip key={ref} content={ref}>
+          <span
+            data-testid="wireframe-source-chip"
+            aria-label={ref}
+            className={cn(chipClass, 'font-mono')}
+          >
+            <span className="truncate">{refLeaf({ ref })}</span>
+          </span>
+        </Tooltip>
       ))}
       {overflow > 0 && !isExpanded && (
         <button

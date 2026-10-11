@@ -41,8 +41,18 @@ vi.mock('@goodboy/ui', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@goodboy/ui')>();
   return {
     ...actual,
-    Tooltip: ({ content, children }: { content: string; children: React.ReactNode }) => (
-      <span data-tooltip={content}>{children}</span>
+    Tooltip: ({
+      content,
+      shortcut,
+      children,
+    }: {
+      content: string;
+      shortcut?: string;
+      children: React.ReactNode;
+    }) => (
+      <span data-tooltip={content} data-shortcut={shortcut}>
+        {children}
+      </span>
     ),
   };
 });
@@ -171,7 +181,8 @@ describe('NavCluster', () => {
     const board = screen.getByRole('button', { name: 'Board' });
     expect(board.textContent).toContain('Board');
     expect(board.getAttribute('aria-current')).toBe('page');
-    expect(board.parentElement?.getAttribute('data-tooltip')).toMatch(/^Board {2}\S+/);
+    expect(board.parentElement?.getAttribute('data-tooltip')).toBe('Board');
+    expect(board.parentElement?.getAttribute('data-shortcut')).toBe('session.board');
     fireEvent.click(board);
     expect(store.navigate).not.toHaveBeenCalled();
     expect(store.closeStudio).not.toHaveBeenCalled();
@@ -183,7 +194,8 @@ describe('NavCluster', () => {
 
     const board = screen.getByRole('button', { name: 'Board' });
     expect(board.getAttribute('aria-current')).toBeNull();
-    expect(board.parentElement?.getAttribute('data-tooltip')).toMatch(/^Board {2}\S+/);
+    expect(board.parentElement?.getAttribute('data-tooltip')).toBe('Board');
+    expect(board.parentElement?.getAttribute('data-shortcut')).toBe('session.board');
     fireEvent.click(board);
     expect(store.closeStudio).toHaveBeenCalledOnce();
   });

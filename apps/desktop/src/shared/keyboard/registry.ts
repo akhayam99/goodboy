@@ -1,3 +1,4 @@
+import { registerShortcutGlyphs } from '@goodboy/ui';
 import { currentPlatform } from '../platform';
 import { NAMES } from '../names';
 
@@ -719,12 +720,6 @@ export const shortcutRangeGlyphs = ({ first, last }: RangeParams): string => {
   return shared === -1 ? from : `${from}-${to.slice(shared)}`;
 };
 
-type HintParams = {
-  readonly label: string;
-  readonly shortcut: ShortcutId;
-};
+const isShortcutId = (id: string): id is ShortcutId => Object.hasOwn(SHORTCUTS, id);
 
-export const withShortcutHint = ({ label, shortcut }: HintParams): string => {
-  const glyphs = shortcutGlyphs(shortcut);
-  return glyphs === '' ? label : `${label} (${glyphs})`;
-};
+registerShortcutGlyphs((id) => (isShortcutId(id) ? shortcutGlyphs(id) : ''));

@@ -95,16 +95,28 @@ const removeLedger = async ({ folder, mode }: FolderRemovalParams): Promise<Stor
   return { kind: 'removed', path: folder.path, sizeBytes: folder.sizeBytes ?? 0 };
 };
 
+const MONITOR_UNREADABLE_REASON = 'Could not check for running processes, so this folder was kept';
+
+const keptFor = ({
+  folder,
+  message,
+}: {
+  readonly folder: StorageFolder;
+  readonly message: string;
+}) => ({ kind: 'kept', path: folder.path, reasons: [], message }) satisfies StorageRemoval;
+
 const removeOne = async ({ get, folder, mode }: FolderRemovalParams): Promise<StorageRemoval> => {
-  if (
-    processesInWorktree({ snapshot: get().monitorSnapshot, worktreePath: folder.path }).length > 0
-  ) {
-    return {
-      kind: 'kept',
-      path: folder.path,
-      reasons: [],
-      message: MOUNT_CLEANUP_BLOCKER_REASON['process-running'],
-    };
+  try {
+    await get().refreshMonitorSnapshot();
+  } catch {
+    return keptFor({ folder, message: MONITOR_UNREADABLE_REASON });
+  }
+  const { monitorSnapshot, monitorError } = get();
+  if (monitorError !== null || monitorSnapshot === null || !monitorSnapshot.isPlatformSupported) {
+    return keptFor({ folder, message: MONITOR_UNREADABLE_REASON });
+  }
+  if (processesInWorktree({ snapshot: monitorSnapshot, worktreePath: folder.path }).length > 0) {
+    return keptFor({ folder, message: MOUNT_CLEANUP_BLOCKER_REASON['process-running'] });
   }
   try {
     if (folder.origin === 'archived') {

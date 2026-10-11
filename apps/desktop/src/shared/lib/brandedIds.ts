@@ -4,13 +4,17 @@ type ValueParams = {
   readonly value: string;
 };
 
-const isNonEmpty = (value: string): boolean => value.length > 0;
+type AgentIdParams = {
+  readonly value: AgentId;
+};
 
-const isAgentId = (value: string): value is AgentId => isNonEmpty(value);
+const isNonEmpty = ({ value }: ValueParams): boolean => value.length > 0;
 
-export const agentIdOf = ({ value }: ValueParams): AgentId => {
-  if (!isAgentId(value)) {
+const isAgentIdParams = (params: ValueParams): params is AgentIdParams => isNonEmpty(params);
+
+export const agentIdOf = (params: ValueParams): AgentId => {
+  if (!isAgentIdParams(params)) {
     throw new Error('An agent id cannot be empty');
   }
-  return value;
+  return params.value;
 };

@@ -43,7 +43,9 @@ const doors = (): Pick<ColumnActions, 'openNewChat' | 'openNewTerminal'> => ({
 });
 
 const mount = (isCurrent = false, actions = doors()) =>
-  render(<CreateRow workspaceId={harborline.id} isNewCurrent={isCurrent} actions={actions} />);
+  render(
+    <CreateRow workspaceId={harborline.id} place={isCurrent ? 'new' : null} actions={actions} />,
+  );
 
 describe('the create row', () => {
   it('asks for a new session when it is clicked', () => {
