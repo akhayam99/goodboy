@@ -222,7 +222,6 @@ const ChatListRowView = ({
                   <ObjectOverflowMenu
                     target={target}
                     label={`More actions for ${title}`}
-                    tooltip="More"
                     anchorKey={anchorKey}
                   />
                   {isRevealed || isConfirming ? (

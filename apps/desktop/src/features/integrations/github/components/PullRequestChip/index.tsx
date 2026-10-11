@@ -1,4 +1,4 @@
-import { Chip, cn } from '@goodboy/ui';
+import { Chip, cn, Tooltip } from '@goodboy/ui';
 import {
   PULL_REQUEST_PRESENTATION,
   type PullRequestPresentationState,
@@ -35,25 +35,25 @@ export const PullRequestChip = ({
 
   if (variant === 'icon') {
     return (
-      <span
-        title={description}
-        aria-label={description}
-        className={cn('inline-flex shrink-0', meta.textClass, className)}
-      >
-        <Icon size={iconSize ?? 10} aria-hidden />
-      </span>
+      <Tooltip content={description}>
+        <span
+          aria-label={description}
+          className={cn('inline-flex shrink-0', meta.textClass, className)}
+        >
+          <Icon size={iconSize ?? 10} aria-hidden />
+        </span>
+      </Tooltip>
     );
   }
 
   if (variant === 'compact') {
     return (
-      <span
-        title={meta.label}
-        className={cn('inline-flex items-center gap-1 text-chip', meta.textClass, className)}
-      >
-        <Icon size={iconSize ?? 12} aria-hidden />
-        {number !== undefined && <span>#{number}</span>}
-      </span>
+      <Tooltip content={meta.label}>
+        <span className={cn('inline-flex items-center gap-1 text-chip', meta.textClass, className)}>
+          <Icon size={iconSize ?? 12} aria-hidden />
+          {number !== undefined && <span>#{number}</span>}
+        </span>
+      </Tooltip>
     );
   }
 

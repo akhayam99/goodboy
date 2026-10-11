@@ -93,6 +93,7 @@ vi.mock('../../../../shared/components/RoutingPicker', () => ({
 
 import { ArtifactCreationPane } from './index';
 import { chooseListboxValue, listboxValueOf } from '../../../../__tests__/helpers/listbox';
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 
 const SESSION_ID = JSON.parse(JSON.stringify('session-harborline'));
 const WORKTREE = '/tmp/harborline-worktree';
@@ -223,7 +224,8 @@ describe('ArtifactCreationPane', () => {
 
     const pending = screen.getByRole('button', { name: 'Use the session goal' });
     expect(pending.hasAttribute('disabled')).toBe(true);
-    expect(pending.getAttribute('title')).toBe('the session goal is still loading');
+    expect(pending.getAttribute('title')).toBeNull();
+    expect(tooltipTextOf({ element: pending })).toBe('the session goal is still loading');
     fireEvent.click(pending);
     expect((screen.getByTestId('artifact-brief') as HTMLTextAreaElement).value).toBe('');
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Collapsible } from '@goodboy/ui';
+import { Collapsible, Tooltip } from '@goodboy/ui';
 import { subjectWithoutType, type AppliedTypeGroup } from '../../groupAppliedEdits';
 
 type Props = {
@@ -21,18 +21,16 @@ export const HistoryAbsorbedGroup = ({ group }: Props) => {
     >
       <ul className="flex flex-col gap-0.5">
         {group.items.map((item) => (
-          <li
-            key={item.sha}
-            title={item.title}
-            className="flex min-w-0 items-baseline gap-2 text-label text-muted-foreground"
-          >
-            <span className="min-w-0 flex-1 truncate">
-              {subjectWithoutType({ title: item.title })}
-            </span>
-            <span className="shrink-0 font-mono text-meta text-faint-foreground tabular-nums">
-              {item.sha.slice(0, 7)}
-            </span>
-          </li>
+          <Tooltip key={item.sha} content={item.title}>
+            <li className="flex min-w-0 items-baseline gap-2 text-label text-muted-foreground">
+              <span className="min-w-0 flex-1 truncate">
+                {subjectWithoutType({ title: item.title })}
+              </span>
+              <span className="shrink-0 font-mono text-meta text-faint-foreground tabular-nums">
+                {item.sha.slice(0, 7)}
+              </span>
+            </li>
+          </Tooltip>
         ))}
       </ul>
     </Collapsible>

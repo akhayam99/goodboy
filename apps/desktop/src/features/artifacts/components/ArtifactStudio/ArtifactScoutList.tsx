@@ -1,4 +1,4 @@
-import { cn } from '@goodboy/ui';
+import { cn, TruncatedText } from '@goodboy/ui';
 import type { ArtifactScoutRow, ArtifactScoutState } from '../../artifactScoutRoster';
 
 type Props = {
@@ -75,23 +75,19 @@ export const ArtifactScoutList = ({ rows, emptyLine }: Props) => {
               />
               <span className="shrink-0 font-medium text-foreground">{row.name}</span>
               {where === null ? null : (
-                <span
+                <TruncatedText
+                  tooltip={row.root === null ? where : row.root}
                   className="min-w-0 shrink truncate font-mono"
-                  title={row.root === null ? where : row.root}
                 >
                   {where}
-                </span>
+                </TruncatedText>
               )}
               <span className="ml-auto shrink-0 tabular-nums">{stateLine({ row })}</span>
             </span>
             {row.reason === null ? null : (
-              <span
-                data-testid="artifact-scout-reason"
-                className="min-w-0 truncate pl-4"
-                title={row.reason}
-              >
+              <TruncatedText data-testid="artifact-scout-reason" className="min-w-0 truncate pl-4">
                 {row.reason}
-              </span>
+              </TruncatedText>
             )}
           </li>
         );

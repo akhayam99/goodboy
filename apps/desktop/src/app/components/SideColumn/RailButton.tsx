@@ -1,13 +1,14 @@
 import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { Tooltip, cn } from '@goodboy/ui';
+import type { ShortcutId } from '../../../shared/keyboard/registry';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
   readonly id: string;
   readonly icon: LucideIcon;
   readonly label: string;
-  readonly shortcut?: string;
+  readonly shortcut?: ShortcutId;
   readonly isCurrent: boolean;
   readonly className?: string;
   readonly badge?: ReactNode;
@@ -37,7 +38,7 @@ export const RailButton = ({
   badge,
   onSelect,
 }: Props) => (
-  <Tooltip content={shortcut === undefined ? label : `${label}  ${shortcut}`} side="right">
+  <Tooltip content={label} shortcut={shortcut} side="right">
     <button
       type="button"
       data-column-door={id}

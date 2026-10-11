@@ -1,5 +1,5 @@
 import { ExternalLink, FolderOpen } from 'lucide-react';
-import { Button, SectionHeader } from '@goodboy/ui';
+import { Button, SectionHeader, TruncatedText } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { ArtifactSavedCopy as SavedCopy } from '../../hooks/useArtifactSavedCopy';
 
@@ -14,13 +14,13 @@ export const ArtifactSavedCopy = ({ savedCopy }: Props) => {
     <section aria-label="File" className="flex min-w-0 flex-col gap-2">
       <SectionHeader label="File" />
       <div className="flex min-w-0 items-center gap-2">
-        <span
+        <TruncatedText
+          tooltip={location?.path}
           data-testid="artifact-saved-copy-path"
-          title={location?.path}
           className="min-w-0 flex-1 truncate font-mono text-meta text-muted-foreground"
         >
           {saved !== null ? saved.path : 'Writing the file…'}
-        </span>
+        </TruncatedText>
         {saved !== null ? (
           <Button
             variant="ghost"

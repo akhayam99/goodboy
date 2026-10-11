@@ -12,6 +12,7 @@ vi.mock('../../../../shared/lib/editor', () => ({
   openUrl: mocks.openUrl,
 }));
 
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { ExternalTaskChip } from './index';
 
 afterEach(() => {
@@ -47,7 +48,8 @@ describe('ExternalTaskChip, full variant', () => {
   it('sets the tooltip to "identifier: title"', () => {
     render(<ExternalTaskChip task={makeTask()} />);
     const btn = screen.getByRole('button');
-    expect(btn.getAttribute('title')).toBe('GB-123: Improve preview metadata');
+    expect(btn.getAttribute('title')).toBeNull();
+    expect(tooltipTextOf({ element: btn })).toBe('GB-123: Improve preview metadata');
   });
 });
 
@@ -63,7 +65,8 @@ describe('ExternalTaskChip, icon variant', () => {
     render(<ExternalTaskChip task={makeTask()} variant="icon" />);
     expect(screen.queryByRole('button')).toBeNull();
     const badge = screen.getByLabelText(/GB-123 from Linear/i);
-    expect(badge.getAttribute('title')).toBe('GB-123: Improve preview metadata');
+    expect(badge.getAttribute('title')).toBeNull();
+    expect(tooltipTextOf({ element: badge })).toBe('GB-123: Improve preview metadata');
   });
 });
 

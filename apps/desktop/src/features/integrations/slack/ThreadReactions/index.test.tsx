@@ -2,6 +2,7 @@
 
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { ThreadReactions } from './index';
 
 const TS = '1723456999.000100';
@@ -47,6 +48,6 @@ describe('ThreadReactions', () => {
 
     const button = screen.getByRole('button', { name: 'React with :eyes:' });
     expect(button.hasAttribute('disabled')).toBe(true);
-    expect(button.getAttribute('title')).toBe('Waiting for the current Slack write');
+    expect(tooltipTextOf({ element: button })).toBe('Waiting for the current Slack write');
   });
 });

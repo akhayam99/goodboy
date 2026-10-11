@@ -1,4 +1,4 @@
-import { ROW_INTERACTIVE, Checkbox, cn, inlineMarkdownText } from '@goodboy/ui';
+import { ROW_INTERACTIVE, Checkbox, cn, inlineMarkdownText, TruncatedText } from '@goodboy/ui';
 import { REVIEW_LAUNCH_LABEL } from '../../../reviewLaunchCopy';
 import { RESOLVE_COMMENT_UNAVAILABLE } from '../../../resolveQueueCopy';
 import { firstSentence } from '../firstSentence';
@@ -36,15 +36,15 @@ export const LaunchPanelRow = ({ entry, isIncluded, onToggle }: Props) => {
             )}
             <span className="ml-auto shrink-0 text-faint-foreground">{entry.word}</span>
           </span>
-          <span
+          <TruncatedText
+            tooltip={body ?? undefined}
             className={cn(
               'min-w-0 truncate text-body',
               isIncluded ? 'text-foreground' : 'text-faint-foreground line-through',
             )}
-            title={body ?? undefined}
           >
             {title}
-          </span>
+          </TruncatedText>
         </span>
       }
     />

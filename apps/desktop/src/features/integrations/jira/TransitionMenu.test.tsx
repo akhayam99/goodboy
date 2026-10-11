@@ -19,6 +19,7 @@ vi.mock('./client', async (importOriginal) => ({
   jiraListTransitions: vi.fn(async () => []),
 }));
 
+import { tooltipTextOf } from '../../../__tests__/helpers/tooltip';
 import { TransitionMenu } from './TransitionMenu';
 
 const listTransitions = vi.mocked(jiraListTransitions);
@@ -65,7 +66,7 @@ describe('TransitionMenu', () => {
     const trigger = await screen.findByRole('button', { name: /move this issue/ });
     await waitFor(() => expect(trigger.getAttribute('aria-disabled')).toBe('true'));
 
-    expect(trigger.getAttribute('title')).toContain('403 Forbidden');
+    expect(tooltipTextOf({ element: trigger })).toContain('403 Forbidden');
     fireEvent.click(trigger);
     expect(screen.queryByRole('menu')).toBeNull();
   });

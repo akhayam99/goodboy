@@ -1,4 +1,4 @@
-import { WorkNode, cn } from '@goodboy/ui';
+import { WorkNode, cn, TruncatedText } from '@goodboy/ui';
 import type { ArtifactRowPart } from '../../artifactListRows';
 import { ARTIFACT_ROW_GRID } from './artifactRowGrid';
 
@@ -19,9 +19,9 @@ export const ArtifactRowParts = ({ parts }: Props) => (
           mark={{ kind: 'index', value: String(part.index + 1) }}
           label={part.nodeLabel}
         />
-        <span className="min-w-0 flex-1 truncate text-muted-foreground" title={part.title}>
+        <TruncatedText className="min-w-0 flex-1 truncate text-muted-foreground">
           {part.title}
-        </span>
+        </TruncatedText>
         <span aria-hidden className={cn(ARTIFACT_ROW_GRID.kind, 'invisible')} />
         <span className={cn(ARTIFACT_ROW_GRID.state, 'px-2 text-meta text-faint-foreground')}>
           {part.nodeLabel}

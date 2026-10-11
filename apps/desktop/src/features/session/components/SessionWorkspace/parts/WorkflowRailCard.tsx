@@ -1,5 +1,5 @@
 import type { Agent, Workflow, WorkflowOrigin, WorkflowRun } from '@goodboy/types';
-import { ClampedProse, MetaRow, formatUsdPrecise } from '@goodboy/ui';
+import { ClampedProse, MetaRow, formatUsdPrecise, Tooltip } from '@goodboy/ui';
 import { classifyWorkflowChain } from '@goodboy/core';
 import { workflowKindName } from '../../../../workspace/components/WorkspacesSidebar/lib';
 import { WorkflowRunStatus } from '../../AgentTree/WorkflowRunStatus';
@@ -127,14 +127,15 @@ export const WorkflowRailCard = ({
         </div>
       ) : null}
       {isDiscarded ? (
-        <button
-          type="button"
-          onClick={onRestore}
-          title="Restore run"
-          className="absolute right-1.5 top-1.5 rounded-md px-2 py-0.5 text-chip text-muted-foreground transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-        >
-          Restore
-        </button>
+        <Tooltip content="Restore run">
+          <button
+            type="button"
+            onClick={onRestore}
+            className="absolute right-1.5 top-1.5 rounded-md px-2 py-0.5 text-chip text-muted-foreground transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          >
+            Restore
+          </button>
+        </Tooltip>
       ) : null}
     </div>
   );

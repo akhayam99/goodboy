@@ -1,4 +1,4 @@
-import { DrawerFrame, Markdown, SectionHeader } from '@goodboy/ui';
+import { DrawerFrame, Markdown, SectionHeader, TruncatedText } from '@goodboy/ui';
 import type { Agent, ArtifactId, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionPlans, agentPlace } from '../../../../store';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
@@ -73,9 +73,9 @@ export const PlanPartDrawer = ({ sessionId, planId, index, onClose }: Props) => 
             <SectionHeader label="Touches" />
             <ul className="flex min-w-0 flex-col gap-0.5 text-code text-muted-foreground">
               {row.touches.map((path) => (
-                <li key={path} className="truncate" title={path}>
+                <TruncatedText as="li" key={path} className="truncate">
                   {path}
-                </li>
+                </TruncatedText>
               ))}
             </ul>
           </section>

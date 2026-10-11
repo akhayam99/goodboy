@@ -1,5 +1,6 @@
 import { Plus } from 'lucide-react';
 import { Button, StatusDot, Tooltip, cn, tintClasses } from '@goodboy/ui';
+import type { ShortcutId } from '../../../shared/keyboard/registry';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
@@ -7,6 +8,7 @@ type Props = {
   readonly label: string;
   readonly accessibleName: string;
   readonly tooltip: string;
+  readonly shortcut?: ShortcutId;
   readonly isPrimary?: boolean;
   readonly isCurrent?: boolean;
   readonly hasDot?: boolean;
@@ -20,12 +22,13 @@ export const CreateButton = ({
   label,
   accessibleName,
   tooltip,
+  shortcut,
   isPrimary = false,
   isCurrent = false,
   hasDot = false,
   onSelect,
 }: Props) => (
-  <Tooltip content={tooltip} side="bottom">
+  <Tooltip content={tooltip} shortcut={shortcut} side="bottom">
     <Button
       variant={isPrimary ? 'ghost' : 'secondary'}
       data-create={id}

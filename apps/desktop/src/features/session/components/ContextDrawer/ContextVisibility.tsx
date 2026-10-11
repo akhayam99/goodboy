@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Check, ChevronRight, Eye, Minus } from 'lucide-react';
-import { ICON_SIZE, Reveal, cn } from '@goodboy/ui';
+import { ICON_SIZE, Reveal, cn, Tooltip } from '@goodboy/ui';
 import type { Visibility } from './roleVisibility';
 
 type Props = {
@@ -38,21 +38,21 @@ export const ContextVisibility = ({ visibility }: Props) => {
             </span>
           ) : null}
           {visibility.chips.map((chip) => (
-            <span
-              key={chip.key}
-              title={chip.isReading ? undefined : 'Does not receive this'}
-              className={cn(
-                CHIP,
-                chip.isReading ? 'bg-subtle text-foreground' : 'text-faint-foreground',
-              )}
-            >
-              {chip.isReading ? (
-                <Check size={ICON_SIZE.mark} aria-hidden className="text-success" />
-              ) : (
-                <Minus size={ICON_SIZE.mark} aria-hidden />
-              )}
-              {chip.label}
-            </span>
+            <Tooltip key={chip.key} content={chip.isReading ? undefined : 'Does not receive this'}>
+              <span
+                className={cn(
+                  CHIP,
+                  chip.isReading ? 'bg-subtle text-foreground' : 'text-faint-foreground',
+                )}
+              >
+                {chip.isReading ? (
+                  <Check size={ICON_SIZE.mark} aria-hidden className="text-success" />
+                ) : (
+                  <Minus size={ICON_SIZE.mark} aria-hidden />
+                )}
+                {chip.label}
+              </span>
+            </Tooltip>
           ))}
         </div>
         <p className="mt-2 text-meta text-faint-foreground">{visibility.note}</p>

@@ -1,3 +1,4 @@
+import { Tooltip } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -12,18 +13,19 @@ export const TimelineRowWorktrees = ({ names }: Props) => {
   }
   const title = `Changed files in ${NAME_LIST.format(names)}`;
   return (
-    <span
-      data-testid="timeline-row-worktrees"
-      title={title}
-      aria-label={title}
-      className="inline-flex shrink-0 items-center gap-0.5 text-meta tabular-nums text-muted-foreground"
-    >
-      <CONCEPT_ICONS.worktree
-        size={ICON_SIZE.mark}
-        aria-hidden
-        className="shrink-0 text-faint-foreground"
-      />
-      {names.length}
-    </span>
+    <Tooltip content={title}>
+      <span
+        data-testid="timeline-row-worktrees"
+        aria-label={title}
+        className="inline-flex shrink-0 items-center gap-0.5 text-meta tabular-nums text-muted-foreground"
+      >
+        <CONCEPT_ICONS.worktree
+          size={ICON_SIZE.mark}
+          aria-hidden
+          className="shrink-0 text-faint-foreground"
+        />
+        {names.length}
+      </span>
+    </Tooltip>
   );
 };

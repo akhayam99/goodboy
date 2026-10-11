@@ -9,7 +9,6 @@ import { MenuItems, type OverflowMenuItem } from './MenuItems';
 type Props = {
   readonly items: ReadonlyArray<OverflowMenuItem>;
   readonly label?: string;
-  readonly tooltip?: string;
   readonly triggerClassName?: string;
   readonly trigger?: ReactNode;
   readonly disabled?: boolean;
@@ -22,7 +21,6 @@ const MIN_DRAWN_ITEMS = 2;
 export const OverflowMenu = ({
   items,
   label = 'More actions',
-  tooltip,
   triggerClassName,
   trigger,
   disabled,
@@ -58,7 +56,6 @@ export const OverflowMenu = ({
       trigger={
         <MenuTriggerButton
           label={label}
-          tooltip={tooltip}
           isOpen={dropdown.open}
           size={size}
           disabled={disabled}

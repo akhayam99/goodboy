@@ -26,6 +26,7 @@ import { holdPaletteScope } from '../../heldPaletteScope';
 import type { HeldScope } from '../../types';
 
 type CommitScope = Extract<HeldScope, { kind: 'commit' }>;
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { PaletteOverlay } from './index';
 
 const elsewhere = vi.hoisted(() => ({ refs: [] as ReadonlyArray<SessionTitleRef> }));
@@ -80,13 +81,20 @@ const selectedName = () =>
     .find((option) => option.getAttribute('aria-selected') === 'true')
     ?.getAttribute('aria-label');
 
+const scopeChipOf = ({ label }: { readonly label: string }): HTMLElement => {
+  const chip = screen.getAllByText(label)[0]?.parentElement ?? null;
+  if (chip === null) {
+    throw new Error('the scope chip has no root');
+  }
+  return chip;
+};
+
 describe('PaletteOverlay, the commands mode', () => {
   it('names the session in a scope chip and lists its verbs first', () => {
     openIn(PAYOUT);
 
-    expect(screen.getByTitle('Backspace removes the scope').textContent).toBe(
-      'Speed up the payout export for large merchants',
-    );
+    const chip = scopeChipOf({ label: 'Speed up the payout export for large merchants' });
+    expect(tooltipTextOf({ element: chip })).toBe('Backspace removes the scope');
     expect(screen.getByText('For this session')).toBeDefined();
     expect(optionNames()[0]).toBe('Open Files');
     expect(optionNames()[0]).not.toMatch(/^Message /);
@@ -126,7 +134,7 @@ describe('PaletteOverlay, the commands mode', () => {
 
     fireEvent.keyDown(input, { key: 'Backspace' });
 
-    expect(screen.queryByTitle('Backspace removes the scope')).toBeNull();
+    expect(screen.queryByText('Speed up the payout export for large merchants')).toBeNull();
     expect(screen.queryByText('For this session')).toBeNull();
   });
 
@@ -452,9 +460,8 @@ describe('PaletteOverlay on a focused commit row', () => {
     const release = focusCommitRow(commitScope({}));
     openIn(PAYOUT);
 
-    expect(screen.getByTitle('Backspace removes the scope').textContent).toBe(
-      'Keep trailing-comma rows in the ledger-core importer',
-    );
+    const chip = scopeChipOf({ label: 'Keep trailing-comma rows in the ledger-core importer' });
+    expect(tooltipTextOf({ element: chip })).toBe('Backspace removes the scope');
     expect(screen.getByText('For this commit')).toBeDefined();
     expect(optionNames().slice(0, 8)).toEqual([
       'Rename',

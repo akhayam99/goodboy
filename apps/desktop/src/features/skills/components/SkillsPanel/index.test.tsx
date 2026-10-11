@@ -39,6 +39,7 @@ vi.mock('../../../../store', () => {
 });
 
 import { ToastProvider } from '../../../../shared/components/Toast';
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { SkillsPanel } from './index';
 
 const buildSkill = (): Skill => ({
@@ -80,7 +81,9 @@ describe('SkillsPanel', () => {
     expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'Delete my-skill' }))).toBe(
       true,
     );
-    expect(screen.getByTitle('Edit my-skill')).toBeDefined();
+    expect(tooltipTextOf({ element: screen.getByRole('button', { name: 'Edit my-skill' }) })).toBe(
+      'Edit my-skill',
+    );
   });
 
   it('asks in a popover beside the delete button before calling deleteSkill', async () => {

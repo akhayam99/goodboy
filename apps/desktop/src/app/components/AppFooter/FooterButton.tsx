@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { cn, Tooltip } from '@goodboy/ui';
+import type { ShortcutId } from '../../../shared/keyboard/registry';
 
 export const FOOTER_LABELED_PAD = 'gap-2 px-2';
 export const FOOTER_LABEL = 'hidden @min-chrome-labels/footer:inline';
@@ -7,7 +8,7 @@ export const FOOTER_LABEL = 'hidden @min-chrome-labels/footer:inline';
 type Props = {
   readonly icon: ReactNode;
   readonly label: string;
-  readonly shortcut?: string;
+  readonly shortcut?: ShortcutId;
   readonly onClick: () => void;
   readonly isCurrent?: boolean;
   readonly showLabel?: boolean;
@@ -21,7 +22,7 @@ export const FooterButton = ({
   isCurrent = false,
   showLabel = true,
 }: Props) => (
-  <Tooltip content={shortcut === undefined ? label : `${label}  ${shortcut}`}>
+  <Tooltip content={label} shortcut={shortcut}>
     <button
       type="button"
       onClick={onClick}

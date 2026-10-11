@@ -5,7 +5,6 @@ import { useAppStore } from '../../../store';
 import type { ViewFind } from '../../../store/slices/search-index/state';
 import { captureLocation } from '../../../store/slices/navigation/captureLocation';
 import { locationKey } from '../../../store/slices/navigation/locationKey';
-import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 import { findMatchRanges } from './findMatchRanges';
 import { pickTargetIndex } from './pickTargetIndex';
 import { clearFindHighlights, paintFindHighlights } from './findHighlights';
@@ -131,7 +130,7 @@ export const FindSession = ({ viewFind }: Props) => {
       <IconButton
         icon={ChevronUp}
         label="Previous match"
-        tooltip={`Previous match (${shortcutGlyphs('find.previous')})`}
+        shortcut="find.previous"
         variant="ghost"
         disabled={total < 2}
         onClick={() => stepViewFind({ delta: -1 })}
@@ -139,7 +138,7 @@ export const FindSession = ({ viewFind }: Props) => {
       <IconButton
         icon={ChevronDown}
         label="Next match"
-        tooltip={`Next match (${shortcutGlyphs('find.next')})`}
+        shortcut="find.next"
         variant="ghost"
         disabled={total < 2}
         onClick={() => stepViewFind({ delta: 1 })}

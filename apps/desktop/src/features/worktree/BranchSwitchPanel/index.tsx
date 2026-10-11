@@ -8,6 +8,7 @@ import {
   Notice,
   SegmentedTabs,
   useCopyLink,
+  TruncatedText,
 } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { useToast } from '../../../shared/components/Toast';
@@ -117,9 +118,9 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
       {branch === null ? null : (
         <div className="flex min-w-0 items-center gap-2 rounded-md bg-muted px-2 py-1 text-label text-muted-foreground">
           <GitBranch size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-          <span title={branch} className="min-w-0 flex-1 truncate font-mono text-foreground">
+          <TruncatedText className="min-w-0 flex-1 truncate font-mono text-foreground">
             {branch}
-          </span>
+          </TruncatedText>
           <IconButton
             size="xs"
             variant="ghost"

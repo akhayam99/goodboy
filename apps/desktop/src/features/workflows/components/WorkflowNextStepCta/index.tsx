@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { AlertTriangle, Play } from 'lucide-react';
-import { ConfirmPopover, cn, tintClasses } from '@goodboy/ui';
+import { ConfirmPopover, cn, tintClasses, Tooltip } from '@goodboy/ui';
 import { classifyWorkflowChain } from '@goodboy/core';
 import type {
   Agent,
@@ -112,56 +112,60 @@ export const WorkflowNextStepCta = ({
         onCancel={advance.onCancel}
         anchorClassName="flex min-w-0"
         trigger={() => (
-          <button
-            type="button"
-            onClick={advance.onTrigger}
-            disabled={advance.isBusy || blockReason === 'paused'}
-            data-testid="workflow-next-step-cta"
-            title={
+          <Tooltip
+            content={
               blockReason != null
                 ? WORKFLOW_BLOCK_COPY[blockReason]
-                : `effort: ${effortText}${stepVerbosity ? ` · verbosity: ${stepVerbosity}` : ''}`
+                : `effort: ${effortText}${stepVerbosity ? ` · verbosity: ${stepVerbosity}` : ''}${consumesActivePlan ? '. Advancing will consume the active plan' : ''}`
             }
-            className={cn(
-              'flex items-center gap-1 rounded-md border px-2 py-1 text-chip font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors disabled:cursor-not-allowed disabled:opacity-60',
-              blockReason != null
-                ? cn(
-                    tintClasses('warning').border,
-                    tintClasses('warning').bg,
-                    'text-warning hover:border-warning',
-                    tintClasses('warning').hoverBg,
-                  )
-                : cn(
-                    tintClasses('primary').border,
-                    tintClasses('primary').bg,
-                    'text-primary hover:border-primary',
-                    tintClasses('primary').hoverBg,
-                  ),
-            )}
-            aria-label={`Run next step: ${next.name} (${modelLabel(routing.model, routing.provider)}, ${effortText} effort${stepVerbosity ? `, ${stepVerbosity} verbosity` : ''})${blockReason != null ? `. Blocked: ${WORKFLOW_BLOCK_COPY[blockReason]}` : ''}`}
+            anchorClassName="min-w-0"
           >
-            {blockReason != null ? (
-              <AlertTriangle
-                size={ICON_SIZE.row}
-                aria-hidden
-                className="shrink-0"
-                data-testid="workflow-next-step-blocked"
+            <button
+              type="button"
+              onClick={advance.onTrigger}
+              disabled={advance.isBusy || blockReason === 'paused'}
+              data-testid="workflow-next-step-cta"
+              className={cn(
+                'flex items-center gap-1 rounded-md border px-2 py-1 text-chip font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+                blockReason != null
+                  ? cn(
+                      tintClasses('warning').border,
+                      tintClasses('warning').bg,
+                      'text-warning hover:border-warning',
+                      tintClasses('warning').hoverBg,
+                    )
+                  : cn(
+                      tintClasses('primary').border,
+                      tintClasses('primary').bg,
+                      'text-primary hover:border-primary',
+                      tintClasses('primary').hoverBg,
+                    ),
+              )}
+              aria-label={`Run next step: ${next.name} (${modelLabel(routing.model, routing.provider)}, ${effortText} effort${stepVerbosity ? `, ${stepVerbosity} verbosity` : ''})${blockReason != null ? `. Blocked: ${WORKFLOW_BLOCK_COPY[blockReason]}` : ''}`}
+            >
+              {blockReason != null ? (
+                <AlertTriangle
+                  size={ICON_SIZE.row}
+                  aria-hidden
+                  className="shrink-0"
+                  data-testid="workflow-next-step-blocked"
+                />
+              ) : (
+                <Play size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+              )}
+              <span className="truncate">Run next step: {next.name}</span>
+              <RoutingLabel
+                className="shrink-0 opacity-70"
+                model={routing.model}
+                effort={routing.effort}
               />
-            ) : (
-              <Play size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-            )}
-            <span className="truncate">Run next step: {next.name}</span>
-            <RoutingLabel
-              className="shrink-0 opacity-70"
-              model={routing.model}
-              effort={routing.effort}
-            />
-            {consumesActivePlan ? (
-              <span className="shrink-0" title="Advancing will consume the active plan">
-                <CONCEPT_ICONS.plans size={ICON_SIZE.row} aria-hidden className={planTint.icon} />
-              </span>
-            ) : null}
-          </button>
+              {consumesActivePlan ? (
+                <span className="shrink-0">
+                  <CONCEPT_ICONS.plans size={ICON_SIZE.row} aria-hidden className={planTint.icon} />
+                </span>
+              ) : null}
+            </button>
+          </Tooltip>
         )}
       />
     </div>

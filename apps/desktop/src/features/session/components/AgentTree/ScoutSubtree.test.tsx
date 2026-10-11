@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 
 vi.mock('../../../../store', () => ({
@@ -20,6 +20,7 @@ vi.mock('./ClusterChildRow', () => ({
   ),
 }));
 
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { ScoutSubtree } from './ScoutSubtree';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -61,6 +62,19 @@ function renderTree(
   );
 }
 
+const unreadBadge = (): HTMLElement | null => {
+  const toggle = screen.getAllByRole('button', { name: /^(expand|collapse) / })[0];
+  return toggle === undefined ? null : within(toggle).queryByText(/^\d+$/);
+};
+
+const badgeTip = (): string => {
+  const badge = unreadBadge();
+  if (badge === null) {
+    throw new Error('the scouts show no unread badge');
+  }
+  return tooltipTextOf({ element: badge });
+};
+
 describe('ScoutSubtree unread badge', () => {
   afterEach(() => {
     cleanup();
@@ -95,7 +109,8 @@ describe('ScoutSubtree unread badge', () => {
       ],
     ]);
     renderTree(map, { expanded: false });
-    expect(screen.getByTitle('2 scout replies to review').textContent).toContain('2');
+    expect(badgeTip()).toBe('2 scout replies to review');
+    expect(unreadBadge()?.textContent).toContain('2');
   });
 
   it('counts nested grandchildren in the badge total', () => {
@@ -110,7 +125,8 @@ describe('ScoutSubtree unread badge', () => {
       ],
     ]);
     renderTree(map, { expanded: false });
-    expect(screen.getByTitle('3 scout replies to review').textContent).toContain('3');
+    expect(badgeTip()).toBe('3 scout replies to review');
+    expect(unreadBadge()?.textContent).toContain('3');
   });
 
   it('uses singular wording for a single unread scout', () => {
@@ -118,7 +134,7 @@ describe('ScoutSubtree unread badge', () => {
       [CONTAINER, [buildAgent({ id: 's1' as AgentId, lastFinishedAt: NOW })]],
     ]);
     renderTree(map, { expanded: false });
-    expect(screen.queryByTitle('1 scout reply to review')).not.toBeNull();
+    expect(badgeTip()).toBe('1 scout reply to review');
   });
 
   it('excludes skipped descendants from the count', () => {
@@ -132,8 +148,7 @@ describe('ScoutSubtree unread badge', () => {
       ],
     ]);
     renderTree(map, { expanded: false });
-    expect(screen.queryByTitle('1 scout reply to review')).not.toBeNull();
-    expect(screen.queryByTitle('2 scout replies to review')).toBeNull();
+    expect(badgeTip()).toBe('1 scout reply to review');
   });
 
   it('excludes the currently-viewed selected child from the count', () => {
@@ -147,7 +162,7 @@ describe('ScoutSubtree unread badge', () => {
       ],
     ]);
     renderTree(map, { expanded: false, selectedAgentId: 's1' as AgentId, isTaskActive: true });
-    expect(screen.queryByTitle('1 scout reply to review')).not.toBeNull();
+    expect(badgeTip()).toBe('1 scout reply to review');
   });
 
   it('hides the badge and renders child rows when expanded', () => {
@@ -161,7 +176,7 @@ describe('ScoutSubtree unread badge', () => {
       ],
     ]);
     renderTree(map, { expanded: true });
-    expect(screen.queryByTitle('2 scout replies to review')).toBeNull();
+    expect(unreadBadge()).toBeNull();
     expect(screen.getAllByTestId('cluster-child-row')).toHaveLength(2);
   });
 
@@ -170,7 +185,7 @@ describe('ScoutSubtree unread badge', () => {
       [CONTAINER, [buildAgent({ id: 's1' as AgentId, lastFinishedAt: NOW, lastViewedAt: NOW })]],
     ]);
     renderTree(map, { expanded: false });
-    expect(screen.queryByTitle(/scout repl/)).toBeNull();
+    expect(unreadBadge()).toBeNull();
   });
 
   it('uses the sidebar disclosure layout', () => {

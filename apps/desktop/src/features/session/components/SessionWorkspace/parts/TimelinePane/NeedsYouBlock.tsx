@@ -1,6 +1,6 @@
 import { GitBranch, MessageSquare, Workflow } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { Button, Eyebrow, ToneBar } from '@goodboy/ui';
+import { Button, Eyebrow, ToneBar, TruncatedText } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 import type { NeedsYouOwner, NeedsYouOwnerKind } from '../../../../timeline/needsYou';
 
@@ -39,9 +39,9 @@ export const NeedsYouBlock = ({ owners, onOpen }: Props) => {
               className="flex h-9 items-center gap-2 rounded-md px-3 text-row"
             >
               <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
-              <span className="min-w-0 flex-1 truncate text-foreground" title={owner.text}>
+              <TruncatedText className="min-w-0 flex-1 truncate text-foreground">
                 {owner.text}
-              </span>
+              </TruncatedText>
               <Button
                 variant="ghost"
                 size="xs"

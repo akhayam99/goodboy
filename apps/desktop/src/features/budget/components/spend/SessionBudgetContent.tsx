@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { StatCard, formatUsd, formatUsdPrecise } from '@goodboy/ui';
+import { StatCard, formatUsd, formatUsdPrecise, Tooltip } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { SpendLimitRow } from '../SessionSpendPopover/SpendLimitRow';
@@ -31,12 +31,16 @@ export const SessionBudgetContent = ({ sessionId, turns, onOpenSession }: Props)
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-3 gap-3">
-        <div title={formatUsdPrecise(totalUsd)}>
-          <StatCard label="Session spend" value={formatUsd(totalUsd)} />
-        </div>
-        <div title={formatUsdPrecise(contextUsd)}>
-          <StatCard label="Keeping context up to date" value={formatUsd(contextUsd)} />
-        </div>
+        <Tooltip content={formatUsdPrecise(totalUsd)}>
+          <div>
+            <StatCard label="Session spend" value={formatUsd(totalUsd)} />
+          </div>
+        </Tooltip>
+        <Tooltip content={formatUsdPrecise(contextUsd)}>
+          <div>
+            <StatCard label="Keeping context up to date" value={formatUsd(contextUsd)} />
+          </div>
+        </Tooltip>
         <StatCard label="Turns" value={String(turnCount)} />
       </div>
       <SpendLimitRow

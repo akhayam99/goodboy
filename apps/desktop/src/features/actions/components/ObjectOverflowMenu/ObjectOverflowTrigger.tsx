@@ -14,7 +14,6 @@ export type ObjectOverflowMenuProps = ObjectOverflowTriggerProps & {
 export type ObjectOverflowTriggerProps = {
   readonly target: ObjectTarget;
   readonly label: string;
-  readonly tooltip?: string;
   readonly trigger?: ReactNode;
   readonly triggerClassName?: string;
   readonly size?: MenuTriggerSize;
@@ -29,7 +28,6 @@ export type ObjectOverflowTriggerProps = {
 export const ObjectOverflowTrigger = ({
   target,
   label,
-  tooltip,
   trigger,
   triggerClassName,
   size = 'compact',
@@ -54,7 +52,6 @@ export const ObjectOverflowTrigger = ({
       trigger={
         <MenuTriggerButton
           label={label}
-          tooltip={tooltip}
           isOpen={dropdown.open}
           size={size}
           disabled={disabled}

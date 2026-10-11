@@ -1,4 +1,4 @@
-import { Button, Eyebrow, ScrollFade, formatUsd, formatUsdPrecise } from '@goodboy/ui';
+import { Button, Eyebrow, ScrollFade, formatUsd, formatUsdPrecise, Tooltip } from '@goodboy/ui';
 import type { SessionBudget, SessionId } from '@goodboy/types';
 import type { SessionSpendBreakdown } from '../../sessionSpendByAgent';
 import { SpendLimitRow } from './SpendLimitRow';
@@ -25,12 +25,11 @@ export const SessionSpendPopover = ({
     <div className="flex items-end justify-between gap-2 px-4 pb-1 pt-4">
       <div className="flex flex-col gap-1">
         <Eyebrow label="Spend" />
-        <span
-          title={formatUsdPrecise(spend.totalUsd)}
-          className="text-title tabular-nums text-foreground"
-        >
-          {formatUsd(spend.totalUsd)}
-        </span>
+        <Tooltip content={formatUsdPrecise(spend.totalUsd)}>
+          <span className="text-title tabular-nums text-foreground">
+            {formatUsd(spend.totalUsd)}
+          </span>
+        </Tooltip>
       </div>
       <span className="text-meta text-muted-foreground">this session</span>
     </div>

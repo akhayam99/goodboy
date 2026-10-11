@@ -23,7 +23,6 @@ export const ArtifactOverflowMenu = ({
   <ObjectOverflowMenu
     target={target}
     label={label}
-    tooltip="More actions"
     size={size}
     hideWhenEmpty={size === 'control'}
     anchorKey={anchorKey}

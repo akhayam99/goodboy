@@ -1,6 +1,6 @@
 import { Folder, FolderGit2, X } from 'lucide-react';
 import type { Project } from '@goodboy/types';
-import { Chip, Tooltip } from '@goodboy/ui';
+import { Chip, IconButton } from '@goodboy/ui';
 import { ICON_SIZE } from '../conceptIcons';
 import { NAMES } from '../../names';
 
@@ -32,17 +32,14 @@ export const ProjectLinkRow = ({ project, busy, onUnlink }: Props) => {
           </span>
           <span className="block truncate text-code text-muted-foreground">{project.rootPath}</span>
         </span>
-        <Tooltip content={`${NAMES.removeLink} to ${project.name}`} anchorClassName="shrink-0">
-          <button
-            type="button"
-            aria-label={`${NAMES.removeLink} to ${project.name}`}
-            disabled={busy}
-            onClick={() => void onUnlink({ project })}
-            className="rounded-md p-1 text-faint-foreground hover:bg-hover hover:text-foreground"
-          >
-            <X size={ICON_SIZE.control} aria-hidden />
-          </button>
-        </Tooltip>
+        <IconButton
+          icon={X}
+          label={`${NAMES.removeLink} to ${project.name}`}
+          size="xs"
+          iconSize={ICON_SIZE.control}
+          disabled={busy}
+          onClick={() => void onUnlink({ project })}
+        />
       </div>
     </li>
   );

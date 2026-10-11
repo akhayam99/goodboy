@@ -27,6 +27,7 @@ vi.mock('../../../../worktree/BranchSwitchPanel', () => ({
   },
 }));
 
+import { tooltipTextOf } from '../../../../../__tests__/helpers/tooltip';
 import { ProjectBranchChip } from './ProjectBranchChip';
 
 const renderChip = ({
@@ -72,7 +73,9 @@ describe('ProjectBranchChip', () => {
   it('shows the branch without a control when switching is not possible', () => {
     renderChip({ canSwitch: false });
 
-    expect(screen.getByTitle('ak/sibling')).toBeDefined();
+    const name = screen.getByText(/sibling/).parentElement;
+    expect(name?.getAttribute('title')).toBeNull();
+    expect(name === null ? null : tooltipTextOf({ element: name })).toBe('ak/sibling');
     expect(screen.queryByRole('button')).toBeNull();
   });
 

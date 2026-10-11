@@ -1,5 +1,5 @@
 import { Paperclip, X } from 'lucide-react';
-import { Button, IconButton, StatusDot, cn, tintClasses } from '@goodboy/ui';
+import { Button, IconButton, StatusDot, cn, tintClasses, Tooltip } from '@goodboy/ui';
 import { RoutingLabel } from '../../../../../shared/components/RoutingLabel';
 import type {
   AgentQueuedStatus,
@@ -52,21 +52,25 @@ export const QueuedMessages = ({ items, canEdit, onEdit, onRemove, onSendNow }: 
             )}
           >
             {isSending ? <StatusDot tone="info" size="sm" pulsing /> : null}
-            <button
-              type="button"
-              disabled={!canEdit || isSending}
-              onClick={() => onEdit(item.id)}
-              title={
+            <Tooltip
+              content={
                 isSending
                   ? undefined
                   : canEdit
                     ? 'Edit, moves it back to the composer'
                     : 'Clear the composer to edit'
               }
-              className="min-w-0 flex-1 truncate text-left text-label leading-relaxed text-foreground disabled:cursor-default"
+              anchorClassName="min-w-0 flex-1"
             >
-              {previewOf({ item })}
-            </button>
+              <button
+                type="button"
+                disabled={!canEdit || isSending}
+                onClick={() => onEdit(item.id)}
+                className="min-w-0 flex-1 truncate text-left text-label leading-relaxed text-foreground disabled:cursor-default"
+              >
+                {previewOf({ item })}
+              </button>
+            </Tooltip>
             {item.override != null && (
               <RoutingLabel
                 provider={item.override.providerId}

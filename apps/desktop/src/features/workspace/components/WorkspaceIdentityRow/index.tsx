@@ -1,10 +1,9 @@
 import { ChevronsUpDown } from 'lucide-react';
-import { ROW_INTERACTIVE, cn, AnchoredPopover, StatusDot, useDropdown } from '@goodboy/ui';
+import { ROW_INTERACTIVE, cn, AnchoredPopover, StatusDot, useDropdown, Tooltip } from '@goodboy/ui';
 import { useAppStore, useCurrentWorkspace, useHasUnreadElsewhere } from '../../../../store';
 import { workspaceAccent } from '../../color';
 import { linkedProjectsLabel } from '../../linkedProjectsLabel';
 import { WorkspaceSwitcher } from '../WorkspaceSwitcher';
-import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const initialOf = (name: string): string => name.trim().charAt(0).toUpperCase() || '?';
@@ -36,35 +35,40 @@ export const WorkspaceIdentityRow = () => {
         anchorClassName="min-w-0"
         hasBackdrop
         trigger={
-          <button
-            type="button"
-            onClick={dropdown.toggle}
-            data-tauri-drag-region="false"
-            aria-label={`Switch workspace: ${currentWorkspace.name}`}
-            aria-expanded={dropdown.open}
-            className={cn(
-              'group flex w-full min-w-0 items-center gap-2 rounded-md px-1 py-1 text-left transition-colors',
-              ROW_INTERACTIVE,
-            )}
-            title={`${currentWorkspace.name}, ${subtitle} (${shortcutGlyphs('workspace.switcher')})`}
+          <Tooltip
+            content={`${currentWorkspace.name}, ${subtitle}`}
+            shortcut="workspace.switcher"
+            isSuppressed={dropdown.open}
           >
-            <span
-              aria-hidden
-              className="flex size-5 shrink-0 items-center justify-center rounded-md text-chip font-semibold text-on-tone ring-1 ring-inset ring-border-soft"
-              style={{ backgroundColor: accent }}
+            <button
+              type="button"
+              onClick={dropdown.toggle}
+              data-tauri-drag-region="false"
+              aria-label={`Switch workspace: ${currentWorkspace.name}`}
+              aria-expanded={dropdown.open}
+              className={cn(
+                'group flex w-full min-w-0 items-center gap-2 rounded-md px-1 py-1 text-left transition-colors',
+                ROW_INTERACTIVE,
+              )}
             >
-              {initialOf(currentWorkspace.name)}
-            </span>
-            <span className="truncate text-row text-foreground">{currentWorkspace.name}</span>
-            {hasUnreadElsewhere ? (
-              <StatusDot tone="warning" size="sm" title="Activity in another workspace" />
-            ) : null}
-            <ChevronsUpDown
-              size={ICON_SIZE.row}
-              aria-hidden
-              className="shrink-0 text-faint-foreground transition-colors group-hover:text-muted-foreground"
-            />
-          </button>
+              <span
+                aria-hidden
+                className="flex size-5 shrink-0 items-center justify-center rounded-md text-chip font-semibold text-on-tone ring-1 ring-inset ring-border-soft"
+                style={{ backgroundColor: accent }}
+              >
+                {initialOf(currentWorkspace.name)}
+              </span>
+              <span className="truncate text-row text-foreground">{currentWorkspace.name}</span>
+              {hasUnreadElsewhere ? (
+                <StatusDot tone="warning" size="sm" title="Activity in another workspace" />
+              ) : null}
+              <ChevronsUpDown
+                size={ICON_SIZE.row}
+                aria-hidden
+                className="shrink-0 text-faint-foreground transition-colors group-hover:text-muted-foreground"
+              />
+            </button>
+          </Tooltip>
         }
       >
         <WorkspaceSwitcher onClose={dropdown.close} />

@@ -1,4 +1,4 @@
-import { MetaRow, Skeleton, cn, formatUsdPrecise } from '@goodboy/ui';
+import { MetaRow, Skeleton, cn, formatUsdPrecise, Tooltip } from '@goodboy/ui';
 import type { Agent, ProviderId, TelemetryRecord } from '@goodboy/types';
 import { getModelProvider } from '@goodboy/core';
 import type { ProviderContextUsage } from '../AgentTree/ContextWindowBar';
@@ -94,29 +94,28 @@ export const AgentMetrics = ({
               }
             />,
             summary != null && pct != null ? (
-              <span
+              <Tooltip
                 key="context"
-                className={cn(
-                  'tabular-nums',
-                  contextUsageTone({ pct: summary.pct, prefix: 'text' }),
-                )}
-                title={`Context: ${formatInteger(summary.usedTokens)} / ${formatInteger(summary.windowTokens)} tokens`}
+                content={`Context: ${formatInteger(summary.usedTokens)} / ${formatInteger(summary.windowTokens)} tokens`}
               >
-                ctx {pct}%
-              </span>
+                <span
+                  className={cn(
+                    'tabular-nums',
+                    contextUsageTone({ pct: summary.pct, prefix: 'text' }),
+                  )}
+                >
+                  ctx {pct}%
+                </span>
+              </Tooltip>
             ) : null,
             turnsLoading ? (
               <span key="turns" role="status" aria-label="Loading turn count">
                 <Skeleton className="inline-block h-2.5 w-4" />
               </span>
             ) : (
-              <span
-                key="turns"
-                className="tabular-nums"
-                title={`${turns} turn${turns === 1 ? '' : 's'}`}
-              >
-                {turns}t
-              </span>
+              <Tooltip key="turns" content={`${turns} turn${turns === 1 ? '' : 's'}`}>
+                <span className="tabular-nums">{turns}t</span>
+              </Tooltip>
             ),
             isLane && run.startedAt != null ? <AgentDuration key="duration" run={run} /> : null,
             isLane ? (
@@ -135,24 +134,22 @@ export const AgentMetrics = ({
           data-testid="agent-metrics-block"
           className="flex items-center gap-1 whitespace-nowrap text-meta text-faint-foreground"
         >
-          <span
-            className="inline-flex items-baseline gap-0.5 tabular-nums"
-            title={`In: ${formatInteger(inputTokens)} tokens (cumulative)`}
-          >
-            <span aria-hidden className="text-faint-foreground">
-              ↓
+          <Tooltip content={`In: ${formatInteger(inputTokens)} tokens (cumulative)`}>
+            <span className="inline-flex items-baseline gap-0.5 tabular-nums">
+              <span aria-hidden className="text-faint-foreground">
+                ↓
+              </span>
+              {formatTokens(inputTokens)}
             </span>
-            {formatTokens(inputTokens)}
-          </span>
-          <span
-            className="inline-flex items-baseline gap-0.5 tabular-nums"
-            title={`Out: ${formatInteger(outputTokens)} tokens (cumulative)`}
-          >
-            <span aria-hidden className="text-faint-foreground">
-              ↑
+          </Tooltip>
+          <Tooltip content={`Out: ${formatInteger(outputTokens)} tokens (cumulative)`}>
+            <span className="inline-flex items-baseline gap-0.5 tabular-nums">
+              <span aria-hidden className="text-faint-foreground">
+                ↑
+              </span>
+              {formatTokens(outputTokens)}
             </span>
-            {formatTokens(outputTokens)}
-          </span>
+          </Tooltip>
           <span aria-hidden className="text-faint-foreground">
             ·
           </span>

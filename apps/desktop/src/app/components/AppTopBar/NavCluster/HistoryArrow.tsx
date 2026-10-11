@@ -1,7 +1,6 @@
 import { useRef } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { AnchoredPopover, TOP_BAR_CONTROL, Tooltip, cn, useDropdown } from '@goodboy/ui';
-import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { HistoryMenu, type HistoryItem } from './HistoryMenu';
 import type { HistoryLabel } from './historyLabel';
@@ -29,12 +28,12 @@ export const HistoryArrow = ({ direction, target, items, onGo, onJump }: Props) 
   const isDisabled = target === null;
   const Icon = direction === 'back' ? ArrowLeft : ArrowRight;
   const verb = direction === 'back' ? 'Back' : 'Forward';
-  const glyph = shortcutGlyphs(direction === 'back' ? 'nav.back' : 'nav.forward');
+  const shortcut = direction === 'back' ? 'nav.back' : 'nav.forward';
   const tooltip = isDisabled
     ? direction === 'back'
       ? 'Nothing to go back to'
       : 'Nothing to go forward to'
-    : `${verb} to ${target.label}${target.context === null ? '' : ` · ${target.context}`}  ${glyph}`;
+    : `${verb} to ${target.label}${target.context === null ? '' : ` · ${target.context}`}`;
 
   const clearHold = () => {
     if (holdTimer.current === null) {
@@ -58,7 +57,7 @@ export const HistoryArrow = ({ direction, target, items, onGo, onJump }: Props) 
       ariaLabel="History"
       anchorClassName="flex shrink-0"
       trigger={
-        <Tooltip content={tooltip} side="bottom">
+        <Tooltip content={tooltip} shortcut={isDisabled ? undefined : shortcut} side="bottom">
           <button
             type="button"
             aria-label={isDisabled ? verb : `${verb} to ${target.label}`}

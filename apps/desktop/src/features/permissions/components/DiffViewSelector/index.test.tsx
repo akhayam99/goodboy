@@ -3,6 +3,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { BranchCommit, DiffView } from '@goodboy/types';
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { DiffViewSelector } from './index';
 
 afterEach(cleanup);
@@ -29,6 +30,14 @@ const commits: ReadonlyArray<BranchCommit> = [
   },
 ];
 
+const pickerTrigger = (): HTMLElement => {
+  const [first] = screen.getAllByRole('button');
+  if (first === undefined) {
+    throw new Error('the diff view picker has no trigger');
+  }
+  return first;
+};
+
 describe('DiffViewSelector', () => {
   it('renders the current label in the trigger', () => {
     render(<DiffViewSelector view={workingView} onChange={vi.fn()} commits={[]} status={null} />);
@@ -52,6 +61,22 @@ describe('DiffViewSelector', () => {
     expect(screen.queryByText(/\bmain\b/)).toBeNull();
   });
 
+  it('names the picker in a tooltip, not a native title', () => {
+    render(
+      <DiffViewSelector
+        view={{ kind: 'branch' }}
+        onChange={vi.fn()}
+        commits={[]}
+        status={null}
+        baseBranch="main"
+        branch="feat/a"
+      />,
+    );
+
+    expect(pickerTrigger().getAttribute('title')).toBeNull();
+    expect(tooltipTextOf({ element: pickerTrigger() })).toBe('Change diff view');
+  });
+
   it('names the base branch in the branch option of the picker, never main by default', () => {
     render(
       <DiffViewSelector
@@ -63,7 +88,7 @@ describe('DiffViewSelector', () => {
         branch="feat/a"
       />,
     );
-    fireEvent.click(screen.getByTitle(/change diff view/i));
+    fireEvent.click(pickerTrigger());
 
     expect(screen.getByText('branch vs release/2026.10')).toBeDefined();
     expect(screen.getByText(/everything this branch changes vs release\/2026.10/)).toBeDefined();
@@ -87,14 +112,14 @@ describe('DiffViewSelector', () => {
 
   it('opens the menu and shows the staged-only option', () => {
     render(<DiffViewSelector view={workingView} onChange={vi.fn()} commits={[]} status={null} />);
-    fireEvent.click(screen.getByTitle(/change diff view/i));
+    fireEvent.click(pickerTrigger());
     expect(screen.getByText('staged only')).toBeDefined();
   });
 
   it('fires onChange with a new view when an option is picked', () => {
     const onChange = vi.fn();
     render(<DiffViewSelector view={workingView} onChange={onChange} commits={[]} status={null} />);
-    fireEvent.click(screen.getByTitle(/change diff view/i));
+    fireEvent.click(pickerTrigger());
     fireEvent.click(screen.getByText('staged only'));
     expect(onChange).toHaveBeenCalledWith({ kind: 'working', scope: 'staged' });
   });
@@ -103,7 +128,7 @@ describe('DiffViewSelector', () => {
     render(
       <DiffViewSelector view={workingView} onChange={vi.fn()} commits={commits} status={null} />,
     );
-    fireEvent.click(screen.getByTitle(/change diff view/i));
+    fireEvent.click(pickerTrigger());
 
     expect(screen.getByText('ready to push')).toBeDefined();
     expect(screen.getByText('abc1234')).toBeDefined();
@@ -121,7 +146,7 @@ describe('DiffViewSelector', () => {
         status={null}
       />,
     );
-    fireEvent.click(screen.getByTitle(/change diff view/i));
+    fireEvent.click(pickerTrigger());
     const filter = screen.getByRole('textbox', { name: 'Filter commits' });
     fireEvent.keyDown(filter, { key: 'ArrowDown' });
     fireEvent.keyDown(filter, { key: 'Enter' });
@@ -133,7 +158,7 @@ describe('DiffViewSelector', () => {
     render(
       <DiffViewSelector view={workingView} onChange={vi.fn()} commits={commits} status={null} />,
     );
-    fireEvent.click(screen.getByTitle(/change diff view/i));
+    fireEvent.click(pickerTrigger());
 
     const labels = ['branch', 'currently editing', 'ready to push', 'on origin'].map(
       (label) => screen.getByText(label) as HTMLElement,
@@ -152,7 +177,7 @@ describe('DiffViewSelector', () => {
     render(
       <DiffViewSelector view={workingView} onChange={vi.fn()} commits={commits} status={null} />,
     );
-    fireEvent.click(screen.getByTitle(/change diff view/i));
+    fireEvent.click(pickerTrigger());
     const filter = screen.getByRole('textbox', { name: 'Filter commits' });
     fireEvent.change(filter, { target: { value: 'zzz-no-such-commit' } });
 
@@ -167,7 +192,7 @@ describe('DiffViewSelector', () => {
     render(
       <DiffViewSelector view={workingView} onChange={vi.fn()} commits={commits} status={null} />,
     );
-    fireEvent.click(screen.getByTitle(/change diff view/i));
+    fireEvent.click(pickerTrigger());
     const filter = screen.getByRole('textbox', { name: 'Filter commits' });
     fireEvent.change(filter, { target: { value: 'origin change' } });
 

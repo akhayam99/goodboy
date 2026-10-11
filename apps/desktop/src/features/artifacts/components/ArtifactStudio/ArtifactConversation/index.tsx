@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Button, Divider, cn } from '@goodboy/ui';
+import { Button, Divider, cn, TruncatedText } from '@goodboy/ui';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import type { Agent, SessionArtifact, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
@@ -54,9 +54,9 @@ export const ArtifactConversation = ({ sessionId, artifact, agent, isWorkflowOwn
                 ? 'the agent behind this artifact is gone'
                 : `writing to ${agent.name}`}
             </span>
-            <span className="min-w-0 truncate text-meta text-muted-foreground" title={followUpNote}>
+            <TruncatedText className="min-w-0 truncate text-meta text-muted-foreground">
               {followUpNote}
-            </span>
+            </TruncatedText>
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             <Button

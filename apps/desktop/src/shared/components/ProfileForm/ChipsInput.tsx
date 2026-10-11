@@ -4,10 +4,10 @@ import {
   AnchoredPopover,
   ListboxList,
   ScrollFade,
-  Tooltip,
   cn,
   listboxOptionId,
   useDropdown,
+  IconButton,
 } from '@goodboy/ui';
 import { chipsInputOptions, type ChipSuggestion } from './chipsInputOptions';
 import { ICON_SIZE } from '../conceptIcons';
@@ -130,20 +130,18 @@ export const ChipsInput = ({
               className="inline-flex h-6 items-center gap-1 rounded-sm bg-subtle pl-2 pr-0.5 text-label text-foreground"
             >
               {value}
-              <Tooltip content={`Remove ${value}`} anchorClassName="flex">
-                <button
-                  type="button"
-                  aria-label={`Remove ${value}`}
-                  disabled={disabled}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    remove({ value });
-                  }}
-                  className="inline-flex size-5 items-center justify-center rounded-sm text-muted-foreground hover:bg-hover hover:text-foreground"
-                >
-                  <X size={ICON_SIZE.mark} aria-hidden />
-                </button>
-              </Tooltip>
+              <IconButton
+                icon={X}
+                label={`Remove ${value}`}
+                size="xs"
+                iconSize={ICON_SIZE.mark}
+                disabled={disabled}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  remove({ value });
+                }}
+                className="size-5"
+              />
             </span>
           ))}
           <input

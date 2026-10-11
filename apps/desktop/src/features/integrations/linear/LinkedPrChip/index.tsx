@@ -1,4 +1,4 @@
-import { cn, tintClasses } from '@goodboy/ui';
+import { cn, tintClasses, Tooltip } from '@goodboy/ui';
 import { GitPullRequest } from 'lucide-react';
 import type { LinearLinkedPr } from '../client';
 import { linearPrStateKind } from '../linearPrStateKind';
@@ -46,22 +46,23 @@ export const LinkedPrChip = ({ pr }: Props) => {
       : stateDescription({ presentation, subject: `PR #${pr.number}` });
 
   return (
-    <button
-      type="button"
-      onClick={open}
-      title={description}
-      aria-label={description}
-      className={cn(
-        'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-chip motion-safe:transition-opacity hover:opacity-80',
-        tint.border,
-        tint.bg,
-        tint.text,
-      )}
-    >
-      <Icon size={ICON_SIZE.mark} aria-hidden />#{pr.number}
-      {presentation !== null ? (
-        <span className="opacity-70">· {presentation.label.toLowerCase()}</span>
-      ) : null}
-    </button>
+    <Tooltip content={description}>
+      <button
+        type="button"
+        onClick={open}
+        aria-label={description}
+        className={cn(
+          'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-chip motion-safe:transition-opacity hover:opacity-80',
+          tint.border,
+          tint.bg,
+          tint.text,
+        )}
+      >
+        <Icon size={ICON_SIZE.mark} aria-hidden />#{pr.number}
+        {presentation !== null ? (
+          <span className="opacity-70">· {presentation.label.toLowerCase()}</span>
+        ) : null}
+      </button>
+    </Tooltip>
   );
 };

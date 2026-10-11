@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { RotateCcw } from 'lucide-react';
-import { Markdown, EmptyState } from '@goodboy/ui';
+import { Markdown, EmptyState, Tooltip } from '@goodboy/ui';
 import type { ContextSlotHistoryEntry } from '@goodboy/types';
 import { AuthorshipChip } from './AuthorshipChip';
 import { formatAge } from '../../../../../shared/utils/time/formatAge';
@@ -42,16 +42,17 @@ const HistoryEntry = ({
             label="copy this version"
             className="rounded-md p-0.5 text-faint-foreground hover:bg-hover hover:text-foreground"
           />
-          <button
-            type="button"
-            onClick={() => onRestore(entry)}
-            title="Restore this version"
-            aria-label="Restore this version"
-            className="flex items-center gap-1 rounded-sm px-2 py-0.5 text-chip text-muted-foreground hover:bg-hover hover:text-foreground"
-          >
-            <RotateCcw size={ICON_SIZE.mark} aria-hidden />
-            restore
-          </button>
+          <Tooltip content="Restore this version">
+            <button
+              type="button"
+              onClick={() => onRestore(entry)}
+              aria-label="Restore this version"
+              className="flex items-center gap-1 rounded-sm px-2 py-0.5 text-chip text-muted-foreground hover:bg-hover hover:text-foreground"
+            >
+              <RotateCcw size={ICON_SIZE.mark} aria-hidden />
+              restore
+            </button>
+          </Tooltip>
         </div>
       </div>
       <button

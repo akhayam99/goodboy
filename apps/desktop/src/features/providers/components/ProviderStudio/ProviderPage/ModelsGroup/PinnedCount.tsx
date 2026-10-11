@@ -1,3 +1,4 @@
+import { Tooltip } from '@goodboy/ui';
 import type { ProviderId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
 import { useChatDefaultModel } from '../../../../../../shared/hooks/useChatDefaultModel';
@@ -20,11 +21,8 @@ export const PinnedCount = ({ providerId, workspaceId }: Props) => {
     return null;
   }
   return (
-    <span
-      className="text-meta text-faint-foreground"
-      title="Chat, agent roles and background tasks pinned to this provider in Models"
-    >
-      {count} pinned
-    </span>
+    <Tooltip content="Chat, agent roles and background tasks pinned to this provider in Models">
+      <span className="text-meta text-faint-foreground">{count} pinned</span>
+    </Tooltip>
   );
 };

@@ -11,6 +11,7 @@ import {
   ScrollFade,
   StatusDot,
   useDropdown,
+  Tooltip,
 } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import type { JiraUser } from './client';
@@ -77,20 +78,21 @@ export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Pr
       className="flex flex-col"
       hasBackdrop
       trigger={
-        <button
-          type="button"
-          aria-haspopup="menu"
-          aria-expanded={isOpen}
-          title="Change who owns this issue in Jira"
-          disabled={busyId != null}
-          onClick={toggle}
-          className="inline-flex items-center gap-1 rounded-sm text-meta text-muted-foreground hover:text-foreground disabled:cursor-not-allowed"
-        >
-          <UserRound size={ICON_SIZE.row} aria-hidden />
-          <span className={cn(busyId != null && 'text-shimmer')}>
-            {assignee?.displayName ?? 'Unassigned'}
-          </span>
-        </button>
+        <Tooltip content="Change who owns this issue in Jira" isSuppressed={isOpen}>
+          <button
+            type="button"
+            aria-haspopup="menu"
+            aria-expanded={isOpen}
+            disabled={busyId != null}
+            onClick={toggle}
+            className="inline-flex items-center gap-1 rounded-sm text-meta text-muted-foreground hover:text-foreground disabled:cursor-not-allowed"
+          >
+            <UserRound size={ICON_SIZE.row} aria-hidden />
+            <span className={cn(busyId != null && 'text-shimmer')}>
+              {assignee?.displayName ?? 'Unassigned'}
+            </span>
+          </button>
+        </Tooltip>
       }
     >
       <div className="p-1">

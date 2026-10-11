@@ -1,4 +1,4 @@
-import { WORK_ROW, cn } from '@goodboy/ui';
+import { WORK_ROW, cn, TruncatedText } from '@goodboy/ui';
 import type { TimelineRunEntry } from '../../../../timeline/buildTimelineGroups';
 import { runWorkflowKind } from '../../../../timeline/runWorkflowKind';
 import { TimelineRunChip } from './TimelineRunChip';
@@ -22,8 +22,7 @@ export const TimelineRunLabel = ({ entry, identity = null, isCardOpen = false }:
         identity={identity}
         isCardOpen={isCardOpen}
       />
-      <span
-        title={title}
+      <TruncatedText
         className={cn(
           'flex-1 truncate text-body',
           WORK_ROW.title,
@@ -31,7 +30,7 @@ export const TimelineRunLabel = ({ entry, identity = null, isCardOpen = false }:
         )}
       >
         {title}
-      </span>
+      </TruncatedText>
     </>
   );
 };

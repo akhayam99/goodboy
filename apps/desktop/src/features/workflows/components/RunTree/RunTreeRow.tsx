@@ -7,6 +7,7 @@ import {
   WORK_ROW,
   cn,
   tintClasses,
+  TruncatedText,
 } from '@goodboy/ui';
 import type {
   EffortLevel,
@@ -186,8 +187,7 @@ export const RunTreeRow = ({
                 </span>
                 {glyph}
                 <span className="flex min-w-0 flex-1 items-center gap-2">
-                  <span
-                    title={agent.name}
+                  <TruncatedText
                     className={cn(
                       WORK_ROW.title,
                       'flex-1 truncate',
@@ -200,7 +200,7 @@ export const RunTreeRow = ({
                     )}
                   >
                     {agent.name}
-                  </span>
+                  </TruncatedText>
                   {guidance === null ? null : (
                     <Tooltip content={guidanceTagTip({ text: guidance })} side="top">
                       <span

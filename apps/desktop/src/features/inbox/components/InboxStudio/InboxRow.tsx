@@ -94,18 +94,19 @@ const InboxRowView = ({
         !selected && !isCursor && 'hover:bg-hover hover:text-foreground',
       )}
     >
-      <button
-        type="button"
-        id={inboxOptionId({ key: record.key })}
-        role="option"
-        aria-selected={selected}
-        tabIndex={-1}
-        title={record.title}
-        onClick={() => onSelect(record)}
-        className={cn('absolute inset-0 cursor-pointer rounded-md', FOCUS_RING)}
-      >
-        <span className="sr-only">{`${record.identifier} ${record.title}`}</span>
-      </button>
+      <Tooltip content={record.title}>
+        <button
+          type="button"
+          id={inboxOptionId({ key: record.key })}
+          role="option"
+          aria-selected={selected}
+          tabIndex={-1}
+          onClick={() => onSelect(record)}
+          className={cn('absolute inset-0 cursor-pointer rounded-md', FOCUS_RING)}
+        >
+          <span className="sr-only">{`${record.identifier} ${record.title}`}</span>
+        </button>
+      </Tooltip>
       <span className="pointer-events-none relative flex h-4 items-center">
         {hasSession ? <StatusDot tone="primary" size="sm" ariaLabel="Has a session" /> : null}
       </span>
@@ -146,17 +147,18 @@ const InboxRowView = ({
             )}
           />
         )}
-        <time
-          dateTime={record.updatedAt}
-          title={formatDateTime({ at: record.updatedAt, hasYear: true })}
-          className={cn(
-            'pointer-events-none whitespace-nowrap text-meta text-faint-foreground',
-            canOpen && 'group-hover:hidden',
-            canOpen && selected && 'hidden',
-          )}
-        >
-          {relativeTime}
-        </time>
+        <Tooltip content={formatDateTime({ at: record.updatedAt, hasYear: true })}>
+          <time
+            dateTime={record.updatedAt}
+            className={cn(
+              'pointer-events-none whitespace-nowrap text-meta text-faint-foreground',
+              canOpen && 'group-hover:hidden',
+              canOpen && selected && 'hidden',
+            )}
+          >
+            {relativeTime}
+          </time>
+        </Tooltip>
         {canOpen ? (
           <Tooltip content={`Open in ${toolLabel}`}>
             <button
@@ -164,7 +166,6 @@ const InboxRowView = ({
               aria-hidden
               tabIndex={-1}
               data-open-in-tool={record.key}
-              title={`Open ${record.identifier} in ${toolLabel}`}
               onClick={() => void openUrl(record.url)}
               className={cn(
                 'size-5 items-center justify-center rounded-sm text-muted-foreground hover:bg-hover hover:text-foreground',

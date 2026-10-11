@@ -4,7 +4,6 @@ import { EmptyLine, Button, SelectionBar, SelectionConfirm } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import type { StorageFolder } from '../../../../store/slices/storage/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { pluralize } from '../../../../shared/utils/pluralize';
 import { storageScopeLabel } from '../../storageScopeLabel';
@@ -110,8 +109,8 @@ export const BulkRemoveBar = ({
       ]}
       onClear={onClear}
       onSelectAll={onSelectAll}
-      clearHint={shortcutGlyphs('selection.clear')}
-      selectAllHint={shortcutGlyphs('selection.all')}
+      clearShortcut="selection.clear"
+      selectAllShortcut="selection.all"
       onDismissConfirm={onCancel}
       confirm={
         isConfirming ? (

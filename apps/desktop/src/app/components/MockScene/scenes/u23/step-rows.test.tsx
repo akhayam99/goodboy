@@ -10,6 +10,7 @@ import { cleanup, render, screen, waitFor, within } from '@testing-library/react
 import { WORK_META_COLUMN } from '@goodboy/ui';
 import { carriesSpec } from '../../../../../test/classTokens';
 import { ToastProvider } from '../../../../../shared/components/Toast';
+import { asCutText, tooltipTextOf } from '../../../../../__tests__/helpers/tooltip';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -79,7 +80,7 @@ describe('the u23 step row scenes', () => {
     const tree = await screen.findByTestId('run-tree', undefined, WAIT);
 
     const title = within(tree).getByText(/^Agree where the dedupe belongs between/u);
-    expect(title.getAttribute('title')).toBe(
+    expect(tooltipTextOf({ element: asCutText({ element: title }) })).toBe(
       'Agree where the dedupe belongs between the webhook handler, the credit writer and the ledger posting in payments-api',
     );
     expect(effortsIn({ root: tree }).some((text) => text?.startsWith('from '))).toBe(true);

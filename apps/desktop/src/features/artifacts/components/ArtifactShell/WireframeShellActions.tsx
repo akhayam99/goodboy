@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { cn, formatError } from '@goodboy/ui';
+import { cn, formatError, TruncatedText } from '@goodboy/ui';
 import type { SessionId, WireframeArtifact } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { ArtifactExport } from '../../hooks/useArtifactExport';
@@ -59,16 +59,15 @@ export const WireframeShellActions = ({
   return (
     <span className="flex min-w-0 items-center gap-2">
       {message === null ? null : (
-        <span
+        <TruncatedText
           role={message.isError ? 'alert' : 'status'}
-          title={message.text}
           className={cn(
             'min-w-0 max-w-48 truncate text-meta',
             message.isError ? 'text-danger' : 'text-muted-foreground',
           )}
         >
           {message.text}
-        </span>
+        </TruncatedText>
       )}
       <ArtifactShellActions
         details={details}

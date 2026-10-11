@@ -1,5 +1,5 @@
 import { useId, type FormEvent } from 'react';
-import { Button, Eyebrow, FormActions, Input, Notice } from '@goodboy/ui';
+import { Button, Eyebrow, FormActions, Input, Notice, TruncatedText } from '@goodboy/ui';
 import { useNewProject } from '../../hooks/useNewProject';
 
 type Props = {
@@ -55,12 +55,12 @@ export const NewProjectForm = ({ onCreated, onCancel, autoFocus = true }: Props)
       <div className="flex flex-col gap-2">
         <span className="text-label text-foreground">Location</span>
         <div className="flex items-center gap-2">
-          <span
+          <TruncatedText
+            tooltip={model.folderPreview ?? undefined}
             className="min-w-0 flex-1 truncate font-mono text-meta text-muted-foreground"
-            title={model.folderPreview ?? undefined}
           >
             {model.folderPreview ?? 'Choose where the folder goes'}
-          </span>
+          </TruncatedText>
           <Button
             type="button"
             variant="ghost"

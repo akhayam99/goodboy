@@ -1,5 +1,5 @@
 import { AlertTriangle } from 'lucide-react';
-import { Button, FormActions, cn, Eyebrow } from '@goodboy/ui';
+import { Button, FormActions, cn, Eyebrow, TruncatedText } from '@goodboy/ui';
 import type { Project } from '@goodboy/types';
 import { ICON_SIZE, projectGlyph } from '../../../../../shared/components/conceptIcons';
 import type { MountFailure } from './mountFailure';
@@ -25,15 +25,15 @@ const PreflightRow = ({ label, value, isPending }: RowProps) => (
     <dt className="w-12 shrink-0">
       <Eyebrow label={label} muted />
     </dt>
-    <dd
+    <TruncatedText
+      as="dd"
       className={cn(
         'min-w-0 flex-1 truncate font-mono text-meta text-foreground',
         isPending && 'text-muted-foreground',
       )}
-      title={value}
     >
       {value}
-    </dd>
+    </TruncatedText>
   </div>
 );
 

@@ -14,7 +14,6 @@ import { useAppStore, useWorkspaces } from '../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { SETTING_REOPEN_LAST } from '../../../settings/settings';
 import { UpdatePill } from '../../../updater/components/UpdatePill';
-import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { WorkspaceListRow } from '../WorkspaceListRow';
 import { filterWorkspaces, sortWorkspacesByRecent } from '../../recent';
 import { NewProjectForm } from '../../../../shared/components/NewProjectForm';
@@ -81,7 +80,7 @@ export const WorkspaceLauncher = () => {
         <IconButton
           icon={CONCEPT_ICONS.settings}
           label="Open settings"
-          tooltip={`Open settings (${shortcutGlyphs('settings.open')})`}
+          shortcut="settings.open"
           variant="ghost"
           onClick={() =>
             window.dispatchEvent(

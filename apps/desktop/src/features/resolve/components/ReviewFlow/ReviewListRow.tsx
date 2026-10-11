@@ -1,4 +1,12 @@
-import { Button, ROW_INTERACTIVE, SelectionCheckbox, Tooltip, WorkNode, cn } from '@goodboy/ui';
+import {
+  Button,
+  ROW_INTERACTIVE,
+  SelectionCheckbox,
+  Tooltip,
+  WorkNode,
+  cn,
+  TruncatedText,
+} from '@goodboy/ui';
 import { REVIEW_LAUNCH_LABEL } from '../../reviewLaunchCopy';
 import { REVIEW_COMMENT_NODE } from '../../reviewCommentState';
 import { entryBodyOf, entryTitleOf } from './entryTitle';
@@ -90,9 +98,12 @@ export const ReviewListRow = ({ entry, isSelected, onSelect, onFix, selection }:
             )}
             {qualifier === null ? stateWord : <Tooltip content={qualifier}>{stateWord}</Tooltip>}
           </span>
-          <span className="min-w-0 truncate text-body text-foreground" title={body ?? undefined}>
+          <TruncatedText
+            tooltip={body ?? undefined}
+            className="min-w-0 truncate text-body text-foreground"
+          >
             {title}
-          </span>
+          </TruncatedText>
         </span>
       </button>
       {selection !== null && (

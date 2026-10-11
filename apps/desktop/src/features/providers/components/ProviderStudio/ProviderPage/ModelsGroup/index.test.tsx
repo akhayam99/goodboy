@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { MODEL_CATALOGS } from '@goodboy/core';
 import { SETTING_HIDDEN_MODELS } from '../../../../../settings/settings';
+import { tooltipTextOf } from '../../../../../../__tests__/helpers/tooltip';
 import { ModelsGroup } from './index';
 
 type SaveSetting = (key: string, value: string) => Promise<void>;
@@ -68,7 +69,10 @@ describe('ModelsGroup', () => {
     const last = screen.getAllByRole('button', { pressed: true });
     expect(last).toHaveLength(1);
     expect(last[0]?.hasAttribute('disabled')).toBe(true);
-    expect(last[0]?.getAttribute('title')).toBe('At least one model stays visible');
+    const [only] = last;
+    expect(only === undefined ? null : tooltipTextOf({ element: only })).toBe(
+      'At least one model stays visible',
+    );
   });
 
   it('says in one line that hidden models are not used unless a task setting names one', () => {

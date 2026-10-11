@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
+import { tooltipTextOf } from '../../../../../__tests__/helpers/tooltip';
 import { PullRequestChip, pullRequestMeta } from './index';
 
 afterEach(cleanup);
@@ -32,7 +33,8 @@ describe('PullRequestChip', () => {
   it('renders the none state as a named dashed icon', () => {
     render(<PullRequestChip state="none" />);
     const icon = screen.getByLabelText('No pull request');
-    expect(icon.getAttribute('title')).toBe('No pull request');
+    expect(icon.getAttribute('title')).toBeNull();
+    expect(tooltipTextOf({ element: icon })).toBe('No pull request');
     expect(icon.querySelector('.lucide-circle-dashed')).not.toBeNull();
   });
 });
