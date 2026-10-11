@@ -1,0 +1,19 @@
+{
+  "apps/desktop/src/features/artifacts/components/ArtifactList/ArtifactListGroup.tsx": 1,
+  "apps/desktop/src/features/artifacts/components/PlanComments/PartCommentFrame.tsx": 1,
+  "apps/desktop/src/features/chat/components/HandoffBlock/HandoffCard.tsx": 1,
+  "apps/desktop/src/features/chat/components/ToolCallCard/CollapsibleString.tsx": 1,
+  "apps/desktop/src/features/chat/components/TranscriptDisclosure.tsx": 1,
+  "apps/desktop/src/features/plans/components/PlanParts/PlanPartDrawer.tsx": 1,
+  "apps/desktop/src/features/resolve/components/ReviewFlow/ThreadRecheckLine.tsx": 1,
+  "apps/desktop/src/features/resolve/components/ReviewFlow/ThreadRecheckLive.tsx": 1,
+  "apps/desktop/src/features/resolve/notes/components/ReviewNotesDrawer/NoteItem.tsx": 1,
+  "apps/desktop/src/features/session/ask/components/AskDrawer/AskAnswer.tsx": 1,
+  "apps/desktop/src/features/wireframes/components/WireframeViewer/ScreenRail.tsx": 1,
+  "apps/desktop/src/features/workflows/components/AddStepMenu/index.tsx": 1,
+  "apps/desktop/src/features/workflows/components/WorkflowStudio/ImportPopover/index.tsx": 1,
+  "apps/desktop/src/features/workspace-chat/components/ChatList/ChatListRow.tsx": 1,
+  "apps/desktop/src/features/workspace/components/SessionActivityBar/index.tsx": 1,
+  "apps/desktop/src/features/workspace/components/StageBoard/StageBoardCard/index.tsx": 2,
+  "apps/desktop/src/features/workspace/components/WorkspaceLauncher/index.tsx": 1
+}

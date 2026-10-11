@@ -343,3 +343,6 @@ export type {
   FrameType,
 } from './frameGeometry';
 export { HeaderActions } from './components/HeaderActions';
+
+export { Disclosure } from './components/Disclosure';
+export type { DisclosureProps } from './components/Disclosure';

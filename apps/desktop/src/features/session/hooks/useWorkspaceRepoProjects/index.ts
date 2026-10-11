@@ -14,6 +14,7 @@ export const useWorkspaceRepoProjects = ({ workspaceId }: Params): ReadonlyArray
         projects: state.projects.filter(
           (project) => project.workspaceId === workspaceId && project.kind === 'repo',
         ),
+        inside: 'recency',
       }),
     ),
   );

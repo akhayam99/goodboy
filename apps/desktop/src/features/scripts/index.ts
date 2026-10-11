@@ -1,3 +1,3 @@
 export { ScriptsPanel } from './components/ScriptsPanel';
-export { ProjectScriptsFold } from './components/ProjectScriptsFold';
+export { ProjectScriptsField } from './components/ProjectScriptsField';
 export { useScriptPins } from './hooks/useScriptPins';

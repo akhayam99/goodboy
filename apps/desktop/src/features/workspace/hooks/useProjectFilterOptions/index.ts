@@ -6,6 +6,7 @@ import {
   useAppStore,
   useProjectMountsForSessions,
 } from '../../../../store';
+import { starredProjectsFirst } from '../../../../shared/utils/starredProjectsFirst';
 
 export type ProjectFilterOption = {
   readonly id: string;
@@ -38,18 +39,17 @@ export const useProjectFilterOptions = ({
         counts.set(projectId, (counts.get(projectId) ?? 0) + 1);
       }
     }
-    const projectOptions: ReadonlyArray<ProjectFilterOption> = projects
-      .filter((project) => project.workspaceId === workspaceId && counts.has(project.id))
-      .map((project) => ({
-        id: project.id,
-        label: project.name,
-        count: counts.get(project.id) ?? 0,
-        isStarred: project.starredAt !== undefined,
-      }))
-      .sort(
-        (left, right) =>
-          Number(right.isStarred) - Number(left.isStarred) || left.label.localeCompare(right.label),
-      );
+    const projectOptions: ReadonlyArray<ProjectFilterOption> = starredProjectsFirst({
+      projects: projects.filter(
+        (project) => project.workspaceId === workspaceId && counts.has(project.id),
+      ),
+      inside: 'recency',
+    }).map((project) => ({
+      id: project.id,
+      label: project.name,
+      count: counts.get(project.id) ?? 0,
+      isStarred: project.starredAt !== undefined,
+    }));
     if (noProjectCount === 0) {
       return projectOptions;
     }

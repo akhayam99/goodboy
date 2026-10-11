@@ -46,6 +46,7 @@ type CommonProps<T extends ListboxValue> = {
   readonly align?: 'start' | 'end';
   readonly openEvent?: string;
   readonly isBlock?: boolean;
+  readonly shouldFlattenOnSearch?: boolean;
   readonly popupWidth?: 'content' | 'trigger';
   readonly maxPopupWidth?: number;
   readonly className?: string;
@@ -108,6 +109,7 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
     align = 'start',
     openEvent,
     isBlock = false,
+    shouldFlattenOnSearch = false,
     popupWidth = 'content',
     maxPopupWidth = LISTBOX_MAX_WIDTH,
     className,
@@ -360,6 +362,7 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
               activeIndex={activeIndex}
               selectedValues={selectedValues}
               isMultiple={isMultiple}
+              isFlat={shouldFlattenOnSearch && trimmedQuery !== ''}
               createLabel={createLabel}
               onSelect={commit}
               onActivate={setActiveIndex}
