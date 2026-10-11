@@ -100,7 +100,7 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
       ).toHaveLength(0);
       const confirmButton = within(confirm).getByRole('button', { name: 'Push' });
       expect(confirmButton.getAttribute('data-variant')).toBe('primary');
-      expect(confirm.querySelector('[data-testid="tone-bar"]')).not.toBeNull();
+      expect(confirm.querySelector('[data-testid="tone-bar"]')).toBeNull();
 
       await click(confirmButton);
 

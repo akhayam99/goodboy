@@ -19,7 +19,6 @@ export const CrumbMenuActions = ({ actions, confirmingId, onConfirmingChange, on
       <div data-crumb-actions="" className="flex flex-col rounded-md bg-fill p-1">
         <InlineConfirm
           role="danger"
-          surface="plain"
           icon={<Icon size={ICON_SIZE.row} aria-hidden />}
           title={confirming.confirm.title}
           description={confirming.confirm.description}

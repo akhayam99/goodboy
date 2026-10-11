@@ -27,7 +27,6 @@ export const WorkspaceOpenConfirm = ({
   return (
     <InlineConfirm
       role="alert"
-      surface="plain"
       icon={<TriangleAlert size={ICON_SIZE.row} aria-hidden />}
       title={activeLine({ running, currentName })}
       description={`Opening ${targetName} here stops them. A new window keeps them going.`}

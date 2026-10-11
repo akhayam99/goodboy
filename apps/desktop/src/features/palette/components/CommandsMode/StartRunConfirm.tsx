@@ -15,7 +15,6 @@ export const StartRunConfirm = ({ entry, workflowName, facts, onConfirm, onCance
   const Icon = entry.icon;
   return (
     <InlineConfirm
-      surface="plain"
       role="primary"
       icon={<Icon size={ICON_SIZE.row} aria-hidden />}
       title={`Start a run: ${workflowName}`}

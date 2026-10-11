@@ -1,13 +1,10 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Profiler } from 'react';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { InlineConfirm, type ConfirmRole } from '../components/InlineConfirm';
 
-afterEach(() => {
-  cleanup();
-  vi.useRealTimers();
-});
+afterEach(cleanup);
 
 describe('InlineConfirm', () => {
   it('never confirms without an explicit click on the confirm control', () => {
@@ -114,26 +111,6 @@ describe('InlineConfirm', () => {
     expect(commits).toEqual(['mount', 'update', 'update']);
   });
 
-  it('cancels itself after the configured delay', () => {
-    vi.useFakeTimers();
-    const onCancel = vi.fn();
-    render(
-      <InlineConfirm
-        role="alert"
-        icon={null}
-        title="Skip the blocked step?"
-        confirmLabel="Skip"
-        autoDisarmMs={4000}
-        onConfirm={vi.fn()}
-        onCancel={onCancel}
-      />,
-    );
-
-    act(() => vi.advanceTimersByTime(4000));
-
-    expect(onCancel).toHaveBeenCalledOnce();
-  });
-
   it('renders the description, children and note slots', () => {
     render(
       <InlineConfirm
@@ -198,14 +175,13 @@ describe('InlineConfirm', () => {
     );
   });
 
-  it('sits in popover chrome without a nested card on the plain surface', () => {
+  it('has no card surface: no border, no fill and no tone line', () => {
     render(
       <InlineConfirm
         role="danger"
         icon={null}
         title="Detach payments-api?"
         confirmLabel="Detach"
-        surface="plain"
         onConfirm={vi.fn()}
         onCancel={vi.fn()}
       />,
@@ -214,6 +190,37 @@ describe('InlineConfirm', () => {
     const group = screen.getByRole('group', { name: 'Detach payments-api?' });
     expect(group.className).not.toContain('border');
     expect(group.className).not.toContain('rounded-lg');
+    expect(group.className).not.toContain('bg-subtle');
+    expect(screen.queryByTestId('tone-bar')).toBeNull();
+  });
+
+  it('refuses a card surface and an auto-disarm delay at the type level', () => {
+    render(
+      <InlineConfirm
+        role="danger"
+        icon={null}
+        title="Delete?"
+        confirmLabel="Delete"
+        // @ts-expect-error the card surface is gone
+        surface="card"
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+    render(
+      <InlineConfirm
+        role="danger"
+        icon={null}
+        title="Skip?"
+        confirmLabel="Skip"
+        // @ts-expect-error the auto-disarm delay is gone
+        autoDisarmMs={4000}
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.getAllByRole('group')).toHaveLength(2);
   });
 
   it('maps danger to the one solid red button and alert to the primary button', () => {
@@ -257,7 +264,7 @@ describe('InlineConfirm', () => {
   });
 });
 
-const card = (role: ConfirmRole) =>
+const plain = (role: ConfirmRole) =>
   render(
     <InlineConfirm
       role={role}
@@ -269,46 +276,9 @@ const card = (role: ConfirmRole) =>
     />,
   );
 
-describe('InlineConfirm card', () => {
-  it('is a neutral card: no tinted fill and no tinted border', () => {
-    card('primary');
-
-    const group = screen.getByRole('group', { name: 'Push 3 comments?' });
-    const classes = group.className.split(' ');
-    expect(classes).toEqual(expect.arrayContaining(['bg-subtle', 'border-border-soft']));
-    expect(group.className).not.toMatch(/\b(bg|border)-(primary|warning|danger)/);
-  });
-
-  it.each([
-    ['primary', 'primary'],
-    ['alert', 'warning'],
-    ['danger', 'danger'],
-  ] as const)('carries its %s tone as an inner line', (role, tone) => {
-    card(role);
-
-    const bar = screen.getByTestId('tone-bar');
-    expect(bar.getAttribute('data-tone')).toBe(tone);
-    expect(screen.getByRole('group').contains(bar)).toBe(true);
-  });
-
-  it('draws no tone line on the plain surface used inside a menu', () => {
-    render(
-      <InlineConfirm
-        role="danger"
-        icon={<svg />}
-        title="Delete?"
-        confirmLabel="Delete"
-        surface="plain"
-        onConfirm={vi.fn()}
-        onCancel={vi.fn()}
-      />,
-    );
-
-    expect(screen.queryByTestId('tone-bar')).toBeNull();
-  });
-
+describe('InlineConfirm buttons', () => {
   it('makes the confirm button the one filled primary of a primary confirm', () => {
-    card('primary');
+    plain('primary');
 
     expect(document.querySelectorAll('button[data-variant="primary"]')).toHaveLength(1);
     expect(screen.getByRole('button', { name: 'Push' }).getAttribute('data-variant')).toBe(

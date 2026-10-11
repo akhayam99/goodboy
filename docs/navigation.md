@@ -419,11 +419,14 @@ never exists on one surface only.
   covers the last row.
 - **Confirm and undo.** A confirm is one placement, anchored to its trigger
   (`ConfirmPopover`): Cancel has focus on a danger confirm, `Cmd+Enter` confirms,
-  and a card still drawn by a call site is counted in
-  `inline-confirm-placement.baseline.json`, which only falls. A verb that loses
-  work confirms inside the menu with
-  `InlineConfirm` (Delete, Delete permanently, Discard, Close run, Merge, Close pull request,
-  Delete script, Close branch, Remove from session, Abort rebase). Remove
+  and no card confirm exists any more (`inline-confirm-placement.baseline.json`
+  is empty). A verb that loses work confirms in a `ConfirmPopover` on its button
+  (Delete, Delete permanently, Discard, Close run, Merge, Close pull request,
+  Delete script, Close branch, Remove from session, Abort rebase, Restore a
+  backup). The Branch header's Merge asks "Merge #318 into main?" and Close
+  asks "Close #318 without merging?" beside their buttons. Deleting a diff note
+  acts at once with Undo, which posts the same note again; a pull request
+  review draft asks in a popover. Remove
   from session and a storage worktree's Remove keep their detailed confirm (the
   removal plan, the forced remove) in their own menu. A reversible verb runs at once with an Undo toast (Archive, Delete on an artifact,
   Close agent, Unlink, Stop tracking, Take off this branch). The toast lasts
@@ -2933,7 +2936,7 @@ number to comment, drag or shift-click to cover a range; the composer and the
 threads sit under the last line of the range. ⌘Enter saves, Escape cancels.
 `+ Add note` on a line saves the note with the project and branch of the active
 mount (`diff_comments.project_id` and `branch`, m223). A note shows `Close note`
-and `Delete` in the diff; Fix lives on the note's item in the Notes drawer. While a fixer
+and `Delete` in the diff (Delete acts at once and offers Undo, which posts the same note again); Fix lives on the note's item in the Notes drawer. While a fixer
 works on a note, Close note and Delete are disabled with "A fixer is working on
 this note". Close note goes through `closeResolvedNote`, the same path the
 Notes drawer uses. The Files tab shows only the notes of its own branch; a note

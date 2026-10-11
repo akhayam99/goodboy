@@ -1,13 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { cn } from '../cn';
 import { formatError } from '../formatError';
 import { tintClasses, type Tone } from '../tint';
 import { Button, type ButtonVariant } from './Button';
-import { ToneBar } from './ToneBar';
 
 export type ConfirmRole = 'primary' | 'alert' | 'danger';
-
-export type ConfirmSurface = 'card' | 'plain';
 
 export type ConfirmAltAction = {
   readonly label: string;
@@ -30,8 +27,6 @@ type Props = {
   readonly onCancel: () => void;
   readonly isBusy?: boolean;
   readonly isConfirmDisabled?: boolean;
-  readonly autoDisarmMs?: number;
-  readonly surface?: ConfirmSurface;
   readonly className?: string;
 };
 
@@ -61,25 +56,12 @@ export const InlineConfirm = ({
   onCancel,
   isBusy = false,
   isConfirmDisabled = false,
-  autoDisarmMs,
-  surface = 'card',
   className,
 }: Props) => {
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const tone = ROLE_TONE[role];
-  const tint = tintClasses(tone);
+  const tint = tintClasses(ROLE_TONE[role]);
   const busy = isBusy || isRunning;
-  const cancelRef = useRef(onCancel);
-  cancelRef.current = onCancel;
-
-  useEffect(() => {
-    if (autoDisarmMs === undefined || busy || error !== null) {
-      return;
-    }
-    const timer = window.setTimeout(() => cancelRef.current(), autoDisarmMs);
-    return () => window.clearTimeout(timer);
-  }, [autoDisarmMs, busy, error]);
 
   const confirm = async () => {
     setIsRunning(true);
@@ -97,16 +79,9 @@ export const InlineConfirm = ({
     <div
       role="group"
       aria-label={title}
-      data-surface={surface}
-      className={cn(
-        'flex min-w-0 flex-col gap-2 text-meta',
-        surface === 'card'
-          ? 'relative rounded-lg border border-border-soft bg-subtle py-3 pr-3 pl-4'
-          : 'p-3',
-        className,
-      )}
+      data-surface="plain"
+      className={cn('flex min-w-0 flex-col gap-2 p-3 text-meta', className)}
     >
-      {surface === 'card' ? <ToneBar tone={tone} density="card" /> : null}
       <div className="flex min-w-0 items-start gap-2">
         <span className={cn('flex h-4 shrink-0 items-center', tint.icon)} aria-hidden>
           {icon}

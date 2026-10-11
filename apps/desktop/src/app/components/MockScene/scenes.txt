@@ -148,8 +148,11 @@ companion
 confirm-action-panel
 confirm-artifact-delete
 confirm-chat-delete
+confirm-close-pr
 confirm-folder-remove
+confirm-merge
 confirm-reset-app
+confirm-restore-backup
 confirm-session-delete
 confirm-signout
 confirm-worktree-remove

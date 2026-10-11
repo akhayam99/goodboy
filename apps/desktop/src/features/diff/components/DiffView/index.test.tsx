@@ -423,13 +423,30 @@ describe('DiffView comments', () => {
     expect(comments.onReopen).toHaveBeenCalledWith('n1');
   });
 
-  it('asks before deleting a thread', () => {
+  it('asks in a popover beside Delete before deleting a thread it cannot restore', () => {
     const comments = commentsWith([thread()]);
-    render(<DiffView files={[LEDGER]} comments={comments} />);
+    const { container } = render(<DiffView files={[LEDGER]} comments={comments} />);
+    const before = container.innerHTML;
+
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Delete this comment?' });
+    expect(dialog.closest('[data-dropdown-portal]')).not.toBeNull();
+    expect(container.innerHTML.replace(/ aria-expanded="true"/g, '')).toBe(
+      before.replace(/ aria-expanded="true"/g, ''),
+    );
     expect(comments.onDelete).not.toHaveBeenCalled();
-    const confirm = screen.getAllByRole('button', { name: 'Delete' }).at(-1);
-    fireEvent.click(confirm as HTMLElement);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete comment' }));
+    expect(comments.onDelete).toHaveBeenCalledWith('n1');
+  });
+
+  it('deletes at once a thread the provider can restore, with no question', () => {
+    const comments = commentsWith([thread({ canRestore: true })]);
+    render(<DiffView files={[LEDGER]} comments={comments} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+
+    expect(screen.queryByRole('dialog')).toBeNull();
     expect(comments.onDelete).toHaveBeenCalledWith('n1');
   });
 });
