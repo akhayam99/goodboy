@@ -76,7 +76,7 @@ describe('useDiffNotes delete', () => {
     expect(result.current.threads.map((thread) => thread.canRestore)).toEqual([true]);
   });
 
-  it('deletes at once, records Undo, and Undo posts the same note again', async () => {
+  it('deletes at once, records Undo, and Undo restores the same note with its id', async () => {
     const { result } = renderHook(() => useDiffNotes({ sessionId: SESSION_ID }), {
       wrapper: ToastProvider,
     });
@@ -94,15 +94,7 @@ describe('useDiffNotes delete', () => {
       await useAppStore.getState().undoLastOperation();
     });
 
-    expect(storySpies.insertDiffComment).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.any(String),
-      SESSION_ID,
-      'src/ledger.ts',
-      'Guard the residual when a weight is zero',
-      undefined,
-      undefined,
-      undefined,
-    );
+    expect(storySpies.insertDiffComment).not.toHaveBeenCalled();
+    expect(storySpies.restoreDiffComment).toHaveBeenCalledWith(expect.anything(), NOTE);
   });
 });
