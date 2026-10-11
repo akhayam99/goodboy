@@ -46,6 +46,18 @@ type Props = {
   readonly onExit?: (exitCode: number) => void;
 };
 
+type WebglParams = { readonly term: Terminal };
+
+const loadWebglRenderer = ({ term }: WebglParams): void => {
+  try {
+    const webgl = new WebglAddon();
+    webgl.onContextLoss(() => webgl.dispose());
+    term.loadAddon(webgl);
+  } catch {
+    return;
+  }
+};
+
 const DEFAULT_EXIT_MESSAGE = '\r\n\x1B[90m[process exited]\x1B[0m';
 
 export const GenericTerminalPanel = ({
@@ -114,15 +126,7 @@ export const GenericTerminalPanel = ({
     });
     term.open(container);
 
-    let webgl: WebglAddon | null = null;
-    try {
-      webgl = new WebglAddon();
-      webgl.onContextLoss(() => webgl?.dispose());
-      term.loadAddon(webgl);
-    } catch {
-      webgl?.dispose();
-      webgl = null;
-    }
+    loadWebglRenderer({ term });
 
     const fitAndSync = () => {
       if (!container.clientWidth || !container.clientHeight) {

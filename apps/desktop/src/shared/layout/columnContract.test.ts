@@ -185,12 +185,8 @@ const FORM_AND_DETAIL_ROOTS: PlaceRoots = {
   'Runs > Create': ['features/workflows/components/WorkflowBuilderView/index.tsx'],
   'Runs > a run': ['features/session/components/SessionWorkspace/parts/WorkflowRunDetail.tsx'],
   'Questions detail': ['features/session/components/SessionWorkspace/parts/QuestionsPane.tsx'],
-  'Branch > create pull request': [
-    'features/integrations/github/components/PullRequest/CreatePrPanel.tsx',
-  ],
-  'Create merge request': [
-    'features/integrations/gitlab/MergeRequest/MrDetailPanel/CreateMrForm.tsx',
-  ],
+  'Branch > create pull request': ['features/branch/components/BranchPage/index.tsx'],
+  'Create merge request': ['features/integrations/gitlab/MergeRequest/MrDetailPanel/index.tsx'],
   'Artifacts > create': ['features/artifacts/components/ArtifactCreationPane/index.tsx'],
   'Session overview loading': [
     'features/session/components/SessionWorkspace/parts/SessionOverviewSkeleton.tsx',

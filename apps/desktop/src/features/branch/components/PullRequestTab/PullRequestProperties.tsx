@@ -15,7 +15,7 @@ import { pullRequestWord } from '../../pullRequestWord';
 import { checksPropertyWord } from './checksPropertyWord';
 import { FileStatRow } from './FileStatRow';
 import { PROPERTY_ROW as ROW } from './propertyRow';
-import { PropertyBlock } from './PropertyBlock';
+import { PropertyBlock } from '../../../../shared/components/PropertyBlock';
 import { ResolvesProperty } from './ResolvesProperty';
 import { ReviewersProperty, type ReviewerRequest } from './ReviewersProperty';
 

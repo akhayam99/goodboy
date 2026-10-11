@@ -52,7 +52,9 @@ export const TerminalRow = ({
   const isBusyNow = !isExited && isBusy;
   const presentation = presentationOf({ tab, isBusy });
   const detail = isExited
-    ? `exited ${tab.exitCode ?? 0}`
+    ? tab.openError === undefined
+      ? `exited ${tab.exitCode ?? 0}`
+      : 'failed to open'
     : isBusyNow
       ? (command ?? 'running')
       : null;

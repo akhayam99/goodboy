@@ -7,7 +7,7 @@ import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRep
 import { closingIssueReferences } from '../../../integrations/github/closingIssueReferences';
 import { LinkIssueToPrPopover } from './LinkIssueToPrPopover';
 import { openLens } from '../../../session/openLens';
-import { PropertyBlock } from './PropertyBlock';
+import { PropertyBlock } from '../../../../shared/components/PropertyBlock';
 
 type Props = {
   readonly sessionId: SessionId;

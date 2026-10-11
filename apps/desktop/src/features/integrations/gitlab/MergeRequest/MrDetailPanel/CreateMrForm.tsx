@@ -1,266 +1,62 @@
-import { useEffect, useMemo, useState } from 'react';
-import {
-  Button,
-  Checkbox,
-  FieldRow,
-  FormActions,
-  FormPage,
-  formatError,
-  Input,
-  SectionHeader,
-  SegmentedTabs,
-  Textarea,
-} from '@goodboy/ui';
-import { AlertTriangle, ArrowRight, PenLine } from 'lucide-react';
+import { useCallback } from 'react';
+import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
 import type { SessionId } from '@goodboy/types';
-import { appendOperatorNotes } from '../../../../session/utils/appendOperatorNotes';
-import { AgentSpawnConfig } from '../../../../session/components/AgentSpawnConfig';
-import type { AgentSpawnConfigValue } from '../../../../session/agentSpawnConfigValue';
-import { taskModelAgentSpawnConfig } from '../../../../session/taskModelAgentSpawnConfig';
-import { useResolution } from '../../../../providers/hooks/useResolution';
-import { agentPlace, useAppStore } from '../../../../../store';
 import { useToast } from '../../../../../shared/components/Toast';
-import { useFollowToast } from '../../../../../shared/hooks/useFollowToast';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { useAppStore } from '../../../../../store';
+import { CreateReviewForm } from '../../../components/CreateReviewForm/CreateReviewForm';
+import type {
+  CreatedReview,
+  CreateReviewInput,
+  CreateReviewNouns,
+} from '../../../components/CreateReviewForm/types';
 import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
-
-type CreateMode = 'manual' | 'agent';
 
 type Props = {
   readonly sessionId: SessionId;
-  readonly branch: string | null;
-  readonly error: string | null;
-  readonly onClose: () => void;
+  readonly onCreated: (created: CreatedReview) => void;
 };
 
-export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
-  const createMrForSession = useAppStore((s) => s.createMrForSession);
-  const spawnAgent = useAppStore((s) => s.spawnAgent);
+const NOUNS: CreateReviewNouns = {
+  long: 'merge request',
+  create: 'Create merge request',
+  createDraft: 'Create draft merge request',
+};
+
+const NO_REQUESTS = async (): Promise<void> => undefined;
+
+export const CreateMrForm = ({ sessionId, onCreated }: Props) => {
+  const createMrForSession = useAppStore((state) => state.createMrForSession);
   const { showToast } = useToast();
-  const followAgent = useFollowToast();
+  const goal = useAppStore((state) => sessionById(state.sessions, sessionId)?.goal ?? '');
 
-  const session = useAppStore((s) => sessionById(s.sessions, sessionId) ?? null);
-  const resolution = useResolution({ task: 'pr_draft', sessionId });
-  const resolvedAgentConfig = useMemo(
-    () => taskModelAgentSpawnConfig({ resolution }),
-    [resolution],
-  );
-
-  const [mode, setMode] = useState<CreateMode>('manual');
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [targetBranch, setTargetBranch] = useState('main');
-  const [draft, setDraft] = useState(true);
-  const [busy, setBusy] = useState<'create' | 'agent' | null>(null);
-  const [failure, setFailure] = useState<string | null>(null);
-  const [agentConfig, setAgentConfig] = useState<AgentSpawnConfigValue>(resolvedAgentConfig);
-  const [agentConfigUserTouched, setAgentConfigUserTouched] = useState(false);
-
-  useEffect(() => {
-    if (agentConfigUserTouched) {
-      return;
-    }
-    setAgentConfig(resolvedAgentConfig);
-  }, [agentConfigUserTouched, resolvedAgentConfig]);
-
-  useEffect(() => {
-    setTitle(session?.goal ?? '');
-  }, [session?.goal]);
-
-  if (session == null) {
-    return null;
-  }
-
-  const shownError = failure ?? error;
-
-  const onCreate = async () => {
-    if (busy !== null || title.trim().length === 0) {
-      return;
-    }
-    setBusy('create');
-    try {
+  const create = useCallback(
+    async ({ title, body, base, isDraft }: CreateReviewInput): Promise<CreatedReview> => {
       await createMrForSession({
         sessionId,
         title: title.trim(),
-        description,
-        targetBranch: targetBranch.trim() || 'main',
-        draft,
+        description: body,
+        targetBranch: base,
+        draft: isDraft,
       });
-      setFailure(null);
-      showToast({ kind: 'success', message: 'Merge request created' });
-    } catch (err) {
-      setFailure(formatError(err));
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const onCreateWithAgent = async () => {
-    if (busy !== null) {
-      return;
-    }
-    setBusy('agent');
-    try {
-      const prompt = [
-        `Open a GitLab merge request for this session's branch.`,
-        `- Write a clear, conventional title and a concise description from the committed changes.`,
-        `- Session goal: "${session.goal}".`,
-        `- Target branch: ${targetBranch.trim() || 'main'}.`,
-        `- If this project defines an MR-creation skill, command, or template (look under .claude/), follow it.`,
-        `- Open it as a ${draft ? 'draft' : 'ready-for-review'} merge request.`,
-        `Then open it with \`glab mr create\` (or the GitLab REST API if glab is unavailable) and report the MR URL.`,
-      ].join('\n');
-      const agentId = await spawnAgent(sessionId, {
-        name: 'open merge request',
-        initialPrompt: appendOperatorNotes({ prompt, hint: agentConfig.hint }),
-        model: agentConfig.model,
-        ...(agentConfig.provider !== '' && { provider: agentConfig.provider }),
-        effort: agentConfig.effort,
-        focus: 'none',
-      });
-      setFailure(null);
-      followAgent({
-        title: 'Agent started',
-        message: 'An agent is drafting the merge request.',
-        target: { place: agentPlace({ sessionId, agentId }) },
-        startKey: agentId,
-        onFollow: onClose,
-      });
-    } catch (err) {
-      setFailure(formatError(err));
-    } finally {
-      setBusy(null);
-    }
-  };
+      showToast({ kind: 'success', message: 'Merge request opened' });
+      return { number: null, url: null };
+    },
+    [createMrForSession, sessionId, showToast],
+  );
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <FormPage>
-        <section className="flex flex-col gap-6">
-          <section className="flex flex-col">
-            <SectionHeader
-              label="How"
-              hint="Fill the merge request yourself, or hand it to an agent that drafts and opens it."
-              action={
-                <SegmentedTabs
-                  ariaLabel="Creation mode"
-                  size="sm"
-                  options={[
-                    { value: 'manual', label: 'Manual', icon: PenLine },
-                    { value: 'agent', label: 'With an agent', icon: CONCEPT_ICONS.agents },
-                  ]}
-                  value={mode}
-                  onChange={setMode}
-                />
-              }
-            />
-            {mode === 'manual' ? (
-              <>
-                <FieldRow label="Title" help="A short summary of the change.">
-                  <Input
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    disabled={busy !== null}
-                    aria-label="Merge request title"
-                    className="h-8 w-full text-body sm:w-96"
-                  />
-                </FieldRow>
-                <FieldRow label="Description" help="What changed and why. Markdown supported.">
-                  <Textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    autoGrow
-                    minRows={3}
-                    maxRows={10}
-                    disabled={busy !== null}
-                    aria-label="Merge request description"
-                    className="w-full text-body sm:w-96"
-                  />
-                </FieldRow>
-                <FieldRow label="Target branch" help="The branch this merge request merges into.">
-                  <Input
-                    value={targetBranch}
-                    onChange={(e) => setTargetBranch(e.target.value)}
-                    placeholder="main"
-                    className="h-8 w-full font-mono text-body sm:w-96"
-                    disabled={busy !== null}
-                    autoCapitalize="off"
-                    autoCorrect="off"
-                    spellCheck={false}
-                    aria-label="Target branch"
-                  />
-                </FieldRow>
-              </>
-            ) : (
-              <FieldRow
-                label="Agent"
-                layout="stacked"
-                help="Routing and optional notes for the agent that drafts the title and description, then opens the merge request."
-              >
-                <AgentSpawnConfig
-                  value={agentConfig}
-                  onChange={(value) => {
-                    setAgentConfigUserTouched(true);
-                    setAgentConfig(value);
-                  }}
-                  disabled={busy !== null}
-                  role={{ label: 'Merge request author', hint: 'Fixed by this panel' }}
-                />
-              </FieldRow>
-            )}
-            <FieldRow
-              label="Open as draft"
-              help="Creates the merge request in GitLab's draft state."
-            >
-              <Checkbox checked={draft} onChange={setDraft} disabled={busy !== null} />
-            </FieldRow>
-          </section>
-        </section>
-        <FormActions
-          leading={
-            shownError == null ? null : (
-              <span
-                role="alert"
-                className="inline-flex min-w-0 items-center gap-1 truncate text-label text-danger"
-                title={shownError}
-              >
-                <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-                {shownError}
-              </span>
-            )
-          }
-        >
-          {mode === 'manual' ? (
-            <Button
-              onClick={() => void onCreate()}
-              disabled={busy !== null || title.trim().length === 0 || branch == null}
-            >
-              {busy === 'create' ? (
-                <span className="text-shimmer">Creating…</span>
-              ) : (
-                <>
-                  Create MR
-                  <ArrowRight size={ICON_SIZE.row} aria-hidden />
-                </>
-              )}
-            </Button>
-          ) : (
-            <Button
-              onClick={() => void onCreateWithAgent()}
-              disabled={busy !== null || branch == null}
-            >
-              {busy === 'agent' ? (
-                <span className="text-shimmer">Drafting…</span>
-              ) : (
-                <>
-                  <CONCEPT_ICONS.agents size={ICON_SIZE.row} aria-hidden />
-                  Draft with agent
-                </>
-              )}
-            </Button>
-          )}
-        </FormActions>
-      </FormPage>
-    </div>
+    <CreateReviewForm
+      sessionId={sessionId}
+      defaultTitle={goal}
+      nouns={NOUNS}
+      canSetDraft={REVIEW_SOURCE_CAPABILITIES.gitlab.canSetDraft}
+      loadBases={null}
+      searchReviewers={null}
+      hasPushStep={false}
+      hasCloses={false}
+      create={create}
+      requestReviewers={NO_REQUESTS}
+      onCreated={onCreated}
+    />
   );
 };

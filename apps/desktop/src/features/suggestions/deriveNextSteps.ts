@@ -22,6 +22,7 @@ import { PROVIDER_LABEL } from '../providers/providerLabel';
 import type { AgentKind } from '../session/agent-kind';
 import type {
   RebaseSuggestionTarget,
+  ScribeRequestState,
   SessionSuggestion,
   SuggestionKind,
   SuggestionQuestion,
@@ -56,6 +57,7 @@ export type SuggestionMount = {
   readonly isClean: boolean | null;
   readonly pr: PullRequestState | null;
   readonly fetchedAt: string | null;
+  readonly scribe?: ScribeRequestState | null;
 };
 
 type SuggestionRecommendedWorkflow = {
@@ -115,6 +117,25 @@ const isRebaseConsumed = ({ project }: ProjectParams): boolean => {
     return false;
   }
   return request.behind === project.mainDistance;
+};
+
+const SCRIBE_DETAIL = {
+  writing: 'Scribe is writing the text',
+  creating: 'Opening the pull request',
+  ready: 'Scribe wrote the text, review it',
+} as const satisfies Readonly<Record<ScribeRequestState, string>>;
+
+const openPrDetailOf = ({
+  mount,
+  ahead,
+}: {
+  readonly mount: SuggestionMount;
+  readonly ahead: number;
+}): string => {
+  if (mount.scribe !== undefined && mount.scribe !== null) {
+    return SCRIBE_DETAIL[mount.scribe];
+  }
+  return `${ahead} ${ahead === 1 ? 'commit' : 'commits'} ahead`;
 };
 
 type PushSuggestionParams = {
@@ -502,7 +523,7 @@ export const deriveNextSteps = ({
           priority: 42,
           band: 2,
           title: `Open a pull request for ${mount.projectName}`,
-          detail: `${mount.aheadOfBase} ${mount.aheadOfBase === 1 ? 'commit' : 'commits'} ahead`,
+          detail: openPrDetailOf({ mount, ahead: mount.aheadOfBase }),
           sessionId,
           targetKey: `pr:${mount.mountId}`,
           fingerprint: `open-pr:${mount.mountId}:${mount.aheadOfBase}`,
@@ -511,6 +532,7 @@ export const deriveNextSteps = ({
             projectId: mount.projectId,
             projectName: mount.projectName,
             ahead: mount.aheadOfBase,
+            scribe: mount.scribe ?? null,
           },
         });
       }
