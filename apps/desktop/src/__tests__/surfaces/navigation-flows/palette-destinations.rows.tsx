@@ -214,7 +214,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     open: () => openPalette(/^Tasks$/),
     lands: both(
       () => band('Tasks'),
-      () => heading('All items'),
+      () => heading('Tasks'),
     ),
   },
   {
@@ -271,7 +271,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     open: () => openPalette(/^Notifications/),
     lands: both(
       () => band('Notifications'),
-      () => heading('All notifications'),
+      () => heading('Notifications'),
     ),
   },
   {

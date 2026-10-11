@@ -50,7 +50,7 @@ export const FORMER_NAME_ROWS: ReadonlyArray<Row> = [
     open: () => openPalette(/^Tasks$/, 'Inbox'),
     lands: both(
       () => band('Tasks'),
-      () => heading('All items'),
+      () => heading('Tasks'),
     ),
   },
 ];

@@ -269,7 +269,7 @@ describe.each(ARRANGEMENTS)('exactly one door in the frame is marked current, %s
   });
 });
 
-const WAY_BACK = /^(Close|Back to )/i;
+const WAY_BACK = /^(Close\b|Back to )/i;
 
 const waysBack = (): ReadonlyArray<HTMLElement> =>
   Array.from(document.querySelectorAll<HTMLElement>('button'))

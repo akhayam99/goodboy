@@ -128,7 +128,7 @@ export const StudioFrame = ({
               title={meta.title}
               railWidthPx={readStudioRailWidth({
                 surface: kind,
-                railWidth: 'railWidth' in meta ? meta.railWidth : 'narrow',
+                railWidth: 'railWidth' in meta ? meta.railWidth : 'standard',
               })}
             />
           }

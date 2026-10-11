@@ -210,6 +210,7 @@ needs-you-card
 notifications
 notifications-delete-all
 notifications-empty
+notifications-rail
 onboarding
 open-question-prose
 open-questions
@@ -339,6 +340,9 @@ task-links
 task-links-hover
 task-links-undo
 tasks-cursor
+tasks-rail
+tasks-rail-folded
+tasks-rail-open
 terminal-empty
 toast-over-drawer
 toast-over-drawer-overlay
