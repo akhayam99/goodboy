@@ -247,6 +247,13 @@ those commits, and its confirm says how many folders have them. A folder git
 no longer tracks cannot be checked for changes, so the bulk action keeps it
 too. Either one is removed only after the user confirms that folder on its own.
 
+The Storage page does not poll the process monitor, so each removal first
+refreshes the snapshot (`refreshMonitorSnapshot`) and fails closed: when the
+read fails, or the platform cannot list processes (`isPlatformSupported` is
+false), the folder is kept with the reason "Could not check for running
+processes". The ledger alone never decides, because an unreadable monitor
+reads as "no processes" and would delete a worktree something still runs in.
+
 ## Driving mounts from an agent
 
 A turn drives its mounts through the bridge's `mount` and `series` verbs and

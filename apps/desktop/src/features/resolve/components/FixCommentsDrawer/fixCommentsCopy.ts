@@ -1,3 +1,6 @@
+import type { PullRequestHost } from '@goodboy/types';
+import type { CommentFilter } from './commentFilter';
+
 export const FIX_COMMENTS_LABEL = {
   title: 'Fix comments',
   activity: 'Activity',
@@ -25,8 +28,18 @@ export const fixCommentsAgentName = ({ count }: CountParams): string =>
 
 export const FIX_COMMENTS_AGENT_PREFIX = 'Fix comments';
 
-export const FILTER_LABEL = {
+const HOST_LABEL = {
+  github: 'On GitHub',
+  gitlab: 'On GitLab',
+  bitbucket: 'On Bitbucket',
+} as const satisfies Record<PullRequestHost, string>;
+
+type HostParams = {
+  readonly host: PullRequestHost;
+};
+
+export const filterLabelOf = ({ host }: HostParams): Record<CommentFilter, string> => ({
   all: 'All',
   notes: 'Notes',
-  host: 'On GitHub',
-} as const;
+  host: HOST_LABEL[host],
+});

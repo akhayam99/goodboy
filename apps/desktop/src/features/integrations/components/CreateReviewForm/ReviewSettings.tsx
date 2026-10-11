@@ -1,4 +1,4 @@
-import { Input, Skeleton, SegmentedTabs } from '@goodboy/ui';
+import { Button, Input, Skeleton, SegmentedTabs } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { BranchCombobox } from '../../../worktree/BranchCombobox';
 import type { LocalBranchInfo } from '../../../worktree/worktree';
@@ -14,6 +14,8 @@ type Props = {
   readonly base: string;
   readonly branches: ReadonlyArray<LocalBranchInfo> | null;
   readonly isBasesLoading: boolean;
+  readonly basesError: string | null;
+  readonly onBasesRetry: () => void;
   readonly isLocked: boolean;
   readonly canSetDraft: boolean;
   readonly isDraft: boolean;
@@ -34,6 +36,8 @@ export const ReviewSettings = ({
   base,
   branches,
   isBasesLoading,
+  basesError,
+  onBasesRetry,
   isLocked,
   canSetDraft,
   isDraft,
@@ -48,7 +52,29 @@ export const ReviewSettings = ({
 }: Props) => (
   <div className="flex min-w-0 flex-col gap-4">
     <PropertyBlock label="Into">
-      {branches === null ? (
+      {branches !== null && basesError !== null ? (
+        <div className="flex min-w-0 flex-col gap-2">
+          <Input
+            value={base}
+            onChange={(event) => onBaseChange(event.target.value)}
+            placeholder="main"
+            aria-label="Target branch"
+            disabled={isLocked}
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
+            className="h-8 w-full text-code"
+          />
+          <div className="flex items-center justify-between gap-2">
+            <p role="alert" className="min-w-0 truncate text-meta text-danger">
+              Couldn't load branches
+            </p>
+            <Button variant="ghost" size="sm" disabled={isLocked} onClick={onBasesRetry}>
+              Retry
+            </Button>
+          </div>
+        </div>
+      ) : branches === null ? (
         <Input
           value={base}
           onChange={(event) => onBaseChange(event.target.value)}
