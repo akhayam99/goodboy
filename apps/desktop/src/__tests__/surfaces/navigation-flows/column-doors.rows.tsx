@@ -1,5 +1,7 @@
 import { expect, vi } from 'vitest';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
+import type { ChatId } from '@goodboy/types';
+import { brandedId } from '../../../features/history/testing/brandedId';
 import {
   type Row,
   WAIT,
@@ -22,6 +24,14 @@ const doorIn = (name: string): HTMLElement => {
   );
   expect(door).not.toBeNull();
   return door as HTMLElement;
+};
+
+const createIn = (name: string): HTMLElement => {
+  const button = document.querySelector<HTMLElement>(`[data-side-column] [data-create="${name}"]`);
+  if (button === null) {
+    throw new Error(`The column has no create button ${name}`);
+  }
+  return button;
 };
 
 export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
@@ -164,10 +174,53 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
   {
     name: 'column: new session opens the draft',
     covers: ['column:new'],
-    open: () => click(doorIn('new')),
+    open: () => click(createIn('session')),
     lands: async () => {
-      await waitFor(() => expect(doorIn('new').getAttribute('aria-current')).toBe('page'), WAIT);
+      await waitFor(
+        () => expect(createIn('session').getAttribute('aria-current')).toBe('page'),
+        WAIT,
+      );
     },
+  },
+  {
+    name: 'column: new chat opens an empty chat even with a last chat',
+    covers: ['openNewChat'],
+    open: async () => {
+      const state = useAppStore.getState();
+      const workspaceId = state.currentWorkspaceId;
+      if (workspaceId === null) {
+        throw new Error('The journey needs its workspace');
+      }
+      useAppStore.setState({
+        lastChatByWorkspace: {
+          ...state.lastChatByWorkspace,
+          [workspaceId]: brandedId<ChatId>({ value: 'doors-last-chat' }),
+        },
+      });
+      await click(createIn('chat'));
+    },
+    lands: both(
+      () => band('Chat'),
+      () => heading('New chat'),
+      async () => expect(useAppStore.getState().appStudio).toEqual({ kind: 'chat', chatId: null }),
+    ),
+  },
+  {
+    name: 'column: new terminal opens the studio on a fresh terminal',
+    covers: ['openNewTerminal'],
+    open: () => click(createIn('terminal')),
+    lands: both(
+      () => band('Terminal'),
+      () => visible('complementary', 'Terminals'),
+      async () =>
+        waitFor(
+          () =>
+            expect(
+              Object.values(useAppStore.getState().terminalTabs).flat().length,
+            ).toBeGreaterThan(0),
+          WAIT,
+        ),
+    ),
   },
   {
     name: 'column: goodboy chip to the changelog',

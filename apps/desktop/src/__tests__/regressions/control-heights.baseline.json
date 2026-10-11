@@ -2,7 +2,6 @@
   "apps/desktop/src/app/components/AppTopBar/LimitsStrip/LimitsOverflowPopover.tsx": 1,
   "apps/desktop/src/app/components/SideColumn/ColumnDoorRow.tsx": 1,
   "apps/desktop/src/app/components/SideColumn/ColumnToggleButton.tsx": 1,
-  "apps/desktop/src/app/components/SideColumn/NewSessionRow.tsx": 1,
   "apps/desktop/src/app/components/SideColumn/ReportBugButton.tsx": 2,
   "apps/desktop/src/features/artifacts/components/ArtifactList/ArtifactListGroup.tsx": 1,
   "apps/desktop/src/features/budget/components/spend/TurnsTable.tsx": 1,

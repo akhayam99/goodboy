@@ -7,7 +7,7 @@ import { ChatDoorActivity } from './ChatDoorActivity';
 import { ColumnDoorRow } from './ColumnDoorRow';
 import { ColumnFoot } from './ColumnFoot';
 import { ColumnToggleButton } from './ColumnToggleButton';
-import { NewSessionRow } from './NewSessionRow';
+import { CreateRow } from './CreateRow';
 import { COLUMN_DOORS, openColumnDoor, type ColumnActions } from './columnDoors';
 import { isStudioOverSession, type ColumnPlace } from './columnPlace';
 
@@ -61,28 +61,27 @@ export const SideColumn = ({
         </div>
         {scope === 'workspace' && workspaceId !== null ? (
           <>
+            <CreateRow
+              workspaceId={workspaceId}
+              isNewCurrent={place === 'new'}
+              actions={actions}
+              {...(onNavigate !== undefined && { onNavigate })}
+            />
             <div className={cn('flex shrink-0 flex-col px-2', PANE_RHYTHM.navRail.doorGap)}>
-              <NewSessionRow
-                workspaceId={workspaceId}
-                isCurrent={place === 'new'}
-                {...(onNavigate !== undefined && { onNavigate })}
-              />
-              <div className={cn('flex flex-col pt-1', PANE_RHYTHM.navRail.doorGap)}>
-                {COLUMN_DOORS.map((door) => (
-                  <ColumnDoorRow
-                    key={door.id}
-                    id={door.id}
-                    icon={door.icon}
-                    label={door.label}
-                    {...(door.shortcutId !== undefined && {
-                      shortcut: shortcutGlyphs(door.shortcutId),
-                    })}
-                    isCurrent={place === door.id}
-                    {...(door.id === 'chat' && { trailing: <ChatDoorActivity /> })}
-                    onSelect={go(() => openColumnDoor({ id: door.id, actions }))}
-                  />
-                ))}
-              </div>
+              {COLUMN_DOORS.map((door) => (
+                <ColumnDoorRow
+                  key={door.id}
+                  id={door.id}
+                  icon={door.icon}
+                  label={door.label}
+                  {...(door.shortcutId !== undefined && {
+                    shortcut: shortcutGlyphs(door.shortcutId),
+                  })}
+                  isCurrent={place === door.id}
+                  {...(door.id === 'chat' && { trailing: <ChatDoorActivity /> })}
+                  onSelect={go(() => openColumnDoor({ id: door.id, actions }))}
+                />
+              ))}
             </div>
             <div data-column-sessions="" className="flex min-h-0 flex-1 flex-col">
               <SessionNavSidebar

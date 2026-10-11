@@ -51,11 +51,12 @@
   reads like a figure, not a place you work in. The spend chip is state that
   opens the studio that owns that number, on Impact's Spend tab, and the Limits
   chips open the Providers menu. The bar never edits a record in place.
-- **The column holds every door.** Board, Tasks, Chat, Workflows, Terminal and Monitoring sit
-  under New session, the Sessions list follows, Settings and the Goodboy row sit at
-  the foot. Board is home and the first door (⌘⇧H). The column is on every
-  screen with a workspace: the board, a session, the draft and every studio but
-  Settings, which swaps the column's content (see Studios).
+- **The column holds every door.** One create row of three labelled buttons (+ Session,
+  - Chat, + Terminal) sits under the toggle; Board, Tasks, Chat, Workflows, Terminal and
+    Monitoring sit under it with no plus of their own, the Sessions list follows, Settings and the Goodboy row sit at
+    the foot. Board is home and the first door (⌘⇧H). The column is on every
+    screen with a workspace: the board, a session, the draft and every studio but
+    Settings, which swaps the column's content (see Studios).
 - **One home per thing.** Say a thing must exist in state A and can exist in
   state B. It lives where it must, and B gets no second copy. Workspace identity
   is always pinned at the left of the top bar. Neither the column nor a studio
@@ -99,7 +100,7 @@
   below, Close rewrites the top entry as the page without the studio. Esc is
   layered: it closes a popover or a confirmation inside the studio before the
   studio itself.
-- **One selected sign.** The open studio's door, New session while the draft is
+- **One selected sign.** The open studio's door, + Session while the draft is
   open, or Board on the board, takes `bg-selected` with `cursor-default` and
   `aria-current="page"`, in the column and on the rail alike. Every door reads it from one place (`columnPlaceOf`, through
   `useColumnPlace`), so at most one door carries it; inside a session no door
@@ -453,8 +454,11 @@ reference material beside the page and closes with the pane that opened it.
 
 **The column** (`app/components/SideColumn/`) is on every screen with a
 workspace, in the same shape everywhere: the toggle on the traffic-light axis,
-New session (⌘N, the only emphasised control, selected while the draft is open,
-a primary dot and `Draft in progress` while a draft waits), the doors Board
+the create row, three equal buttons side by side, each a 12px plus and a word
+(`CreateRow`): + Session (⌘N, the only emphasised control, selected while the draft is
+open, a primary dot and `Draft in progress` while a draft waits), + Chat (⌘⇧N, always a
+new chat, never the last one) and + Terminal (a new terminal in the workspace folder);
+then the doors Board
 (⌘⇧H), Tasks, Chat, Workflows, Terminal (⌃`) and Monitoring as one 28px row each (icon and word, the
 shortcut on hover), the Sessions list (`SessionNavSidebar`, its rows and header
 belong to the sessions list), then at the foot Settings (⌘,), the Goodboy row
