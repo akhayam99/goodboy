@@ -1,18 +1,22 @@
 import {
   resolveSlot,
+  type HeadroomMap,
   type Resolution,
   type ResolveLayer,
+  type ResolveContext,
   type ResolveLayers,
   type ResolvePins,
   type ResolveSlot,
 } from '@goodboy/core';
-import type { SessionId, StepSize, WorkspaceId } from '@goodboy/types';
+import type { ProviderId, SessionId, StepSize, WorkspaceId } from '@goodboy/types';
 import { selectModelContext, type ModelScope, type ModelState } from './selectModelContext';
 
 type Options = {
   readonly pins?: ResolvePins;
   readonly size?: StepSize | null;
   readonly isAutoOnly?: boolean;
+  readonly providers?: ReadonlyArray<ProviderId> | null;
+  readonly headroom?: HeadroomMap | null;
 };
 
 type Params = Options & {
@@ -44,11 +48,33 @@ const autoLayers = ({ layers }: AutoLayersParams): ResolveLayers => ({
   session: withoutPins({ layer: layers.session }),
 });
 
-export const resolutionOf = ({ scope, slot, pins, size, isAutoOnly }: ScopeParams): Resolution =>
+type ContextParams = {
+  readonly scope: ModelScope;
+  readonly providers: ReadonlyArray<ProviderId> | null | undefined;
+  readonly headroom: HeadroomMap | null | undefined;
+};
+
+const contextOf = ({ scope, providers, headroom }: ContextParams): ResolveContext => ({
+  ...scope.context,
+  ...(providers != null && {
+    connected: (scope.context.connected ?? []).filter((provider) => providers.includes(provider)),
+  }),
+  ...(headroom != null && { headroom }),
+});
+
+export const resolutionOf = ({
+  scope,
+  slot,
+  pins,
+  size,
+  isAutoOnly,
+  providers,
+  headroom,
+}: ScopeParams): Resolution =>
   resolveSlot({
     slot,
     layers: isAutoOnly === true ? autoLayers({ layers: scope.layers }) : scope.layers,
-    context: scope.context,
+    context: contextOf({ scope, providers, headroom }),
     ...(pins !== undefined && isAutoOnly !== true && { pins }),
     ...(size !== undefined && { size }),
   });
@@ -61,6 +87,8 @@ export const selectResolution = ({
   pins,
   size,
   isAutoOnly,
+  providers,
+  headroom,
 }: Params): Resolution =>
   resolutionOf({
     scope: selectModelContext({ state, workspaceId, sessionId }),
@@ -68,4 +96,6 @@ export const selectResolution = ({
     ...(pins !== undefined && { pins }),
     ...(size !== undefined && { size }),
     ...(isAutoOnly !== undefined && { isAutoOnly }),
+    ...(providers !== undefined && { providers }),
+    ...(headroom !== undefined && { headroom }),
   });

@@ -213,6 +213,7 @@ model-picker-cursor
 model-picker-triggers
 models-anthropic-on
 models-codex-only
+models-saved-project
 modelswilluse
 modelswilluse-cleared
 mount-mismatch
@@ -372,6 +373,7 @@ topbar-limits-overflow
 topbar-states
 transcript
 transcript-mount
+turn-override-off
 update-card
 update-card-long-version
 update-card-narrow

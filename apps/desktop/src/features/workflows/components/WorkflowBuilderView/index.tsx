@@ -15,12 +15,11 @@ import {
   type PlannerOutput,
   clampEffortForModel,
   isAgentStatusHalted,
-  recommendedModelForRole,
-  resolveRoleRouting,
   runsForWorkflowRun,
 } from '@goodboy/core';
 import { useResolution } from '../../../providers/hooks/useResolution';
 import { autoModelOn } from '../../../providers/autoModelOn';
+import { modelOnProvider, roleResolutionOf } from '../../../providers/roleResolution';
 import { resolutionAsTask } from '../../../providers/resolutionAsTask';
 import type {
   EffortLevel,
@@ -137,7 +136,7 @@ type StepsFromPlanParams = {
 const stepsFromPlan = ({ plan, roleModels }: StepsFromPlanParams): ReadonlyArray<StepDraft> =>
   draftFromPlannerSteps({ steps: plan.steps }).map((step) => ({
     ...step,
-    effort: resolveRoleRouting({ role: step.role, prefs: roleModels }).effort as EffortLevel,
+    effort: roleResolutionOf({ role: step.role, roleModels }).effort ?? 'medium',
   }));
 
 const isDraftEmpty = (d: WorkflowBuilderDraft, rules: WorkflowRules): boolean =>
@@ -158,7 +157,7 @@ const isDraftEmpty = (d: WorkflowBuilderDraft, rules: WorkflowRules): boolean =>
   d.orchestratorModel.effortOverride === null &&
   d.providerPool === null;
 
-const PLANNER_EFFORT: EffortLevel = resolveRoleRouting({ role: 'planner', prefs: null }).effort;
+const PLANNER_EFFORT: EffortLevel = roleResolutionOf({ role: 'planner' }).effort ?? 'medium';
 const ORCHESTRATOR_EFFORT: EffortLevel = 'medium';
 const DYNAMIC_EXECUTION_MODE: WorkflowExecutionMode = 'dynamic';
 const DYNAMIC_WORKFLOW_NAME = 'Orchestrated workflow';
@@ -209,7 +208,7 @@ export const WorkflowBuilderView = (props: Props) => {
   const { rules: workflowRules, patch: patchWorkflowRules } = useWorkflowRules({ workspaceId });
   const roleModels = workspaceOverrides?.roleModels ?? null;
   const roleEffort = (role: StepDraft['role']): EffortLevel =>
-    resolveRoleRouting({ role, prefs: roleModels }).effort as EffortLevel;
+    roleResolutionOf({ role, roleModels }).effort ?? 'medium';
   const setWorkflowDraft = useAppStore((s) => s.setWorkflowDraft);
   const clearWorkflowDraft = useAppStore((s) => s.clearWorkflowDraft);
   const sessionSlots = useSessionSlots(session?.id ?? null);
@@ -631,10 +630,10 @@ export const WorkflowBuilderView = (props: Props) => {
   const resolvedProvider = (step: StepDraft): ProviderId =>
     step.provider !== '' ? step.provider : providerId;
   const recommendedModel = (step: StepDraft): string =>
-    recommendedModelForRole({
+    modelOnProvider({
       role: step.role ?? 'custom',
       provider: resolvedProvider(step),
-      prefs: roleModels,
+      roleModels,
     });
   const resolvedModel = (step: StepDraft): string =>
     step.model !== '' ? step.model : recommendedModel(step);

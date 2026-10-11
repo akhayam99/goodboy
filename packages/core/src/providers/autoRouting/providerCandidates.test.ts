@@ -6,9 +6,11 @@ import { resolveRoleRouting } from '../role-models';
 import { resolveTaskModel } from '../task-models';
 import { AUTO_DEFAULTS } from './defaults';
 import {
+  enabledProvidersOf,
   providerCandidates,
   providerStanding,
   seedProviderPolicy,
+  unusableReason,
   workingProviders,
   type ProviderCandidatesContext,
 } from './providerCandidates';
@@ -233,5 +235,60 @@ describe('providerCandidates spread by headroom', () => {
         headroom: { anthropic: 'out', codex: 'out', cursor: 'out' },
       }),
     ).toEqual(['anthropic', 'codex', 'cursor']);
+  });
+});
+
+describe('unusableReason and enabledProvidersOf', () => {
+  const policy: ProviderPolicy = [
+    { id: 'codex', state: 'on' },
+    { id: 'cursor', state: 'backup' },
+    { id: 'anthropic', state: 'off' },
+  ];
+
+  it('calls a Backup provider idle while an On provider can work', () => {
+    expect(
+      unusableReason({ provider: 'cursor', context: { defaultProvider: 'codex', policy } }),
+    ).toBe('backup-idle');
+  });
+
+  it('lets a Backup provider run once no On provider can work', () => {
+    expect(
+      unusableReason({
+        provider: 'cursor',
+        context: { defaultProvider: 'codex', policy, atLimit: ['codex'] },
+      }),
+    ).toBeNull();
+    expect(
+      unusableReason({
+        provider: 'cursor',
+        context: { defaultProvider: 'codex', policy, connected: ['cursor'] },
+      }),
+    ).toBeNull();
+  });
+
+  it('keeps off before backup-idle and never calls an On provider idle', () => {
+    const context = { defaultProvider: 'codex' as const, policy };
+    expect(unusableReason({ provider: 'anthropic', context })).toBe('off');
+    expect(unusableReason({ provider: 'codex', context })).toBeNull();
+  });
+
+  it('lists the first On provider then every provider that is not Off', () => {
+    expect(enabledProvidersOf({ policy, fallbackDefault: 'anthropic' })).toEqual([
+      'codex',
+      'cursor',
+    ]);
+  });
+
+  it('falls back to the default provider when no provider is On', () => {
+    expect(
+      enabledProvidersOf({
+        policy: [{ id: 'cursor', state: 'backup' }],
+        fallbackDefault: 'anthropic',
+      }),
+    ).toEqual(['anthropic', 'cursor']);
+  });
+
+  it('is undefined with no policy, so every provider stays enabled', () => {
+    expect(enabledProvidersOf({ policy: null, fallbackDefault: 'anthropic' })).toBeUndefined();
   });
 });

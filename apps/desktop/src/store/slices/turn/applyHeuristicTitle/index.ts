@@ -1,6 +1,5 @@
-import { autoLimitContext } from '../../providerLimits/autoLimitContext';
+import { selectTaskModel } from '../../models/selectTaskModel';
 import { runHelperTask } from '../../providerLimits/runHelperTask';
-import { resolveLimitedTaskModel } from '../../providerLimits/resolveLimitedTaskModel';
 import { invokeCommand } from '../../../../shared/lib/invokeCommand';
 import { getDefaultBinary, runAuxOneShot } from '@goodboy/core';
 import { renameSession as renameSessionInDb } from '@goodboy/db';
@@ -156,14 +155,7 @@ export const applyHeuristicTitle = async ({
       return;
     }
 
-    const taskModel = resolveLimitedTaskModel({
-      limitContext: autoLimitContext({ state: get() }),
-      task: 'agent_naming',
-      preferences: selectResolvedSettings({ state: get(), sessionId })?.taskModels,
-      workspaceDefaultProviderId: selectResolvedSettings({ state: get(), sessionId })
-        ?.defaultProviderOverride,
-      sessionDefaultProviderId: session.providerPreference.defaultProvider,
-    });
+    const taskModel = selectTaskModel({ state: get(), sessionId, task: 'agent_naming' });
 
     let generatedTitle: string;
     try {

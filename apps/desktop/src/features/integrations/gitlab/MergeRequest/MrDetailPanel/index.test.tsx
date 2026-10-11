@@ -33,6 +33,7 @@ type Store = {
   readonly loadAgentTranscript: ReturnType<typeof vi.fn>;
   readonly reportError: ReturnType<typeof vi.fn>;
   workspaceOverrides: Record<string, { readonly taskModels: TaskModelPreferences | null }>;
+  readonly providers: ReadonlyArray<{ readonly id: string; readonly connection: 'connected' }>;
 };
 
 type ConfigProps = {
@@ -90,6 +91,10 @@ const h = vi.hoisted(() => ({
     loadAgentTranscript: vi.fn(async () => undefined),
     reportError: vi.fn(async () => undefined),
     workspaceOverrides: {},
+    providers: [
+      { id: 'anthropic', connection: 'connected' },
+      { id: 'codex', connection: 'connected' },
+    ],
   } satisfies Store,
 }));
 

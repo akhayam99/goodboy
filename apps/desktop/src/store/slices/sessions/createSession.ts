@@ -157,19 +157,9 @@ export const createSession = (set: SetFn, get: GetFn) => {
       firstOnProvider({ policy: workspacePolicy }) ??
       workspaceOverrides?.defaultProviderId ??
       DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider;
-    const inheritedEnabledProviders =
-      workspacePolicy == null
-        ? undefined
-        : Array.from(
-            new Set([
-              inheritedDefaultProvider,
-              ...workspacePolicy.filter((entry) => entry.state !== 'off').map((entry) => entry.id),
-            ]),
-          );
     const inheritedPreference: SessionProviderPreference = {
       ...DEFAULT_SESSION_PROVIDER_PREFERENCE,
       defaultProvider: inheritedDefaultProvider,
-      ...(inheritedEnabledProviders == null ? {} : { enabledProviders: inheritedEnabledProviders }),
     };
 
     const workspacePermissionMode =

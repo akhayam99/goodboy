@@ -50,6 +50,8 @@ import { createSidebarSlice } from './slices/sidebar';
 import { createSettingsLastPageSlice } from './slices/settings-last-page';
 import { createChatLastOpenSlice } from './slices/chat-last-open';
 import { createSessionViewSlice } from './slices/session-view';
+import { createSavedProjectModelsSlice } from './slices/saved-project-models';
+import { savedProjectModelsInitialState } from './slices/saved-project-models/state';
 import { createSessionPinsSlice } from './slices/session-pins';
 import { sessionPinsInitialState } from './slices/session-pins/state';
 import { createSessionFiltersSlice } from './slices/sessionFilters';
@@ -249,6 +251,7 @@ export type AppStore = AppState &
   ReturnType<typeof createScriptsSlice> &
   ReturnType<typeof createPermissionsSlice> &
   ReturnType<typeof createSessionViewSlice> &
+  ReturnType<typeof createSavedProjectModelsSlice> &
   ReturnType<typeof createSessionPinsSlice> &
   ReturnType<typeof createSessionsSlice> &
   ReturnType<typeof createTranscriptsSlice> &
@@ -306,6 +309,7 @@ export const initialState: AppState = {
   ...backupInitialState,
   ...budgetInitialState,
   ...createInitialSessionViewState({}),
+  ...savedProjectModelsInitialState,
   ...sessionPinsInitialState,
   ...sessionFiltersInitialState,
   ...workspacesInitialState,
@@ -405,6 +409,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createSettingsLastPageSlice({ set, get }),
   ...createChatLastOpenSlice({ set, get }),
   ...createSessionViewSlice({ set, get }),
+  ...createSavedProjectModelsSlice({ set, get }),
   ...createSessionPinsSlice({ set, get }),
   ...createSessionFiltersSlice({ set, get }),
   ...createTerminalSlice({ set, get }),

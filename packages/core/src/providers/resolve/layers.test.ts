@@ -22,14 +22,26 @@ describe('mergeLayers', () => {
     });
   });
 
-  it('merges role keys one by one, the narrower layer winning', () => {
+  it('merges role keys one by one, the session winning over the workspace', () => {
     const merged = mergeLayers({
       workspace: { roleModels: { planner: OPUS, reviewer: OPUS } },
-      project: { roleModels: { reviewer: SONNET } },
-      session: { roleModels: { scout: SONNET } },
+      session: { roleModels: { reviewer: SONNET, scout: SONNET } },
     });
 
     expect(merged.roleModels).toEqual({ planner: OPUS, reviewer: SONNET, scout: SONNET });
+  });
+
+  it('ignores the role and task models of a project layer', () => {
+    const merged = mergeLayers({
+      workspace: { roleModels: { planner: OPUS }, taskModels: { summarizer: SOL } },
+      project: {
+        roleModels: { planner: SONNET, reviewer: SONNET },
+        taskModels: { summarizer: { providerId: 'anthropic', model: 'sonnet-5' } },
+      },
+    });
+
+    expect(merged.roleModels).toEqual({ planner: OPUS });
+    expect(merged.taskModels).toEqual({ summarizer: SOL });
   });
 
   it('merges task keys apart from role keys', () => {
@@ -45,7 +57,7 @@ describe('mergeLayers', () => {
   it('skips a key a narrower layer leaves undefined', () => {
     const merged = mergeLayers({
       workspace: { roleModels: { planner: OPUS } },
-      project: { roleModels: { planner: undefined } },
+      session: { roleModels: { planner: undefined } },
     });
 
     expect(merged.roleModels).toEqual({ planner: OPUS });
@@ -66,10 +78,10 @@ describe('mergeLayers', () => {
 
   it('returns the same object for the same layer objects', () => {
     const workspace = { roleModels: { planner: OPUS } };
-    const project = { roleModels: { reviewer: SONNET } };
+    const session = { roleModels: { reviewer: SONNET } };
 
-    expect(mergeLayers({ workspace, project }).roleModels).toBe(
-      mergeLayers({ workspace, project }).roleModels,
+    expect(mergeLayers({ workspace, session }).roleModels).toBe(
+      mergeLayers({ workspace, session }).roleModels,
     );
   });
 });
@@ -83,10 +95,22 @@ describe('pinSourceOf', () => {
         slot,
         layers: {
           workspace: { roleModels: { planner: OPUS } },
+          session: { roleModels: { planner: SONNET } },
+        },
+      }),
+    ).toBe('session');
+  });
+
+  it('never names the project layer, which no longer pins a model', () => {
+    expect(
+      pinSourceOf({
+        slot,
+        layers: {
+          workspace: { roleModels: { planner: OPUS } },
           project: { roleModels: { planner: SONNET } },
         },
       }),
-    ).toBe('project');
+    ).toBe('workspace');
   });
 
   it('is null when no layer pins the slot', () => {

@@ -1,4 +1,4 @@
-import { resolveAuto } from '@goodboy/core';
+import { resolveSlot } from '@goodboy/core';
 import type { ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { useAutoLimitContext } from './useAutoLimitContext';
@@ -17,14 +17,16 @@ export const useAutoDetour = ({ providerId }: Params): ProviderId | null => {
   if (limitContext === null || !limitContext.atLimit.includes(providerId)) {
     return null;
   }
-  const pick = resolveAuto({
+  const resolution = resolveSlot({
     slot: { kind: 'role', id: 'implementer' },
-    defaultProvider: defaultProvider ?? providerId,
-    connected: limitContext.connected,
-    atLimit: limitContext.atLimit,
+    context: {
+      defaultProvider: defaultProvider ?? providerId,
+      connected: limitContext.connected,
+      atLimit: limitContext.atLimit,
+    },
   });
-  if (pick == null || !(pick.skippedAtLimit ?? []).includes(providerId)) {
-    return null;
-  }
-  return pick.provider;
+  const isDetour = resolution.skipped.some(
+    (skip) => skip.provider === providerId && skip.reason === 'at-limit',
+  );
+  return isDetour ? resolution.provider : null;
 };

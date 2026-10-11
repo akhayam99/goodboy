@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { formatError } from '@goodboy/ui';
-import { recommendedModelForRole, resolveRoleRouting } from '@goodboy/core';
+import { modelOnProvider, roleResolutionOf } from '../../../providers/roleResolution';
 import type { ProviderId, SessionId, WorkflowRunId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { StepEditor } from '../StepTree/StepEditor';
@@ -51,18 +51,19 @@ export const RunStepDraft = ({
         .map((provider) => provider.id),
     [providers],
   );
-  const polishDeps = useProsePolishDeps({ workspaceId, workingDir: null, connectedProviders });
+  const polishDeps = useProsePolishDeps({ workspaceId, workingDir: null });
   const polish = usePolish({ onError: setError });
 
-  const roleRouting = resolveRoleRouting({ role: draft.role, prefs: workspaceRoleModels });
-  const defaultProvider: ProviderId = roleRouting.isOverride
-    ? roleRouting.provider
-    : (sessionProvider ?? connectedProviders[0] ?? 'anthropic');
+  const roleRouting = roleResolutionOf({ role: draft.role, roleModels: workspaceRoleModels });
+  const defaultProvider: ProviderId =
+    roleRouting.source !== 'auto'
+      ? roleRouting.provider
+      : (sessionProvider ?? connectedProviders[0] ?? 'anthropic');
   const resolvedProvider: ProviderId = draft.provider !== '' ? draft.provider : defaultProvider;
-  const recommendedModel = recommendedModelForRole({
+  const recommendedModel = modelOnProvider({
     role: draft.role,
     provider: resolvedProvider,
-    prefs: workspaceRoleModels,
+    roleModels: workspaceRoleModels,
   });
   const patch = (next: Partial<StepDraft>) => setDraft((current) => ({ ...current, ...next }));
 

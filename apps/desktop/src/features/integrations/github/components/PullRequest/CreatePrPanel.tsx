@@ -19,7 +19,7 @@ import { closingIssueReferences } from '../../closingIssueReferences';
 import { AgentSpawnConfig } from '../../../../session/components/AgentSpawnConfig';
 import type { AgentSpawnConfigValue } from '../../../../session/agentSpawnConfigValue';
 import { taskModelAgentSpawnConfig } from '../../../../session/taskModelAgentSpawnConfig';
-import { useAutoLimitContext } from '../../../../providers/hooks/useAutoLimitContext';
+import { useResolution } from '../../../../providers/hooks/useResolution';
 import { BranchCombobox } from '../../../../worktree/BranchCombobox';
 import type { LocalBranchInfo } from '../../../../worktree/worktree';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
@@ -56,20 +56,10 @@ export const CreatePrPanel = ({
   const projectId = repo?.projectId;
   const session = useAppStore((s) => sessionById(s.sessions, sessionId) ?? null);
   const workspaceId = session?.workspaceId;
-  const workspaceOverrides = useAppStore((s) =>
-    workspaceId == null ? null : (s.workspaceOverrides?.[workspaceId] ?? null),
-  );
-  const limitContext = useAutoLimitContext();
+  const resolution = useResolution({ task: 'pr_draft', sessionId });
   const resolvedAgentConfig = useMemo(
-    () =>
-      taskModelAgentSpawnConfig({
-        task: 'pr_draft',
-        preferences: workspaceOverrides?.taskModels,
-        workspaceDefaultProviderId: workspaceOverrides?.defaultProviderId,
-        sessionDefaultProviderId: session?.providerPreference?.defaultProvider ?? 'anthropic',
-        limitContext,
-      }),
-    [limitContext, workspaceOverrides, session?.providerPreference?.defaultProvider],
+    () => taskModelAgentSpawnConfig({ resolution }),
+    [resolution],
   );
 
   const [mode, setMode] = useState<CreateMode>('manual');
