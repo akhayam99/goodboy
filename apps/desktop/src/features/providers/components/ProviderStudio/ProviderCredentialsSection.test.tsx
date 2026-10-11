@@ -40,11 +40,13 @@ vi.mock('../../../../shared/components/Toast', () => ({
 
 import { ProviderCredentialsSection } from './ProviderCredentialsSection';
 
+const ANTHROPIC = 'anthropic' as ProviderId;
+
 afterEach(cleanup);
 
 describe('ProviderCredentialsSection', () => {
   it('reveals the remove control on keyboard focus, not only on hover', () => {
-    render(<ProviderCredentialsSection providerId={'anthropic' as ProviderId} />);
+    render(<ProviderCredentialsSection providerId={ANTHROPIC} />);
     const remove = screen.getByRole('button', { name: 'Remove work' });
 
     expect(remove.className).toContain('opacity-0');
@@ -53,7 +55,7 @@ describe('ProviderCredentialsSection', () => {
   });
 
   it('asks in a popover beside the key and removes it on confirm', async () => {
-    render(<ProviderCredentialsSection providerId={'anthropic' as ProviderId} />);
+    render(<ProviderCredentialsSection providerId={ANTHROPIC} />);
     const list = screen.getByRole('list');
     const rowsBefore = list.children.length;
 
@@ -72,7 +74,7 @@ describe('ProviderCredentialsSection', () => {
 
   it('keeps the key when the popover is cancelled', async () => {
     state.deleteCredential.mockClear();
-    render(<ProviderCredentialsSection providerId={'anthropic' as ProviderId} />);
+    render(<ProviderCredentialsSection providerId={ANTHROPIC} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Remove work' }));
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancel' }));

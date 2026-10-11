@@ -8,15 +8,14 @@ import { ARTIFACT_KIND_MARKER_LABEL } from '../../artifactPresentation';
 import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { RelativeTime } from '../../../../shared/components/RelativeTime';
 import { useAppStore } from '../../../../store';
-import { useRestoreFocus } from '../../../../shared/hooks/useRestoreFocus';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ArtifactOverflowMenu } from '../ArtifactShell/ArtifactOverflowMenu';
-import { ActionConfirmPanel } from '../../../actions/components/ActionControls/ActionConfirmPanel';
 import type { ActionControls } from '../../../actions/useActionControls';
 import { useActionControls } from '../../../actions/useActionControls';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import type { ArtifactActionTarget, ResolvedAction } from '../../../actions/types';
 import { ArtifactKindGlyph } from './ArtifactKindGlyph';
+import { ArtifactRowConfirm } from './ArtifactRowConfirm';
 import { ARTIFACT_ROW_GRID } from './artifactRowGrid';
 import { ArtifactRowParts } from './ArtifactRowParts';
 import { ArtifactStateBadge } from './ArtifactStateBadge';
@@ -119,7 +118,6 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
   const anchorKey = `artifact-row:${row.id}`;
   const menu = useObjectMenuTrigger({ target, anchorKey });
   const controls = useActionControls({ target, anchorKey });
-  useRestoreFocus({ isOpen: controls.confirming !== null });
   const isDeleted = row.group === 'deleted';
   const hasParts = row.kind === 'plan' && row.partCount > 0 && !isDeleted;
   const rowLabel = `${ARTIFACT_KIND_MARKER_LABEL[row.kind]} ${row.title}${row.state === null ? '' : `, ${row.state.label}`}`;
@@ -266,9 +264,7 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
           </span>
         )}
       </InteractiveRow>
-      <div className="absolute inset-x-0 top-8 h-0">
-        <ActionConfirmPanel controls={controls} />
-      </div>
+      <ArtifactRowConfirm controls={controls} />
       {controls.failure === null ? null : (
         <p role="alert" className="px-8 pb-1 text-meta text-danger">
           {controls.failure.message}

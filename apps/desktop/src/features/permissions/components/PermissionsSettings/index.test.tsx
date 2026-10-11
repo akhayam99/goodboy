@@ -148,8 +148,8 @@ describe('PermissionsSettings', () => {
   });
 
   it('removes a rule at once and Undo puts it back', async () => {
-    mocks.upsert.mockImplementation(async (input: { readonly id: string }) =>
-      rule({ id: input.id as PermissionRuleId }),
+    mocks.upsert.mockImplementation(async (input: { readonly id: PermissionRuleId }) =>
+      rule({ id: input.id }),
     );
     renderSettings();
 

@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { sessionPlace } from '../../../../store/slices/navigation/place';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import type { ImpactMetrics } from '../../hooks/useImpactMetrics';
 
@@ -261,7 +261,7 @@ describe('Impact studio spend scopes', () => {
     });
   });
 
-  it('removes a provider cap via deleteBudgetRule', () => {
+  it('removes a provider cap via deleteBudgetRule after the popover confirm', () => {
     state.budgetRules = [
       {
         id: 'rule-1',
@@ -276,7 +276,15 @@ describe('Impact studio spend scopes', () => {
     renderStudio({ initialScope: { kind: 'provider', provider: 'anthropic' } });
 
     fireEvent.click(screen.getByRole('button', { name: /remove/i }));
-    fireEvent.click(screen.getByRole('button', { name: /remove/i }));
+    expect(state.deleteBudgetRule).not.toHaveBeenCalled();
+    fireEvent.click(
+      within(screen.getByRole('dialog', { name: /^Remove the .*10.* cap\?$/ })).getByRole(
+        'button',
+        {
+          name: /remove/i,
+        },
+      ),
+    );
     expect(state.deleteBudgetRule).toHaveBeenCalledWith('rule-1');
   });
 
