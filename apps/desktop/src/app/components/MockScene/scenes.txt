@@ -52,6 +52,8 @@ branch-comments
 branch-comments-no-pr
 branch-commits
 branch-commits-toolbar
+branch-create
+branch-create-gitlab
 branch-description-open
 branch-files
 branch-files-button

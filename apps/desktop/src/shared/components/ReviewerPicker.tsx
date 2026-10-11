@@ -12,7 +12,7 @@ import {
 } from '@goodboy/ui';
 import { Plus, Search } from 'lucide-react';
 import type { PullRequestPerson } from '@goodboy/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from './conceptIcons';
 
 type Props = {
   readonly search: (query: string) => Promise<ReadonlyArray<PullRequestPerson>>;

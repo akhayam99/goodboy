@@ -1,0 +1,345 @@
+// @vitest-environment happy-dom
+
+vi.mock('@tauri-apps/api/core', async () => {
+  const { sceneInvoke } = await import('../../../../test/sceneInvoke');
+  return { invoke: vi.fn((command: string, args?: unknown) => sceneInvoke({ command, args })) };
+});
+vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
+
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import type { PullRequestPerson, SessionId } from '@goodboy/types';
+import { U24_PRPAGE_CREATE_SCENES } from '../../../../app/components/MockScene/scenes/u24/prpage-create';
+import { ToastProvider } from '../../../../shared/components/Toast';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../../../store/storyHarness';
+import { clearSceneInvoke } from '../../../../test/sceneInvoke';
+import { CreatePrPanel } from '../../github/components/PullRequest/CreatePrPanel';
+import { CreateReviewForm } from './CreateReviewForm';
+import type { CreatedReview, CreateReviewNouns } from './types';
+
+let store: StoryStore;
+
+beforeAll(async () => {
+  store = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+});
+
+afterEach(() => {
+  cleanup();
+  clearSceneInvoke();
+  window.history.replaceState(null, '', '/');
+});
+
+type SceneName = keyof typeof U24_PRPAGE_CREATE_SCENES;
+
+const renderScene = ({ name, state }: { readonly name: SceneName; readonly state: string }) => {
+  window.history.replaceState(null, '', `/?state=${state}`);
+  const Scene = U24_PRPAGE_CREATE_SCENES[name];
+  return render(
+    <ToastProvider>
+      <Scene />
+    </ToastProvider>,
+  );
+};
+
+const titleField = () => screen.findByRole('textbox', { name: 'Pull request title' });
+
+const NOUNS: CreateReviewNouns = {
+  long: 'pull request',
+  create: 'Create pull request',
+  createDraft: 'Create draft pull request',
+};
+
+const MAYA: PullRequestPerson = { login: 'maya-ortiz', name: 'Maya Ortiz', avatarUrl: null };
+
+describe('the create form', () => {
+  it('has no How control, one primary and no bar between the settings and the actions', async () => {
+    const { container } = renderScene({ name: 'branch-create', state: 'empty' });
+    await titleField();
+
+    expect(screen.queryByRole('tab', { name: 'Manual' })).toBeNull();
+    expect(screen.queryByRole('tab', { name: 'Draft with an agent' })).toBeNull();
+    expect(container.querySelectorAll('[data-variant="primary"]').length).toBe(1);
+    expect(container.querySelector('[data-slot="form-actions"]')).toBeNull();
+    expect(container.querySelector('footer')).toBeNull();
+    expect(
+      Array.from(container.querySelectorAll('*')).filter((element) =>
+        Array.from(element.classList).some(
+          (token) => token === 'border-t' || token.startsWith('border-t-'),
+        ),
+      ),
+    ).toEqual([]);
+    const card = screen.getByRole('region', { name: 'Pull request text' });
+    const actions = container.querySelector('[data-slot="create-actions"]');
+    expect(actions).not.toBeNull();
+    expect(
+      card.compareDocumentPosition(actions as Element) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it('writes with Scribe without ever creating the pull request', async () => {
+    renderScene({ name: 'branch-create', state: 'empty' });
+    await titleField();
+    const requestScribe = vi.fn(async () => 'pr:mount');
+    const createPrForSession = vi.fn(async () => ({ number: 318, url: null }));
+    act(() => store.setState({ requestScribe, createPrForSession }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Write with Scribe' }));
+
+    expect(requestScribe).toHaveBeenCalledTimes(1);
+    expect(requestScribe).toHaveBeenCalledWith(
+      expect.objectContaining({ task: expect.objectContaining({ kind: 'pr', isTextOnly: true }) }),
+    );
+    expect(createPrForSession).not.toHaveBeenCalled();
+  });
+
+  it('shows the writing state in the card, disables Create and stops the job', async () => {
+    renderScene({ name: 'branch-create', state: 'writing' });
+    const status = await screen.findByText(
+      'Scribe is reading 7 commits and writing the text',
+      {},
+      { timeout: 3_000 },
+    );
+    const stopScribe = vi.fn(async () => undefined);
+    act(() => store.setState({ stopScribe }));
+
+    expect(status.closest('section')).toBe(
+      screen.getByRole('region', { name: 'Pull request text' }),
+    );
+    expect(screen.queryByRole('textbox', { name: 'Pull request title' })).toBeNull();
+    expect(
+      screen.getByRole('button', { name: 'Create pull request' }).hasAttribute('disabled'),
+    ).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
+    expect(stopScribe).toHaveBeenCalledWith({ key: expect.stringMatching(/^pr:/) });
+  });
+
+  it('fills the text from the job and says Scribe wrote it', async () => {
+    renderScene({ name: 'branch-create', state: 'ready' });
+
+    const title = await titleField();
+
+    expect((title as HTMLInputElement).value).toBe(
+      'Stop duplicate credits when a settlement retries',
+    );
+    expect(
+      (screen.getByRole('textbox', { name: 'Pull request description' }) as HTMLTextAreaElement)
+        .value,
+    ).toContain(
+      'keyed by the settlement id'.replace('keyed', 'key').replace('by the', 'each credit by the'),
+    );
+    expect(screen.getByText('Written by Scribe. Edit it as you like.')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'More options' })).toBeDefined();
+  });
+
+  it('hydrates from the job after the page was left while Scribe wrote', async () => {
+    const first = renderScene({ name: 'branch-create', state: 'writing' });
+    await screen.findByText('Stop', {}, { timeout: 3_000 });
+    first.unmount();
+    const state = store.getState();
+    const job = Object.values(state.scribeWork)[0];
+    const session = state.sessions[0];
+    if (job === undefined || session === undefined) {
+      throw new Error('the scene seeds a job and a session');
+    }
+    store.setState({
+      scribeWork: {
+        [job.key]: {
+          ...job,
+          status: 'ready',
+          output: {
+            prTitle: 'Written while away',
+            prBody: 'Body written while away',
+            commitMessages: [],
+            changelogEntry: null,
+          },
+        },
+      },
+    });
+
+    render(
+      <ToastProvider>
+        <CreatePrPanel sessionId={session.id} defaultTitle="Goal" onCreated={() => undefined} />
+      </ToastProvider>,
+    );
+
+    expect(((await titleField()) as HTMLInputElement).value).toBe('Written while away');
+  });
+
+  it('keeps the text on the card when Scribe fails afterwards, with a Retry', async () => {
+    renderScene({ name: 'branch-create', state: 'ready' });
+    await titleField();
+    const job = Object.values(store.getState().scribeWork)[0];
+    if (job === undefined) {
+      throw new Error('the scene seeds a job');
+    }
+    act(() =>
+      store.setState({
+        scribeWork: {
+          [job.key]: {
+            ...job,
+            status: 'failed',
+            output: null,
+            error: 'Scribe wrote no text.',
+            updatedAt: job.updatedAt + 1,
+          },
+        },
+      }),
+    );
+
+    const alert = await screen.findByRole('alert');
+
+    expect(within(alert).getByText('Scribe wrote no text')).toBeDefined();
+    expect(within(alert).getByText('Nothing was changed.')).toBeDefined();
+    expect(within(alert).getByRole('button', { name: 'Retry' })).toBeDefined();
+    expect(
+      (screen.getByRole('textbox', { name: 'Pull request description' }) as HTMLTextAreaElement)
+        .value,
+    ).toContain('key each credit by the settlement id');
+  });
+
+  it('discards the text with an Undo that brings it back', async () => {
+    renderScene({ name: 'branch-create', state: 'typing' });
+    await titleField();
+    const description = () =>
+      screen.getByRole('textbox', { name: 'Pull request description' }) as HTMLTextAreaElement;
+
+    fireEvent.click(screen.getByRole('button', { name: 'Discard text' }));
+
+    expect(description().value).toBe('');
+    expect(screen.queryByRole('button', { name: 'Discard text' })).toBeNull();
+    fireEvent.click(await screen.findByRole('button', { name: 'Undo' }));
+    expect(description().value).toContain('Settlement retries');
+    expect(screen.getByRole('button', { name: 'Discard text' })).toBeDefined();
+  });
+
+  it('shows the push and the opening steps while it creates', async () => {
+    renderScene({ name: 'branch-create', state: 'creating' });
+
+    expect(
+      await screen.findByText('Pushed hl/fix-duplicate-credit', {}, { timeout: 3_000 }),
+    ).toBeDefined();
+    expect(screen.getByText('Opening the pull request')).toBeDefined();
+    expect(
+      screen.getByRole('button', { name: 'Create pull request' }).hasAttribute('disabled'),
+    ).toBe(true);
+  });
+
+  it('keeps the edited text and names the failure when the host refuses', async () => {
+    renderScene({ name: 'branch-create', state: 'failed' });
+
+    const alert = await screen.findByRole('alert', {}, { timeout: 3_000 });
+
+    expect(within(alert).getByText("Couldn't open the pull request")).toBeDefined();
+    expect(within(alert).getByText('The text is kept.')).toBeDefined();
+    expect(
+      (screen.getByRole('textbox', { name: 'Pull request description' }) as HTMLTextAreaElement)
+        .value,
+    ).toContain('Settlement retries');
+    expect(
+      screen.getByRole('button', { name: 'Create pull request' }).hasAttribute('disabled'),
+    ).toBe(false);
+  });
+
+  it('offers Opens as and Reviewers on GitHub and no Reviewers on GitLab', async () => {
+    const github = renderScene({ name: 'branch-create', state: 'empty' });
+    await titleField();
+
+    expect(screen.getByRole('tablist', { name: 'Opens as' })).toBeDefined();
+    expect(screen.getByRole('region', { name: 'Reviewers' })).toBeDefined();
+    expect(screen.getByRole('region', { name: 'Closes' })).toBeDefined();
+    github.unmount();
+
+    renderScene({ name: 'branch-create-gitlab', state: 'empty' });
+    await screen.findByRole('textbox', { name: 'Merge request title' });
+
+    expect(screen.getByRole('tablist', { name: 'Opens as' })).toBeDefined();
+    expect(screen.queryByRole('region', { name: 'Reviewers' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Closes' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Create merge request' })).toBeDefined();
+  });
+
+  it('hides Opens as when the host cannot set a draft', async () => {
+    const seeded = renderScene({ name: 'branch-create', state: 'empty' });
+    await titleField();
+    seeded.unmount();
+    const sessionId = store.getState().sessions[0]?.id as SessionId;
+
+    render(
+      <ToastProvider>
+        <CreateReviewForm
+          sessionId={sessionId}
+          defaultTitle="Goal"
+          nouns={NOUNS}
+          canSetDraft={false}
+          loadBases={null}
+          searchReviewers={null}
+          hasPushStep
+          hasCloses
+          create={async () => ({ number: 1, url: null })}
+          requestReviewers={async () => undefined}
+          onCreated={() => undefined}
+        />
+      </ToastProvider>,
+    );
+    await titleField();
+
+    expect(screen.queryByRole('tablist', { name: 'Opens as' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Reviewers' })).toBeNull();
+  });
+
+  it('requests the chosen reviewers only after the pull request exists', async () => {
+    const seeded = renderScene({ name: 'branch-create', state: 'empty' });
+    await titleField();
+    seeded.unmount();
+    const sessionId = store.getState().sessions[0]?.id as SessionId;
+    const order: Array<string> = [];
+    const create = vi.fn(async (): Promise<CreatedReview> => {
+      order.push('create');
+      return { number: 318, url: null };
+    });
+    const requestReviewers = vi.fn(async () => {
+      order.push('request');
+    });
+    const onCreated = vi.fn();
+
+    render(
+      <ToastProvider>
+        <CreateReviewForm
+          sessionId={sessionId}
+          defaultTitle="Goal"
+          nouns={NOUNS}
+          canSetDraft
+          loadBases={null}
+          searchReviewers={async () => [MAYA]}
+          hasPushStep
+          hasCloses
+          create={create}
+          requestReviewers={requestReviewers}
+          onCreated={onCreated}
+        />
+      </ToastProvider>,
+    );
+    await titleField();
+    fireEvent.click(screen.getByRole('button', { name: 'Request review' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'maya-ortiz' }));
+    expect(requestReviewers).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Create pull request' }));
+
+    await waitFor(() => expect(onCreated).toHaveBeenCalledWith({ number: 318, url: null }));
+    expect(order).toEqual(['create', 'request']);
+    expect(requestReviewers).toHaveBeenCalledWith({
+      sessionId,
+      number: 318,
+      logins: ['maya-ortiz'],
+    });
+  });
+});

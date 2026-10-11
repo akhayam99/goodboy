@@ -102,23 +102,13 @@ const renderForm = ({ form }: { form: FormKey }): ReactNode => {
     case 'pr':
       return (
         <div className="flex h-full min-h-0 flex-col">
-          <CreatePrPanel
-            sessionId={SESSION_ID}
-            defaultTitle={SESSION.goal}
-            onCreated={noop}
-            onCancel={noop}
-          />
+          <CreatePrPanel sessionId={SESSION_ID} defaultTitle={SESSION.goal} onCreated={noop} />
         </div>
       );
     case 'mr':
       return (
         <div className="flex h-full min-h-0 flex-col">
-          <CreateMrForm
-            sessionId={SESSION_ID}
-            branch="hl/fix-duplicate-credit"
-            error={null}
-            onClose={noop}
-          />
+          <CreateMrForm sessionId={SESSION_ID} onCreated={noop} />
         </div>
       );
     case 'link':
