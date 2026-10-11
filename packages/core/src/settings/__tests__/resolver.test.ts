@@ -296,7 +296,7 @@ describe('resolveSettings', () => {
     expect(result.defaultVerbosity).toBe('brief');
   });
 
-  it('role and task models: session beats project beats workspace', () => {
+  it('role and task models: the session beats the workspace and the project layer is ignored', () => {
     const wsRoles = {
       planner: {
         providerId: 'anthropic' as ProviderId,
@@ -321,11 +321,11 @@ describe('resolveSettings', () => {
       projectOverride: { ...NULL_OVERRIDE, roleModels: projectRoles },
       sessionOverride: { ...NULL_OVERRIDE, taskModels: sessionTasks },
     });
-    expect(result.roleModels).toEqual(projectRoles);
+    expect(result.roleModels).toEqual(wsRoles);
     expect(result.taskModels).toEqual(sessionTasks);
   });
 
-  it('task models: a project that pins one task keeps the workspace pins of the others', () => {
+  it('task models: a project that pins a task changes nothing for the workspace', () => {
     const workspaceTasks = {
       workflow_orchestrator: { providerId: 'anthropic' as ProviderId, model: 'claude-sonnet-5-5' },
       summarizer: { providerId: 'anthropic' as ProviderId, model: 'claude-sonnet-5-5' },
@@ -338,13 +338,10 @@ describe('resolveSettings', () => {
       workspaceOverride: { ...NULL_OVERRIDE, taskModels: workspaceTasks },
       projectOverride: { ...NULL_OVERRIDE, taskModels: projectTasks },
     });
-    expect(result.taskModels).toEqual({
-      workflow_orchestrator: projectTasks.workflow_orchestrator,
-      summarizer: workspaceTasks.summarizer,
-    });
+    expect(result.taskModels).toEqual(workspaceTasks);
   });
 
-  it('task models: a session key beats a project key beats a workspace key', () => {
+  it('task models: a session key beats a workspace key and a project key never shows', () => {
     const pin = (model: string) => ({ providerId: 'anthropic' as ProviderId, model });
     const result = resolveSettings({
       global: GLOBAL,
@@ -360,12 +357,12 @@ describe('resolveSettings', () => {
     });
     expect(result.taskModels).toEqual({
       summarizer: pin('session'),
-      rebase: pin('project'),
+      rebase: pin('ws'),
       recheck: pin('ws'),
     });
   });
 
-  it('role models: merge key by key, project over workspace', () => {
+  it('role models: merge key by key, session over workspace', () => {
     const pin = (model: string) => ({
       providerId: 'anthropic' as ProviderId,
       model,
@@ -377,9 +374,9 @@ describe('resolveSettings', () => {
         ...NULL_OVERRIDE,
         roleModels: { planner: pin('ws'), reviewer: pin('ws') },
       },
-      projectOverride: { ...NULL_OVERRIDE, roleModels: { planner: pin('project') } },
+      sessionOverride: { ...NULL_OVERRIDE, roleModels: { planner: pin('session') } },
     });
-    expect(result.roleModels).toEqual({ planner: pin('project'), reviewer: pin('ws') });
+    expect(result.roleModels).toEqual({ planner: pin('session'), reviewer: pin('ws') });
   });
 
   it('role and task models: empty maps in every scope resolve to null', () => {
@@ -408,9 +405,9 @@ describe('resolveSettings', () => {
       ...NULL_OVERRIDE,
       taskModels: { summarizer: pin('ws'), rebase: pin('ws') },
     };
-    const projectOverride = { ...NULL_OVERRIDE, taskModels: { rebase: pin('project') } };
+    const sessionOverride = { ...NULL_OVERRIDE, taskModels: { rebase: pin('session') } };
     const merged = () =>
-      resolveSettings({ global: GLOBAL, workspaceOverride, projectOverride }).taskModels;
+      resolveSettings({ global: GLOBAL, workspaceOverride, sessionOverride }).taskModels;
     const single = () => resolveSettings({ global: GLOBAL, workspaceOverride }).taskModels;
 
     expect(merged()).toBe(merged());

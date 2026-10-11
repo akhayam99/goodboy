@@ -62,11 +62,22 @@ export const providerStanding = ({ provider, context }: GateParams): ProviderSta
   return state === 'backup' ? 'backup' : 'usable';
 };
 
-export type UnusableReason = 'off' | 'not-connected';
+export type UnusableReason = 'off' | 'not-connected' | 'backup-idle';
+
+const hasUsableOnProvider = ({ provider, context }: GateParams): boolean =>
+  (context.policy ?? []).some(
+    (entry) =>
+      entry.id !== provider &&
+      entry.state === 'on' &&
+      providerStanding({ provider: entry.id, context }) === 'usable',
+  );
 
 export const unusableReason = ({ provider, context }: GateParams): UnusableReason | null => {
   const standing = providerStanding({ provider, context });
-  return standing === 'off' || standing === 'not-connected' ? standing : null;
+  if (standing === 'off' || standing === 'not-connected') {
+    return standing;
+  }
+  return standing === 'backup' && hasUsableOnProvider({ provider, context }) ? 'backup-idle' : null;
 };
 
 type PolicyParams = {
@@ -75,6 +86,24 @@ type PolicyParams = {
 
 export const firstOnProvider = ({ policy }: PolicyParams): ProviderId | null =>
   policy?.find((entry) => entry.state === 'on')?.id ?? null;
+
+type EnabledParams = {
+  readonly policy: ProviderPolicy | null | undefined;
+  readonly fallbackDefault: ProviderId;
+};
+
+export const enabledProvidersOf = ({
+  policy,
+  fallbackDefault,
+}: EnabledParams): ReadonlyArray<ProviderId> | undefined => {
+  if (policy == null) {
+    return undefined;
+  }
+  const first = firstOnProvider({ policy }) ?? fallbackDefault;
+  return Array.from(
+    new Set([first, ...policy.filter((entry) => entry.state !== 'off').map((entry) => entry.id)]),
+  );
+};
 
 const legacyCandidates = (context: ProviderCandidatesContext): ReadonlyArray<ProviderId> => {
   const order = context.fallbackOrder ?? ALL_PROVIDERS;

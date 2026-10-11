@@ -1,3 +1,4 @@
+import { selectTaskModel } from '../models/selectTaskModel';
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { formatError } from '@goodboy/ui';
 import {
@@ -89,11 +90,10 @@ import { mountContinuationRefusal, queueMountContinuation } from './mountContinu
 import { summarizerFailureNotice, summarizerNoticeKey } from './summarizerFailureNotice';
 import { runHelperTask } from '../providerLimits/runHelperTask';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
-import { autoLimitContext } from '../providerLimits/autoLimitContext';
-import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
 import { sessionById } from '../sessions/sessionIndex';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { liveEnabledProviders } from '../models/liveEnabledProviders';
 
 type AttachmentsBlockParams = {
   readonly scope: string;
@@ -422,18 +422,11 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
     return;
   }
   const connectedProviders = autoRoutableProviders({ providers: get().providers });
-  const enabledProviders = session.providerPreference.enabledProviders ?? null;
+  const enabledProviders = liveEnabledProviders({ state: get(), sessionId }) ?? null;
   const taskModel =
     entry.taskModelOverride ??
     routeTaskModel({
-      taskModel: resolveLimitedTaskModel({
-        limitContext: autoLimitContext({ state: get() }),
-        task: 'summarizer',
-        preferences: selectResolvedSettings({ state: get(), sessionId })?.taskModels,
-        workspaceDefaultProviderId: selectResolvedSettings({ state: get(), sessionId })
-          ?.defaultProviderOverride,
-        sessionDefaultProviderId: session.providerPreference.defaultProvider,
-      }),
+      taskModel: selectTaskModel({ state: get(), sessionId, task: 'summarizer' }),
       connectedProviders,
       enabledProviders,
       cooldowns: get().providerCooldowns,

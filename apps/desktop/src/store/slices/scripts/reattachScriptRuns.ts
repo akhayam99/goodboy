@@ -24,7 +24,7 @@ export const reattachScriptRuns = (set: SetFn, get: GetFn) => {
     });
     await Promise.all(
       liveRuns.map(async (live) => {
-        await registerScriptRunListeners({ set, get, ...live });
+        await registerScriptRunListeners({ set, get, ...live, shouldReplay: true });
       }),
     );
   };

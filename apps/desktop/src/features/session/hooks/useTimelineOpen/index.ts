@@ -8,6 +8,7 @@ import { agentPlace, branchPlace, sessionPlace, useAppStore } from '../../../../
 import { lensPlace } from '../../../../store/slices/navigation/canonicalLocation';
 import type { LensKind } from '../../../../store/slices/session-view/types';
 import type { TimelineStreamEntry } from '../../timeline/buildTimelineStream';
+import { jobMountPathOf } from '../../timeline/jobMountPathOf';
 
 type EventTarget = {
   readonly lens: LensKind | null;
@@ -87,6 +88,24 @@ export const useTimelineOpen = ({
               }),
             });
           },
+        };
+      }
+      if (entry.kind === 'agent' && entry.agentKind === 'rewriter') {
+        const { mountPath, isRebase } = jobMountPathOf({
+          state: store,
+          sessionId,
+          agentId: entry.agent.id,
+        });
+        return {
+          label: isRebase ? 'Open rebase' : 'Open commits',
+          open: () => store.openRewriteHistory(sessionId, mountPath),
+        };
+      }
+      if (entry.kind === 'agent' && entry.agentKind === 'scribe') {
+        const { mountPath } = jobMountPathOf({ state: store, sessionId, agentId: entry.agent.id });
+        return {
+          label: 'Open overview',
+          open: () => store.navigate({ to: branchPlace({ sessionId, mountPath, tab: 'pr' }) }),
         };
       }
       if (entry.kind === 'agent') {

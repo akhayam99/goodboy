@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Unlink, X } from 'lucide-react';
 import { EmptyLine, Chip, Skeleton, SkeletonChip, cn } from '@goodboy/ui';
 import type { SessionId, WorktreeStatus } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../store';
@@ -25,10 +26,12 @@ import { MountResolveLink } from './MountResolveLink';
 import { MountStatusPhrase } from './MountStatusPhrase';
 import { ProjectBranchChip } from './ProjectBranchChip';
 import { RebaseStoppedNotice } from './RebaseStoppedNotice';
+import { MountConfirmAction } from './MountConfirmAction';
 import { MountRowAction } from './MountRowAction';
+import { RemoveWorktreeAction } from './RemoveWorktreeAction';
 import { useMountPresence } from './useMountPresence';
 import { mountWorktreeState } from './mountRowState';
-import { MOUNT_ROW_HEIGHT } from './mountGrid';
+import { MOUNT_CHILD_PAD, MOUNT_ROW_HEIGHT, MOUNT_ROW_PAD } from './mountGrid';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -37,7 +40,6 @@ type Props = {
   readonly diffStat: MountDiffStat | null;
   readonly worktreeStatus: WorktreeStatus | null;
   readonly isStatusPending?: boolean;
-  readonly isMerged?: boolean;
   readonly commitsAfterMerge?: number | null;
   readonly isSkeleton?: boolean;
 };
@@ -49,7 +51,6 @@ export const ProjectMountRow = ({
   diffStat,
   worktreeStatus,
   isStatusPending: isStatusPendingProp = false,
-  isMerged = false,
   commitsAfterMerge = null,
   isSkeleton = false,
 }: Props) => {
@@ -78,7 +79,21 @@ export const ProjectMountRow = ({
   );
   const controls = useActionControls({ target });
   const menuTrigger = useObjectMenuTrigger({ target });
-  const isActionRoomKept = row.branch !== '' && row.isAttached;
+  const isPutTaskShown = row.branch !== '' && row.isAttached && !row.isFinished;
+  const hasInlineClose = controls
+    .inSlot({ slot: 'inline' })
+    .some((action) => action.id === 'mount.close');
+  const isRemoveShown = row.isAttached && (row.isFinished || hasInlineClose);
+  const menuOmit = useMemo(
+    () => [
+      ...controls.actions
+        .filter((action) => action.slot === 'inline' || action.id === 'mount.putTaskOnBranch')
+        .map((action) => action.id),
+      'mount.close',
+      'mount.forget',
+    ],
+    [controls.actions],
+  );
   const switchBranch =
     controls.actions.find((action) => action.id === 'mount.switchBranch') ?? null;
 
@@ -86,24 +101,29 @@ export const ProjectMountRow = ({
     <li
       data-testid="project-mount-row"
       aria-label={label}
+      data-finished={row.isFinished ? 'true' : undefined}
       className="group/mount-row col-span-full grid grid-cols-subgrid"
       onContextMenu={menuTrigger.onContextMenu}
       onKeyDown={menuTrigger.onKeyDown}
     >
       <div
         data-testid="project-mount-cells"
+        data-slot="mount-child"
         data-row-height={MOUNT_ROW_HEIGHT}
-        style={{ height: MOUNT_ROW_HEIGHT }}
-        className="col-span-full grid grid-cols-subgrid items-center gap-x-3 rounded-md px-1 hover:bg-hover"
+        style={{
+          height: MOUNT_ROW_HEIGHT,
+          paddingLeft: MOUNT_CHILD_PAD,
+          paddingRight: MOUNT_ROW_PAD,
+        }}
+        className={cn(
+          'col-span-full grid grid-cols-subgrid items-center gap-x-3 rounded-md hover:bg-hover',
+          row.isFinished && 'opacity-70 hover:opacity-100',
+        )}
       >
-        <div className="relative flex h-full min-w-0 items-center">
+        <div className="flex h-full min-w-0 items-center gap-x-2">
           <div
             data-testid="project-mount-branch-cell"
-            data-keeps-action-room={isActionRoomKept ? 'true' : undefined}
-            className={cn(
-              'flex min-w-0 flex-1 items-center gap-x-2 overflow-hidden',
-              isActionRoomKept && 'pr-7',
-            )}
+            className="flex min-w-0 flex-1 items-center gap-x-2 overflow-hidden"
           >
             <MountKindGlyph
               projectKind={row.projectKind}
@@ -131,7 +151,7 @@ export const ProjectMountRow = ({
                 isSkeleton={isSkeleton}
               />
             )}
-            {row.branch === '' ? null : (
+            {row.branch === '' || row.isFinished ? null : (
               <MountStatusPhrase
                 label={label}
                 status={worktreeStatus}
@@ -139,7 +159,6 @@ export const ProjectMountRow = ({
                 isRepo={isRepo && row.isAttached}
                 isPending={isStatusPending}
                 isSkeleton={isSkeleton}
-                isMerged={isMerged}
                 isRebasing={controls.pendingId === 'mount.rebase'}
                 commitsAfterMerge={commitsAfterMerge}
                 request={row.request}
@@ -155,8 +174,8 @@ export const ProjectMountRow = ({
               <MountPresence sessionId={sessionId} label={label} agents={presence} />
             )}
           </div>
-          {!isActionRoomKept ? null : (
-            <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center group-focus-within/mount-row:pointer-events-auto group-hover/mount-row:pointer-events-auto">
+          {!isPutTaskShown ? null : (
+            <span className="pointer-events-none flex shrink-0 items-center group-focus-within/mount-row:pointer-events-auto group-hover/mount-row:pointer-events-auto">
               <PutOnBranchPopover
                 sessionId={sessionId}
                 mountId={row.mountId}
@@ -172,7 +191,7 @@ export const ProjectMountRow = ({
           ) : row.isAttached ? (
             <>
               <MountRequestLink sessionId={sessionId} row={row} label={label} />
-              {row.request === null && isRepo && !row.isCompleted && !row.isMainCheckout ? (
+              {row.request === null && isRepo && !row.isFinished && !row.isMainCheckout ? (
                 <EmptyLine className="px-2 text-label text-faint-foreground">No PR yet</EmptyLine>
               ) : null}
             </>
@@ -209,9 +228,37 @@ export const ProjectMountRow = ({
           {isSkeleton ? (
             <SkeletonChip width="sm" />
           ) : (
-            <MountRowAction sessionId={sessionId} row={row} label={label} controls={controls} />
+            <>
+              {isRemoveShown ? (
+                <RemoveWorktreeAction sessionId={sessionId} row={row} label={label} />
+              ) : (
+                <MountRowAction label={label} controls={controls} />
+              )}
+              {isRemoveShown || !row.isAttached ? null : (
+                <MountConfirmAction
+                  controls={controls}
+                  actionId="mount.close"
+                  label={label}
+                  glyph={X}
+                />
+              )}
+              {row.isAttached ? null : (
+                <MountConfirmAction
+                  controls={controls}
+                  actionId="mount.forget"
+                  label={label}
+                  glyph={Unlink}
+                />
+              )}
+            </>
           )}
-          <ObjectOverflowMenu target={target} label={`${label} actions`} size="control" />
+          <ObjectOverflowMenu
+            target={target}
+            label={`${label} actions`}
+            size="control"
+            omit={menuOmit}
+            hideWhenEmpty
+          />
         </div>
       </div>
       {controls.failure === null ? null : (

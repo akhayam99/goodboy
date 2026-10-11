@@ -113,3 +113,14 @@ export const INITIAL_LIFECYCLE_MAP: ProviderLifecycleMap = {
   openrouter: IDLE_LIFECYCLE,
   moonshot: IDLE_LIFECYCLE,
 };
+
+export type ConnectionTestResult = {
+  readonly isOk: boolean;
+  readonly millis: number;
+  readonly detail: string;
+};
+
+export type ConnectionTestState = {
+  readonly isTesting: boolean;
+  readonly result: ConnectionTestResult | null;
+};

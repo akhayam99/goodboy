@@ -5,7 +5,8 @@ import type { WorkspaceId } from '@goodboy/types';
 import { Button, Textarea, formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { useAutoLimitContext } from '../../../providers/hooks/useAutoLimitContext';
+import { useResolution } from '../../../providers/hooks/useResolution';
+import { resolutionAsTask } from '../../../providers/resolutionAsTask';
 import { learnWorkspaceReplyStyle } from '../../../resolve/learnWorkspaceReplyStyle';
 
 const LearnIcon = CONCEPT_ICONS.enhance;
@@ -22,7 +23,6 @@ export const ReplyStyleNoteField = ({ workspaceId, value, isDisabled, onSave }: 
   const [draft, setDraft] = useState(value ?? '');
   const [isLearning, setIsLearning] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const overrides = useAppStore((s) => s.workspaceOverrides[workspaceId] ?? null);
   const projectRoots = useAppStore(
     useShallow((s) =>
       s.projects
@@ -30,14 +30,7 @@ export const ReplyStyleNoteField = ({ workspaceId, value, isDisabled, onSave }: 
         .map((project) => project.rootPath),
     ),
   );
-  const connectedProviders = useAppStore(
-    useShallow((s) =>
-      s.providers
-        .filter((provider) => provider.connection === 'connected')
-        .map((provider) => provider.id),
-    ),
-  );
-  const limitContext = useAutoLimitContext();
+  const resolution = useResolution({ task: 'prose_polish', workspaceId });
 
   useEffect(() => {
     setDraft(value ?? '');
@@ -50,9 +43,7 @@ export const ReplyStyleNoteField = ({ workspaceId, value, isDisabled, onSave }: 
       const note = await learnWorkspaceReplyStyle({
         workspaceId,
         projectRoots,
-        overrides,
-        connectedProviders,
-        limitContext,
+        taskModel: resolutionAsTask({ resolution }),
       });
       setDraft(note);
       onSave(note);

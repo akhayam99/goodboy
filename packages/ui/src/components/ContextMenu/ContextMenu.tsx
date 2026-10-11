@@ -5,6 +5,7 @@ import { FLOATING_SURFACE } from '../../floatingSurface';
 import { ScrollFade } from '../ScrollFade';
 import { MenuList } from './MenuList';
 import { placeContextMenu } from './placeContextMenu';
+import { useEscapeLayer } from '../../useEscapeLayer';
 import type { MenuEntry, MenuPoint } from './menuTypes';
 
 type Props = {
@@ -19,6 +20,7 @@ export const ContextMenu = ({ label, point, entries, onClose }: Props) => {
   const [placed, setPlaced] = useState<MenuPoint | null>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  useEscapeLayer(() => onCloseRef.current());
 
   useLayoutEffect(() => {
     const node = menuRef.current;

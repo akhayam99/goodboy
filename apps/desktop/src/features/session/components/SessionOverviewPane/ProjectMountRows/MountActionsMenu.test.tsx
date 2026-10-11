@@ -116,9 +116,13 @@ const renderMenu = () =>
     />,
   );
 
+const TRIGGER = 'Remove api from session';
+
 const openConfirm = () => {
-  fireEvent.click(screen.getByRole('button', { name: 'Remove api from session' }));
+  fireEvent.click(screen.getByRole('button', { name: TRIGGER }));
 };
+
+const isConfirmOpen = (): boolean => screen.queryByText('Remove api from the session?') !== null;
 
 afterEach(cleanup);
 beforeEach(() => {
@@ -182,11 +186,11 @@ describe('MountActionsMenu', () => {
     openConfirm();
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(screen.queryByText('Remove api from the session?')).toBeNull();
+    expect(isConfirmOpen()).toBe(false);
 
     resolveAssessment(assessed({ affectedFiles: 0, localOnlyCommits: 0, hasUpstream: true }));
-    await waitFor(() => expect(screen.queryByText('Remove api from the session?')).toBeNull());
-    expect(screen.queryByRole('menuitem')).toBeNull();
+    await waitFor(() => expect(isConfirmOpen()).toBe(false));
+    expect(screen.getByRole('button', { name: TRIGGER })).toBeDefined();
   });
 
   it('offers a plain removal for a clean published worktree', async () => {
@@ -545,8 +549,8 @@ describe('MountActionsMenu', () => {
     expect(screen.getByText('Remove api from the session?')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
-    expect(screen.queryByText('Remove api from the session?')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Remove api from session' })).toBeDefined();
+    expect(isConfirmOpen()).toBe(false);
+    expect(screen.getByRole('button', { name: TRIGGER })).toBeDefined();
   });
 
   it('keeps the confirmation open and reports a removal failure', async () => {
@@ -569,33 +573,32 @@ describe('MountActionsMenu', () => {
     expect(screen.getByText('Remove api from the session?')).toBeDefined();
   });
 
-  it('closes the confirmation on cancel and removes nothing', async () => {
+  it('closes the anchored confirm on cancel and leaves the project in the session', async () => {
     renderMenu();
     openConfirm();
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and delete worktree' })));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
-    expect(screen.queryByText('Remove api from the session?')).toBeNull();
+    expect(isConfirmOpen()).toBe(false);
     expect(state.detachProject).not.toHaveBeenCalled();
   });
 
-  it('draws one quiet button for the one action, never a menu of one', () => {
+  it('opens a dialog named after the question, not a menu', () => {
     renderMenu();
-
-    expect(screen.queryByRole('button', { name: 'api actions' })).toBeNull();
-    const trigger = screen.getByRole('button', { name: 'Remove api from session' });
+    const trigger = screen.getByRole('button', { name: TRIGGER });
     expect(trigger.getAttribute('aria-haspopup')).toBe('dialog');
-    fireEvent.click(trigger);
 
+    openConfirm();
+
+    screen.getByRole('dialog', { name: 'Remove api from the session?' });
     expect(screen.queryByRole('menu')).toBeNull();
-    expect(screen.getByText('Remove api from the session?')).toBeDefined();
   });
 
   it('renders no trigger for a project with no mount to detach', () => {
     state.sessionMounts = { 'session-1': [] };
     renderMenu();
 
-    expect(screen.queryByRole('button', { name: 'Remove api from session' })).toBeNull();
+    expect(screen.queryByRole('button', { name: TRIGGER })).toBeNull();
   });
 });

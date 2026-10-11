@@ -49,6 +49,7 @@ export const parentPlace = ({ state, place }: Params): Place | null => {
     view.target !== null &&
     view.target.kind !== 'diff' &&
     view.target.kind !== 'terminal' &&
+    view.target.kind !== 'explore' &&
     view.target.kind !== 'thread'
   ) {
     return { ...place, view: { ...view, target: null } };

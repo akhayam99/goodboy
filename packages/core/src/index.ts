@@ -393,6 +393,7 @@ export {
   type AutoStep,
 } from './providers/autoRouting/resolveAuto';
 export {
+  enabledProvidersOf,
   firstOnProvider,
   providerCandidates,
   providerStanding,
@@ -815,6 +816,7 @@ export {
 } from './artifacts';
 export {
   explainResolution,
+  skippedPinNote,
   mergeLayers,
   resolveSlot,
   type LayerName,
@@ -826,11 +828,9 @@ export {
   type ResolveNames,
   type ResolvePin,
   type ResolvePins,
-  type ResolveShadow,
   type ResolveSkip,
   type ResolveSlot,
   type ResolveSource,
   type ResolveVia,
-  type ScopedLayer,
   type SkipReason,
 } from './providers/resolve';

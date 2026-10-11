@@ -25,6 +25,7 @@ const layoutInputs = (state: AppStore): ReadonlyArray<unknown> => [
   state.branchTab,
   state.branchThreadId,
   state.terminalMountPath,
+  state.exploreMountPath,
 ];
 
 const isSameInputs = (left: ReadonlyArray<unknown>, right: ReadonlyArray<unknown>): boolean =>

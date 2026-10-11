@@ -296,12 +296,14 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
   and `N to resolve` (only while review comments of
   that pull request wait) opens Review on them. `Rewrite history` sits in the
   row menu.
-- **Merged rows move under `Show completed`.** A row is merged when its
-  request merged, or when a pushed branch that tracks its own name has a
-  clean tree and nothing past the base. Ancestry alone never decides it while
+- **Finished rows move under `Show finished`.** A row is finished when its
+  request merged or closed, or when a pushed branch that tracks its own name has a
+  clean tree and nothing past the base. `classifyMountRows` in `mountRowModel.ts`
+  is the one place that decides, from the request first and the worktree status
+  second, so a row placed by its request never moves when its status arrives. Ancestry alone never decides it while
   the mount links an open request (draft, open, approved or queued):
   `isBranchMergedOf` takes `hasOpenRequest` and answers no, so such a row is
-  never under Completed and never reads `Merged`. A worktree with nothing past
+  never under Show finished and never reads `Merged`. A worktree with nothing past
   the base whose HEAD is not the open request's head sha reads `Not on the PR's
 commits` (`branchPresenceOf`, `openRequest`); on the request's head it reads
   as any row. A merged request whose branch moved
@@ -486,18 +488,15 @@ the state calls for, picked by its `inline` slot: `Rebase on main` when main
 moved, `Push N commits` when commits wait on a branch with a pull request,
 `Create PR` when the branch has commits and no pull request, `Close branch`
 once the pull request merged, `Reopen` on a closed row. A blocked action stays
-visible, disabled, with its reason in the tooltip. The always visible row menu
-(`⋯`, also on right click) lists every available action of the worktree: open
-the pull request, the diff, Review, the terminal, the editor (one submenu level
-of detected editors), scripts, Rebase, Push, Rewrite history, Switch branch,
-Start new turns here (only with two or more mounts), the copies, then Close
-worktree, or Remove from session on a closed row. There are no hover-only icons
+visible, disabled, with its reason in the tooltip. The row menu
+(`⋯`, also on right click) lists only the rare verbs of the worktree: the terminal, the editor (one submenu level
+of detected editors), scripts, Rewrite history, Switch branch,
+Start new turns here (only with two or more mounts) and the copies. It is not drawn when fewer than two would be left.
+The verbs of every day sit on the row: the state verb (Rebase, Push, Create PR), a quiet Close branch icon that asks in a `ConfirmPopover` (`MountConfirmAction`, from the action's own confirm), Reopen and a quiet Remove from session icon on a closed row, and Close branch as text on a finished row. There are no hover-only icons
 on the row. When a rebase stops, the notice under the row brings the terminal
 and Abort rebase forward. Below a 28rem container New branch shows its icon
-only. The project control (`MountActionsMenu`, the `project` kind) is one quiet button,
-`Remove <project> from session`, that opens the removal confirmation at once, because
-a menu of one action is not drawn. It renders nothing when the project has no mount
-to remove.
+only. The project row has no menu: `MountActionsMenu` is the quiet Remove from session icon, a `ConfirmPopover` anchored to it
+(`DetachConfirm`), and renders nothing when the project has no mount to remove.
 
 With two or more mounts, a row shows its presence (`MountPresence`): the
 state node of each agent whose turn runs, waits on an answer or needs you in
@@ -513,12 +512,15 @@ tooltip. Copy branch name lives in the row menu.
 A branch row shows the tasks linked to that branch as chips (`LinkedTaskChip`, the
 `task` kind). The visible **Put on a branch** action opens an anchored picker for a linked
 task, with **Link work** for another task and **New branch for** to give a
-task its own branch. A task already on the session moves with
-`assignSessionExternalTask`: it links the branch row, then drops the session row.
-`takeOffSessionExternalTask` reverses it, and taking a task off its last branch
-restores the session row. The chip opens its task; its hover or focus unlink
-control takes it off this branch. Undo restores the exact placements in one
-transaction, including removing a generated session row. `forkMount` takes `taskIdentifier` and `taskTitle` so a
+task its own branch. Every placement change goes through
+`moveSessionExternalTask` (`to` a session or a branch of the task's own
+project, `isCopy` keeps the source): it computes the next rows of that task and
+writes them once, so one Undo restores the exact rows, including removing a
+generated session row. `assignSessionExternalTask` and
+`takeOffSessionExternalTask` are thin callers of it. A task of another project
+is refused. The chip opens its task; its context menu (Shift+F10) holds
+**Move to**, and its hover or focus x reads **Move to session** when the branch
+is the only placement and **Take off project / branch** otherwise. `forkMount` takes `taskIdentifier` and `taskTitle` so a
 worktree made for a task is named `{prefix}/{task-id}-{slug}`. The session header,
 Board card and sidebar dedupe by provider and external id (`distinctTasks`); the
 branch is visible only under its row in the Projects card.

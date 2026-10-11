@@ -53,7 +53,7 @@ const requestOf = (over: Partial<MountRequestView>): MountRequestView => ({
   ...over,
 });
 
-const rowOf = (request: MountRequestView): MountRowView => ({
+const rowOf = (request: MountRequestView, isFinished: boolean): MountRowView => ({
   mountId: 'mount-1' as MountId,
   projectId: 'project-1' as ProjectId,
   projectName: 'payments-api',
@@ -73,11 +73,13 @@ const rowOf = (request: MountRequestView): MountRowView => ({
   series: null,
   observation: null,
   observedBranchHolder: null,
-  isCompleted: request.state === 'merged' || request.state === 'closed',
+  isFinished,
 });
 
-const renderLink = (request: MountRequestView) =>
-  render(<MountRequestLink sessionId={SESSION} row={rowOf(request)} label="payments-api" />);
+const renderLink = (request: MountRequestView, isFinished = false) =>
+  render(
+    <MountRequestLink sessionId={SESSION} row={rowOf(request, isFinished)} label="payments-api" />,
+  );
 
 describe('MountRequestLink', () => {
   it('reads a closed pull request as Closed even when GitHub still flags it as a draft', () => {
@@ -92,6 +94,16 @@ describe('MountRequestLink', () => {
     renderLink(requestOf({ state: 'merged', isDraft: true }));
 
     expect(screen.getByText('Merged')).toBeDefined();
+    expect(screen.queryByText('Draft')).toBeNull();
+  });
+
+  it('reads a finished row as one muted phrase with the number and the state', () => {
+    const { unmount } = renderLink(requestOf({ state: 'merged' }), true);
+    expect(screen.getByText('PR #9914 merged')).toBeDefined();
+    unmount();
+
+    renderLink(requestOf({ state: 'closed', isDraft: true }), true);
+    expect(screen.getByText('PR #9914 closed')).toBeDefined();
     expect(screen.queryByText('Draft')).toBeNull();
   });
 

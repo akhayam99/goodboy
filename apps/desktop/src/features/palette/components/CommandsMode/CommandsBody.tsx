@@ -150,6 +150,8 @@ export const CommandsBody = ({
   const liveTarget = scope?.kind === 'agent' ? null : (activePalette?.liveAgent?.target ?? null);
   const pullRequestTarget =
     scope?.kind === 'pullRequest' ? null : (activePalette?.pullRequest ?? null);
+  const taskTarget = activePalette?.task ?? null;
+  const taskActions = useObjectActions({ target: taskTarget, env });
   const runActions = useObjectActions({ target: runTarget, env });
   const liveActions = useObjectActions({ target: liveTarget, env });
   const pullRequestActions = useObjectActions({ target: pullRequestTarget, env });
@@ -283,6 +285,21 @@ export const CommandsBody = ({
     [pullRequestTarget, pullRequestActions.actions, runVerb],
   );
 
+  const taskVerbs = useMemo(
+    () =>
+      taskTarget === null
+        ? []
+        : verbEntries({
+            target: taskTarget,
+            actions: taskActions.actions.filter((action) => action.id === 'task.moveTo'),
+            isScope: false,
+            noun: 'issue',
+            select: ({ action }: VerbSelectParams) =>
+              runVerb({ target: taskTarget, actionId: action.id }),
+          }),
+    [taskTarget, taskActions.actions, runVerb],
+  );
+
   const sessionList = useMemo(
     () => (scope?.kind === 'session' ? [...scopeVerbs, ...liveVerbs] : scopeVerbs),
     [scope?.kind, scopeVerbs, liveVerbs],
@@ -339,8 +356,9 @@ export const CommandsBody = ({
       ...(activePalette?.next ?? []),
       ...runs,
       ...pullRequestVerbs.filter((entry) => !taken.has(entry.label)),
+      ...taskVerbs.filter((entry) => !taken.has(entry.label)),
     ];
-  }, [activePalette?.next, runs, pullRequestVerbs, sessionList, parentList]);
+  }, [activePalette?.next, runs, pullRequestVerbs, taskVerbs, sessionList, parentList]);
 
   const pool = useMemo(() => {
     const runsKeys = new Set(runs.map((entry) => entry.key));

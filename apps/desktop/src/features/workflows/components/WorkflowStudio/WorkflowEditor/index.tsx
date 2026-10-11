@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { RotateCcw, Trash2 } from 'lucide-react';
 import { Button, InlineConfirm, Notice } from '@goodboy/ui';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE, recommendedModelForRole } from '@goodboy/core';
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/core';
+import { modelOnProvider } from '../../../../providers/roleResolution';
 import type { ProviderId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
@@ -44,7 +45,7 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const { form, setForm, expandedKey, setExpandedKey } = editor;
   const steps = form.steps;
-  const polishDeps = useProsePolishDeps({ workspaceId, workingDir, connectedProviders });
+  const polishDeps = useProsePolishDeps({ workspaceId, workingDir });
   const [polishError, setPolishError] = useState<string | null>(null);
   const polish = usePolish({ onError: setPolishError });
   const blocked = editor.isGenerating;
@@ -102,10 +103,10 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
   const resolvedProvider = (step: StepDraft): ProviderId =>
     step.provider !== '' ? step.provider : defaultProvider;
   const recommendedModel = (step: StepDraft): string =>
-    recommendedModelForRole({
+    modelOnProvider({
       role: step.role,
       provider: resolvedProvider(step),
-      prefs: roleModels,
+      roleModels,
     });
   const resolvedModel = (step: StepDraft): string =>
     step.model !== '' ? step.model : recommendedModel(step);

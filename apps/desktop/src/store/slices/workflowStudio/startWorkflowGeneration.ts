@@ -1,5 +1,5 @@
-import { autoLimitContext } from '../providerLimits/autoLimitContext';
-import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
+import { selectResolution } from '../models/selectResolution';
+import { resolutionAsTask } from '../../../features/providers/resolutionAsTask';
 import {
   formatWorkflowFromNL,
   orchestratorModelPool,
@@ -27,21 +27,14 @@ type GenerationModelParams = {
   readonly workspaceId: WorkspaceId;
 };
 
-const generationTaskModel = ({
-  state,
-  workspaceId,
-}: GenerationModelParams): TaskModelPreference => {
-  const overrides = state.workspaceOverrides?.[workspaceId] ?? null;
-  const connected = autoRoutableProviders({ providers: state.providers });
-  return resolveLimitedTaskModel({
-    limitContext: autoLimitContext({ state }),
-    task: 'plan_generation',
-    preferences: overrides?.taskModels,
-    workspaceDefaultProviderId: overrides?.defaultProviderId,
-    sessionDefaultProviderId: connected[0] ?? DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider,
-    connectedProviders: connected.length > 0 ? connected : null,
+const generationTaskModel = ({ state, workspaceId }: GenerationModelParams): TaskModelPreference =>
+  resolutionAsTask({
+    resolution: selectResolution({
+      state,
+      workspaceId,
+      slot: { kind: 'task', id: 'plan_generation' },
+    }),
   });
-};
 
 type MenuParams = {
   readonly state: ReturnType<GetFn>;

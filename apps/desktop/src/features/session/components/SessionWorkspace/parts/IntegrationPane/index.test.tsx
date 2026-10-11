@@ -345,6 +345,75 @@ describe('IntegrationPane', () => {
     expect(screen.queryByRole('button', { name: /^Link/ })).toBeNull();
   });
 
+  it('shows where the focused issue lives and moves it from the Linked to value', async () => {
+    const moveSessionExternalTask = vi.fn(async () => undefined);
+    useAppStore.setState({ moveSessionExternalTask });
+    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
+    fireEvent.click(screen.getByRole('button', { name: 'View GB-42' }));
+
+    screen.getByText('Linked to');
+    const value = screen.getByRole('button', { name: 'Move GB-42 from This session' });
+    expect(value.textContent).toContain('This session');
+    fireEvent.click(value);
+
+    const menu = screen.getByRole('menu', { name: 'Move to' });
+    expect(
+      within(menu)
+        .getAllByRole('menuitem')
+        .map((item) => item.textContent),
+    ).toEqual(['This session', 'ledger-core · ak/current']);
+    await act(async () => {
+      fireEvent.click(within(menu).getByRole('menuitem', { name: 'ledger-core · ak/current' }));
+    });
+    expect(moveSessionExternalTask).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessionId: SESSION_ID,
+        to: { kind: 'branch', projectId: PROJECT_ID, branch: 'ak/current' },
+      }),
+    );
+  });
+
+  it('stays on the focused issue when a move changes where it lives', () => {
+    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
+    fireEvent.click(screen.getByRole('button', { name: 'View GB-42' }));
+
+    act(() => {
+      useAppStore.setState({
+        sessionExternalTasks: {
+          [SESSION_ID]: [{ ...TASK, scope: 'branch', branch: 'ak/current' }],
+        },
+      });
+    });
+
+    expect(screen.getByText('Linear detail GB-42')).toBeDefined();
+    expect(screen.getByRole('button', { name: /^Move GB-42 from / })).toBeDefined();
+  });
+
+  it('opens a branch only issue from its chip on the issue page', () => {
+    useAppStore.setState({
+      sessionExternalTasks: { [SESSION_ID]: [{ ...TASK, scope: 'branch', branch: 'ak/current' }] },
+      focusedExternalTask: {
+        [SESSION_ID]: { provider: 'linear', externalId: TASK.externalId, projectId: null },
+      },
+    });
+    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
+
+    expect(screen.getByText('Linear detail GB-42')).toBeDefined();
+  });
+
+  it('names the branch in Linked to once the issue sits on one', () => {
+    useAppStore.setState({
+      sessionExternalTasks: {
+        [SESSION_ID]: [{ ...TASK, scope: 'branch', branch: 'ak/current', projectId: PROJECT_ID }],
+      },
+    });
+    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
+    fireEvent.click(screen.getByRole('button', { name: 'View GB-42' }));
+
+    const value = screen.getByRole('button', { name: /^Move GB-42 from / });
+    expect(value.textContent).toContain('ledger-core · ak/current');
+  });
+
   it('puts Link work in the tracker list header and leaves it out of a focused issue', () => {
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
 

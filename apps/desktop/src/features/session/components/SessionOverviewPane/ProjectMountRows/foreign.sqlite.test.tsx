@@ -195,7 +195,7 @@ describe('a teammate pull request opened from Goodboy', () => {
 
     const row = await screen.findByTestId('project-mount-row');
     await within(row).findByText("Not on the PR's commits");
-    expect(screen.queryByRole('button', { name: /Completed/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Show finished/ })).toBeNull();
     expect((await storedMount())?.branchOrigin).toBe('created');
 
     fireEvent.click(await screen.findByRole('button', { name: "Use the PR's commits" }));

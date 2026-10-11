@@ -284,7 +284,17 @@ It includes:
 
 History rows carry no verb and no `⋯`. They stay in Activity only while no
 later outcome of the same branch settled them, and the row opens the Commits
-tab of the Branch page, where the recovery lives: `Undo rewrite` for a
+tab of the Branch page, where the recovery lives. The agent rows of those jobs
+read the job, not the turn of the agent (`jobFactsByAgentId`, the seam beside
+the resolver's in `buildTimelineStream`): History rewriter reads "Rebase on
+main" with the job's word (Replaying, Merging, Checking, Moving, Pushing,
+Done, or "Stopped: needs you" with the short cause) and opens **Open rebase**;
+Scribe reads "Pull request text" (Writing, Opening, Created #318, Couldn't
+open) and opens **Open overview**; the Scribe that refreshes a description or
+writes a commit message reads "Refresh pull request text" or "Commit message",
+muted and never in Needs you. `history_rewritten`, `history_pushed` and
+`history_stopped` carry the `agentId` of the rewriter, so a finished row still
+reads Done or Stopped after a restart. The recovery: `Undo rewrite` for a
 rewrite, `Retry` (or `Retry with a note` when History rewriter needs you), `Rewrite with an agent`,
 `Change the plan` and `Discard plan` for a stopped one, `Restore previous
 history` for a push. A stopped rewrite waits in Needs you until a later outcome settles it. Every notification
@@ -312,7 +322,8 @@ A **Needs you** block sits on top of Activity, and only while something waits
 on you: one row per owner, never per child. A pull request's fix runs read
 "#318 · 1 question · 5 to review" (the actions you owe, counted in comments), a
 run "Retry policy · 1 question", a stopped rebase
-"Rebase of feat/export stopped ×2". Each row has **Open**, which goes to
+"Rebase of feat/export stopped ×2 · needs you" (a short cause, never the engine
+sentence). Each row has **Open**, which goes to
 whoever owns the action (the first comment that waits on you, the exact
 question, the branch). A fix run's Activity row reads "Fix run · #318 · 9
 comments" with its tally, and there is one row per run, no per-agent burst. Push is
@@ -1068,21 +1079,24 @@ Settings can be set at four levels. The level closest to the work wins:
   matches a tool call, the most specific one decides.
 - **Settings overrides** (default provider, branch prefix, verbosity, role
   and task models, provider pool, parallel agents, provider bindings) can be
-  set on a workspace, a project or a session, on top of the global defaults.
-  Anything you leave empty comes from the level above. The session engine
-  reads them only through `selectResolvedSettings`: session, then the
-  session's active project, then workspace, then global (`resolveSettings` in
-  core). Role models, task models and provider bindings merge key by key, so a
-  project that pins only the orchestrator keeps the workspace's pin for every
-  other task and role, and the closest level wins on a key both set. The
-  provider list stays whole: the closest level that sets one replaces the
-  list. A project override sets the branch prefix for that project's mounts.
-  The settings screens edit the workspace row and read that row back, since
-  it is what they change. When a project of the workspace has its own role
-  models, task models, provider list or default provider, **Models** says so in
-  a notice under its header, names what the project pins, and offers **Use
-  this page instead**, which clears those four settings of the project after a
-  confirm anchored to the button (`clearProjectModelOverrides`).
+  set on a workspace, a project or a session, on top of the global defaults,
+  except the role and task models, which a project no longer holds: they are
+  set on a workspace or a session. Anything you leave empty comes from the
+  level above. The session engine reads them only through
+  `selectResolvedSettings`: session, then the session's active project, then
+  workspace, then global (`resolveSettings` in core). Role models, task models
+  and provider bindings merge key by key, so a session that pins only the
+  orchestrator keeps the workspace's pin for every other task and role, and
+  the closest level wins on a key both set; the role and task maps skip the
+  project. The provider list stays whole: the closest level that sets one
+  replaces the list. A project override sets the branch prefix for that
+  project's mounts. The settings screens edit the workspace row and read that
+  row back, since it is what they change. A project that had its own role or
+  task models before 0.24.0 keeps them as saved settings
+  (`legacy.projectModels.<projectId>`, written by m228): **Models** says "Model
+  settings 2 projects had are saved. They no longer apply." and **Show** lists
+  each project with **Apply to this page** and **Discard**, both behind a
+  confirm anchored to the button.
 - **Workflows, saved steps and skills** belong to the workspace. Built-in
   steps live in code and are the same everywhere. They are read only: **Save a
   copy** puts one copy in the workspace, and that copy remembers what it is
@@ -1621,4 +1635,5 @@ An agent materializes a project through the query bridge like this:
 - `packages/db/src/queries/resolve-thread.ts`: review conversations
 
 Task-link removal uses **Unlink**, with **Unlinked** in its Undo toast and
-**Re-link** on the Activity event. **Link work** is the single linking entry.
+**Re-link** on the Activity event. A move says where the task is now (**HL-204
+is on the session again**, **HL-204 is on payments-api / hl/ledger-rounding**). **Link work** is the single linking entry.

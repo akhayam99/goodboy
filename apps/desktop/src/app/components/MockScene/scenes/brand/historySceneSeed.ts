@@ -237,6 +237,7 @@ const baseRun = {
   identity: null,
   movedHead: null,
   threadShas: [],
+  commitCount: null,
   updatedAt: 0,
 } satisfies Omit<HistoryRun, 'phase'>;
 

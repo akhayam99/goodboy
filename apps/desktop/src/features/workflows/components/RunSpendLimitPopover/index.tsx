@@ -12,7 +12,6 @@ import {
 import type { SessionId, WorkflowRun, WorkflowSpendLimitMode } from '@goodboy/types';
 import { useAppStore } from '../../../../store/store';
 import { useRunSpendUsd } from '../../../../store/slices/sessions/selectors';
-import { OrchestratorAction } from '../OrchestratorStrip/OrchestratorAction';
 import { SpendLimitFields } from '../../../budget/components/SpendLimitFields';
 import { parseSpendLimit } from '../../../budget/parseSpendLimit';
 import { behaviorOfRunMode, runModeOfBehavior } from '../../../budget/spendLimitBehavior';
@@ -87,16 +86,16 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
             {metaLabel}
           </button>
         ) : (
-          <OrchestratorAction
-            icon={CircleDollarSign}
-            label="Raise the spend cap"
+          <Button
+            size="sm"
             variant="primary"
-            tone="warning"
-            testId="run-spend-limit-trigger"
-            title="Cap what this run is allowed to spend"
-            expanded={open}
+            data-testid="run-spend-limit-trigger"
+            aria-expanded={open}
             onClick={onToggle}
-          />
+          >
+            <CircleDollarSign size={ICON_SIZE.control} aria-hidden />
+            Raise spend cap
+          </Button>
         )
       }
     >

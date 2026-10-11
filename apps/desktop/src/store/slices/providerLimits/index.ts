@@ -12,8 +12,8 @@ export const createProviderLimitsSlice = ({ set, get }: SliceDeps): ProviderLimi
   ...providerLimitsInitialState,
   loadProviderLimits: loadProviderLimits(set),
   recordProviderLimits: recordProviderLimits(set, get),
-  refreshCodexLimits: refreshCodexLimits(set, get),
-  refreshClaudeUsage: refreshClaudeUsage(set, get),
+  refreshCodexLimits: refreshCodexLimits({ set, get }),
+  refreshClaudeUsage: refreshClaudeUsage({ set, get }),
   probeProviderLimits: probeProviderLimits(get),
   consumeCodexResetCredit: consumeCodexResetCredit(set, get),
 });

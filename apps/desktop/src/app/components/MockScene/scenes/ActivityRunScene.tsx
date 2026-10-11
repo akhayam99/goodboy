@@ -10,7 +10,7 @@ import {
   seedActivityRunScene,
   seedSiblingStages,
 } from './activityRunSeed';
-import { useHoveredMountRow, useShowCompletedMounts } from './sceneReveal';
+import { useHoveredMountRow, useShowFinishedMounts } from './sceneReveal';
 import { ShellFrame, seedShellChrome } from './shellChrome';
 
 const HOUR = 3_600_000;
@@ -133,7 +133,7 @@ export const ActivityRunScene = ({
     setIsReady(true);
   }, [contextTab, isFinished, onSeeded]);
 
-  useShowCompletedMounts({ isReady });
+  useShowFinishedMounts({ isReady });
   useHoveredMountRow({ isReady, rowLabel: 'nw/backfill-processed-events' });
 
   if (!isReady) {

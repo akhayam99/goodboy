@@ -1,5 +1,5 @@
 import type { ProviderId } from '@goodboy/types';
-import type { Resolution, ResolveShadow, ResolveSkip } from './types';
+import type { Resolution, ResolveSkip } from './types';
 
 type ModelParams = {
   readonly provider: ProviderId;
@@ -38,39 +38,17 @@ const reasonOf = ({ skip, names }: SkipParams): string => {
     case 'unknown-model':
       return `${model} is not available`;
     case 'backup-idle':
-      return `${provider} is a backup`;
+      return `${provider} is Backup only`;
   }
 };
 
-type JoinParams = {
-  readonly parts: ReadonlyArray<string>;
-};
-
-const joinNames = ({ parts }: JoinParams): string => {
-  const last = parts.at(-1);
-  if (last === undefined || parts.length === 1) {
-    return last ?? '';
-  }
-  return `${parts.slice(0, -1).join(', ')} and ${last}`;
-};
-
-type ShadowParams = {
-  readonly shadowed: ReadonlyArray<ResolveShadow>;
-  readonly names: ResolveNames;
-};
-
-const shadowSentence = ({ shadowed, names }: ShadowParams): string | null => {
-  const [only] = shadowed;
-  if (only === undefined) {
+export const skippedPinNote = ({ resolution, names }: Params): string | null => {
+  const pinSkip = resolution.skipped.find((skip) => skip.source !== 'auto' && skip.model !== null);
+  if (pinSkip === undefined || pinSkip.model === null) {
     return null;
   }
-  if (shadowed.length === 1) {
-    const model = names.model({ provider: only.provider, model: only.model });
-    return `A ${only.kind} setting in ${only.name} overrides this: ${model}.`;
-  }
-  const isProject = shadowed.every((shadow) => shadow.kind === 'project');
-  const noun = isProject ? 'Project settings' : 'Settings';
-  return `${noun} in ${joinNames({ parts: shadowed.map((shadow) => shadow.name) })} override this.`;
+  const pinned = names.model({ provider: pinSkip.provider, model: pinSkip.model });
+  return `pinned ${pinned} skipped: ${reasonOf({ skip: pinSkip, names })}`;
 };
 
 export const explainResolution = ({ resolution, names }: Params): string | null => {
@@ -79,10 +57,6 @@ export const explainResolution = ({ resolution, names }: Params): string | null 
   if (pinSkip !== undefined && pinSkip.model !== null) {
     const pinned = names.model({ provider: pinSkip.provider, model: pinSkip.model });
     return `Pinned ${pinned} is skipped: ${reasonOf({ skip: pinSkip, names })}. Using ${using}.`;
-  }
-  const shadow = shadowSentence({ shadowed: resolution.shadowed, names });
-  if (shadow !== null) {
-    return shadow;
   }
   if (resolution.source !== 'auto') {
     return null;

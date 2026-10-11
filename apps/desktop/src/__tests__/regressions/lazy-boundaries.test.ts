@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 const DESKTOP_SRC = join(__dirname, '..', '..');
 const TERMINAL_DIR = join(DESKTOP_SRC, 'shared', 'components', 'GenericTerminalPanel');
 const TERMINAL_ENTRY = join(TERMINAL_DIR, 'index');
-const HIGHLIGHT_DIR = join(DESKTOP_SRC, 'features', 'diff', 'lib', 'highlight');
+const HIGHLIGHT_DIR = join(DESKTOP_SRC, 'shared', 'lib', 'highlight');
 const SKIP_SEGMENTS = new Set(['__tests__', 'node_modules', 'dist']);
 const STATIC_IMPORT = /^(?:import|export)\s+(?!type\b)[^;]*?\sfrom\s+['"]([^'"]+)['"]/gm;
 const SIDE_EFFECT_IMPORT = /^import\s+['"]([^'"]+)['"]/gm;

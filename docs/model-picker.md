@@ -36,8 +36,10 @@ The row above the provider chips is one component with two meanings.
   (`Now: Claude · Sonnet 5.5 · Medium`). A pinned trigger shows the model and an
   x back to Auto. The row under a Models page label and the run page and builder
   orchestrator pills read that answer from `useResolution`, so they name the same
-  model; when a pin is skipped or a project overrides it, the row's muted line says
-  why through `explainResolution` (see `docs/providers.md`, Defaults internals)
+  model; when a pin is skipped, the row's muted line says why through
+  `explainResolution` (see `docs/providers.md`, Defaults internals). The background
+  rows are named for the agent they drive: **History rewriter** (rebase and history
+  clean-up) and **Scribe** (the title and body of a pull or merge request)
 - **Launching popovers** (Start agent, Resolve) call it **Suggested**. It fixes a
   concrete model at launch and says why in one line, from the ladder step that
   decided (`suggestedRouting`): the role default on the default provider, a pin
@@ -59,6 +61,9 @@ escape), the orchestrator model menu (`orchestratorModelPool`), routing availabi
 (`workflowRoutingAvailability` answers `hidden` unless the pick is explicit), turn and
 task fallback, and the Ask and Chat defaults. An explicit choice bypasses it: a role
 or task model set in Settings, a step or agent lock, and a hand pick for one agent.
+A hand pick for one turn or one agent also bypasses the provider list: on a provider
+that is Off it still runs, and the transcript says "Running on Cursor because you
+picked it for this turn. Cursor is Off in Settings." once.
 When no allowed model is left for a role, `resolveRoleRouting` sets
 `noAllowedModel` and the spawn refuses inline instead of running a hidden model. The
 current value always shows in the picker, marked `Hidden in the picker`. The settings

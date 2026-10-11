@@ -237,7 +237,7 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
 
 - **A `Location` is where you are plus how the page was.** Its `place` is the
   board or a session view: lens, open agent, session studio and one target
-  (artifact, run, issue, diff focus, terminal mount). Its `studio` is the app
+  (artifact, run, issue, diff focus, terminal mount, Explore project). Its `studio` is the app
   studio open over that place, if any. Its `focus` is the page state: the open
   drawer, selection, scroll and revealed rows. `locationKey` prints the text
   form used by tests and logs: `board`, `s/{session}`, `s/{session}/branch/comments`,
@@ -327,7 +327,10 @@ never exists on one surface only.
   `⋯` holds copy and rare actions. A task chip opens the task; its unlink
   control appears on pointer hover and keyboard focus, with no kebab.
   Put on a branch lives on the branch row. Link work is the single entry
-  for linking work to a session or workspace.
+  for linking work to a session or workspace. Moving a task is one verb,
+  `Move to`: in the chip's menu (Shift+F10), in the focused issue's
+  `Linked to` row and in the palette; the x on a branch chip says what it
+  does (`Move to session`, or `Take off project / branch`).
 - **One order.** The registry and right click list Open, Act, Copy, then
   lifecycle and destructive verbs, with a rule between groups. Menus and
   visible controls use the same definitions and availability rules.
@@ -466,8 +469,17 @@ the push confirm or any action confirm is open the primary turns secondary so
 the confirm holds the one filled button. A plan drawer reads
 `[Edit] [Approve] [...]`; Approve reads Approving until the approval resolves,
 then closes the drawer on any page and raises one toast, and a plan whose run
-was approved reads Approved with no primary until the run starts the step. Scripts reads `[search] [New script]`. A page with no
-actions draws no `...`.
+was approved reads Approved with no primary until the run starts the step. The
+run page reads `[Stop run] [one primary] [...]` (`RunHeader`): **Stop run**
+only while the run is live (it asks first), the one primary from `runPrimaryOf`
+(**Review plan**, **Answer**, **Resume**, **Continue the run**, **Retry**,
+**Raise spend cap**, **Decide next step**, **Start step 2**, **Start run** or
+**Restore**, and nothing while a step runs or once the run is finished), and an
+overflow that holds View diff, Copy run summary, Pause run (live runs only),
+Step routing, Archive run and Delete run, never **Stop run** or **Approve plan**.
+The title is the only h1 of the page; the trail says `Session > Runs > Run`, the
+Runs crumb or Esc goes back to the list, and no chevron on the page does.
+Scripts reads `[search] [New script]`. A page with no actions draws no `...`.
 
 **Legacy layout.** Settings > App > General > Legacy layout (setting
 `shell.classicBars`, off by default; the stored key kept its name when the
@@ -510,7 +522,7 @@ mounts editors and takes a title.
 
 **The projects section shows which projects a session has materialized.** It
 lives in the session overview and always has the Add project action, even
-before the first mount. Mounted projects show as dense rows. The empty section
+before the first mount. Each mounted project is one band under the section eyebrow, with its worktrees as dense rows indented by one constant (`MOUNT_CHILD_INDENT`) so a branch glyph sits under the project name; merged and closed ones sit behind `Show finished (n)`. The empty section
 is its header with a one-line hint: turns run in the session folder until you
 add a project. Sessions are created lazily
 on the workspace ([concepts.md](concepts.md) → Lazy sessions), and this section
@@ -1793,6 +1805,12 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   `Mark all seen` is a ghost button in the Activity header and shows only
   while an agent is unseen; a waiting question is answered from its Needs you row, never from a
   second `Answer` on the timeline row.
+- **The focused issue page says where the issue lives.** Under the page
+  header (All issues, Unlink) a `Linked to` row (`w-28` label, muted) shows
+  `This session` or the branches; its value opens the same `Move to` menu as
+  the task chip, `This session` and one entry per open branch of the issue's
+  project (`project · branch`, middle cut), the current placement checked.
+  `LinkedToRow` draws it once for every tracker, not inside each detail.
 - **A step chat is one explicit click**, never an automatic redirect.
 - **A lens-wide toggle is its own row**, never inside an empty state's action
   slot.
@@ -1890,13 +1908,29 @@ on you] }`. Any other agent keeps its page, and its pane tab is part of the
   use.** One function feeds both. Context is a drawer, not a destination: the
   palette offers **Show context** (⌘⌥C) and neither lists a Context page.
   Explore is always listed and
-  browses the active working directory as a tree (`role="tree"`), rows 40px
+  browses one project of the session at a time as a tree (`role="tree"`). A
+  project chip under the title (`ExploreProjectChip`) names it, `ledger-core ·
+hl/ledger-rounding`, and with two or more mounts opens a menu grouped by
+  project; a first-lap session reads `ledger-core, project folder` and a
+  session without a project reads `Session scratch folder`. Picking a row is
+  view only: it sets `exploreMountPath` in the session-view slice and never
+  calls `switchBranchMount` or `setSessionActiveMount`, and an agent run never
+  moves it. Until you pick, Explore follows the write destination
+  (`selectExploreMount` in `features/explore`, built on
+  `resolveWriteDestination`). A pick whose worktree lost its files reads
+  "This worktree is gone", and a session with nothing to browse reads "Nothing
+  to browse yet". The pick is captured as the `explore` target of a place
+  (`s/{session}/explore/{mount}`), so Back restores the project and the file
+  drawer together, and the `mount.browseFiles` action (Browse files) opens
+  Explore on a given mount from the Projects rows. Rows are 40px
   high with no gap (`EXPLORE_ROW_PX`): a type glyph, the name with its
   extension kept, a slot for change marks, the size and the age. The size
   hides under a 520px column and the age under 440px. The folders you opened
-  are kept per session in the session-view slice (`exploreExpanded`) and open
-  again when you come back, and a file opened from elsewhere opens the folders
-  above it. The tree has one tab stop; Up and Down move, Right
+  are kept per session and project in the session-view slice (`exploreExpanded`,
+  keyed by session, mount path and folder) and open again when you come back,
+  and a file opened from elsewhere opens the folders above it. The file drawer
+  key holds the project (`explore-file:{mount}:{path}`), so the same relative
+  path in a second project replaces the drawer instead of closing it. The tree has one tab stop; Up and Down move, Right
   opens a folder or enters it, Left closes it or goes to its parent, Home and
   End jump, Enter and Space open the preview of a file or toggle a folder. Above
   120 rows it draws only the rows near the scroll position (`shared/utils/windowRows.ts`, the
@@ -1904,7 +1938,22 @@ on you] }`. Any other agent keeps its page, and its pane tab is part of the
   agent (files), Open in editor or Open, Show in Finder and Copy path. A folder
   offers Open only when an editor can take it (a repository with an editor),
   and a linked folder is listed as a folder; the Rust containment check on
-  read and open stays. Diff and the other branch lenses need a
+  read and open stays. A file opens in a reader drawer whose header reads like
+  the diff drawer's: the type glyph, the file name, the one labelled open
+  button (`openActionOf`), then 28px ghost buttons for Copy path, Wrap lines
+  (code only, `aria-pressed`) and Close. A second row of `Preview | Source`
+  tabs shows only for Markdown and SVG, which open as Preview. The open
+  failure line and its Choose editor link sit under the header. The body starts
+  with the relative path in `text-code`, the folders cut first so the file name
+  stays whole, then the size and age faint; there is no divider and no button
+  in the body. Code and Source render in `SourceView`: a `bg-muted` well that
+  scrolls both ways, a gutter of line numbers drawn by a CSS counter so a copy
+  never holds them, and colours from the shared highlighter. Wrap is off for
+  code and on for prose, and the code choice is kept in
+  `goodboy:explore-wrap:v1`. Past 5,000 lines or a line over 1,000 characters
+  the text stays plain and one line says so. A file that is not an image or a
+  PDF and is not text says "This file is binary. Open it in the app that owns it."
+  Diff and the other branch lenses need a
   branch. Pull request is listed on every code host, GitHub included. A tool
   lens appears once that tool is connected.
 - **A lens surface is reached from the overview or from the trail's
@@ -2024,16 +2073,15 @@ from 384 to 560px and keeps `goodboy:right-drawer-width:v1`. A reader drawer
 `min(1000, page - 16)` over the page, and keeps its own
 `goodboy:reader-drawer-width:v1`. Both are clamped on read and written once when a
 drag ends; a double click on the handle resets to the tier default (400 or 720);
-the two saved widths never bleed. **Expand** (`full`) takes the whole column
-until the plan drawer drops it. `selectDrawerSizing` picks the tier from the
-drawer kind. The pure rule lives in `drawerLayoutOf` (`drawerGeometry.ts`).
+the two saved widths never bleed. There is no third tier: no drawer expands over
+the whole column, the reader tier is the large one. `selectDrawerSizing` picks
+the tier from the drawer kind. The pure rule lives in `drawerLayoutOf` (`drawerGeometry.ts`).
 
 **One push rule.** `room = main - 16 - 48 - 560`: the pane (the `DrawerColumn`'s
 own width) minus the drawer's two 8px insets, the page's gutters and the 560px
 the page keeps. The drawer pushes only while the page container keeps 560 plus
 its 48px of gutters and `room` covers the drawer's saved width; it is never
-squeezed. Otherwise it lies over the page at `min(saved, main - 16)`. Expanded
-always lies over. The mode reads the committed width, never a drag in progress,
+squeezed. Otherwise it lies over the page at `min(saved, main - 16)`. The mode reads the committed width, never a drag in progress,
 and while it pushes the handle stops at `min(tier max, room)`, so a drag never
 flips the mode. Once a drawer pushes at some width it pushes at every wider one.
 The column and measure pages are centred, and the column slides left to
@@ -2078,7 +2126,7 @@ drawer repeats its own name in the label. The one exception is the Context
 drawer in its versions view, whose control reads `Back to current` and goes
 back to the current view instead of closing. The Close button is a 28px target
 (`size-7`) with the 14px glyph, and so is every utility in the header (copy,
-open on its page, expand); a header holds at most one labelled button (Stop,
+open on its page); a header holds at most one labelled button (Stop,
 Run again, Open in Files, New) and utilities share one icon tone. The count slot
 is for a count or a version, never for the session title: Ask's header reads
 `Ask`.
@@ -2127,6 +2175,8 @@ card 320, session switcher 420. `regressions/popover-widths.test.ts` counts the
 off-scale widths a floating surface declares per file and never lets one
 grow.
 
+**The update card is never clipped.** It is a `Popover` in the popover layer, anchored above the Goodboy chip with 12px to the window edge and never wider than `min(384px, window - 24px)`: it carries the title `<version> is ready` and the Later, What's new and Restart now actions, no lead and no bullets. A `fixed` card inside the sidebar would resolve against the sidebar, which has a transform and `overflow-hidden`.
+
 **An object that belongs to where you are opens in a drawer; the page changes
 only by an explicit command.** A plan read from the planner that wrote it (the
 row in its chat, in its Brief, or a plan row in Activity) stays on the agent
@@ -2135,7 +2185,7 @@ sits beside it. The same goes for every artifact kind read from its work: a
 report or a wireframe row in Activity, and a report or wireframe chip in a
 transcript, open the same `artifact-document` drawer (`DrawerHost` hands a
 report or a wireframe to `ArtifactReadingDrawer`, which shows the report or
-the wireframe stage, with Open in Artifacts and Expand). **A plan always opens
+the wireframe stage, with Open in Artifacts as its one header action). **A plan always opens
 in the drawer** (`openPlanDrawer`): the object menu's **Open**, the plan view
 inside Ask, a plan row in the palette, a plan hit in search and the plan chip in
 a chat open it over the page you are on, unless you are already on the
@@ -2147,14 +2197,13 @@ the Artifacts page from a drawer is a command of its own, **Open in Artifacts**
 in the drawer header, and it is the only page change. The `artifact-document` kind
 carries `{ artifactId, revision }`; `revision` is `null` for the current
 version and a number for an earlier one read from the revisions. It is the one
-drawer that can expand: it opens at 560px (`sizing="half"` on
-`DrawerColumn`, with no resize handle, narrowed to the room the page leaves
-when that is less, so the page keeps its 560px and the drawer still pushes),
-**Expand** takes the whole column and
-lies over the page (`sizing="full"`), and Expand toggles back. The choice is
-kept per session in `documentDrawerExpanded` and is forgotten when the session
-is archived. The header holds the title, `vN`, the state chip, **Run plan**,
-Open in Artifacts, Expand and Close; Escape closes it. While the planner
+drawer in the reader tier: it opens at 720px and you drag its edge from 480
+to 1000 (a double click resets it to 720), so there is no Expand. The body
+stays on the 720 reading measure whatever the width. The header holds the
+title, **Open in Artifacts** and **Copy markdown** as two 28px icon buttons,
+and Close; the second row holds the state chip, `vN`, the parts, **Edit** and
+**Run plan**. **Copy markdown** is absent when the plan has no copy action.
+Escape closes it. While the planner
 revises the plan the body is dimmed and Run plan waits.
 
 The `ask` kind carries no payload: the thread on screen lives in the `ask`
@@ -2364,7 +2413,12 @@ method the repository forbids shown disabled with its reason
 (`Turned off in payments-api`). Merging raises one plain `info` toast with no
 Follow. Push, Publish and Retry go through the existing publish
 machinery: a frozen preview in line under the header (`PushBanner`, the only
-one), drift and the result per thread. Only the header pushes: a thread has no
+push one), drift and the result per thread. Under it sits the rebase job banner
+(`JobBanner`, `features/history/JobBanner`): one strip for a rebase
+on main, on every tab of the page, which replaces the red line that used to
+tell a stop. It reads the run of the branch (`historyRuns`), never local state,
+and its stops carry only the actions that exist today (Dismiss, Refresh, Open
+terminal, Open providers, Check again, Undo rewrite, See what it did). Only the header pushes: a thread has no
 Push, Push again or Sync button. With an accepted thread opened in Comments the
 primary reads `Push 1` (it counts threads) and pushes just that fix
 (`preparePublication` with `isolated`, `isolatedPushOf` unchanged); the preview
@@ -2843,7 +2897,9 @@ operation when focus is outside a text field or terminal. Dismissing the
 toast does not discard the operation. An Undo that fails stays retryable.
 
 Session unlink snapshots all placements of one task, including every branch.
-Take off snapshots the session placement it may create too. Undo compares the
+A move (`Move to`, Take off, Put on a branch) is one operation: it replaces the
+rows of that task in one write, so branch to branch is one Undo, and it
+snapshots the session placement it may create too. Undo compares the
 current placements with the operation's expected result and restores the
 snapshot in one guarded database transaction. A later re-link or changed row
 makes Undo do nothing and say why. Other tasks and projects stay untouched.
@@ -2884,5 +2940,6 @@ The title reaches assistive tech through the toast card itself, which is a
 polite `status` region for every non-warning toast. Code that cannot call a
 hook builds the same params: `planRunToast` returns the Follow params for Run
 plan and marks the agent. Starts that already land on their page raise nothing
-new: the Runs page start navigates to the run (`useAgentsSection`), so
-`WorkflowRunStartButton` toasts only for a start that does not.
+new: the Start run primary of the run header navigates to the run page
+(`RunPrimaryAction`), so `WorkflowRunStartButton` toasts only for a start that
+does not.

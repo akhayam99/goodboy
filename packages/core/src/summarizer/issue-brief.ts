@@ -23,9 +23,11 @@ No markdown, no code fences, no preamble, no explanation. Output only the JSON o
 const ACCEPTANCE_LIMIT = 5;
 
 export type IssueBriefInput = {
-  readonly identifier: string;
-  readonly title: string;
-  readonly body: string;
+  readonly items: ReadonlyArray<{
+    readonly identifier: string;
+    readonly title: string;
+    readonly body: string;
+  }>;
 };
 
 export type IssueBriefDeps = TaskModelPreference & {
@@ -65,15 +67,29 @@ type ParseResult =
   | { readonly kind: 'ready'; readonly brief: IssueBrief }
   | { readonly kind: 'failed'; readonly failure: IssueBriefFailure };
 
-export const buildIssueBriefUserPrompt = ({ identifier, title, body }: IssueBriefInput): string => {
-  const text = body.trim();
+type PromptParams = IssueBriefInput;
+
+export const buildIssueBriefUserPrompt = ({ items }: PromptParams): string => {
+  if (items.length < 1 || items.length > 5) {
+    throw new Error('A brief needs one to five items.');
+  }
+  const blocks = items.map(({ identifier, title, body }) =>
+    [
+      `IDENTIFIER: ${identifier.trim()}`,
+      `TITLE: ${title.trim()}`,
+      '',
+      'TEXT:',
+      body.trim() === '' ? '(title only; no text)' : body.trim(),
+    ].join('\n'),
+  );
   return [
-    `IDENTIFIER: ${identifier.trim()}`,
-    `TITLE: ${title.trim()}`,
+    blocks.join('\n\n'),
     '',
-    'TEXT:',
-    text === '' ? '(no text)' : text,
-    '',
+    ...(items.length > 1
+      ? [
+          'Write one title of at most 60 characters and one goal of one to three sentences covering all items.',
+        ]
+      : []),
     'Write the brief following your instructions. Output only the JSON object.',
   ].join('\n');
 };
@@ -107,7 +123,7 @@ export const parseIssueBrief = ({ text }: ParseParams): ParseResult => {
   if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
     return { kind: 'failed', failure: 'not_json' };
   }
-  const record = parsed as Record<string, unknown>;
+  const record: Record<string, unknown> = { ...parsed };
   const title = singleLine({ text: readString({ value: record['title'] }) });
   if (!isProse({ text: title })) {
     return { kind: 'failed', failure: 'missing_title' };
@@ -133,6 +149,13 @@ export const generateIssueBrief = async ({
   deps,
   input,
 }: GenerateParams): Promise<IssueBriefResult> => {
+  if (input.items.length < 1 || input.items.length > 5) {
+    return {
+      kind: 'failed',
+      failure: 'provider_failed',
+      detail: 'A brief needs one to five items.',
+    };
+  }
   const now = deps.nowMs ?? Date.now;
   const startedAt = now();
   let result: Awaited<ReturnType<typeof runAuxOneShot>>;

@@ -9,6 +9,11 @@ use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Runtime, State};
 
+use crate::pty_ring::{
+    empty_snapshot, new_shared_ring, push_shared, snapshot_of, ExitedStore, OutputSnapshot,
+    SharedRing,
+};
+
 struct TerminalSession {
     spawn_id: String,
     writer: Box<dyn Write + Send>,
@@ -21,6 +26,7 @@ struct TerminalOutputPayload {
     #[serde(rename = "sessionId")]
     session_id: String,
     data: String,
+    offset: u64,
 }
 
 #[derive(Serialize, Clone)]
@@ -37,10 +43,11 @@ struct TerminalEntry {
     slot: SessionSlot,
     cwd: String,
     pid: Option<u32>,
+    ring: SharedRing,
 }
 
 #[derive(Default)]
-pub struct TerminalRegistry(Arc<Mutex<HashMap<String, TerminalEntry>>>);
+pub struct TerminalRegistry(Arc<Mutex<HashMap<String, TerminalEntry>>>, Arc<ExitedStore>);
 
 impl TerminalRegistry {
     pub fn new() -> Self {
@@ -217,6 +224,7 @@ pub async fn terminal_open(
     let request = TerminalSpawnRequest {
         app,
         registry: Arc::clone(&registry.0),
+        exited: Arc::clone(&registry.1),
         session_id,
         cwd,
         cols,
@@ -230,6 +238,7 @@ pub async fn terminal_open(
 struct TerminalSpawnRequest<R: Runtime> {
     app: AppHandle<R>,
     registry: Arc<Mutex<HashMap<String, TerminalEntry>>>,
+    exited: Arc<ExitedStore>,
     session_id: String,
     cwd: Option<String>,
     cols: u16,
@@ -240,6 +249,7 @@ fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), Te
     let TerminalSpawnRequest {
         app,
         registry: registry_arc,
+        exited,
         session_id: session_id_clone,
         cwd,
         cols,
@@ -311,6 +321,8 @@ fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), Te
         child,
     })));
 
+    let ring = new_shared_ring();
+    exited.forget(&session_id_clone);
     registry_arc
         .lock()
         .map_err(|_| TerminalError::Poisoned)?
@@ -320,6 +332,7 @@ fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), Te
                 slot: Arc::clone(&slot),
                 cwd: effective_cwd,
                 pid,
+                ring: Arc::clone(&ring),
             },
         );
 
@@ -334,12 +347,14 @@ fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), Te
             match reader.read(&mut buf) {
                 Ok(0) | Err(_) => break,
                 Ok(n) => {
+                    let offset = push_shared(&ring, &buf[..n]);
                     let encoded = STANDARD.encode(&buf[..n]);
                     let _ = app_r.emit(
                         "terminal-output",
                         TerminalOutputPayload {
                             session_id: sid.clone(),
                             data: encoded,
+                            offset,
                         },
                     );
                 }
@@ -365,6 +380,11 @@ fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), Te
             }
         };
 
+        exited.keep(&sid, Arc::clone(&ring), exit_code);
+        crate::proc::ledger::forget(&spawn_id);
+        if let Ok(mut map) = registry_r.lock() {
+            map.remove(&sid);
+        }
         let _ = app_r.emit(
             "terminal-exit",
             TerminalExitPayload {
@@ -372,11 +392,6 @@ fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), Te
                 exit_code,
             },
         );
-
-        crate::proc::ledger::forget(&spawn_id);
-        if let Ok(mut map) = registry_r.lock() {
-            map.remove(&sid);
-        }
     });
 
     Ok(())
@@ -387,6 +402,31 @@ pub async fn terminal_list_live(
     registry: State<'_, TerminalRegistry>,
 ) -> Result<Vec<LiveTerminal>, TerminalError> {
     registry.list_live()
+}
+
+#[tauri::command]
+pub async fn terminal_snapshot(
+    registry: State<'_, TerminalRegistry>,
+    session_id: String,
+) -> Result<OutputSnapshot, TerminalError> {
+    snapshot_session(&registry, &session_id)
+}
+
+fn snapshot_session(
+    registry: &TerminalRegistry,
+    session_id: &str,
+) -> Result<OutputSnapshot, TerminalError> {
+    let ring = {
+        let map = registry.0.lock().map_err(|_| TerminalError::Poisoned)?;
+        map.get(session_id).map(|entry| Arc::clone(&entry.ring))
+    };
+    if let Some(ring) = ring {
+        return Ok(snapshot_of(&ring, None));
+    }
+    Ok(registry
+        .1
+        .snapshot(session_id)
+        .unwrap_or_else(empty_snapshot))
 }
 
 #[tauri::command]
@@ -482,6 +522,7 @@ mod tests {
                 slot,
                 cwd: "/worktrees/api".to_string(),
                 pid: Some(4321),
+                ring: new_shared_ring(),
             },
         );
 
@@ -599,6 +640,7 @@ mod tests {
                 }))),
                 cwd: "/".to_string(),
                 pid: None,
+                ring: new_shared_ring(),
             },
         );
 
@@ -630,6 +672,7 @@ mod tests {
         spawn_terminal(TerminalSpawnRequest {
             app: app.handle().clone(),
             registry: Arc::clone(&registry.0),
+            exited: Arc::clone(&registry.1),
             session_id: "session-7::t1".to_string(),
             cwd: Some(cwd.clone()),
             cols: 80,
@@ -650,6 +693,51 @@ mod tests {
 
         crate::proc::ledger::test_support::assert_row_gone(&cwd);
         assert!(registry.0.lock().unwrap().is_empty());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn terminal_snapshot_returns_the_tail_of_a_busy_pty_with_its_final_line() {
+        let dir = crate::proc::ledger::test_support::scratch_dir("terminal-snapshot");
+        let cwd = dir.to_string_lossy().into_owned();
+        let app = tauri::test::mock_app();
+        let registry = TerminalRegistry::new();
+        spawn_terminal(TerminalSpawnRequest {
+            app: app.handle().clone(),
+            registry: Arc::clone(&registry.0),
+            exited: Arc::clone(&registry.1),
+            session_id: "session-9::t1".to_string(),
+            cwd: Some(cwd),
+            cols: 80,
+            rows: 24,
+        })
+        .expect("open the terminal");
+        let slot = {
+            let map = registry.0.lock().unwrap();
+            Arc::clone(&map.get("session-9::t1").unwrap().slot)
+        };
+        let command =
+            "i=1; while [ $i -le 600 ]; do printf 'chunk-%04d-%0600d\\n' $i 0; i=$((i+1)); done; echo FINAL-LINE\nexit 7\n";
+        slot.lock()
+            .unwrap()
+            .as_mut()
+            .unwrap()
+            .writer
+            .write_all(command.as_bytes())
+            .unwrap();
+        let mut snapshot = snapshot_session(&registry, "session-9::t1").unwrap();
+        for _ in 0..200 {
+            if snapshot.exit_code.is_some() {
+                break;
+            }
+            thread::sleep(std::time::Duration::from_millis(50));
+            snapshot = snapshot_session(&registry, "session-9::t1").unwrap();
+        }
+        let text = String::from_utf8_lossy(&STANDARD.decode(&snapshot.data).unwrap()).into_owned();
+        assert!(text.contains("FINAL-LINE"));
+        assert!(snapshot.offset > 0);
+        assert_eq!(snapshot.exit_code, Some(7));
         let _ = std::fs::remove_dir_all(&dir);
     }
 

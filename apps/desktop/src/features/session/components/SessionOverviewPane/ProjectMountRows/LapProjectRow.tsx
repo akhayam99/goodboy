@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Chip, Notice } from '@goodboy/ui';
+import { Band, Button, Chip, Notice } from '@goodboy/ui';
 import type { Project, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { sessionPlace } from '../../../../../store/slices/navigation/place';
@@ -7,6 +7,7 @@ import { changedCount } from '../../../../../shared/lib/gitStatus';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { PublishPanel } from '../../../../bootstrap/PublishPanel';
 import { MountActionsMenu } from './MountActionsMenu';
+import { MOUNT_CHILD_PAD, MOUNT_ROW_HEIGHT, MOUNT_ROW_PAD } from './mountGrid';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -28,8 +29,16 @@ export const LapProjectRow = ({ sessionId, project, stage }: Props) => {
   const isPublished = isOnRemote || stage === 'moving';
 
   return (
-    <div className="col-span-full flex min-w-0 flex-col gap-0.5">
-      <div className="flex min-h-8 min-w-0 items-center gap-2 px-2">
+    <Band className="gap-0.5">
+      <div
+        data-slot="mount-header"
+        style={{
+          height: MOUNT_ROW_HEIGHT,
+          paddingLeft: MOUNT_ROW_PAD,
+          paddingRight: MOUNT_ROW_PAD,
+        }}
+        className="flex min-w-0 items-center gap-2"
+      >
         <CONCEPT_ICONS.projectFolder
           size={ICON_SIZE.control}
           aria-hidden
@@ -49,7 +58,9 @@ export const LapProjectRow = ({ sessionId, project, stage }: Props) => {
       <div
         role="group"
         aria-label={`${project.name} project folder`}
-        className="flex min-h-8 min-w-0 items-center gap-2 rounded-md py-1 pr-1 pl-5 hover:bg-hover"
+        data-slot="mount-child"
+        style={{ paddingLeft: MOUNT_CHILD_PAD, paddingRight: MOUNT_ROW_PAD }}
+        className="flex min-h-9 min-w-0 items-center gap-2 rounded-md py-1 hover:bg-hover"
       >
         <CONCEPT_ICONS.projectFolder
           size={ICON_SIZE.row}
@@ -76,7 +87,7 @@ export const LapProjectRow = ({ sessionId, project, stage }: Props) => {
         </div>
       </div>
       {isPublishing && !isPublished ? (
-        <div className="pl-5">
+        <div style={{ paddingLeft: MOUNT_CHILD_PAD, paddingRight: MOUNT_ROW_PAD }}>
           <PublishPanel
             project={project}
             primaryLabel={changed !== null && changed > 0 ? 'Publish and move my work' : 'Publish'}
@@ -102,6 +113,6 @@ export const LapProjectRow = ({ sessionId, project, stage }: Props) => {
       {notice === null ? null : (
         <Notice tone="warning" placement="inline" role="alert" title={notice} />
       )}
-    </div>
+    </Band>
   );
 };

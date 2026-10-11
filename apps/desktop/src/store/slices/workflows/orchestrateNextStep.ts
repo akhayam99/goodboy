@@ -31,8 +31,6 @@ import {
   orchestratorModelPool,
   roleModelSetMenu,
   parseWorkflowRoutingProposal,
-  recommendedModelForRole,
-  resolveRoleRouting,
   resolveStoredModelSelection,
   resolveWorkflowRouting,
   devWarn,
@@ -40,7 +38,6 @@ import {
   runsForWorkflowRun,
   serializeRunSummary,
   type BackgroundAttempt,
-  type HiddenModels,
   type OrchestratorClientResult,
   type OrchestratorInput,
   type OrchestratorModelOption,
@@ -59,7 +56,8 @@ import {
 import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
 import { uniqueStepName } from '../../../features/workflows/uniqueStepName';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
-import { configuredRolePick } from '../workflowRouting/configuredRolePick';
+import { roleDefaultsFor } from './roleDefaultsFor';
+import { rolePicks } from '../workflowRouting/rolePicks';
 import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAvailability';
 import { tauriDatabase } from '../../../shared/lib/db';
 import {
@@ -89,8 +87,7 @@ import { admitWorkflowRun } from './workflowPlanApproval';
 import { waitForSessionSummarizer } from './summarizerGate';
 import { WORKFLOW_BLOCK_COPY } from '../../../features/workflows/blockCopy';
 import type { GetFn, SetFn } from './types';
-import { autoLimitContext } from '../providerLimits/autoLimitContext';
-import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
+import { selectTaskModel } from '../models/selectTaskModel';
 import { sessionById } from '../sessions/sessionIndex';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
 import { resolveWorkflowHeadroom } from './resolveWorkflowHeadroom';
@@ -114,45 +111,6 @@ const setDeciding = ({ set, workflowRunId, isDeciding }: DecidingParams): void =
     orchestratingWorkflowRuns: { ...state.orchestratingWorkflowRuns, [workflowRunId]: isDeciding },
   }));
 };
-
-type RoleDefaultsParams = {
-  readonly provider: ProviderId;
-  readonly roleModels: RoleModelPreferences | null;
-  readonly menu: ReadonlyArray<OrchestratorModelOption>;
-  readonly hidden: HiddenModels;
-};
-
-const roleDefaultsFor = ({
-  provider,
-  roleModels,
-  menu,
-  hidden,
-}: RoleDefaultsParams): ReadonlyArray<OrchestratorRoleDefault> =>
-  SELECTABLE_AGENT_ROLES.filter((role) => ROLE_REGISTRY[role].workflowEligible).map((role) => {
-    const routing = resolveRoleRouting({
-      role,
-      prefs: roleModels,
-      auto: { defaultProvider: provider, hidden },
-    });
-    if (routing.isOverride === true) {
-      const setMenu = roleModelSetMenu({ menu, role, prefs: roleModels });
-      return {
-        role,
-        provider: routing.provider,
-        model: routing.model,
-        effort: routing.effort,
-        ...(setMenu !== null && {
-          models: setMenu.map((option) => ({ provider: option.provider, model: option.model })),
-        }),
-      };
-    }
-    return {
-      role,
-      provider,
-      model: recommendedModelForRole({ role, provider, prefs: roleModels, hidden }),
-      effort: routing.effort,
-    };
-  });
 
 type TaskProfileParams = {
   readonly decision: WorkflowRoutingDecision;
@@ -650,13 +608,10 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         session.providerPreference.defaultProvider) as ProviderId;
       const workspaceRoleModels =
         selectResolvedSettings({ state: get(), sessionId })?.roleModels ?? null;
-      const taskModel = resolveLimitedTaskModel({
-        limitContext: autoLimitContext({ state: get() }),
+      const taskModel = selectTaskModel({
+        state: get(),
+        sessionId,
         task: 'workflow_orchestrator',
-        preferences: selectResolvedSettings({ state: get(), sessionId })?.taskModels,
-        workspaceDefaultProviderId: selectResolvedSettings({ state: get(), sessionId })
-          ?.defaultProviderOverride,
-        sessionDefaultProviderId: defaultProvider,
       });
       const pinnedRouting =
         run.orchestratorRouting != null && isRoutingModelKnown(run.orchestratorRouting)
@@ -705,10 +660,10 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         hidden: selectHiddenModels({ state: get() }),
       });
       const roleDefaults = roleDefaultsFor({
-        provider: defaultProvider,
+        state: get(),
+        sessionId,
         roleModels: workspaceRoleModels,
         menu: modelMenu,
-        hidden: selectHiddenModels({ state: get() }),
       });
       const wastedReplies: Array<OrchestratorClientResult> = [];
       const decideInput: OrchestratorInput = {
@@ -874,11 +829,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       }
       if (decision.action === 'next') {
         const proposed = decision.step;
-        const compiled = resolveRoleRouting({
-          role: proposed.role,
-          prefs: null,
-          auto: { defaultProvider, hidden: selectHiddenModels({ state: get() }) },
-        });
         const parsedProposal = parseWorkflowRoutingProposal({
           fields: proposed,
           emittingProvider: routing.providerId,
@@ -894,18 +844,21 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
             prefs: workspaceRoleModels,
           }),
         });
+        const picks = rolePicks({
+          state: get(),
+          sessionId,
+          role: proposed.role,
+          profile:
+            parsedProposal.kind === 'valid'
+              ? parsedProposal.proposal.profile
+              : parsedProposal.profile,
+          providerPool: run.providerPool ?? null,
+        });
         const resolution = resolveWorkflowRouting({
           agentLock: null,
           stepLock: null,
           proposal: routingProposal,
-          roleDefault: configuredRolePick({
-            role: proposed.role,
-            roleModels: workspaceRoleModels,
-            profile:
-              parsedProposal.kind === 'valid'
-                ? parsedProposal.proposal.profile
-                : parsedProposal.profile,
-          }),
+          roleDefault: picks.roleDefault,
           sessionDefault:
             session.modelOverride == null
               ? null
@@ -914,11 +867,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
                   model: session.modelOverride,
                   effort: session.effort ?? null,
                 },
-          kindDefault: {
-            provider: compiled.provider,
-            model: compiled.model,
-            effort: compiled.effort,
-          },
+          kindDefault: picks.kindDefault,
           availability,
           contextEstimate: null,
           missingProposal: 'configured_default',

@@ -108,6 +108,7 @@ check_related_tests() {
   packages=$(changed_files | grep -E '^packages/[^/]+/src/.*\.tsx?$')
   for name in $(echo "$packages" | cut -d/ -f2 | sort -u); do
     [ -z "$name" ] && continue
+    [ -e "packages/$name/node_modules/.bin/vitest" ] || continue
     echo "$packages" | grep "^packages/$name/" | sed "s#^packages/$name/##" | tr '\n' '\0' | xargs -0 pnpm --filter "@goodboy/$name" exec vitest related --run --passWithNoTests --maxWorkers="$WORKERS" || status=1
   done
   return $status

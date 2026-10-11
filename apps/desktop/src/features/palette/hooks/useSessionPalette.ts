@@ -9,7 +9,11 @@ import {
 } from '../../../store';
 import { usePendingAction } from '../../../shared/hooks/usePendingAction';
 import { WORKFLOW_RUN_KIND, type WorkflowRunFacts } from '../../actions/kinds/workflowRun';
-import type { AgentActionTarget, PullRequestActionTarget } from '../../actions/types';
+import type {
+  AgentActionTarget,
+  PullRequestActionTarget,
+  TaskActionTarget,
+} from '../../actions/types';
 import { openLens } from '../../session/openLens';
 import { recordNextStepOutcome } from '../../suggestions/useNextStepOutcomes';
 import { useSessionSuggestions } from '../../suggestions/useSessionSuggestions';
@@ -36,6 +40,7 @@ export type SessionPalette = {
   readonly run: PaletteRun | null;
   readonly liveAgent: PaletteLiveAgent | null;
   readonly pullRequest: PullRequestActionTarget | null;
+  readonly task: TaskActionTarget | null;
 };
 
 export const useSessionPalette = ({ session }: Params): SessionPalette => {
@@ -58,6 +63,7 @@ export const useSessionPalette = ({ session }: Params): SessionPalette => {
   const sessionWorkflows = useAppStore((s) => s.sessionWorkflows[sessionId] ?? EMPTY_ARRAY);
   const openQuestions = useSessionOpenQuestions(sessionId);
   const prNumber = useAppStore((s) => s.sessionGithub[sessionId]?.pr?.number ?? null);
+  const focusedTask = useAppStore((s) => s.focusedExternalTask[sessionId] ?? null);
   const stageInfo = useSessionStageInfo(session);
   const suggestions = useSessionSuggestions({ session, agents });
   const actionsFor = useSuggestionActions({
@@ -135,5 +141,16 @@ export const useSessionPalette = ({ session }: Params): SessionPalette => {
             name: liveAgent.name ?? 'agent',
           },
     pullRequest: prNumber === null ? null : { kind: 'pullRequest', sessionId, prNumber },
+    task:
+      focusedTask === null
+        ? null
+        : {
+            kind: 'task',
+            sessionId,
+            provider: focusedTask.provider,
+            externalId: focusedTask.externalId,
+            projectId: focusedTask.projectId,
+            branch: null,
+          },
   };
 };

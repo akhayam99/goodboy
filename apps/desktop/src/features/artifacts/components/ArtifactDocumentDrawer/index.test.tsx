@@ -106,14 +106,28 @@ describe('plan document drawer header', () => {
     );
   });
 
-  it('puts the one primary, Edit and the overflow on the second row', () => {
+  it('puts the one primary and Edit on the second row, with no overflow', () => {
     seedAndRender({ run: 'held' });
 
     const toolbar = screen.getByTestId('plan-drawer-toolbar');
     expect(within(toolbar).getByTestId('plan-primary').textContent).toBe('Approve');
     expect(within(toolbar).getByRole('button', { name: 'Edit' })).toBeDefined();
-    expect(within(toolbar).getByRole('button', { name: 'More plan actions' })).toBeDefined();
-    expect(toolbarButtons()).toEqual(['Edit', 'Approve', 'More plan actions']);
+    expect(screen.queryByRole('button', { name: 'More plan actions' })).toBeNull();
+    expect(toolbarButtons()).toEqual(['Edit', 'Approve']);
+  });
+
+  it('holds two icon buttons between the title and Close, and no Expand', () => {
+    seedAndRender({ run: 'held' });
+
+    const frame = screen.getByRole('region', { name: 'Retry-safe webhook credits' });
+    const titleRow = frame.querySelector('header > div');
+    const names = Array.from(titleRow?.querySelectorAll('button') ?? []).map((button) =>
+      button.getAttribute('aria-label'),
+    );
+    expect(names).toEqual(['Open in Artifacts', 'Copy markdown', 'Close']);
+    expect(screen.queryByRole('button', { name: 'Expand' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Collapse' })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: 'Expand' })).toBeNull();
   });
 
   it('has exactly one filled button for a plan a run holds for', () => {
@@ -166,15 +180,14 @@ describe('plan document drawer header', () => {
     expect(screen.queryByTestId('plan-bar-approve')).toBeNull();
   });
 
-  it('moves to Artifacts only through Open in Artifacts in the overflow', () => {
+  it('moves to Artifacts only through Open in Artifacts in the header', () => {
     seedPlanDrawer();
     const navigations: unknown[] = [];
     useAppStore.setState({ navigate: (request) => navigations.push(request) });
     renderDrawer();
     expect(navigations).toEqual([]);
 
-    fireEvent.click(screen.getByRole('button', { name: 'More plan actions' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Open in Artifacts' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open in Artifacts' }));
 
     expect(navigations).toEqual([
       {
@@ -187,36 +200,20 @@ describe('plan document drawer header', () => {
     ]);
   });
 
-  it('expands to one row and collapses again, remembered for the session', () => {
-    seedAndRender();
+  it('keeps the body on the reading measure in the one layout', () => {
+    seedPlanDrawer();
+    renderDrawer();
 
-    fireEvent.click(screen.getByRole('button', { name: 'More plan actions' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Expand' }));
-    expect(useAppStore.getState().documentDrawerExpanded[PLAN_FIXTURE_SESSION]).toBe(true);
+    const column = screen.getByTestId('plan-drawer').closest('[data-page-column]');
+    expect(column?.getAttribute('data-width')).toBe('measure');
     expect(
       screen
         .getByRole('region', { name: 'Retry-safe webhook credits' })
         .querySelector('[data-drawer-toolbar]'),
-    ).toBeNull();
-
-    fireEvent.click(screen.getByRole('button', { name: 'More plan actions' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Collapse' }));
-    expect(useAppStore.getState().documentDrawerExpanded[PLAN_FIXTURE_SESSION]).toBe(false);
+    ).not.toBeNull();
   });
 
-  it('centres the body on the reading measure only while expanded', () => {
-    seedPlanDrawer();
-    renderDrawer();
-    expect(screen.getByTestId('plan-drawer').closest('[data-page-column]')).toBeNull();
-
-    fireEvent.click(screen.getByRole('button', { name: 'More plan actions' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Expand' }));
-
-    const column = screen.getByTestId('plan-drawer').closest('[data-page-column]');
-    expect(column?.getAttribute('data-width')).toBe('measure');
-  });
-
-  it('copies the plan from the overflow', async () => {
+  it('copies the plan from its header icon', async () => {
     const writeText = vi.fn(async () => undefined);
     Object.defineProperty(globalThis.navigator, 'clipboard', {
       configurable: true,
@@ -224,8 +221,7 @@ describe('plan document drawer header', () => {
     });
     seedAndRender();
 
-    fireEvent.click(screen.getByRole('button', { name: 'More plan actions' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Copy markdown' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Copy markdown' }));
 
     await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
   });
@@ -777,7 +773,7 @@ describe('editing the plan by hand in the drawer', () => {
     const version = screen.getByTestId('plan-drawer-version');
     expect(version.textContent).toBe('v2 · v3');
     expect(version.getAttribute('title')).toBe('Version 3 is available');
-    expect(toolbarButtons()).toEqual(['Cancel', 'Save', 'More plan actions']);
+    expect(toolbarButtons()).toEqual(['Cancel', 'Save']);
     fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
     expect(screen.queryByRole('textbox')).toBeNull();
     expect(screen.getByTestId('plan-drawer-version').textContent).toBe('v2');

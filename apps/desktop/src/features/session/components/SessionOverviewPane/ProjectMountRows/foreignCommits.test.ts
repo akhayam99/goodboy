@@ -37,7 +37,7 @@ const rowOf = (overrides: Partial<MountRowView> = {}): MountRowView =>
     series: null,
     observation: null,
     observedBranchHolder: null,
-    isCompleted: false,
+    isFinished: false,
     ...overrides,
   }) as MountRowView;
 

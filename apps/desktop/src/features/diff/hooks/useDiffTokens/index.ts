@@ -5,7 +5,7 @@ import {
   languageForPath,
   type SyntaxLang,
   type SyntaxToken,
-} from '../../lib/highlight';
+} from '../../../../shared/lib/highlight';
 
 export type DiffTokenMap = ReadonlyMap<string, ReadonlyArray<SyntaxToken>>;
 

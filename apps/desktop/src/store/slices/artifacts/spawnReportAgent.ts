@@ -1,4 +1,3 @@
-import { resolveRoleRouting } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type {
   AgentEffort,
@@ -20,13 +19,12 @@ import { sessionGoalText } from '../../../features/artifacts/sessionGoalText';
 import { collectReportDiffEvidence } from '../../../features/reports/collectReportDiffEvidence';
 import { REPORT_TYPE_LABEL, type ReportType } from '../../../features/reports/reportTypes';
 import { WIREFRAME_SCOUT_DEADLINE_MS } from '../../../features/wireframes/wireframeScoutReports';
-import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
-import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAvailability';
 import type { SpawnFocus } from '../session-view/spawnFocus';
 import type { ArtifactRunMount } from './artifactScoutRun';
 import type { GetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
-import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { selectResolution } from '../models/selectResolution';
+import { usableArtifactProviders } from './usableArtifactProviders';
 
 const REPORT_SCOUT_PENDING_NOTE = 'the scouts had not reported yet when this row was written';
 
@@ -54,29 +52,6 @@ export type SpawnReportAgentParams = {
 
 type State = ReturnType<GetFn>;
 
-type UsableParams = {
-  readonly state: State;
-  readonly sessionId: SessionId;
-};
-
-const usableProviders = ({ state, sessionId }: UsableParams): ReadonlyArray<ProviderId> => {
-  const availability = workflowAvailabilitySnapshot({
-    providers: state.providers ?? [],
-    cooldowns: state.providerCooldowns ?? {},
-    alerts: state.budgetAlerts ?? [],
-    hidden: selectHiddenModels({ state: state }),
-    sessionId,
-    isRunBudgetBlocked: false,
-    nowMs: Date.now(),
-    ...workspacePolicyAvailability({ state, sessionId }),
-  });
-  return availability.connectedProviders.filter(
-    (provider) =>
-      !availability.coolingDownProviders.includes(provider) &&
-      !availability.budgetBlockedProviders.includes(provider),
-  );
-};
-
 type RoutingParams = {
   readonly state: State;
   readonly sessionId: SessionId;
@@ -91,21 +66,17 @@ export const resolveReportRouting = ({
   if (picked !== null) {
     return picked;
   }
-  const session = sessionById(state.sessions, sessionId) ?? null;
-  const overrides =
-    session === null ? null : (state.workspaceOverrides?.[session.workspaceId] ?? null);
-  const usable = usableProviders({ state, sessionId });
-  const defaultProvider =
-    overrides?.defaultProviderId ??
-    session?.providerPreference?.defaultProvider ??
-    usable[0] ??
-    'anthropic';
-  const role = resolveRoleRouting({
-    role: 'report',
-    prefs: overrides?.roleModels,
-    auto: { defaultProvider, ...(usable.length > 0 && { connected: usable }) },
+  const resolution = selectResolution({
+    state,
+    sessionId,
+    slot: { kind: 'role', id: 'report' },
+    providers: usableArtifactProviders({ state, sessionId }),
   });
-  return { provider: role.provider, model: role.model, effort: role.effort };
+  return {
+    provider: resolution.provider,
+    model: resolution.model,
+    effort: resolution.effort ?? 'medium',
+  };
 };
 
 const withScoutNote = ({
@@ -189,7 +160,7 @@ export const spawnReportAgent = (get: GetFn) => {
       })),
       probe: async () => [],
     });
-    const isBudgetBlocked = usableProviders({ state, sessionId }).length === 0;
+    const isBudgetBlocked = usableArtifactProviders({ state, sessionId }) === null;
     const scoutNote = isBudgetBlocked ? REPORT_SCOUT_SKIP_BUDGET : roster.note;
     if (roster.picks.length > 0 && !isBudgetBlocked) {
       const containerId = await get().spawnAgent(sessionId, {

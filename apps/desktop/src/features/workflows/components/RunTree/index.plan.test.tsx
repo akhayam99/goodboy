@@ -57,11 +57,11 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('RunTree planner row', () => {
-  it('offers Review plan on the planner row while the run is held for its plan', () => {
+  it('draws no plan button on the planner row while the run is held for its plan', () => {
     seed({ plans: [planOf()] });
     render(<RunTreeHarness routingRun={heldRun} />);
 
-    expect(within(rowOf('scout')).getByRole('button', { name: 'Review plan' })).toBeDefined();
+    expect(within(rowOf('scout')).queryByRole('button', { name: 'Review plan' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Open plan' })).toBeNull();
   });
 
@@ -73,7 +73,7 @@ describe('RunTree planner row', () => {
     expect(screen.queryByRole('button', { name: 'Review plan' })).toBeNull();
   });
 
-  it('offers Open plan, not Review plan, for a plan that was already consumed', () => {
+  it('offers Open plan for a plan that was already consumed, even while the run is held', () => {
     seed({ plans: [planOf({ status: 'consumed', consumptionCount: 1 })] });
     render(<RunTreeHarness routingRun={heldRun} />);
 
@@ -82,9 +82,9 @@ describe('RunTree planner row', () => {
 
   it('opens the plan drawer on the click', () => {
     seed({ plans: [planOf()] });
-    render(<RunTreeHarness routingRun={heldRun} />);
+    render(<RunTreeHarness routingRun={run} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Review plan' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open plan' }));
 
     expect(useAppStore.getState().drawer).toMatchObject({
       kind: 'artifact-document',

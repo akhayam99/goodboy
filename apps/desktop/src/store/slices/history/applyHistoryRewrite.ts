@@ -94,6 +94,7 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
         return stopWith({ reason: 'blocked', message: outcome.reason, files: [], sha: null });
       }
       const threadShas = await remapRewrittenCommits({ set, get, sessionId, map: input.map });
+      const agentId = get().historyRuns[mountId]?.agentId ?? null;
       await recordHistoryEvent({
         get,
         kind: 'history_rewritten',
@@ -102,6 +103,7 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
         planId,
         extra: {
           backupRef: outcome.backupRef,
+          ...(agentId !== null && { agentId }),
           ...(input.summary !== undefined && { summary: input.summary }),
           ...(input.isTreeEqual !== undefined && { isTreeEqual: input.isTreeEqual }),
         },
@@ -201,13 +203,17 @@ export const pushHistoryRewrite = (set: SetFn, get: GetFn) => {
       }
       await editPostedReplies({ set, get, sessionId }).catch(() => 0);
       const prNumber = get().mountGithub[mountId]?.pr?.number ?? null;
+      const agentId = get().historyRuns[mountId]?.agentId ?? null;
       await recordHistoryEvent({
         get,
         kind: 'history_pushed',
         target,
         origin,
         planId,
-        extra: prNumber === null ? {} : { prNumber },
+        extra: {
+          ...(prNumber !== null && { prNumber }),
+          ...(agentId !== null && { agentId }),
+        },
       });
       void get()
         .refreshPrDescription({ sessionId, mountId })
@@ -224,7 +230,7 @@ export const pushHistoryRewrite = (set: SetFn, get: GetFn) => {
             files: [],
             sha: null,
           }
-        : { reason: 'failed', message: pushed.message, files: [], sha: null };
+        : { reason: 'push-failed', message: pushed.message, files: [], sha: null };
     setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'stopped', stop } });
     await reportHistoryStop({ get, set, target, origin, stop, planId });
     return 'stopped';

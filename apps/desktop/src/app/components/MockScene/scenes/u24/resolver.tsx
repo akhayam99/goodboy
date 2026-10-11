@@ -1,22 +1,12 @@
 import { useEffect, useState, type ComponentType } from 'react';
-import type {
-  AgentRole,
-  OverrideSettings,
-  Project,
-  ProviderId,
-  ProviderPolicy,
-  RoleModelPreference,
-} from '@goodboy/types';
+import type { AgentRole, ProviderId, ProviderPolicy, RoleModelPreference } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../../../../../features/providers/providers';
 import { useAppStore } from '../../../../../store';
-import { sceneClock } from '../../sceneClock';
 import { AppFrame } from '../audit/AppFrame';
 import { seedFrame } from '../audit/frameSeed';
 import { installSettingsInvokeMocks } from '../audit/installSettingsInvokeMocks';
 
 const OPEN_DELAY_MS = 30;
-
-const clock = sceneClock({ anchor: '2026-10-09T09:00:00.000Z' });
 
 const CAPABILITIES = {
   models: [],
@@ -67,20 +57,6 @@ const ANTHROPIC_ON: ProviderPolicy = [
   { id: 'codex', state: 'on' },
 ];
 
-type ProjectParams = {
-  readonly base: Project;
-  readonly overrides: OverrideSettings;
-};
-
-const paymentsApi = ({ base, overrides }: ProjectParams): Project => ({
-  ...base,
-  name: 'payments-api',
-  rootPath: '/mock/harborline/payments-api',
-  overrides,
-  createdAt: clock.iso({ at: '2026-09-27T09:00:00.000Z' }),
-  updatedAt: clock.iso({ at: '2026-09-27T09:00:00.000Z' }),
-});
-
 type SeedParams = {
   readonly policy: ProviderPolicy;
 };
@@ -94,8 +70,7 @@ const seedModelsPage = ({ policy }: SeedParams): void => {
     const current =
       state.workspaceOverrides[workspaceId] ??
       state.workspaces.find((workspace) => workspace.id === workspaceId)?.overrides;
-    const [base] = state.projects.filter((project) => project.workspaceId === workspaceId);
-    if (current === undefined || base === undefined) {
+    if (current === undefined) {
       return state;
     }
     return {
@@ -104,20 +79,6 @@ const seedModelsPage = ({ policy }: SeedParams): void => {
         connected({ id: 'codex', label: 'Codex', binary: 'codex' }),
       ],
       refreshProviders: async () => undefined,
-      projects: [
-        paymentsApi({
-          base,
-          overrides: {
-            ...current,
-            defaultProviderId: null,
-            providerPool: null,
-            roleModels: null,
-            taskModels: {
-              workflow_orchestrator: { providerId: 'anthropic', model: 'claude-sonnet-5' },
-            },
-          },
-        }),
-      ],
       workspaceOverrides: {
         ...state.workspaceOverrides,
         [workspaceId]: {

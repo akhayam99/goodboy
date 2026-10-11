@@ -20,7 +20,7 @@ const clock = sceneClock({ anchor: '2026-10-06T09:40:00.000Z' });
 const WIDE_WIDTH_PX = 1920;
 const NARROW_WIDTH_PX = 1280;
 const CONTEXT_WIDTH_PX = 1440;
-const SESSION_DIR = '~/code/harborline/sessions/settlement-rounding';
+const SESSION_DIR = '~/code/harborline/payments-api-duplicate-credit';
 const MODIFIED_AT = clock.iso({ at: '2026-10-06T08:40:00.000Z' });
 
 const noop = () => undefined;
@@ -159,7 +159,7 @@ export const U24_DRAWERS_SCENES = {
     <DrawerSplitStage
       width={WIDE_WIDTH_PX}
       prepare={prepareExplore}
-      main={<ExplorePane sessionId={ARTIFACT_SESSION_ID} sessionDir={SESSION_DIR} />}
+      main={<ExplorePane sessionId={ARTIFACT_SESSION_ID} />}
     />
   ),
 };

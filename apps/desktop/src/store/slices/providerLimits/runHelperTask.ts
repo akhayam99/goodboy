@@ -17,6 +17,7 @@ import type { GetFn, SetFn } from '../../slice-types';
 import { sessionById } from '../sessions/sessionIndex';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { liveEnabledProviders } from '../models/liveEnabledProviders';
 
 const HELPER_FAILURE_WINDOW_MS = 3 * 60 * 1000;
 
@@ -44,7 +45,7 @@ const poolFor = ({ get, sessionId }: PoolParams): BackgroundPool => {
   const session = sessionId == null ? null : sessionById(get().sessions, sessionId);
   return {
     connectedProviders: autoRoutableProviders({ providers: get().providers }),
-    enabledProviders: session?.providerPreference.enabledProviders ?? null,
+    enabledProviders: liveEnabledProviders({ state: get(), sessionId }) ?? null,
     coolingDownProviders: [
       ...providersCoolingDown({ cooldowns: get().providerCooldowns, nowMs: Date.now() }),
       ...failingProviders({ get }),

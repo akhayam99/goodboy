@@ -14,9 +14,8 @@ import { distanceBehind } from '../../../../shared/lib/gitStatus';
 import type { SessionCreationId } from '../../../../store/slices/session-view';
 import { useToast } from '../../../../shared/components/Toast';
 import { taskModelAgentSpawnConfig } from '../../taskModelAgentSpawnConfig';
-import { useAutoLimitContext } from '../../../providers/hooks/useAutoLimitContext';
+import { useResolution } from '../../../providers/hooks/useResolution';
 import { projectById } from '../../../../store/slices/projects/projectIndex';
-import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import { routingShortText } from '../../../../shared/components/RoutingPicker/routingSummary';
 
 type Params = {
@@ -145,12 +144,6 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
   const [pending, setPending] = useState<Pending | null>(null);
   const settledAgentIds = useRef(new Set<AgentId>());
   const pendingRef = useRef<Pending | null>(null);
-  const session = useAppStore((state) =>
-    sessionId == null ? null : (sessionById(state.sessions, sessionId) ?? null),
-  );
-  const workspaceOverrides = useAppStore((state) =>
-    session == null ? null : (state.workspaceOverrides?.[session.workspaceId] ?? null),
-  );
   const mounts = useAppStore((state) =>
     sessionId == null ? null : (state.sessionProjectMounts[sessionId] ?? null),
   );
@@ -188,18 +181,8 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
   const recordSessionEvent = useAppStore((state) => state.recordSessionEvent);
   const reportError = useAppStore((state) => state.reportError);
   const { showToast } = useToast();
-  const limitContext = useAutoLimitContext();
-  const config = useMemo(
-    () =>
-      taskModelAgentSpawnConfig({
-        task: 'rebase',
-        preferences: workspaceOverrides?.taskModels,
-        workspaceDefaultProviderId: workspaceOverrides?.defaultProviderId,
-        sessionDefaultProviderId: session?.providerPreference.defaultProvider ?? 'anthropic',
-        limitContext,
-      }),
-    [limitContext, session?.providerPreference.defaultProvider, workspaceOverrides],
-  );
+  const resolution = useResolution({ task: 'rebase', sessionId });
+  const config = useMemo(() => taskModelAgentSpawnConfig({ resolution }), [resolution]);
   const rebasingAgentIds = useMemo(
     () => rebasingAgentIdsFor({ events: sessionEvents, mountId: mountId ?? null }),
     [sessionEvents, mountId],

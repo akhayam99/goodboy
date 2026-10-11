@@ -256,5 +256,7 @@ Read it out loud. If it sounds like a press release, rewrite it. If it sounds
 like something you'd say to a friend after the third coffee of the day, ship it.
 
 Task links use **Unlink**, **Unlinked** in the toast, and **Re-link** on the
-unlink event. The entry for adding a link is always **Link work**. These
+unlink event. Moving a task between the session and its branches never says
+unlink: **Move to session**, **Take off project / branch**, and a toast that
+names the new place. The entry for adding a link is always **Link work**. These
 words replace the former retirement of Unlink for task-link controls.

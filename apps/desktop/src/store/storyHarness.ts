@@ -144,6 +144,8 @@ const storyInvokeHandlers = {
   qa_deciding_workflow_runs: [],
   workspace_script_list_live: [],
   terminal_list_live: [],
+  workspace_script_snapshot: { data: '', offset: 0, exitCode: null },
+  terminal_snapshot: { data: '', offset: 0, exitCode: null },
   turn_list_live: [],
   other_tools_scan: { status: 'ready', tools: [] },
   other_tools_cancel: null,
@@ -325,6 +327,9 @@ export const storySpies = {
     await storyInvoke('workspace_script_list_live');
     return [];
   }),
+  invokeScriptSnapshot: vi.fn<
+    () => Promise<{ data: string; offset: number; exitCode: number | null }>
+  >(async () => ({ data: '', offset: 0, exitCode: null })),
   invokeTerminalListLive: vi.fn<() => Promise<ReadonlyArray<{ id: string; cwd: string }>>>(
     async () => {
       await storyInvoke('terminal_list_live');
@@ -909,6 +914,7 @@ export const scriptsModuleMock = () => ({
   invokeScriptRun: storySpies.invokeScriptRun,
   invokeScriptListLive: storySpies.invokeScriptListLive,
   invokeScriptCancel: vi.fn(async () => undefined),
+  invokeScriptSnapshot: storySpies.invokeScriptSnapshot,
   listenScriptOutput: vi.fn(async () => () => undefined),
   listenScriptExit: vi.fn(async () => () => undefined),
   scanProjectScripts: storySpies.scanProjectScripts,
@@ -921,10 +927,18 @@ export const terminalModuleMock = () => ({
   invokeTerminalClose: storySpies.invokeTerminalClose,
   invokeTerminalWrite: vi.fn(async () => undefined),
   invokeTerminalResize: vi.fn(async () => undefined),
+  invokeTerminalSnapshot: vi.fn(async () => ({ data: '', offset: 0, exitCode: null })),
+  listenTerminalOutput: vi.fn(async () => () => undefined),
+  listenTerminalExit: vi.fn(async () => () => undefined),
 });
 
-export const terminalOutputCacheModuleMock = () => ({
-  clearTerminalCache: vi.fn(() => undefined),
+export const terminalOutputBusModuleMock = () => ({
+  terminalOutputBus: {
+    register: vi.fn(async () => undefined),
+    subscribe: vi.fn(() => () => undefined),
+    tailOf: vi.fn(() => null),
+    forget: vi.fn(() => undefined),
+  },
 });
 
 export const configExportModuleMock = () => ({

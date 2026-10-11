@@ -35,6 +35,7 @@ vi.mock('../../../../shared/components/GenericTerminalPanel/LazyGenericTerminalP
 vi.mock('../../terminal', () => ({
   invokeTerminalOpen: vi.fn(async () => undefined),
   invokeTerminalResize: vi.fn(async () => undefined),
+  invokeTerminalSnapshot: vi.fn(async () => ({ data: '', offset: 0, exitCode: null })),
   invokeTerminalWrite: vi.fn(async () => undefined),
   listenTerminalExit: vi.fn(async () => () => undefined),
   listenTerminalOutput: vi.fn(async () => () => undefined),
