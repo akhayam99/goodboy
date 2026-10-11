@@ -20,12 +20,14 @@ pub(crate) struct RawProcess {
     pub(crate) name: String,
 }
 
+#[cfg_attr(not(any(target_os = "macos", test)), allow(dead_code))]
 fn split_endpoint(endpoint: &str) -> Option<(String, u16)> {
     let (address, port) = endpoint.rsplit_once(':')?;
     let port: u16 = port.parse().ok()?;
     Some((address.trim_matches(['[', ']']).to_string(), port))
 }
 
+#[cfg_attr(not(any(target_os = "macos", test)), allow(dead_code))]
 pub(crate) fn parse_lsof_listeners(text: &str) -> Vec<RawListener> {
     let mut pid: Option<u32> = None;
     let mut seen = BTreeSet::new();
@@ -56,6 +58,7 @@ pub(crate) fn parse_lsof_listeners(text: &str) -> Vec<RawListener> {
     out
 }
 
+#[cfg_attr(not(any(target_os = "macos", test)), allow(dead_code))]
 pub(crate) fn parse_lsof_cwd(text: &str) -> Vec<(u32, String)> {
     let mut pid: Option<u32> = None;
     let mut out = Vec::new();
@@ -74,6 +77,7 @@ pub(crate) fn parse_lsof_cwd(text: &str) -> Vec<(u32, String)> {
     out
 }
 
+#[cfg_attr(not(any(target_os = "macos", test)), allow(dead_code))]
 pub(crate) fn parse_etime(value: &str) -> Option<u64> {
     let (days, clock) = match value.split_once('-') {
         Some((days, clock)) => (days.parse::<u64>().ok()?, clock),
@@ -91,10 +95,12 @@ pub(crate) fn parse_etime(value: &str) -> Option<u64> {
     Some(days * 86_400 + hours * 3_600 + minutes * 60 + seconds)
 }
 
+#[cfg_attr(not(any(target_os = "macos", test)), allow(dead_code))]
 pub(crate) fn parse_ps_rows(text: &str) -> Vec<RawProcess> {
     text.lines().filter_map(parse_ps_row).collect()
 }
 
+#[cfg_attr(not(any(target_os = "macos", test)), allow(dead_code))]
 fn parse_ps_row(line: &str) -> Option<RawProcess> {
     let mut rest = line.trim_start();
     let mut fields = Vec::with_capacity(7);
@@ -120,6 +126,7 @@ fn parse_ps_row(line: &str) -> Option<RawProcess> {
     })
 }
 
+#[cfg_attr(not(any(target_os = "macos", test)), allow(dead_code))]
 pub(crate) fn parse_ps_args(text: &str) -> Vec<(u32, String)> {
     text.lines()
         .filter_map(|line| {

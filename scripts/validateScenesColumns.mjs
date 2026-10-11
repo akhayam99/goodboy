@@ -3,7 +3,7 @@ export const COLUMN_TOLERANCE_PX = 1;
 export const COLUMN_WIDTHS = [1100, 1440, 1920];
 export const COLUMN_SCENES = ['step-rows-activity', 'step-rows-runs', 'workflow-run-plan-review'];
 
-export const columnEdgesProbe = (names) =>
+export const columnEdgesProbe = ({ names }) =>
   [...document.querySelectorAll('[data-row-id]')].map((row) => {
     const edges = {};
     for (const name of names) {

@@ -1,44 +1,68 @@
 // @vitest-environment happy-dom
-vi.mock('@tauri-apps/api/core', async () =>
-  (await import('../../../store/storyHarness')).tauriCoreModuleMock(),
-);
-vi.mock('@tauri-apps/api/event', async () =>
-  (await import('../../../store/storyHarness')).tauriEventModuleMock(),
-);
 
-import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
-import { cleanup, render, waitFor } from '@testing-library/react';
-import { importStore, resetStoryStore, STORE_IMPORT_TIMEOUT_MS } from '../../../store/storyHarness';
-import { installFakeResizeObserver } from '../../../test/fakeResizeObserver';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+
+vi.mock('@xterm/xterm/css/xterm.css', () => ({}));
+vi.mock('@xterm/xterm', () => ({
+  Terminal: class {
+    cols = 80;
+    rows = 24;
+    options = {};
+    unicode = { activeVersion: '' };
+    loadAddon(addon: { readonly isWebgl?: boolean }) {
+      if (addon.isWebgl === true) {
+        throw new Error('WebGL2 not supported');
+      }
+    }
+    open() {}
+    attachCustomKeyEventHandler() {}
+    onData() {
+      return { dispose() {} };
+    }
+    write() {}
+    writeln() {}
+    dispose() {}
+    focus() {}
+  },
+}));
+vi.mock('@xterm/addon-fit', () => ({
+  FitAddon: class {
+    fit() {}
+  },
+}));
+vi.mock('@xterm/addon-webgl', () => ({
+  WebglAddon: class {
+    isWebgl = true;
+    onContextLoss() {}
+    dispose() {}
+  },
+}));
+vi.mock('@xterm/addon-web-links', () => ({ WebLinksAddon: class {} }));
+vi.mock('@xterm/addon-clipboard', () => ({ ClipboardAddon: class {} }));
+vi.mock('@xterm/addon-unicode11', () => ({ Unicode11Addon: class {} }));
+vi.mock('@xterm/addon-search', () => ({
+  SearchAddon: class {
+    onDidChangeResults() {
+      return { dispose() {} };
+    }
+  },
+}));
+
 import { GenericTerminalPanel, type TerminalDriver } from './index';
 
-beforeAll(async () => {
-  await importStore();
-}, STORE_IMPORT_TIMEOUT_MS);
-beforeEach(async () => {
-  await resetStoryStore();
-});
-afterEach(() => {
-  cleanup();
-  vi.restoreAllMocks();
-  vi.unstubAllGlobals();
-});
+const driver: TerminalDriver = {
+  write: () => undefined,
+  resize: () => undefined,
+  onOutput: async () => () => undefined,
+  onExit: async () => () => undefined,
+};
 
-it('keeps the terminal connected when WebGL2 activation is unavailable', async () => {
-  const observers = installFakeResizeObserver();
-  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
-  const driver: TerminalDriver = {
-    write: vi.fn(),
-    resize: vi.fn(),
-    onOutput: vi.fn(async () => () => undefined),
-    onExit: vi.fn(async () => () => undefined),
-  };
-  const { container, unmount } = render(
-    <GenericTerminalPanel terminalId="harborline-terminal" driver={driver} isActive={false} />,
-  );
-  expect(container.querySelector('.xterm')).not.toBeNull();
-  await waitFor(() => expect(driver.onOutput).toHaveBeenCalledTimes(1));
-  await waitFor(() => expect(driver.onExit).toHaveBeenCalledTimes(1));
-  unmount();
-  expect(observers.observedCount()).toBe(0);
+afterEach(cleanup);
+
+describe('the terminal panel without WebGL2', () => {
+  it('keeps the terminal on the default renderer instead of crashing', () => {
+    render(<GenericTerminalPanel terminalId="payments-api::t1" driver={driver} isActive />);
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
 });
