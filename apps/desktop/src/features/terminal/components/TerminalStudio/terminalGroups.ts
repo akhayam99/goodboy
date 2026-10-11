@@ -25,8 +25,8 @@ type SelectParams = {
   readonly focusSessionId: SessionId | null;
 };
 
-export const WORKSPACE_GROUP_KEY = 'workspace';
-export const WORKSPACE_GROUP_TITLE = 'Workspace';
+const WORKSPACE_GROUP_KEY = 'workspace';
+const WORKSPACE_GROUP_TITLE = 'Workspace';
 
 export const terminalGroups = ({
   workspaceId,

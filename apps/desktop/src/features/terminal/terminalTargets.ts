@@ -31,8 +31,8 @@ type CwdParams = {
   readonly home: string | null;
 };
 
-export const WORKSPACE_FOLDER_LABEL = 'Workspace folder';
-export const MAIN_CHECKOUT_LABEL = 'Main checkout';
+const WORKSPACE_FOLDER_LABEL = 'Workspace folder';
+const MAIN_CHECKOUT_LABEL = 'Main checkout';
 
 export const terminalTargets = ({
   folder,
