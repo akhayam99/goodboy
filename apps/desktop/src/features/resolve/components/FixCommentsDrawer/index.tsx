@@ -2,12 +2,14 @@ import { useMemo, useState } from 'react';
 import { Wrench } from 'lucide-react';
 import { Button, DrawerFrame, ScrollFade, SectionHeader, SegmentedTabs } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
+import { useAppStore } from '../../../../store';
+import { requestHostOf } from '../../../../store/slices/review-source/requestHostOf';
 import { AgentChain } from '../../../../shared/components/AgentChain';
 import { useDraftRouting } from '../ReviewFlow/useDraftRouting';
 import { useReviewEntries } from '../ReviewFlow/useReviewEntries';
 import { groupConversationsByFile } from '../../groupConversationsByFile';
 import { COMMENT_FILTERS, filteredEntries, type CommentFilter } from './commentFilter';
-import { FIX_COMMENTS_LABEL, FILTER_LABEL } from './fixCommentsCopy';
+import { FIX_COMMENTS_LABEL, filterLabelOf } from './fixCommentsCopy';
 import { FixCommentRow } from './FixCommentRow';
 import { FixCommentsLaunchRow } from './FixCommentsLaunchRow';
 import { ModelChipPicker } from './ModelChipPicker';
@@ -21,13 +23,16 @@ type Props = {
   readonly onClose: () => void;
 };
 
-const FILTER_OPTIONS = COMMENT_FILTERS.map((value) => ({ value, label: FILTER_LABEL[value] }));
-
 export const FixCommentsDrawer = ({ sessionId, focusThreadId, threadIds, onClose }: Props) => {
   const { all } = useReviewEntries({ sessionId, scope: 'all' });
   const draft = useDraftRouting({ sessionId });
   const steps = useFixChain({ sessionId });
   const [filter, setFilter] = useState<CommentFilter>('all');
+  const host = useAppStore((state) => requestHostOf({ state, sessionId }));
+  const filterOptions = useMemo(
+    () => COMMENT_FILTERS.map((value) => ({ value, label: filterLabelOf({ host })[value] })),
+    [host],
+  );
   const open = useMemo(() => all.filter((entry) => entry.isFixable), [all]);
   const [explicit, setExplicit] = useState<ReadonlySet<string> | null>(() => {
     if (threadIds !== null) {
@@ -116,7 +121,7 @@ export const FixCommentsDrawer = ({ sessionId, focusThreadId, threadIds, onClose
           <SegmentedTabs
             ariaLabel={FIX_COMMENTS_LABEL.filters}
             size="xs"
-            options={FILTER_OPTIONS}
+            options={filterOptions}
             value={filter}
             onChange={setFilter}
           />
