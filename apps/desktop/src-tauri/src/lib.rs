@@ -546,6 +546,7 @@ pub fn run() {
             gitlab::gitlab_mr_for_branch,
             gitlab::gitlab_create_mr,
             gitlab::gitlab_merge_mr,
+            gitlab::gitlab_cancel_auto_merge,
             gitlab::gitlab_mr_diff,
             gitlab::gitlab_mr_diff_refs,
             gitlab::gitlab_create_mr_discussion,

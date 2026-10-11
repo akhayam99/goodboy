@@ -37,6 +37,7 @@ export type GitlabMergeRequestPayload = Readonly<{
   sourceBranch: string;
   targetBranch: string;
   draft: boolean;
+  isMergeWhenPipelineSucceeds?: boolean;
   hasConflicts: boolean;
   mergeStatus: string | null;
   updatedAt: string;
@@ -94,6 +95,7 @@ export type GitlabPullRequestTransport = Readonly<{
   }) => Promise<void>;
   setState: (params: { readonly stateEvent: GitlabMergeStateEvent }) => Promise<void>;
   merge: (params: { readonly method: PrMergeMethod }) => Promise<void>;
+  cancelAutoMerge: () => Promise<void>;
   projectMergeSettings: () => Promise<GitlabMergeSettingsPayload>;
   searchUsers: (params: { readonly query: string }) => Promise<ReadonlyArray<GitlabPersonPayload>>;
 }>;
@@ -136,20 +138,24 @@ export const gitlabJobConclusion = ({
   return conclusion === 'failure' && allowFailure ? 'neutral' : conclusion;
 };
 
+type StateKindParams = {
+  readonly state: string;
+  readonly draft: boolean;
+  readonly isMergeWhenPipelineSucceeds?: boolean;
+};
+
 export const gitlabStateKindOf = ({
   state,
   draft,
-}: {
-  readonly state: string;
-  readonly draft: boolean;
-}): PullRequestStateKind => {
+  isMergeWhenPipelineSucceeds = false,
+}: StateKindParams): PullRequestStateKind => {
   if (state === 'merged') {
     return 'merged';
   }
   if (state === 'closed') {
     return 'closed';
   }
-  if (state === 'locked') {
+  if (state === 'locked' || isMergeWhenPipelineSucceeds) {
     return 'queued';
   }
   return draft ? 'draft' : 'open';
@@ -362,7 +368,12 @@ export const gitlabPullRequestPort = ({
         title: stripGitlabDraftPrefix({ title: mr.title }),
         body: mr.description ?? '',
         url,
-        state: gitlabStateKindOf({ state: mr.state, draft: mr.draft }),
+        state: gitlabStateKindOf({
+          state: mr.state,
+          draft: mr.draft,
+          isMergeWhenPipelineSucceeds: mr.isMergeWhenPipelineSucceeds ?? false,
+        }),
+        isAutoMerge: mr.isMergeWhenPipelineSucceeds ?? false,
         isDraft: mr.draft,
         author: mr.author == null ? null : personOf({ person: mr.author }),
         baseBranch: mr.targetBranch,
@@ -441,6 +452,10 @@ export const gitlabPullRequestPort = ({
     },
     merge: async ({ method }) => {
       await write(() => transport.merge({ method }));
+    },
+    cancelAutoMerge: async () => {
+      requirePullRequestCapability({ capabilities, capability: 'canCancelAutoMerge' });
+      await write(() => transport.cancelAutoMerge());
     },
     close: async () => {
       requirePullRequestCapability({ capabilities, capability: 'canClose' });

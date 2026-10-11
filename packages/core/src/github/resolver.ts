@@ -188,6 +188,7 @@ export const toPullRequestState = ({
   baseBranch: raw.baseRefName,
   headBranch: raw.headRefName,
   isDraft: raw.isDraft,
+  isAutoMerge: raw.autoMergeRequest != null,
   reviewDecision:
     raw.reviewDecision != null ? (REVIEW_DECISIONS[raw.reviewDecision] ?? null) : null,
   body: raw.body ?? '',
