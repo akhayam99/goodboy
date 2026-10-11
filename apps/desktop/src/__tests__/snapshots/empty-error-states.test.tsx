@@ -132,9 +132,15 @@ describe('error states', () => {
       <DeleteSessionConfirm
         session={aSession({ id: SESSION_ID, workspaceId: WS_ID })}
         onClose={onClose}
+        trigger={({ arm }) => (
+          <button type="button" onClick={arm}>
+            Open delete
+          </button>
+        )}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete session' }));
     expect(await screen.findByText(/session not found/)).toBeDefined();
     expect(deleteTask).toHaveBeenCalledWith('sess-1');
     expect(onClose).not.toHaveBeenCalled();

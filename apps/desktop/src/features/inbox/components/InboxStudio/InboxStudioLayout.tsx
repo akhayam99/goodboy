@@ -1,6 +1,7 @@
 import type { ReactNode, Ref } from 'react';
 import { DrawerColumn, StudioRailLayout, useStudioRailFold } from '@goodboy/ui';
 import { useStudioDrawer } from '../../../../shared/hooks/useStudioDrawer';
+import { StudioDetail } from '../../../../shared/components/StudioShell/StudioDetail';
 
 type InboxRailState = {
   readonly isRailCollapsed: boolean;
@@ -27,12 +28,12 @@ export const InboxStudioLayout = ({ rail, railHeader, list, drawer, drawerRef }:
     ...(drawerRef !== undefined && { drawerRef }),
   });
   const main = (
-    <div className="flex min-h-0 min-w-0 flex-1">
+    <StudioDetail>
       {list({
         isRailCollapsed: fold.isCollapsed,
         onDock: fold.canDock ? () => fold.setFolded(false) : undefined,
       })}
-    </div>
+    </StudioDetail>
   );
 
   return (

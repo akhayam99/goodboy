@@ -167,7 +167,9 @@ export const PULL_REQUEST_PAGE_ROWS: ReadonlyArray<Row> = [
           .hasAttribute('disabled'),
       ).toBe(true);
       await click(within(methods).getByRole('tab', { name: /Rebase and merge/ }));
-      const confirm = within(screen.getByRole('group', { name: /^Merge #\d+ into main/ }));
+      const confirm = within(
+        await screen.findByRole('dialog', { name: /^Merge #\d+ into main/ }, WAIT),
+      );
       await click(confirm.getByRole('button', { name: 'Merge' }));
       await settle(8);
     },

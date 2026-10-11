@@ -294,7 +294,15 @@ open) and opens **Open overview**; the Scribe that refreshes a description or
 writes a commit message reads "Refresh pull request text" or "Commit message",
 muted and never in Needs you. `history_rewritten`, `history_pushed` and
 `history_stopped` carry the `agentId` of the rewriter, so a finished row still
-reads Done or Stopped after a restart. The recovery, on the banner: `Undo rewrite`
+reads Done or Stopped after a restart. The history journal records expected head, target head, backup ref and branch.
+Its optional fifth line records the stash SHA; a following line records the
+exact ownership message. The journal is replaced atomically and synchronized
+before files are set aside. A pending intent can find that stash after a crash
+before its SHA was recorded. A `restoring` marker, cleared on conflict, lets bring-back detect an
+interrupted restore; a restored marker prevents applying it twice if cleanup
+was interrupted. A pending intent with no stash is rolled back, never kept. `pending_stash` and `write_journal` own this contract.
+
+The recovery, on the banner: `Undo rewrite`
 for a rewrite, `Retry with a note` when History rewriter needs you, `Bring them
 into the plan` when the online copy moved, `Retry rebase` when the branch moved,
 `Retry push` when the push failed. In the Commits section: `Rewrite with an agent`,
@@ -390,7 +398,7 @@ whether you clicked it on the board or in the session overview.
   landed on the same engine, not a second one: approve a pending permission,
   sign back in after `auth_required`, resume every agent a restart stopped
   (one **Resume all**, band 0, standalone and workflow agents alike), retry
-  the last standalone agent that failed, fix a pull request's failing checks,
+  the last standalone agent that failed, analyze a pull request's failing checks,
   push unpushed commits on a clean worktree (counted against the branch's
   own copy on origin by `branchPushStateOf`; `Push the branch` with `Not
 pushed yet` when origin has no copy, and `Branch diverged from origin`
@@ -1574,7 +1582,7 @@ Agent kinds, in `AGENT_KIND_ORDER`:
 | `planner`     | Plan             | spawn menu                                        |
 | `scout`       | Scout            | spawn menu                                        |
 | `implementer` | Implement        | spawn menu                                        |
-| `debugger`    | Debug            | spawn menu                                        |
+| `debugger`    | Debug            | spawn menu and failing check Analyze              |
 | `tester`      | Test             | spawn menu                                        |
 | `reviewer`    | Review           | spawn menu                                        |
 | `pr-reviewer` | PR reviewer      | PR review session                                 |
@@ -1639,3 +1647,5 @@ An agent materializes a project through the query bridge like this:
 Task-link removal uses **Unlink**, with **Unlinked** in its Undo toast and
 **Re-link** on the Activity event. A move says where the task is now (**HL-204
 is on the session again**, **HL-204 is on payments-api / hl/ledger-rounding**). **Link work** is the single linking entry.
+
+A check analysis agent has `sourceKind` `failed_check` and keeps the originating check URL in `sourceCommentUrl`. The latest non-deleted agent for that session and URL owns the check row status; its transcript owns the finding and **Proposed fix**. The source type is in `packages/types/src/workflow.ts`, and the selector is `apps/desktop/src/store/slices/agents/selectCheckAnalysis.ts`.

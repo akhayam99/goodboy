@@ -1,4 +1,5 @@
 import type { SessionExternalTaskProvider, StarredIssue, WorkspaceId } from '@goodboy/types';
+import type { LaunchExternalTask } from '../../../features/inbox/launchSpecFor';
 import type { InboxRecord } from '../../../features/inbox/types';
 import type { StarredIssuesState } from './state';
 
@@ -10,6 +11,10 @@ type WorkspaceParams = {
 
 type StarRecordParams = WorkspaceParams & {
   readonly record: InboxRecord;
+};
+
+type StarTaskParams = WorkspaceParams & {
+  readonly task: LaunchExternalTask;
 };
 
 type UnstarParams = WorkspaceParams & {
@@ -28,6 +33,7 @@ type RefreshStarsParams = WorkspaceParams & {
 export type StarredIssuesSlice = StarredIssuesState & {
   loadStarredIssues(params: WorkspaceParams): Promise<void>;
   starIssueRecord(params: StarRecordParams): Promise<void>;
+  starExternalTask(params: StarTaskParams): Promise<boolean>;
   unstarIssue(params: UnstarParams): Promise<void>;
   unstarClosedIssues(params: WorkspaceParams): Promise<ReadonlyArray<StarredIssue>>;
   restoreStarredIssues(params: RestoreStarsParams): Promise<void>;

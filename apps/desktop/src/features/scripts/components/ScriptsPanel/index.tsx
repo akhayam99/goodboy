@@ -18,10 +18,13 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 import { MountProjectAction } from '../../../session/components/SessionOverviewPane/ProjectMountRows/MountProjectAction';
 import type { RunnableScript, SessionScriptGroup } from '../../buildSessionScripts';
+import { isService } from '../../classifyScript';
 import { defaultClosedPackageKeys } from '../../defaultClosedPackageKeys';
 import { filterScriptGroups } from '../../filterScriptGroups';
 import { groupScriptsByPackage } from '../../groupScriptsByPackage';
 import { readCollapsedGroups, writeCollapsedGroups } from '../../groupsCollapsedStorage';
+import { useScriptKeys } from '../../hooks/useScriptKeys';
+import { useScriptLive } from '../../hooks/useScriptLive';
 import { useScriptPins } from '../../hooks/useScriptPins';
 import { useSessionScripts } from '../../hooks/useSessionScripts';
 import { scriptPinId } from '../../scriptPinId';
@@ -35,8 +38,9 @@ import { startRunnableScript } from '../../startRunnableScript';
 import { workspaceInvocation } from '../../workspaceInvocation';
 import { ScriptEditor } from '../ScriptEditor';
 import { ScriptRow } from '../ScriptRow';
+import { SuggestedRow } from '../ScriptRow/SuggestedRow';
 import { DiscardDraftConfirm } from './DiscardDraftConfirm';
-import { PinnedScriptsStrip, type PinnedScriptEntry } from './PinnedScriptsStrip';
+import { ScriptBand } from './ScriptBand';
 import { ScriptGroupSection } from './ScriptGroupSection';
 import { ScriptPackageSection } from './ScriptPackageSection';
 import { ScriptSavedSection } from './ScriptSavedSection';
@@ -117,6 +121,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
   );
   const [scopedProjectId] = useState(() => scriptsLensScope?.projectId ?? null);
   const [pageError, setPageError] = useState<string | null>(null);
+  const [focusedKey, setFocusedKey] = useState<string | null>(null);
   const [pickerMountId, setPickerMountId] = useState<MountId | null>(null);
   const draft = useScriptDraft({ workspaceId });
   const { copy } = useCopyLink();
@@ -126,6 +131,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
     [allProjects, workspaceId],
   );
   const visibleGroups = useMemo(() => filterScriptGroups({ groups, query }), [groups, query]);
+  const live = useScriptLive({ runs });
   const runningCount = useMemo(
     () => Object.values(runs ?? {}).filter((record) => record.status === 'pending').length,
     [runs],
@@ -258,6 +264,14 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
     [cancelScript, sessionId],
   );
 
+  const onRestart = useCallback(
+    async ({ group, script }: RowParams) => {
+      await cancelScript(sessionId, script.key);
+      onRun({ group, script });
+    },
+    [cancelScript, onRun, sessionId],
+  );
+
   const onDuplicate = useCallback(
     ({ group, script }: RowParams) => {
       const body = saved.find((candidate) => candidate.id === script.savedId)?.body ?? '';
@@ -360,7 +374,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
           onClose={() => setPickerMountId(null)}
         />
       ) : null;
-    if (group.scripts.length > 0) {
+    if (group.scripts.length > 0 || group.suggested.length > 0) {
       return picker;
     }
     if (!group.isReady) {
@@ -444,7 +458,10 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
     );
   };
 
-  const renderRow = ({ group, script }: RowParams, showSource: boolean) => {
+  const orderedKeys: string[] = [];
+  const rowsByKey = new Map<string, RowParams>();
+
+  const renderRow = ({ group, script }: RowParams) => {
     const isEditing =
       script.savedId !== null &&
       draft.draft?.savedId === script.savedId &&
@@ -452,17 +469,34 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
     if (isEditing) {
       return <div key={script.key}>{editorNode}</div>;
     }
+    const rowKey = `${group.mountId}:${script.key}`;
+    orderedKeys.push(rowKey);
+    rowsByKey.set(rowKey, { group, script });
+    const record = recordFor({ runs, group, script });
+    const projectId = group.projectId;
+    const port = isService({ script })
+      ? live.expectedPortOf({ projectId, scriptName: script.name })
+      : null;
+    const facts = record === null ? null : (live.factsByRunId[record.runId] ?? null);
+    const isOwnPort = facts !== null && port !== null && facts.ports.includes(port);
     return (
       <ScriptRow
         key={script.key}
         script={script}
-        record={recordFor({ runs, group, script })}
+        record={record}
         now={now}
-        showSource={showSource}
+        expectedPort={port}
+        portHolder={
+          port === null || isOwnPort
+            ? null
+            : live.holderOf({ port, worktreePath: group.worktreePath })
+        }
+        facts={facts}
         isSelected={
-          openPayload !== null &&
-          openPayload.scriptKey === script.key &&
-          (openPayload.mountId === null || openPayload.mountId === group.mountId)
+          focusedKey === rowKey ||
+          (openPayload !== null &&
+            openPayload.scriptKey === script.key &&
+            (openPayload.mountId === null || openPayload.mountId === group.mountId))
         }
         blockedReason={group.isReady ? null : `${group.projectName} is still preparing`}
         target={targetFor({ group, script })}
@@ -471,19 +505,28 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
         onOpen={() => onOpen({ group, script })}
         onRun={() => onRun({ group, script })}
         onStop={() => onStop({ script })}
+        onRestart={() => void onRestart({ group, script })}
       />
     );
   };
 
-  const renderScripts = ({ group }: { readonly group: SessionScriptGroup }) => {
+  const renderScripts = ({
+    group,
+    scripts,
+    band,
+  }: {
+    readonly group: SessionScriptGroup;
+    readonly scripts: ReadonlyArray<RunnableScript>;
+    readonly band: 'services' | 'tasks';
+  }) => {
     if (group.packageCount < 2) {
-      return group.scripts.map((script) => renderRow({ group, script }, true));
+      return scripts.map((script) => renderRow({ group, script }));
     }
-    const sections = groupScriptsByPackage({ scripts: group.scripts });
+    const sections = groupScriptsByPackage({ scripts });
     const isSearching = query.trim() !== '';
     const startedAtByKey: Record<string, number> = {};
     const runningKeys = new Set<string>();
-    for (const script of group.scripts) {
+    for (const script of scripts) {
       const record = recordFor({ runs, group, script });
       if (record === null) {
         continue;
@@ -503,7 +546,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
     return (
       <div className="flex flex-col gap-2">
         {sections.map((section) => {
-          const rows = section.scripts.map((script) => renderRow({ group, script }, false));
+          const rows = section.scripts.map((script) => renderRow({ group, script }));
           if (section.source === 'saved') {
             return (
               <ScriptSavedSection key={section.key} count={section.scripts.length}>
@@ -513,7 +556,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
           }
           const overrideKey = packageSectionKey({
             mountId: group.mountId,
-            sectionKey: section.key,
+            sectionKey: `${band}:${section.key}`,
           });
           const isCollapsed = isSearching
             ? false
@@ -530,7 +573,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
               onToggle={() =>
                 setPackageCollapsed({
                   mountId: group.mountId,
-                  sectionKey: section.key,
+                  sectionKey: `${band}:${section.key}`,
                   isCollapsed: !isCollapsed,
                 })
               }
@@ -543,27 +586,61 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
     );
   };
 
-  const seenPins = new Set<string>();
-  const pinnedEntries: ReadonlyArray<PinnedScriptEntry> = groups.flatMap((group) =>
-    group.scripts
-      .filter((script) => isPinned({ group, script }))
-      .filter((script) => {
-        const seenKey = `${group.projectId}:${scriptPinId(script)}`;
-        if (seenPins.has(seenKey)) {
-          return false;
-        }
-        seenPins.add(seenKey);
-        return true;
-      })
-      .map((script) => ({
-        key: `${group.mountId}:${script.key}`,
-        name: script.name,
-        projectName: group.projectName,
-        isRunning: recordFor({ runs, group, script })?.status === 'pending',
-        blockedReason: group.isReady ? null : `${group.projectName} is still preparing`,
-        onRun: () => onRun({ group, script }),
-      })),
-  );
+  const renderGroupBands = ({ group }: { readonly group: SessionScriptGroup }) => {
+    const services = group.scripts.filter((script) => isService({ script }));
+    const tasks = group.scripts.filter((script) => !isService({ script }));
+    const groupScope =
+      group.branch === '' ? group.projectName : `${group.projectName} · ${group.branch}`;
+    const hasManifestScripts = (discovered?.[group.worktreePath] ?? []).some(
+      (entry) => entry.scripts.length > 0,
+    );
+    return (
+      <>
+        {services.length === 0 ? null : (
+          <ScriptBand label="Services" scope={groupScope} count={services.length}>
+            {renderScripts({ group, scripts: services, band: 'services' })}
+          </ScriptBand>
+        )}
+        {tasks.length === 0 ? null : (
+          <ScriptBand label="Tasks" scope={groupScope} count={tasks.length}>
+            {renderScripts({ group, scripts: tasks, band: 'tasks' })}
+          </ScriptBand>
+        )}
+        {group.suggested.length === 0 ? null : (
+          <ScriptBand
+            label="Suggested"
+            scope={groupScope}
+            count={group.suggested.length}
+            hint="Pin the ones you run here."
+            action={
+              hasManifestScripts && group.isReady ? (
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  aria-label={`Pin a script of ${group.projectName}`}
+                  aria-expanded={pickerMountId === group.mountId}
+                  onClick={() =>
+                    setPickerMountId(pickerMountId === group.mountId ? null : group.mountId)
+                  }
+                >
+                  <Pin size={ICON_SIZE.row} aria-hidden />
+                  Pin a script
+                </Button>
+              ) : null
+            }
+          >
+            {group.suggested.map((script) => (
+              <SuggestedRow
+                key={script.key}
+                script={script}
+                onPin={() => togglePin({ group, script })}
+              />
+            ))}
+          </ScriptBand>
+        )}
+      </>
+    );
+  };
 
   const meta = [
     plural({ count: projectCount, word: 'project' }),
@@ -586,6 +663,64 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
         }
       />
     );
+
+  const groupsNode =
+    visibleGroups.length > 0 ? (
+      <div className="flex flex-col gap-4">
+        {visibleGroups.map((group) => {
+          const isCollapsed = query.trim() === '' && collapsed.has(group.mountId);
+          const isNewHere = draft.draft?.savedId === null && draft.draft.mountId === group.mountId;
+          return (
+            <ScriptGroupSection
+              key={group.mountId}
+              group={group}
+              count={group.scripts.length}
+              isCollapsed={isCollapsed}
+              isRefreshing={scans?.[group.worktreePath]?.status === 'loading'}
+              editor={isNewHere ? editorNode : null}
+              note={groupNote({ group })}
+              onToggle={() =>
+                setGroupCollapsed({ mountId: group.mountId, isCollapsed: !isCollapsed })
+              }
+              onRefresh={() =>
+                void refreshDiscoveredScripts({ sessionId, worktreePath: group.worktreePath })
+              }
+            >
+              {renderGroupBands({ group })}
+            </ScriptGroupSection>
+          );
+        })}
+      </div>
+    ) : null;
+
+  useScriptKeys({
+    keys: orderedKeys,
+    selectedKey: focusedKey,
+    onSelect: setFocusedKey,
+    onOpen: (key) => {
+      const row = rowsByKey.get(key);
+      if (row !== undefined) {
+        onOpen(row);
+      }
+    },
+    onRun: (key) => {
+      const row = rowsByKey.get(key);
+      if (row === undefined) {
+        return;
+      }
+      if (recordFor({ runs, ...row })?.status === 'pending') {
+        void onRestart(row);
+        return;
+      }
+      onRun(row);
+    },
+    onStop: (key) => {
+      const row = rowsByKey.get(key);
+      if (row !== undefined && recordFor({ runs, ...row })?.status === 'pending') {
+        onStop({ script: row.script });
+      }
+    },
+  });
 
   return (
     <PaneShell title="Scripts" meta={groups.length === 0 ? undefined : meta} actions={actions}>
@@ -616,7 +751,6 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
           onCancel={draft.keepEditing}
         />
       ) : null}
-      {projectCount < 2 ? null : <PinnedScriptsStrip entries={pinnedEntries} />}
       {query.trim() !== '' && visibleGroups.length === 0 ? (
         <EmptyLine
           action={
@@ -628,34 +762,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
           No scripts match "{query.trim()}".
         </EmptyLine>
       ) : null}
-      {visibleGroups.length > 0 ? (
-        <div className="flex flex-col gap-4">
-          {visibleGroups.map((group) => {
-            const isCollapsed = query.trim() === '' && collapsed.has(group.mountId);
-            const isNewHere =
-              draft.draft?.savedId === null && draft.draft.mountId === group.mountId;
-            return (
-              <ScriptGroupSection
-                key={group.mountId}
-                group={group}
-                count={group.scripts.length}
-                isCollapsed={isCollapsed}
-                isRefreshing={scans?.[group.worktreePath]?.status === 'loading'}
-                editor={isNewHere ? editorNode : null}
-                note={groupNote({ group })}
-                onToggle={() =>
-                  setGroupCollapsed({ mountId: group.mountId, isCollapsed: !isCollapsed })
-                }
-                onRefresh={() =>
-                  void refreshDiscoveredScripts({ sessionId, worktreePath: group.worktreePath })
-                }
-              >
-                {renderScripts({ group })}
-              </ScriptGroupSection>
-            );
-          })}
-        </div>
-      ) : null}
+      {groupsNode}
       {unmounted.length === 0 ? null : (
         <UnmountedScriptsNote
           sessionId={sessionId}

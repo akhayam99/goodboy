@@ -9,6 +9,10 @@ export type ContextDrawerView = 'current' | 'versions';
 
 export type DrawerContent =
   | {
+      readonly kind: 'check-analysis';
+      readonly payload: { readonly sessionId: SessionId; readonly checkUrl: string };
+    }
+  | {
       readonly kind: 'context';
       readonly payload: {
         readonly tab: ContextDrawerTab;
@@ -18,7 +22,11 @@ export type DrawerContent =
     }
   | {
       readonly kind: 'explore-file';
-      readonly payload: { readonly sessionDir: string; readonly entry: ExploreEntry };
+      readonly payload: {
+        readonly sessionDir: string;
+        readonly entry: ExploreEntry;
+        readonly line?: number;
+      };
     }
   | {
       readonly kind: 'artifact';

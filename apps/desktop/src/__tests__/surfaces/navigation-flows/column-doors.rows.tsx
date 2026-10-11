@@ -114,6 +114,21 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
+    name: 'column: monitoring',
+    covers: ['openMonitoring', 'studio:monitoring'],
+    open: () => click(doorIn('monitoring')),
+    lands: both(
+      () => band('Monitoring'),
+      async () => expect(doorIn('monitoring').getAttribute('aria-current')).toBe('page'),
+    ),
+  },
+  {
+    name: 'palette: Go to Monitoring',
+    covers: ['palette:Monitoring'],
+    open: () => openPalette(/^Monitoring/, 'Monitoring'),
+    lands: () => band('Monitoring'),
+  },
+  {
     name: 'column: chat',
     covers: ['openChat', 'studio:chat'],
     open: () => click(doorIn('chat')),

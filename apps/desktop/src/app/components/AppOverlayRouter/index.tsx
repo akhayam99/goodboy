@@ -1,7 +1,6 @@
 import { Suspense, lazy, type ReactNode } from 'react';
-import { FLOATING_SURFACE, cn } from '@goodboy/ui';
 import type { Session, Workspace } from '@goodboy/types';
-import { DeleteSessionConfirm } from '../../../features/session/components/DeleteSessionConfirm';
+import { DeleteSessionOverlay } from './DeleteSessionOverlay';
 import { WorkspaceLauncher } from '../../../features/workspace/components/WorkspaceLauncher';
 import type { SettingsScopeChange } from '../../../features/settings/settingsFocus';
 import type { ImpactScope } from '../../../features/impact/lib';
@@ -62,6 +61,11 @@ const ChatStudio = lazy(() =>
 const TerminalStudio = lazy(() =>
   import('../../../features/terminal/components/TerminalStudio').then((module) => ({
     default: module.TerminalStudio,
+  })),
+);
+const MonitoringStudio = lazy(() =>
+  import('../../../features/monitoring/components/MonitoringStudio').then((module) => ({
+    default: module.MonitoringStudio,
   })),
 );
 const CompanionStudio = lazy(() =>
@@ -188,6 +192,8 @@ const renderStudio = ({
           onClose={close}
         />
       );
+    case 'monitoring':
+      return currentWorkspace === null ? null : <MonitoringStudio onClose={close} />;
     default: {
       const unreachable: never = overlay;
       return unreachable;
@@ -289,15 +295,12 @@ export const AppOverlayRouter = ({
   return (
     <Suspense fallback={null}>
       <AppScopeOverlays studio={null} palette={palette} closePalette={closePalette} />
-      {deleteTargetSession !== null && deleteOpen ? (
-        <div
-          className={cn(
-            FLOATING_SURFACE,
-            'fixed bottom-4 right-4 z-popover w-96 max-w-[calc(100vw-2rem)]',
-          )}
-        >
-          <DeleteSessionConfirm session={deleteTargetSession} onClose={closeDeleteConfirm} />
-        </div>
+      {deleteTargetSession !== null ? (
+        <DeleteSessionOverlay
+          session={deleteTargetSession}
+          isOpen={deleteOpen}
+          onClose={closeDeleteConfirm}
+        />
       ) : null}
       <OnboardingWizard />
     </Suspense>

@@ -19,10 +19,7 @@ const CONFIRM_IMPORT = /import\s+(?:type\s+)?\{[^}]*\b[A-Za-z]*Confirm\b[^}]*\}\
 const CONFIRM_DEFINITION = /export const ([A-Za-z]*Confirm) =/g;
 const FLOATING_BELOW = /\babsolute\b[^'"`]*\btop-full\b/;
 const INLINE_CONFIRM = 'InlineConfirm';
-const FLOATING_ALLOWED: Readonly<Record<string, string>> = {
-  'apps/desktop/src/features/workspace-chat/components/ChatRoom/ChatHeaderDelete.tsx':
-    'floats the chat delete card under its trigger until the confirm sweep moves it to a ConfirmPopover',
-};
+const FLOATING_ALLOWED: Readonly<Record<string, string>> = {};
 
 type CardParams = {
   readonly text: string;

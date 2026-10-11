@@ -16,7 +16,6 @@ import {
   type SuggestionMountEvent,
 } from '../../store/slices/project-mounts/materializationProposals';
 import type { BranchPushState } from '../../shared/lib/branchPushState';
-import { dirtyTreeLine } from '../../shared/lib/dirtyTreeCopy';
 import type { PendingAgentSignal } from './pendingAgentSignal';
 import { isFresh, applyDismissals, dedupeByTargetKey, sortNextSteps } from './nextStepGates';
 import { PROVIDER_LABEL } from '../providers/providerLabel';
@@ -565,9 +564,7 @@ export const deriveNextSteps = ({
       dirtyCount: dirtyCountOf({ project }),
     });
   }
-  const cleanRebaseTargets = rebaseTargets.filter((target) => target.dirtyCount === 0);
-  const isRebaseBlocked = cleanRebaseTargets.length === 0;
-  const shownRebaseTargets = [...(isRebaseBlocked ? rebaseTargets : cleanRebaseTargets)].sort(
+  const shownRebaseTargets = [...rebaseTargets].sort(
     (first, second) =>
       second.behind - first.behind || first.projectName.localeCompare(second.projectName),
   );
@@ -581,9 +578,6 @@ export const deriveNextSteps = ({
       : isSingleProject
         ? `${shownRebaseTargets.length} branches behind`
         : `${projectCount} projects behind`;
-    const blockedDetail = isSingleTarget
-      ? dirtyTreeLine({ count: firstRebaseTarget.dirtyCount })
-      : `${shownRebaseTargets.length} branches have changes not committed`;
     suggestions.push({
       id: `rebase-project:${sessionId}`,
       kind: 'rebase-project',
@@ -594,10 +588,10 @@ export const deriveNextSteps = ({
         : isSingleProject
           ? `Rebase ${firstRebaseTarget.projectName}`
           : `Rebase ${shownRebaseTargets.length} branches`,
-      detail: isRebaseBlocked ? blockedDetail : behindDetail,
+      detail: behindDetail,
       sessionId,
       targetKey: null,
-      fingerprint: `rebase-project:${sessionId}:${isRebaseBlocked ? 'dirty:' : ''}${shownRebaseTargets.map((target) => `${target.id}:${target.behind}`).join(',')}`,
+      fingerprint: `rebase-project:${sessionId}:${shownRebaseTargets.map((target) => `${target.id}:${target.behind}`).join(',')}`,
       payload: { targets: shownRebaseTargets },
     });
   }

@@ -25,8 +25,6 @@ import { BOARD_STAGES } from './boardStages';
 import { useBoardNavigation } from './useBoardNavigation';
 import { useBoardSelection } from './useBoardSelection';
 import { ProjectFilter } from '../ProjectFilter';
-import { OngoingTasksRow } from './OngoingTasksRow';
-import { sessionsOnOngoingTask } from './sessionsOnOngoingTask';
 import { ProjectGitPills } from '../ProjectGitPill';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
@@ -70,34 +68,11 @@ type Props = {
 };
 
 export const StageBoard = ({ workspaceId, sessions, hasNewSession = true }: Props) => {
-  const [ongoingFilter, setOngoingFilter] = useState<string | null>(null);
-  const ongoingSessionIds = useAppStore(
-    useShallow((s) =>
-      sessionsOnOngoingTask({
-        sessionExternalTasks: s.sessionExternalTasks,
-        filter: ongoingFilter,
-      }),
-    ),
-  );
-  const shownSessions = useMemo(
-    () =>
-      ongoingFilter === null
-        ? sessions
-        : sessions.filter((session) => ongoingSessionIds.includes(session.id)),
-    [ongoingFilter, ongoingSessionIds, sessions],
-  );
-  const groups = useStageGroupedSessions(workspaceId, shownSessions);
+  const groups = useStageGroupedSessions(workspaceId, sessions);
   const nav = useBoardNavigation();
   const archivedList = useAppStore((s) => s.archivedSessions[workspaceId]);
   const archived = archivedList ?? EMPTY_ARRAY;
   const projectArchived = useProjectFilteredSessions({ workspaceId, sessions: archived });
-  const filteredArchived = useMemo(
-    () =>
-      ongoingFilter === null
-        ? projectArchived
-        : projectArchived.filter((session) => ongoingSessionIds.includes(session.id)),
-    [ongoingFilter, ongoingSessionIds, projectArchived],
-  );
   const filterSessions = useMemo(() => [...sessions, ...archived], [archived, sessions]);
   const boardReady = useAppStore((s) => s.boardReady);
   const loadArchivedSessions = useAppStore((s) => s.loadArchivedSessions);
@@ -131,9 +106,9 @@ export const StageBoard = ({ workspaceId, sessions, hasNewSession = true }: Prop
   const boardSessions = useMemo(
     () => [
       ...BOARD_STAGES.flatMap((stage) => [...(byStage.get(stage) ?? EMPTY_ARRAY)]),
-      ...filteredArchived,
+      ...projectArchived,
     ],
-    [byStage, filteredArchived],
+    [byStage, projectArchived],
   );
   const selection = useBoardSelection({ sessions: boardSessions });
   const { selectedIds } = selection;
@@ -211,37 +186,28 @@ export const StageBoard = ({ workspaceId, sessions, hasNewSession = true }: Prop
         )}
       >
         {pending || !empty || hasProjects ? (
-          <>
-            <div data-slot="board-header" className="flex shrink-0 flex-col">
-              <div aria-hidden data-slot="board-band" className="h-10 shrink-0" />
-              <div
-                data-slot="pane-title-row"
-                className="flex h-8 shrink-0 items-center justify-between gap-4"
-              >
-                <span className="flex min-w-0 items-center gap-2">
-                  <h1 className="text-title text-foreground">Board</h1>
-                  <ProjectGitPills entries={projectGitStatuses} isQuiet />
-                </span>
-                <span className="flex shrink-0 items-center gap-2">
-                  <ProjectFilter workspaceId={workspaceId} sessions={filterSessions} />
-                  {!hasNewSession ? null : hasUsableProject ? (
-                    newSessionButton
-                  ) : (
-                    <Tooltip content={blockedReason} side="bottom">
-                      {newSessionButton}
-                    </Tooltip>
-                  )}
-                </span>
-              </div>
+          <div data-slot="board-header" className="flex shrink-0 flex-col">
+            <div aria-hidden data-slot="board-band" className="h-10 shrink-0" />
+            <div
+              data-slot="pane-title-row"
+              className="flex h-8 shrink-0 items-center justify-between gap-4"
+            >
+              <span className="flex min-w-0 items-center gap-2">
+                <h1 className="text-title text-foreground">Board</h1>
+                <ProjectGitPills entries={projectGitStatuses} isQuiet />
+              </span>
+              <span className="flex shrink-0 items-center gap-2">
+                <ProjectFilter workspaceId={workspaceId} sessions={filterSessions} />
+                {!hasNewSession ? null : hasUsableProject ? (
+                  newSessionButton
+                ) : (
+                  <Tooltip content={blockedReason} side="bottom">
+                    {newSessionButton}
+                  </Tooltip>
+                )}
+              </span>
             </div>
-            {pending ? null : (
-              <OngoingTasksRow
-                workspaceId={workspaceId}
-                filter={ongoingFilter}
-                onFilter={setOngoingFilter}
-              />
-            )}
-          </>
+          </div>
         ) : null}
 
         {pending && <BoardSkeleton lanes={layout.lanes} />}
@@ -308,7 +274,7 @@ export const StageBoard = ({ workspaceId, sessions, hasNewSession = true }: Prop
           <BoardLanes
             layout={layout}
             byStage={byStage}
-            archived={filteredArchived}
+            archived={projectArchived}
             isArchivedLoading={archivedList === undefined}
             nav={nav}
             selection={selection}

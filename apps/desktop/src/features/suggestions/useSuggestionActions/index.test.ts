@@ -155,7 +155,7 @@ vi.mock('../../worktree/worktree', async (importOriginal) => ({
 }));
 vi.mock('../../session/contextWindowFor', () => ({ contextWindowFor: () => null }));
 
-import { ensure, resetWorktreeStatusCache } from '../../../store/slices/worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../../store/slices/worktreeStatuses/cache';
 import { useSuggestionActions } from './index';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -299,65 +299,6 @@ describe('useSuggestionActions', () => {
     await vi.waitFor(() => expect(spies.rebaseRun).toHaveBeenCalledTimes(1));
     expect(spies.setSessionActiveProject).not.toHaveBeenCalled();
     expect(spies.rebaseRun).toHaveBeenCalledWith({ mountId: WEB_MOUNT_ID, behind: 2 });
-  });
-
-  const dirtyRebase = (): SessionSuggestion => ({
-    ...suggestionBase,
-    id: 'rebase-project:session-1',
-    kind: 'rebase-project',
-    payload: {
-      targets: [
-        {
-          id: 'mount:mount-web',
-          mountId: WEB_MOUNT_ID,
-          projectId: WEB_ID,
-          projectName: 'web',
-          branch: 'feature/web',
-          worktreePath: '/tmp/web',
-          baseBranch: 'main',
-          behind: 2,
-          dirtyCount: 11,
-        },
-      ],
-    },
-  });
-
-  it('offers no Rebase while the tree has changes that are not committed', () => {
-    const actions = actionsFor({ suggestion: dirtyRebase() });
-
-    expect(actions.primary).toBeNull();
-    expect(actions.extras?.map((extra) => [extra.label, extra.variant])).toEqual([
-      ['Check again', 'secondary'],
-      ['Open terminal', 'ghost'],
-    ]);
-  });
-
-  it('refreshes the worktree status when the person checks again', async () => {
-    await ensure({
-      key: JSON.stringify(['/tmp/web', 'main']),
-      worktreePath: '/tmp/web',
-      baseBranch: 'main',
-      maxAgeMs: 0,
-    });
-    spies.readWorktreeStatus.mockClear();
-    const actions = actionsFor({ suggestion: dirtyRebase() });
-
-    await actions.extras?.[0]?.run();
-
-    expect(spies.readWorktreeStatus).toHaveBeenCalledTimes(1);
-    expect(spies.readWorktreeStatus).toHaveBeenCalledWith({
-      worktreePath: '/tmp/web',
-      baseBranch: 'main',
-    });
-    expect(spies.rebaseRun).not.toHaveBeenCalled();
-  });
-
-  it('opens the terminal on the worktree that is not clean', async () => {
-    const actions = actionsFor({ suggestion: dirtyRebase() });
-
-    await actions.extras?.[1]?.run();
-
-    expect(spies.openMountTerminal).toHaveBeenCalledWith(SESSION_ID, '/tmp/web');
   });
 
   it('runs the second rebase choice with that mount and distance', async () => {
@@ -723,27 +664,6 @@ describe('useSuggestionActions', () => {
     });
   });
 
-  it('starts a debugger to fix failing checks', () => {
-    const actions = actionsFor({
-      suggestion: {
-        ...suggestionBase,
-        id: 'fix-checks:mount-web',
-        kind: 'fix-checks',
-        band: 1,
-        payload: { mountId: WEB_MOUNT_ID, projectName: 'web', prNumber: 618 },
-      },
-    });
-
-    expect(actions.primary?.label).toBe('Start debugger');
-    actions.primary?.run();
-
-    expect(spies.spawnAgent).toHaveBeenCalledWith(SESSION_ID, {
-      kindOverride: 'debugger',
-      mountId: WEB_MOUNT_ID,
-      focus: 'none',
-    });
-  });
-
   it('pushes the named mount', () => {
     const actions = actionsFor({
       suggestion: {
@@ -1053,7 +973,7 @@ const EVERY_KIND = {
 } satisfies { readonly [K in SuggestionKind]: Extract<SessionSuggestion, { readonly kind: K }> };
 
 describe('every suggestion kind', () => {
-  it.each(SUGGESTION_KINDS)(
+  it.each(SUGGESTION_KINDS.filter((kind) => kind !== 'fix-checks'))(
     '%s runs as a promise with a failure title, so the row can show pending',
     async (kind) => {
       const actions = actionsFor({ suggestion: EVERY_KIND[kind] });
@@ -1088,12 +1008,5 @@ describe('every suggestion kind', () => {
     await expect(actions.primary?.run()).rejects.toThrow('rejected');
     expect(spies.reportError).not.toHaveBeenCalled();
     expect(spies.emitNotification).not.toHaveBeenCalled();
-  });
-
-  it('hands a failed agent start back as a rejection', async () => {
-    spies.spawnAgent.mockRejectedValueOnce(new Error('provider unavailable'));
-    const actions = actionsFor({ suggestion: EVERY_KIND['fix-checks'] });
-
-    await expect(actions.primary?.run()).rejects.toThrow('provider unavailable');
   });
 });

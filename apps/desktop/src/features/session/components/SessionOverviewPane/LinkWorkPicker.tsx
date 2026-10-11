@@ -17,17 +17,12 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { formatSpan } from '../../../../shared/utils/time/formatSpan';
 import { LinkScopePreview } from './LinkScopePreview';
-import {
-  SCOPE_TAB_LABEL,
-  linkedLabel,
-  relationFor,
-  type LinkChoice,
-  type LinkScope,
-} from './linkScope';
+import { LINKED_LABEL, relationFor, type LinkChoice } from './linkScope';
+import { starIdentityOfTask, starKey } from '../../../integrations/starred/starredIssueOf';
 import {
   LINK_WORK_PROVIDER_LABEL,
   linkWorkView,
-  type LinkedScopes,
+  type LinkedKeys,
   type LinkWorkItem,
   type LinkWorkRow,
   type LinkWorkSource,
@@ -38,13 +33,15 @@ type Props = {
   readonly onQueryChange: (query: string) => void;
   readonly items: ReadonlyArray<LinkWorkItem>;
   readonly lookedUp: ReadonlyArray<LinkWorkItem>;
-  readonly linkedScopes: LinkedScopes;
+  readonly linkedKeys: LinkedKeys;
+  readonly starredKeys: ReadonlySet<string>;
   readonly sources: ReadonlyArray<SessionExternalTaskProvider>;
   readonly initialSource?: SessionExternalTaskProvider;
   readonly isLoading: boolean;
   readonly isLinking: boolean;
   readonly error: string | null;
   readonly onLink: (task: LaunchExternalTask, choice: LinkChoice) => void;
+  readonly onStar: (task: LaunchExternalTask) => void;
   readonly onClose: () => void;
 };
 
@@ -68,8 +65,8 @@ const placeholderOf = ({
     : `Search ${LIST_FORMAT.format(sources.map((source) => LINK_WORK_PROVIDER_LABEL[source]))} or paste a link`;
 
 const rowMeta = ({ row, now }: { readonly row: LinkWorkRow; readonly now: number }): string => {
-  if (row.linkedScopes.length > 0) {
-    return linkedLabel({ scopes: row.linkedScopes });
+  if (row.isLinked) {
+    return LINKED_LABEL;
   }
   if (row.section === 'inbox') {
     return formatSpan({ from: row.updatedAt, to: now });
@@ -85,13 +82,15 @@ export const LinkWorkPicker = ({
   onQueryChange,
   items,
   lookedUp,
-  linkedScopes,
+  linkedKeys,
+  starredKeys,
   sources,
   initialSource,
   isLoading,
   isLinking,
   error,
   onLink,
+  onStar,
   onClose,
 }: Props) => {
   const now = useNow(30_000);
@@ -102,11 +101,10 @@ export const LinkWorkPicker = ({
     pickedSource ??
     (initialSource !== undefined && sources.includes(initialSource) ? initialSource : 'all');
   const [activeIndex, setActiveIndex] = useState(0);
-  const [scope, setScope] = useState<LinkScope>('session');
   const [isClosing, setIsClosing] = useState(true);
   const view = useMemo(
-    () => linkWorkView({ query, source, items, lookedUp, linkedScopes }),
-    [query, source, items, lookedUp, linkedScopes],
+    () => linkWorkView({ query, source, items, lookedUp, linkedKeys }),
+    [query, source, items, lookedUp, linkedKeys],
   );
   const rows = view.kind === 'unknownLink' ? [] : view.rows;
   const active = rows[Math.min(activeIndex, rows.length - 1)] ?? null;
@@ -119,26 +117,26 @@ export const LinkWorkPicker = ({
     inputRef.current?.focus();
   }, []);
 
+  const isStarred = (row: LinkWorkRow): boolean => {
+    const identity = starIdentityOfTask({ task: row.task });
+    return identity !== null && starredKeys.has(starKey(identity));
+  };
+
   const optionId = (key: string): string => `${listId}-${key}`;
 
-  const isDuplicate = (row: LinkWorkRow): boolean => row.linkedScopes.includes(scope);
-
   const link = (row: LinkWorkRow | null): void => {
-    if (row === null || isLinking || isDuplicate(row)) {
+    if (row === null || isLinking || row.isLinked) {
       return;
     }
-    onLink(row.task, { scope, relation: relationFor({ scope, isClosing }) });
+    onLink(row.task, { relation: relationFor({ isClosing }) });
   };
 
-  const pickScope = (next: LinkScope): void => {
-    setScope(next);
-    setIsClosing(true);
+  const star = (row: LinkWorkRow | null): void => {
+    if (row === null || isLinking) {
+      return;
+    }
+    onStar(row.task);
   };
-
-  const scopeOptions = [
-    { value: 'session' as const, label: SCOPE_TAB_LABEL.session },
-    { value: 'workspace' as const, label: SCOPE_TAB_LABEL.workspace },
-  ];
 
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
     switch (event.key) {
@@ -197,15 +195,6 @@ export const LinkWorkPicker = ({
           onChange={(event) => onQueryChange(event.target.value)}
           onKeyDown={onKeyDown}
           className="min-w-0 flex-1 bg-transparent text-body text-foreground outline-none placeholder:text-faint-foreground"
-        />
-      </div>
-      <div className="flex px-2 pb-2">
-        <SegmentedTabs
-          size="sm"
-          ariaLabel="Link scope"
-          options={scopeOptions}
-          value={scope}
-          onChange={pickScope}
         />
       </div>
       {sources.length > 1 && view.kind === 'list' ? (
@@ -292,11 +281,12 @@ export const LinkWorkPicker = ({
         <LinkScopePreview
           provider={active.task.provider}
           identifier={active.task.identifier}
-          title={active.task.title}
-          scope={scope}
           isClosing={isClosing}
           isLinking={isLinking}
-          {...(isDuplicate(active) ? { duplicate: { scopes: active.linkedScopes } } : {})}
+          isDuplicate={active.isLinked}
+          canStar={starIdentityOfTask({ task: active.task }) !== null}
+          isStarred={isStarred(active)}
+          onStar={() => star(active)}
           onToggleClosing={() => setIsClosing((current) => !current)}
           onLink={() => link(active)}
           onCancel={onClose}

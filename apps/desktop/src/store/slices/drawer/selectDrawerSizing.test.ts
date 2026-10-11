@@ -29,6 +29,14 @@ const SAVED_WIDTHS: Readonly<Record<DrawerSizing, ReadonlyArray<number>>> = {
 };
 
 const EVERY_KIND: ReadonlyArray<DrawerRequest> = [
+  {
+    kind: 'check-analysis',
+    sessionId: SESSION_ID,
+    payload: {
+      sessionId: SESSION_ID,
+      checkUrl: 'https://github.com/harborline/payments-api/actions/runs/31/job/42',
+    },
+  },
   { kind: 'context', sessionId: SESSION_ID, payload: { tab: 'goal', view: 'current' } },
   {
     kind: 'explore-file',
@@ -105,6 +113,7 @@ const slideOf = (keyframes: string): number => {
 };
 
 const SIZING_BY_KIND: ReadonlyArray<readonly [DrawerRequest['kind'], DrawerSizing]> = [
+  ['check-analysis', 'side'],
   ['context', 'side'],
   ['explore-file', 'reader'],
   ['artifact', 'side'],

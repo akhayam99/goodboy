@@ -1,4 +1,5 @@
 import type { IsoDateTime, StarredIssue, WorkspaceId } from '@goodboy/types';
+import type { LaunchExternalTask } from '../../inbox/launchSpecFor';
 import type { InboxRecord } from '../../inbox/types';
 import { parseIssueCode } from '../issueCode/parseIssueCode';
 import type { LookupTarget } from '../issueCode/routeIssueCode';
@@ -42,6 +43,53 @@ export const starIdentityOf = (record: InboxRecord): Identity | null => {
   }
 };
 
+const GITHUB_ISSUE_URL = /github\.com\/([^/]+\/[^/]+)\/issues\/(\d+)/;
+
+type TaskParams = {
+  readonly task: LaunchExternalTask;
+};
+
+const ISSUE_MARK = '/-/issues/';
+
+const gitlabContainerOf = ({ task }: TaskParams): string | null => {
+  const mark = task.url.indexOf(ISSUE_MARK);
+  if (mark < 0) {
+    return null;
+  }
+  const afterScheme = task.url.indexOf('://') + 3;
+  const pathStart = task.url.indexOf('/', afterScheme);
+  if (afterScheme < 3 || pathStart < 0 || pathStart >= mark) {
+    return null;
+  }
+  return task.url.slice(pathStart + 1, mark);
+};
+
+export const starIdentityOfTask = ({ task }: TaskParams): Identity | null => {
+  switch (task.provider) {
+    case 'linear':
+    case 'jira':
+    case 'sentry':
+      return { provider: task.provider, externalId: task.externalId, container: null };
+    case 'github': {
+      const match = GITHUB_ISSUE_URL.exec(task.url);
+      if (match?.[1] === undefined || match[2] === undefined) {
+        return null;
+      }
+      return { provider: 'github', externalId: `${match[1]}#${match[2]}`, container: match[1] };
+    }
+    case 'gitlab': {
+      const container = gitlabContainerOf({ task });
+      if (container === null) {
+        return null;
+      }
+      return { provider: 'gitlab', externalId: task.externalId, container };
+    }
+    case 'slack':
+    case 'bitbucket':
+      return null;
+  }
+};
+
 export const starKey = ({ provider, externalId }: Pick<StarredIssue, 'provider' | 'externalId'>) =>
   `${provider}:${externalId}`;
 
@@ -68,6 +116,33 @@ export const starredIssueOf = ({
     stateLabel: record.stateLabel,
     starredAt: now,
     refreshedAt: now,
+  };
+};
+
+type StarTaskParams = TaskParams & {
+  readonly workspaceId: WorkspaceId;
+  readonly now: IsoDateTime;
+};
+
+export const starredIssueOfTask = ({
+  workspaceId,
+  task,
+  now,
+}: StarTaskParams): StarredIssue | null => {
+  const identity = starIdentityOfTask({ task });
+  if (identity === null) {
+    return null;
+  }
+  return {
+    workspaceId,
+    ...identity,
+    identifier: task.identifier,
+    title: task.title,
+    url: task.url,
+    state: 'open',
+    stateLabel: null,
+    starredAt: now,
+    refreshedAt: null,
   };
 };
 

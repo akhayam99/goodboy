@@ -13,8 +13,8 @@
   capability stays one step away.
 - **The board frame.** The header has the pane title grade (`Board` alone, no
   total: each lane carries its own count), with the repository summary as quiet
-  meta text after it and the project filter and New session on the right. The
-  Ongoing row shows only while the workspace tracks a task. Header and lanes
+  meta text after it and the project filter and New session on the right.
+  Nothing else sits on that line, and no row sits under it. Header and lanes
   share one frame centred in the pane, so the title's left edge is the first
   lane's left edge and the actions' right edge is the last lane's right edge.
   There are six lanes in pipeline order (building, running, needs you, in
@@ -51,7 +51,7 @@
   reads like a figure, not a place you work in. The spend chip is state that
   opens the studio that owns that number, on Impact's Spend tab, and the Limits
   chips open the Providers menu. The bar never edits a record in place.
-- **The column holds every door.** Board, Tasks, Chat, Workflows and Terminal sit
+- **The column holds every door.** Board, Tasks, Chat, Workflows, Terminal and Monitoring sit
   under New session, the Sessions list follows, Settings and the Goodboy row sit at
   the foot. Board is home and the first door (⌘⇧H). The column is on every
   screen with a workspace: the board, a session, the draft and every studio but
@@ -88,7 +88,7 @@
   editors layer over the session pane. Studios take the slot. Anything that
   became a lens stays a lens.
 - **A door replaces, a link stacks.** A door is a control that names a studio:
-  a column door (Tasks, Chat, Workflows, Terminal, Settings), a ⌘K Go to
+  a column door (Tasks, Chat, Workflows, Terminal, Monitoring, Settings), a ⌘K Go to
   row and the spend chip. Pressing a door while a studio is open replaces that studio in
   the same history entry (`switchStudio`), so five doors in a row leave one
   entry, not five. A link opened from inside a studio's content (a notification
@@ -213,7 +213,17 @@ opens it on a mode. Commands is the first mode.
 In the composer, `$` lists the scripts of the session's mounted projects
 (`useSessionScripts`): saved scripts first, then the `package.json` and
 `composer.json` scripts pinned for the project, by category. The Scripts lens
-lists the same set. Scripts that are not pinned stay on the workspace Projects
+lists the same set in two bands per project: **Services** (category `dev`, or a
+script named `start`, `serve`, `watch` or `preview`, decided by `isService`) and
+**Tasks** (the rest), each with a count. A running service row shows the last
+output line, uptime, CPU and memory (the monitor snapshot for the run's pid,
+polled only while the lens is open), its port as a link once a listener owned by
+the run exists, and **Stop** and **Restart**; an idle one shows its expected
+port as a chip, or `:5005 in use` in warning when another worktree holds it.
+A task row shows a result glyph, its duration and age, and the last line of a
+failure. A project with nothing pinned shows a dimmed **Suggested** band (its
+root `dev`, `build`, `test`, `lint` and `typecheck`, first match each) with a
+**Pin** on every row. Scripts that are not pinned stay on the workspace Projects
 page in Settings, where they are pinned. A row's sublabel names its package (the
 manifest name, or `root`) and shows the script's body, not its invocation; the
 trailing badge is `Running` or the package's short name (`web`, not
@@ -442,7 +452,7 @@ reference material beside the page and closes with the pane that opened it.
 workspace, in the same shape everywhere: the toggle on the traffic-light axis,
 New session (⌘N, the only emphasised control, selected while the draft is open,
 a primary dot and `Draft in progress` while a draft waits), the doors Board
-(⌘⇧H), Tasks, Chat, Workflows and Terminal (⌃`) as one 28px row each (icon and word, the
+(⌘⇧H), Tasks, Chat, Workflows, Terminal (⌃`) and Monitoring as one 28px row each (icon and word, the
 shortcut on hover), the Sessions list (`SessionNavSidebar`, its rows and header
 belong to the sessions list), then at the foot Settings (⌘,), the Goodboy row
 and a bug icon that opens the report sheet. Chat's door carries a running dot
@@ -459,7 +469,7 @@ drawer header (`HeaderActions`): secondary controls, at most one secondary
 button, at most one filled primary, then the overflow `...`, all 28 tall, the
 last one on the column edge. The Session overview holds only the overflow
 (Refresh, Pin session, Archive session, Delete session...); Delete session...
-opens its confirm as a card under the title row, and Escape or Cancel gives
+opens its confirm beside the overflow trigger without moving the page, and Escape or Cancel gives
 focus back to the overflow. The Agent page keeps Interrupt, Close or Reopen as
 one ghost button with its word (it folds into the overflow below 560px) and
 `Delete agent` in the overflow. The artifact header reads
@@ -500,7 +510,7 @@ hide animation or overlay can move it.
 
 - **A column has one reduced state, and it is never a narrower copy of
   itself.** The left column's one reduced state is the 44px rail
-  (`ColumnRail`): the toggle, New, Board, Tasks, Chat, Workflows and Terminal as icons
+  (`ColumnRail`): the toggle, New, Board, Tasks, Chat, Workflows, Terminal and Monitoring as icons
   with their names and shortcuts in tooltips, then the open session and the
   pinned sessions as 28px node buttons (see the rail paragraph below), then
   Settings, the bug and the Goodboy mark at the bottom. It works at rail width
@@ -588,21 +598,37 @@ card. The row, the card and the board card all read `useSessionSummary`, so they
 say the same things in the same words. The board card keeps the whole summary
 and the session header keeps its chips.
 
-**The user chooses the order of the list.** The Sessions header holds one `⋯`
-menu: Sort (Needs you first then the session you opened last [default],
-Alphabetical, Last activity, Created), Group (None [default], PR state, Stage,
-Project), Filter by project (the same selection as the board's project filter)
-and Show archived. The choices persist per workspace in the browser storage
-(`goodboy:session-view:<workspace id>`, version 2); nothing goes to the
-database. By default the sessions that need you sit on top, the one that has
-waited longest first, and the rest follow `sessions.last_opened_at`, written
-when a session opens (a session never opened falls back to its last activity).
-A running session does not move, and a row moves only when you open a session
-or a session starts needing you. With no grouping the first eight rows show and
-the rest sit under **Show N more**, remembered per workspace. A session that
-needs you and the open session are never folded. A grouped list shows every
-group, finished groups start collapsed, and nothing folds. `⌘⇧[` and `⌘⇧]` walk
-this same order and skip folded rows, so they match what you see.
+**The user chooses what the list shows and in what order.** The Sessions header
+holds one funnel button, **Filter sessions** (`SessionFilterPopover`), with the
+count of active filters as a small badge, like the Board's project filter. Its
+popover is a labelled dialog, not a menu of menus. Status lists Needs you,
+Running, In review, Building and Done with their counts (`statusFilter` in the
+prefs). Project lists the projects of the sessions with their counts and shows
+only when two or more projects have sessions (the same selection as the board's
+project filter). Archive holds Show archived. Sort offers Needs you first
+[default], Alphabetical, Last activity and Created; Group offers None
+[default], PR state, Stage and Project. **Clear filters** shows while a filter
+is active. The choices persist per workspace in the browser storage
+(`goodboy:session-view:<workspace id>`, version 3: a version 2 record loads with
+an empty status filter); nothing goes to the database.
+
+A filter never hides a pinned session or the open session
+(`withExemptSessions`, `filterSessionsByStatus`). When filters hide other
+sessions, one quiet line under the list reads "N hidden by filters" with a
+ghost **Clear**; a list that filters out everything says "No sessions match".
+
+By default the sessions that need you sit on top, the one that has waited longest
+first, and the rest follow their last activity (`activityKeyOf`: the later of
+the last finished turn and `sessions.updated_at`). Opening a session writes
+`sessions.last_opened_at` and never moves a row, so the list holds still while
+you click through it. A row moves only when its session has new activity or
+starts needing you. `last_opened_at` feeds `⌃Tab` and the switcher's recents
+only. The Board's default order uses the same key. With no grouping the first
+eight rows show and the rest sit under **Show N more**, remembered per
+workspace. A session that needs you and the open session are never folded. A
+grouped list shows every group, finished groups start collapsed, and nothing
+folds. `⌘⇧[` and `⌘⇧]` walk this same displayed order and skip folded rows, so
+pressing `⌘⇧]` four times from the first row visits the next four sessions.
 
 **Pin a session and it stays at the top of the list.** **Pin session** and
 **Unpin session** are session actions (the row's right-click menu, `⌘K` and
@@ -863,7 +889,9 @@ activity yet show the plain overview with its actions.
   name through the `Trail` primitive from `@goodboy/ui`. A studio body that
   goes deeper claims the band with `StudioTrail` (the workflow editor shows
   `Workflows > Ship a fix` with its save state and actions), so the app has one
-  breadcrumb.
+  breadcrumb. In a split studio (Chat, Guide, What's new, Tasks, Notifications) the band
+  is the first child of the detail beside the page rail, not a bar across the rail, so
+  the crumb, the title and the body share one x ([frame map](./styling.md#the-frame-map)).
 - **The parent crumb is Up, and the last crumb names the kind.** No crumb
   carries a back glyph and `Trail` has no lead slot, so a page never draws its
   own back link above its content. The last crumb of a run, an artifact, an
@@ -980,6 +1008,13 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
   keeps the existing lines and offers Retry; oversized files offer the editor.
   The per-file expand-all registration in
   `features/diff/components/DiffView` lets file actions reveal the whole file.
+- **A double click on a name in a diff line shows where it is defined and used.**
+  Alt click does the same. An anchored popover under the word lists a Defined in
+  group and a Used in group from the worktree, marks files of this change, and
+  says when it shows only the first 300. A result in this diff scrolls to its
+  line and flashes it, expanding the hidden range first when the line sits in
+  one; any other result opens the Explore file drawer on that line. The commit
+  view has no peek, because its lines are not the working tree's.
 - **A fix run has no segment of its own.** Its transcript is a drawer on the
   Comments tab, so the trail reads Session, Branch, Comments.
 - **In the legacy layout, Settings claims its studio band** with Settings, the
@@ -1041,7 +1076,7 @@ covered.
   chat you had open last in this workspace (`lastChatByWorkspace`, memory only,
   `selectChatDoor`), else the most recent chat by activity, else a new chat; after
   you press New chat it opens a new one until you pick a chat again. The column
-  door, the top bar button and the palette entry share that rule. Archiving or
+  door, the top bar button and the palette entry share that rule. A chat with no message is one centred stage (the glyph, **Ask about {workspace}**, one sentence, the composer and up to three suggestions); the first message docks the composer at the bottom. Archiving or
   deleting the open chat lands on the next most recent one, not a blank page. Its
   row carries a running dot or a new-reply dot. The command
   center opens the palette and shows ⌘K; it never takes typing itself. In the palette,
@@ -1129,11 +1164,15 @@ only drop under zoom.
 - **Identity is pinned and mounted once.** Workspace identity stays at the left
   of the top bar on the board, inside sessions, and under studios. Exactly one
   switcher is live, and ⌘O opens its single anchored popover.
-- **Theme is not in the bar.** The theme changes a few times a week, not per
-  click, and the swap is one paint (`theme-switch-is-one-paint`), so a
-  permanent icon bought little. The three-way choice (dark, light, Match
-  system) lives in Settings > App > General and in the palette (`Switch to
-light mode`, `Switch to dark mode`). No shortcut is bound to it.
+- **Theme is in the bar.** A 28px square `ThemeToggle` sits between spend and
+  the bell, because the owner switches often: Sun in light, Moon in dark,
+  Monitor while following the system. The tooltip names the state and the
+  action (`Dark theme. Switch to light`, `Matching system (dark). Switch to
+light`) and a click writes the explicit opposite of what shows. Settings >
+  App > General keeps the three-way choice and the palette keeps its entry;
+  all three call `switchTheme({ to })` in `shared/lib/theme.ts`, the only
+  writer. The swap stays one paint (`theme-switch-is-one-paint`). No shortcut
+  is bound to it.
 - The top bar never edits. Reporting a bug, the setup checklist, the update
   and the version are about Goodboy itself, so they live at the foot of the
   column: the Goodboy row and the bug icon beside it.
@@ -1713,12 +1752,28 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   confirm. Panel sections sit on bands (`Band`, eyebrow outside) with gap between
   them and no `Divider`. The workspace page is the exception: one
   column of eyebrow sections 24px apart. Its title is the workspace name,
-  renamed in place. Projects group Starred ahead of All (never in both), each
-  a 32px grid row (star, kind, name, description, a base-branch chip only
-  when set by hand, a Folder-not-found flag) with Open in editor, Copy path
-  and Remove link in a reserved column, dim at rest; clicking the name opens an
-  inline editor below the row for the rest (description, base branch, After
-  merge for repos, folder, facts, footer actions). New session defaults sit in a
+  renamed in place. One `Terminal folder` row sits above the projects: the
+  computed folder (`workspaceFolder`) with `Change` (the folder dialog) and,
+  when overridden, `Use the default` (`setTerminalWorkspaceFolder`). Projects
+  group `Starred` ahead of `Other projects` (never in both; one `Projects`
+  heading with `Star the ones you use most.` while nothing is starred), 16px
+  apart with no divider, each a `SectionHeader` with its count and, for
+  Starred, `Agents and pickers list these first.`; Starred is never folded and
+  `Show N more` stays under Other projects. Each project is a 32px row on the
+  group grid (star, kind, name, description, a base-branch chip only when set
+  by hand, a Folder-not-found flag) with Open in editor, Copy path and Remove
+  link in a reserved column, dim at rest. The star shows at rest only on
+  starred rows (filled, warning tone); on the others it appears on hover and
+  focus in the same 24px slot (`StarToggle isQuietAtRest`). Clicking the name
+  opens an inline editor card below the row for the rest (description, base
+  branch, After merge for repos, folder, scripts, facts, footer actions); the
+  card starts at the name column (`grid-cols-subgrid`) so its content sits 12px
+  right of the name. `starredProjectsFirst({ projects, inside })` is the one
+  order: starred first, then the rest, by `name` in Settings and by `recency`
+  in pickers (`groupProjects` calls it). A project picker (the session Add
+  project list, the Sessions project filter) with a starred project and six or
+  more projects shows the same two headings and a small filled star on starred
+  rows (`shouldGroupStarred`); a search flattens them. New session defaults sit in a
   two-column grid with each help behind an info mark, followed by the
   `After a pull request merges` segmented control, and disconnecting is a
   ghost row at the bottom that asks with `InlineConfirm`. Onboarding keeps the
@@ -2163,7 +2218,7 @@ forward move that stays in its session keeps it open (`keepAskDrawer` in
 `navigate`), so a chip in an answer changes the page beside it; leaving the
 session closes it, and Back brings it back like any drawer. Another drawer
 opened from the page replaces it. `app/components/DrawerHost` turns a `kind` into its content, framed
-by `DrawerFrame` from `@goodboy/ui`: a 44px header (icon, title, count, at most
+by `DrawerFrame` from `@goodboy/ui`: a header whose 28px row is centred on the band (icon, title, count, at most
 one labelled action, close), one divider, a `ScrollFade` body and an optional
 `dock`. A body that scrolls itself, such as a chat, passes `scroll="self"` and
 fills the frame instead. A new kind adds a variant to `DrawerContent` and a
@@ -2950,11 +3005,14 @@ shows once: in the `Pinned` strip at the top of the lens only when the session
 has more than one project (one click runs one in its group's worktree), and
 only in the rows otherwise. The palette lists pinned scripts under `$` with the
 project name (`scriptPinEntries`, run through `runPinnedScript`; saved scripts show
-their project name too). On the workspace Projects page every row has a
-`Scripts` fold (`ProjectScriptsFold`, closed by default) that reads the
-project folder only when it opens (`loadProjectRootScripts`, kept in memory
-by root path) and says `Scripts on <base>`, with the same pin; a project with
-no package.json or composer.json says so.
+their project name too). On the workspace Projects page the open editor card
+of a project ends with a `Scripts` field (`ProjectScriptsField`, label
+`Scripts · N pinned`): it reads the project folder when the card opens
+(`loadProjectRootScripts`, kept in memory by root path), says `On <base>` and
+where a pin shows, and lists the scripts with the same pin; a package label
+shows only with several packages, a project with no package.json or
+composer.json says so, and a failed scan is an inline `Notice` with `Retry`.
+The row itself stays 32px and carries no scripts control.
 
 ## Undo operations
 

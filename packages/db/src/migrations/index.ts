@@ -84,6 +84,7 @@ import { m225ResolveAttemptFailureCause } from './m225-resolve-attempt-failure-c
 import { m226SessionLastOpened } from './m226-session-last-opened';
 import { m227AskTelemetryThreads } from './m227-ask-telemetry-threads';
 import { m228RetireProjectModels } from './m228-retire-project-models';
+import { m229OngoingToStars } from './m229-ongoing-to-stars';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -461,4 +462,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 226, sql: m226SessionLastOpened },
   { version: 227, sql: m227AskTelemetryThreads },
   { version: 228, sql: m228RetireProjectModels },
+  { version: 229, sql: m229OngoingToStars },
 ];

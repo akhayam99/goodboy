@@ -185,6 +185,7 @@ export const seedPinnedSessions = (): Session => {
         group: 'project',
         isArchivedShown: false,
         isFoldOpen: false,
+        statusFilter: [],
       },
     },
   });

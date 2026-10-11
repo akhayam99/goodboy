@@ -11,6 +11,11 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
+const PROJECTS = vi.hoisted(() => [
+  { id: 'project-payments', workspaceId: 'ws-harborline', name: 'payments-api' },
+  { id: 'project-ledger', workspaceId: 'ws-harborline', name: 'ledger-core' },
+]);
+
 const { store, summarize } = vi.hoisted(() => ({
   summarize: vi.fn(async (_params: Record<string, unknown>) =>
     JSON.stringify({
@@ -23,10 +28,7 @@ const { store, summarize } = vi.hoisted(() => ({
   ),
   store: {
     workspaces: [{ id: 'ws-harborline', name: 'Harborline' }],
-    projects: [
-      { id: 'project-payments', workspaceId: 'ws-harborline', name: 'payments-api' },
-      { id: 'project-ledger', workspaceId: 'ws-harborline', name: 'ledger-core' },
-    ],
+    projects: PROJECTS,
     sessions: [] as ReadonlyArray<unknown>,
     stages: {} as Record<string, string>,
     mounts: {} as Record<string, ReadonlyArray<{ readonly projectId: string }>>,
@@ -59,6 +61,7 @@ const { store, summarize } = vi.hoisted(() => ({
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
     agentDraft: {} as Record<string, string>,
     navigate: vi.fn(),
+    openStudio: vi.fn(),
   },
 }));
 
@@ -176,6 +179,7 @@ const LINK_ADD = {
 };
 
 beforeEach(() => {
+  store.projects = PROJECTS;
   store.chatMessages = {};
   store.chatLinks = {};
   store.chatStreams = {};
@@ -213,17 +217,48 @@ describe('ChatRoom', () => {
     expect(inColumn(screen.getByRole('textbox', { name: 'Message' }))).toBe(1);
   });
 
-  it('keeps the new chat prompt and its composer on the page column too', () => {
+  it('puts the one composer inside the empty stage on the page column', () => {
     renderRoom({ chat: null });
 
-    const columns = Array.from(document.querySelectorAll('[data-page-column]'));
-    const composer = screen.getByRole('textbox', { name: 'Message' });
-    expect(columns.some((column) => column.contains(composer))).toBe(true);
+    const stage = document.querySelector('[data-chat-stage]');
+    const composers = screen.getAllByRole('textbox', { name: 'Message' });
+    expect(composers).toHaveLength(1);
+    expect(stage?.contains(composers[0] ?? null)).toBe(true);
+    expect(stage?.closest('[data-page-column]')).not.toBeNull();
+    expect(screen.getByRole('heading', { name: 'Ask about Harborline' })).toBeDefined();
     expect(
-      columns.some((column) =>
-        column.contains(screen.getByText(/Ask anything about/, { selector: 'h2' })),
-      ),
-    ).toBe(true);
+      screen.getByText('Answers read the code and history of payments-api and ledger-core.'),
+    ).toBeDefined();
+    expect(screen.queryAllByText(/Ask anything about/)).toHaveLength(0);
+    expect(screen.queryAllByPlaceholderText(/Ask anything about/)).toHaveLength(0);
+    expect(screen.getByPlaceholderText('Ask a question')).toBeDefined();
+  });
+
+  it('docks the composer in the footer once a message exists', () => {
+    store.chatMessages = { [CHAT_ID]: ANSWERED };
+    renderRoom({ chat: CHAT });
+
+    const composer = screen.getByRole('textbox', { name: 'Message' });
+    expect(document.querySelector('[data-chat-stage]')).toBeNull();
+    expect(composer.closest('[data-page-column]')).not.toBeNull();
+    expect(screen.queryByRole('list', { name: 'Suggested questions' })).toBeNull();
+  });
+
+  it('lists at most three suggested questions as buttons', () => {
+    renderRoom({ chat: null });
+
+    const list = screen.getByRole('list', { name: 'Suggested questions' });
+    expect(within(list).getAllByRole('button').length).toBeLessThanOrEqual(3);
+    expect(within(list).getAllByRole('button').length).toBeGreaterThan(0);
+  });
+
+  it('asks to add a project when the workspace has none', () => {
+    store.projects = [];
+    renderRoom({ chat: null });
+
+    expect(screen.getByText('Add a project so answers can read its code.')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
+    expect(screen.queryByRole('list', { name: 'Suggested questions' })).toBeNull();
   });
 
   it('creates a session with the summarized goal, records the link and opens it', async () => {
@@ -576,7 +611,7 @@ describe('ChatRoom', () => {
     const header = screen.getByRole('banner');
     expect(within(header).getByRole('heading', { name: CHAT.title })).toBeDefined();
     expect(within(header).getByRole('button', { name: NAMES.startWorkFromChat })).toBeDefined();
-    expect(within(header).queryByText(/Read-only/)).toBeNull();
+    expect(within(header).queryByText(/Read only/)).toBeNull();
     expect(within(header).queryByText(/Harborline/)).toBeNull();
     expect(within(header).queryByText(/Sonnet/)).toBeNull();
   });
@@ -585,7 +620,7 @@ describe('ChatRoom', () => {
     store.chatMessages = { [CHAT_ID]: ANSWERED };
     renderRoom({ chat: CHAT });
 
-    expect(screen.getByText('Read-only')).toBeDefined();
+    expect(screen.getByText('Read only. Nothing is changed.')).toBeDefined();
     expect(screen.queryByText(/Shift\+Enter/)).toBeNull();
     fireEvent.change(screen.getByRole('textbox', { name: 'Message' }), { target: { value: 'Hi' } });
     expect(tooltipTextOf({ element: screen.getByRole('button', { name: 'Send' }) })).toBe(
@@ -711,7 +746,7 @@ describe('ChatRoom', () => {
   it('shows the empty state with suggestions from the projects', async () => {
     renderRoom({ chat: null });
 
-    expect(screen.getByRole('heading', { name: 'Ask anything about Harborline' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Ask about Harborline' })).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: /What changed in payments-api/ }));
     await waitFor(() => expect(store.createChat).toHaveBeenCalled());
   });

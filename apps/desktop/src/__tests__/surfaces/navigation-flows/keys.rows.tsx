@@ -12,6 +12,7 @@ import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer'
 import { App } from '../../../App';
 import { seedActivityRunScene } from '../../../app/components/MockScene/scenes/activityRunSeed';
 import { seedResolveScene } from '../../../app/components/MockScene/scenes/resolveSeed';
+import { sceneClock } from '../../../app/components/MockScene/sceneClock';
 import { pressShortcut } from '../../helpers/pressKey';
 import { openQuestionFor } from '../../../features/workspace/testing/sessionColumn';
 import { reloads, spawnedWindows, worldDatabase, zoomFactors } from './keys.effects';
@@ -33,6 +34,10 @@ import {
   useAppStore,
   visible,
 } from './harness';
+
+const LATEST_ACTIVITY = sceneClock({ anchor: '2099-01-01T00:00:00.000Z' }).iso({
+  at: '2099-01-01T00:00:00.000Z',
+});
 
 const ANCHOR = /^Search \(/;
 
@@ -272,8 +277,13 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   }),
   keyRow({
     id: 'session.next',
+    note: 'walks the list in the order it shows, which follows the last activity',
     open: async (ctx) => {
-      useAppStore.getState().markSessionOpened({ sessionId: ctx.sessionId });
+      useAppStore.setState((state) => ({
+        sessions: state.sessions.map((session) =>
+          session.id === ctx.sessionId ? { ...session, updatedAt: LATEST_ACTIVITY } : session,
+        ),
+      }));
       await press('session.next')();
     },
     lands: async (ctx) => expect(useAppStore.getState().currentSessionId).not.toBe(ctx.sessionId),
@@ -340,7 +350,8 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   }),
   pressRow({
     id: 'session.delete',
-    lands: async () => expect(await screen.findByText('Delete session?', {}, WAIT)).toBeDefined(),
+    lands: async () =>
+      expect(await screen.findByRole('dialog', { name: /^Delete .+\?$/ }, WAIT)).toBeDefined(),
   }),
   keyRow({
     id: 'lens.overview',

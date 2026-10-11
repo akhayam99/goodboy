@@ -33,7 +33,6 @@ describe('the floating surface', () => {
         'SwitcherPanel.tsx',
       ),
     ],
-    ['AppOverlayRouter', join(DESKTOP_SRC, 'app', 'components', 'AppOverlayRouter', 'index.tsx')],
   ])('paints %s from the constant, with no surface of its own', (_name, path) => {
     const source = read(path);
 

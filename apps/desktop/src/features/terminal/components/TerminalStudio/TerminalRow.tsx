@@ -1,5 +1,5 @@
 import { RotateCcw } from 'lucide-react';
-import { Button, ICON_SIZE, ROW_HOVER, StatusDot, cn, type Tone } from '@goodboy/ui';
+import { Button, Chip, ICON_SIZE, ROW_HOVER, StatusDot, cn, type Tone } from '@goodboy/ui';
 import type { TerminalTab } from '../../../../shared/types/terminal';
 import { CloseTerminal } from './CloseTerminal';
 import { TerminalRowName } from './TerminalRowName';
@@ -9,6 +9,7 @@ type Props = {
   readonly isSelected: boolean;
   readonly isBusy: boolean;
   readonly command: string | null;
+  readonly ports: ReadonlyArray<number>;
   readonly onSelect: () => void;
   readonly onClose: () => void;
   readonly onRestart: () => void;
@@ -41,6 +42,7 @@ export const TerminalRow = ({
   isSelected,
   isBusy,
   command,
+  ports,
   onSelect,
   onClose,
   onRestart,
@@ -83,6 +85,9 @@ export const TerminalRow = ({
           <span className="truncate text-meta text-faint-foreground">{detail}</span>
         )}
       </div>
+      {ports.map((port) => (
+        <Chip key={port} tone="neutral" kind="reference" size="xs" label={`:${port}`} />
+      ))}
       {isExited ? (
         <Button size="xs" variant="ghost" onClick={onRestart}>
           <RotateCcw size={ICON_SIZE.row} aria-hidden />

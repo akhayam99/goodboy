@@ -110,7 +110,6 @@ import { createHandoffsSlice } from './slices/handoffs';
 import { createSecurityFindingsSlice } from './slices/security-findings';
 import { createBranchCleanupSlice } from './slices/branch-cleanup';
 import { createStarredIssuesSlice } from './slices/starred-issues';
-import { createWorkspaceTasksSlice } from './slices/workspace-tasks';
 import { createSearchIndexSlice } from './slices/search-index';
 import { createChatsSlice } from './slices/chats';
 import { createAskSlice } from './slices/ask';
@@ -227,7 +226,6 @@ export type AppStore = AppState &
   ReturnType<typeof createSecurityFindingsSlice> &
   ReturnType<typeof createBranchCleanupSlice> &
   ReturnType<typeof createStarredIssuesSlice> &
-  ReturnType<typeof createWorkspaceTasksSlice> &
   ReturnType<typeof createSearchIndexSlice> &
   ReturnType<typeof createChatsSlice> &
   ReturnType<typeof createAskSlice> &
@@ -462,7 +460,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createSecurityFindingsSlice({ set, get }),
   ...createBranchCleanupSlice({ set, get }),
   ...createStarredIssuesSlice({ set, get }),
-  ...createWorkspaceTasksSlice({ set, get }),
   ...createSearchIndexSlice({ set, get }),
   ...createChatsSlice({ set, get }),
   ...createAskSlice({ set, get }),

@@ -68,6 +68,9 @@ beforeEach(async () => {
     },
     terminal_list_live: [],
     db_select: [],
+    monitor_snapshot: { listeners: [], processes: [], takenAt: 0, isPlatformSupported: true },
+    process_ledger_list: [],
+    monitor_watched_ports: [],
   });
   store.setState({
     sessions: [SESSION],

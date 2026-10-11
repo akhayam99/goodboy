@@ -188,6 +188,38 @@ describe('Listbox', () => {
     expect(screen.getByText('No option matches "relx"')).toBeDefined();
   });
 
+  it('keeps group headings while searching unless the caller flattens them', () => {
+    const grouped: ReadonlyArray<ListboxOption<string>> = BRANCHES.map((option, index) => ({
+      ...option,
+      group: index < 2 ? 'Long lived' : 'Topic',
+    }));
+    const Harness = ({ shouldFlatten }: { readonly shouldFlatten: boolean }) => (
+      <Listbox
+        ariaLabel="Theme"
+        options={grouped}
+        value="main"
+        shouldFlattenOnSearch={shouldFlatten}
+        onChange={vi.fn()}
+      />
+    );
+    const { rerender } = render(<Harness shouldFlatten={false} />);
+    fireEvent.click(trigger());
+    fireEvent.change(screen.getByRole('combobox', { name: 'Search' }), {
+      target: { value: 'fix' },
+    });
+    expect(screen.getByText('Topic')).toBeDefined();
+    fireEvent.keyDown(trigger(), { key: 'Escape' });
+
+    rerender(<Harness shouldFlatten />);
+    fireEvent.click(trigger());
+    expect(screen.getByText('Long lived')).toBeDefined();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Search' }), {
+      target: { value: 'fix' },
+    });
+    expect(screen.queryByText('Topic')).toBeNull();
+    expect(screen.getAllByRole('option')).toHaveLength(3);
+  });
+
   it('keeps the search field flush: a divider below and no focus outline of its own', () => {
     render(<SingleHarness options={BRANCHES} initial="main" />);
     fireEvent.click(trigger());

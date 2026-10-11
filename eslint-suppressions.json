@@ -1525,7 +1525,7 @@
   },
   "apps/desktop/src/app/components/StudioFrame/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 6
+      "count": 5
     }
   },
   "apps/desktop/src/app/components/StudioFrame/popoverEscape.test.tsx": {
@@ -5450,14 +5450,6 @@
   "apps/desktop/src/features/scripts/components/ScriptRow/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/features/scripts/components/ScriptRow/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
     }
   },
   "apps/desktop/src/features/scripts/components/ScriptRunDrawer/RunButton.test.tsx": {
@@ -5478,11 +5470,6 @@
   "apps/desktop/src/features/scripts/components/ScriptsPanel/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 13
-    }
-  },
-  "apps/desktop/src/features/scripts/components/ScriptsPanel/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
     }
   },
   "apps/desktop/src/features/scripts/components/ScriptsPanel/pins.test.tsx": {
@@ -5922,19 +5909,6 @@
   "apps/desktop/src/features/session/components/CreateAgentPopover/index.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 2
-    }
-  },
-  "apps/desktop/src/features/session/components/DeleteSessionConfirm/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/session/components/DeleteSessionConfirm/index.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 1
     }
   },
   "apps/desktop/src/features/session/components/RoleSelect/index.test.tsx": {
@@ -7224,7 +7198,7 @@
       "count": 36
     },
     "@typescript-eslint/no-floating-promises": {
-      "count": 24
+      "count": 23
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
@@ -8080,11 +8054,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/workspace-chat/components/ChatRoom/ChatHeaderDelete.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/workspace-chat/components/ChatRoom/ChatReads.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 1
@@ -8239,11 +8208,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionViewMenu/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/workspace/components/SessionActivityBar/branchRowModels.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
@@ -8336,11 +8300,6 @@
   "apps/desktop/src/features/workspace/components/SessionSwitcher/switcherOrder.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
-    }
-  },
-  "apps/desktop/src/features/workspace/components/StageBoard/OngoingTasksRow.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
     }
   },
   "apps/desktop/src/features/workspace/components/StageBoard/StageBoard.perf.test.tsx": {
@@ -11549,7 +11508,7 @@
   },
   "apps/desktop/src/store/slices/session-view/selectors.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
+      "count": 2
     }
   },
   "apps/desktop/src/store/slices/session-view/sessionCreation.ts": {
@@ -11820,7 +11779,7 @@
   },
   "apps/desktop/src/store/slices/starred-issues/index.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
+      "count": 1
     },
     "@typescript-eslint/naming-convention": {
       "count": 1
@@ -14713,16 +14672,6 @@
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 6
-    }
-  },
-  "packages/db/src/queries/workspace-external-task.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    }
-  },
-  "packages/db/src/queries/workspace-external-task.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
     }
   },
   "packages/db/src/queries/workspace-merge.test.ts": {

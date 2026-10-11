@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { GhostActionButton, HeaderActions } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
 import { ObjectOverflowMenu } from '../../actions/components/ObjectOverflowMenu';
-import type { OnArm } from '../../../shared/components/HeaderConfirm/armedAction';
+import { ArmedActionPopover } from '../../../shared/components/HeaderConfirm/ArmedActionPopover';
+import type { ArmedAction } from '../../../shared/components/HeaderConfirm/armedAction';
 import { useActionEnv } from '../../actions/useActionEnv';
 import { useObjectActions } from '../../actions/useObjectActions';
 
@@ -11,7 +13,6 @@ const DELETE_ACTION = 'agent.delete';
 type Props = {
   readonly agent: Agent;
   readonly sessionId: SessionId;
-  readonly onArm: OnArm;
   readonly allowInterrupt?: boolean;
   readonly onDeleted?: () => void;
 };
@@ -19,10 +20,10 @@ type Props = {
 export const AgentHeaderActions = ({
   agent,
   sessionId,
-  onArm,
   allowInterrupt = false,
   onDeleted,
 }: Props) => {
+  const [armed, setArmed] = useState<ArmedAction | null>(null);
   const viewing = { kind: 'agent', id: agent.id } as const;
   const env = useActionEnv({
     origin: 'button',
@@ -53,24 +54,30 @@ export const AgentHeaderActions = ({
         )
       }
       overflow={
-        <ObjectOverflowMenu
-          target={target}
-          label="More agent actions"
-          anchorKey={`agent-header:${agent.id}`}
-          viewing={viewing}
-          size="control"
-          hideWhenEmpty
-          onArm={({ action, run: runAction }) =>
-            onArm({
-              action,
-              run: async () => {
-                await runAction();
-                if (action.id === DELETE_ACTION) {
-                  onDeleted?.();
-                }
-              },
-            })
-          }
+        <ArmedActionPopover
+          armed={armed}
+          onClose={() => setArmed(null)}
+          trigger={() => (
+            <ObjectOverflowMenu
+              target={target}
+              label="More agent actions"
+              anchorKey={`agent-header:${agent.id}`}
+              viewing={viewing}
+              size="control"
+              hideWhenEmpty
+              onArm={({ action, run: runAction }) =>
+                setArmed({
+                  action,
+                  run: async () => {
+                    await runAction();
+                    if (action.id === DELETE_ACTION) {
+                      onDeleted?.();
+                    }
+                  },
+                })
+              }
+            />
+          )}
         />
       }
     />

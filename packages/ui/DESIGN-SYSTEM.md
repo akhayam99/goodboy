@@ -1461,7 +1461,10 @@ left, Ask or Close at its right edge), a 32px title row directly under it with t
 page's `h1` at `text-title` and the actions at its right, and an optional 12px muted
 meta line 4px under the row. The title's centre is therefore 56px under the pane top
 and its left edge is the column's content edge on every page; `frameGeometryOf`
-(`packages/ui/src/frameGeometry.ts`) is the table and the journey test reads it. Inside
+(`packages/ui/src/frameGeometry.ts`) is the table and the journey test reads it. Every
+page has one of four frame types in `PAGE_FRAME` (column 1008, reader 768, stage, split
+`[rail 288][detail]`), see [the frame map](../../docs/styling.md#the-frame-map); in a split page the
+band is the first child of the detail, never over the rail. Inside
 a session the band is the `TrailBar`, and in a studio `StudioFrame` draws it inside a
 `PageColumn` of the studio's tier and hands its body `UnderTrailContext`, so the header
 adds no top padding; outside both, a bare page keeps 12px above. The Board has an
@@ -1525,7 +1528,8 @@ page under it is `inert`, a click on the scrim dismisses the top escape layer
 like Esc, and focus moves into the card on open and back to the trigger on
 close.
 
-**The drawer container.** `DrawerFrame` is its one frame: a 44px header, a
+**The drawer container.** `DrawerFrame` is its one frame: a header whose 28px row is centred on the
+band's centre line (`FRAME_DRAWER_ROW_PX`), a
 divider, a body and an optional `dock`. The title row reads icon, title, count
 (a number or a version, never a session title), at most one labelled action,
 then Close. Close always reads `Close` and is a 28px target (`size-7`, 14px
@@ -1925,6 +1929,10 @@ drawn as an empty list.
    with nothing the person can start (Questions) has no primary. Inside a
    section of a page, `EmptyState size="section"`: one line, no card and no
    padding block.
+   A stage may hold its input. The empty chat is one stage centred both ways and
+   lifted 24px above the optical centre: the bare glyph, the title, one
+   sentence, the composer itself and up to three quiet suggestion rows. The
+   first message docks the composer at the bottom.
 3. **Nothing matches.** A filter or a search hides everything. `EmptyLine`
    with `Clear filter` (or `Clear search`), or the next place to look. It never
    uses the first-time shape: the list exists, the filter is the cause.
@@ -2086,7 +2094,7 @@ conversation is the wrapped sheet, and "Start work from chat" is the
 - **The composer** is the only pinned row: a `bg-subtle` box with the
   textarea, the app `RoutingPicker` in its `pill` variant (chat providers
   only, effort editable, a one-line footer for the providers that cannot
-  chat), the faint "Read-only · N projects" hint from `@2xl/chat`, and a
+  chat), the faint "Read only. Nothing is changed." hint from `@2xl/chat`, and a
   square send button that turns into Stop while an answer streams. The Enter
   and Shift+Enter keys live in the send button's tooltip.
 
@@ -2106,14 +2114,22 @@ collapse and unmounts them on `transitionend`, or at once when no transition
 runs (reduced motion, tests). `Collapsible` opens through it. A disclosure
 never mounts and unmounts its panel by hand.
 
+`Disclosure` is the toggle-and-body pair for a row that opens its detail: a
+14px chevron, an 8px gap and a label on one `px-2` line, and a body inside
+`Reveal` whose left indent is measured from them (`pl-[calc(8px+14px+8px)]`,
+never a typed `pl-5`, `pl-7` or `pl-9`). A body that sits under a control
+measures its indent the same way, from that control's own padding, width and
+gap. The ratchet `hand-indent.test.ts` counts `pl-5`, `pl-7` and `pl-9` in
+`features/` and only falls.
+
 A theme switch is one paint, a class swap on `<html>` and nothing else:
 `applyDocumentTheme` writes the `light` or `dark` class, `data-theme` and
 `color-scheme` once each in a single task, and the CSS variables repaint the
 page in that frame. There is no React state for it (the zustand store keeps
 only the preference, set in the same call, so the palette, the Settings field
 and the footer chip commit once together). Every route into a switch (the
-palette, Settings, the system, another window) goes through that
-one function, and it writes nothing when the resolved theme is already
+top bar toggle, the palette, Settings, the system, another window) goes through
+that one function (`switchTheme`), and it writes nothing when the resolved theme is already
 applied. `html[data-theme-switching]` turns every element transition off from
 before the swap until two painted frames later (a timer guards a window that
 never paints), so no `transition-colors` surface animates on its own and a
@@ -2126,7 +2142,11 @@ against 16, 7 and 114ms for the instant swap; WebKit dropped to 28 frames
 with a 500ms freeze on a large diff, against 80 frames with the swap alone),
 and a window that repaints for a fade reads as the UI flickering, worst on
 the busiest pages. A circular reveal and a cross-fade were both tried and
-dropped for that reason. The few things
+dropped for that reason. A fixed full-window cover fading over the swap
+(`opacity` only, 100ms in, 200ms out) was specified as a third try, gated on
+a WebKit frame-gap spike (no gap above 50ms on Settings, an Overview of 30
+sessions and a 3,000 line diff). The spike was not measured, so the cover did
+not ship and the switch stays the instant swap. The few things
 that paint with JS colors (the xterm terminal, the changelog image) listen through `subscribeAppliedTheme` or `useAppliedTheme` and
 update only themselves.
 

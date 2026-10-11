@@ -75,6 +75,17 @@ and `apps/desktop/src/store/slices/issue-briefs/applyGoalFromWork.ts`.
 
 Get a short title without writing one. A new session is named for you and marked **Named by Goodboy** until you rename it.
 
+### Star an issue from Link work
+
+**Link work** links a task to the session only. To keep an issue for the whole
+workspace instead, press **Star it** under the issue: it is starred for the
+workspace and the toast says "HBL-204 is starred. Find it in Tasks, Starred.",
+with Undo. Only tracker issues can be starred (Linear, Jira, Sentry, and GitHub
+or GitLab issues, not pull requests or merge requests). An issue that is already
+starred shows **Starred** and keeps its state. The Board has no row for these
+issues any more: migration m229 turned every task a workspace tracked there into
+a star, dated by when it was linked.
+
 ### Undo an unlink
 
 Linked task chips open the task directly. Their unlink control appears on hover

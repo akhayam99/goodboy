@@ -123,6 +123,14 @@ vi.mock(
   }),
 );
 
+vi.mock('../../hooks/useScriptLive', () => ({
+  useScriptLive: () => ({
+    factsByRunId: {},
+    expectedPortOf: () => null,
+    holderOf: () => null,
+  }),
+}));
+
 vi.mock('../../../../store', () => {
   const settingsOf = () => {
     const byProject: Record<string, Array<string>> = {};
@@ -225,7 +233,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('ScriptsPanel', () => {
-  it('groups scripts by mount, saved first, with the source on each row', () => {
+  it('groups scripts by mount, saved first, in a Tasks band with no source column', () => {
     renderPanel();
 
     expect(screen.getByRole('heading', { name: 'Scripts' })).toBeDefined();
@@ -240,8 +248,9 @@ describe('ScriptsPanel', () => {
       'Show test output',
       'Show lint output',
     ]);
-    expect(within(settlement).getByText('Saved')).toBeDefined();
-    expect(within(settlement).getAllByText('package.json')).toHaveLength(2);
+    expect(within(settlement).getByRole('region', { name: /^Tasks of /u })).toBeDefined();
+    expect(within(settlement).queryByRole('region', { name: /^Services of /u })).toBeNull();
+    expect(within(settlement).queryByText('package.json')).toBeNull();
     expect(within(rounding).getByText('Replay settlement batch')).toBeDefined();
   });
 
@@ -293,10 +302,12 @@ describe('ScriptsPanel', () => {
         .getAllByRole('region')
         .map((region) => region.getAttribute('aria-label')),
     ).toEqual([
-      'Saved scripts',
+      'Services of ledger-core · nw/settlement',
       'northwind scripts',
       '@acme/api scripts',
       '@northwind/web scripts',
+      'Tasks of ledger-core · nw/settlement',
+      'Saved scripts',
     ]);
     const web = within(settlement).getByRole('region', { name: '@northwind/web scripts' });
     expect(within(web).getByText('apps/web')).toBeDefined();
@@ -317,7 +328,7 @@ describe('ScriptsPanel', () => {
       within(group('ledger-core · nw/settlement'))
         .getAllByRole('region')
         .map((region) => region.getAttribute('aria-label')),
-    ).toEqual(['@acme/api scripts']);
+    ).toEqual(['Services of ledger-core · nw/settlement', '@acme/api scripts']);
   });
 
   it('copies the workspace-scoped invocation for a nested package, not the package-local one', () => {
@@ -634,54 +645,112 @@ describe('ScriptsPanel', () => {
     );
   });
 
-  it('names the empty project and opens its scripts inline to pin one', () => {
+  it('suggests the usual scripts of a project with nothing pinned and pins from there', () => {
     state.mounts = [RELAY_MOUNT];
     state.saved = [];
     state.discovered = {
       [RELAY_PATH]: manifest([
         { name: 'dev', command: 'pnpm run dev' },
         { name: 'test', command: 'pnpm run test' },
+        { name: 'db:migrate', command: 'pnpm run db:migrate' },
       ]),
     };
     state.pins = {};
     renderPanel();
 
     const relay = group('notify-relay · nw/retry-backoff');
-    expect(within(relay).getByText('No scripts in notify-relay')).toBeDefined();
+    expect(within(relay).queryByText('No scripts in notify-relay')).toBeNull();
     expect(within(relay).queryByRole('button', { name: /^Show .* output$/ })).toBeNull();
-    expect(within(relay).queryByRole('button', { name: /Settings/ })).toBeNull();
-    expect(within(relay).queryByRole('region', { name: 'Scripts of notify-relay' })).toBeNull();
+    const suggested = within(relay).getByRole('region', { name: /^Suggested of /u });
+    expect(within(suggested).getByText('Pin the ones you run here.')).toBeDefined();
+    expect(within(suggested).getByText('test')).toBeDefined();
+    expect(within(suggested).queryByText('db:migrate')).toBeNull();
+    expect(within(suggested).queryByRole('button', { name: /^Run / })).toBeNull();
 
-    fireEvent.click(within(relay).getByRole('button', { name: 'Pin a script of notify-relay' }));
-
-    const picker = within(relay).getByRole('region', { name: 'Scripts of notify-relay' });
-    expect(within(picker).getByRole('button', { name: 'Pin dev' })).toBeDefined();
-    fireEvent.click(within(picker).getByRole('button', { name: 'Pin test' }));
-
+    fireEvent.click(within(suggested).getByRole('button', { name: 'Pin test' }));
     expect(state.toggleScriptPin).toHaveBeenCalledWith({
       projectId: RELAY.id,
       pinId: pinIdOf({ relDir: '', name: 'test' }),
     });
   });
 
-  it('shows the pinned strip only when the session has more than one project', () => {
+  it('opens the pin picker from the Suggested band for scripts it does not suggest', () => {
+    state.mounts = [RELAY_MOUNT];
+    state.saved = [];
+    state.discovered = {
+      [RELAY_PATH]: manifest([
+        { name: 'dev', command: 'pnpm run dev' },
+        { name: 'db:migrate', command: 'pnpm run db:migrate' },
+      ]),
+    };
+    state.pins = {};
+    renderPanel();
+
+    const relay = group('notify-relay · nw/retry-backoff');
+    fireEvent.click(within(relay).getByRole('button', { name: 'Pin a script of notify-relay' }));
+
+    const picker = within(relay).getByRole('region', { name: 'Scripts of notify-relay' });
+    fireEvent.click(within(picker).getByRole('button', { name: 'Pin db:migrate' }));
+    expect(state.toggleScriptPin).toHaveBeenCalledWith({
+      projectId: RELAY.id,
+      pinId: pinIdOf({ relDir: '', name: 'db:migrate' }),
+    });
+  });
+
+  it('names the empty project and opens its scripts inline to pin one', () => {
+    state.mounts = [RELAY_MOUNT];
+    state.saved = [];
+    state.discovered = {
+      [RELAY_PATH]: manifest([{ name: 'db:migrate', command: 'pnpm run db:migrate' }]),
+    };
+    state.pins = {};
+    renderPanel();
+
+    const relay = group('notify-relay · nw/retry-backoff');
+    expect(within(relay).getByText('No scripts in notify-relay')).toBeDefined();
+    expect(within(relay).queryByRole('region', { name: /^Suggested of /u })).toBeNull();
+
+    fireEvent.click(within(relay).getByRole('button', { name: 'Pin a script of notify-relay' }));
+
+    const picker = within(relay).getByRole('region', { name: 'Scripts of notify-relay' });
+    fireEvent.click(within(picker).getByRole('button', { name: 'Pin db:migrate' }));
+
+    expect(state.toggleScriptPin).toHaveBeenCalledWith({
+      projectId: RELAY.id,
+      pinId: pinIdOf({ relDir: '', name: 'db:migrate' }),
+    });
+  });
+
+  it('lists a pinned script once, in its band, with no separate Pinned strip', () => {
     state.pins = {
       [LEDGER.id]: [pinIdOf({ relDir: '', name: 'test' })],
     };
     renderPanel();
 
-    const strip = screen.getByRole('region', { name: 'Pinned scripts' });
-    expect(within(strip).getByRole('button', { name: 'Run test in ledger-core' })).toBeDefined();
-    cleanup();
+    expect(screen.queryByRole('region', { name: 'Pinned scripts' })).toBeNull();
+    const settlement = group('ledger-core · nw/settlement');
+    expect(within(settlement).getAllByRole('button', { name: 'Run test' })).toHaveLength(1);
+    expect(within(settlement).queryByRole('region', { name: /^Suggested of /u })).toBeNull();
+  });
 
+  it('splits a project into Services and Tasks with a count on each band', () => {
     state.mounts = [SETTLEMENT];
+    state.saved = [];
+    state.discovered = {
+      [SETTLEMENT_PATH]: manifest([
+        { name: 'dev', command: 'pnpm run dev', body: 'vite --port 4310' },
+        { name: 'preview', command: 'pnpm run preview' },
+        { name: 'test', command: 'pnpm run test' },
+      ]),
+    };
     renderPanel();
 
-    expect(screen.queryByRole('region', { name: 'Pinned scripts' })).toBeNull();
-    expect(
-      within(group('ledger-core · nw/settlement')).getByRole('button', {
-        name: 'Show test output',
-      }),
-    ).toBeDefined();
+    const settlement = group('ledger-core · nw/settlement');
+    const services = within(settlement).getByRole('region', { name: /^Services of /u });
+    const tasks = within(settlement).getByRole('region', { name: /^Tasks of /u });
+    expect(within(services).getAllByRole('button', { name: /^Show .* output$/ })).toHaveLength(2);
+    expect(within(services).getByText('2')).toBeDefined();
+    expect(within(tasks).getAllByRole('button', { name: /^Show .* output$/ })).toHaveLength(1);
+    expect(within(tasks).getByText('1')).toBeDefined();
   });
 });

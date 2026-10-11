@@ -1,6 +1,6 @@
 import { FieldRow, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import { Monitor, Moon, Sun } from 'lucide-react';
-import { useThemeStore, type ThemePreference } from '../../../../shared/lib/theme';
+import { switchTheme, useThemeStore, type ThemePreference } from '../../../../shared/lib/theme';
 
 const THEME_OPTIONS: ReadonlyArray<SegmentedTabOption<ThemePreference>> = [
   { value: 'light', label: 'Light', icon: Sun },
@@ -10,7 +10,6 @@ const THEME_OPTIONS: ReadonlyArray<SegmentedTabOption<ThemePreference>> = [
 
 export const ThemePreferenceField = () => {
   const preference = useThemeStore((s) => s.preference);
-  const setPreference = useThemeStore((s) => s.setPreference);
 
   return (
     <FieldRow label="Theme" help="Applies to every window.">
@@ -18,7 +17,7 @@ export const ThemePreferenceField = () => {
         size="sm"
         value={preference}
         options={THEME_OPTIONS}
-        onChange={setPreference}
+        onChange={(to) => switchTheme({ to })}
         ariaLabel="Theme"
       />
     </FieldRow>

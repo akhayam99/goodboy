@@ -27,6 +27,7 @@ type Props = {
   readonly sessionId: SessionId;
   readonly sessionDir: string;
   readonly entry: ExploreEntry;
+  readonly line?: number;
   readonly renderChanges: (params: RenderChangesParams) => ReactNode;
   readonly onClose: () => void;
 };
@@ -53,6 +54,7 @@ export const ExploreFileDrawer = ({
   sessionId,
   sessionDir,
   entry,
+  line,
   renderChanges,
   onClose,
 }: Props) => {
@@ -60,7 +62,14 @@ export const ExploreFileDrawer = ({
   const exploreOpen = useExploreOpen({ sessionId, sessionDir });
   const wrap = useExploreWrap();
   const [openFailure, setOpenFailure] = useState<ExploreOpenFailure | null>(null);
-  const [view, setView] = useState<DrawerView>('preview');
+  const [view, setView] = useState<DrawerView>(line === undefined ? 'preview' : 'source');
+  const [seenLine, setSeenLine] = useState(line);
+  if (seenLine !== line) {
+    setSeenLine(line);
+    if (line !== undefined) {
+      setView('source');
+    }
+  }
   const isMount = useAppStore(
     (state) => selectMountForPath({ state, sessionId, path: sessionDir }) !== null,
   );
@@ -168,6 +177,7 @@ export const ExploreFileDrawer = ({
           previewKind={previewKind}
           view={previewView}
           isWrapped={isProseShown || wrap.isWrapped}
+          line={line}
         />
       )}
     </DrawerFrame>

@@ -1,4 +1,4 @@
-import type { Tone } from '@goodboy/ui';
+import type { FramePage, Tone } from '@goodboy/ui';
 import { Smartphone, type LucideIcon } from 'lucide-react';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import { NAMES } from '../../../shared/names';
@@ -12,6 +12,7 @@ type StudioMeta = {
   readonly title: string;
   readonly closeLabel: string;
   readonly tier: 'column' | 'full';
+  readonly page: FramePage | null;
   readonly skeleton: StudioSkeletonLayout;
   readonly railWidth?: 'narrow' | 'standard';
   readonly canHostDrawer?: boolean;
@@ -24,6 +25,7 @@ export const STUDIO_META = {
     title: 'Settings',
     closeLabel: 'Close settings',
     tier: 'column',
+    page: 'settings',
     skeleton: 'rail',
     railWidth: 'narrow',
   },
@@ -33,6 +35,7 @@ export const STUDIO_META = {
     title: 'Guide',
     closeLabel: 'Close guide',
     tier: 'column',
+    page: 'guide',
     skeleton: 'rail',
     railWidth: 'standard',
   },
@@ -41,6 +44,7 @@ export const STUDIO_META = {
     title: 'Pair device',
     closeLabel: 'Close pairing',
     tier: 'full',
+    page: null,
     skeleton: 'grid',
   },
   addWorkspace: {
@@ -49,6 +53,7 @@ export const STUDIO_META = {
     title: 'Add workspace',
     closeLabel: 'Close add workspace',
     tier: 'column',
+    page: null,
     skeleton: 'list',
   },
   workflow: {
@@ -57,6 +62,7 @@ export const STUDIO_META = {
     title: 'Workflows',
     closeLabel: 'Close workflows',
     tier: 'column',
+    page: 'workflows',
     skeleton: 'grid',
   },
   inbox: {
@@ -65,6 +71,7 @@ export const STUDIO_META = {
     title: NAMES.tasks,
     closeLabel: 'Close tasks',
     tier: 'column',
+    page: 'inbox',
     skeleton: 'rail',
     railWidth: 'standard',
     canHostDrawer: true,
@@ -75,6 +82,7 @@ export const STUDIO_META = {
     title: 'Impact',
     closeLabel: 'Close impact',
     tier: 'column',
+    page: 'impact',
     skeleton: 'list',
   },
   changelog: {
@@ -83,6 +91,7 @@ export const STUDIO_META = {
     title: NAMES.whatsNew,
     closeLabel: `Close ${NAMES.whatsNew.toLowerCase()}`,
     tier: 'column',
+    page: 'whatsNew',
     skeleton: 'grid',
   },
   notifications: {
@@ -91,6 +100,7 @@ export const STUDIO_META = {
     title: 'Notifications',
     closeLabel: 'Close notifications',
     tier: 'column',
+    page: 'notifications',
     skeleton: 'rail',
     railWidth: 'standard',
   },
@@ -99,7 +109,8 @@ export const STUDIO_META = {
     tone: CONCEPT_TONE.chat,
     title: 'Chat',
     closeLabel: 'Close chat',
-    tier: 'full',
+    tier: 'column',
+    page: 'chat',
     skeleton: 'rail',
     railWidth: 'standard',
     canHostDrawer: true,
@@ -110,7 +121,17 @@ export const STUDIO_META = {
     title: 'Terminal',
     closeLabel: 'Close terminal',
     tier: 'full',
+    page: 'terminal',
     skeleton: 'rail',
     railWidth: 'standard',
+  },
+  monitoring: {
+    icon: CONCEPT_ICONS.monitoring,
+    tone: CONCEPT_TONE.monitoring,
+    title: 'Monitoring',
+    closeLabel: 'Close monitoring',
+    tier: 'column',
+    page: 'monitoring',
+    skeleton: 'list',
   },
 } as const satisfies Record<StudioKind, StudioMeta>;

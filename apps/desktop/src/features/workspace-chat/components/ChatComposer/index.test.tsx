@@ -51,7 +51,6 @@ const mount = ({ isStreaming = false, isSent = true }: MountParams = {}) => {
       workspaceId={WORKSPACE_ID}
       placeholder="Ask about Harborline, read-only"
       routing={{ provider: 'anthropic', model: 'sonnet-5.5', effort: null }}
-      projectCount={3}
       isStreaming={isStreaming}
       isStopping={false}
       onSend={async (message) => {

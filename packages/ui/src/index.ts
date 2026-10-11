@@ -325,10 +325,24 @@ export { FLOATING_SURFACE } from './floatingSurface';
 
 export {
   FRAME_BAND_PX,
+  FRAME_DRAWER_INSET_PX,
+  FRAME_DRAWER_ROW_PX,
   FRAME_PAGES,
   FRAME_TITLE_CENTRE_PX,
   FRAME_TITLE_ROW_PX,
+  FRAME_TYPES,
+  PAGE_FRAME,
   frameGeometryOf,
+  frameTierOf,
 } from './frameGeometry';
-export type { FrameGeometry, FramePage, FrameTitleLeft } from './frameGeometry';
+export type {
+  FrameGeometry,
+  FramePage,
+  FrameTier,
+  FrameTitleLeft,
+  FrameType,
+} from './frameGeometry';
 export { HeaderActions } from './components/HeaderActions';
+
+export { Disclosure } from './components/Disclosure';
+export type { DisclosureProps } from './components/Disclosure';

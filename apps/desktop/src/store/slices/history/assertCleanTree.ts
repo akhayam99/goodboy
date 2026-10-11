@@ -6,9 +6,14 @@ import { TreeUnreadableError } from './TreeUnreadableError';
 type Params = {
   readonly worktreePath: string;
   readonly baseBranch: string | null;
+  readonly canCarryDirty?: boolean;
 };
 
-export const assertCleanTree = async ({ worktreePath, baseBranch }: Params): Promise<void> => {
+export const assertCleanTree = async ({
+  worktreePath,
+  baseBranch,
+  canCarryDirty = false,
+}: Params): Promise<void> => {
   const status = await ensure({
     key: worktreeStatusKey({ worktreePath, baseBranch: baseBranch ?? undefined }),
     worktreePath,
@@ -19,7 +24,13 @@ export const assertCleanTree = async ({ worktreePath, baseBranch }: Params): Pro
   if (count === null) {
     throw new TreeUnreadableError();
   }
-  if (count === 0) {
+  if (status !== null && status.inProgress !== undefined && status.inProgress !== null) {
+    throw new Error(`A git ${status.inProgress} is in progress. Finish or abort it first.`);
+  }
+  if (
+    count === 0 ||
+    (canCarryDirty && status?.workingTree.kind === 'known' && status.workingTree.unmerged === 0)
+  ) {
     return;
   }
   throw new DirtyTreeError({ count });

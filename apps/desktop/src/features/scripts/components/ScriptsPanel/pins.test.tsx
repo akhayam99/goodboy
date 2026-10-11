@@ -27,7 +27,7 @@ import {
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { scriptPinsKey } from '../../scriptPinsKey';
-import { ProjectScriptsFold } from '../ProjectScriptsFold';
+import { ProjectScriptsField } from '../ProjectScriptsField';
 import { ScriptsPanel } from './index';
 
 let useAppStore: StoryStore;
@@ -132,26 +132,30 @@ beforeEach(async () => {
     project_scripts_scan: ({ worktreePath }: { readonly worktreePath: string }) =>
       worktreePath === RELAY.rootPath ? [] : LEDGER_SCRIPTS,
     workspace_script_run_adhoc: 'run-1',
+    monitor_watched_ports: [],
+    monitor_snapshot: { listeners: [], processes: [], takenAt: 1, isPlatformSupported: true },
+    process_ledger_list: [],
+    workspace_script_list_live: [],
   });
 });
 
 afterEach(cleanup);
 
 describe('script pins in the Scripts lens', () => {
-  it('pins from the empty project inline, shows the script once, and keeps it in a session on another worktree', async () => {
+  it('pins from the Suggested band, shows the script once, and keeps it in a session on another worktree', async () => {
     renderLens(FIRST.id);
-    await screen.findByText('No scripts in ledger-core');
+    const suggested = await screen.findByRole('region', { name: /^Suggested of /u });
     expect(screen.queryByRole('region', { name: 'Pinned scripts' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Show test output' })).toBeNull();
+    expect(within(suggested).getByText('dev')).toBeDefined();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Pin a script of ledger-core' }));
-    const picker = await screen.findByRole('region', { name: 'Scripts of ledger-core' });
-    fireEvent.click(within(picker).getByRole('button', { name: 'Pin test' }));
+    fireEvent.click(within(suggested).getByRole('button', { name: 'Pin test' }));
 
     await waitFor(async () => expect(await savedPins()).toHaveLength(1));
     expect((await savedPins())[0]).not.toContain('worktrees');
     expect(await screen.findAllByRole('button', { name: 'Show test output' })).toHaveLength(1);
     expect(screen.queryByRole('region', { name: 'Pinned scripts' })).toBeNull();
+    expect(screen.queryByRole('region', { name: /^Suggested of /u })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Show dev output' })).toBeNull();
     cleanup();
 
@@ -170,28 +174,44 @@ describe('script pins in the Scripts lens', () => {
   });
 });
 
-describe('script pins on the Projects page', () => {
-  it('reads the project folder only when the row opens and pins from there', async () => {
-    render(<ProjectScriptsFold project={LEDGER} />);
-    const toggle = screen.getByRole('button', { name: 'Scripts of ledger-core' });
-    expect(toggle.getAttribute('aria-expanded')).toBe('false');
-    expect(invokes('project_scripts_scan')).toEqual([]);
+describe('script pins in the project editor card', () => {
+  it('reads the project folder when the card mounts and pins from there', async () => {
+    render(<ProjectScriptsField project={LEDGER} />);
 
-    fireEvent.click(toggle);
-
-    await screen.findByText(/Scripts on main/);
+    await screen.findByText(/On main\. Pinned scripts show on a session's Scripts page/);
     expect(invokes('project_scripts_scan')).toEqual([{ worktreePath: LEDGER.rootPath }]);
+    screen.getByText('Scripts');
     fireEvent.click(screen.getByRole('button', { name: 'Pin dev' }));
-    await screen.findByText('· 2, 1 pinned');
+    await screen.findByText('Scripts · 1 pinned');
     await waitFor(async () => expect(await savedPins()).toHaveLength(1));
   });
 
   it('says plainly when a project has no package.json', async () => {
-    render(<ProjectScriptsFold project={RELAY} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Scripts of notify-relay' }));
+    render(<ProjectScriptsField project={RELAY} />);
 
     await screen.findByText('No package.json or composer.json in notify-relay.');
-    screen.getByText('· none found');
+    screen.getByText('Scripts');
+  });
+
+  it('shows a failed scan as a notice and retries it', async () => {
+    let attempts = 0;
+    stubStoryInvoke({
+      project_scripts_scan: () => {
+        attempts += 1;
+        if (attempts === 1) {
+          throw new Error('permission denied');
+        }
+        return LEDGER_SCRIPTS;
+      },
+    });
+    render(<ProjectScriptsField project={LEDGER} />);
+
+    const notice = await screen.findByRole('alert');
+    within(notice).getByText("Couldn't read the scripts");
+    fireEvent.click(within(notice).getByRole('button', { name: 'Retry' }));
+
+    await screen.findByRole('button', { name: 'Pin dev' });
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(invokes('project_scripts_scan')).toHaveLength(2);
   });
 });

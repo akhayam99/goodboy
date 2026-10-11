@@ -1,6 +1,8 @@
+import type { ReactNode } from 'react';
 import type { PrCheckRun, PrDetail, PullRequestState } from '@goodboy/types';
 import {
   ROW_INTERACTIVE,
+  Tooltip,
   Button,
   EmptyState,
   Eyebrow,
@@ -21,6 +23,7 @@ import { CheckConclusionIcon } from './CheckConclusionIcon';
 import { checksGroupsOf, checksRollup, checksWordOf, type ChecksWord } from '../../checksRollup';
 
 type Props = {
+  readonly renderCheckActions?: (check: PrCheckRun) => ReactNode;
   readonly checks: ReadonlyArray<PrCheckRun>;
   readonly fallbackUrl: string;
   readonly hostLabel: string;
@@ -41,6 +44,7 @@ const WORD_TONE: Readonly<Record<ChecksWord, Tone>> = {
 const SKELETON_ROWS = [0, 1, 2] as const;
 
 export const PrChecks = ({
+  renderCheckActions,
   checks,
   fallbackUrl,
   hostLabel,
@@ -101,25 +105,27 @@ export const PrChecks = ({
           <Eyebrow className="px-2" label={entry.label} />
           <ul aria-label={`${entry.label} checks`} className="flex flex-col gap-0.5">
             {entry.runs.map((check, index) => (
-              <li key={`${check.name}-${index}`}>
-                <button
-                  type="button"
-                  onClick={() => onOpenUrl(check.detailsUrl ?? fallbackUrl)}
-                  title={check.detailsUrl ?? check.name}
-                  className={cn(
-                    'flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-body transition-colors',
-                    ROW_INTERACTIVE,
-                    FOCUS_RING,
-                  )}
-                >
-                  <CheckConclusionIcon conclusion={check.conclusion} />
-                  <span className="min-w-0 flex-1 truncate text-foreground">{check.name}</span>
-                  <span className="shrink-0 text-label tabular-nums text-faint-foreground">
-                    {check.durationMs === null
-                      ? ''
-                      : formatDuration({ durationMs: check.durationMs })}
-                  </span>
-                </button>
+              <li key={`${check.name}-${index}`} className="flex items-center gap-2">
+                <Tooltip content={check.detailsUrl ?? check.name} anchorClassName="min-w-0 flex-1">
+                  <button
+                    type="button"
+                    onClick={() => onOpenUrl(check.detailsUrl ?? fallbackUrl)}
+                    className={cn(
+                      'flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-body transition-colors',
+                      ROW_INTERACTIVE,
+                      FOCUS_RING,
+                    )}
+                  >
+                    <CheckConclusionIcon conclusion={check.conclusion} />
+                    <span className="min-w-0 flex-1 truncate text-foreground">{check.name}</span>
+                    <span className="shrink-0 text-label tabular-nums text-faint-foreground">
+                      {check.durationMs === null
+                        ? ''
+                        : formatDuration({ durationMs: check.durationMs })}
+                    </span>
+                  </button>
+                </Tooltip>
+                {renderCheckActions?.(check)}
               </li>
             ))}
           </ul>

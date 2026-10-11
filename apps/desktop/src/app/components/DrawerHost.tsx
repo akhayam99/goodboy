@@ -1,3 +1,4 @@
+import { CheckAnalysisDrawer } from '../../features/branch/components/CheckAnalysisDrawer';
 import { useAppStore } from '../../store';
 import { selectDrawerPanel } from '../../store/slices/drawer/selectDrawerPanel';
 import { ContextDrawer } from '../../features/session/components/ContextDrawer';
@@ -37,6 +38,14 @@ export const DrawerHost = () => {
     return null;
   }
   switch (drawer.kind) {
+    case 'check-analysis':
+      return (
+        <CheckAnalysisDrawer
+          sessionId={drawer.payload.sessionId}
+          checkUrl={drawer.payload.checkUrl}
+          onClose={closeDrawer}
+        />
+      );
     case 'context':
       return (
         <ContextDrawer
@@ -55,6 +64,7 @@ export const DrawerHost = () => {
           sessionId={drawer.sessionId}
           sessionDir={drawer.payload.sessionDir}
           entry={drawer.payload.entry}
+          line={drawer.payload.line}
           renderChanges={({ sessionDir, relPath, baseBranch }) => (
             <ExploreFileChanges sessionDir={sessionDir} relPath={relPath} baseBranch={baseBranch} />
           )}

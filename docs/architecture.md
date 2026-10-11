@@ -206,6 +206,8 @@ replays it through the same snapshot path, so a remount during a login still
 shows the device code once. The buffer of an exited run is dropped when its
 terminal unmounts, and only the newest four exited runs are kept.
 
+`shared/components/GenericTerminalPanel/index.tsx` keeps the normal terminal renderer when WebGL addon construction or activation fails, and disposes the failed addon. Acceleration is optional; an unavailable WebGL2 context does not close the terminal.
+
 ### Launching git
 
 Every git process the Rust shell starts goes through one builder,
@@ -264,6 +266,20 @@ worktree and revision pair, fetches once
 per file and diff refresh, and discards late results after its source changes.
 The command lives in `apps/desktop/src-tauri/src/worktree/file_sides.rs`;
 `features/diff/hooks/useFileSides` owns the expansion cache and retry state.
+
+### Identifier peek
+
+`worktree_grep_word` backs the double click on a name in a diff line. It refuses
+a word that is not an identifier of 2 to 128 characters (`A-Za-z_$` first, then
+`A-Za-z0-9_$`) before any process starts, then runs
+`git grep -n --column -z -w -I -F --untracked -e <word> --` in the worktree
+through the `Git` helper with an argument array and a 3 second deadline. It keeps
+the first 300 matches (`truncated` says more existed) and trims each line to 240
+characters. Exit 1 is an empty list. The definition guess is
+`features/diff/lib/definitionOf.ts`: it reads declaration keywords for TS and JS,
+Rust, Python and Go, and does not guess class methods or Go receivers. The
+command lives in `apps/desktop/src-tauri/src/worktree/grep.rs`;
+`features/diff/hooks/useIdentifierUses` keeps only the latest answer.
 
 ### History module
 
@@ -645,7 +661,6 @@ cleanup) and moving those calls behind the commands is not done yet.
 | `telemetry_records`           | ts     |                                                                                                                     |
 | `turn_events`                 | ts     |                                                                                                                     |
 | `workflows`                   | ts     | `saveWorkflow` and `removeWorkflow`. Exception: the backup import.                                                  |
-| `workspace_external_tasks`    | ts     | Tasks linked to the whole workspace. They show on the Board and never close from a PR.                              |
 | `workspace_profiles`          | ts     | Exception: the backup import.                                                                                       |
 | `workspace_starred_issues`    | ts     |                                                                                                                     |
 | `workspaces`                  | ts     | Exceptions: the backup import and the per-workspace settings override (`settings_overrides.rs`).                    |

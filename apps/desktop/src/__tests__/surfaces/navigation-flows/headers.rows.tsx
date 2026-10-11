@@ -34,7 +34,7 @@ const headerPush = (): HTMLElement => {
 
 export const HEADERS_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'headers: Delete session lives in the overflow and confirms inline under the title row',
+    name: 'headers: Delete session lives in the overflow and confirms in a popover beside it',
     covers: [],
     open: async () => {
       await settle();
@@ -52,20 +52,20 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
         });
       });
       useAppStore.setState({ deleteTask });
-      const confirm = await screen.findByRole('group', { name: 'Delete session?' }, WAIT);
-      expect(screen.queryByRole('dialog')).toBeNull();
+      const confirm = await screen.findByRole('dialog', { name: /^Delete .+\?$/ }, WAIT);
+      expect(confirm.closest('[data-dropdown-portal]')).not.toBeNull();
 
       within(confirm).getByRole('button', { name: 'Cancel' }).focus();
       await userEvent.keyboard('{Escape}');
-      expect(screen.queryByRole('group', { name: 'Delete session?' })).toBeNull();
+      expect(screen.queryByRole('dialog')).toBeNull();
       expect(document.activeElement).toBe(
         screen.getByRole('button', { name: 'More session actions' }),
       );
 
       await click(screen.getByRole('button', { name: 'More session actions' }));
       await click(await screen.findByRole('menuitem', { name: /Delete session…/ }, WAIT));
-      const again = await screen.findByRole('group', { name: 'Delete session?' }, WAIT);
-      await click(within(again).getByRole('button', { name: 'Delete' }));
+      const again = await screen.findByRole('dialog', { name: /^Delete .+\?$/ }, WAIT);
+      await click(within(again).getByRole('button', { name: 'Delete session' }));
 
       await waitFor(() => expect(deleteTask).toHaveBeenCalledTimes(1), WAIT);
       expect(deleteTask).toHaveBeenCalledWith(ctx.sessionId);

@@ -88,7 +88,7 @@ const harness = (initial: Record<string, unknown>): Harness => {
     archivedSessions: { [SOURCE]: [] },
     sessionContextItems: { [SESSION]: [cachedItem('learn-live')] },
     workspaceLearnings: { [SOURCE]: [cachedItem('learn-live')] },
-    workspaceExternalTasks: { [SOURCE]: [] },
+    starredIssues: { [SOURCE]: [] },
     workspaceIntegrations: { [SOURCE]: [] },
     projectScripts: {},
     workspaceOverrides: { [SOURCE]: overrides },
@@ -147,9 +147,9 @@ const seedDb = async () => {
     );
   }
   await db.execute(
-    `INSERT INTO workspace_external_tasks
-       (workspace_id, provider, external_id, identifier, url, title, created_at)
-     VALUES (?, 'linear', 'NW-7', 'NW-7', 'https://linear.example/NW-7', 'Ledger export', ?)`,
+    `INSERT INTO workspace_starred_issues
+       (workspace_id, provider, external_id, identifier, container, title, url, state, state_label, starred_at, refreshed_at)
+     VALUES (?, 'linear', 'NW-7', 'NW-7', NULL, 'Ledger export', 'https://linear.example/NW-7', 'open', NULL, ?, NULL)`,
     [SOURCE, MS],
   );
 };
@@ -220,10 +220,8 @@ describe('mergeWorkspaces slice action', () => {
     expect(store.state.sessionContextItems[SESSION]?.map((item) => item.workspaceId)).toEqual([
       TARGET,
     ]);
-    expect(store.state.workspaceExternalTasks[SOURCE]).toBeUndefined();
-    expect(store.state.workspaceExternalTasks[TARGET]?.map((task) => task.identifier)).toEqual([
-      'NW-7',
-    ]);
+    expect(store.state.starredIssues[SOURCE]).toBeUndefined();
+    expect(store.state.starredIssues[TARGET]?.map((issue) => issue.identifier)).toEqual(['NW-7']);
   });
 
   it('reloads the current workspace when it is the merge target', async () => {

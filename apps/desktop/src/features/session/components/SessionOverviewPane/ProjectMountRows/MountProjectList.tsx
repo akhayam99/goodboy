@@ -1,8 +1,10 @@
-import { useMemo, useState } from 'react';
-import { ROW_INTERACTIVE, EmptyLine, ScrollFade, cn, formatError } from '@goodboy/ui';
+import { Fragment, useMemo, useState } from 'react';
+import { Star } from 'lucide-react';
+import { ROW_INTERACTIVE, EmptyLine, Eyebrow, ScrollFade, cn, formatError } from '@goodboy/ui';
 import type { Project, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { ICON_SIZE, projectGlyph } from '../../../../../shared/components/conceptIcons';
+import { shouldGroupStarred } from '../../../../../shared/utils/shouldGroupStarred';
 import { MountPreflightCard } from './MountPreflightCard';
 import { mountFailure, type MountFailure } from './mountFailure';
 import { useMountPreflight } from './useMountPreflight';
@@ -29,6 +31,23 @@ export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
     () => projects.filter((project) => project.name.toLowerCase().includes(query.toLowerCase())),
     [projects, query],
   );
+  const isGrouped =
+    query.trim() === '' &&
+    shouldGroupStarred({
+      starredCount: projects.filter((project) => project.starredAt !== undefined).length,
+      total: projects.length,
+    });
+  const groups = useMemo(() => {
+    if (!isGrouped) {
+      return [{ key: 'all', label: null, projects: filtered }];
+    }
+    const starred = filtered.filter((project) => project.starredAt !== undefined);
+    const others = filtered.filter((project) => project.starredAt === undefined);
+    return [
+      { key: 'starred', label: 'Starred', projects: starred },
+      { key: 'other', label: 'Other projects', projects: others },
+    ].filter((group) => group.projects.length > 0);
+  }, [filtered, isGrouped]);
   const selectedProject = projectById(projects, selectedProjectId) ?? null;
   const preflightState = useMountPreflight({ sessionId, project: selectedProject });
 
@@ -100,34 +119,53 @@ export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
         <EmptyLine className="px-3">No matching projects</EmptyLine>
       ) : (
         <ScrollFade className="max-h-56" viewportClassName="py-0.5" fadeFrom="subtle">
-          <ul>
-            {filtered.map((project) => {
-              const GlyphIcon = projectGlyph({ kind: project.kind });
-              return (
-                <li key={project.id}>
-                  <button
-                    type="button"
-                    aria-label={`Add ${project.name}`}
-                    onClick={() => {
-                      setFailure(null);
-                      setSelectedProjectId(project.id);
-                    }}
-                    className={cn(
-                      'flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-body text-foreground',
-                      ROW_INTERACTIVE,
-                    )}
-                  >
-                    <GlyphIcon
-                      size={ICON_SIZE.row}
-                      aria-hidden
-                      className="shrink-0 text-muted-foreground"
-                    />
-                    <span className="truncate">{project.name}</span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+          <div className="flex flex-col">
+            {groups.map((group) => (
+              <Fragment key={group.key}>
+                {group.label === null ? null : (
+                  <div className="px-3 pb-1 pt-2">
+                    <Eyebrow label={group.label} muted />
+                  </div>
+                )}
+                <ul aria-label={group.label ?? undefined}>
+                  {group.projects.map((project) => {
+                    const GlyphIcon = projectGlyph({ kind: project.kind });
+                    const isStarred = project.starredAt !== undefined;
+                    return (
+                      <li key={project.id}>
+                        <button
+                          type="button"
+                          aria-label={`Add ${project.name}`}
+                          onClick={() => {
+                            setFailure(null);
+                            setSelectedProjectId(project.id);
+                          }}
+                          className={cn(
+                            'flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-body text-foreground',
+                            ROW_INTERACTIVE,
+                          )}
+                        >
+                          <GlyphIcon
+                            size={ICON_SIZE.row}
+                            aria-hidden
+                            className="shrink-0 text-muted-foreground"
+                          />
+                          <span className="min-w-0 flex-1 truncate">{project.name}</span>
+                          {isStarred ? (
+                            <Star
+                              size={ICON_SIZE.mark}
+                              aria-hidden
+                              className="shrink-0 fill-current text-warning"
+                            />
+                          ) : null}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </Fragment>
+            ))}
+          </div>
         </ScrollFade>
       )}
     </div>

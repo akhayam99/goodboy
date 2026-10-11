@@ -3,6 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { MountId, Project, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
+import { TEST_NOW, aProject } from '@goodboy/types/testing';
 import { emptyOverrides } from '../../../../../store/storyHarness';
 
 const SID = 'session-1' as SessionId;
@@ -154,5 +155,47 @@ describe('MountProjectList', () => {
     const retry = screen.getByRole('button', { name: 'Retry' });
     fireEvent.click(retry);
     await waitFor(() => expect(h.ensureProjectMounted).toHaveBeenCalledTimes(2));
+  });
+});
+
+describe('MountProjectList groups', () => {
+  const named = ({ name, isStarred }: { readonly name: string; readonly isStarred: boolean }) =>
+    aProject({
+      workspaceId: WID,
+      name,
+      rootPath: `/repos/${name}`,
+      kind: 'repo',
+      ...(isStarred ? { starredAt: TEST_NOW } : {}),
+    });
+
+  const NAMES = [
+    'ledger-core',
+    'notify-relay',
+    'payments-api',
+    'cascadia-web',
+    'acme-infra',
+    'runbooks',
+  ];
+
+  it('heads Starred and Other projects at six projects with a star', () => {
+    const projects = NAMES.map((name, index) => named({ name, isStarred: index < 2 }));
+    render(<MountProjectList sessionId={SID} projects={projects} onDone={vi.fn()} />);
+
+    expect(screen.getByText('Starred')).toBeDefined();
+    expect(screen.getByText('Other projects')).toBeDefined();
+    expect(screen.getAllByRole('button', { name: /^Add / })).toHaveLength(6);
+  });
+
+  it('shows no headings under six projects or with nothing starred', () => {
+    const fewer = NAMES.slice(0, 5).map((name, index) => named({ name, isStarred: index < 2 }));
+    const { unmount } = render(
+      <MountProjectList sessionId={SID} projects={fewer} onDone={vi.fn()} />,
+    );
+    expect(screen.queryByText('Starred')).toBeNull();
+    unmount();
+
+    const none = NAMES.map((name) => named({ name, isStarred: false }));
+    render(<MountProjectList sessionId={SID} projects={none} onDone={vi.fn()} />);
+    expect(screen.queryByText('Other projects')).toBeNull();
   });
 });

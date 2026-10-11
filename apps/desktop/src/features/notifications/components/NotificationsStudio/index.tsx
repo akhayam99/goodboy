@@ -9,6 +9,7 @@ import {
 } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
+import { StudioDetail } from '../../../../shared/components/StudioShell/StudioDetail';
 import { FilterButton } from '../../../../shared/components/FilterButton';
 import { useAppStore } from '../../../../store';
 import { mapNotificationAction } from '../NotificationToastBridge';
@@ -174,132 +175,134 @@ export const NotificationsStudio = ({ onClose }: Props) => {
             isCollapsed={fold.isCollapsed}
             onCollapsedChange={fold.setFolded}
             detail={
-              <PaneShell
-                scroll="body"
-                title="Notifications"
-                meta={subtitle({ total: counts.total, unread: counts.unread })}
-                actions={
-                  <HeaderActions
-                    secondary={
-                      fold.isCollapsed ? (
-                        <FilterButton
-                          popoverLabel="Notification filters"
-                          activeCount={activeCount}
-                          facets={facets}
-                          onDock={fold.canDock ? () => fold.setFolded(false) : undefined}
-                        />
-                      ) : null
-                    }
-                    button={
-                      notifications.length > 0 ? (
-                        <NotificationsToolbar
-                          unreadCount={counts.unread}
-                          totalCount={counts.total}
-                          workspaceName={scope === 'workspace' ? workspaceName : null}
-                          onMarkAllRead={() => void markNotificationsRead()}
-                          onDeleteAll={async () => {
-                            await clearNotifications();
-                            setSelectedKey(null);
-                          }}
-                        />
-                      ) : null
-                    }
-                  />
-                }
-              >
-                {isLoading && notifications.length === 0 && <NotificationsSkeleton />}
-                {!isLoading && notifications.length === 0 && (
-                  <EmptyState
-                    icon={CONCEPT_ICONS.notifications}
-                    tone={CONCEPT_TONE.notifications}
-                    title="No notifications"
-                    size="page"
-                    headingLevel={2}
-                  />
-                )}
-                {notifications.length > 0 && visibleGroups.length === 0 && (
-                  <EmptyState
-                    icon={CONCEPT_ICONS.notifications}
-                    tone={CONCEPT_TONE.notifications}
-                    title="No notifications match"
-                    description={
-                      hasOlder
-                        ? 'Nothing loaded matches these filters. Older notifications may.'
-                        : 'Try another filter or include notifications you have already read.'
-                    }
-                    action={
-                      isFiltered ? (
-                        <button
-                          type="button"
-                          onClick={clearFilters}
-                          className="rounded-md px-2 py-1 text-label font-medium text-foreground ring-1 ring-inset ring-border hover:bg-hover"
+              <StudioDetail>
+                <PaneShell
+                  scroll="body"
+                  title="Notifications"
+                  meta={subtitle({ total: counts.total, unread: counts.unread })}
+                  actions={
+                    <HeaderActions
+                      secondary={
+                        fold.isCollapsed ? (
+                          <FilterButton
+                            popoverLabel="Notification filters"
+                            activeCount={activeCount}
+                            facets={facets}
+                            onDock={fold.canDock ? () => fold.setFolded(false) : undefined}
+                          />
+                        ) : null
+                      }
+                      button={
+                        notifications.length > 0 ? (
+                          <NotificationsToolbar
+                            unreadCount={counts.unread}
+                            totalCount={counts.total}
+                            workspaceName={scope === 'workspace' ? workspaceName : null}
+                            onMarkAllRead={() => void markNotificationsRead()}
+                            onDeleteAll={async () => {
+                              await clearNotifications();
+                              setSelectedKey(null);
+                            }}
+                          />
+                        ) : null
+                      }
+                    />
+                  }
+                >
+                  {isLoading && notifications.length === 0 && <NotificationsSkeleton />}
+                  {!isLoading && notifications.length === 0 && (
+                    <EmptyState
+                      icon={CONCEPT_ICONS.notifications}
+                      tone={CONCEPT_TONE.notifications}
+                      title="No notifications"
+                      size="page"
+                      headingLevel={2}
+                    />
+                  )}
+                  {notifications.length > 0 && visibleGroups.length === 0 && (
+                    <EmptyState
+                      icon={CONCEPT_ICONS.notifications}
+                      tone={CONCEPT_TONE.notifications}
+                      title="No notifications match"
+                      description={
+                        hasOlder
+                          ? 'Nothing loaded matches these filters. Older notifications may.'
+                          : 'Try another filter or include notifications you have already read.'
+                      }
+                      action={
+                        isFiltered ? (
+                          <button
+                            type="button"
+                            onClick={clearFilters}
+                            className="rounded-md px-2 py-1 text-label font-medium text-foreground ring-1 ring-inset ring-border hover:bg-hover"
+                          >
+                            Clear filters
+                          </button>
+                        ) : undefined
+                      }
+                      size="page"
+                      headingLevel={2}
+                    />
+                  )}
+                  {days.length > 0 && (
+                    <div className="flex flex-col gap-4">
+                      {days.map((entry) => (
+                        <section
+                          key={entry.day}
+                          aria-label={entry.label}
+                          className="flex flex-col gap-0.5"
                         >
-                          Clear filters
-                        </button>
-                      ) : undefined
-                    }
-                    size="page"
-                    headingLevel={2}
-                  />
-                )}
-                {days.length > 0 && (
-                  <div className="flex flex-col gap-4">
-                    {days.map((entry) => (
-                      <section
-                        key={entry.day}
-                        aria-label={entry.label}
-                        className="flex flex-col gap-0.5"
+                          <div className="flex items-baseline gap-2 px-3 pb-1">
+                            <Eyebrow label={entry.label} />
+                            <span className="text-meta tabular-nums text-faint-foreground">
+                              {entry.items.length}
+                            </span>
+                          </div>
+                          <ul className="flex flex-col gap-0.5">
+                            {entry.items.map((group) => {
+                              const key = notificationGroupKey({ group });
+                              return (
+                                <NotificationRow
+                                  key={key}
+                                  scrollKey={key}
+                                  notifications={group}
+                                  density="cozy"
+                                  isSelected={selectedKey === key}
+                                  onOpen={() => {
+                                    markGroupRead(key);
+                                    if (selectedKey === key) {
+                                      setSelectedKey(null);
+                                      return;
+                                    }
+                                    selectGroup(key);
+                                  }}
+                                  onMarkRead={() => markGroupRead(key)}
+                                  onDismiss={() => dismissGroup(key)}
+                                />
+                              );
+                            })}
+                          </ul>
+                        </section>
+                      ))}
+                    </div>
+                  )}
+                  {hasOlder && notifications.length > 0 && (
+                    <div className="flex items-center justify-between gap-3 px-3 text-meta text-muted-foreground">
+                      <span className="tabular-nums">
+                        Showing {loadedMatching} of {counts.matching}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => void loadOlderNotifications()}
+                        disabled={isLoading}
+                        className="rounded-md px-2 py-1 font-medium text-foreground ring-1 ring-inset ring-border-soft motion-safe:transition-colors hover:bg-hover disabled:opacity-50"
                       >
-                        <div className="flex items-baseline gap-2 px-3 pb-1">
-                          <Eyebrow label={entry.label} />
-                          <span className="text-meta tabular-nums text-faint-foreground">
-                            {entry.items.length}
-                          </span>
-                        </div>
-                        <ul className="flex flex-col gap-0.5">
-                          {entry.items.map((group) => {
-                            const key = notificationGroupKey({ group });
-                            return (
-                              <NotificationRow
-                                key={key}
-                                scrollKey={key}
-                                notifications={group}
-                                density="cozy"
-                                isSelected={selectedKey === key}
-                                onOpen={() => {
-                                  markGroupRead(key);
-                                  if (selectedKey === key) {
-                                    setSelectedKey(null);
-                                    return;
-                                  }
-                                  selectGroup(key);
-                                }}
-                                onMarkRead={() => markGroupRead(key)}
-                                onDismiss={() => dismissGroup(key)}
-                              />
-                            );
-                          })}
-                        </ul>
-                      </section>
-                    ))}
-                  </div>
-                )}
-                {hasOlder && notifications.length > 0 && (
-                  <div className="flex items-center justify-between gap-3 px-3 text-meta text-muted-foreground">
-                    <span className="tabular-nums">
-                      Showing {loadedMatching} of {counts.matching}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => void loadOlderNotifications()}
-                      disabled={isLoading}
-                      className="rounded-md px-2 py-1 font-medium text-foreground ring-1 ring-inset ring-border-soft motion-safe:transition-colors hover:bg-hover disabled:opacity-50"
-                    >
-                      Load older
-                    </button>
-                  </div>
-                )}
-              </PaneShell>
+                        Load older
+                      </button>
+                    </div>
+                  )}
+                </PaneShell>
+              </StudioDetail>
             }
           />
         </div>

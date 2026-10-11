@@ -5,39 +5,58 @@ import { starredProjectsFirst } from './starredProjectsFirst';
 
 const at = (value: string): IsoDateTime => value as IsoDateTime;
 
-describe('starredProjectsFirst', () => {
-  it('puts starred projects first, the most recently used one on top, and keeps the rest in order', () => {
-    const projects = [
-      { name: 'payments-api', lastAccessedAt: at('2026-09-20T10:00:00.000Z') },
-      {
-        name: 'ledger-core',
-        starredAt: at('2026-09-01T10:00:00.000Z'),
-        lastAccessedAt: at('2026-09-10T10:00:00.000Z'),
-      },
-      { name: 'notify-relay' },
-      {
-        name: 'runbooks',
-        starredAt: at('2026-09-02T10:00:00.000Z'),
-        lastAccessedAt: at('2026-09-24T10:00:00.000Z'),
-      },
-    ];
+const PROJECTS = [
+  { name: 'payments-api', lastAccessedAt: at('2026-09-20T10:00:00.000Z') },
+  {
+    name: 'ledger-core',
+    starredAt: at('2026-09-01T10:00:00.000Z'),
+    lastAccessedAt: at('2026-09-10T10:00:00.000Z'),
+  },
+  { name: 'notify-relay', lastAccessedAt: at('2026-09-25T10:00:00.000Z') },
+  {
+    name: 'harborline',
+    starredAt: at('2026-09-02T10:00:00.000Z'),
+    lastAccessedAt: at('2026-09-24T10:00:00.000Z'),
+  },
+  { name: 'cascadia' },
+];
 
-    expect(starredProjectsFirst({ projects }).map((project) => project.name)).toEqual([
-      'runbooks',
+const names = ({ inside }: { readonly inside: 'name' | 'recency' }): ReadonlyArray<string> =>
+  starredProjectsFirst({ projects: PROJECTS, inside }).map((project) => project.name);
+
+describe('starredProjectsFirst', () => {
+  it('orders both groups by recency, starred first', () => {
+    expect(names({ inside: 'recency' })).toEqual([
+      'harborline',
       'ledger-core',
-      'payments-api',
       'notify-relay',
+      'payments-api',
+      'cascadia',
     ]);
   });
 
-  it('returns the same order when nothing is starred', () => {
-    const projects: ReadonlyArray<{ name: string; starredAt?: IsoDateTime }> = [
-      { name: 'ledger-core' },
-      { name: 'notify-relay' },
-    ];
-    expect(starredProjectsFirst({ projects }).map((project) => project.name)).toEqual([
+  it('orders both groups by name, starred first', () => {
+    expect(names({ inside: 'name' })).toEqual([
+      'harborline',
       'ledger-core',
+      'cascadia',
       'notify-relay',
+      'payments-api',
     ]);
+  });
+
+  it('falls back to the name when recency ties or is missing', () => {
+    const projects: ReadonlyArray<{ name: string; starredAt?: IsoDateTime }> = [
+      { name: 'notify-relay' },
+      { name: 'ledger-core' },
+    ];
+
+    expect(
+      starredProjectsFirst({ projects, inside: 'recency' }).map((project) => project.name),
+    ).toEqual(['ledger-core', 'notify-relay']);
+  });
+
+  it('returns an empty list for no projects', () => {
+    expect(starredProjectsFirst({ projects: [], inside: 'name' })).toEqual([]);
   });
 });
