@@ -6,9 +6,6 @@ export type ExplorePreviewState =
       readonly status: 'loading';
     }
   | {
-      readonly status: 'unsupported';
-    }
-  | {
       readonly status: 'error';
       readonly message: string;
     }
@@ -16,28 +13,6 @@ export type ExplorePreviewState =
       readonly status: 'ready';
       readonly content: ExploreContent;
     };
-
-const KNOWN_UNSUPPORTED_PREVIEW_EXTENSIONS = new Set([
-  'doc',
-  'docx',
-  'key',
-  'numbers',
-  'ods',
-  'odt',
-  'pages',
-  'ppt',
-  'pptx',
-  'xls',
-  'xlsx',
-]);
-
-const extensionOf = ({ fileName }: { readonly fileName: string }): string => {
-  const dot = fileName.lastIndexOf('.');
-  if (dot < 0) {
-    return '';
-  }
-  return fileName.slice(dot + 1).toLowerCase();
-};
 
 const toErrorMessage = ({ error }: { readonly error: unknown }): string => {
   if (error instanceof Error && error.message.trim() !== '') {
@@ -54,15 +29,8 @@ type Params = {
 export const useExplorePreview = ({ sessionDir, entry }: Params): ExplorePreviewState => {
   const [state, setState] = useState<ExplorePreviewState>({ status: 'loading' });
   const relPath = entry.relPath;
-  const isUnsupported = KNOWN_UNSUPPORTED_PREVIEW_EXTENSIONS.has(
-    extensionOf({ fileName: entry.name }),
-  );
 
   useEffect(() => {
-    if (isUnsupported) {
-      setState({ status: 'unsupported' });
-      return;
-    }
     let isCancelled = false;
     setState({ status: 'loading' });
     exploreRead({ sessionDir, relPath })
@@ -79,7 +47,7 @@ export const useExplorePreview = ({ sessionDir, entry }: Params): ExplorePreview
     return () => {
       isCancelled = true;
     };
-  }, [isUnsupported, relPath, sessionDir]);
+  }, [relPath, sessionDir]);
 
   return state;
 };
