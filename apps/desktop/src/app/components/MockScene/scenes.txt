@@ -348,6 +348,10 @@ scribe-proposal-transcript
 scripts-empty
 scripts-empty-group
 scripts-lens
+scripts-live-idle
+scripts-live-portbusy
+scripts-live-running
+scripts-live-suggested
 scripts-rows
 search
 session-ask

@@ -14,7 +14,15 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { insertProject, insertWorkspace } from '@goodboy/db';
 import type { MonitorSnapshot } from '@goodboy/core';
-import type { MountId, Project, SessionId, SessionMountView, Workspace } from '@goodboy/types';
+import type {
+  IsoDateTime,
+  MountId,
+  Project,
+  SessionId,
+  SessionMountView,
+  SessionProjectMount,
+  Workspace,
+} from '@goodboy/types';
 import { aProject, aSession, aWorkspace } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -57,7 +65,7 @@ const mountOf = ({
   readonly sessionId: SessionId;
   readonly worktreePath: string;
   readonly branch: string;
-}): SessionMountView => ({
+}): SessionProjectMount => ({
   mountId: `mount-${sessionId}` as MountId,
   sessionId,
   projectId: PAYMENTS.id,
@@ -71,6 +79,14 @@ const mountOf = ({
   isAttached: true,
   diskState: 'present',
   revision: 1,
+});
+
+const viewOf = ({ mount }: { readonly mount: SessionProjectMount }): SessionMountView => ({
+  ...mount,
+  id: mount.mountId,
+  repoSlug: null,
+  createdAt: '2026-10-11T09:00:00.000Z' as IsoDateTime,
+  updatedAt: '2026-10-11T09:00:00.000Z' as IsoDateTime,
 });
 
 const SCRIPTS = [
@@ -213,7 +229,10 @@ beforeEach(async () => {
     sessions: [FIRST, SECOND],
     currentSessionId: FIRST.id,
     sessionProjectMounts: { [FIRST.id]: [firstMount], [SECOND.id]: [secondMount] },
-    sessionMounts: { [FIRST.id]: [firstMount], [SECOND.id]: [secondMount] },
+    sessionMounts: {
+      [FIRST.id]: [viewOf({ mount: firstMount })],
+      [SECOND.id]: [viewOf({ mount: secondMount })],
+    },
   });
   await useAppStore
     .getState()
