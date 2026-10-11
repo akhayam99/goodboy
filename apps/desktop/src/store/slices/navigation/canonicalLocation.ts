@@ -9,7 +9,8 @@ import { CONTEXT_LENS_TAB } from './contextLensTab';
 import { DEFAULT_CONTEXT_TAB } from '../contextDrawer/state';
 import { branchLandingTabOf } from '../../../features/branch/branchLandingTab';
 import { resolveBranchTab } from '../../../features/branch/branchTabs';
-import { branchHasPullRequest, branchScopeOf } from '../session-view/branchTabOf';
+import { branchHasPullRequest } from '../session-view/branchHasPullRequest';
+import { branchScopeOf } from '../session-view/branchScopeOf';
 import type { BranchTab, CanonicalPlace, Place, PlaceRequest } from './types';
 
 type SessionPlace = Extract<Place, { readonly at: 'session' }>;
