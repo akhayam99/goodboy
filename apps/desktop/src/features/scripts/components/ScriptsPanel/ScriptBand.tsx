@@ -3,14 +3,15 @@ import { SectionHeader } from '@goodboy/ui';
 
 type Props = {
   readonly label: string;
+  readonly scope: string;
   readonly count: number;
   readonly hint?: string;
   readonly action?: ReactNode;
   readonly children: ReactNode;
 };
 
-export const ScriptBand = ({ label, count, hint, action, children }: Props) => (
-  <section aria-label={label} className="flex flex-col gap-1">
+export const ScriptBand = ({ label, scope, count, hint, action, children }: Props) => (
+  <section aria-label={`${label} of ${scope}`} className="flex flex-col gap-1">
     <SectionHeader
       label={label}
       hint={hint}

@@ -144,7 +144,7 @@ afterEach(cleanup);
 describe('script pins in the Scripts lens', () => {
   it('pins from the Suggested band, shows the script once, and keeps it in a session on another worktree', async () => {
     renderLens(FIRST.id);
-    const suggested = await screen.findByRole('region', { name: 'Suggested' });
+    const suggested = await screen.findByRole('region', { name: /^Suggested of /u });
     expect(screen.queryByRole('region', { name: 'Pinned scripts' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Show test output' })).toBeNull();
     expect(within(suggested).getByText('dev')).toBeDefined();
@@ -155,7 +155,7 @@ describe('script pins in the Scripts lens', () => {
     expect((await savedPins())[0]).not.toContain('worktrees');
     expect(await screen.findAllByRole('button', { name: 'Show test output' })).toHaveLength(1);
     expect(screen.queryByRole('region', { name: 'Pinned scripts' })).toBeNull();
-    expect(screen.queryByRole('region', { name: 'Suggested' })).toBeNull();
+    expect(screen.queryByRole('region', { name: /^Suggested of /u })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Show dev output' })).toBeNull();
     cleanup();
 

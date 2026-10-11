@@ -141,7 +141,7 @@ describe('the u23 list scenes', () => {
     renderScene('scripts-empty-group');
     await settle();
 
-    expect(screen.getByRole('region', { name: 'Suggested' })).toBeDefined();
+    expect(screen.getByRole('region', { name: /^Suggested of /u })).toBeDefined();
     expect(screen.queryByText(/Settings/)).toBeNull();
     const picker = screen.getByRole('region', { name: 'Scripts of northwind-storefront' });
     expect(within(picker).getAllByRole('button', { name: /^Pin / }).length).toBeGreaterThan(0);
