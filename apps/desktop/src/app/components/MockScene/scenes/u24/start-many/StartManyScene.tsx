@@ -21,7 +21,7 @@ import {
   starredLinearOf,
 } from '../../brand/kickoffIssues';
 
-export type StartManyMode = 'multiselect' | 'cap' | 'picked3' | 'crossproject';
+type StartManyMode = 'multiselect' | 'cap' | 'picked3' | 'crossproject';
 
 type Props = {
   readonly mode: StartManyMode;
