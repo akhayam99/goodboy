@@ -7,10 +7,10 @@ import {
   useDropdown,
   type MenuEntry,
 } from '@goodboy/ui';
-import { useActionEnv } from '../useActionEnv';
-import { useObjectActions } from '../useObjectActions';
-import { toMenuEntries } from '../toMenuEntries';
-import type { ObjectTarget } from '../types';
+import { useActionEnv } from './useActionEnv';
+import { useObjectActions } from './useObjectActions';
+import { toMenuEntries } from './toMenuEntries';
+import type { ObjectTarget } from './types';
 
 const MIN_DRAWN_CHOICES = 2;
 

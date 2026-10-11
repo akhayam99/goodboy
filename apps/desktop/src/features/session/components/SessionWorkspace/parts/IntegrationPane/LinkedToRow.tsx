@@ -6,7 +6,7 @@ import type { SessionExternalTask, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
 import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 import { taskIdentityKey } from '../../../../../../shared/utils/taskIdentityKey';
-import { ObjectChoiceMenu } from '../../../../../actions/components/ObjectChoiceMenu';
+import { ObjectChoiceMenu } from '../../../../../actions/ObjectChoiceMenu';
 import { taskMoveTargets, type TaskMoveChoice } from '../../../../../actions/kinds/taskMoveTargets';
 
 type Props = {
