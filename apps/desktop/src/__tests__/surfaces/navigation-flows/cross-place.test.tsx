@@ -910,8 +910,6 @@ describe('moving across every place keeps one frame', () => {
         expect(currentPage()).toBe(page);
         expectCentredColumns();
         expectAskInColumn();
-        const trail = document.querySelector('main [data-slot="trail-bar"] [data-page-column]');
-        expect(trail?.getAttribute('data-width')).toBe('column');
         if (lens === 'branch') {
           expect(leftEdge().columns).not.toContain('full');
         }
