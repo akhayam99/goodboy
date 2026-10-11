@@ -863,7 +863,9 @@ activity yet show the plain overview with its actions.
   name through the `Trail` primitive from `@goodboy/ui`. A studio body that
   goes deeper claims the band with `StudioTrail` (the workflow editor shows
   `Workflows > Ship a fix` with its save state and actions), so the app has one
-  breadcrumb.
+  breadcrumb. In a split studio (Chat, Guide, What's new, Tasks, Notifications) the band
+  is the first child of the detail beside the page rail, not a bar across the rail, so
+  the crumb, the title and the body share one x ([frame map](./styling.md#the-frame-map)).
 - **The parent crumb is Up, and the last crumb names the kind.** No crumb
   carries a back glyph and `Trail` has no lead slot, so a page never draws its
   own back link above its content. The last crumb of a run, an artifact, an
@@ -2128,7 +2130,7 @@ forward move that stays in its session keeps it open (`keepAskDrawer` in
 `navigate`), so a chip in an answer changes the page beside it; leaving the
 session closes it, and Back brings it back like any drawer. Another drawer
 opened from the page replaces it. `app/components/DrawerHost` turns a `kind` into its content, framed
-by `DrawerFrame` from `@goodboy/ui`: a 44px header (icon, title, count, at most
+by `DrawerFrame` from `@goodboy/ui`: a header whose 28px row is centred on the band (icon, title, count, at most
 one labelled action, close), one divider, a `ScrollFade` body and an optional
 `dock`. A body that scrolls itself, such as a chat, passes `scroll="self"` and
 fills the frame instead. A new kind adds a variant to `DrawerContent` and a

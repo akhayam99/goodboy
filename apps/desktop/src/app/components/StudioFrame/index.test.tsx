@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { PaneShell } from '@goodboy/ui';
 import { StudioShell } from '../../../shared/components/StudioShell';
+import { StudioDetail } from '../../../shared/components/StudioShell/StudioDetail';
 import { StudioTrail } from '../../../shared/components/StudioShell/StudioTrail';
 import { StudioFrame } from './index';
 
@@ -28,7 +29,11 @@ const Body = ({ subtitle, isEscapeEnabled = true }: BodyProps) => (
     headerAccessory={<button type="button">Refresh</button>}
     onClose={() => undefined}
   >
-    {() => <p>inbox body</p>}
+    {() => (
+      <StudioDetail>
+        <p>inbox body</p>
+      </StudioDetail>
+    )}
   </StudioShell>
 );
 
@@ -149,7 +154,9 @@ describe('StudioFrame', () => {
 
     rerender(
       <StudioFrame kind="notifications" onClose={() => undefined}>
-        <p>notifications body</p>
+        <StudioDetail>
+          <p>notifications body</p>
+        </StudioDetail>
       </StudioFrame>,
     );
 
@@ -214,7 +221,7 @@ describe('StudioFrame', () => {
 describe('StudioFrame grid', () => {
   const columnOf = (node: HTMLElement) => node.closest('[data-page-column]') as HTMLElement | null;
 
-  it.each(['inbox', 'workflow', 'impact', 'guide', 'changelog', 'notifications'] as const)(
+  it.each(['workflow', 'impact'] as const)(
     'draws the %s band inside the page column, like the title under it',
     (kind) => {
       render(
@@ -234,18 +241,33 @@ describe('StudioFrame grid', () => {
     },
   );
 
-  it('lines the chat band up with the 24px gutter beside its rail', () => {
-    render(
-      <StudioFrame kind="chat" onClose={() => undefined}>
-        <p>chat body</p>
-      </StudioFrame>,
-    );
+  it.each(['inbox', 'guide', 'changelog', 'notifications', 'chat'] as const)(
+    'draws the %s crumb and title in the detail beside the rail, on one column',
+    (kind) => {
+      const { container } = render(
+        <StudioFrame kind={kind} onClose={() => undefined}>
+          <div className="flex">
+            <aside aria-label="Rail" />
+            <StudioDetail>
+              <PaneShell title="Studio title">
+                <p>body</p>
+              </PaneShell>
+            </StudioDetail>
+          </div>
+        </StudioFrame>,
+      );
 
-    const band = screen.getByRole('banner');
-    expect(
-      (band.querySelector('[data-page-column]') as HTMLElement).getAttribute('data-width'),
-    ).toBe('full');
-  });
+      const band = screen.getByRole('banner');
+      const detail = container.querySelector('[data-studio-detail]');
+      const rail = screen.getByRole('complementary', { name: 'Rail' });
+      const bandColumn = band.querySelector('[data-page-column]');
+      const titleColumn = screen.getByRole('heading', { level: 1 }).closest('[data-page-column]');
+      expect(detail?.contains(band)).toBe(true);
+      expect(rail.contains(band)).toBe(false);
+      expect(bandColumn?.getAttribute('data-width')).toBe(titleColumn?.getAttribute('data-width'));
+      expect(detail?.firstElementChild).toBe(band);
+    },
+  );
 
   it('keeps Close at the right edge of the same column as the crumb', () => {
     render(

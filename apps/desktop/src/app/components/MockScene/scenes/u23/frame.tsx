@@ -3,6 +3,7 @@ import { PaneShell } from '@goodboy/ui';
 import { GuideStudio } from '../../../../../features/settings/components/GuideStudio';
 import { ImpactStudio } from '../../../../../features/impact/components/ImpactStudio';
 import { WorkflowStudio } from '../../../../../features/workflows/components/WorkflowStudio';
+import { StudioDetail } from '../../../../../shared/components/StudioShell/StudioDetail';
 import { useAppStore } from '../../../../../store';
 import { FirstLapFrame } from '../audit/FirstLapFrame';
 import { OpenQuestionsScene } from '../flow-audit/OpenQuestionsScene';
@@ -38,15 +39,17 @@ const seedImpact = (): void => {
 export const U23_FRAME_SCENES = {
   'frame-studio-inbox': () => (
     <FramedStudioScene kind="inbox" place="inbox">
-      <PaneShell scroll="body" title="All items" meta={`${INBOX_ROWS.length} items`}>
-        <ul aria-label="Task items" className="flex flex-col gap-3">
-          {INBOX_ROWS.map((row) => (
-            <li key={row} className="text-body text-foreground">
-              {row}
-            </li>
-          ))}
-        </ul>
-      </PaneShell>
+      <StudioDetail>
+        <PaneShell scroll="body" title="All items" meta={`${INBOX_ROWS.length} items`}>
+          <ul aria-label="Task items" className="flex flex-col gap-3">
+            {INBOX_ROWS.map((row) => (
+              <li key={row} className="text-body text-foreground">
+                {row}
+              </li>
+            ))}
+          </ul>
+        </PaneShell>
+      </StudioDetail>
     </FramedStudioScene>
   ),
   'frame-studio-workflows': () => (
