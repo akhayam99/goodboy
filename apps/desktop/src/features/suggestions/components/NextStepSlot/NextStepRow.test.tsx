@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { SessionSuggestion } from '../../types';
 import type { SuggestionActions } from '../../useSuggestionActions';
 import type { AgentKindRouting } from '../../../session/agent-kind';
@@ -68,7 +68,7 @@ describe('NextStepRow', () => {
     expect(run).toHaveBeenCalledTimes(1);
   });
 
-  it('arms a confirm-requiring action instead of acting on the first click', () => {
+  it('asks in a popover instead of acting on the first click', () => {
     const run = vi.fn(async () => undefined);
     const actions: SuggestionActions = {
       primary: {
@@ -93,10 +93,10 @@ describe('NextStepRow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Merge' }));
 
     expect(run).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: 'Merge?' })).toBeTruthy();
   });
 
-  it('acts once the armed confirm is clicked again', () => {
+  it('acts once the popover confirm is clicked', () => {
     const run = vi.fn(async () => undefined);
     const actions: SuggestionActions = {
       primary: {
@@ -119,7 +119,9 @@ describe('NextStepRow', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Merge' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Merge' }));
+    fireEvent.click(
+      within(screen.getByRole('dialog', { name: 'Merge?' })).getByRole('button', { name: 'Merge' }),
+    );
 
     expect(run).toHaveBeenCalledTimes(1);
   });
@@ -150,7 +152,7 @@ describe('NextStepRow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(run).not.toHaveBeenCalled();
-    expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('shows the running action as busy and refuses a second click', () => {

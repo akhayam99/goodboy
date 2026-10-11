@@ -8,6 +8,7 @@ import { ARTIFACT_KIND_MARKER_LABEL } from '../../artifactPresentation';
 import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { RelativeTime } from '../../../../shared/components/RelativeTime';
 import { useAppStore } from '../../../../store';
+import { useRestoreFocus } from '../../../../shared/hooks/useRestoreFocus';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ArtifactOverflowMenu } from '../ArtifactShell/ArtifactOverflowMenu';
 import { ActionConfirmPanel } from '../../../actions/components/ActionControls/ActionConfirmPanel';
@@ -118,6 +119,7 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
   const anchorKey = `artifact-row:${row.id}`;
   const menu = useObjectMenuTrigger({ target, anchorKey });
   const controls = useActionControls({ target, anchorKey });
+  useRestoreFocus({ isOpen: controls.confirming !== null });
   const isDeleted = row.group === 'deleted';
   const hasParts = row.kind === 'plan' && row.partCount > 0 && !isDeleted;
   const rowLabel = `${ARTIFACT_KIND_MARKER_LABEL[row.kind]} ${row.title}${row.state === null ? '' : `, ${row.state.label}`}`;

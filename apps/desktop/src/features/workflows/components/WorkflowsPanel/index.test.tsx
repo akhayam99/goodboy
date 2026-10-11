@@ -190,6 +190,36 @@ describe('WorkflowsPanel home', () => {
   });
 });
 
+describe('WorkflowsPanel restore and discard popovers', () => {
+  it('asks in a popover before it restores the built-in workflows', async () => {
+    removed.ids = new Set(['wf_seed_refactor-example_ws-1']);
+    renderPanel();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Restore built-in workflows' }));
+
+    const dialog = screen.getByRole('dialog', {
+      name: 'Restore built-in workflows in this workspace?',
+    });
+    expect(dialog.closest('[data-dropdown-portal]')).not.toBeNull();
+    expect(state.copyWorkflowsFromWorkspaces).not.toHaveBeenCalled();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('asks in a popover before it discards a workflow that was never saved', async () => {
+    renderPanel();
+    fireEvent.click(screen.getByRole('button', { name: /new workflow/i }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Discard this workflow?' });
+    expect(dialog.closest('[data-dropdown-portal]')).not.toBeNull();
+    expect(state.deleteWorkflow).not.toHaveBeenCalled();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Discard' }));
+    expect(await screen.findByRole('button', { name: /new workflow/i })).toBeDefined();
+  });
+});
+
 describe('WorkflowsPanel editor', () => {
   it('opens a workflow in the editor and goes back with the breadcrumb', () => {
     state.phaseTemplates = { 'ws-1': [makeWorkflow({ name: 'Plan and build' })] };

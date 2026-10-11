@@ -2,7 +2,7 @@ import { PROVIDER_API_KEY_ENV } from '@goodboy/core';
 import { useCallback, useMemo, useState } from 'react';
 import {
   Button,
-  InlineConfirm,
+  ConfirmPopover,
   Input,
   SectionHeader,
   Tooltip,
@@ -107,53 +107,50 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
 
       {mine.length > 0 && (
         <ul className="flex flex-col gap-2">
-          {mine.map((c) =>
-            armedId === c.id ? (
-              <li key={c.id}>
-                <InlineConfirm
-                  role="danger"
-                  icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
-                  title={`Remove "${c.label}"?`}
-                  description="Deletes this API key from Goodboy. A key a workspace still uses is kept."
-                  confirmLabel={`Remove ${c.label}`}
-                  autoDisarmMs={4000}
-                  onConfirm={() => onDelete(c.id)}
-                  onCancel={() => setArmedId(null)}
-                />
-              </li>
-            ) : (
-              <li
-                key={c.id}
-                className="group flex items-center gap-3 rounded-lg border border-border-soft bg-elevated p-3 transition-colors hover:border-border"
+          {mine.map((c) => (
+            <li
+              key={c.id}
+              className="group flex items-center gap-3 rounded-lg border border-border-soft bg-elevated p-3 transition-colors hover:border-border"
+            >
+              <span
+                className="flex size-8 shrink-0 items-center justify-center rounded-md bg-fill text-muted-foreground"
+                aria-hidden
               >
-                <span
-                  className="flex size-8 shrink-0 items-center justify-center rounded-md bg-fill text-muted-foreground"
-                  aria-hidden
-                >
-                  <KeyRound size={ICON_SIZE.control} />
-                </span>
-                <div className="flex min-w-0 flex-col">
-                  <span className="truncate text-row text-foreground">{c.label}</span>
-                  <span className="font-mono text-meta text-faint-foreground">{c.hint}</span>
-                </div>
-                <div className="flex-1" />
-                <Tooltip content={`Remove ${c.label}`}>
-                  <button
-                    type="button"
-                    aria-label={`Remove ${c.label}`}
-                    onClick={() => setArmedId(c.id)}
-                    className={cn(
-                      'inline-flex size-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity',
-                      tintClasses('danger').hoverBg,
-                      'hover:text-danger focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring group-hover:opacity-100',
-                    )}
-                  >
-                    <Trash2 size={ICON_SIZE.row} aria-hidden />
-                  </button>
-                </Tooltip>
-              </li>
-            ),
-          )}
+                <KeyRound size={ICON_SIZE.control} />
+              </span>
+              <div className="flex min-w-0 flex-col">
+                <span className="truncate text-row text-foreground">{c.label}</span>
+                <span className="font-mono text-meta text-faint-foreground">{c.hint}</span>
+              </div>
+              <div className="flex-1" />
+              <ConfirmPopover
+                role="danger"
+                icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
+                title={`Remove "${c.label}"?`}
+                description="Deletes this API key from Goodboy. A key a workspace still uses is kept."
+                confirmLabel={`Remove ${c.label}`}
+                isOpen={armedId === c.id}
+                onConfirm={() => onDelete(c.id)}
+                onCancel={() => setArmedId(null)}
+                trigger={() => (
+                  <Tooltip content={`Remove ${c.label}`}>
+                    <button
+                      type="button"
+                      aria-label={`Remove ${c.label}`}
+                      onClick={() => setArmedId(c.id)}
+                      className={cn(
+                        'inline-flex size-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity',
+                        tintClasses('danger').hoverBg,
+                        'hover:text-danger focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring group-hover:opacity-100 group-has-[[aria-expanded=true]]:opacity-100',
+                      )}
+                    >
+                      <Trash2 size={ICON_SIZE.row} aria-hidden />
+                    </button>
+                  </Tooltip>
+                )}
+              />
+            </li>
+          ))}
         </ul>
       )}
 

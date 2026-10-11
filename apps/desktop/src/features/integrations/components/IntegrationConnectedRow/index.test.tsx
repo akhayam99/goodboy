@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { IntegrationCredentialId } from '@goodboy/types';
 import { IntegrationConnectedRow } from '.';
 
@@ -65,7 +65,9 @@ describe('IntegrationConnectedRow', () => {
     const onDisconnect = vi.fn(async () => undefined);
     renderRow({ onDisconnect });
     fireEvent.click(screen.getByRole('button', { name: /disconnect linear/i }));
-    fireEvent.click(screen.getByRole('button', { name: /^disconnect linear$/i }));
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: /^disconnect linear$/i }),
+    );
     await waitFor(() => expect(onDisconnect).toHaveBeenCalledOnce());
   });
 
@@ -76,7 +78,9 @@ describe('IntegrationConnectedRow', () => {
       }),
     });
     fireEvent.click(screen.getByRole('button', { name: /disconnect linear/i }));
-    fireEvent.click(screen.getByRole('button', { name: /^disconnect linear$/i }));
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: /^disconnect linear$/i }),
+    );
     expect(await screen.findByText(/keychain said no/i)).toBeDefined();
   });
 });

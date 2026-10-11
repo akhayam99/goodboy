@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type {
   BitbucketIntegrationBinding,
   IntegrationCredentialId,
@@ -142,7 +142,9 @@ describe('BitbucketFormBody', () => {
     it('disconnects Bitbucket for the workspace once the confirm is confirmed', async () => {
       render(<BitbucketFormBody workspaceId={WS_ID} />);
       fireEvent.click(screen.getByRole('button', { name: /disconnect bitbucket/i }));
-      fireEvent.click(screen.getByRole('button', { name: /^disconnect bitbucket$/i }));
+      fireEvent.click(
+        within(screen.getByRole('dialog')).getByRole('button', { name: /^disconnect bitbucket$/i }),
+      );
       await waitFor(() =>
         expect(state.disconnectIntegration).toHaveBeenCalledWith({
           workspaceId: WS_ID,

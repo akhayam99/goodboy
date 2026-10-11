@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Trash2, TriangleAlert } from 'lucide-react';
-import { InlineConfirm } from '@goodboy/ui';
 import type { WorktreeRemovalMode } from '@goodboy/types';
+import { AnchoredConfirm } from '../../../../shared/components/AnchoredConfirm';
 import { useAppStore } from '../../../../store';
 import type { StorageFolder } from '../../../../store/slices/storage/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -13,7 +13,7 @@ export type RemoveIntent = 'safe' | 'force' | 'untracked';
 
 type Props = {
   readonly folder: StorageFolder;
-  readonly intent: RemoveIntent;
+  readonly intent: RemoveIntent | null;
   readonly onClose: () => void;
 };
 
@@ -87,7 +87,7 @@ export const FolderRemoveConfirm = ({ folder, intent, onClose }: Props) => {
   const removeStorageFolders = useAppStore((state) => state.removeStorageFolders);
   const reportError = useAppStore((state) => state.reportError);
   const [isBusy, setIsBusy] = useState(false);
-  const copy = copyOf({ folder, intent });
+  const copy = copyOf({ folder, intent: intent ?? 'safe' });
 
   const onConfirm = async () => {
     setIsBusy(true);
@@ -101,10 +101,12 @@ export const FolderRemoveConfirm = ({ folder, intent, onClose }: Props) => {
   };
 
   return (
-    <InlineConfirm
-      role={intent === 'safe' ? 'danger' : 'alert'}
+    <AnchoredConfirm
+      width="w-96"
+      isOpen={intent !== null}
+      role={intent === 'safe' || intent === null ? 'danger' : 'alert'}
       icon={
-        intent === 'safe' ? (
+        intent === 'safe' || intent === null ? (
           <Trash2 size={ICON_SIZE.row} aria-hidden />
         ) : (
           <TriangleAlert size={ICON_SIZE.row} aria-hidden />
@@ -116,7 +118,6 @@ export const FolderRemoveConfirm = ({ folder, intent, onClose }: Props) => {
       onConfirm={onConfirm}
       onCancel={onClose}
       isBusy={isBusy}
-      className="ml-9"
     />
   );
 };

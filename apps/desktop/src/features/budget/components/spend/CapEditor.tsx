@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { Button, Divider, InlineConfirm, Input, formatUsd } from '@goodboy/ui';
+import { Button, ConfirmPopover, Divider, Input, formatUsd } from '@goodboy/ui';
 import { parseCap } from '../../../../shared/lib/parse-cap';
 import { StudioWidget } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -114,23 +114,6 @@ export const CapEditor = ({
     }
   };
 
-  if (removeArmed && currentCapUsd !== null) {
-    return (
-      <StudioWidget label={label} hint={hint}>
-        <InlineConfirm
-          role="alert"
-          icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
-          title={`Remove the ${formatUsd(currentCapUsd)} cap?`}
-          confirmLabel="Remove"
-          isBusy={busy}
-          autoDisarmMs={4000}
-          onConfirm={remove}
-          onCancel={() => setRemoveArmed(false)}
-        />
-      </StudioWidget>
-    );
-  }
-
   return (
     <StudioWidget label={label} hint={hint}>
       <div className="flex items-center gap-2">
@@ -154,9 +137,26 @@ export const CapEditor = ({
           {currentCapUsd !== null ? 'Update cap' : 'Set cap'}
         </Button>
         {currentCapUsd !== null && onRemove ? (
-          <Button variant="ghost" size="sm" disabled={busy} onClick={() => setRemoveArmed(true)}>
-            Remove
-          </Button>
+          <ConfirmPopover
+            role="alert"
+            icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
+            title={`Remove the ${formatUsd(currentCapUsd)} cap?`}
+            confirmLabel="Remove"
+            isBusy={busy}
+            isOpen={removeArmed}
+            onConfirm={remove}
+            onCancel={() => setRemoveArmed(false)}
+            trigger={() => (
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={busy}
+                onClick={() => setRemoveArmed(true)}
+              >
+                Remove
+              </Button>
+            )}
+          />
         ) : null}
         {currentCapUsd !== null ? (
           <span className="ml-auto text-meta text-muted-foreground tabular-nums">

@@ -205,17 +205,17 @@ describe('PlanEditor', () => {
     expect(screen.getByTestId('state').textContent).toBe('reading');
   });
 
-  it('asks before it drops a changed edit, and Escape again keeps editing', () => {
+  it('asks in a popover before it drops a changed edit, and Escape again keeps editing', () => {
     render(<Harness />);
     start();
     edit('# Retry once\n\n## Goal\nMine.');
 
     escape();
-    expect(screen.getByRole('group', { name: 'Discard your edit?' })).toBeDefined();
+    expect(screen.getByRole('dialog', { name: 'Discard your edit?' })).toBeDefined();
     expect(screen.getByTestId('state').textContent).toBe('editing');
 
     escape();
-    expect(screen.queryByRole('group', { name: 'Discard your edit?' })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Discard your edit?' })).toBeNull();
     expect(screen.getByTestId('state').textContent).toBe('editing');
   });
 

@@ -221,7 +221,9 @@ describe('ToolSettingsScope', () => {
     expect(screen.getByText('Connected as Ada')).toBeDefined();
     expect(screen.getByText('linear.app/acme')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Disconnect Linear' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Disconnect Linear' }));
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Disconnect Linear' }),
+    );
     await waitFor(() =>
       expect(store.getState().disconnectIntegration).toHaveBeenCalledWith({
         workspaceId: WORKSPACE_ID,
@@ -309,7 +311,9 @@ describe('ToolSettingsScope', () => {
       expect(screen.getByText(identity)).toBeDefined();
       expect(screen.getAllByText(secondary).length).toBeGreaterThan(0);
       fireEvent.click(screen.getByRole('button', { name: `Disconnect ${label}` }));
-      fireEvent.click(screen.getByRole('button', { name: `Disconnect ${label}` }));
+      fireEvent.click(
+        within(screen.getByRole('dialog')).getByRole('button', { name: `Disconnect ${label}` }),
+      );
       await waitFor(() =>
         expect(store.getState().disconnectIntegration).toHaveBeenCalledWith({
           workspaceId: WORKSPACE_ID,
@@ -425,7 +429,9 @@ describe('ToolSettingsScope', () => {
     expect(screen.getByText('Uses the all-workspaces connection')).toBeDefined();
     expect(screen.queryByLabelText('Personal API key')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Disconnect GitHub' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Disconnect GitHub' }));
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Disconnect GitHub' }),
+    );
     await waitFor(() =>
       expect(invoke).toHaveBeenCalledWith('gh_clear_token', { workspaceId: null }),
     );
@@ -485,7 +491,9 @@ describe('ToolSettingsScope', () => {
     expect(screen.getByText('workspace key')).toBeDefined();
     expect(screen.getAllByRole('button', { name: 'Disconnect GitHub' })).toHaveLength(1);
     fireEvent.click(screen.getByRole('button', { name: 'Disconnect GitHub' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Disconnect GitHub' }));
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Disconnect GitHub' }),
+    );
     await waitFor(() =>
       expect(invoke).toHaveBeenCalledWith('gh_clear_token', { workspaceId: WORKSPACE_ID }),
     );

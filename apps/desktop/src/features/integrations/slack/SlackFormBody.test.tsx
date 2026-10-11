@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { IntegrationCredentialId, SlackIntegrationBinding, WorkspaceId } from '@goodboy/types';
 
 const { state } = vi.hoisted(() => ({
@@ -210,7 +210,9 @@ describe('SlackFormBody', () => {
     it('disconnects Slack for the workspace once the confirm is confirmed', async () => {
       render(<SlackFormBody workspaceId={WS_ID} />);
       fireEvent.click(screen.getByRole('button', { name: /disconnect slack/i }));
-      fireEvent.click(screen.getByRole('button', { name: /^disconnect slack$/i }));
+      fireEvent.click(
+        within(screen.getByRole('dialog')).getByRole('button', { name: /^disconnect slack$/i }),
+      );
       await waitFor(() =>
         expect(state.disconnectIntegration).toHaveBeenCalledWith({
           workspaceId: WS_ID,
