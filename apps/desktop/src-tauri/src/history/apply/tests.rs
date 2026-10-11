@@ -23,7 +23,10 @@ fn applying_backs_up_moves_the_branch_and_restore_brings_it_back() {
     let result = trial(&args, &slug("apply-restore"), false).unwrap();
     let new_head = result.head.unwrap();
     let moved = move_branch_blocking(&b.root, "feature", &b.c, &new_head).unwrap();
-    let MoveOutcome::Moved { head, backup_ref } = moved else {
+    let MoveOutcome::Moved {
+        head, backup_ref, ..
+    } = moved
+    else {
         panic!("expected the branch to move");
     };
     assert_eq!(head, new_head);
@@ -40,13 +43,13 @@ fn applying_backs_up_moves_the_branch_and_restore_brings_it_back() {
 }
 
 #[test]
-fn applying_refuses_when_the_head_moved_or_the_tree_is_dirty() {
+fn applying_refuses_a_moved_head_and_requests_consent_for_overlap() {
     let b = branch("apply-refuse");
     let moved = move_branch_blocking(&b.root, "feature", &b.b, &b.a).unwrap();
     assert_eq!(moved, MoveOutcome::HeadMoved { head: b.c.clone() });
     std::fs::write(b.root.join("policy.txt"), "dirty\n").unwrap();
     let blocked = move_branch_blocking(&b.root, "feature", &b.c, &b.a).unwrap();
-    assert!(matches!(blocked, MoveOutcome::Blocked { .. }));
+    assert!(matches!(blocked, MoveOutcome::NeedsStash { .. }));
     assert_eq!(git_ok(&b.root, &["rev-parse", "HEAD"]), b.c);
 }
 
@@ -84,10 +87,10 @@ fn apply_refuses_to_overwrite_an_untracked_file() {
     let now = git_ok(&l.root, &["rev-parse", "HEAD"]);
     std::fs::write(l.root.join("logger.ts"), "mine\n").unwrap();
     let blocked = move_branch_blocking(&l.root, "feature", &now, &l.typo).unwrap();
-    let MoveOutcome::Blocked { reason } = blocked else {
-        panic!("expected the untracked file to block");
+    let MoveOutcome::NeedsStash { files, .. } = blocked else {
+        panic!("expected consent for the untracked file");
     };
-    assert!(reason.contains("logger.ts"), "{reason}");
+    assert_eq!(files, vec!["logger.ts"]);
     assert_eq!(
         std::fs::read_to_string(l.root.join("logger.ts")).unwrap(),
         "mine\n"
@@ -115,10 +118,10 @@ fn apply_refuses_to_replace_an_untracked_folder_or_an_ignored_file() {
     std::fs::create_dir_all(l.root.join("logger.ts")).unwrap();
     std::fs::write(l.root.join("logger.ts").join("notes.txt"), "mine\n").unwrap();
     let blocked = move_branch_blocking(&l.root, "feature", &now, &ignored).unwrap();
-    let MoveOutcome::Blocked { reason } = blocked else {
-        panic!("expected the untracked folder to block");
+    let MoveOutcome::NeedsStash { files, .. } = blocked else {
+        panic!("expected consent for the untracked folder");
     };
-    assert!(reason.contains("logger.ts"), "{reason}");
+    assert_eq!(files, vec!["logger.ts/notes.txt"]);
     assert_eq!(
         std::fs::read_to_string(l.root.join("logger.ts").join("notes.txt")).unwrap(),
         "mine\n"
@@ -162,7 +165,7 @@ fn a_file_where_the_rewrite_needs_a_folder_blocks_too() {
     git_ok(&l.root, &["reset", "-q", "--hard", &now]);
     std::fs::write(l.root.join("assets"), "a note, not a folder\n").unwrap();
     let blocked = move_branch_blocking(&l.root, "feature", &now, &with_assets).unwrap();
-    assert!(matches!(blocked, MoveOutcome::Blocked { .. }));
+    assert!(matches!(blocked, MoveOutcome::NeedsStash { .. }));
     assert_eq!(
         std::fs::read_to_string(l.root.join("assets")).unwrap(),
         "a note, not a folder\n"

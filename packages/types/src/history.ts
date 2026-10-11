@@ -119,6 +119,7 @@ export type HistoryRebaseCommit = {
 };
 
 export type HistoryRebasePlan = {
+  readonly setAside?: string | null;
   readonly onto: string;
   readonly ontoRef: string;
   readonly mergeBase: string;
@@ -143,7 +144,27 @@ export type HistoryRewriterCheck = {
 };
 
 export type HistoryMoveOutcome =
-  | { readonly kind: 'moved'; readonly head: string; readonly backupRef: string }
+  | {
+      readonly kind: 'moved';
+      readonly head: string;
+      readonly backupRef: string;
+      readonly carriedCount?: number;
+      readonly cleanupError?: string;
+    }
+  | {
+      readonly kind: 'needs-stash';
+      readonly files: ReadonlyArray<string>;
+      readonly dirtyCount: number;
+    }
+  | {
+      readonly kind: 'restore-conflict';
+      readonly stash: string;
+      readonly files: ReadonlyArray<string>;
+      readonly head: string;
+      readonly backupRef: string;
+    }
+  | { readonly kind: 'set-aside'; readonly stash: string; readonly reason: string }
+  | { readonly kind: 'files-restored'; readonly stash: string; readonly cleanupError?: string }
   | { readonly kind: 'busy'; readonly holder: string | null }
   | { readonly kind: 'head-moved'; readonly head: string }
   | { readonly kind: 'blocked'; readonly reason: string };

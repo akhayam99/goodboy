@@ -14,6 +14,8 @@ import {
 import { rebaseBranch } from './rebaseBranch';
 import { bringOriginIntoHistory } from './bringOriginIntoHistory';
 import { restoreHistory } from './restoreHistory';
+import { resumeHistoryMove } from './resumeHistoryMove';
+import { bringBackHistoryFiles } from './bringBackHistoryFiles';
 import { settleHistoryRewriter } from './settleHistoryRewriter';
 import { startHistoryRewriter } from './startHistoryRewriter';
 import { syncBranchWithRemote } from './syncBranchWithRemote';
@@ -37,6 +39,8 @@ export const createHistorySlice = ({ set, get }: SliceDeps) => {
     applyRewrittenHistory: applyRewrittenHistory(set, get),
     rewriteDraftWithAgent: rewriteDraftWithAgent(set, get),
     restoreHistory: restoreHistory(set, get),
+    resumeHistoryMove: resumeHistoryMove({ set, get }),
+    bringBackHistoryFiles: bringBackHistoryFiles({ set, get }),
     bringOriginIntoHistory: bringOriginIntoHistory(set, get),
     syncBranchWithRemote: syncBranchWithRemote(set, get),
   };

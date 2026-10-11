@@ -155,7 +155,7 @@ vi.mock('../../worktree/worktree', async (importOriginal) => ({
 }));
 vi.mock('../../session/contextWindowFor', () => ({ contextWindowFor: () => null }));
 
-import { ensure, resetWorktreeStatusCache } from '../../../store/slices/worktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../../store/slices/worktreeStatuses/cache';
 import { useSuggestionActions } from './index';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -299,65 +299,6 @@ describe('useSuggestionActions', () => {
     await vi.waitFor(() => expect(spies.rebaseRun).toHaveBeenCalledTimes(1));
     expect(spies.setSessionActiveProject).not.toHaveBeenCalled();
     expect(spies.rebaseRun).toHaveBeenCalledWith({ mountId: WEB_MOUNT_ID, behind: 2 });
-  });
-
-  const dirtyRebase = (): SessionSuggestion => ({
-    ...suggestionBase,
-    id: 'rebase-project:session-1',
-    kind: 'rebase-project',
-    payload: {
-      targets: [
-        {
-          id: 'mount:mount-web',
-          mountId: WEB_MOUNT_ID,
-          projectId: WEB_ID,
-          projectName: 'web',
-          branch: 'feature/web',
-          worktreePath: '/tmp/web',
-          baseBranch: 'main',
-          behind: 2,
-          dirtyCount: 11,
-        },
-      ],
-    },
-  });
-
-  it('offers no Rebase while the tree has changes that are not committed', () => {
-    const actions = actionsFor({ suggestion: dirtyRebase() });
-
-    expect(actions.primary).toBeNull();
-    expect(actions.extras?.map((extra) => [extra.label, extra.variant])).toEqual([
-      ['Check again', 'secondary'],
-      ['Open terminal', 'ghost'],
-    ]);
-  });
-
-  it('refreshes the worktree status when the person checks again', async () => {
-    await ensure({
-      key: JSON.stringify(['/tmp/web', 'main']),
-      worktreePath: '/tmp/web',
-      baseBranch: 'main',
-      maxAgeMs: 0,
-    });
-    spies.readWorktreeStatus.mockClear();
-    const actions = actionsFor({ suggestion: dirtyRebase() });
-
-    await actions.extras?.[0]?.run();
-
-    expect(spies.readWorktreeStatus).toHaveBeenCalledTimes(1);
-    expect(spies.readWorktreeStatus).toHaveBeenCalledWith({
-      worktreePath: '/tmp/web',
-      baseBranch: 'main',
-    });
-    expect(spies.rebaseRun).not.toHaveBeenCalled();
-  });
-
-  it('opens the terminal on the worktree that is not clean', async () => {
-    const actions = actionsFor({ suggestion: dirtyRebase() });
-
-    await actions.extras?.[1]?.run();
-
-    expect(spies.openMountTerminal).toHaveBeenCalledWith(SESSION_ID, '/tmp/web');
   });
 
   it('runs the second rebase choice with that mount and distance', async () => {

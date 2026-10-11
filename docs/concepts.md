@@ -294,7 +294,14 @@ open) and opens **Open overview**; the Scribe that refreshes a description or
 writes a commit message reads "Refresh pull request text" or "Commit message",
 muted and never in Needs you. `history_rewritten`, `history_pushed` and
 `history_stopped` carry the `agentId` of the rewriter, so a finished row still
-reads Done or Stopped after a restart. The recovery, on the banner: `Undo rewrite`
+reads Done or Stopped after a restart. The history journal records expected head, target head, backup ref and branch.
+Its optional fifth line records the stash SHA; a following line records the
+exact ownership message. The journal is replaced atomically and synchronized
+before files are set aside. A pending intent can find that stash after a crash
+before its SHA was recorded. A restored marker prevents applying it twice if
+cleanup was interrupted. `pending_stash` and `write_journal` own this contract.
+
+The recovery, on the banner: `Undo rewrite`
 for a rewrite, `Retry with a note` when History rewriter needs you, `Bring them
 into the plan` when the online copy moved, `Retry rebase` when the branch moved,
 `Retry push` when the push failed. In the Commits section: `Rewrite with an agent`,

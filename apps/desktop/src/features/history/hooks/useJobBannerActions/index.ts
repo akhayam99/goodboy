@@ -1,3 +1,4 @@
+import { useCopyText } from '../../../../shared/hooks/useCopyText';
 import { useShallow } from 'zustand/react/shallow';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -26,6 +27,10 @@ export const useJobBannerActions = ({ sessionId, worktreePath, agentId }: Params
   const chosenBase = useAppStore((s) =>
     selectMountBaseBranch({ state: s, sessionId, path: worktreePath }),
   );
+  const copyText = useCopyText();
+  const run = useAppStore((s) =>
+    mount?.mountId === undefined ? undefined : s.historyRuns[mount.mountId],
+  );
   const pending = usePendingAction({ sessionId });
   const mountId = mount?.mountId ?? null;
   const attempt = (params: Parameters<typeof pending.run>[0]): void => {
@@ -33,6 +38,32 @@ export const useJobBannerActions = ({ sessionId, worktreePath, agentId }: Params
   };
   return {
     pendingKeys: pending.pendingKeys,
+    stashAndMove: () => {
+      if (mountId === null) {
+        return;
+      }
+      attempt({
+        key: 'stash-move',
+        failureTitle: "Couldn't set your files aside safely.",
+        task: () => useAppStore.getState().resumeHistoryMove({ sessionId, mountId }),
+      });
+    },
+    bringBack: () => {
+      if (mountId === null) {
+        return;
+      }
+      attempt({
+        key: 'bring-back',
+        failureTitle: "Couldn't bring your files back.",
+        task: () => useAppStore.getState().bringBackHistoryFiles({ sessionId, mountId }),
+      });
+    },
+    copyStashCommand: () => {
+      if (run?.savedStash === undefined) {
+        return;
+      }
+      void copyText({ text: `git stash apply ${run.savedStash.sha}` });
+    },
     retryRebase: () => {
       if (mountId === null) {
         return;

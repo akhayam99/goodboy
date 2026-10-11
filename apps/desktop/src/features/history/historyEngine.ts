@@ -17,6 +17,8 @@ import type {
 } from '@goodboy/types';
 
 type MoveBranchParams = {
+  readonly shouldStash?: boolean;
+  readonly restoreStash?: string;
   readonly worktreePath: string;
   readonly branch: string;
   readonly expectedHead: string;
@@ -24,6 +26,7 @@ type MoveBranchParams = {
 };
 
 type RestoreParams = {
+  readonly shouldStash?: boolean;
   readonly worktreePath: string;
   readonly branch: string;
   readonly expectedHead: string;
@@ -94,11 +97,21 @@ export const readHistoryGraph = async ({
 }: GraphParams): Promise<HistoryGraph> =>
   invokeCommand<HistoryGraph>('history_graph', { worktreePath, baseBranch, branch });
 
-export const applyHistoryPlan = async (params: MoveBranchParams): Promise<HistoryMoveOutcome> =>
-  invokeCommand<HistoryMoveOutcome>('history_plan_apply', { args: params });
+export const applyHistoryPlan = async ({
+  shouldStash,
+  ...args
+}: MoveBranchParams): Promise<HistoryMoveOutcome> =>
+  invokeCommand<HistoryMoveOutcome>('history_plan_apply', {
+    args: { ...args, ...(shouldStash === true ? { stash: true } : {}) },
+  });
 
-export const restoreHistoryBackup = async (params: RestoreParams): Promise<HistoryMoveOutcome> =>
-  invokeCommand<HistoryMoveOutcome>('history_restore', { args: params });
+export const restoreHistoryBackup = async ({
+  shouldStash,
+  ...args
+}: RestoreParams): Promise<HistoryMoveOutcome> =>
+  invokeCommand<HistoryMoveOutcome>('history_restore', {
+    args: { ...args, ...(shouldStash === true ? { stash: true } : {}) },
+  });
 
 export const listHistoryBackups = async ({
   worktreePath,

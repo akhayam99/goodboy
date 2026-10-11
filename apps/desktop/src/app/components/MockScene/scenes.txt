@@ -293,8 +293,12 @@ rail-flyout
 rail-pinned
 rail-ticket-ids
 railorder
+rebase-bring-back
+rebase-choosing
+rebase-done-carried
 rebase-origin-moved
 rebase-push-failed
+rebase-restore-conflict
 rebase-stuck-note
 rebasedirty
 repo-status

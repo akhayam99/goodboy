@@ -444,3 +444,33 @@ fails silently at runtime.
   the two reads. The monitor reads exit 0 and 1 as success and anything else,
   or a timeout, as a failed snapshot; treating 1 as an error would show a
   broken monitor on a quiet machine.
+
+## History stashes are shared across worktrees
+
+`refs/stash` belongs to the repository's common directory. Another worktree
+or a terminal may push or drop an entry while a rewrite runs. History saves
+and applies the exact stash SHA and verifies its unique message. It never
+pops an entry or restores whichever stash happens to be first. Cleanup in
+`drop_own_stash` holds Git's stash ref and reflog locks and retains ambiguous
+or unsupported entries rather than deleting a user's stash. Ignored files
+must be checked against both the current HEAD and target: stash push's
+cleanup can overwrite a directory that HEAD tracks as a file, even when
+the rewrite does not change that path.
+`overlap_for_repo` in `apps/desktop/src-tauri/src/history/dirty.rs` also
+honors `core.ignorecase` when checking these file and directory collisions.
+
+If the shared entry disappears before verification, `find_stash` in
+`apps/desktop/src-tauri/src/history/dirty.rs` searches commit objects for the
+exact unique message and verifies the stash parents against the captured HEAD.
+`move_branch_with` protects the verified commit in `refs/goodboy/stash/<sha>`
+until restoration succeeds. An unresolved intent journal is retained with an
+error, even if the working tree looks clean. Object discovery before the
+private ref exists cannot survive simultaneous immediate Git object pruning.
+
+`history/dirty.rs` uses Git's stash capture and cleanup command. The writer
+lease covers cooperating Goodboy writers; an external editor writing during
+Git's capture and reset is outside that lease. Do not treat the lease as a
+filesystem write lock. Stash cleanup commits the reflog before the ref; a
+crash between those renames can leave the ref pointing at the restored stash
+while the surviving user's reflog entries remain intact. Cleanup failure
+retains the stash instead of repeating restoration.

@@ -41,6 +41,7 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
     if (changed !== null) {
       return stopWith({ reason: 'blocked', message: changed, files: [], sha: null });
     }
+    const sourceRun = get().historyRuns[mountId];
     const remote = await remoteForPush({
       target,
       expectedHead: input.expectedHead,
@@ -48,18 +49,68 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
       incorporatedSince: null,
       shouldPush: input.shouldPush,
     });
+    if (
+      get().historyRuns[mountId] !== sourceRun ||
+      identityChange({ get, sessionId, mountId, identity: input.identity }) !== null
+    ) {
+      return 'stopped';
+    }
     if (remote.stop !== null) {
       return stopWith(remote.stop);
     }
     const startedAt = Date.now();
+    let cleanupError: string | undefined;
     setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'applying', planId } });
     while (true) {
+      const requestRun = get().historyRuns[mountId];
       const outcome = await applyHistoryPlan({
         worktreePath: input.identity.worktreePath,
         branch: input.identity.branch,
         expectedHead: input.expectedHead,
         newHead: input.newHead,
+        ...(input.shouldStash === true ? { shouldStash: true } : {}),
       }).catch((error: unknown) => ({ kind: 'failed' as const, message: formatError(error) }));
+      if (
+        get().historyRuns[mountId] !== requestRun ||
+        identityChange({ get, sessionId, mountId, identity: input.identity }) !== null
+      ) {
+        return 'stopped';
+      }
+      if (outcome.kind === 'needs-stash') {
+        setHistoryRun({
+          set,
+          sessionId,
+          mountId,
+          origin,
+          patch: {
+            phase: 'choosing',
+            pendingMove: { kind: 'apply', input: { ...input, shouldStash: undefined } },
+            dirtyChoice: { files: outcome.files, dirtyCount: outcome.dirtyCount },
+          },
+        });
+        return 'stopped';
+      }
+      if (outcome.kind === 'set-aside') {
+        setHistoryRun({
+          set,
+          sessionId,
+          mountId,
+          origin,
+          patch: {
+            phase: 'set-aside',
+            savedStash: {
+              sha: outcome.stash,
+              identity: input.identity,
+              expectedHead: input.expectedHead,
+              files: [],
+            },
+          },
+        });
+        return 'stopped';
+      }
+      if (outcome.kind === 'files-restored') {
+        return 'stopped';
+      }
       if (outcome.kind === 'busy') {
         if (Date.now() - startedAt > WAIT_LIMIT_MS) {
           return stopWith({
@@ -118,13 +169,31 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
           remoteShaAtApply: remote.sha,
         }).catch(() => undefined);
       }
+      if (
+        get().historyRuns[mountId] !== requestRun ||
+        identityChange({ get, sessionId, mountId, identity: input.identity }) !== null
+      ) {
+        return 'stopped';
+      }
       setHistoryRun({
         set,
         sessionId,
         mountId,
         origin,
         patch: {
-          phase: 'applied',
+          phase: outcome.kind === 'restore-conflict' ? 'restore-conflict' : 'applied',
+          carriedCount: outcome.kind === 'moved' ? (outcome.carriedCount ?? 0) : 0,
+          savedStash:
+            outcome.kind === 'restore-conflict'
+              ? {
+                  sha: outcome.stash,
+                  identity: input.identity,
+                  expectedHead: outcome.head,
+                  files: outcome.files,
+                }
+              : undefined,
+          pendingMove: undefined,
+          dirtyChoice: undefined,
           backupRef: outcome.backupRef,
           remoteSha: remote.sha,
           holder: null,
@@ -136,9 +205,22 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
           threadShas,
         },
       });
+      if (outcome.kind === 'restore-conflict') {
+        return 'stopped';
+      }
+      cleanupError = outcome.cleanupError;
       break;
     }
     await refreshWorktreeStatuses({ worktreePaths: [target.worktreePath] }).catch(() => undefined);
+    if (cleanupError !== undefined) {
+      await get().reportError({
+        title: 'Your files are back, but stash cleanup needs attention',
+        error: cleanupError,
+        severity: 'warning',
+        sessionId,
+      });
+      return 'applied';
+    }
     if (!input.shouldPush || !remote.hasUpstream) {
       return 'applied';
     }

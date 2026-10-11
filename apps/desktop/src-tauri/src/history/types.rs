@@ -132,6 +132,10 @@ pub struct PlannedStep {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MoveBranchArgs {
+    #[serde(default, rename = "stash")]
+    pub should_stash: bool,
+    #[serde(default)]
+    pub restore_stash: Option<String>,
     pub worktree_path: String,
     pub branch: String,
     pub expected_head: String,
@@ -141,6 +145,8 @@ pub struct MoveBranchArgs {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RestoreArgs {
+    #[serde(default, rename = "stash")]
+    pub should_stash: bool,
     pub worktree_path: String,
     pub branch: String,
     pub expected_head: String,
@@ -150,7 +156,32 @@ pub struct RestoreArgs {
 #[derive(Debug, Serialize, PartialEq, Eq)]
 #[serde(tag = "kind", rename_all = "kebab-case")]
 pub enum MoveOutcome {
+    NeedsStash {
+        files: Vec<String>,
+        #[serde(rename = "dirtyCount")]
+        dirty_count: usize,
+    },
+    SetAside {
+        stash: String,
+        reason: String,
+    },
+    FilesRestored {
+        stash: String,
+        #[serde(rename = "cleanupError", skip_serializing_if = "Option::is_none")]
+        cleanup_error: Option<String>,
+    },
+    RestoreConflict {
+        stash: String,
+        files: Vec<String>,
+        head: String,
+        #[serde(rename = "backupRef")]
+        backup_ref: String,
+    },
     Moved {
+        #[serde(rename = "cleanupError", skip_serializing_if = "Option::is_none")]
+        cleanup_error: Option<String>,
+        #[serde(rename = "carriedCount")]
+        carried_count: usize,
         head: String,
         #[serde(rename = "backupRef")]
         backup_ref: String,
