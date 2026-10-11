@@ -55,7 +55,7 @@ describe('the u24 chat-empty scenes', () => {
     expect(stage).not.toBeNull();
     const composers = screen.getAllByRole('textbox', { name: 'Message' });
     expect(composers).toHaveLength(1);
-    expect(stage?.contains(composers[0] as HTMLElement)).toBe(true);
+    expect(stage?.contains(composers[0] ?? null)).toBe(true);
     expect(screen.queryAllByText(/Ask anything about/)).toHaveLength(0);
     const list = screen.getByRole('list', { name: 'Suggested questions' });
     expect(list.querySelectorAll('button').length).toBeLessThanOrEqual(3);

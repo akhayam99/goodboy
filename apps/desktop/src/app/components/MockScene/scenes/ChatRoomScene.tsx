@@ -104,16 +104,14 @@ export const ChatRoomScene = ({ chat }: Props) => {
       })),
     }));
     seedChatActivity();
-    useAppStore
-      .getState()
-      .openStudio({
-        studio: {
-          kind: 'chat',
-          chatId: initialChatId({ key: chat ?? sceneParam({ key: 'chat' }) }),
-        },
-      });
+    useAppStore.getState().openStudio({
+      studio: {
+        kind: 'chat',
+        chatId: initialChatId({ key: chat ?? sceneParam({ key: 'chat' }) }),
+      },
+    });
     setIsReady(true);
-  }, []);
+  }, [chat]);
 
   useEffect(() => {
     const stage = sceneParam({ key: 'work' });

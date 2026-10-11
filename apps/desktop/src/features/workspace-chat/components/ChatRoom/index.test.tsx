@@ -11,11 +11,12 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
-const { store, summarize, PROJECTS } = vi.hoisted(() => ({
-  PROJECTS: [
-    { id: 'project-payments', workspaceId: 'ws-harborline', name: 'payments-api' },
-    { id: 'project-ledger', workspaceId: 'ws-harborline', name: 'ledger-core' },
-  ],
+const PROJECTS = vi.hoisted(() => [
+  { id: 'project-payments', workspaceId: 'ws-harborline', name: 'payments-api' },
+  { id: 'project-ledger', workspaceId: 'ws-harborline', name: 'ledger-core' },
+]);
+
+const { store, summarize } = vi.hoisted(() => ({
   summarize: vi.fn(async (_params: Record<string, unknown>) =>
     JSON.stringify({
       title: 'Ask for consent again when the policy changes',
@@ -27,7 +28,7 @@ const { store, summarize, PROJECTS } = vi.hoisted(() => ({
   ),
   store: {
     workspaces: [{ id: 'ws-harborline', name: 'Harborline' }],
-    projects: [] as ReadonlyArray<unknown>,
+    projects: PROJECTS,
     sessions: [] as ReadonlyArray<unknown>,
     stages: {} as Record<string, string>,
     mounts: {} as Record<string, ReadonlyArray<{ readonly projectId: string }>>,
@@ -222,7 +223,7 @@ describe('ChatRoom', () => {
     const stage = document.querySelector('[data-chat-stage]');
     const composers = screen.getAllByRole('textbox', { name: 'Message' });
     expect(composers).toHaveLength(1);
-    expect(stage?.contains(composers[0] as HTMLElement)).toBe(true);
+    expect(stage?.contains(composers[0] ?? null)).toBe(true);
     expect(stage?.closest('[data-page-column]')).not.toBeNull();
     expect(screen.getByRole('heading', { name: 'Ask about Harborline' })).toBeDefined();
     expect(
