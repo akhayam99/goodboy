@@ -137,7 +137,6 @@ export const SessionFilterPopover = ({
             icon={ListFilter}
             label={FILTER_LABEL}
             size="xs"
-            aria-haspopup="dialog"
             aria-expanded={isOpen}
             isTooltipSuppressed={isOpen}
             onClick={toggle}

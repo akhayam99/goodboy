@@ -279,7 +279,8 @@ const groupHeaders = (): ReadonlyArray<string> =>
     .getAllByRole('button')
     .filter(
       (button) =>
-        button.hasAttribute('aria-expanded') && button.getAttribute('aria-haspopup') === null,
+        button.hasAttribute('aria-expanded') &&
+        button.getAttribute('aria-label') !== 'Filter sessions',
     )
     .map((button) => button.textContent ?? '');
 
