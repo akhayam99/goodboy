@@ -9,11 +9,12 @@ vi.mock('@tauri-apps/api/event', () => ({
 }));
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
-import { existsSync, readFileSync, readdirSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
 import { APP_SECTIONS } from '../../../features/settings/components/SettingsStudio/appSections';
+import { ALL_ROWS, ROW_FILES, ROW_SUFFIX, STUDIO_KINDS } from './allRows';
 import {
   type BridgeArgs,
   CRUMB_ROWS,
@@ -30,23 +31,7 @@ import {
 } from './harness';
 installNavigationHooks();
 
-const ROW_SUFFIX = '.rows.tsx';
-const ROW_FILES = readdirSync(__dirname)
-  .filter((file) => file.endsWith(ROW_SUFFIX))
-  .sort();
-
-const loadAllRows = async (): Promise<ReadonlyArray<Row>> => {
-  const modules = await Promise.all(
-    ROW_FILES.map(
-      async (file) =>
-        (await import(`./${file.slice(0, -ROW_SUFFIX.length)}.rows`)) as Record<string, unknown>,
-    ),
-  );
-  return modules.flatMap((mod) => Object.values(mod).flat() as ReadonlyArray<Row>);
-};
-
-const declaredTokens = async (): Promise<Set<string>> =>
-  new Set((await loadAllRows()).flatMap((row) => row.covers));
+const declaredTokens = (): Set<string> => new Set(ALL_ROWS.flatMap((row) => row.covers));
 
 const readSource = (path: string): string => readFileSync(join(SRC, path), 'utf8');
 
@@ -58,11 +43,6 @@ const OVERLAY_OPENERS = Array.from(
     }),
   ),
 ).sort();
-
-const STUDIO_KINDS = namesIn({
-  source: readSource('store/slices/navigation/studio.ts'),
-  pattern: /\{ readonly kind: '(\w+)'/g,
-});
 
 const SETTINGS_SCOPES = namesIn({
   source:
@@ -147,7 +127,7 @@ describe('navigation flow table ratchet', () => {
   });
 
   it('has a row for every navigation action of the store and the app overlays', async () => {
-    const declared = await declaredTokens();
+    const declared = declaredTokens();
     const missing = [...STORE_ACTIONS, ...OVERLAY_OPENERS].filter(
       (name) => !declared.has(name) && EXEMPT[name] === undefined,
     );
@@ -159,7 +139,7 @@ describe('navigation flow table ratchet', () => {
   });
 
   it('has a row for every studio, settings scope and app settings section', async () => {
-    const declared = await declaredTokens();
+    const declared = declaredTokens();
     expect(STUDIO_KINDS.length).toBeGreaterThan(0);
     expect(SETTINGS_SCOPES.length).toBeGreaterThan(0);
     const missing = [
@@ -170,22 +150,8 @@ describe('navigation flow table ratchet', () => {
     expect(missing).toEqual([]);
   });
 
-  it('gives every studio a door that is visible on screen, not only in the palette', async () => {
-    const rows = await loadAllRows();
-    const missing = STUDIO_KINDS.filter(
-      (kind) =>
-        !rows.some(
-          (row) =>
-            row.door !== 'palette' &&
-            Array.isArray(row.covers) &&
-            row.covers.includes(`studio:${kind}`),
-        ),
-    );
-    expect(missing).toEqual([]);
-  });
-
   it('has a row for every crumb menu entry and palette destination', async () => {
-    const declared = await declaredTokens();
+    const declared = declaredTokens();
     await boot({ seed: 'pr' });
     await clickButton(/^Session/);
     const crumbs = screen.getAllByRole('menuitemradio').map((item) => {

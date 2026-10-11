@@ -20,6 +20,8 @@ The other docs link here instead of explaining them again.
 - **Lens**: one view of a session, such as its plans, questions or diff
 - **Turn**: one message from you and one answer from the agent
 
+The Guide's Words chapter mirrors this section in the app's voice.
+
 ## How they fit together
 
 A workspace holds projects and sessions. A session holds agents, workflow
