@@ -293,6 +293,9 @@ rail-flyout
 rail-pinned
 rail-ticket-ids
 railorder
+rebase-origin-moved
+rebase-push-failed
+rebase-stuck-note
 rebasedirty
 repo-status
 reportdrawer-720
@@ -320,6 +323,7 @@ resolve-transcript-drawer
 resolve-transcript-drawer-multi
 resolve-transcript-drawer-multi-done
 review-modes
+rewriter-transcript-finished
 role-model-set-add
 rules-no-limits
 rules-teleport

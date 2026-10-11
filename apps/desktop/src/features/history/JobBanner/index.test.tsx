@@ -179,7 +179,7 @@ describe('the job banner', () => {
     expect(screen.getByRole('button', { name: 'Undo rewrite' })).toBeDefined();
   });
 
-  it('asks nothing of a rebase that stopped on the origin, only to dismiss it', async () => {
+  it('offers to bring the online commits into the plan when the origin moved', async () => {
     await showRun({
       phase: 'stopped',
       stop: { reason: 'origin-moved', message: 'Origin moved.', files: [], sha: null },
@@ -188,7 +188,160 @@ describe('the job banner', () => {
     const alert = screen.getByRole('alert');
     expect(alert.textContent).toContain('Someone pushed to the online copy');
     expect(alert.textContent).toContain('Nothing was pushed.');
-    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(['Dismiss']);
+    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual([
+      'Bring them into the plan',
+      'Dismiss',
+    ]);
+  });
+
+  it('retries the rebase when the branch moved', async () => {
+    const rebaseBranch = vi.fn(async () => 'rebased' as const);
+    useAppStore.setState({ rebaseBranch });
+    await showRun({
+      phase: 'stopped',
+      stop: { reason: 'head-moved', message: 'moved', files: [], sha: null },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry rebase' }));
+    await settle();
+
+    expect(rebaseBranch).toHaveBeenCalledWith({
+      sessionId: A_REBASE_SESSION_ID,
+      mountId: A_REBASE_MOUNT_ID,
+    });
+    expect(screen.queryByRole('button', { name: 'Refresh' })).toBeNull();
+  });
+
+  it('brings the online commits into the plan from the banner', async () => {
+    const bringOriginIntoHistory = vi.fn(async () => 'nothing' as const);
+    useAppStore.setState({ bringOriginIntoHistory });
+    await showRun({
+      phase: 'stopped',
+      stop: { reason: 'origin-moved', message: 'Origin moved.', files: [], sha: null },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bring them into the plan' }));
+    await settle();
+
+    expect(bringOriginIntoHistory).toHaveBeenCalledWith({
+      sessionId: A_REBASE_SESSION_ID,
+      mountId: A_REBASE_MOUNT_ID,
+    });
+  });
+
+  it('says the rebase could not be retried when it fails', async () => {
+    const rebaseBranch = vi.fn(async () => {
+      throw new Error('git is busy');
+    });
+    const reportError = vi.fn(async () => undefined);
+    useAppStore.setState({ rebaseBranch, reportError });
+    await showRun({
+      phase: 'stopped',
+      stop: { reason: 'head-moved', message: 'moved', files: [], sha: null },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry rebase' }));
+    await settle();
+
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't retry the rebase." }),
+    );
+  });
+
+  it('retries a stuck rewrite with the typed note and the same plan', async () => {
+    const startHistoryRewriter = vi.fn(async () => 'rewriting' as const);
+    useAppStore.setState({
+      startHistoryRewriter,
+      historyRewriters: {
+        [A_REBASE_AGENT_ID]: {
+          sessionId: A_REBASE_SESSION_ID,
+          mountId: A_REBASE_MOUNT_ID,
+          copyPath: '/w/payments-api-copy',
+          plan: {
+            worktreePath: WORKTREE,
+            base: 'base-sha',
+            head: 'head-sha',
+            steps: [],
+            onto: null,
+          },
+          origin: 'rebase',
+          planId: null,
+          identity: { worktreePath: WORKTREE, branch: MOUNT.branch, projectId: PROJECT_ID },
+        },
+      },
+    });
+    await showRun({
+      phase: 'stopped',
+      agentId: A_REBASE_AGENT_ID,
+      stop: {
+        reason: 'stuck',
+        message: 'both sides change the retry key',
+        files: ['webhook.ts'],
+        sha: null,
+      },
+    });
+
+    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual([
+      'Retry with a note',
+      'See what it did',
+      'Dismiss',
+    ]);
+    expect(screen.queryByRole('textbox')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry with a note' }));
+    const note = screen.getByRole('textbox', { name: 'Note for History rewriter' });
+    expect(note.getAttribute('placeholder')).toBe('What should it do differently?');
+    fireEvent.change(note, { target: { value: 'Keep the retry key from main.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    await settle();
+
+    expect(startHistoryRewriter).toHaveBeenCalledWith({
+      sessionId: A_REBASE_SESSION_ID,
+      mountId: A_REBASE_MOUNT_ID,
+      plan: { worktreePath: WORKTREE, base: 'base-sha', head: 'head-sha', steps: [], onto: null },
+      origin: 'rebase',
+      planId: null,
+      note: 'Keep the retry key from main.',
+    });
+    expect(useAppStore.getState().historyRewriters[A_REBASE_AGENT_ID]).toBeUndefined();
+  });
+
+  it('collapses the note on Escape and keeps Retry off until there is a note', async () => {
+    await showRun({
+      phase: 'stopped',
+      agentId: A_REBASE_AGENT_ID,
+      stop: { reason: 'stuck', message: 'x', files: [], sha: null },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry with a note' }));
+    expect(screen.getByRole('button', { name: 'Retry' }).hasAttribute('disabled')).toBe(true);
+
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Note for History rewriter' }), {
+      key: 'Escape',
+    });
+
+    expect(screen.queryByRole('textbox')).toBeNull();
+  });
+
+  it('retries the push from a push that failed', async () => {
+    const pushHistoryRewrite = vi.fn(async () => 'pushed' as const);
+    const loadHistoryDraft = vi.fn(async () => undefined);
+    useAppStore.setState({ pushHistoryRewrite, loadHistoryDraft });
+    await showRun({
+      phase: 'stopped',
+      stop: { reason: 'push-failed', message: 'declined\nlint error', files: [], sha: null },
+    });
+
+    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual([
+      'Retry push',
+      'Open terminal',
+      'Details',
+      'Dismiss',
+    ]);
+    fireEvent.click(screen.getByRole('button', { name: 'Retry push' }));
+    await settle();
+
+    expect(pushHistoryRewrite).toHaveBeenCalledTimes(1);
   });
 
   it('opens the output of a failed push on Details', async () => {
@@ -210,7 +363,9 @@ describe('the job banner', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Details' }));
 
-    expect(screen.getByText(/postCredit\.ts 14:7 error/)).toBeDefined();
+    expect(screen.getByRole('dialog', { name: 'Push output' }).textContent).toContain(
+      'postCredit.ts 14:7 error',
+    );
     expect(screen.getByRole('button', { name: 'Open terminal' })).toBeDefined();
   });
 
