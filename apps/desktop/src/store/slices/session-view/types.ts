@@ -208,6 +208,7 @@ type SessionViewSliceState = {
   readonly diffMountPath: Readonly<Record<SessionId, string | null>>;
   readonly branchTab: Readonly<Record<SessionId, BranchTab>>;
   readonly sessionPagesFolded: Readonly<Record<SessionId, boolean>>;
+  readonly dismissedCheckProposals: Readonly<Record<SessionId, ReadonlyArray<AgentId>>>;
   readonly branchThreadId: Readonly<Record<SessionId, string | null>>;
   readonly terminalMountPath: Readonly<Record<SessionId, string | null>>;
   readonly sessionCreations: Readonly<Record<SessionId, ReadonlyArray<SessionCreation>>>;
@@ -216,6 +217,11 @@ type SessionViewSliceState = {
     Record<SessionId, Readonly<Record<string, Readonly<Record<string, boolean>>>>>
   >;
   readonly exploreMountPath: Readonly<Record<SessionId, string | null>>;
+};
+
+type DismissCheckProposalParams = {
+  readonly sessionId: SessionId;
+  readonly agentId: AgentId;
 };
 
 type SessionViewSliceActions = {
@@ -239,6 +245,7 @@ type SessionViewSliceActions = {
     readonly sessionId: SessionId;
     readonly isFolded: boolean;
   }): void;
+  dismissCheckProposal(params: DismissCheckProposalParams): void;
   setActiveLens(sessionId: SessionId, lens: LensKind | null): void;
   setFocusedWorkflowRun(sessionId: SessionId, runId: string | null): void;
   setFocusedArtifactId(sessionId: SessionId, artifactId: ArtifactId | null): void;

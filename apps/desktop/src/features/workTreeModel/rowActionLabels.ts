@@ -4,6 +4,7 @@ export const ROW_ACTION_LABEL = {
   openPlan: 'Open plan',
   open: 'Open',
   start: 'Start',
+  startFix: 'Start fix',
   resume: 'Resume',
   continue: 'Continue',
   retry: 'Retry',

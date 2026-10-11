@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Button, StatusDot, Tooltip } from '@goodboy/ui';
 import type {
@@ -7,18 +7,17 @@ import type {
   PullRequestState,
   PullRequestView,
   SessionId,
-  TurnEvent,
 } from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { useKindRouting } from '../../../shared/hooks/useKindRouting';
 import { useAppStore } from '../../../store';
-import { selectCheckAnalysis } from '../../../store/slices/agents/selectCheckAnalysis';
+import type { CheckChainState } from '../../../store/slices/agents/selectCheckChain';
 import { isReportedError } from '../../../store/slices/notifications/reportedError';
 import { modelLabel } from '../../chat/utils/chat-constants';
 import { analyzeFailingChecks } from '../checks/analyzeFailingChecks';
-import { checkAnalysisOf } from '../checks/checkAnalysisOf';
 import { checkRoutingOf } from '../checks/checkRoutingOf';
-
-const NO_EVENTS: ReadonlyArray<TurnEvent> = [];
+import { startCheckFix } from '../checks/startCheckFix';
+import { useCheckChain } from '../hooks/useCheckChain';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -27,66 +26,66 @@ type Props = {
   readonly check: PrCheckRun;
 };
 
+const WORDS: Readonly<Record<Exclude<CheckChainState, 'none'>, string>> = {
+  analyzing: 'Debugger is analyzing',
+  proposal: 'Debugger proposes a fix',
+  fixing: 'Implementer is fixing',
+  fixed: 'Fixed by Implementer. The checks run again when you push.',
+  'fix-failed': 'The fix stopped',
+  'no-fix': 'Debugger found no fix',
+};
+
+const TONES = {
+  analyzing: 'warning',
+  fixing: 'warning',
+  proposal: 'success',
+  fixed: 'success',
+  'fix-failed': 'danger',
+  'no-fix': 'neutral',
+} as const satisfies Record<Exclude<CheckChainState, 'none'>, string>;
+
 export const CheckAnalysisActions = ({ sessionId, mountId, pullRequest, check }: Props) => {
   const url = check.detailsUrl ?? pullRequest.url;
-  const agent = useAppStore((state) => selectCheckAnalysis({ state, sessionId, url }));
-  const events = useAppStore((state) =>
-    agent === null ? NO_EVENTS : (state.transcripts[agent.id] ?? NO_EVENTS),
-  );
-  const turnState = useAppStore((state) =>
-    agent === null ? undefined : state.agentTurnState[agent.id],
-  );
+  const { chain } = useCheckChain({ sessionId, url });
   const routing = useAppStore(useShallow((state) => checkRoutingOf({ state, sessionId, mountId })));
+  const fixRouting = useKindRouting({ sessionId, kind: 'implementer' });
   const reportError = useAppStore((state) => state.reportError);
   const openDrawer = useAppStore((state) => state.openDrawer);
-  const loadAgentTranscript = useAppStore((state) => state.loadAgentTranscript);
-  const hasTranscript = useAppStore(
-    (state) => agent !== null && state.transcripts[agent.id] !== undefined,
-  );
   const [isStarting, setIsStarting] = useState(false);
-  useEffect(() => {
-    if (agent === null || hasTranscript) {
-      return;
-    }
-    void loadAgentTranscript(sessionId, agent.id, { isSelecting: false }).catch(
-      (error: unknown) => {
-        if (!isReportedError(error)) {
-          void reportError({ title: "Couldn't read the analysis", error, sessionId });
-        }
-      },
-    );
-  }, [agent, hasTranscript, loadAgentTranscript, reportError, sessionId]);
-  const analysis = agent === null ? null : checkAnalysisOf({ agent, events, turnState });
-  const start = async () => {
+  const run = async ({
+    title,
+    task,
+  }: {
+    readonly title: string;
+    readonly task: () => Promise<unknown>;
+  }) => {
     if (isStarting) {
       return;
     }
     setIsStarting(true);
     try {
-      await analyzeFailingChecks({ sessionId, mountId, pullRequest, checks: [check] });
+      await task();
     } catch (error: unknown) {
       if (!isReportedError(error)) {
-        void reportError({ title: "Couldn't start the Debugger", error, sessionId });
+        void reportError({ title, error, sessionId });
       }
     } finally {
       setIsStarting(false);
     }
   };
   const AgentsIcon = CONCEPT_ICONS.agents;
-  const canAnalyze = analysis === null || (!analysis.isRunning && analysis.proposal === null);
+  const canAnalyze = chain.state === 'none' || chain.state === 'no-fix';
   return (
     <div className="flex shrink-0 items-center gap-2">
-      {analysis === null ? null : (
+      {chain.state === 'none' ? null : (
         <>
           <StatusDot
-            tone={
-              analysis.isRunning ? 'warning' : analysis.proposal === null ? 'neutral' : 'success'
-            }
-            pulsing={analysis.isRunning}
+            tone={TONES[chain.state]}
+            pulsing={chain.state === 'analyzing' || chain.state === 'fixing'}
             size="sm"
           />
           <span role="status" className="text-meta text-muted-foreground">
-            {analysis.label}
+            {WORDS[chain.state]}
           </span>
           <Button
             variant="ghost"
@@ -103,18 +102,43 @@ export const CheckAnalysisActions = ({ sessionId, mountId, pullRequest, check }:
           </Button>
         </>
       )}
+      {chain.state === 'proposal' ? (
+        <Tooltip
+          content={`Start an Implementer with this proposal: ${modelLabel(fixRouting.model, fixRouting.provider)} · ${fixRouting.effort}`}
+        >
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={isStarting}
+            onClick={() =>
+              void run({
+                title: "Couldn't start the Implementer",
+                task: () => startCheckFix({ sessionId, url, mountId }),
+              })
+            }
+          >
+            Start fix
+          </Button>
+        </Tooltip>
+      ) : null}
       {canAnalyze ? (
         <Tooltip
           content={`Start a Debugger on this failure: ${modelLabel(routing.model, routing.provider)} · ${routing.effort}`}
         >
           <Button
-            variant={analysis === null ? 'secondary' : 'ghost'}
+            variant={chain.state === 'none' ? 'secondary' : 'ghost'}
             size="sm"
             disabled={isStarting}
-            onClick={() => void start()}
+            onClick={() =>
+              void run({
+                title: "Couldn't start the Debugger",
+                task: () =>
+                  analyzeFailingChecks({ sessionId, mountId, pullRequest, checks: [check] }),
+              })
+            }
           >
             <AgentsIcon size={ICON_SIZE.row} aria-hidden />
-            {analysis === null ? 'Analyze' : 'Analyze again'}
+            {chain.state === 'none' ? 'Analyze' : 'Analyze again'}
           </Button>
         </Tooltip>
       ) : null}

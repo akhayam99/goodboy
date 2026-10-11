@@ -5693,7 +5693,7 @@
   },
   "apps/desktop/src/features/session/components/AgentDetailPane/AgentFollowUps.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 18
+      "count": 13
     }
   },
   "apps/desktop/src/features/session/components/AgentDetailPane/AgentFollowUps.tsx": {
