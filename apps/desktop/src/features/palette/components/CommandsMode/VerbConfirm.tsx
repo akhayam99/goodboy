@@ -25,7 +25,6 @@ export const VerbConfirm = ({
   const Icon = entry.icon;
   return (
     <InlineConfirm
-      surface="plain"
       role={confirm.role}
       icon={<Icon size={ICON_SIZE.row} aria-hidden />}
       title={confirm.title}

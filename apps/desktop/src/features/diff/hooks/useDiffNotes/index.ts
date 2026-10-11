@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { useShowToast } from '../../../../shared/components/Toast/useShowToast';
 import { useAskAgent } from '../useAskAgent';
 import { useNoteFixes } from '../useNoteFixes';
 import { NOTE_LOCK_REASON, type NoteFix } from '../../lib/noteFixes';
@@ -30,6 +31,7 @@ const threadOf = ({ fix }: { readonly fix: NoteFix }): DiffThread => {
     statusLabel: fix.word,
     isResolved: isDone,
     canEdit: false,
+    canRestore: true,
     canClose: !isDone,
     canReopen: fix.canReopen,
     actions: [],
@@ -45,6 +47,7 @@ export const useDiffNotes = ({ sessionId }: Params): DiffNotes => {
   const reopenDiffComment = useAppStore((s) => s.reopenDiffComment);
   const deleteDiffComment = useAppStore((s) => s.deleteDiffComment);
   const askAgent = useAskAgent({ sessionId });
+  const showToast = useShowToast();
 
   const comments = useMemo<DiffComments>(() => {
     const threadIdOf = new Map(fixes.map((fix) => [fix.note.id, fix.threadId] as const));
@@ -65,7 +68,22 @@ export const useDiffNotes = ({ sessionId }: Params): DiffNotes => {
         void closeResolvedNote({ sessionId, threadId });
       },
       onReopen: (id) => void reopenDiffComment(sessionId, id),
-      onDelete: (id) => void deleteDiffComment(sessionId, id),
+      onDelete: (id) => {
+        const note = fixes.find((fix) => fix.note.id === id)?.note;
+        void deleteDiffComment(sessionId, id).then(() => {
+          if (note === undefined) {
+            return;
+          }
+          useAppStore.getState().undoable({
+            showToast,
+            title: 'Note deleted',
+            message: note.body,
+            undo: async () => {
+              await addDiffComment(sessionId, note.filePath, note.body, note.anchor ?? undefined);
+            },
+          });
+        });
+      },
     };
   }, [
     addDiffComment,
@@ -75,6 +93,7 @@ export const useDiffNotes = ({ sessionId }: Params): DiffNotes => {
     fixes,
     reopenDiffComment,
     sessionId,
+    showToast,
   ]);
 
   return { comments, fixes };

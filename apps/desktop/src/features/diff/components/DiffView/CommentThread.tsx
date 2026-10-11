@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Bot, Lock, Trash2 } from 'lucide-react';
-import { Avatar, Chip, InlineConfirm, Markdown, cn, tintClasses } from '@goodboy/ui';
+import { Avatar, Chip, ConfirmPopover, Markdown, cn, tintClasses } from '@goodboy/ui';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { DiffComments, DiffThread } from './types';
@@ -14,6 +14,10 @@ type Props = {
   readonly comments: DiffComments;
 };
 
+type DeleteButtonParams = {
+  readonly onClick: () => void;
+};
+
 const CLOSE_NOTE_LABEL = 'Close note';
 
 const excerpt = (body: string): string => {
@@ -24,7 +28,6 @@ const excerpt = (body: string): string => {
 export const CommentThread = ({ thread, comments }: Props) => {
   const now = useNow(30_000);
   const [editing, setEditing] = useState(false);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const tint = tintClasses(thread.tone);
   const noun = comments.noun ?? 'comment';
   const lockReason = thread.lockReason ?? null;
@@ -76,6 +79,32 @@ export const CommentThread = ({ thread, comments }: Props) => {
       />
     );
   }
+
+  const deleteButton = ({ onClick }: DeleteButtonParams) => (
+    <button
+      type="button"
+      className={ACTION_CLASS}
+      disabled={isLocked}
+      title={lockReason ?? undefined}
+      onClick={onClick}
+    >
+      Delete
+    </button>
+  );
+  const deleteControl =
+    thread.canRestore === true ? (
+      deleteButton({ onClick: () => comments.onDelete?.(thread.id) })
+    ) : (
+      <ConfirmPopover
+        role="danger"
+        icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
+        title={`Delete this ${noun}?`}
+        description="It is removed from the review."
+        confirmLabel={`Delete ${noun}`}
+        onConfirm={() => comments.onDelete?.(thread.id)}
+        trigger={({ arm }) => deleteButton({ onClick: arm })}
+      />
+    );
 
   return (
     <div
@@ -129,17 +158,7 @@ export const CommentThread = ({ thread, comments }: Props) => {
               Reopen
             </button>
           ) : null}
-          {thread.canDelete !== false && comments.onDelete ? (
-            <button
-              type="button"
-              className={ACTION_CLASS}
-              disabled={isLocked}
-              title={lockReason ?? undefined}
-              onClick={() => setConfirmingDelete(true)}
-            >
-              Delete
-            </button>
-          ) : null}
+          {thread.canDelete !== false && comments.onDelete ? deleteControl : null}
         </span>
       </div>
       <div className="min-w-0 text-body text-foreground">
@@ -160,19 +179,6 @@ export const CommentThread = ({ thread, comments }: Props) => {
         </div>
       ) : null}
       {thread.footer ?? null}
-      {confirmingDelete ? (
-        <InlineConfirm
-          role="danger"
-          icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
-          title={`Delete this ${noun}?`}
-          confirmLabel="Delete"
-          onConfirm={() => {
-            comments.onDelete?.(thread.id);
-            setConfirmingDelete(false);
-          }}
-          onCancel={() => setConfirmingDelete(false)}
-        />
-      ) : null}
     </div>
   );
 };

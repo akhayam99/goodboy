@@ -155,7 +155,6 @@ export const MenuList = ({ label, entries, onClose, isAutoFocus = true }: Props)
           title={confirm.title}
           description={confirm.description}
           confirmLabel={confirm.confirmLabel}
-          surface="plain"
           isBusy={isBusy}
           note={
             confirm.notes === undefined || confirm.notes.length === 0 ? undefined : (

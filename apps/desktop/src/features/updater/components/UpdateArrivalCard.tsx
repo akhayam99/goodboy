@@ -73,7 +73,6 @@ export const UpdateArrivalCard = ({ anchorRef, onOpenChangelog }: Props) => {
         {isConfirming ? (
           <InlineConfirm
             role="alert"
-            surface="plain"
             icon={<ArrowUpCircle size={ICON_SIZE.control} aria-hidden />}
             title={`${runningCount} agent${runningCount === 1 ? '' : 's'} ${runningCount === 1 ? 'is' : 'are'} running. A restart now picks them up where they stopped.`}
             confirmLabel="Restart when they finish"

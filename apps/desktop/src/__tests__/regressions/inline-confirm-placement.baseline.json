@@ -1,10 +1,1 @@
-{
-  "apps/desktop/src/features/diff/components/DiffView/CommentThread.tsx": 1,
-  "apps/desktop/src/features/history/components/CommitsHistory/HistoryBackups.tsx": 1,
-  "apps/desktop/src/features/resolve/components/ReviewFlow/PushBanner.tsx": 2,
-  "apps/desktop/src/features/storage/components/BranchesSection/BranchBulkBar.tsx": 1,
-  "apps/desktop/src/features/storage/components/StoragePage/ArtifactBulkDeleteBar.tsx": 1,
-  "apps/desktop/src/features/storage/components/StoragePage/BulkRemoveBar.tsx": 1,
-  "apps/desktop/src/shared/components/ObjectSelectionBar/index.tsx": 1,
-  "packages/ui/src/components/SelectionBar/SelectionConfirm.tsx": 1
-}
+{}
