@@ -39,6 +39,7 @@ mod linear;
 mod live_child;
 mod local_image;
 mod logging;
+mod monitor;
 mod path_env;
 mod permissions;
 mod planner;
@@ -475,6 +476,8 @@ pub fn run() {
             terminal::terminal_resize,
             terminal::terminal_close,
             proc::ledger::process_ledger_list,
+            monitor::monitor_snapshot,
+            monitor::watched::monitor_watched_ports,
             workflows::workflow_list,
             workflows::workflows_for_session,
             workflows::step_def_list,
