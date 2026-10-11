@@ -16,6 +16,7 @@ import { effectiveDiffLayout } from '../../../../shared/hooks/useDiffLayoutMode/
 import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useDiffWrap } from '../../hooks/useDiffWrap';
+import type { FileSidesLoader } from '../../hooks/useFileSides';
 import { DiffFile } from './DiffFile';
 import { DisplayMenu } from './DisplayMenu';
 import type { DiffComments, DiffFileActions, DiffThread, DiffViewed } from './types';
@@ -29,6 +30,9 @@ const USER_SCROLL_EVENTS = ['wheel', 'touchmove', 'pointerdown', 'keydown'] as c
 
 type Props = {
   readonly files: ReadonlyArray<FileDiff>;
+  readonly loadFileSides?: FileSidesLoader | null;
+  readonly registerExpandAll?:
+    ((path: string, expand: (() => Promise<void>) | null) => void) | null;
   readonly comments?: DiffComments | null;
   readonly viewed?: DiffViewed | null;
   readonly fileActions?: DiffFileActions | null;
@@ -63,6 +67,8 @@ const snapToTop = (element: HTMLElement) =>
 
 export const DiffView = ({
   files,
+  loadFileSides = null,
+  registerExpandAll = null,
   comments = null,
   viewed = null,
   fileActions = null,
@@ -387,6 +393,8 @@ export const DiffView = ({
         <DiffFile
           key={file.path}
           file={file}
+          loadFileSides={loadFileSides}
+          registerExpandAll={registerExpandAll}
           layout={layout}
           wrap={wrap}
           threads={threadsByFile.get(file.path) ?? EMPTY_THREADS}

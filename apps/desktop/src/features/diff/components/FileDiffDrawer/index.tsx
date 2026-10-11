@@ -1,14 +1,16 @@
 import { useCallback, useMemo } from 'react';
 import { ArrowUpRight } from 'lucide-react';
-import { Button, DrawerFrame, ErrorStrip, Skeleton } from '@goodboy/ui';
-import type { SessionId } from '@goodboy/types';
+import { Button, DrawerFrame, ErrorStrip, Skeleton, formatError } from '@goodboy/ui';
+import type { FileDiff, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { FileDiffSource } from '../../../../store/slices/drawer/state';
 import { selectMountBaseBranch } from '../../../../store/slices/project-mounts/selectors';
+import { openFileInWorkspace } from '../../../../shared/lib/editor';
+import { resolveEditorBinary } from '../../../../shared/lib/editorSettings';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ghCommitDiff } from '../../../integrations/github/github';
-import { worktreeDiff, worktreeDiffCommit } from '../../../worktree/worktree';
+import { worktreeDiff, worktreeDiffCommit, worktreeFileSides } from '../../../worktree/worktree';
 import { useSessionDiff } from '../../hooks/useSessionDiff';
 import { splitPath } from '../../lib/fileStatus';
 import { DiffView } from '../DiffView';
@@ -31,6 +33,27 @@ export const FileDiffDrawer = ({ sessionId, source, path, onClose }: Props) => {
     source.kind === 'worktree'
       ? selectMountBaseBranch({ state, sessionId, path: source.worktreePath })
       : null,
+  );
+  const editorBinary = useAppStore((state) => resolveEditorBinary({ settings: state.settings }));
+  const reportError = useAppStore((state) => state.reportError);
+  const editorRoot = source.kind === 'worktree' ? source.worktreePath : sessionWorktree;
+  const fileActions = useMemo(
+    () =>
+      editorRoot === null
+        ? null
+        : {
+            onOpenInEditor: (filePath: string) => {
+              void openFileInWorkspace(editorRoot, `${editorRoot}/${filePath}`, editorBinary).catch(
+                (error: unknown) =>
+                  reportError({
+                    title: "Couldn't open the file in your editor",
+                    error: formatError(error),
+                    sessionId,
+                  }),
+              );
+            },
+          },
+    [editorBinary, editorRoot, reportError, sessionId],
   );
   const openMountDiff = useAppStore((state) => state.openMountDiff);
   const setDiffFocus = useAppStore((state) => state.setDiffFocus);
@@ -55,6 +78,18 @@ export const FileDiffDrawer = ({ sessionId, source, path, onClose }: Props) => {
   const files = useMemo(
     () => (path === null ? diff.files : diff.files.filter((file) => matches(file.path, path))),
     [diff.files, path],
+  );
+
+  const loadFileSides = useCallback(
+    (file: FileDiff) =>
+      worktreeFileSides({
+        worktreePath: source.kind === 'worktree' ? source.worktreePath : (sessionWorktree ?? ''),
+        path: file.path,
+        oldRev: source.kind === 'commit' ? `${source.sha}^` : null,
+        newRev: source.kind === 'commit' ? source.sha : null,
+        baseBranch: worktreeBase,
+      }),
+    [sessionWorktree, source, worktreeBase],
   );
 
   const title =
@@ -103,7 +138,14 @@ export const FileDiffDrawer = ({ sessionId, source, path, onClose }: Props) => {
           {path === null ? 'No changes in this commit.' : 'This file has no changes here.'}
         </p>
       ) : (
-        <DiffView files={files} presentation="peek" />
+        <DiffView
+          files={files}
+          presentation="peek"
+          fileActions={fileActions}
+          loadFileSides={
+            source.kind === 'commit' && sessionWorktree === null ? null : loadFileSides
+          }
+        />
       )}
     </DrawerFrame>
   );

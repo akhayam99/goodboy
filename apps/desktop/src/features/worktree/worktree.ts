@@ -872,3 +872,34 @@ export const moveToRemoteCommits = async ({
 }: MoveToRemoteCommitsParams): Promise<void> => {
   await invokeCommand('worktree_use_remote_commits', { worktreePath, branch });
 };
+
+export type FileSides = {
+  readonly old: string | null;
+  readonly new: string | null;
+  readonly isTooLarge: boolean;
+};
+
+type WorktreeFileSidesParams = WorktreeBaseParams & {
+  readonly path: string;
+  readonly oldRev?: string | null;
+  readonly newRev?: string | null;
+};
+
+type RawFileSides = Pick<FileSides, 'old' | 'new'> & Readonly<Record<'too_large', boolean>>;
+
+export const worktreeFileSides = async ({
+  worktreePath,
+  path,
+  oldRev,
+  newRev,
+  baseBranch,
+}: WorktreeFileSidesParams): Promise<FileSides> => {
+  const sides = await invokeCommand<RawFileSides>('worktree_file_sides', {
+    worktreePath,
+    path,
+    oldRev: oldRev ?? null,
+    newRev: newRev ?? null,
+    baseBranch: baseBranch ?? null,
+  });
+  return { old: sides.old, new: sides.new, isTooLarge: sides.too_large };
+};

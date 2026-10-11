@@ -140,6 +140,11 @@ A `packages/db` test that needs a migrated schema calls `await makeMigratedTestD
 
 For speed, `packages/db/src/migrations/registry.test.ts` tests a sample of the intermediate versions instead of all of them. That sample does not replace the per-version sql hash manifest checked into the same file. The manifest is what really stops anyone from editing a migration after release. The sample has its own minimum number of intermediate points it must reach. So if someone cuts the sample size, the test fails, instead of quietly shrinking to the first and last version. No test pins the sampled versions or the total number of migrations. Both change every release. A test that goes red for that reason teaches people to edit the expected values, and that is exactly how a hash manifest gets regenerated without anyone looking.
 
+Rust repository fixtures reserve a unique directory before Git initialization.
+Timestamp-only names can collide in parallel tests. The helper in
+`apps/desktop/src-tauri/src/worktree/file_sides/tests.rs` combines a per-process
+counter with a timestamp and uses `create_dir` to reject reuse.
+
 ## Fake CLI binaries for the Rust spawn tests
 
 `apps/desktop/src-tauri/tests/fixtures/fake-cli/` holds POSIX `sh` scripts named `claude`, `codex`, `cursor-agent`, `agy` and `opencode`, plus `streams/` with one recorded output per provider. The Rust tests copy the folder to a temp dir with `FakeCli::stage(mode)` (`src/fake_cli.rs`) and start the copy through the real code: `spawn_one` in `turn.rs` for a turn, `run_planner` and `run_summarize` for the side jobs, `detect_binary_within` and the `check_*_auth_with` functions in `providers.rs` for detection and sign-in. The tests live in `src/turn/fake_cli_tests.rs`, `src/providers/fake_cli_tests.rs` and `src/providers/cli_args/fake_cli_tests.rs`, and run under plain `cargo test --locked`.

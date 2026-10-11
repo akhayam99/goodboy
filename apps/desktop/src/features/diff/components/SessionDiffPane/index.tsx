@@ -2,7 +2,7 @@ import { useCallback, useContext, useMemo, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom';
 import { PencilLine } from 'lucide-react';
 import { Button, ErrorStrip, EmptyState, PageColumn, Skeleton, formatError } from '@goodboy/ui';
-import type { SessionId } from '@goodboy/types';
+import type { FileDiff, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectMountBaseBranch } from '../../../../store/slices/project-mounts/selectors';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -21,6 +21,7 @@ import { TreeLoading } from '../ChangeTree/TreeLoading';
 import { TreeRail } from '../ChangeTree/TreeRail';
 import { TreeResizer } from '../ChangeTree/TreeResizer';
 import { TreeStrip } from '../ChangeTree/TreeStrip';
+import { worktreeFileSides } from '../../../worktree/worktree';
 import { DiffView } from '../DiffView';
 import { DiffEmptyState } from './DiffEmptyState';
 
@@ -146,6 +147,27 @@ export const SessionDiffPane = ({
     [openInEditor, workingDir],
   );
 
+  const loadFileSides = useCallback(
+    (file: FileDiff) => {
+      const oldRev =
+        diff.view.kind === 'commit'
+          ? `${diff.view.sha}^`
+          : diff.view.kind === 'working'
+            ? diff.view.scope === 'unstaged'
+              ? ':0'
+              : 'HEAD'
+            : null;
+      const newRev =
+        diff.view.kind === 'commit'
+          ? diff.view.sha
+          : diff.view.kind === 'working' && diff.view.scope === 'staged'
+            ? ':0'
+            : null;
+      return worktreeFileSides({ worktreePath, path: file.path, oldRev, newRev, baseBranch });
+    },
+    [baseBranch, diff.view, worktreePath],
+  );
+
   const selector = (
     <DiffViewSelector
       view={diff.view}
@@ -218,6 +240,7 @@ export const SessionDiffPane = ({
   ) : (
     <DiffView
       files={review.tree.files}
+      loadFileSides={loadFileSides}
       comments={review.comments}
       viewed={review.viewed}
       fileActions={fileActions}
