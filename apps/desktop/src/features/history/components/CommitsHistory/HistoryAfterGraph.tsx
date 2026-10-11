@@ -56,7 +56,6 @@ export const HistoryAfterGraph = ({
         laneX={HISTORY_GRAPH.afterLaneX}
         mainY={isOnMain ? null : mainY}
         forkY={forkY}
-        mainDots={[]}
         nodes={nodes}
         isDashed
         isForkOnMain={isOnMain}

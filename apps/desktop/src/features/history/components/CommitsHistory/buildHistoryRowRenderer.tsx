@@ -29,6 +29,7 @@ type Params = {
   readonly headSha: string | null;
   readonly model: HistoryGraphModel;
   readonly prNumber: number | null;
+  readonly hasUpstream: boolean;
   readonly highlightedRows: ReadonlySet<string>;
   readonly drag: ReturnType<typeof useHistoryPlanDrag>;
   readonly editingSha: string | null;
@@ -60,6 +61,7 @@ export const buildHistoryRowRenderer =
     headSha,
     model,
     prNumber,
+    hasUpstream,
     highlightedRows,
     drag,
     editingSha,
@@ -138,6 +140,7 @@ export const buildHistoryRowRenderer =
               : null,
           prNumber: commit.sha === model.prRowSha ? prNumber : null,
         }}
+        canShowUnpushed={hasUpstream}
         isNew={
           isDone && (applied?.newShas.includes(commit.sha) ?? false) && commit.pushed === false
         }

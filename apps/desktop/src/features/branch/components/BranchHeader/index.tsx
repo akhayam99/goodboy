@@ -36,6 +36,7 @@ type Props = {
   readonly controls: BranchControls;
   readonly isPushBusy: boolean;
   readonly isPrimaryYielding: boolean;
+  readonly isRebaseYielding?: boolean;
   readonly tab: BranchTab;
   readonly isActive?: boolean;
   readonly canEditTitle: boolean;
@@ -92,6 +93,7 @@ export const BranchHeader = ({
   controls,
   isPushBusy,
   isPrimaryYielding,
+  isRebaseYielding = false,
   tab,
   isActive = true,
   canEditTitle,
@@ -120,7 +122,13 @@ export const BranchHeader = ({
     primary === null ? null : (
       <Button
         size="sm"
-        variant={primary.isSecondary || isPrimaryYielding ? 'secondary' : 'primary'}
+        variant={
+          primary.isSecondary ||
+          isPrimaryYielding ||
+          (isRebaseYielding && primary.actionId === 'diff.rebase')
+            ? 'secondary'
+            : 'primary'
+        }
         data-branch-primary={primary.actionId}
         disabled={primary.blockedReason !== null}
         isBusy={primary.isBusy || isPushBusy}

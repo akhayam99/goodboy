@@ -1,7 +1,7 @@
 export const HISTORY_GRAPH = {
-  trunkX: 26,
-  laneX: 74,
-  gutter: 100,
+  trunkX: 20,
+  laneX: 52,
+  gutter: 72,
   nodeOffset: 27,
   afterTrunkX: 14,
   afterLaneX: 40,

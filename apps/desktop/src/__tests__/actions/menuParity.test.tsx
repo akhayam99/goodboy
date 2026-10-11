@@ -460,6 +460,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
         takenIn={[]}
         pills={{ isHead: true, remote: null, prNumber: null }}
         isNew={false}
+        canShowUnpushed={false}
         isHighlighted={false}
         isLifted={false}
         isDropInto={false}
