@@ -187,13 +187,7 @@ export const TimelineStreamRow = ({
         )}
       </span>
       <div className="flex min-w-0 flex-1 flex-col">
-        <div
-          className={cn(
-            WORK_ROW.container,
-            'flex min-w-0 flex-1 items-end gap-1',
-            item.grade !== 'entry' && 'pr-1',
-          )}
-        >
+        <div className={cn(WORK_ROW.container, 'flex min-w-0 flex-1 items-end gap-1')}>
           {openTarget == null ? (
             <div className={contentClassName} style={{ height: boxHeight }}>
               {content}
