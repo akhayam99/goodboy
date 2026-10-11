@@ -332,3 +332,6 @@ export {
 } from './frameGeometry';
 export type { FrameGeometry, FramePage, FrameTitleLeft } from './frameGeometry';
 export { HeaderActions } from './components/HeaderActions';
+
+export { Disclosure } from './components/Disclosure';
+export type { DisclosureProps } from './components/Disclosure';

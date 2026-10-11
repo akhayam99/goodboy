@@ -2106,6 +2106,14 @@ collapse and unmounts them on `transitionend`, or at once when no transition
 runs (reduced motion, tests). `Collapsible` opens through it. A disclosure
 never mounts and unmounts its panel by hand.
 
+`Disclosure` is the toggle-and-body pair for a row that opens its detail: a
+14px chevron, an 8px gap and a label on one `px-2` line, and a body inside
+`Reveal` whose left indent is measured from them (`pl-[calc(8px+14px+8px)]`,
+never a typed `pl-5`, `pl-7` or `pl-9`). A body that sits under a control
+measures its indent the same way, from that control's own padding, width and
+gap. The ratchet `hand-indent.test.ts` counts `pl-5`, `pl-7` and `pl-9` in
+`features/` and only falls.
+
 A theme switch is one paint, a class swap on `<html>` and nothing else:
 `applyDocumentTheme` writes the `light` or `dark` class, `data-theme` and
 `color-scheme` once each in a single task, and the CSS variables repaint the

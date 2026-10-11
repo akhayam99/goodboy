@@ -38,7 +38,7 @@ export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'ico
     }),
   );
   const orderedProjects = useMemo(
-    () => starredProjectsFirst({ projects: availableProjects }),
+    () => starredProjectsFirst({ projects: availableProjects, inside: 'recency' }),
     [availableProjects],
   );
   const hasWorkspaceProjects = useAppStore((state) =>

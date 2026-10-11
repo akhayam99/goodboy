@@ -156,3 +156,44 @@ describe('MountProjectList', () => {
     await waitFor(() => expect(h.ensureProjectMounted).toHaveBeenCalledTimes(2));
   });
 });
+
+describe('MountProjectList groups', () => {
+  const named = ({ name, isStarred }: { readonly name: string; readonly isStarred: boolean }) =>
+    ({
+      ...repoProject,
+      id: `project-${name}` as ProjectId,
+      name,
+      ...(isStarred ? { starredAt: '2026-10-01T09:00:00.000Z' } : {}),
+    }) as unknown as Project;
+
+  const NAMES = [
+    'ledger-core',
+    'notify-relay',
+    'payments-api',
+    'cascadia-web',
+    'acme-infra',
+    'runbooks',
+  ];
+
+  it('heads Starred and Other projects at six projects with a star', () => {
+    const projects = NAMES.map((name, index) => named({ name, isStarred: index < 2 }));
+    render(<MountProjectList sessionId={SID} projects={projects} onDone={vi.fn()} />);
+
+    expect(screen.getByText('Starred')).toBeDefined();
+    expect(screen.getByText('Other projects')).toBeDefined();
+    expect(screen.getAllByRole('button', { name: /^Add / })).toHaveLength(6);
+  });
+
+  it('shows no headings under six projects or with nothing starred', () => {
+    const fewer = NAMES.slice(0, 5).map((name, index) => named({ name, isStarred: index < 2 }));
+    const { unmount } = render(
+      <MountProjectList sessionId={SID} projects={fewer} onDone={vi.fn()} />,
+    );
+    expect(screen.queryByText('Starred')).toBeNull();
+    unmount();
+
+    const none = NAMES.map((name) => named({ name, isStarred: false }));
+    render(<MountProjectList sessionId={SID} projects={none} onDone={vi.fn()} />);
+    expect(screen.queryByText('Other projects')).toBeNull();
+  });
+});
