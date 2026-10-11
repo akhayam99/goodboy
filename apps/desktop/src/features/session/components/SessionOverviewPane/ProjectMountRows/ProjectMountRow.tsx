@@ -120,7 +120,7 @@ export const ProjectMountRow = ({
           row.isFinished && 'opacity-70 hover:opacity-100',
         )}
       >
-        <div className="relative flex h-full min-w-0 items-center">
+        <div className="flex h-full min-w-0 items-center gap-x-2">
           <div
             data-testid="project-mount-branch-cell"
             className="flex min-w-0 flex-1 items-center gap-x-2 overflow-hidden"
@@ -175,7 +175,7 @@ export const ProjectMountRow = ({
             )}
           </div>
           {!isPutTaskShown ? null : (
-            <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center group-focus-within/mount-row:pointer-events-auto group-hover/mount-row:pointer-events-auto">
+            <span className="pointer-events-none flex shrink-0 items-center group-focus-within/mount-row:pointer-events-auto group-hover/mount-row:pointer-events-auto">
               <PutOnBranchPopover
                 sessionId={sessionId}
                 mountId={row.mountId}
