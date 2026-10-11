@@ -98,6 +98,7 @@ const createHarness = () => {
     navigate: vi.fn<AppStore['navigate']>(() => {
       calls.push('lens');
     }),
+    loadDiffComments: vi.fn<AppStore['loadDiffComments']>(async () => undefined),
   };
   const store = createStore<AppStore>((set, get) => ({
     ...useAppStore.getInitialState(),
@@ -559,6 +560,39 @@ describe('a destination made of notes', () => {
     });
     expect(live.get().reviewTargets[SESSION_ID] ?? null).toBeNull();
     expect(live.state.refreshSessionPr).not.toHaveBeenCalled();
+  });
+
+  it('loads the notes first, so a saved note opens on its line after a restart', async () => {
+    const live = createHarness();
+    live.state.loadDiffComments.mockImplementation(async (sessionId) => {
+      live.store.setState({ diffComments: { [sessionId]: [NOTE] } });
+    });
+
+    await live.actions.openReviewTarget({ sessionId: SESSION_ID, destination: notes });
+
+    expect(live.state.loadDiffComments).toHaveBeenCalledWith(SESSION_ID);
+    expect(live.state.navigate).toHaveBeenCalledWith({
+      to: branchPlace({
+        sessionId: SESSION_ID,
+        mountPath: null,
+        tab: 'files',
+        threadId: NOTE_THREAD,
+        focus: { kind: 'branch', path: 'src/retry/backoff.ts', threadId: NOTE.id },
+      }),
+    });
+  });
+
+  it('reports a failure to load the notes and does not navigate', async () => {
+    const live = createHarness();
+    live.state.loadDiffComments.mockRejectedValue(new Error('Database is locked'));
+
+    const outcome = await live.actions.openReviewTarget({
+      sessionId: SESSION_ID,
+      destination: notes,
+    });
+
+    expect(outcome).toEqual({ kind: 'failed', error: 'Database is locked' });
+    expect(live.state.navigate).not.toHaveBeenCalled();
   });
 
   it('lands on the thread in Comments once the branch has a pull request', async () => {
