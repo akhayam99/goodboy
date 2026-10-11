@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Lock, Trash2 } from 'lucide-react';
-import { Chip, ConfirmPopover, Markdown, cn, tintClasses } from '@goodboy/ui';
+import { Chip, ConfirmPopover, Markdown, cn, formatError, tintClasses } from '@goodboy/ui';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { DiffComments, DiffThread } from './types';
@@ -13,6 +13,7 @@ import { ThreadWho } from './ThreadWho';
 import { kindLabelOf } from './threadKind';
 import { useHostThreadVerbs } from '../../hooks/useHostThreadVerbs';
 import { useNow } from '../../../../shared/hooks/useNow';
+import { isReportedError } from '../../../../store/slices/notifications/reportedError';
 
 type Props = {
   readonly thread: DiffThread;
@@ -34,6 +35,8 @@ const excerpt = (body: string): string => {
 export const CommentThread = ({ thread, comments, outcome = null }: Props) => {
   const now = useNow(30_000);
   const [editing, setEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
   const tint = tintClasses(thread.tone);
   const noun = comments.noun ?? 'comment';
   const lockReason = thread.lockReason ?? null;
@@ -84,11 +87,24 @@ export const CommentThread = ({ thread, comments, outcome = null }: Props) => {
         label={`Edit ${noun}`}
         submitLabel="Save"
         initialBody={thread.body}
+        isBusy={isSaving}
+        error={editError}
         onSubmit={(body) => {
-          comments.onEdit?.(thread.id, body);
+          setIsSaving(true);
+          setEditError(null);
+          void Promise.resolve(comments.onEdit?.(thread.id, body))
+            .then(() => setEditing(false))
+            .catch((caught: unknown) => {
+              if (!isReportedError(caught)) {
+                setEditError(formatError(caught));
+              }
+            })
+            .finally(() => setIsSaving(false));
+        }}
+        onCancel={() => {
+          setEditError(null);
           setEditing(false);
         }}
-        onCancel={() => setEditing(false)}
       />
     );
   }

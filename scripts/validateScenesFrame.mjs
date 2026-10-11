@@ -13,27 +13,27 @@ export const FRAME_SCENES = [
   { scene: 'agents-list-empty', rail: FRAME_RAIL_QUERY },
   { scene: 'agentlead', rail: FRAME_RAIL_QUERY },
   { scene: 'frame-questions', rail: null },
-  { scene: 'tasks-rail', rail: null },
+  { scene: 'tasks-rail', rail: null, isBare: true },
   { scene: 'drawer-split-tasks', rail: FRAME_RAIL_QUERY },
   { scene: 'notifications', rail: null },
-  { scene: 'frame&view=workflows', rail: FRAME_CTX_RAIL_QUERY },
-  { scene: 'frame&view=impact', rail: FRAME_CTX_RAIL_QUERY },
-  { scene: 'frame&view=settings', rail: FRAME_CTX_RAIL_QUERY },
+  { scene: 'frame-studio-workflows', rail: null },
+  { scene: 'frame-studio-impact', rail: null },
+  { scene: 'frame&view=settings', rail: FRAME_CTX_RAIL_QUERY, isBare: true },
   { scene: 'scripts-empty', rail: FRAME_RAIL_QUERY },
   { scene: 'artifact-states', rail: FRAME_RAIL_QUERY },
   { scene: 'explore', rail: FRAME_RAIL_QUERY },
   { scene: 'explore-changes', rail: FRAME_RAIL_QUERY },
-  { scene: 'storage-other-tools', rail: FRAME_RAIL_QUERY },
-  { scene: 'board-shell', rail: FRAME_RAIL_QUERY },
+  { scene: 'storage-other-tools', rail: FRAME_RAIL_QUERY, isBare: true },
+  { scene: 'board-shell', rail: FRAME_RAIL_QUERY, isBare: true },
   { scene: 'chat-room', rail: FRAME_RAIL_QUERY },
   { scene: 'chat-empty-stage', rail: FRAME_RAIL_QUERY },
   { scene: 'frame&view=guide', rail: FRAME_CTX_RAIL_QUERY },
   { scene: 'frame&view=changelog', rail: FRAME_CTX_RAIL_QUERY },
-  { scene: 'drawer-split-plan', rail: FRAME_RAIL_QUERY },
-  { scene: 'scripts-rows', rail: null },
-  { scene: 'monitoring-ports', rail: null },
-  { scene: 'terminal-studio', rail: null },
-  { scene: 'agent-running-stop', rail: null },
+  { scene: 'drawer-split-plan', rail: FRAME_RAIL_QUERY, isBare: true },
+  { scene: 'scripts-rows', rail: null, isBare: true },
+  { scene: 'monitoring-ports', rail: null, isBare: true },
+  { scene: 'terminal-studio', rail: null, isBare: true },
+  { scene: 'agent-running-stop', rail: null, isBare: true },
   { scene: 'branch-commits', rail: null },
   { scene: 'branch-files', rail: null },
   { scene: 'branch-open', rail: null },
@@ -57,23 +57,26 @@ export const missingFrameScenes = ({ ids, entries = FRAME_SCENES }) => {
 };
 
 export const frameProbe = async () => {
-  const settleBy = performance.now() + 3000;
-  while (performance.now() < settleBy) {
-    const running = document
-      .getAnimations()
-      .filter(
-        (animation) =>
-          animation.playState === 'running' &&
-          animation.effect?.getComputedTiming().iterations !== Infinity,
-      );
-    if (running.length === 0) {
-      break;
+  const settle = async () => {
+    const settleBy = performance.now() + 3000;
+    while (performance.now() < settleBy) {
+      const running = document
+        .getAnimations()
+        .filter(
+          (animation) =>
+            animation.playState === 'running' &&
+            animation.effect?.getComputedTiming().iterations !== Infinity,
+        );
+      if (running.length === 0) {
+        break;
+      }
+      await Promise.race([
+        Promise.allSettled(running.map((animation) => animation.finished)),
+        new Promise((resolvePromise) => setTimeout(resolvePromise, 200)),
+      ]);
     }
-    await Promise.race([
-      Promise.allSettled(running.map((animation) => animation.finished)),
-      new Promise((resolvePromise) => setTimeout(resolvePromise, 200)),
-    ]);
-  }
+  };
+  await settle();
   const box = (element) => {
     if (element === null || element === undefined) {
       return null;
@@ -105,21 +108,41 @@ export const frameProbe = async () => {
     );
     return top !== null && (element.contains(top) || top.contains(element));
   };
-  const firstShown = (selector, scope) =>
+  const firstShown = (selector, scope, isTopRequired = true) =>
     [...document.querySelectorAll(selector)].find(
       (element) =>
         element.closest('.invisible, [inert], [hidden], [aria-hidden="true"]') === null &&
         element.getBoundingClientRect().width > 0 &&
         (scope === null || scope.contains(element)) &&
-        isOnTop(element),
+        (!isTopRequired || isOnTop(element)),
     ) ?? null;
-  const detailScope = document.querySelector('[data-studio-detail]') ?? sheetElement;
-  const titleElement = firstShown('h1', detailScope);
-  const trailScope =
-    titleElement === null ? null : (titleElement.closest('[data-studio-detail]') ?? sheetElement);
-  const trailElement = firstShown('[data-slot="trail"]', trailScope);
-  const crumbElement =
-    trailElement === null ? null : trailElement.querySelector('[data-trail-segment]');
+  const locate = (isTopRequired) => {
+    const detailScope = document.querySelector('[data-studio-detail]') ?? sheetElement;
+    const title = firstShown('h1', detailScope, isTopRequired);
+    const trailScope =
+      title === null ? null : (title.closest('[data-studio-detail]') ?? sheetElement);
+    const trail = firstShown('[data-slot="trail"]', trailScope, isTopRequired);
+    return {
+      titleElement: title,
+      trailElement: trail,
+      crumbElement: trail === null ? null : trail.querySelector('[data-trail-segment]'),
+    };
+  };
+  const locateDeadline = performance.now() + 1500;
+  let located = locate(true);
+  while (
+    (located.titleElement === null || located.crumbElement === null) &&
+    performance.now() < locateDeadline
+  ) {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    located = locate(true);
+  }
+  await settle();
+  located = locate(true);
+  if (located.titleElement === null || located.crumbElement === null) {
+    located = locate(false);
+  }
+  const { titleElement, trailElement, crumbElement } = located;
   const bodyElement = document.querySelector('[data-slot="pane-body"]');
   const railElement = document.querySelector('aside[style*="grid-area: left"]');
   const drawerRowElement = document.querySelector('[data-drawer-header-row]');
@@ -200,9 +223,18 @@ export const frameFailures = ({
   sidebar,
   measured,
   tolerance = FRAME_TOLERANCE_PX,
+  isBare = false,
 }) => {
   const failures = [];
   const fail = (rule, detail) => failures.push({ scene, width, sidebar, rule, ...detail });
+  if (!isBare && (measured.crumb === null || measured.title === null)) {
+    fail('rule 1', {
+      check: 'the scene shows a crumb and an h1 to align',
+      crumb: measured.crumb === null ? null : round(measured.crumb.left),
+      title: measured.title === null ? null : round(measured.title.left),
+      body: measured.bodyChild === null ? null : round(measured.bodyChild.left),
+    });
+  }
   if (measured.crumb !== null && measured.title !== null) {
     const lefts = [measured.crumb.left, measured.title.left];
     if (measured.bodyChild !== null) {

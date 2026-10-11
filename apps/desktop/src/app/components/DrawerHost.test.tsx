@@ -21,7 +21,14 @@ import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { invoke } from '@tauri-apps/api/core';
-import type { AgentId, ArtifactId, IsoDateTime, ReportArtifact, SessionId } from '@goodboy/types';
+import type {
+  AgentId,
+  ArtifactId,
+  IsoDateTime,
+  MountId,
+  ReportArtifact,
+  SessionId,
+} from '@goodboy/types';
 import { aSession, anAgent } from '@goodboy/types/testing';
 import { useAppStore } from '../../store';
 import type { DrawerRequest } from '../../store/slices/drawer/state';
@@ -33,6 +40,7 @@ import { PLAN_FIXTURE_ID, PLAN_FIXTURE_SESSION } from '../../test/planFixtures';
 import { seedPlanDrawer } from '../../test/planDrawerFixtures';
 import { DrawerHost } from './DrawerHost';
 
+const MOUNT_ID: MountId = JSON.parse(JSON.stringify('mount-1'));
 const SESSION = 'session-harborline' as SessionId;
 const REPORT = 'artifact-report' as ArtifactId;
 const AGENT = 'agent-resolver' as AgentId;
@@ -85,6 +93,7 @@ const ENTRIES: ReadonlyArray<Entry> = [
       sessionId: SESSION,
       payload: {
         sessionId: SESSION,
+        mountId: MOUNT_ID,
         checkUrl: 'https://github.com/harborline/payments-api/actions/runs/31/job/42',
       },
     },

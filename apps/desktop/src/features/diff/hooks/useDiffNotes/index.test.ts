@@ -52,12 +52,24 @@ describe('useDiffNotes', () => {
 
     const open = result.current.threads.find((thread) => thread.id === NOTE_IDS.open);
     expect(open?.canEdit).toBe(true);
-    result.current.onEdit?.(NOTE_IDS.open, 'Cap the backoff at 30 seconds');
+    void result.current.onEdit?.(NOTE_IDS.open, 'Cap the backoff at 30 seconds');
 
     expect(editDiffComment).toHaveBeenCalledWith(
       CTX_SESSION_ID,
       NOTE_IDS.open,
       'Cap the backoff at 30 seconds',
+    );
+  });
+
+  it('hands the edit promise back so the composer can await a failure', async () => {
+    const editDiffComment = vi.fn(async () => {
+      throw new Error('Database is locked');
+    });
+    useAppStore.setState({ editDiffComment });
+    const { result } = read();
+
+    await expect(result.current.onEdit?.(NOTE_IDS.open, 'Cap it')).rejects.toThrow(
+      'Database is locked',
     );
   });
 

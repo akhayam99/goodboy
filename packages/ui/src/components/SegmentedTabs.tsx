@@ -132,6 +132,7 @@ export const SegmentedTabs = <T extends string>({
               style={activeStyle}
               className={cn(
                 'relative flex items-center justify-center gap-2 rounded-sm border border-transparent text-label motion-safe:transition-colors',
+                fill && 'w-full',
                 TAB_CLASSES[step],
                 FOCUS_RING,
                 isActive

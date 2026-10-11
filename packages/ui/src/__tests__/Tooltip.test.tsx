@@ -549,7 +549,7 @@ describe('Tooltip shortcut', () => {
   };
 
   it('draws the label and the keys as separate nodes with no parentheses', () => {
-    registerShortcutGlyphs((id) => (id === 'ask.open' ? '⌘L' : ''));
+    registerShortcutGlyphs({ lookup: ({ id }) => (id === 'ask.open' ? '⌘L' : '') });
     render(
       <Tooltip content="Ask an agent" shortcut="ask.open">
         <button type="button">btn</button>
@@ -565,7 +565,7 @@ describe('Tooltip shortcut', () => {
   });
 
   it('prints the label alone when the shortcut has no keys', () => {
-    registerShortcutGlyphs(() => '');
+    registerShortcutGlyphs({ lookup: () => '' });
     render(
       <Tooltip content="Ask an agent" shortcut="ask.open">
         <button type="button">btn</button>

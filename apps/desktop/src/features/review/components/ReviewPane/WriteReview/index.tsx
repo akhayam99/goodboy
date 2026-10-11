@@ -60,7 +60,7 @@ export const WriteReview = ({ session }: Props) => {
         );
       },
       onAskAgent: askAgent,
-      onEdit: (id, body) => void updateReviewDraft(id, body),
+      onEdit: (id, body) => updateReviewDraft(id, body),
       onDelete: (id) => void discardReviewDraft(id),
     }),
     [

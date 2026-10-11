@@ -367,7 +367,7 @@ export const Tooltip = ({
       },
     })
   );
-  const keys = shortcut === undefined ? '' : glyphsOfShortcut(shortcut);
+  const keys = shortcut === undefined ? '' : glyphsOfShortcut({ id: shortcut });
   const portalTarget =
     typeof document === 'undefined'
       ? null

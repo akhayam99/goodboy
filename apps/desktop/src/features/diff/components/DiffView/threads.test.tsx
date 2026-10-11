@@ -90,7 +90,7 @@ const commentsWith = (
   noun: 'note',
   allowFileLevel: true,
   onSubmit: vi.fn(),
-  onEdit: vi.fn(),
+  onEdit: vi.fn(async () => undefined),
   onClose: vi.fn(),
   onReopen: vi.fn(),
   onDelete: vi.fn(),
@@ -258,6 +258,37 @@ describe('a note in Files', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     expect(comments.onEdit).toHaveBeenCalledWith('note-1', 'Keep the note out of the row, please');
+  });
+
+  it('closes the editor once the edit is saved', async () => {
+    const comments = commentsWith([NOTE]);
+    render(<DiffView files={[FILE]} comments={comments} />);
+
+    fireEvent.click(within(noteCard()).getByRole('button', { name: 'Edit' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Edit note' }), {
+      target: { value: 'Saved text' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(screen.queryByRole('textbox', { name: 'Edit note' })).toBeNull());
+  });
+
+  it('keeps the editor, the typed text and shows the error when the edit fails', async () => {
+    const onEdit = vi.fn(async () => {
+      throw new Error('Database is locked');
+    });
+    render(<DiffView files={[FILE]} comments={commentsWith([NOTE], { onEdit })} />);
+
+    fireEvent.click(within(noteCard()).getByRole('button', { name: 'Edit' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Edit note' }), {
+      target: { value: 'Text that must survive' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect((await screen.findByRole('alert')).textContent).toContain('Database is locked');
+    const box = screen.getByRole('textbox', { name: 'Edit note' });
+    expect(box instanceof HTMLTextAreaElement && box.value).toBe('Text that must survive');
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDefined();
   });
 
   it('shows what the triage slot is given, right after the kind chip', () => {

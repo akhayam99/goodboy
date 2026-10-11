@@ -62,7 +62,7 @@ describe('IconButton', () => {
   });
 
   it('draws its shortcut after the name as faint keys, never in parentheses', async () => {
-    registerShortcutGlyphs((id) => (id === 'ask.open' ? '⌘L' : ''));
+    registerShortcutGlyphs({ lookup: ({ id }) => (id === 'ask.open' ? '⌘L' : '') });
     render(<IconButton icon={Trash2} label="Ask an agent" shortcut="ask.open" />);
     fireEvent.mouseEnter(screen.getByRole('button', { name: 'Ask an agent' }));
 

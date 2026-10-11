@@ -481,7 +481,7 @@ export const useSuggestionActions = ({
               useAppStore.getState().openDrawer({
                 kind: 'check-analysis',
                 sessionId,
-                payload: { sessionId, checkUrl: url },
+                payload: { sessionId, mountId: suggestion.payload.mountId, checkUrl: url },
               });
             },
           },

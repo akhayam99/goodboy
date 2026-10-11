@@ -722,4 +722,6 @@ export const shortcutRangeGlyphs = ({ first, last }: RangeParams): string => {
 
 const isShortcutId = (id: string): id is ShortcutId => Object.hasOwn(SHORTCUTS, id);
 
-registerShortcutGlyphs((id) => (isShortcutId(id) ? shortcutGlyphs(id) : ''));
+registerShortcutGlyphs({
+  lookup: ({ id }) => (isShortcutId(id) ? shortcutGlyphs(id) : ''),
+});
