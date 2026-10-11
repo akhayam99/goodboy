@@ -15,6 +15,8 @@ import type {
 } from '../../exploreHandlers';
 import type { ExploreEntryRow } from '../../exploreRows';
 import { fileGlyphOf } from '../../fileGlyph';
+import type { ChangedEntry } from '../../../worktree/worktree';
+import { ExploreChangeMark } from './ExploreChangeMark';
 import { ExploreIndent } from './ExploreIndent';
 import { ExploreRowActions } from './ExploreRowActions';
 
@@ -26,6 +28,8 @@ type Props = {
   readonly isActive: boolean;
   readonly isSelected: boolean;
   readonly isAskOpen: boolean;
+  readonly change: ChangedEntry | null;
+  readonly folderChangeCount: number;
   readonly onToggle: (params: SetExpandedParams) => void;
   readonly onSelectFile: (params: SelectFileParams) => void;
   readonly onRun: (params: RunRowActionParams) => void;
@@ -45,12 +49,15 @@ export const ExploreRow = ({
   isActive,
   isSelected,
   isAskOpen,
+  change,
+  folderChangeCount,
   onToggle,
   onSelectFile,
   onRun,
   onAskClosed,
 }: Props) => {
   const { entry } = row;
+  const isDeleted = change?.status === 'deleted';
   const menu = useObjectMenuTrigger({ target, anchorKey: `explore:${entry.relPath}` });
   const Glyph = entry.isDir
     ? row.isExpanded
@@ -67,6 +74,9 @@ export const ExploreRow = ({
     ) {
       return;
     }
+    if (isDeleted) {
+      return;
+    }
     if (entry.isDir) {
       onToggle({ path: entry.relPath, isExpanded: !row.isExpanded });
       return;
@@ -80,6 +90,7 @@ export const ExploreRow = ({
       aria-level={row.depth + 1}
       aria-expanded={entry.isDir ? row.isExpanded : undefined}
       aria-selected={isSelected}
+      aria-disabled={isDeleted ? true : undefined}
       aria-label={entry.name}
       tabIndex={isActive ? 0 : -1}
       data-row-id={row.id}
@@ -106,14 +117,22 @@ export const ExploreRow = ({
         <span aria-hidden className="w-3.5 shrink-0" />
       )}
       <Glyph size={ICON_SIZE.control} aria-hidden className="shrink-0 text-muted-foreground" />
-      <span className="flex min-w-0 flex-1 text-row text-foreground">
+      <span
+        className={cn(
+          'flex min-w-0 flex-1 text-row text-foreground',
+          isDeleted && 'text-faint-foreground line-through',
+        )}
+      >
         {entry.isDir ? (
           <span className="truncate">{entry.name}</span>
         ) : (
           <MiddleText value={entry.name} tail={EXTENSION} />
         )}
       </span>
-      <span aria-hidden data-slot="explore-change-slot" className="size-4 shrink-0" />
+      <ExploreChangeMark
+        change={change}
+        folderChangeCount={entry.isDir && !row.isExpanded ? folderChangeCount : 0}
+      />
       <span
         data-slot="explore-size"
         className={cn(
@@ -133,13 +152,15 @@ export const ExploreRow = ({
         {age}
       </span>
       <span aria-hidden className="hidden w-20 shrink-0 @max-[440px]:block" />
-      <ExploreRowActions
-        sessionId={sessionId}
-        target={target}
-        isAskOpen={isAskOpen}
-        onRun={onRun}
-        onAskClosed={onAskClosed}
-      />
+      {isDeleted ? null : (
+        <ExploreRowActions
+          sessionId={sessionId}
+          target={target}
+          isAskOpen={isAskOpen}
+          onRun={onRun}
+          onAskClosed={onAskClosed}
+        />
+      )}
     </div>
   );
 };
