@@ -545,10 +545,21 @@ describe('frameFailures', () => {
 });
 
 describe('the frame probe scene list', () => {
-  it('lists about two dozen scenes, each once', () => {
+  it('lists each scene once, with the pages that once had no page container', () => {
     const ids = FRAME_SCENES.map((entry) => entry.scene);
     assert.equal(new Set(ids).size, ids.length);
-    assert.ok(ids.length >= 22 && ids.length <= 26);
+    assert.ok(ids.length >= 22 && ids.length <= 34);
+    for (const scene of [
+      'scripts-rows',
+      'monitoring-ports',
+      'terminal-studio',
+      'agent-running-stop',
+      'branch-commits',
+      'branch-files',
+      'branch-open',
+    ]) {
+      assert.ok(ids.includes(scene), scene);
+    }
   });
 
   it('measures a scene pinned, and on the rail only when it has a rail query', () => {

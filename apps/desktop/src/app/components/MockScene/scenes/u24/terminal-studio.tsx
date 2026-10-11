@@ -16,6 +16,7 @@ import type { TerminalTab, TerminalTabId } from '../../../../../shared/types/ter
 import { useAppStore } from '../../../../../store';
 import { sceneClock } from '../../sceneClock';
 import { useSceneClicks } from '../audit/useSceneClicks';
+import { PageSheet } from '../PageSheet';
 import { mockSceneIpc } from '../mockSceneIpc';
 import { brandedId } from '../../../../../features/history/testing/brandedId';
 
@@ -323,22 +324,24 @@ const TerminalStudioScene = ({ variant }: Props) => {
   }
 
   return (
-    <main className="h-screen overflow-hidden bg-background text-foreground">
-      {variant === 'session' ? (
-        <SessionTerminalLens
-          workspaceId={WORKSPACE_ID}
-          sessionId={SESSION_ID}
-          isActive
-          sessionCwd={null}
-        />
-      ) : (
-        <TerminalStudio
-          workspaceId={WORKSPACE_ID}
-          terminalId={studio?.kind === 'terminal' ? studio.terminalId : null}
-          sessionId={studio?.kind === 'terminal' ? studio.sessionId : SESSION_ID}
-          onClose={NOOP}
-        />
-      )}
+    <main className="flex h-screen overflow-hidden bg-background text-foreground">
+      <PageSheet>
+        {variant === 'session' ? (
+          <SessionTerminalLens
+            workspaceId={WORKSPACE_ID}
+            sessionId={SESSION_ID}
+            isActive
+            sessionCwd={null}
+          />
+        ) : (
+          <TerminalStudio
+            workspaceId={WORKSPACE_ID}
+            terminalId={studio?.kind === 'terminal' ? studio.terminalId : null}
+            sessionId={studio?.kind === 'terminal' ? studio.sessionId : SESSION_ID}
+            onClose={NOOP}
+          />
+        )}
+      </PageSheet>
     </main>
   );
 };

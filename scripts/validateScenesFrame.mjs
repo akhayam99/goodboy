@@ -30,6 +30,13 @@ export const FRAME_SCENES = [
   { scene: 'frame&view=guide', rail: FRAME_CTX_RAIL_QUERY },
   { scene: 'frame&view=changelog', rail: FRAME_CTX_RAIL_QUERY },
   { scene: 'drawer-split-plan', rail: FRAME_RAIL_QUERY },
+  { scene: 'scripts-rows', rail: null },
+  { scene: 'monitoring-ports', rail: null },
+  { scene: 'terminal-studio', rail: null },
+  { scene: 'agent-running-stop', rail: null },
+  { scene: 'branch-commits', rail: null },
+  { scene: 'branch-files', rail: null },
+  { scene: 'branch-open', rail: null },
 ];
 
 export const frameSceneVariants = ({ entry }) => {
