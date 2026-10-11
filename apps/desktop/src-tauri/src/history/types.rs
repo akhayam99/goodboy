@@ -136,6 +136,8 @@ pub struct MoveBranchArgs {
     pub should_stash: bool,
     #[serde(default)]
     pub restore_stash: Option<String>,
+    #[serde(default)]
+    pub forget_stash: Option<String>,
     pub worktree_path: String,
     pub branch: String,
     pub expected_head: String,
@@ -169,6 +171,9 @@ pub enum MoveOutcome {
         stash: String,
         #[serde(rename = "cleanupError", skip_serializing_if = "Option::is_none")]
         cleanup_error: Option<String>,
+    },
+    Forgotten {
+        stash: String,
     },
     RestoreConflict {
         stash: String,

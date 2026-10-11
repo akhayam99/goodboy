@@ -1,11 +1,11 @@
 use super::backups::{backup_namespace, is_backup_of, now_nanos, KEPT_STAMP};
 use super::dirty::{
-    dirty_files, drop_own_stash, find_stash, overlap_for_repo, push_stash, restore_stash,
-    stash_message, touched_files,
+    dirty_files, drop_own_stash, find_stash, is_restored, object_exists, overlap_for_repo,
+    prune_guards, push_stash, restore_stash, stash_message, touched_files,
 };
 use super::journal::{
     branch_ref, branch_tip, is_consistent, is_on_branch, journal_of, matches_tree, pending_stash,
-    recover_journal, write_journal,
+    recover_journal, roll_back_intent, set_phase, write_journal, Intent,
 };
 use super::plan::plan_error;
 use super::preflight::{blocking_reason, untracked_in_the_way};
@@ -61,6 +61,7 @@ pub(super) fn move_branch_with(
     if let Some(reason) = recover_journal(cwd)? {
         return Ok(MoveOutcome::Blocked { reason });
     }
+    prune_old_guards(cwd);
     let current_branch = crate::worktree::current_branch_name(cwd).unwrap_or_default();
     if current_branch != branch {
         return Ok(MoveOutcome::Blocked {
@@ -158,7 +159,7 @@ pub(super) fn move_branch_with(
                         reason: "The branch changed. Your files remain set aside.".to_string(),
                     });
                 }
-                let files = restore_stash(cwd, &sha)?;
+                let files = restore_marked(cwd, &journal, &sha)?;
                 if files.is_empty() {
                     if !is_on_branch(cwd, branch) || resolve_commit(cwd, "HEAD")? != expected {
                         return Ok(MoveOutcome::SetAside {
@@ -185,7 +186,36 @@ pub(super) fn move_branch_with(
                         .to_string(),
                 });
             }
-            return Err(plan_error("Couldn't locate the saved files safely. The journal was kept. Check the stash in the terminal before continuing."));
+            if let Ok(sha) = &pushed {
+                if stash_message(cwd, sha).is_ok_and(|text| text == message) {
+                    let _ = git_run(
+                        cwd,
+                        &["update-ref", &format!("refs/goodboy/stash/{sha}"), sha, ""],
+                        None,
+                        None,
+                    );
+                }
+            }
+            roll_back_intent(
+                cwd,
+                &journal,
+                &Intent {
+                    old: &expected,
+                    new: &target,
+                    backup: &backup_ref,
+                    branch,
+                },
+            )?;
+            return Ok(MoveOutcome::Blocked {
+                reason: match pushed {
+                    Err(error) => format!(
+                        "Couldn't set your files aside safely. Nothing was changed. {error}"
+                    ),
+                    Ok(_) => {
+                        "Couldn't set your files aside safely. Nothing was changed.".to_string()
+                    }
+                },
+            });
         }
         saved = ours.map(|sha| (sha, message));
         #[cfg(test)]
@@ -210,7 +240,7 @@ pub(super) fn move_branch_with(
                 reason: "The branch changed. Your files remain set aside.".to_string(),
             });
         }
-        let files = restore_stash(cwd, &sha)?;
+        let files = restore_marked(cwd, &journal, &sha)?;
         if !files.is_empty() {
             return Ok(MoveOutcome::RestoreConflict {
                 stash: sha,
@@ -352,6 +382,9 @@ pub async fn history_plan_apply(
             return Err(WorktreeError::RepoNotFound(args.worktree_path));
         }
         with_lease(&registry, &args.worktree_path, || {
+            if let Some(stash) = &args.forget_stash {
+                return forget_saved(&cwd, &args.branch, &args.expected_head, stash);
+            }
             if let Some(stash) = &args.restore_stash {
                 return bring_back(&cwd, &args.branch, &args.expected_head, stash);
             }
@@ -399,10 +432,32 @@ pub async fn history_restore(
     .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
-fn mark_restored(journal: &Path) -> Result<(), WorktreeError> {
-    let raw = std::fs::read_to_string(journal)?;
-    write_journal(journal, &format!("{}\nrestored\n", raw.trim_end()))?;
-    Ok(())
+fn restore_marked(cwd: &Path, journal: &Path, sha: &str) -> Result<Vec<String>, WorktreeError> {
+    set_phase(journal, Some("restoring"))?;
+    let outcome = restore_stash(cwd, sha);
+    if !outcome.as_ref().is_ok_and(Vec::is_empty) {
+        let _ = set_phase(journal, None);
+    }
+    outcome
+}
+
+fn now_secs() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|elapsed| elapsed.as_secs())
+        .unwrap_or_default()
+}
+
+fn pending_guard(cwd: &Path) -> Option<String> {
+    let raw = std::fs::read_to_string(journal_of(cwd)?).ok()?;
+    raw.lines()
+        .nth(4)
+        .and_then(|line| line.strip_prefix("stash "))
+        .map(str::to_string)
+}
+
+fn prune_old_guards(cwd: &Path) {
+    let _ = prune_guards(cwd, now_secs(), pending_guard(cwd).as_deref());
 }
 
 fn finish_restoration(
@@ -411,18 +466,24 @@ fn finish_restoration(
     sha: &str,
     message: &str,
 ) -> Result<(), WorktreeError> {
-    mark_restored(journal)?;
+    set_phase(journal, Some("restored"))?;
     drop_own_stash(cwd, sha, message)?;
-    git(
-        cwd,
-        &[
-            "update-ref",
-            "-d",
-            &format!("refs/goodboy/stash/{sha}"),
-            sha,
-        ],
-    )?;
     std::fs::remove_file(journal)?;
+    Ok(())
+}
+
+fn settle_interrupted_move(
+    cwd: &Path,
+    expected: &str,
+    old: &str,
+    new: &str,
+) -> Result<(), WorktreeError> {
+    if expected == old && matches_tree(cwd, new) {
+        git(cwd, &["read-tree", "-m", "-u", new, old])?;
+    }
+    if expected == new && matches_tree(cwd, old) {
+        git(cwd, &["read-tree", "-m", "-u", old, new])?;
+    }
     Ok(())
 }
 
@@ -450,16 +511,25 @@ pub(super) fn bring_back(
     let lines: Vec<&str> = raw.lines().collect();
     let old = lines.first().copied().unwrap_or_default();
     let new = lines.get(1).copied().unwrap_or_default();
-    if expected == old && matches_tree(cwd, new) {
-        git(cwd, &["read-tree", "-m", "-u", new, old])?;
+    settle_interrupted_move(cwd, expected, old, new)?;
+    if !object_exists(cwd, sha) {
+        return Ok(MoveOutcome::Blocked {
+            reason: "That stash is gone, so there is nothing to bring back. Use Done, forget it."
+                .to_string(),
+        });
     }
-    if expected == new && matches_tree(cwd, old) {
-        git(cwd, &["read-tree", "-m", "-u", old, new])?;
+    if lines.get(6) == Some(&"restoring") && is_restored(cwd, sha)? {
+        return Ok(MoveOutcome::FilesRestored {
+            stash: sha.to_string(),
+            cleanup_error: finish_restoration(cwd, &journal, sha, &message)
+                .err()
+                .map(|error| format!("Stash {sha}: {error}")),
+        });
     }
     if let Some(reason) = blocking_reason(cwd, false) {
         return Ok(MoveOutcome::Blocked { reason });
     }
-    let files = restore_stash(cwd, sha)?;
+    let files = restore_marked(cwd, &journal, sha)?;
     if !files.is_empty() {
         return Ok(MoveOutcome::RestoreConflict {
             stash: sha.to_string(),
@@ -474,11 +544,53 @@ pub(super) fn bring_back(
             reason: "The branch changed while restoring. The stash was kept.".to_string(),
         });
     }
+    prune_old_guards(cwd);
     Ok(MoveOutcome::FilesRestored {
         stash: sha.to_string(),
         cleanup_error: finish_restoration(cwd, &journal, sha, &message)
             .err()
             .map(|error| format!("Stash {sha}: {error}")),
+    })
+}
+
+pub(super) fn forget_saved(
+    cwd: &Path,
+    branch: &str,
+    expected: &str,
+    sha: &str,
+) -> Result<MoveOutcome, WorktreeError> {
+    let Some(journal) = journal_of(cwd).filter(|path| path.exists()) else {
+        return Ok(MoveOutcome::Blocked {
+            reason: "No files are set aside here.".to_string(),
+        });
+    };
+    let raw = std::fs::read_to_string(&journal)?;
+    let lines: Vec<&str> = raw.lines().collect();
+    if lines.get(3) != Some(&branch) || lines.get(4) != Some(&format!("stash {sha}").as_str()) {
+        return Err(plan_error("these saved files belong to another rewrite"));
+    }
+    if !is_on_branch(cwd, branch) {
+        return Ok(MoveOutcome::Blocked {
+            reason: format!("This worktree is no longer on {branch}, so nothing was changed."),
+        });
+    }
+    settle_interrupted_move(
+        cwd,
+        expected,
+        lines.first().copied().unwrap_or_default(),
+        lines.get(1).copied().unwrap_or_default(),
+    )?;
+    if object_exists(cwd, sha) {
+        let _ = git_run(
+            cwd,
+            &["update-ref", &format!("refs/goodboy/stash/{sha}"), sha, ""],
+            None,
+            None,
+        );
+    }
+    std::fs::remove_file(&journal)?;
+    Ok(MoveOutcome::Forgotten {
+        stash: sha.to_string(),
     })
 }
 

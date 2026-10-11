@@ -1,7 +1,8 @@
 use super::{
-    dirty_files, drop_own_stash, overlap, parse_dirty, stash_entries, stash_message, AFTER_PUSH,
+    dirty_files, drop_own_stash, is_restored, overlap, parse_dirty, prune_guards, stash_entries,
+    stash_message, AFTER_PUSH, BEFORE_DROP, GUARD_RETENTION_SECS,
 };
-use crate::history::apply::{bring_back, move_branch_with, BEFORE_MOVE};
+use crate::history::apply::{bring_back, forget_saved, move_branch_with, BEFORE_MOVE};
 use crate::history::fixtures::{commit, git_ok, init_repo};
 use crate::history::journal::{journal_of, pending_stash, recover_journal};
 use crate::history::types::MoveOutcome;
@@ -301,47 +302,6 @@ fn bring_back_rolls_back_an_interrupted_file_move_before_applying() {
 }
 
 #[test]
-fn committed_locks_never_remove_a_new_lock_at_the_same_path() {
-    let (root, _, _) = repository("lock-ownership");
-    let older = older_stashes(&root);
-    let sha = &older[0];
-    let message = stash_message(&root, sha).unwrap();
-    let log_lock = root.join(".git/logs/refs/stash.lock");
-    super::AFTER_LOCK_COMMIT.with(|hook| {
-        *hook.borrow_mut() = Some(Box::new(|path| {
-            std::fs::write(path, "another process").unwrap();
-        }))
-    });
-    drop_own_stash(&root, sha, &message).unwrap();
-    assert_eq!(
-        std::fs::read_to_string(&log_lock).unwrap(),
-        "another process"
-    );
-    std::fs::remove_file(log_lock).unwrap();
-}
-
-#[test]
-fn a_cleanup_crash_keeps_every_other_reflog_entry() {
-    let (root, _, _) = repository("cleanup-crash");
-    let older = older_stashes(&root);
-    std::fs::write(root.join("notes.txt"), "Goodboy saved files\n").unwrap();
-    git_ok(&root, &["stash", "push", "-m", "goodboy: rebase feature 1"]);
-    let sha = git_ok(&root, &["rev-parse", "refs/stash"]);
-    let message = stash_message(&root, &sha).unwrap();
-    super::AFTER_LOG_COMMIT
-        .with(|hook| *hook.borrow_mut() = Some(Box::new(|_| panic!("simulated cleanup crash"))));
-    assert!(std::panic::catch_unwind(|| drop_own_stash(&root, &sha, &message)).is_err());
-    let raw = std::fs::read_to_string(root.join(".git/logs/refs/stash")).unwrap();
-    let remaining: Vec<&str> = raw
-        .lines()
-        .rev()
-        .map(|line| line.split_whitespace().nth(1).unwrap())
-        .collect();
-    assert_eq!(remaining, older);
-    assert_eq!(git_ok(&root, &["rev-parse", "refs/stash"]), sha);
-}
-
-#[test]
 fn ambiguous_duplicate_stashes_are_never_deleted() {
     let (root, _, _) = repository("duplicate-stash");
     let older = older_stashes(&root);
@@ -401,27 +361,7 @@ fn a_recorded_stash_can_be_restored_after_its_shared_entry_is_dropped() {
         std::fs::read(root.join("ledger.txt")).unwrap(),
         b"mine\ntwo\nthree\n"
     );
-    assert!(git_ok(
-        &root,
-        &["for-each-ref", "--format=%(refname)", "refs/goodboy/stash"]
-    )
-    .is_empty());
-}
-
-#[test]
-fn unresolved_stash_intent_is_never_deleted_as_a_clean_rewrite() {
-    let (root, old, new) = repository("missing-intent");
-    let journal = journal_of(&root).unwrap();
-    std::fs::write(
-        &journal,
-        format!(
-            "{old}\n{new}\nbackup\nfeature\nstash pending\nOn feature: goodboy: rebase feature 1\n"
-        ),
-    )
-    .unwrap();
-    assert!(recover_journal(&root).is_err());
-    assert!(journal.exists());
-    assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), old);
+    assert_eq!(guards(&root), vec![sha]);
 }
 
 #[test]
@@ -509,4 +449,208 @@ fn undo_requires_consent_and_restores_files_with_a_kept_backup() {
         b"mine\ntwo\nthree\n"
     );
     assert!(stash_entries(&root).unwrap().is_empty());
+}
+
+fn guards(root: &std::path::Path) -> Vec<String> {
+    git_ok(
+        root,
+        &[
+            "for-each-ref",
+            "--format=%(objectname)",
+            "refs/goodboy/stash",
+        ],
+    )
+    .lines()
+    .map(str::to_string)
+    .collect()
+}
+
+fn backups(root: &std::path::Path) -> String {
+    git_ok(root, &["for-each-ref", "refs/goodboy/backup"])
+}
+
+fn crash_with_saved_files(root: &std::path::Path, old: &str, new: &str) -> String {
+    std::fs::write(root.join("ledger.txt"), "mine\ntwo\nthree\n").unwrap();
+    std::fs::write(root.join("untracked.txt"), "untracked\n").unwrap();
+    BEFORE_MOVE.with(|hook| *hook.borrow_mut() = Some(Box::new(|_| panic!("simulated crash"))));
+    assert!(std::panic::catch_unwind(|| move_to(root, old, new, true)).is_err());
+    pending_stash(root).unwrap().unwrap().0
+}
+
+#[test]
+fn a_failed_stash_push_rolls_the_journal_back_and_never_blocks_the_next_job() {
+    let (root, old, new) = repository("push-fails");
+    std::fs::write(root.join("ledger.txt"), "mine\ntwo\nthree\n").unwrap();
+    let lock = root.join(".git/index.lock");
+    std::fs::write(&lock, "another process").unwrap();
+    let MoveOutcome::Blocked { reason } = move_to(&root, &old, &new, true) else {
+        panic!("expected the stash failure to block");
+    };
+    assert!(reason.contains("Nothing was changed"));
+    std::fs::remove_file(&lock).unwrap();
+    assert!(!journal_of(&root).unwrap().exists());
+    assert!(backups(&root).is_empty());
+    assert!(pending_stash(&root).unwrap().is_none());
+    assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), old);
+    assert_eq!(
+        std::fs::read(root.join("ledger.txt")).unwrap(),
+        b"mine\ntwo\nthree\n"
+    );
+    assert!(matches!(
+        move_to(&root, &old, &new, true),
+        MoveOutcome::Moved { .. }
+    ));
+}
+
+#[test]
+fn a_crash_before_the_stash_exists_is_settled_by_the_next_job() {
+    let (root, old, new) = repository("missing-intent");
+    std::fs::write(root.join("ledger.txt"), "mine\ntwo\nthree\n").unwrap();
+    let namespace = crate::history::backups::backup_namespace("feature");
+    let backup = format!("{namespace}/123");
+    git_ok(&root, &["update-ref", &backup, &old]);
+    let journal = journal_of(&root).unwrap();
+    std::fs::write(
+        &journal,
+        format!(
+            "{old}\n{new}\n{backup}\nfeature\nstash pending\nOn feature: goodboy: rebase feature 1\n"
+        ),
+    )
+    .unwrap();
+    assert!(pending_stash(&root).unwrap().is_none());
+    assert_eq!(recover_journal(&root).unwrap(), None);
+    assert!(!journal.exists());
+    assert!(backups(&root).is_empty());
+    assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), old);
+    assert!(matches!(
+        move_to(&root, &old, &new, true),
+        MoveOutcome::Moved { .. }
+    ));
+}
+
+#[test]
+fn done_forget_it_clears_the_journal_and_keeps_the_guard_ref() {
+    let (root, old, new) = repository("forget");
+    let sha = crash_with_saved_files(&root, &old, &new);
+    let outcome = forget_saved(&root, "feature", &old, &sha).unwrap();
+    assert_eq!(outcome, MoveOutcome::Forgotten { stash: sha.clone() });
+    assert!(!journal_of(&root).unwrap().exists());
+    assert_eq!(guards(&root), vec![sha.clone()]);
+    assert_eq!(stash_entries(&root).unwrap(), vec![sha]);
+    assert!(pending_stash(&root).unwrap().is_none());
+}
+
+#[test]
+fn forgetting_files_of_another_branch_or_stash_is_refused() {
+    let (root, old, new) = repository("forget-other");
+    let sha = crash_with_saved_files(&root, &old, &new);
+    assert!(forget_saved(&root, "other", &old, &sha).is_err());
+    assert!(forget_saved(&root, "feature", &old, &old).is_err());
+    assert!(journal_of(&root).unwrap().exists());
+}
+
+#[test]
+fn a_stash_that_is_gone_is_clearable_instead_of_an_error() {
+    let (root, old, new) = repository("forget-gone");
+    let gone = "a".repeat(40);
+    let journal = journal_of(&root).unwrap();
+    std::fs::write(
+        &journal,
+        format!(
+            "{old}\n{new}\nbackup\nfeature\nstash {gone}\nOn feature: goodboy: rebase feature 1\n"
+        ),
+    )
+    .unwrap();
+    assert_eq!(pending_stash(&root).unwrap().unwrap().0, gone);
+    let MoveOutcome::Blocked { reason } = bring_back(&root, "feature", &old, &gone).unwrap() else {
+        panic!("expected a clear message");
+    };
+    assert!(reason.contains("forget"));
+    assert!(matches!(
+        forget_saved(&root, "feature", &old, &gone).unwrap(),
+        MoveOutcome::Forgotten { .. }
+    ));
+    assert!(!journal.exists());
+    assert!(guards(&root).is_empty());
+}
+
+#[test]
+fn a_crash_after_the_restore_does_not_block_bring_back_forever() {
+    let (root, old, new) = repository("restore-crash");
+    let sha = crash_with_saved_files(&root, &old, &new);
+    let journal = journal_of(&root).unwrap();
+    let raw = std::fs::read_to_string(&journal).unwrap();
+    std::fs::write(&journal, format!("{raw}restoring\n")).unwrap();
+    git_ok(&root, &["stash", "apply", "--index", &sha]);
+    assert!(is_restored(&root, &sha).unwrap());
+    assert!(matches!(
+        bring_back(&root, "feature", &old, &sha).unwrap(),
+        MoveOutcome::FilesRestored {
+            cleanup_error: None,
+            ..
+        }
+    ));
+    assert!(!journal.exists());
+    assert!(stash_entries(&root).unwrap().is_empty());
+    assert_eq!(guards(&root), vec![sha]);
+    assert_eq!(
+        std::fs::read(root.join("ledger.txt")).unwrap(),
+        b"mine\ntwo\nthree\n"
+    );
+}
+
+#[test]
+fn a_restore_that_never_happened_is_not_mistaken_for_one() {
+    let (root, old, new) = repository("not-restored");
+    let sha = crash_with_saved_files(&root, &old, &new);
+    assert!(!is_restored(&root, &sha).unwrap());
+}
+
+#[test]
+fn cleanup_drops_the_entry_by_sha_and_a_shifted_slot_is_put_back() {
+    let (root, _, _) = repository("drop-race");
+    std::fs::write(root.join("notes.txt"), "Goodboy saved files\n").unwrap();
+    git_ok(&root, &["stash", "push", "-m", "goodboy: rebase feature 1"]);
+    let sha = git_ok(&root, &["rev-parse", "refs/stash"]);
+    let message = stash_message(&root, &sha).unwrap();
+    BEFORE_DROP.with(|hook| {
+        *hook.borrow_mut() = Some(Box::new(|cwd| {
+            std::fs::write(cwd.join("notes.txt"), "Cascadia newer\n").unwrap();
+            git_ok(cwd, &["stash", "push", "-m", "Cascadia newer"]);
+        }))
+    });
+    assert!(drop_own_stash(&root, &sha, &message).is_err());
+    let entries = stash_entries(&root).unwrap();
+    assert_eq!(entries.len(), 2);
+    assert!(entries.contains(&sha));
+    assert!(entries.iter().any(|entry| stash_message(&root, entry)
+        .unwrap()
+        .contains("Cascadia newer")));
+}
+
+#[test]
+fn a_clean_drop_removes_only_the_entry_that_matches() {
+    let (root, _, _) = repository("drop-by-sha");
+    let older = older_stashes(&root);
+    std::fs::write(root.join("notes.txt"), "Goodboy saved files\n").unwrap();
+    git_ok(&root, &["stash", "push", "-m", "goodboy: rebase feature 2"]);
+    let sha = git_ok(&root, &["rev-parse", "refs/stash"]);
+    let message = stash_message(&root, &sha).unwrap();
+    drop_own_stash(&root, &sha, &message).unwrap();
+    assert_eq!(stash_entries(&root).unwrap(), older);
+}
+
+#[test]
+fn guard_refs_live_fourteen_days_and_a_pending_one_never_goes() {
+    let (root, old, new) = repository("guards");
+    let sha = crash_with_saved_files(&root, &old, &new);
+    let created: u64 = git_ok(&root, &["show", "-s", "--format=%ct", &sha])
+        .parse()
+        .unwrap();
+    prune_guards(&root, created + GUARD_RETENTION_SECS, None).unwrap();
+    assert_eq!(guards(&root), vec![sha.clone()]);
+    prune_guards(&root, created + GUARD_RETENTION_SECS + 1, Some(&sha)).unwrap();
+    assert_eq!(guards(&root), vec![sha.clone()]);
+    prune_guards(&root, created + GUARD_RETENTION_SECS + 1, None).unwrap();
+    assert!(guards(&root).is_empty());
 }

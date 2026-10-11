@@ -1,10 +1,8 @@
-use super::journal::sync_directory;
 use super::plan::plan_error;
 use super::runner::git_run;
 use crate::worktree::{git, resolve_commit, WorktreeError};
 use std::collections::BTreeSet;
-use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 pub(super) fn paths(raw: &str) -> Vec<String> {
     raw.split('\0')
@@ -212,186 +210,154 @@ pub(super) fn push_stash(cwd: &Path, message: &str) -> Result<String, WorktreeEr
     resolve_commit(cwd, "refs/stash")
 }
 
-struct StashLock {
-    path: PathBuf,
-    is_active: bool,
-}
-
-impl Drop for StashLock {
-    fn drop(&mut self) {
-        if self.is_active {
-            let _ = std::fs::remove_file(&self.path);
-        }
-    }
-}
-
-impl StashLock {
-    fn commit(mut self, target: &Path) -> Result<(), WorktreeError> {
-        std::fs::rename(&self.path, target)?;
-        self.is_active = false;
-        if let Some(parent) = target.parent() {
-            sync_directory(parent)?;
-        }
-        #[cfg(test)]
-        AFTER_LOCK_COMMIT.with(|hook| {
-            if let Some(hook) = hook.borrow_mut().take() {
-                hook(&self.path);
-            }
-        });
-        Ok(())
-    }
-}
-
-fn lock(path: PathBuf) -> Result<(StashLock, std::fs::File), WorktreeError> {
-    let file = std::fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(&path)?;
-    Ok((
-        StashLock {
-            path,
-            is_active: true,
-        },
-        file,
-    ))
+pub(super) fn object_exists(cwd: &Path, sha: &str) -> bool {
+    git_run(
+        cwd,
+        &["cat-file", "-e", &format!("{sha}^{{commit}}")],
+        None,
+        None,
+    )
+    .is_ok_and(|run| run.status == 0)
 }
 
 pub(super) fn drop_own_stash(cwd: &Path, sha: &str, message: &str) -> Result<(), WorktreeError> {
     if !own_stash(cwd, sha, message)? {
         return Ok(());
     }
-    let reference = PathBuf::from(
-        git(
-            cwd,
-            &[
-                "rev-parse",
-                "--path-format=absolute",
-                "--git-path",
-                "refs/stash",
-            ],
-        )?
-        .trim(),
-    );
-    let log = PathBuf::from(
-        git(
-            cwd,
-            &[
-                "rev-parse",
-                "--path-format=absolute",
-                "--git-path",
-                "logs/refs/stash",
-            ],
-        )?
-        .trim(),
-    );
-    let (reference_lock, mut reference_file) = lock(reference.with_extension("lock"))?;
-    let (log_lock, mut log_file) = lock(log.with_extension("lock"))?;
-    let raw = std::fs::read_to_string(&log)?;
-    let mut kept = Vec::new();
-    let mut has_removed = false;
-    let copies = raw
-        .lines()
-        .filter(|line| line.split_whitespace().nth(1) == Some(sha))
-        .count();
-    if copies > 1 {
+    let positions: Vec<usize> = stash_entries(cwd)?
+        .iter()
+        .enumerate()
+        .filter(|(_, entry)| entry.as_str() == sha)
+        .map(|(index, _)| index)
+        .collect();
+    if positions.len() > 1 {
         return Err(plan_error(
             "the stash has duplicate entries; they were kept safely",
         ));
     }
-    for line in raw.lines() {
-        let mut fields = line.splitn(3, ' ');
-        let old = fields.next().unwrap_or_default();
-        let new = fields.next().unwrap_or_default();
-        let rest = fields.next().unwrap_or_default();
-        if old.len() != sha.len() || new.len() != sha.len() || !rest.contains('\t') {
-            return Err(plan_error(
-                "couldn't clean up the stash safely; your files are restored",
-            ));
-        }
-        if new == sha
-            && rest
-                .split_once('\t')
-                .is_some_and(|(_, text)| text == message)
-        {
-            has_removed = true;
-            continue;
-        }
-        kept.push(line.to_string());
-    }
-    if !has_removed {
+    let Some(index) = positions.first() else {
         return Ok(());
-    }
-    let tip = resolve_commit(cwd, "refs/stash")?;
-    if kept.is_empty() {
-        let packed = git_run(cwd, &["show-ref", "--verify", "refs/stash"], None, None)?;
-        if packed.status != 0 || !reference.exists() || tip != sha {
-            return Err(plan_error(
-                "couldn't clean up the stash safely; your files are restored",
-            ));
-        }
-        let packed_path = PathBuf::from(
-            git(
-                cwd,
-                &[
-                    "rev-parse",
-                    "--path-format=absolute",
-                    "--git-path",
-                    "packed-refs",
-                ],
-            )?
-            .trim(),
-        );
-        if packed_path.exists()
-            && std::fs::read_to_string(packed_path)?
-                .lines()
-                .any(|line| line.ends_with(" refs/stash"))
-        {
-            return Err(plan_error(
-                "the restored stash is packed; it was kept safely",
-            ));
-        }
-        std::fs::remove_file(&reference)?;
-        if let Some(parent) = reference.parent() {
-            sync_directory(parent)?;
-        }
-        log_file.sync_all()?;
-        log_lock.commit(&log)?;
-        return Ok(());
-    }
-    let mut previous = "0".repeat(sha.len());
-    for line in &mut kept {
-        let (_, rest) = line
-            .split_once(' ')
-            .ok_or_else(|| plan_error("the stash log is incomplete"))?;
-        let next = rest
-            .split_whitespace()
-            .next()
-            .unwrap_or_default()
-            .to_string();
-        *line = format!("{previous} {rest}");
-        previous = next;
-    }
-    let new_tip = kept
-        .last()
-        .and_then(|line| line.split_whitespace().nth(1))
-        .ok_or_else(|| plan_error("the stash log is incomplete"))?;
-    if tip != sha && tip != new_tip {
+    };
+    let slot = format!("stash@{{{index}}}");
+    if resolve_commit(cwd, &slot)? != sha {
         return Err(plan_error(
             "the stash changed during cleanup; it was kept safely",
         ));
     }
-    log_file.write_all(format!("{}\n", kept.join("\n")).as_bytes())?;
-    log_file.sync_all()?;
-    reference_file.write_all(format!("{new_tip}\n").as_bytes())?;
-    reference_file.sync_all()?;
-    log_lock.commit(&log)?;
     #[cfg(test)]
-    AFTER_LOG_COMMIT.with(|hook| {
+    BEFORE_DROP.with(|hook| {
         if let Some(hook) = hook.borrow_mut().take() {
             hook(cwd);
         }
     });
-    reference_lock.commit(&reference)?;
+    let printed = git(cwd, &["stash", "drop", &slot])?;
+    let dropped = printed
+        .split(['(', ')'])
+        .nth(1)
+        .map(str::trim)
+        .unwrap_or_default();
+    if dropped == sha {
+        return Ok(());
+    }
+    if dropped.is_empty() || !object_exists(cwd, dropped) {
+        return Err(plan_error(
+            "the stash changed during cleanup; check it in the terminal",
+        ));
+    }
+    let subject = stash_message(cwd, dropped)?;
+    git(cwd, &["stash", "store", "-m", &subject, dropped])?;
+    Err(plan_error(
+        "the stash changed during cleanup; it was kept safely",
+    ))
+}
+
+pub(super) fn is_restored(cwd: &Path, sha: &str) -> Result<bool, WorktreeError> {
+    let unmerged = git_run(
+        cwd,
+        &["diff", "--name-only", "--diff-filter=U", "-z"],
+        None,
+        None,
+    )?;
+    if !paths(&unmerged.stdout).is_empty() {
+        return Ok(false);
+    }
+    let mut has_evidence = false;
+    let untracked = format!("{sha}^3");
+    if git_run(
+        cwd,
+        &["rev-parse", "--verify", "--quiet", &untracked],
+        None,
+        None,
+    )?
+    .status
+        == 0
+    {
+        let listing = git(cwd, &["ls-tree", "-r", "-z", &untracked])?;
+        for record in listing.split('\0').filter(|record| !record.is_empty()) {
+            let Some((meta, path)) = record.split_once('\t') else {
+                return Ok(false);
+            };
+            let Some(oid) = meta.split_whitespace().nth(2) else {
+                return Ok(false);
+            };
+            if !cwd.join(path).is_file() {
+                return Ok(false);
+            }
+            let hashed = git_run(cwd, &["hash-object", "--", path], None, None)?;
+            if hashed.status != 0 || hashed.stdout.trim() != oid {
+                return Ok(false);
+            }
+            has_evidence = true;
+        }
+    }
+    let changed = git(
+        cwd,
+        &[
+            "diff",
+            "--no-renames",
+            "--name-only",
+            "-z",
+            &format!("{sha}^1"),
+            sha,
+            "--",
+        ],
+    )?;
+    let dirty = dirty_files(cwd)?;
+    if paths(&changed).iter().any(|path| dirty.contains(path)) {
+        has_evidence = true;
+    }
+    Ok(has_evidence)
+}
+
+pub(super) const GUARD_RETENTION_SECS: u64 = 14 * 24 * 60 * 60;
+
+pub(super) fn prune_guards(
+    cwd: &Path,
+    now_secs: u64,
+    protected: Option<&str>,
+) -> Result<(), WorktreeError> {
+    let listing = git(
+        cwd,
+        &[
+            "for-each-ref",
+            "--format=%(refname) %(objectname) %(committerdate:unix)",
+            "refs/goodboy/stash",
+        ],
+    )?;
+    for line in listing.lines() {
+        let mut fields = line.split_whitespace();
+        let (Some(name), Some(sha), Some(stamp)) = (fields.next(), fields.next(), fields.next())
+        else {
+            continue;
+        };
+        let Ok(created) = stamp.parse::<u64>() else {
+            continue;
+        };
+        if Some(sha) == protected || now_secs.saturating_sub(created) <= GUARD_RETENTION_SECS {
+            continue;
+        }
+        let _ = git_run(cwd, &["update-ref", "-d", name, sha], None, None);
+    }
     Ok(())
 }
 
@@ -442,8 +408,7 @@ type StashHook = Box<dyn FnOnce(&Path)>;
 
 #[cfg(test)]
 thread_local! {
-    pub(super) static AFTER_LOG_COMMIT: std::cell::RefCell<Option<StashHook>> = const { std::cell::RefCell::new(None) };
-    pub(super) static AFTER_LOCK_COMMIT: std::cell::RefCell<Option<StashHook>> = const { std::cell::RefCell::new(None) };
+    pub(super) static BEFORE_DROP: std::cell::RefCell<Option<StashHook>> = const { std::cell::RefCell::new(None) };
     pub(super) static AFTER_PUSH: std::cell::RefCell<Option<StashHook>> = const { std::cell::RefCell::new(None) };
 }
 

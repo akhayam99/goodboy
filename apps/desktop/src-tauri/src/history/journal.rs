@@ -1,5 +1,6 @@
+use super::backups::is_backup_of;
 use super::commits::rev_parse_all;
-use super::dirty::{find_stash, stash_matches};
+use super::dirty::{find_stash, object_exists, stash_matches};
 use super::plan::plan_error;
 use super::runner::git_run;
 use crate::worktree::{git, git_dir_of, WorktreeError};
@@ -65,7 +66,7 @@ pub(super) fn write_journal(journal: &Path, text: &str) -> Result<(), WorktreeEr
     Ok(())
 }
 
-pub(super) fn sync_directory(path: &Path) -> Result<(), WorktreeError> {
+fn sync_directory(path: &Path) -> Result<(), WorktreeError> {
     if cfg!(unix) {
         std::fs::File::open(path)?.sync_all()?;
     }
@@ -76,6 +77,10 @@ pub(crate) fn recover_journal(cwd: &Path) -> Result<Option<String>, WorktreeErro
     let Some(journal) = journal_of(cwd) else {
         return Ok(None);
     };
+    if !journal.exists() {
+        return Ok(None);
+    }
+    settle_unsaved_intent(cwd)?;
     if !journal.exists() {
         return Ok(None);
     }
@@ -180,16 +185,16 @@ pub(super) fn pending_stash(cwd: &Path) -> Result<Option<(String, String)>, Work
     }
     if *line == "stash pending" {
         let expected = lines.first().copied().unwrap_or_default();
-        let sha = find_stash(cwd, message, expected)?.ok_or_else(|| {
-            plan_error("Couldn't locate the saved files safely. The journal was kept. Check the stash in the terminal before continuing.")
-        })?;
-        return Ok(Some((sha, message.to_string())));
+        return Ok(find_stash(cwd, message, expected)?.map(|sha| (sha, message.to_string())));
     }
     let sha = line
         .strip_prefix("stash ")
         .ok_or_else(|| plan_error("the stash journal is invalid"))?;
     if !sha.bytes().all(|byte| byte.is_ascii_hexdigit()) || ![40, 64].contains(&sha.len()) {
         return Err(plan_error("the stash journal has an invalid commit"));
+    }
+    if !object_exists(cwd, sha) {
+        return Ok(Some((sha.to_string(), message.to_string())));
     }
     if stash_matches(
         cwd,
@@ -200,6 +205,83 @@ pub(super) fn pending_stash(cwd: &Path) -> Result<Option<(String, String)>, Work
         return Ok(Some((sha.to_string(), message.to_string())));
     }
     Err(plan_error(&format!("Your files were saved in stash {sha}, but its entry is gone. Check it in the terminal before continuing.")))
+}
+
+pub(super) fn set_phase(journal: &Path, phase: Option<&str>) -> Result<(), WorktreeError> {
+    let raw = std::fs::read_to_string(journal)?;
+    let mut kept: Vec<&str> = raw.lines().take(6).collect();
+    if let Some(phase) = phase {
+        kept.push(phase);
+    }
+    write_journal(journal, &format!("{}\n", kept.join("\n")))
+}
+
+pub(super) struct Intent<'a> {
+    pub old: &'a str,
+    pub new: &'a str,
+    pub backup: &'a str,
+    pub branch: &'a str,
+}
+
+pub(super) fn roll_back_intent(
+    cwd: &Path,
+    journal: &Path,
+    intent: &Intent,
+) -> Result<(), WorktreeError> {
+    if is_backup_of(intent.branch, intent.backup) {
+        let _ = git_run(
+            cwd,
+            &["update-ref", "-d", intent.backup, intent.old],
+            None,
+            None,
+        );
+    }
+    if is_on_branch(cwd, intent.branch)
+        && branch_tip(cwd, intent.branch).as_deref() == Some(intent.old)
+    {
+        std::fs::remove_file(journal)?;
+        return Ok(());
+    }
+    write_journal(
+        journal,
+        &format!(
+            "{}\n{}\n{}\n{}\n",
+            intent.old, intent.new, intent.backup, intent.branch
+        ),
+    )
+}
+
+fn settle_unsaved_intent(cwd: &Path) -> Result<(), WorktreeError> {
+    let Some(journal) = journal_of(cwd).filter(|path| path.exists()) else {
+        return Ok(());
+    };
+    let raw = std::fs::read_to_string(&journal)?;
+    let lines: Vec<&str> = raw.lines().collect();
+    if lines.get(4) != Some(&"stash pending") || lines.len() > 6 {
+        return Ok(());
+    }
+    let (Some(old), Some(new), Some(backup), Some(branch), Some(message)) = (
+        lines.first(),
+        lines.get(1),
+        lines.get(2),
+        lines.get(3),
+        lines.get(5),
+    ) else {
+        return Ok(());
+    };
+    if find_stash(cwd, message, old)?.is_some() {
+        return Ok(());
+    }
+    roll_back_intent(
+        cwd,
+        &journal,
+        &Intent {
+            old,
+            new,
+            backup,
+            branch,
+        },
+    )
 }
 
 #[cfg(test)]
