@@ -495,6 +495,7 @@ describe('ExplorePane previews', () => {
     listFiles('README.md', 'notes.log', 'budget.xlsx');
     h.reads.push({ type: 'text', text: '# Read me\n\nMarkdown body', truncated: false });
     h.reads.push({ type: 'text', text: 'line one\nline two', truncated: false });
+    h.reads.push({ type: 'binary', size: 4096 });
     mount();
 
     fireEvent.click(await rowNamed('README.md'));
@@ -707,6 +708,7 @@ describe('ExplorePane row actions', () => {
     const navigate = vi.fn();
     useAppStore.setState({ spawnAgent, navigate });
     listOne('budget.xlsx');
+    h.reads.push({ type: 'binary', size: 4096 }, { type: 'binary', size: 4096 });
     mount();
     await rowNamed('budget.xlsx');
 
