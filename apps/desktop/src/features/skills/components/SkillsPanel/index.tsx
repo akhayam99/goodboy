@@ -11,6 +11,7 @@ import {
   Input,
   SectionHeader,
   Textarea,
+  Tooltip,
 } from '@goodboy/ui';
 import type { Skill, SkillFrontmatter, WorkspaceId } from '@goodboy/types';
 import { CardAction } from '@goodboy/ui';
@@ -251,19 +252,18 @@ const SkillRow = ({ skill, onEdit, onDelete }: SkillRowProps) => {
   return (
     <li className="flex flex-col gap-1">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto] gap-x-2 rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground">
-        <button
-          type="button"
-          onClick={onEdit}
-          title={`Edit ${skill.name}`}
-          className="flex min-w-0 flex-col items-start gap-0.5 rounded-md px-3 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-        >
-          <span className="truncate text-row text-foreground" title={skill.filePath}>
-            /{skill.name}
-          </span>
-          {skill.description !== '' ? (
-            <span className="truncate text-label text-muted-foreground">{skill.description}</span>
-          ) : null}
-        </button>
+        <Tooltip content={`Edit ${skill.name}`}>
+          <button
+            type="button"
+            onClick={onEdit}
+            className="flex min-w-0 flex-col items-start gap-0.5 rounded-md px-3 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          >
+            <span className="truncate text-row text-foreground">/{skill.name}</span>
+            {skill.description !== '' ? (
+              <span className="truncate text-label text-muted-foreground">{skill.description}</span>
+            ) : null}
+          </button>
+        </Tooltip>
         <div className="col-start-2 row-start-1 flex items-start gap-1 px-2 py-2">
           <CardActionSlot label="Skill lifecycle actions">
             <ConfirmPopover

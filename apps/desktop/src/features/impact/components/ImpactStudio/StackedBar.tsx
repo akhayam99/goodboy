@@ -1,4 +1,4 @@
-import { cn, tintClasses, type Tone } from '@goodboy/ui';
+import { cn, tintClasses, type Tone, Tooltip } from '@goodboy/ui';
 
 type StackedSegment = {
   readonly key: string;
@@ -21,12 +21,12 @@ export const StackedBar = ({ segments, className }: Props) => {
   return (
     <div className={cn('flex h-2 w-full overflow-hidden rounded-full bg-muted', className)}>
       {visible.map((segment) => (
-        <div
-          key={segment.key}
-          title={segment.title}
-          style={{ width: `${segment.share}%` }}
-          className={cn('h-full', tintClasses(segment.tone).dot)}
-        />
+        <Tooltip key={segment.key} content={segment.title}>
+          <div
+            style={{ width: `${segment.share}%` }}
+            className={cn('h-full', tintClasses(segment.tone).dot)}
+          />
+        </Tooltip>
       ))}
     </div>
   );

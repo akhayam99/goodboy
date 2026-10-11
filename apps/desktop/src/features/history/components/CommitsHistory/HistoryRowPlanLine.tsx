@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import { TriangleAlert } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn, Tooltip } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { HISTORY_ACTION_CLASSES } from '../../historyActionClasses';
 import type { HistoryRowLinePart } from './historyRowLine';
@@ -45,13 +45,12 @@ export const HistoryRowPlanLine = ({ parts, conflictFiles }: Props) => {
               ·
             </span>
           ) : null}
-          <span
-            title={`Replaying this step conflicts in ${conflictFiles.join(', ')}`}
-            className="inline-flex shrink-0 items-center gap-1 text-warning"
-          >
-            <TriangleAlert size={ICON_SIZE.row} aria-hidden />
-            may conflict in {firstFile}
-          </span>
+          <Tooltip content={`Replaying this step conflicts in ${conflictFiles.join(', ')}`}>
+            <span className="inline-flex shrink-0 items-center gap-1 text-warning">
+              <TriangleAlert size={ICON_SIZE.row} aria-hidden />
+              may conflict in {firstFile}
+            </span>
+          </Tooltip>
         </>
       )}
     </span>

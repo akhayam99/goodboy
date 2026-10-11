@@ -4,7 +4,7 @@ import { cn } from '../cn';
 import { FOCUS_RING } from '../focusRing';
 import { ICON_SIZE } from '../iconSize';
 import { tintClasses, type Tone } from '../tint';
-import { Tooltip } from './Tooltip';
+import { Tooltip, type TooltipSide } from './Tooltip';
 
 export type IconButtonSize = 'xs' | 'sm' | 'md';
 
@@ -12,6 +12,8 @@ export type IconButtonProps = Omit<ComponentProps<'button'>, 'type' | 'children'
   icon: LucideIcon;
   label: string;
   tooltip?: string;
+  shortcut?: string;
+  tooltipSide?: TooltipSide;
   isTooltipSuppressed?: boolean;
   size?: IconButtonSize;
   iconSize?: number;
@@ -45,6 +47,8 @@ export const IconButton = ({
   icon: Icon,
   label,
   tooltip,
+  shortcut,
+  tooltipSide,
   isTooltipSuppressed = false,
   size = 'sm',
   iconSize,
@@ -57,7 +61,12 @@ export const IconButton = ({
   ...rest
 }: IconButtonProps) => {
   return (
-    <Tooltip content={tooltip ?? label} isSuppressed={isTooltipSuppressed}>
+    <Tooltip
+      content={tooltip ?? label}
+      shortcut={shortcut}
+      side={tooltipSide}
+      isSuppressed={isTooltipSuppressed}
+    >
       <button
         type={type}
         aria-label={label}

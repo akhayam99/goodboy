@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ClampedProse, StatusDot, ToneBar, tintClasses } from '@goodboy/ui';
+import { ClampedProse, StatusDot, ToneBar, tintClasses, TruncatedText } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type {
   Agent,
@@ -110,13 +110,12 @@ export const OrchestratorStrip = ({
             )}
           </span>
           <p className="flex min-w-0 flex-1 items-baseline gap-2">
-            <span
+            <TruncatedText
               data-testid="orchestrator-state"
               className="min-w-0 truncate text-row text-foreground"
-              title={state.sentence}
             >
               {state.sentence}
-            </span>
+            </TruncatedText>
             {elapsed == null ? null : (
               <span
                 data-testid="orchestrator-elapsed"

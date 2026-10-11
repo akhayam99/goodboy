@@ -856,13 +856,15 @@ describe('ProjectMountRow worktree state', () => {
   it('names the git operation in flight on the row', () => {
     renderRow({ worktreeStatus: { ...cleanStatus, inProgress: 'rebase' } });
 
-    expect(screen.getByTitle('A rebase is in progress in API.').textContent).toBe('Rebasing');
+    expect(tooltipTextOf({ element: screen.getByText('Rebasing') })).toContain(
+      'A rebase is in progress in API.',
+    );
   });
 
   it('leaves the row without an operation chip when nothing is running', () => {
     renderRow({ worktreeStatus: cleanStatus });
 
-    expect(screen.queryByTitle('A rebase is in progress in API.')).toBeNull();
+    expect(screen.queryByText('Rebasing')).toBeNull();
   });
 
   it('marks the main checkout apart from a worktree', () => {

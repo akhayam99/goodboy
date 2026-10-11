@@ -116,7 +116,7 @@ describe('InboxStarredGroup', () => {
 
   it('opens the detail panel from the snapshot, not the tool URL, for a star not refreshed yet', () => {
     const on = handlers();
-    render(
+    const { container } = render(
       <InboxStarredGroup
         rows={[{ issue: issue({}), record: null }]}
         selectedKey={null}
@@ -125,7 +125,7 @@ describe('InboxStarredGroup', () => {
       />,
     );
 
-    fireEvent.click(screen.getByTitle('Reconcile the payout ledger'));
+    fireEvent.click(screen.getByRole('button', { name: 'NW-142 Reconcile the payout ledger' }));
 
     expect(openUrl).not.toHaveBeenCalled();
     expect(on.onSelect).toHaveBeenCalledTimes(1);
@@ -134,7 +134,12 @@ describe('InboxStarredGroup', () => {
     expect(selected.title).toBe('Reconcile the payout ledger');
     expect(selected.provider).toBe('jira');
 
-    fireEvent.click(screen.getByTitle('Open NW-142 in Jira'));
+    const open = container.querySelector('.lucide-arrow-up-right')?.closest('button') ?? null;
+    expect(open).not.toBeNull();
+    if (open === null) {
+      return;
+    }
+    fireEvent.click(open);
     expect(openUrl).toHaveBeenCalledWith('https://northwind.atlassian.net/browse/NW-142');
   });
 });

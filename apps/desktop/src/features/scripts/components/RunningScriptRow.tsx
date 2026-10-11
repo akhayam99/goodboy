@@ -1,8 +1,7 @@
 import { Square } from 'lucide-react';
-import { StatusDot, Tooltip, cn, tintClasses } from '@goodboy/ui';
+import { StatusDot, IconButton } from '@goodboy/ui';
 import { formatDuration } from '../../../shared/utils/time/formatDuration';
 import type { RunningScript } from '../hooks/useRunningScripts';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
   readonly run: RunningScript;
@@ -28,19 +27,12 @@ export const RunningScriptRow = ({ run, now, onOpen, onStop }: Props) => (
     <span className="shrink-0 text-meta tabular-nums text-muted-foreground">
       {formatDuration({ durationMs: now - run.startedAt })}
     </span>
-    <Tooltip content={`Stop ${run.scriptName}`}>
-      <button
-        type="button"
-        onClick={() => onStop(run)}
-        aria-label={`Stop ${run.scriptName}`}
-        className={cn(
-          'shrink-0 rounded-sm p-1 text-muted-foreground transition-colors',
-          tintClasses('danger').hoverBg,
-          'hover:text-danger',
-        )}
-      >
-        <Square size={ICON_SIZE.row} aria-hidden />
-      </button>
-    </Tooltip>
+    <IconButton
+      icon={Square}
+      label={`Stop ${run.scriptName}`}
+      size="xs"
+      onClick={() => onStop(run)}
+      className="hover:text-danger"
+    />
   </li>
 );

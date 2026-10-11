@@ -35,12 +35,11 @@ describe('OverflowMenu', () => {
     expect(screen.getByRole('tooltip').textContent).toBe('More actions');
   });
 
-  it('lets the caller name the action in the tooltip', () => {
-    render(
-      <OverflowMenu items={TWO} label="Branch actions" tooltip="Rebase this branch, or push" />,
-    );
-    hover(screen.getByRole('button', { name: /branch actions/i }));
-    expect(screen.getByRole('tooltip').textContent).toBe('Rebase this branch, or push');
+  it('always says More actions while the contextual name stays in the aria-label', () => {
+    render(<OverflowMenu items={TWO} label="Branch actions" />);
+    const trigger = screen.getByRole('button', { name: 'Branch actions' });
+    hover(trigger);
+    expect(screen.getByRole('tooltip').textContent).toBe('More actions');
   });
 
   it('opens the menu on trigger click and shows item labels', () => {

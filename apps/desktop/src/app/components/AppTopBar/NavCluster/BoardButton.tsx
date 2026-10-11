@@ -1,6 +1,5 @@
 import { SquareKanban } from 'lucide-react';
 import { TOP_BAR_CONTROL, Tooltip, cn } from '@goodboy/ui';
-import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -11,10 +10,9 @@ type Props = {
 
 export const BoardButton = ({ isOnBoard, hasStudio, onBoard }: Props) => {
   const isCurrent = isOnBoard && !hasStudio;
-  const glyph = shortcutGlyphs('session.board');
 
   return (
-    <Tooltip content={`Board  ${glyph}`} side="bottom">
+    <Tooltip content="Board" shortcut="session.board" side="bottom">
       <button
         type="button"
         aria-current={isCurrent ? 'page' : undefined}

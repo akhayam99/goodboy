@@ -105,7 +105,6 @@ export const StepEditorMenu = ({
       trigger={
         <MenuTriggerButton
           label={LABEL}
-          tooltip={LABEL}
           isOpen={dropdown.open}
           size="control"
           disabled={disabled}

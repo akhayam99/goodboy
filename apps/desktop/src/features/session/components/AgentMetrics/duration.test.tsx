@@ -3,6 +3,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { Agent } from '@goodboy/types';
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { AgentMetrics, type AgentAggregate } from '.';
 
 afterEach(cleanup);
@@ -37,13 +38,19 @@ const renderMetrics = (agent: Agent, totals: AgentAggregate | null) =>
 describe('AgentMetrics, full density block', () => {
   it('renders the cumulative input and output token split', () => {
     renderMetrics(run, aggregate);
-    expect(screen.getByTitle('In: 12,000 tokens (cumulative)').textContent).toContain('12');
-    expect(screen.getByTitle('Out: 3,000 tokens (cumulative)').textContent).toContain('3');
+    expect(tooltipTextOf({ element: screen.getByText(/^12/) })).toBe(
+      'In: 12,000 tokens (cumulative)',
+    );
+    expect(tooltipTextOf({ element: screen.getByText(/^3(\.\d)?k?$/) })).toBe(
+      'Out: 3,000 tokens (cumulative)',
+    );
   });
 
   it('renders a live duration for a started run', () => {
     renderMetrics(run, aggregate);
-    expect(screen.getByTitle(/^Started .+2026/)).toBeDefined();
+    expect(tooltipTextOf({ element: screen.getByText(/^\d+(s|m|h|d)/) })).toMatch(
+      /^Started .+2026/,
+    );
   });
 
   it('never reprints cost or turn count, those live on the inline strip', () => {
@@ -55,7 +62,9 @@ describe('AgentMetrics, full density block', () => {
 
   it('renders zeroed tokens for a started run with no telemetry yet', () => {
     renderMetrics(run, null);
-    expect(screen.getByTitle('In: 0 tokens (cumulative)')).toBeDefined();
+    expect(tooltipTextOf({ element: screen.getAllByText(/^0$/)[0]! })).toBe(
+      'In: 0 tokens (cumulative)',
+    );
   });
 
   it('collapses to nothing for a run that never started and burned nothing', () => {

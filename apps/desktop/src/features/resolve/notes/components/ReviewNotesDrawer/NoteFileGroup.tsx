@@ -1,3 +1,4 @@
+import { Tooltip } from '@goodboy/ui';
 import type { ReactNode } from 'react';
 import { MiddleText } from '../../../../../shared/components/MiddleText';
 
@@ -15,9 +16,11 @@ export const NoteFileGroup = ({ path, children }: Props) => (
     className="flex min-w-0 flex-col gap-4"
   >
     {path === null ? null : (
-      <h3 className="flex min-w-0 text-code text-muted-foreground" title={path}>
-        <MiddleText value={path} tail={LAST_SEGMENT} />
-      </h3>
+      <Tooltip content={path}>
+        <h3 className="flex min-w-0 text-code text-muted-foreground">
+          <MiddleText value={path} tail={LAST_SEGMENT} />
+        </h3>
+      </Tooltip>
     )}
     <ul className="flex min-w-0 flex-col gap-8">{children}</ul>
   </section>

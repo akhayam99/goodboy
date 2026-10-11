@@ -13,6 +13,7 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { WorkflowRunStatus } from './WorkflowRunStatus';
 
 const WORKFLOW_ID = 'workflow-1' as WorkflowId;
@@ -97,7 +98,7 @@ describe('WorkflowRunStatus', () => {
       runOverride: { ...run, orchestrationStop: { kind: 'failure', message: 'usage limit' } },
     });
 
-    expect(screen.getByTestId('workflow-orchestrator-failed').getAttribute('title')).toBe(
+    expect(tooltipTextOf({ element: screen.getByTestId('workflow-orchestrator-failed') })).toBe(
       'usage limit',
     );
     expect(screen.queryByTestId('workflow-orchestrator-budget-paused')).toBeNull();
@@ -202,7 +203,7 @@ describe('WorkflowRunStatus', () => {
       predecessorName: 'Scout',
     });
 
-    expect(screen.getByTitle('After Scout')).toBeDefined();
+    expect(tooltipTextOf({ element: screen.getByText(/after Scout/i) })).toBe('After Scout');
   });
 
   it('reads blocked instead of ready while an open question holds the run', () => {

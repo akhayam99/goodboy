@@ -481,6 +481,8 @@ terminal-studio-session
 toast-over-drawer
 toast-over-drawer-overlay
 toasts
+tooltip-shortcut
+tooltip-truncated
 topbar-1100
 topbar-limits-overflow
 topbar-states

@@ -1,3 +1,4 @@
+import { OptionalTooltip } from './OptionalTooltip';
 import type { FocusEvent, MouseEvent, ReactNode, Ref } from 'react';
 import { cn } from '../cn';
 import { FOCUS_RING } from '../focusRing';
@@ -162,36 +163,38 @@ export const Chip = ({
 
   if (isButton) {
     return (
-      <button
-        ref={ref as Ref<HTMLButtonElement>}
-        {...hoverProps}
-        type="button"
-        title={title}
-        aria-label={ariaLabel}
-        aria-pressed={ariaPressed}
-        data-testid={testId}
-        aria-expanded={expanded}
-        aria-haspopup={hasPopup}
-        onClick={onClick}
-        disabled={disabled}
-        className={classes}
-      >
-        {inner}
-      </button>
+      <OptionalTooltip content={title}>
+        <button
+          ref={ref as Ref<HTMLButtonElement>}
+          {...hoverProps}
+          type="button"
+          aria-label={ariaLabel}
+          aria-pressed={ariaPressed}
+          data-testid={testId}
+          aria-expanded={expanded}
+          aria-haspopup={hasPopup}
+          onClick={onClick}
+          disabled={disabled}
+          className={classes}
+        >
+          {inner}
+        </button>
+      </OptionalTooltip>
     );
   }
 
   return (
-    <span
-      ref={ref as Ref<HTMLSpanElement>}
-      {...hoverProps}
-      title={title}
-      role={ariaLabel == null ? undefined : 'img'}
-      aria-label={ariaLabel}
-      data-testid={testId}
-      className={classes}
-    >
-      {inner}
-    </span>
+    <OptionalTooltip content={title}>
+      <span
+        ref={ref as Ref<HTMLSpanElement>}
+        {...hoverProps}
+        role={ariaLabel == null ? undefined : 'img'}
+        aria-label={ariaLabel}
+        data-testid={testId}
+        className={classes}
+      >
+        {inner}
+      </span>
+    </OptionalTooltip>
   );
 };

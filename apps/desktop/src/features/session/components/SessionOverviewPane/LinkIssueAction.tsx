@@ -3,7 +3,6 @@ import { Plus } from 'lucide-react';
 import { AnchoredPopover, Chip, Tooltip, useDropdown } from '@goodboy/ui';
 import type { Session, SessionExternalTaskProvider } from '@goodboy/types';
 import { linkIssueEventName } from '../../../actions/kinds/session';
-import { withShortcutHint } from '../../../../shared/keyboard/registry';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { LinkWorkPanel } from './LinkWorkPanel';
@@ -61,10 +60,9 @@ export const LinkIssueAction = ({ session, initialSource }: Props) => {
       className="overflow-hidden p-0"
       trigger={
         <Tooltip
-          content={withShortcutHint({
-            label: 'Link an issue, an error or a thread to this session',
-            shortcut: 'session.linkWork',
-          })}
+          content="Link an issue, an error or a thread to this session"
+          shortcut="session.linkWork"
+          isSuppressed={isOpen}
         >
           <Chip
             as="button"

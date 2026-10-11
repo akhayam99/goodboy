@@ -1781,6 +1781,35 @@ themselves, and a hand-rolled icon button wraps itself in `Tooltip`. The native
 positioned or styled. Pass `tooltip` when the control needs to say more than
 its accessible name. `IconButton` refuses a `title` at the type level.
 
+An icon-only control is an `IconButton` by construction: the
+`hand-rolled-icon-buttons` ratchet counts a `<button>` whose only child is an
+icon outside `packages/ui`, and its baseline only falls. Convert such a button to
+`IconButton` (`tooltipSide` moves its tooltip to the side of a rail).
+
+**One shortcut format.** A tooltip that names a key takes `shortcut="<id>"`, a
+registry id, on `Tooltip`, `IconButton` or a wrapper such as `FooterButton`. The
+tooltip draws the label, then the keys from `shortcutGlyphs` as faint `Kbd` text
+a `gap-2` after it: `Ask an agent  ⌘L`, two nodes, never `Ask an agent (⌘L)`
+and never a key typed into the string. `tooltip-shortcuts-use-the-prop` fails on
+a key written into a `tooltip`, `content` or `title` string and on a `shortcut`
+literal that is not an id. A key with no registered keys prints the label alone.
+
+**No native `title` on a DOM node.** `native-title` counts `title=` on a lowercase
+element in `apps/desktop/src` and `packages/ui/src` (an `<iframe title>` is its
+accessible name and is not counted), and its baseline only falls. A control or
+a label with a different meaning goes behind `Tooltip`. Text that a `truncate`
+cuts goes behind `TruncatedText`: it renders the element (`as` takes `span`, `div`,
+`p`, `h3`, `code`, `li`, `dd` or `td`; a page `h1` stays an `h1` inside `Tooltip`), measures it when the pointer
+enters, and shows its text (or `tooltip`) only when `scrollWidth` is wider than
+`clientWidth` or `scrollHeight` is taller than `clientHeight`. A control with a
+`title` prop (`Chip`, `StatusDot`, `GhostActionButton`, `SelectableRow`,
+`ValueToken`, a `SegmentedTabs` option, a `SelectionBar` verb) shows it in a
+`Tooltip`, never as an attribute. An empty tooltip shows nothing, so a
+conditional reason is `content={reason}` with `reason` possibly `undefined`.
+A long label wraps at 28rem and keeps a line break it is given. `Button` still
+forwards a `title` as the native attribute, so a `Button` that needs a reason
+stands inside a `Tooltip` instead.
+
 There is no exception for a control that can go `disabled`, and no native
 `title` for that state either. A disabled element sends no mouse events and
 cuts the event path above itself. So listeners on the control stop working in
@@ -1808,8 +1837,10 @@ and the focus a closing menu hands back to its trigger does not reopen it.
 Keyboard focus (`:focus-visible`) opens the tooltip at once, and so does any
 tooltip that opens less than 300ms after another one closed, so a row of icons
 reads as one hover and not as four waits. A card with `restDelayMs` keeps its
-rest. The overflow tooltip says `More actions` unless the caller passes one; the
-contextual name stays in `aria-label`.
+rest. The overflow tooltip always says `More actions`: `OverflowMenu` and
+`ObjectOverflowMenu` take no `tooltip`, and the contextual name stays in
+`aria-label`. Only a choice menu that is not an overflow (`ObjectChoiceMenu`) names
+itself.
 That comes from the attribute itself. `icon-only-controls-carry-a-tooltip`
 enforces the rule for `<button>`, `<a>` and `<Button>` controls, and sees icons
 written as member expressions such as `<CONCEPT_ICONS.agents />`.

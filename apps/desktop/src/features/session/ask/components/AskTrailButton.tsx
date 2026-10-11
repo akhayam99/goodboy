@@ -38,7 +38,7 @@ export const AskTrailButton = ({ sessionId }: Props) => {
   );
 
   return (
-    <Tooltip content={`Ask what is happening in this session ${glyphs}`}>
+    <Tooltip content="Ask what is happening in this session" shortcut="ask.open">
       <button
         type="button"
         data-testid="ask-trail-button"

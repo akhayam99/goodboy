@@ -3,7 +3,6 @@ import { AlertTriangle, Trash2 } from 'lucide-react';
 import type { ProjectId } from '@goodboy/types';
 import { Checkbox, SelectionBar, SelectionConfirm } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { pluralize } from '../../../../shared/utils/pluralize';
 import { branchCount } from '../../branches/branchCopy';
 import {
@@ -102,8 +101,8 @@ export const BranchBulkBar = ({
       }
       onClear={onClear}
       onSelectAll={onSelectAll}
-      clearHint={shortcutGlyphs('selection.clear')}
-      selectAllHint={shortcutGlyphs('selection.all')}
+      clearShortcut="selection.clear"
+      selectAllShortcut="selection.all"
       onDismissConfirm={onCancel}
       confirm={
         isConfirming && count > 0 ? (

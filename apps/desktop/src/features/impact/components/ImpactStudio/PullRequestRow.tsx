@@ -1,7 +1,7 @@
 import type { PullRequestEntry } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
 import { ArrowUpRight } from 'lucide-react';
-import { cn, formatUsd, formatUsdPrecise } from '@goodboy/ui';
+import { cn, formatUsd, formatUsdPrecise, Tooltip } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { DeletedSessionTag } from '../../../../shared/components/DeletedSessionTag';
 
@@ -21,12 +21,11 @@ export const PullRequestRow = ({ entry, onOpenSession }: Props) => {
       </span>
       {entry.isDeleted ? <DeletedSessionTag /> : null}
       {entry.spendUsd === null ? null : (
-        <span
-          title={formatUsdPrecise(entry.spendUsd)}
-          className="shrink-0 tabular-nums text-muted-foreground"
-        >
-          {formatUsd(entry.spendUsd)}
-        </span>
+        <Tooltip content={formatUsdPrecise(entry.spendUsd)}>
+          <span className="shrink-0 tabular-nums text-muted-foreground">
+            {formatUsd(entry.spendUsd)}
+          </span>
+        </Tooltip>
       )}
       <span className="shrink-0 capitalize text-muted-foreground">{entry.state}</span>
     </>

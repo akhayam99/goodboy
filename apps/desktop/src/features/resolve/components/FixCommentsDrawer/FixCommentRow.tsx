@@ -1,4 +1,11 @@
-import { ROW_INTERACTIVE, Checkbox, Chip, cn, inlineMarkdownText } from '@goodboy/ui';
+import {
+  ROW_INTERACTIVE,
+  Checkbox,
+  Chip,
+  cn,
+  inlineMarkdownText,
+  TruncatedText,
+} from '@goodboy/ui';
 import { RESOLVE_COMMENT_UNAVAILABLE } from '../../resolveQueueCopy';
 import { firstSentence } from '../ReviewFlow/firstSentence';
 import type { ReviewEntry } from '../ReviewFlow/useReviewEntries';
@@ -49,14 +56,15 @@ export const FixCommentRow = ({ entry, isIncluded, onToggle }: Props) => {
               </span>
             )}
           </span>
-          <span
+          <TruncatedText
+            tooltip={body ?? undefined}
             className={cn(
               'min-w-0 truncate text-body',
               isIncluded ? 'text-foreground' : 'text-muted-foreground',
             )}
           >
             {title}
-          </span>
+          </TruncatedText>
         </span>
       }
     />

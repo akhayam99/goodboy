@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { EmptyLine, Button, ConfirmPopover, Eyebrow } from '@goodboy/ui';
+import { EmptyLine, Button, ConfirmPopover, Eyebrow, Tooltip } from '@goodboy/ui';
 import type { HistoryBackup } from '@goodboy/types';
 import { listHistoryBackups } from '../../historyEngine';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
@@ -73,12 +73,11 @@ export const HistoryBackups = ({
                 })}
               </span>
               {backup.isLegacy ? (
-                <span
-                  title="Made by an older Goodboy before backups named their branch, so it is shown read-only."
-                  className="shrink-0 text-meta text-faint-foreground"
-                >
-                  Older backup, read-only
-                </span>
+                <Tooltip content="Made by an older Goodboy before backups named their branch, so it is shown read-only.">
+                  <span className="shrink-0 text-meta text-faint-foreground">
+                    Older backup, read-only
+                  </span>
+                </Tooltip>
               ) : (
                 <ConfirmPopover
                   role="danger"

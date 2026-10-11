@@ -11,7 +11,6 @@ import {
   formatCombo,
   shortcutGlyphs,
   shortcutRangeGlyphs,
-  withShortcutHint,
 } from './registry';
 import type { ShortcutEntry } from './registry';
 
@@ -298,13 +297,5 @@ describe('shortcut registry', () => {
     expect(shortcutGlyphs('session.switcher')).toBe('Ctrl+Tab');
     expect(shortcutGlyphs('session.switcherBack')).toBe('Ctrl+Shift+Tab');
     expect(shortcutGlyphs('session.nextNeedsYou')).toBe('Ctrl+Alt+Down');
-  });
-
-  it('hangs the chord off the control that triggers it', () => {
-    platform.current = 'darwin';
-
-    expect(withShortcutHint({ label: 'Delete session', shortcut: 'session.delete' })).toBe(
-      'Delete session (⌘⇧⌫)',
-    );
   });
 });

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Bug, SlidersHorizontal } from 'lucide-react';
 import type { Notification } from '@goodboy/db';
-import { cn } from '@goodboy/ui';
+import { cn, Tooltip } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
@@ -51,13 +51,11 @@ export const NotificationRowDetail = ({ notifications }: Props) => {
               )}
             >
               <span className="truncate">{entry.title}</span>
-              <time
-                dateTime={entry.ts}
-                title={formatDateTime({ at: entry.ts, hasYear: true })}
-                className="shrink-0 text-meta text-faint-foreground"
-              >
-                {formatAge({ from: entry.ts, now })}
-              </time>
+              <Tooltip content={formatDateTime({ at: entry.ts, hasYear: true })}>
+                <time dateTime={entry.ts} className="shrink-0 text-meta text-faint-foreground">
+                  {formatAge({ from: entry.ts, now })}
+                </time>
+              </Tooltip>
             </li>
           ))}
         </ul>

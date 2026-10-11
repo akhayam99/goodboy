@@ -43,9 +43,10 @@ describe('AgentKindChip', () => {
     expect(icons.size).toBe(AGENT_KIND_ORDER.length);
   });
 
-  it('applies the title attribute when provided', () => {
+  it('shows the title in a tooltip, never as a native attribute', () => {
     const { container } = render(<AgentKindChip kind="scout" title="scout agent" />);
-    expect(container.querySelector('[title="scout agent"]')).not.toBeNull();
+    expect(container.querySelector('[title]')).toBeNull();
+    expect(tooltipTextOf({ element: screen.getByText('Scout') })).toBe('scout agent');
   });
 
   it('renders the label density by default with the kind label, or the label it is given', () => {

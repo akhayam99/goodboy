@@ -3,6 +3,7 @@
 import { Trash2 } from 'lucide-react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { registerShortcutGlyphs } from '../shortcutGlyphs';
 import { IconButton } from './IconButton';
 
 describe('IconButton', () => {
@@ -58,5 +59,15 @@ describe('IconButton', () => {
     );
 
     expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+
+  it('draws its shortcut after the name as faint keys, never in parentheses', async () => {
+    registerShortcutGlyphs((id) => (id === 'ask.open' ? '⌘L' : ''));
+    render(<IconButton icon={Trash2} label="Ask an agent" shortcut="ask.open" />);
+    fireEvent.mouseEnter(screen.getByRole('button', { name: 'Ask an agent' }));
+
+    const tip = await screen.findByRole('tooltip');
+    expect(tip.textContent).toBe('Ask an agent⌘L');
+    expect(tip.querySelector('kbd')?.textContent).toBe('⌘L');
   });
 });

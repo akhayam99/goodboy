@@ -1,6 +1,5 @@
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
-import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 import { requestNewSession } from '../../../features/session/requestNewSession';
 import { selectSessionDraft } from '../../../store/slices/sessionDraft/selectSessionDraft';
 import { hasSessionDraftContent } from '../../../store/slices/sessionDraft/hasSessionDraftContent';
@@ -29,7 +28,8 @@ export const CreateRow = ({ workspaceId, place, actions, onNavigate }: Props) =>
         id="session"
         label="Session"
         accessibleName={isDraftWaiting ? `New session, ${DRAFT_IN_PROGRESS}` : 'New session'}
-        tooltip={`New session  ${shortcutGlyphs('session.new')}`}
+        tooltip="New session"
+        shortcut="session.new"
         isPrimary
         isCurrent={place === 'new'}
         hasDot={isDraftWaiting}
@@ -42,7 +42,8 @@ export const CreateRow = ({ workspaceId, place, actions, onNavigate }: Props) =>
         id="chat"
         label="Chat"
         accessibleName="New chat"
-        tooltip={`New chat  ${shortcutGlyphs('chat.new')}`}
+        tooltip="New chat"
+        shortcut="chat.new"
         onSelect={() => {
           actions.openNewChat();
           onNavigate?.();

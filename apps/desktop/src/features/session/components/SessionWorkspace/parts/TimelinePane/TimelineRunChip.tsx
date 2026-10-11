@@ -27,7 +27,6 @@ export const TimelineRunChip = ({
     <span
       role="img"
       aria-label={tooltip}
-      title={identity === null ? tooltip : undefined}
       data-testid="run-glyph"
       className={cn(
         'inline-flex size-4.5 shrink-0 items-center justify-center self-center rounded-full bg-current/12 motion-safe:transition-colors',
@@ -38,7 +37,7 @@ export const TimelineRunChip = ({
     </span>
   );
   if (identity === null) {
-    return glyph;
+    return <Tooltip content={tooltip}>{glyph}</Tooltip>;
   }
   return (
     <Tooltip

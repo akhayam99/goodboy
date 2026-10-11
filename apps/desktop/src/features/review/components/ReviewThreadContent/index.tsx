@@ -1,5 +1,5 @@
 import { ExternalLink, MessageSquare } from 'lucide-react';
-import { Avatar, Chip, Tooltip } from '@goodboy/ui';
+import { Avatar, Chip, IconButton } from '@goodboy/ui';
 import type { CommentThread } from '../../../integrations/github/comment-threads';
 import { isBot } from '../../../integrations/github/comment-threads';
 import { ThreadBody } from '../../../integrations/github/components/PullRequest/ThreadBody';
@@ -48,16 +48,12 @@ export const ReviewThreadContent = ({ thread, onOpenUrl }: Props) => {
         )}
         {!isNote && (
           <span className="ml-auto inline-flex shrink-0 items-center">
-            <Tooltip content="Open in browser">
-              <button
-                type="button"
-                onClick={() => onOpenUrl(head.url)}
-                aria-label="Open in browser"
-                className="rounded-sm p-0.5 text-muted-foreground hover:bg-hover hover:text-foreground"
-              >
-                <ExternalLink size={ICON_SIZE.row} aria-hidden />
-              </button>
-            </Tooltip>
+            <IconButton
+              icon={ExternalLink}
+              label="Open in browser"
+              size="xs"
+              onClick={() => onOpenUrl(head.url)}
+            />
           </span>
         )}
       </div>

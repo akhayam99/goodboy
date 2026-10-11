@@ -1,4 +1,4 @@
-import { cn, tintClasses, Eyebrow } from '@goodboy/ui';
+import { cn, tintClasses, Eyebrow, Tooltip } from '@goodboy/ui';
 import { Fragment, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { Agent, AgentId } from '@goodboy/types';
@@ -76,17 +76,20 @@ export const ScoutSubtree = ({
         )}
         <Eyebrow label={`${groupLabel} ${doneCount}/${children.length}`} className="text-inherit" />
         {!expanded && unreadCount > 0 ? (
-          <span
-            className={cn(
-              'inline-flex shrink-0 items-center gap-1 rounded-sm',
-              tintClasses('warning').bg,
-              'px-1 py-0.5 text-chip font-medium text-warning',
-            )}
-            title={`${unreadCount} scout ${unreadCount === 1 ? 'reply' : 'replies'} to review`}
+          <Tooltip
+            content={`${unreadCount} scout ${unreadCount === 1 ? 'reply' : 'replies'} to review`}
           >
-            <span aria-hidden className="size-1 rounded-full bg-warning" />
-            {unreadCount}
-          </span>
+            <span
+              className={cn(
+                'inline-flex shrink-0 items-center gap-1 rounded-sm',
+                tintClasses('warning').bg,
+                'px-1 py-0.5 text-chip font-medium text-warning',
+              )}
+            >
+              <span aria-hidden className="size-1 rounded-full bg-warning" />
+              {unreadCount}
+            </span>
+          </Tooltip>
         ) : null}
       </button>
       {expanded

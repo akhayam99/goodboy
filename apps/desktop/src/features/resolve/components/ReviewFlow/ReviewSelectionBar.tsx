@@ -65,8 +65,8 @@ export const ReviewSelectionBar = ({
       onHeightChange={onHeightChange}
       onClear={onClear}
       onSelectAll={onSelectAll}
-      clearHint={shortcutGlyphs('selection.clear')}
-      selectAllHint={shortcutGlyphs('review.selectAll')}
+      clearShortcut="selection.clear"
+      selectAllShortcut="review.selectAll"
     />
   );
 };

@@ -1,5 +1,5 @@
 import { ChevronRight } from 'lucide-react';
-import { Eyebrow, cn, type Tone } from '@goodboy/ui';
+import { Eyebrow, cn, type Tone, Tooltip } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -41,14 +41,15 @@ export const SessionGroupHeader = ({
     return <div className="mt-2 flex h-6 w-full items-center gap-1 px-2">{content}</div>;
   }
   return (
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-expanded={!isCollapsed}
-      title={title}
-      className="group mt-2 flex h-6 w-full items-center gap-1 rounded-sm px-2 text-left"
-    >
-      {content}
-    </button>
+    <Tooltip content={title}>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={!isCollapsed}
+        className="group mt-2 flex h-6 w-full items-center gap-1 rounded-sm px-2 text-left"
+      >
+        {content}
+      </button>
+    </Tooltip>
   );
 };

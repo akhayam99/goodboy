@@ -40,6 +40,7 @@ vi.mock('../../../../store', () => ({
     }),
 }));
 
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { WorkspaceIdentityRow } from './index';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 
@@ -56,8 +57,10 @@ describe('WorkspaceIdentityRow', () => {
   it('carries the linked project count and the switcher shortcut in the title', () => {
     render(<WorkspaceIdentityRow />);
 
-    expect(screen.getByLabelText('Switch workspace: Acme').getAttribute('title')).toBe(
-      `Acme, 1 linked project (${shortcutGlyphs('workspace.switcher')})`,
+    const trigger = screen.getByLabelText('Switch workspace: Acme');
+    expect(trigger.getAttribute('title')).toBeNull();
+    expect(tooltipTextOf({ element: trigger })).toBe(
+      `Acme, 1 linked project${shortcutGlyphs('workspace.switcher')}`,
     );
   });
 

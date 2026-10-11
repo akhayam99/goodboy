@@ -1,8 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { X } from 'lucide-react';
-import { cn, tintClasses, Tooltip } from '@goodboy/ui';
+import { cn, tintClasses, IconButton } from '@goodboy/ui';
 import { TranscriptShell } from '../TranscriptShell';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type NudgeSeverity = 'info' | 'warning' | 'success';
 
@@ -62,17 +61,14 @@ export const NudgeCard = ({
     <TranscriptShell tone={severity} variant="boxed" emphasis className="relative text-label">
       <section data-testid={testId} aria-label={ariaLabel} className="flex flex-col gap-2">
         {onDismiss ? (
-          <Tooltip content="Dismiss">
-            <button
-              type="button"
-              onClick={onDismiss}
-              aria-label="Dismiss"
-              className="absolute right-1.5 top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-md text-muted-foreground hover:bg-hover hover:text-foreground"
-              data-testid={testId ? `${testId}-dismiss` : undefined}
-            >
-              <X size={ICON_SIZE.row} aria-hidden />
-            </button>
-          </Tooltip>
+          <IconButton
+            icon={X}
+            label="Dismiss"
+            size="xs"
+            onClick={onDismiss}
+            data-testid={testId ? `${testId}-dismiss` : undefined}
+            className="absolute right-1.5 top-1.5 size-5"
+          />
         ) : null}
         <div className="flex items-start gap-2 pr-5">
           {icon ? (

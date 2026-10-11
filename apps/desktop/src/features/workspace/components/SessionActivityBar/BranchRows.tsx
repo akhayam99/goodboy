@@ -1,4 +1,4 @@
-import { ROW_INTERACTIVE, cn } from '@goodboy/ui';
+import { ROW_INTERACTIVE, cn, Tooltip } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import {
@@ -43,39 +43,40 @@ export const BranchRows = ({ sessionId }: Props) => {
         const { head, tail } = splitBranchLabel({ branch: row.label });
         return (
           <li key={row.mountId}>
-            <button
-              type="button"
-              aria-label={rowLabelOf(row)}
-              aria-current={row.isCurrent ? 'true' : undefined}
-              data-branch-row={row.mountId}
-              title={row.label}
-              onClick={() =>
-                void switchBranchMount({
-                  sessionId,
-                  mountId: row.mountId,
-                  worktreePath: row.worktreePath,
-                  mode: 'push',
-                })
-              }
-              className={cn(ROW_CLASS, ROW_INTERACTIVE, row.isCurrent && 'text-foreground')}
-            >
-              <CONCEPT_ICONS.branch
-                size={ICON_SIZE.row}
-                aria-hidden
-                className={cn('box-content shrink-0 p-px', lensIconClass({ lens: 'branch' }))}
-              />
-              <span className="flex min-w-0 flex-1 items-center text-code">
-                <span className="truncate">{head}</span>
-                {tail === '' ? null : <span className="shrink-0">{tail}</span>}
-              </span>
-              {row.request === null ? null : (
-                <Glyph
+            <Tooltip content={row.label}>
+              <button
+                type="button"
+                aria-label={rowLabelOf(row)}
+                aria-current={row.isCurrent ? 'true' : undefined}
+                data-branch-row={row.mountId}
+                onClick={() =>
+                  void switchBranchMount({
+                    sessionId,
+                    mountId: row.mountId,
+                    worktreePath: row.worktreePath,
+                    mode: 'push',
+                  })
+                }
+                className={cn(ROW_CLASS, ROW_INTERACTIVE, row.isCurrent && 'text-foreground')}
+              >
+                <CONCEPT_ICONS.branch
                   size={ICON_SIZE.row}
                   aria-hidden
-                  className={cn('shrink-0', presentation.textClass)}
+                  className={cn('box-content shrink-0 p-px', lensIconClass({ lens: 'branch' }))}
                 />
-              )}
-            </button>
+                <span className="flex min-w-0 flex-1 items-center text-code">
+                  <span className="truncate">{head}</span>
+                  {tail === '' ? null : <span className="shrink-0">{tail}</span>}
+                </span>
+                {row.request === null ? null : (
+                  <Glyph
+                    size={ICON_SIZE.row}
+                    aria-hidden
+                    className={cn('shrink-0', presentation.textClass)}
+                  />
+                )}
+              </button>
+            </Tooltip>
           </li>
         );
       })}

@@ -67,6 +67,43 @@ export const openingTags = ({ text, name }: TagParams): ReadonlyArray<string> =>
   return found;
 };
 
+export const domOpeningTags = ({ text }: { readonly text: string }): ReadonlyArray<string> => {
+  const found: string[] = [];
+  for (const match of text.matchAll(/<([a-z][a-z0-9]*)(?=[\s/>])/g)) {
+    let depth = 0;
+    let cursor = match.index + match[0].length;
+    while (cursor < text.length) {
+      const char = text[cursor];
+      depth += char === '{' ? 1 : char === '}' ? -1 : 0;
+      if (char === '>' && depth === 0 && text[cursor - 1] !== '=') {
+        break;
+      }
+      cursor += 1;
+    }
+    found.push(text.slice(match.index, cursor + 1));
+  }
+  return found;
+};
+
+export const hasTopLevelAttribute = ({
+  tag,
+  attribute,
+}: {
+  readonly tag: string;
+  readonly attribute: string;
+}): boolean => {
+  let depth = 0;
+  const pattern = new RegExp(`^${attribute}=`);
+  for (let cursor = 0; cursor < tag.length; cursor += 1) {
+    const char = tag.charAt(cursor);
+    depth += char === '{' ? 1 : char === '}' ? -1 : 0;
+    if (depth === 0 && /\s/.test(char) && pattern.test(tag.slice(cursor + 1))) {
+      return true;
+    }
+  }
+  return false;
+};
+
 export const countMatches = ({
   text,
   pattern,

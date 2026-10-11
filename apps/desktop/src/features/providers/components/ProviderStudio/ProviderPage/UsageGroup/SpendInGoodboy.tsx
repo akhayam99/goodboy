@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import type { ProviderBudgetStatus, ProviderId } from '@goodboy/types';
-import { BAND_ROW_CLASS, Button, cn, formatUsd } from '@goodboy/ui';
+import { BAND_ROW_CLASS, Button, cn, formatUsd, Tooltip } from '@goodboy/ui';
 import { ArrowRight } from 'lucide-react';
 import { useAppStore } from '../../../../../../store';
 import { openImpactStudio } from '../../../../../impact/openImpactStudio';
@@ -44,9 +44,9 @@ export const SpendInGoodboy = ({ providerId }: Props) => {
       className={cn(BAND_ROW_CLASS, 'flex-wrap gap-x-4 bg-muted text-label')}
     >
       {status === null || text === null ? null : (
-        <span className="tabular-nums text-muted-foreground" title={budgetScopeNote({ status })}>
-          {text}
-        </span>
+        <Tooltip content={budgetScopeNote({ status })}>
+          <span className="tabular-nums text-muted-foreground">{text}</span>
+        </Tooltip>
       )}
       <Button variant="ghost" size="sm" onClick={openImpact} className="ml-auto">
         Open in Impact

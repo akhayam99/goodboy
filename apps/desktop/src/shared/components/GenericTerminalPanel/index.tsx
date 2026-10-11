@@ -11,11 +11,10 @@ import { RotateCcw } from 'lucide-react';
 import { getAppliedTheme, subscribeAppliedTheme } from '../../lib/theme';
 import { openUrl } from '../../lib/editor';
 import { resolveTerminalTheme } from './terminal-theme';
-import { Tooltip } from '@goodboy/ui';
+import { IconButton } from '@goodboy/ui';
 import { terminalFindKey } from './terminalFindKey';
 import { terminalFindOptions } from './terminalFindDecorations';
 import { TerminalFindBar, type TerminalFindController } from './TerminalFindBar';
-import { ICON_SIZE } from '../conceptIcons';
 
 export type TerminalChunk = {
   readonly bytes: Uint8Array;
@@ -327,16 +326,13 @@ export const GenericTerminalPanel = ({
         <TerminalFindBar controller={findController} step={findStep} onClose={closeFind} />
       )}
       {onRestart && findStep === null ? (
-        <Tooltip content="Restart shell">
-          <button
-            type="button"
-            onClick={onRestart}
-            aria-label="Restart shell"
-            className="absolute right-2 top-2 z-10 rounded-sm bg-background p-1 text-muted-foreground backdrop-blur hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-          >
-            <RotateCcw size={ICON_SIZE.row} aria-hidden />
-          </button>
-        </Tooltip>
+        <IconButton
+          icon={RotateCcw}
+          label="Restart shell"
+          size="xs"
+          onClick={onRestart}
+          className="absolute right-2 top-2 z-10 bg-background backdrop-blur"
+        />
       ) : null}
     </div>
   );

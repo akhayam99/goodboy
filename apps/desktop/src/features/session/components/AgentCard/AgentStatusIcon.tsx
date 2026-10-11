@@ -1,4 +1,4 @@
-import { StatusDot, tintClasses } from '@goodboy/ui';
+import { StatusDot, tintClasses, Tooltip } from '@goodboy/ui';
 import type { AgentStatus } from '@goodboy/types';
 import { describeAgentStatus } from '../../agent-status';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
@@ -14,17 +14,18 @@ export const AgentStatusIcon = ({ status }: Props) => {
   const Icon = presentation.icon;
 
   return (
-    <span
-      className="inline-flex size-3 shrink-0 items-center justify-center"
-      title={description}
-      role="img"
-      aria-label={description}
-    >
-      {status === 'running' ? (
-        <StatusDot tone={presentation.tone} size="sm" pulsing />
-      ) : (
-        <Icon size={ICON_SIZE.mark} className={tintClasses(presentation.tone).icon} aria-hidden />
-      )}
-    </span>
+    <Tooltip content={description}>
+      <span
+        className="inline-flex size-3 shrink-0 items-center justify-center"
+        role="img"
+        aria-label={description}
+      >
+        {status === 'running' ? (
+          <StatusDot tone={presentation.tone} size="sm" pulsing />
+        ) : (
+          <Icon size={ICON_SIZE.mark} className={tintClasses(presentation.tone).icon} aria-hidden />
+        )}
+      </span>
+    </Tooltip>
   );
 };

@@ -1,3 +1,4 @@
+import { OptionalTooltip } from './OptionalTooltip';
 import { cn } from '../cn';
 import { tintClasses, type Tone } from '../tint';
 
@@ -35,16 +36,17 @@ export const StatusDot = ({
         : { role };
 
   return (
-    <span
-      title={title}
-      className={cn(
-        'inline-block shrink-0 rounded-full',
-        dim,
-        dot,
-        pulsing ? 'motion-safe:animate-soft-pulse' : '',
-        className,
-      )}
-      {...ariaProps}
-    />
+    <OptionalTooltip content={title}>
+      <span
+        className={cn(
+          'inline-block shrink-0 rounded-full',
+          dim,
+          dot,
+          pulsing ? 'motion-safe:animate-soft-pulse' : '',
+          className,
+        )}
+        {...ariaProps}
+      />
+    </OptionalTooltip>
   );
 };

@@ -1,3 +1,4 @@
+import { Tooltip } from '@goodboy/ui';
 import type { SlackReaction } from '../client';
 import type { SlackReactionPick } from '../useSlackThreadActions';
 import { QUICK_REACTIONS, reactionEmoji } from './quickReactions';
@@ -39,32 +40,32 @@ export const ThreadReactions = ({ messageTs, reactions, isWriting, onReact }: Pr
   return (
     <div className="flex flex-wrap items-center gap-2">
       {reactions.map((reaction) => (
-        <button
-          key={reaction.name}
-          type="button"
-          disabled={isBlocked}
-          title={reason ?? `React with :${reaction.name}:`}
-          aria-label={`React with :${reaction.name}:`}
-          onClick={() => onReact?.({ messageTs, name: reaction.name })}
-          className={PILL}
-        >
-          <span aria-hidden>{reactionEmoji({ name: reaction.name })}</span>
-          <span className="tabular-nums">{reaction.count}</span>
-        </button>
-      ))}
-      <div className={QUICK_ROW}>
-        {quick.map((reaction) => (
+        <Tooltip key={reaction.name} content={reason ?? `React with :${reaction.name}:`}>
           <button
-            key={reaction.name}
             type="button"
             disabled={isBlocked}
-            title={reason ?? `React with :${reaction.name}:`}
             aria-label={`React with :${reaction.name}:`}
             onClick={() => onReact?.({ messageTs, name: reaction.name })}
             className={PILL}
           >
-            <span aria-hidden>{reaction.emoji}</span>
+            <span aria-hidden>{reactionEmoji({ name: reaction.name })}</span>
+            <span className="tabular-nums">{reaction.count}</span>
           </button>
+        </Tooltip>
+      ))}
+      <div className={QUICK_ROW}>
+        {quick.map((reaction) => (
+          <Tooltip key={reaction.name} content={reason ?? `React with :${reaction.name}:`}>
+            <button
+              type="button"
+              disabled={isBlocked}
+              aria-label={`React with :${reaction.name}:`}
+              onClick={() => onReact?.({ messageTs, name: reaction.name })}
+              className={PILL}
+            >
+              <span aria-hidden>{reaction.emoji}</span>
+            </button>
+          </Tooltip>
         ))}
       </div>
     </div>

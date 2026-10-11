@@ -107,19 +107,22 @@ export const MountStatusPhrase = ({
     );
   }
   const isWarning = operation !== null || phrase?.isWarning === true;
-  const node = (
-    <span
-      title={operation?.title}
-      className={cn(
-        'shrink-0 whitespace-nowrap text-meta',
-        isWarning ? 'text-warning' : 'text-muted-foreground',
-      )}
-    >
-      {text}
-    </span>
+  const hasDetails = details !== '' && details !== text;
+  const tip = !hasDetails
+    ? operation?.title
+    : operation === null
+      ? details
+      : `${operation.title}\n${details}`;
+  return (
+    <Tooltip content={tip}>
+      <span
+        className={cn(
+          'shrink-0 whitespace-nowrap text-meta',
+          isWarning ? 'text-warning' : 'text-muted-foreground',
+        )}
+      >
+        {text}
+      </span>
+    </Tooltip>
   );
-  if (details === '' || details === text) {
-    return node;
-  }
-  return <Tooltip content={details}>{node}</Tooltip>;
 };

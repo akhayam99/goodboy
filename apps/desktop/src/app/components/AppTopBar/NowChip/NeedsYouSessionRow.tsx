@@ -5,6 +5,7 @@ import {
   InlineMarkdown,
   inlineMarkdownText,
   type Tone,
+  Tooltip,
 } from '@goodboy/ui';
 import type { Session, SessionAttentionReason, SessionId } from '@goodboy/types';
 import { useSessionStageInfo } from '../../../../store';
@@ -36,29 +37,30 @@ export const NeedsYouSessionRow = ({ session, onSelect, fallbackTone = 'neutral'
 
   return (
     <li>
-      <button
-        type="button"
-        onClick={() => onSelect({ sessionId: session.id as SessionId, reason: attention })}
-        title={`${inlineMarkdownText({ text: session.goal })} · ${words}`}
-        className={cn(
-          'flex w-full items-start gap-2 px-3 py-3 text-left transition-colors',
-          ROW_INTERACTIVE,
-        )}
-      >
-        <Icon
-          size={ICON_SIZE.control}
-          aria-hidden
-          data-attention-tone={tone}
-          className={cn('mt-px shrink-0', tintClasses(tone).icon)}
-        />
-        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <InlineMarkdown
-            text={session.goal}
-            className="truncate text-label font-medium text-foreground"
+      <Tooltip content={`${inlineMarkdownText({ text: session.goal })} · ${words}`}>
+        <button
+          type="button"
+          onClick={() => onSelect({ sessionId: session.id as SessionId, reason: attention })}
+          className={cn(
+            'flex w-full items-start gap-2 px-3 py-3 text-left transition-colors',
+            ROW_INTERACTIVE,
+          )}
+        >
+          <Icon
+            size={ICON_SIZE.control}
+            aria-hidden
+            data-attention-tone={tone}
+            className={cn('mt-px shrink-0', tintClasses(tone).icon)}
           />
-          <span className="truncate text-meta text-muted-foreground">{words}</span>
-        </span>
-      </button>
+          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <InlineMarkdown
+              text={session.goal}
+              className="truncate text-label font-medium text-foreground"
+            />
+            <span className="truncate text-meta text-muted-foreground">{words}</span>
+          </span>
+        </button>
+      </Tooltip>
     </li>
   );
 };

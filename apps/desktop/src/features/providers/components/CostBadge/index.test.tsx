@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { CostBadge } from './index';
 
 afterEach(cleanup);
@@ -18,8 +19,12 @@ describe('CostBadge', () => {
     expect(container.textContent).toContain('$0');
   });
 
-  it('applies the title attribute when provided', () => {
+  it('shows the title in a tooltip, never as a native attribute', () => {
     const { container } = render(<CostBadge value={4.5} title="total spend" />);
-    expect(container.querySelector('[title="total spend"]')).not.toBeNull();
+    const badge = container.firstElementChild;
+    expect(container.querySelector('[title]')).toBeNull();
+    expect(badge instanceof HTMLElement ? tooltipTextOf({ element: badge }) : null).toBe(
+      'total spend',
+    );
   });
 });

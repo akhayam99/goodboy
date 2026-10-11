@@ -112,6 +112,7 @@ vi.mock('./WorkflowRunDetail', () => ({
 }));
 
 import { TERMINAL_DIM } from '@goodboy/ui';
+import { tooltipTextOf } from '../../../../../__tests__/helpers/tooltip';
 import { WorkflowsPane } from './WorkflowsPane';
 
 const SESSION_ID = 'session-1';
@@ -269,7 +270,7 @@ describe('WorkflowsPane', () => {
     expect(screen.getByText('2 of 2 steps run')).toBeDefined();
     expect(screen.getByText('3m')).toBeDefined();
     expect(screen.getByText('Last: Second')).toBeDefined();
-    expect(screen.getByTitle('$0.30 for this run')).toBeDefined();
+    expect(tooltipTextOf({ element: screen.getByText('$0.30') })).toBe('$0.30 for this run');
   });
 
   it('shows dynamic run progress without a fixed total', () => {

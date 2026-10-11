@@ -1282,7 +1282,8 @@ describe('TimelinePane row meta', () => {
 
   it('keeps the provider glyph out of the label, ahead of the title', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
-    const label = within(rowOf('Plan the fix')).getByTitle('Plan the fix').parentElement;
+    const label = within(rowOf('Plan the fix')).getByText('Plan the fix').parentElement
+      ?.parentElement;
 
     expect(label?.querySelector('[data-provider]')).toBeNull();
   });
@@ -1550,7 +1551,7 @@ describe('TimelinePane row meta', () => {
       const narrow = seen(460);
       expect(narrow).not.toContain('6m 40s');
       expect(narrow).toContain('Plan the fix');
-      expect(within(row).getByTitle('Plan the fix').textContent).toBe('Plan the fix');
+      expect(within(row).getByText('Plan the fix').textContent).toBe('Plan the fix');
     });
 
     it('counts down a running step and fills its node toward its usual time', () => {
@@ -1703,7 +1704,7 @@ describe('TimelinePane row meta', () => {
 
       const worktrees = within(rowOf('Plan the fix')).getByTestId('timeline-row-worktrees');
       expect(worktrees.textContent).toBe('2');
-      expect(worktrees.getAttribute('title')).toBe('Changed files in acme-web and acme-api');
+      expect(tooltipTextOf({ element: worktrees })).toBe('Changed files in acme-web and acme-api');
       expect(within(rowOf('Build the fix')).queryByTestId('timeline-row-worktrees')).toBeNull();
     });
 
@@ -1722,7 +1723,7 @@ describe('TimelinePane row meta', () => {
 
       const worktrees = within(rowOf('Plan the fix')).getByTestId('timeline-row-worktrees');
       expect(worktrees.textContent).toBe('1');
-      expect(worktrees.getAttribute('title')).toBe('Changed files in acme-api');
+      expect(tooltipTextOf({ element: worktrees })).toBe('Changed files in acme-api');
     });
   });
 });
@@ -2084,8 +2085,8 @@ describe('TimelinePane finished run', () => {
 
     const summary = within(countRow()).getByTestId('fold-summary');
     expect(summary.textContent).toBe('3 steps · 1 question answered');
-    expect(summary.getAttribute('title')).toBe('3 steps · 1 question answered');
-    expect(within(runRow()).getByTitle('Refund keys').textContent).toBe('Refund keys');
+    expect(tooltipTextOf({ element: summary })).toBe('3 steps · 1 question answered');
+    expect(within(runRow()).getByText('Refund keys').textContent).toBe('Refund keys');
   });
 
   it('lets the cost and the time of a finished run go before its title gives way', () => {

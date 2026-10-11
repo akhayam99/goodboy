@@ -1,4 +1,4 @@
-import { cn } from '@goodboy/ui';
+import { cn, TruncatedText } from '@goodboy/ui';
 import type { ArtifactExportStatus as Status } from '../../hooks/useArtifactExport';
 
 type Props = {
@@ -29,16 +29,16 @@ export const ArtifactExportStatus = ({ status }: Props) => {
   const note = noteOf({ status });
   const hasFailed = status.kind === 'failed';
   return (
-    <span
+    <TruncatedText
+      tooltip={note ?? undefined}
       data-testid="artifact-export-status"
       aria-live={hasFailed ? 'assertive' : 'polite'}
-      title={note ?? undefined}
       className={cn(
         'min-w-0 max-w-48 truncate text-meta',
         hasFailed ? 'text-danger' : 'text-muted-foreground',
       )}
     >
       {note}
-    </span>
+    </TruncatedText>
   );
 };

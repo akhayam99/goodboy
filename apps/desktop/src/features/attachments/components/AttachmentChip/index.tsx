@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ImageOff, X } from 'lucide-react';
-import { IconButton, Skeleton } from '@goodboy/ui';
+import { IconButton, Skeleton, Tooltip } from '@goodboy/ui';
 import { attachmentKindFor, fileIconFor } from '../../../chat/attachment-kinds';
 import { ImageLightbox } from '../../../chat/components/ImageLightbox';
 import type { PendingAttachment } from '../../pendingAttachment';
@@ -106,32 +106,30 @@ export const AttachmentChip = ({
 
   if (attachmentKindFor(mimeType) === 'image' && thumbnail != null) {
     return (
-      <div
-        className="group relative h-16 w-16 overflow-hidden rounded-md ring-1 ring-border-soft"
-        title={title}
-      >
-        {thumbnail.status === 'loading' ? (
-          <Skeleton className="h-full w-full rounded-none" />
-        ) : thumbnail.status === 'failed' ? (
-          <div className="flex h-full w-full items-center justify-center bg-subtle text-muted-foreground">
-            <ImageOff size={ICON_SIZE.control} aria-hidden />
-          </div>
-        ) : !canPreview ? (
-          <img src={thumbnail.src} alt={fileName} className="h-full w-full object-cover" />
-        ) : (
-          <button
-            type="button"
-            onClick={openPreview}
-            title={`Preview ${fileName}`}
-            aria-label={`Preview ${fileName}`}
-            className="block h-full w-full cursor-zoom-in"
-          >
+      <Tooltip content={title}>
+        <div className="group relative h-16 w-16 overflow-hidden rounded-md ring-1 ring-border-soft">
+          {thumbnail.status === 'loading' ? (
+            <Skeleton className="h-full w-full rounded-none" />
+          ) : thumbnail.status === 'failed' ? (
+            <div className="flex h-full w-full items-center justify-center bg-subtle text-muted-foreground">
+              <ImageOff size={ICON_SIZE.control} aria-hidden />
+            </div>
+          ) : !canPreview ? (
             <img src={thumbnail.src} alt={fileName} className="h-full w-full object-cover" />
-          </button>
-        )}
-        {lightbox}
-        {removeButton}
-      </div>
+          ) : (
+            <button
+              type="button"
+              onClick={openPreview}
+              aria-label={`Preview ${fileName}`}
+              className="block h-full w-full cursor-zoom-in"
+            >
+              <img src={thumbnail.src} alt={fileName} className="h-full w-full object-cover" />
+            </button>
+          )}
+          {lightbox}
+          {removeButton}
+        </div>
+      </Tooltip>
     );
   }
 
@@ -144,25 +142,23 @@ export const AttachmentChip = ({
   );
 
   return (
-    <div
-      className="group relative flex h-16 max-w-[12rem] items-center gap-2 rounded-md bg-background py-2 pl-3 pr-6 ring-1 ring-border-soft"
-      title={title}
-    >
-      {!canPreview ? (
-        <div className="flex min-w-0 items-center gap-2">{body}</div>
-      ) : (
-        <button
-          type="button"
-          onClick={openPreview}
-          title={`Preview ${fileName}`}
-          aria-label={`Preview ${fileName}`}
-          className="flex min-w-0 cursor-zoom-in items-center gap-2"
-        >
-          {body}
-        </button>
-      )}
-      {lightbox}
-      {removeButton}
-    </div>
+    <Tooltip content={title}>
+      <div className="group relative flex h-16 max-w-[12rem] items-center gap-2 rounded-md bg-background py-2 pl-3 pr-6 ring-1 ring-border-soft">
+        {!canPreview ? (
+          <div className="flex min-w-0 items-center gap-2">{body}</div>
+        ) : (
+          <button
+            type="button"
+            onClick={openPreview}
+            aria-label={`Preview ${fileName}`}
+            className="flex min-w-0 cursor-zoom-in items-center gap-2"
+          >
+            {body}
+          </button>
+        )}
+        {lightbox}
+        {removeButton}
+      </div>
+    </Tooltip>
   );
 };

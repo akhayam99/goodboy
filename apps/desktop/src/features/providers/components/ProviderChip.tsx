@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cn, tintClasses } from '@goodboy/ui';
+import { cn, tintClasses, Tooltip } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { PROVIDER_LABEL } from '../providerLabel';
 import { PROVIDER_BRAND, brandColor } from './provider-brand';
@@ -24,23 +24,24 @@ export const ProviderChip = ({
 }: ProviderChipProps) => {
   const Icon = PROVIDER_BRAND[id].icon;
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      title={title}
-      aria-pressed={selected}
-      className={cn(
-        'inline-flex items-center gap-2 rounded-md px-3 py-2 text-label motion-safe:transition-colors',
-        selected
-          ? cn(tintClasses('primary').bg, 'font-medium text-primary')
-          : 'text-muted-foreground hover:bg-hover hover:text-foreground',
-        disabled && 'cursor-not-allowed opacity-60',
-      )}
-    >
-      <Icon size={ICON_SIZE.row} aria-hidden style={{ color: brandColor(id) }} />
-      {PROVIDER_LABEL[id]}
-      {trailing}
-    </button>
+    <Tooltip content={title}>
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        aria-pressed={selected}
+        className={cn(
+          'inline-flex items-center gap-2 rounded-md px-3 py-2 text-label motion-safe:transition-colors',
+          selected
+            ? cn(tintClasses('primary').bg, 'font-medium text-primary')
+            : 'text-muted-foreground hover:bg-hover hover:text-foreground',
+          disabled && 'cursor-not-allowed opacity-60',
+        )}
+      >
+        <Icon size={ICON_SIZE.row} aria-hidden style={{ color: brandColor(id) }} />
+        {PROVIDER_LABEL[id]}
+        {trailing}
+      </button>
+    </Tooltip>
   );
 };
