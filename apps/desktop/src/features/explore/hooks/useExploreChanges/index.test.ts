@@ -101,7 +101,9 @@ describe('useExploreChanges', () => {
     rerender();
     expect(changedCalls()).toHaveLength(1);
 
-    act(() => document.dispatchEvent(new Event('visibilitychange')));
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
 
     await waitFor(() => expect(changedCalls()).toHaveLength(2));
   });
@@ -113,7 +115,7 @@ describe('useExploreChanges', () => {
       throw new Error('git is busy');
     });
 
-    act(() => result.current.refresh());
+    await act(async () => result.current.refresh());
 
     await waitFor(() => expect(changedCalls()).toHaveLength(2));
     expect(result.current.changes.count).toBe(2);

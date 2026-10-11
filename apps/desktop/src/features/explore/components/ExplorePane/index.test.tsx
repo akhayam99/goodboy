@@ -2,13 +2,14 @@
 
 const h = vi.hoisted(() => {
   const gate: { current: Promise<void> | null } = { current: null };
+  const summary: { current: unknown } = { current: undefined };
   return {
     invoke: vi.fn<(command: string, args?: Record<string, unknown>) => Promise<unknown>>(),
     lists: new Map<string, unknown>(),
     reads: new Array<unknown>(),
     openFailures: new Array<unknown>(),
     gate,
-    summary: { current: undefined as unknown },
+    summary,
   };
 });
 
