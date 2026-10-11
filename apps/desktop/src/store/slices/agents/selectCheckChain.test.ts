@@ -6,8 +6,8 @@ import { selectFixOffers } from './selectFixOffers';
 
 const sessionId = aSession().id;
 const url = 'https://github.com/harborline/payments-api/actions/runs/31/job/42';
-const runId = 'run-1' as ProviderRunId;
-const at = TEST_NOW as IsoDateTime;
+const runId: ProviderRunId = JSON.parse(JSON.stringify('run-1'));
+const at: IsoDateTime = TEST_NOW;
 const debuggerAgent = anAgent({
   sessionId,
   ordinal: 1,

@@ -8,11 +8,7 @@ import type { SpawnedChild } from '../../../../shared/utils/spawnedChildren';
 const state = vi.hoisted(() => ({
   agentTurnState: {} as Record<string, unknown>,
   openQuestions: [] as ReadonlyArray<OpenQuestion>,
-  spawnAgent: vi.fn(async () => 'agent-2' as AgentId),
-  sessionPhaseRuns: {} as Record<string, ReadonlyArray<Agent>>,
-  startFollowUp: (() => Promise.resolve('agent-2' as AgentId)) as (
-    params: never,
-  ) => Promise<AgentId>,
+  startFollowUp: vi.fn(async (_params: unknown) => 'agent-2' as AgentId),
   navigate: vi.fn(),
   loadAgentTranscript: vi.fn(async () => undefined),
   providers: [],
@@ -38,7 +34,6 @@ vi.mock('../../../../shared/hooks/useFollowToast', () => ({
   useFollowToast: () => announce,
 }));
 
-import { startFollowUp } from '../../../../store/slices/agents/startFollowUp';
 import { AgentFollowUps } from './AgentFollowUps';
 import type { FollowUpChild } from './followUpChildren';
 
@@ -74,11 +69,9 @@ const makeChild = (over: Partial<Agent>): FollowUpChild => {
 afterEach(cleanup);
 
 beforeEach(() => {
-  state.sessionPhaseRuns = { [sessionId]: [source] };
-  state.startFollowUp = startFollowUp(() => state as never);
   state.agentTurnState = {};
   state.openQuestions = [];
-  state.spawnAgent.mockClear();
+  state.startFollowUp.mockClear();
   state.navigate.mockClear();
   announce.mockClear();
 });
@@ -114,11 +107,10 @@ describe('AgentFollowUps suggestions', () => {
     );
 
     screen.getByText('Turn the review findings into a plan').click();
-    await vi.waitFor(() => expect(state.spawnAgent).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(state.startFollowUp).toHaveBeenCalledTimes(1));
 
-    expect(state.spawnAgent).toHaveBeenCalledWith(
-      sessionId,
-      expect.objectContaining({ kindOverride: 'planner', parentAgentId: sourceId }),
+    expect(state.startFollowUp).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionId, kind: 'planner', sourceAgentId: sourceId }),
     );
   });
 
@@ -159,16 +151,18 @@ describe('AgentFollowUps suggestions', () => {
     );
 
     screen.getByText('Fix these review findings').click();
-    await vi.waitFor(() => expect(state.spawnAgent).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(state.startFollowUp).toHaveBeenCalledTimes(1));
 
-    const options = (state.spawnAgent.mock.calls[0] as ReadonlyArray<unknown>)[1] as Record<
-      string,
-      unknown
-    >;
-    expect(options.kindOverride).toBe('implementer');
-    expect(options.triggeredPlanId).toBe('plan-1');
-    expect(options.initialPrompt).toBeUndefined();
-    expect(options.parentAgentId).toBe(sourceId);
+    expect(state.startFollowUp).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'implementer',
+        triggeredPlanId: 'plan-1',
+        sourceAgentId: sourceId,
+      }),
+    );
+    expect(state.startFollowUp).toHaveBeenCalledWith(
+      expect.not.objectContaining({ seed: expect.anything() }),
+    );
   });
 
   it('keeps the seed on an implementer when no plan exists', async () => {
@@ -184,15 +178,14 @@ describe('AgentFollowUps suggestions', () => {
     );
 
     screen.getByText('Fix these review findings').click();
-    await vi.waitFor(() => expect(state.spawnAgent).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(state.startFollowUp).toHaveBeenCalledTimes(1));
 
-    const options = (state.spawnAgent.mock.calls[0] as ReadonlyArray<unknown>)[1] as Record<
-      string,
-      unknown
-    >;
-    expect(options.triggeredPlanId).toBeUndefined();
-    expect(typeof options.initialPrompt).toBe('string');
-    expect((options.initialPrompt as string).length).toBeGreaterThan(0);
+    expect(state.startFollowUp).toHaveBeenCalledWith(
+      expect.not.objectContaining({ triggeredPlanId: expect.anything() }),
+    );
+    expect(state.startFollowUp).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'implementer', summary: 'two findings' }),
+    );
   });
 });
 

@@ -25,6 +25,8 @@ vi.mock('../../permissions/permissions', async () =>
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ProviderRunId } from '@goodboy/types';
+
+const FIX_RUN: ProviderRunId = JSON.parse(JSON.stringify('run-fix'));
 import { insertAgent, insertSession, insertWorkspace } from '@goodboy/db';
 import { aSession } from '@goodboy/types/testing';
 import {
@@ -165,7 +167,7 @@ describe('Start fix with the real store and SQLite', () => {
           ...store.getState().agentTurnState,
           [child.id]: {
             kind: 'running',
-            runId: 'run-fix' as ProviderRunId,
+            runId: FIX_RUN,
             startedAt: seed.events[0]!.at,
           },
         },
@@ -189,7 +191,7 @@ describe('Start fix with the real store and SQLite', () => {
           [child.id]: [
             {
               kind: 'tool_call_start',
-              runId: 'run-fix' as ProviderRunId,
+              runId: FIX_RUN,
               toolUseId: 'c1',
               toolName: 'Bash',
               input: { command: 'git commit -m fix' },
@@ -197,7 +199,7 @@ describe('Start fix with the real store and SQLite', () => {
             },
             {
               kind: 'tool_call_end',
-              runId: 'run-fix' as ProviderRunId,
+              runId: FIX_RUN,
               toolUseId: 'c1',
               output: '[acme/fix-credits 9e4c1a7] fix',
               isError: false,

@@ -53,6 +53,7 @@ const { storeState, spies, fixable } = vi.hoisted(() => {
   const requestReviewLaunch = vi.fn();
   const openMountTerminal = vi.fn();
   const readWorktreeStatus = vi.fn(async (_params: unknown) => null);
+  const phaseRuns: Record<string, ReadonlyArray<unknown>> = {};
   return {
     fixable: { ids: [] as ReadonlyArray<string> },
     spies: {
@@ -88,7 +89,7 @@ const { storeState, spies, fixable } = vi.hoisted(() => {
     },
     storeState: {
       sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
-      sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
+      sessionPhaseRuns: phaseRuns,
       mountGithub: {} as Record<string, unknown>,
       mountGitlabMr: {} as Record<string, unknown>,
       mountBitbucketPr: {} as Record<string, unknown>,
