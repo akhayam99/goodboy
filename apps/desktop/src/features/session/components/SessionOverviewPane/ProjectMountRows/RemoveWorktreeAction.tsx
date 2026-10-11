@@ -1,5 +1,6 @@
 import { NAMES } from '../../../../../shared/names';
 import { useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { ConfirmPopover, cn, type ConfirmRole } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
@@ -8,6 +9,7 @@ import { useToast } from '../../../../../shared/components/Toast';
 import { worktreeDetachAssessment } from '../../../../worktree/worktree';
 import {
   mountCleanupBlockers,
+  processesInWorktree,
   type MountCleanupBlocker,
 } from '../../../../../store/slices/mount-cleanup/cleanupPolicy';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
@@ -34,6 +36,10 @@ type Confirm =
   | { readonly kind: 'unmerged'; readonly lines: ReadonlyArray<string> }
   | { readonly kind: 'risky'; readonly lines: ReadonlyArray<string> };
 
+type CheckParams = {
+  readonly currentBlockers?: ReadonlyArray<MountCleanupBlocker>;
+};
+
 type RemoveParams = {
   readonly mode: 'safe' | 'confirmed';
 };
@@ -48,6 +54,7 @@ const CONFIRM_ROLE = {
 const BLOCKER_CODES = [
   'agent-running',
   'terminal-open',
+  'process-running',
 ] satisfies ReadonlyArray<MountCleanupBlocker>;
 
 export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }: Props) => {
@@ -70,6 +77,17 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
           .join(','),
   );
   const blockers = BLOCKER_CODES.filter((code) => blockerKey.split(',').includes(code));
+
+  const worktreeProcesses = useAppStore(
+    useShallow((state) =>
+      worktreePath === null
+        ? []
+        : processesInWorktree({ snapshot: state.monitorSnapshot, worktreePath }),
+    ),
+  );
+  const stopGoodboyRow = useAppStore((state) => state.stopGoodboyRow);
+  const stopProcess = useAppStore((state) => state.stopProcess);
+  const [isStopping, setIsStopping] = useState(false);
 
   const cancel = () => {
     setConfirm(null);
@@ -96,6 +114,35 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
     }
   };
 
+  const stopProcesses = async () => {
+    if (worktreePath === null) {
+      return;
+    }
+    setIsStopping(true);
+    try {
+      for (const process of worktreeProcesses) {
+        const entry = useAppStore
+          .getState()
+          .monitorLedger.find((candidate) => candidate.pid === process.pid);
+        if (entry === undefined) {
+          await stopProcess({ pid: process.pid, force: false });
+          continue;
+        }
+        await stopGoodboyRow({ spawnId: entry.spawnId });
+      }
+    } finally {
+      setIsStopping(false);
+    }
+    const fresh = mountCleanupBlockers({
+      state: useAppStore.getState(),
+      sessionId,
+      mountId: row.mountId,
+      worktreePath,
+    });
+    setConfirm(null);
+    await check({ currentBlockers: fresh });
+  };
+
   const removeAtOnce = async () => {
     try {
       await remove({ mode: 'safe' });
@@ -104,14 +151,20 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
     }
   };
 
-  const check = async () => {
+  const check = async ({ currentBlockers = blockers }: CheckParams = {}) => {
     if (worktreePath === null || isChecking) {
       return;
     }
-    if (blockers.length > 0) {
+    if (currentBlockers.length > 0) {
+      const names = [...new Set(worktreeProcesses.map((process) => process.name))];
       setConfirm({
         kind: 'blocked',
-        lines: blockers.map((blocker) => BLOCKER_SENTENCE[blocker]({ projectName: label })),
+        lines: [
+          ...currentBlockers.map((blocker) => BLOCKER_SENTENCE[blocker]({ projectName: label })),
+          ...(currentBlockers.includes('process-running') && names.length > 0
+            ? [`Running: ${names.join(', ')}.`]
+            : []),
+        ],
       });
       return;
     }
@@ -198,6 +251,15 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
       onCancel={cancel}
       {...(confirm?.kind === 'unread'
         ? { altAction: { label: 'Check again', onClick: () => void check(), disabled: isChecking } }
+        : {})}
+      {...(confirm?.kind === 'blocked' && worktreeProcesses.length > 0
+        ? {
+            altAction: {
+              label: isStopping ? 'Stopping' : 'Stop it',
+              onClick: () => void stopProcesses(),
+              disabled: isStopping,
+            },
+          }
         : {})}
       trigger={() => (
         <button

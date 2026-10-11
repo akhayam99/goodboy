@@ -1,4 +1,4 @@
-import type { LedgerRow, MonitorProcess, MonitorSnapshot } from '@goodboy/core';
+import type { LedgerKind, LedgerRow, MonitorProcess, MonitorSnapshot } from '@goodboy/core';
 import type { Project, SessionMountView } from '@goodboy/types';
 import { projectById } from '../../store/slices/projects/projectIndex';
 import { ledgerKindWord } from './ledgerKindWord';
@@ -12,6 +12,7 @@ type Params = {
 
 export type StartedRow = {
   readonly spawnId: string;
+  readonly kind: LedgerKind;
   readonly name: string;
   readonly where: string;
   readonly startedAt: number;
@@ -54,6 +55,7 @@ export const startedByGoodboy = ({
       const process = processes.get(entry.pid);
       return {
         spawnId: entry.spawnId,
+        kind: entry.kind,
         name: `${ledgerKindWord({ kind: entry.kind })} · ${process?.name ?? 'process'}`,
         where: whereOf({ entry, projects, sessionMounts }),
         startedAt: entry.startedAt,

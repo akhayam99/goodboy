@@ -322,6 +322,8 @@ export const NON_SESSION_STATE_KEYS = [
   'monitorScanned',
   'monitorWatched',
   'monitorLearned',
+  'monitorStopping',
+  'monitorSweptCount',
   'undoStack',
   'undoNotices',
   'pendingUndoId',
