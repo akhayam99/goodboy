@@ -66,6 +66,9 @@ export const settleScribe = (set: SetFn, get: GetFn) => {
       return;
     }
     patchScribeWork({ set, key, patch: { status: 'ready', output, error: null } });
+    if (work.task.kind === 'pr' && work.task.isTextOnly === true) {
+      return;
+    }
     if (work.task.kind === 'pr') {
       await get().openScribePullRequest({ key });
       return;
