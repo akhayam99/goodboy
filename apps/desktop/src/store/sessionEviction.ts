@@ -298,6 +298,8 @@ export const NON_SESSION_STATE_KEYS = [
   'appStudio',
   'lastSettingsFocus',
   'lastChatByWorkspace',
+  'terminalNames',
+  'terminalFolderOverrides',
   'slackChannels',
   'slackUsers',
   'slackThreadHeads',
