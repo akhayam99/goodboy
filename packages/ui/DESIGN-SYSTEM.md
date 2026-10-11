@@ -1929,6 +1929,10 @@ drawn as an empty list.
    with nothing the person can start (Questions) has no primary. Inside a
    section of a page, `EmptyState size="section"`: one line, no card and no
    padding block.
+   A stage may hold its input. The empty chat is one stage centred both ways and
+   lifted 24px above the optical centre: the bare glyph, the title, one
+   sentence, the composer itself and up to three quiet suggestion rows. The
+   first message docks the composer at the bottom.
 3. **Nothing matches.** A filter or a search hides everything. `EmptyLine`
    with `Clear filter` (or `Clear search`), or the next place to look. It never
    uses the first-time shape: the list exists, the filter is the cause.
@@ -2090,7 +2094,7 @@ conversation is the wrapped sheet, and "Start work from chat" is the
 - **The composer** is the only pinned row: a `bg-subtle` box with the
   textarea, the app `RoutingPicker` in its `pill` variant (chat providers
   only, effort editable, a one-line footer for the providers that cannot
-  chat), the faint "Read-only · N projects" hint from `@2xl/chat`, and a
+  chat), the faint "Read only. Nothing is changed." hint from `@2xl/chat`, and a
   square send button that turns into Stop while an answer streams. The Enter
   and Shift+Enter keys live in the send button's tooltip.
 

@@ -5,7 +5,6 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { PromptField } from '../../../../shared/components/PromptField';
 import { usePromptFiles, type PromptFileFilter } from '../../../../shared/hooks/usePromptFiles';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
-import { pluralize } from '../../../../shared/utils/pluralize';
 import type { WorkspaceId } from '@goodboy/types';
 import type { PendingAttachment } from '../../../attachments/pendingAttachment';
 import { CHAT_IMAGE_ACCEPT, isChatImage } from '../../chatImageKinds';
@@ -22,7 +21,6 @@ type Props = {
   readonly workspaceId: WorkspaceId;
   readonly placeholder: string;
   readonly routing: ChatRouting;
-  readonly projectCount: number;
   readonly isStreaming: boolean;
   readonly isStopping: boolean;
   readonly isAutoFocused?: boolean;
@@ -50,7 +48,6 @@ export const ChatComposer = ({
   workspaceId,
   placeholder,
   routing,
-  projectCount,
   isStreaming,
   isStopping,
   isAutoFocused = false,
@@ -104,11 +101,9 @@ export const ChatComposer = ({
       }
       actions={
         <>
-          <Tooltip content={`Reads ${pluralize(projectCount, 'project')} and changes nothing`}>
-            <span className="hidden text-meta text-faint-foreground @2xl/chat:inline">
-              Read-only
-            </span>
-          </Tooltip>
+          <span className="hidden text-meta text-faint-foreground @2xl/chat:inline">
+            Read only. Nothing is changed.
+          </span>
           {isStreaming ? (
             <Tooltip content="Stop the answer">
               <button
