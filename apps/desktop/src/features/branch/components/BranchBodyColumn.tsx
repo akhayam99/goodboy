@@ -1,15 +1,11 @@
 import type { ReactNode } from 'react';
-import { PageColumn } from '@goodboy/ui';
 
 type Props = {
   readonly children: ReactNode;
 };
 
 export const BranchBodyColumn = ({ children }: Props) => (
-  <PageColumn
-    width="column"
-    className="flex min-h-0 min-w-0 flex-1 flex-col px-0 @max-[720px]:px-0"
-  >
+  <div className="mx-auto flex min-h-0 w-full min-w-0 max-w-[var(--column-frame)] flex-1 flex-col">
     {children}
-  </PageColumn>
+  </div>
 );
