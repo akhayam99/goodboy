@@ -66,11 +66,8 @@ describe('HistoryBackups', () => {
     const day = formatDayMonth({ at: found.createdAt * 1000 });
     const dialog = screen.getByRole('dialog', { name: `Restore the backup from ${day}?` });
     expect(container.contains(dialog)).toBe(false);
-    expect(
-      within(dialog).getByText(
-        'Your branch goes back to that state. The current one is kept as a backup.',
-      ),
-    ).toBeDefined();
+    expect(within(dialog).getByText('Your branch goes back to that state.')).toBeDefined();
+    expect(within(dialog).getByText('The current one is kept as a backup.')).toBeDefined();
     expect(onRestore).not.toHaveBeenCalled();
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Restore backup' }));

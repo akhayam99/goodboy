@@ -84,13 +84,12 @@ export const HistoryBackups = ({
                   role="danger"
                   icon={<CONCEPT_ICONS.backup size={ICON_SIZE.row} aria-hidden />}
                   title={`Restore the backup from ${formatDayMonth({ at: backup.createdAt * 1000 })}?`}
-                  description="Your branch goes back to that state. The current one is kept as a backup."
+                  description="Your branch goes back to that state."
                   note={
-                    hasUpstream ? (
-                      <p className="text-muted-foreground">
-                        It goes online only if nothing newer is there.
-                      </p>
-                    ) : undefined
+                    <div className="flex min-w-0 flex-col gap-1 text-muted-foreground">
+                      <p>The current one is kept as a backup.</p>
+                      {hasUpstream ? <p>It goes online only if nothing newer is there.</p> : null}
+                    </div>
                   }
                   confirmLabel="Restore backup"
                   onConfirm={() => onRestore(backup)}
