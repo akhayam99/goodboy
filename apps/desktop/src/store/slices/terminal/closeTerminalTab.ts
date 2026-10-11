@@ -1,13 +1,13 @@
 import type { SessionId } from '@goodboy/types';
 import { invokeTerminalClose } from '../../../features/terminal/terminal';
-import { clearTerminalCache } from '../../../shared/components/GenericTerminalPanel/outputCache';
+import { terminalOutputBus } from '../../../features/terminal/outputBus';
 import type { TerminalTabId } from '../../../shared/types/terminal';
 import type { GetFn, SetFn } from './types';
 
 export const closeTerminalTab = (set: SetFn, get: GetFn) => {
   return (sessionId: SessionId, tabId: TerminalTabId): void => {
     invokeTerminalClose(tabId).catch(() => undefined);
-    clearTerminalCache(tabId);
+    terminalOutputBus.forget({ terminalId: tabId });
     const tabs = get().terminalTabs[sessionId] ?? [];
     const index = tabs.findIndex((t) => t.id === tabId);
     const remaining = tabs.filter((t) => t.id !== tabId);

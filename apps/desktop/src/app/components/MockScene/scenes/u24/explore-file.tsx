@@ -132,7 +132,7 @@ const FileStage = ({ variant, isOverlay = false }: StageProps) => {
         style={{ width: OVERLAY_STAGE_PX, height: STAGE_HEIGHT_PX }}
       >
         <div className="h-full w-full">
-          <ExplorePane sessionId={SESSION_ID} sessionDir={SESSION_DIR} />
+          <ExplorePane sessionId={SESSION_ID} />
         </div>
         <div className="absolute inset-0 bg-scrim" aria-hidden />
         <div

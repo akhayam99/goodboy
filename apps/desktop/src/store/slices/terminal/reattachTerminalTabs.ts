@@ -1,5 +1,6 @@
 import type { SessionId, SessionProjectMount } from '@goodboy/types';
 import { invokeTerminalListLive } from '../../../features/terminal/terminal';
+import { terminalOutputBus } from '../../../features/terminal/outputBus';
 import type { TerminalTab, TerminalTabId } from '../../../shared/types/terminal';
 import type { SetFn } from './types';
 
@@ -38,6 +39,7 @@ const mountForCwd = ({ mounts, cwd }: OwnerParams): SessionProjectMount | null =
 
 export const reattachTerminalTabs = (set: SetFn) => {
   return async (): Promise<void> => {
+    await terminalOutputBus.register();
     const liveTerminals = await invokeTerminalListLive();
     set((state) => {
       const terminalTabs = { ...state.terminalTabs };
