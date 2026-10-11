@@ -21,7 +21,6 @@ export const ProjectScriptRow = ({ name, command, isPinned, onTogglePin }: Props
       label={isPinned ? `Unpin ${name}` : `Pin ${name}`}
       aria-pressed={isPinned}
       tone={isPinned ? 'primary' : 'neutral'}
-
       onClick={onTogglePin}
     />
   </div>

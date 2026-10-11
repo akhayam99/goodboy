@@ -4,60 +4,66 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { WorkspaceId } from '@goodboy/types';
 
-const { state, repoMocks } = vi.hoisted(() => ({
-  state: {
-    settings: {} as Record<string, string>,
-    projects: [] as ReadonlyArray<Record<string, unknown>>,
-    projectGitStatus: {} as Readonly<Record<string, Record<string, unknown>>>,
-    projectRelocationWorkspaceId: null as string | null,
-    projectRelocationCandidates: [] as ReadonlyArray<Record<string, unknown>>,
-    projectRelocationCompleted: [] as ReadonlyArray<Record<string, unknown>>,
-    projectRelocationPhase: 'idle',
-    projectRelocationError: null as string | null,
-    addProject: vi.fn(async (): Promise<Record<string, unknown>> => ({
-      kind: 'linked',
-      project: { id: 'proj-1', name: 'api', rootPath: '/repos/api' },
-    })),
-    addProjects: vi.fn(async () => ({ linked: [], conflicts: [] })),
-    adoptProject: vi.fn(async () => ({
-      movedSessionCount: 4,
-      ambiguousSessionCount: 0,
-      mergedWorkspace: true,
-    })),
-    previewProjectAdoption: vi.fn(async (): Promise<Record<string, unknown> | null> => null),
-    removeProject: vi.fn(async () => undefined),
-    setProjectStarred: vi.fn(async () => undefined),
-    describeProject: vi.fn(async () => undefined),
-    updateProjectBaseBranch: vi.fn(async () => undefined),
-    updateProjectAfterMerge: vi.fn(async () => undefined),
-    workspaceOverrides: {} as Record<string, { readonly afterMerge: string | null }>,
-    loadProjectGitStatus: vi.fn(async () => undefined),
-    findMovedProjects: vi.fn(async () => undefined),
-    setProjectRelocationSelected: vi.fn(),
-    relocateProjects: vi.fn(async () => undefined),
-    undoRelocation: vi.fn(async () => undefined),
-    clearProjectRelocation: vi.fn(),
-    reportError: vi.fn(async () => undefined),
-    workspaceIntegrations: {} as Record<string, ReadonlyArray<{ provider: string }>>,
-    projectSentryLinks: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
-    loadProjectSentryLinks: vi.fn(async () => undefined),
-    projectRootScripts: {} as Record<string, unknown>,
-    loadProjectRootScripts: vi.fn(async () => undefined),
-    loadScriptPins: vi.fn(async () => undefined),
-    toggleScriptPin: vi.fn(async () => undefined),
-  },
-  repoMocks: {
-    validateGitRepo: vi.fn(async () => ({
-      isRepo: true,
-      rootPath: '/repos/api',
-      resolvedPath: '/repos/api',
-      error: null,
-    })),
-    scanChildRepos: vi.fn(async (): Promise<ReadonlyArray<never>> => []),
-    initRepo: vi.fn(async () => ({ rootPath: '/repos/api' })),
-    dialogOpen: vi.fn(async (): Promise<string | null> => null),
-  },
-}));
+const { state, repoMocks } = vi.hoisted(() => {
+  const noFolderOverrides = (): Record<string, string | null> => ({});
+  return {
+    state: {
+      settings: {} as Record<string, string>,
+      projects: [] as ReadonlyArray<Record<string, unknown>>,
+      projectGitStatus: {} as Readonly<Record<string, Record<string, unknown>>>,
+      projectRelocationWorkspaceId: null as string | null,
+      projectRelocationCandidates: [] as ReadonlyArray<Record<string, unknown>>,
+      projectRelocationCompleted: [] as ReadonlyArray<Record<string, unknown>>,
+      projectRelocationPhase: 'idle',
+      projectRelocationError: null as string | null,
+      addProject: vi.fn(async (): Promise<Record<string, unknown>> => ({
+        kind: 'linked',
+        project: { id: 'proj-1', name: 'api', rootPath: '/repos/api' },
+      })),
+      addProjects: vi.fn(async () => ({ linked: [], conflicts: [] })),
+      adoptProject: vi.fn(async () => ({
+        movedSessionCount: 4,
+        ambiguousSessionCount: 0,
+        mergedWorkspace: true,
+      })),
+      previewProjectAdoption: vi.fn(async (): Promise<Record<string, unknown> | null> => null),
+      removeProject: vi.fn(async () => undefined),
+      setProjectStarred: vi.fn(async () => undefined),
+      describeProject: vi.fn(async () => undefined),
+      updateProjectBaseBranch: vi.fn(async () => undefined),
+      updateProjectAfterMerge: vi.fn(async () => undefined),
+      workspaceOverrides: {} as Record<string, { readonly afterMerge: string | null }>,
+      loadProjectGitStatus: vi.fn(async () => undefined),
+      findMovedProjects: vi.fn(async () => undefined),
+      setProjectRelocationSelected: vi.fn(),
+      relocateProjects: vi.fn(async () => undefined),
+      undoRelocation: vi.fn(async () => undefined),
+      clearProjectRelocation: vi.fn(),
+      reportError: vi.fn(async () => undefined),
+      workspaceIntegrations: {} as Record<string, ReadonlyArray<{ provider: string }>>,
+      projectSentryLinks: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
+      loadProjectSentryLinks: vi.fn(async () => undefined),
+      projectRootScripts: {} as Record<string, unknown>,
+      loadProjectRootScripts: vi.fn(async () => undefined),
+      loadScriptPins: vi.fn(async () => undefined),
+      toggleScriptPin: vi.fn(async () => undefined),
+      terminalFolderOverrides: noFolderOverrides(),
+      loadTerminalWorkspaceFolder: vi.fn(async () => undefined),
+      setTerminalWorkspaceFolder: vi.fn(async () => undefined),
+    },
+    repoMocks: {
+      validateGitRepo: vi.fn(async () => ({
+        isRepo: true,
+        rootPath: '/repos/api',
+        resolvedPath: '/repos/api',
+        error: null,
+      })),
+      scanChildRepos: vi.fn(async (): Promise<ReadonlyArray<never>> => []),
+      initRepo: vi.fn(async () => ({ rootPath: '/repos/api' })),
+      dialogOpen: vi.fn(async (): Promise<string | null> => null),
+    },
+  };
+});
 
 vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
@@ -97,6 +103,8 @@ beforeEach(() => {
   state.projectSentryLinks = {};
   state.projectGitStatus = {};
   state.workspaceOverrides = {};
+  state.terminalFolderOverrides = {};
+  state.projectRootScripts = {};
 });
 afterEach(cleanup);
 
@@ -239,9 +247,8 @@ describe('WorkspaceProjectsSection', () => {
     ];
     render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
 
-    expect(screen.queryByRole('heading', { name: 'Projects' })).toBeNull();
     expect(screen.queryByText('/repos/ledger-core')).toBeNull();
-    expect(screen.getByText('All projects')).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Projects' })).toBeDefined();
     expect(screen.getByRole('img', { name: 'Repository' })).toBeDefined();
     expect(screen.queryByLabelText('Project path')).toBeNull();
     expect(screen.queryByRole('button', { name: /plain folder/i })).toBeNull();
@@ -375,7 +382,6 @@ describe('WorkspaceProjectsSection', () => {
         isStarred: true,
       }),
     );
-    expect(screen.getByText(/Starred projects come first for agents/)).toBeDefined();
   });
 
   it('shows a starred project as pressed, grouped under Starred, and unstars it', async () => {
@@ -391,7 +397,8 @@ describe('WorkspaceProjectsSection', () => {
     ];
     render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
 
-    expect(screen.getByText('Starred')).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Starred' })).toBeDefined();
+    expect(screen.getByText('Agents and pickers list these first.')).toBeDefined();
     const star = screen.getByRole('button', { name: 'Starred: ledger-core' });
     expect(star.getAttribute('aria-pressed')).toBe('true');
     fireEvent.click(star);
@@ -499,7 +506,7 @@ describe('WorkspaceProjectsSection', () => {
     expect(screen.getByText('Folder not found')).toBeDefined();
   });
 
-  it('shows the first 8 of All projects and reveals the rest on Show more', () => {
+  it('shows the first 8 projects and reveals the rest on Show more', () => {
     state.projects = Array.from({ length: 9 }, (_, index) => ({
       id: `proj-${index}`,
       name: `project-${index}`,
@@ -512,5 +519,138 @@ describe('WorkspaceProjectsSection', () => {
     expect(screen.getAllByRole('img', { name: 'Folder' })).toHaveLength(8);
     fireEvent.click(screen.getByRole('button', { name: 'Show 1 more' }));
     expect(screen.getAllByRole('img', { name: 'Folder' })).toHaveLength(9);
+  });
+
+  it('keeps scripts off the row and shows them in the open editor card with the pinned count', () => {
+    state.projects = [
+      {
+        id: 'proj-ledger',
+        name: 'ledger-core',
+        rootPath: '/repos/ledger-core',
+        kind: 'repo',
+        workspaceId: WORKSPACE_ID,
+        baseBranch: 'main',
+        overrides: { afterMerge: null },
+      },
+    ];
+    state.projectRootScripts = {
+      '/repos/ledger-core': {
+        status: 'ready',
+        error: null,
+        groups: [
+          {
+            source: 'package-json',
+            packageName: 'ledger-core',
+            relDir: '',
+            manager: 'pnpm',
+            scripts: [
+              { name: 'dev', command: 'pnpm run dev', body: 'vite --port 4310' },
+              { name: 'test', command: 'pnpm run test', body: 'vitest run' },
+            ],
+          },
+        ],
+      },
+    };
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+
+    expect(screen.queryByRole('button', { name: /^Scripts of/ })).toBeNull();
+    expect(screen.queryByText('Scripts')).toBeNull();
+
+    openEditor('ledger-core');
+
+    const scripts = screen.getByRole('group', { name: 'Scripts of ledger-core' });
+    within(scripts).getByText('Scripts');
+    expect(within(scripts).getByRole('button', { name: 'Pin dev' })).toBeDefined();
+    expect(within(scripts).getByRole('button', { name: 'Pin test' })).toBeDefined();
+    expect(state.loadProjectRootScripts).toHaveBeenCalledWith({ rootPath: '/repos/ledger-core' });
+  });
+
+  it('shows a failed scripts scan as a notice with Retry', () => {
+    state.projects = [
+      {
+        id: 'proj-ledger',
+        name: 'ledger-core',
+        rootPath: '/repos/ledger-core',
+        kind: 'repo',
+        workspaceId: WORKSPACE_ID,
+        overrides: { afterMerge: null },
+      },
+    ];
+    state.projectRootScripts = {
+      '/repos/ledger-core': { status: 'error', error: 'permission denied', groups: [] },
+    };
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+    openEditor('ledger-core');
+    state.loadProjectRootScripts.mockClear();
+
+    const notice = screen.getByRole('alert');
+    within(notice).getByText('permission denied');
+    fireEvent.click(within(notice).getByRole('button', { name: 'Retry' }));
+
+    expect(state.loadProjectRootScripts).toHaveBeenCalledWith({ rootPath: '/repos/ledger-core' });
+  });
+
+  it('shows the computed terminal folder once above the list and lets it change', async () => {
+    state.projects = [
+      {
+        id: 'proj-ledger',
+        name: 'ledger-core',
+        rootPath: '/repos/ledger-core',
+        kind: 'repo',
+        workspaceId: WORKSPACE_ID,
+      },
+      {
+        id: 'proj-relay',
+        name: 'notify-relay',
+        rootPath: '/repos/notify-relay',
+        kind: 'repo',
+        workspaceId: WORKSPACE_ID,
+      },
+    ];
+    repoMocks.dialogOpen.mockResolvedValueOnce('/work/harborline');
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+
+    const row = screen.getByRole('group', { name: 'Terminal folder' });
+    within(row).getByText('/repos');
+    expect(within(row).queryByRole('button', { name: 'Use the default' })).toBeNull();
+    fireEvent.click(within(row).getByRole('button', { name: 'Change' }));
+
+    await waitFor(() =>
+      expect(state.setTerminalWorkspaceFolder).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE_ID,
+        folder: '/work/harborline',
+      }),
+    );
+  });
+
+  it('offers Use the default when the terminal folder is overridden', async () => {
+    state.projects = [
+      {
+        id: 'proj-ledger',
+        name: 'ledger-core',
+        rootPath: '/repos/ledger-core',
+        kind: 'repo',
+        workspaceId: WORKSPACE_ID,
+      },
+    ];
+    state.terminalFolderOverrides = { [WORKSPACE_ID]: '/work/harborline' };
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+
+    const row = screen.getByRole('group', { name: 'Terminal folder' });
+    within(row).getByText('/work/harborline');
+    fireEvent.click(within(row).getByRole('button', { name: 'Use the default' }));
+
+    await waitFor(() =>
+      expect(state.setTerminalWorkspaceFolder).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE_ID,
+        folder: null,
+      }),
+    );
+  });
+
+  it('shows no terminal folder row before a project is linked', () => {
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+
+    expect(screen.queryByRole('group', { name: 'Terminal folder' })).toBeNull();
   });
 });

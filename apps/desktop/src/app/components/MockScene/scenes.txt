@@ -277,6 +277,7 @@ palette-stable-height
 palette-stable-height-typing
 palette-state
 permissions-empty
+picker-starred
 plan-drawer-approved
 plan-drawer-conflict
 plan-drawer-drafts
@@ -369,6 +370,10 @@ settings-app
 settings-general-legacy
 settings-general-pinned
 settings-no-workspace
+settings-projects-failed
+settings-projects-nostar
+settings-projects-open
+settings-projects-rows
 settings-providers
 settings-providers-rail
 settings-providers-scope

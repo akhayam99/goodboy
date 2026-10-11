@@ -25,7 +25,7 @@ const focusOf = ({ project }: { readonly project: Project }): string => {
 export const starredProjectLines = ({ projects, line }: Params): ReadonlyArray<string> => {
   const hasStarred = projects.some((project) => project.starredAt !== undefined);
   return [
-    ...starredProjectsFirst({ projects }).map((project) =>
+    ...starredProjectsFirst({ projects, inside: 'recency' }).map((project) =>
       line({ project, focus: focusOf({ project }) }),
     ),
     ...(hasStarred ? [STARRED_FIRST_RULE] : []),

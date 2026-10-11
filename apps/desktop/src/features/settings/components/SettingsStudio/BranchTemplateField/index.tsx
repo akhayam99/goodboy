@@ -188,7 +188,7 @@ export const BranchTemplateField = ({ workspaceId }: Props) => {
         ))}
       </div>
       {picked === 'custom' ? (
-        <div className="flex min-w-0 flex-col gap-2 pl-9">
+        <div className="flex min-w-0 flex-col gap-2 pl-[calc(12px+16px+12px)]">
           <Input
             ref={inputRef}
             value={draft}

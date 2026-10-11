@@ -20,9 +20,16 @@ type Props = {
   readonly busy: boolean;
   readonly onArmUnlink: () => void;
   readonly ignoreField?: ReactNode;
+  readonly scriptsField?: ReactNode;
 };
 
-export const ProjectRowEditor = ({ project, busy, onArmUnlink, ignoreField }: Props) => {
+export const ProjectRowEditor = ({
+  project,
+  busy,
+  onArmUnlink,
+  ignoreField,
+  scriptsField,
+}: Props) => {
   const now = useNow(30_000);
   const reportError = useAppStore((state) => state.reportError);
   const editor = useAppStore((state) => resolveEditorBinary({ settings: state.settings }));
@@ -89,6 +96,7 @@ export const ProjectRowEditor = ({ project, busy, onArmUnlink, ignoreField }: Pr
         </div>
         {ignoreField}
       </div>
+      {scriptsField}
       <span className="text-label text-faint-foreground">
         {isRepo ? 'Repository' : 'Folder'}
         {linkedLabel !== '' ? ` · linked ${linkedLabel}` : ''}

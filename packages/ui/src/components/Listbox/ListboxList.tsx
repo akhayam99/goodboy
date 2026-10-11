@@ -14,6 +14,7 @@ export type ListboxListProps<T extends ListboxValue> = {
   readonly activeIndex: number;
   readonly selectedValues: ReadonlyArray<T>;
   readonly isMultiple?: boolean;
+  readonly isFlat?: boolean;
   readonly createLabel?: string;
   readonly className?: string;
   readonly onSelect: (index: number) => void;
@@ -30,6 +31,7 @@ export const ListboxList = <T extends ListboxValue>({
   activeIndex,
   selectedValues,
   isMultiple = false,
+  isFlat = false,
   createLabel,
   className,
   onSelect,
@@ -48,7 +50,8 @@ export const ListboxList = <T extends ListboxValue>({
     >
       {entries.map(({ option, match }, index) => {
         const previousGroup = entries[index - 1]?.option.group;
-        const isGroupStart = option.group !== undefined && option.group !== previousGroup;
+        const isGroupStart =
+          !isFlat && option.group !== undefined && option.group !== previousGroup;
         return (
           <Fragment key={String(option.value)}>
             {isGroupStart ? (

@@ -77,7 +77,7 @@ export const FlowPlanPreview = ({
                 />
               </div>
               {isOpen ? (
-                <dl className="grid grid-cols-[minmax(0,12rem)_minmax(0,1fr)] gap-x-4 gap-y-1 pl-7">
+                <dl className="grid grid-cols-[minmax(0,12rem)_minmax(0,1fr)] gap-x-4 gap-y-1 pl-[calc(16px+8px)]">
                   {page.items.map((item) => (
                     <div key={item.field} className="contents">
                       <dt className="truncate text-meta text-muted-foreground">{item.label}</dt>
