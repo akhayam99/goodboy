@@ -304,9 +304,15 @@ describe('session draft slice', () => {
     });
 
     expect(h.spies.createSession).toHaveBeenCalledOnce();
-    expect(
-      h.spies.createSession.mock.calls[0]?.[0].externalTasks?.map((task) => task.identifier),
-    ).toEqual(['NW-214', 'NW-215', 'NW-216']);
+    expect(h.spies.createSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        externalTasks: [
+          expect.objectContaining({ identifier: 'NW-214' }),
+          expect.objectContaining({ identifier: 'NW-215' }),
+          expect.objectContaining({ identifier: 'NW-216' }),
+        ],
+      }),
+    );
   });
 
   it('links the issue, mounts the issue project and runs the workflow in one gesture', async () => {
