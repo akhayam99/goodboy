@@ -1,4 +1,4 @@
-use super::worktree_changed_files_blocking;
+use super::{worktree_changed_files_blocking, ChangedEntry};
 use crate::worktree::git::git;
 use std::path::{Path, PathBuf};
 
@@ -145,6 +145,58 @@ fn keeps_counting_a_branch_the_base_changed_further() {
     git_ok(&root, &["checkout", "feature"]);
 
     assert_eq!(summary(&root), (3, 0));
+
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+fn entry(path: &str, status: &'static str, from: Option<&str>) -> ChangedEntry {
+    ChangedEntry {
+        path: path.to_string(),
+        status,
+        from: from.map(str::to_string),
+    }
+}
+
+#[test]
+fn names_the_status_of_every_changed_file() {
+    let root = init_repo("changed-files-statuses");
+    let body_of = |name: &str| format!("{name} one\n{name} two\n{name} three\n{name} four\n");
+    let body = body_of("committed.txt");
+    let dirty_body = body_of("dirty.txt");
+    for name in ["committed.txt", "dirty.txt", "old.txt", "gone.txt"] {
+        std::fs::write(root.join(name), body_of(name)).unwrap();
+        git_ok(&root, &["add", name]);
+    }
+    git_ok(&root, &["commit", "-m", "files"]);
+    git_ok(&root, &["checkout", "-b", "feature"]);
+    std::fs::write(root.join("committed.txt"), format!("{body}extra\n")).unwrap();
+    git_ok(&root, &["add", "committed.txt"]);
+    git_ok(&root, &["commit", "-m", "touch"]);
+    std::fs::write(root.join("dirty.txt"), format!("{dirty_body}more\n")).unwrap();
+    std::fs::write(root.join("fresh.txt"), "a\nb\n").unwrap();
+    git_ok(&root, &["mv", "old.txt", "new.txt"]);
+    git_ok(&root, &["rm", "gone.txt"]);
+
+    let out = worktree_changed_files_blocking(
+        root.to_string_lossy().to_string(),
+        Some("main".to_string()),
+    )
+    .unwrap();
+
+    assert_eq!(
+        out.entries,
+        vec![
+            entry("committed.txt", "modified", None),
+            entry("dirty.txt", "modified", None),
+            entry("fresh.txt", "added", None),
+            entry("gone.txt", "deleted", None),
+            entry("new.txt", "renamed", Some("old.txt")),
+        ]
+    );
+    assert_eq!(
+        out.numstat,
+        "1\t0\tcommitted.txt\n1\t0\tdirty.txt\n0\t4\tgone.txt\n0\t0\told.txt => new.txt\n2\t0\tfresh.txt"
+    );
 
     std::fs::remove_dir_all(root).unwrap();
 }

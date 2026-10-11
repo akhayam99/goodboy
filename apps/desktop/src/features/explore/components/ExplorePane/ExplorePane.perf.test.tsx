@@ -66,6 +66,9 @@ beforeEach(async () => {
     if (command === 'explore_list') {
       return BIG_ROOT;
     }
+    if (command === 'worktree_changed_files') {
+      return null;
+    }
     return [];
   });
   useAppStore.setState({
