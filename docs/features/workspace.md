@@ -15,6 +15,8 @@ Begin with an empty folder and no repository. **Start a new project** on the emp
 
 <sub>Screenshot from Goodboy 0.23.0</sub>
 
+The session column aligns its hidden-filter summary with the shared row inset (`features/workspace/components/SessionActivityBar/index.tsx`, `PANE_RHYTHM.sessionList.rowInset`).
+
 Keep your repos together as one workspace, and let one session work across several of them. The **Projects** section of the session lists each repo it touches, with its branch, the size of its changes and **New branch**. A project gets a branch only when an agent needs to edit it.
 
 A terminal opened from the Terminal studio starts in the workspace folder: the nearest common parent of your project roots when it sits below your home folder, otherwise the first starred project, otherwise the first project. The setting `terminal.workspaceFolder.<workspace>` overrides it.
