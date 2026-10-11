@@ -10,7 +10,9 @@ const BODY_FLOOR = 4.5;
 const LARGE_FLOOR = 3;
 
 const SURFACES = ['chrome', 'background', 'subtle', 'muted', 'elevated', 'floating'] as const;
+const READ_SURFACES = [...SURFACES, 'drawer'] as const;
 const STEP_FLOOR = 1.04;
+const DRAWER_STEP_FLOOR = 1.03;
 const FILL_FLOOR = 1.1;
 const TONES = ['primary', 'info', 'success', 'warning', 'danger', 'merged', 'draft'] as const;
 // The diff viewer paints code on the canvas and on hunk rows, never on a card.
@@ -153,7 +155,7 @@ const readShadow = ({ block, name }: { block: string; name: string }): string =>
 };
 
 describe.each(Object.entries(readThemes()))('%s palette', (_theme, palette) => {
-  it.each(SURFACES)('carries body and tone text at 4.5:1 on %s', (surface) => {
+  it.each(READ_SURFACES)('carries body and tone text at 4.5:1 on %s', (surface) => {
     const failures = ['foreground', 'muted-foreground', 'faint-foreground', ...TONES]
       .map((token) => ({
         token,
@@ -163,7 +165,7 @@ describe.each(Object.entries(readThemes()))('%s palette', (_theme, palette) => {
     expect(failures).toEqual([]);
   });
 
-  it.each(SURFACES)('keeps disabled text distinguishable on %s', (surface) => {
+  it.each(READ_SURFACES)('keeps disabled text distinguishable on %s', (surface) => {
     expect(
       contrast(swatch(palette, 'disabled-foreground'), swatch(palette, surface)),
     ).toBeGreaterThanOrEqual(LARGE_FLOOR);
@@ -180,13 +182,13 @@ describe.each(Object.entries(readThemes()))('%s palette', (_theme, palette) => {
     expect(failures).toEqual([]);
   });
 
-  it.each(SURFACES)('delineates controls with border at 3:1 on %s', (surface) => {
+  it.each(READ_SURFACES)('delineates controls with border at 3:1 on %s', (surface) => {
     expect(contrast(swatch(palette, 'border'), swatch(palette, surface))).toBeGreaterThanOrEqual(
       LARGE_FLOOR,
     );
   });
 
-  it.each(SURFACES)('keeps tone text readable on its tint over %s', (surface) => {
+  it.each(READ_SURFACES)('keeps tone text readable on its tint over %s', (surface) => {
     const failures = TONES.map((tone) => ({
       tone,
       ratio: contrast(
@@ -201,7 +203,7 @@ describe.each(Object.entries(readThemes()))('%s palette', (_theme, palette) => {
     expect(failures).toEqual([]);
   });
 
-  it.each(SURFACES)('keeps agent labels readable on %s', (surface) => {
+  it.each(READ_SURFACES)('keeps agent labels readable on %s', (surface) => {
     const failures = Object.keys(palette)
       .filter((token) => token.startsWith('agent-'))
       .map((token) => ({
@@ -212,7 +214,7 @@ describe.each(Object.entries(readThemes()))('%s palette', (_theme, palette) => {
     expect(failures).toEqual([]);
   });
 
-  it.each(SURFACES)('keeps agent labels readable on their own tint over %s', (surface) => {
+  it.each(READ_SURFACES)('keeps agent labels readable on their own tint over %s', (surface) => {
     const failures = Object.keys(palette)
       .filter((token) => token.startsWith('agent-'))
       .map((token) => ({
@@ -230,29 +232,32 @@ describe.each(Object.entries(readThemes()))('%s palette', (_theme, palette) => {
     expect(failures).toEqual([]);
   });
 
-  it.each(SURFACES)('keeps history action colours readable on %s and on their mark', (surface) => {
-    const tokens = Object.keys(palette).filter((token) => token.startsWith('history-'));
-    expect(tokens).toEqual(['history-fixup', 'history-squash', 'history-move']);
-    const failures = tokens
-      .flatMap((token) => [
-        { token, ratio: contrast(swatch(palette, token), swatch(palette, surface)) },
-        {
-          token: `${token} on its mark`,
-          ratio: contrast(
-            swatch(palette, token),
-            composite({
-              foreground: swatch(palette, token),
-              background: swatch(palette, surface),
-              alpha: 0.12,
-            }),
-          ),
-        },
-      ])
-      .filter(({ ratio }) => ratio < BODY_FLOOR);
-    expect(failures).toEqual([]);
-  });
+  it.each(READ_SURFACES)(
+    'keeps history action colours readable on %s and on their mark',
+    (surface) => {
+      const tokens = Object.keys(palette).filter((token) => token.startsWith('history-'));
+      expect(tokens).toEqual(['history-fixup', 'history-squash', 'history-move']);
+      const failures = tokens
+        .flatMap((token) => [
+          { token, ratio: contrast(swatch(palette, token), swatch(palette, surface)) },
+          {
+            token: `${token} on its mark`,
+            ratio: contrast(
+              swatch(palette, token),
+              composite({
+                foreground: swatch(palette, token),
+                background: swatch(palette, surface),
+                alpha: 0.12,
+              }),
+            ),
+          },
+        ])
+        .filter(({ ratio }) => ratio < BODY_FLOOR);
+      expect(failures).toEqual([]);
+    },
+  );
 
-  it.each(SURFACES)('keeps identity labels readable on %s', (surface) => {
+  it.each(READ_SURFACES)('keeps identity labels readable on %s', (surface) => {
     const failures = Object.keys(palette)
       .filter((token) => token.startsWith('identity-'))
       .map((token) => ({
@@ -263,7 +268,7 @@ describe.each(Object.entries(readThemes()))('%s palette', (_theme, palette) => {
     expect(failures).toEqual([]);
   });
 
-  it.each(SURFACES)('keeps provider glyphs visible on %s', (surface) => {
+  it.each(READ_SURFACES)('keeps provider glyphs visible on %s', (surface) => {
     const failures = Object.keys(palette)
       .filter((token) => token.startsWith('provider-'))
       .map((token) => ({
@@ -274,26 +279,26 @@ describe.each(Object.entries(readThemes()))('%s palette', (_theme, palette) => {
     expect(failures).toEqual([]);
   });
 
-  it.each(SURFACES)('keeps the soft border visible on %s', (surface) => {
+  it.each(READ_SURFACES)('keeps the soft border visible on %s', (surface) => {
     const floor = surface === 'elevated' || surface === 'floating' ? 1.3 : 1.2;
     expect(
       contrast(swatch(palette, 'border-soft'), swatch(palette, surface)),
     ).toBeGreaterThanOrEqual(floor);
   });
 
-  it.each(SURFACES)('keeps the strong border at 4.5:1 on %s', (surface) => {
+  it.each(READ_SURFACES)('keeps the strong border at 4.5:1 on %s', (surface) => {
     expect(
       contrast(swatch(palette, 'border-strong'), swatch(palette, surface)),
     ).toBeGreaterThanOrEqual(BODY_FLOOR);
   });
 
-  it.each(SURFACES)('keeps idle marks at 3:1 on %s', (surface) => {
+  it.each(READ_SURFACES)('keeps idle marks at 3:1 on %s', (surface) => {
     expect(contrast(swatch(palette, 'idle'), swatch(palette, surface))).toBeGreaterThanOrEqual(
       LARGE_FLOOR,
     );
   });
 
-  it.each(SURFACES)('keeps the focus ring visible at 3:1 on %s', (surface) => {
+  it.each(READ_SURFACES)('keeps the focus ring visible at 3:1 on %s', (surface) => {
     expect(
       contrast(swatch(palette, 'focus-ring'), swatch(palette, surface)),
     ).toBeGreaterThanOrEqual(LARGE_FLOOR);
@@ -392,6 +397,22 @@ describe('surface ladder', () => {
     });
   });
 
+  it.each(['dark', 'light'] as const)(
+    'keeps the drawer surface one quiet step below the page in %s, never louder or tinted',
+    (theme) => {
+      const level = (token: string): number => lightness({ theme, token });
+      expect(level('drawer')).toBeGreaterThan(level('chrome'));
+      expect(level('drawer')).toBeLessThan(level('background'));
+      expect(step({ theme, lower: 'drawer', upper: 'background' })).toBeGreaterThanOrEqual(
+        DRAWER_STEP_FLOOR,
+      );
+      expect(step({ theme, lower: 'chrome', upper: 'drawer' })).toBeGreaterThanOrEqual(1.01);
+      const chroma = (token: string): number =>
+        Math.hypot(...lab({ labs: labs[theme], token }).slice(1));
+      expect(chroma('drawer')).toBeLessThanOrEqual(chroma('background') + 0.001);
+    },
+  );
+
   it('keeps floating above raised', () => {
     expect(lightness({ theme: 'dark', token: 'floating' })).toBeGreaterThanOrEqual(
       lightness({ theme: 'dark', token: 'elevated' }),
@@ -411,7 +432,7 @@ describe('surface ladder', () => {
     'steps fill one level inside every surface in $theme',
     ({ theme, block, direction }) => {
       const fill = readTranslucent({ block, token: 'fill' });
-      const failures = SURFACES.map((surface) => {
+      const failures = READ_SURFACES.map((surface) => {
         const parent = swatch(palettes[theme], surface);
         const filled = composite({ foreground: fill.rgb, background: parent, alpha: fill.alpha });
         return {

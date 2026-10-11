@@ -41,7 +41,7 @@ between them instead of mixing one surface through opacity.
 | ---- | -------- | --------------- | ----------------------------------------------------- |
 | 0    | chrome   | `bg-chrome`     | the app frame: top bar, left column and its rail      |
 | 1    | sheet    | `bg-background` | the content sheet, a studio's detail, viewer dialogs  |
-| 2    | panel    | `bg-subtle`     | a drawer that pushes the column                       |
+| 2    | panel    | `bg-subtle`     | grouped content on the sheet                          |
 | 3    | inset    | `bg-muted`      | opaque rails, highlighted code rows                   |
 | 4    | raised   | `bg-elevated`   | cards: board cards, `RailCard`                        |
 | 5    | floating | `bg-floating`   | popovers, menus, centred dialogs, toasts, the palette |
@@ -52,6 +52,15 @@ Light mode is ink on paper, read on two axes. On the elevation axis (what sits
 in front) chrome < content < raised = floating: nothing is brighter than white,
 so above raised the lift is `shadow-lg` plus `border`. On the nesting axis
 (what sits inside) content > panel > inset: the deeper, the darker.
+
+`drawer` sits beside the page surface, not on the ladder: a right drawer is its
+own container next to the sheet and is painted one step quieter than
+`background`, between `chrome` and `background` in both themes (dark
+`oklch(0.187 0.006 255)`, light `oklch(0.964 0.0045 250)`: the same hue and no
+more chroma than `background`, so it recedes and never tints). It carries every
+text token at 4.5:1 and every border at the floors of the ladder, held by
+`token-contrast-floor.test.ts`. A drawer container never fakes the difference
+with a border.
 
 Two tokens are relations, not steps. `fill` is one step inside whatever parent
 it sits on (white 6% in dark, black 5% in light), so a neutral chip, a
@@ -69,8 +78,8 @@ Three borders, each with one job:
 | `border-strong` | emphasis: control hover                                          | 4.5:1 on every step             |
 
 Three translucent tokens paint over whatever sits below them: `frame-edge`
-(white 8% in dark, black 8.5% in light) draws the content sheet and the
-floating drawer at 1.2:1 or more on chrome and background, and
+(white 8% in dark, black 8.5% in light) draws the content sheet and the right
+drawer container at 1.2:1 or more on chrome and background, and
 `scrollbar-thumb` and `scrollbar-thumb-active` clear 1.8:1 and 3:1 on
 background, panel and floating.
 
@@ -237,7 +246,7 @@ Bare `rounded` comes out at 3.75px on the 15px root, so it is always written
 
 | token           | value | used for                                                        |
 | --------------- | ----- | --------------------------------------------------------------- |
-| `rounded-frame` | 10px  | only the content sheet and the floating drawer                  |
+| `rounded-frame` | 10px  | only the content sheet and the right drawer container           |
 | `rounded-lg`    | 8px   | surfaces: cards, popovers, menus, bands, notices, toasts        |
 | `rounded-md`    | 6px   | controls: buttons, inputs, triggers, icon buttons, sidebar rows |
 | `rounded-sm`    | 4px   | role pill, kbd, inline code, checkbox, rows inside a popover    |
@@ -248,16 +257,16 @@ Bare `rounded` comes out at 3.75px on the 15px root, so it is always written
 Five levels plus the tooltip. A level sets surface, shadow, border and radius
 together, and there is no arbitrary shadow.
 
-| level      | surface                          | shadow      | border                        | radius                     | holds                            |
-| ---------- | -------------------------------- | ----------- | ----------------------------- | -------------------------- | -------------------------------- |
-| 0 frame    | `chrome`                         | none        | none                          | n/a                        | top bar, left column, rail       |
-| 1 sheet    | `background`                     | none        | `frame-edge`                  | `frame` where chrome wraps | content, studio detail           |
-| 2 band     | `fill` (band), `subtle` (drawer) | none        | none                          | `lg` band, `frame` drawer  | groups, a drawer that pushes     |
-| 3 card     | `elevated`                       | `shadow-sm` | `border-soft`, hover `border` | `lg`                       | board cards, `RailCard`          |
-| 4 floating | `floating`                       | `shadow-lg` | `border`                      | `lg`                       | popovers, menus, toasts, dialogs |
-| 5 tooltip  | `foreground`                     | `shadow-md` | none                          | `md`                       | tooltips                         |
+| level      | surface                         | shadow      | border                        | radius                     | holds                            |
+| ---------- | ------------------------------- | ----------- | ----------------------------- | -------------------------- | -------------------------------- |
+| 0 frame    | `chrome`                        | none        | none                          | n/a                        | top bar, left column, rail       |
+| 1 sheet    | `background`                    | none        | `frame-edge`                  | `frame` where chrome wraps | content, studio detail           |
+| 2 band     | `fill` (band), `subtle` (panel) | none        | none                          | `lg`                       | groups, panels on the sheet      |
+| 3 card     | `elevated`                      | `shadow-sm` | `border-soft`, hover `border` | `lg`                       | board cards, `RailCard`          |
+| 4 floating | `floating`                      | `shadow-lg` | `border`                      | `lg`                       | popovers, menus, toasts, dialogs |
+| 5 tooltip  | `foreground`                    | `shadow-md` | none                          | `md`                       | tooltips                         |
 
-A drawer over the page is flush with the sheet (no inset), takes `rounded-l-frame` and a left border only, and adds `shadow-xl`. Outside the tooltip, `shadow-md` belongs
+A right drawer is its own container, never a card inside the sheet: it takes `drawer` (see Surfaces), `frame-edge` and `rounded-frame` like the sheet it stands beside. Over the page it is flush with the window edge (no inset), takes `rounded-l-frame` and a left border only, and adds `shadow-xl`. Outside the tooltip, `shadow-md` belongs
 only to a dragged card.
 
 **One floating surface.** Level 4 is the constant `FLOATING_SURFACE`
@@ -1490,17 +1499,20 @@ its track from the main area and the centred column re-centres in the space
 left of it, at its full width while that space is wide enough, in one 180ms
 ease-out move (none under reduced motion). A full tier work surface keeps its
 left edge and only gives up its right. One rule decides the mode: with
-`room = main - 16 - 48 - 560`, the drawer pushes while `room >= 384` (a side
-drawer at `min(saved, room)`, a wide one at `min(560, room)`) and otherwise
-lies over the page. Pushing it is the inset card of the Elevation table. Over
-the page it spends no pixels on an inset: the card runs the full height of the
-sheet, flush with its top, bottom and right edges, with `rounded-l-frame`, a
-left border only and `shadow-xl`, over a `scrim` that fades in in 120ms. The
+`room = main - 16 - 48 - 560`, the drawer pushes while `room` covers its saved
+width (side tier 400 by default, reader tier 720) and otherwise lies over the
+page at `min(saved, main - 16)`; it is never squeezed. Pushing, the drawer is
+its own container beside the page container: both rounded on all four corners
+with `frame-edge`, 8px apart, the drawer 8px from the window's right edge, the
+drawer on `bg-drawer`. Over the page it spends no pixels on an inset: the
+container runs the full height of the sheet, flush with its top, bottom and
+right edges, with `rounded-l-frame`, a left border only and `shadow-xl`, over a
+`scrim` that fades in in 120ms. The
 page under it is `inert`, a click on the scrim dismisses the top escape layer
 like Esc, and focus moves into the card on open and back to the trigger on
 close.
 
-**The drawer card.** `DrawerFrame` is the card's one frame: a 44px header, a
+**The drawer container.** `DrawerFrame` is its one frame: a 44px header, a
 divider, a body and an optional `dock`. The title row reads icon, title, count
 (a number or a version, never a session title), at most one labelled action,
 then Close. Close always reads `Close` and is a 28px target (`size-7`, 14px
@@ -1510,7 +1522,7 @@ composer, a transcript reply field and a script run's status line. The first
 control takes focus when the drawer opens (the composer of the dock when it has
 one, `Close` otherwise); Esc blurs a non-empty text field first and closes on
 the next press, and a click on the scrim does the same through the escape
-stack. A toast beside a pushing drawer stops at the card's left edge less the
+stack. A toast beside a pushing drawer stops at the container's left edge less the
 12px gutter.
 
 **A form opens where you clicked.** One placement rule for every inline form:

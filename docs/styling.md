@@ -125,8 +125,10 @@ containers. So hiding or resizing a column is one template declaration, and
 nothing inside it needs to know. [navigation.md](navigation.md) owns which
 columns exist and what each one may do.
 
-Top bar and left column are one chrome field, and `main` is a **sheet** on
-it (`SHEET_CLASSES` in `packages/ui/src/sheet.ts`). A sheet corner rounds only
+Top bar and left column are one chrome field, and the page container is a
+**sheet** on it (`SHEET_CLASSES` in `packages/ui/src/sheet.ts`, drawn by
+`DrawerColumn` with `frame="sheet"`; `AppShell`'s `main` is the grid cell it
+sits in). A sheet corner rounds only
 where the chrome wraps it on two sides: with the sidebar, the top-left and
 bottom-left corners take `rounded-frame` (10px) and one uniform 1px
 `frame-edge` border runs along the top, left and bottom; the right side meets
@@ -142,18 +144,24 @@ equal flexible outer columns around the command center. Page breadcrumbs stay
 in the content column of the pane that owns them and do not set the top bar's
 size.
 
-The right drawer is not a grid column: `DrawerColumn` sits inside the `main`
-area beside the page, 0px wide while closed. Pushing, its aside is the card
-width plus two 8px insets; over the page it is the card width plus the 8px
-handle gutter, because the card is flush with the sheet's right edge. It opens
-beside the page: the main area gives up the drawer's track and the centred
+The sheet is drawn by `DrawerColumn`, not by `main`: `AppShell`'s `main` is a
+plain grid cell and `DrawerColumn` with `frame="sheet"` draws the page
+container (`data-container="page"`, the sheet shape above) and, beside it, the
+drawer container (`data-container="drawer"`), 0px wide while closed. While a
+drawer pushes, the page container rounds all four corners and the drawer
+container stands 8px to its right and 8px from the window's right edge, both
+with `frame-edge` and `rounded-frame`; the drawer container takes `bg-drawer`,
+one step quieter than `bg-background`. Pushing, its aside is the container
+width plus two 8px insets; over the page it is the container width plus the 8px
+handle gutter, because the container is flush with the window's right edge. It
+opens beside the page: the pane gives up the drawer's track and the centred
 column slides left to re-centre in what is left of it (see The content
-column). While the page keeps 560px plus its 48px of gutters beside the
-narrowest drawer (384px, insets counted) the drawer pushes; below that it lies
-over the page, full height, with a scrim and an `inert` page. `sizing` on
-`DrawerColumn` is `default` (the saved width, with the resize handle), `half`
-(560px, narrowed to the room the page leaves, no handle) or `full` (the whole
-column, always over the page). The pure geometry lives in
+column). The drawer pushes only while the page container keeps 560px plus its
+48px of gutters and the room covers the drawer's saved width; below that it
+lies over the page, full height, with a scrim and an `inert` page, never
+squeezed. `sizing` on `DrawerColumn` is `side` (400, drag 384 to 560), `reader`
+(720, drag 480 to 1000) or `full` (the whole column, always over the page); each
+tier has its own saved width and a handle. The pure geometry lives in
 `packages/ui/src/drawerGeometry.ts` (`drawerLayoutOf`, with `drawerWidthOf`,
 `drawerModeOf` and `mainWidthOf` on top of it) and `drawerGeometry.test.ts`
 sweeps every main from 600 to 2400 and runs a width matrix: 1024, 1440 and
@@ -162,9 +170,9 @@ sweeps every main from 600 to 2400 and runs a width matrix: 1024, 1440 and
 checks the pushing card ends 8px inside the aside and the overlay card ends on
 the column edge. `drawer-card-in` and `drawer-overlay-in` slide at most the
 8px inset; the overlay card starts that far outside the sheet and is clipped by
-it. `DrawerColumn.test.tsx` pins the classes that math assumes (an 8px `w-2`
-handle, the pushing card's `my-2 mr-2`, the overlay card's `rounded-l-frame`
-and `border-l`, the track's min width).
+it. `DrawerColumn.test.tsx` pins the structure that math assumes (the two
+containers as siblings, an 8px `w-2` handle gutter, the track's `pr-2`, the
+overlay container's `rounded-l-frame` and `border-l`, the track's min width).
 [navigation.md](navigation.md#the-right-drawer) owns what goes in it.
 
 The top bar's 6px left padding puts the workspace tile on the collapsed rail's

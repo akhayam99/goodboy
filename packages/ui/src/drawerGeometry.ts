@@ -1,13 +1,32 @@
 export const RIGHT_DRAWER_MIN = 384;
 export const RIGHT_DRAWER_MAX = 560;
 export const RIGHT_DRAWER_DEFAULT = 400;
+export const READER_DRAWER_MIN = 480;
+export const READER_DRAWER_MAX = 1000;
+export const READER_DRAWER_DEFAULT = 720;
 export const COLUMN_MIN_PUSH = 560;
 export const COLUMN_GUTTERS = 48;
 export const DRAWER_INSET = 8;
 
-export type DrawerSizing = 'default' | 'half' | 'full';
+export type DrawerSizing = 'side' | 'reader' | 'full';
+
+export type DrawerTier = Exclude<DrawerSizing, 'full'>;
 
 export type DrawerMode = 'closed' | 'push' | 'overlay';
+
+type TierBounds = {
+  readonly min: number;
+  readonly max: number;
+  readonly fallback: number;
+};
+
+export const DRAWER_TIERS: Readonly<Record<DrawerTier, TierBounds>> = {
+  side: { min: RIGHT_DRAWER_MIN, max: RIGHT_DRAWER_MAX, fallback: RIGHT_DRAWER_DEFAULT },
+  reader: { min: READER_DRAWER_MIN, max: READER_DRAWER_MAX, fallback: READER_DRAWER_DEFAULT },
+};
+
+export const drawerTierOf = (sizing: DrawerSizing): DrawerTier =>
+  sizing === 'reader' ? 'reader' : 'side';
 
 export const drawerTrackOf = (drawerWidthPx: number): number => drawerWidthPx + DRAWER_INSET * 2;
 
@@ -42,19 +61,20 @@ export const drawerLayoutOf = ({ main, sizing, savedWidth }: LayoutParams): Draw
       dragMax: RIGHT_DRAWER_MAX,
     };
   }
-  const target = sizing === 'half' ? RIGHT_DRAWER_MAX : savedWidth;
+  const tier = DRAWER_TIERS[drawerTierOf(sizing)];
   const room = pushRoomOf(main);
-  if (room >= RIGHT_DRAWER_MIN) {
+  if (room >= savedWidth) {
     return {
       mode: 'push',
-      width: Math.min(target, room),
-      dragMax: Math.min(RIGHT_DRAWER_MAX, room),
+      width: savedWidth,
+      dragMax: Math.min(tier.max, room),
     };
   }
+  const overlayRoom = main - DRAWER_INSET * 2;
   return {
     mode: 'overlay',
-    width: Math.min(target, main - DRAWER_INSET * 2),
-    dragMax: RIGHT_DRAWER_MAX,
+    width: Math.min(savedWidth, overlayRoom),
+    dragMax: Math.min(tier.max, overlayRoom),
   };
 };
 
@@ -147,7 +167,7 @@ export const pageBoxOf = ({
   paneWidth,
   tier,
   drawerWidthPx,
-  sizing = 'default',
+  sizing = 'side',
 }: PageBoxParams): PageBox => {
   const space =
     drawerWidthPx === null
