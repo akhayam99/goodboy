@@ -222,24 +222,19 @@ describe('useSessionCrumbs', () => {
   });
 
   it('parents a step opened from the activity feed on its run, not on overview', () => {
-    expect(labelsOf(null, STEP_AGENT_ID)).toEqual(['Session', 'Runs', 'Refactor', 'Implement']);
+    expect(labelsOf(null, STEP_AGENT_ID)).toEqual(['Session', 'Runs', 'Refactor', 'Agent']);
   });
 
   it('reads the same trail when the step is opened from the workflows lens', () => {
-    expect(labelsOf('workflows', STEP_AGENT_ID)).toEqual([
-      'Session',
-      'Runs',
-      'Refactor',
-      'Implement',
-    ]);
+    expect(labelsOf('workflows', STEP_AGENT_ID)).toEqual(['Session', 'Runs', 'Refactor', 'Agent']);
   });
 
   it('keeps a step parented on its run while the app sits in another lens', () => {
-    expect(labelsOf('agents', STEP_AGENT_ID)).toEqual(['Session', 'Runs', 'Refactor', 'Implement']);
+    expect(labelsOf('agents', STEP_AGENT_ID)).toEqual(['Session', 'Runs', 'Refactor', 'Agent']);
   });
 
   it('gives an ad-hoc agent opened from the feed the agents home as parent', () => {
-    expect(labelsOf(null, ADHOC_AGENT_ID)).toEqual(['Session', 'Agents', 'scout one']);
+    expect(labelsOf(null, ADHOC_AGENT_ID)).toEqual(['Session', 'Agents', 'Agent']);
   });
 
   it('gives a resolver opened from the feed the Branch as parent, named Fix run', () => {
@@ -276,7 +271,7 @@ describe('useSessionCrumbs', () => {
       'Runs',
       'Refactor',
       'Implement',
-      'area alpha',
+      'Agent',
     ]);
   });
 
@@ -324,14 +319,14 @@ describe('useSessionCrumbs', () => {
       'Runs',
       'Refactor',
       'Implement',
-      'answer: pick a database',
+      'Agent',
     ]);
   });
 
   it('adds no question crumb to an agent that is not a delegate', () => {
     store.openQuestions = [{ id: 'oq-1', text: 'pick a database' }];
 
-    expect(labelsOf(null, CLUSTER_CHILD_ID).at(-1)).toBe('area alpha');
+    expect(labelsOf(null, CLUSTER_CHILD_ID).at(-1)).toBe('Agent');
   });
 
   it('navigates from the run crumb to that run, and from Workflows to the list', () => {
