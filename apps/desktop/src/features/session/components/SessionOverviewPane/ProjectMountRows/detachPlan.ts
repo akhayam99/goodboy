@@ -55,6 +55,8 @@ export const BLOCKER_SENTENCE = {
     `Work is still running in ${projectName}; stop it before removing this worktree.`,
   'terminal-open': ({ projectName }: ProjectNameParams) =>
     `A terminal is open in ${projectName}; close it before removing this worktree.`,
+  'process-running': ({ projectName }: ProjectNameParams) =>
+    `A process is running in ${projectName}; stop it before removing this worktree.`,
 } satisfies Record<MountCleanupBlocker, (input: ProjectNameParams) => string>;
 
 type CountNoun =

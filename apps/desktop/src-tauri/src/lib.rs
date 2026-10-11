@@ -478,6 +478,7 @@ pub fn run() {
             terminal::terminal_close,
             proc::ledger::process_ledger_list,
             monitor::monitor_snapshot,
+            monitor::stop::monitor_stop,
             monitor::watched::monitor_watched_ports,
             workflows::workflow_list,
             workflows::workflows_for_session,

@@ -54,6 +54,7 @@ const isDetachRequest = (event: Event): event is CustomEvent<ProjectDetachReques
 const BLOCKER_CODES = [
   'agent-running',
   'terminal-open',
+  'process-running',
 ] satisfies ReadonlyArray<MountCleanupBlocker>;
 
 export const MountActionsMenu = ({

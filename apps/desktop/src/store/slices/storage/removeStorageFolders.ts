@@ -3,6 +3,7 @@ import type { IsoDateTime, WorktreeRemovalMode } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { removeWorktreeFolder } from '../../../features/worktree/worktree';
+import { MOUNT_CLEANUP_BLOCKER_REASON, processesInWorktree } from '../mount-cleanup/cleanupPolicy';
 import { runMountRemoval } from '../project-mounts/runMountRemoval';
 import type {
   GetFn,
@@ -95,6 +96,16 @@ const removeLedger = async ({ folder, mode }: FolderRemovalParams): Promise<Stor
 };
 
 const removeOne = async ({ get, folder, mode }: FolderRemovalParams): Promise<StorageRemoval> => {
+  if (
+    processesInWorktree({ snapshot: get().monitorSnapshot, worktreePath: folder.path }).length > 0
+  ) {
+    return {
+      kind: 'kept',
+      path: folder.path,
+      reasons: [],
+      message: MOUNT_CLEANUP_BLOCKER_REASON['process-running'],
+    };
+  }
   try {
     if (folder.origin === 'archived') {
       return await removeArchived({ get, folder, mode });
