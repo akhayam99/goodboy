@@ -7,6 +7,7 @@ import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { classifyGitlabFailure, gitlabFailureOf } from './classifyGitlabFailure';
 import {
   gitlabGetMr,
+  gitlabCancelAutoMerge,
   gitlabMergeMr,
   gitlabMrApprovalState,
   gitlabMrCommits,
@@ -95,6 +96,7 @@ export const gitlabPullRequestTransport = ({
       guarded(async () => {
         await gitlabMergeMr(workspaceId, host, projectPath, mrIid, projectId, method);
       }),
+    cancelAutoMerge: () => guarded(() => gitlabCancelAutoMerge(target)),
     projectMergeSettings: () => guarded(() => gitlabProjectMergeMethods(project)),
     searchUsers: ({ query }) => guarded(() => gitlabSearchProjectUsers({ ...project, query })),
   };

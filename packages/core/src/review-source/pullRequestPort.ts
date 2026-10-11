@@ -18,6 +18,7 @@ export type PullRequestPort = Readonly<{
   requestReviewers: (params: { readonly logins: ReadonlyArray<string> }) => Promise<void>;
   setDraft: (params: { readonly isDraft: boolean }) => Promise<void>;
   merge: (params: { readonly method: PrMergeMethod }) => Promise<void>;
+  cancelAutoMerge?: () => Promise<void>;
   close: () => Promise<void>;
   reopen: () => Promise<void>;
 }>;
@@ -93,4 +94,5 @@ export const PULL_REQUEST_CAPABILITY_METHODS = {
   canChooseMergeMethod: 'merge',
   canClose: 'close',
   canReopen: 'reopen',
+  canCancelAutoMerge: 'cancelAutoMerge',
 } as const satisfies Readonly<Record<PullRequestCapability, keyof PullRequestPort>>;

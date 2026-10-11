@@ -120,6 +120,7 @@ describe('bitbucket pull request capabilities', () => {
       canChooseMergeMethod: true,
       canClose: true,
       canReopen: false,
+      canCancelAutoMerge: false,
     });
   });
 });

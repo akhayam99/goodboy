@@ -7,4 +7,8 @@ type Params = {
 };
 
 export const gitlabMrStateKind = ({ mr }: Params): PullRequestStateKind =>
-  gitlabStateKindOf({ state: mr.state, draft: mr.draft });
+  gitlabStateKindOf({
+    state: mr.state,
+    draft: mr.draft,
+    isMergeWhenPipelineSucceeds: mr.isMergeWhenPipelineSucceeds ?? false,
+  });

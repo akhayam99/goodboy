@@ -163,6 +163,9 @@ export const fakeGitlabTransport = (overrides: TransportOverrides = {}): FakeTra
       fail(overrides.writeError);
       merges.push(method);
     }),
+    cancelAutoMerge: vi.fn(async () => {
+      fail(overrides.writeError);
+    }),
     projectMergeSettings: vi.fn(async () => overrides.settings ?? SETTINGS_JSON),
     searchUsers: vi.fn(async ({ query }) => {
       searches.push(query);
