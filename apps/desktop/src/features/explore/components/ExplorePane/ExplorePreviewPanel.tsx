@@ -60,13 +60,6 @@ export const ExplorePreviewPanel = ({
         </div>
       );
     }
-    if (previewState.status === 'unsupported') {
-      return (
-        <p className="px-4 pb-3 text-label text-muted-foreground">
-          This file is binary. Open it in the app that owns it.
-        </p>
-      );
-    }
     const { content } = previewState;
     if (content.type === 'text') {
       const isTruncated = content.truncated;
