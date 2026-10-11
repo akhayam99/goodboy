@@ -28,19 +28,19 @@ const item = ({ identifier, title, status, at }: ItemParams): LinkWorkItem => ({
 
 const ITEMS: ReadonlyArray<LinkWorkItem> = [
   item({
-    identifier: 'HL-204',
+    identifier: 'HBL-400',
     title: 'Payments revamp',
     status: 'In progress',
     at: '2026-10-10T07:12:00.000Z',
   }),
   item({
-    identifier: 'HL-211',
+    identifier: 'HBL-411',
     title: 'Show the retry count on each delivery',
     status: 'Todo',
     at: '2026-10-10T04:12:00.000Z',
   }),
   item({
-    identifier: 'HL-198',
+    identifier: 'HBL-398',
     title: 'Ledger cleanup',
     status: 'Todo',
     at: '2026-10-09T09:12:00.000Z',
@@ -58,7 +58,7 @@ export const LinkworkStarScene = () => {
           items={ITEMS}
           lookedUp={[]}
           linkedKeys={new Set()}
-          starredKeys={new Set(['linear:mock-link-HL-198'])}
+          starredKeys={new Set(['linear:mock-link-HBL-398'])}
           sources={['linear']}
           isLoading={false}
           isLinking={false}

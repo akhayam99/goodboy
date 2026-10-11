@@ -57,7 +57,7 @@ describe('the ongoing scenes', () => {
     expect(screen.getAllByRole('button', { name: 'New session' }).length).toBeGreaterThan(0);
     expect(screen.queryByText('Ongoing')).toBeNull();
     expect(screen.queryByRole('group', { name: 'Ongoing' })).toBeNull();
-    expect(screen.queryByText('HL-204')).toBeNull();
+    expect(screen.queryByText('HBL-400')).toBeNull();
   });
 
   it('offers Star it on a tracker issue and no workspace tab', () => {
