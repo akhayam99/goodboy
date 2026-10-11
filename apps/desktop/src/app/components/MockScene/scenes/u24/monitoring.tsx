@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { MonitoringStudio } from '../../../../../features/monitoring/components/MonitoringStudio';
 import { useAppStore } from '../../../../../store';
 import { useSceneClicks } from '../audit/useSceneClicks';
+import { PageSheet } from '../PageSheet';
 import { mockSceneIpc } from '../mockSceneIpc';
 import {
   EMPTY_SNAPSHOT,
@@ -87,8 +88,10 @@ const MonitoringScene = ({ variant }: Props) => {
   }
 
   return (
-    <main className="h-screen overflow-hidden bg-background text-foreground">
-      <MonitoringStudio onClose={NOOP} />
+    <main className="flex h-screen overflow-hidden bg-background text-foreground">
+      <PageSheet>
+        <MonitoringStudio onClose={NOOP} />
+      </PageSheet>
     </main>
   );
 };

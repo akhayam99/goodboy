@@ -8,6 +8,7 @@ import { AskTrailButton } from '../../../../../features/session/ask/components/A
 import { StudioBandContext } from '../../../../../shared/components/StudioShell/studioBandContext';
 import { useAppStore } from '../../../../../store';
 import { sceneClock } from '../../sceneClock';
+import { PageSheet } from '../PageSheet';
 import { SESSION, SESSION_ID } from '../resolveSeed';
 import { PR_PAGE_WORKTREE, applyPrPageSeed, type PrPageVariant } from '../u23/prPageSeed';
 
@@ -93,16 +94,18 @@ export const PrpageFrameScene = ({
 
   return (
     <main
-      className="h-screen overflow-hidden bg-background text-foreground"
+      className="flex h-screen overflow-hidden bg-background text-foreground"
       style={stageWidth === undefined ? undefined : { width: stageWidth }}
     >
-      <UnderTrailContext.Provider value>
-        <StudioBandContext.Provider
-          value={<TrailBar session={SESSION} end={<AskTrailButton sessionId={SESSION_ID} />} />}
-        >
-          <BranchPage session={SESSION} workingDir={PR_PAGE_WORKTREE} />
-        </StudioBandContext.Provider>
-      </UnderTrailContext.Provider>
+      <PageSheet>
+        <UnderTrailContext.Provider value>
+          <StudioBandContext.Provider
+            value={<TrailBar session={SESSION} end={<AskTrailButton sessionId={SESSION_ID} />} />}
+          >
+            <BranchPage session={SESSION} workingDir={PR_PAGE_WORKTREE} />
+          </StudioBandContext.Provider>
+        </UnderTrailContext.Provider>
+      </PageSheet>
     </main>
   );
 };
