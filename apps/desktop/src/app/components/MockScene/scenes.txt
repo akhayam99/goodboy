@@ -225,7 +225,10 @@ first-lap-report
 first-run
 fix-run
 fix-run-question
+fixcomments-applied
 fixcomments-list
+fixcomments-mixed
+fixcomments-question
 fixcomments-running
 fixcomments-selected
 floating-surfaces

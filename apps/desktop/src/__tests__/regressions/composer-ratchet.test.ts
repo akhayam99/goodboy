@@ -24,6 +24,8 @@ const AGENT_COMPOSERS: Readonly<Record<string, ReadonlyArray<Kind>>> = {
   'features/context/components/QuestionsTab/DelegateAnswerRow/index.tsx': ['document'],
   'features/diff/components/DiffView/CommentComposer.tsx': ['document'],
   'features/resolve/components/ReviewFlow/ReviewComment.tsx': ['document', 'document'],
+  'features/resolve/components/FixCommentsDrawer/OutcomeQuestion.tsx': ['document'],
+  'features/resolve/components/FixCommentsDrawer/OutcomeReply.tsx': ['document'],
   'features/workflows/components/WorkflowBuilderView/parts/GoalField.tsx': ['document'],
   'features/workflows/components/WorkflowBuilderView/parts/GuidanceDisclosure.tsx': ['document'],
   'features/workflows/components/WorkflowBuilderView/parts/PlannerDraftRow.tsx': ['document'],
