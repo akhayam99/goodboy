@@ -351,22 +351,32 @@
   font: 400 14px / 20px var(--sans);
 }
 
-.mockStage .dfrTabs {
+.mockStage .dfrSide {
   display: flex;
-  gap: 16px;
-  margin: 0 12px;
-  border-bottom: 1px solid var(--g-border-soft);
+  min-width: 0;
+  flex-direction: column;
+}
+
+.mockStage .dfrRail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 6px 0;
   color: var(--g-muted-foreground);
   font: 500 12px / 16px var(--sans);
 }
 
-.mockStage .dfrTab {
-  padding: 8px 0;
-  border-bottom: 2px solid transparent;
+.mockStage .dfrRail p {
+  margin: 0;
 }
 
-.mockStage .dfrTab[data-active='true'] {
-  border-bottom-color: var(--t1);
+.mockStage .dfrRailRow {
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.mockStage .dfrRailRow[data-active='true'] {
+  background: var(--g-fill);
   color: var(--t1);
 }
 
@@ -382,7 +392,7 @@
   .mockStage .dfrStat,
   .mockStage .dfrAvatar,
   .mockStage .dfrStatus,
-  .mockStage .dfrTab,
+  .mockStage .dfrRailRow,
   .mockStage .dfrThreadHead {
     font-size: 13px;
   }
@@ -393,7 +403,7 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .mockStage .dfrTree,
+  .mockStage .dfrSide,
   .mockStage .dfrFileAction {
     display: none;
   }
