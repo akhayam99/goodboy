@@ -45,12 +45,17 @@ export const settleHistoryRewriter = (set: SetFn, get: GetFn) => {
       return;
     }
     setHistoryRun({ set, sessionId, mountId, origin, patch: { progress: { stage: 'check' } } });
+    const requestRun = get().historyRuns[mountId];
     const check = await collectHistoryRewrite({
       plan,
       copyPath,
       skipped: report.steps.filter((step) => step.to === null).map((step) => step.from),
       keepsCopy: false,
+      conflictFiles: requestRun?.stop?.files ?? [],
     }).catch((error: unknown) => formatError(error));
+    if (get().historyRuns[mountId] !== requestRun || get().historyRewriters[agentId] !== binding) {
+      return;
+    }
     if (typeof check === 'string') {
       await stopWith({ reason: 'invalid', message: check, files: [], sha: null });
       return;
@@ -59,7 +64,8 @@ export const settleHistoryRewriter = (set: SetFn, get: GetFn) => {
       await stopWith({
         reason: 'invalid',
         message: check.problems.join(' '),
-        files: [],
+        files: check.unexpectedFiles,
+        review: check.review,
         sha: null,
       });
       return;

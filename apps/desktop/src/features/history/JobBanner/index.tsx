@@ -7,6 +7,7 @@ import { useRebaseJob } from '../useRebaseJob';
 import { JobBannerActions } from './JobBannerActions';
 import { JobBannerLine } from './JobBannerLine';
 import { JobBannerNote } from './JobBannerNote';
+import { JobBannerReview } from './JobBannerReview';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -65,7 +66,10 @@ export const JobBanner = ({ sessionId, worktreePath }: Props) => {
           />
         </div>
       </div>
-      <JobBannerLine job={job} />
+      <div className="flex min-w-0 flex-col gap-2">
+        <JobBannerLine job={job} />
+        <JobBannerReview sessionId={sessionId} mountId={actions.mountId} />
+      </div>
       {isNoteShown ? (
         <JobBannerNote
           isPending={actions.pendingKeys.has('retry-note')}

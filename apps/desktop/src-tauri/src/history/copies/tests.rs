@@ -471,3 +471,49 @@ fn linking_dependencies_from_a_missing_main_tree_changes_nothing() {
     link_dependencies(&scratch.join("gone"), &copy);
     assert!(listing(&copy).is_empty());
 }
+
+#[test]
+fn review_cleanup_keeps_a_copy_until_its_deadline_then_removes_it() {
+    let l = ledger("review-expiry");
+    let scratch = temp_root("review-expiry-copies");
+    let root = scratch.join(format!("{COPY_PREFIX}review"));
+    let copy = root.join(COPY_DIR);
+    let mut guard = create_copy(&l.root, &copy, &l.typo).unwrap();
+    guard.is_kept = true;
+    drop(guard);
+    super::keep_review(&copy, &l.typo).unwrap();
+    assert_eq!(clean_stale_copies_in(&scratch, 0, 0), 0);
+    assert!(copy.exists());
+    let expired = super::KeptReview {
+        kept_until: 0,
+        copy_head: l.typo,
+    };
+    std::fs::write(
+        root.join(super::REVIEW_FILE),
+        serde_json::to_vec(&expired).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(copy_git_dirs(&copy), None);
+    assert_eq!(clean_released(&scratch, 0, u64::MAX), 1);
+    assert!(!copy.exists());
+}
+
+#[test]
+fn a_failed_review_record_keeps_the_copy_and_can_be_retried() {
+    let l = ledger("review-write-failure");
+    let scratch = temp_root("review-write-failure-copies");
+    let root = scratch.join(format!("{COPY_PREFIX}review"));
+    let copy = root.join(COPY_DIR);
+    let mut guard = create_copy(&l.root, &copy, &l.typo).unwrap();
+    guard.is_kept = true;
+    drop(guard);
+    let staged = root.join(format!("{}.next", super::REVIEW_FILE));
+    std::fs::create_dir(&staged).unwrap();
+    assert!(super::keep_review(&copy, &l.typo).is_err());
+    assert_eq!(clean_stale_copies_in(&scratch, 0, 0), 0);
+    assert!(copy.exists());
+    std::fs::remove_dir(staged).unwrap();
+    assert!(super::keep_review(&copy, &l.typo).is_ok());
+    assert_eq!(clean_stale_copies_in(&scratch, 0, 0), 0);
+    discard_copy(&copy.to_string_lossy());
+}

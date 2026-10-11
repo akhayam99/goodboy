@@ -47,6 +47,8 @@ fn the_engine_rebuilds_the_rewriter_result_with_the_plan_messages_and_authors() 
         copy_path: copy.to_string_lossy().into_owned(),
         skipped: Vec::new(),
         keeps_copy: false,
+        conflict_files: Vec::new(),
+        reviewed_head: None,
     })
     .unwrap();
     assert!(check.problems.is_empty(), "{:?}", check.problems);
@@ -83,6 +85,8 @@ fn the_engine_refuses_a_rewrite_with_the_wrong_number_of_commits() {
         copy_path: copy.to_string_lossy().into_owned(),
         skipped: Vec::new(),
         keeps_copy: false,
+        conflict_files: Vec::new(),
+        reviewed_head: None,
     })
     .unwrap();
     assert_eq!(check.head, None);
@@ -141,6 +145,8 @@ fn an_agent_rewrite_keeps_the_shas_of_the_untouched_older_commits() {
         copy_path: copy.to_string_lossy().into_owned(),
         skipped: Vec::new(),
         keeps_copy: false,
+        conflict_files: Vec::new(),
+        reviewed_head: None,
     })
     .unwrap();
     assert!(check.problems.is_empty(), "{:?}", check.problems);
@@ -183,6 +189,8 @@ fn an_agent_that_skips_a_planned_commit_is_refused() {
         copy_path: copy.to_string_lossy().into_owned(),
         skipped: vec![b.a.clone()],
         keeps_copy: false,
+        conflict_files: Vec::new(),
+        reviewed_head: None,
     })
     .unwrap();
     assert_eq!(check.head, None);
@@ -413,4 +421,77 @@ fn the_rewriter_git_sequence_works_inside_its_roots_and_leaves_the_user_refs_unt
     assert_eq!(snapshot(&root, &watched), before);
     drop(guard);
     discard_copy(&copy.to_string_lossy());
+}
+
+fn unexpected_rewrite(name: &str) -> RewriterCollectArgs {
+    let l = ledger(name);
+    let args = crate::history::fixtures::ledger_plan(
+        &l,
+        crate::history::fixtures::picks(&[
+            &l.export, &l.batch, &l.webhook, &l.retries, &l.logging, &l.tests, &l.typo,
+        ]),
+    );
+    let copy = temp_root(name)
+        .join(format!(
+            "{}{}",
+            crate::history::reservation::COPY_PREFIX,
+            slug(name)
+        ))
+        .join(crate::history::reservation::COPY_DIR);
+    let mut guard = create_copy(&l.root, &copy, &l.typo).unwrap();
+    guard.is_kept = true;
+    drop(guard);
+    std::fs::write(copy.join("webhook.ts"), "skip verify\n").unwrap();
+    git_ok(&copy, &["add", "webhook.ts"]);
+    git_ok(&copy, &["commit", "--amend", "--no-verify", "--no-edit"]);
+    RewriterCollectArgs {
+        plan: args,
+        copy_path: copy.to_string_lossy().into_owned(),
+        skipped: Vec::new(),
+        keeps_copy: true,
+        conflict_files: vec!["export.ts".to_string()],
+        reviewed_head: None,
+    }
+}
+
+#[test]
+fn unexpected_files_are_structured_and_the_copy_stays_for_review() {
+    let args = unexpected_rewrite("review-kept");
+    let check = collect_rewrite(&args).unwrap();
+    assert_eq!(check.head, None);
+    assert_eq!(check.unexpected_files, vec!["webhook.ts".to_string()]);
+    let review = check.review.unwrap();
+    assert!(review.kept_until > crate::history::copies::now_secs());
+    assert_eq!(
+        git_ok(Path::new(&args.copy_path), &["rev-parse", "HEAD"]),
+        review.copy_head
+    );
+    discard_copy(&args.copy_path);
+}
+
+#[test]
+fn accepting_a_review_rechecks_the_copy_and_returns_the_plan_head() {
+    let mut args = unexpected_rewrite("review-accept");
+    let review = collect_rewrite(&args).unwrap().review.unwrap();
+    args.reviewed_head = Some(review.copy_head);
+    let check = collect_rewrite(&args).unwrap();
+    assert!(check.head.is_some());
+    assert_eq!(check.map.len(), 7);
+    assert_eq!(
+        git_ok(Path::new(&args.plan.worktree_path), &["rev-parse", "HEAD"]),
+        args.plan.head
+    );
+    discard_copy(&args.copy_path);
+}
+
+#[test]
+fn accepting_a_changed_review_never_returns_a_head() {
+    let mut args = unexpected_rewrite("review-changed");
+    args.reviewed_head = Some(collect_rewrite(&args).unwrap().review.unwrap().copy_head);
+    let copy = Path::new(&args.copy_path);
+    std::fs::write(copy.join("webhook.ts"), "another change\n").unwrap();
+    git_ok(copy, &["add", "webhook.ts"]);
+    git_ok(copy, &["commit", "--amend", "--no-verify", "--no-edit"]);
+    assert!(collect_rewrite(&args).is_err());
+    discard_copy(&args.copy_path);
 }

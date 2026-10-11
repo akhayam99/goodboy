@@ -506,7 +506,15 @@ pick it when you start the agent.
   points `origin` at a push URL that always fails, it has no GitHub token and
   no bridge mount. It reports with `<<history-step>>`, `<<history-done>>` or
   `<<history-stuck>>`; the engine rebuilds its commits with the plan messages
-  and authors, checks the count, and moves the branch itself
+  and authors, checks the count, and moves the branch itself.
+
+  When the checked result changes files outside the plan, the copy is kept
+  for 24 hours from that check. The deadline survives restart; cleanup respects
+  it and removes the copy after it expires. Reviewing does not extend the
+  deadline. A review accepts only the head it showed, while it is still alive.
+  Copy retention is owned by `apps/desktop/src-tauri/src/history/copies.rs`;
+  the [Branch history](features/branch-history.md) guide owns the review actions.
+
 - **Scribe** is hidden too: it writes text about the code and never code.
   `Write with Scribe` in the create form asks it for the title and body as a
   text-only job (`isTextOnly`): when its first turn ends the work is `ready`
