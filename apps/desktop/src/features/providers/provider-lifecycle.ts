@@ -7,6 +7,7 @@ import {
   type ProviderPlatform,
 } from '@goodboy/types';
 import { currentPlatform } from '../../shared/platform';
+import { lifecycleOutputBuffer } from './lifecycleOutputBuffer';
 import type { AuthState, ProviderStatus } from './providers';
 
 export type LifecycleOutputPayload = {
@@ -47,7 +48,7 @@ export const resolveLifecycleCommand = (
   return command;
 };
 
-export const invokeProviderLifecycleRun = (args: {
+export const invokeProviderLifecycleRun = async (args: {
   providerId: ProviderId;
   action: ProviderLifecycleAction;
   command: string;
@@ -56,6 +57,7 @@ export const invokeProviderLifecycleRun = (args: {
   rows: number;
   env?: Readonly<Record<string, string>>;
 }): Promise<void> => {
+  await lifecycleOutputBuffer.start({ runId: args.runId });
   return invokeCommand<void>('provider_lifecycle_run', args);
 };
 

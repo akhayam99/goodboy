@@ -1,23 +1,10 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   LazyGenericTerminalPanel,
   type TerminalDriver,
 } from '../../../shared/components/GenericTerminalPanel/LazyGenericTerminalPanel';
-import {
-  invokeProviderLifecycleResize,
-  invokeProviderLifecycleWrite,
-  listenLifecycleExit,
-  listenLifecycleOutput,
-} from '../provider-lifecycle';
-
-function base64ToBytes(b64: string): Uint8Array {
-  const binary = atob(b64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes;
-}
+import { invokeProviderLifecycleResize, invokeProviderLifecycleWrite } from '../provider-lifecycle';
+import { lifecycleOutputBuffer } from '../lifecycleOutputBuffer';
 
 function stringToBase64(s: string): string {
   const bytes = new TextEncoder().encode(s);
@@ -43,23 +30,20 @@ export const InlineTerminal = ({ runId, isActive, heightClass = 'h-44' }: Props)
       resize: (cols, rows) => {
         void invokeProviderLifecycleResize(runId, cols, rows);
       },
-      onOutput: (handler) =>
-        listenLifecycleOutput((payload) => {
-          if (payload.runId !== runId) {
-            return;
-          }
-          handler({ bytes: base64ToBytes(payload.data), offset: null });
-        }),
-      onExit: (handler) =>
-        listenLifecycleExit((payload) => {
-          if (payload.runId !== runId) {
-            return;
-          }
-          handler(payload.exitCode);
-        }),
+      onOutput: async (handler) => {
+        await lifecycleOutputBuffer.register();
+        return lifecycleOutputBuffer.subscribe({ runId, subscriber: { onOutput: handler } });
+      },
+      onExit: async (handler) => {
+        await lifecycleOutputBuffer.register();
+        return lifecycleOutputBuffer.subscribe({ runId, subscriber: { onExit: handler } });
+      },
+      snapshot: async () => lifecycleOutputBuffer.snapshotOf({ runId }),
     }),
     [runId],
   );
+
+  useEffect(() => () => lifecycleOutputBuffer.release({ runId }), [runId]);
 
   return (
     <div
