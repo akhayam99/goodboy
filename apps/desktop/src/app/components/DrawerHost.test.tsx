@@ -28,6 +28,8 @@ import type { DrawerRequest } from '../../store/slices/drawer/state';
 import { ToastProvider } from '../../shared/components/Toast';
 import { CTX_PAYMENTS_WORKTREE, CTX_SESSION_ID } from './MockScene/scenes/brand/contextBase';
 import { seedNotesScene } from './MockScene/scenes/u23/notesSeed';
+import { SESSION_ID as RESOLVE_SESSION_ID } from './MockScene/scenes/resolveSeed';
+import { seedBulkScene } from './MockScene/scenes/bulkSeed';
 import { PLAN_FIXTURE_ID, PLAN_FIXTURE_SESSION } from '../../test/planFixtures';
 import { seedPlanDrawer } from '../../test/planDrawerFixtures';
 import { DrawerHost } from './DrawerHost';
@@ -194,6 +196,18 @@ const ENTRIES: ReadonlyArray<Entry> = [
       kind: 'review-notes',
       sessionId: CTX_SESSION_ID,
       payload: { mountPath: CTX_PAYMENTS_WORKTREE },
+    },
+  },
+  {
+    kind: 'fix-comments',
+    region: 'Fix comments',
+    seed: () => {
+      seedBulkScene({ stage: 'launch' });
+    },
+    drawer: {
+      kind: 'fix-comments',
+      sessionId: RESOLVE_SESSION_ID,
+      payload: { mountId: null },
     },
   },
   {
