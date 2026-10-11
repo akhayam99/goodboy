@@ -17,7 +17,7 @@ import { selectChatDoor } from '../../../store/slices/chat-last-open/selectChatD
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { SHORTCUTS } from '../../../shared/keyboard/registry';
 import { NAMES, formerNamesOf } from '../../../shared/names';
-import { getAppliedTheme, useThemeStore } from '../../../shared/lib/theme';
+import { getAppliedTheme, oppositeOfApplied, switchTheme } from '../../../shared/lib/theme';
 import { classifyAgent } from '../../session/agent-kind';
 import { useLensDestinations } from '../../session/hooks/useLensDestinations';
 import { useSessionRefresh } from '../../session/hooks/useSessionRefresh';
@@ -119,7 +119,6 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
   const refreshSession = useSessionRefresh();
   const { showToast } = useToast();
   const theme = getAppliedTheme();
-  const toggleTheme = useThemeStore((s) => s.toggleTheme);
 
   return useMemo<ReadonlyArray<PaletteEntry>>(() => {
     const now = Date.now();
@@ -437,7 +436,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         group: 'action',
         icon: CONCEPT_ICONS.appearance,
         secondary: ['theme appearance'],
-        run: () => toggleTheme(),
+        run: () => switchTheme({ to: oppositeOfApplied() }),
       },
       {
         key: 'action:connect-provider',
@@ -512,7 +511,6 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     refreshSession,
     showToast,
     theme,
-    toggleTheme,
     settingsGroups,
   ]);
 };

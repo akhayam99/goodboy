@@ -197,11 +197,15 @@ describe('AppTopBar', () => {
     expect(screen.queryByRole('button', { name: 'Impact' })).toBeNull();
   });
 
-  it('keeps the theme out of the bar, Settings and the palette change it', () => {
+  it('puts the theme toggle between spend and the bell, named by its tooltip', () => {
     renderBar();
 
-    expect(screen.queryByRole('button', { name: /switch to (light|dark)/i })).toBeNull();
-    expect(screen.queryByRole('button', { name: /theme/i })).toBeNull();
+    const toggle = screen.getByRole('button', { name: /^(Dark|Light) theme\. Switch to /i });
+    const spend = screen.getByRole('button', { name: 'Spend today. Open Impact' });
+    const bell = screen.getByTestId('notification-center');
+
+    expect(spend.compareDocumentPosition(toggle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(toggle.compareDocumentPosition(bell) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('keeps the brand and a workspace gear out of the bar', () => {
