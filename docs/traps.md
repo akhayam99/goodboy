@@ -451,8 +451,12 @@ fails silently at runtime.
 or a terminal may push or drop an entry while a rewrite runs. History saves
 and applies the exact stash SHA and verifies its unique message. It never
 pops an entry or restores whichever stash happens to be first. Cleanup in
-`drop_own_stash` holds Git's stash ref and reflog locks and retains ambiguous
-or unsupported entries rather than deleting a user's stash. Ignored files
+`drop_own_stash` finds the entry's index by SHA, runs `git stash drop` on it
+and checks that the SHA Git printed is the one it meant to drop; if another
+worktree shifted the slot, it puts the dropped entry back with
+`git stash store` and keeps ours. Ambiguous entries are retained rather than
+deleting a user's stash. Goodboy never writes `refs/stash` or its reflog by
+hand. Ignored files
 must be checked against both the current HEAD and target: stash push's
 cleanup can overwrite a directory that HEAD tracks as a file, even when
 the rewrite does not change that path.
@@ -462,15 +466,25 @@ honors `core.ignorecase` when checking these file and directory collisions.
 If the shared entry disappears before verification, `find_stash` in
 `apps/desktop/src-tauri/src/history/dirty.rs` searches commit objects for the
 exact unique message and verifies the stash parents against the captured HEAD.
-`move_branch_with` protects the verified commit in `refs/goodboy/stash/<sha>`
-until restoration succeeds. An unresolved intent journal is retained with an
-error, even if the working tree looks clean. Object discovery before the
-private ref exists cannot survive simultaneous immediate Git object pruning.
+`move_branch_with` protects the verified commit in `refs/goodboy/stash/<sha>`.
+The guard ref outlives a clean restore: `prune_guards` removes guards older
+than 14 days (by the stash commit date) on the next job, never the one a
+journal still names. A `stash pending` intent whose stash does not exist (the
+push failed on an `index.lock`, or the app died before it) is rolled back by
+`roll_back_intent`: the backup ref is deleted and the journal removed, so it
+never blocks a later rebase, undo or plan load. `pending_stash` reads
+"pending, nothing found" as none. Object discovery before the private ref
+exists cannot survive simultaneous immediate Git object pruning.
+
+The journal's seventh line is `restoring` while a restore runs and is cleared
+when the restore reports a conflict or fails, so it survives only a crash
+between applying the stash and recording `restored`. `bring_back` then asks
+`is_restored` (no unmerged paths, untracked files byte-equal to the stash,
+a stash path now changed) and finishes instead of applying twice. **Done,
+forget it** (`forget_saved`) clears the journal and keeps the guard ref; a
+stash whose object is gone is clearable, never an error.
 
 `history/dirty.rs` uses Git's stash capture and cleanup command. The writer
 lease covers cooperating Goodboy writers; an external editor writing during
 Git's capture and reset is outside that lease. Do not treat the lease as a
-filesystem write lock. Stash cleanup commits the reflog before the ref; a
-crash between those renames can leave the ref pointing at the restored stash
-while the surviving user's reflog entries remain intact. Cleanup failure
-retains the stash instead of repeating restoration.
+filesystem write lock. Cleanup failure retains the stash instead of repeating restoration.

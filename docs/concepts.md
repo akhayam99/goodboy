@@ -298,8 +298,9 @@ reads Done or Stopped after a restart. The history journal records expected head
 Its optional fifth line records the stash SHA; a following line records the
 exact ownership message. The journal is replaced atomically and synchronized
 before files are set aside. A pending intent can find that stash after a crash
-before its SHA was recorded. A restored marker prevents applying it twice if
-cleanup was interrupted. `pending_stash` and `write_journal` own this contract.
+before its SHA was recorded. A `restoring` marker, cleared on conflict, lets bring-back detect an
+interrupted restore; a restored marker prevents applying it twice if cleanup
+was interrupted. A pending intent with no stash is rolled back, never kept. `pending_stash` and `write_journal` own this contract.
 
 The recovery, on the banner: `Undo rewrite`
 for a rewrite, `Retry with a note` when History rewriter needs you, `Bring them
