@@ -17,9 +17,7 @@ export const SuggestedRow = ({ script, onPin }: Props) => (
       <Tooltip content={`Runs ${script.invocation}`}>
         <span className="shrink-0 truncate text-row text-foreground">{script.name}</span>
       </Tooltip>
-      <span className="min-w-0 truncate font-mono text-code text-faint-foreground">
-        {script.body}
-      </span>
+      <span className="min-w-0 truncate text-code text-faint-foreground">{script.body}</span>
     </span>
     <Button variant="ghost" size="xs" aria-label={`Pin ${script.name}`} onClick={onPin}>
       <Pin size={ICON_SIZE.row} aria-hidden />

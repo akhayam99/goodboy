@@ -70,7 +70,7 @@ export const ServiceRow = ({
           )}
         </span>
         {hasSecondLine ? (
-          <span className="truncate font-mono text-code text-faint-foreground">
+          <span className="truncate text-code text-faint-foreground">
             {line ?? 'Waiting for output'}
           </span>
         ) : null}

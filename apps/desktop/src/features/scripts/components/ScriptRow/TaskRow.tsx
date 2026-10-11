@@ -59,7 +59,7 @@ export const TaskRow = ({
           <span className="truncate text-row text-foreground">{script.name}</span>
         </Tooltip>
         {failedLine === null ? null : (
-          <span className="truncate font-mono text-code text-danger/80">{failedLine}</span>
+          <span className="truncate text-code text-danger">{failedLine}</span>
         )}
       </span>
       <span

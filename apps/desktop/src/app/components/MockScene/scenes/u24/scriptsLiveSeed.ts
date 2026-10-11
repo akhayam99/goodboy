@@ -1,12 +1,13 @@
 import type { MonitorSnapshot } from '@goodboy/core';
-import { aProject, aSession, aWorkspace } from '@goodboy/types/testing';
 import type {
   MountId,
   Project,
+  ProjectId,
   Session,
   SessionId,
   SessionMountView,
   SessionProjectMount,
+  WorkspaceId,
 } from '@goodboy/types';
 import { parseScriptPins } from '../../../../../features/scripts/parseScriptPins';
 import { scriptPinId } from '../../../../../features/scripts/scriptPinId';
@@ -54,25 +55,25 @@ type TickParams = {
   readonly tick: number;
 };
 
-type MountIdParams = {
+type IdParams = {
   readonly value: string;
 };
 
-const isMountId = (value: string): value is MountId => value.startsWith('mock-');
+const hasMockPrefix = <Id extends string>(value: string): value is Id => value.startsWith('mock-');
 
-const mountIdOf = ({ value }: MountIdParams): MountId => {
-  if (!isMountId(value)) {
-    throw new Error(`Not a mock mount id: ${value}`);
+const idOf = <Id extends string>({ value }: IdParams): Id => {
+  if (!hasMockPrefix<Id>(value)) {
+    throw new Error(`Not a mock id: ${value}`);
   }
   return value;
 };
 
-export const SCRIPTS_LIVE_WORKSPACE_ID = aWorkspace({ name: 'Harborline' }).id;
-export const SCRIPTS_LIVE_SESSION_ID = aSession().id;
-const OTHER_SESSION_ID = aSession().id;
-const PROJECT_ID = aProject().id;
-const MOUNT_ID = mountIdOf({ value: 'mock-sl-mount' });
-const OTHER_MOUNT_ID = mountIdOf({ value: 'mock-sl-mount-other' });
+export const SCRIPTS_LIVE_WORKSPACE_ID = idOf<WorkspaceId>({ value: 'mock-sl-workspace' });
+export const SCRIPTS_LIVE_SESSION_ID = idOf<SessionId>({ value: 'mock-sl-session' });
+const OTHER_SESSION_ID = idOf<SessionId>({ value: 'mock-sl-session-other' });
+const PROJECT_ID = idOf<ProjectId>({ value: 'mock-sl-project-payments' });
+const MOUNT_ID = idOf<MountId>({ value: 'mock-sl-mount' });
+const OTHER_MOUNT_ID = idOf<MountId>({ value: 'mock-sl-mount-other' });
 
 const WORKTREE = '/mock/harborline/payments-api-settlement';
 const OTHER_WORKTREE = '/mock/harborline/payments-api-rounding';

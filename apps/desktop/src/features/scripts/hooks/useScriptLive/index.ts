@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useMonitorPolling } from '../../../monitoring/hooks/useMonitorPolling';
 import { useAppStore } from '../../../../store';
+import { projectById } from '../../../../store/slices/projects/projectIndex';
 import { selectPortRows } from '../../../../store/slices/monitoring/selectPortRows';
 import { expectedPort } from '../../expectedPort';
 import { invokeScriptListLive, type ScriptRunRecord } from '../../scripts';
@@ -27,15 +27,37 @@ type ScriptLive = {
 };
 
 const NO_PIDS: Readonly<Record<string, number>> = {};
+const POLL_INTERVAL_MS = 5000;
+
+const isWatching = (): boolean => document.visibilityState === 'visible' && document.hasFocus();
 
 export const useScriptLive = ({ runs }: Params): ScriptLive => {
-  useMonitorPolling();
+  const refreshMonitorSnapshot = useAppStore((state) => state.refreshMonitorSnapshot);
+  const loadWatchedPorts = useAppStore((state) => state.loadWatchedPorts);
   const snapshot = useAppStore((state) => state.monitorSnapshot);
   const portRows = useAppStore(selectPortRows);
   const scanned = useAppStore((state) => state.monitorScanned);
   const projects = useAppStore((state) => state.projects);
   const sessionMounts = useAppStore((state) => state.sessionMounts);
   const reportError = useAppStore((state) => state.reportError);
+
+  useEffect(() => {
+    const tick = (): void => {
+      if (isWatching()) {
+        void refreshMonitorSnapshot();
+      }
+    };
+    void loadWatchedPorts().then(tick);
+    const timer = window.setInterval(tick, POLL_INTERVAL_MS);
+    window.addEventListener('focus', tick);
+    document.addEventListener('visibilitychange', tick);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('focus', tick);
+      document.removeEventListener('visibilitychange', tick);
+    };
+  }, [refreshMonitorSnapshot, loadWatchedPorts]);
+
   const [pids, setPids] = useState<Readonly<Record<string, number>>>(NO_PIDS);
 
   const pendingKey = useMemo(
@@ -105,7 +127,7 @@ export const useScriptLive = ({ runs }: Params): ScriptLive => {
       if (owner.worktreePath === worktreePath) {
         return null;
       }
-      const projectName = projects.find((project) => project.id === owner.projectId)?.name;
+      const projectName = projectById(projects, owner.projectId)?.name;
       const ownerPath = owner.worktreePath;
       const branch = Object.values(sessionMounts)
         .flat()
