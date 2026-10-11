@@ -1061,7 +1061,11 @@ describe('moving across every place keeps one frame', () => {
       expect(currentDoors()).toEqual(['board']);
 
       await clickButton('New session');
-      expect(currentDoors()).toEqual(['new']);
+      expect(
+        document
+          .querySelector('[data-side-column] [data-create="session"]')
+          ?.getAttribute('aria-current'),
+      ).toBe('page');
       expectHealthy();
     },
     JOURNEY_MS,

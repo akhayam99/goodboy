@@ -5,7 +5,7 @@ import { clearMocks } from '@tauri-apps/api/mocks';
 import { ErrorBoundary } from '@goodboy/ui';
 import { vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { SessionId, StarredIssue, Workspace, WorkspaceId } from '@goodboy/types';
+import type { ChatId, SessionId, StarredIssue, Workspace, WorkspaceId } from '@goodboy/types';
 import { shortcutGlyphs, type ShortcutId } from '../../../shared/keyboard/registry';
 import { agentPlace } from '../../../store';
 import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
@@ -13,6 +13,7 @@ import { App } from '../../../App';
 import { seedActivityRunScene } from '../../../app/components/MockScene/scenes/activityRunSeed';
 import { seedResolveScene } from '../../../app/components/MockScene/scenes/resolveSeed';
 import { sceneClock } from '../../../app/components/MockScene/sceneClock';
+import { brandedId } from '../../../features/history/testing/brandedId';
 import { pressShortcut } from '../../helpers/pressKey';
 import { openQuestionFor } from '../../../features/workspace/testing/sessionColumn';
 import { reloads, spawnedWindows, worldDatabase, zoomFactors } from './keys.effects';
@@ -250,6 +251,29 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   pressRow({
     id: 'column.toggle',
     lands: () => visible('button', /^Show sidebar/),
+  }),
+  keyRow({
+    id: 'chat.new',
+    note: 'a new chat even with a last chat',
+    open: async () => {
+      const state = useAppStore.getState();
+      const workspaceId = state.currentWorkspaceId;
+      if (workspaceId === null) {
+        throw new Error('The journey needs its workspace');
+      }
+      useAppStore.setState({
+        lastChatByWorkspace: {
+          ...state.lastChatByWorkspace,
+          [workspaceId]: brandedId<ChatId>({ value: 'keys-last-chat' }),
+        },
+      });
+      await press('chat.new')();
+    },
+    lands: async () => {
+      await waitFor(() => {
+        expect(useAppStore.getState().appStudio).toEqual({ kind: 'chat', chatId: null });
+      }, WAIT);
+    },
   }),
   pressRow({
     id: 'session.board',
@@ -1116,7 +1140,14 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
     id: 'terminal.newTab',
     open: async () => {
       await press('lens.terminal')();
-      await clickFirstButton(/^New terminal$/);
+      await screen.findByRole('complementary', { name: 'Terminals' }, WAIT);
+      const [newTerminal] = screen
+        .getAllByRole('button', { name: /^New terminal$/ })
+        .filter((button) => button.closest('[data-side-column]') === null);
+      if (newTerminal === undefined) {
+        throw new Error('The terminal rail has no New terminal button');
+      }
+      fireEvent.click(newTerminal);
       await waitFor(() => expect(terminalRows().length).toBeGreaterThan(0), WAIT);
       const first = terminalRows()[0]?.querySelector('button');
       expect(first).toBeDefined();
