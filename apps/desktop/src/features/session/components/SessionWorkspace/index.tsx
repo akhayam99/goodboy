@@ -37,6 +37,7 @@ import { ExplorePane } from '../../../explore/components/ExplorePane';
 import { SIMPLE_LENSES } from '../../lens-labels';
 import { resolveLensSurface } from '../../lens-surface';
 import { EmptyState } from '@goodboy/ui';
+import { StudioBandContext } from '../../../../shared/components/StudioShell/studioBandContext';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type SessionWorkspaceProps = {
@@ -143,12 +144,14 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   useEscapeLayer(leaveAgentOverlay, showAgentOverlay && isActive);
 
   const banner = <FirstLapBanner sessionId={sessionId} />;
+  const trail = <TrailBar session={session} end={<AskTrailButton sessionId={sessionId} />} />;
+  const isBranchSplit = lens === 'branch' && showLens;
 
   return (
     <div className="@container relative flex h-full w-full min-w-0 flex-col">
-      <TrailBar session={session} end={<AskTrailButton sessionId={sessionId} />} />
+      {isBranchSplit ? null : trail}
       <UnderTrailContext.Provider value>
-        <div className="relative min-h-0 flex-1">
+        <div className="relative flex min-h-0 flex-1 flex-col">
           <div
             className={cn('absolute inset-0 z-0', !showLens && 'invisible pointer-events-none')}
             inert={!showLens}
@@ -173,7 +176,9 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                 <ScriptsPanel workspaceId={session.workspaceId} sessionId={sessionId} />
               ) : null}
               {lens === 'branch' ? (
-                <BranchPage session={session} workingDir={workingDir} isActive={isActive} />
+                <StudioBandContext.Provider value={isBranchSplit ? trail : null}>
+                  <BranchPage session={session} workingDir={workingDir} isActive={isActive} />
+                </StudioBandContext.Provider>
               ) : null}
               {lens === 'linear' ? (
                 <IntegrationPane

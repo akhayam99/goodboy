@@ -41,7 +41,6 @@ describe('shortcutRows', () => {
       'diff.nextUnviewed',
       'diff.focusTree',
       'diff.focusFilter',
-      'diff.toggleTree',
       'diff.previousFile',
       'diff.nextFile',
       'diff.focusFilterAlias',

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { PULL_REQUEST_NOUNS, REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
-import { PageColumn, PaneShell, SegmentedTabs } from '@goodboy/ui';
+import { PanelLeft } from 'lucide-react';
+import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
+import { Button, Eyebrow, PageColumn, PaneShell, ScrollFade, StudioRailLayout } from '@goodboy/ui';
 import type { PullRequestHost, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { branchPlace } from '../../../../store/slices/navigation/place';
@@ -8,7 +9,7 @@ import type { BranchTab } from '../../../../store/slices/navigation/types';
 import { projectById } from '../../../../store/slices/projects/projectIndex';
 import { refreshActiveRequest } from '../../../../store/slices/review-source/refreshActiveRequest';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
-import { DiffRailScope } from '../../../diff/DiffRailScope';
+import { DiffRailContext, type DiffRailHost } from '../../../diff/diffRailHost';
 import { JobBanner } from '../../../history/JobBanner';
 import { DiffBaseBranchRow } from '../../../diff/components/SessionDiffPane/DiffBaseBranchRow';
 import { useSessionDiff } from '../../../diff/hooks/useSessionDiff';
@@ -30,18 +31,23 @@ import { usePullRequestView } from '../../hooks/usePullRequestView';
 import { capabilityReasonOf } from '../../pullRequestCapabilityReason';
 import { distanceBehind } from '../../../../shared/lib/gitStatus';
 import type { BranchReviewCounts } from '../../branchPrimary';
-import { branchTabsOf } from '../../branchTabs';
+import { branchTabsOf, isBranchReadOnly, resolveBranchTab } from '../../branchTabs';
 import { branchScopeOf } from '../../../../store/slices/session-view/branchTabOf';
 import { pullRequestKindOf } from '../../../../shared/pullRequestKind';
+import { BRANCH_RAIL_SURFACE } from '../../branchRailSurface';
+import { useBranchRailDock } from '../../hooks/useBranchRailDock';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { BranchRail } from '../BranchRail';
+import { checksSummaryOf } from '../../checksSummary';
+import { BranchRailOverlay } from '../BranchRail/BranchRailOverlay';
 import { BranchChecks } from '../BranchChecks';
 import { BranchCommits } from '../BranchCommits';
 import { BranchFiles } from '../BranchFiles';
-import { deriveHistoryEdits } from '../../../history/historyEdits';
 import { BranchHeader } from '../BranchHeader';
 import { NoPullRequest } from '../PullRequestTab/NoPullRequest';
 import { PullRequestTab } from '../PullRequestTab';
 import type { ReviewerRequest } from '../PullRequestTab/ReviewersProperty';
-import { TabCount } from './TabCount';
+import { BranchDetail } from './BranchDetail';
 import { TabActionsSlotContext } from '../../../../shared/components/TabActions/tabActionsSlotContext';
 
 type Props = {
@@ -50,29 +56,19 @@ type Props = {
   readonly isActive?: boolean;
 };
 
-const tabLabelOf = ({
-  host,
-  label,
-}: {
-  readonly host: PullRequestHost;
-  readonly label: string;
-}): string => {
-  const long = PULL_REQUEST_NOUNS[host].long;
-  return host === 'github' ? label : `${long.charAt(0).toUpperCase()}${long.slice(1)}`;
-};
-
 export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   const sessionId = session.id as SessionId;
   const identity = useBranchIdentity({ sessionId });
-  const tab = useBranchTab({ sessionId, mountPath: identity.mountPath });
+  const storedTab = useBranchTab({ sessionId, mountPath: identity.mountPath });
   const setPullRequestMode = useAppStore((s) => s.setPullRequestMode);
   const navigate = useAppStore((s) => s.navigate);
   const selectedThreadId = useAppStore((s) => s.branchThreadId[sessionId] ?? null);
-  const openDiffLens = useAppStore((s) => s.openDiffLens);
   const diffFocus = useAppStore((s) => s.diffFocus[sessionId] ?? null);
   const github = useAppStore((s) => s.sessionGithub[sessionId] ?? null);
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
   const [tabActionsSlot, setTabActionsSlot] = useState<HTMLElement | null>(null);
+  const [railHost, setRailHost] = useState<HTMLElement | null>(null);
+  const dock = useBranchRailDock();
   const historyMountId = identity.mount?.mountId ?? null;
   const commitCount = useAppStore((s) =>
     historyMountId === null ? null : (s.historyDrafts[historyMountId]?.commits.length ?? null),
@@ -80,20 +76,6 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   const hasHistoryDraft = useAppStore(
     (s) => historyMountId !== null && s.historyDrafts[historyMountId] !== undefined,
   );
-  const hasHistoryPlan = useAppStore((s) => {
-    const draft = historyMountId === null ? undefined : s.historyDrafts[historyMountId];
-    if (draft === undefined) {
-      return false;
-    }
-    return (
-      deriveHistoryEdits({
-        items: draft.items,
-        original: [...draft.commits].reverse().map((commit) => commit.sha),
-        onto: draft.onto,
-        behind: draft.graph?.behind ?? 0,
-      }).length > 0
-    );
-  });
   const loadHistoryDraft = useAppStore((s) => s.loadHistoryDraft);
   const projectName = useAppStore(
     (s) => projectById(s.projects, identity.mount?.projectId ?? null)?.name ?? null,
@@ -124,10 +106,14 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     remoteKind === 'gitlab' ? 'gitlab' : bitbucketRemote.isBitbucket ? 'bitbucket' : 'github';
   const host: PullRequestHost = activeSource?.kind ?? (pr === null ? remoteHost : identity.host);
   const hasComments = useAppStore((s) => branchScopeOf({ state: s, sessionId }).hasComments);
-  const tabs = branchTabsOf({
-    state: pr === null ? 'none' : pullRequestKindOf({ state: pr.state, isDraft: pr.isDraft }),
+  const scope = {
+    state:
+      pr === null ? ('none' as const) : pullRequestKindOf({ state: pr.state, isDraft: pr.isDraft }),
     hasComments,
-  });
+  };
+  const tabs = branchTabsOf(scope);
+  const tab = resolveBranchTab({ tab: storedTab, scope });
+  const isReadOnly = isBranchReadOnly(scope);
   const hasPushFailure = entries.some((entry) => isPushFailure({ row: entry.row }));
   const isPushBusy =
     push.phase.kind === 'preparing' ||
@@ -268,14 +254,6 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     rebaseAction === undefined || rebaseAction.blockedReason !== null
       ? null
       : () => controls.diffControls.trigger({ actionId: rebaseAction.id });
-  const onOpenFiles = (path: string | null): void => {
-    if (path === null) {
-      selectTab('files');
-      return;
-    }
-    openDiffLens(sessionId, { kind: 'branch', path });
-  };
-
   const isGithubConnected =
     githubConnection.isResolved === false || githubConnection.isAuthenticated;
   const hasRemote = sources.length > 0;
@@ -297,34 +275,35 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     }
     if (tab === 'pr') {
       return (
-        <PageColumn width="column" className="flex min-w-0 flex-col">
-          <PullRequestTab
-            session={session}
-            host={host}
-            pr={pr}
-            isBitbucketRemote={bitbucketRemote.isBitbucket}
-            isBitbucketConnected={bitbucketRemote.isConnected}
-            newPullRequestUrl={bitbucketRemote.newPullRequestUrl}
-            detail={github?.detail ?? null}
-            view={pullRequestView.view}
-            edits={pullRequestView.edits}
-            viewError={pullRequestView.error}
-            viewErrorKind={pullRequestView.errorKind}
-            mountPath={identity.mountPath}
-            canEdit={canEditBody}
-            request={request}
-            behind={behind}
-            distanceBase={identity.mount?.baseBranch ?? null}
-            isConnected={isGithubConnected}
-            onRebase={onRebase}
-            onMutated={onMutated}
-            onCreated={onPullRequestCreated}
-            onConnected={() => void githubConnection.refresh()}
-            onReload={reloadPullRequestView}
-            onSelectTab={selectTab}
-            onOpenFiles={onOpenFiles}
-          />
-        </PageColumn>
+        <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
+          <PageColumn width="column" className="flex min-w-0 flex-col pb-5">
+            <PullRequestTab
+              session={session}
+              host={host}
+              pr={pr}
+              isBitbucketRemote={bitbucketRemote.isBitbucket}
+              isBitbucketConnected={bitbucketRemote.isConnected}
+              newPullRequestUrl={bitbucketRemote.newPullRequestUrl}
+              detail={github?.detail ?? null}
+              view={pullRequestView.view}
+              edits={pullRequestView.edits}
+              viewError={pullRequestView.error}
+              viewErrorKind={pullRequestView.errorKind}
+              mountPath={identity.mountPath}
+              canEdit={canEditBody}
+              request={request}
+              behind={behind}
+              distanceBase={identity.mount?.baseBranch ?? null}
+              isConnected={isGithubConnected}
+              onRebase={onRebase}
+              onMutated={onMutated}
+              onCreated={onPullRequestCreated}
+              onConnected={() => void githubConnection.refresh()}
+              onReload={reloadPullRequestView}
+              onSelectTab={selectTab}
+            />
+          </PageColumn>
+        </ScrollFade>
       );
     }
     if (tab === 'files') {
@@ -339,10 +318,20 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
       );
     }
     if (tab === 'commits') {
-      return <BranchCommits sessionId={sessionId} worktreePath={identity.mountPath} />;
+      return (
+        <BranchCommits
+          sessionId={sessionId}
+          worktreePath={identity.mountPath}
+          isReadOnly={isReadOnly}
+        />
+      );
     }
     if (tab === 'checks') {
-      return <BranchChecks sessionId={sessionId} />;
+      return (
+        <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
+          <BranchChecks sessionId={sessionId} />
+        </ScrollFade>
+      );
     }
     return (
       <>
@@ -361,70 +350,134 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
       />
     ) : null;
 
+  const matchedDetail =
+    pr !== null && github?.detail?.prNumber === pr.number ? github.detail : null;
+  const checksCount = matchedDetail === null ? null : matchedDetail.checks.length;
+  const checksSummary =
+    pr === null
+      ? null
+      : checksSummaryOf({ rollup: pr.checks, checks: matchedDetail?.checks ?? [] });
+  const viewedCount =
+    diff.loading || diff.error !== null
+      ? null
+      : diff.files.filter((file) => diff.viewed.stateOf(file) === 'viewed').length;
+  const railNode = (
+    <BranchRail
+      tabs={tabs}
+      current={tab}
+      counts={{
+        comments: commentsCount,
+        files: filesCount,
+        commits: commitCount,
+        ...(checksCount !== null && { checks: checksCount }),
+      }}
+      hasFailingChecks={checksSummary?.tone === 'danger'}
+      viewed={
+        viewedCount === null || filesCount === null
+          ? null
+          : { viewed: viewedCount, total: filesCount }
+      }
+      hostRef={setRailHost}
+      onSelect={(next) => {
+        selectTab(next);
+        dock.closeOverlay();
+      }}
+    />
+  );
+  const railSlot = useMemo<DiffRailHost>(
+    () => ({
+      host: tab === 'files' ? railHost : null,
+      isOverlay: !dock.isDocked,
+      open: dock.openOverlay,
+      dismiss: dock.closeOverlay,
+    }),
+    [dock.closeOverlay, dock.isDocked, dock.openOverlay, railHost, tab],
+  );
+
+  const sectionsButton = dock.isDocked ? null : (
+    <div className="flex h-10 shrink-0 items-start pl-2 pt-3">
+      <Button
+        size="xs"
+        variant="ghost"
+        aria-expanded={dock.isOverlayOpen}
+        onClick={dock.openOverlay}
+      >
+        <PanelLeft size={ICON_SIZE.row} aria-hidden />
+        Sections
+      </Button>
+    </div>
+  );
+
+  const detail = (
+    <BranchDetail sectionsButton={sectionsButton} isInert={dock.isOverlayOpen}>
+      <PaneShell
+        width="column"
+        scroll="self"
+        header={
+          <div className="flex min-w-0 flex-col gap-3">
+            <BranchHeader
+              sessionId={sessionId}
+              host={host}
+              mountPath={identity.mountPath}
+              pr={pr}
+              projectName={projectName}
+              branch={identity.mount?.branch ?? null}
+              baseBranch={identity.mount?.baseBranch ?? null}
+              fallbackTitle={identity.label}
+              controls={controls}
+              isPushBusy={isPushBusy}
+              isPrimaryYielding={isPrimaryYielding}
+              tab={tab}
+              isActive={isActive}
+              canEditTitle={canEditTitle}
+              createdAt={pullRequestView.view?.createdAt ?? null}
+              commitCount={commitCount}
+              onMutated={onMutated}
+            />
+            <PushBanner sessionId={sessionId} push={push} />
+            {baseRow}
+            <JobBanner sessionId={sessionId} worktreePath={identity.mountPath} />
+            <div
+              ref={setTabActionsSlot}
+              data-slot="branch-tab-actions"
+              className="flex min-w-0 shrink-0 items-center justify-end gap-2 empty:hidden"
+            />
+          </div>
+        }
+      >
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col pt-3">{body()}</div>
+      </PaneShell>
+    </BranchDetail>
+  );
+
   return (
     <BranchDiffContext.Provider value={identity.mountPath === null ? null : diff}>
       <TabActionsSlotContext.Provider value={tabActionsSlot}>
-        <DiffRailScope isActive={tab === 'files'}>
-          <PaneShell
-            width="column"
-            scroll="self"
-            header={
-              <div className="flex min-w-0 flex-col gap-3">
-                <BranchHeader
-                  sessionId={sessionId}
-                  host={host}
-                  mountPath={identity.mountPath}
-                  pr={pr}
-                  detail={github?.detail ?? null}
-                  projectName={projectName}
-                  branch={identity.mount?.branch ?? null}
-                  baseBranch={identity.mount?.baseBranch ?? null}
-                  fallbackTitle={identity.label}
-                  controls={controls}
-                  isPushBusy={isPushBusy}
-                  isPrimaryYielding={isPrimaryYielding}
-                  isRebaseYielding={hasHistoryPlan}
-                  tab={tab}
-                  isActive={isActive}
-                  canEditTitle={canEditTitle}
-                  createdAt={pullRequestView.view?.createdAt ?? null}
-                  onMutated={onMutated}
-                />
-                <PushBanner sessionId={sessionId} push={push} />
-                {baseRow}
-                <JobBanner sessionId={sessionId} worktreePath={identity.mountPath} />
-                <div className="flex min-w-0 items-center justify-between gap-2">
-                  <SegmentedTabs<BranchTab>
-                    ariaLabel="Branch"
-                    size="sm"
-                    className="w-fit"
-                    value={tab}
-                    onChange={selectTab}
-                    options={tabs.map(({ id: value, label }) => ({
-                      value,
-                      label: value === 'pr' ? tabLabelOf({ host, label }) : label,
-                      badge:
-                        value === 'comments' ? (
-                          <TabCount count={commentsCount} />
-                        ) : value === 'files' ? (
-                          <TabCount count={filesCount} />
-                        ) : value === 'commits' ? (
-                          <TabCount count={commitCount} />
-                        ) : undefined,
-                    }))}
-                  />
-                  <div
-                    ref={setTabActionsSlot}
-                    data-slot="branch-tab-actions"
-                    className="flex shrink-0 items-center gap-2"
-                  />
-                </div>
-              </div>
-            }
+        <DiffRailContext.Provider value={railSlot}>
+          <div
+            ref={dock.paneRef}
+            data-branch-pane=""
+            className="relative flex h-full min-h-0 min-w-0 flex-1"
           >
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col pt-3">{body()}</div>
-          </PaneShell>
-        </DiffRailScope>
+            <StudioRailLayout
+              railLabel="Branch sections"
+              railWidth="standard"
+              surface={BRANCH_RAIL_SURFACE}
+              placement="page"
+              isCollapsed={!dock.isDocked}
+              railHeader={
+                <div className="flex h-6 min-w-0 flex-1 items-center px-2">
+                  <Eyebrow label="Sections" muted />
+                </div>
+              }
+              rail={dock.isDocked ? railNode : null}
+              detail={detail}
+            />
+            {dock.isOverlayOpen ? (
+              <BranchRailOverlay rail={railNode} onClose={dock.closeOverlay} />
+            ) : null}
+          </div>
+        </DiffRailContext.Provider>
       </TabActionsSlotContext.Provider>
     </BranchDiffContext.Provider>
   );

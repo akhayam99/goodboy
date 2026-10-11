@@ -593,13 +593,6 @@ export const SHORTCUTS = {
     group: 'diff',
     scope: 'diff',
   },
-  'diff.toggleTree': {
-    combo: 'cmd+shift+KeyB',
-    label: 'Show or hide the file tree',
-    plane: 'session',
-    group: 'diff',
-    scope: 'diff',
-  },
   'diff.previousFile': {
     combo: 'BracketLeft',
     label: 'Previous file (same as K)',

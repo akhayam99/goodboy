@@ -129,6 +129,7 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
     files: ['features/session/components/SessionWorkspace/parts/SessionStudioLayer.tsx'],
   },
   PaneShell: { kind: 'helper', files: [] },
+  StudioBandContext: { kind: 'helper', files: [] },
   TrailBar: { kind: 'helper', files: [] },
   AskTrailButton: { kind: 'helper', files: [] },
   FirstLapBanner: {

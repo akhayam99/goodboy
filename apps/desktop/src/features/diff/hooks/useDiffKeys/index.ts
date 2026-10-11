@@ -12,18 +12,11 @@ type DiffKeysReview = Pick<
 type Params = {
   readonly enabled: boolean;
   readonly review: DiffKeysReview;
-  readonly onToggleTree: () => void;
   readonly onFocusTree: () => void;
   readonly onFocusFilter: () => void;
 };
 
-export const useDiffKeys = ({
-  enabled,
-  review,
-  onToggleTree,
-  onFocusTree,
-  onFocusFilter,
-}: Params): void => {
+export const useDiffKeys = ({ enabled, review, onFocusTree, onFocusFilter }: Params): void => {
   const { tree, activePath, collapsed, toggleFolder, jumpTo, stepTo, viewed } = review;
   const order = useMemo(() => tree.files.map((file) => file.path), [tree.files]);
 
@@ -97,5 +90,4 @@ export const useDiffKeys = ({
   useShortcut('diff.focusTree', onFocusTree, enabled);
   useShortcut('diff.focusFilter', onFocusFilter, enabled);
   useShortcut('diff.focusFilterAlias', onFocusFilter, enabled);
-  useShortcut('diff.toggleTree', onToggleTree, enabled);
 };
