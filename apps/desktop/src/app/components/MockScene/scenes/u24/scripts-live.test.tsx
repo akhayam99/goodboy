@@ -38,21 +38,21 @@ describe('the u24 scripts-live scenes', () => {
   it('draws services and tasks at rest with results and the exit by signal', async () => {
     renderScene({ name: 'scripts-live-idle' });
 
-    const services = await screen.findByRole('region', { name: 'Services' });
+    const services = await screen.findByRole('region', { name: /^Services of /u });
     expect(within(services).getByText(':5005')).toBeDefined();
     expect(within(services).getByText('Exit 137')).toBeDefined();
     expect(within(services).getByText('Killed')).toBeDefined();
-    const tasks = screen.getByRole('region', { name: 'Tasks' });
+    const tasks = screen.getByRole('region', { name: /^Tasks of /u });
     expect(within(tasks).getByText('12s · 3m ago')).toBeDefined();
     expect(within(tasks).getByText(/^Exit 1 · /)).toBeDefined();
     expect(within(tasks).getByText(/error TS2322/)).toBeDefined();
-    expect(screen.queryByRole('region', { name: 'Suggested' })).toBeNull();
+    expect(screen.queryByRole('region', { name: /^Suggested of /u })).toBeNull();
   });
 
   it('draws a running service with its last line, port link and stop and restart', async () => {
     renderScene({ name: 'scripts-live-running' });
 
-    const services = await screen.findByRole('region', { name: 'Services' });
+    const services = await screen.findByRole('region', { name: /^Services of /u });
     expect(within(services).getByText(/^vite v6/)).toBeDefined();
     expect(
       await within(services).findByRole('button', { name: 'Open localhost:5005' }),
@@ -65,7 +65,7 @@ describe('the u24 scripts-live scenes', () => {
   it('warns that another worktree holds the expected port and keeps Run', async () => {
     renderScene({ name: 'scripts-live-portbusy' });
 
-    const services = await screen.findByRole('region', { name: 'Services' });
+    const services = await screen.findByRole('region', { name: /^Services of /u });
     expect(await within(services).findByText(':5005 in use')).toBeDefined();
     expect(within(services).getByRole('button', { name: 'Run dev' }).hasAttribute('disabled')).toBe(
       false,
@@ -75,11 +75,11 @@ describe('the u24 scripts-live scenes', () => {
   it('draws the dimmed Suggested band with a Pin on each row', async () => {
     renderScene({ name: 'scripts-live-suggested' });
 
-    const suggested = await screen.findByRole('region', { name: 'Suggested' });
+    const suggested = await screen.findByRole('region', { name: /^Suggested of /u });
     expect(within(suggested).getByText('Pin the ones you run here.')).toBeDefined();
     expect(
       within(suggested).getAllByRole('button', { name: /^Pin / }).length,
     ).toBeGreaterThanOrEqual(5);
-    expect(screen.queryByRole('region', { name: 'Services' })).toBeNull();
+    expect(screen.queryByRole('region', { name: /^Services of /u })).toBeNull();
   });
 });

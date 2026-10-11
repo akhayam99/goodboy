@@ -84,7 +84,7 @@ export const ProjectGroups = ({
         <section aria-label="Starred" className="col-span-full grid grid-cols-subgrid gap-y-1">
           <SectionHeader
             label="Starred"
-            headingLevel={3}
+            headingLevel={2}
             meta={<GroupCount count={groups.starred.length} />}
             hint="Agents and pickers list these first."
             className="col-span-full px-2"
@@ -101,7 +101,7 @@ export const ProjectGroups = ({
         >
           <SectionHeader
             label={hasStarred ? 'Other projects' : 'Projects'}
-            headingLevel={3}
+            headingLevel={2}
             meta={<GroupCount count={groups.all.length} />}
             hint={hasStarred ? undefined : 'Star the ones you use most.'}
             className="col-span-full px-2"
