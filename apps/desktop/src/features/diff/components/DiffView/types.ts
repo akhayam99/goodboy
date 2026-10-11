@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { DiffCommentAnchor, FileDiff, IsoDateTime } from '@goodboy/types';
+import type { DiffCommentAnchor, FileDiff } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 import type { ViewedState } from '../../lib/reviewedFiles';
 
@@ -10,6 +10,16 @@ export type DiffThreadAction = {
   readonly onClick: () => void;
 };
 
+type DiffThreadSource = 'note' | 'host';
+
+export type DiffThreadReply = {
+  readonly id: string;
+  readonly author: string;
+  readonly body: string;
+};
+
+export type DiffThreadHost = 'github' | 'gitlab' | 'bitbucket';
+
 export type DiffThread = {
   readonly id: string;
   readonly filePath: string;
@@ -17,8 +27,15 @@ export type DiffThread = {
   readonly body: string;
   readonly tone: Tone;
   readonly author: string;
+  readonly authorAvatarUrl?: string | null;
   readonly isAgent: boolean;
-  readonly createdAt: IsoDateTime;
+  readonly source: DiffThreadSource;
+  readonly host: DiffThreadHost | null;
+  readonly kindLabel?: string;
+  readonly replies?: ReadonlyArray<DiffThreadReply>;
+  readonly canReply?: boolean;
+  readonly canResolve?: boolean;
+  readonly createdAt: string;
   readonly statusLabel: string;
   readonly isResolved: boolean;
   readonly footer?: ReactNode;
@@ -52,6 +69,9 @@ export type DiffComments = {
   readonly onClose?: (id: string) => void;
   readonly onReopen?: (id: string) => void;
   readonly onDelete?: (id: string) => void;
+  readonly onReply?: (id: string, body: string) => Promise<void>;
+  readonly onResolve?: (id: string) => Promise<void>;
+  readonly onOpenInComments?: (id: string) => void;
 };
 
 export type DiffViewed = {
@@ -61,4 +81,5 @@ export type DiffViewed = {
 
 export type DiffFileActions = {
   readonly onOpenInEditor?: (path: string) => void;
+  readonly onOpenInDrawer?: (path: string) => void;
 };

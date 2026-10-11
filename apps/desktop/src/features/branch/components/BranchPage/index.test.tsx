@@ -243,7 +243,7 @@ describe('Branch page header and sections', () => {
     );
     expect(sectionNames()).toEqual(['Overview', 'Comments', 'Files', 'Commits', 'Checks']);
     expect(railRow(/^Comments/).getAttribute('aria-current')).toBe('page');
-    expect(screen.queryByRole('tablist')).toBeNull();
+    expect(screen.queryByRole('tablist', { name: /^Branch/ })).toBeNull();
   });
 
   it('carries one primary at most and none of the controls of the neighbouring pages', async () => {
@@ -684,13 +684,14 @@ describe('Branch page Checks and Files', () => {
     await mount();
     dropRequest();
     await visit(/^Overview/);
-    expect(screen.getByRole('heading', { name: 'No pull request yet' })).toBeDefined();
+    expect(screen.queryByRole('heading', { name: 'No pull request yet' })).toBeNull();
+    expect(screen.getByText('No pull request')).toBeDefined();
     expect(screen.getByRole('textbox', { name: 'Pull request title' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Create pull request' })).toBeDefined();
 
     await visit(/^Files/);
 
-    expect(screen.queryByRole('heading', { name: 'No pull request yet' })).toBeNull();
+    expect(screen.queryByRole('textbox', { name: 'Pull request title' })).toBeNull();
     expect(railRow(/^Files/).getAttribute('aria-current')).toBe('page');
   });
 

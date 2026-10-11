@@ -136,6 +136,10 @@ const headerPush = (name: RegExp): HTMLElement =>
 
 const comment = (): HTMLElement => screen.getByRole('article', { name: 'Comment' });
 
+const showResolved = (): void => {
+  fireEvent.click(screen.getByRole('tab', { name: 'Resolved' }));
+};
+
 const focusedThread = (): string | null => comment().getAttribute('data-review-comment');
 
 const press = (key: string, code: string, init: KeyboardEventInit = {}): void => {
@@ -150,7 +154,7 @@ describe('Review as one flow', () => {
     expect(within(list()).getByRole('region', { name: 'Working' })).toBeDefined();
     expect(within(list()).getByRole('region', { name: 'Ready to push' })).toBeDefined();
     expect(within(list()).getByRole('region', { name: 'Open' })).toBeDefined();
-    expect(within(list()).getByRole('region', { name: 'Done' })).toBeDefined();
+    expect(within(list()).queryByRole('region', { name: 'Done' })).toBeNull();
     expect(within(list()).getByRole('region', { name: 'Left open on GitHub' })).toBeDefined();
     expect(focusedThread()).toBe(EXPANDED_THREAD_ID);
     expect(screen.queryByRole('complementary', { name: 'Conversation' })).toBeNull();
@@ -165,49 +169,54 @@ describe('Review as one flow', () => {
     await mount({ threadId: null });
 
     expect(within(list()).getByRole('region', { name: 'Open' }).textContent).toMatch(/Open \d+/);
+    showResolved();
     expect(within(list()).getByRole('region', { name: 'Done' }).textContent).toMatch(/Done \d+/);
     expect(screen.queryByLabelText('Comment summary')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Filter comments' })).toBeNull();
   });
 
-  it('keeps Done closed until it is opened', async () => {
+  it('keeps Done under Resolved, open there, and Left open closed until it is opened', async () => {
     await mount({ threadId: null });
 
-    const toggle = within(list()).getByRole('button', { name: /^Done \d+/ });
     const leftOpen = within(list()).getByRole('button', { name: /^Left open on GitHub \d+/ });
-    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(within(list()).queryByRole('button', { name: /^Done \d+/ })).toBeNull();
     expect(leftOpen.getAttribute('aria-expanded')).toBe('false');
-    expect(within(list()).queryByText('Done')).toBeNull();
     expect(within(list()).queryByText('Left open')).toBeNull();
 
-    fireEvent.click(toggle);
     fireEvent.click(leftOpen);
-
-    expect(toggle.getAttribute('aria-expanded')).toBe('true');
     expect(leftOpen.getAttribute('aria-expanded')).toBe('true');
-    expect(within(list()).getAllByText('Done').length).toBeGreaterThan(0);
     expect(within(list()).getAllByText('Left open').length).toBeGreaterThan(0);
+
+    showResolved();
+    expect(within(list()).getAllByText('Done').length).toBeGreaterThan(0);
+    expect(within(list()).queryByRole('region', { name: 'Needs you' })).toBeNull();
   });
 
-  it('orders the groups Needs you, Working, Ready to push, Open, Done, Left open', async () => {
+  it('orders the groups Needs you, Working, Ready to push, Open, Left open', async () => {
     await mount({ threadId: null });
 
     const titles = within(list())
       .getAllByRole('region')
       .map((region) => region.getAttribute('aria-label'));
-    const wanted = ['Needs you', 'Working', 'Ready to push', 'Open', 'Done', 'Left open on GitHub'];
+    const wanted = ['Needs you', 'Working', 'Ready to push', 'Open', 'Left open on GitHub'];
     expect(titles).toEqual(wanted.filter((title) => titles.includes(title)));
     expect(titles[0]).toBe('Needs you');
   });
 
   it('names every state with its own word and never says Resolve on a control', async () => {
     await mount({ threadId: null });
-    fireEvent.click(within(list()).getByRole('button', { name: /^Done \d+/ }));
     fireEvent.click(within(list()).getByRole('button', { name: /^Left open on GitHub \d+/ }));
-
-    const words = Array.from(list().querySelectorAll('[data-row-state]')).map(
+    const openWords = Array.from(list().querySelectorAll('[data-row-state]')).map(
       (node) => node.textContent ?? '',
     );
+    showResolved();
+
+    const words = [
+      ...openWords,
+      ...Array.from(list().querySelectorAll('[data-row-state]')).map(
+        (node) => node.textContent ?? '',
+      ),
+    ];
     for (const word of ['To review', 'Question', 'Working', 'Ready', 'Open', 'Left open', 'Done']) {
       expect(words, word).toContain(word);
     }

@@ -317,6 +317,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
           worktreePath={identity.mountPath}
           diff={diff}
           hasPullRequest={pr !== null && pr.state === 'open'}
+          isReadOnly={isReadOnly}
         />
       );
     }

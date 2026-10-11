@@ -1356,11 +1356,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/app/components/MockScene/scenes/u23/notesSeed.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    }
-  },
   "apps/desktop/src/app/components/MockScene/scenes/u23/overview.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 12
@@ -3052,7 +3047,7 @@
   },
   "apps/desktop/src/features/diff/components/ChangeTree/index.tsx": {
     "@typescript-eslint/naming-convention": {
-      "count": 3
+      "count": 2
     }
   },
   "apps/desktop/src/features/diff/components/DiffView/CommentThread.tsx": {
@@ -3062,10 +3057,10 @@
   },
   "apps/desktop/src/features/diff/components/DiffView/DiffFile.tsx": {
     "@typescript-eslint/naming-convention": {
-      "count": 8
+      "count": 6
     },
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 2
+      "count": 1
     }
   },
   "apps/desktop/src/features/diff/components/DiffView/DiffRows.tsx": {
@@ -3074,11 +3069,6 @@
     }
   },
   "apps/desktop/src/features/diff/components/DiffView/DisplayMenu.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/features/diff/components/DiffView/FileHeader.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 2
     }
@@ -3143,16 +3133,8 @@
     }
   },
   "apps/desktop/src/features/diff/hooks/useDiffReviewThreads/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    },
     "@typescript-eslint/naming-convention": {
       "count": 6
-    }
-  },
-  "apps/desktop/src/features/diff/hooks/useDiffReviewThreads/index.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
     }
   },
   "apps/desktop/src/features/diff/hooks/useDiffTokens/index.ts": {
@@ -5247,16 +5229,6 @@
   },
   "apps/desktop/src/features/resolve/learnWorkspaceReplyStyle.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/resolve/notes/components/ReviewNotesDrawer/index.sqlite.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
-    }
-  },
-  "apps/desktop/src/features/resolve/notes/components/ReviewNotesDrawer/index.tsx": {
-    "@typescript-eslint/naming-convention": {
       "count": 1
     }
   },

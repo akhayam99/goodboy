@@ -2,20 +2,20 @@ import { useMemo } from 'react';
 import { cn } from '@goodboy/ui';
 import { LINE_FILL, SIGN_TEXT } from '../../diff/lib/lineTone';
 import { threadLocationOf } from '../../resolve/threadLocationOf';
-import type { ReviewEntry } from '../../resolve/components/ReviewFlow/useReviewEntries';
+import type { ResolveQueueRow } from '../../resolve/buildResolveQueueRows';
 import { useBranchDiff } from '../branchDiffContext';
 import { hunkAround } from '../hunkAround';
 
 type Props = {
-  readonly entry: ReviewEntry;
+  readonly row: ResolveQueueRow;
   readonly onOpenInDiff: (() => void) | null;
 };
 
 const SIGN = { add: '+', del: '-', context: ' ' } as const;
 
-export const ThreadHunk = ({ entry, onOpenInDiff }: Props) => {
+export const ThreadHunk = ({ row, onOpenInDiff }: Props) => {
   const diff = useBranchDiff();
-  const location = threadLocationOf({ row: entry.row });
+  const location = threadLocationOf({ row });
   const window = useMemo(
     () =>
       diff === null || location === null || location.path === null

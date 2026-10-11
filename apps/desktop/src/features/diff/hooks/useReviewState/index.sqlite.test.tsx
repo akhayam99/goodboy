@@ -67,6 +67,7 @@ const diffOf = (): SessionDiff => ({
   refresh: vi.fn(),
   viewed: { stateOf: () => 'none', onToggle: vi.fn() },
   focusPath: null,
+  focusThreadId: null,
   clearFocus: vi.fn(),
 });
 

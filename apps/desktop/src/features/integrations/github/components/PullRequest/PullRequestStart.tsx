@@ -1,6 +1,4 @@
-import { EmptyState } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { GithubConnectionEmptyState } from '../GithubConnectionEmptyState';
 import { CreatePrPanel } from './CreatePrPanel';
 
@@ -36,15 +34,5 @@ export const PullRequestStart = ({
       />
     );
   }
-  return (
-    <div className="flex min-h-0 min-w-0 flex-col gap-4">
-      <EmptyState
-        size="page"
-        icon={CONCEPT_ICONS.pr}
-        title="No pull request yet"
-        description="Comments live on the pull request. Create it here."
-      />
-      <CreatePrPanel sessionId={sessionId} defaultTitle={defaultTitle} onCreated={onCreated} />
-    </div>
-  );
+  return <CreatePrPanel sessionId={sessionId} defaultTitle={defaultTitle} onCreated={onCreated} />;
 };

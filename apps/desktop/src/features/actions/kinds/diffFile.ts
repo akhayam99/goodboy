@@ -1,10 +1,11 @@
-import { Copy, ExternalLink, MessageSquarePlus } from 'lucide-react';
+import { Copy, ExternalLink, FileText, PanelRight } from 'lucide-react';
 import type { DiffFileActionTarget, ObjectKindDefinition } from '../types';
 
 export type DiffFileFacts = {
   readonly path: string;
   readonly onOpenInEditor: (() => void) | null;
-  readonly onCommentOnFile: (() => void) | null;
+  readonly onShowWhole: (() => void) | null;
+  readonly onOpenInDrawer: (() => void) | null;
 };
 
 export const DIFF_FILE_KIND: ObjectKindDefinition<DiffFileActionTarget, DiffFileFacts> = {
@@ -20,12 +21,20 @@ export const DIFF_FILE_KIND: ObjectKindDefinition<DiffFileActionTarget, DiffFile
       run: ({ facts }) => facts.onOpenInEditor?.(),
     },
     {
-      id: 'diffFile.comment',
-      label: 'Comment on file',
-      icon: MessageSquarePlus,
+      id: 'diffFile.openInDrawer',
+      label: 'Open in a drawer',
+      icon: PanelRight,
+      group: 'open',
+      when: ({ facts }) => facts.onOpenInDrawer !== null,
+      run: ({ facts }) => facts.onOpenInDrawer?.(),
+    },
+    {
+      id: 'diffFile.showWhole',
+      label: 'Show whole file',
+      icon: FileText,
       group: 'act',
-      when: ({ facts }) => facts.onCommentOnFile !== null,
-      run: ({ facts }) => facts.onCommentOnFile?.(),
+      when: ({ facts }) => facts.onShowWhole !== null,
+      run: ({ facts }) => facts.onShowWhole?.(),
     },
     {
       id: 'diffFile.copyPath',

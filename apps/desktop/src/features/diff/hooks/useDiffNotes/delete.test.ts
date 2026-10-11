@@ -73,7 +73,7 @@ describe('useDiffNotes delete', () => {
       wrapper: ToastProvider,
     });
 
-    expect(result.current.comments.threads.map((thread) => thread.canRestore)).toEqual([true]);
+    expect(result.current.threads.map((thread) => thread.canRestore)).toEqual([true]);
   });
 
   it('deletes at once, records Undo, and Undo posts the same note again', async () => {
@@ -82,7 +82,7 @@ describe('useDiffNotes delete', () => {
     });
 
     await act(async () => {
-      result.current.comments.onDelete?.('n1');
+      result.current.onDelete?.('n1');
       await Promise.resolve();
     });
 

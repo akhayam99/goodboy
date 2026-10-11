@@ -9,7 +9,7 @@ const WEBSITE_PATHS_READ_BY_TESTS = [
   'website/scripts/build-brand-assets.mjs',
 ];
 
-const DOC_PATHS_READ_BY_TESTS = ['docs/architecture.md', 'docs/features'];
+const DOC_PATHS_READ_BY_TESTS = ['docs/architecture.md', 'docs/concepts.md', 'docs/features'];
 
 const INERT_PATTERNS = [
   /^docs\/(?!changelog(?:\/|$))/,

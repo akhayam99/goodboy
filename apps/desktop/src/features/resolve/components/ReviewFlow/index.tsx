@@ -7,7 +7,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, MessageSquare } from 'lucide-react';
 import {
   Button,
   EmptyState,
@@ -54,8 +54,9 @@ import { isPushFailure } from '../../reviewCommentState';
 import { bulkRunOf } from './bulkRun';
 import { AnswersPanel } from './AnswersPanel';
 import { BulkUndoBar } from './BulkUndoBar';
-import { FixOpenLine } from './FixOpenLine';
 import { openFixComments } from '../../../../store/slices/resolve/openFixComments';
+import { NoteThreadActions } from './NoteThreadActions';
+import { ReviewScopeBar, type CommentScope, type CommentState } from './ReviewScopeBar';
 import { RunStatusBulkActions } from './RunStatusBulkActions';
 import { useBulkQuestions } from './useBulkQuestions';
 import { ReviewEmptyState } from './ReviewEmptyState';
@@ -65,7 +66,7 @@ import { ReviewComment } from './ReviewComment';
 import { ReviewList } from './ReviewList';
 import { ReviewSelectionBar } from './ReviewSelectionBar';
 import type { ReviewPush } from './useReviewPush';
-import { useReviewEntries } from './useReviewEntries';
+import { useReviewEntries, type ReviewEntry } from './useReviewEntries';
 
 type Props = {
   readonly session: Session;
@@ -91,6 +92,11 @@ type FixLaunchParams = {
   readonly threadIds: ReadonlyArray<string>;
 };
 
+type ShownParams = {
+  readonly entry: ReviewEntry;
+  readonly group: ResolveGroup;
+};
+
 const SKELETON_ROWS = [0, 1, 2];
 const COLLAPSIBLE_GROUPS: ReadonlySet<ResolveGroup> = new Set(['done', 'left_open']);
 const DOCK_BOTTOM_OFFSET = 24;
@@ -98,7 +104,32 @@ const DOCK_BOTTOM_OFFSET = 24;
 export const ReviewFlow = ({ session, push }: Props) => {
   const sessionId = session.id as SessionId;
   const env = useActionEnv({ origin: 'button' });
-  const { entries, groups: allGroups, all: laneEntries } = useReviewEntries({ sessionId });
+  const {
+    entries,
+    groups: branchGroups,
+    all: laneEntries,
+    counts,
+  } = useReviewEntries({ sessionId, scope: 'branch' });
+  const [scope, setScope] = useState<CommentScope>('branch');
+  const [commentState, setCommentState] = useState<CommentState>('open');
+  const allGroups = useMemo(() => {
+    const isShown = ({ entry, group }: ShownParams): boolean => {
+      const isNote = entry.row.thread.originKind === 'diff_comment';
+      if (scope === 'notes' && !isNote) {
+        return false;
+      }
+      if (scope === 'comments' && isNote) {
+        return false;
+      }
+      return commentState === 'resolved' ? group === 'done' : group !== 'done';
+    };
+    return branchGroups
+      .map(({ group, entries: members }) => ({
+        group,
+        entries: members.filter((entry) => isShown({ entry, group })),
+      }))
+      .filter((group) => group.entries.length > 0);
+  }, [branchGroups, commentState, scope]);
   const forceCloseResolver = useAppStore((s) => s.forceCloseResolver);
   const stopResolveLane = useAppStore((s) => s.stopResolveLane);
   const [filter, setFilter] = useState<FixRunChipKey | null>(null);
@@ -134,14 +165,18 @@ export const ReviewFlow = ({ session, push }: Props) => {
       }))
       .filter((group) => group.entries.length > 0);
   }, [activeFilter, allGroups]);
+  const isResolvedState = commentState === 'resolved';
   const isGroupShown = useCallback(
     (group: ResolveGroup): boolean =>
-      !COLLAPSIBLE_GROUPS.has(group) || openGroups.has(group) || allGroups.length === 1,
-    [allGroups.length, openGroups],
+      !COLLAPSIBLE_GROUPS.has(group) ||
+      openGroups.has(group) ||
+      allGroups.length === 1 ||
+      isResolvedState,
+    [allGroups.length, isResolvedState, openGroups],
   );
   const shownGroups = useMemo(
-    () => (allGroups.length === 1 ? COLLAPSIBLE_GROUPS : openGroups),
-    [allGroups.length, openGroups],
+    () => (allGroups.length === 1 || isResolvedState ? COLLAPSIBLE_GROUPS : openGroups),
+    [allGroups.length, isResolvedState, openGroups],
   );
   const toggleGroup = useCallback((group: ResolveGroup): void => {
     setOpenGroups((current) => {
@@ -510,8 +545,10 @@ export const ReviewFlow = ({ session, push }: Props) => {
   };
 
   const refreshError = source?.error ?? null;
-  const isLoading = source !== null && !source.hasDetail && source.isLoading;
-  const isWholeError = source !== null && !source.hasDetail && refreshError !== null;
+  const hasLocalEntries = entries.length > 0;
+  const isLoading = source !== null && !source.hasDetail && source.isLoading && !hasLocalEntries;
+  const isWholeError =
+    source !== null && !source.hasDetail && refreshError !== null && !hasLocalEntries;
   const targetThreadId =
     reviewTarget === null ? null : reviewFocusThreadId({ destination: reviewTarget.destination });
   const targetError =
@@ -554,6 +591,16 @@ export const ReviewFlow = ({ session, push }: Props) => {
     }
     if (focused === null) {
       return <ReviewEmptyState sessionId={sessionId} provider={provider} />;
+    }
+    if (shownEntries.length === 0) {
+      return (
+        <EmptyState
+          size="section"
+          icon={MessageSquare}
+          tone="neutral"
+          title={commentState === 'resolved' ? 'No resolved comments' : 'No open comments here'}
+        />
+      );
     }
     const isSingle = layout === 'single';
     const isPanelOpen = isAnswering && bulkRun !== null;
@@ -640,7 +687,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
                       hasBar
                       hunk={
                         <ThreadHunk
-                          entry={focused}
+                          row={focused.row}
                           onOpenInDiff={() =>
                             void runVerb({
                               threadId: focused.threadId,
@@ -655,6 +702,9 @@ export const ReviewFlow = ({ session, push }: Props) => {
                       onStartOver={() => void controller.startOver(focused.threadId)}
                     />
                     <ThreadProperties sessionId={sessionId} entry={focused} />
+                    {focused.row.thread.originKind === 'diff_comment' ? (
+                      <NoteThreadActions sessionId={sessionId} entry={focused} />
+                    ) : null}
                   </div>
                 </div>
               )}
@@ -709,11 +759,17 @@ export const ReviewFlow = ({ session, push }: Props) => {
             body={acceptError}
           />
         )}
-        {run === null ? (
-          shownFixableIds.length > 0 && (
-            <FixOpenLine count={shownFixableIds.length} sessionId={sessionId} />
-          )
-        ) : (
+        <ReviewScopeBar
+          sessionId={sessionId}
+          mountId={source?.mountId ?? null}
+          scope={scope}
+          onScope={setScope}
+          state={commentState}
+          onState={setCommentState}
+          counts={counts}
+          hostLabel={provider}
+        />
+        {run === null ? null : (
           <ResolveRunStatus
             run={run}
             filter={activeFilter}

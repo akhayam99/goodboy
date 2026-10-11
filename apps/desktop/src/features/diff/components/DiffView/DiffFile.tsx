@@ -35,8 +35,9 @@ type Props = {
   readonly fileActions: DiffFileActions | null;
   readonly registerRef: RefCallback<HTMLElement>;
   readonly isVisible: boolean;
-  readonly wantsFileComment: boolean;
-  readonly onFileCommentOpened: () => void;
+  readonly isReadOnly: boolean;
+  readonly focusThreadId: string | null;
+  readonly onThreadFocused: () => void;
 };
 
 type Drag = {
@@ -84,8 +85,9 @@ const DiffFileView = ({
   fileActions,
   registerRef,
   isVisible,
-  wantsFileComment,
-  onFileCommentOpened,
+  isReadOnly,
+  focusThreadId,
+  onThreadFocused,
 }: Props) => {
   const context = useFileSides({ file, load: loadFileSides });
   const tokenHunks = useMemo(() => {
@@ -108,7 +110,7 @@ const DiffFileView = ({
       return [contextHunk, hunk];
     });
   }, [context.gaps, file.hunks]);
-  const viewedState = viewed?.stateOf(file) ?? null;
+  const viewedState = isReadOnly ? null : (viewed?.stateOf(file) ?? null);
   const isHeavy = file.binary || isGeneratedPath(file.path);
   const [collapsed, setCollapsed] = useState(viewedState === 'viewed' || isHeavy);
   const wasViewed = useRef(viewedState === 'viewed');
@@ -141,13 +143,30 @@ const DiffFileView = ({
     focusIn('[data-file-comment-trigger]');
   };
   useEffect(() => {
-    if (!wantsFileComment) {
+    if (focusThreadId === null) {
       return;
     }
     setCollapsed(false);
-    setComposer({ kind: 'file' });
-    onFileCommentOpened();
-  }, [onFileCommentOpened, wantsFileComment]);
+    let attempts = 0;
+    let frame = 0;
+    const reveal = () => {
+      const target = sectionRef.current?.querySelector<HTMLElement>(
+        `[data-thread-id="${CSS.escape(focusThreadId)}"]`,
+      );
+      if (target === null || target === undefined) {
+        attempts += 1;
+        if (attempts < 20) {
+          frame = requestAnimationFrame(reveal);
+        }
+        return;
+      }
+      target.scrollIntoView?.({ block: 'center' });
+      target.focus({ preventScroll: true });
+      onThreadFocused();
+    };
+    frame = requestAnimationFrame(reveal);
+    return () => cancelAnimationFrame(frame);
+  }, [focusThreadId, onThreadFocused]);
   const [visibleLines, setVisibleLines] = useState(INITIAL_VISIBLE_LINES);
   const dragRef = useRef<Drag | null>(null);
   dragRef.current = drag;
@@ -158,7 +177,7 @@ const DiffFileView = ({
     enabled: isVisible && !collapsed && !file.binary,
   });
 
-  const canComment = comments !== null;
+  const canComment = comments !== null && !isReadOnly;
   const lineThreads = useMemo(() => {
     const map = new Map<string, DiffThread[]>();
     for (const thread of threads) {
@@ -304,18 +323,19 @@ const DiffFileView = ({
   }, [expandAll, file.path, registerExpandAll]);
 
   const toggleViewed =
-    viewed === null ? null : () => viewed.onToggle(file, viewedState !== 'viewed');
+    viewed === null || isReadOnly ? null : () => viewed.onToggle(file, viewedState !== 'viewed');
 
   return (
     <section
       ref={setSection}
       data-file-path={file.path}
       aria-label={file.path}
-      className="flex min-w-0 flex-col"
+      data-file-card=""
+      className="flex min-w-0 flex-col rounded-lg border border-border-soft bg-background"
     >
       <FileHeader
         file={file}
-        collapsed={collapsed}
+        isCollapsed={collapsed}
         onToggleCollapsed={() => setCollapsed((value) => !value)}
         commentCount={openCount}
         viewed={viewedState}
@@ -323,8 +343,12 @@ const DiffFileView = ({
         onOpenInEditor={
           fileActions?.onOpenInEditor ? () => fileActions.onOpenInEditor?.(file.path) : null
         }
+        onShowWhole={file.binary || loadFileSides === null ? null : () => void expandAll()}
+        onOpenInDrawer={
+          fileActions?.onOpenInDrawer ? () => fileActions.onOpenInDrawer?.(file.path) : null
+        }
         onCommentOnFile={
-          comments?.allowFileLevel
+          comments?.allowFileLevel === true && !isReadOnly
             ? () => {
                 setCollapsed(false);
                 setComposer({ kind: 'file' });
@@ -346,7 +370,7 @@ const DiffFileView = ({
       ) : (
         <div
           data-slot="diff-file-body"
-          className="flex min-w-0 flex-col gap-2 pb-4 pt-1 [contain-intrinsic-size:auto_480px] [content-visibility:auto]"
+          className="flex min-w-0 flex-col gap-2 pb-2 [contain-intrinsic-size:auto_480px] [content-visibility:auto]"
         >
           {fileThreads.length > 0 || composer?.kind === 'file' ? (
             <div className="flex flex-col gap-2 py-1">
@@ -375,7 +399,7 @@ const DiffFileView = ({
           ) : (
             <div
               className={cn(
-                'min-w-0 rounded-md',
+                'min-w-0',
                 !wrap && layout === 'unified' ? 'overflow-x-auto' : 'overflow-hidden',
                 drag !== null && 'select-none',
               )}
