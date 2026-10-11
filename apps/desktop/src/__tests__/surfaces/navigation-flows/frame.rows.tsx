@@ -154,6 +154,7 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
   {
     name: 'frame: the Tasks studio draws its band and its title on the column',
     covers: ['openInbox', 'studio:inbox'],
+    door: 'visible',
     open: async () => {
       await clickButton('Tasks');
     },
