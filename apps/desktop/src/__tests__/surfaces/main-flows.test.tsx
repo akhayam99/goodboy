@@ -202,8 +202,8 @@ describe('main flows on the real store', () => {
     await waitFor(() =>
       expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]).toMatchObject({
         choice: 'task',
-        issueKey: 'github:412',
-        pickedIssue: expect.objectContaining({ provider: 'github', identifier: '#412' }),
+        pickedIssues: [expect.objectContaining({ provider: 'github', identifier: '#412' })],
+        hasPickedStep: true,
       }),
     );
     expect(requestIssueBrief).toHaveBeenCalledOnce();

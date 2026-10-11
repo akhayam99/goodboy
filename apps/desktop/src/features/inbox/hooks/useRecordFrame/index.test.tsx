@@ -268,8 +268,8 @@ describe('useRecordFrame', () => {
       workspaceId: WORKSPACE_ID,
       patch: {
         choice: 'task',
-        issueKey: 'github:42',
-        pickedIssue: expect.objectContaining({ identifier: '#42', externalId: '42' }),
+        pickedIssues: [expect.objectContaining({ identifier: '#42', externalId: '42' })],
+        hasPickedStep: true,
       },
     });
     expect(h.requestIssueBrief).toHaveBeenCalledWith({
@@ -350,7 +350,7 @@ describe('useRecordFrame', () => {
       workspaceId: WORKSPACE_ID,
       start: expect.objectContaining({
         kind: 'task',
-        candidate: expect.objectContaining({ identifier: '#318', externalId: '318' }),
+        candidates: [expect.objectContaining({ identifier: '#318', externalId: '318' })],
         title: 'Review #318: Stop retried webhooks posting a second credit',
         then: { kind: 'agent', agentKind: 'pr-reviewer', prompt: '', routing: null },
         checkout: { existingBranch: 'nadia-p/single-credit', fallbackRef: 'pull/318/head' },
