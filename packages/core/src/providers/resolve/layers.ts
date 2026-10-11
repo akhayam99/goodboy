@@ -20,10 +20,10 @@ export type MergedLayers = Readonly<{
 
 export const mergeLayers = ({ workspace, project, session }: ResolveLayers): MergedLayers => ({
   roleModels: mergeRoleModels({
-    layers: [workspace?.roleModels, project?.roleModels, session?.roleModels],
+    layers: [workspace?.roleModels, session?.roleModels],
   }),
   taskModels: mergeTaskModels({
-    layers: [workspace?.taskModels, project?.taskModels, session?.taskModels],
+    layers: [workspace?.taskModels, session?.taskModels],
   }),
   providerPool: session?.providerPool ?? project?.providerPool ?? workspace?.providerPool ?? null,
   defaultProviderId:
@@ -56,7 +56,6 @@ const hasPin = ({ slot, layer }: PinParams) =>
 export const pinSourceOf = ({ slot, layers }: SourceParams): LayerName | null => {
   const ordered: ReadonlyArray<NamedLayer> = [
     { name: 'session', layer: layers.session },
-    { name: 'project', layer: layers.project },
     { name: 'workspace', layer: layers.workspace },
   ];
   return ordered.find(({ layer }) => hasPin({ slot, layer }))?.name ?? null;

@@ -33,6 +33,12 @@ export type RowStateReason =
   | { readonly kind: 'awaitingFirstMessage' }
   | { readonly kind: 'discarded' }
   | {
+      readonly kind: 'job';
+      readonly title: string;
+      readonly word: string;
+      readonly isMuted: boolean;
+    }
+  | {
       readonly kind: 'review';
       readonly state: ReviewCommentState;
       readonly word: string;

@@ -44,6 +44,7 @@ export const settleHistoryRewriter = (set: SetFn, get: GetFn) => {
       });
       return;
     }
+    setHistoryRun({ set, sessionId, mountId, origin, patch: { progress: { stage: 'check' } } });
     const check = await collectHistoryRewrite({
       plan,
       copyPath,

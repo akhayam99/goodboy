@@ -101,9 +101,7 @@ describe('WorkspaceReviewRepliesSection', () => {
     expect(learn).toHaveBeenCalledWith({
       workspaceId: WORKSPACE,
       projectRoots: ['/repos/ledger-core'],
-      overrides: state.workspaceOverrides[WORKSPACE],
-      connectedProviders: ['anthropic'],
-      limitContext: expect.objectContaining({ atLimit: [] }),
+      taskModel: expect.objectContaining({ providerId: 'anthropic' }),
     });
     expect(screen.getByLabelText('Style note')).toHaveProperty(
       'value',

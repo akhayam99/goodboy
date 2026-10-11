@@ -134,7 +134,7 @@ export const FOLLOW_ROWS: ReadonlyArray<Row> = [
       seedRun(ctx, { isQueued: true });
       act(() => useAppStore.getState().navigate({ to: runPage(ctx) }));
       await settle();
-      fireEvent.click(await screen.findByRole('button', { name: 'Start' }, WAIT));
+      fireEvent.click(await screen.findByRole('button', { name: 'Start run' }, WAIT));
       await settle(6);
     },
     lands: async (ctx) => {

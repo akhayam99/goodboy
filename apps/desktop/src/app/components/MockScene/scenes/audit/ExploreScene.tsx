@@ -5,13 +5,13 @@ import { ShellFrame, seedShellChrome } from '../shellChrome';
 import { SESSION, SESSION_ID, seedArtifactScene } from '../artifactSeed';
 import { payloadString } from './ipcPayload';
 import { sceneParam, sceneParamList } from './sceneParams';
+import { SCRATCH_DIR, isExploreRoots, seedExploreRoots, type ExploreRoots } from './exploreRoots';
 import { useSceneClicks } from './useSceneClicks';
 import { sceneClock } from '../../sceneClock';
 
 const clock = sceneClock({ anchor: '2026-09-14T16:40:00.000Z' });
 
 const NOW = clock.iso({ at: '2026-09-14T16:40:00.000Z' });
-const SESSION_DIR = '~/code/harborline/sessions/settlement-rounding';
 const BIG_COUNT = 3000;
 
 const AGES: ReadonlyArray<string> = [
@@ -68,6 +68,22 @@ const FOLDERS: Readonly<Record<string, ReadonlyArray<ReturnType<typeof entry>>>>
   ],
 };
 
+const NOTIFY_ROOT = [
+  folder('docs', 1),
+  folder('src', 2),
+  entry({ relPath: 'README.md', sizeBytes: 2410, age: 1 }),
+  entry({ relPath: 'package.json', sizeBytes: 988, age: 0 }),
+  entry({ relPath: 'retry-policy.md', sizeBytes: 5320, age: 2 }),
+];
+
+const NOTIFY_FOLDERS: Readonly<Record<string, ReadonlyArray<ReturnType<typeof entry>>>> = {
+  docs: [entry({ relPath: 'docs/delivery-states.md', sizeBytes: 3880, age: 1 })],
+  src: [
+    entry({ relPath: 'src/deliveries.ts', sizeBytes: 6120 }),
+    entry({ relPath: 'src/retry.ts', sizeBytes: 2764, age: 1 }),
+  ],
+};
+
 const NODE_MODULES = Array.from({ length: BIG_COUNT }, (_, index) =>
   entry({
     relPath: `node_modules/pkg-${String(index).padStart(4, '0')}.js`,
@@ -85,17 +101,21 @@ Northwind finance sees one cent drift on split batches.
 `;
 
 type ListParams = {
+  readonly sessionDir: string;
   readonly relPath: string;
   readonly variant: string;
   readonly isBig: boolean;
 };
 
-const listFolder = ({ relPath, variant, isBig }: ListParams) => {
+const listFolder = ({ sessionDir, relPath, variant, isBig }: ListParams) => {
   if (variant === 'error') {
     throw new Error('Permission denied reading the session folder');
   }
   if (variant === 'empty') {
     return [];
+  }
+  if (sessionDir.includes('notify-relay')) {
+    return relPath === '' ? NOTIFY_ROOT : (NOTIFY_FOLDERS[relPath] ?? []);
   }
   if (relPath === '') {
     return isBig ? [...ROOT, folder('node_modules', 3)] : ROOT;
@@ -177,6 +197,12 @@ type Props = {
   readonly focusRow?: string | null;
   readonly isBig?: boolean;
   readonly widthPx?: number | null;
+  readonly roots?: ExploreRoots;
+};
+
+const rootsParam = (): ExploreRoots => {
+  const value = sceneParam({ key: 'roots' });
+  return isExploreRoots(value) ? value : 'single';
 };
 
 export const ExploreScene = (props: Props) => {
@@ -189,17 +215,25 @@ export const ExploreScene = (props: Props) => {
     focusRow: props.focusRow ?? sceneParam({ key: 'focus' }),
     isBig: props.isBig ?? sceneParam({ key: 'big' }) === '1',
     widthPx: props.widthPx ?? null,
+    roots: props.roots ?? rootsParam(),
   }));
-  const { variant, openLabels, hoverRow, hoverAction, focusRow, isBig, widthPx } = resolved;
+  const { variant, openLabels, hoverRow, hoverAction, focusRow, isBig, widthPx, roots } = resolved;
 
   useEffect(() => {
     mockIPC((cmd, payload) => {
       if (cmd === 'explore_list') {
         return listFolder({
+          sessionDir: payloadString({ payload, key: 'sessionDir' }) ?? '',
           relPath: payloadString({ payload, key: 'relPath' }) ?? '',
           variant,
           isBig,
         });
+      }
+      if (cmd === 'scratch_dir_prepare') {
+        if (roots === 'none') {
+          throw new Error('The scratch folder is not available');
+        }
+        return SCRATCH_DIR;
       }
       if (cmd === 'explore_read') {
         return { type: 'text', text: BRIEF, truncated: false };
@@ -214,8 +248,9 @@ export const ExploreScene = (props: Props) => {
       telemetryAt: NOW,
       lens: 'explore',
     });
+    seedExploreRoots({ roots });
     setIsReady(true);
-  }, [isBig, variant]);
+  }, [isBig, roots, variant]);
 
   useSceneClicks({
     isReady,
@@ -232,7 +267,7 @@ export const ExploreScene = (props: Props) => {
     return null;
   }
 
-  const pane = <ExplorePane sessionId={SESSION_ID} sessionDir={SESSION_DIR} />;
+  const pane = <ExplorePane sessionId={SESSION_ID} />;
 
   return (
     <ShellFrame

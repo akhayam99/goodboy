@@ -6,6 +6,7 @@ import {
   tryHistoryPlan,
 } from '../../../features/history/historyEngine';
 import { assertCleanTree } from './assertCleanTree';
+import { DirtyTreeError } from './DirtyTreeError';
 import { historyTargetOf } from './historyTargetOf';
 import { identityOf } from './historyIdentity';
 import { isHistoryRunActive } from './isHistoryRunActive';
@@ -29,23 +30,40 @@ export const rebasePlanArgs = ({ worktreePath, rebase }: PlanParams): HistoryPla
 export const rebaseBranch = (set: SetFn, get: GetFn) => {
   return async ({ sessionId, mountId }: HistoryMountInput): Promise<RebaseBranchOutcome> => {
     const target = historyTargetOf({ get, sessionId, mountId });
-    await assertCleanTree({ worktreePath: target.worktreePath, baseBranch: target.baseBranch });
-    const current = get().historyRuns[mountId];
-    if (current !== undefined && isHistoryRunActive({ phase: current.phase })) {
-      return 'busy';
-    }
     const origin = 'rebase' as const;
     const stopWith = async (stop: HistoryStop): Promise<RebaseBranchOutcome> => {
       setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'stopped', stop } });
       await reportHistoryStop({ get, set, target, origin, stop, planId: null });
       return 'stopped';
     };
+    const current = get().historyRuns[mountId];
+    if (current !== undefined && isHistoryRunActive({ phase: current.phase })) {
+      return 'busy';
+    }
+    try {
+      await assertCleanTree({ worktreePath: target.worktreePath, baseBranch: target.baseBranch });
+    } catch (error) {
+      if (error instanceof DirtyTreeError) {
+        return stopWith({ reason: 'dirty', message: error.message, files: [], sha: null });
+      }
+      throw error;
+    }
     setHistoryRun({
       set,
       sessionId,
       mountId,
       origin,
-      patch: { phase: 'predicting', stop: null, result: null, agentId: null, planId: null },
+      patch: {
+        phase: 'predicting',
+        stop: null,
+        result: null,
+        agentId: null,
+        planId: null,
+        progress: null,
+        backupRef: null,
+        applied: null,
+        commitCount: null,
+      },
     });
     const rebase = await readRebasePlan({
       worktreePath: target.worktreePath,
@@ -68,6 +86,7 @@ export const rebaseBranch = (set: SetFn, get: GetFn) => {
       },
     });
     const plan = rebasePlanArgs({ worktreePath: target.worktreePath, rebase });
+    setHistoryRun({ set, sessionId, mountId, origin, patch: { commitCount: plan.steps.length } });
     const prediction = await predictHistoryPlan(plan).catch(() => null);
     const isConflictPredicted =
       prediction !== null && prediction.isSupported && prediction.head === null;

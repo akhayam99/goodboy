@@ -1,9 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
-import { DrawerFrame, PageColumn, cn } from '@goodboy/ui';
+import { ArrowUpRight, Copy } from 'lucide-react';
+import { DrawerFrame, IconButton, PageColumn, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import type { SendArtifactCommentsResult } from '../../../../store/slices/artifact-comments/types';
 import { agentPlace, sessionPlace, useAppStore, useSessionOpenQuestions } from '../../../../store';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useActionEnv } from '../../../actions/useActionEnv';
 import { useObjectActions } from '../../../actions/useObjectActions';
 import type { ArtifactActionTarget } from '../../../actions/types';
@@ -16,7 +17,6 @@ import { PlanEditor } from '../PlanEditor';
 import { usePlanEditor } from '../PlanEditor/usePlanEditor';
 import { ArtifactPastVersion } from './ArtifactPastVersion';
 import { PlanDrawerLine } from './PlanDrawerLine';
-import { PlanDrawerMenu } from './PlanDrawerMenu';
 import { PlanDrawerNotes } from './PlanDrawerNotes';
 import { PlanDrawerStateLine } from './PlanDrawerStateLine';
 import { PlanDrawerToolbar } from './PlanDrawerToolbar';
@@ -38,8 +38,6 @@ const COPY_ACTION_ID = 'artifact.copySource';
 
 export const PlanDrawerFrame = ({ sessionId, model, revision, onClose }: Props) => {
   const { plan, version, revising, state, rows, agents, hasRun } = model;
-  const isExpanded = useAppStore((s) => s.documentDrawerExpanded[sessionId] === true);
-  const setDocumentDrawerExpanded = useAppStore((s) => s.setDocumentDrawerExpanded);
   const navigate = useAppStore((s) => s.navigate);
   const openDrawer = useAppStore((s) => s.openDrawer);
   const openQuestions = useSessionOpenQuestions(sessionId);
@@ -105,27 +103,10 @@ export const PlanDrawerFrame = ({ sessionId, model, revision, onClose }: Props) 
       version={pastVersion ?? version}
       state={state}
       isPast={pastVersion !== null}
-      isInline={isExpanded}
       action={action}
       editor={editor}
       editAction={editAction}
       onEdit={() => void run({ actionId: EDIT_ACTION_ID })}
-      menu={
-        <PlanDrawerMenu
-          isExpanded={isExpanded}
-          onOpenInArtifacts={() =>
-            navigate({
-              to: sessionPlace({
-                sessionId,
-                lens: 'plans',
-                target: { kind: 'artifact', artifactId: plan.id },
-              }),
-            })
-          }
-          onToggleExpanded={() => setDocumentDrawerExpanded(sessionId, !isExpanded)}
-          onCopy={copyAction === null ? null : () => void run({ actionId: COPY_ACTION_ID })}
-        />
-      }
     />
   );
   const isRevising = revising.kind === 'revising';
@@ -134,7 +115,6 @@ export const PlanDrawerFrame = ({ sessionId, model, revision, onClose }: Props) 
 
   const content = (
     <div data-testid="plan-drawer" className="flex min-h-full min-w-0 flex-col gap-4">
-      {isExpanded ? line : null}
       {pastVersion === null ? (
         <>
           <PlanDrawerNotes
@@ -203,17 +183,44 @@ export const PlanDrawerFrame = ({ sessionId, model, revision, onClose }: Props) 
       icon={CONCEPT_ICONS.plans}
       iconClassName="text-muted-foreground"
       onClose={onClose}
-      action={isExpanded ? toolbar : undefined}
+      action={
+        <span className="flex min-w-0 items-center gap-1">
+          <IconButton
+            icon={ArrowUpRight}
+            iconSize={ICON_SIZE.row}
+            label="Open in Artifacts"
+            variant="ghost"
+            onClick={() =>
+              navigate({
+                to: sessionPlace({
+                  sessionId,
+                  lens: 'plans',
+                  target: { kind: 'artifact', artifactId: plan.id },
+                }),
+              })
+            }
+          />
+          {copyAction === null ? null : (
+            <IconButton
+              icon={Copy}
+              iconSize={ICON_SIZE.row}
+              label="Copy markdown"
+              variant="ghost"
+              onClick={() => void run({ actionId: COPY_ACTION_ID })}
+            />
+          )}
+        </span>
+      }
       toolbar={
-        isExpanded ? undefined : (
-          <>
-            {toolbar}
-            {line}
-          </>
-        )
+        <>
+          {toolbar}
+          {line}
+        </>
       }
     >
-      {isExpanded ? <PageColumn width="measure">{content}</PageColumn> : content}
+      <PageColumn width="measure" className="px-0">
+        {content}
+      </PageColumn>
     </DrawerFrame>
   );
 };

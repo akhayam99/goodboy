@@ -1,8 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { clampEffortForModel } from '@goodboy/core';
-import { useAutoLimitContext } from '../../../providers/hooks/useAutoLimitContext';
-import { resolveLimitedTaskModel } from '../../../../store/slices/providerLimits/resolveLimitedTaskModel';
+import { useResolution } from '../../../providers/hooks/useResolution';
 import type { Agent, OpenQuestion, ProviderId, SessionId } from '@goodboy/types';
 import { useAppStore, agentPlace } from '../../../../store';
 import {
@@ -15,7 +14,6 @@ import {
   useOpenQuestions,
   type DelegateRouting,
 } from '../../components/QuestionsTab/useOpenQuestions';
-import { selectResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type Params = {
@@ -51,9 +49,7 @@ export const useQuestionDelegateControls = ({
   const agents = useAppStore((state) => state.sessionPhaseRuns?.[sessionId] ?? NO_AGENTS);
   const session = useAppStore((state) => sessionById(state.sessions, sessionId) ?? null);
   const workspaceId = session?.workspaceId ?? null;
-  const taskModels = useAppStore(
-    (state) => selectResolvedSettings({ state, sessionId })?.taskModels ?? null,
-  );
+  const resolution = useResolution({ task: 'question_delegate', sessionId });
   const connectedProviders = useAppStore(
     useShallow((state) =>
       (state.providers ?? [])
@@ -62,31 +58,19 @@ export const useQuestionDelegateControls = ({
     ),
   );
 
-  const sessionProvider: ProviderId =
-    session?.providerPreference.defaultProvider ?? connectedProviders[0] ?? 'anthropic';
-
-  const limitContext = useAutoLimitContext();
-
   const defaultRouting = useMemo((): DelegateRouting => {
-    const resolved = resolveLimitedTaskModel({
-      limitContext,
-      task: 'question_delegate',
-      preferences: taskModels,
-      workspaceDefaultProviderId: null,
-      sessionDefaultProviderId: sessionProvider,
-    });
-    const requestedEffort = resolved.effort ?? 'medium';
+    const requestedEffort = resolution.effort ?? 'medium';
     return {
-      provider: resolved.providerId,
-      model: resolved.model,
+      provider: resolution.provider,
+      model: resolution.model,
       effort:
         clampEffortForModel({
-          model: resolved.model,
+          model: resolution.model,
           effort: requestedEffort,
-          provider: resolved.providerId,
+          provider: resolution.provider,
         }) ?? requestedEffort,
     };
-  }, [limitContext, sessionProvider, taskModels]);
+  }, [resolution]);
 
   const asker =
     question.createdByAgentId == null

@@ -49,6 +49,20 @@ Map an unfamiliar repo before you plan. **Scout** is the default and only reads,
 
 Start from the goal instead. **Start blank** sits in the header of every tab and opens the session straight on its Overview, where you add the goal, projects and work.
 
+After starting blank and linking an issue, Overview offers **Write** to draft
+a title and goal from the linked issues. The hint appears while the goal is
+empty; **Not now** dismisses it for that session. Nothing is generated until
+you click. **Write title and goal from linked work** remains available in the
+session menu and command palette.
+
+Review and edit the proposal before **Use title and goal**, or **Replace**
+when a title or goal already exists. **Dismiss** keeps the current fields.
+The proposal uses up to five linked issues. Unreadable issue text uses the title and says so. A failed brief offers
+**Retry**. Applying the proposal has one **Undo** for both fields; later edits
+are kept if they conflict with Undo. Entry points:
+`apps/desktop/src/features/session/components/SessionOverviewPane/GoalTeaser.tsx`
+and `apps/desktop/src/store/slices/issue-briefs/applyGoalFromWork.ts`.
+
 ### Named by Goodboy
 
 Get a short title without writing one. A new session is named for you and marked **Named by Goodboy** until you rename it.
@@ -62,6 +76,21 @@ with a 10-second Undo toast; **Cmd+Z** also undoes the latest app operation
 outside text fields. Session unlink removes every branch placement as one
 operation, and Undo restores the entire snapshot atomically. A later re-link
 makes Undo do nothing and say why. The unlink event keeps **Re-link**.
+
+### Move an issue between the session and a branch
+
+One verb moves an issue: **Move to**. Open the menu of a linked task chip (right
+click or Shift+F10), or use the **Linked to** row under the header of an open
+issue, and pick **This session** or one of the open branches of the issue's
+project. It moves at once, with an Undo toast that names the new place
+(**HL-204 is on the session again**). Branch to branch is one move and one
+Undo. An issue of another project is refused with the project it belongs to.
+The same entries are in the command palette while an issue is open.
+
+On a branch row the chip's x says what it does: **Move to session** when that
+branch is the only place, **Take off payments-api / hl/fix-duplicate-credit**
+when the issue is somewhere else too. On the session it stays **Unlink from
+session**.
 
 Activity shows each linked task once, even across several branches. Tasks
 with the same issue number in different projects keep separate rows.

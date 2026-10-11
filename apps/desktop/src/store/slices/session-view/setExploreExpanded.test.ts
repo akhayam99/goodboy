@@ -34,36 +34,106 @@ beforeEach(async () => {
 const SETTLEMENT = aSession({ goal: 'Settlement rounding' }).id;
 const PAYOUTS = aSession({ goal: 'Payout export' }).id;
 
-const expandedOf = (sessionId: SessionId) => useAppStore.getState().exploreExpanded[sessionId];
+const LEDGER = '/work/ledger-core';
+const NOTIFY = '/work/notify-relay';
+
+const expandedOf = ({ sessionId, mountPath }: { sessionId: SessionId; mountPath: string }) =>
+  useAppStore.getState().exploreExpanded[sessionId]?.[mountPath];
 
 describe('setExploreExpanded', () => {
-  it('remembers the folders a session opened', () => {
+  it('remembers the folders a session opened in a project', () => {
     const { setExploreExpanded } = useAppStore.getState();
-    setExploreExpanded({ sessionId: SETTLEMENT, path: 'apps', isExpanded: true });
-    setExploreExpanded({ sessionId: SETTLEMENT, path: 'apps/ledger-core', isExpanded: true });
-    expect(expandedOf(SETTLEMENT)).toEqual({ apps: true, 'apps/ledger-core': true });
+    setExploreExpanded({
+      sessionId: SETTLEMENT,
+      mountPath: LEDGER,
+      path: 'apps',
+      isExpanded: true,
+    });
+    setExploreExpanded({
+      sessionId: SETTLEMENT,
+      mountPath: LEDGER,
+      path: 'apps/ledger-core',
+      isExpanded: true,
+    });
+    expect(expandedOf({ sessionId: SETTLEMENT, mountPath: LEDGER })).toEqual({
+      apps: true,
+      'apps/ledger-core': true,
+    });
   });
 
   it('forgets a folder when it closes, leaving the rest', () => {
     const { setExploreExpanded } = useAppStore.getState();
-    setExploreExpanded({ sessionId: SETTLEMENT, path: 'apps', isExpanded: true });
-    setExploreExpanded({ sessionId: SETTLEMENT, path: 'docs', isExpanded: true });
-    setExploreExpanded({ sessionId: SETTLEMENT, path: 'apps', isExpanded: false });
-    expect(expandedOf(SETTLEMENT)).toEqual({ docs: true });
+    setExploreExpanded({
+      sessionId: SETTLEMENT,
+      mountPath: LEDGER,
+      path: 'apps',
+      isExpanded: true,
+    });
+    setExploreExpanded({
+      sessionId: SETTLEMENT,
+      mountPath: LEDGER,
+      path: 'docs',
+      isExpanded: true,
+    });
+    setExploreExpanded({
+      sessionId: SETTLEMENT,
+      mountPath: LEDGER,
+      path: 'apps',
+      isExpanded: false,
+    });
+    expect(expandedOf({ sessionId: SETTLEMENT, mountPath: LEDGER })).toEqual({ docs: true });
   });
 
   it('keeps sessions apart', () => {
     const { setExploreExpanded } = useAppStore.getState();
-    setExploreExpanded({ sessionId: SETTLEMENT, path: 'apps', isExpanded: true });
-    expect(expandedOf(PAYOUTS)).toBeUndefined();
+    setExploreExpanded({
+      sessionId: SETTLEMENT,
+      mountPath: LEDGER,
+      path: 'apps',
+      isExpanded: true,
+    });
+    expect(expandedOf({ sessionId: PAYOUTS, mountPath: LEDGER })).toBeUndefined();
+  });
+
+  it('keeps each project of a session apart', () => {
+    const { setExploreExpanded } = useAppStore.getState();
+    setExploreExpanded({
+      sessionId: SETTLEMENT,
+      mountPath: LEDGER,
+      path: 'apps',
+      isExpanded: true,
+    });
+    setExploreExpanded({
+      sessionId: SETTLEMENT,
+      mountPath: NOTIFY,
+      path: 'docs',
+      isExpanded: true,
+    });
+    expect(expandedOf({ sessionId: SETTLEMENT, mountPath: LEDGER })).toEqual({ apps: true });
+    expect(expandedOf({ sessionId: SETTLEMENT, mountPath: NOTIFY })).toEqual({ docs: true });
   });
 
   it('changes nothing when the folder is already in that state', () => {
     const { setExploreExpanded } = useAppStore.getState();
-    setExploreExpanded({ sessionId: SETTLEMENT, path: 'apps', isExpanded: true });
+    setExploreExpanded({
+      sessionId: SETTLEMENT,
+      mountPath: LEDGER,
+      path: 'apps',
+      isExpanded: true,
+    });
     const before = useAppStore.getState().exploreExpanded;
-    setExploreExpanded({ sessionId: SETTLEMENT, path: 'apps', isExpanded: true });
-    setExploreExpanded({ sessionId: SETTLEMENT, path: 'docs', isExpanded: false });
+    setExploreExpanded({
+      sessionId: SETTLEMENT,
+      mountPath: LEDGER,
+      path: 'apps',
+      isExpanded: true,
+    });
+    setExploreExpanded({
+      sessionId: SETTLEMENT,
+      mountPath: LEDGER,
+      path: 'docs',
+      isExpanded: false,
+    });
     expect(useAppStore.getState().exploreExpanded).toBe(before);
   });
 });

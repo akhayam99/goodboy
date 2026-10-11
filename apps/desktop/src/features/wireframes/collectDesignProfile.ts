@@ -38,7 +38,8 @@ export type DesignProfileEntry = Readonly<{
 
 export type DesignProfileReadResult =
   | Readonly<{ type: 'text'; text: string; truncated: boolean }>
-  | Readonly<{ type: 'dataUrl'; url: string }>;
+  | Readonly<{ type: 'dataUrl'; url: string }>
+  | Readonly<{ type: 'binary'; size: number }>;
 
 export type CollectDesignProfileParams = Readonly<{
   rootPath: string;

@@ -638,6 +638,65 @@ const RUN_STATES: ReadonlyArray<readonly [string, ActionSeed, ReadonlyArray<stri
     [
       'workflowRun.open',
       'workflowRun.diff',
+      'workflowRun.pause',
+      'workflowRun.copySummary',
+      'workflowRun.close',
+      'workflowRun.discard',
+      'workflowRun.delete',
+    ],
+  ],
+  [
+    'orchestrated and running',
+    withRun({
+      run: { executionMode: 'dynamic' },
+      agents: [stepAgent({ id: 'agent-plan', stepId: STEP_PLAN, status: 'running' })],
+      turnStates: { 'agent-plan': RUNNING },
+    }),
+    [
+      'workflowRun.open',
+      'workflowRun.diff',
+      'workflowRun.pause',
+      'workflowRun.routing',
+      'workflowRun.copySummary',
+      'workflowRun.close',
+      'workflowRun.discard',
+      'workflowRun.delete',
+    ],
+  ],
+  [
+    'orchestrated and paused by you',
+    withRun({
+      run: {
+        executionMode: 'dynamic',
+        orchestrationStop: { kind: 'paused', message: 'Paused by you.' },
+      },
+      agents: [stepAgent({ id: 'agent-plan', stepId: STEP_PLAN, status: 'running' })],
+      turnStates: { 'agent-plan': RUNNING },
+    }),
+    [
+      'workflowRun.open',
+      'workflowRun.diff',
+      'workflowRun.routing',
+      'workflowRun.copySummary',
+      'workflowRun.close',
+      'workflowRun.discard',
+      'workflowRun.delete',
+    ],
+  ],
+  [
+    'orchestrated and stopped by you',
+    withRun({
+      run: {
+        executionMode: 'dynamic',
+        orchestrationStop: { kind: 'operator', message: 'You stopped this run.' },
+      },
+      agents: [stepAgent({ id: 'agent-plan', stepId: STEP_PLAN, status: 'running' })],
+      turnStates: { 'agent-plan': RUNNING },
+    }),
+    [
+      'workflowRun.open',
+      'workflowRun.diff',
+      'workflowRun.routing',
       'workflowRun.copySummary',
       'workflowRun.close',
       'workflowRun.discard',
@@ -1132,7 +1191,12 @@ const mountRowTarget = (status: WorktreeStatus | null): ObjectTarget => ({
   remoteKind: 'github',
 });
 
-const WT_TOOLS = ['mount.openTerminal menu', 'mount.openInEditor menu', 'mount.scripts menu'];
+const WT_TOOLS = [
+  'mount.openTerminal menu',
+  'mount.openInEditor menu',
+  'mount.scripts menu',
+  'mount.browseFiles menu',
+];
 const WT_COPIES = ['mount.copyBranch menu', 'mount.copyPath menu'];
 const WT_HISTORY = [
   'mount.rewriteHistory menu',
@@ -1238,6 +1302,7 @@ const MOUNT_STATES: ReadonlyArray<
       'mount.openTerminal notice',
       'mount.openInEditor menu',
       'mount.scripts menu',
+      'mount.browseFiles menu',
       'mount.abortRebase notice',
       'mount.rewriteHistory menu (Finish or abort the rebase first.)',
       'mount.putTaskOnBranch chip',

@@ -11,6 +11,10 @@ use serde::Serialize;
 use tauri::{AppHandle, Emitter, Runtime, State};
 
 use crate::db::{Db, DbError};
+use crate::pty_ring::{
+    empty_snapshot, new_shared_ring, push_shared, snapshot_of, ExitedStore, OutputSnapshot,
+    SharedRing,
+};
 
 // ---------------------------------------------------------------------------
 // PTY run slot
@@ -28,6 +32,7 @@ struct ScriptOutputPayload {
     #[serde(rename = "runId")]
     run_id: String,
     data: String,
+    offset: u64,
 }
 
 #[derive(Serialize, Clone)]
@@ -47,6 +52,7 @@ type PtySlot = Arc<Mutex<Option<PtyRun>>>;
 struct ScriptSlot {
     run: PtySlot,
     metadata: LiveScriptRun,
+    ring: SharedRing,
 }
 
 #[derive(Serialize, Clone, Debug, PartialEq, Eq)]
@@ -61,7 +67,7 @@ pub struct LiveScriptRun {
 }
 
 #[derive(Default)]
-pub struct ScriptRegistry(Arc<Mutex<HashMap<String, ScriptSlot>>>);
+pub struct ScriptRegistry(Arc<Mutex<HashMap<String, ScriptSlot>>>, Arc<ExitedStore>);
 
 impl ScriptRegistry {
     pub fn new() -> Self {
@@ -180,6 +186,7 @@ fn build_script_command(body: &str, cwd: &str, login_env: &[(String, String)]) -
 struct ScriptSpawnRequest<R: Runtime> {
     app: AppHandle<R>,
     registry: Arc<Mutex<HashMap<String, ScriptSlot>>>,
+    exited: Arc<ExitedStore>,
     script_id: String,
     name: String,
     body: String,
@@ -250,6 +257,8 @@ fn spawn_script<R: Runtime>(request: ScriptSpawnRequest<R>) -> Result<(), Script
         started_at,
     };
 
+    let ring = new_shared_ring();
+    request.exited.forget(&request.run_id);
     request
         .registry
         .lock()
@@ -259,12 +268,14 @@ fn spawn_script<R: Runtime>(request: ScriptSpawnRequest<R>) -> Result<(), Script
             ScriptSlot {
                 run: Arc::clone(&slot),
                 metadata,
+                ring: Arc::clone(&ring),
             },
         );
 
     let run_id = request.run_id;
     let app = request.app;
     let registry = request.registry;
+    let exited = request.exited;
     thread::spawn(move || {
         let mut reader = reader;
         let mut buf = [0u8; 4096];
@@ -272,12 +283,14 @@ fn spawn_script<R: Runtime>(request: ScriptSpawnRequest<R>) -> Result<(), Script
             match reader.read(&mut buf) {
                 Ok(0) | Err(_) => break,
                 Ok(count) => {
+                    let offset = push_shared(&ring, &buf[..count]);
                     let encoded = STANDARD.encode(&buf[..count]);
                     let _ = app.emit(
                         "script-output",
                         ScriptOutputPayload {
                             run_id: run_id.clone(),
                             data: encoded,
+                            offset,
                         },
                     );
                 }
@@ -304,6 +317,10 @@ fn spawn_script<R: Runtime>(request: ScriptSpawnRequest<R>) -> Result<(), Script
         };
 
         crate::proc::ledger::forget(&spawn_id);
+        exited.keep(&run_id, Arc::clone(&ring), exit_code);
+        if let Ok(mut map) = registry.lock() {
+            map.remove(&run_id);
+        }
         let _ = app.emit(
             "script-exit",
             ScriptExitPayload {
@@ -311,9 +328,6 @@ fn spawn_script<R: Runtime>(request: ScriptSpawnRequest<R>) -> Result<(), Script
                 exit_code,
             },
         );
-        if let Ok(mut map) = registry.lock() {
-            map.remove(&run_id);
-        }
     });
 
     Ok(())
@@ -353,6 +367,7 @@ pub async fn workspace_script_run(
     spawn_script_blocking(ScriptSpawnRequest {
         app,
         registry: Arc::clone(&registry.0),
+        exited: Arc::clone(&registry.1),
         script_id,
         name,
         body,
@@ -383,6 +398,7 @@ pub async fn workspace_script_run_adhoc(
     spawn_script_blocking(ScriptSpawnRequest {
         app,
         registry: Arc::clone(&registry.0),
+        exited: Arc::clone(&registry.1),
         script_id,
         name,
         body,
@@ -394,6 +410,25 @@ pub async fn workspace_script_run_adhoc(
     })
     .await?;
     Ok(run_id)
+}
+
+#[tauri::command]
+pub async fn workspace_script_snapshot(
+    registry: State<'_, ScriptRegistry>,
+    run_id: String,
+) -> Result<OutputSnapshot, ScriptError> {
+    snapshot_run(&registry, &run_id)
+}
+
+fn snapshot_run(registry: &ScriptRegistry, run_id: &str) -> Result<OutputSnapshot, ScriptError> {
+    let ring = {
+        let map = registry.0.lock().map_err(|_| ScriptError::Poisoned)?;
+        map.get(run_id).map(|slot| Arc::clone(&slot.ring))
+    };
+    if let Some(ring) = ring {
+        return Ok(snapshot_of(&ring, None));
+    }
+    Ok(registry.1.snapshot(run_id).unwrap_or_else(empty_snapshot))
 }
 
 #[tauri::command]
@@ -518,6 +553,7 @@ mod tests {
             ScriptSlot {
                 run: Arc::new(Mutex::new(None)),
                 metadata: metadata.clone(),
+                ring: new_shared_ring(),
             },
         );
 
@@ -631,6 +667,7 @@ mod tests {
         spawn_script(ScriptSpawnRequest {
             app: app.handle().clone(),
             registry: Arc::new(Mutex::new(HashMap::new())),
+            exited: Arc::new(ExitedStore::default()),
             script_id: "script-1".to_string(),
             name: "Exit probe".to_string(),
             body: body.to_string(),
@@ -647,6 +684,48 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
         let value: serde_json::Value = serde_json::from_str(&payload).expect("payload json");
         value["exitCode"].as_i64().expect("exit code") as i32
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_finished_script_snapshot_keeps_the_tail_and_the_exit_code() {
+        use tauri::Listener;
+        let dir = crate::proc::ledger::test_support::scratch_dir("snapshot");
+        let app = tauri::test::mock_app();
+        let (sender, receiver) = std::sync::mpsc::channel::<String>();
+        app.handle().listen("script-exit", move |event| {
+            let _ = sender.send(event.payload().to_string());
+        });
+        let registry = ScriptRegistry::new();
+        spawn_script(ScriptSpawnRequest {
+            app: app.handle().clone(),
+            registry: Arc::clone(&registry.0),
+            exited: Arc::clone(&registry.1),
+            script_id: "script-1".to_string(),
+            name: "Snapshot probe".to_string(),
+            body: "i=1; while [ $i -le 600 ]; do echo line-$i; i=$((i+1)); done; exit 4"
+                .to_string(),
+            run_id: "run-snapshot".to_string(),
+            session_id: "session-1".to_string(),
+            cwd: dir.to_string_lossy().into_owned(),
+            cols: 80,
+            rows: 24,
+        })
+        .expect("spawn the script");
+        receiver
+            .recv_timeout(std::time::Duration::from_secs(10))
+            .expect("script-exit");
+        let snapshot = snapshot_run(&registry, "run-snapshot").expect("snapshot");
+        let _ = std::fs::remove_dir_all(&dir);
+        let text = String::from_utf8(STANDARD.decode(snapshot.data).unwrap()).unwrap();
+        assert!(text.contains("line-600"));
+        assert!(text.contains("line-1\r\n"));
+        assert_eq!(snapshot.offset, 0);
+        assert_eq!(snapshot.exit_code, Some(4));
+        assert_eq!(
+            snapshot_run(&registry, "unknown").expect("empty").data,
+            String::new()
+        );
     }
 
     #[cfg(unix)]
@@ -708,6 +787,7 @@ mod tests {
         spawn_script(ScriptSpawnRequest {
             app: app.handle().clone(),
             registry: Arc::clone(&registry.0),
+            exited: Arc::clone(&registry.1),
             script_id: "script-1".to_string(),
             name: "Wait for flag".to_string(),
             body,

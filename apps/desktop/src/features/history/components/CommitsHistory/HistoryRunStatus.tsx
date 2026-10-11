@@ -22,6 +22,9 @@ const STOP_TITLE: Readonly<Record<HistoryStopReason, string>> = {
   'origin-moved': 'Someone else pushed to the online copy',
   'head-moved': 'Nothing was changed: the branch moved',
   blocked: 'Nothing was changed yet',
+  dirty: 'Nothing was changed yet',
+  'no-provider': 'Nothing was changed: no provider is connected',
+  'push-failed': 'Rewritten, but the push failed',
   failed: "Couldn't rewrite the history",
 };
 
@@ -56,6 +59,9 @@ export const HistoryRunStatus = ({
   onDismiss,
   onRefresh,
 }: Props) => {
+  if (run.origin === 'rebase') {
+    return null;
+  }
   if (run.phase === 'rewritten' && run.result !== null) {
     const result = run.result;
     return (

@@ -3,7 +3,11 @@ import type { SessionId } from '@goodboy/types';
 import { resolveEditorBinary } from '../../../../shared/lib/editorSettings';
 import { useAppStore } from '../../../../store';
 import { projectById } from '../../../../store/slices/projects/projectIndex';
-import { selectActiveMount } from '../../../../store/slices/project-mounts/selectors';
+import type { AppStore } from '../../../../store/store';
+import {
+  selectActiveMount,
+  selectWritableMounts,
+} from '../../../../store/slices/project-mounts/selectors';
 import { exploreOpen, type ExploreEntry } from '../../explore';
 import { fileKindOf } from '../../fileKindOf';
 import { openActionOf, type ExploreOpenAction } from '../../openAction';
@@ -29,16 +33,26 @@ export type ExploreOpen = {
   readonly run: (params: RunParams) => Promise<ExploreOpenFailure | null>;
 };
 
+type BrowsedParams = {
+  readonly state: AppStore;
+  readonly sessionId: SessionId;
+  readonly sessionDir: string | null;
+};
+
+const browsedMountOf = ({ state, sessionId, sessionDir }: BrowsedParams) =>
+  selectWritableMounts({ state, sessionId }).find((mount) => mount.worktreePath === sessionDir) ??
+  selectActiveMount({ state, sessionId });
+
 export const useExploreOpen = ({ sessionId, sessionDir }: Params): ExploreOpen => {
   const projectKind = useAppStore((state): 'repo' | 'folder' => {
-    const mount = selectActiveMount({ state, sessionId });
+    const mount = browsedMountOf({ state, sessionId, sessionDir });
     if (mount === null) {
       return 'folder';
     }
     return projectById(state.projects, mount.projectId)?.kind ?? 'repo';
   });
   const hasGit = useAppStore((state) => {
-    const mount = selectActiveMount({ state, sessionId });
+    const mount = browsedMountOf({ state, sessionId, sessionDir });
     return mount !== null && mount.branch.trim() !== '';
   });
   const configured = useAppStore((state) => resolveEditorBinary({ settings: state.settings }));

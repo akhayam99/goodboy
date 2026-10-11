@@ -144,7 +144,7 @@ const seedKickoff = (): void => {
     },
     openSessionDraftWorkspaceId: WORKSPACE_ID,
     issueBriefs: {
-      [issueBriefKey({ source: PICKED_SOURCE })]: {
+      [issueBriefKey({ sources: [PICKED_SOURCE] })]: {
         status: 'ready',
         signature: `${PICKED_SOURCE.title}\n${PICKED_SOURCE.body}`,
         route: { providerId: BRAND_MODELS.scout.provider, model: BRAND_MODELS.scout.model },

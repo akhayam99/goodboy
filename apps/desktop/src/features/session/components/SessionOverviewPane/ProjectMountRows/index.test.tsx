@@ -43,7 +43,8 @@ import type {
   WorktreeStatus,
 } from '@goodboy/types';
 import { aProject, aSession } from '@goodboy/types/testing';
-import { mountGridTracksOf } from './mountGrid';
+import { tooltipTextOf } from '../../../../../__tests__/helpers/tooltip';
+import { MOUNT_CHILD_PAD, MOUNT_ROW_PAD, mountGridTracksOf } from './mountGrid';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import type { MountGithubState } from '../../../../../store/types';
 import {
@@ -53,6 +54,8 @@ import {
   storySpies,
   type StoryStore,
 } from '../../../../../store/storyHarness';
+
+const MOUNT_CHILD_INDENT = MOUNT_CHILD_PAD - MOUNT_ROW_PAD;
 
 let useAppStore: StoryStore;
 let ProjectMountRows: typeof import('.').ProjectMountRows;
@@ -248,7 +251,7 @@ describe('ProjectMountRows', () => {
     within(second as HTMLElement).getByText('No PR yet');
   });
 
-  it('keeps merged worktrees under Completed, below the open ones', async () => {
+  it('keeps merged worktrees under Show finished, below the open ones', async () => {
     seed({
       mounts: [
         mountView({ id: 'm1', branch: 'hl/fix-webhook-idempotency' }),
@@ -259,9 +262,9 @@ describe('ProjectMountRows', () => {
     renderRows();
 
     await waitFor(() => expect(screen.getAllByTestId('project-mount-row')).toHaveLength(1));
-    const completed = screen.getByRole('button', { name: /Completed/ });
-    expect(completed.getAttribute('aria-expanded')).toBe('false');
-    fireEvent.click(completed);
+    const finished = screen.getByRole('button', { name: 'Show finished (1)' });
+    expect(finished.getAttribute('aria-pressed')).toBe('false');
+    fireEvent.click(finished);
 
     expect(
       screen.getAllByTestId('project-mount-row').map((row) => row.getAttribute('aria-label')),
@@ -269,6 +272,132 @@ describe('ProjectMountRows', () => {
       'payments-api on hl/retry-state-copy',
       'payments-api on hl/fix-webhook-idempotency',
     ]);
+  });
+
+  describe('the rails of a project band', () => {
+    const seedBand = () =>
+      seed({
+        mounts: [
+          mountView({ id: 'm1', branch: 'hl/fix-webhook-idempotency' }),
+          mountView({ id: 'm2', branch: 'hl/retry-state-copy' }),
+          mountView({ id: 'm3', project: LEDGER, branch: 'hl/round-minor-units' }),
+        ],
+        github: { m1: githubOf('m1', 311, 'merged') },
+      });
+
+    const pad = ({
+      element,
+      side,
+    }: {
+      readonly element: HTMLElement;
+      readonly side: 'Left' | 'Right';
+    }) =>
+      Number.parseFloat(side === 'Left' ? element.style.paddingLeft : element.style.paddingRight);
+
+    it('draws one band per project, with the eyebrow and Add project above them', () => {
+      seedBand();
+      renderRows();
+
+      const section = screen.getByRole('region', { name: 'Projects' });
+      const bands = section.querySelectorAll('[data-band]');
+      expect(bands).toHaveLength(2);
+      const heading = within(section).getByRole('heading', { level: 2, name: 'Projects' });
+      bands.forEach((band) => expect(band.contains(heading)).toBe(false));
+      screen.getByRole('button', { name: 'Add project' });
+    });
+
+    it('sits every child glyph one constant to the right of the project glyph', async () => {
+      seedBand();
+      renderRows();
+      fireEvent.click(await screen.findByRole('button', { name: 'Show finished (1)' }));
+
+      const headers = Array.from(
+        document.querySelectorAll<HTMLElement>('[data-slot="mount-header"]'),
+      );
+      const children = Array.from(
+        document.querySelectorAll<HTMLElement>('[data-slot="mount-child"]'),
+      );
+      expect(headers).toHaveLength(2);
+      expect(children).toHaveLength(3);
+      for (const header of headers) {
+        for (const child of children) {
+          expect(
+            pad({ element: child, side: 'Left' }) - pad({ element: header, side: 'Left' }),
+          ).toBe(MOUNT_CHILD_INDENT);
+          expect(pad({ element: child, side: 'Right' })).toBe(
+            pad({ element: header, side: 'Right' }),
+          );
+        }
+      }
+    });
+
+    it('starts the finished toggle and the empty line on the child rail too', async () => {
+      seed({
+        mounts: [mountView({ id: 'm1', branch: 'hl/fix-webhook-idempotency' })],
+        github: { m1: githubOf('m1', 311, 'merged') },
+      });
+      renderRows();
+
+      await screen.findByRole('button', { name: 'Show finished (1)' });
+      const empty = screen.getByText('No open worktrees.').closest('[data-slot="empty-line"]');
+      const header = document.querySelector<HTMLElement>('[data-slot="mount-header"]');
+      expect(header).not.toBeNull();
+      expect(empty?.parentElement?.style.paddingLeft).toBe(
+        `${Number.parseFloat(header?.style.paddingLeft ?? '') + MOUNT_CHILD_INDENT}px`,
+      );
+    });
+
+    it('summarises a project as open and finished, and keeps the Finished group quiet', async () => {
+      seedBand();
+      renderRows();
+
+      screen.getByText('1 open, 1 finished');
+      const toggle = await screen.findByRole('button', { name: 'Show finished (1)' });
+      expect(tooltipTextOf({ element: toggle })).toBe('Merged or closed');
+      fireEvent.click(toggle);
+
+      const rows = screen.getAllByTestId('project-mount-row');
+      const finished = rows.filter((row) => row.dataset.finished === 'true');
+      expect(finished).toHaveLength(1);
+      for (const row of finished) {
+        within(row).getByText('PR #311 merged');
+        expect(within(row).queryByText('Up to date')).toBeNull();
+        within(row).getByRole('button', { name: /^Close branch for/ });
+      }
+    });
+
+    it('does not move a row between the lists when its status arrives', async () => {
+      seedBand();
+      renderRows();
+
+      const before = {
+        open: screen
+          .getAllByTestId('project-mount-row')
+          .map((row) => row.getAttribute('aria-label')),
+        toggle: screen.getByRole('button', { name: 'Show finished (1)' }),
+      };
+      await act(async () => new Promise<void>((resolve) => window.setTimeout(resolve, 80)));
+
+      expect(
+        screen.getAllByTestId('project-mount-row').map((row) => row.getAttribute('aria-label')),
+      ).toEqual(before.open);
+      expect(screen.getByRole('button', { name: 'Show finished (1)' })).toBe(before.toggle);
+    });
+
+    it('draws no menu trigger that would open fewer than two items', async () => {
+      seedBand();
+      renderRows();
+      fireEvent.click(await screen.findByRole('button', { name: 'Show finished (1)' }));
+
+      const triggers = Array.from(document.querySelectorAll<HTMLElement>('[aria-haspopup="menu"]'));
+      expect(triggers.length).toBeGreaterThan(0);
+      for (const trigger of triggers) {
+        fireEvent.click(trigger);
+        expect(screen.getAllByRole('menuitem').length).toBeGreaterThanOrEqual(2);
+        fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+        fireEvent.click(trigger);
+      }
+    });
   });
 
   describe('a worktree on the base while its branch has an open pull request', () => {
@@ -291,11 +420,11 @@ describe('ProjectMountRows', () => {
       seed({ mounts: [mountView({ id: 'base-1', branch: 'hl/cta-for-the-slot' })] });
       renderRows();
 
-      await screen.findByRole('button', { name: /Completed/ });
+      await screen.findByRole('button', { name: 'Show finished (1)' });
       expect(screen.queryAllByTestId('project-mount-row')).toHaveLength(0);
     });
 
-    it('never moves under Completed and says it is not on the pull request commits', async () => {
+    it('never moves under Show finished and says it is not on the pull request commits', async () => {
       status.clean = onBase;
       seed({
         mounts: [mountView({ id: 'base-2', branch: 'hl/cta-for-the-slot' })],
@@ -306,7 +435,7 @@ describe('ProjectMountRows', () => {
       const row = await screen.findByTestId('project-mount-row');
       await within(row).findByText("Not on the PR's commits");
       expect(within(row).queryByText('Merged')).toBeNull();
-      expect(screen.queryByRole('button', { name: /Completed/ })).toBeNull();
+      expect(screen.queryByRole('button', { name: /Show finished/ })).toBeNull();
     });
 
     it('reads as a normal row once the worktree is on the pull request head', async () => {
@@ -322,7 +451,7 @@ describe('ProjectMountRows', () => {
       await screen.findByText('Up to date');
       expect(within(row).queryByText("Not on the PR's commits")).toBeNull();
       expect(within(row).queryByText('Merged')).toBeNull();
-      expect(screen.queryByRole('button', { name: /Completed/ })).toBeNull();
+      expect(screen.queryByRole('button', { name: /Show finished/ })).toBeNull();
     });
   });
 
@@ -432,10 +561,10 @@ describe('ProjectMountRows', () => {
     });
     renderRows();
 
-    const summary = screen.getByRole('button', { name: /payments-api/ });
-    within(summary).getByText('3 worktrees');
-    within(summary).getByText('2 in review');
+    const summary = screen.getByRole('button', { name: 'payments-api worktrees' });
+    within(summary).getByText('3 open');
     expect(summary.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryAllByTestId('project-mount-row')).toHaveLength(0);
 
     fireEvent.click(summary);
 
@@ -454,7 +583,7 @@ describe('ProjectMountRows', () => {
     });
     renderRows();
 
-    expect(screen.queryByText('3 worktrees')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'payments-api worktrees' })).toBeNull();
     expect(screen.getAllByTestId('project-mount-row')).toHaveLength(4);
   });
 

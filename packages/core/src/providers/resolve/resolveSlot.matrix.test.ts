@@ -88,7 +88,6 @@ describe('resolveSlot matrix', () => {
           source: 'auto',
           via: 'curated',
           skipped: [],
-          shadowed: [],
           ...curated({ slot, provider: 'anthropic' }),
         });
       });
@@ -110,11 +109,33 @@ describe('resolveSlot matrix', () => {
         });
       });
 
-      it('pin on an idle Backup provider still runs', () => {
+      it('pin on a Backup provider is skipped while an On provider can work', () => {
         const resolution = resolveSlot({
           slot,
           layers: { workspace: layerWith({ slot, pin: OPUS }) },
           context: {
+            policy: [
+              { id: 'codex', state: 'on' },
+              { id: 'anthropic', state: 'backup' },
+            ],
+          },
+        });
+
+        expect(resolution).toMatchObject({ provider: 'codex', source: 'auto' });
+        expect(resolution.skipped).toContainEqual({
+          source: 'workspace',
+          provider: 'anthropic',
+          model: 'opus-5',
+          reason: 'backup-idle',
+        });
+      });
+
+      it('pin on a Backup provider runs once the On provider is at its limit', () => {
+        const resolution = resolveSlot({
+          slot,
+          layers: { workspace: layerWith({ slot, pin: OPUS }) },
+          context: {
+            atLimit: ['codex'],
             policy: [
               { id: 'codex', state: 'on' },
               { id: 'anthropic', state: 'backup' },
@@ -266,7 +287,7 @@ describe('resolveSlot matrix', () => {
         });
       });
 
-      it('project key over workspace', () => {
+      it('ignores a project key: the workspace pin runs', () => {
         const resolution = resolveSlot({
           slot,
           layers: {
@@ -277,13 +298,13 @@ describe('resolveSlot matrix', () => {
         });
 
         expect(resolution).toMatchObject({
-          model: 'sonnet-5',
-          effort: 'medium',
-          source: 'project',
+          model: 'opus-5',
+          effort: 'high',
+          source: 'workspace',
         });
       });
 
-      it('session over project', () => {
+      it('session over workspace', () => {
         const resolution = resolveSlot({
           slot,
           layers: {
@@ -299,6 +320,69 @@ describe('resolveSlot matrix', () => {
           model: 'gpt-6.1-sol',
           source: 'session',
         });
+      });
+
+      it('an explicit turn or agent pick runs on a provider that is Off', () => {
+        const policy: ProviderPolicy = [
+          { id: 'codex', state: 'on' },
+          { id: 'anthropic', state: 'off' },
+        ];
+
+        for (const source of ['turn', 'agent'] as const) {
+          const resolution = resolveSlot({
+            slot,
+            layers: { workspace: layerWith({ slot, pin: SOL }) },
+            pins: { [source]: OPUS },
+            context: { policy },
+          });
+
+          expect(resolution).toMatchObject({
+            provider: 'anthropic',
+            model: 'opus-5',
+            source,
+            via: 'pin',
+            skipped: [],
+          });
+        }
+      });
+
+      it('an explicit pick still needs a connected provider', () => {
+        const resolution = resolveSlot({
+          slot,
+          pins: { turn: OPUS },
+          context: { policy: ON, connected: ['codex'] },
+        });
+
+        expect(resolution).toMatchObject({ provider: 'codex', source: 'auto' });
+        expect(resolution.skipped).toContainEqual({
+          source: 'turn',
+          provider: 'anthropic',
+          model: 'opus-5',
+          reason: 'not-connected',
+        });
+      });
+
+      it('a step or run pin on a provider that is Off is skipped like a saved pin', () => {
+        const policy: ProviderPolicy = [
+          { id: 'codex', state: 'on' },
+          { id: 'anthropic', state: 'off' },
+        ];
+
+        for (const source of ['step', 'run'] as const) {
+          const resolution = resolveSlot({
+            slot,
+            pins: { [source]: OPUS },
+            context: { policy },
+          });
+
+          expect(resolution).toMatchObject({ provider: 'codex', source: 'auto' });
+          expect(resolution.skipped).toContainEqual({
+            source,
+            provider: 'anthropic',
+            model: 'opus-5',
+            reason: 'off',
+          });
+        }
       });
 
       it('run pin over every layer; a skipped turn pin is listed first', () => {
@@ -431,35 +515,6 @@ describe('resolveSlot auto passes over what cannot run', () => {
     });
     expect(resolution.skipped).toEqual([
       { source: 'workspace', provider: 'anthropic', model: 'opus-5', reason: 'off' },
-    ]);
-  });
-});
-
-describe('resolveSlot shadowed', () => {
-  it('lists the project values that win over a workspace pin inside their project', () => {
-    const slot: ResolveSlot = { kind: 'task', id: 'summarizer' };
-    const resolution = resolveSlot({
-      slot,
-      layers: {
-        workspace: layerWith({ slot, pin: OPUS }),
-        scoped: [
-          { kind: 'project', name: 'payments-api', layer: layerWith({ slot, pin: SONNET }) },
-          { kind: 'project', name: 'ledger-core', layer: layerWith({ slot, pin: OPUS }) },
-          { kind: 'project', name: 'notify-relay', layer: {} },
-        ],
-      },
-      context: { policy: ON },
-    });
-
-    expect(resolution.source).toBe('workspace');
-    expect(resolution.shadowed).toEqual([
-      {
-        kind: 'project',
-        name: 'payments-api',
-        provider: 'anthropic',
-        model: 'sonnet-5',
-        effort: 'medium',
-      },
     ]);
   });
 });

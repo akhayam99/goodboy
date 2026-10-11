@@ -558,9 +558,10 @@ describe('store contract', () => {
       expect(result.stderr).toBe('repo is not mounted in this session');
     });
 
+    const scriptId = 'sc-live' as ProjectScriptId;
+
     it('reattaches a live script run and completes it from the recovered exit listener', async () => {
       const store = useAppStore;
-      const scriptId = 'sc-live' as ProjectScriptId;
       storySpies.invokeScriptListLive.mockResolvedValueOnce([
         { runId: 'run-live', scriptId, sessionId: SESSION_ID, startedAt: 1234 },
       ]);
@@ -578,6 +579,28 @@ describe('store contract', () => {
       }
       scriptExitHandler({ runId: 'run-live', exitCode: 0 });
       expect(store.getState().scriptRuns[SESSION_ID]?.[scriptId]?.status).toBe('ok');
+    });
+
+    it('boots a live run with its snapshot as the output', async () => {
+      const store = useAppStore;
+      storySpies.invokeScriptListLive.mockResolvedValueOnce([
+        { runId: 'run-reload', scriptId, sessionId: SESSION_ID, startedAt: 99 },
+      ]);
+      storySpies.invokeScriptSnapshot.mockResolvedValueOnce({
+        data: btoa('compiled 120 modules\n'),
+        offset: 0,
+        exitCode: null,
+      });
+
+      await store.getState().reattachScriptRuns();
+      if (scriptExitHandler === null) {
+        throw new Error('script exit listener was not restored');
+      }
+      scriptExitHandler({ runId: 'run-reload', exitCode: 0 });
+
+      expect(store.getState().scriptRuns[SESSION_ID]?.[scriptId]?.result?.stdout).toBe(
+        'compiled 120 modules\n',
+      );
     });
   });
 });

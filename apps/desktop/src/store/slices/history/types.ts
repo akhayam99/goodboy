@@ -41,6 +41,9 @@ export type HistoryStopReason =
   | 'origin-moved'
   | 'head-moved'
   | 'blocked'
+  | 'dirty'
+  | 'no-provider'
+  | 'push-failed'
   | 'failed';
 
 export type HistoryStop = {
@@ -91,6 +94,7 @@ export type HistoryRun = {
   readonly identity: HistoryIdentity | null;
   readonly movedHead: string | null;
   readonly threadShas: ReadonlyArray<HistoryThreadShas>;
+  readonly commitCount: number | null;
   readonly updatedAt: number;
 };
 

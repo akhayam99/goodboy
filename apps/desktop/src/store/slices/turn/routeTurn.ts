@@ -1,5 +1,4 @@
 import {
-  autoModelForRole,
   extractSpawnModel,
   PROVIDER_ARG_FLAGS,
   resolveModelArgs,
@@ -13,6 +12,10 @@ import { encodeAuthRequiredMessage } from '../../../features/chat/turn';
 import { EFFORT_LEVELS } from '../../../features/chat/utils/chat-constants';
 import { KIND_TO_ROLE, classifyAgent } from '../../../features/session/agent-kind';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
+import { liveSessionPreference } from '../models/liveSessionPreference';
+import { selectModelOnProvider } from '../models/selectModelOnProvider';
+import { overrideOffNoticeMessage, type OverrideScope } from './overrideOffNoticeMessage';
+import { overrideScopeOf } from './overrideScopeOf';
 import { pickedTurnExecution } from './pickedTurnExecution';
 import { budgetRoutingNoticeMessage, budgetRoutingReason } from './budgetRoutingNoticeMessage';
 import { resolveTurnModelSelection } from './resolveTurnModelSelection';
@@ -25,8 +28,11 @@ import type { PreparedTurn } from './prepareTurn';
 
 type Params = Readonly<{
   get: GetFn;
-  ctx: WithInput & PreparedTurn;
+  ctx: WithInput &
+    Pick<PreparedTurn, 'session' | 'now' | 'activeAgentId' | 'activeAgent' | 'phaseDefinition'>;
 }>;
+
+const newRunId = (): ProviderRunId => crypto.randomUUID() as ProviderRunId;
 
 export const routeTurn = async ({ get, ctx }: Params) => {
   const { sessionId, override, force, retry } = ctx.input;
@@ -65,18 +71,24 @@ export const routeTurn = async ({ get, ctx }: Params) => {
   const pickedOverride = turnOverride?.explicit === true ? turnOverride : undefined;
   const effectiveOverride =
     retryOverride ?? pickedOverride ?? nodeOverride ?? turnOverride ?? agentOverride;
+  const overrideScope: OverrideScope = overrideScopeOf({
+    effective: effectiveOverride,
+    node: nodeOverride,
+    agent: agentOverride,
+  });
 
   const connectedProviders = autoRoutableProviders({
     providers: get().providers,
     pinned: effectiveOverride?.providerId ?? null,
   });
 
+  const livePreference = liveSessionPreference({ state: get(), session });
   const routingPreference =
     (effectiveOverride === agentOverride && agentOverride !== undefined) ||
     (effectiveOverride === nodeOverride && nodeOverride !== undefined) ||
     retry != null
-      ? { ...session.providerPreference, allowTurnOverride: true }
-      : session.providerPreference;
+      ? { ...livePreference, allowTurnOverride: true }
+      : livePreference;
 
   const routingDecision = await resolveProviderForTurn({
     sessionPreference: routingPreference,
@@ -88,7 +100,7 @@ export const routeTurn = async ({ get, ctx }: Params) => {
   });
 
   if (routingDecision.reason === 'all-exceeded') {
-    const runId = crypto.randomUUID() as ProviderRunId;
+    const runId = newRunId();
     get().appendTurnEvent(activeAgentId, sessionId, {
       kind: 'error',
       runId,
@@ -97,6 +109,18 @@ export const routeTurn = async ({ get, ctx }: Params) => {
       at: now(),
     });
     return turnDone({ result: { blockedOverBudget: true } });
+  }
+
+  if (routingDecision.reason === 'override-off') {
+    get().appendTurnEvent(activeAgentId, sessionId, {
+      kind: 'decision_note',
+      runId: newRunId(),
+      message: overrideOffNoticeMessage({
+        provider: routingDecision.selectedProvider,
+        scope: overrideScope,
+      }),
+      at: now(),
+    });
   }
 
   const movedForBudget = budgetRoutingReason({ reason: routingDecision.reason });
@@ -108,7 +132,7 @@ export const routeTurn = async ({ get, ctx }: Params) => {
   ) {
     get().appendTurnEvent(activeAgentId, sessionId, {
       kind: 'error',
-      runId: crypto.randomUUID() as ProviderRunId,
+      runId: newRunId(),
       message: budgetRoutingNoticeMessage({
         from: routingDecision.fallbackFrom,
         to: routingDecision.selectedProvider,
@@ -126,16 +150,18 @@ export const routeTurn = async ({ get, ctx }: Params) => {
       : (agentKindOverrideForTurn ?? 'generic');
   const autoStepModel =
     phaseDefinition != null && nodeModel === null
-      ? autoModelForRole({
+      ? selectModelOnProvider({
+          state: get(),
+          sessionId,
           role: phaseDefinition.role ?? 'custom',
-          providers: [provider],
-          prefs: selectResolvedSettings({ state: get(), sessionId })?.roleModels ?? null,
+          provider,
         })
       : phaseDefinition == null && routingDecision.fallbackUsed
-        ? autoModelForRole({
+        ? selectModelOnProvider({
+            state: get(),
+            sessionId,
             role: KIND_TO_ROLE[turnAgentKind],
-            providers: [provider],
-            prefs: selectResolvedSettings({ state: get(), sessionId })?.roleModels ?? null,
+            provider,
           })
         : null;
   const rawEffort = nodeEffort ?? get().agentEffortOverride[activeAgentId] ?? null;
@@ -195,7 +221,7 @@ export const routeTurn = async ({ get, ctx }: Params) => {
 
   const authState = get().authResults?.[provider] ?? null;
   if (authState?.state === 'disconnected' && !apiKeyBinding) {
-    const runId = crypto.randomUUID() as ProviderRunId;
+    const runId = newRunId();
     get().appendTurnEvent(activeAgentId, sessionId, {
       kind: 'error',
       runId,

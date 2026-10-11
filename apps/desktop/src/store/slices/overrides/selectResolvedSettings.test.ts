@@ -68,7 +68,7 @@ const buildState = ({ workspace, project, session, workspaceRow }: StateParams):
 };
 
 describe('selectResolvedSettings', () => {
-  it('lets the session row beat the active project and the project beat the workspace', () => {
+  it('lets the session row beat the active project and the workspace, and skips the project for role models', () => {
     const workspaceRoles = {
       planner: {
         providerId: 'anthropic' as ProviderId,
@@ -96,13 +96,29 @@ describe('selectResolvedSettings', () => {
 
     const settings = selectResolvedSettings({ state, sessionId: SESSION_ID });
 
-    expect(settings?.roleModels).toEqual({
-      planner: projectRoles.planner,
-      reviewer: workspaceRoles.reviewer,
-    });
+    expect(settings?.roleModels).toEqual(workspaceRoles);
     expect(settings?.defaultProviderId).toBe('cursor');
     expect(settings?.defaultProviderOverride).toBe('cursor');
     expect(settings?.defaultVerbosityOverride).toBe('brief');
+  });
+
+  it('lets a session role pin beat the workspace pin of the same role and keep the others', () => {
+    const state = buildState({
+      workspace: {
+        roleModels: {
+          planner: { providerId: 'anthropic', model: 'ws-model', effort: 'high' },
+          reviewer: { providerId: 'anthropic', model: 'ws-reviewer', effort: 'high' },
+        },
+      },
+      session: {
+        roleModels: { planner: { providerId: 'codex', model: 'session-model', effort: 'low' } },
+      },
+    });
+
+    expect(selectResolvedSettings({ state, sessionId: SESSION_ID })?.roleModels).toEqual({
+      planner: { providerId: 'codex', model: 'session-model', effort: 'low' },
+      reviewer: { providerId: 'anthropic', model: 'ws-reviewer', effort: 'high' },
+    });
   });
 
   it('merges bindings from every scope, the closest one winning per provider', () => {

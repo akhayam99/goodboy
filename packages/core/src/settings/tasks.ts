@@ -47,13 +47,13 @@ export const TASKS: ReadonlyArray<{
   },
   {
     id: 'pr_draft',
-    label: 'PR and MR drafts',
-    description: 'Model for the agent that drafts a pull or merge request.',
+    label: 'Scribe',
+    description: 'Writes the title and body of a pull or merge request.',
   },
   {
     id: 'rebase',
-    label: 'Rebase',
-    description: 'Model for the agent that rebases the branch.',
+    label: 'History rewriter',
+    description: 'Rewrites commits when you rebase or clean up history.',
   },
   {
     id: 'recheck',

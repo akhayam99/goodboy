@@ -66,6 +66,8 @@ const NOT_AGENT: Readonly<Record<string, string>> = {
     'an artifact document edited in place',
   'features/artifacts/components/PlanEditor/index.tsx': 'a plan edited in place',
   'features/session/components/ContextDrawer/GoalTab.tsx': 'saved session context, edited in place',
+  'features/session/components/SessionOverviewPane/GoalFromWorkCard.tsx':
+    'a proposed title and saved session goal, edited before applying',
   'features/session/components/ContextDrawer/BlockEditor.tsx':
     'saved session context, edited in place',
   'features/workflows/components/WorkflowBuilderView/parts/BuilderTitleField.tsx': 'a title',

@@ -105,6 +105,7 @@ const session = (runs: ReadonlyArray<Record<string, unknown>> = []) =>
       id: SESSION_ID,
       workspaceId: WORKSPACE_ID,
       goal: 'Fix the rounding drift in ledger-core postings',
+      providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
       workflowRuns: runs,
     }),
   );

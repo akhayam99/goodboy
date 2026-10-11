@@ -1107,7 +1107,7 @@ describe('store contract', () => {
       expect(store.getState().sessionBranches[session.id]).toBe('');
     });
 
-    it('starts a session on the first On provider and drops the Off ones', async () => {
+    it('starts a session on the first On provider and leaves the live policy to routing', async () => {
       const store = useAppStore;
       store.setState({
         currentWorkspaceId: WS_ID,
@@ -1130,7 +1130,6 @@ describe('store contract', () => {
       expect(session.providerPreference).toEqual({
         defaultProvider: 'codex',
         allowTurnOverride: true,
-        enabledProviders: ['codex', 'anthropic'],
       });
     });
 

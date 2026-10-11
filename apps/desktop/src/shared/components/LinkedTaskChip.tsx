@@ -2,6 +2,8 @@ import { X } from 'lucide-react';
 import { IconButton, chipClasses, cn, type ChipSize } from '@goodboy/ui';
 import type { SessionExternalTask, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../store/store';
+import { selectProjectById } from '../../store/slices/projects/selectProjectById';
+import { taskIdentityKey } from '../utils/taskIdentityKey';
 import { ObjectMenuArea } from '../../features/actions/components/ObjectMenuArea';
 import { taskKeyOf } from '../../features/actions/kinds/task';
 import type { ObjectTarget } from '../../features/actions/types';
@@ -19,7 +21,18 @@ type Props = {
 export const LinkedTaskChip = ({ sessionId, task, branch, branches, size = 'control' }: Props) => {
   const openExternalTaskLens = useAppStore((state) => state.openExternalTaskLens);
   const unlinkSessionExternalTask = useAppStore((state) => state.unlinkSessionExternalTask);
-  const takeOffSessionExternalTask = useAppStore((state) => state.takeOffSessionExternalTask);
+  const moveSessionExternalTask = useAppStore((state) => state.moveSessionExternalTask);
+  const otherPlacements = useAppStore(
+    (state) =>
+      (state.sessionExternalTasks[sessionId] ?? []).filter(
+        (row) =>
+          taskIdentityKey({ task: row }) === taskIdentityKey({ task }) &&
+          !(row.scope === 'branch' && row.branch === branch),
+      ).length,
+  );
+  const projectName = useAppStore(
+    (state) => selectProjectById(state, task.projectId ?? null)?.name ?? null,
+  );
   const reportError = useAppStore((state) => state.reportError);
   const target = {
     kind: 'task',
@@ -30,15 +43,30 @@ export const LinkedTaskChip = ({ sessionId, task, branch, branches, size = 'cont
     branch,
   } satisfies ObjectTarget;
   const placement = taskPlacementLabel({ branches });
-  const unlink = async () => {
+  const isSolePlacement = branch !== null && otherPlacements === 0;
+  const dismissLabel =
+    branch === null
+      ? `Unlink ${task.identifier} from session`
+      : isSolePlacement
+        ? 'Move to session'
+        : `Take off ${projectName === null ? branch : `${projectName} / ${branch}`}`;
+  const dismiss = async () => {
     try {
       if (branch !== null) {
-        await takeOffSessionExternalTask({ sessionId, task });
+        await moveSessionExternalTask({
+          sessionId,
+          task,
+          to: isSolePlacement ? { kind: 'session' } : { kind: 'off' },
+        });
         return;
       }
       await unlinkSessionExternalTask(sessionId, task.provider, task.externalId, task.projectId);
     } catch (error) {
-      await reportError({ title: `Couldn't unlink ${task.identifier}`, error, sessionId });
+      await reportError({
+        title: `Couldn't ${branch === null ? 'unlink' : 'move'} ${task.identifier}`,
+        error,
+        sessionId,
+      });
     }
   };
   return (
@@ -73,9 +101,9 @@ export const LinkedTaskChip = ({ sessionId, task, branch, branches, size = 'cont
             size="xs"
             icon={X}
             variant="ghost"
-            label={`Unlink ${task.identifier}${branch === null ? ' from session' : ` from ${branch}`}`}
-            tooltip="Unlink"
-            onClick={() => void unlink()}
+            label={dismissLabel}
+            tooltip={branch === null ? 'Unlink' : dismissLabel}
+            onClick={() => void dismiss()}
             className="pointer-events-none bg-hover opacity-0 group-hover/task-link:pointer-events-auto group-hover/task-link:opacity-100 group-focus-within/task-link:pointer-events-auto group-focus-within/task-link:opacity-100 hover:text-danger"
           />
         </span>

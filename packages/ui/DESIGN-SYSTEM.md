@@ -1523,7 +1523,7 @@ close.
 divider, a body and an optional `dock`. The title row reads icon, title, count
 (a number or a version, never a session title), at most one labelled action,
 then Close. Close always reads `Close` and is a 28px target (`size-7`, 14px
-glyph); every utility in the header (copy, open on its page, expand) is a 28px
+glyph); every utility in the header (copy, open on its page) is a 28px
 icon button in one tone. The `dock` is `px-4 py-3`, the same padding for the Ask
 composer, a transcript reply field and a script run's status line. The first
 control takes focus when the drawer opens (the composer of the dock when it has
@@ -1612,6 +1612,8 @@ Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action
 | Utilities | Open in the tool, `⋯`, close                                         | icon buttons at the end of the identity line       |
 
 A verb blocked for a moment stays visible with its reason in the tooltip; a verb the tool refuses is not shown. Merge confirms under the action row, and a destructive verb confirms in its menu with a plain menu swap. Properties that can change (state, assignee) change from the control that shows them, never from a button. `RecordHeader` and the `RecordVerbs` type own the contract.
+
+**Row verbs.** The action ladder of a row in a list of objects (the Overview's worktrees) has three rungs, left to right: the verb the state asks for as a quiet text button (Rebase, Push, Create PR, Reopen), the one verb every row can need as a quiet `IconButton` that asks in a `ConfirmPopover` (Close branch, Remove from session), then the `...` with the rare verbs. The menu does not exist when it would hold fewer than two. Rows nest by one constant: a child row's leading glyph sits under the parent's name, `MOUNT_CHILD_INDENT = 22` (the 14px parent glyph and its 8px gap, `ProjectMountRows/mountGrid.ts`), every row of a band has the same 8px left edge and every trailing control ends 8px from the band's right edge. A "Show finished (n)" `CountToggle` and an empty line start on the child rail too.
 
 A confirm has one placement: anchored. A destructive or one-shot trigger (icon button, sidebar row action, header action, rail row, a text button) opens `ConfirmPopover`, which draws the `plain` surface of `InlineConfirm` in an `AnchoredPopover` beside the trigger, so the page under it never moves. Anything restorable does not ask: it acts at once and offers Undo. A confirmation detached in the body, or a destructive footer dock, is not another zone. Notifications uses it: `Delete all` in the studio header opens it aligned to its end edge, with the scope's count in the title, and the title row never changes height. Push review stays in its banner.
 

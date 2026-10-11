@@ -4,6 +4,13 @@ import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 export type TerminalOutputPayload = {
   readonly sessionId: string;
   readonly data: string;
+  readonly offset: number;
+};
+
+export type TerminalSnapshot = {
+  readonly data: string;
+  readonly offset: number;
+  readonly exitCode: number | null;
 };
 
 export type TerminalExitPayload = {
@@ -20,6 +27,10 @@ export type LiveTerminal = {
 
 export const invokeTerminalListLive = (): Promise<ReadonlyArray<LiveTerminal>> => {
   return invokeCommand<ReadonlyArray<LiveTerminal>>('terminal_list_live');
+};
+
+export const invokeTerminalSnapshot = (terminalId: string): Promise<TerminalSnapshot> => {
+  return invokeCommand<TerminalSnapshot>('terminal_snapshot', { sessionId: terminalId });
 };
 
 export const invokeTerminalOpen = (

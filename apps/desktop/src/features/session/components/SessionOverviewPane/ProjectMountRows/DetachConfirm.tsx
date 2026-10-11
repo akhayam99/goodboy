@@ -1,4 +1,5 @@
-import { InlineConfirm, Skeleton } from '@goodboy/ui';
+import type { ReactNode } from 'react';
+import { ConfirmPopover, Skeleton, type ConfirmPopoverTriggerParams } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { DetachDetails } from './DetachDetails';
 import { CHECKING_STATUS, detachActionFor, type DetachPlan } from './detachPlan';
@@ -7,6 +8,8 @@ import type { DetachDisposition } from '../../../../../store/slices/project-moun
 type Props = {
   readonly projectName: string;
   readonly plan: DetachPlan;
+  readonly isOpen: boolean;
+  readonly trigger: (params: ConfirmPopoverTriggerParams) => ReactNode;
   readonly isBusy: boolean;
   readonly stage: string | null;
   readonly onConfirm: (input: { readonly disposition: DetachDisposition }) => void;
@@ -20,6 +23,8 @@ const WorktreeIcon = CONCEPT_ICONS.worktree;
 export const DetachConfirm = ({
   projectName,
   plan,
+  isOpen,
+  trigger,
   isBusy,
   stage,
   onConfirm,
@@ -30,12 +35,14 @@ export const DetachConfirm = ({
 
   if (plan.kind === 'checking') {
     return (
-      <InlineConfirm
+      <ConfirmPopover
+        width="w-96"
+        isOpen={isOpen}
+        trigger={trigger}
         role="primary"
         icon={<WorktreeIcon size={ICON_SIZE.row} />}
         title={title}
         confirmLabel="Remove"
-        surface="plain"
         isConfirmDisabled
         onConfirm={() => undefined}
         onCancel={onCancel}
@@ -45,19 +52,21 @@ export const DetachConfirm = ({
           <Skeleton className="h-3 w-full" />
           <Skeleton className="h-3 w-4/5" />
         </div>
-      </InlineConfirm>
+      </ConfirmPopover>
     );
   }
 
   const action = detachActionFor({ plan });
   if (action === null) {
     return (
-      <InlineConfirm
+      <ConfirmPopover
+        width="w-96"
+        isOpen={isOpen}
+        trigger={trigger}
         role="alert"
         icon={<AlertIcon size={ICON_SIZE.row} />}
         title={title}
         confirmLabel="Remove"
-        surface="plain"
         isConfirmDisabled
         onConfirm={() => undefined}
         onCancel={onCancel}
@@ -69,7 +78,7 @@ export const DetachConfirm = ({
             </p>
           ))}
         </div>
-      </InlineConfirm>
+      </ConfirmPopover>
     );
   }
   const isRisky = plan.kind === 'risky';
@@ -82,9 +91,11 @@ export const DetachConfirm = ({
     plan.kind === 'keep' && (plan.reason === 'unavailable' || plan.reason === 'unverified');
 
   return (
-    <InlineConfirm
+    <ConfirmPopover
+      width="w-96"
+      isOpen={isOpen}
+      trigger={trigger}
       role={action.role === 'danger' ? 'danger' : 'primary'}
-      surface="plain"
       icon={isRisky ? <AlertIcon size={ICON_SIZE.row} /> : <WorktreeIcon size={ICON_SIZE.row} />}
       title={title}
       confirmLabel={action.label}
@@ -115,6 +126,6 @@ export const DetachConfirm = ({
           {stage}
         </p>
       )}
-    </InlineConfirm>
+    </ConfirmPopover>
   );
 };

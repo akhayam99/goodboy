@@ -14,34 +14,28 @@ type Props = {
   readonly isRepo: boolean;
   readonly isPending: boolean;
   readonly isSkeleton: boolean;
-  readonly isMerged: boolean;
   readonly isRebasing: boolean;
   readonly commitsAfterMerge: number | null;
   readonly request?: MountRowView['request'];
 };
 
-type PhraseParams = Pick<Props, 'status' | 'isMerged' | 'commitsAfterMerge'> & {
+type PhraseParams = Pick<Props, 'status' | 'commitsAfterMerge'> & {
   readonly request: MountRowView['request'];
 };
 
 type Phrase = {
-  readonly text: string;
+  readonly text: string | null;
   readonly isWarning: boolean;
   readonly detail: string;
 };
 
-const phraseOf = ({
-  status,
-  isMerged,
-  commitsAfterMerge,
-  request,
-}: PhraseParams): Phrase | null => {
+const phraseOf = ({ status, commitsAfterMerge, request }: PhraseParams): Phrase | null => {
   if (status === null) {
     return null;
   }
   const presence = branchPresenceOf({
     status,
-    isMerged,
+    isMerged: false,
     commitsAfterMerge,
     openRequest: isOpenRequest({ request }) ? { headSha: request?.headSha ?? null } : null,
   });
@@ -51,9 +45,9 @@ const phraseOf = ({
     presence.kind === 'not-on-pr';
   if (presence.kind === 'on-origin') {
     return {
-      text: presence.toPush === null ? 'Up to date' : `${presence.toPush} to push`,
+      text: presence.toPush === null ? null : `${presence.toPush} to push`,
       isWarning,
-      detail: presence.label,
+      detail: presence.toPush === null ? 'Up to date' : presence.label,
     };
   }
   return { text: presence.label, isWarning, detail: presence.label };
@@ -87,7 +81,6 @@ export const MountStatusPhrase = ({
   isRepo,
   isPending,
   isSkeleton,
-  isMerged,
   isRebasing,
   commitsAfterMerge,
   request = null,
@@ -103,11 +96,15 @@ export const MountStatusPhrase = ({
     );
   }
   const operation = mountOperationView({ status, label });
-  const phrase = phraseOf({ status, isMerged, commitsAfterMerge, request });
+  const phrase = phraseOf({ status, commitsAfterMerge, request });
   const details = detailsOf({ status, series, isRebasing, phrase });
   const text = operation?.label ?? phrase?.text ?? null;
   if (text === null) {
-    return null;
+    return phrase === null ? null : (
+      <span data-slot="mount-status-silent" className="sr-only">
+        {phrase.detail}
+      </span>
+    );
   }
   const isWarning = operation !== null || phrase?.isWarning === true;
   const node = (

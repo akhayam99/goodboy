@@ -1,7 +1,11 @@
-import { Skeleton, inlineMarkdownText } from '@goodboy/ui';
+import { X } from 'lucide-react';
+import { Button, IconButton, Notice, Skeleton, inlineMarkdownText } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore, useSessionLoading, useSessionSlots } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { useGoalHint } from '../../hooks/useGoalHint';
+import { useGoalFromWork } from '../../hooks/useGoalFromWork';
+import { GoalFromWorkCard } from './GoalFromWorkCard';
 import { goalPresence } from './goalPresence';
 
 type Props = {
@@ -13,6 +17,8 @@ const ROW =
 
 export const GoalTeaser = ({ session }: Props) => {
   const sessionId = session.id;
+  const hint = useGoalHint({ sessionId });
+  const proposal = useGoalFromWork({ session });
   const slots = useSessionSlots(sessionId);
   const loading = useSessionLoading(sessionId);
   const openContextDrawer = useAppStore((state) => state.openContextDrawer);
@@ -30,6 +36,61 @@ export const GoalTeaser = ({ session }: Props) => {
   const presence = goalPresence({ value, sessionTitle: session.goal });
   const open = () => openContextDrawer({ sessionId, tab: 'goal' });
 
+  if (proposal.isReading) {
+    return (
+      <span role="status" className="text-meta text-shimmer">
+        Reading {proposal.readingCount} {proposal.readingCount === 1 ? 'issue' : 'issues'}
+      </span>
+    );
+  }
+  if (proposal.error !== null) {
+    return (
+      <Notice
+        role="alert"
+        placement="inline"
+        tone="danger"
+        title="Couldn't read linked work"
+        body={proposal.error}
+        actions={
+          <Button size="sm" variant="secondary" onClick={() => void proposal.write()}>
+            Retry
+          </Button>
+        }
+      />
+    );
+  }
+  if (proposal.sources !== null) {
+    return (
+      <GoalFromWorkCard
+        session={session}
+        sources={proposal.sources}
+        linkedCount={proposal.linked.length}
+        entry={proposal.entry}
+        onRetry={() => void proposal.write()}
+        onDismiss={() => {
+          hint.dismiss();
+          proposal.dismiss();
+        }}
+        onUsed={() => {
+          hint.dismiss();
+          proposal.dismiss();
+        }}
+      />
+    );
+  }
+  if (presence === 'empty' && proposal.linked.length > 0 && !hint.isDismissed) {
+    return (
+      <div className="flex min-h-5 items-center gap-2">
+        <span className="min-w-0 text-meta text-muted-foreground">
+          Write the title and goal from {proposal.label}?
+        </span>
+        <Button variant="ghost" size="sm" onClick={() => void proposal.write()}>
+          Write
+        </Button>
+        <IconButton icon={X} label="Not now" size="sm" onClick={hint.dismiss} />
+      </div>
+    );
+  }
   if (presence === 'title') {
     return null;
   }

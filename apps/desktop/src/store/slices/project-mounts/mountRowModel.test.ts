@@ -9,10 +9,12 @@ import type {
   SessionId,
   SessionMountView,
   WorkspaceId,
+  WorktreeStatus,
 } from '@goodboy/types';
 import type { MountGithubState } from '../../types';
 import {
   buildMountRows,
+  classifyMountRows,
   isMountCompleted,
   isMountRequestMerged,
   type MountRowState,
@@ -184,13 +186,13 @@ describe('buildMountRows', () => {
       },
     };
     const [group] = buildMountRows({ state, sessionId: SESSION_ID });
-    const rows = [...(group?.rows ?? []), ...(group?.completedRows ?? [])];
+    const rows = [...(group?.rows ?? []), ...(group?.finishedRows ?? [])];
 
     expect(
       [FIRST, SECOND, THIRD].map((mountId) => ({
         mountId,
         predicate: isMountCompleted({ state, mountId }),
-        row: rows.find((candidate) => candidate.mountId === mountId)?.isCompleted,
+        row: rows.find((candidate) => candidate.mountId === mountId)?.isFinished,
       })),
     ).toEqual([
       { mountId: FIRST, predicate: true, row: true },
@@ -282,5 +284,144 @@ describe('buildMountRows checkout kind', () => {
     const [group] = buildMountRows({ state: rebuilt, sessionId: SESSION_ID });
 
     expect(group?.rows[0]?.isMainCheckout).toBe(false);
+  });
+});
+
+describe('classifyMountRows', () => {
+  const BEHIND: WorktreeStatus = {
+    branch: 'ak/part-one',
+    head: 'aaaaaaa1',
+    headSubject: 'work',
+    upstream: 'origin/ak/part-one',
+    upstreamDistance: { kind: 'known', ahead: 0, behind: 0 },
+    mainDistance: { kind: 'known', ahead: 3, behind: 2 },
+    workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
+    inProgress: null,
+  };
+  const AT_BASE: WorktreeStatus = {
+    ...BEHIND,
+    mainDistance: { kind: 'known', ahead: 0, behind: 0 },
+  };
+
+  const groupOf = (states: Readonly<Record<string, PullRequestStateKind>>) => {
+    const ids = [FIRST, SECOND, THIRD];
+    const state: MountRowState = {
+      ...makeState(),
+      mountBranchObservations: {},
+      sessionMounts: {
+        [SESSION_ID]: ids.map((id, index) =>
+          mountView({
+            id,
+            branch: `ak/part-${index}`,
+            worktreePath: `/wt/${index}`,
+            parallelIndex: index,
+          }),
+        ),
+      },
+      mountGithub: Object.fromEntries(
+        ids.flatMap((id) => {
+          const requestState = states[id];
+          return requestState === undefined
+            ? []
+            : [[id, githubState({ mountId: id, state: requestState })]];
+        }),
+      ),
+    };
+    const [group] = buildMountRows({ state, sessionId: SESSION_ID });
+    if (group === undefined) {
+      throw new Error('no group');
+    }
+    return group;
+  };
+
+  const idsOf = (rows: ReadonlyArray<{ readonly mountId: MountId }>): ReadonlyArray<string> =>
+    rows.map((row) => row.mountId);
+
+  it('keeps merged and closed requests in Finished before and after the status arrives', () => {
+    const group = groupOf({ [FIRST]: 'merged', [SECOND]: 'closed', [THIRD]: 'open' });
+    const none = () => null;
+    const merged = () => null;
+
+    const loading = classifyMountRows({ group, statusOf: none, commitsAfterMergeOf: none });
+    const loaded = classifyMountRows({
+      group,
+      statusOf: () => BEHIND,
+      commitsAfterMergeOf: merged,
+    });
+
+    expect(idsOf(loading.finished)).toEqual([FIRST, SECOND]);
+    expect(idsOf(loaded.finished)).toEqual(idsOf(loading.finished));
+    expect(idsOf(loaded.open)).toEqual(idsOf(loading.open));
+    expect(idsOf(loaded.open)).toEqual([THIRD]);
+  });
+
+  it('never moves a row with an open request, whatever its status says', () => {
+    const group = groupOf({ [FIRST]: 'open', [SECOND]: 'open', [THIRD]: 'open' });
+
+    const atBase = classifyMountRows({
+      group,
+      statusOf: () => AT_BASE,
+      commitsAfterMergeOf: () => null,
+    });
+
+    expect(idsOf(atBase.open)).toEqual([FIRST, SECOND, THIRD]);
+    expect(atBase.finished).toEqual([]);
+  });
+
+  it('stays where the request puts a row without a request until its status says it landed', () => {
+    const group = groupOf({});
+
+    const loading = classifyMountRows({
+      group,
+      statusOf: () => null,
+      commitsAfterMergeOf: () => null,
+    });
+    const behind = classifyMountRows({
+      group,
+      statusOf: () => BEHIND,
+      commitsAfterMergeOf: () => null,
+    });
+    const landed = classifyMountRows({
+      group,
+      statusOf: () => AT_BASE,
+      commitsAfterMergeOf: () => null,
+    });
+
+    expect(idsOf(loading.open)).toEqual([FIRST, SECOND, THIRD]);
+    expect(idsOf(behind.open)).toEqual([FIRST, SECOND, THIRD]);
+    expect(idsOf(landed.finished)).toEqual([FIRST, SECOND, THIRD]);
+    expect(landed.finished.every((row) => row.isFinished)).toBe(true);
+  });
+
+  it('brings a merged row back to open only when new commits followed the merge', () => {
+    const group = groupOf({ [FIRST]: 'merged', [SECOND]: 'merged', [THIRD]: 'open' });
+
+    const result = classifyMountRows({
+      group,
+      statusOf: () => BEHIND,
+      commitsAfterMergeOf: (row) => (row.mountId === SECOND ? 2 : null),
+    });
+
+    expect(idsOf(result.finished)).toEqual([FIRST]);
+    expect(idsOf(result.open)).toEqual([THIRD, SECOND]);
+    expect(result.open.find((row) => row.mountId === SECOND)?.isFinished).toBe(false);
+  });
+
+  it('classifies a folder project by its request alone', () => {
+    const group = groupOf({ [FIRST]: 'merged' });
+    const folder = {
+      ...group,
+      projectKind: 'folder' as const,
+      rows: group.rows.map((row) => ({ ...row, projectKind: 'folder' as const })),
+    };
+
+    const result = classifyMountRows({
+      group: folder,
+      statusOf: () => AT_BASE,
+      commitsAfterMergeOf: () => null,
+    });
+
+    expect(idsOf(result.finished)).toEqual([FIRST]);
+    expect(idsOf(result.open)).toEqual([SECOND, THIRD]);
   });
 });

@@ -46,7 +46,6 @@
   "apps/desktop/src/features/session/components/AgentMetrics/index.test.tsx": 2,
   "apps/desktop/src/features/session/components/AgentTree/AgentRow.test.tsx": 6,
   "apps/desktop/src/features/session/components/AgentTree/ClusterChildRow.test.tsx": 7,
-  "apps/desktop/src/features/session/components/AgentTree/WorkflowRow.test.tsx": 5,
   "apps/desktop/src/features/session/components/CreateAgentPopover/index.test.tsx": 4,
   "apps/desktop/src/features/session/components/DiffStat.test.tsx": 2,
   "apps/desktop/src/features/session/components/RoleSelect/index.test.tsx": 1,

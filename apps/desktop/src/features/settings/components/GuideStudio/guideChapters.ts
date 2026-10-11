@@ -331,7 +331,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Task links',
-        desc: 'A task chip opens the task. Unlink, Stop tracking and Take off this branch act at once and show an Undo toast, and ⌘Z undoes the last one when focus is not in a text field. The Log keeps the event with Re-link. Put on a branch sits on the branch row.',
+        desc: 'A task chip opens the task. Move to, Unlink, Stop tracking and Take off this branch act at once and show an Undo toast, and ⌘Z undoes the last one when focus is not in a text field. The Log keeps the event with Re-link. Put on a branch sits on the branch row.',
       },
       {
         term: 'Slack',

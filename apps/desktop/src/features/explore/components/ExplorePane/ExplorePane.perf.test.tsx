@@ -19,7 +19,11 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../store/storyHarness';
-import { SESSION, sessionFixture } from '../../../../__tests__/helpers/actionFixtures';
+import {
+  SESSION,
+  mountFixture,
+  sessionFixture,
+} from '../../../../__tests__/helpers/actionFixtures';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { ObjectMenuProvider } from '../../../actions/components/ObjectMenuProvider';
 import { EXPLORE_ROW_PX } from '../../exploreRows';
@@ -64,7 +68,12 @@ beforeEach(async () => {
     }
     return [];
   });
-  useAppStore.setState({ sessions: [sessionFixture()], currentSessionId: SESSION_ID });
+  useAppStore.setState({
+    sessions: [sessionFixture()],
+    currentSessionId: SESSION_ID,
+    sessionProjectMounts: { [SESSION_ID]: [mountFixture({ worktreePath: DIR, branch: '' })] },
+    sessionActiveMount: { [SESSION_ID]: mountFixture().mountId },
+  });
   Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
     configurable: true,
     get: () => VIEWPORT_PX,
@@ -80,7 +89,7 @@ const mount = () =>
   render(
     <ToastProvider>
       <ObjectMenuProvider>
-        <ExplorePane sessionId={SESSION_ID} sessionDir={DIR} />
+        <ExplorePane sessionId={SESSION_ID} />
       </ObjectMenuProvider>
     </ToastProvider>,
   );

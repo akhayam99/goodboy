@@ -1638,7 +1638,7 @@
   },
   "apps/desktop/src/features/actions/kinds/openInEditor.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 7
+      "count": 6
     }
   },
   "apps/desktop/src/features/actions/kinds/pullRequest.bitbucket.test.ts": {
@@ -3248,29 +3248,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/diff/lib/highlight/index.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/diff/lib/highlight/languages.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/diff/lib/highlight/theme.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/diff/lib/highlight/worker.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/diff/lib/reviewedFiles.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 3
@@ -3281,11 +3258,6 @@
       "count": 1
     },
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/explore/components/ExplorePane/ExplorePreviewPanel.tsx": {
-    "@typescript-eslint/naming-convention": {
       "count": 1
     }
   },
@@ -4560,7 +4532,7 @@
   },
   "apps/desktop/src/features/palette/paletteStateMatrix.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
+      "count": 3
     }
   },
   "apps/desktop/src/features/palette/rank.perf.test.ts": {
@@ -4868,16 +4840,6 @@
       "count": 3
     }
   },
-  "apps/desktop/src/features/providers/components/ProviderStudio/DefaultsPanel/ProjectOverridesNotice.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
-    }
-  },
-  "apps/desktop/src/features/providers/components/ProviderStudio/DefaultsPanel/ProjectOverridesNotice.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/providers/components/ProviderStudio/DefaultsPanel/RoleRow/RoleModelChip.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 2
@@ -4908,11 +4870,6 @@
   },
   "apps/desktop/src/features/providers/components/ProviderStudio/DefaultsPanel/index.tsx": {
     "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/providers/components/ProviderStudio/DefaultsPanel/projectOverrideFacts.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
       "count": 1
     }
   },
@@ -5896,19 +5853,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/session/components/AgentTree/AgentsSection.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 21
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 5
-    }
-  },
-  "apps/desktop/src/features/session/components/AgentTree/AgentsSection.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 5
-    }
-  },
   "apps/desktop/src/features/session/components/AgentTree/ClusterChildRow.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 11
@@ -5927,24 +5871,9 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/session/components/AgentTree/SectionToggle.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/session/components/AgentTree/WorkflowResumeStrip/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 4
-    }
-  },
-  "apps/desktop/src/features/session/components/AgentTree/WorkflowRow.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 31
-    }
-  },
-  "apps/desktop/src/features/session/components/AgentTree/WorkflowRow.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
     }
   },
   "apps/desktop/src/features/session/components/AgentTree/WorkflowRunAsk.tsx": {
@@ -5960,17 +5889,6 @@
   "apps/desktop/src/features/session/components/AgentTree/WorkflowRunStatus.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 10
-    }
-  },
-  "apps/desktop/src/features/session/components/AgentTree/useAgentsSection.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 3
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
     }
   },
   "apps/desktop/src/features/session/components/ContextDrawer/decisionByline.test.ts": {
@@ -6072,14 +5990,6 @@
   "apps/desktop/src/features/session/components/SessionOverviewPane/ContextChip.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 5
-    }
-  },
-  "apps/desktop/src/features/session/components/SessionOverviewPane/GoalTeaser.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 1
     }
   },
   "apps/desktop/src/features/session/components/SessionOverviewPane/HeaderBand.test.tsx": {
@@ -6513,17 +6423,9 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/session/components/SessionWorkspace/parts/WorkflowRunDetail.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/WorkflowsPane.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 14
+      "count": 10
     }
   },
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/WorkflowsPane.tsx": {
@@ -7582,19 +7484,9 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/workflows/components/OrchestratorStrip/StopStepButton.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/workflows/components/OrchestratorStrip/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 22
-    }
-  },
-  "apps/desktop/src/features/workflows/components/OrchestratorStrip/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 3
     }
   },
   "apps/desktop/src/features/workflows/components/OrchestratorStrip/orchestratorState.test.ts": {
@@ -7608,14 +7500,6 @@
   "apps/desktop/src/features/workflows/components/OrchestratorStrip/orchestratorState.ts": {
     "@typescript-eslint/naming-convention": {
       "count": 1
-    }
-  },
-  "apps/desktop/src/features/workflows/components/RunControls/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 10
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 4
     }
   },
   "apps/desktop/src/features/workflows/components/RunSpendLimitPopover/index.test.tsx": {
@@ -7733,7 +7617,7 @@
   },
   "apps/desktop/src/features/workflows/components/WorkflowBuilderView/index.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 8
+      "count": 6
     },
     "@typescript-eslint/naming-convention": {
       "count": 16
@@ -8872,9 +8756,6 @@
     "@typescript-eslint/naming-convention": {
       "count": 4
     },
-    "@typescript-eslint/no-floating-promises": {
-      "count": 2
-    },
     "react-hooks/exhaustive-deps": {
       "count": 1
     }
@@ -9362,6 +9243,29 @@
   "apps/desktop/src/shared/lib/dbBoot.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 3
+    }
+  },
+  "apps/desktop/src/shared/lib/highlight/index.ts": {
+    "@typescript-eslint/naming-convention": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/shared/lib/highlight/languages.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/shared/lib/highlight/theme.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    },
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/shared/lib/highlight/worker.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
     }
   },
   "apps/desktop/src/shared/lib/projectGitPresentation.ts": {
@@ -10301,11 +10205,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/store/slices/issue-briefs/index.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
-    }
-  },
   "apps/desktop/src/store/slices/live-work/selectLiveWork.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -10898,11 +10797,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/store/slices/projects/clearProjectModelOverrides.sqlite.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
-    }
-  },
   "apps/desktop/src/store/slices/projects/convertProjectToRepo.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -10970,7 +10864,7 @@
   },
   "apps/desktop/src/store/slices/providerLimits/index.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 14
+      "count": 4
     }
   },
   "apps/desktop/src/store/slices/providerLimits/markProbe.ts": {
@@ -11499,7 +11393,7 @@
   },
   "apps/desktop/src/store/slices/scripts/registerScriptRunListeners.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 8
+      "count": 6
     }
   },
   "apps/desktop/src/store/slices/scripts/saveScript.ts": {
@@ -12300,7 +12194,7 @@
   },
   "apps/desktop/src/store/slices/turn/routeTurn.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
+      "count": 1
     },
     "@typescript-eslint/naming-convention": {
       "count": 2
@@ -12700,11 +12594,6 @@
   "apps/desktop/src/store/slices/workflows/loadPhaseRunsForSession.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 7
-    }
-  },
-  "apps/desktop/src/store/slices/workflows/makeWorkflowPreset.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 6
     }
   },
   "apps/desktop/src/store/slices/workflows/maybeAutoAdvanceWorkflow.test.ts": {
@@ -13980,11 +13869,6 @@
   "packages/core/src/summarizer/extract-json.ts": {
     "@typescript-eslint/naming-convention": {
       "count": 2
-    }
-  },
-  "packages/core/src/summarizer/issue-brief.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
     }
   },
   "packages/core/src/summarizer/learning-extractor.test.ts": {

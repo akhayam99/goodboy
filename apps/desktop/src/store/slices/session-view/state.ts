@@ -41,5 +41,8 @@ export type SessionViewState = {
   readonly focusedExternalTask: Readonly<Record<SessionId, FocusedExternalTask | null>>;
   readonly agentPane: Readonly<Record<SessionId, AgentPane | null>>;
   readonly agentTab: Readonly<Record<AgentId, AgentPane>>;
-  readonly exploreExpanded: Readonly<Record<SessionId, Readonly<Record<string, boolean>>>>;
+  readonly exploreExpanded: Readonly<
+    Record<SessionId, Readonly<Record<string, Readonly<Record<string, boolean>>>>>
+  >;
+  readonly exploreMountPath: Readonly<Record<SessionId, string | null>>;
 };

@@ -1,43 +1,24 @@
-import { clampEffortForModel } from '@goodboy/core';
-import type { AgentEffort, AuxTaskId, ProviderId, TaskModelPreferences } from '@goodboy/types';
-import type { AutoLimitContext } from '../../store/slices/providerLimits/autoLimitContext';
-import { resolveLimitedTaskModel } from '../../store/slices/providerLimits/resolveLimitedTaskModel';
+import { clampEffortForModel, type Resolution } from '@goodboy/core';
+import type { AgentEffort } from '@goodboy/types';
 import type { AgentSpawnConfigValue } from './agentSpawnConfigValue';
 
 const TASK_FALLBACK_EFFORT: AgentEffort = 'medium';
 
 type Params = {
-  readonly task: AuxTaskId;
-  readonly preferences: TaskModelPreferences | null | undefined;
-  readonly workspaceDefaultProviderId: ProviderId | null | undefined;
-  readonly sessionDefaultProviderId: ProviderId;
-  readonly limitContext: AutoLimitContext | null;
+  readonly resolution: Resolution;
 };
 
-export const taskModelAgentSpawnConfig = ({
-  task,
-  preferences,
-  workspaceDefaultProviderId,
-  sessionDefaultProviderId,
-  limitContext,
-}: Params): AgentSpawnConfigValue => {
-  const taskModel = resolveLimitedTaskModel({
-    limitContext,
-    task,
-    preferences,
-    workspaceDefaultProviderId,
-    sessionDefaultProviderId,
-  });
-  const requestedEffort = taskModel.effort ?? TASK_FALLBACK_EFFORT;
+export const taskModelAgentSpawnConfig = ({ resolution }: Params): AgentSpawnConfigValue => {
+  const requestedEffort = resolution.effort ?? TASK_FALLBACK_EFFORT;
   return {
     hint: '',
-    provider: taskModel.providerId,
-    model: taskModel.model,
+    provider: resolution.provider,
+    model: resolution.model,
     effort:
       clampEffortForModel({
-        model: taskModel.model,
+        model: resolution.model,
         effort: requestedEffort,
-        provider: taskModel.providerId,
+        provider: resolution.provider,
       }) ?? requestedEffort,
   };
 };

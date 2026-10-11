@@ -1,6 +1,5 @@
-import { autoLimitContext } from '../providerLimits/autoLimitContext';
+import { selectTaskModel } from '../models/selectTaskModel';
 import { runHelperTask } from '../providerLimits/runHelperTask';
-import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
 import { devWarn } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type { SessionId, WorkflowRunId } from '@goodboy/types';
@@ -48,13 +47,7 @@ export const generateWorkflowRunTitle = async ({
       return;
     }
     const settings = selectResolvedSettings({ state: get(), sessionId });
-    const taskModel = resolveLimitedTaskModel({
-      limitContext: autoLimitContext({ state: get() }),
-      task: 'agent_naming',
-      preferences: settings?.taskModels,
-      workspaceDefaultProviderId: settings?.defaultProviderOverride,
-      sessionDefaultProviderId: session.providerPreference.defaultProvider,
-    });
+    const taskModel = selectTaskModel({ state: get(), sessionId, task: 'agent_naming' });
     const worktreePath = get().sessionWorktrees?.[sessionId]?.[0] ?? null;
     const chain = await runHelperTask({
       set,

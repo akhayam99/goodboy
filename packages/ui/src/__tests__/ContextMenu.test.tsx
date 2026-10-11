@@ -156,6 +156,12 @@ describe('ContextMenu', () => {
     expect(spies.model).toHaveBeenCalledWith('sonnet');
   });
 
+  it('closes on Escape pressed on the window while focus is outside the menu', () => {
+    const { onClose } = renderMenu();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it('closes on a click outside', () => {
     const { onClose } = renderMenu();
     fireEvent.mouseDown(document.body);

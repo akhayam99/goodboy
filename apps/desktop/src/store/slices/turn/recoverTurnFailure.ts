@@ -31,6 +31,7 @@ import { selectHiddenModels } from '../settings/selectHiddenModels';
 import type { GetFn, SendTurnResult, SetFn, SendTurnInput, TurnLease } from './types';
 import { formatClock } from '../../../shared/utils/time/formatClock';
 import type { TurnContext } from './turnContext';
+import { liveEnabledProviders } from '../models/liveEnabledProviders';
 
 const MIN_USAGE_LIMIT_RETRY_MS = 1_000;
 const MAX_TIMEOUT_MS = 2_147_483_647;
@@ -129,7 +130,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce, r
         connectedProviders,
         attempt: retry?.attempt ?? 0,
         wantsThinker: fallbackWantsThinker({ role: fallbackRole }),
-        enabledProviders: session.providerPreference.enabledProviders ?? null,
+        enabledProviders: liveEnabledProviders({ state: get(), sessionId }) ?? null,
         coolingDownProviders: providersCoolingDown({
           cooldowns: get().providerCooldowns,
           nowMs: Date.now(),

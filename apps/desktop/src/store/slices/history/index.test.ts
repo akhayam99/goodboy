@@ -83,10 +83,12 @@ vi.mock('@goodboy/db', async () =>
     setSetting: vi.fn(async () => undefined),
   }),
 );
+const spawnConfig = vi.hoisted(() => ({ provider: 'anthropic' }));
+
 vi.mock('../../../features/session/taskModelAgentSpawnConfig', () => ({
   taskModelAgentSpawnConfig: () => ({
     hint: '',
-    provider: 'anthropic',
+    provider: spawnConfig.provider,
     model: 'sonnet-5',
     effort: 'medium',
   }),
@@ -99,7 +101,7 @@ import { resetWorktreeStatusCache } from '../worktreeStatuses/cache';
 import { assertCleanTree } from './assertCleanTree';
 import { rewriterCopyFor } from './rewriterCopyFor';
 import { rewriterKickoff } from './rewriterKickoff';
-import type { GetFn, SetFn } from './types';
+import type { GetFn, HistoryRun, SetFn } from './types';
 
 const SESSION_ID = 'session-ledger' as SessionId;
 const PROJECT_ID = 'project-ledger' as ProjectId;
@@ -195,6 +197,7 @@ const DIRTY_TREE = {
 const DIRTY_SENTENCE = '11 files have changes that are not committed. Commit or stash them first.';
 
 beforeEach(() => {
+  spawnConfig.provider = 'anthropic';
   resetWorktreeStatusCache();
   for (const mock of Object.values(engine)) {
     mock.mockReset();
@@ -764,20 +767,57 @@ const TRIED = {
 describe('preflight on a dirty tree', () => {
   const dirtyOnce = () => worktree.worktreeStatus.mockResolvedValueOnce(DIRTY_TREE);
 
-  it('refuses a rebase before any try, copy or agent and records no stop', async () => {
+  it('refuses a rebase before any try, copy or agent and records a dirty stop', async () => {
     const { slice, read, spawnAgent } = harness();
     dirtyOnce();
 
-    await expect(slice.rebaseBranch({ sessionId: SESSION_ID, mountId: MOUNT_ID })).rejects.toThrow(
-      DIRTY_SENTENCE,
+    await expect(slice.rebaseBranch({ sessionId: SESSION_ID, mountId: MOUNT_ID })).resolves.toBe(
+      'stopped',
     );
 
     expect(engine.readRebasePlan).not.toHaveBeenCalled();
     expect(engine.predictHistoryPlan).not.toHaveBeenCalled();
     expect(engine.tryHistoryPlan).not.toHaveBeenCalled();
     expect(spawnAgent).not.toHaveBeenCalled();
-    expect(read().historyRuns[MOUNT_ID]).toBeUndefined();
-    expect(read().recordSessionEvent).not.toHaveBeenCalled();
+    expect(read().historyRuns[MOUNT_ID]).toMatchObject({
+      origin: 'rebase',
+      phase: 'stopped',
+      stop: { reason: 'dirty', message: DIRTY_SENTENCE },
+    });
+    expect(read().recordSessionEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'history_stopped',
+        payload: expect.objectContaining({ origin: 'rebase', reason: 'dirty' }),
+      }),
+    );
+  });
+
+  it('raises the notification for a dirty stop when the user is not on the Branch page', async () => {
+    const { slice, read } = harness();
+    dirtyOnce();
+
+    await slice.rebaseBranch({ sessionId: SESSION_ID, mountId: MOUNT_ID });
+
+    expect(read().reportError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Couldn't rebase fix/ledger-postings",
+        sessionId: SESSION_ID,
+      }),
+    );
+  });
+
+  it('keeps the notification quiet while the Branch page of that session is open', async () => {
+    const { slice, read, seed } = harness();
+    seed({
+      currentSessionId: SESSION_ID,
+      activeLens: { [SESSION_ID]: 'branch' },
+    });
+    dirtyOnce();
+
+    await slice.rebaseBranch({ sessionId: SESSION_ID, mountId: MOUNT_ID });
+
+    expect(read().historyRuns[MOUNT_ID]?.stop?.reason).toBe('dirty');
+    expect(read().reportError).not.toHaveBeenCalled();
   });
 
   it('refuses to sync with the remote and says why', async () => {
@@ -1259,6 +1299,7 @@ describe('restore previous history', () => {
           identity: null,
           movedHead: 'rewrite-two',
           threadShas: [],
+          commitCount: null,
           updatedAt: 1,
         },
       },
@@ -1421,6 +1462,7 @@ describe('bring origin into the plan', () => {
           identity: null,
           movedHead: null,
           threadShas: [],
+          commitCount: null,
           updatedAt: 1,
         },
       },
@@ -1564,5 +1606,176 @@ describe('rewriterKickoff', () => {
     expect(text).toContain('never run git worktree, git stash');
     expect(text).not.toContain('skip it');
     expect(text).toContain('keep the retry key from main');
+  });
+});
+
+describe('the job of a rebase', () => {
+  const rebaseRun = (patch: Partial<HistoryRun>): HistoryRun => ({
+    sessionId: SESSION_ID,
+    mountId: MOUNT_ID,
+    origin: 'rebase',
+    phase: 'applying',
+    planId: null,
+    agentId: AGENT_ID,
+    copyPath: null,
+    stop: null,
+    result: null,
+    backupRef: null,
+    remoteSha: null,
+    holder: null,
+    progress: null,
+    applied: null,
+    identity: null,
+    movedHead: null,
+    threadShas: [],
+    commitCount: null,
+    updatedAt: 0,
+    ...patch,
+  });
+
+  const apply = (slice: ReturnType<typeof harness>['slice']) =>
+    slice.applyHistoryRewrite({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      origin: 'rebase',
+      planId: null,
+      newHead: 'new-head',
+      expectedHead: 'head-sha',
+      map: [],
+      shouldPush: true,
+      byAgent: true,
+      identity: IDENTITY,
+    });
+
+  it('tells the rewritten and pushed events which agent did the work', async () => {
+    const { slice, read, seed } = harness();
+    seed({ historyRuns: { [MOUNT_ID]: rebaseRun({}) } });
+
+    await expect(apply(slice)).resolves.toBe('pushed');
+
+    expect(read().recordSessionEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'history_rewritten',
+        payload: expect.objectContaining({ origin: 'rebase', agentId: AGENT_ID }),
+      }),
+    );
+    expect(read().recordSessionEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'history_pushed',
+        payload: expect.objectContaining({ origin: 'rebase', agentId: AGENT_ID }),
+      }),
+    );
+  });
+
+  it('leaves the agent out of the events of a rebase the engine did alone', async () => {
+    const { slice, read, seed } = harness();
+    seed({ historyRuns: { [MOUNT_ID]: rebaseRun({ agentId: null }) } });
+
+    await apply(slice);
+
+    const rewritten = vi
+      .mocked(read().recordSessionEvent)
+      .mock.calls.find(([params]) => params.kind === 'history_rewritten');
+    expect(rewritten?.[0].payload).not.toHaveProperty('agentId');
+  });
+
+  it('calls a push that failed a failed push and keeps the branch moved', async () => {
+    const { slice, read, seed } = harness();
+    seed({ historyRuns: { [MOUNT_ID]: rebaseRun({}) } });
+    engine.pushWithLease.mockResolvedValue({ kind: 'failed', message: 'pre-push hook declined' });
+
+    await expect(apply(slice)).resolves.toBe('stopped');
+
+    expect(read().historyRuns[MOUNT_ID]).toMatchObject({
+      phase: 'stopped',
+      backupRef: 'refs/goodboy/backup/fix-ledger-postings/1',
+      stop: { reason: 'push-failed', message: 'pre-push hook declined' },
+    });
+  });
+
+  it('stops with no provider when the conflict has nobody to go to', async () => {
+    const { slice, read, spawnAgent } = harness();
+    spawnConfig.provider = '';
+    engine.predictHistoryPlan.mockResolvedValue({
+      isSupported: true,
+      steps: [{ sha: 'a1', outcome: 'conflict', files: ['webhook.ts'], newSha: null }],
+      head: null,
+      isTreeEqual: false,
+      changedFiles: [],
+    });
+    engine.prepareHistoryRewrite.mockResolvedValue({
+      head: null,
+      map: [],
+      isTreeEqual: false,
+      changedFiles: [],
+      stop: { sha: 'a1', index: 0, kind: 'merge', files: ['webhook.ts'], message: '' },
+      copyPath: '/tmp/goodboy-history-copy',
+      order: [],
+      check: null,
+    });
+
+    await expect(slice.rebaseBranch({ sessionId: SESSION_ID, mountId: MOUNT_ID })).resolves.toBe(
+      'stopped',
+    );
+
+    expect(spawnAgent).not.toHaveBeenCalled();
+    expect(read().historyRuns[MOUNT_ID]?.stop).toMatchObject({
+      reason: 'no-provider',
+      files: ['webhook.ts'],
+    });
+  });
+
+  it('counts the commits it replays on the run', async () => {
+    const { slice, read } = harness();
+    engine.predictHistoryPlan.mockResolvedValue({
+      isSupported: true,
+      steps: [],
+      head: 'predicted',
+      isTreeEqual: false,
+      changedFiles: [],
+    });
+    engine.tryHistoryPlan.mockResolvedValue({ ...TRIED, head: 'new-head' });
+
+    await slice.rebaseBranch({ sessionId: SESSION_ID, mountId: MOUNT_ID });
+
+    expect(read().historyRuns[MOUNT_ID]).toMatchObject({ phase: 'pushed', commitCount: 2 });
+  });
+
+  it('marks the rewriter result as being checked while the engine checks it', async () => {
+    const { slice, read, seed } = harness();
+    seed({
+      historyRuns: { [MOUNT_ID]: rebaseRun({ phase: 'rewriting' }) },
+      historyRewriters: {
+        [AGENT_ID]: {
+          sessionId: SESSION_ID,
+          mountId: MOUNT_ID,
+          copyPath: '/tmp/goodboy-history-copy',
+          plan: { worktreePath: '/w/ledger', base: 'onto-sha', head: 'head-sha', steps: [] },
+          origin: 'rebase',
+          planId: null,
+          identity: IDENTITY,
+        },
+      },
+    });
+    let seen: HistoryRun['progress'] = null;
+    engine.collectHistoryRewrite.mockImplementation(async () => {
+      seen = read().historyRuns[MOUNT_ID]?.progress ?? null;
+      return {
+        head: 'rebuilt',
+        map: [],
+        problems: [],
+        isTreeEqual: false,
+        changedFiles: [],
+      };
+    });
+
+    await slice.settleHistoryRewriter({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      assistantText: '<<history-done head="c3">>',
+      hasFailed: false,
+    });
+
+    expect(seen).toEqual({ stage: 'check' });
   });
 });

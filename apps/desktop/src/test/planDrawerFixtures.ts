@@ -222,7 +222,6 @@ export const seedPlanDrawer = ({
     agentTurnState: { [PLAN_FIXTURE_PLANNER]: turn },
     artifactComments: { [PLAN_FIXTURE_SESSION]: [...drafts] },
     artifactCommentSends: {},
-    documentDrawerExpanded: {},
     drawer: null,
     loadArtifactComments: async () => undefined,
   });

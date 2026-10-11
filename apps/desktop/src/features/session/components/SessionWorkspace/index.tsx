@@ -166,7 +166,9 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               ) : null}
               {lens === 'questions' ? <QuestionsPane session={session} /> : null}
               {lens === 'plans' ? <ArtifactStudio sessionId={sessionId} /> : null}
-              {lens === 'workflows' ? <WorkflowsPane session={session} /> : null}
+              {lens === 'workflows' ? (
+                <WorkflowsPane session={session} isActive={isActive && showLens} />
+              ) : null}
               {lens === 'scripts' ? (
                 <ScriptsPanel workspaceId={session.workspaceId} sessionId={sessionId} />
               ) : null}
@@ -229,9 +231,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                   onClose={onSelectOverview}
                 />
               ) : null}
-              {lens === 'explore' ? (
-                <ExplorePane sessionId={sessionId} sessionDir={workingDir} />
-              ) : null}
+              {lens === 'explore' ? <ExplorePane sessionId={sessionId} /> : null}
               <Pane visible={lens === 'agents'}>
                 <PaneBannerContext.Provider
                   value={lens === 'agents' && !showAgentOverlay ? banner : null}

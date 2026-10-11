@@ -17,7 +17,7 @@ import { appendOperatorNotes } from '../../../../session/utils/appendOperatorNot
 import { AgentSpawnConfig } from '../../../../session/components/AgentSpawnConfig';
 import type { AgentSpawnConfigValue } from '../../../../session/agentSpawnConfigValue';
 import { taskModelAgentSpawnConfig } from '../../../../session/taskModelAgentSpawnConfig';
-import { useAutoLimitContext } from '../../../../providers/hooks/useAutoLimitContext';
+import { useResolution } from '../../../../providers/hooks/useResolution';
 import { agentPlace, useAppStore } from '../../../../../store';
 import { useToast } from '../../../../../shared/components/Toast';
 import { useFollowToast } from '../../../../../shared/hooks/useFollowToast';
@@ -34,26 +34,16 @@ type Props = {
 };
 
 export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
-  const session = useAppStore((s) => sessionById(s.sessions, sessionId) ?? null);
-  const workspaceOverrides = useAppStore((s) =>
-    session == null ? null : (s.workspaceOverrides?.[session.workspaceId] ?? null),
-  );
   const createMrForSession = useAppStore((s) => s.createMrForSession);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const { showToast } = useToast();
   const followAgent = useFollowToast();
 
-  const limitContext = useAutoLimitContext();
+  const session = useAppStore((s) => sessionById(s.sessions, sessionId) ?? null);
+  const resolution = useResolution({ task: 'pr_draft', sessionId });
   const resolvedAgentConfig = useMemo(
-    () =>
-      taskModelAgentSpawnConfig({
-        task: 'pr_draft',
-        preferences: workspaceOverrides?.taskModels,
-        workspaceDefaultProviderId: workspaceOverrides?.defaultProviderId,
-        sessionDefaultProviderId: session?.providerPreference?.defaultProvider ?? 'anthropic',
-        limitContext,
-      }),
-    [limitContext, workspaceOverrides, session?.providerPreference?.defaultProvider],
+    () => taskModelAgentSpawnConfig({ resolution }),
+    [resolution],
   );
 
   const [mode, setMode] = useState<CreateMode>('manual');

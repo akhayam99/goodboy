@@ -2,13 +2,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { getCapabilities, orchestratorModelPool, visibleCatalog } from '@goodboy/core';
 import type { ProviderId, SessionId, WorkspaceId } from '@goodboy/types';
-import { aSession } from '@goodboy/types/testing';
+import { EMPTY_OVERRIDES, aSession } from '@goodboy/types/testing';
 import type { ProviderDisplayInfo } from '../../../features/providers/providers';
 import { SETTING_HIDDEN_MODELS } from '../../../features/settings/settings';
 import { useAppStore } from '../../store';
 import { selectKindRouting } from '../agents/selectKindRouting';
-import { autoLimitContext } from '../providerLimits/autoLimitContext';
-import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
+import { selectTaskModel } from '../models/selectTaskModel';
 import { selectHiddenModels } from './selectHiddenModels';
 
 const SESSION_ID = 'ses-ledger' as SessionId;
@@ -86,13 +85,10 @@ describe('a model hidden from the pickers', () => {
 
   it('never puts the summarizer on a hidden Haiku when the task is on Auto', () => {
     seed({ hidden: { anthropic: ['haiku-4.5'] } });
-    const summarizer = resolveLimitedTaskModel({
-      limitContext: autoLimitContext({ state: useAppStore.getState() }),
+    const summarizer = selectTaskModel({
+      state: useAppStore.getState(),
+      sessionId: SESSION_ID,
       task: 'summarizer',
-      preferences: null,
-      connectedProviders: ['anthropic', 'codex'],
-      workspaceDefaultProviderId: 'anthropic',
-      sessionDefaultProviderId: 'anthropic',
     });
 
     expect(summarizer.model).not.toBe('haiku-4.5');
@@ -100,15 +96,20 @@ describe('a model hidden from the pickers', () => {
 
   it('keeps a hidden Haiku when Settings name it for the summarizer', () => {
     seed({ hidden: { anthropic: ['haiku-4.5'] } });
-    const summarizer = resolveLimitedTaskModel({
-      limitContext: autoLimitContext({ state: useAppStore.getState() }),
+    useAppStore.setState({
+      workspaceOverrides: {
+        [WORKSPACE_ID]: {
+          ...EMPTY_OVERRIDES,
+          taskModels: { summarizer: { providerId: 'anthropic', model: 'haiku-4.5' } },
+        },
+      },
+    });
+    const summarizer = selectTaskModel({
+      state: useAppStore.getState(),
+      sessionId: SESSION_ID,
       task: 'summarizer',
-      preferences: { summarizer: { providerId: 'anthropic', model: 'haiku-4.5' } },
-      connectedProviders: ['anthropic', 'codex'],
-      workspaceDefaultProviderId: 'anthropic',
-      sessionDefaultProviderId: 'anthropic',
     });
 
-    expect(summarizer).toEqual({ providerId: 'anthropic', model: 'haiku-4.5' });
+    expect(summarizer).toMatchObject({ providerId: 'anthropic', model: 'haiku-4.5' });
   });
 });

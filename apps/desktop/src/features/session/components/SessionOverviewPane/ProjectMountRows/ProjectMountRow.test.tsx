@@ -22,6 +22,7 @@ const { store, remoteKind } = vi.hoisted(() => ({
     rebaseBranch: vi.fn(async () => 'rebased' as const),
     pushSessionBranch: vi.fn(async () => ({ ok: true as const })),
     unmountMount: vi.fn(async () => ({ kept: false })),
+    forgetMount: vi.fn(async () => ({ keptPath: null })),
     openRewriteHistory: vi.fn(),
     openReviewTarget: vi.fn(async () => ({ kind: 'opened' as const })),
     mountGithub: {} as Record<string, unknown>,
@@ -94,6 +95,7 @@ vi.mock('../../../../../store/slices/worktreeStatuses/cache', () => ({
 }));
 import { tooltipTextOf } from '../../../../../__tests__/helpers/tooltip';
 import { openInEditor } from '../../../../../shared/lib/editor';
+import { MOUNT_CHILD_PAD, MOUNT_ROW_PAD } from './mountGrid';
 import { ProjectMountRow } from './ProjectMountRow';
 
 const sessionId = 'session-1' as SessionId;
@@ -118,7 +120,7 @@ const baseRow: MountRowView = {
   series: null,
   observation: null,
   observedBranchHolder: null,
-  isCompleted: false,
+  isFinished: false,
 };
 
 const viewOf = ({ row }: { readonly row: MountRowView }) => ({
@@ -507,12 +509,37 @@ describe('ProjectMountRow availability', () => {
     await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
   });
 
-  it('keeps the worktree tools out of the menu of a closed row', () => {
+  it('keeps the worktree tools out of the menu of a closed row and shows its two verbs', () => {
     renderRow({ row: detached });
+
+    screen.getByRole('button', { name: 'Reopen for API' });
+    screen.getByRole('button', { name: 'Remove from session for API' });
     openMenu();
 
     expect(screen.queryByRole('menuitem', { name: /Open terminal/ })).toBeNull();
-    expect(screen.getByRole('menuitem', { name: /Remove from session/ })).toBeDefined();
+    expect(screen.queryByRole('menuitem', { name: /Remove from session/ })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: /Reopen/ })).toBeNull();
+    expect(screen.getAllByRole('menuitem').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('confirms Remove from session from a popover anchored to the row and forgets the mount', async () => {
+    renderRow({ row: detached });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remove from session for API' }));
+    const dialog = screen.getByRole('dialog', { name: 'Remove feat/api from this session?' });
+    expect(store.forgetMount).not.toHaveBeenCalled();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Remove' }));
+
+    await waitFor(() =>
+      expect(store.forgetMount).toHaveBeenCalledWith({ sessionId, mountId: 'mount-1' }),
+    );
+  });
+
+  it('draws no menu at all when fewer than two items would be left in it', () => {
+    renderRow({ row: { ...detached, lastWorktreePath: null, isOnDisk: false } });
+
+    expect(screen.queryByRole('button', { name: 'API actions' })).toBeNull();
+    expect(document.querySelector('[aria-haspopup="menu"]')).toBeNull();
   });
 
   it('shows a branch task only on the project it was linked in, not on a namesake branch', () => {
@@ -592,12 +619,21 @@ describe('ProjectMountRow availability', () => {
     expect(screen.getByRole('button', { name: 'Open NW-43 on feat/api' })).toBeDefined();
   });
 
-  it('keeps room at the end of the branch cell for the put on branch button', () => {
+  it('reserves no empty room beside the branch for the put on branch button', () => {
     renderRow({ row: { ...baseRow } });
-    expect(screen.getByTestId('project-mount-branch-cell').dataset.keepsActionRoom).toBe('true');
-    cleanup();
-    renderRow({ row: { ...baseRow, isAttached: false } });
-    expect(screen.getByTestId('project-mount-branch-cell').dataset.keepsActionRoom).toBeUndefined();
+    const cell = screen.getByTestId('project-mount-branch-cell');
+
+    expect(cell.dataset.keepsActionRoom).toBeUndefined();
+    expect(cell.style.paddingRight).toBe('');
+  });
+
+  it('indents the cells of a child row by the shared constant and ends them on the right rail', () => {
+    renderRow({ row: { ...baseRow } });
+    const cells = screen.getByTestId('project-mount-cells');
+
+    expect(cells.dataset.slot).toBe('mount-child');
+    expect(cells.style.paddingLeft).toBe(`${MOUNT_CHILD_PAD}px`);
+    expect(cells.style.paddingRight).toBe(`${MOUNT_ROW_PAD}px`);
   });
 
   it('names the row and its action menu after the mount label', () => {
@@ -626,23 +662,50 @@ describe('ProjectMountRow availability', () => {
     expect(screen.getByTestId('branch-decision')).toBeDefined();
   });
 
-  it('offers Close branch only once the pull request merged', () => {
+  it('always shows Close branch on a live row, and once on a finished one', () => {
     renderRow({
       worktreeStatus: statusWith({ mainDistance: { kind: 'known', ahead: 0, behind: 0 } }),
-      row: { ...baseRow, isCompleted: true, request: { ...openRequest, state: 'merged' } },
+      row: { ...baseRow, isFinished: true, request: { ...openRequest, state: 'merged' } },
     });
 
-    expect(screen.getByRole('button', { name: 'Close branch for API' })).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'Close branch for API' })).toHaveLength(1);
     cleanup();
     store.sessionMounts = {};
     store.mountGithub = {};
     renderRow({});
-    expect(screen.queryByRole('button', { name: 'Close branch for API' })).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Close branch for API' })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'Close branch for API' })?.dataset.size).toBe('xs');
+  });
+
+  it('asks Close branch from a popover anchored to its button, then closes the mount', async () => {
+    renderRow({ worktreeStatus: statusWith({}) });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close branch for API' }));
+    const dialog = screen.getByRole('dialog', { name: 'Close the branch for feat/api?' });
+    expect(store.unmountMount).not.toHaveBeenCalled();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close branch' }));
+
+    await waitFor(() =>
+      expect(store.unmountMount).toHaveBeenCalledWith({ sessionId, mountId: 'mount-1' }),
+    );
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: 'Close the branch for feat/api?' })).toBeNull(),
+    );
+  });
+
+  it('closes the Close branch popover on Cancel without touching the mount', () => {
+    renderRow({ worktreeStatus: statusWith({}) });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close branch for API' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.queryByRole('dialog', { name: 'Close the branch for feat/api?' })).toBeNull();
+    expect(store.unmountMount).not.toHaveBeenCalled();
   });
 });
 
 describe('ProjectMountRow menu', () => {
-  it('lists every action of the worktree, grouped, with the editors one level down', () => {
+  it('lists only the rare verbs of the worktree, grouped, with the editors one level down', () => {
     store.detectedEditors = [{ binary: 'code', label: 'VS Code' }];
     renderRow({ worktreeStatus: statusWith({}) });
     openMenu();
@@ -653,7 +716,8 @@ describe('ProjectMountRow menu', () => {
     expect(labels.some((label) => label.startsWith('Open scripts'))).toBe(true);
     expect(labels.some((label) => label.startsWith('Rewrite history'))).toBe(true);
     expect(labels.some((label) => label.startsWith('Copy path'))).toBe(true);
-    expect(labels.some((label) => label.startsWith('Close branch'))).toBe(true);
+    expect(labels.some((label) => label.startsWith('Close branch'))).toBe(false);
+    expect(labels.some((label) => label.startsWith('Rebase'))).toBe(false);
   });
 
   it('opens rewrite history for this worktree from the row menu', async () => {

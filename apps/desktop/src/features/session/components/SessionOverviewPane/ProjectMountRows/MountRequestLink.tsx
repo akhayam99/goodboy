@@ -51,11 +51,19 @@ export const MountRequestLink = ({ sessionId, row, label }: Props) => {
         }}
         className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1 text-label hover:bg-hover"
       >
-        <PullRequestChip state={state} iconSize={ICON_SIZE.row} />
-        <span className="shrink-0 text-foreground tabular-nums">{request.label}</span>
-        <span className="truncate text-muted-foreground @max-md:hidden">
-          {pullRequestMeta({ state }).label}
-        </span>
+        {row.isFinished ? (
+          <span className="truncate text-muted-foreground tabular-nums">
+            {`${request.label} ${request.state}`}
+          </span>
+        ) : (
+          <>
+            <PullRequestChip state={state} iconSize={ICON_SIZE.row} />
+            <span className="shrink-0 text-foreground tabular-nums">{request.label}</span>
+            <span className="truncate text-muted-foreground @max-md:hidden">
+              {pullRequestMeta({ state }).label}
+            </span>
+          </>
+        )}
       </button>
       {error !== null && (
         <span role="status" className="min-w-0 truncate text-meta text-danger">

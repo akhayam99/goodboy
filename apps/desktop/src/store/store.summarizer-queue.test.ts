@@ -20,6 +20,22 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
+import type { ProviderDisplayInfo } from '../features/providers/providers';
+
+const CONNECTED: ReadonlyArray<ProviderDisplayInfo> = (
+  ['anthropic', 'cursor', 'codex'] as const
+).map((id) => ({
+  id,
+  binary: id,
+  capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },
+  connection: 'connected',
+  version: null,
+  identity: null,
+  label: id,
+  error: null,
+  docsUrl: '',
+}));
+
 let resolveSummarize: (() => void) | null = null;
 type SummarizerUpsert = { readonly key: SlotKey; readonly value: string };
 let summarizerUpserts: ReadonlyArray<SummarizerUpsert> = [];
@@ -264,6 +280,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       await import('./slices/turn/turnHelpers');
     queues.clear();
     useAppStore.setState({
+      providers: CONNECTED,
       sessions: [buildSession()],
       sessionSlots: { [SESSION_ID]: [] },
       summarizerStatus: {},
@@ -395,6 +412,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       await import('./slices/turn/turnHelpers');
     queues.clear();
     useAppStore.setState({
+      providers: CONNECTED,
       sessions: [buildSession()],
       sessionSlots: { [SESSION_ID]: [] },
       summarizerStatus: {},
@@ -442,6 +460,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       await import('./slices/turn/turnHelpers');
     queues.clear();
     useAppStore.setState({
+      providers: CONNECTED,
       sessions: [buildSession()],
       sessionSlots: { [SESSION_ID]: [] },
       summarizerStatus: {},

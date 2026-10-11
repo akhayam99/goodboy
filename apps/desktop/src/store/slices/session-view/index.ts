@@ -7,6 +7,7 @@ import { markSessionOpened } from './markSessionOpened';
 import { setSessionViewPrefs } from './setSessionViewPrefs';
 import { setAgentTab } from './setAgentTab';
 import { setExploreExpanded } from './setExploreExpanded';
+import { setExploreMountPath } from './setExploreMountPath';
 import { setSessionPagesFolded } from './setSessionPagesFolded';
 import { toggleSessionGroup } from './toggleSessionGroup';
 import {
@@ -50,6 +51,7 @@ export const createSessionViewSlice = ({ set, get }: SliceDeps): SessionViewSlic
     toggleSessionGroup: toggleSessionGroup(set),
     setSessionPagesFolded: setSessionPagesFolded(set),
     setExploreExpanded: setExploreExpanded(set),
+    setExploreMountPath: setExploreMountPath(set),
     setAgentTab: setAgentTab(set),
     setActiveLens: setActiveLens(set),
     toggleWorkflowExpand: toggleWorkflowExpand(set),
