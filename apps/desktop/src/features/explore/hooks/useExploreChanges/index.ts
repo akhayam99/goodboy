@@ -28,7 +28,7 @@ export const useExploreChanges = ({ sessionId, mountPath }: Params): ExploreChan
   const baseBranch = useAppStore((state) =>
     mountPath === null ? null : selectMountBaseBranch({ state, sessionId, path: mountPath }),
   );
-  const tickRevision = useMountDiffRevision(sessionId);
+  const tickRevision = useMountDiffRevision({ sessionId });
   const [refreshes, setRefreshes] = useState(0);
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const revision = refreshes === 0 ? tickRevision : `${tickRevision}|refresh-${refreshes}`;

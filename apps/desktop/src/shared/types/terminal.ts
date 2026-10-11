@@ -17,5 +17,6 @@ export type TerminalTab = {
   readonly mountId?: MountId;
   readonly status: TerminalTabStatus;
   readonly exitCode?: number;
+  readonly openError?: string;
   readonly createdAt: number;
 };

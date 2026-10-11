@@ -367,7 +367,7 @@ describe('columnEdgesProbe', () => {
       '<div data-row-id="a"><span data-meta-column="model"></span></div>';
     const column = window.document.querySelector('[data-meta-column="model"]');
     column.getBoundingClientRect = () => ({ right: 321 });
-    const rows = window.eval(`(${columnEdgesProbe.toString()})(["model","action"])`);
+    const rows = window.eval(`(${columnEdgesProbe.toString()})({"names":["model","action"]})`);
     assert.deepEqual(JSON.parse(JSON.stringify(rows)), [
       { row: 'a', edges: { model: 321, action: null } },
     ]);

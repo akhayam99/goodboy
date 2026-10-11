@@ -81,7 +81,7 @@ export const useMountDiffStats = (
     }),
   );
   const targets = useMemo(() => decodeMountTargets(targetCells), [targetCells]);
-  const revision = useMountDiffRevision(sessionId);
+  const revision = useMountDiffRevision({ sessionId });
 
   const [stats, setStats] = useState<ReadonlyMap<string, MountDiffStat>>(EMPTY_MOUNT_DIFF_STATS);
 
