@@ -20,6 +20,9 @@ export const useScopeInfo = (scope: PaletteScope | null): ScopeInfo | null => {
     if (scope.kind === 'workspace') {
       return s.workspaces.find((workspace) => workspace.id === scope.workspaceId)?.name ?? null;
     }
+    if (scope.kind === 'exploreFile') {
+      return scope.facts.name;
+    }
     if (scope.kind === 'commit') {
       return scope.facts.subject === '' ? scope.facts.shortSha : scope.facts.subject;
     }
@@ -80,6 +83,13 @@ export const useScopeInfo = (scope: PaletteScope | null): ScopeInfo | null => {
         noun: 'pull request',
         icon: CONCEPT_ICONS.pr,
         key: `pr:${scope.sessionId}`,
+      };
+    case 'exploreFile':
+      return {
+        title,
+        noun: scope.facts.isDir ? 'folder' : 'file',
+        icon: CONCEPT_ICONS.explore,
+        key: `explore:${scope.sessionId}:${scope.facts.relPath}`,
       };
     case 'commit':
       return {

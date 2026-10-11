@@ -1,9 +1,9 @@
 import { useEffect, useRef, type RefObject } from 'react';
 import { holdPaletteScope } from '../heldPaletteScope';
-import type { CommitScope } from '../types';
+import type { HeldScope } from '../types';
 
 type Params = {
-  readonly scope: CommitScope | null;
+  readonly scope: HeldScope | null;
 };
 
 export const useHeldPaletteScope = <T extends HTMLElement>({

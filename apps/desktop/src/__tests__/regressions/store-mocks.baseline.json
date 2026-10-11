@@ -51,7 +51,6 @@
   "apps/desktop/src/features/diff/components/SessionDiffPane/index.test.tsx": 3,
   "apps/desktop/src/features/diff/hooks/useDiffReviewThreads/index.test.tsx": 1,
   "apps/desktop/src/features/explore/components/ExplorePane/ExploreSpawnPopover.test.tsx": 1,
-  "apps/desktop/src/features/explore/components/ExplorePane/index.test.tsx": 1,
   "apps/desktop/src/features/history/components/CommitsHistory/index.test.tsx": 2,
   "apps/desktop/src/features/history/components/CommitsHistory/useHistoryRunFlow/index.test.ts": 1,
   "apps/desktop/src/features/impact/components/ImpactStudio/spend.test.tsx": 1,

@@ -22,13 +22,13 @@ import {
 } from '../../lib/changeTree';
 import { STATUS_LETTER, STATUS_TONE, STATUS_WORD } from '../../lib/fileStatus';
 import type { ViewedState } from '../../lib/reviewedFiles';
+import { rowHeightOf } from '../../lib/rowHeightOf';
 import {
   WINDOW_MIN_ROWS,
   layoutRows,
-  rowHeightOf,
   scrollTopToReveal,
   windowOf,
-} from '../../lib/windowRows';
+} from '../../../../shared/utils/windowRows';
 import { Delta } from './Delta';
 import { KeyHints } from './KeyHints';
 import { ProgressRing } from './ProgressRing';
@@ -105,7 +105,7 @@ export const ChangeTree = ({
   const revealed = useRef(false);
   const [scrollTop, setScrollTop] = useState(0);
   const [viewport, setViewport] = useState(0);
-  const layout = useMemo(() => layoutRows(rows), [rows]);
+  const layout = useMemo(() => layoutRows({ rows, heightOf: rowHeightOf }), [rows]);
   const isWindowed = rows.length > WINDOW_MIN_ROWS;
   const { start, end } = isWindowed
     ? windowOf({ layout, count: rows.length, scrollTop, viewport })

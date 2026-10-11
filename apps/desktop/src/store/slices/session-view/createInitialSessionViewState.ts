@@ -26,4 +26,5 @@ export const createInitialSessionViewState = ({}: Params) => ({
   resolveItemDrafts: {},
   sessionCreations: {},
   sessionGroupExpanded: {},
+  exploreExpanded: {},
 });

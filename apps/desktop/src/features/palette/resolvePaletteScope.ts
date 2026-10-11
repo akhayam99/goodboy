@@ -1,7 +1,7 @@
 import type { AgentId, SessionId, WorkflowRunId, WorkspaceId } from '@goodboy/types';
 import type { LensKind } from '../../store';
 import { resolveSessionSurfaceLayer } from '../session/resolveSessionSurfaceLayer';
-import type { CommitScope, PaletteScope } from './types';
+import type { HeldScope, PaletteScope } from './types';
 
 type Params = {
   readonly currentWorkspaceId: WorkspaceId | null;
@@ -13,7 +13,7 @@ type Params = {
   readonly hasAppStudio?: boolean;
   readonly focusedRunId?: WorkflowRunId | null;
   readonly prNumber?: number | null;
-  readonly heldScope: CommitScope | null;
+  readonly heldScope: HeldScope | null;
 };
 
 export const resolvePaletteScope = ({

@@ -25,6 +25,7 @@ type RunParams = EntryParams & {
 
 export type ExploreOpen = {
   readonly actionOf: (params: EntryParams) => ExploreOpenAction;
+  readonly canOpen: (params: EntryParams) => boolean;
   readonly run: (params: RunParams) => Promise<ExploreOpenFailure | null>;
 };
 
@@ -56,8 +57,18 @@ export const useExploreOpen = ({ sessionId, sessionDir }: Params): ExploreOpen =
 
   const actionOf = useCallback(
     ({ entry }: EntryParams): ExploreOpenAction =>
-      openActionOf({ projectKind, hasGit, fileKind: fileKindOf({ name: entry.name }), editor }),
+      openActionOf({
+        projectKind,
+        hasGit,
+        fileKind: entry.isDir ? 'text' : fileKindOf({ name: entry.name }),
+        editor,
+      }),
     [editor, hasGit, projectKind],
+  );
+
+  const canOpen = useCallback(
+    ({ entry }: EntryParams): boolean => !entry.isDir || actionOf({ entry }).editor !== null,
+    [actionOf],
   );
 
   const run = useCallback(
@@ -81,5 +92,5 @@ export const useExploreOpen = ({ sessionId, sessionDir }: Params): ExploreOpen =
     [actionOf, sessionDir],
   );
 
-  return useMemo(() => ({ actionOf, run }), [actionOf, run]);
+  return useMemo(() => ({ actionOf, canOpen, run }), [actionOf, canOpen, run]);
 };

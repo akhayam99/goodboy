@@ -12,7 +12,7 @@ vi.mock('@tauri-apps/api/event', () => ({
 
 import type { ReactNode } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { GitMerge, XCircle } from 'lucide-react';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -33,6 +33,7 @@ import { WorkflowRunDetail } from '../../features/session/components/SessionWork
 import { AgentHeaderActions } from '../../features/session/components/AgentHeaderActions';
 import type { ArtifactActionTarget, CommitActionTarget } from '../../features/actions/types';
 import { HistoryCommitRow } from '../../features/history/components/CommitsHistory/HistoryCommitRow';
+import { ExploreTree } from '../../features/explore/components/ExplorePane/ExploreTree';
 import { PaletteOverlay } from '../../features/palette/components/PaletteOverlay';
 import { ToastProvider } from '../../shared/components/Toast';
 import type { RunnableScript } from '../../features/scripts/buildSessionScripts';
@@ -485,6 +486,70 @@ describe('every ⋯ menu and its right click list the same actions in the same o
     expect(fromContext).toEqual(fromOverflow);
     expect(screen.getByText('For this commit')).toBeDefined();
     expect(fromPalette).toEqual(fromOverflow);
+  });
+});
+
+describe('an Explore row lists the same verbs on its buttons, its right click and ⌘K', () => {
+  it('file row: the hover buttons are the right click without Copy path, and ⌘K on the focused row lists them all', async () => {
+    seedActionState({ useAppStore, seed: {} });
+    withMenus(
+      <ExploreTree
+        sessionId={SESSION}
+        sessionDir="/work/harborline/settlement"
+        listing={{
+          entriesByPath: {
+            '': [
+              {
+                name: 'rounding.ts',
+                relPath: 'src/rounding.ts',
+                isDir: false,
+                sizeBytes: 4120,
+                modifiedAt: '2026-09-14T15:40:00Z',
+              },
+            ],
+          },
+          loadingByPath: {},
+          errorByPath: {},
+        }}
+        expanded={{}}
+        selectedRelPath={null}
+        now={Date.parse('2026-09-14T16:40:00Z')}
+        onSetExpanded={vi.fn()}
+        onLoad={vi.fn()}
+        onSelectFile={vi.fn()}
+      />,
+    );
+    const row = screen.getByRole('treeitem', { name: 'rounding.ts' });
+    fireEvent.contextMenu(row);
+    const fromContext = menuLabels();
+    await closeMenus();
+    const buttons = within(row)
+      .getAllByRole('button')
+      .map((button) => button.getAttribute('aria-label'));
+    act(() => row.focus());
+    render(
+      <ToastProvider>
+        <PaletteOverlay onClose={vi.fn()} />
+      </ToastProvider>,
+    );
+    const fromPalette = screen
+      .getAllByRole('option')
+      .map((option) => option.getAttribute('aria-label') ?? '')
+      .slice(0, fromContext.length);
+
+    expect(fromContext).toEqual([
+      'Open',
+      'Show in Finder',
+      'Ask an agent about this file',
+      'Copy path',
+    ]);
+    expect(buttons).toEqual([
+      'Ask an agent about rounding.ts',
+      'Open rounding.ts',
+      'Show rounding.ts in Finder',
+    ]);
+    expect(fromPalette).toEqual(fromContext);
+    expect(screen.getByText('For this file')).toBeDefined();
   });
 });
 

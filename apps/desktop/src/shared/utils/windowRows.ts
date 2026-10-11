@@ -1,25 +1,23 @@
-import type { TreeRow } from './changeTree';
-
-const ROW_PX = 28;
-const ROW_WITH_SOURCE_PX = 44;
 export const WINDOW_MIN_ROWS = 120;
 const OVERSCAN_PX = 280;
 const FALLBACK_VIEWPORT_PX = 800;
-
-export const rowHeightOf = (row: TreeRow): number =>
-  row.kind === 'file' && row.fromPath !== null ? ROW_WITH_SOURCE_PX : ROW_PX;
 
 export type RowLayout = {
   readonly offsets: ReadonlyArray<number>;
   readonly total: number;
 };
 
-export const layoutRows = (rows: ReadonlyArray<TreeRow>): RowLayout => {
+type LayoutParams<Row> = {
+  readonly rows: ReadonlyArray<Row>;
+  readonly heightOf: (row: Row) => number;
+};
+
+export const layoutRows = <Row>({ rows, heightOf }: LayoutParams<Row>): RowLayout => {
   const offsets: number[] = [];
   let total = 0;
   for (const row of rows) {
     offsets.push(total);
-    total += rowHeightOf(row);
+    total += heightOf(row);
   }
   return { offsets, total };
 };
@@ -43,7 +41,7 @@ export const windowOf = ({ layout, count, scrollTop, viewport }: WindowParams): 
   let high = count;
   while (low < high) {
     const mid = (low + high) >> 1;
-    const isAbove = (layout.offsets[mid] ?? 0) + ROW_PX <= from;
+    const isAbove = (layout.offsets[mid + 1] ?? layout.total) <= from;
     low = isAbove ? mid + 1 : low;
     high = isAbove ? high : mid;
   }
