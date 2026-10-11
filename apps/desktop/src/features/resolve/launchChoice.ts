@@ -1,4 +1,9 @@
-import { PROVIDER_IDS, type ResolveCommitStyle, type ResolveLaunchChoice } from '@goodboy/types';
+import {
+  PROVIDER_IDS,
+  type ResolveCommitStyle,
+  type ResolveLaunchChoice,
+  type ResolveLaunchMode,
+} from '@goodboy/types';
 import { EFFORT_LEVELS } from '../chat/utils/chat-constants';
 import type { ResolveModelChoice } from '../chat/spawn-from-comment';
 import type { AgentKindRouting } from '../session/agent-kind';
@@ -7,15 +12,18 @@ type LaunchParams = {
   readonly routing: AgentKindRouting;
   readonly commitStyle: ResolveCommitStyle | null;
   readonly hint: string | null;
+  readonly mode?: ResolveLaunchMode;
 };
 
 export const launchChoiceOf = ({
   routing,
   commitStyle,
   hint,
+  mode = 'apply',
 }: LaunchParams): ResolveLaunchChoice => {
   const trimmed = hint?.trim() ?? '';
   return {
+    mode,
     provider: routing.provider,
     model: routing.model,
     effort: routing.effort ?? null,

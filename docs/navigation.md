@@ -1929,8 +1929,8 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   itself, never in a drawer. A comment reads one word (Question, To review,
   Push failed, Couldn't fix, Working, Ready, Done, Left open, Open) and
   `reviewTally` is the one count behind every number of them. A thread in the address is
-  `s/{session}/branch/comments/t/{thread}`. A comment nobody started shows `Fix` on hover (and `F`), which opens the launch panel
-  in the right column in place of the thread; a checkbox on hover picks comments (`X` on the focused row,
+  `s/{session}/branch/comments/t/{thread}`. A comment nobody started shows `Fix` on hover (and `F`), which opens the **Fix comments** drawer
+  (kind `fix-comments`, side tier) with that comment checked; a checkbox on hover picks comments (`X` on the focused row,
   Cmd+A for every fixable comment, open or couldn't fix, Esc clears) and the bar `N selected ·
 Fix N` opens the same panel, or `Accept N` for comments to review. With no fix run
   the line under the tabs says `Fix N`; the Overview card and

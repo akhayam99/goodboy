@@ -41,7 +41,7 @@
   "apps/desktop/src/features/providers/components/ProviderStudio/ProviderCredentialsSection.tsx": "identifier",
   "apps/desktop/src/features/resolve/components/ReviewFlow/AnswersPanel/AnswerCard.tsx": "path",
   "apps/desktop/src/features/resolve/components/ReviewFlow/FailedRun.tsx": "path",
-  "apps/desktop/src/features/resolve/components/ReviewFlow/LaunchPanel/LaunchPanelRow.tsx": "path",
+  "apps/desktop/src/features/resolve/components/FixCommentsDrawer/FixCommentRow.tsx": "path",
   "apps/desktop/src/features/resolve/components/ReviewFlow/ProposedChange.tsx": "code",
   "apps/desktop/src/features/resolve/components/ReviewFlow/PushBanner.tsx": "sha",
   "apps/desktop/src/features/resolve/components/ReviewFlow/ReviewComment.tsx": "path",

@@ -218,6 +218,9 @@ first-lap-report
 first-run
 fix-run
 fix-run-question
+fixcomments-list
+fixcomments-running
+fixcomments-selected
 floating-surfaces
 foreign-picker
 foreign-stranded

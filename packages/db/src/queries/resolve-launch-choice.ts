@@ -1,4 +1,8 @@
-import { RESOLVE_COMMIT_STYLES, type ResolveLaunchChoice } from '@goodboy/types';
+import {
+  RESOLVE_COMMIT_STYLES,
+  RESOLVE_LAUNCH_MODES,
+  type ResolveLaunchChoice,
+} from '@goodboy/types';
 import { isJsonRecord, parseJsonColumn } from '../shared/parseJsonColumn';
 
 const textOrNull = ({ value }: { readonly value: unknown }): string | null =>
@@ -15,7 +19,9 @@ const choiceOf = ({ value }: { readonly value: unknown }): ResolveLaunchChoice |
   if (!isJsonRecord(value)) {
     return null;
   }
+  const mode = RESOLVE_LAUNCH_MODES.find((candidate) => candidate === value.mode);
   return {
+    ...(mode !== undefined && { mode }),
     provider: textOrNull({ value: value.provider }),
     model: textOrNull({ value: value.model }),
     effort: textOrNull({ value: value.effort }),
