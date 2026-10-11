@@ -23,7 +23,6 @@ import { DisplayMenu } from './DisplayMenu';
 import type { DiffComments, DiffFileActions, DiffThread, DiffViewed } from './types';
 
 export type { DiffComments, DiffThread } from './types';
-export type { IdentifierPeekConfig } from '../IdentifierPeek/PeekHost';
 
 const BATCH_SIZE = 20;
 const SETTLE_FRAMES = 30;
