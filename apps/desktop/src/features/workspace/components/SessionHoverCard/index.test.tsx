@@ -30,6 +30,7 @@ import {
   seedColumn,
   sessionOf,
 } from '../../testing/sessionColumn';
+import { peekGuideChapter } from '../../../settings/components/GuideStudio/guideChapterRequest';
 
 let useAppStore: StoryStore;
 
@@ -254,6 +255,14 @@ describe('what the hover card says', () => {
     const view = openCard('Retry policy for 429s');
     fireEvent.click(view.getByRole('button', { name: 'Open what needs you' }));
     expect(useAppStore.getState().activeLens[retry.id]).toBe('questions');
+    expect(card()).toBeNull();
+  });
+
+  it('ends with a link to the legend that opens the Guide and closes the card', () => {
+    const view = openCard('Fix webhook retries');
+    fireEvent.click(view.getByRole('button', { name: 'What do these marks mean?' }));
+    expect(useAppStore.getState().appStudio).toEqual({ kind: 'guide' });
+    expect(peekGuideChapter()).toBe('legend');
     expect(card()).toBeNull();
   });
 

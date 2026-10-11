@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { ArtifactId, SessionId, WorkspaceId } from '@goodboy/types';
 import type { StorageArtifact, StorageFolder } from '../../../../store/slices/storage/types';
+import { peekGuideChapter } from '../../../settings/components/GuideStudio/guideChapterRequest';
 
 const DAY = 24 * 60 * 60 * 1000;
 const NOW = Date.now();
@@ -272,6 +273,19 @@ describe('StoragePage', () => {
       paths: [dirty.path],
       mode: 'confirmed',
     });
+  });
+
+  it('explains what a worktree is from the row menu, in the Guide Words chapter', () => {
+    const openStudio = vi.fn();
+    state.openStudio = openStudio;
+    render(<StoragePage />);
+    const row = screen.getAllByTestId('storage-folder-row')[0];
+
+    fireEvent.click(within(row!).getByRole('button', { name: 'More actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'What is a worktree?' }));
+
+    expect(openStudio).toHaveBeenCalledWith({ studio: { kind: 'guide' } });
+    expect(peekGuideChapter()).toBe('words');
   });
 
   it('keeps a folder for thirty days from its menu', () => {

@@ -68,6 +68,7 @@ import {
   stubStoryInvoke,
   type StoryStore,
 } from '../../../../store/storyHarness';
+import { peekGuideChapter } from '../../../settings/components/GuideStudio/guideChapterRequest';
 import { ImpactStudio } from './index';
 
 const WORKSPACE_ID = 'workspace-harborline' as WorkspaceId;
@@ -277,6 +278,17 @@ describe('ImpactStudio on the real database', () => {
 
     await waitFor(() => expect(screen.getAllByText('$5.50').length).toBeGreaterThanOrEqual(3));
     within(screen.getByRole('button', { name: /^Spend today/ })).getByText('$5.50');
+  });
+
+  it('links the Spend tab, and only it, to how cost is counted', async () => {
+    renderStudio();
+    expect(screen.queryByRole('button', { name: 'How cost is counted' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Spend' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'How cost is counted' }));
+
+    expect(useAppStore.getState().appStudio).toEqual({ kind: 'guide' });
+    expect(peekGuideChapter()).toBe('tokens');
   });
 
   it('opens a live session from its row and closes the studio', async () => {

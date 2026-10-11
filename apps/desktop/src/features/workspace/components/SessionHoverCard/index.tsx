@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { FLOATING_SURFACE, cn, useEscapeLayer } from '@goodboy/ui';
 import type { Session, SessionAttentionReason, SessionId } from '@goodboy/types';
+import { openGuideChapter } from '../../../settings/openGuideChapter';
 import { SessionHoverCardBody } from './SessionHoverCardBody';
 
 const CARD_WIDTH = 320;
@@ -88,6 +89,10 @@ export const SessionHoverCard = ({
         session={session}
         isArchived={isArchived}
         onOpenAttention={onOpenAttention}
+        onOpenLegend={() => {
+          openGuideChapter({ id: 'legend' });
+          onClose();
+        }}
       />
     </div>,
     document.body,

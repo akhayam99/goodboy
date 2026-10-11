@@ -1,4 +1,4 @@
-import { Bookmark, Clock, Code, Copy, FolderOpen, Trash2 } from 'lucide-react';
+import { Bookmark, CircleHelp, Clock, Code, Copy, FolderOpen, Trash2 } from 'lucide-react';
 import type { ObjectKindDefinition, WorktreeActionTarget } from '../types';
 
 export const KEEP_DAYS = 30;
@@ -15,6 +15,7 @@ export type WorktreeFacts = {
   readonly onKeep: (days: number | null) => void;
   readonly onStopKeeping: () => void;
   readonly onRemove: (intent: WorktreeRemoveIntent) => void;
+  readonly onLearn: () => void;
 };
 
 type FactsOnly = { readonly facts: WorktreeFacts };
@@ -87,6 +88,14 @@ export const WORKTREE_KIND: ObjectKindDefinition<WorktreeActionTarget, WorktreeF
           facts.onRemove(facts.removeIntent);
         }
       },
+    },
+    {
+      id: 'worktree.learn',
+      label: 'What is a worktree?',
+      icon: CircleHelp,
+      group: 'open',
+      when: () => true,
+      run: ({ facts }) => facts.onLearn(),
     },
   ],
 };

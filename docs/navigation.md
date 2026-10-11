@@ -1201,8 +1201,16 @@ still. Its popover leads with Report a bug (with ⌘I, and Draft saved
 when a draft waits), then the version and release notes, the update, the setup
 checklist, then the help rows: Guide first, What's new, keyboard shortcuts, Pair
 your iPhone, Sponsor and Follow on X. Guide opens the guide studio and Pair your
-iPhone the pairing studio, so neither waits behind the palette. The
-addresses live in `shared/lib/productLinks.ts`. Report a bug closes the
+iPhone the pairing studio, so neither waits behind the palette. Every
+studio keeps a door you can see: the flow table in
+`__tests__/surfaces/navigation-flows` gives each row that reaches a studio a
+`door` of `visible` or `palette`, and `studio-doors.test.ts` fails when a studio
+kind has no `visible` row. Three links open the Guide on a chapter and Back
+returns to the page you were on: the session hover card's "What do these marks
+mean?" (Legend), Impact's Spend tab "How cost is counted" (Tokens and cost) and
+the Storage worktree row's "What is a worktree?" (Words). They share
+`features/settings/openGuideChapter.ts`. The addresses live in
+`shared/lib/productLinks.ts`. Report a bug closes the
 popover and opens the report sheet. The popover opens by itself once, when the
 first agent finishes a turn, and never while the setup wizard is open; the
 checklist has no floating card. Only the pinned row does that (and reports the

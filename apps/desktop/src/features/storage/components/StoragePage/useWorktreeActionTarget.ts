@@ -4,6 +4,7 @@ import type { StorageFolder, StorageFolderStatus } from '../../../../store/slice
 import { openInEditor } from '../../../../shared/lib/editor';
 import { resolveEditorBinary } from '../../../../shared/lib/editorSettings';
 import { revealInFileManager } from '../../../../shared/lib/reveal';
+import { openGuideChapter } from '../../../settings/openGuideChapter';
 import type { WorktreeActionTarget } from '../../../actions/types';
 import type { WorktreeRemoveIntent } from '../../../actions/kinds/worktree';
 import type { RemoveIntent } from './FolderRemoveConfirm';
@@ -68,6 +69,7 @@ export const useWorktreeActionTarget = ({ folder, status, onRemove }: Params) =>
           action: () => keepStorageFolder({ path: folder.path, days: null, isStopping: true }),
         }),
       onRemove,
+      onLearn: () => openGuideChapter({ id: 'words' }),
     },
   };
   return { target, onEditor };

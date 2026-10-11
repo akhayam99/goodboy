@@ -4,6 +4,7 @@ import { SegmentedTabs, inlineMarkdownText } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { useAppStore, sessionPlace } from '../../../../store';
+import { openGuideChapter } from '../../../settings/openGuideChapter';
 import type { PaneFrame } from '../../../../shared/types/paneFrame';
 import { ProviderPanel } from '../../../budget/components/spend/ProviderPanel';
 import { SessionPanel } from '../../../budget/components/spend/SessionPanel';
@@ -31,6 +32,8 @@ type Props = {
 };
 
 const SPEND_SCOPE: ImpactScope = { kind: 'spend' };
+
+const IMPACT_META = 'What Goodboy got done, and what it cost.';
 
 export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose }: Props) => {
   const [windowId, setWindowId] = useState<ImpactWindowId>('last30');
@@ -67,9 +70,25 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
     }
   }, [scope, selectedSession]);
 
+  const meta =
+    scope.kind === 'spend' ? (
+      <>
+        {IMPACT_META}{' '}
+        <button
+          type="button"
+          onClick={() => openGuideChapter({ id: 'tokens' })}
+          className="rounded-sm text-foreground underline decoration-border-soft underline-offset-3 hover:decoration-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+        >
+          How cost is counted
+        </button>
+      </>
+    ) : (
+      IMPACT_META
+    );
+
   const frame: PaneFrame = {
     title: 'Impact',
-    meta: 'What Goodboy got done, and what it cost.',
+    meta,
     actions: (
       <SegmentedTabs
         ariaLabel="Impact window"
