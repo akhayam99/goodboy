@@ -2125,6 +2125,8 @@ card 320, session switcher 420. `regressions/popover-widths.test.ts` counts the
 off-scale widths a floating surface declares per file and never lets one
 grow.
 
+**The update card is never clipped.** It is a `Popover` in the popover layer, anchored above the Goodboy chip with 12px to the window edge and never wider than `min(384px, window - 24px)`: it carries the title `<version> is ready` and the Later, What's new and Restart now actions, no lead and no bullets. A `fixed` card inside the sidebar would resolve against the sidebar, which has a transform and `overflow-hidden`.
+
 **An object that belongs to where you are opens in a drawer; the page changes
 only by an explicit command.** A plan read from the planner that wrote it (the
 row in its chat, in its Brief, or a plan row in Activity) stays on the agent
