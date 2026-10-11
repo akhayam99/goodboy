@@ -316,6 +316,7 @@ pub fn run() {
             worktree::worktree_diff,
             worktree::worktree_diff_file,
             worktree::worktree_file_sides,
+            worktree::worktree_grep_word,
             worktree::worktree_changed_files,
             worktree::worktree_commits,
             worktree::worktree_is_ancestor,
