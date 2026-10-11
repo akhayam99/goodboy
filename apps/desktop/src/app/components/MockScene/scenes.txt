@@ -145,6 +145,8 @@ diff-gaps
 diff-gaps-expanded
 diff-gaps-toolarge
 diff-notes
+diff-peek-empty
+diff-peek-open
 drawer-ask-draft
 drawer-headers
 drawer-overlay-narrow

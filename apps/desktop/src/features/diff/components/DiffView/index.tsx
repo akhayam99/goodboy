@@ -17,11 +17,13 @@ import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useDiffWrap } from '../../hooks/useDiffWrap';
 import type { FileSidesLoader } from '../../hooks/useFileSides';
+import { PeekHost, type IdentifierPeekConfig } from '../IdentifierPeek/PeekHost';
 import { DiffFile } from './DiffFile';
 import { DisplayMenu } from './DisplayMenu';
 import type { DiffComments, DiffFileActions, DiffThread, DiffViewed } from './types';
 
 export type { DiffComments, DiffThread } from './types';
+export type { IdentifierPeekConfig } from '../IdentifierPeek/PeekHost';
 
 const BATCH_SIZE = 20;
 const SETTLE_FRAMES = 30;
@@ -48,6 +50,7 @@ type Props = {
   readonly toolbarEnd?: ReactNode;
   readonly belowToolbar?: ReactNode;
   readonly columnWidth?: 'column' | 'full';
+  readonly identifierPeek?: IdentifierPeekConfig | null;
 };
 
 const EMPTY_THREADS: ReadonlyArray<DiffThread> = [];
@@ -84,6 +87,7 @@ export const DiffView = ({
   toolbarEnd,
   belowToolbar = null,
   columnWidth = 'column',
+  identifierPeek = null,
 }: Props) => {
   const isPeek = presentation === 'peek';
   const [savedLayout, setLayout] = useDiffLayoutMode();
@@ -106,6 +110,17 @@ export const DiffView = ({
   const focusFrame = useRef<number | null>(null);
   const onActivePathChangeRef = useRef(onActivePathChange);
   onActivePathChangeRef.current = onActivePathChange;
+  const expandersRef = useRef(new Map<string, () => Promise<void>>());
+  const registerExpandAllRef = useRef(registerExpandAll);
+  registerExpandAllRef.current = registerExpandAll;
+  const trackExpandAll = useCallback((path: string, expand: (() => Promise<void>) | null) => {
+    registerExpandAllRef.current?.(path, expand);
+    if (expand === null) {
+      expandersRef.current.delete(path);
+      return;
+    }
+    expandersRef.current.set(path, expand);
+  }, []);
   const filesRef = useRef(files);
   filesRef.current = files;
   const pathsKey = useMemo(() => files.map((file) => file.path).join('\n'), [files]);
@@ -394,7 +409,7 @@ export const DiffView = ({
           key={file.path}
           file={file}
           loadFileSides={loadFileSides}
-          registerExpandAll={registerExpandAll}
+          registerExpandAll={trackExpandAll}
           layout={layout}
           wrap={wrap}
           threads={threadsByFile.get(file.path) ?? EMPTY_THREADS}
@@ -419,10 +434,19 @@ export const DiffView = ({
     </div>
   );
 
+  const content =
+    identifierPeek === null ? (
+      body
+    ) : (
+      <PeekHost config={identifierPeek} files={files} expandersRef={expandersRef}>
+        {body}
+      </PeekHost>
+    );
+
   if (isPeek) {
     return (
       <ScrollFade className="min-h-0 flex-1" viewportRef={viewportRef} fadeSize={24}>
-        <div className="px-3 pt-1">{body}</div>
+        <div className="px-3 pt-1">{content}</div>
       </ScrollFade>
     );
   }
@@ -454,7 +478,7 @@ export const DiffView = ({
       <div data-slot="diff-view" className="flex min-w-0 flex-col gap-3">
         {toolbar}
         {belowToolbar}
-        {body}
+        {content}
       </div>
     );
   }
@@ -473,7 +497,7 @@ export const DiffView = ({
         fadeSize={24}
         fadeEdges="end"
       >
-        <PageColumn width={columnWidth}>{body}</PageColumn>
+        <PageColumn width={columnWidth}>{content}</PageColumn>
       </ScrollFade>
     </div>
   );

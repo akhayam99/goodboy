@@ -982,6 +982,13 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
   keeps the existing lines and offers Retry; oversized files offer the editor.
   The per-file expand-all registration in
   `features/diff/components/DiffView` lets file actions reveal the whole file.
+- **A double click on a name in a diff line shows where it is defined and used.**
+  Alt click does the same. An anchored popover under the word lists a Defined in
+  group and a Used in group from the worktree, marks files of this change, and
+  says when it shows only the first 300. A result in this diff scrolls to its
+  line and flashes it, expanding the hidden range first when the line sits in
+  one; any other result opens the Explore file drawer on that line. The commit
+  view has no peek, because its lines are not the working tree's.
 - **A fix run has no segment of its own.** Its transcript is a drawer on the
   Comments tab, so the trail reads Session, Branch, Comments.
 - **In the legacy layout, Settings claims its studio band** with Settings, the
