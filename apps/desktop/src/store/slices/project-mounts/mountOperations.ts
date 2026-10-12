@@ -1,13 +1,8 @@
 import { getMountOperation, upsertMountOperation } from '@goodboy/db';
-import type {
-  IsoDateTime,
-  MountId,
-  MountOperation,
-  MountOperationKind,
-  SessionId,
-} from '@goodboy/types';
+import type { MountId, MountOperation, MountOperationKind, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { rearmMountRecovery } from './mountRecoveryGuard';
+import { nowIso } from './nowIso';
 
 export type MountOperationResult = {
   readonly mountId: MountId;
@@ -35,8 +30,6 @@ type SettleParams = {
 type UncertainParams = SettleParams & {
   readonly shouldRearmRecovery?: boolean;
 };
-
-const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
 const PLANNED_MOUNT_KEY = 'plannedMountId';
 
@@ -67,7 +60,7 @@ export const beginMountOperation = async ({
   if (existing !== null && existing.status === 'succeeded') {
     return existing;
   }
-  const timestamp = nowIso();
+  const timestamp = nowIso({});
   const carried =
     (existing === null ? null : readPlanned({ input: existing.input })) ?? planned ?? null;
   const merged =
@@ -112,7 +105,7 @@ export const succeedMountOperation = async ({ operation, result }: SettleParams)
       status: 'succeeded',
       result: result ?? null,
       errorCode: null,
-      updatedAt: nowIso(),
+      updatedAt: nowIso({}),
     },
   });
 };
@@ -124,7 +117,7 @@ export const failMountOperation = async ({ operation, errorCode }: SettleParams)
       ...operation,
       status: 'failed',
       errorCode: errorCode ?? 'unknown-state',
-      updatedAt: nowIso(),
+      updatedAt: nowIso({}),
     },
   });
 };
@@ -142,7 +135,7 @@ export const markMountOperationUncertain = async ({
       status: 'uncertain',
       result: result ?? operation.result,
       errorCode: errorCode ?? 'unknown-state',
-      updatedAt: nowIso(),
+      updatedAt: nowIso({}),
     },
   });
   if (shouldRearmRecovery) {

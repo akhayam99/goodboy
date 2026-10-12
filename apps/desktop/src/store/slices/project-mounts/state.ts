@@ -8,11 +8,13 @@ import type {
   SessionProjectMount,
   ProjectId,
 } from '@goodboy/types';
+import type { MountBranchGoneMap } from './mountBranchGone';
 import type { WriteDestination } from './writeDestination';
 
 export type ProjectMountsState = {
   readonly sessionMounts: Readonly<Record<string, ReadonlyArray<SessionMountView>>>;
   readonly mountBranchObservations: Readonly<Record<string, ReadonlyArray<MountBranchObservation>>>;
+  readonly mountBranchGone: MountBranchGoneMap;
   readonly sessionActiveMount: Readonly<Record<string, MountId | null>>;
   readonly agentTurnDestination: Readonly<Record<AgentId, WriteDestination>>;
 
@@ -26,6 +28,7 @@ export type ProjectMountsState = {
 export const projectMountsInitialState: ProjectMountsState = {
   sessionMounts: {},
   mountBranchObservations: {},
+  mountBranchGone: {},
   sessionActiveMount: {},
   agentTurnDestination: {},
 

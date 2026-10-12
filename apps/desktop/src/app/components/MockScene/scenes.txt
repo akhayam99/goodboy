@@ -267,6 +267,8 @@ goalhint
 goalproposal
 goalreplace
 goaltitlesonly
+gone-branch
+gone-branch-restore
 guide
 guide-words
 header-agent

@@ -28,6 +28,8 @@ export type MountFacts = {
   readonly keptPath: string | null;
   readonly isRepo: boolean;
   readonly isClosed: boolean;
+  readonly isBranchGone: boolean;
+  readonly canRestoreBranch: boolean;
   readonly pr: MountRequestPhase | null;
   readonly requestLabel: string | null;
   readonly requestNumber: number | null;
@@ -84,6 +86,8 @@ type Params = {
   readonly keptPath: string | null;
   readonly isRepo: boolean;
   readonly isAttached: boolean;
+  readonly isBranchGone: boolean;
+  readonly canRestoreBranch: boolean;
   readonly request: {
     readonly state: string;
     readonly isDraft: boolean;
@@ -113,6 +117,8 @@ export const mountFacts = ({
   keptPath,
   isRepo,
   isAttached,
+  isBranchGone,
+  canRestoreBranch,
   request,
   status,
   remoteKind,
@@ -139,6 +145,8 @@ export const mountFacts = ({
     keptPath,
     isRepo,
     isClosed: !isAttached,
+    isBranchGone: !isAttached && isBranchGone,
+    canRestoreBranch: !isAttached && isBranchGone && canRestoreBranch,
     pr: request === null ? null : phaseOf({ state: request.state, isDraft: request.isDraft }),
     requestLabel: request?.label ?? null,
     requestNumber: request?.number ?? null,

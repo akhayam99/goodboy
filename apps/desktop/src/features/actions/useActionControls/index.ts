@@ -27,6 +27,7 @@ export type ActionControls = {
   readonly confirm: (params?: { readonly choice?: string | null }) => Promise<void>;
   readonly cancel: () => void;
   readonly retry: () => void;
+  readonly dismissFailure: () => void;
 };
 
 export const useActionControls = ({ target, anchorKey = null }: Params): ActionControls => {
@@ -103,6 +104,8 @@ export const useActionControls = ({ target, anchorKey = null }: Params): ActionC
     }
   }, [execute, failure]);
 
+  const dismissFailure = useCallback(() => setFailure(null), []);
+
   const inSlot = useCallback(
     ({ slot }: { readonly slot: ActionSlot }) => actions.filter((action) => action.slot === slot),
     [actions],
@@ -119,5 +122,6 @@ export const useActionControls = ({ target, anchorKey = null }: Params): ActionC
     confirm,
     cancel,
     retry,
+    dismissFailure,
   };
 };

@@ -32,6 +32,8 @@ const mountFacts: MountFacts = {
   keptPath: '/work/payments-api',
   isRepo: true,
   isClosed: false,
+  isBranchGone: false,
+  canRestoreBranch: false,
   pr: 'open',
   requestLabel: 'PR #318',
   requestNumber: 318,

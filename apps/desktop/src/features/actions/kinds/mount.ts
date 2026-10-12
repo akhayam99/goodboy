@@ -367,11 +367,25 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
     label: 'Reopen',
     icon: RotateCcw,
     group: 'act',
-    when: ({ facts }) => facts.isClosed,
+    when: ({ facts }) => facts.isClosed && !facts.isBranchGone,
     slot: () => 'inline',
     pendingLabel: () => 'Reopening…',
     run: async ({ facts, env }) => {
       await env.getState().attachMount({ sessionId: facts.sessionId, mountId: facts.mountId });
+    },
+  },
+  {
+    id: 'mount.restoreBranch',
+    label: 'Restore branch',
+    icon: RotateCcw,
+    group: 'act',
+    when: ({ facts }) => facts.canRestoreBranch,
+    slot: () => 'inline',
+    pendingLabel: () => 'Restoring…',
+    run: async ({ facts, env }) => {
+      await env
+        .getState()
+        .restoreGoneBranch({ sessionId: facts.sessionId, mountId: facts.mountId });
     },
   },
   {
@@ -440,6 +454,31 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
     },
   },
   {
+    id: 'mount.removeGone',
+    label: 'Remove',
+    icon: CONCEPT_ICONS.delete,
+    group: 'danger',
+    when: ({ facts }) => facts.isBranchGone,
+    blockedReason: ({ facts }) => facts.blockers[0] ?? null,
+    confirm: ({ facts }) => ({
+      title: `Remove ${facts.label}?`,
+      description:
+        facts.keptPath === null
+          ? 'The branch is already deleted. This only clears the row from the session.'
+          : 'The branch is already deleted. Its kept folder is removed too, unless it holds uncommitted work.',
+      confirmLabel: 'Remove',
+      role: 'danger',
+    }),
+    run: async ({ facts, env }) => {
+      const result = await env
+        .getState()
+        .removeGoneMount({ sessionId: facts.sessionId, mountId: facts.mountId });
+      if (result.kind !== 'forgotten') {
+        throw new Error(result.reason ?? `The folder for ${facts.label} stayed.`);
+      }
+    },
+  },
+  {
     id: 'mount.browseFiles',
     label: 'Browse files',
     icon: CONCEPT_ICONS.explore,
@@ -498,6 +537,8 @@ export const mountFactsFor = ({
       view.diskState === 'missing' || view.diskState === 'removed' ? null : view.lastWorktreePath,
     isRepo: (project?.kind ?? 'repo') === 'repo',
     isAttached,
+    isBranchGone: state.mountBranchGone[mountId] !== undefined,
+    canRestoreBranch: (state.mountBranchGone[mountId]?.restorableBranchId ?? null) !== null,
     request,
     status,
     remoteKind,

@@ -41,3 +41,20 @@ export const mountActionFailureOf = ({
     body: 'Nothing changed.',
   };
 };
+
+const NON_RETRYABLE_CODES: ReadonlySet<string> = new Set([
+  'branch-missing',
+  'mount-missing',
+  'project-missing',
+]);
+
+type RetryParams = {
+  readonly error: unknown;
+};
+
+export const isRetryableMountFailure = ({ error }: RetryParams): boolean => {
+  if (error === null || typeof error !== 'object' || !('code' in error)) {
+    return true;
+  }
+  return typeof error.code !== 'string' || !NON_RETRYABLE_CODES.has(error.code);
+};

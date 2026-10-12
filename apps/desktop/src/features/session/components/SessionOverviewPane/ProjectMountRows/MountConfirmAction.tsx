@@ -1,16 +1,23 @@
 import type { LucideIcon } from 'lucide-react';
-import { ConfirmPopover, IconButton } from '@goodboy/ui';
+import { Button, ConfirmPopover, IconButton } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import type { ActionControls } from '../../../../actions/useActionControls';
 
 type Props = {
   readonly controls: ActionControls;
-  readonly actionId: 'mount.close' | 'mount.forget';
+  readonly actionId: 'mount.close' | 'mount.forget' | 'mount.removeGone';
   readonly label: string;
   readonly glyph: LucideIcon;
+  readonly isLabelShown?: boolean;
 };
 
-export const MountConfirmAction = ({ controls, actionId, label, glyph }: Props) => {
+export const MountConfirmAction = ({
+  controls,
+  actionId,
+  label,
+  glyph,
+  isLabelShown = false,
+}: Props) => {
   const action = controls.actions.find((candidate) => candidate.id === actionId) ?? null;
   const confirm = action?.confirm ?? null;
   if (action === null || confirm === null) {
@@ -42,20 +49,33 @@ export const MountConfirmAction = ({ controls, actionId, label, glyph }: Props) 
       }
       onConfirm={() => controls.confirm()}
       onCancel={controls.cancel}
-      trigger={() => (
-        <IconButton
-          size="xs"
-          variant="ghost"
-          icon={glyph}
-          iconSize={ICON_SIZE.row}
-          label={name}
-          tooltip={action.blockedReason ?? action.label}
-          aria-disabled={isBlocked ? true : undefined}
-          busy={controls.pendingId === actionId}
-          aria-haspopup="dialog"
-          onClick={() => controls.trigger({ actionId })}
-        />
-      )}
+      trigger={() =>
+        isLabelShown ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label={name}
+            aria-disabled={isBlocked ? true : undefined}
+            aria-haspopup="dialog"
+            onClick={() => controls.trigger({ actionId })}
+          >
+            {action.label}
+          </Button>
+        ) : (
+          <IconButton
+            size="xs"
+            variant="ghost"
+            icon={glyph}
+            iconSize={ICON_SIZE.row}
+            label={name}
+            tooltip={action.blockedReason ?? action.label}
+            aria-disabled={isBlocked ? true : undefined}
+            busy={controls.pendingId === actionId}
+            aria-haspopup="dialog"
+            onClick={() => controls.trigger({ actionId })}
+          />
+        )
+      }
     />
   );
 };

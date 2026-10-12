@@ -23,6 +23,10 @@ const { store, remoteKind } = vi.hoisted(() => ({
     pushSessionBranch: vi.fn(async () => ({ ok: true as const })),
     unmountMount: vi.fn(async () => ({ kept: false })),
     forgetMount: vi.fn(async () => ({ keptPath: null })),
+    removeGoneMount: vi.fn(async () => ({ kind: 'forgotten' as const, reason: null })),
+    restoreGoneBranch: vi.fn(async () => undefined),
+    checkMountBranchGone: vi.fn(async () => false),
+    mountBranchGone: {},
     openRewriteHistory: vi.fn(),
     openReviewTarget: vi.fn(async () => ({ kind: 'opened' as const })),
     mountGithub: {} as Record<string, unknown>,
@@ -209,6 +213,7 @@ const openMenu = ({ label = 'API' }: { readonly label?: string } = {}) =>
 
 beforeEach(() => {
   vi.clearAllMocks();
+  store.mountBranchGone = {};
   remoteKind.current = 'github';
   store.terminalTabs = {};
   store.scriptRuns = {};
@@ -509,37 +514,80 @@ describe('ProjectMountRow availability', () => {
     await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
   });
 
-  it('keeps the worktree tools out of the menu of a closed row and shows its two verbs', () => {
+  it('never offers Retry for a reopen that cannot work, and lets the card be dismissed', async () => {
+    store.attachMount.mockRejectedValueOnce(
+      Object.assign(new Error('branch no longer exists: feat/api'), { code: 'branch-missing' }),
+    );
+    renderRow({ row: detached });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reopen for API' }));
+
+    const notice = await screen.findByRole('alert');
+    expect(within(notice).queryByRole('button', { name: 'Retry' })).toBeNull();
+    fireEvent.click(within(notice).getByRole('button', { name: 'Dismiss' }));
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('says Branch deleted instead of offering Reopen, with Remove on the row', async () => {
+    store.mountBranchGone = { 'mount-1': { restorableBranchId: null } };
+    renderRow({ row: detached });
+
+    screen.getByText('Branch deleted');
+    expect(screen.queryByText('Files kept')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Reopen for API' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Restore branch for API' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove for API' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
+
+    await waitFor(() =>
+      expect(store.removeGoneMount).toHaveBeenCalledWith({ sessionId, mountId: 'mount-1' }),
+    );
+  });
+
+  it('offers Restore branch only when a saved copy of the branch exists', async () => {
+    store.mountBranchGone = { 'mount-1': { restorableBranchId: 'deleted-1' } };
+    renderRow({ row: detached });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Restore branch for API' }));
+
+    await waitFor(() =>
+      expect(store.restoreGoneBranch).toHaveBeenCalledWith({ sessionId, mountId: 'mount-1' }),
+    );
+  });
+
+  it('keeps the worktree tools out of the menu of a closed row and puts Remove from session in it', () => {
     renderRow({ row: detached });
 
     screen.getByRole('button', { name: 'Reopen for API' });
-    screen.getByRole('button', { name: 'Remove from session for API' });
+    expect(screen.queryByRole('button', { name: 'Remove from session for API' })).toBeNull();
     openMenu();
 
+    screen.getByRole('menuitem', { name: /Remove from session/ });
     expect(screen.queryByRole('menuitem', { name: /Open terminal/ })).toBeNull();
-    expect(screen.queryByRole('menuitem', { name: /Remove from session/ })).toBeNull();
     expect(screen.queryByRole('menuitem', { name: /Reopen/ })).toBeNull();
     expect(screen.getAllByRole('menuitem').length).toBeGreaterThanOrEqual(2);
   });
 
-  it('confirms Remove from session from a popover anchored to the row and forgets the mount', async () => {
+  it('confirms Remove from session from the row menu and forgets the mount', async () => {
     renderRow({ row: detached });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Remove from session for API' }));
-    const dialog = screen.getByRole('dialog', { name: 'Remove feat/api from this session?' });
+    openMenu();
+    fireEvent.click(screen.getByRole('menuitem', { name: /Remove from session/ }));
     expect(store.forgetMount).not.toHaveBeenCalled();
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Remove' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
 
     await waitFor(() =>
       expect(store.forgetMount).toHaveBeenCalledWith({ sessionId, mountId: 'mount-1' }),
     );
   });
 
-  it('draws no menu at all when fewer than two items would be left in it', () => {
+  it('keeps at least two items in the menu of a closed row whose files are gone', () => {
     renderRow({ row: { ...detached, lastWorktreePath: null, isOnDisk: false } });
 
-    expect(screen.queryByRole('button', { name: 'API actions' })).toBeNull();
-    expect(document.querySelector('[aria-haspopup="menu"]')).toBeNull();
+    openMenu();
+
+    expect(screen.getAllByRole('menuitem').length).toBeGreaterThanOrEqual(2);
+    screen.getByRole('menuitem', { name: /Remove from session/ });
   });
 
   it('shows a branch task only on the project it was linked in, not on a namesake branch', () => {

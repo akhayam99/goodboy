@@ -1,4 +1,5 @@
 import { attachMount } from './attachMount';
+import { checkMountBranchGone } from './checkMountBranchGone';
 import { detachProject } from './detachProject';
 import { ensureProjectMounted } from './ensureProjectMounted';
 import { forgetMount } from './forgetMount';
@@ -7,8 +8,10 @@ import { inspectMount } from './inspectMount';
 import { loadSessionMounts } from './loadSessionMounts';
 import { moveMountToRemoteCommits } from './moveMountToRemoteCommits';
 import { openMountRequest } from './openMountRequest';
+import { removeGoneMount } from './removeGoneMount';
 import { removeMountWorktree } from './removeMountWorktree';
 import { resolveMountBranchMismatch } from './resolveMountBranchMismatch';
+import { restoreGoneBranch } from './restoreGoneBranch';
 import { setSessionActiveMount } from './setSessionActiveMount';
 import { switchMount } from './switchMount';
 import { unmountMount } from './unmountMount';
@@ -25,6 +28,9 @@ export const createProjectMountsSlice = ({ set, get }: SliceDeps) => {
     switchMount: switchMount(set, get),
     moveMountToRemoteCommits: moveMountToRemoteCommits(set, get),
     attachMount: attachMount(set, get),
+    checkMountBranchGone: checkMountBranchGone({ set, get }),
+    removeGoneMount: removeGoneMount({ set, get }),
+    restoreGoneBranch: restoreGoneBranch({ set, get }),
     unmountMount: unmountMount(set, get),
     removeMountWorktree: removeMountWorktree({ set, get }),
     inspectMount: inspectMount(set, get),

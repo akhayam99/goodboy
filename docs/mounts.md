@@ -499,7 +499,7 @@ visible, disabled, with its reason in the tooltip. The row menu
 (`⋯`, also on right click) lists only the rare verbs of the worktree: the terminal, the editor (one submenu level
 of detected editors), scripts, Rewrite history, Switch branch,
 Start new turns here (only with two or more mounts) and the copies. It is not drawn when fewer than two would be left.
-The verbs of every day sit on the row: the state verb (Rebase, Push, Create PR), a quiet Close branch icon that asks in a `ConfirmPopover` (`MountConfirmAction`, from the action's own confirm), Reopen and a quiet Remove from session icon on a closed row, and Close branch as text on a finished row. There are no hover-only icons
+The verbs of every day sit on the row: the state verb (Rebase, Push, Create PR), a quiet Close branch icon that asks in a `ConfirmPopover` (`MountConfirmAction`, from the action's own confirm), Reopen on a closed row (Remove from session sits in its `...` menu), and on a closed row whose branch was deleted locally and on origin the chip reads Branch deleted, Reopen gives way to Restore branch (only when Goodboy kept a saved copy of the branch) and a Remove button that also deletes the kept folder after the dirty-files guard (`checkMountBranchGone`, `removeGoneMount`, `restoreGoneBranch`), a failed Reopen whose cause cannot change (branch gone) shows no Retry and can be dismissed, and Close branch as text on a finished row. There are no hover-only icons
 on the row. When a rebase stops, the notice under the row brings the terminal
 and Abort rebase forward. Below a 28rem container New branch shows its icon
 only. The project row has no menu: `MountActionsMenu` is the quiet Remove from session icon, a `ConfirmPopover` anchored to it

@@ -1,6 +1,9 @@
 import type { ActionControls } from '../../../../../features/actions/useActionControls';
 import { ActionStatusLine } from '../../../../../features/actions/components/ActionControls/ActionStatusLine';
-import { PushFailedError } from '../../../../../features/actions/kinds/PushFailedError';
+import {
+  pushFailedError,
+  type PushFailedError,
+} from '../../../../../features/actions/kinds/pushFailedError';
 import { PushFailureActions } from '../../../../../features/branch/components/BranchHeader/PushFailureActions';
 import { SESSION_ID } from '../resolveSeed';
 import { REBASE_JOB_MOUNT_ID } from '../u24/rebaseJobSeed';
@@ -28,15 +31,17 @@ const controlsOf = ({ error }: ControlsParams): ActionControls => ({
   confirm: async () => undefined,
   cancel: () => undefined,
   retry: () => undefined,
+  dismissFailure: () => undefined,
 });
 
 export const PushFailureScene = ({ variant }: Props) => {
   const isForce = variant === 'force';
-  const error = new PushFailedError({
+  const error = pushFailedError({
     message: HOOK_OUTPUT,
     mountId: REBASE_JOB_MOUNT_ID,
     isForce,
     confirmedOnlyOnline: null,
+    confirmedRemoteSha: null,
   });
   return (
     <div className="flex w-[720px] flex-col gap-2 bg-background p-6">
@@ -50,7 +55,9 @@ export const PushFailureScene = ({ variant }: Props) => {
             mountId={error.mountId}
             isForce={error.isForce}
             confirmedOnlyOnline={null}
+            confirmedRemoteSha={null}
             message={error.message}
+            onResolved={() => undefined}
           />
         }
       />
