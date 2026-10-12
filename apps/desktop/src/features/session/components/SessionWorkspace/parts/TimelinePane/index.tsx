@@ -87,8 +87,14 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
   const isLoading = !rows.isLoaded && entries.length === 0;
   const isSearching = view === 'log' && query.trim() !== '';
   const hasLogEntries = useMemo(
-    () => entriesOfView({ entries, events: rows.events, view: 'log' }).length > 0,
-    [entries, rows.events],
+    () =>
+      entriesOfView({
+        entries,
+        events: rows.events,
+        view: 'log',
+        liveAgentIds: rows.liveAgentIds,
+      }).length > 0,
+    [entries, rows.events, rows.liveAgentIds],
   );
 
   return (

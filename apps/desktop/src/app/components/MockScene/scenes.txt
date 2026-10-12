@@ -303,6 +303,7 @@ monitoring-stopconfirm
 mount-mismatch
 mounts
 needs-you-card
+next-step-rebase
 notifications
 notifications-delete-all
 notifications-empty

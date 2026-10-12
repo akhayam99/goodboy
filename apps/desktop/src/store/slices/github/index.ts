@@ -13,11 +13,21 @@ import { refreshGithubStatus } from './refreshGithubStatus';
 import { refreshSessionPr } from './refreshSessionPr';
 import { refreshSessionPrDetail } from './refreshSessionPrDetail';
 import { selectSessionPr } from './selectSessionPr';
+import { forcePushSessionBranch } from './forcePushSessionBranch';
 import { pushSessionBranch } from './pushSessionBranch';
 import { setGithubToken } from './setGithubToken';
 import { sweepGithub } from './sweepGithub';
 import { refreshDormantPullRequests } from './refreshDormantPullRequests';
 import type { SliceDeps } from '../../slice-types';
+
+type BranchPushParams = {
+  readonly sessionId: SessionId;
+  readonly mountId: MountId;
+};
+
+type ForcePushParams = BranchPushParams & {
+  readonly confirmedOnlyOnline: ReadonlyArray<string> | null;
+};
 
 export const createGithubSlice = ({ set, get }: SliceDeps) => {
   return {
@@ -28,8 +38,10 @@ export const createGithubSlice = ({ set, get }: SliceDeps) => {
     refreshSessionPr: refreshSessionPr(set, get),
     refreshSessionPrDetail: refreshSessionPrDetail(set, get),
     selectSessionPr: selectSessionPr(set, get),
-    pushSessionBranch: (input: { sessionId: SessionId; mountId: MountId }) =>
-      pushSessionBranch({ get, ...input }),
+    pushSessionBranch: ({ sessionId, mountId }: BranchPushParams) =>
+      pushSessionBranch({ get, sessionId, mountId }),
+    forcePushSessionBranch: ({ sessionId, mountId, confirmedOnlyOnline }: ForcePushParams) =>
+      forcePushSessionBranch({ get, sessionId, mountId, confirmedOnlyOnline }),
     createPrForSession: createPrForSession(set, get),
     markPrReady: markPrReady(set, get),
     convertPrToDraft: convertPrToDraft(set, get),

@@ -356,9 +356,7 @@ describe('the job banner', () => {
       },
     });
 
-    expect(screen.getByRole('alert').textContent).toContain(
-      'A pre-push hook stopped it. Details has the output.',
-    );
+    expect(screen.getByRole('alert').textContent).toContain('pre-push hook declined');
     expect(screen.queryByText(/postCredit\.ts 14:7 error/)).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Details' }));

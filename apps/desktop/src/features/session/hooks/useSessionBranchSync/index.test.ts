@@ -6,14 +6,19 @@ import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
 
 const h = vi.hoisted(() => ({
   reconcileSessionBranch: vi.fn(async () => undefined),
+  reportError: vi.fn(async () => undefined),
+  invokeCommand: vi.fn(async (..._args: Array<unknown>): Promise<unknown> => ({ onlyOnline: [] })),
   lastTurnFinishedAt: null as string | null,
   worktreePath: '/sessions/one/api' as string | null,
-  status: vi.fn(async () => ({ branch: 'ak/renamed-by-an-agent' })),
+  status: vi.fn(async (): Promise<unknown> => ({ branch: 'ak/renamed-by-an-agent' })),
 }));
 
 vi.mock('../../../../store', () => ({
   useAppStore: (selector: (state: unknown) => unknown) =>
-    selector({ reconcileSessionBranch: h.reconcileSessionBranch }),
+    selector({
+      reconcileSessionBranch: h.reconcileSessionBranch,
+      reportError: h.reportError,
+    }),
   useSessionLastTurnFinishedAt: () => h.lastTurnFinishedAt,
 }));
 
@@ -24,6 +29,10 @@ vi.mock('../../../../store/slices/worktrees/resolveSessionRepo', () => ({
 
 vi.mock('../../../worktree/worktree', () => ({
   worktreeStatus: () => h.status(),
+}));
+
+vi.mock('../../../../shared/lib/invokeCommand', () => ({
+  invokeCommand: (...args: Array<unknown>) => h.invokeCommand(...args),
 }));
 
 vi.mock('../useIsBranchlessSession', () => ({
@@ -74,5 +83,52 @@ describe('useSessionBranchSync', () => {
     renderHook(() => useSessionBranchSync({ session, isActive: false }));
 
     expect(h.status).not.toHaveBeenCalled();
+  });
+
+  it('reads the online copy when the branch differs from it', async () => {
+    h.status.mockResolvedValueOnce({
+      branch: 'ak/renamed-by-an-agent',
+      upstreamDistance: { kind: 'known', ahead: 2, behind: 1 },
+    });
+
+    renderHook(() => useSessionBranchSync({ session, isActive: true }));
+
+    await waitFor(() =>
+      expect(h.invokeCommand).toHaveBeenCalledWith(
+        'history_origin_ahead',
+        expect.objectContaining({
+          worktreePath: '/sessions/one/api',
+          branch: 'ak/renamed-by-an-agent',
+        }),
+      ),
+    );
+  });
+
+  it('leaves the online copy unread while the branch is level with it', async () => {
+    h.status.mockResolvedValueOnce({
+      branch: 'ak/renamed-by-an-agent',
+      upstreamDistance: { kind: 'known', ahead: 2, behind: 0 },
+    });
+
+    renderHook(() => useSessionBranchSync({ session, isActive: true }));
+    await waitFor(() => expect(h.reconcileSessionBranch).toHaveBeenCalled());
+
+    expect(h.invokeCommand).not.toHaveBeenCalled();
+  });
+
+  it('tells the user when the online copy could not be read', async () => {
+    h.status.mockResolvedValueOnce({
+      branch: 'ak/renamed-by-an-agent',
+      upstreamDistance: { kind: 'known', ahead: 2, behind: 1 },
+    });
+    h.invokeCommand.mockRejectedValueOnce(new Error('offline'));
+
+    renderHook(() => useSessionBranchSync({ session, isActive: true }));
+
+    await waitFor(() =>
+      expect(h.reportError).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Couldn't check the online copy", severity: 'warning' }),
+      ),
+    );
   });
 });

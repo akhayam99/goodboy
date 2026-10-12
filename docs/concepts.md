@@ -285,7 +285,9 @@ It includes:
   `history_pushed`, `history_stopped` and `history_restored`
 
 History rows carry no verb and no `⋯`; the verbs live on the job banner of the Branch page (`docs/features/branch-history.md`). They stay in Activity only while no
-later outcome of the same branch settled them, and the row opens the Commits
+later outcome of the same branch settled them and, for a stop that names a rewriter
+(`agentId`), while that agent still exists: delete the agent and the stop moves to the
+Log and leaves Needs you, and the row opens the Commits
 tab of the Branch page, where the recovery lives. The agent rows of those jobs
 read the job, not the turn of the agent (`jobFactsByAgentId`, the seam beside
 the resolver's in `buildTimelineStream`): History rewriter reads "Rebase on

@@ -131,7 +131,9 @@ export type HistoryRebasePlan = {
 
 export type HistoryOriginAhead = {
   readonly remoteSha: string;
+  readonly knownRemoteSha: string | null;
   readonly commits: ReadonlyArray<HistoryRebaseCommit>;
+  readonly onlyOnline: ReadonlyArray<HistoryRebaseCommit>;
   readonly fetchError: string | null;
 };
 

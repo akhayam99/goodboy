@@ -1323,14 +1323,7 @@ const MOUNT_STATES: ReadonlyArray<
     'diverged from origin',
     { pr: 'open' },
     gitStatus({ unpushed: 1, originAhead: 1 }),
-    [
-      ...WT_PR,
-      ...WT_TOOLS,
-      'mount.push menu (Origin has a commit this branch lacks. Rebase on it first; Rewrite history owns force pushes.)',
-      ...WT_HISTORY,
-      ...WT_COPIES,
-      'mount.close menu',
-    ],
+    [...WT_PR, ...WT_TOOLS, 'mount.push menu', ...WT_HISTORY, ...WT_COPIES, 'mount.close menu'],
   ],
   [
     'rebase stopped',
@@ -1552,12 +1545,7 @@ const DIFF_STATES: ReadonlyArray<
     'diverged',
     'open',
     gitStatus({ unpushed: 1, originAhead: 1 }),
-    [
-      ...DIFF_TOOLS,
-      'diff.push menu (Origin has a commit this branch lacks. Rebase on it first; Rewrite history owns force pushes.)',
-      'diff.rewriteHistory secondary',
-      ...DIFF_TAIL,
-    ],
+    [...DIFF_TOOLS, 'diff.push menu', 'diff.rewriteHistory secondary', ...DIFF_TAIL],
   ],
   [
     'rebase stopped',

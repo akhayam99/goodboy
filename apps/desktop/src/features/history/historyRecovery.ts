@@ -3,6 +3,22 @@ import type { SessionEvent } from '@goodboy/types';
 type Params = {
   readonly event: SessionEvent;
   readonly events: ReadonlyArray<SessionEvent>;
+  readonly liveAgentIds?: ReadonlySet<string>;
+};
+
+type OrphanedStopParams = {
+  readonly event: SessionEvent;
+  readonly liveAgentIds: ReadonlySet<string> | undefined;
+};
+
+const isOrphanedStop = ({ event, liveAgentIds }: OrphanedStopParams): boolean => {
+  const agentId = event.payload?.agentId;
+  return (
+    event.kind === 'history_stopped' &&
+    liveAgentIds !== undefined &&
+    agentId !== undefined &&
+    !liveAgentIds.has(agentId)
+  );
 };
 
 const isHistoryEvent = ({ event }: { readonly event: SessionEvent }): boolean =>
@@ -19,8 +35,12 @@ const isSuperseded = ({ event, events }: Params): boolean => {
   );
 };
 
-export const hasHistoryRecovery = ({ event, events }: Params): boolean => {
-  if (!isHistoryEvent({ event }) || isSuperseded({ event, events })) {
+export const hasHistoryRecovery = ({ event, events, liveAgentIds }: Params): boolean => {
+  if (
+    !isHistoryEvent({ event }) ||
+    isSuperseded({ event, events }) ||
+    isOrphanedStop({ event, liveAgentIds })
+  ) {
     return false;
   }
   if (event.kind === 'history_rewritten') {

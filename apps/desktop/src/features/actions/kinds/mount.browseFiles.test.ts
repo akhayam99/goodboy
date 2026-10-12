@@ -41,6 +41,7 @@ const facts = (overrides: Partial<MountFacts> = {}): MountFacts => ({
   behind: 0,
   dirty: 0,
   isDiverged: false,
+  onlyOnline: null,
   isRebasing: false,
   comments: 0,
   canStartTurnsHere: false,

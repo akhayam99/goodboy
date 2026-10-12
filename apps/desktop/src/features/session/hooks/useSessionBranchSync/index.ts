@@ -3,7 +3,12 @@ import { useShallow } from 'zustand/react/shallow';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore, useSessionLastTurnFinishedAt } from '../../../../store';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
+import {
+  clearOnlyOnline,
+  loadOnlyOnline,
+} from '../../../../store/slices/worktreeStatuses/onlyOnline';
 import { ensure, worktreeStatusKey } from '../../../../store/slices/worktreeStatuses/cache';
+import { distanceBehind } from '../../../../shared/lib/gitStatus';
 import { useIsBranchlessSession } from '../useIsBranchlessSession';
 
 const BRANCH_MAX_AGE_MS = 10_000;
@@ -19,7 +24,10 @@ export const useSessionBranchSync = ({ session, isActive }: Params): void => {
   const sessionRepo = useAppStore(useShallow((state) => resolveSessionRepo({ state, sessionId })));
   const projectWorktreePath = sessionRepo?.worktreePath ?? null;
   const projectMountId = sessionRepo?.mountId ?? null;
+  const projectId = sessionRepo?.projectId ?? null;
+  const workspaceId = session.workspaceId;
   const reconcileSessionBranch = useAppStore((s) => s.reconcileSessionBranch);
+  const reportError = useAppStore((s) => s.reportError);
   const lastTurnFinishedAt = useSessionLastTurnFinishedAt(sessionId);
   const seenTurnRef = useRef<string | null | undefined>(undefined);
 
@@ -47,6 +55,28 @@ export const useSessionBranchSync = ({ session, isActive }: Params): void => {
           worktreePath: projectWorktreePath,
           observedBranch,
         });
+        if (status === null) {
+          return;
+        }
+        if ((distanceBehind({ distance: status.upstreamDistance }) ?? 0) === 0) {
+          clearOnlyOnline({ mountId: projectMountId });
+          return;
+        }
+        void loadOnlyOnline({
+          mountId: projectMountId,
+          worktreePath: projectWorktreePath,
+          branch: observedBranch,
+          workspaceId,
+          projectId,
+        }).catch((error: unknown) =>
+          reportError({
+            title: "Couldn't check the online copy",
+            error,
+            severity: 'warning',
+            sessionId,
+            coalesceKey: `online-copy:${projectMountId}`,
+          }),
+        );
       })
       .catch(() => undefined);
     return () => {
@@ -56,9 +86,12 @@ export const useSessionBranchSync = ({ session, isActive }: Params): void => {
     isActive,
     isBranchless,
     lastTurnFinishedAt,
+    projectId,
     projectMountId,
     projectWorktreePath,
     reconcileSessionBranch,
+    reportError,
     sessionId,
+    workspaceId,
   ]);
 };

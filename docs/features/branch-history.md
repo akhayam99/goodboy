@@ -78,7 +78,7 @@ If someone pushed after you applied, Goodboy lists their new commits and offers 
 
 ### Rebase on main
 
-**Rebase on main** moves the branch onto the latest main and calls an agent only on a conflict. If your uncommitted files are in the way, Goodboy asks once to set them aside and brings them back after the move. A banner under the Branch header follows the rebase and offers the next step if it stops.
+**Rebase on main** moves the branch onto the latest main and calls an agent only on a conflict. If your uncommitted files are in the way, Goodboy asks once to set them aside and brings them back after the move. A banner under the Branch header follows the rebase, says in one line why a push failed, and **Force push** replaces the online copy only if nobody pushed since you last looked.
 
 ### After a pull request merges
 

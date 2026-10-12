@@ -433,4 +433,71 @@ describe('NextStepRow', () => {
     expect(run).toHaveBeenCalledTimes(1);
     expect(runWith).not.toHaveBeenCalled();
   });
+
+  it('hides Not now and takes it out of the tab order while the action runs', () => {
+    const actions: SuggestionActions = {
+      primary: { label: 'Rebase', isDisabled: false, failureTitle: 'Failed', run: vi.fn() },
+      onDismiss: null,
+    };
+    const view = render(
+      <NextStepRow
+        suggestion={suggestion()}
+        actions={actions}
+        compact={false}
+        isPending={false}
+        onNotNow={vi.fn()}
+      />,
+    );
+    screen.getByRole('button', { name: 'Not now' });
+
+    view.rerender(
+      <NextStepRow
+        suggestion={suggestion()}
+        actions={actions}
+        compact={false}
+        isPending
+        onNotNow={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Not now' })).toBeNull();
+    const hidden = screen.getByRole('button', { name: 'Not now', hidden: true });
+    expect(hidden.hasAttribute('disabled')).toBe(true);
+
+    view.rerender(
+      <NextStepRow
+        suggestion={suggestion()}
+        actions={actions}
+        compact={false}
+        isPending={false}
+        onNotNow={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Not now' }).hasAttribute('disabled')).toBe(false);
+  });
+
+  it('hides Not now while the action reports itself busy', () => {
+    const actions: SuggestionActions = {
+      primary: {
+        label: 'Rebasing',
+        isDisabled: true,
+        isBusy: true,
+        failureTitle: 'Failed',
+        run: vi.fn(),
+      },
+      onDismiss: null,
+    };
+    render(
+      <NextStepRow
+        suggestion={suggestion()}
+        actions={actions}
+        compact={false}
+        isPending={false}
+        onNotNow={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Not now' })).toBeNull();
+  });
 });

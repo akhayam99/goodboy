@@ -207,6 +207,26 @@ describe('NextStepSlot', () => {
     expect(reportError).not.toHaveBeenCalled();
   });
 
+  it('hides Not now while the action runs and brings it back when it fails', async () => {
+    let fail: (error: Error) => void = () => undefined;
+    suggestionState.run.mockImplementationOnce(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          fail = reject;
+        }),
+    );
+    suggestionState.list = [suggestion({ id: 'push-branch:mount-web', kind: 'push-branch' })];
+    render(<NextStepSlot session={SESSION} onSelectLens={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Act on push-branch:mount-web' }));
+
+    expect(screen.queryByRole('button', { name: 'Not now' })).toBeNull();
+    await act(async () => {
+      fail(new Error('remote rejected the branch'));
+    });
+    expect(screen.getByRole('button', { name: 'Not now' }).hasAttribute('disabled')).toBe(false);
+  });
+
   it('logs a failed action once with its title and gives the button back', async () => {
     suggestionState.run.mockRejectedValueOnce(new Error('remote rejected the branch'));
     suggestionState.list = [suggestion({ id: 'push-branch:mount-web', kind: 'push-branch' })];

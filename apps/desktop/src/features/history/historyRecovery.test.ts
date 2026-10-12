@@ -127,4 +127,36 @@ describe('history activity rows', () => {
     expect(homes({ events: [stopped] })).toEqual([]);
     expect(homes({ events: [stopped, rewritten] })).toEqual(['log']);
   });
+
+  it('drops a stopped rebase whose agent was deleted and keeps one whose agent is alive', () => {
+    const stopped = event({
+      id: 'ev-1',
+      kind: 'history_stopped',
+      at: '2026-09-26T10:00:00.000Z',
+      payload: { origin: 'rebase', reason: 'conflict', agentId: 'agent-rebase' },
+    });
+    const alive = new Set(['agent-rebase']);
+    const gone = new Set(['agent-other']);
+
+    expect(hasHistoryRecovery({ event: stopped, events: [stopped], liveAgentIds: alive })).toBe(
+      true,
+    );
+    expect(hasHistoryRecovery({ event: stopped, events: [stopped], liveAgentIds: gone })).toBe(
+      false,
+    );
+    expect(hasHistoryRecovery({ event: stopped, events: [stopped] })).toBe(true);
+  });
+
+  it('keeps a stopped rewrite that never had an agent when agents are known', () => {
+    const stopped = event({
+      id: 'ev-1',
+      kind: 'history_stopped',
+      at: '2026-09-26T10:00:00.000Z',
+      payload: { origin: 'plan', reason: 'conflict' },
+    });
+
+    expect(hasHistoryRecovery({ event: stopped, events: [stopped], liveAgentIds: new Set() })).toBe(
+      true,
+    );
+  });
 });

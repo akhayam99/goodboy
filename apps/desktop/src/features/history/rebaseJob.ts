@@ -1,6 +1,7 @@
 import { isHistoryRunActive } from '../../store/slices/history/isHistoryRunActive';
 import type { HistoryRun } from '../../store/slices/history/types';
 import { historyStopCause } from './historyStopCause';
+import { pushErrorLine } from './pushErrorLine';
 
 type RebaseJobState =
   | 'choosing'
@@ -70,6 +71,21 @@ type DetailOfParams = {
 const detailOf = ({ text }: DetailOfParams): string | null => {
   const trimmed = text.trim();
   return trimmed === '' || trimmed === firstLineOf({ text: trimmed }) ? null : trimmed;
+};
+
+type PushFailureLineParams = {
+  readonly reason: string | undefined;
+  readonly message: string;
+};
+
+const pushFailureLine = ({ reason, message }: PushFailureLineParams): string => {
+  const picked = pushErrorLine({ message });
+  if (picked !== '') {
+    return picked;
+  }
+  return historyStopCause({ reason, message }) === 'hook stopped the push'
+    ? 'A pre-push hook stopped it.'
+    : 'The online copy was not updated.';
 };
 
 type FilesLabelOfParams = {
@@ -333,10 +349,7 @@ const copyOf = ({
       return {
         tone: 'danger',
         title: 'Rebased, but the push failed',
-        line:
-          historyStopCause({ reason: stop?.reason, message }) === 'hook stopped the push'
-            ? 'A pre-push hook stopped it. Details has the output.'
-            : 'The online copy was not updated. Details has the output.',
+        line: pushFailureLine({ reason: stop?.reason, message }),
         detail: message.trim() === '' ? null : message.trim(),
       };
     case 'blocked':

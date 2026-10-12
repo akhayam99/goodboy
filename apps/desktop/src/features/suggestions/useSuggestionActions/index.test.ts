@@ -209,6 +209,12 @@ beforeEach(() => {
   for (const spy of Object.values(spies)) {
     spy.mockClear();
   }
+  spies.useRebaseBranch.mockImplementation(() => ({
+    canRebase: false,
+    isRunning: false,
+    error: null,
+    run: spies.rebaseRun,
+  }));
 });
 
 describe('useSuggestionActions', () => {
@@ -301,6 +307,40 @@ describe('useSuggestionActions', () => {
     await vi.waitFor(() => expect(spies.rebaseRun).toHaveBeenCalledTimes(1));
     expect(spies.setSessionActiveProject).not.toHaveBeenCalled();
     expect(spies.rebaseRun).toHaveBeenCalledWith({ mountId: WEB_MOUNT_ID, behind: 2 });
+  });
+
+  it('marks the rebase action busy while a rebase runs', () => {
+    spies.useRebaseBranch.mockImplementation(() => ({
+      canRebase: false,
+      isRunning: true,
+      error: null,
+      run: spies.rebaseRun,
+    }));
+    const actions = actionsFor({
+      suggestion: {
+        ...suggestionBase,
+        id: 'rebase-project:session-1',
+        kind: 'rebase-project',
+        payload: {
+          targets: [
+            {
+              id: 'mount:mount-web',
+              mountId: WEB_MOUNT_ID,
+              projectId: WEB_ID,
+              projectName: 'web',
+              branch: 'feature/web',
+              worktreePath: '/tmp/web',
+              baseBranch: 'main',
+              behind: 2,
+              dirtyCount: 0,
+            },
+          ],
+        },
+      },
+    });
+
+    expect(actions.primary?.label).toBe('Rebasing');
+    expect(actions.primary?.isBusy).toBe(true);
   });
 
   it('runs the second rebase choice with that mount and distance', async () => {

@@ -1,4 +1,4 @@
-use super::{origin_ahead, remote_lease, RemoteLease};
+use super::{commits_only_online, origin_ahead, remote_lease, RemoteLease};
 use crate::history::apply::move_branch_blocking;
 use crate::history::fixtures::{
     branch, commit, fold, git_ok, ledger, picks, plan, run_ok, slug, step, subjects, with_remote,
@@ -49,7 +49,7 @@ fn commits_origin_gained_after_the_apply_come_into_the_plan_and_push_with_lease(
         .unwrap();
     move_branch_blocking(&b.root, "feature", &b.c, &rewritten).unwrap();
 
-    let ahead = origin_ahead(&b.root, "feature", Some(&b.c), None).unwrap();
+    let ahead = origin_ahead(&b.root, "feature", Some(&b.c), None, true).unwrap();
     assert_eq!(ahead.remote_sha, theirs);
     assert_eq!(
         ahead
@@ -90,6 +90,41 @@ fn commits_origin_gained_after_the_apply_come_into_the_plan_and_push_with_lease(
         subjects(&b.root, &format!("{}..feature", b.base)),
         vec!["Teammate adds a note", "C adds notes", "A edits the policy"]
     );
+}
+
+#[test]
+fn the_known_remote_sha_is_the_tracking_ref_from_before_the_fetch() {
+    let b = branch("known-remote");
+    let remote = b.root.join("remote.git");
+    git_ok(&b.root, &["init", "--bare", remote.to_str().unwrap()]);
+    git_ok(
+        &b.root,
+        &["remote", "add", "origin", remote.to_str().unwrap()],
+    );
+    git_ok(&b.root, &["push", "-u", "origin", "feature"]);
+    let other = b.root.join("other");
+    git_ok(
+        &b.root,
+        &[
+            "clone",
+            "-q",
+            "-b",
+            "feature",
+            remote.to_str().unwrap(),
+            other.to_str().unwrap(),
+        ],
+    );
+    git_ok(&other, &["config", "user.email", "test@example.com"]);
+    git_ok(&other, &["config", "user.name", "teammate"]);
+    let theirs = commit(&other, "teammate.txt", "hello\n", "Teammate adds a note");
+    git_ok(&other, &["push", "-q", "origin", "feature"]);
+
+    let ahead = origin_ahead(&b.root, "feature", None, None, false).unwrap();
+    assert_eq!(ahead.known_remote_sha, Some(b.c.clone()));
+    assert_eq!(ahead.remote_sha, theirs);
+
+    let unpushed = origin_ahead(&b.root, "feature", None, None, false).unwrap();
+    assert_eq!(unpushed.known_remote_sha, Some(theirs));
 }
 
 #[test]
@@ -393,4 +428,192 @@ fn restoring_an_older_backup_never_counts_a_later_push_that_carried_a_teammate()
             sha: second_rewrite
         }
     );
+}
+
+fn pushed_branch(name: &str) -> (crate::history::fixtures::Branch, std::path::PathBuf) {
+    let b = branch(name);
+    let remote = b.root.join("remote.git");
+    git_ok(&b.root, &["init", "--bare", remote.to_str().unwrap()]);
+    git_ok(
+        &b.root,
+        &["remote", "add", "origin", remote.to_str().unwrap()],
+    );
+    git_ok(&b.root, &["push", "-u", "origin", "feature"]);
+    (b, remote)
+}
+
+#[test]
+fn a_rebased_branch_has_no_commit_only_online() {
+    let (b, _remote) = pushed_branch("only-online-rebased");
+    git_ok(
+        &b.root,
+        &["commit", "--amend", "--no-verify", "-m", "Reworded"],
+    );
+
+    let ahead = origin_ahead(&b.root, "feature", None, None, false).unwrap();
+    assert!(ahead.only_online.is_empty());
+}
+
+#[test]
+fn a_commit_someone_else_pushed_is_the_only_one_online() {
+    let (b, remote) = pushed_branch("only-online-teammate");
+    let other = b.root.join("other");
+    git_ok(
+        &b.root,
+        &[
+            "clone",
+            "-q",
+            "-b",
+            "feature",
+            remote.to_str().unwrap(),
+            other.to_str().unwrap(),
+        ],
+    );
+    git_ok(&other, &["config", "user.email", "test@example.com"]);
+    git_ok(&other, &["config", "user.name", "teammate"]);
+    let theirs = commit(&other, "teammate.txt", "hello\n", "Teammate adds a note");
+    git_ok(&other, &["push", "-q", "origin", "feature"]);
+    git_ok(
+        &b.root,
+        &["commit", "--amend", "--no-verify", "-m", "Reworded"],
+    );
+
+    let ahead = origin_ahead(&b.root, "feature", None, None, false).unwrap();
+    assert_eq!(
+        ahead
+            .only_online
+            .iter()
+            .map(|c| (c.sha.clone(), c.subject.clone()))
+            .collect::<Vec<_>>(),
+        vec![(theirs, "Teammate adds a note".to_string())]
+    );
+}
+
+#[test]
+fn a_merge_commit_that_exists_only_online_is_listed() {
+    let b = branch("only-online-merge");
+    let remote = b.root.join("remote.git");
+    git_ok(&b.root, &["init", "--bare", remote.to_str().unwrap()]);
+    git_ok(
+        &b.root,
+        &["remote", "add", "origin", remote.to_str().unwrap()],
+    );
+    git_ok(&b.root, &["push", "-u", "origin", "feature"]);
+    let other = b.root.join("other");
+    git_ok(
+        &b.root,
+        &[
+            "clone",
+            "-q",
+            "-b",
+            "feature",
+            remote.to_str().unwrap(),
+            other.to_str().unwrap(),
+        ],
+    );
+    git_ok(&other, &["config", "user.email", "test@example.com"]);
+    git_ok(&other, &["config", "user.name", "teammate"]);
+    git_ok(&other, &["checkout", "-q", "-b", "side"]);
+    commit(
+        &other,
+        "side.txt",
+        "side\n",
+        "Teammate works on a side branch",
+    );
+    git_ok(&other, &["checkout", "-q", "feature"]);
+    commit(&other, "main.txt", "main\n", "Teammate moves feature on");
+    git_ok(
+        &other,
+        &[
+            "merge",
+            "--no-ff",
+            "-q",
+            "-m",
+            "Merge side into feature",
+            "side",
+        ],
+    );
+    git_ok(&other, &["push", "-q", "origin", "feature"]);
+    git_ok(&b.root, &["fetch", "-q", "origin"]);
+    let remote_sha = crate::worktree::resolve_commit(&b.root, "origin/feature").unwrap();
+
+    let listed = commits_only_online(&b.root, &remote_sha).unwrap();
+
+    assert_eq!(
+        listed
+            .iter()
+            .map(|c| c.subject.as_str())
+            .collect::<Vec<_>>(),
+        vec![
+            "Teammate works on a side branch",
+            "Teammate moves feature on",
+            "Merge side into feature"
+        ]
+    );
+}
+
+#[test]
+fn a_remote_only_merge_is_listed_by_origin_ahead_and_refused_only_when_bringing_in() {
+    let b = branch("origin-ahead-merge");
+    let remote = b.root.join("remote.git");
+    git_ok(&b.root, &["init", "--bare", remote.to_str().unwrap()]);
+    git_ok(
+        &b.root,
+        &["remote", "add", "origin", remote.to_str().unwrap()],
+    );
+    git_ok(&b.root, &["push", "-u", "origin", "feature"]);
+    let other = b.root.join("other");
+    git_ok(
+        &b.root,
+        &[
+            "clone",
+            "-q",
+            "-b",
+            "feature",
+            remote.to_str().unwrap(),
+            other.to_str().unwrap(),
+        ],
+    );
+    git_ok(&other, &["config", "user.email", "test@example.com"]);
+    git_ok(&other, &["config", "user.name", "teammate"]);
+    git_ok(&other, &["checkout", "-q", "-b", "side"]);
+    commit(
+        &other,
+        "side.txt",
+        "side\n",
+        "Teammate works on a side branch",
+    );
+    git_ok(&other, &["checkout", "-q", "feature"]);
+    commit(&other, "main.txt", "main\n", "Teammate moves feature on");
+    git_ok(
+        &other,
+        &[
+            "merge",
+            "--no-ff",
+            "-q",
+            "-m",
+            "Merge side into feature",
+            "side",
+        ],
+    );
+    git_ok(&other, &["push", "-q", "origin", "feature"]);
+
+    let ahead = origin_ahead(&b.root, "feature", None, None, false).unwrap();
+    assert_eq!(
+        ahead
+            .only_online
+            .iter()
+            .map(|c| c.subject.as_str())
+            .collect::<Vec<_>>(),
+        vec![
+            "Teammate works on a side branch",
+            "Teammate moves feature on",
+            "Merge side into feature"
+        ]
+    );
+
+    let refused = origin_ahead(&b.root, "feature", None, None, true).unwrap_err();
+    assert!(refused
+        .to_string()
+        .contains("is a merge commit: bring it in by hand"));
 }

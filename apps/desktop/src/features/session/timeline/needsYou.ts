@@ -259,11 +259,13 @@ const ownerOfRow = ({
   itemById,
   events,
   factsByAgentId,
+  liveAgentIds,
 }: {
   readonly item: TimelineRowItem;
   readonly itemById: ReadonlyMap<string, TimelineRowItem>;
   readonly events: ReadonlyArray<SessionEvent>;
   readonly factsByAgentId: ReadonlyMap<string, ResolveActivityFacts>;
+  readonly liveAgentIds: ReadonlySet<string> | undefined;
 }): NeedsYouOwner | null => {
   const { entry } = item;
   const base = {
@@ -279,7 +281,7 @@ const ownerOfRow = ({
     if (entry.event.kind !== 'history_stopped') {
       return null;
     }
-    if (!hasHistoryRecovery({ event: entry.event, events })) {
+    if (!hasHistoryRecovery({ event: entry.event, events, liveAgentIds })) {
       return null;
     }
     return {
@@ -353,6 +355,7 @@ type Params = {
   readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
   readonly events: ReadonlyArray<SessionEvent>;
   readonly resolveFactsByAgentId?: ReadonlyMap<string, ResolveActivityFacts>;
+  readonly liveAgentIds?: ReadonlySet<string>;
 };
 
 export const needsYouOwners = ({
@@ -360,12 +363,19 @@ export const needsYouOwners = ({
   entries,
   events,
   resolveFactsByAgentId = NO_FACTS,
+  liveAgentIds,
 }: Params): ReadonlyArray<NeedsYouOwner> => {
   const rowItems = items.filter((item): item is TimelineRowItem => item.kind === 'row');
   const itemById = new Map(rowItems.map((item) => [item.id, item]));
   const byId = new Map<string, NeedsYouOwner>();
   for (const item of rowItems) {
-    const owner = ownerOfRow({ item, itemById, events, factsByAgentId: resolveFactsByAgentId });
+    const owner = ownerOfRow({
+      item,
+      itemById,
+      events,
+      factsByAgentId: resolveFactsByAgentId,
+      liveAgentIds,
+    });
     if (owner !== null && !byId.has(owner.id)) {
       byId.set(owner.id, owner);
     }

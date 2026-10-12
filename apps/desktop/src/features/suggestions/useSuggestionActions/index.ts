@@ -40,6 +40,7 @@ type Params = {
 type SuggestionAction = {
   readonly label: string;
   readonly isDisabled: boolean;
+  readonly isBusy?: boolean;
   readonly failureTitle: string;
   readonly run: () => Promise<void>;
   readonly choices?: ReadonlyArray<SuggestionActionChoice>;
@@ -232,6 +233,7 @@ export const useSuggestionActions = ({
         primary: {
           label: rebase.isRunning ? 'Rebasing' : 'Rebase',
           isDisabled: firstTarget == null || rebase.isRunning,
+          isBusy: rebase.isRunning,
           failureTitle: REBASE_FAILURE_TITLE,
           run: async () => {
             if (firstTarget == null) {

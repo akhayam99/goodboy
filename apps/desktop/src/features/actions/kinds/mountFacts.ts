@@ -5,6 +5,7 @@ import type {
   SessionId,
   WorktreeStatus,
 } from '@goodboy/types';
+import type { OnlineCommit } from '../../../store/slices/worktreeStatuses/onlyOnline';
 import { changedCount, distanceAhead, distanceBehind } from '../../../shared/lib/gitStatus';
 import {
   branchPushStateOf,
@@ -37,6 +38,7 @@ export type MountFacts = {
   readonly behind: number;
   readonly dirty: number;
   readonly isDiverged: boolean;
+  readonly onlyOnline: ReadonlyArray<OnlineCommit> | null;
   readonly isRebasing: boolean;
   readonly comments: number;
   readonly canStartTurnsHere: boolean;
@@ -96,6 +98,7 @@ type Params = {
   readonly isScribeWriting: boolean;
   readonly blockers: ReadonlyArray<string>;
   readonly editors: ReadonlyArray<MountEditor>;
+  readonly onlyOnline: ReadonlyArray<OnlineCommit> | null;
 };
 
 export const mountFacts = ({
@@ -118,6 +121,7 @@ export const mountFacts = ({
   isScribeWriting,
   blockers,
   editors,
+  onlyOnline,
 }: Params): MountFacts => {
   const ahead = status === null ? 0 : (distanceAhead({ distance: status.mainDistance }) ?? 0);
   const pushState = status === null ? null : branchPushStateOf({ status });
@@ -145,6 +149,7 @@ export const mountFacts = ({
     behind: status === null ? 0 : (distanceBehind({ distance: status.mainDistance }) ?? 0),
     dirty: status === null ? 0 : (changedCount({ workingTree: status.workingTree }) ?? 0),
     isDiverged: upstreamBehind !== null && upstreamBehind > 0,
+    onlyOnline,
     isRebasing: status?.inProgress === 'rebase',
     comments,
     canStartTurnsHere,

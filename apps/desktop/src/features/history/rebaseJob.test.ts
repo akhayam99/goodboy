@@ -156,14 +156,32 @@ describe('a rebase job that stopped', () => {
       'a pre-push hook',
       { reason: 'push-failed', message: 'pre-push hook declined\nlint failed' },
       'Rebased, but the push failed',
-      'A pre-push hook stopped it. Details has the output.',
+      'pre-push hook declined',
       'Stopped: hook stopped the push',
     ],
     [
       'a push without a hook',
       { reason: 'push-failed', message: 'remote unreachable' },
       'Rebased, but the push failed',
-      'The online copy was not updated. Details has the output.',
+      'remote unreachable',
+      'Stopped: push failed',
+    ],
+    [
+      'a protected branch behind remote prefixes',
+      {
+        reason: 'push-failed',
+        message:
+          'remote: Resolving deltas\nremote: error: GH006: Protected branch update failed\nTo https://example.com/acme/payments-api.git',
+      },
+      'Rebased, but the push failed',
+      'error: GH006: Protected branch update failed',
+      'Stopped: push failed',
+    ],
+    [
+      'a push with no output',
+      { reason: 'push-failed', message: '' },
+      'Rebased, but the push failed',
+      'The online copy was not updated.',
       'Stopped: push failed',
     ],
   ];

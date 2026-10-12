@@ -152,6 +152,7 @@ type World = {
   readonly events?: ReadonlyArray<SessionEvent>;
   readonly externalTasks?: ReadonlyArray<SessionExternalTask>;
   readonly worktrees?: ReadonlyArray<SessionWorktree>;
+  readonly liveAgentIds?: ReadonlySet<string>;
 };
 
 const homesOf = ({
@@ -160,6 +161,7 @@ const homesOf = ({
   readonly world: World;
 }): ReadonlyMap<string, ActivityView | null> => {
   const events = world.events ?? [];
+  const liveAgentIds = world.liveAgentIds;
   const { entries } = buildTimelineGroups({
     sessionId: SESSION_ID,
     agents: world.agents ?? [],
@@ -176,7 +178,7 @@ const homesOf = ({
   const homes = new Map<string, ActivityView | null>();
   for (const entry of entries) {
     const home = (['activity', 'log'] as const).find(
-      (view) => entriesOfView({ entries: [entry], events, view }).length === 1,
+      (view) => entriesOfView({ entries: [entry], events, view, liveAgentIds }).length === 1,
     );
     homes.set(entry.id, home ?? null);
   }
@@ -375,6 +377,23 @@ describe('recovery and Needs you for the history of a branch', () => {
 
     expect(homesOf({ world: { events: [stopped] } }).get('event:stopped')).toBeNull();
     expect(homesOf({ world: { events: [stopped, settled] } }).get('event:stopped')).toBe('log');
+  });
+
+  it('sends a stopped rebase to the Log once its agent was deleted', () => {
+    const stopped = event({
+      id: 'stopped',
+      kind: 'history_stopped',
+      payload: { origin: 'rebase', reason: 'conflict', agentId: 'agent-1' },
+    });
+
+    expect(
+      homesOf({ world: { events: [stopped], liveAgentIds: new Set(['agent-1']) } }).get(
+        'event:stopped',
+      ),
+    ).toBeNull();
+    expect(
+      homesOf({ world: { events: [stopped], liveAgentIds: new Set() } }).get('event:stopped'),
+    ).toBe('log');
   });
 });
 
