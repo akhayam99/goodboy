@@ -505,15 +505,6 @@ The title is the only h1 of the page; the trail says `Session > Runs > Run`, the
 Runs crumb or Esc goes back to the list, and no chevron on the page does.
 Scripts reads `[search] [New script]`. A page with no actions draws no `...`.
 
-**Legacy layout.** Settings > App > General > Legacy layout (setting
-`shell.classicBars`, off by default; the stored key kept its name when the
-setting was renamed) brings back the 0.20.0 frame: Board and Chat in the top
-bar, the footer with its doors and integration glyphs, the sessions sidebar
-only inside a session, studios covering it, Settings drawn as a covering studio
-with its own rail and band. The field says it may be removed in a future
-version; the tests of exits, doors and restore run on both arrangements while
-it exists.
-
 A window is a strip, a set of columns, and a pane. Each owns one thing.
 
 **The strip** is one row on the chrome, with no line under it: the edge of the
@@ -1038,8 +1029,9 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
   view has no peek, because its lines are not the working tree's.
 - **A fix run has no segment of its own.** Its transcript is a drawer on the
   Comments tab, so the trail reads Session, Branch, Comments.
-- **In the legacy layout, Settings claims its studio band** with Settings, the
-  scope and the App section (the default shell draws no band for Settings). The scope segment lists App, the workspace, Providers & models and
+- **Settings draws no band in the column.** In the launcher, where it covers the
+  window, it claims its studio band with Settings, the scope and the App
+  section. The scope segment lists App, the workspace, Providers & models and
   Tools; the section segment lists the App sections. Neither carries an
   action: Settings has no project scope, so there is no `Use workspace values`
   to offer. A segment without an action is plain text and has no hover state.
@@ -1089,8 +1081,7 @@ covered.
   (24px icons) name their destination in the tooltip (`Back to Comments ·
 {session}  ⌘[`), sit at 40% with `Nothing to go back to` when the history is
   empty, and open the last 12 entries on right click or a 400ms hold. Board and
-  Chat left the bar for the column (under Legacy layout they come back here, in
-  their old shape). Board, the column's first door, is pressed
+  Chat left the bar for the column. Board, the column's first door, is pressed
   (`aria-current="page"`) on the board and does nothing; over a studio on the
   board it closes the studio; in a session it navigates to the board as a
   history entry. ⌘⇧H does the same. Chat is a door to the `chat` studio on the
@@ -1130,8 +1121,7 @@ covered.
   reset since, and a dashed track means no data. The card tooltip always
   carries every window, its percentage and its reset. A click on any chip, or
   on a provider under `+N`, opens the Providers menu anchored under the strip
-  (`LimitsProvidersMenu`, the same `ProvidersMenuPanel` the classic footer
-  opens): the policy list, Connect for each CLI provider that is missing, and
+  (`LimitsProvidersMenu` and its `ProvidersMenuPanel`): the policy list, Connect for each CLI provider that is missing, and
   Manage providers. Usage stays in the chip tooltip and in Settings >
   Providers & models. Without a workspace a chip still opens that usage page.
   The strip is a toolbar: arrow keys move between chips. With no provider
@@ -1141,8 +1131,7 @@ covered.
   Then Spend, the one door to Impact: the figure with `today`, named `Spend
 today. Open Impact`, opening the Impact studio on its Spend tab (it is never
   merged with a count). The other Impact tabs are reached inside the studio and
-  from ⌘K. The bar holds no Impact icon in the column layout; the Legacy layout
-  keeps its own Impact door in the footer. Last the bell, which opens the
+  from ⌘K. The bar holds no Impact icon. Last the bell, which opens the
   notification popover.
 
 The bar is an `@container/topbar` and degrades on its own width, never the
@@ -1205,12 +1194,10 @@ and opens the report sheet (⌘I), nothing else. On the rail the three keep thei
 place at the bottom: the Settings icon, the bug and the Goodboy mark, which
 carries a dot while an update or setup waits.
 
-The Goodboy row (`app/components/GoodboyChip`, variants `column`, `rail` and
-the classic `footer`) holds everything about Goodboy itself, the way the Apple
+The Goodboy row (`app/components/GoodboyChip`, variants `column` and `rail`) holds everything about Goodboy itself, the way the Apple
 menu or Linear's help menu does. Its label says one thing, in this order: an
 update is ready, setup is unfinished (with its progress), or
-"Goodboy | BETA v<version>" with the installed version. The classic footer
-chip keeps only the mark and the version below the `chrome-labels` width. The version is
+"Goodboy | BETA v<version>" with the installed version. The version is
 `APP_VERSION` (`shared/lib/appVersion.ts`), which the build stamps from
 `apps/desktop/package.json` as `__APP_VERSION__`, so it never waits on Tauri
 and shows in mock scenes too. The update pill is soft, enters once and holds
@@ -1327,11 +1314,6 @@ filter is the tool door, and Connect a tool lives in Settings > Integrations.
   App and Providers & models groups, and Providers opens on an account instead
   of on the workspace defaults. Precedent: VS Code keeps its status bar and
   Manage gear with no folder open.
-- **Under Legacy layout the 0.20.0 footer comes back** (`AppFooter`): the
-  connected integration glyphs and Link integration on the left, the Goodboy
-  chip in the centre, Tasks, Workflows, Impact, Providers and Settings on the
-  right. Its target is a pair, the place and the tool (`FooterTarget`), so a
-  scoped tool glyph and Tasks never light together.
 
 ## Shortcuts
 
@@ -1428,9 +1410,8 @@ Esc and Back land alike. A session key (⌃Tab, ⌥⌘↓, ⌘⇧[) is a forward
 closes Settings on its way. On close, `StudioFrame` gives focus back to what
 opened the studio, or to the studio's door when that is gone (the palette),
 unless focus already sits outside the studio (`restoreStudioOpener`). The
-exceptions are the legacy layout and the workspace launcher, which have no
-column to give. In the legacy layout Settings covers the window as before, with
-its band, its crumbs and its own rail beside the page. In the launcher, Add
+exception is the workspace launcher, which has no column to give. In the
+launcher, Add
 workspace takes the whole window, and so do the app studios: Settings (its
 corner gear, ⌘, or ⌘/ for shortcuts) and the guide. The palette opens there
 too.
@@ -1608,7 +1589,7 @@ terminal in both places. ⌘K has `Terminal` (`goto:terminal`), `New terminal`
   amends the history entry to the concrete page. The rail is the only index,
   portaled into the column (`SettingsColumnNav`, `Back to app` first, then
   `Search settings`, then the groups) in both sidebar states, or drawn beside
-  the page in the legacy layout: its four groups (App, Workspace, Providers &
+  the page in the launcher: its four groups (App, Workspace, Providers &
   models, Integrations) come from `settingsDirectory`. Every row is one 28px
   line of one grammar (`SettingsNavRow`): a group row carries its icon, a page
   row is nested by `PANE_RHYTHM.navRail.nest`, and a row has no second line,

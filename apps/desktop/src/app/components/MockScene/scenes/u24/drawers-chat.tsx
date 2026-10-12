@@ -18,9 +18,7 @@ const noop = () => undefined;
 
 const arrangement = shellArrangement({
   hasWorkspace: true,
-  hasActiveSession: false,
   isSidebarCollapsed: false,
-  mode: 'column',
 });
 
 const CLAUDE: ProviderDisplayInfo = {
@@ -70,7 +68,6 @@ const DrawerSplitChat = () => {
       style={{ width: WINDOW_WIDTH_PX }}
     >
       <AppShell
-        leftHidden={arrangement.leftHidden}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={<div aria-hidden />}
         main={<div />}

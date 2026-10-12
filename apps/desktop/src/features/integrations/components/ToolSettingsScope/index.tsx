@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import { FOOTER_INTEGRATIONS } from '../../../../app/components/AppFooter/categories';
+import { TOOL_CATALOG } from '../../toolCatalog';
 import type { IntegrationGlyphProvider } from '../IntegrationGlyph';
 import { useToolConnections } from '../../useToolConnections';
 import type { ScopeFrame } from '../../../settings/components/SettingsStudio/types';
@@ -19,8 +19,8 @@ export const ToolSettingsScope = ({ workspaceId, initialFocus, frame }: Props) =
   useEffect(() => setFocused(initialFocus ?? null), [initialFocus]);
   const defaultSelection =
     focused ??
-    FOOTER_INTEGRATIONS.find(({ provider }) => !connected[provider])?.provider ??
-    FOOTER_INTEGRATIONS[0]?.provider ??
+    TOOL_CATALOG.find(({ provider }) => !connected[provider])?.provider ??
+    TOOL_CATALOG[0]?.provider ??
     'github';
 
   const selected = github.isResolved ? defaultSelection : null;

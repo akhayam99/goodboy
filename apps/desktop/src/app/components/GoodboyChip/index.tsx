@@ -9,7 +9,6 @@ import { openReportSheet } from '../../../features/bug-report/openReportSheet';
 import { useHasBugReportDraft } from '../../../features/settings/hooks/useHasBugReportDraft';
 import { openUrl } from '../../../shared/lib/editor';
 import { SOCIAL_LINKS, SPONSOR_URL } from '../../../shared/lib/productLinks';
-import { FOOTER_LABEL } from '../AppFooter/FooterButton';
 import { GoodboyChipLabel, type GoodboyChipState } from './GoodboyChipLabel';
 import { GoodboyChipEffects } from './GoodboyChipEffects';
 
@@ -17,7 +16,7 @@ const OPEN_GOODBOY_MENU_EVENT = 'goodboy:open-goodboy-menu';
 const OPEN_PAIR_DEVICE_EVENT = 'goodboy:open-pair-device';
 import { GoodboyMenu } from './GoodboyMenu';
 
-type GoodboyChipVariant = 'footer' | 'column' | 'rail';
+type GoodboyChipVariant = 'column' | 'rail';
 
 type Props = {
   readonly onOpenChangelog: () => void;
@@ -37,13 +36,11 @@ const TRIGGER_LABEL: Record<GoodboyChipState, string> = {
 };
 
 const TRIGGER_SHAPE: Record<GoodboyChipVariant, string> = {
-  footer: 'h-6 gap-1 px-2',
   column: 'h-7 min-w-0 flex-1 gap-2 overflow-hidden px-2',
   rail: 'size-8 shrink-0 justify-center',
 };
 
 const DROPDOWN_ALIGN: Record<GoodboyChipVariant, 'start' | 'center'> = {
-  footer: 'center',
   column: 'start',
   rail: 'start',
 };
@@ -52,7 +49,7 @@ export const GoodboyChip = ({
   onOpenChangelog,
   onOpenGuide,
   onOpenShortcuts,
-  variant = 'footer',
+  variant = 'column',
   isPrimary = true,
 }: Props) => {
   const progress = useOnboardingProgress();
@@ -121,7 +118,6 @@ export const GoodboyChip = ({
           progress={progress}
           installedVersion={version}
           isMarkOnly={variant === 'rail'}
-          {...(variant === 'footer' && { labelClassName: FOOTER_LABEL })}
         />
         {variant === 'rail' && state !== 'rest' ? (
           <StatusDot

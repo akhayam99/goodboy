@@ -1153,7 +1153,7 @@ One ladder of control heights runs through every register: **24** (`xs`),
 | `SegmentedTabs`                      | `xs` frame 28 (inside a title row that also holds actions), `sm` frame 32 (page-level tabs on their own row)    | The tab keeps one weight selected or not; selection is a fill. A group of two to four choices is `SegmentedTabs`; a group of cards with a description is `ChoiceCards`.                                                                                                                             |
 | `Input`, `Textarea`, `Listbox` field | `sm` 28 (default), `md` 32                                                                                      | 12px text, `rounded-md`. `SearchField` (28, search icon, clear button, `ariaLabel` required) is the one search input; it takes a `hint` for a registered shortcut.                                                                                                                                  |
 | `Checkbox`                           | 16 box, 4px radius, inside a 24 hit area                                                                        |                                                                                                                                                                                                                                                                                                     |
-| `Switch`                             | 16 by 28 track inside a 24 target                                                                               | The label names the setting and never says On or Off: the setting goes in `ariaLabel`. The Legacy layout row keeps its state word on purpose.                                                                                                                                                       |
+| `Switch`                             | 16 by 28 track inside a 24 target                                                                               | The label names the setting and never says On or Off: the setting goes in `ariaLabel`.                                                                                                                                                                                                              |
 
 A bar has one control height. Every control in the top bar is 28 and
 `rounded-md`: the history arrows, Board, Chat, the command centre, the bell,
@@ -1802,7 +1802,7 @@ icon outside `packages/ui`, and its baseline only falls. Convert such a button t
 `IconButton` (`tooltipSide` moves its tooltip to the side of a rail).
 
 **One shortcut format.** A tooltip that names a key takes `shortcut="<id>"`, a
-registry id, on `Tooltip`, `IconButton` or a wrapper such as `FooterButton`. The
+registry id, on `Tooltip`, `IconButton` or a wrapper. The
 tooltip draws the label, then the keys from `shortcutGlyphs` as faint `Kbd` text
 a `gap-2` after it: `Ask an agent  ⌘L`, two nodes, never `Ask an agent (⌘L)`
 and never a key typed into the string. `tooltip-shortcuts-use-the-prop` fails on

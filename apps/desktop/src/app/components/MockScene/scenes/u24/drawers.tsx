@@ -27,9 +27,7 @@ const noop = () => undefined;
 
 const arrangement = shellArrangement({
   hasWorkspace: true,
-  hasActiveSession: true,
   isSidebarCollapsed: false,
-  mode: 'column',
 });
 
 type StageProps = {
@@ -55,7 +53,6 @@ const DrawerSplitStage = ({ width, prepare, main }: StageProps) => {
   return (
     <div data-testid="drawer-split-stage" className="[&>div]:w-full" style={{ width }}>
       <AppShell
-        leftHidden={arrangement.leftHidden}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={<div aria-hidden />}
         main={main}

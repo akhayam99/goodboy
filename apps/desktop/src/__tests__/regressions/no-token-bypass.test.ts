@@ -85,7 +85,6 @@ const RULES = [
     allow: [
       'packages/ui/src/components/AppShell.tsx',
       'apps/desktop/src/app/components/AppTopBar/index.tsx',
-      'apps/desktop/src/app/components/AppFooter/index.tsx',
       'apps/desktop/src/app/components/MockScene/scenes/DesignScaleScene.tsx',
       'packages/ui/src/components/StudioRailLayout.tsx',
       'apps/desktop/src/shared/components/StudioShell/DetachedStudio.tsx',

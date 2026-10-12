@@ -27,14 +27,6 @@
       "count": 7
     }
   },
-  "apps/desktop/src/__tests__/footer-studio-reachability.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 10
-    },
-    "@typescript-eslint/no-floating-promises": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/__tests__/helpers/actionFixtures.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 13
@@ -116,7 +108,7 @@
   },
   "apps/desktop/src/__tests__/regressions/collapsed-rail-width.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
+      "count": 1
     }
   },
   "apps/desktop/src/__tests__/regressions/console-guard/unstubbed-calls.fixture.ts": {
@@ -201,7 +193,7 @@
   },
   "apps/desktop/src/__tests__/regressions/sidebar-toggle-axis.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
+      "count": 2
     }
   },
   "apps/desktop/src/__tests__/regressions/spin-border-is-motion-gated.test.ts": {
@@ -268,6 +260,14 @@
   "apps/desktop/src/__tests__/store/unknown-payload.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 4
+    }
+  },
+  "apps/desktop/src/__tests__/footer-studio-reachability.test.tsx": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 10
+    },
+    "@typescript-eslint/no-floating-promises": {
+      "count": 2
     }
   },
   "apps/desktop/src/__tests__/surfaces/context-drawer.test.tsx": {
@@ -498,26 +498,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/app/components/AppFooter/FooterButton.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/app/components/AppFooter/IntegrationAddPopover.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/app/components/AppFooter/IntegrationAddRow.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/app/components/AppFooter/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
-    }
-  },
   "apps/desktop/src/app/components/AppOverlayRouter/index.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 2
@@ -538,11 +518,6 @@
       "count": 19
     }
   },
-  "apps/desktop/src/app/components/AppTopBar/LimitsStrip/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/app/components/AppTopBar/NavCluster/HistoryArrow.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 1
@@ -550,7 +525,7 @@
   },
   "apps/desktop/src/app/components/AppTopBar/NavCluster/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 12
+      "count": 8
     }
   },
   "apps/desktop/src/app/components/AppTopBar/NavCluster/index.tsx": {
@@ -878,11 +853,6 @@
   "apps/desktop/src/app/components/MockScene/scenes/audit/SessionStatesScene.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 4
-    }
-  },
-  "apps/desktop/src/app/components/MockScene/scenes/audit/SettingsFrame.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
     }
   },
   "apps/desktop/src/app/components/MockScene/scenes/audit/SettingsProvidersScene.tsx": {
@@ -1531,9 +1501,6 @@
   "apps/desktop/src/app/hooks/useAppOverlays/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 3
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 4
     }
   },
   "apps/desktop/src/app/hooks/useAppOverlays/index.ts": {
@@ -1556,14 +1523,9 @@
       "count": 1
     }
   },
-  "apps/desktop/src/app/shellArrangement/index.test.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/app/shellArrangement/index.ts": {
     "@typescript-eslint/naming-convention": {
-      "count": 3
+      "count": 2
     }
   },
   "apps/desktop/src/features/actions/chatSelectionTarget.test.ts": {
@@ -5877,11 +5839,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/session/components/SessionNavSidebar/parts/CollapsedRail.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/session/components/SessionOverviewPane/ChatOriginRow.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 13
@@ -6775,11 +6732,6 @@
     }
   },
   "apps/desktop/src/features/settings/components/SettingsStudio/ClassicComposerKeysField.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/features/settings/components/SettingsStudio/LegacyLayoutField.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 2
     }

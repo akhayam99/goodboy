@@ -1,7 +1,6 @@
 import { UndoToastBridge } from './app/components/UndoToastBridge';
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { AppShell } from '@goodboy/ui';
-import { AppFooter } from './app/components/AppFooter';
 import type { SessionId } from '@goodboy/types';
 import { BootSplash } from './app/components/BootSplash';
 import { KeepAliveWorkSurface } from './app/components/KeepAliveWorkSurface';
@@ -22,7 +21,6 @@ import { SidebarPeekOverlay } from './features/workspace/components/SidebarPeekO
 import { ShellLeft } from './app/components/SideColumn/ShellLeft';
 import type { ColumnActions } from './app/components/SideColumn/columnDoors';
 import { useGoToBoard } from './app/hooks/useGoToBoard';
-import { useClassicBars } from './shared/hooks/useClassicBars';
 import { useWindowPresence } from './features/workspace/hooks/useWindowPresence';
 import { useWindowLayout } from './features/workspace/hooks/useWindowLayout';
 import { isMainWindow } from './features/workspace/window';
@@ -55,10 +53,9 @@ import { useRunWatchdog } from './features/workflows/hooks/useRunWatchdog';
 import { useSessionFocusRecheck } from './features/session/hooks/useSessionFocusRecheck';
 import { useSessionPinsSync } from './features/workspace/hooks/useSessionPinsSync';
 import { useUpdaterPolling } from './features/updater/hooks/useUpdaterPolling';
-import { useConnectedIntegrations } from './features/integrations/hooks/useConnectedIntegrations';
 import { useAsyncSubscription } from './app/hooks/useAsyncSubscription';
 import { useSessionSidebarVisibility } from './features/workspace/hooks/useSessionSidebarVisibility';
-import { shellArrangement, type ShellMode } from './app/shellArrangement';
+import { shellArrangement } from './app/shellArrangement';
 import { DrawerHost } from './app/components/DrawerHost';
 import { selectIsSessionDraftShown } from './store/slices/sessionDraft/selectIsSessionDraftShown';
 import { selectDrawerPanel } from './store/slices/drawer/selectDrawerPanel';
@@ -98,39 +95,28 @@ export const App = () => {
   const currentSession = useCurrentSession();
   const currentWorkspaceSessions = useSessions();
   const isDraftShown = useAppStore((s) => selectIsSessionDraftShown({ state: s }));
-  const hasActiveSession = currentSession != null || isDraftShown;
-  const isClassicBars = useClassicBars();
-  const shellMode: ShellMode = isClassicBars ? 'classic' : 'column';
   const isSettingsOpen = useAppStore((s) => s.appStudio?.kind === 'settings');
-  const sessionSidebar = useSessionSidebarVisibility({
-    hasSidebar: shellMode === 'column' || hasActiveSession,
-  });
+  const sessionSidebar = useSessionSidebarVisibility({ hasSidebar: true });
   const [settingsColumnSlot, setSettingsColumnSlot] = useState<HTMLDivElement | null>(null);
-  const connected = useConnectedIntegrations({ workspaceId: currentWorkspaceId });
   const [keepAliveIds, setKeepAliveIds] = useState<ReadonlyArray<SessionId>>([]);
   const isWorkspaceLauncherBranch = hasWorkspaces && currentWorkspace === null && isMainWindow();
   const arrangement = shellArrangement({
     hasWorkspace: currentWorkspace != null,
-    hasActiveSession,
     isSidebarCollapsed: sessionSidebar.isCollapsed,
-    mode: shellMode,
     isSettingsOpen,
   });
   const goToBoard = useGoToBoard();
   const {
-    footer,
     armDeleteConfirm,
     openAddWorkspace,
     openChangelog,
     openChat,
     openGuide,
     openInbox,
-    openIntegration,
     openPalette,
     openSettings,
     openShortcutHelp,
     openSpend,
-    openImpact,
     openWorkflows,
     openTerminalStudio,
     openNewChat,
@@ -140,7 +126,6 @@ export const App = () => {
     studio,
     layers,
   } = useAppOverlays({
-    connected,
     currentSession,
     currentWorkspace,
     workspaceProjectRoot,
@@ -236,7 +221,6 @@ export const App = () => {
     openNewChat,
     openShortcutHelp,
     toggleSidebar: sessionSidebar.toggle,
-    sidebarToggleScope: shellMode === 'column' ? 'everywhere' : 'session',
   });
 
   const renderedSessionIds = useMemo<ReadonlyArray<SessionId>>(() => {
@@ -298,43 +282,22 @@ export const App = () => {
         <AppShell
           topBar={
             <AppTopBar
-              mode={arrangement.mode}
               onOpenSpend={openSpend}
               onOpenScript={openScript}
               openProviderId={settingsProviderId}
             />
           }
-          footer={
-            arrangement.footer === null ? undefined : (
-              <AppFooter
-                scope={arrangement.footer}
-                target={footer}
-                connected={connected}
-                onOpenIntegration={openIntegration}
-                onOpenInbox={openInbox}
-                onOpenWorkflows={openWorkflows}
-                onOpenImpact={openImpact}
-                onOpenSettings={openSettings}
-                onOpenChangelog={openChangelog}
-                onOpenGuide={openGuide}
-                onOpenShortcuts={openShortcutHelp}
-              />
-            )
-          }
-          leftHidden={arrangement.leftHidden}
           leftSidebarCollapsed={arrangement.isLeftRail}
           leftSidebar={
-            arrangement.leftSlot === 'none' ? undefined : (
-              <ShellLeft
-                arrangement={arrangement}
-                workspaceId={currentWorkspaceId}
-                currentSessionId={currentSession?.id ?? null}
-                isDraftShown={isDraftShown}
-                actions={columnActions}
-                onToggle={sessionSidebar.toggle}
-                settingsSlotRef={setSettingsColumnSlot}
-              />
-            )
+            <ShellLeft
+              arrangement={arrangement}
+              workspaceId={currentWorkspaceId}
+              currentSessionId={currentSession?.id ?? null}
+              isDraftShown={isDraftShown}
+              actions={columnActions}
+              onToggle={sessionSidebar.toggle}
+              settingsSlotRef={setSettingsColumnSlot}
+            />
           }
           leftOverlay={
             arrangement.leftOverlaySlot === 'peek' ? (
@@ -381,11 +344,7 @@ export const App = () => {
               ) : currentWorkspace && isDraftShown ? (
                 <SessionDraftPane workspaceId={currentWorkspace.id} />
               ) : currentWorkspace ? (
-                <StageBoard
-                  workspaceId={currentWorkspace.id}
-                  sessions={currentWorkspaceSessions}
-                  hasNewSession={arrangement.mode === 'classic'}
-                />
+                <StageBoard workspaceId={currentWorkspace.id} sessions={currentWorkspaceSessions} />
               ) : (
                 <NoWorkspaceScreen onAddWorkspace={openAddWorkspace} />
               )}

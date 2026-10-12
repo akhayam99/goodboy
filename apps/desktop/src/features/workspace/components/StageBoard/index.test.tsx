@@ -218,7 +218,7 @@ describe('StageBoard loading gate', () => {
     expect(screen.queryByLabelText('Loading board')).toBeNull();
     expect(screen.getByText('Start your first session')).toBeDefined();
     expect(screen.getByRole('heading', { level: 1, name: 'Board' })).toBeDefined();
-    expect(screen.getAllByRole('button', { name: 'New session' })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: 'New session' })).toHaveLength(1);
   });
 
   it('renders stage columns once ready with sessions', () => {
@@ -227,7 +227,7 @@ describe('StageBoard loading gate', () => {
     expect(screen.getAllByTestId('stage-column').length).toBeGreaterThan(0);
     expect(screen.getByRole('heading', { level: 1, name: 'Board' })).toBeDefined();
     expect(screen.getByTestId('project-filter')).toBeDefined();
-    expect(screen.getAllByRole('button', { name: 'New session' })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'New session' })).toBeNull();
   });
 
   it('leaves the total out of the title and has no Ongoing row on the board', () => {
@@ -266,16 +266,13 @@ describe('StageBoard empty-projects gate', () => {
     expect(screen.queryByRole('button', { name: 'New session' })).toBeNull();
   });
 
-  it('disables New session with the reason while sessions exist but no project does', () => {
+  it('leaves the projects step out and keeps the board while sessions exist but no project does', () => {
     state.projects = [];
     groups.current = [{ key: 'building', sessions: [session] }];
     render(<StageBoard workspaceId={wsId} sessions={[session]} />);
-    const button = screen.getByRole('button', { name: 'New session' });
-    expect(button.hasAttribute('disabled')).toBe(true);
-    expect(button.closest('[data-tooltip]')?.getAttribute('data-tooltip')).toBe(
-      'Link a project first',
-    );
     expect(screen.queryByTestId('projects-step')).toBeNull();
+    expect(screen.getAllByTestId('stage-column').length).toBeGreaterThan(0);
+    expect(screen.queryByRole('button', { name: 'New session' })).toBeNull();
   });
 
   it('flips back to the session-first empty state once a project lands', () => {
@@ -292,6 +289,23 @@ describe('StageBoard empty-projects gate', () => {
 });
 
 describe('StageBoard git gate', () => {
+  it('enables New session on the empty board when one repo is ready even if another repo is broken', () => {
+    state.projects = [projectOf({ id: 'proj-1' }), projectOf({ id: 'proj-2' })];
+    gitStatuses.current = { 'proj-1': statusOf('ready'), 'proj-2': statusOf('missing') };
+    render(<StageBoard workspaceId={wsId} sessions={[]} />);
+    expect(screen.getByRole('button', { name: 'New session' }).hasAttribute('disabled')).toBe(
+      false,
+    );
+  });
+
+  it('enables New session on the empty board when a folder project is available', () => {
+    state.projects = [projectOf({ id: 'folder-a', kind: 'folder' })];
+    render(<StageBoard workspaceId={wsId} sessions={[]} />);
+    expect(screen.getByRole('button', { name: 'New session' }).hasAttribute('disabled')).toBe(
+      false,
+    );
+  });
+
   it('renders one pill per repo project and no pill for a folder project', () => {
     state.projects = [
       projectOf({ id: 'repo-a', name: 'Alpha' }),
@@ -323,54 +337,6 @@ describe('StageBoard git gate', () => {
     render(<StageBoard workspaceId={wsId} sessions={[]} />);
     expect(screen.getAllByTestId('git-pill')).toHaveLength(1);
     expect(screen.getByText('3 repos')).toBeDefined();
-  });
-
-  it('blocks New session when the only repo project is absent', () => {
-    gitStatuses.current = { 'proj-1': statusOf('absent') };
-    render(<StageBoard workspaceId={wsId} sessions={[session]} />);
-    const button = screen.getByRole('button', { name: 'New session' });
-    expect(button.hasAttribute('disabled')).toBe(true);
-    expect(button.closest('[data-tooltip]')?.getAttribute('data-tooltip')).toBe(
-      'This project needs a git repository with one commit first',
-    );
-  });
-
-  it('enables New session when one repo is ready even if another repo is broken', () => {
-    state.projects = [projectOf({ id: 'proj-1' }), projectOf({ id: 'proj-2' })];
-    gitStatuses.current = { 'proj-1': statusOf('ready'), 'proj-2': statusOf('missing') };
-    render(<StageBoard workspaceId={wsId} sessions={[session]} />);
-    const button = screen.getByRole('button', { name: 'New session' });
-    expect(button.hasAttribute('disabled')).toBe(false);
-    expect(button.closest('[data-tooltip]')).toBeNull();
-  });
-
-  it('enables New session when a folder project is available', () => {
-    state.projects = [projectOf({ id: 'folder-a', kind: 'folder' })];
-    render(<StageBoard workspaceId={wsId} sessions={[session]} />);
-    expect(screen.getByRole('button', { name: 'New session' }).hasAttribute('disabled')).toBe(
-      false,
-    );
-  });
-
-  it('reports a status read in progress instead of the setup reason while loading', () => {
-    gitStatuses.current = {};
-    render(<StageBoard workspaceId={wsId} sessions={[session]} />);
-    const button = screen.getByRole('button', { name: 'New session' });
-    expect(button.hasAttribute('disabled')).toBe(true);
-    expect(button.closest('[data-tooltip]')?.getAttribute('data-tooltip')).toBe(
-      'Reading git status',
-    );
-  });
-
-  it('uses the unreachable reason when all repo projects are missing', () => {
-    gitStatuses.current = { 'proj-1': statusOf('missing') };
-    render(<StageBoard workspaceId={wsId} sessions={[session]} />);
-    expect(
-      screen
-        .getByRole('button', { name: 'New session' })
-        .closest('[data-tooltip]')
-        ?.getAttribute('data-tooltip'),
-    ).toBe('The project folder is unreachable');
   });
 
   it('explains an empty board whose only project is not usable yet', () => {
@@ -405,30 +371,12 @@ describe('StageBoard git gate', () => {
 });
 
 describe('StageBoard instant create', () => {
-  it('dispatches the new-session event from the board header button', () => {
-    const listener = vi.fn();
-    window.addEventListener('goodboy:new-session', listener);
-    groups.current = [{ key: 'building', sessions: [session] }];
-    render(<StageBoard workspaceId={wsId} sessions={[session]} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'New session' }));
-
-    expect(listener).toHaveBeenCalledOnce();
-    expect(screen.queryByRole('textbox')).toBeNull();
-    window.removeEventListener('goodboy:new-session', listener);
-  });
-
   it('dispatches the new-session event from the empty-board button', () => {
     const listener = vi.fn();
     window.addEventListener('goodboy:new-session', listener);
     render(<StageBoard workspaceId={wsId} sessions={[]} />);
 
-    const buttons = screen.getAllByRole('button', { name: 'New session' });
-    const emptyStateButton = buttons[1];
-    if (emptyStateButton == null) {
-      throw new Error('Expected the empty state session button');
-    }
-    fireEvent.click(emptyStateButton);
+    fireEvent.click(screen.getByRole('button', { name: 'New session' }));
 
     expect(listener).toHaveBeenCalledOnce();
     window.removeEventListener('goodboy:new-session', listener);

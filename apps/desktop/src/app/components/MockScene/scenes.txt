@@ -441,7 +441,6 @@ sessions-hidden
 sessions-menu
 sessions-nomatch
 settings-app
-settings-general-legacy
 settings-general-pinned
 settings-no-workspace
 settings-projects-failed

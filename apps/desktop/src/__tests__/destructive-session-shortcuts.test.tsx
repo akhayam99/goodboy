@@ -34,7 +34,7 @@ const { state } = vi.hoisted(() => {
       closeStudio: vi.fn(),
       sessionWorktrees: {},
       providers: [] as ReadonlyArray<{ connection: string }>,
-      settings: { 'shell.classicBars': 'true' } as Record<string, string | undefined>,
+      settings: {} as Record<string, string | undefined>,
       loadSetting: vi.fn(async () => null),
     },
   };
@@ -49,7 +49,6 @@ vi.mock('@goodboy/ui', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@goodboy/ui')>()),
   AppShell: () => null,
 }));
-vi.mock('../app/components/AppFooter', () => ({ AppFooter: () => null }));
 vi.mock('../features/palette/components/PaletteOverlay', () => ({ PaletteOverlay: () => null }));
 vi.mock('../app/components/BootSplash', () => ({
   BootSplash: ({ onFinished }: { onFinished: () => void }) => {

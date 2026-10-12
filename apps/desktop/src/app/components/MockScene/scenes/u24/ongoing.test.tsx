@@ -54,7 +54,6 @@ describe('the ongoing scenes', () => {
     mount({ id: 'board-no-ongoing' });
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Board' })).toBeDefined();
-    expect(screen.getAllByRole('button', { name: 'New session' }).length).toBeGreaterThan(0);
     expect(screen.queryByText('Ongoing')).toBeNull();
     expect(screen.queryByRole('group', { name: 'Ongoing' })).toBeNull();
     expect(screen.queryByText('HBL-400')).toBeNull();

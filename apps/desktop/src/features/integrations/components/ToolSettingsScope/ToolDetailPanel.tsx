@@ -1,6 +1,6 @@
 import { Button, SectionHeader, PaneShell } from '@goodboy/ui';
 import type { IntegrationBinding, WorkspaceId } from '@goodboy/types';
-import { FOOTER_INTEGRATIONS } from '../../../../app/components/AppFooter/categories';
+import { TOOL_CATALOG } from '../../toolCatalog';
 import { SETTINGS_PANE_ENTRY } from '../../../settings/components/SettingsStudio/settingsPaneEntry';
 import { integrationLabel, type IntegrationGlyphProvider } from '../IntegrationGlyph';
 import { FORM_BODIES } from '../../formBodies';
@@ -31,7 +31,7 @@ export const ToolDetailPanel = ({
     ? provider === 'github'
       ? (githubIdentity ?? 'connected')
       : toolIdentity({ binding })
-    : FOOTER_INTEGRATIONS.find((entry) => entry.provider === provider)?.connectLabel;
+    : TOOL_CATALOG.find((entry) => entry.provider === provider)?.connectLabel;
   return (
     <PaneShell scroll="body" animationClassName={SETTINGS_PANE_ENTRY} title={title} meta={subtitle}>
       <section className="flex flex-col gap-2">

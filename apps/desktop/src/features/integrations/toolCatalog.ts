@@ -1,12 +1,12 @@
-import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
+import type { IntegrationGlyphProvider } from './components/IntegrationGlyph';
 
-export type FooterIntegrationEntry = {
+export type ToolCatalogEntry = {
   readonly provider: IntegrationGlyphProvider;
   readonly connectedLabel: string;
   readonly connectLabel: string;
 };
 
-export const FOOTER_INTEGRATIONS = [
+export const TOOL_CATALOG = [
   {
     provider: 'github',
     connectedLabel: 'Review and act on pull requests across this workspace',
@@ -42,4 +42,4 @@ export const FOOTER_INTEGRATIONS = [
     connectedLabel: 'Launch a session from a Slack thread',
     connectLabel: 'Connect Slack',
   },
-] satisfies ReadonlyArray<FooterIntegrationEntry>;
+] satisfies ReadonlyArray<ToolCatalogEntry>;

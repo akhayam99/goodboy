@@ -10,7 +10,6 @@ import { shellArrangement } from '../../../../shellArrangement';
 
 const arrangement = shellArrangement({
   hasWorkspace: true,
-  hasActiveSession: true,
   isSidebarCollapsed: false,
 });
 
@@ -44,7 +43,6 @@ export const ChecksAnalyzeScene = ({
   return (
     <div className="[&>div]:w-full" style={{ width: 1360 }}>
       <AppShell
-        leftHidden={arrangement.leftHidden}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={<div aria-hidden />}
         main={

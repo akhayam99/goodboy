@@ -11,7 +11,6 @@ type Props = {
   readonly state: GoodboyChipState;
   readonly progress: OnboardingProgress;
   readonly installedVersion: string | null;
-  readonly labelClassName?: string;
   readonly isMarkOnly?: boolean;
 };
 
@@ -22,7 +21,6 @@ export const GoodboyChipLabel = ({
   state,
   progress,
   installedVersion,
-  labelClassName,
   isMarkOnly = false,
 }: Props) => {
   const status = useAppStore((s) => s.updaterStatus);
@@ -67,9 +65,9 @@ export const GoodboyChipLabel = ({
   return (
     <>
       <DogMascot size={MARK_SIZE} className="text-foreground" />
-      <span className={cn(labelClassName, 'font-semibold text-foreground')}>Goodboy</span>
-      <span aria-hidden className={cn(labelClassName, 'h-3 w-px bg-border')} />
-      <Eyebrow label="Beta" muted className={labelClassName} />
+      <span className="font-semibold text-foreground">Goodboy</span>
+      <span aria-hidden className="h-3 w-px bg-border" />
+      <Eyebrow label="Beta" muted />
       {installedVersion === null ? null : (
         <span className="tabular-nums text-faint-foreground">v{installedVersion}</span>
       )}

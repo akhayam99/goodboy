@@ -38,9 +38,7 @@ const NO_ERRORS: Record<InboxProvider, string | null> = {
 
 const arrangement = shellArrangement({
   hasWorkspace: true,
-  hasActiveSession: false,
   isSidebarCollapsed: false,
-  mode: 'column',
 });
 
 const ROWS = [
@@ -70,7 +68,6 @@ const DrawerSplitTasks = () => {
       style={{ width: WINDOW_WIDTH_PX }}
     >
       <AppShell
-        leftHidden={arrangement.leftHidden}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={<div aria-hidden />}
         main={<div />}

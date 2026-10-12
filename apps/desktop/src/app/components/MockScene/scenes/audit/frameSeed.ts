@@ -1,20 +1,9 @@
-import type { IntegrationGlyphProvider } from '../../../../../features/integrations/components/IntegrationGlyph';
 import { useAppStore } from '../../../../../store';
 import { seedBoardScene } from '../BoardScene';
 import { NOW, SESSION, seedWorkflowScene } from '../workflowSeed';
 import { seedShellChrome } from '../shellChrome';
 
 export type FrameContext = 'board' | 'session' | 'rail' | 'empty';
-
-export const FRAME_CONNECTED: Readonly<Record<IntegrationGlyphProvider, boolean>> = {
-  github: true,
-  linear: true,
-  sentry: false,
-  jira: false,
-  gitlab: false,
-  bitbucket: false,
-  slack: false,
-};
 
 const noop = () => undefined;
 

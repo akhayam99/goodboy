@@ -36,7 +36,7 @@ const { sessionList, sidebarOrder, state } = vi.hoisted(() => {
       sessionProjectMounts: {},
       sessionActiveProject: {},
       sessionBranches: { 'session-1': 'feature/branch' } as Record<string, string>,
-      settings: { 'shell.classicBars': 'true' } as Record<string, string | undefined>,
+      settings: {} as Record<string, string | undefined>,
       loadSetting: vi.fn(async () => null),
       navigate: vi.fn(),
       back: vi.fn(),
@@ -60,7 +60,6 @@ vi.mock('@goodboy/ui', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@goodboy/ui')>()),
   AppShell: () => null,
 }));
-vi.mock('../../app/components/AppFooter', () => ({ AppFooter: () => null }));
 vi.mock('../../features/palette/components/PaletteOverlay', () => ({ PaletteOverlay: () => null }));
 vi.mock('../../app/components/BootSplash', () => ({ BootSplash: () => null }));
 vi.mock('../../app/components/KeepAliveWorkSurface', () => ({ KeepAliveWorkSurface: () => null }));

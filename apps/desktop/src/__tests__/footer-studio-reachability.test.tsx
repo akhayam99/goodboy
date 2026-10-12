@@ -43,7 +43,7 @@ const { state, workspace, storeListeners } = vi.hoisted(() => {
       selectedAgentId: {} as Record<string, string | null>,
       sessionWorktrees: {},
       providers: [] as ReadonlyArray<{ connection: string }>,
-      settings: { 'shell.classicBars': 'true' } as Record<string, string | undefined>,
+      settings: {} as Record<string, string | undefined>,
       loadSetting: vi.fn(async () => undefined),
       get appStudio() {
         return studioState.appStudio;
@@ -73,7 +73,6 @@ const { state, workspace, storeListeners } = vi.hoisted(() => {
 
 type ShellProps = {
   readonly topBar?: ReactNode;
-  readonly footer?: ReactNode;
   readonly studio?: ReactNode;
 };
 
@@ -81,68 +80,14 @@ vi.mock('@goodboy/ui', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@goodboy/ui')>();
   return {
     ...actual,
-    AppShell: ({ topBar, footer, studio }: ShellProps) => (
+    AppShell: ({ topBar, studio }: ShellProps) => (
       <div>
         {topBar}
         {studio}
-        {footer}
       </div>
     ),
   };
 });
-
-type FooterProvider = 'linear' | 'slack' | 'bitbucket' | 'github';
-
-type FooterProps = {
-  readonly scope: 'workspace' | 'app';
-  readonly target: { readonly place: string | null; readonly tool: string | null };
-  readonly connected: Readonly<Record<FooterProvider, boolean>>;
-  readonly onOpenIntegration: (params: { readonly provider: FooterProvider }) => void;
-  readonly onOpenSettings: () => void;
-  readonly onOpenChangelog: () => void;
-  readonly onOpenShortcuts: () => void;
-};
-
-const FOOTER_LABELS: ReadonlyArray<readonly [FooterProvider, string, string]> = [
-  ['linear', 'Open Linear', 'Connect Linear'],
-  ['slack', 'Launch a session from a Slack thread', 'Connect Slack'],
-  ['bitbucket', 'Review pull requests across this workspace', 'Connect Bitbucket'],
-  ['github', 'Review pull requests and issues', 'Connect GitHub'],
-];
-
-vi.mock('../app/components/AppFooter', () => ({
-  AppFooter: ({
-    scope,
-    target,
-    connected,
-    onOpenIntegration,
-    onOpenSettings,
-    onOpenChangelog,
-    onOpenShortcuts,
-  }: FooterProps) => (
-    <div
-      data-testid="footer"
-      data-scope={scope}
-      data-place={target.place ?? ''}
-      data-tool={target.tool ?? ''}
-    >
-      {FOOTER_LABELS.map(([provider, openLabel, connectLabel]) => (
-        <button key={provider} type="button" onClick={() => onOpenIntegration({ provider })}>
-          {connected[provider] ? openLabel : connectLabel}
-        </button>
-      ))}
-      <button type="button" onClick={onOpenSettings}>
-        Open settings
-      </button>
-      <button type="button" onClick={onOpenChangelog}>
-        Open changelog
-      </button>
-      <button type="button" onClick={onOpenShortcuts}>
-        Open shortcuts
-      </button>
-    </div>
-  ),
-}));
 
 vi.mock('../features/integrations/github/useGithubConnection', () => ({
   useGithubConnection: () => ({
@@ -295,7 +240,7 @@ import { App } from '../App';
 
 beforeEach(() => {
   state.appStudio = null;
-  state.settings = { 'shell.classicBars': 'true' };
+  state.settings = {};
   state.workspaceIntegrations = {};
   state.workspaces = [workspace];
   state.currentWorkspaceId = 'workspace-1';
@@ -306,115 +251,7 @@ afterEach(() => {
   cleanup();
 });
 
-describe('Slack studio reachability', () => {
-  it('opens the workspace slack studio from the app footer', async () => {
-    state.workspaceIntegrations = { 'workspace-1': [{ provider: 'slack' }] };
-    render(<App />);
-
-    expect(screen.queryByTestId('inbox-studio')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Launch a session from a Slack thread' }));
-
-    expect((await screen.findByTestId('inbox-studio')).textContent).toBe('slack');
-  });
-
-  it('opens Tools settings when slack is not connected', async () => {
-    render(<App />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Connect Slack' }));
-
-    expect((await screen.findByTestId('settings-studio')).getAttribute('data-scope')).toBe('tools');
-    expect(screen.getByTestId('settings-studio').getAttribute('data-tool')).toBe('slack');
-    expect(screen.queryByTestId('inbox-studio')).toBeNull();
-  });
-});
-
-describe('GitHub footer state', () => {
-  it('lights the footer glyph from the workspace credential, whatever the remote is', () => {
-    githubAuth.isAuthenticated = true;
-    state.workspaceIntegrations = { 'workspace-1': [{ provider: 'gitlab' }] };
-    render(<App />);
-
-    expect(screen.getByRole('button', { name: 'Review pull requests and issues' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Connect GitHub' })).toBeNull();
-  });
-
-  it('leaves the glyph unlit when no github credential resolves', () => {
-    render(<App />);
-
-    expect(screen.getByRole('button', { name: 'Connect GitHub' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Review pull requests and issues' })).toBeNull();
-  });
-
-  it('still opens the studio when github is not connected, so the connect form is reachable', () => {
-    render(<App />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Connect GitHub' }));
-
-    expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('tools');
-    expect(screen.getByTestId('settings-studio').getAttribute('data-tool')).toBe('github');
-    expect(screen.queryByTestId('inbox-studio')).toBeNull();
-  });
-});
-
-describe('Bitbucket studio reachability', () => {
-  it('opens the workspace bitbucket studio from the app footer', () => {
-    state.workspaceIntegrations = { 'workspace-1': [{ provider: 'bitbucket' }] };
-    render(<App />);
-
-    expect(screen.queryByTestId('inbox-studio')).toBeNull();
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Review pull requests across this workspace' }),
-    );
-
-    expect(screen.getByTestId('inbox-studio').textContent).toBe('bitbucket');
-  });
-
-  it('still opens the studio when bitbucket is not connected, so the connect form is reachable', () => {
-    render(<App />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Connect Bitbucket' }));
-
-    expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('tools');
-    expect(screen.getByTestId('settings-studio').getAttribute('data-tool')).toBe('bitbucket');
-    expect(screen.queryByTestId('inbox-studio')).toBeNull();
-  });
-});
-
-describe('No workspace yet', () => {
-  it('keeps the app footer', () => {
-    state.workspaces = [];
-    state.currentWorkspaceId = null;
-    render(<App />);
-
-    expect(screen.getByTestId('footer').getAttribute('data-scope')).toBe('app');
-  });
-});
-
-describe('The legacy layout switch', () => {
-  it('draws no footer at all while the switch is off', () => {
-    state.settings = { 'shell.classicBars': 'false' };
-    render(<App />);
-
-    expect(screen.queryByTestId('footer')).toBeNull();
-  });
-
-  it('reads the switch once and draws the footer when it is on', () => {
-    render(<App />);
-
-    expect(screen.getByTestId('footer').getAttribute('data-scope')).toBe('workspace');
-    expect(state.loadSetting).not.toHaveBeenCalledWith('shell.classicBars');
-  });
-});
-
-describe('Footer to settings and Goodboy chip reachability', () => {
-  it('opens the shortcuts list from the Goodboy chip', () => {
-    render(<App />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Open shortcuts' }));
-
-    expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('app');
-  });
-
+describe('Spend reachability from the top bar', () => {
   it('lands the top bar spend chip on the impact spend tab', async () => {
     render(<App />);
 
@@ -422,15 +259,6 @@ describe('Footer to settings and Goodboy chip reachability', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open spend' }));
 
     expect((await screen.findByTestId('impact-studio')).getAttribute('data-scope')).toBe('spend');
-  });
-
-  it('opens changelog from the Goodboy chip', async () => {
-    render(<App />);
-
-    expect(screen.queryByTestId('changelog-studio')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Open changelog' }));
-
-    expect((await screen.findByTestId('changelog-studio')).textContent).toBe('Changelog');
   });
 });
 
@@ -463,61 +291,6 @@ describe('Spend reachability through the impact studio', () => {
     );
 
     expect(screen.getByTestId('impact-studio').getAttribute('data-scope')).toBe('provider');
-    expect(screen.queryByTestId('settings-studio')).toBeNull();
-  });
-});
-
-describe('Footer highlight follows the open studio', () => {
-  const litTarget = () => ({
-    place: screen.getByTestId('footer').getAttribute('data-place'),
-    tool: screen.getByTestId('footer').getAttribute('data-tool'),
-  });
-
-  it('lights the inbox and rings the github glyph while its inbox is open', () => {
-    githubAuth.isAuthenticated = true;
-    render(<App />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Review pull requests and issues' }));
-
-    expect(litTarget()).toEqual({ place: 'inbox', tool: 'github' });
-  });
-
-  it('lights settings while the providers scope is open, since providers is a settings scope', () => {
-    render(<App />);
-
-    act(() => {
-      window.dispatchEvent(
-        new CustomEvent('goodboy:open-settings', { detail: { scope: 'providers' } }),
-      );
-    });
-
-    expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('providers');
-    expect(litTarget()).toEqual({ place: 'settings', tool: '' });
-  });
-
-  it('lights the link action while a disconnected glyph opens its tools form', () => {
-    render(<App />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Connect Linear' }));
-
-    expect(litTarget()).toEqual({ place: 'link', tool: '' });
-  });
-});
-
-describe('Linear connection routing', () => {
-  it('opens Tools settings focused on an unconnected Linear', () => {
-    render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: 'Connect Linear' }));
-    expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('tools');
-    expect(screen.getByTestId('settings-studio').getAttribute('data-tool')).toBe('linear');
-    expect(screen.queryByTestId('inbox-studio')).toBeNull();
-  });
-
-  it('opens the filtered inbox for connected Linear', () => {
-    state.workspaceIntegrations = { 'workspace-1': [{ provider: 'linear' }] };
-    render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: 'Open Linear' }));
-    expect(screen.getByTestId('inbox-studio').textContent).toBe('linear');
     expect(screen.queryByTestId('settings-studio')).toBeNull();
   });
 });

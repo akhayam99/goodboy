@@ -112,13 +112,12 @@ and the contrast floors are in
 class with no `--color-*` token behind it fails `no-token-bypass.test.ts`.
 
 `bg-chrome` is the app frame and nothing else: `AppShell` paints it on the
-window and the left column, and `AppTopBar` (and `AppFooter` under Classic
-bars) paint their bars with it. The main pane stays on `bg-background`, one step in front.
+window and the left column, and `AppTopBar` paints its bar with it. The main pane stays on `bg-background`, one step in front.
 `no-token-bypass.test.ts` fails a `bg-chrome` anywhere else.
 
 ## The window grid
 
-Columns, resize handles, the studio slot and (under Legacy layout) the footer
+Columns, resize handles and the studio slot
 are areas of **one** CSS grid. Their
 widths are saved, and clamped when read back. They are never nested flex
 containers. So hiding or resizing a column is one template declaration, and

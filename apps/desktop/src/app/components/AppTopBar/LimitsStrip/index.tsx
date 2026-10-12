@@ -7,13 +7,12 @@ import { LimitsToolbar } from './LimitsToolbar';
 
 type Props = {
   readonly openProviderId?: ProviderId | null;
-  readonly opensProvidersMenu?: boolean;
 };
 
-export const LimitsStrip = ({ openProviderId = null, opensProvidersMenu = false }: Props) => {
+export const LimitsStrip = ({ openProviderId = null }: Props) => {
   const { chips, nowMs } = useLimitsChips();
   const workspaceId = useAppStore((state) => state.currentWorkspaceId);
-  if (opensProvidersMenu && workspaceId !== null) {
+  if (workspaceId !== null) {
     return <LimitsProvidersMenu workspaceId={workspaceId} chips={chips} nowMs={nowMs} />;
   }
   if (chips.length === 0) {

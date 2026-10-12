@@ -105,17 +105,10 @@ const SPEND_LABEL = 'Spend today. Open Impact';
 
 type BarOverrides = {
   readonly onOpenSpend?: () => void;
-  readonly mode?: 'column' | 'classic';
 };
 
 const renderBar = (overrides: BarOverrides = {}) =>
-  render(
-    <AppTopBar
-      mode={overrides.mode ?? 'column'}
-      onOpenSpend={overrides.onOpenSpend ?? vi.fn()}
-      onOpenScript={vi.fn()}
-    />,
-  );
+  render(<AppTopBar onOpenSpend={overrides.onOpenSpend ?? vi.fn()} onOpenScript={vi.fn()} />);
 
 const zones = (container: HTMLElement) =>
   Array.from(container.querySelector('[data-tauri-drag-region]')?.children ?? []);
@@ -170,14 +163,6 @@ describe('AppTopBar', () => {
     expect(screen.queryByRole('button', { name: 'Board' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Chat' })).toBeNull();
     expect(screen.queryByRole('button', { name: /sidebar \(/ })).toBeNull();
-  });
-
-  it('keeps Board and Chat by the search under the legacy layout, with no Impact button', () => {
-    renderBar({ mode: 'classic' });
-
-    expect(screen.getByRole('button', { name: 'Board' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Chat' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Impact' })).toBeNull();
   });
 
   it('seats Now, Limits, Spend and the bell in that order, with no Impact icon', () => {

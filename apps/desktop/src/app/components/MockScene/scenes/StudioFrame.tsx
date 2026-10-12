@@ -7,8 +7,7 @@ import type { ColumnPlace } from '../../SideColumn/columnPlace';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { useAppStore } from '../../../../store';
 import { shellArrangement } from '../../../shellArrangement';
-import { SceneFooter } from './SceneFooter';
-import { sceneColumnPlace, sceneShellMode } from './sceneShell';
+import { sceneColumnPlace } from './sceneShell';
 import { useSceneShell } from './useSceneShell';
 
 const noop = () => undefined;
@@ -24,9 +23,7 @@ export const StudioFrame = ({ target, main, columnPlace }: StudioFrameProps) => 
   const isSettingsOpen = useAppStore((state) => state.appStudio?.kind === 'settings');
   const arrangement = shellArrangement({
     hasWorkspace: true,
-    hasActiveSession: false,
     isSidebarCollapsed: false,
-    mode: sceneShellMode(),
     isSettingsOpen,
   });
   const shell = useSceneShell({ arrangement });
@@ -36,27 +33,19 @@ export const StudioFrame = ({ target, main, columnPlace }: StudioFrameProps) => 
   return (
     <ToastProvider>
       <AppShell
-        topBar={<AppTopBar mode={arrangement.mode} onOpenSpend={noop} onOpenScript={noop} />}
-        leftHidden={arrangement.leftHidden}
+        topBar={<AppTopBar onOpenSpend={noop} onOpenScript={noop} />}
         leftSidebarCollapsed={arrangement.isLeftRail}
         leftSidebar={
-          arrangement.leftSlot === 'none' ? undefined : (
-            <ShellLeft
-              arrangement={arrangement}
-              workspaceId={workspaceId}
-              currentSessionId={null}
-              isDraftShown={false}
-              actions={shell.actions}
-              onToggle={noop}
-              {...(isSettingsOpen ? {} : { placeOverride: place })}
-              settingsSlotRef={shell.settingsSlotRef}
-            />
-          )
-        }
-        footer={
-          arrangement.footer === null ? undefined : (
-            <SceneFooter scope={arrangement.footer} target={target} />
-          )
+          <ShellLeft
+            arrangement={arrangement}
+            workspaceId={workspaceId}
+            currentSessionId={null}
+            isDraftShown={false}
+            actions={shell.actions}
+            onToggle={noop}
+            {...(isSettingsOpen ? {} : { placeOverride: place })}
+            settingsSlotRef={shell.settingsSlotRef}
+          />
         }
         main={typeof main === 'function' ? main(slot) : main}
         {...(isSettingsOpen && { studio: shell.studio })}

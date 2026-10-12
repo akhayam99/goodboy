@@ -1,5 +1,5 @@
 import type { IntegrationBinding } from '@goodboy/types';
-import { FOOTER_INTEGRATIONS } from '../../../../app/components/AppFooter/categories';
+import { TOOL_CATALOG } from '../../toolCatalog';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { SettingsNavRow } from '../../../../shared/components/SettingsNavRow';
 import {
@@ -25,7 +25,7 @@ export const ToolsRail = ({
   githubIdentity,
 }: Props) => (
   <ul aria-label="Integrations settings" className="flex flex-col gap-0.5">
-    {FOOTER_INTEGRATIONS.map(({ provider }) => {
+    {TOOL_CATALOG.map(({ provider }) => {
       const subtitle = toolRailSubtitle({ provider, integrations, connected, githubIdentity });
       return (
         <li key={provider}>

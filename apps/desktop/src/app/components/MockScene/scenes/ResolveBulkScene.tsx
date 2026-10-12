@@ -10,7 +10,6 @@ import { BULK_LAUNCH_THREAD_IDS, seedBulkScene, type BulkStage } from './bulkSee
 
 const arrangement = shellArrangement({
   hasWorkspace: true,
-  hasActiveSession: true,
   isSidebarCollapsed: false,
 });
 
@@ -57,7 +56,6 @@ export const ResolveBulkScene = ({ stage }: { readonly stage: BulkStage }) => {
     return (
       <div className="[&>div]:w-full" style={{ width: 1440 }}>
         <AppShell
-          leftHidden={arrangement.leftHidden}
           leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
           leftSidebar={<div aria-hidden />}
           main={<BranchPage session={SESSION} workingDir={null} />}

@@ -2,7 +2,6 @@ import type { ProviderId } from '@goodboy/types';
 import { NotificationCenter } from '../../../features/notifications/components/NotificationCenter';
 import { WorkspaceIdentityRow } from '../../../features/workspace/components/WorkspaceIdentityRow';
 import type { RunningScript } from '../../../features/scripts/hooks/useRunningScripts';
-import type { ShellMode } from '../../shellArrangement';
 import { CommandCenter } from './CommandCenter';
 import { LimitsStrip } from './LimitsStrip';
 import { NowChip } from './NowChip';
@@ -14,15 +13,9 @@ type Props = {
   readonly onOpenSpend: () => void;
   readonly onOpenScript: (run: RunningScript) => void;
   readonly openProviderId?: ProviderId | null;
-  readonly mode?: ShellMode;
 };
 
-export const AppTopBar = ({
-  onOpenSpend,
-  onOpenScript,
-  openProviderId = null,
-  mode = 'column',
-}: Props) => (
+export const AppTopBar = ({ onOpenSpend, onOpenScript, openProviderId = null }: Props) => (
   <>
     <div
       data-tauri-drag-region="deep"
@@ -36,14 +29,14 @@ export const AppTopBar = ({
       </div>
 
       <div className="col-start-2 flex min-w-0 items-center justify-center gap-2">
-        <NavCluster hasDoors={mode === 'classic'} />
+        <NavCluster />
         <CommandCenter />
       </div>
 
       <div className="col-start-3 flex items-center justify-end gap-1">
         <NowChip onOpenScript={onOpenScript} />
 
-        <LimitsStrip openProviderId={openProviderId} opensProvidersMenu={mode === 'column'} />
+        <LimitsStrip openProviderId={openProviderId} />
 
         <SpendButton onOpenSpend={onOpenSpend} />
 

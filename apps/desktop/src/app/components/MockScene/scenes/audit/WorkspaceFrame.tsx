@@ -9,10 +9,7 @@ import { selectDrawerPanel } from '../../../../../store/slices/drawer/selectDraw
 import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
 import { DrawerHost } from '../../../DrawerHost';
 import { shellArrangement } from '../../../../shellArrangement';
-import { SceneFooter } from '../SceneFooter';
-import { sceneShellMode } from '../sceneShell';
 import { useSceneShell } from '../useSceneShell';
-import { FRAME_CONNECTED } from './frameSeed';
 import { sceneParam } from './sceneParams';
 
 const noop = () => undefined;
@@ -27,9 +24,7 @@ export const WorkspaceFrame = ({ session, main }: Props) => {
   const drawerSizing = useAppStore(selectDrawerSizing);
   const arrangement = shellArrangement({
     hasWorkspace: true,
-    hasActiveSession: true,
     isSidebarCollapsed: sceneParam({ key: 'rail' }) === '1',
-    mode: sceneShellMode(),
   });
   const shell = useSceneShell({ arrangement });
   return (
@@ -39,8 +34,7 @@ export const WorkspaceFrame = ({ session, main }: Props) => {
         drawerSizing={drawerSizing}
         studio={shell.studio}
         studioCoversLeft={arrangement.studioCoversLeft}
-        topBar={<AppTopBar mode={arrangement.mode} onOpenSpend={noop} onOpenScript={noop} />}
-        leftHidden={arrangement.leftHidden}
+        topBar={<AppTopBar onOpenSpend={noop} onOpenScript={noop} />}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={
           <ShellLeft
@@ -52,11 +46,6 @@ export const WorkspaceFrame = ({ session, main }: Props) => {
             onToggle={noop}
             settingsSlotRef={shell.settingsSlotRef}
           />
-        }
-        footer={
-          arrangement.footer === null ? undefined : (
-            <SceneFooter scope={arrangement.footer} connected={FRAME_CONNECTED} />
-          )
         }
         main={
           main ?? (

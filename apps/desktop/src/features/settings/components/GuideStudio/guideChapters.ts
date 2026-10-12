@@ -254,7 +254,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Left column',
-        desc: 'One row of + Session, + Chat and + Terminal starts something new. Board, Tasks, Chat, Workflows, Terminal and Monitoring come next, then your sessions, then Settings, the Goodboy row and the bug report button. The Goodboy row opens a menu with the Guide. ⌘B folds it into icons. Legacy layout in Settings, App, General brings back the top bar buttons and the footer.',
+        desc: 'One row of + Session, + Chat and + Terminal starts something new. Board, Tasks, Chat, Workflows, Terminal and Monitoring come next, then your sessions, then Settings, the Goodboy row and the bug report button. The Goodboy row opens a menu with the Guide. ⌘B folds it into icons.',
       },
       {
         term: 'Session rows',

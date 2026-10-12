@@ -61,6 +61,7 @@ beforeEach(() => {
   vi.useFakeTimers({ now: NOW, toFake: ['Date'] });
   store.providers = connected(['anthropic', 'codex', 'cursor', 'gemini']);
   store.providerLimits = {};
+  store.currentWorkspaceId = null;
 });
 
 afterEach(() => {
@@ -299,11 +300,15 @@ describe('LimitsStrip', () => {
 });
 
 describe('LimitsStrip opening the Providers menu', () => {
+  beforeEach(() => {
+    store.currentWorkspaceId = 'workspace-1';
+  });
+
   it('opens the Providers menu under the strip from any chip, and never leaves for Settings', () => {
     store.providerLimits = bothReporting();
     const listener = vi.fn();
     window.addEventListener('goodboy:open-settings', listener);
-    render(<LimitsStrip opensProvidersMenu />);
+    render(<LimitsStrip />);
 
     fireEvent.click(chipButtons()[0] as HTMLElement);
 
@@ -316,7 +321,7 @@ describe('LimitsStrip opening the Providers menu', () => {
   it('opens the same menu from a provider listed under +N', () => {
     store.providers = connected(['anthropic', 'codex', 'cursor', 'gemini', 'opencode']);
     store.providerLimits = bothReporting();
-    render(<LimitsStrip opensProvidersMenu />);
+    render(<LimitsStrip />);
 
     const [overflow] = screen.getAllByRole('button', { name: /more providers?/ });
     fireEvent.click(overflow as HTMLElement);
@@ -330,7 +335,7 @@ describe('LimitsStrip opening the Providers menu', () => {
 
   it('keeps one Connect a provider chip that opens the menu when none is connected', () => {
     store.providers = connected([]);
-    render(<LimitsStrip opensProvidersMenu />);
+    render(<LimitsStrip />);
 
     const connect = screen.getByRole('button', { name: 'Connect a provider' });
     expect(connect.getAttribute('aria-expanded')).toBe('false');
@@ -342,7 +347,7 @@ describe('LimitsStrip opening the Providers menu', () => {
 
   it('still draws nothing while providers are being detected', () => {
     store.providers = [{ id: 'anthropic', connection: 'unknown' }];
-    const { container } = render(<LimitsStrip opensProvidersMenu />);
+    const { container } = render(<LimitsStrip />);
 
     expect(container.textContent).toBe('');
   });
@@ -352,13 +357,12 @@ describe('LimitsStrip opening the Providers menu', () => {
     store.currentWorkspaceId = null;
     const listener = vi.fn();
     window.addEventListener('goodboy:open-settings', listener);
-    render(<LimitsStrip opensProvidersMenu />);
+    render(<LimitsStrip />);
 
     fireEvent.click(chipButtons()[0] as HTMLElement);
 
     expect(screen.queryByRole('dialog', { name: 'Providers' })).toBeNull();
     expect(listener).toHaveBeenCalledOnce();
     window.removeEventListener('goodboy:open-settings', listener);
-    store.currentWorkspaceId = 'workspace-1';
   });
 });

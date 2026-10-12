@@ -150,7 +150,7 @@ const isSameInk = ({
   first.identityIndex === second.identityIndex &&
   first.isMuted === second.isMuted;
 
-export const mergeRailSegments = ({
+const mergeRailSegments = ({
   segments,
 }: {
   readonly segments: ReadonlyArray<RailSegment>;
