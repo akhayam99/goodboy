@@ -27,6 +27,9 @@ import {
   resolveMountBaseBranch,
   selectActiveMountId,
 } from '../../../store/slices/project-mounts/selectors';
+import { selectProjectById } from '../../../store/slices/projects/selectProjectById';
+import { selectSessionById } from '../../../store/slices/sessions/selectSessionById';
+import { resolveRequestedBranchName } from '../../../store/slices/project-mounts/resolveMountNaming';
 import { useAppStore } from '../../../store/store';
 import { isMainWindow } from '../../workspace/window';
 import { executeSeriesRequest, type SeriesBridgeRequest } from './series';
@@ -263,6 +266,13 @@ const switchTo = async ({ request }: InspectParams): Promise<MountBridgeOutcome>
     };
   }
   const previous = await loadedMount(request);
+  const requested = text({ args: request.args, key: 'branch' });
+  const session = selectSessionById(get(), request.sessionId);
+  const project = selectProjectById(get(), previous?.projectId ?? null);
+  const target =
+    createNew && requested !== '' && session !== null && project !== null
+      ? resolveRequestedBranchName({ get, session, project, requested })
+      : requested;
   if (adoptObserved) {
     await get().resolveMountBranchMismatch({
       sessionId: request.sessionId,
@@ -273,7 +283,7 @@ const switchTo = async ({ request }: InspectParams): Promise<MountBridgeOutcome>
   const mount = await get().switchMount({
     sessionId: request.sessionId,
     mountId: request.mountId,
-    branch: text({ args: request.args, key: 'branch' }),
+    branch: target,
     createNew,
     ...(request.requestId === undefined ? {} : { requestId: request.requestId }),
   });

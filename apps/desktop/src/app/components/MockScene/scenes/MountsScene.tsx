@@ -210,6 +210,7 @@ type MountsVariant =
   | 'full'
   | 'branch-tasks'
   | 'task-split'
+  | 'branch-split'
   | 'unassigned-notes';
 
 const UNASSIGNED_NOTES: ReadonlyArray<DiffComment> = [
@@ -711,7 +712,9 @@ export const MountsScene = ({ variant = DEFAULT_VARIANT }: Props) => {
             )
         : variant === 'task-split'
           ? [MOUNT_SEEDS[2]].filter((seed) => seed !== undefined)
-          : MOUNT_SEEDS;
+          : variant === 'branch-split'
+            ? [MOUNT_SEEDS[0], MOUNT_SEEDS[1]].filter((seed) => seed !== undefined)
+            : MOUNT_SEEDS;
   const views = viewsOf(seeds);
 
   useEffect(() => {

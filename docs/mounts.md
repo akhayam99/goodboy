@@ -32,7 +32,7 @@ and `apps/desktop/src/store/slices/mount-cleanup/`.
   gets `<prefix>/<slug>`. The task id only enters when the session starts from a
   task: a task linked later never renames the branch. The prefix may hold `/`
   (`team/ak`); the worktree folder stays flat because `/` becomes `-`.
-- A name an agent or the New branch form asks for goes through the same
+- A name an agent asks for (`mount fork`, `mount switch --create`) or the New branch form gives goes through the same
   prefix (project, then workspace, then the default). A name that already
   starts with `<prefix>/` stays as it is, `feat/x` becomes `<prefix>/feat-x`
   and a bare `x` becomes `<prefix>/x` (`prefixedBranchName` in
@@ -132,7 +132,7 @@ before projecting it as writable. Disk states:
 ## Lifecycle
 
 - **Attach** creates or adopts a worktree and inserts the row.
-- **Switch** changes the branch of one mount in place.
+- **Switch** changes the branch of one mount in place, and a mount follows by itself when its worktree lands on another branch (a rename or a checkout), adopting it unless git is mid-operation or another mount holds that branch.
 - **Fork** creates another mount from an explicit base and leaves the source
   intact.
 - **Unmount** removes the worktree and keeps the row with no current path.

@@ -9,6 +9,9 @@ const SECOND_MOUNT_ID = 'mount-2' as MountId;
 
 const h = vi.hoisted(() => ({
   emitNotification: vi.fn(async () => undefined),
+  resolveMountBranchMismatch: vi.fn(async () => {
+    throw new Error('the worktree is busy');
+  }),
 }));
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
@@ -50,6 +53,7 @@ const makeState = (): State => ({
   sessionSelectedPrNumber: { [SESSION_ID]: 40 },
   sessionExternalTasks: { [SESSION_ID]: [] },
   emitNotification: h.emitNotification,
+  resolveMountBranchMismatch: h.resolveMountBranchMismatch,
 });
 
 type ObserveParams = {
@@ -135,7 +139,28 @@ beforeEach(() => {
 });
 
 describe('reconcileSessionBranch', () => {
-  it('records a mismatch against the mount without rewriting the branch', async () => {
+  it('asks the mount to adopt the branch it finds the worktree on', async () => {
+    const state = makeState();
+
+    await observe({ state, observedBranch: 'ak/incoming' });
+
+    expect(h.resolveMountBranchMismatch).toHaveBeenCalledTimes(1);
+    expect(h.resolveMountBranchMismatch).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      resolution: 'adopt-observed',
+    });
+  });
+
+  it('does not ask a detached head to be adopted', async () => {
+    const state = makeState();
+
+    await observe({ state, observedBranch: '   ' });
+
+    expect(h.resolveMountBranchMismatch).not.toHaveBeenCalled();
+  });
+
+  it('keeps the mismatch note and the recorded branch when the adoption is refused', async () => {
     const state = makeState();
 
     await observe({ state, observedBranch: 'ak/incoming' });
@@ -209,5 +234,28 @@ describe('reconcileSessionBranch', () => {
 
     expect(state.mountBranchObservations).toEqual({ [SESSION_ID]: [] });
     expect(h.emitNotification).not.toHaveBeenCalled();
+  });
+
+  it('adopts the newest observation after an adoption in flight, never the stale one', async () => {
+    const state = makeState();
+    const release: Array<() => void> = [];
+    const pending = () =>
+      new Promise<never>((_resolve, reject) => {
+        release.push(() => reject(new Error('the worktree is busy')));
+      });
+    h.resolveMountBranchMismatch.mockImplementationOnce(pending).mockImplementationOnce(pending);
+
+    const first = observe({ state, observedBranch: 'ak/branch-a' });
+    await observe({ state, observedBranch: 'ak/branch-b' });
+    expect(h.resolveMountBranchMismatch).toHaveBeenCalledTimes(1);
+
+    release[0]?.();
+    await vi.waitFor(() => expect(h.resolveMountBranchMismatch).toHaveBeenCalledTimes(2));
+    release[1]?.();
+    await first;
+
+    expect(state.mountBranchObservations).toEqual({
+      [SESSION_ID]: [expect.objectContaining({ observedBranch: 'ak/branch-b' })],
+    });
   });
 });

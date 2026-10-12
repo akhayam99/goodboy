@@ -10,14 +10,21 @@ export type ReconcileSessionBranchInput = {
   readonly observedBranch: string;
 };
 
+const following = new Set<string>();
+const newest = new Map<string, ReconcileSessionBranchInput>();
+
 export const reconcileSessionBranch = (set: SetFn, get: GetFn) => {
-  return async ({
+  const reconcile = async ({
     sessionId,
     mountId,
     worktreePath,
     observedBranch,
   }: ReconcileSessionBranchInput): Promise<void> => {
     if (isBranchlessSession({ branch: get().sessionBranches[sessionId] })) {
+      return;
+    }
+    if (following.has(mountId)) {
+      newest.set(mountId, { sessionId, mountId, worktreePath, observedBranch });
       return;
     }
     const state = get();
@@ -33,7 +40,7 @@ export const reconcileSessionBranch = (set: SetFn, get: GetFn) => {
       return;
     }
     const trimmed = observedBranch.trim();
-    recordMountBranchObservation({
+    const observation = recordMountBranchObservation({
       set,
       sessionId,
       mountId,
@@ -42,5 +49,26 @@ export const reconcileSessionBranch = (set: SetFn, get: GetFn) => {
       worktreePath,
       observedBranch: trimmed === '' ? null : trimmed,
     });
+    if (observation.state !== 'mismatch') {
+      return;
+    }
+    following.add(mountId);
+    try {
+      await get().resolveMountBranchMismatch({
+        sessionId,
+        mountId,
+        resolution: 'adopt-observed',
+      });
+    } catch {
+      return;
+    } finally {
+      following.delete(mountId);
+      const next = newest.get(mountId);
+      newest.delete(mountId);
+      if (next !== undefined) {
+        await reconcile(next);
+      }
+    }
   };
+  return reconcile;
 };

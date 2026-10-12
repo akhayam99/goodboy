@@ -1922,7 +1922,10 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   every mount row is `MOUNT_ROW_HEIGHT` (36px), so a long branch or a failure
   never moves a column. A failed row action raises an inline `Notice`
   (`danger`, title `Couldn't <verb> <project>`, `Details`, `Retry`) under its
-  row; a branch mismatch is a `warning` `Notice` with `Use this branch here`,
+  row; a mount follows a branch renamed or switched in its worktree on the
+  next status read and logs it as a `Branch` activity row, and only a mismatch
+  it cannot follow (a git operation in progress, the branch held by another
+  mount, a detached HEAD) is a `warning` `Notice` with `Use this branch here`,
   `Keep both branches` and `Not now`. A card whose mounts have not loaded
   draws skeleton rows on the same tracks. `Add project` stays a button in the
   header; once nothing is left to add its popover says every project is already in
