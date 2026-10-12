@@ -12,7 +12,7 @@ const CSS_HEIGHT = 425;
 const DEVICE_SCALE_FACTOR = 2;
 const WINDOW_WIDTH = CSS_WIDTH * DEVICE_SCALE_FACTOR;
 const WINDOW_HEIGHT = CSS_HEIGHT * DEVICE_SCALE_FACTOR;
-const RENDER_WAIT_MS = 4000;
+const RENDER_WAIT_MS = Number(process.env.GOODBOY_SHOT_WAIT ?? 4000);
 const THEMES = ['dark', 'light'];
 const OUT_DIRECTORY = resolve(ROOT_DIRECTORY, 'docs/changelog/next');
 
@@ -109,8 +109,16 @@ const captureThemePng = async ({ theme }) => {
         params: { url: `${DEV_URL}/?scene=${scene}&theme=${theme}` },
       });
       await sleep({ ms: RENDER_WAIT_MS });
+      if (process.env.GOODBOY_SHOT_BLUR === '1') {
+        await send({
+          method: 'Runtime.evaluate',
+          params: { expression: 'document.activeElement?.blur()' },
+        });
+        await sleep({ ms: 400 });
+      }
     };
     await send({ method: 'Page.enable' });
+    await send({ method: 'Emulation.setFocusEmulationEnabled', params: { enabled: true } });
     await openScene({
       width: CSS_WIDTH,
       height: CSS_HEIGHT,

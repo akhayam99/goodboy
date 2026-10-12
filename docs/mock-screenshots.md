@@ -370,7 +370,9 @@ saves `docs/changelog/next/<name>-<before|after>-{dark,light}.webp`.
   whole instead, at a 1360×850 window and DPR 1, so the picture keeps the same
   size. Extra scene params ride in the scene argument
   (`'session-start&kind=workflow'`), and `GOODBOY_SHOT_URL` points the script
-  at a dev server on another port.
+  at a dev server on another port. `GOODBOY_SHOT_WAIT` (milliseconds) lengthens
+  the render wait, and `GOODBOY_SHOT_BLUR=1` drops focus before the capture so no
+  focus ring or tooltip shows.
 - **Both themes, one command each.** The script captures dark and light in
   one run; a scene that renders differently per theme needs no extra work,
   the `&theme=` query param already switches it (`MockScene/index.tsx`).
