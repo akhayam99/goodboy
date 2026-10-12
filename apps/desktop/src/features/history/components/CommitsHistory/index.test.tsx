@@ -354,7 +354,6 @@ describe('CommitsHistory', () => {
       .getAllByRole('listitem')
       .map((item) => item.getAttribute('aria-label'));
     expect(labels).toEqual(LEDGER_COMMITS.map((entry) => entry.subject));
-    expect(screen.getByText('3 newer')).toBeDefined();
     expect(screen.getByText('3 new commits on main')).toBeDefined();
     expect(screen.queryByText('online')).toBeNull();
     expect(screen.queryByText(/already online/)).toBeNull();
@@ -727,15 +726,12 @@ describe('CommitsHistory', () => {
     });
   });
 
-  it('starts from today main as one more planned change', () => {
+  it('keeps the only rebase on the base row, never as a planned change', () => {
     const actions = setup();
-    fireEvent.click(screen.getByRole('button', { name: /Rebase on main/ }));
-    expect(actions.editHistoryDraft).toHaveBeenCalledWith({
-      sessionId: SESSION_ID,
-      mountId: MOUNT_ID,
-      items: BASE,
-      onto: LEDGER_GRAPH.mainHead,
-    });
+    expect(screen.queryByText(/is here now/)).toBeNull();
+    expect(screen.queryByRole('button', { name: /Rebase on main/ })).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Rebase onto latest' })).toHaveLength(1);
+    expect(actions.editHistoryDraft).not.toHaveBeenCalled();
   });
 
   it('names the chosen base branch in the graph', () => {
@@ -1018,7 +1014,7 @@ describe('CommitsHistory after a squash', () => {
     seed();
     const view = render(<CommitsHistory sessionId={SESSION_ID} worktreePath="/w/payments" />);
     const before = lane();
-    expect(before).toBe(56 * (LEDGER_COMMITS.length + 2));
+    expect(before).toBe(56 * (LEDGER_COMMITS.length + 1));
 
     seed({
       commits: [SQUASHED],
@@ -1029,7 +1025,7 @@ describe('CommitsHistory after a squash', () => {
     act(() => observers.resizeAll());
 
     expect(observers.observedCount()).toBeGreaterThan(0);
-    expect(lane()).toBe(56 * 3);
+    expect(lane()).toBe(56 * 2);
     expect(lane()).toBeLessThan(before);
   });
 });

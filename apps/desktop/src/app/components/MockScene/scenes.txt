@@ -71,6 +71,7 @@ branch-files-deep
 branch-files-docked
 branch-files-nopr-notes
 branch-files-notes
+branch-force-push-failed
 branch-lane-chain
 branch-lane-working
 branch-merged
@@ -96,6 +97,7 @@ branch-pr-narrow
 branch-pr-none
 branch-pr-scribe-writing
 branch-push
+branch-push-failed
 branch-queued
 branch-rebase-job
 branch-reply-alone

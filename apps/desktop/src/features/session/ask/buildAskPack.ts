@@ -263,6 +263,7 @@ const WORD_ORDER: ReadonlyArray<ResolveWord> = [
   'working',
   'ready',
   'open',
+  'replied',
   'done',
   'left_open',
 ];

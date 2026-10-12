@@ -1,5 +1,7 @@
 import type { MountId, SessionId } from '@goodboy/types';
 import type { ReviewTargetOutcome } from '../../../store/slices/review-navigation/types';
+import { readOnlineRemoteSha } from '../../../store/slices/worktreeStatuses/onlyOnline';
+import { pushFailedError } from './pushFailedError';
 import type { OnlineCommit } from '../../../store/slices/worktreeStatuses/onlyOnline';
 import { ensure, worktreeStatusKey } from '../../../store/slices/worktreeStatuses/cache';
 import { REVIEW_TARGET_REASON_COPY } from '../../review/reviewTargetCopy';
@@ -137,15 +139,23 @@ export const pushMount = async ({
   isForce,
   confirmedOnlyOnline,
 }: PushMountParams): Promise<void> => {
+  const confirmedRemoteSha = isForce ? readOnlineRemoteSha({ mountId }) : null;
   const result = isForce
     ? await env.getState().forcePushSessionBranch({
         sessionId,
         mountId,
         confirmedOnlyOnline: confirmedOnlyOnline?.map((commit) => commit.sha) ?? null,
+        confirmedRemoteSha,
       })
     : await env.getState().pushSessionBranch({ sessionId, mountId });
   if (!result.ok) {
-    throw new Error(result.error);
+    throw pushFailedError({
+      message: result.error,
+      mountId,
+      isForce,
+      confirmedOnlyOnline,
+      confirmedRemoteSha,
+    });
   }
   await refreshWorktreeStatus({ worktreePath, baseBranch });
 };

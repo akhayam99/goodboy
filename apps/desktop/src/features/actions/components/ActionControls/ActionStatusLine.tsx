@@ -1,12 +1,18 @@
+import type { ReactNode } from 'react';
 import { Button, cn, tintClasses } from '@goodboy/ui';
 import type { ActionControls } from '../../useActionControls';
 
 type Props = {
   readonly controls: ActionControls;
   readonly showReasons?: boolean;
+  readonly failureActions?: ReactNode;
 };
 
-export const ActionStatusLine = ({ controls, showReasons = true }: Props) => {
+export const ActionStatusLine = ({
+  controls,
+  showReasons = true,
+  failureActions = null,
+}: Props) => {
   const visible = showReasons
     ? [...controls.inSlot({ slot: 'primary' }), ...controls.inSlot({ slot: 'secondary' })]
     : [];
@@ -41,6 +47,7 @@ export const ActionStatusLine = ({ controls, showReasons = true }: Props) => {
             {failed === null ? '' : `${failed.label}: `}
             {controls.failure.message}
           </p>
+          {failureActions}
           <Button size="sm" variant="ghost" onClick={controls.retry}>
             Retry
           </Button>

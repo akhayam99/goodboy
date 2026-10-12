@@ -259,23 +259,12 @@ export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: 
               graph={graph}
               baseSha={draft?.baseSha ?? ''}
               baseBranch={baseBranch}
-              onto={onto}
               isInteractive={isInteractive}
               dropTarget={drag.drag?.target ?? null}
               nowMs={nowMs}
               renderRow={renderRow}
               onKeyDown={keys.onRowKey}
               onNarrowViewChange={setNarrowView}
-              onStartFromMain={() => {
-                if (graph === null) {
-                  return;
-                }
-                editing.change({
-                  items,
-                  onto: graph.mainHead,
-                  message: "Your branch will start from today's main on Apply",
-                });
-              }}
             />
             {reveal.isMounted ? (
               <HistoryAfterColumn

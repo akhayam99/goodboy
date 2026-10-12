@@ -82,7 +82,10 @@ const nextOpenAfter = ({
   readonly threadId: string;
 }): string | null => {
   const open = entries.filter(
-    (entry) => entry.resolveWord !== 'done' && entry.resolveWord !== 'left_open',
+    (entry) =>
+      entry.resolveWord !== 'done' &&
+      entry.resolveWord !== 'replied' &&
+      entry.resolveWord !== 'left_open',
   );
   const index = open.findIndex((entry) => entry.threadId === threadId);
   if (index === -1) {

@@ -1,9 +1,6 @@
 import type { ReactNode, RefObject } from 'react';
-import { ArrowUp } from 'lucide-react';
-import { Button, cn } from '@goodboy/ui';
+import { cn } from '@goodboy/ui';
 import type { BranchCommit, HistoryGraph, SessionId } from '@goodboy/types';
-import { NAMES } from '../../../../shared/names';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { HISTORY_GRAPH } from '../../historyGraphGeometry';
 import type { HistoryDropTarget } from '../../useHistoryDrag';
@@ -24,16 +21,12 @@ type Props = {
   readonly graph: HistoryGraph | null;
   readonly baseSha: string;
   readonly baseBranch: string;
-  readonly onto: string | null;
   readonly isInteractive: boolean;
   readonly dropTarget: HistoryDropTarget | null;
   readonly nowMs: number;
   readonly renderRow: (commit: BranchCommit) => ReactNode;
-  readonly onStartFromMain: () => void;
   readonly onRebase: (params: RebaseRequest) => void;
 };
-
-const MAIN_ROW_LIMIT = 5;
 
 export const HistoryNowList = ({
   sessionId,
@@ -47,19 +40,12 @@ export const HistoryNowList = ({
   graph,
   baseSha,
   baseBranch,
-  onto,
   isInteractive,
   dropTarget,
   nowMs,
   renderRow,
-  onStartFromMain,
   onRebase,
 }: Props) => {
-  const behind = graph?.behind ?? 0;
-  const isPlannedOnMain = view === 'planned' && onto !== null;
-  const hasMainRow = behind > 0 && !isPlannedOnMain;
-  const mainHead = graph?.mainCommits[0] ?? null;
-  const mainShort = (graph?.mainHead ?? '').slice(0, 7);
   const forkAge =
     graph === null
       ? ''
@@ -69,31 +55,6 @@ export const HistoryNowList = ({
         });
   return (
     <div ref={listRef} className="relative flex flex-col">
-      {hasMainRow ? (
-        <div
-          data-graph-key="main"
-          className="grid min-h-12 grid-cols-[72px_minmax(0,1fr)] items-center"
-        >
-          <span aria-hidden />
-          <span className="flex min-w-0 items-center gap-3 px-3 text-label text-muted-foreground">
-            <span className="shrink-0">
-              <span className="text-foreground">main</span> is here now
-            </span>
-            <span className="shrink-0 font-mono tabular-nums">{mainShort}</span>
-            <span className="min-w-0 truncate">
-              {onto !== null && view === 'now'
-                ? 'your branch will start here on Apply'
-                : `${behind} newer`}
-            </span>
-            {isInteractive && onto === null && view !== 'done' ? (
-              <Button size="sm" variant="secondary" className="shrink-0" onClick={onStartFromMain}>
-                <ArrowUp size={ICON_SIZE.row} aria-hidden />
-                {`${NAMES.rebaseOn} ${baseBranch}`}
-              </Button>
-            ) : null}
-          </span>
-        </div>
-      ) : null}
       <div role="list" aria-label="Commits" className="flex flex-col">
         {rows.map(renderRow)}
       </div>
@@ -103,52 +64,30 @@ export const HistoryNowList = ({
       >
         <span aria-hidden />
         <span className="flex min-w-0 items-center gap-3 px-3 text-label text-muted-foreground">
-          {isPlannedOnMain ? (
-            <>
-              <span className="shrink-0 text-foreground">Starts from today&apos;s main</span>
-              <span className="shrink-0 font-mono tabular-nums">{mainShort}</span>
-              <span className="min-w-0 truncate">{mainHead?.subject ?? ''}</span>
-            </>
-          ) : (
-            <HistoryBaseRow
-              sessionId={sessionId}
-              graph={graph}
-              baseBranch={baseBranch}
-              baseSha={baseSha}
-              forkAge={forkAge}
-              repoPath={repoPath}
-              ownBranch={ownBranch}
-              isInteractive={isInteractive && view === 'now'}
-              isDone={view === 'done'}
-              onRebase={onRebase}
-            />
-          )}
+          <HistoryBaseRow
+            sessionId={sessionId}
+            graph={graph}
+            baseBranch={baseBranch}
+            baseSha={baseSha}
+            forkAge={forkAge}
+            repoPath={repoPath}
+            ownBranch={ownBranch}
+            isInteractive={isInteractive && view === 'now'}
+            isDone={view === 'done'}
+            onRebase={onRebase}
+          />
         </span>
       </div>
-      {isPlannedOnMain
-        ? (graph?.mainCommits ?? []).slice(1, MAIN_ROW_LIMIT + 1).map((commit) => (
-            <div
-              key={commit.sha}
-              className="grid min-h-7 grid-cols-[72px_minmax(0,1fr)] items-center"
-            >
-              <span aria-hidden />
-              <span className="flex min-w-0 items-center gap-3 px-3 text-label text-faint-foreground">
-                <span className="shrink-0 font-mono tabular-nums">{commit.sha.slice(0, 7)}</span>
-                <span className="min-w-0 truncate">{commit.subject}</span>
-              </span>
-            </div>
-          ))
-        : null}
       <HistoryLaneSvg
         width={HISTORY_GRAPH.gutter}
         height={positions.height}
         trunkX={HISTORY_GRAPH.trunkX}
         laneX={HISTORY_GRAPH.laneX}
-        mainY={positions.y.get('main') ?? null}
+        mainY={null}
         forkY={positions.y.get('fork') ?? null}
         nodes={nodes}
         isDashed={view === 'planned'}
-        isForkOnMain={isPlannedOnMain}
+        isForkOnMain={false}
       />
       {dropTarget !== null && dropTarget.mode === 'slot' ? (
         <div

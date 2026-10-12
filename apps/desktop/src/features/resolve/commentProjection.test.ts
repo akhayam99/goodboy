@@ -53,7 +53,7 @@ describe('projectResolveComment', () => {
     ['drafting', false, 'working', 'Working', 'info', 'working'],
     ['accepted', false, 'ready', 'Applied', 'success', 'ready_to_push'],
     ['replied', false, 'ready', 'Applied', 'success', 'ready_to_push'],
-    ['pushed', false, 'done', 'Done', 'neutral', 'done'],
+    ['pushed', false, 'replied', 'Replied', 'neutral', 'done'],
     ['resolved', false, 'done', 'Done', 'neutral', 'done'],
     ['skipped', false, 'left_open', 'Left open', 'neutral', 'left_open'],
     ['new', false, 'open', 'Open', 'neutral', 'open'],
@@ -80,7 +80,7 @@ describe('projectResolveComment', () => {
       'ready',
       'ready',
       'left_open',
-      'done',
+      'replied',
       'done',
     ]);
     expect(RESOLVE_LIST_GROUPS).toEqual([
@@ -94,6 +94,15 @@ describe('projectResolveComment', () => {
     expect(RESOLVE_GROUP_LABEL.ready_to_push).toBe('Ready to push');
   });
 
+  it('keeps Replied apart from Applied: a delivered thread is not a fix still to push', () => {
+    expect(RESOLVE_WORD_LABEL.replied).toBe('Replied');
+    expect(RESOLVE_WORD_LABEL.ready).toBe('Applied');
+    expect(RESOLVE_GROUP_OF_WORD.replied).toBe('done');
+    expect(RESOLVE_GROUP_OF_WORD.ready).toBe('ready_to_push');
+    expect(projectResolveComment(facts({ state: 'accepted' })).word).toBe('ready');
+    expect(projectResolveComment(facts({ state: 'pushed' })).word).toBe('replied');
+  });
+
   it('names the host in the group of the comments left open', () => {
     expect(leftOpenGroupLabel({ sourceLabel: 'GitHub' })).toBe('Left open on GitHub');
     expect(leftOpenGroupLabel({ sourceLabel: 'GitLab' })).toBe('Left open on GitLab');
@@ -102,7 +111,8 @@ describe('projectResolveComment', () => {
 
   it('never calls a decided or sent comment by a sub-word', () => {
     const label = (state: ReviewCommentState) => projectResolveComment(facts({ state })).label;
-    expect(label('pushed')).toBe('Done');
+    expect(label('pushed')).toBe('Replied');
+    expect(label('resolved')).not.toBe(label('pushed'));
     expect(label('skipped')).toBe('Left open');
     expect(label('replied')).toBe('Applied');
     expect(label('accepted')).toBe('Applied');
@@ -111,9 +121,9 @@ describe('projectResolveComment', () => {
     );
   });
 
-  it('reads a pushed Bitbucket comment as Done, never as resolved', () => {
+  it('reads a pushed Bitbucket comment as Replied, never as resolved', () => {
     const pushed = projectResolveComment(facts({ state: 'pushed', sourceLabel: 'Bitbucket' }));
-    expect(pushed.label).toBe('Done');
+    expect(pushed.label).toBe('Replied');
     expect(pushed.label.toLowerCase()).not.toContain('resolved');
   });
 

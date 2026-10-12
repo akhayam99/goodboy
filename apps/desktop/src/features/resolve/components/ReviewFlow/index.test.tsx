@@ -175,7 +175,7 @@ describe('Review as one flow', () => {
     expect(screen.queryByRole('button', { name: 'Filter comments' })).toBeNull();
   });
 
-  it('keeps Done under Resolved, open there, and Left open closed until it is opened', async () => {
+  it('keeps Replied under Done, open there, and Left open closed until it is opened', async () => {
     await mount({ threadId: null });
 
     const leftOpen = within(list()).getByRole('button', { name: /^Left open on GitHub \d+/ });
@@ -188,7 +188,7 @@ describe('Review as one flow', () => {
     expect(within(list()).getAllByText('Left open').length).toBeGreaterThan(0);
 
     showResolved();
-    expect(within(list()).getAllByText('Done').length).toBeGreaterThan(0);
+    expect(within(list()).getAllByText('Replied').length).toBeGreaterThan(0);
     expect(within(list()).queryByRole('region', { name: 'Needs you' })).toBeNull();
   });
 
@@ -224,7 +224,7 @@ describe('Review as one flow', () => {
       'Applied',
       'Open',
       'Left open',
-      'Done',
+      'Replied',
     ]) {
       expect(words, word).toContain(word);
     }

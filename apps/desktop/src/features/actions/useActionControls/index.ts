@@ -12,6 +12,7 @@ type Params = {
 type ActionFailure = {
   readonly actionId: string;
   readonly message: string;
+  readonly error: unknown;
   readonly choice: string | null;
 };
 
@@ -48,7 +49,7 @@ export const useActionControls = ({ target, anchorKey = null }: Params): ActionC
       try {
         await run({ actionId, choice });
       } catch (error) {
-        setFailure({ actionId, message: formatError(error), choice });
+        setFailure({ actionId, message: formatError(error), error, choice });
       } finally {
         setPendingId(null);
       }

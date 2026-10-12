@@ -1,0 +1,78 @@
+import { useEffect, useRef, useState } from 'react';
+import { Button } from '@goodboy/ui';
+import type { MountId, SessionId } from '@goodboy/types';
+import { useAppStore } from '../../../../store';
+
+type Props = {
+  readonly sessionId: SessionId;
+  readonly mountId: MountId;
+  readonly isForce: boolean;
+  readonly confirmedOnlyOnline: ReadonlyArray<string> | null;
+  readonly confirmedRemoteSha: string | null;
+  readonly message: string;
+  readonly onResolved: () => void;
+};
+
+export const PushFailureActions = ({
+  sessionId,
+  mountId,
+  isForce,
+  confirmedOnlyOnline,
+  confirmedRemoteSha,
+  message,
+  onResolved,
+}: Props) => {
+  const [isFixing, setIsFixing] = useState(false);
+  const [isOpening, setIsOpening] = useState(false);
+  const reportError = useAppStore((state) => state.reportError);
+  const settledCount = useAppStore((state) => state.settledBranchPushes[mountId] ?? 0);
+  const initialSettledCount = useRef(settledCount);
+  useEffect(() => {
+    if (settledCount > initialSettledCount.current) {
+      onResolved();
+    }
+  }, [settledCount, onResolved]);
+  const fixWithAgent = async () => {
+    setIsFixing(true);
+    try {
+      await useAppStore.getState().fixBranchPushWithAgent({
+        sessionId,
+        mountId,
+        isForce,
+        confirmedOnlyOnline,
+        confirmedRemoteSha,
+        message,
+      });
+    } catch (error) {
+      await reportError({ title: "Couldn't start the agent.", error, sessionId });
+    } finally {
+      setIsFixing(false);
+    }
+  };
+  const openTerminal = async () => {
+    setIsOpening(true);
+    try {
+      await useAppStore.getState().prefillBranchPushTerminal({
+        sessionId,
+        mountId,
+        isForce,
+        confirmedOnlyOnline,
+        confirmedRemoteSha,
+      });
+    } catch (error) {
+      await reportError({ title: "Couldn't open the terminal.", error, sessionId });
+    } finally {
+      setIsOpening(false);
+    }
+  };
+  return (
+    <>
+      <Button size="sm" isBusy={isFixing} onClick={() => void fixWithAgent()}>
+        Fix with agent
+      </Button>
+      <Button size="sm" variant="secondary" isBusy={isOpening} onClick={() => void openTerminal()}>
+        Open terminal here
+      </Button>
+    </>
+  );
+};

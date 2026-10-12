@@ -159,6 +159,18 @@ export type HistoryRewriterBinding = {
   readonly identity: HistoryIdentity;
 };
 
+export type BranchPushFix = {
+  readonly sessionId: SessionId;
+  readonly mountId: MountId;
+  readonly isForce: boolean;
+  readonly confirmedOnlyOnline: ReadonlyArray<string> | null;
+};
+
+export type BranchPushInput = HistoryMountInput & {
+  readonly isForce: boolean;
+  readonly confirmedOnlyOnline: ReadonlyArray<string> | null;
+};
+
 export type HistoryTarget = {
   readonly sessionId: SessionId;
   readonly mountId: MountId;

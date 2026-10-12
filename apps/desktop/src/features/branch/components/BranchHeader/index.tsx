@@ -15,6 +15,8 @@ import type { BranchPrimary } from '../../branchPrimary';
 import { queueLineOf } from '../../queueLineOf';
 import { pullRequestKindOf } from '../../../../shared/pullRequestKind';
 import type { PullRequestPresentationState } from '../../../../shared/pullRequestPresentation';
+import { pushFailureOf } from '../../../actions/kinds/pushFailureOf';
+import { PushFailureActions } from './PushFailureActions';
 import { BranchStateChip } from './BranchStateChip';
 import { BranchOverflow } from './BranchOverflow';
 import { BranchSwitcher } from './BranchSwitcher';
@@ -94,6 +96,8 @@ export const BranchHeader = ({
         ? `#${pr.number}`
         : `${PULL_REQUEST_NOUNS[host].short} ${PULL_REQUEST_NOUNS[host].numberPrefix}${pr.number}`;
 
+  const failedError = controls.diffControls.failure?.error;
+  const pushFailure = pushFailureOf({ error: failedError });
   const buttonOf = ({ action, slot, variant }: ButtonParams) => {
     const button = (
       <Button
@@ -257,7 +261,25 @@ export const BranchHeader = ({
           }
         />
       )}
-      <ActionStatusLine controls={controls.diffControls} showReasons={false} />
+      <ActionStatusLine
+        controls={controls.diffControls}
+        showReasons={false}
+        failureActions={
+          pushFailure === null ? null : (
+            <PushFailureActions
+              sessionId={sessionId}
+              mountId={pushFailure.mountId}
+              isForce={pushFailure.isForce}
+              confirmedOnlyOnline={
+                pushFailure.confirmedOnlyOnline?.map((commit) => commit.sha) ?? null
+              }
+              confirmedRemoteSha={pushFailure.confirmedRemoteSha}
+              message={pushFailure.message}
+              onResolved={controls.diffControls.dismissFailure}
+            />
+          )
+        }
+      />
       <ActionConfirmPanel controls={controls.diffControls} />
       <ActionStatusLine controls={controls.pullRequestControls} showReasons={false} />
       <ActionConfirmPanel controls={controls.pullRequestControls} />

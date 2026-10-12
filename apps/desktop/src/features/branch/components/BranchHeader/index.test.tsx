@@ -18,7 +18,7 @@ vi.mock('../../../worktree/useMountRemoteHostKind', () => ({
 }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type {
   MountId,
   ProjectId,
@@ -902,5 +902,113 @@ describe('BranchHeader title editing', () => {
 
     await waitFor(() => expect(screen.queryByRole('textbox')).toBeNull());
     expect(editPr).not.toHaveBeenCalled();
+  });
+});
+
+describe('BranchHeader push failure', () => {
+  const open: PullRequestState = { ...PR, isDraft: false };
+  type UpstreamAtParams = {
+    readonly ahead: number;
+    readonly behind: number;
+  };
+  const upstreamAt = ({ ahead, behind }: UpstreamAtParams) => ({
+    ...statusOf({}),
+    upstreamDistance: { kind: 'known' as const, ahead, behind },
+  });
+
+  type FailPushWithParams = {
+    readonly error: string;
+  };
+
+  const failPushWith = ({ error }: FailPushWithParams) => {
+    const fixBranchPushWithAgent = vi.fn<StoreState['fixBranchPushWithAgent']>(async () => {});
+    const prefillBranchPushTerminal = vi.fn<StoreState['prefillBranchPushTerminal']>(
+      async () => {},
+    );
+    useAppStore.setState({
+      pushSessionBranch: vi.fn<StoreState['pushSessionBranch']>(async () => ({ ok: false, error })),
+      forcePushSessionBranch: vi.fn<StoreState['forcePushSessionBranch']>(async () => ({
+        ok: false,
+        error,
+      })),
+      fixBranchPushWithAgent,
+      prefillBranchPushTerminal,
+    });
+    return { fixBranchPushWithAgent, prefillBranchPushTerminal };
+  };
+
+  it('offers Fix with agent and Open terminal here beside Retry when a plain push fails', async () => {
+    withRequest(open);
+    status = upstreamAt({ ahead: 2, behind: 0 });
+    const { fixBranchPushWithAgent, prefillBranchPushTerminal } = failPushWith({
+      error: 'pre-push hook declined',
+    });
+    renderHeader({ pr: open });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Push 2 commits' }));
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('pre-push hook declined');
+
+    fireEvent.click(within(alert).getByRole('button', { name: 'Fix with agent' }));
+    await waitFor(() => expect(fixBranchPushWithAgent).toHaveBeenCalledTimes(1));
+    expect(fixBranchPushWithAgent).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      isForce: false,
+      confirmedOnlyOnline: null,
+      confirmedRemoteSha: null,
+      message: 'pre-push hook declined',
+    });
+
+    fireEvent.click(within(alert).getByRole('button', { name: 'Open terminal here' }));
+    await waitFor(() =>
+      expect(prefillBranchPushTerminal).toHaveBeenCalledWith(
+        expect.objectContaining({ sessionId: SESSION_ID, mountId: MOUNT_ID, isForce: false }),
+      ),
+    );
+    expect(within(alert).getByRole('button', { name: 'Retry' })).toBeDefined();
+  });
+
+  it('offers the same two actions on a failed force push and keeps the force lease', async () => {
+    withRequest(open);
+    status = upstreamAt({ ahead: 2, behind: 1 });
+    const { fixBranchPushWithAgent, prefillBranchPushTerminal } = failPushWith({
+      error: 'stale info',
+    });
+    renderHeader({ pr: open });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Force push 3 commits' }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Force push$/ }));
+    const alert = await screen.findByRole('alert');
+
+    fireEvent.click(within(alert).getByRole('button', { name: 'Fix with agent' }));
+    await waitFor(() =>
+      expect(fixBranchPushWithAgent).toHaveBeenCalledWith(
+        expect.objectContaining({ isForce: true, message: 'stale info' }),
+      ),
+    );
+    fireEvent.click(within(alert).getByRole('button', { name: 'Open terminal here' }));
+    await waitFor(() =>
+      expect(prefillBranchPushTerminal).toHaveBeenCalledWith(
+        expect.objectContaining({ isForce: true }),
+      ),
+    );
+  });
+
+  it('drops the failure and its recovery buttons once the agent fix pushed', async () => {
+    withRequest(open);
+    status = upstreamAt({ ahead: 2, behind: 0 });
+    failPushWith({ error: 'pre-push hook declined' });
+    renderHeader({ pr: open });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Push 2 commits' }));
+    await screen.findByRole('alert');
+
+    act(() => {
+      useAppStore.setState({ settledBranchPushes: { [MOUNT_ID]: 1 } });
+    });
+
+    await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+    expect(screen.queryByRole('button', { name: 'Open terminal here' })).toBeNull();
   });
 });

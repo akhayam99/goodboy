@@ -50,6 +50,7 @@ export const SESSION_EVICTION = [
   { key: 'historyRuns', keyedBy: 'mount', evictOn: 'archive' },
   { key: 'historyDrafts', keyedBy: 'mount', evictOn: 'archive' },
   { key: 'historyRewriters', keyedBy: 'agent', evictOn: 'archive' },
+  { key: 'branchPushFixes', keyedBy: 'agent', evictOn: 'archive' },
   { key: 'scribeAgents', keyedBy: 'agent', evictOn: 'archive' },
   { key: 'sessionGithub', keyedBy: 'session', evictOn: 'archive' },
   { key: 'pullRequestViews', keyedBy: 'session', evictOn: 'archive' },

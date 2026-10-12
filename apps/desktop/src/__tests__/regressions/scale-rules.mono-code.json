@@ -17,7 +17,6 @@
   "apps/desktop/src/features/history/components/CommitsHistory/HistoryAbsorbedGroup.tsx": "sha",
   "apps/desktop/src/features/history/components/CommitsHistory/HistoryCommitRow.tsx": "sha",
   "apps/desktop/src/features/history/components/CommitsHistory/HistoryEditRow.tsx": "command",
-  "apps/desktop/src/features/history/components/CommitsHistory/HistoryNowList.tsx": "sha",
   "apps/desktop/src/features/impact/components/ImpactStudio/ShippedPanel.tsx": "path",
   "apps/desktop/src/features/inbox/components/InboxStudio/InboxRow.tsx": "identifier",
   "apps/desktop/src/features/inbox/components/InboxStudio/StarredSnapshotRow.tsx": "identifier",

@@ -113,6 +113,7 @@ const WORD_PRECEDENCE: ReadonlyArray<ResolveWord> = [
   'to_review',
   'couldnt_fix',
   'ready',
+  'replied',
   'done',
   'left_open',
   'open',

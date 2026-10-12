@@ -1954,8 +1954,9 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   Ready to push, Open, Done and Left open on its host, the last two closed)
   under the run status line, and the focused comment beside it in the page
   itself, never in a drawer. A comment reads one word (Question for you, Fix ready,
-  Push failed, Failed, Working, Applied, Done, Left open, Open), all from `RESOLVE_WORD_LABEL`
-  in `commentProjection.ts`, and `reviewTally` is the one count behind every number of them.
+  Push failed, Failed, Working, Applied, Replied, Done, Left open, Open), all from `RESOLVE_WORD_LABEL`
+  in `commentProjection.ts` (Applied is a fix on the branch whose reply is not sent, Replied is a
+  thread delivered and resolved on the host), and `reviewTally` is the one count behind every number of them.
   The action that takes a fix is `Apply fix` (`Apply N fixes`) in the list, the bar and the
   drawer. A fix run is one agent and one transcript for all its comments: answers, retries and
   hints continue that run, only a model the owner picks starts a new one, and a finished turn
@@ -2596,6 +2597,11 @@ command and git output, `fixPushWithAgent`; it commits the fix and never pushes,
 pushes again with the same lease, `settlePushFix`, and the banner follows it with a link to its
 transcript), `Open terminal here` (the session terminal drawer at the worktree with the exact
 push typed at the prompt and not run, `openSessionTerminal` with `prefill`) and `Retry push`.
+The same two actions sit beside Retry on the inline failure line of the header Push and Force
+push (`PushFailureActions`, shown when the failed action's error is a `PushFailedError`): the
+agent is `fixBranchPushWithAgent`, its finish runs `settleBranchPushFix` (plain push, or force push
+with the lease read before the agent started and the commits the confirm named), and the terminal
+is `prefillBranchPushTerminal` (`git push`, or `--force-with-lease` pinned to that sha).
 Only the header pushes: a thread has no
 Push, Push again or Sync button. With an accepted thread opened in Comments the
 primary reads `Push 1` (it counts threads) and pushes just that fix
@@ -2823,14 +2829,12 @@ moves only after the engine checks the result, with a backup ref and a push
 with lease.
 
 The Commits tab draws the branch as a graph (`history_graph`): a grey main
-trunk with its head node (`main is here now`, how many commits it gained,
-`Rebase on main`), your branch leaving it at the real fork point, one
+trunk, your branch leaving it at the real fork point, one
 row per commit newest first, and the base row at the fork. There
 is no row of fact chips over it: the graph already says how many commits are
 yours, how far main moved and what is online. At rest the section is one
-column (`grid-cols-1`) on a 72px lane (trunk at x 20, lane at x 52): the first
-row is `main is here now` with its head node, `15 newer` and a secondary
-`Rebase on main`, then one row per commit (title, then sha, author and age in
+column (`grid-cols-1`) on a 72px lane (trunk at x 20, lane at x 52): one row
+per commit (title, then sha, author and age in
 `text-meta`, a faint `Not pushed` chip only on a commit that is not on the
 online copy, the grip on hover and focus only), then the base row.
 

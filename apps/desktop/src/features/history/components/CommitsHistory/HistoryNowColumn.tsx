@@ -24,14 +24,12 @@ type Props = {
   readonly graph: HistoryGraph | null;
   readonly baseSha: string;
   readonly baseBranch: string;
-  readonly onto: string | null;
   readonly isInteractive: boolean;
   readonly dropTarget: HistoryDropTarget | null;
   readonly nowMs: number;
   readonly renderRow: (commit: BranchCommit) => ReactNode;
   readonly onKeyDown: (event: ReactKeyboardEvent<HTMLDivElement>) => void;
   readonly onNarrowViewChange: (view: 'now' | 'planned') => void;
-  readonly onStartFromMain: () => void;
   readonly onRebase: (params: RebaseRequest) => void;
 };
 
@@ -56,14 +54,12 @@ export const HistoryNowColumn = ({
   graph,
   baseSha,
   baseBranch,
-  onto,
   isInteractive,
   dropTarget,
   nowMs,
   renderRow,
   onKeyDown,
   onNarrowViewChange,
-  onStartFromMain,
   onRebase,
 }: Props) => (
   <div className="flex min-w-0 flex-col gap-2" onKeyDown={onKeyDown}>
@@ -94,12 +90,10 @@ export const HistoryNowColumn = ({
       graph={graph}
       baseSha={baseSha}
       baseBranch={baseBranch}
-      onto={onto}
       isInteractive={isInteractive}
       dropTarget={dropTarget}
       nowMs={nowMs}
       renderRow={renderRow}
-      onStartFromMain={onStartFromMain}
       onRebase={onRebase}
     />
   </div>

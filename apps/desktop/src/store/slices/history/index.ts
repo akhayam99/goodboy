@@ -21,6 +21,9 @@ import { acceptHistoryChange } from './acceptHistoryChange';
 import { discardHistoryChange } from './discardHistoryChange';
 import { fixPushWithAgent } from './fixPushWithAgent';
 import { settlePushFix } from './settlePushFix';
+import { fixBranchPushWithAgent } from './fixBranchPushWithAgent';
+import { settleBranchPushFix } from './settleBranchPushFix';
+import { prefillBranchPushTerminal } from './prefillBranchPushTerminal';
 import { settleHistoryRewriter } from './settleHistoryRewriter';
 import { startHistoryRewriter } from './startHistoryRewriter';
 import { syncBranchWithRemote } from './syncBranchWithRemote';
@@ -39,6 +42,9 @@ export const createHistorySlice = ({ set, get }: SliceDeps) => {
     settleHistoryRewriter: settleHistoryRewriter(set, get),
     fixPushWithAgent: fixPushWithAgent(set, get),
     settlePushFix: settlePushFix(set, get),
+    fixBranchPushWithAgent: fixBranchPushWithAgent(set, get),
+    settleBranchPushFix: settleBranchPushFix(set, get),
+    prefillBranchPushTerminal: prefillBranchPushTerminal(get),
     loadHistoryDraft: loadHistoryDraft(set, get),
     editHistoryDraft: editHistoryDraft(set, get),
     undoHistoryDraft: undoHistoryDraft(set, get),
