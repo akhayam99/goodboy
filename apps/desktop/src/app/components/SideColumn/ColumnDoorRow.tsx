@@ -4,6 +4,8 @@ import { PANE_RHYTHM, cn } from '@goodboy/ui';
 import type { ShortcutId } from '../../../shared/keyboard/registry';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 import { DoorCreateButton } from './DoorCreateButton';
+import { DoorSignalMark } from './DoorSignalMark';
+import type { DoorSignal } from './doorSignal';
 
 type DoorCreate = {
   readonly label: string;
@@ -18,6 +20,7 @@ type Props = {
   readonly shortcut?: string;
   readonly isCurrent: boolean;
   readonly trailing?: ReactNode;
+  readonly signal?: DoorSignal | undefined;
   readonly create?: DoorCreate;
   readonly onSelect: () => void;
 };
@@ -29,6 +32,7 @@ export const ColumnDoorRow = ({
   shortcut,
   isCurrent,
   trailing,
+  signal,
   create,
   onSelect,
 }: Props) => (
@@ -36,7 +40,7 @@ export const ColumnDoorRow = ({
     <button
       type="button"
       data-column-door={id}
-      aria-label={label}
+      aria-label={signal === undefined ? label : `${label}, ${signal.fact}`}
       aria-current={isCurrent ? 'page' : undefined}
       onClick={() => {
         if (isCurrent) {
@@ -57,6 +61,7 @@ export const ColumnDoorRow = ({
       <Icon size={ICON_SIZE.control} aria-hidden className="shrink-0" />
       <span className="min-w-0 flex-1 truncate text-left">{label}</span>
       {trailing}
+      {signal === undefined ? null : <DoorSignalMark signal={signal} />}
       {shortcut === undefined ? null : (
         <span
           aria-hidden

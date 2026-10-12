@@ -8,6 +8,7 @@ import { ColumnDoorRow } from './ColumnDoorRow';
 import { ColumnFoot } from './ColumnFoot';
 import { ColumnToggleButton } from './ColumnToggleButton';
 import { COLUMN_DOORS, openColumnDoor, type ColumnActions } from './columnDoors';
+import { useDoorSignals } from './useDoorSignals';
 import { isStudioOverSession, type ColumnPlace } from './columnPlace';
 
 type Props = {
@@ -38,6 +39,7 @@ export const SideColumn = ({
   settingsSlotRef,
   isPeek = false,
 }: Props) => {
+  const signals = useDoorSignals({});
   const isSettingsShown = place === 'settings' && settingsSlotRef !== undefined;
   const go = (open: () => void) => () => {
     open();
@@ -71,6 +73,7 @@ export const SideColumn = ({
                     shortcut: shortcutGlyphs(door.shortcutId),
                   })}
                   isCurrent={place === door.id}
+                  signal={signals[door.id]}
                   {...(door.id === 'chat' && { trailing: <ChatDoorActivity /> })}
                   {...(door.id === 'chat' && {
                     create: {

@@ -22,6 +22,7 @@ import { AgentTitle } from './AgentTitle';
 import { AgentNextAction } from './AgentNextAction';
 import { AgentStoppedNotice } from './AgentStoppedNotice';
 import { RewriterFinishedNotice } from './RewriterFinishedNotice';
+import { useAgentHasBrief } from '../../hooks/useAgentHasBrief';
 import { useRewriterComposer } from '../../hooks/useRewriterComposer';
 
 type Props = {
@@ -58,7 +59,12 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
   const requestedPane = useAppStore((state) => state.agentPane?.[session.id] ?? null);
   const rememberedTab = useAppStore((state) => state.agentTab[agent.id] ?? null);
   const setAgentTab = useAppStore((state) => state.setAgentTab);
-  const openTab = agentOpenTab({ requested: requestedPane, remembered: rememberedTab });
+  const hasBrief = useAgentHasBrief({ session, agent });
+  const openTab = agentOpenTab({
+    requested: requestedPane,
+    remembered: rememberedTab,
+    hasBrief,
+  });
   const openTabRef = useRef(openTab);
   openTabRef.current = openTab;
   const [tab, setTab] = useState<AgentTab>(openTab);

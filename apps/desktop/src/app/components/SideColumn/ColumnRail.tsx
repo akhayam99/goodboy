@@ -1,5 +1,5 @@
 import { Plus } from 'lucide-react';
-import { COLLAPSED_RAIL_WIDTH, cn, tintClasses } from '@goodboy/ui';
+import { COLLAPSED_RAIL_WIDTH, StatusDot, cn, tintClasses } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { selectSessionDraft } from '../../../store/slices/sessionDraft/selectSessionDraft';
@@ -14,6 +14,7 @@ import { RailButton } from './RailButton';
 import { RailSessions } from './RailSessions';
 import { ReportBugButton } from './ReportBugButton';
 import { COLUMN_DOORS, openColumnDoor, type ColumnActions } from './columnDoors';
+import { useDoorSignals } from './useDoorSignals';
 import type { ColumnPlace } from './columnPlace';
 
 type Props = {
@@ -43,6 +44,7 @@ export const ColumnRail = ({
       : hasSessionDraftContent({ draft: selectSessionDraft({ state, workspaceId }) }),
   );
   const isDraftWaiting = hasDraft && place !== 'new';
+  const signals = useDoorSignals({});
   return (
     <nav
       aria-label="Sidebar"
@@ -72,26 +74,40 @@ export const ColumnRail = ({
             onSelect={requestNewSession}
           />
           <div className="flex flex-col items-center gap-1 pt-2">
-            {COLUMN_DOORS.map((door) => (
-              <RailButton
-                key={door.id}
-                id={door.id}
-                icon={door.icon}
-                label={door.label}
-                {...(door.shortcutId !== undefined && {
-                  shortcut: door.shortcutId,
-                })}
-                isCurrent={place === door.id}
-                {...(door.id === 'chat' && {
-                  badge: (
-                    <span className="absolute right-0.5 top-0.5 flex">
-                      <ChatDoorActivity />
-                    </span>
-                  ),
-                })}
-                onSelect={() => openColumnDoor({ id: door.id, actions })}
-              />
-            ))}
+            {COLUMN_DOORS.map((door) => {
+              const signal = signals[door.id];
+              return (
+                <RailButton
+                  key={door.id}
+                  id={door.id}
+                  icon={door.icon}
+                  label={signal === undefined ? door.label : `${door.label}, ${signal.fact}`}
+                  {...(door.shortcutId !== undefined && {
+                    shortcut: door.shortcutId,
+                  })}
+                  isCurrent={place === door.id}
+                  {...(door.id === 'chat' && {
+                    badge: (
+                      <span className="absolute right-0.5 top-0.5 flex">
+                        <ChatDoorActivity />
+                      </span>
+                    ),
+                  })}
+                  {...(signal !== undefined && {
+                    badge: (
+                      <span
+                        aria-hidden
+                        data-door-signal={signal.isWarning ? 'warning' : 'dot'}
+                        className="absolute right-0.5 top-0.5 flex"
+                      >
+                        <StatusDot tone={signal.isWarning ? 'warning' : 'info'} size="sm" />
+                      </span>
+                    ),
+                  })}
+                  onSelect={() => openColumnDoor({ id: door.id, actions })}
+                />
+              );
+            })}
           </div>
           {workspaceId === null ? null : (
             <RailSessions

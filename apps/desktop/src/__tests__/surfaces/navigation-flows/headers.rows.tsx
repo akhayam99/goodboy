@@ -112,7 +112,7 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'agent page: opens on the Brief from a door, and the tab picked by hand is remembered for that agent only',
+    name: 'agent page: opens on the Brief from a door when it has content, and the tab picked by hand is remembered for that agent only',
     covers: ['navigate'],
     open: async (ctx) => {
       const agents = (useAppStore.getState().sessionPhaseRuns[ctx.sessionId] ?? []).filter(
@@ -126,9 +126,12 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
         sessionPhaseRuns: {
           ...current.sessionPhaseRuns,
           [ctx.sessionId]: [
-            ...(current.sessionPhaseRuns[ctx.sessionId] ?? []),
+            ...(current.sessionPhaseRuns[ctx.sessionId] ?? []).map((run) =>
+              run.id === first.id ? { ...run, outputSummary: 'Capped the retries at three' } : run,
+            ),
             {
               ...first,
+              outputSummary: 'Capped the retries at three',
               id: OTHER_AGENT,
               name: 'Review the retry cap',
               kind: 'reviewer',

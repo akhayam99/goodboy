@@ -16,6 +16,8 @@ import {
   type StoryStore,
 } from '../../../store/storyHarness';
 import { OPEN_REPORT_SHEET_EVENT } from '../../../features/bug-report/openReportSheet';
+import { brandedId } from '../../../features/history/testing/brandedId';
+import type { TerminalTabId } from '../../../shared/types/terminal';
 import { ColumnRail } from './ColumnRail';
 import { SideColumn } from './index';
 import type { ColumnActions } from './columnDoors';
@@ -119,6 +121,54 @@ describe('SideColumn', () => {
     expect(within(foot).getByRole('button', { name: 'Settings' })).toBeDefined();
     expect(within(foot).getByTestId('goodboy-chip')).toBeDefined();
     expect(within(foot).getByRole('button', { name: 'Report a bug' })).toBeDefined();
+  });
+
+  it('names a live terminal on the Terminal row without crowding its plus', () => {
+    useAppStore.setState({
+      terminalTabs: {
+        [WORKSPACE.id]: [
+          {
+            id: brandedId<TerminalTabId>({ value: 'tab-1' }),
+            owner: { kind: 'workspace', workspaceId: WORKSPACE.id },
+            title: 'dev',
+            cwd: null,
+            status: 'running',
+            createdAt: 1,
+          },
+        ],
+      },
+    });
+    mountColumn({ place: 'terminal' });
+
+    const door = screen.getByRole('button', { name: 'Terminal, 1 running' });
+    expect(door.querySelector('[data-door-signal="count"]')?.textContent).toBe('1');
+    expect(screen.getByRole('button', { name: 'New terminal' })).toBeDefined();
+  });
+
+  it('puts a warning on the Monitoring row when a pinned port is down', () => {
+    useAppStore.setState({
+      monitorSnapshot: { listeners: [], processes: [], takenAt: 1, isPlatformSupported: true },
+      monitorPinned: [{ port: 9000, description: 'Mock API' }],
+    });
+    mountColumn();
+
+    const door = screen.getByRole('button', { name: 'Monitoring, a pinned port is down' });
+    expect(door.querySelector('[data-door-signal="warning"]')).not.toBeNull();
+  });
+
+  it('stays quiet about a pinned port before the first scan', () => {
+    useAppStore.setState({ monitorPinned: [{ port: 9000, description: 'Mock API' }] });
+    mountColumn();
+
+    expect(screen.getByRole('button', { name: 'Monitoring' })).toBeDefined();
+  });
+
+  it('leaves the Terminal and Monitoring rows plain when nothing runs', () => {
+    mountColumn();
+
+    expect(screen.getByRole('button', { name: 'Terminal' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Monitoring' })).toBeDefined();
+    expect(document.querySelector('[data-door-signal]')).toBeNull();
   });
 
   it('renders one row per door and keeps each plus inside its own row', () => {
@@ -303,6 +353,39 @@ describe('ColumnRail', () => {
     readonly scope?: 'workspace' | 'app';
   } = {}) =>
     render(<ColumnRail scope={scope} place={place} onToggle={vi.fn()} actions={actions()} />);
+
+  it('shows a dot, not a number, on the collapsed Terminal and Monitoring doors', () => {
+    useAppStore.setState({
+      terminalTabs: {
+        [WORKSPACE.id]: [
+          {
+            id: brandedId<TerminalTabId>({ value: 'tab-1' }),
+            owner: { kind: 'workspace', workspaceId: WORKSPACE.id },
+            title: 'dev',
+            cwd: null,
+            status: 'running',
+            createdAt: 1,
+          },
+        ],
+      },
+      monitorSnapshot: { listeners: [], processes: [], takenAt: 1, isPlatformSupported: true },
+      monitorPinned: [{ port: 9000, description: 'Mock API' }],
+    });
+    mountRail();
+
+    const terminal = screen.getByRole('button', { name: 'Terminal, 1 running' });
+    expect(terminal.querySelector('[data-door-signal="dot"]')).not.toBeNull();
+    expect(terminal.textContent).toBe('');
+    const monitoring = screen.getByRole('button', { name: 'Monitoring, a pinned port is down' });
+    expect(monitoring.querySelector('[data-door-signal="warning"]')).not.toBeNull();
+  });
+
+  it('keeps the collapsed doors plain when nothing runs', () => {
+    mountRail();
+
+    expect(screen.getByRole('button', { name: 'Terminal' })).toBeDefined();
+    expect(document.querySelector('[data-door-signal]')).toBeNull();
+  });
 
   it('keeps every door at 44px: toggle, New, the six doors, then Settings, the bug and the mark', () => {
     const { container } = mountRail();

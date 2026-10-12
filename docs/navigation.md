@@ -470,7 +470,15 @@ session row, selected while the draft is open, a primary dot and `Draft in progr
 draft waits) and whose group headers carry no top margin: the list's one gap (`listGap`, equal to the
 doors' gap) spaces the groups; then at the foot Settings (⌘,), the Goodboy row
 and a bug icon that opens the report sheet. Chat's door carries a running dot
-or a new-reply dot. Before any workspace exists the column keeps only its app
+or a new-reply dot. Terminal's door counts the terminal tabs still alive, all owners, and Monitoring's
+door counts the pinned ports and the ports Goodboy started that are in use, both in the info tone and
+hidden at zero; a pinned port that is down swaps Monitoring's count for a warning dot. The door's
+accessible name carries the fact (`Terminal, 2 running`, `Monitoring, 3 in use`), and both read the
+store (`useDoorSignals`). While the Monitoring page is closed,
+`useMonitoringSignalRefresh` rescans only the pinned, learned and Goodboy-run ports every 30 seconds
+(`monitor_snapshot` with a port list, merged into the snapshot), only while the window is visible and
+the snapshot is older than 15 seconds, and never beside another scan. The collapsed rail shows a dot
+(no number) on those two doors, with the fact in the tooltip. Before any workspace exists the column keeps only its app
 half: Settings, the Goodboy row and the bug. The column is 240px by default and
 resizes from 200 to 400 (`goodboy:left-sidebar-width:v3`, so an older saved
 width resets once). Its first button or ⌘B folds it, on every screen, into the
@@ -1990,7 +1998,9 @@ on you] }`. Any other agent keeps its page, and its pane tab is part of the
   address: `agentPlace({ sessionId, agentId, pane })` asks for `brief` or
   `transcript`. The agent page opens on Brief from every door. Without a
   `pane` the pane picks its tab (`agentOpenTab`: the `pane` of the address,
-  else the tab the user picked by hand on that agent, else Brief). A door asks
+  else the tab the user picked by hand on that agent, else Brief when the Brief has
+  something to show (an outcome, a latest reply, an open question, a plan or a subagent) and Transcript when it has
+  nothing yet, as for an agent that just started). A door asks
   for `transcript` only when it targets a place inside the chat: a search hit
   on a message, Message this agent, Open the agent from a message, and the
   hint that points at the transcript. A door that targets the Brief, such as a

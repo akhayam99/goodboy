@@ -169,6 +169,123 @@ describe('refreshMonitorSnapshot', () => {
   });
 });
 
+describe('refreshMonitorPorts', () => {
+  it('asks the scan for the given ports only and keeps the other known ports', async () => {
+    stubStoryInvoke({
+      monitor_snapshot: {
+        ...snapshotAt({ takenAt: 1 }),
+        listeners: [{ port: 3000, address: '127.0.0.1', protocol: 'tcp', pid: 30 }],
+      },
+      process_ledger_list: [],
+    });
+    await useAppStore.getState().refreshMonitorSnapshot();
+    stubStoryInvoke({
+      monitor_snapshot: {
+        ...snapshotAt({ takenAt: 2 }),
+        listeners: [{ port: 4300, address: '127.0.0.1', protocol: 'tcp', pid: 43 }],
+      },
+      process_ledger_list: [],
+    });
+    await useAppStore.getState().refreshMonitorPorts({ ports: [4300] });
+
+    expect(
+      storySpies.tauriInvoke.mock.calls.some(
+        ([name, args]) =>
+          name === 'monitor_snapshot' && JSON.stringify(args) === JSON.stringify({ ports: [4300] }),
+      ),
+    ).toBe(true);
+    expect(
+      useAppStore.getState().monitorSnapshot?.listeners.map((listener) => listener.port),
+    ).toEqual([3000, 4300]);
+  });
+
+  it('never runs two scans at once, and a full refresh waits for the narrow one', async () => {
+    let release: (value: MonitorSnapshot) => void = () => undefined;
+    stubStoryInvoke({
+      monitor_snapshot: (args: unknown) =>
+        args !== undefined && JSON.stringify(args) === JSON.stringify({ ports: [4300] })
+          ? new Promise<MonitorSnapshot>((resolve) => {
+              release = resolve;
+            })
+          : snapshotAt({ takenAt: 5 }),
+      process_ledger_list: [],
+    });
+
+    const narrow = useAppStore.getState().refreshMonitorPorts({ ports: [4300] });
+    const again = useAppStore.getState().refreshMonitorPorts({ ports: [4300] });
+    const full = useAppStore.getState().refreshMonitorSnapshot();
+    expect(snapshotCalls()).toBe(1);
+    release(snapshotAt({ takenAt: 4 }));
+    await Promise.all([narrow, again, full]);
+
+    expect(snapshotCalls()).toBe(2);
+  });
+
+  const portsScans = () =>
+    storySpies.tauriInvoke.mock.calls
+      .filter(([name]) => name === 'monitor_snapshot')
+      .map(([, args]) => JSON.stringify(args));
+
+  const gatedScans = () => {
+    const releases: Array<() => void> = [];
+    stubStoryInvoke({
+      monitor_snapshot: () =>
+        new Promise<MonitorSnapshot>((resolve) => {
+          releases.push(() => resolve(snapshotAt({ takenAt: releases.length + 1 })));
+        }),
+      process_ledger_list: [],
+    });
+    return releases;
+  };
+
+  const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+  it('rescans a port requested while a narrow scan for another port is running', async () => {
+    const releases = gatedScans();
+    const first = useAppStore.getState().refreshMonitorPorts({ ports: [4300] });
+    const second = useAppStore.getState().refreshMonitorPorts({ ports: [4400] });
+    await settle();
+    expect(portsScans()).toEqual([JSON.stringify({ ports: [4300] })]);
+    releases[0]?.();
+    await settle();
+    expect(portsScans()).toEqual([
+      JSON.stringify({ ports: [4300] }),
+      JSON.stringify({ ports: [4400] }),
+    ]);
+    releases[1]?.();
+    await Promise.all([first, second]);
+  });
+
+  it('runs a follow-up narrow scan after a full scan that was in flight', async () => {
+    const releases = gatedScans();
+    const full = useAppStore.getState().refreshMonitorSnapshot();
+    const narrow = useAppStore.getState().refreshMonitorPorts({ ports: [4400] });
+    await settle();
+    expect(snapshotCalls()).toBe(1);
+    releases[0]?.();
+    await settle();
+    expect(portsScans()).toEqual([JSON.stringify({}), JSON.stringify({ ports: [4400] })]);
+    releases[1]?.();
+    await Promise.all([full, narrow]);
+  });
+
+  it('coalesces several narrow requests into one follow-up with the union of ports', async () => {
+    const releases = gatedScans();
+    const calls = [
+      useAppStore.getState().refreshMonitorPorts({ ports: [4300] }),
+      useAppStore.getState().refreshMonitorPorts({ ports: [4400] }),
+      useAppStore.getState().refreshMonitorPorts({ ports: [4500, 4400] }),
+    ];
+    await settle();
+    releases[0]?.();
+    await settle();
+    expect(snapshotCalls()).toBe(2);
+    expect(portsScans()[1]).toBe(JSON.stringify({ ports: [4400, 4500] }));
+    releases[1]?.();
+    await Promise.all(calls);
+  });
+});
+
 const PINNED_KEY = 'monitor.pinnedPorts';
 const HIDDEN_KEY = 'monitor.hiddenPorts';
 

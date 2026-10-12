@@ -72,6 +72,7 @@ const landingOf = (revealed: ReadonlyArray<Event>): Landing => {
   const resolved = agentOpenTab({
     requested: state.agentPane[SESSION] ?? null,
     remembered: agentId === null ? null : (state.agentTab[agentId] ?? null),
+    hasBrief: true,
   });
   const isPlainReveal = revealed.some((event) => !isOpenAgentReveal(event));
   return { agentId, tab: isPlainReveal ? 'transcript' : resolved };

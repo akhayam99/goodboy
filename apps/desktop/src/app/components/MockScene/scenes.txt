@@ -454,6 +454,8 @@ settings-run-defaults-link
 settings-tools
 settings-workspace
 shell
+side-signals-idle
+side-signals-running
 sidebar-branches
 sidebar-branches-many
 sidebar-meta-branch
