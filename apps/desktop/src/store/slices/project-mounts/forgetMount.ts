@@ -14,8 +14,16 @@ export type ForgetMountResult = {
   readonly keptPath: string | null;
 };
 
+type ForgetMountInput = MountKeyInput & {
+  readonly expectedRevision?: number;
+};
+
 export const forgetMount = (set: SetFn, get: GetFn) => {
-  return async ({ sessionId, mountId }: MountKeyInput): Promise<ForgetMountResult> => {
+  return async ({
+    sessionId,
+    mountId,
+    expectedRevision,
+  }: ForgetMountInput): Promise<ForgetMountResult> => {
     const rendered = (get().sessionMounts[sessionId] ?? []).find(
       (candidate) => candidate.id === mountId,
     );
@@ -46,6 +54,18 @@ export const forgetMount = (set: SetFn, get: GetFn) => {
       repoRoot: view.repoRoot,
       mountKey: `${sessionId}:${mountId}`,
       run: async () => {
+        if (expectedRevision !== undefined) {
+          const fresh = (await loadMountViews({ get, sessionId })).find(
+            (candidate) => candidate.id === mountId,
+          );
+          if (fresh === undefined || fresh.revision !== expectedRevision || fresh.isAttached) {
+            throw mountError({
+              code: 'revision-conflict',
+              message: 'the mount changed while removing it',
+              mountId,
+            });
+          }
+        }
         await settleMountCleanupProposals({
           set,
           sessionId,

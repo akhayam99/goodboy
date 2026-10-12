@@ -12,6 +12,83 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.25.0
+
+You edit branch history live with Undo and Redo, the session terminal moves to a drawer, and Monitoring, Resolve and the queue get clearer.
+
+### New
+
+#### Edit branch history live
+<!-- gb area=review image=live-edit -->
+
+Commits applies each edit to the branch at once, with Undo and Redo in the header. A conflict stops the edit and leaves the branch as it was. Uncommitted work is stashed first and brought back after.
+
+#### Previous versions
+<!-- gb area=review -->
+
+Every history edit and rebase keeps a version of the branch. The Previous versions drawer lists them with the reason each was kept, and Reset branch returns to one.
+
+#### Fix a failed push
+<!-- gb area=review image=push-failed -->
+
+When a push fails, Fix with agent starts an agent on the failure, and Open terminal here opens a terminal on the worktree with the command ready. The agent commits and Goodboy pushes again with the same lease.
+
+#### Read queued messages
+<!-- gb area=workflows image=queue-read -->
+
+When a run finishes with messages waiting, Read queued message hands them to the orchestrator in one turn. A stopped run offers Resume and read. Nothing starts on its own.
+
+### Improved
+
+#### Rebase from the base row
+<!-- gb area=review image=rebase-base-row -->
+
+The base row of Commits says how far the branch is behind and holds one Rebase onto latest button. Pick another branch in the row to rebase onto it. A version of the current history is kept.
+
+#### One terminal list, in a drawer
+<!-- gb area=sessions image=terminal-drawer -->
+
+A session's terminal opens in a right drawer next to the transcript and shares one list with the Terminal page. Cmd+Alt+T toggles it on the active worktree. The session terminal lens is gone.
+
+#### A clearer Monitoring grid
+<!-- gb area=sessions image=monitoring-grid -->
+
+Monitoring has column headers for Port, Label, Opened by, Process, Up, CPU and Memory. Agent children are indented and terminal rows say what they are, with the process and its pid.
+
+#### Running counts in the column
+<!-- gb area=sessions image=running-counts -->
+
+Terminal and Monitoring in the side column show how many are running and in use, and a dot when the column is collapsed. Pinned ports are checked every 30 seconds while Monitoring is closed.
+
+#### Actions in the file header
+<!-- gb area=review image=file-actions -->
+
+A file's header holds icon actions with tooltips for Open in editor, Show whole file and Copy path. Show whole file opens a drawer with its own unified and split switch.
+
+#### Resolve in one run
+<!-- gb area=review image=resolve-words -->
+
+Resolve is one run with one set of words for Working, Ready, Applied, Failed and a question. A reply the agent asks for shows as a question and a final report no longer reads as one.
+
+#### Branches follow your agents
+<!-- gb area=agents -->
+
+An agent that renames or splits a branch does it through Goodboy, so the mounted worktree follows the new name. A branch deleted on the remote shows a Remove button, and Restore branch when Goodboy kept a copy.
+
+#### Queue is the primary
+<!-- gb area=agents -->
+
+In the message box Queue is the primary action on the right and Read now sits beside it as a ghost button.
+
+### Fixed
+
+- A tooltip no longer sticks in the file tree after you scroll. <!-- gb area=review -->
+- Search fields show one focus ring, not two. <!-- gb area=app -->
+- Resolve no longer says a thread is no longer on this branch when it is. <!-- gb area=review -->
+- Continue is not offered while the run works. <!-- gb area=review -->
+- A final report is no longer shown as a question. <!-- gb area=agents -->
+- A new agent opens on Transcript when its Brief is empty. <!-- gb area=agents -->
+
 ## Goodboy v0.24.1
 
 Ports sort into four groups, Terminal works like Chat, the side column is tidier, and pushes, deletes and popovers behave.

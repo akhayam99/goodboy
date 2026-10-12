@@ -136,6 +136,7 @@ describe('forcePushSessionBranch', () => {
       sessionId: SESSION_ID,
       mountId: SIBLING_MOUNT_ID,
       confirmedOnlyOnline: [],
+      confirmedRemoteSha: null,
     });
 
     expect(result).toEqual({ ok: true });
@@ -162,6 +163,7 @@ describe('forcePushSessionBranch', () => {
       sessionId: SESSION_ID,
       mountId: MOUNT_ID,
       confirmedOnlyOnline: [],
+      confirmedRemoteSha: null,
     });
 
     expect(result).toEqual({
@@ -180,6 +182,7 @@ describe('forcePushSessionBranch', () => {
       sessionId: SESSION_ID,
       mountId: MOUNT_ID,
       confirmedOnlyOnline: [],
+      confirmedRemoteSha: null,
     });
 
     expect(result).toEqual({ ok: false, error: 'remote: denied' });
@@ -194,6 +197,7 @@ describe('forcePushSessionBranch', () => {
       sessionId: SESSION_ID,
       mountId: MOUNT_ID,
       confirmedOnlyOnline: [],
+      confirmedRemoteSha: null,
     });
 
     expect(result.ok).toBe(false);
@@ -215,6 +219,7 @@ describe('forcePushSessionBranch', () => {
       sessionId: SESSION_ID,
       mountId: MOUNT_ID,
       confirmedOnlyOnline: [],
+      confirmedRemoteSha: null,
     });
 
     expect(result).toEqual({
@@ -239,6 +244,7 @@ describe('forcePushSessionBranch', () => {
       sessionId: SESSION_ID,
       mountId: MOUNT_ID,
       confirmedOnlyOnline: [],
+      confirmedRemoteSha: null,
     });
 
     expect(result.ok).toBe(false);
@@ -263,6 +269,7 @@ describe('forcePushSessionBranch', () => {
       sessionId: SESSION_ID,
       mountId: MOUNT_ID,
       confirmedOnlyOnline: ['seen'],
+      confirmedRemoteSha: null,
     });
 
     expect(result).toEqual({
@@ -270,6 +277,40 @@ describe('forcePushSessionBranch', () => {
       error: 'The online copy changed. Check again before force pushing.',
     });
     expect(h.pushWithLease).not.toHaveBeenCalled();
+  });
+
+  it('refuses when the known remote sha is no longer the one the user confirmed', async () => {
+    const state = makeState();
+
+    const result = await forcePushSessionBranch({
+      get: () => state,
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      confirmedOnlyOnline: [],
+      confirmedRemoteSha: 'older-sha',
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      error: 'The online copy changed. Check again before force pushing.',
+    });
+    expect(h.pushWithLease).not.toHaveBeenCalled();
+  });
+
+  it('leases the confirmed remote sha when it still matches', async () => {
+    const state = makeState();
+
+    await forcePushSessionBranch({
+      get: () => state,
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      confirmedOnlyOnline: [],
+      confirmedRemoteSha: 'origin-sha',
+    });
+
+    expect(h.pushWithLease).toHaveBeenCalledWith(
+      expect.objectContaining({ expectedRemoteSha: 'origin-sha' }),
+    );
   });
 
   it('pushes when the fresh only-online commits are exactly the ones confirmed', async () => {
@@ -287,6 +328,7 @@ describe('forcePushSessionBranch', () => {
       sessionId: SESSION_ID,
       mountId: MOUNT_ID,
       confirmedOnlyOnline: ['seen', 'gone-since'],
+      confirmedRemoteSha: null,
     });
 
     expect(result).toEqual({ ok: true });
@@ -301,6 +343,7 @@ describe('forcePushSessionBranch', () => {
       sessionId: SESSION_ID,
       mountId: MOUNT_ID,
       confirmedOnlyOnline: null,
+      confirmedRemoteSha: null,
     });
     expect(clean).toEqual({ ok: true });
 
@@ -318,6 +361,7 @@ describe('forcePushSessionBranch', () => {
       sessionId: SESSION_ID,
       mountId: MOUNT_ID,
       confirmedOnlyOnline: null,
+      confirmedRemoteSha: null,
     });
     expect(lossy).toEqual({
       ok: false,
@@ -341,6 +385,7 @@ describe('forcePushSessionBranch', () => {
       sessionId: SESSION_ID,
       mountId: MOUNT_ID,
       confirmedOnlyOnline: [],
+      confirmedRemoteSha: null,
     });
 
     expect(result.ok).toBe(false);

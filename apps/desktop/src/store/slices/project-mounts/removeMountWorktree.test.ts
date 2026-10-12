@@ -243,4 +243,28 @@ describe('removeMountWorktree', () => {
       expect.objectContaining({ kind: 'remove', status: 'uncertain' }),
     ]);
   });
+
+  it('aborts without touching the disk when the row changed while waiting for the lock', async () => {
+    const state = stateWith({ views: [...h.rows.values()] });
+    const set: SetFn = (update) => {
+      Object.assign(state, typeof update === 'function' ? update(state) : update);
+    };
+    h.withRepositoryAndMountLock.mockImplementationOnce(async ({ run }: LockParams) => {
+      const current = h.rows.get(TARGET_ID);
+      if (current !== undefined) {
+        h.rows.set(TARGET_ID, { ...current, revision: current.revision + 1 });
+      }
+      return run();
+    });
+
+    const result = await removeMountWorktree({ set, get: () => state })({
+      sessionId: SESSION_ID,
+      mountId: TARGET_ID,
+      mode: 'safe',
+    });
+
+    expect(result.kind).toBe('kept');
+    expect(h.cleanupMountDirectory).not.toHaveBeenCalled();
+    expect(h.updateSessionMountLifecycle).not.toHaveBeenCalled();
+  });
 });

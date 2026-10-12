@@ -133,6 +133,17 @@ pub fn lease_status(registry: &WriterLeaseRegistry, path: &str) -> WriterLeaseSt
     status_of(&key, map.get(&key), false)
 }
 
+pub fn holds_lease(registry: &WriterLeaseRegistry, path: &str, holder: &str, token: &str) -> bool {
+    holds_in(&lock(registry), &lease_key(path), holder, token)
+}
+
+fn holds_in(map: &LeaseMap, path: &str, holder: &str, token: &str) -> bool {
+    map.get(path)
+        .and_then(|slot| slot.holder.as_ref())
+        .map(|current| current.id == holder && current.token == token && !current.has_exited)
+        .unwrap_or(false)
+}
+
 pub fn is_lease_live(registry: &WriterLeaseRegistry, path: &str) -> bool {
     is_lease_live_at(&lock(registry), &lease_key(path), Instant::now())
 }

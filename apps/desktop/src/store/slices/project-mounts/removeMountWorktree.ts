@@ -47,6 +47,16 @@ export const removeMountWorktree = ({ set, get }: Params) => {
       keepDirectory: false,
       finish: 'clear-path',
       expectedRevision: view.revision,
+      isStillRemovable: async () => {
+        const fresh = (await loadMountViews({ get, sessionId })).find(
+          (candidate) => candidate.id === mountId,
+        );
+        return (
+          fresh !== undefined &&
+          fresh.revision === view.revision &&
+          fresh.worktreePath === worktreePath
+        );
+      },
       target: {
         sessionId,
         mountId,

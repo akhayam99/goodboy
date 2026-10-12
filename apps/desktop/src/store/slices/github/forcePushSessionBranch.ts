@@ -1,6 +1,7 @@
 import type { MountId, SessionId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { pushWithLease, readOriginAhead } from '../../../features/history/historyEngine';
+import { ONLINE_COPY_CHANGED_MESSAGE } from '../../../features/history/onlineCopyChangedMessage';
 import { ORIGIN_MOVED_MESSAGE } from '../../../features/history/originMovedMessage';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { sessionById } from '../sessions/sessionIndex';
@@ -10,8 +11,6 @@ import type { GetFn } from './types';
 const NEVER_PUSHED_MESSAGE =
   'This branch has no online copy this machine knows of. Push it normally first.';
 
-const ONLINE_COPY_CHANGED_MESSAGE = 'The online copy changed. Check again before force pushing.';
-
 type PushResult = Awaited<ReturnType<typeof pushSessionBranch>>;
 
 type Params = {
@@ -19,6 +18,7 @@ type Params = {
   readonly sessionId: SessionId;
   readonly mountId: MountId;
   readonly confirmedOnlyOnline: ReadonlyArray<string> | null;
+  readonly confirmedRemoteSha: string | null;
 };
 
 export const forcePushSessionBranch = async ({
@@ -26,6 +26,7 @@ export const forcePushSessionBranch = async ({
   sessionId,
   mountId,
   confirmedOnlyOnline,
+  confirmedRemoteSha,
 }: Params): Promise<PushResult> => {
   const session = sessionById(get().sessions, sessionId);
   if (session === undefined) {
@@ -57,12 +58,13 @@ export const forcePushSessionBranch = async ({
     return { ok: false, error: ORIGIN_MOVED_MESSAGE };
   }
   const confirmed = new Set(confirmedOnlyOnline ?? []);
-  if (origin.onlyOnline.some((commit) => !confirmed.has(commit.sha))) {
+  const isRemoteMoved = confirmedRemoteSha !== null && origin.knownRemoteSha !== confirmedRemoteSha;
+  if (isRemoteMoved || origin.onlyOnline.some((commit) => !confirmed.has(commit.sha))) {
     return { ok: false, error: ONLINE_COPY_CHANGED_MESSAGE };
   }
   const pushed = await pushWithLease({
     ...target,
-    expectedRemoteSha: origin.knownRemoteSha,
+    expectedRemoteSha: confirmedRemoteSha ?? origin.knownRemoteSha,
   }).catch((error: unknown) => ({ kind: 'failed' as const, message: formatError(error) }));
   if (pushed.kind === 'stale') {
     return { ok: false, error: ORIGIN_MOVED_MESSAGE };

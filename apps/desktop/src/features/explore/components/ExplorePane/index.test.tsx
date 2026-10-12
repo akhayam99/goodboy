@@ -51,7 +51,9 @@ const DIR = '/workspace/sessions/session-1';
 const OTHER_DIR = '/workspace/sessions/session-2';
 const HOURS_AGO = 14;
 
-const modifiedAt = (): string => new Date(Date.now() - HOURS_AGO * 3_600_000).toISOString();
+const NOW_MS = Date.parse('2026-03-10T12:00:00.000Z');
+
+const modifiedAt = (): string => new Date(NOW_MS - HOURS_AGO * 3_600_000).toISOString();
 
 type EntryParams = {
   readonly relPath: string;
@@ -135,6 +137,8 @@ beforeAll(async () => {
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(NOW_MS);
   await resetStoryStore();
   h.lists.clear();
   h.reads.length = 0;
@@ -187,7 +191,10 @@ beforeEach(async () => {
   mountProject({ kind: 'folder', worktreePath: DIR, branch: '' });
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 describe('ExplorePane tree', () => {
   it('lists the root as a tree and opens a folder when you click it', async () => {
@@ -529,7 +536,11 @@ describe('ExplorePane previews', () => {
 
     fireEvent.click(await rowNamed('page.tsx'));
     const drawer = await screen.findByRole('region', { name: 'page.tsx' });
-    await screen.findByText(/export const b/, undefined, { timeout: 4_000 });
+    await waitFor(() =>
+      expect(drawer.querySelector('[data-source-line="2"]')?.textContent).toBe(
+        'export const b = 2;',
+      ),
+    );
 
     const header = drawer.querySelector('header');
     if (header === null) {

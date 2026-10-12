@@ -24,6 +24,7 @@ export type OnlineCommit = {
 
 type Entry = {
   readonly branch: string;
+  readonly knownRemoteSha: string | null;
   readonly commits: ReadonlyArray<OnlineCommit>;
 };
 
@@ -40,6 +41,9 @@ export const readOnlyOnline = ({
   }
   return entry.commits;
 };
+
+export const readOnlineRemoteSha = ({ mountId }: ClearParams): string | null =>
+  entryByMount.get(mountId)?.knownRemoteSha ?? null;
 
 export const clearOnlyOnline = ({ mountId }: ClearParams): void => {
   requestByMount.set(mountId, (requestByMount.get(mountId) ?? 0) + 1);
@@ -68,6 +72,7 @@ export const loadOnlyOnline = async ({
   }
   entryByMount.set(mountId, {
     branch,
+    knownRemoteSha: origin.knownRemoteSha,
     commits: origin.onlyOnline.map(({ sha, subject }) => ({ sha, subject })),
   });
 };

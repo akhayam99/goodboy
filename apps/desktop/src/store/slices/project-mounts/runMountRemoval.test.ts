@@ -217,4 +217,39 @@ describe('runMountRemoval', () => {
 
     expect(onlyOperation().input).toMatchObject({ keepDirectory: true });
   });
+
+  it('aborts without touching the disk when the mount changed while waiting for the lock', async () => {
+    const finishRow = vi.fn(async () => true);
+
+    const result = await runMountRemoval({
+      get,
+      target: target(),
+      mode: 'safe',
+      keepDirectory: false,
+      finish: 'clear-path',
+      expectedRevision: 3,
+      finishRow,
+      isStillRemovable: async () => false,
+    });
+
+    expect(result.decision.kind).toBe('kept');
+    expect(h.cleanupMountDirectory).not.toHaveBeenCalled();
+    expect(finishRow).not.toHaveBeenCalled();
+    expect(h.operations.size).toBe(0);
+  });
+
+  it('removes when the mount is still removable under the lock', async () => {
+    await runMountRemoval({
+      get,
+      target: target(),
+      mode: 'safe',
+      keepDirectory: false,
+      finish: 'clear-path',
+      expectedRevision: 3,
+      finishRow: async () => true,
+      isStillRemovable: async () => true,
+    });
+
+    expect(h.cleanupMountDirectory).toHaveBeenCalledTimes(1);
+  });
 });
