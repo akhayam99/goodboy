@@ -14,6 +14,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type {
+  IsoDateTime,
   Agent,
   AgentId,
   SessionId,
@@ -29,6 +30,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../store/storyHarness';
+import { brandedId } from '../../../history/testing/brandedId';
 import { OrchestratorDock } from './OrchestratorDock';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -206,5 +208,82 @@ describe('OrchestratorDock', () => {
     expect(await tooltipOf('Read now')).toBe(
       'While the run is paused, Read now waits in the queue too.',
     );
+  });
+
+  it('makes Queue the primary action and Read now the quiet one', () => {
+    renderDock();
+    type('one more thing');
+
+    const queue = screen.getByRole('button', { name: 'Queue' });
+    const readNow = screen.getByRole('button', { name: 'Read now' });
+    expect(queue.getAttribute('data-variant')).toBe('primary');
+    expect(readNow.getAttribute('data-variant')).toBe('ghost');
+  });
+
+  type QueuedHintParams = {
+    readonly id: string;
+  };
+
+  const queuedHint = ({ id }: QueuedHintParams) => ({
+    id,
+    text: `note ${id}`,
+    createdAt: brandedId<IsoDateTime>({ value: '2026-10-12T09:00:00.000Z' }),
+  });
+
+  it('offers Resume and read on a stopped run that holds a queued message', () => {
+    const read = vi.fn(async () => undefined);
+    storeState['readQueuedWorkflowHints'] = read;
+    renderDock({
+      runOverride: run({
+        orchestrationStop: { kind: 'operator', message: 'You stopped this run.' },
+        orchestratorHints: [queuedHint({ id: 'h1' })],
+      }),
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Resume and read queued message' }));
+
+    expect(read).toHaveBeenCalledWith({ sessionId: SESSION_ID, workflowRunId: RUN_ID });
+  });
+
+  it('offers Read 2 queued on a finished run and reads once', () => {
+    const read = vi.fn(async () => undefined);
+    storeState['readQueuedWorkflowHints'] = read;
+    renderDock({
+      runOverride: run({
+        orchestrationOutcome: 'done',
+        orchestratorHints: [queuedHint({ id: 'h1' }), queuedHint({ id: 'h2' })],
+      }),
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Read 2 queued' }));
+
+    expect(read).toHaveBeenCalledTimes(1);
+    expect(read).toHaveBeenCalledWith({ sessionId: SESSION_ID, workflowRunId: RUN_ID });
+  });
+
+  it('names a single queued message on a finished run', () => {
+    renderDock({
+      runOverride: run({
+        orchestrationOutcome: 'done',
+        orchestratorHints: [queuedHint({ id: 'h1' })],
+      }),
+    });
+
+    screen.getByRole('button', { name: 'Read queued message' });
+  });
+
+  it('has no read button while the run is working', () => {
+    renderDock({
+      runOverride: run({ orchestratorHints: [queuedHint({ id: 'h1' }), queuedHint({ id: 'h2' })] }),
+      agents: [agent('running')],
+    });
+
+    expect(screen.queryByRole('button', { name: /^Read (\d|queued)/ })).toBeNull();
+  });
+
+  it('has no read button when nothing is queued', () => {
+    renderDock({ runOverride: run({ orchestrationOutcome: 'done' }) });
+
+    expect(screen.queryByRole('button', { name: /queued/ })).toBeNull();
   });
 });

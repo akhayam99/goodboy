@@ -5,13 +5,10 @@ import type {
   SessionId,
   WorkflowRunId,
 } from '@goodboy/types';
-import { runsForWorkflowRun } from '@goodboy/core';
 import { saveGoalAttachments } from '../attachments/saveGoalAttachments';
-import { cancelRunningSteps } from './cancelRunningSteps';
-import { requestDecisionRestart } from './decisionRestart';
 import { findWorkflowRun } from './findWorkflowRun';
 import { isRunPaused } from '../../../features/workflows/isRunPaused';
-import { markHintsReading, releaseHintsReading } from './orchestratorReadingHints';
+import { readNow } from './readNow';
 import type { GetFn, SetFn } from './types';
 import { updateOrchestratorHints } from './updateOrchestratorHints';
 
@@ -58,47 +55,6 @@ const saveHintFiles = async ({
   });
 };
 
-type DeliverParams = {
-  readonly set: SetFn;
-  readonly get: GetFn;
-  readonly sessionId: SessionId;
-  readonly workflowRunId: WorkflowRunId;
-};
-
-type ReadNowParams = DeliverParams & {
-  readonly hintId: string;
-};
-
-const deliverNow = async ({ set, get, sessionId, workflowRunId }: DeliverParams): Promise<void> => {
-  if (get().orchestratingWorkflowRuns[workflowRunId] === true) {
-    requestDecisionRestart({ set, workflowRunId });
-    await get().orchestrateNextStep(sessionId, workflowRunId);
-    return;
-  }
-  const hasRunningStep = runsForWorkflowRun(
-    get().sessionPhaseRuns[sessionId] ?? [],
-    workflowRunId,
-  ).some((agent) => agent.status === 'running');
-  if (hasRunningStep) {
-    await cancelRunningSteps({ set, get, sessionId, workflowRunId });
-  }
-  await get().continueWorkflowRun(sessionId, workflowRunId);
-};
-
-const readNow = async ({ set, get, sessionId, workflowRunId, hintId }: ReadNowParams) => {
-  markHintsReading({ set, workflowRunId, hintIds: [hintId] });
-  try {
-    await deliverNow({ set, get, sessionId, workflowRunId });
-  } finally {
-    const isDecisionAhead =
-      get().orchestratingWorkflowRuns[workflowRunId] === true ||
-      get().pendingOrchestrations[workflowRunId] != null;
-    if (isDecisionAhead === false) {
-      releaseHintsReading({ set, workflowRunId, hintIds: [hintId] });
-    }
-  }
-};
-
 export const addWorkflowOrchestratorHint = (set: SetFn, get: GetFn) => {
   return async (
     sessionId: SessionId,
@@ -134,6 +90,6 @@ export const addWorkflowOrchestratorHint = (set: SetFn, get: GetFn) => {
     ) {
       return;
     }
-    void readNow({ set, get, sessionId, workflowRunId, hintId: hint.id });
+    void readNow({ set, get, sessionId, workflowRunId, hintIds: [hint.id] });
   };
 };

@@ -1,5 +1,5 @@
 import { useRef, useState, type FocusEvent } from 'react';
-import { Button, Tooltip } from '@goodboy/ui';
+import { DeliveryActions } from '../../../../shared/components/DeliveryActions';
 import { PromptField, type PromptSubmitMode } from '../../../../shared/components/PromptField';
 import { usePromptFiles } from '../../../../shared/hooks/usePromptFiles';
 import { toAttachmentInputs } from '../../../attachments/pendingAttachment';
@@ -118,30 +118,15 @@ export const OrchestratorHintComposer = ({
         files={files.files}
         actions={
           isOpen ? (
-            <>
-              <Tooltip content={QUEUE_COPY} side="top">
-                <Button
-                  type="submit"
-                  size="sm"
-                  variant="ghost"
-                  disabled={canSend === false}
-                  data-testid="orchestrator-hint-queue"
-                >
-                  Queue
-                </Button>
-              </Tooltip>
-              <Tooltip content={readNowCopy({ isDeciding, isStepRunning, isPaused })} side="top">
-                <Button
-                  type="button"
-                  size="sm"
-                  disabled={canSend === false}
-                  data-testid="orchestrator-hint-now"
-                  onClick={() => void send({ delivery: 'now' })}
-                >
-                  Read now
-                </Button>
-              </Tooltip>
-            </>
+            <DeliveryActions
+              canSend={canSend}
+              isQueueSubmit
+              queueHint={QUEUE_COPY}
+              readNowHint={readNowCopy({ isDeciding, isStepRunning, isPaused })}
+              queueTestId="orchestrator-hint-queue"
+              readNowTestId="orchestrator-hint-now"
+              onReadNow={() => void send({ delivery: 'now' })}
+            />
           ) : undefined
         }
       />

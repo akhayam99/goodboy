@@ -339,15 +339,15 @@ describe('ChatInput, input wiring', () => {
         },
       });
 
-    it('offers Queue and Send now once there is text, with the helper line', async () => {
+    it('offers Queue and Read now once there is text, with the helper line', async () => {
       const user = userEvent.setup();
       render(<ChatInput session={runningSession()} />);
 
-      expect(screen.queryByRole('button', { name: /^Send now/ })).toBeNull();
+      expect(screen.queryByRole('button', { name: /^Read now/ })).toBeNull();
       await user.type(screen.getByRole('textbox'), 'keep the flag');
 
       expect(screen.getByRole('button', { name: /^Queue/ })).toBeDefined();
-      expect(screen.getByRole('button', { name: /^Send now/ })).toBeDefined();
+      expect(screen.getByRole('button', { name: /^Read now/ })).toBeDefined();
       expect(screen.getByText(/Queue waits for this turn to end/)).toBeDefined();
     });
 

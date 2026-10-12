@@ -25,6 +25,7 @@ import { removeWorkflowOrchestratorHint } from './removeWorkflowOrchestratorHint
 import { setWorkflowOrchestratorRouting } from './setWorkflowOrchestratorRouting';
 import { renameWorkflowRun } from './renameWorkflowRun';
 import { restoreWorkflow } from './restoreWorkflow';
+import { readQueuedWorkflowHints } from './readQueuedWorkflowHints';
 import { retryWorkflowOrchestration } from './retryWorkflowOrchestration';
 import { reprocessGoalForWorkflow } from './reprocessGoalForWorkflow';
 import { resetWorkflows } from './resetWorkflows';
@@ -80,6 +81,7 @@ export const createWorkflowsSlice = ({ set, get }: SliceDeps) => {
     maybeAutoAdvanceWorkflow: maybeAutoAdvanceWorkflow(set, get),
     orchestrateNextStep: orchestrateNextStep(set, get),
     retryWorkflowOrchestration: retryWorkflowOrchestration(set, get),
+    readQueuedWorkflowHints: readQueuedWorkflowHints({ set, get }),
     continueWorkflowRun: continueWorkflowRun(set, get),
     addWorkflowOrchestratorHint: addWorkflowOrchestratorHint(set, get),
     removeWorkflowOrchestratorHint: removeWorkflowOrchestratorHint(set, get),

@@ -1,5 +1,6 @@
 import { ArrowUp, Square } from 'lucide-react';
-import { Button, cn, Tooltip, tintClasses, KeyHint } from '@goodboy/ui';
+import { Button, cn, Tooltip, tintClasses } from '@goodboy/ui';
+import { DeliveryActions } from '../../../../../shared/components/DeliveryActions';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { formatCombo, shortcutGlyphs } from '../../../../../shared/keyboard/registry';
 
@@ -42,16 +43,13 @@ export const SendControl = ({
 
   if (showsDeliveryChoice) {
     return (
-      <>
-        <Button variant="ghost" size="sm" onClick={onSend}>
-          Queue
-          <KeyHint keys={formatCombo('Enter')} />
-        </Button>
-        <Button variant="primary" size="sm" onClick={onSendNow}>
-          Send now
-          <KeyHint keys={shortcutGlyphs('composer.submit')} isOnTone />
-        </Button>
-      </>
+      <DeliveryActions
+        canSend={canSend}
+        queueKeys={formatCombo('Enter')}
+        readNowKeys={shortcutGlyphs('composer.submit')}
+        onQueue={onSend}
+        onReadNow={onSendNow}
+      />
     );
   }
 

@@ -156,8 +156,9 @@ record a live turn already wrote wins.
   Start, from the card or from the live nudge (`acceptSessionNudgeHandoff`),
   seeds the new agent's first turn with the reason and what the source agent
   wrote (`composeHandoffSeed`, `handoffSourceOutput`), passed as `seedPrompt`.
-  `spawnAgent` sends a first turn only when the kickoff is not empty, so a
-  started agent with no seed, plan or step prompt sits in Pending until you
+  `spawnAgent` sends a first turn only when the kickoff is not empty and
+  `shouldDeferKickoff` is unset (the push fixers set it and send the turn once
+  bound to their run), so a started agent with no seed, plan or step prompt sits in Pending until you
   type. A seed fills the kickoff only when no `initialPrompt` or step prompt
   does, and unlike `initialPrompt` it does not stop an implementer from
   fanning a clustered plan out.
@@ -703,7 +704,7 @@ avoided on `SendControl`'s own buttons.
 - The right side is `RoutingPicker` (with a `budget` prop, `ProviderUsagePill`
   passed in rather than living beside it) then `SendControl` (`parts/`): the
   same `ArrowUp` glyph as `ConversationComposer`, stop while a turn runs with
-  nothing to send, Queue/Send now once there is something to deliver while a
+  nothing to send, Read now/Queue (Queue primary) once there is something to deliver while a
   turn runs.
 - `ChatInput/index.tsx` only composes. Its state lives in `hooks/use*` (agent
   selection, draft, queue, send, suggestions), its sections in `parts/`, and

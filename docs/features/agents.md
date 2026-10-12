@@ -57,7 +57,7 @@ When an agent recommends another role, its transcript shows **Agent suggests** w
 
 ### Queue or send now
 
-Keep talking while an agent works. **Enter** queues your message for its next turn, **⌘Enter** interrupts and sends it now, and the queue survives a restart.
+Keep talking while an agent works. **Enter** queues your message for its next turn, **⌘Enter** reads it now, interrupting the turn, and the queue survives a restart.
 
 ### Message and document fields
 
