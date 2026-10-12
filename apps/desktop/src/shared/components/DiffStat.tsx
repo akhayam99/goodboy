@@ -19,6 +19,7 @@ export const DiffStat = ({ additions, deletions, size = 'sm' }: Props) => {
   return (
     <span
       data-testid="diff-stat"
+      data-size={size}
       className={cn('flex shrink-0 items-center gap-1 tabular-nums', SIZE_CLASS[size])}
     >
       {additions === 0 ? null : (

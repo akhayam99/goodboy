@@ -51,12 +51,13 @@
   reads like a figure, not a place you work in. The spend chip is state that
   opens the studio that owns that number, on Impact's Spend tab, and the Limits
   chips open the Providers menu. The bar never edits a record in place.
-- **The column holds every door.** One create row of three labelled buttons (+ Session,
-  - Chat, + Terminal) sits under the toggle; Board, Tasks, Chat, Workflows, Terminal and
-    Monitoring sit under it with no plus of their own, the Sessions list follows, Settings and the Goodboy row sit at
-    the foot. Board is home and the first door (⌘⇧H). The column is on every
-    screen with a workspace: the board, a session, the draft and every studio but
-    Settings, which swaps the column's content (see Studios).
+- **The column holds every door.** Board, Tasks, Chat, Workflows, Terminal and
+  Monitoring sit under the toggle; Chat and Terminal each end in a plus (New chat, New
+  terminal) that shows on hover, on focus and while the door is open. One separator,
+  then the Sessions list with a New session row first, Settings and the Goodboy row sit at
+  the foot. Board is home and the first door (⌘⇧H). The column is on every
+  screen with a workspace: the board, a session, the draft and every studio but
+  Settings, which swaps the column's content (see Studios).
 - **One home per thing.** Say a thing must exist in state A and can exist in
   state B. It lives where it must, and B gets no second copy. Workspace identity
   is always pinned at the left of the top bar. Neither the column nor a studio
@@ -100,7 +101,7 @@
   below, Close rewrites the top entry as the page without the studio. Esc is
   layered: it closes a popover or a confirmation inside the studio before the
   studio itself.
-- **One selected sign.** The open studio's door, + Session while the draft is
+- **One selected sign.** The open studio's door, New session while the draft is
   open, or Board on the board, takes `bg-selected` with `cursor-default` and
   `aria-current="page"`, in the column and on the rail alike. Every door reads it from one place (`columnPlaceOf`, through
   `useColumnPlace`), so at most one door carries it; inside a session no door
@@ -458,14 +459,16 @@ reference material beside the page and closes with the pane that opened it.
 
 **The column** (`app/components/SideColumn/`) is on every screen with a
 workspace, in the same shape everywhere: the toggle on the traffic-light axis,
-the create row, three equal buttons side by side, each a 12px plus and a word
-(`CreateRow`): + Session (⌘N, the only emphasised control, selected while the draft is
-open, a primary dot and `Draft in progress` while a draft waits), + Chat (⌘⇧N, always a
-new chat, never the last one) and + Terminal (a new terminal in the workspace folder);
-then the doors Board
+the doors Board
 (⌘⇧H), Tasks, Chat, Workflows, Terminal (⌃`) and Monitoring as one 28px row each (icon and word, the
-shortcut on hover), the Sessions list (`SessionNavSidebar`, its rows and header
-belong to the sessions list), then at the foot Settings (⌘,), the Goodboy row
+shortcut on hover); Chat ends in a plus (`DoorCreateButton`, New chat, ⌘⇧N, always a
+new chat, never the last one) and Terminal in a plus (New terminal in the workspace folder),
+both visible on hover and focus and while their door is open; one separator
+(`h-px bg-border-soft`) with the same gap above and below; the Sessions list
+(`SessionNavSidebar`), whose first row is New session (`NewSessionRow`, ⌘N, shaped like a
+session row, selected while the draft is open, a primary dot and `Draft in progress` while a
+draft waits) and whose group headers carry no top margin: the list's one gap (`listGap`, equal to the
+doors' gap) spaces the groups; then at the foot Settings (⌘,), the Goodboy row
 and a bug icon that opens the report sheet. Chat's door carries a running dot
 or a new-reply dot. Before any workspace exists the column keeps only its app
 half: Settings, the Goodboy row and the bug. The column is 240px by default and
@@ -711,7 +714,7 @@ returns focus to the button, and `→` or `↓` on the button moves into it. A s
 over the session leaves its button `remembered` (full foreground, no marker). The
 other nodes carry the session title and the stage words in their tooltip. `+N`
 counts the pins past the seventh and opens the same flyout with every pin. `New`
-shows the draft dot and reads `New session, draft in progress` while a written
+shows the draft dot and reads `New session, Draft in progress` while a written
 draft waits elsewhere.
 
 **Two keys switch sessions without the list.** `⌃Tab` opens a list of the
@@ -984,8 +987,9 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
   lists the session's pages with a count that names what it counts,
   grouped as pages, Tools and Linked. One pure table, `pageCountWordOf`
   (`features/session/pageCountWord.ts`), reads noun last and empty at zero:
-  Branch `5 need you` (else `3 branches` with more than one mount), Runs
-  `2 running` (else `4 runs`), Agents `1 running` (else `3 agents`), Artifacts
+  Branch `5 need you` (else `3 branches` with more than one mount, else the branch name of the one
+  mount, with its `+x -y` diff beside it on the open session's row only), Runs
+  `2 running` in the info tone (else `4 runs`, every kept run), Agents `1 running` (else `3 agents`), Artifacts
   `4 artifacts`, Questions `2 open`. The sidebar row and the menu read it
   through `usePageSummaries`; `Session`
   has no menu once it has children. A run lists the session's runs (Running,

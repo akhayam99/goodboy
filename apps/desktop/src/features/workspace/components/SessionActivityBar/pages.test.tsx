@@ -12,20 +12,29 @@ vi.mock('../../../../shared/lib/db', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { aWorkflowRun, anAgent } from '@goodboy/types/testing';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  storySpies,
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { lensDestinations } from '../../../session/lens-destinations';
 import { sessionTitle } from '../../../session/sessionTitle';
 import { usePageSummaries } from '../../../session/hooks/usePageSummaries';
 import { pageMenu } from '../../../session/trail/menus/pageMenu';
-import { harborline, renderBar, seedColumn, sessionOf } from '../../testing/sessionColumn';
+import {
+  harborline,
+  ledgerCore,
+  mountOf,
+  paymentsApi,
+  renderBar,
+  seedColumn,
+  sessionOf,
+} from '../../testing/sessionColumn';
 
 let useAppStore: StoryStore;
 
@@ -121,7 +130,10 @@ describe('the pages under the open session', () => {
   it('nests the five work pages under its row, in order', () => {
     mountOpen();
     const pages = pagesOf().getAllByRole('button');
-    expect(pages.map((page) => page.textContent)).toEqual(PAGE_LABELS);
+    expect(pages).toHaveLength(PAGE_LABELS.length);
+    PAGE_LABELS.forEach((label, index) => {
+      expect(pages[index]?.textContent?.startsWith(label)).toBe(true);
+    });
   });
 
   it('shows pages for the open session only', () => {
@@ -216,24 +228,27 @@ describe('counts on the pages and in the page menu', () => {
     goal: 'Fix webhook retries',
     lastOpenedAt: '2026-10-06T09:00:00.000Z',
   });
+  const firstRun = aWorkflowRun({ ordinal: 0 });
   const withRuns: Session = {
     ...busy,
-    workflowRuns: [aWorkflowRun({ ordinal: 0 }), aWorkflowRun({ ordinal: 1 })],
+    workflowRuns: [firstRun, aWorkflowRun({ ordinal: 1 })],
   };
+
+  const withRunsId = withRuns.id as SessionId;
 
   const mountBoth = () => {
     seedColumn({
       store: useAppStore,
       sessions: [withRuns, other],
-      currentSessionId: withRuns.id as SessionId,
+      currentSessionId: withRunsId,
     });
     useAppStore.setState({
       sessionBranches: { [withRuns.id]: 'goodboy/webhook-retries' },
       sessionPhaseRuns: {
         [withRuns.id]: [
-          anAgent({ sessionId: withRuns.id as SessionId, status: 'running', name: 'Implementer' }),
+          anAgent({ sessionId: withRunsId, status: 'running', name: 'Implementer' }),
           anAgent({
-            sessionId: withRuns.id as SessionId,
+            sessionId: withRunsId,
             status: 'completed',
             ordinal: 1,
             name: 'Planner',
@@ -257,11 +272,81 @@ describe('counts on the pages and in the page menu', () => {
     },
   );
 
-  it('counts the running agents in words and says nothing for runs that are not running', () => {
+  it('counts the kept runs and the running agents, and names the branch', () => {
     mountBoth();
     renderBar();
-    expect(nestedCount('runs')).toBeNull();
+    expect(nestedCount('runs')).toBe('2 runs');
     expect(nestedCount('agents')).toBe('1 running');
+    expect(nestedCount('branch')).toBe('goodboy/webhook-retries');
+  });
+
+  it('says running on the Runs page while a run is running, in the running tone', () => {
+    mountBoth();
+    act(() => {
+      useAppStore.setState({
+        sessionPhaseRuns: {
+          [withRuns.id]: [
+            anAgent({
+              sessionId: withRunsId,
+              status: 'running',
+              workflowRunId: firstRun.id,
+            }),
+          ],
+        },
+      });
+    });
+    renderBar();
+    expect(nestedCount('runs')).toBe('1 running');
+    const runs = within(screen.getByRole('list', { name: 'Pages' })).getByRole('button', {
+      name: /^Runs/,
+    });
+    expect(runs.textContent).toBe('Runs1 running');
+  });
+
+  it('counts the branches when a session has several mounts', () => {
+    mountBoth();
+    act(() => {
+      useAppStore.setState({
+        sessionProjectMounts: {
+          [withRuns.id]: [
+            mountOf({ session: withRuns, project: paymentsApi }),
+            mountOf({ session: withRuns, project: ledgerCore }),
+          ],
+        },
+      });
+    });
+    renderBar();
+    expect(nestedCount('branch')).toBe('2 branches');
+  });
+
+  it('shows the diff beside the branch name for the open session', async () => {
+    storySpies.tauriInvoke.mockImplementation(async (command: unknown) =>
+      command === 'worktree_changed_files'
+        ? { paths: [], entries: [], additions: 12, deletions: 3, numstat: '' }
+        : undefined,
+    );
+    mountBoth();
+    act(() => {
+      useAppStore.setState({
+        sessionWorktreeRecords: {
+          [withRuns.id]: [
+            {
+              id: 'wt-1',
+              sessionId: withRuns.id,
+              worktreePath: '/tmp/payments-api/worktrees/one',
+              branch: 'goodboy/webhook-retries',
+              parallelIndex: 0,
+              createdAt: 1,
+            },
+          ],
+        },
+      });
+    });
+    renderBar();
+    const branch = within(screen.getByRole('list', { name: 'Pages' })).getByRole('button', {
+      name: /^Branch/,
+    });
+    await waitFor(() => expect(within(branch).getByTestId('diff-stat').textContent).toBe('+12-3'));
   });
 });
 

@@ -377,7 +377,8 @@ sharp.
 
 Chrome and content separate with the edge of the content sheet, not with a
 line: the top bar, the left column and a studio rail draw no horizontal `Divider`
-against the content, and the board header sits `gap-6` above its columns. A
+against the content (the left column's one `h-px` separator between its doors and the
+Sessions list is inside the chrome), and the board header sits `gap-6` above its columns. A
 `Divider` marks what is left of the boundary between chrome and a pane's
 content, never a boundary inside content. Allowed: a vertical divider inside
 the chrome (between top bar or footer groups), a pane's fixed header against its

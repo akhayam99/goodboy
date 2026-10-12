@@ -12,6 +12,7 @@ import { waitingNotesOf } from '../../../resolve/notes/waitingNotes';
 import { selectOpenQuestions } from '../../components/SessionOverviewPane/lib';
 import { selectResolverAgentIds } from '../../../review/selectResolverAgentIds';
 import { isRunHeldForPlan } from '../../../../store/slices/workflows/workflowPlanApproval';
+import { singleBranchName } from '../../singleBranchName';
 import { isStandaloneAgent } from '../../agent-kind';
 import {
   COUNTED_PAGE_IDS,
@@ -43,6 +44,7 @@ export const usePageSummaries = ({ session }: Params): PageSummaries => {
   const agents = useAppStore(
     (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
+  const sessionBranch = useAppStore((s) => s.sessionBranches[sessionId] ?? null);
   const kindOverride = useAppStore((s) => s.agentKindOverride);
 
   return useMemo(() => {
@@ -60,12 +62,14 @@ export const usePageSummaries = ({ session }: Params): PageSummaries => {
     const activeRuns = session.workflowRuns.filter(
       (run) => run.discardedAt == null && (activeRunIds.has(run.id) || isRunHeldForPlan({ run })),
     );
+    const runs = session.workflowRuns.filter((run) => run.discardedAt == null);
     return summariesOf({
       facts: {
         waiting: tally.needsYou,
         notes: waitingNotesOf({ rows }),
         mounts: mounts.length,
-        runs: activeRuns.length,
+        branchName: singleBranchName({ mounts, sessionBranch }),
+        runs: runs.length,
         runningRuns: activeRuns.length,
         agents: standalone.length,
         runningAgents: standalone.filter((agent) => agent.status === 'running').length,
@@ -83,5 +87,6 @@ export const usePageSummaries = ({ session }: Params): PageSummaries => {
     artifacts,
     plans,
     mounts,
+    sessionBranch,
   ]);
 };

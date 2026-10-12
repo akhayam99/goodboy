@@ -450,7 +450,10 @@ settings-workspace
 shell
 sidebar-branches
 sidebar-branches-many
+sidebar-meta-branch
+sidebar-meta-branches
 sidebar-pages-folded
+sidebar-rhythm
 sidebar-terminal-current
 slack-permissions
 space-diff-comment

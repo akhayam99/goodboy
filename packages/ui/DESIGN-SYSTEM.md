@@ -208,8 +208,12 @@ The Sessions block shares one left edge and one gap. The `Sessions` eyebrow
 `navRail.door`) and the session row icons (`sessionList.pad` plus
 `sessionList.rowInset`) all start at 16px, and the doors and the session rows
 share one vertical gap (`navRail.doorGap` equals `sessionList.rowGap`). The view
-menu trigger is a 28px target (`sessionList.menuTrigger`). `paneRhythm.test.ts`
-holds the three edges and the gap.
+menu trigger is a 28px target (`sessionList.menuTrigger`). The groups of the list
+are spaced by that same gap (`sessionList.listGap`), and a group header has no
+top margin of its own. One separator sits between the doors and the Sessions
+header, with the doors' gap above and below it, and the first row under the
+header is New session, shaped like a session row. `paneRhythm.test.ts` holds the
+three edges and the gaps.
 
 A stat card holds its label to two lines (`line-clamp-2`), pins the figure to
 the bottom of the card with `mt-auto`, and puts the delta and the hint on their

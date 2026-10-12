@@ -4,7 +4,7 @@ Find any session, message, plan or action, and reach it from the keyboard. One s
 
 ### Sidebar
 
-Every place you go sits in one sidebar on the left: **New session**, **Board**, **Tasks**, **Chat**, **Workflows**, your sessions and **Settings**. **⌘B** folds it into a slim bar of icons that keeps every door.
+Every place you go sits in one sidebar on the left: **Board**, **Tasks**, **Chat** and **Terminal** (each with a **+** to start one), **Workflows**, then your sessions with **New session** as their first row, and **Settings**. **⌘B** folds it into a slim bar of icons that keeps every door.
 
 ### Go anywhere
 

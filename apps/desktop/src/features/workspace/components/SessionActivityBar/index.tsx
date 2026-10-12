@@ -36,6 +36,7 @@ import { useClearSessionFilters } from './useClearSessionFilters';
 import { SessionActivityItem } from './SessionActivityItem';
 import { SessionGroupHeader } from './SessionGroupHeader';
 import { OpenSessionCard } from './OpenSessionCard';
+import { NewSessionRow } from './NewSessionRow';
 
 const SUB_ROW_INSET = 'pl-7';
 const SELECTION_VERB_IDS = ['sessions.archive', 'sessions.restore', 'sessions.delete'];
@@ -50,6 +51,7 @@ type Props = {
   isStudioOver?: boolean;
   onSelectSession: (id: SessionId) => void;
   onArchivedTabOpen?: () => void;
+  onNavigate?: () => void;
 };
 
 type OpenAttention = {
@@ -65,6 +67,7 @@ export const SessionActivityBar = ({
   isStudioOver = false,
   onSelectSession,
   onArchivedTabOpen,
+  onNavigate,
 }: Props) => {
   const toggleSessionGroup = useAppStore((s) => s.toggleSessionGroup);
   const setSessionViewPrefs = useAppStore((s) => s.setSessionViewPrefs);
@@ -274,6 +277,13 @@ export const SessionActivityBar = ({
         />
       </div>
 
+      <div className={cn('shrink-0', PANE_RHYTHM.navRail.inset)}>
+        <NewSessionRow
+          workspaceId={workspaceId}
+          {...(onNavigate !== undefined && { onNavigate })}
+        />
+      </div>
+
       <ScrollFade className="min-h-0 flex-1">
         <div
           ref={listRef}
@@ -286,7 +296,8 @@ export const SessionActivityBar = ({
           }}
           data-selecting={selectedIds.length > 0}
           className={cn(
-            'group/select-list relative flex flex-col gap-1 data-[selecting=true]:pb-24',
+            'group/select-list relative flex flex-col data-[selecting=true]:pb-24',
+            PANE_RHYTHM.sessionList.listGap,
             PANE_RHYTHM.sessionList.pad,
           )}
         >
@@ -352,7 +363,7 @@ export const SessionActivityBar = ({
           {shownArchived.length > 0 ? (
             <div className="flex flex-col gap-0.5">
               {column.isGrouped ? (
-                <span className="mt-2 flex h-6 items-center px-2">
+                <span className="flex h-6 items-center px-2">
                   <Eyebrow label="Archived" muted />
                 </span>
               ) : null}

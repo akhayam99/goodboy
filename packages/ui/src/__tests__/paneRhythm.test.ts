@@ -52,6 +52,10 @@ describe('PANE_RHYTHM', () => {
       expect(PANE_RHYTHM.sessionList.rowGap).toBe(PANE_RHYTHM.navRail.doorGap);
     });
 
+    it('spaces the groups of the list by the same gap as the doors', () => {
+      expect(PANE_RHYTHM.sessionList.listGap).toBe(PANE_RHYTHM.navRail.doorGap);
+    });
+
     it('gives the view menu a 28px target, as tall as a door and a row', () => {
       expect(PANE_RHYTHM.sessionList.menuTrigger).toBe('size-7');
       expect(PANE_RHYTHM.navRail.door).toContain('h-7');

@@ -1,14 +1,14 @@
 // @vitest-environment happy-dom
 
 vi.mock('@tauri-apps/api/core', async () =>
-  (await import('../../../store/storyHarness')).tauriCoreModuleMock(),
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
 );
 vi.mock('@tauri-apps/api/event', async () =>
-  (await import('../../../store/storyHarness')).tauriEventModuleMock(),
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
 );
-vi.mock('@goodboy/db', async () => (await import('../../../store/storyHarness')).dbModuleMock());
-vi.mock('../../../shared/lib/db', async () =>
-  (await import('../../../store/storyHarness')).dbLibModuleMock(),
+vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
+vi.mock('../../../../shared/lib/db', async () =>
+  (await import('../../../../store/storyHarness')).dbLibModuleMock(),
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -18,11 +18,10 @@ import {
   importStore,
   resetStoryStore,
   type StoryStore,
-} from '../../../store/storyHarness';
-import { EMPTY_SESSION_DRAFT } from '../../../store/slices/sessionDraft/state';
-import { harborline, seedColumn } from '../../../features/workspace/testing/sessionColumn';
-import { CreateRow } from './CreateRow';
-import type { ColumnActions } from './columnDoors';
+} from '../../../../store/storyHarness';
+import { EMPTY_SESSION_DRAFT } from '../../../../store/slices/sessionDraft/state';
+import { harborline, seedColumn } from '../../testing/sessionColumn';
+import { NewSessionRow } from './NewSessionRow';
 
 let useAppStore: StoryStore;
 
@@ -37,37 +36,23 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
-const doors = (): Pick<ColumnActions, 'openNewChat' | 'openNewTerminal'> => ({
-  openNewChat: vi.fn(),
-  openNewTerminal: vi.fn(),
-});
-
-const mount = (isCurrent = false, actions = doors()) =>
-  render(
-    <CreateRow workspaceId={harborline.id} place={isCurrent ? 'new' : null} actions={actions} />,
-  );
-
-describe('the create row', () => {
-  it('asks for a new session when it is clicked', () => {
+describe('the New session row', () => {
+  it('asks for a new session and closes a peek when it is clicked', () => {
     const listener = vi.fn();
+    const onNavigate = vi.fn();
     window.addEventListener('goodboy:new-session', listener);
-    mount();
+    render(<NewSessionRow workspaceId={harborline.id} onNavigate={onNavigate} />);
     fireEvent.click(screen.getByRole('button', { name: 'New session' }));
     expect(listener).toHaveBeenCalledOnce();
+    expect(onNavigate).toHaveBeenCalledOnce();
     window.removeEventListener('goodboy:new-session', listener);
   });
 
-  it('asks for a new chat and a new terminal through the actions', () => {
-    const actions = doors();
-    mount(false, actions);
-    fireEvent.click(screen.getByRole('button', { name: 'New chat' }));
-    fireEvent.click(screen.getByRole('button', { name: 'New terminal' }));
-    expect(actions.openNewChat).toHaveBeenCalledOnce();
-    expect(actions.openNewTerminal).toHaveBeenCalledOnce();
-  });
-
   it('is the current place while the draft is open, without a dot', () => {
-    mount(true);
+    act(() => {
+      useAppStore.setState({ openSessionDraftWorkspaceId: harborline.id, currentSessionId: null });
+    });
+    render(<NewSessionRow workspaceId={harborline.id} />);
     const row = screen.getByRole('button', { name: 'New session' });
     expect(row.getAttribute('aria-current')).toBe('page');
     expect(document.querySelector('[data-slot="draft-dot"]')).toBeNull();
@@ -81,7 +66,7 @@ describe('the create row', () => {
         },
       });
     });
-    mount();
+    render(<NewSessionRow workspaceId={harborline.id} />);
     const row = screen.getByRole('button', { name: /Draft in progress/ });
     expect(row.getAttribute('aria-current')).toBeNull();
     expect(document.querySelector('[data-slot="draft-dot"]')).not.toBeNull();

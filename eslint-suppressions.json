@@ -8167,7 +8167,7 @@
   },
   "apps/desktop/src/features/workspace/components/SessionActivityBar/pages.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 18
+      "count": 16
     }
   },
   "apps/desktop/src/features/workspace/components/SessionActivityBar/rowRenders.test.tsx": {

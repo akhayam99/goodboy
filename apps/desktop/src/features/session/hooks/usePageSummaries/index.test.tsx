@@ -108,7 +108,7 @@ describe('usePageSummaries', () => {
     );
   });
 
-  it('counts the branches only when the session has more than one mount', () => {
+  it('names the branch for one mount and counts the branches for several', () => {
     seedColumn({
       store: useAppStore,
       sessions: [base],
@@ -116,7 +116,7 @@ describe('usePageSummaries', () => {
       mounts: [[base, paymentsApi]],
     });
     expect(renderHook(() => usePageSummaries({ session: base })).result.current.branch).toBe(
-      undefined,
+      `goodboy/${sessionId}`,
     );
 
     useAppStore.setState({
@@ -132,13 +132,14 @@ describe('usePageSummaries', () => {
     );
   });
 
-  it('counts only the runs that are running, and says nothing for runs that finished', () => {
+  it('counts every kept run, and says running when one is', () => {
     const first = aWorkflowRun({ ordinal: 0 });
     const second = aWorkflowRun({ ordinal: 1 });
-    const withRuns: Session = { ...base, workflowRuns: [first, second] };
+    const dropped = aWorkflowRun({ ordinal: 2, discardedAt: '2026-10-05T09:00:00.000Z' });
+    const withRuns: Session = { ...base, workflowRuns: [first, second, dropped] };
     seedColumn({ store: useAppStore, sessions: [withRuns], currentSessionId: sessionId });
     expect(renderHook(() => usePageSummaries({ session: withRuns })).result.current.runs).toBe(
-      undefined,
+      '2 runs',
     );
 
     useAppStore.setState({

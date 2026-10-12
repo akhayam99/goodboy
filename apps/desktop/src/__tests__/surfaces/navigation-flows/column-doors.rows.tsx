@@ -27,7 +27,9 @@ const doorIn = (name: string): HTMLElement => {
 };
 
 const createIn = (name: string): HTMLElement => {
-  const button = document.querySelector<HTMLElement>(`[data-side-column] [data-create="${name}"]`);
+  const button = document.querySelector<HTMLElement>(
+    `[data-side-column] [data-create="${name}"], [data-side-column] [data-door-create="${name}"]`,
+  );
   if (button === null) {
     throw new Error(`The column has no create button ${name}`);
   }

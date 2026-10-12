@@ -62,7 +62,7 @@ describe('the sidebar toggle axis', () => {
     expect(SIDE_COLUMN).toMatch(/className="flex w-11 shrink-0 items-center justify-center"/);
     expect(TOGGLE).toContain('size="md"');
     expect(SIDE_COLUMN.indexOf('<ColumnToggleButton')).toBeLessThan(
-      SIDE_COLUMN.indexOf('<CreateRow'),
+      SIDE_COLUMN.indexOf('<ColumnDoorRow'),
     );
     expect(COLUMN_RAIL).toContain('items-center');
     expect(COLUMN_RAIL.indexOf('<ColumnToggleButton')).toBeLessThan(
