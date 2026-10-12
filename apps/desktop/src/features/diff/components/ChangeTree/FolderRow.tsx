@@ -5,7 +5,7 @@ import { ViewedRing } from '../../../../shared/components/ViewedRing';
 import { folderPathOf, type TreeRow } from '../../lib/changeTree';
 import { rowHeightOf } from '../../lib/rowHeightOf';
 import { Delta } from './Delta';
-import { TREE_BASE_PX, TREE_INDENT_PX, TreeGuides } from './TreeGuides';
+import { TREE_BASE_PX, TREE_INDENT_PX } from './treeMetrics';
 
 type FolderTreeRow = Extract<TreeRow, { readonly kind: 'folder' }>;
 
@@ -82,7 +82,6 @@ export const FolderRow = ({
         isCursor && isTreeFocused && 'ring-2 ring-inset ring-focus-ring',
       )}
     >
-      <TreeGuides depth={row.depth} />
       {folderPath === null ? (
         button
       ) : (

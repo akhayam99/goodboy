@@ -180,6 +180,7 @@ diff-gaps-toolarge
 diff-notes
 diff-peek-empty
 diff-peek-open
+diff-tree-indent
 drawer-ask-draft
 drawer-headers
 drawer-overlay-narrow
