@@ -37,8 +37,8 @@ const show = (name: keyof typeof U23_SIDEBAR_NAV_SCENES) => {
 const marked = () => Array.from(document.querySelectorAll('[aria-current="page"]'));
 
 describe('the sidebar navigation scenes', () => {
-  it('marks the session row alone when Terminal is open', async () => {
-    show('sidebar-terminal-current');
+  it('marks the session row alone when Scripts is open', async () => {
+    show('sidebar-scripts-current');
     await screen.findByRole('list', { name: 'Pages' });
     expect(marked()).toHaveLength(1);
     expect(marked()[0]?.getAttribute('data-current-sign')).toBe('session');

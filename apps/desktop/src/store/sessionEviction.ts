@@ -104,7 +104,6 @@ export const SESSION_EVICTION = [
   { key: 'sessionPagesFolded', keyedBy: 'session', evictOn: 'archive' },
   { key: 'dismissedCheckProposals', keyedBy: 'session', evictOn: 'archive' },
   { key: 'branchThreadId', keyedBy: 'session', evictOn: 'archive' },
-  { key: 'terminalMountPath', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionCreations', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionStudio', keyedBy: 'session', evictOn: 'archive' },
   { key: 'focusedArtifactId', keyedBy: 'session', evictOn: 'archive' },

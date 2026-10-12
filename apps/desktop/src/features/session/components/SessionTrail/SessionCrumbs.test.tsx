@@ -485,7 +485,7 @@ describe('SessionCrumbs', () => {
     renderCrumbs();
 
     fireEvent.click(screen.getByRole('button', { name: /Overview/ }));
-    expect(screen.getByRole('menu', { name: 'Switch page' }).textContent).toContain('Terminal');
+    expect(screen.getByRole('menu', { name: 'Switch page' }).textContent).toContain('Scripts');
   });
 });
 

@@ -4,7 +4,7 @@ Drive Goodboy from the keyboard, run a shell in the session's worktree, and open
 
 ### Terminal
 
-Open a real login shell in the workspace folder or any linked worktree. **⌃`** opens the Terminal studio with every terminal of the workspace, **⌘⌥T** the session's terminal, and ⌘K offers **Open <repo · branch> in terminal**. Typing `exit` closes the tab, **⌘F** searches the scrollback, and shells survive a reload.
+Open a real login shell in the workspace folder or any linked worktree. **⌃`** opens the Terminal page with every terminal, grouped by session. **⌘⌥T**, a mount row and ⌘K **Open <repo · branch> in terminal** open a session terminal in a drawer, one click from the page. Typing `exit` closes the tab, **⌘F** searches the scrollback, and shells survive a reload.
 
 ### Keyboard shortcuts, back and forward
 

@@ -1,5 +1,6 @@
 import type { AgentId, ArtifactId, FileDiff, MountId, SessionId } from '@goodboy/types';
 import type { ExploreEntry } from '../../../features/explore/explore';
+import type { TerminalTabId } from '../../../shared/types/terminal';
 
 export type ArtifactDrawerTab = 'details' | 'chat';
 
@@ -67,6 +68,10 @@ export type DrawerContent =
         readonly focusThreadId?: string | null;
         readonly threadIds?: ReadonlyArray<string>;
       };
+    }
+  | {
+      readonly kind: 'terminal';
+      readonly payload: { readonly terminalId: TerminalTabId };
     }
   | {
       readonly kind: 'file-diff';

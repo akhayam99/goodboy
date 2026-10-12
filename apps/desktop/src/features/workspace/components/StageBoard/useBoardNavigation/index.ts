@@ -9,7 +9,6 @@ import { openAgentRevealEvent } from '../../../../../shared/utils/openAgentRevea
 export type BoardNavigation = {
   readonly selectCard: (session: Session) => void;
   readonly openAgent: (session: Session) => void;
-  readonly openTerminal: (session: Session) => void;
   readonly openIDE: (session: Session) => void;
   readonly openQuestions: (session: Session) => void;
   readonly openWorkflows: (session: Session) => void;
@@ -67,7 +66,6 @@ export const useBoardNavigation = (): BoardNavigation => {
     return {
       selectCard,
       openAgent,
-      openTerminal: (session) => openLens({ session, lens: 'terminal' }),
       openIDE,
       openQuestions: (session) => openLens({ session, lens: 'questions' }),
       openWorkflows: (session) => openLens({ session, lens: 'workflows' }),

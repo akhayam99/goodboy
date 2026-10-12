@@ -181,9 +181,6 @@ vi.mock('../AgentDetailPane', () => ({
     </div>
   ),
 }));
-vi.mock('../../../terminal/components/TerminalStudio/SessionTerminalLens', () => ({
-  SessionTerminalLens: () => null,
-}));
 vi.mock('../../../artifacts/components/ArtifactStudio', () => ({ ArtifactStudio: () => null }));
 vi.mock('../../../scripts', () => ({ ScriptsPanel: () => null }));
 vi.mock('../../../worktree/worktree', () => ({ worktreeStatus: vi.fn() }));

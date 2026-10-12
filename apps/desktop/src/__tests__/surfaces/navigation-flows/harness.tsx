@@ -430,7 +430,6 @@ export const CRUMB_ROWS: ReadonlyArray<LensRow> = [
   },
   { label: 'Explore', lens: 'explore', lands: () => heading('Explore') },
   { label: 'Scripts', lens: 'scripts', lands: () => heading('Scripts') },
-  { label: 'Terminal', lens: 'terminal', lands: () => heading('Terminal') },
 ];
 
 export const LENS_ROWS: ReadonlyArray<LensRow> = [
@@ -455,7 +454,6 @@ export const LENS_ROWS: ReadonlyArray<LensRow> = [
   },
   { label: 'Explore', lens: 'explore', lands: () => heading('Explore') },
   { label: 'Scripts', lens: 'scripts', lands: () => heading('Scripts') },
-  { label: 'Terminal', lens: 'terminal', lands: () => heading('Terminal') },
 ];
 
 export const openBranchFiles = async (): Promise<void> => {

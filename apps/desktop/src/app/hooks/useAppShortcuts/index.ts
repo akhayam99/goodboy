@@ -14,6 +14,7 @@ import {
 import { doorMountPath } from '../../../store/slices/navigation/doorMountPath';
 import { branchTabOf } from '../../../store/slices/session-view/branchTabOf';
 import { requestNewSession } from '../../../features/session/requestNewSession';
+import { toggleSessionTerminal } from '../../../features/terminal/toggleSessionTerminal';
 import { openLens } from '../../../features/session/openLens';
 import { isLensReachable } from '../../../features/session/isLensReachable';
 import { isBranchTabAvailable } from '../../../features/branch/branchTabs';
@@ -207,7 +208,7 @@ export const useAppShortcuts = ({
   useShortcut('lens.explore', () => goToLens({ kind: 'explore' }), isExploreSession);
   useShortcut('lens.plans', () => goToLens({ kind: 'plans' }));
   useShortcut('lens.scripts', () => goToLens({ kind: 'scripts' }));
-  useShortcut('lens.terminal', () => goToLens({ kind: 'terminal' }));
+  useShortcut('session.terminal', () => toggleSessionTerminal({}));
   useShortcut('lens.pr', () => goToLens({ kind: 'pr' }));
   useShortcut('lens.linear', () => goToLens({ kind: 'linear' }));
   useShortcut('lens.gitlab_issues', () => goToLens({ kind: 'gitlab_issues' }));

@@ -94,10 +94,6 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
       'features/session/components/SessionWorkspace/parts/FileVersionsPane/index.tsx',
     ],
   },
-  SessionTerminalLens: {
-    kind: 'shell',
-    files: ['features/terminal/components/TerminalStudio/SessionTerminalLens.tsx'],
-  },
   ArtifactStudio: {
     kind: 'dispatch',
     files: [
@@ -162,7 +158,7 @@ const STUDIO_ROOTS: Readonly<Record<StudioKind, ReadonlyArray<string>>> = {
   addWorkspace: ['features/workspace/components/WorkspaceLinkStudio/index.tsx'],
   workflow: ['features/workflows/components/WorkflowsPanel/index.tsx'],
   inbox: ['features/inbox/components/InboxStudio/index.tsx'],
-  terminal: ['features/terminal/components/TerminalStudio/SessionTerminalLens.tsx'],
+  terminal: ['features/terminal/components/TerminalStudio/index.tsx'],
   impact: [
     'features/impact/components/ImpactStudio/OverviewPanel.tsx',
     'features/impact/components/ImpactStudio/FlowPanel.tsx',
@@ -198,6 +194,8 @@ const FORM_AND_DETAIL_ROOTS: PlaceRoots = {
 const COLUMN_ROOT = /<(PaneShell|PageColumn|FormPage)\b/;
 
 const PAGELESS_STUDIOS: ReadonlySet<string> = new Set(['companion', 'addWorkspace']);
+
+const FULL_BLEED_PLACES: ReadonlySet<string> = new Set(['studio terminal']);
 
 const SPLIT_DETAIL_FILES: Readonly<Partial<Record<StudioKind, ReadonlyArray<string>>>> = {
   guide: ['features/settings/components/GuideStudio/index.tsx'],
@@ -349,7 +347,9 @@ describe('content column contract', () => {
     };
     const unrooted = Object.entries(places).flatMap(([place, files]) =>
       files.flatMap((file) =>
-        COLUMN_ROOT.test(read(file)) || CENTRED_ALLOWLIST.has(file) ? [] : [`${place}: ${file}`],
+        COLUMN_ROOT.test(read(file)) || CENTRED_ALLOWLIST.has(file) || FULL_BLEED_PLACES.has(place)
+          ? []
+          : [`${place}: ${file}`],
       ),
     );
 

@@ -692,7 +692,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Terminal',
-        desc: 'Control and the backtick key open Terminal, with every terminal of the workspace and its sessions in one list. A new terminal opens in the workspace folder, chips open one in a worktree or the main checkout, and the shells and their output are still there after a reload. ⌘T adds a terminal while one has focus.',
+        desc: 'Control and the backtick key open Terminal, with every terminal of the workspace and its sessions in one list. A new terminal opens in the workspace folder, chips open one in a worktree or the main checkout, and the shells and their output are still there after a reload. ⌘T adds a terminal while one has focus. From a session, a terminal opens in a drawer on the right and stays in the list.',
       },
       {
         term: 'Search',

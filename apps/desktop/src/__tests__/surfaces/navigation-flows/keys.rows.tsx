@@ -393,7 +393,13 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   pressRow({ id: 'lens.files', lands: branchTab('files') }),
   pressRow({ id: 'lens.plans', lands: both(lens('plans'), () => heading('Artifacts')) }),
   pressRow({ id: 'lens.scripts', lands: both(lens('scripts'), () => heading('Scripts')) }),
-  pressRow({ id: 'lens.terminal', lands: both(lens('terminal'), () => heading('Terminal')) }),
+  pressRow({
+    id: 'session.terminal',
+    lands: async () => {
+      await screen.findByRole('button', { name: 'Open on Terminal page' }, WAIT);
+      expect(useAppStore.getState().drawer?.kind).toBe('terminal');
+    },
+  }),
   pressRow({
     id: 'lens.pr',
     lands: both(branchTab('pr'), () => heading(/Stop retried webhooks/)),
@@ -1144,7 +1150,7 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
   keyRow({
     id: 'terminal.newTab',
     open: async () => {
-      await press('lens.terminal')();
+      await press('terminal.studio')();
       await screen.findByRole('heading', { name: 'No terminal yet' }, WAIT);
       const [newTerminal] = screen
         .getAllByRole('button', { name: /^New terminal$/ })

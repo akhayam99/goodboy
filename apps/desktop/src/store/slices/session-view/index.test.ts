@@ -468,29 +468,31 @@ describe('store contract', () => {
       expect(store.getState().diffMountPath[SESSION_ID]).toBe('/wt/web');
     });
 
-    it('openMountTerminal records the row worktree and switches to the terminal lens, without touching diff or scripts scope', async () => {
+    it('openMountTerminal opens a terminal drawer on the row worktree without leaving the lens', async () => {
       const store = useAppStore;
       store.getState().setActiveLens(SESSION_ID, 'agents');
       store.getState().openMountTerminal(SESSION_ID, '/wt/api');
 
-      expect(store.getState().activeLens[SESSION_ID]).toBe('terminal');
-      expect(store.getState().terminalMountPath[SESSION_ID]).toBe('/wt/api');
+      const tabs = store.getState().terminalTabs[SESSION_ID] ?? [];
+      expect(store.getState().activeLens[SESSION_ID]).toBe('agents');
+      expect(tabs).toHaveLength(1);
+      expect(tabs[0]?.cwd).toBe('/wt/api');
+      expect(store.getState().drawer).toEqual({
+        kind: 'terminal',
+        sessionId: SESSION_ID,
+        payload: { terminalId: tabs[0]?.id },
+      });
     });
 
-    it('opening a different row terminal updates only the terminal scope', async () => {
+    it('opening the same row terminal again reuses its tab, another row adds one', async () => {
       const store = useAppStore;
       store.getState().openMountTerminal(SESSION_ID, '/wt/api');
+      store.getState().openMountTerminal(SESSION_ID, '/wt/api');
+      expect(store.getState().terminalTabs[SESSION_ID]).toHaveLength(1);
+
       store.getState().openMountTerminal(SESSION_ID, '/wt/web');
-
-      expect(store.getState().terminalMountPath[SESSION_ID]).toBe('/wt/web');
-    });
-
-    it('leaving the terminal lens clears the row scope it was opened with', async () => {
-      const store = useAppStore;
-      store.getState().openMountTerminal(SESSION_ID, '/wt/api');
-      store.getState().setActiveLens(SESSION_ID, 'files');
-
-      expect(store.getState().terminalMountPath[SESSION_ID]).toBeNull();
+      const tabs = store.getState().terminalTabs[SESSION_ID] ?? [];
+      expect(tabs.map((tab) => tab.cwd)).toEqual(['/wt/api', '/wt/web']);
     });
 
     it('setSessionStudio(non-null) clears the selected agent', async () => {

@@ -31,7 +31,7 @@ vi.mock('../../../../shared/components/GenericTerminalPanel/LazyGenericTerminalP
   LazyGenericTerminalPanel: () => <div data-testid="terminal-panel" />,
 }));
 
-import { SessionTerminalLens } from './SessionTerminalLens';
+import { TerminalStudio } from './index';
 import { brandedId } from '../../../../features/history/testing/brandedId';
 
 const NOW = brandedId<IsoDateTime>({ value: '2026-10-10T09:12:00.000Z' });
@@ -93,26 +93,26 @@ afterEach(() => {
 
 const mountLens = (): HTMLElement => {
   render(
-    <SessionTerminalLens
+    <TerminalStudio
       workspaceId={WORKSPACE_ID}
+      terminalId={TAB_ID}
       sessionId={SESSION_ID}
-      isActive
-      sessionCwd="/repo"
+      onClose={() => undefined}
     />,
   );
   return screen.getByTestId('terminal-panel');
 };
 
-const tabCount = (): number => store.getState().terminalTabs[SESSION_ID]?.length ?? 0;
+const tabCount = (): number =>
+  Object.values(store.getState().terminalTabs).reduce((total, tabs) => total + tabs.length, 0);
 
-describe('the session terminal new terminal shortcut', () => {
-  it('opens a terminal in the session folder on the command combo on darwin', () => {
+describe('the terminal page new terminal shortcut', () => {
+  it('opens a terminal on the command combo on darwin', () => {
     const target = mountLens();
 
     fireEvent.keyDown(target, { code: 'KeyT', metaKey: true });
 
     expect(tabCount()).toBe(2);
-    expect(store.getState().terminalTabs[SESSION_ID]?.[1]?.cwd).toBe('/repo');
   });
 
   it('leaves the control combos to the pty on darwin', () => {
@@ -142,7 +142,7 @@ describe('the session terminal new terminal shortcut', () => {
     expect(tabCount()).toBe(1);
   });
 
-  it('shows the session rows by name, with no Terminal 2 label', () => {
+  it('shows the rows by name, with no Terminal 2 label', () => {
     mountLens();
 
     expect(screen.getByRole('button', { name: 'payments-api' })).toBeDefined();

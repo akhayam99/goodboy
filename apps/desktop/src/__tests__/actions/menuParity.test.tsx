@@ -122,7 +122,6 @@ const overflowThenContext = async ({
 const NAV: BoardNavigation = {
   selectCard: vi.fn(),
   openAgent: vi.fn(),
-  openTerminal: vi.fn(),
   openIDE: vi.fn(),
   openQuestions: vi.fn(),
   openWorkflows: vi.fn(),

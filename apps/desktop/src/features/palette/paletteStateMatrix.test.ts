@@ -141,7 +141,6 @@ describe('palette verbs follow the session state', () => {
     expect(sessionView({ facts: LIVE, query: '' })).toEqual([
       'Open Comments',
       'Open Files',
-      'Open Terminal',
       'Open in editor',
       'Open ledger-core in terminal',
       'Rename',
@@ -169,7 +168,6 @@ describe('palette verbs follow the session state', () => {
 
     expect(sessionView({ facts, query: '' })).toEqual([
       'Open Comments',
-      'Open Terminal',
       'Rename',
       'Pin session',
       'Start agent',
@@ -435,7 +433,7 @@ describe('the empty palette ranks the session verbs by state', () => {
     expect(labelsOf(screen, 'For this session')).toEqual([
       'Start agent',
       'Link work',
-      'Open Terminal',
+      'Open ledger-core in terminal',
       'Open in editor',
       'Open Files',
       'Rename',
@@ -450,7 +448,7 @@ describe('the empty palette ranks the session verbs by state', () => {
       'Message Implementer',
       'Open Comments',
       'Start agent',
-      'Open Terminal',
+      'Open ledger-core in terminal',
     ]);
   });
 
@@ -461,7 +459,7 @@ describe('the empty palette ranks the session verbs by state', () => {
       'Interrupt Implementer',
       'Message Implementer',
       'Open Files',
-      'Open Terminal',
+      'Open ledger-core in terminal',
       'Start agent',
     ]);
   });
@@ -471,7 +469,7 @@ describe('the empty palette ranks the session verbs by state', () => {
       'Open Comments',
       'Open Files',
       'Open in editor',
-      'Open Terminal',
+      'Open ledger-core in terminal',
     ]);
   });
 

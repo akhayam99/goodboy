@@ -142,7 +142,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   },
   {
     name: 'palette verb: Open a worktree in terminal',
-    covers: ['studio:terminal', 'palette:Open a worktree in terminal'],
+    covers: ['palette:Open a worktree in terminal'],
     seed: 'pr',
     door: 'palette',
     open: async () => {
@@ -155,11 +155,9 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
       await settle();
     },
     lands: async () => {
-      await band('Terminal');
-      await waitFor(
-        () => expect(document.querySelectorAll('[data-terminal-row]')).toHaveLength(1),
-        WAIT,
-      );
+      await screen.findByRole('button', { name: 'Open on Terminal page' }, WAIT);
+      expect(useAppStore.getState().drawer?.kind).toBe('terminal');
+      expect(useAppStore.getState().appStudio).toBeNull();
     },
   },
   {

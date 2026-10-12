@@ -182,7 +182,7 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
     label: 'Open terminal',
     icon: CONCEPT_ICONS.terminal,
     group: 'open',
-    shortcut: 'lens.terminal',
+    shortcut: 'session.terminal',
     when: isOpen,
     slot: ({ facts }) => (facts.isRebasing ? 'notice' : 'menu'),
     run: ({ facts, env }) => {

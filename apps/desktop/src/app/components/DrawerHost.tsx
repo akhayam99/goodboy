@@ -7,6 +7,7 @@ import { ArtifactShellDrawer } from '../../features/artifacts/components/Artifac
 import { ArtifactDocumentDrawer } from '../../features/artifacts/components/ArtifactDocumentDrawer';
 import { PlanPartDrawer } from '../../features/plans/components/PlanParts/PlanPartDrawer';
 import { ScriptRunDrawer } from '../../features/scripts/components/ScriptRunDrawer';
+import { TerminalDrawer } from '../../features/terminal/components/TerminalDrawer';
 import { FileDiffDrawer } from '../../features/diff/components/FileDiffDrawer';
 import { FileWholeDrawer } from '../../features/diff/components/FileWholeDrawer';
 import { AskDrawer } from '../../features/session/ask/components/AskDrawer';
@@ -157,6 +158,15 @@ export const DrawerHost = () => {
           sessionId={drawer.sessionId}
           source={drawer.payload.source}
           path={drawer.payload.path}
+          onClose={closeDrawer}
+        />
+      );
+    case 'terminal':
+      return (
+        <TerminalDrawer
+          key={drawerKey(drawer)}
+          sessionId={drawer.sessionId}
+          terminalId={drawer.payload.terminalId}
           onClose={closeDrawer}
         />
       );

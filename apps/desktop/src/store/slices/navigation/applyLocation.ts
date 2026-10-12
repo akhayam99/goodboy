@@ -77,14 +77,6 @@ const surfaceChanges = ({
       ...state.branchThreadId,
       [sessionId]: target?.kind === 'branch' ? target.threadId : null,
     },
-    terminalMountPath: {
-      ...state.terminalMountPath,
-      [sessionId]: keep(
-        lens === 'terminal',
-        state.terminalMountPath[sessionId] ?? null,
-        target?.kind === 'terminal' ? target.mountPath : null,
-      ),
-    },
     exploreMountPath:
       lens === 'explore'
         ? {

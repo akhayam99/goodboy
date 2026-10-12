@@ -468,7 +468,7 @@ sidebar-meta-branch
 sidebar-meta-branches
 sidebar-pages-folded
 sidebar-rhythm
-sidebar-terminal-current
+sidebar-scripts-current
 slack-permissions
 space-diff-comment
 space-diff-split
@@ -500,12 +500,13 @@ tasks-cursor
 tasks-rail
 tasks-rail-folded
 tasks-rail-open
+terminal-drawer-page
+terminal-drawer-session
 terminal-empty
 terminal-studio
 terminal-studio-closeconfirm
 terminal-studio-empty
 terminal-studio-newmenu
-terminal-studio-session
 toast-over-drawer
 toast-over-drawer-overlay
 toasts

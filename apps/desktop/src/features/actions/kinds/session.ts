@@ -20,8 +20,7 @@ import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { openInConfiguredEditor } from '../../../shared/lib/editorSettings';
 import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
 import { branchPlace } from '../../../store/slices/navigation/place';
-import { openTerminalAt } from '../../terminal/openTerminalAt';
-import { sessionTerminalOwner } from '../../../store/slices/terminal/terminalOwner';
+import { openSessionTerminal } from '../../terminal/openSessionTerminal';
 import { sessionTitle } from '../../session/sessionTitle';
 import { archiveSessions, restoreSessions } from '../../session/sessionArchive';
 import { createAgentEventName } from '../../session/createAgentEventName';
@@ -86,7 +85,7 @@ const deleteDescription = ({ isBranchless }: { readonly isBranchless: boolean })
 type OpenLensParams = {
   readonly env: ActionEnv;
   readonly sessionId: SessionId;
-  readonly lens: 'review' | 'files' | 'terminal' | 'agents' | null;
+  readonly lens: 'review' | 'files' | 'agents' | null;
 };
 
 const openLens = ({ env, sessionId, lens }: OpenLensParams): void => {
@@ -257,15 +256,6 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     run: ({ facts, env }) => openLens({ env, sessionId: facts.sessionId, lens: 'files' }),
   },
   {
-    id: 'session.terminal',
-    label: 'Terminal',
-    icon: CONCEPT_ICONS.terminal,
-    group: 'open',
-    shortcut: 'lens.terminal',
-    when: isLive,
-    run: ({ facts, env }) => openLens({ env, sessionId: facts.sessionId, lens: 'terminal' }),
-  },
-  {
     id: 'session.editor',
     label: 'Open in editor',
     icon: CONCEPT_ICONS.editor,
@@ -366,12 +356,11 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
       if (picked === undefined) {
         return;
       }
-      openTerminalAt({
-        state: env.getState(),
-        owner: sessionTerminalOwner({ sessionId: facts.sessionId }),
-        cwd: picked.path,
-        sessionId: facts.sessionId,
-      });
+      const state = env.getState();
+      if (state.currentSessionId !== facts.sessionId) {
+        state.navigate({ to: lensPlace({ state, sessionId: facts.sessionId, lens: null }) });
+      }
+      openSessionTerminal({ state, sessionId: facts.sessionId, cwd: picked.path });
     },
   },
   {

@@ -66,7 +66,7 @@ const DIFF_ACTIONS: ReadonlyArray<ActionDefinition<DiffFacts>> = [
     label: 'Open terminal',
     icon: CONCEPT_ICONS.terminal,
     group: 'open',
-    shortcut: 'lens.terminal',
+    shortcut: 'session.terminal',
     when: ({ facts }) => facts.isRebasing,
     slot: () => 'primary',
     run: ({ facts, env }) => {
@@ -80,7 +80,7 @@ const DIFF_ACTIONS: ReadonlyArray<ActionDefinition<DiffFacts>> = [
     label: 'Open terminal',
     icon: CONCEPT_ICONS.terminal,
     group: 'open',
-    shortcut: 'lens.terminal',
+    shortcut: 'session.terminal',
     when: ({ facts }) => !facts.isRebasing,
     run: ({ facts, env }) => {
       if (facts.worktreePath !== null) {

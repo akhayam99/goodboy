@@ -109,11 +109,11 @@ let otherId = '';
 
 export const SIDEBAR_NAV_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'sidebar: Terminal open, the session row carries the only current sign',
+    name: 'sidebar: Scripts open, the session row carries the only current sign',
     covers: ['navigate', 'sidebar:current-sign'],
-    open: async () => openCrumb(/^Terminal/),
+    open: async () => openCrumb(/^Scripts/),
     lands: async (ctx) => {
-      await heading('Terminal');
+      await heading('Scripts');
       await waitFor(() => {
         const signs = currentSigns();
         expect(signs).toHaveLength(1);

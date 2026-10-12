@@ -1,6 +1,7 @@
 import { ChevronRight } from 'lucide-react';
 import { ROW_INTERACTIVE, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { middleTruncate } from '../../middleTruncate';
 import type { TerminalGroup } from './terminalGroups';
 import type { ReactNode } from 'react';
 
@@ -10,6 +11,8 @@ type Props = {
   readonly onToggle: () => void;
   readonly children: ReactNode;
 };
+
+const GROUP_TITLE_LIMIT = 28;
 
 export const TerminalGroupSection = ({ group, isOpen, onToggle, children }: Props) => (
   <section aria-label={group.title} className="flex flex-col gap-1">
@@ -28,7 +31,10 @@ export const TerminalGroupSection = ({ group, isOpen, onToggle, children }: Prop
         className={cn('shrink-0 motion-safe:transition-transform', isOpen && 'rotate-90')}
       />
       <span className="flex min-w-0 flex-1 items-baseline gap-2">
-        <span className="min-w-0 truncate text-foreground">{group.title}</span>
+        <span className="min-w-0 truncate text-foreground">
+          <span className="sr-only">{group.title}</span>
+          <span aria-hidden>{middleTruncate({ text: group.title, limit: GROUP_TITLE_LIMIT })}</span>
+        </span>
         {group.branch === null ? null : (
           <span className="min-w-0 truncate text-meta text-faint-foreground">{group.branch}</span>
         )}

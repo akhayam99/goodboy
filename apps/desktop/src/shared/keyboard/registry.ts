@@ -286,6 +286,13 @@ export const SHORTCUTS = {
     group: 'session',
     scope: 'terminal',
   },
+  'session.terminal': {
+    combo: 'cmd+alt+KeyT',
+    label: 'Session terminal',
+    plane: 'lens',
+    group: 'session',
+    scope: 'codeSession',
+  },
   'session.archive': {
     combo: 'cmd+shift+KeyA',
     label: 'Archive session',
@@ -359,7 +366,6 @@ export const SHORTCUTS = {
   },
   'lens.plans': { combo: 'cmd+alt+KeyP', label: NAMES.artifacts, plane: 'lens', group: 'views' },
   'lens.scripts': { combo: 'cmd+alt+KeyS', label: NAMES.scripts, plane: 'lens', group: 'views' },
-  'lens.terminal': { combo: 'cmd+alt+KeyT', label: NAMES.terminal, plane: 'lens', group: 'views' },
   'lens.pr': { combo: 'cmd+alt+Digit1', label: NAMES.pullRequest, plane: 'lens', group: 'views' },
   'lens.linear': { combo: 'cmd+alt+Digit2', label: 'Linear', plane: 'lens', group: 'views' },
   'lens.gitlab_issues': {

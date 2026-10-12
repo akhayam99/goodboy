@@ -192,7 +192,7 @@ opens it on a mode. Commands is the first mode.
   only when searched by name (every word a word prefix of its label), dimmed
   with its reason, and Enter does nothing. Delete and the other confirmed verbs
   swap the list for an InlineConfirm; Archive runs at once with Undo. The
-  registry owns Comments, Files, Terminal and Open in terminal of a session in scope, so the lens
+  registry owns Comments, Files and Open in terminal of a session in scope, so the lens
   rows with the same names step aside. The lens rows read their labels from
   the shortcut registry, which reads `NAMES` (`Overview`, `Comments`, `Files`,
   `Pull request`), so the palette, the page menu and the shortcut sheet cannot
@@ -249,7 +249,7 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
 
 - **A `Location` is where you are plus how the page was.** Its `place` is the
   board or a session view: lens, open agent, session studio and one target
-  (artifact, run, issue, diff focus, terminal mount, Explore project). Its `studio` is the app
+  (artifact, run, issue, diff focus, Explore project). Its `studio` is the app
   studio open over that place, if any. Its `focus` is the page state: the open
   drawer, selection, scroll and revealed rows. `locationKey` prints the text
   form used by tests and logs: `board`, `s/{session}`, `s/{session}/branch/comments`,
@@ -359,7 +359,7 @@ never exists on one surface only.
   `__tests__/actions/handBuiltMenus.test.ts` fails on a menu built by hand
   outside the registry, against a shrinking list of menus that are not objects
   (creation pickers, property pickers, page chrome).
-- **What each object offers.** A session: Open, Comments, Files, Terminal, Open in terminal
+- **What each object offers.** A session: Open, Comments, Files, Open in terminal
   (one choice per worktree), Open in
   editor; Rename (inline, in the row that opened the menu), Start agent, Link
   work (L on the Overview); copy the title, worktree path, branch and pull request link; Archive with Undo and
@@ -671,7 +671,7 @@ the same compare and swap. Dragging is not built.
 or `remembered` for the open session. A page that has a row in the card
 (Overview, Branch, Runs, Agents, Artifacts, and Questions while one is open)
 takes `bg-selected` and `aria-current="page"` alone. Where no row matches (the
-Tools Explore, Scripts and Terminal, a linked record, Questions with nothing
+Tools Explore and Scripts, a linked record, Questions with nothing
 open) or the pages are folded, the session row takes the sign. While a studio
 (Tasks, Chat, Workflows, Terminal, Impact) sits over the session the row is `remembered`:
 medium weight, no fill, no `aria-current`; closing the studio returns the sign to
@@ -1487,12 +1487,23 @@ busy one asks in a`ConfirmPopover` anchored to the x (`Keep`, danger `Close`). T
 32px location row, the cwd trimmed to the workspace folder and the `cd`menu (only while the
 shell is idle, it types`cd`into the shell), then the shell. A terminal id is`<sessionId>::t<n>`for a session and`ws:<workspaceId>::t<n>` for the workspace
 (`terminalOwner.ts`); both reattach after a reload with their owners and renamed names (setting
-`terminal.names`). The session Terminal lens is the same body (`SessionTerminalLens`) focused on
-that session, with the same rail and no header button. `⌘T` (`terminal.newTab`) still adds a
-terminal in both places. ⌘K has `Terminal` (`goto:terminal`), `New terminal`
-(`action:new-terminal`, the workspace folder) and, in a session with worktrees, `Open <repo ·
-  branch> in terminal` (`session.openWorktreeTerminal`, one choice per worktree), which spawns a
-  terminal there on the Terminal page.
+`terminal.names`). A session has no Terminal page of its own: the session terminal lens is gone, and a
+saved location that still names it lands on the session overview (`withoutRemovedPages`). `⌘T`
+(`terminal.newTab`) adds a terminal while one has focus. ⌘K has `Terminal` (`goto:terminal`),
+`New terminal` (`action:new-terminal`, the workspace folder) and, in a session with worktrees,
+`Open <repo · branch> in terminal` (`session.openWorktreeTerminal`, one choice per worktree).
+- **A session terminal opens in a right drawer.** `openSessionTerminal` adds a session terminal at
+  the worktree (or reuses a running one there) and opens the `terminal` drawer over the session
+  (`DrawerContent` `{ kind: 'terminal'; payload: { terminalId } }`, `TerminalDrawer` in
+  `DrawerHost`, side sizing, resizable like the others). The mount row and diff `Open terminal`,
+  the rebase banners (`openMountTerminal`), the session row menu, ⌘K `Open <repo · branch> in
+terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active worktree) all go
+  through it. The header holds the terminal name, a worktree chip, `Open on Terminal page` and
+  `Close`. Closing the drawer never kills the shell: the tab stays in the Terminal list under the
+  session's group, and the drawer closes by itself when its terminal exits. `Open on Terminal page`
+  closes the drawer and selects the same tab on the page; the pane remounts on the same pty and
+  replays its scrollback. The page group title is the session title, cut in the middle past 28
+  characters (`middleTruncate`); the group's `aria-label` keeps the full title.
 - **One Esc stack.** The frame, a body that holds Esc (Tasks with a record
   open), the agent overlay and the delete confirm all register with
   `useEscapeLayer`, so Esc closes the topmost layer only. So does every
