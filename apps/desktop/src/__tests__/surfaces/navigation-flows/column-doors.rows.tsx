@@ -122,7 +122,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     open: () => click(doorIn('terminal')),
     lands: both(
       () => band('Terminal'),
-      () => visible('complementary', 'Terminals'),
+      () => visible('heading', 'No terminal yet'),
       async () => expect(doorIn('terminal').getAttribute('aria-current')).toBe('page'),
     ),
   },

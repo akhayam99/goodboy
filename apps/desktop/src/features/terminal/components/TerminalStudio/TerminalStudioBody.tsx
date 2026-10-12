@@ -1,5 +1,5 @@
 import type { KeyboardEvent } from 'react';
-import { useStudioRailFold, StudioRailLayout } from '@goodboy/ui';
+import { StudioRailLayout } from '@goodboy/ui';
 import { eventMatches } from '../../../../shared/keyboard/dispatcher';
 import { SHORTCUTS } from '../../../../shared/keyboard/registry';
 import type { TerminalStudioModel } from '../../hooks/useTerminalStudioModel';
@@ -12,7 +12,6 @@ type Props = {
 };
 
 export const TerminalStudioBody = ({ model, isActive }: Props) => {
-  const fold = useStudioRailFold({ surface: 'terminal' });
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     if (
       !isActive ||
@@ -24,26 +23,14 @@ export const TerminalStudioBody = ({ model, isActive }: Props) => {
     model.openDefault();
   };
   return (
-    <div
-      ref={fold.paneRef}
-      onKeyDown={handleKeyDown}
-      className="flex h-full min-h-0 min-w-0 flex-1"
-    >
+    <div onKeyDown={handleKeyDown} className="flex h-full min-h-0 min-w-0 flex-1">
       <StudioRailLayout
         railLabel="Terminals"
         railWidth="standard"
         surface="terminal"
         placement="page"
-        rail={<TerminalRail model={model} />}
-        isCollapsed={fold.isCollapsed}
-        onCollapsedChange={fold.setFolded}
-        detail={
-          <TerminalDetail
-            model={model}
-            isActive={isActive}
-            onDock={fold.isCollapsed && fold.canDock ? () => fold.setFolded(false) : undefined}
-          />
-        }
+        rail={model.groups.length === 0 ? null : <TerminalRail model={model} />}
+        detail={<TerminalDetail model={model} isActive={isActive} />}
       />
     </div>
   );

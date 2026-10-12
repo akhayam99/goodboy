@@ -11,6 +11,7 @@ import {
   terminalOwnerKey,
 } from './terminalOwner';
 import type { GetFn, SetFn } from './types';
+import { watchTerminalExits } from './watchTerminalExits';
 
 const isNameRecord = (value: unknown): value is Record<string, string> =>
   typeof value === 'object' &&
@@ -34,6 +35,7 @@ const readNames = async (): Promise<Record<string, string>> => {
 export const reattachTerminalTabs = (set: SetFn, get: GetFn) => {
   return async (): Promise<void> => {
     await terminalOutputBus.register();
+    watchTerminalExits(get)();
     const [liveTerminals, names] = await Promise.all([invokeTerminalListLive(), readNames()]);
     const state = get();
     const rebuilt = new Map<string, TerminalTab[]>();

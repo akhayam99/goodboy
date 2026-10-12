@@ -933,10 +933,38 @@ export const terminalModuleMock = () => ({
   listenTerminalExit: vi.fn(async () => () => undefined),
 });
 
+type TerminalExitListener = (params: {
+  readonly terminalId: string;
+  readonly exitCode: number;
+}) => void;
+
+type SubscribeExitsParams = {
+  readonly listener: TerminalExitListener;
+};
+
+const terminalExitListeners = new Set<TerminalExitListener>();
+
+type EmitExitParams = {
+  readonly terminalId: string;
+  readonly exitCode: number;
+};
+
+export const emitTerminalExit = ({ terminalId, exitCode }: EmitExitParams): void => {
+  for (const listener of [...terminalExitListeners]) {
+    listener({ terminalId, exitCode });
+  }
+};
+
 export const terminalOutputBusModuleMock = () => ({
   terminalOutputBus: {
     register: vi.fn(async () => undefined),
     subscribe: vi.fn(() => () => undefined),
+    subscribeExits: vi.fn(({ listener }: SubscribeExitsParams) => {
+      terminalExitListeners.add(listener);
+      return () => {
+        terminalExitListeners.delete(listener);
+      };
+    }),
     tailOf: vi.fn(() => null),
     forget: vi.fn(() => undefined),
   },

@@ -5,7 +5,6 @@ import { StudioShell } from '../../../../shared/components/StudioShell';
 import type { TerminalTabId } from '../../../../shared/types/terminal';
 import { useAppStore } from '../../../../store';
 import { useTerminalStudioModel } from '../../hooks/useTerminalStudioModel';
-import { NewTerminalMenu } from './NewTerminalMenu';
 import { TerminalStudioBody } from './TerminalStudioBody';
 
 type Props = {
@@ -40,13 +39,6 @@ export const TerminalStudio = ({ workspaceId, terminalId, sessionId, onClose }: 
       tone={CONCEPT_TONE.terminal}
       title="Terminal"
       closeLabel="Close terminal"
-      headerAccessory={
-        <NewTerminalMenu
-          targets={model.targets}
-          onNew={model.openDefault}
-          onOpenAt={model.openAt}
-        />
-      }
       onClose={onClose}
     >
       {() => <TerminalStudioBody model={model} isActive />}

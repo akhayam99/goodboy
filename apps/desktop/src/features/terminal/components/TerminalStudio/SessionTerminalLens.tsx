@@ -8,7 +8,6 @@ import {
   sessionTerminalOwner,
 } from '../../../../store/slices/terminal/terminalOwner';
 import { useTerminalStudioModel } from '../../hooks/useTerminalStudioModel';
-import { NewTerminalMenu } from './NewTerminalMenu';
 import { TerminalStudioBody } from './TerminalStudioBody';
 
 type Props = {
@@ -42,21 +41,12 @@ export const SessionTerminalLens = ({ workspaceId, sessionId, isActive, sessionC
     selectedId: activeId,
     focusSessionId: sessionId,
     sessionCwd,
+    scope: 'session',
     onSelect,
   });
 
   return (
-    <PaneShell
-      title="Terminal"
-      scroll="self"
-      actions={
-        <NewTerminalMenu
-          targets={model.targets}
-          onNew={model.openDefault}
-          onOpenAt={model.openAt}
-        />
-      }
-    >
+    <PaneShell title="Terminal" scroll="self">
       <TerminalStudioBody model={model} isActive={isActive} />
     </PaneShell>
   );

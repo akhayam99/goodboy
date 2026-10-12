@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { StudioRailLayout } from '@goodboy/ui';
+import { useEffect, useState } from 'react';
+import { Button, EmptyState, StudioRailLayout } from '@goodboy/ui';
 import type { ChatId, ChatSummary, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../shared/components/StudioShell';
@@ -26,6 +26,13 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
   const archivedChats = useAppStore(
     (state) => state.archivedChatsByWorkspace[workspaceId] ?? NO_CHATS,
   );
+  const hasLoadedChats = useAppStore((state) => state.chatsByWorkspace[workspaceId] !== undefined);
+  const hasLoadedArchived = useAppStore(
+    (state) => state.archivedChatsByWorkspace[workspaceId] !== undefined,
+  );
+  const loadError = useAppStore((state) => state.chatLoadErrors?.[workspaceId] ?? null);
+  const loadArchivedChats = useAppStore((state) => state.loadArchivedChats);
+  const [hasStarted, setHasStarted] = useState(false);
   const loadChats = useAppStore((state) => state.loadChats);
   const amendStudio = useAppStore((state) => state.amendStudio);
   const markChatRead = useAppStore((state) => state.markChatRead);
@@ -34,6 +41,10 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
   useEffect(() => {
     void loadChats({ workspaceId });
   }, [workspaceId, loadChats]);
+
+  useEffect(() => {
+    void loadArchivedChats({ workspaceId });
+  }, [workspaceId, loadArchivedChats]);
 
   useEffect(() => {
     if (chatId !== null) {
@@ -60,6 +71,15 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
     archivedChats.find((chat) => chat.id === chatId) ??
     null;
 
+  const isFirstRun =
+    !hasStarted &&
+    chatId === null &&
+    hasLoadedChats &&
+    hasLoadedArchived &&
+    loadError === null &&
+    chats.length === 0 &&
+    archivedChats.length === 0;
+
   return (
     <StudioShell icon={CONCEPT_ICONS.chat} tone={CONCEPT_TONE.chat} title="Chat" onClose={onClose}>
       {() => (
@@ -69,26 +89,42 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
           surface="chat"
           placement="page"
           rail={
-            <ChatList
-              workspaceId={workspaceId}
-              chats={chats}
-              selectedId={activeChat?.id ?? null}
-              onSelect={select}
-              onNew={() => select(null)}
-              onArchived={(archivedIds) => leave({ removedIds: archivedIds })}
-              onDeleted={(deletedIds) => leave({ removedIds: deletedIds })}
-            />
+            isFirstRun ? null : (
+              <ChatList
+                workspaceId={workspaceId}
+                chats={chats}
+                selectedId={activeChat?.id ?? null}
+                onSelect={select}
+                onNew={() => select(null)}
+                onArchived={(archivedIds) => leave({ removedIds: archivedIds })}
+                onDeleted={(deletedIds) => leave({ removedIds: deletedIds })}
+              />
+            )
           }
           detail={
-            <StudioDetail>
-              <ChatRoom
-                key={activeChat?.id ?? 'new'}
-                workspaceId={workspaceId}
-                chat={activeChat}
-                onCreated={select}
-                onRemoved={() => leave({ removedIds: chatId === null ? [] : [chatId] })}
+            isFirstRun ? (
+              <EmptyState
+                size="page"
+                icon={CONCEPT_ICONS.chat}
+                title="No chats yet"
+                description="Start a chat to explore an idea with an agent."
+                action={
+                  <Button size="sm" onClick={() => setHasStarted(true)}>
+                    Start a chat
+                  </Button>
+                }
               />
-            </StudioDetail>
+            ) : (
+              <StudioDetail>
+                <ChatRoom
+                  key={activeChat?.id ?? 'new'}
+                  workspaceId={workspaceId}
+                  chat={activeChat}
+                  onCreated={select}
+                  onRemoved={() => leave({ removedIds: chatId === null ? [] : [chatId] })}
+                />
+              </StudioDetail>
+            )
           }
         />
       )}

@@ -281,7 +281,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   }),
   pressRow({
     id: 'terminal.studio',
-    lands: () => visible('complementary', 'Terminals'),
+    lands: () => visible('heading', 'No terminal yet'),
   }),
   keyRow({
     id: 'nav.back',
@@ -1145,12 +1145,12 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
     id: 'terminal.newTab',
     open: async () => {
       await press('lens.terminal')();
-      await screen.findByRole('complementary', { name: 'Terminals' }, WAIT);
+      await screen.findByRole('heading', { name: 'No terminal yet' }, WAIT);
       const [newTerminal] = screen
         .getAllByRole('button', { name: /^New terminal$/ })
         .filter((button) => button.closest('[data-side-column]') === null);
       if (newTerminal === undefined) {
-        throw new Error('The terminal rail has no New terminal button');
+        throw new Error('The empty terminal page has no New terminal button');
       }
       fireEvent.click(newTerminal);
       await waitFor(() => expect(terminalRows().length).toBeGreaterThan(0), WAIT);

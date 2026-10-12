@@ -56,6 +56,7 @@ const RECIPES: Readonly<Record<PaletteTier, ReadonlyArray<string>>> = {
     'session.copyBranch',
     'session.linkIssue',
     'session.rename',
+    'session.startAgent',
   ],
   idle: [
     'session.startAgent',
@@ -74,6 +75,7 @@ const RECIPES: Readonly<Record<PaletteTier, ReadonlyArray<string>>> = {
     'session.copyBranch',
     'session.linkIssue',
     'session.terminal',
+    'session.startAgent',
   ],
   archived: [
     'session.restore',

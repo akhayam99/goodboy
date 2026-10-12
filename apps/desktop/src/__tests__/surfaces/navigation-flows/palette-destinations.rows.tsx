@@ -121,6 +121,48 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: () => band('Chat'),
   },
   {
+    name: 'palette: Terminal',
+    covers: ['studio:terminal', 'palette:Terminal'],
+    door: 'palette',
+    open: () => openPalette(/^Terminal$/),
+    lands: () => band('Terminal'),
+  },
+  {
+    name: 'palette: New terminal',
+    covers: ['studio:terminal', 'palette:New terminal'],
+    door: 'palette',
+    open: () => openPalette(/^New terminal$/, 'new terminal'),
+    lands: async () => {
+      await band('Terminal');
+      await waitFor(
+        () => expect(document.querySelectorAll('[data-terminal-row]')).toHaveLength(1),
+        WAIT,
+      );
+    },
+  },
+  {
+    name: 'palette verb: Open a worktree in terminal',
+    covers: ['studio:terminal', 'palette:Open a worktree in terminal'],
+    seed: 'pr',
+    door: 'palette',
+    open: async () => {
+      await openPalette(/^Open a worktree in terminal/);
+      const [choice] = await screen.findAllByRole('option', { name: /in terminal/ });
+      if (choice === undefined) {
+        throw new Error('The palette offers no worktree to open');
+      }
+      fireEvent.mouseDown(choice);
+      await settle();
+    },
+    lands: async () => {
+      await band('Terminal');
+      await waitFor(
+        () => expect(document.querySelectorAll('[data-terminal-row]')).toHaveLength(1),
+        WAIT,
+      );
+    },
+  },
+  {
     name: 'palette: All actions for this session',
     covers: ['palette:All actions for this session'],
     seed: 'pr',

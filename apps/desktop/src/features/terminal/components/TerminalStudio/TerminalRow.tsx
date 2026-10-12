@@ -29,7 +29,7 @@ type Presentation = {
 
 const presentationOf = ({ tab, isBusy }: StateParams): Presentation => {
   if (tab.status === 'exited') {
-    return { label: 'Exited', tone: 'neutral', isPulsing: false };
+    return { label: 'Failed', tone: 'danger', isPulsing: false };
   }
   if (isBusy) {
     return { label: 'Busy', tone: 'warning', isPulsing: true };
@@ -51,13 +51,7 @@ export const TerminalRow = ({
   const isExited = tab.status === 'exited';
   const isBusyNow = !isExited && isBusy;
   const presentation = presentationOf({ tab, isBusy });
-  const detail = isExited
-    ? tab.openError === undefined
-      ? `exited ${tab.exitCode ?? 0}`
-      : 'failed to open'
-    : isBusyNow
-      ? (command ?? 'running')
-      : null;
+  const detail = isExited ? 'failed to open' : isBusyNow ? (command ?? 'running') : null;
   return (
     <li
       data-terminal-row={tab.id}

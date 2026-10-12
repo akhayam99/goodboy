@@ -10,12 +10,11 @@ type StatusParams = {
   readonly owner: TerminalOwner;
   readonly tabId: TerminalTabId;
   readonly status: TerminalTabStatus;
-  readonly exitCode?: number;
   readonly openError?: string;
 };
 
 export const setTerminalTabStatus = (set: SetFn) => {
-  return ({ owner, tabId, status, exitCode, openError }: StatusParams): void => {
+  return ({ owner, tabId, status, openError }: StatusParams): void => {
     const key = terminalOwnerKey({ owner });
     set((s) => ({
       terminalTabs: {
@@ -25,7 +24,6 @@ export const setTerminalTabStatus = (set: SetFn) => {
             ? {
                 ...t,
                 status,
-                ...(exitCode === undefined ? {} : { exitCode }),
                 ...(openError === undefined ? {} : { openError }),
               }
             : t,

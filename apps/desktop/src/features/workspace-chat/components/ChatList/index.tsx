@@ -5,7 +5,6 @@ import {
   cn,
   Button,
   EmptyLine,
-  EmptyState,
   Notice,
   SkeletonRow,
   ScrollFade,
@@ -392,19 +391,7 @@ export const ChatList = ({
               }
             />
           ) : isEmpty && archived === null ? (
-            needle === '' ? (
-              <EmptyState
-                size="page"
-                icon={CONCEPT_ICONS.chat}
-                title="No chats yet"
-                description="Start a chat to explore an idea with an agent."
-                action={
-                  <Button size="sm" onClick={onNew}>
-                    Start a chat
-                  </Button>
-                }
-              />
-            ) : (
+            needle === '' ? null : (
               <EmptyLine
                 action={
                   <Button size="sm" variant="ghost" onClick={() => setQuery('')}>

@@ -191,7 +191,7 @@ opens it on a mode. Commands is the first mode.
   only when searched by name (every word a word prefix of its label), dimmed
   with its reason, and Enter does nothing. Delete and the other confirmed verbs
   swap the list for an InlineConfirm; Archive runs at once with Undo. The
-  registry owns Comments, Files and Terminal of a session in scope, so the lens
+  registry owns Comments, Files, Terminal and Open in terminal of a session in scope, so the lens
   rows with the same names step aside. The lens rows read their labels from
   the shortcut registry, which reads `NAMES` (`Overview`, `Comments`, `Files`,
   `Pull request`), so the palette, the page menu and the shortcut sheet cannot
@@ -358,7 +358,8 @@ never exists on one surface only.
   `__tests__/actions/handBuiltMenus.test.ts` fails on a menu built by hand
   outside the registry, against a shrinking list of menus that are not objects
   (creation pickers, property pickers, page chrome).
-- **What each object offers.** A session: Open, Comments, Files, Terminal, Open in
+- **What each object offers.** A session: Open, Comments, Files, Terminal, Open in terminal
+  (one choice per worktree), Open in
   editor; Rename (inline, in the row that opened the menu), Start agent, Link
   work (L on the Overview); copy the title, worktree path, branch and pull request link; Archive with Undo and
   Delete with its confirm (Restore once archived). Several sessions: Copy
@@ -1474,20 +1475,31 @@ one is open at a time.
   (`ChatHeader`). Exactly one `h1` per studio scene.
 - **One Terminal studio for every terminal.** The Terminal door (⌃`, `terminal.studio`)
 opens `StudioPlace` `{ kind: 'terminal'; terminalId; sessionId }`in`TerminalStudio`:
-`StudioShell`plus`StudioRailLayout surface="terminal"`(the rail folds like Tasks).
-The rail lists a`Workspace`group first (terminals that belong to the workspace), then one
-group per session that has terminals, headed by the session title, its branch and a count;
-the open session's group is expanded and the others folded. A row is a state dot (idle,
-busy, exited), the name (the cwd's last folder, renamed by double click, Enter saves, Esc
-cancels), the command a busy shell runs and, once exited,`exited 127`with Restart. The
-close x shows on hover and focus: an idle shell closes at once, a busy one asks in a`ConfirmPopover` anchored to the x (`Keep`, danger `Close`). The detail is a 32px location
-row, the cwd trimmed to the workspace folder, chips for `Workspace folder`, one per mount of
-the session (`ledger-core · hl/ledger-rounding`) and `Main checkout`, then the shell. A
-chip opens a new terminal there and selects it; it never types into a shell, and the `cd`menu does that only while the shell is idle.`New terminal`in the header opens in the
-workspace folder, its chevron lists the same targets. A terminal id is`<sessionId>::t<n>`for a session and`ws:<workspaceId>::t<n>` for the workspace (`terminalOwner.ts`); both
-reattach after a reload with their owners and renamed names (setting `terminal.names`).
-The session Terminal lens is the same body (`SessionTerminalLens`) focused on that session.
-`⌘T` (`terminal.newTab`) still adds a terminal in both places.
+`StudioShell`plus`StudioRailLayout surface="terminal"`. The rail does not fold, and its first
+child is `New terminal`, the same full-width secondary button as Chat's New chat, with a chevron
+beside it when there is more than one target. The menu lists `Workspace folder`, then one group
+per session that has attached worktrees, headed by the session title, with one row per worktree
+(`ledger-core · hl/ledger-rounding`); a row opens a terminal there, under that session, and
+selects it. With no terminal at all the page has no rail: the empty state owns the single
+`New terminal`. The rail lists a `Workspace` group first (terminals that belong to the workspace),
+then one group per session that has terminals, headed by the session title, its branch and a
+count; the open session's group is expanded and the others folded. A row is a state dot (idle,
+busy, failed), the name (the cwd's last folder, renamed by double click, Enter saves, Esc
+cancels) and the command a busy shell runs. When the shell exits, whatever the code, the tab
+closes and the studio selects a neighbour of the same owner: the watch lives in the terminal
+slice (`watchTerminalExits`, started by `reattachTerminalTabs`), so it works with the page closed.
+Only a terminal that failed to start stays, as `failed to open`with Restart, and it is never
+opened again on its own. The close x shows on hover and focus: an idle shell closes at once, a
+busy one asks in a`ConfirmPopover` anchored to the x (`Keep`, danger `Close`). The detail is a
+32px location row, the cwd trimmed to the workspace folder and the `cd`menu (only while the
+shell is idle, it types`cd`into the shell), then the shell. A terminal id is`<sessionId>::t<n>`for a session and`ws:<workspaceId>::t<n>` for the workspace
+(`terminalOwner.ts`); both reattach after a reload with their owners and renamed names (setting
+`terminal.names`). The session Terminal lens is the same body (`SessionTerminalLens`) focused on
+that session, with the same rail and no header button. `⌘T` (`terminal.newTab`) still adds a
+terminal in both places. ⌘K has `Terminal` (`goto:terminal`), `New terminal`
+(`action:new-terminal`, the workspace folder) and, in a session with worktrees, `Open <repo ·
+  branch> in terminal` (`session.openWorktreeTerminal`, one choice per worktree), which spawns a
+  terminal there on the Terminal page.
 - **One Esc stack.** The frame, a body that holds Esc (Tasks with a record
   open), the agent overlay and the delete confirm all register with
   `useEscapeLayer`, so Esc closes the topmost layer only. So does every

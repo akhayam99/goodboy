@@ -1436,7 +1436,11 @@ its filters (Tasks, Notifications) uses `StudioRailLayout` with
 draws the only line between it and the detail. Every page rail is 288 wide
 (`standard`), resizes between 220 and 420 unless the page passes `min` and
 `max`, and can take `railHeader` (Tasks' search) plus `onCollapsedChange`, which
-adds the fold control to the first row; `isCollapsed` hides the rail. The page
+adds the fold control to the first row; `isCollapsed` hides the rail, and
+`rail={null}` draws no rail at all, for a page with nothing to list (Chat before
+its first chat, Terminal before its first terminal). Chat and Terminal rails
+never fold, and their first child is the full-width secondary New chat / New
+terminal button. The page
 owns the folded state through `useStudioRailFold` (remembered per surface, and
 forced under a pane of 880px), and a folded rail leaves `FilterButton` in the
 title row: a 28px secondary button with the funnel and the count of active
@@ -2018,7 +2022,7 @@ old shape, and the next round moves it.
 | Comments       | 0.22.1                                   | 0.22.1                                                                                            | 0.22.1                                                   | 0.22.1                                                              | 0.22.1                                    |
 | Commits        | Three skeleton rows                      | `section`: No commits yet on this branch                                                          | N/A                                                      | `Notice` danger: Could not load commits, Retry and Details          | N/A                                       |
 | Impact         | Skeleton cards                           | `page`: Impact fills in as sessions finish, spend line                                            | N/A                                                      | `Notice` danger: Retry and Details                                  | N/A                                       |
-| Chat           | Three skeleton rows                      | `page`: No chats yet, Start a chat                                                                | `EmptyLine`: No chats match this filter, Clear filter    | `Notice` danger: Could not load chats, Retry and Details            | N/A                                       |
+| Chat           | Three skeleton rows                      | `page`, no rail: No chats yet, Start a chat                                                       | `EmptyLine`: No chats match this filter, Clear filter    | `Notice` danger: Could not load chats, Retry and Details            | N/A                                       |
 | Settings lists | 0.22.1                                   | 0.22.1                                                                                            | 0.22.1                                                   | 0.22.1                                                              | 0.22.1                                    |
 
 The new session draft is the kickoff. It asks "How do you want to
@@ -2272,7 +2276,7 @@ Compatibility empty-state and keyboard aliases remain only while callers owned b
 parallel units are migrated during integration. New callers name EmptyState section
 and Kbd inline or cap directly.
 
-The Terminal first-time page offers New terminal. Loading the terminal view
+The Terminal first-time page has no rail and offers the one New terminal. Loading the terminal view
 announces Starting the shell. Permission rules and recent decisions use section
 states that explain when rows are added. Other Settings scope lists retain their
 existing states until their separate loading contracts are covered.

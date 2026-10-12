@@ -20,6 +20,8 @@ import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { openInConfiguredEditor } from '../../../shared/lib/editorSettings';
 import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
 import { branchPlace } from '../../../store/slices/navigation/place';
+import { openTerminalAt } from '../../terminal/openTerminalAt';
+import { sessionTerminalOwner } from '../../../store/slices/terminal/terminalOwner';
 import { sessionTitle } from '../../session/sessionTitle';
 import { archiveSessions, restoreSessions } from '../../session/sessionArchive';
 import { createAgentEventName } from '../../session/createAgentEventName';
@@ -173,6 +175,41 @@ const worktreeChoices = ({
       ];
 };
 
+type WorktreeLabelParams = {
+  readonly worktree: SessionWorktree;
+};
+
+type TerminalFactsParams = {
+  readonly facts: SessionFacts;
+};
+
+const worktreeLabel = ({ worktree }: WorktreeLabelParams): string =>
+  worktree.branch === null ? worktree.name : `${worktree.name} · ${worktree.branch}`;
+
+const worktreeTerminalChoices = ({ facts }: TerminalFactsParams): ReadonlyArray<ActionChoice> => {
+  const worktrees = worktreesOf({ facts });
+  return worktrees.length < 2
+    ? []
+    : worktrees.map((worktree) => ({
+        id: worktree.id,
+        label: `Open ${worktreeLabel({ worktree })} in terminal`,
+        isCurrent: false,
+        detail: worktree.path,
+        keywords: [
+          worktree.name,
+          worktree.path,
+          ...(worktree.branch === null ? [] : [worktree.branch]),
+        ],
+      }));
+};
+
+const worktreeTerminalLabel = ({ facts }: TerminalFactsParams): string => {
+  const [only] = worktreesOf({ facts });
+  return worktreesOf({ facts }).length === 1 && only !== undefined
+    ? `Open ${worktreeLabel({ worktree: only })} in terminal`
+    : 'Open a worktree in terminal';
+};
+
 const worktreeTextFor = ({
   facts,
   choice,
@@ -314,6 +351,27 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     run: ({ facts, env }) => {
       openLens({ env, sessionId: facts.sessionId, lens: null });
       dispatchAfterNavigation({ name: linkIssueEventName({ sessionId: facts.sessionId }) });
+    },
+  },
+  {
+    id: 'session.openWorktreeTerminal',
+    label: worktreeTerminalLabel,
+    icon: CONCEPT_ICONS.terminal,
+    group: 'open',
+    when: ({ facts }) => isLive({ facts }) && worktreesOf({ facts }).length > 0,
+    choices: worktreeTerminalChoices,
+    run: ({ facts, env, choice }) => {
+      const worktrees = worktreesOf({ facts });
+      const picked = worktrees.find((worktree) => worktree.id === choice) ?? worktrees[0];
+      if (picked === undefined) {
+        return;
+      }
+      openTerminalAt({
+        state: env.getState(),
+        owner: sessionTerminalOwner({ sessionId: facts.sessionId }),
+        cwd: picked.path,
+        sessionId: facts.sessionId,
+      });
     },
   },
   {

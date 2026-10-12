@@ -163,7 +163,7 @@ const tabOf = ({ id, owner, title, cwd, isExited = false }: TabParams): Terminal
   title,
   cwd,
   status: isExited ? 'exited' : 'running',
-  ...(isExited ? { exitCode: 127 } : {}),
+  ...(isExited ? { openError: 'The folder no longer exists' } : {}),
   createdAt: CREATED_AT,
 });
 

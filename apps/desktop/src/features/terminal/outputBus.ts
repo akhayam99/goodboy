@@ -28,6 +28,17 @@ type SubscribeParams = TerminalIdParams & {
   readonly subscriber: TerminalBusSubscriber;
 };
 
+type ExitParams = {
+  readonly terminalId: string;
+  readonly exitCode: number;
+};
+
+type ExitListener = (params: ExitParams) => void;
+
+type SubscribeExitsParams = {
+  readonly listener: ExitListener;
+};
+
 type TailState = {
   chunks: Uint8Array[];
   length: number;
@@ -37,6 +48,7 @@ type TailState = {
 const TAIL_CAP_BYTES = 262_144;
 
 const tails = new Map<string, TailState>();
+const exitListeners = new Set<ExitListener>();
 const subscribers = new Map<string, Set<TerminalBusSubscriber>>();
 let registration: Promise<void> | null = null;
 
@@ -84,6 +96,9 @@ const handleOutput = (payload: TerminalOutputPayload): void => {
 };
 
 const handleExit = (payload: TerminalExitPayload): void => {
+  for (const listener of [...exitListeners]) {
+    listener({ terminalId: payload.sessionId, exitCode: payload.exitCode });
+  }
   for (const subscriber of subscribers.get(payload.sessionId) ?? []) {
     subscriber.onExit?.(payload.exitCode);
   }
@@ -116,6 +131,13 @@ const subscribe = ({ terminalId, subscriber }: SubscribeParams): (() => void) =>
   };
 };
 
+const subscribeExits = ({ listener }: SubscribeExitsParams): (() => void) => {
+  exitListeners.add(listener);
+  return () => {
+    exitListeners.delete(listener);
+  };
+};
+
 const tailOf = ({ terminalId }: TerminalIdParams): TerminalBusTail | null => {
   const tail = tails.get(terminalId);
   if (tail === undefined) {
@@ -134,4 +156,4 @@ const forget = ({ terminalId }: TerminalIdParams): void => {
   tails.delete(terminalId);
 };
 
-export const terminalOutputBus = { register, subscribe, tailOf, forget };
+export const terminalOutputBus = { register, subscribe, subscribeExits, tailOf, forget };

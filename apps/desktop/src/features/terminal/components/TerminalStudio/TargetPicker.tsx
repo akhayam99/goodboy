@@ -14,6 +14,7 @@ export const TargetPicker = ({ targets, label, valueLabel, onPick }: Props) => {
     value: target.key,
     label: target.label,
     description: target.path,
+    ...(target.group === undefined ? {} : { group: target.group }),
   }));
   return (
     <Listbox<string>

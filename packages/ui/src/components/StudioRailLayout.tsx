@@ -44,7 +44,7 @@ export const readStudioRailWidth = ({
   });
 
 type Props = {
-  readonly rail: ReactNode;
+  readonly rail: ReactNode | null;
   readonly detail: ReactNode;
   readonly railLabel: string;
   readonly railWidth: RailWidth;
@@ -88,7 +88,7 @@ export const StudioRailLayout = ({
       style={resizable.style}
       className={cn('flex h-full min-h-0 flex-1', isPage ? 'bg-background' : 'bg-chrome')}
     >
-      {isCollapsed ? null : (
+      {isCollapsed || rail === null ? null : (
         <aside
           aria-label={railLabel}
           style={{ width: `var(${RAIL_WIDTH_VAR})` }}

@@ -22,8 +22,8 @@ import {
 import { forgetTerminalCommand, lastCommandOf } from '../../commandTracker';
 import { invokeTerminalWrite } from '../../terminal';
 import { stringToBase64 } from '../../terminalDriver';
-import { terminalTargets, type TerminalTarget } from '../../terminalTargets';
-import { useTerminalExitWatch } from '../useTerminalExitWatch';
+import { sessionTitle } from '../../../session/sessionTitle';
+import { terminalMenuTargets, terminalTargets, type TerminalTarget } from '../../terminalTargets';
 import { useTerminalLedger } from '../useTerminalLedger';
 
 type Params = {
@@ -31,6 +31,7 @@ type Params = {
   readonly selectedId: TerminalTabId | null;
   readonly focusSessionId: SessionId | null;
   readonly sessionCwd?: string | null;
+  readonly scope?: 'page' | 'session';
   readonly onSelect: (params: SelectParams) => void;
 };
 
@@ -52,6 +53,7 @@ export type TerminalStudioModel = {
   readonly groups: ReadonlyArray<TerminalGroup>;
   readonly selected: TerminalTab | null;
   readonly targets: ReadonlyArray<TerminalTarget>;
+  readonly menuTargets: ReadonlyArray<TerminalTarget>;
   readonly folder: string | null;
   readonly home: string | null;
   readonly busyIds: ReadonlySet<string>;
@@ -74,6 +76,7 @@ export const useTerminalStudioModel = ({
   selectedId,
   focusSessionId,
   sessionCwd = null,
+  scope = 'page',
   onSelect,
 }: Params): TerminalStudioModel => {
   const terminalTabs = useAppStore((s) => s.terminalTabs);
@@ -114,7 +117,6 @@ export const useTerminalStudioModel = ({
   );
   const allTabs = useMemo(() => groups.flatMap((group) => group.tabs), [groups]);
   const busyIds = useTerminalLedger({ isEnabled: allTabs.length > 0 });
-  useTerminalExitWatch({ tabs: allTabs });
 
   const folder = selectTerminalWorkspaceFolder({
     state: { projects, terminalFolderOverrides: overrides },
@@ -142,6 +144,29 @@ export const useTerminalStudioModel = ({
       }),
     [folder, contextSessionId, contextMounts, projects, selectedMountPath],
   );
+
+  const sessionMounts = useAppStore(
+    useShallow((s) =>
+      Object.fromEntries(
+        s.sessions
+          .filter((session) => session.workspaceId === workspaceId)
+          .map((session) => [session.id, s.sessionProjectMounts[session.id] ?? NO_MOUNTS]),
+      ),
+    ),
+  );
+  const menuTargets = useMemo(() => {
+    if (scope === 'session') {
+      return targets;
+    }
+    return terminalMenuTargets({
+      folder,
+      sessions: sessions
+        .filter((session) => session.workspaceId === workspaceId)
+        .map((session) => ({ id: session.id, title: sessionTitle({ session }) })),
+      mountsBySession: sessionMounts,
+      projects,
+    });
+  }, [scope, targets, folder, sessions, workspaceId, sessionMounts, projects]);
 
   const select = useCallback(
     (tab: TerminalTab) =>
@@ -271,6 +296,7 @@ export const useTerminalStudioModel = ({
     groups,
     selected,
     targets,
+    menuTargets,
     folder,
     home,
     busyIds,

@@ -4,6 +4,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { sessionTerminalOwner, workspaceTerminalOwner } from './terminalOwner';
 import {
   STORE_IMPORT_TIMEOUT_MS,
+  emitTerminalExit,
   importStore,
   resetStoryStore,
   storySpies,
@@ -354,6 +355,49 @@ describe('store contract', () => {
       expect(tabs).toHaveLength(1);
       expect(tabs[0]?.id).toBe(first);
       expect(store.getState().activeTerminalTab[SESSION_ID]).toBe(first);
+    });
+
+    it('closes a tab when its shell exits, even with no studio open', async () => {
+      const store = useAppStore;
+      await store.getState().reattachTerminalTabs();
+      const first = store.getState().addTerminalTab({ owner: SESSION_OWNER, cwd: null });
+      const second = store.getState().addTerminalTab({ owner: SESSION_OWNER, cwd: null });
+
+      emitTerminalExit({ terminalId: second, exitCode: 0 });
+
+      const tabs = store.getState().terminalTabs[SESSION_ID] ?? [];
+      expect(tabs.map((tab) => tab.id)).toEqual([first]);
+      expect(store.getState().activeTerminalTab[SESSION_ID]).toBe(first);
+    });
+
+    it('closes a tab on a non-zero exit and ignores an unknown terminal', async () => {
+      const store = useAppStore;
+      await store.getState().reattachTerminalTabs();
+      const only = store.getState().addTerminalTab({ owner: WORKSPACE_OWNER, cwd: null });
+
+      emitTerminalExit({ terminalId: 'ws:missing::t9', exitCode: 1 });
+      expect(store.getState().terminalTabs[`ws:${WS_ID}`]).toHaveLength(1);
+
+      emitTerminalExit({ terminalId: only, exitCode: 130 });
+      expect(store.getState().terminalTabs[`ws:${WS_ID}`] ?? []).toEqual([]);
+    });
+
+    it('moves an open terminal studio to the neighbour of the tab that exited', async () => {
+      const store = useAppStore;
+      await store.getState().reattachTerminalTabs();
+      const first = store.getState().addTerminalTab({ owner: SESSION_OWNER, cwd: null });
+      const second = store.getState().addTerminalTab({ owner: SESSION_OWNER, cwd: null });
+      store
+        .getState()
+        .openStudio({ studio: { kind: 'terminal', terminalId: second, sessionId: SESSION_ID } });
+
+      emitTerminalExit({ terminalId: second, exitCode: 0 });
+
+      expect(store.getState().appStudio).toEqual({
+        kind: 'terminal',
+        terminalId: first,
+        sessionId: SESSION_ID,
+      });
     });
 
     it('names a new terminal after the last folder of its cwd, never Terminal N', async () => {

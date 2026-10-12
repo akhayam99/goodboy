@@ -13,9 +13,7 @@ import {
   type InboxStudioFocus,
   type StudioPlace,
 } from '../../../store';
-import { homeFolder } from '../../../shared/lib/homeFolder';
-import { selectTerminalWorkspaceFolder } from '../../../store/slices/terminal/selectors';
-import { workspaceTerminalOwner } from '../../../store/slices/terminal/terminalOwner';
+import { openWorkspaceTerminal } from '../../../features/terminal/openWorkspaceTerminal';
 import { terminalStudioPlace } from '../../../features/terminal/terminalStudioPlace';
 import { selectChatDoor } from '../../../store/slices/chat-last-open/selectChatDoor';
 import { AppOverlayRouter, AppStudio } from '../../components/AppOverlayRouter';
@@ -154,19 +152,8 @@ export const useAppOverlays = ({
     if (workspaceId === undefined) {
       return;
     }
-    void homeFolder().then((home) => {
-      const state = useAppStore.getState();
-      if (state.currentWorkspaceId !== workspaceId) {
-        return;
-      }
-      const folder = selectTerminalWorkspaceFolder({ state, workspaceId, home });
-      const id = state.addTerminalTab({
-        owner: workspaceTerminalOwner({ workspaceId }),
-        cwd: folder,
-      });
-      goTo({ overlay: { kind: 'terminal', terminalId: id, sessionId: state.currentSessionId } });
-    });
-  }, [currentWorkspace?.id, goTo]);
+    void openWorkspaceTerminal({ workspaceId });
+  }, [currentWorkspace?.id]);
 
   const openMonitoring = useCallback(() => goTo({ overlay: { kind: 'monitoring' } }), [goTo]);
 

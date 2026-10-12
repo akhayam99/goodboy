@@ -101,12 +101,13 @@ describe('the terminal studio scenes', () => {
     ).toBeDefined();
   });
 
-  it('shows the running command on a busy row and the exit code with Restart on an exited one', async () => {
+  it('shows the running command on a busy row and a failed start with Restart on a dead one', async () => {
     renderScene('terminal-studio');
     await settle();
 
     expect(within(rowOf('payments-api')).getByText('pnpm dev')).toBeDefined();
-    expect(within(rowOf('ledger-core')).getByText('exited 127')).toBeDefined();
+    expect(within(rowOf('ledger-core')).getByText('failed to open')).toBeDefined();
+    expect(screen.queryByText(/^exited \d+$/)).toBeNull();
     expect(within(rowOf('ledger-core')).getByRole('button', { name: 'Restart' })).toBeDefined();
   });
 
@@ -117,13 +118,16 @@ describe('the terminal studio scenes', () => {
     expect(screen.queryByText(/^Terminal \d+$/)).toBeNull();
   });
 
-  it('opens a terminal in that session from the ledger-core chip and selects it', async () => {
+  it('opens a terminal in a linked worktree from the New terminal menu and selects it', async () => {
     renderScene('terminal-studio');
     await settle();
     const group = groupNamed('Round settlement totals to minor units');
     const before = within(group).getAllByRole('listitem').length;
 
-    fireEvent.click(screen.getByRole('button', { name: 'ledger-core · hl/ledger-rounding' }));
+    fireEvent.click(screen.getByRole('combobox', { name: 'New terminal in' }));
+    fireEvent.click(
+      await screen.findByRole('option', { name: /^ledger-core · hl\/ledger-rounding/ }),
+    );
     await settle();
 
     const rows = within(groupNamed('Round settlement totals to minor units')).getAllByRole(
@@ -139,16 +143,28 @@ describe('the terminal studio scenes', () => {
     });
   });
 
-  it('opens a workspace terminal from the Workspace folder chip', async () => {
+  it('opens a workspace terminal from the New terminal button at the top of the rail', async () => {
     renderScene('terminal-studio');
     await settle();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Workspace folder' }));
+    const rail = screen.getByRole('complementary', { name: 'Terminals' });
+    fireEvent.click(within(rail).getByRole('button', { name: 'New terminal' }));
     await settle();
 
     const tabs = store.getState().terminalTabs['ws:mock-u24-workspace-harborline'] ?? [];
     expect(tabs).toHaveLength(2);
     expect(tabs.at(-1)?.cwd).toBe('/mock/harborline');
+  });
+
+  it('keeps the rail open and draws no chip row for the same targets', async () => {
+    renderScene('terminal-studio');
+    await settle();
+
+    expect(screen.queryByRole('button', { name: 'Fold the rail' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Show the terminal list' })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Open a terminal in' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Workspace folder' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Main checkout' })).toBeNull();
   });
 
   it('closes an idle row at once, without a confirm', async () => {
@@ -222,19 +238,14 @@ describe('the terminal studio scenes', () => {
     expect(tabs.at(-1)?.cwd).toBe('/mock/worktrees/hl-ledger-rounding/ledger-core');
   });
 
-  it('trims the cwd to the workspace folder in the location row', async () => {
+  it('shows the cwd of the selected terminal in the location row', async () => {
     renderScene('terminal-studio');
     await settle();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Main checkout' }));
-    await settle();
-
-    const location = screen.getByRole('group', { name: 'Open a terminal in' }).parentElement;
-    expect(location).not.toBeNull();
-    expect(within(location ?? document.body).getByText('payments-api')).toBeDefined();
+    expect(screen.getByText('/mock/worktrees/hl-fix-duplicate-credit/payments-api')).toBeDefined();
   });
 
-  it('lists the same targets in the new terminal picker', async () => {
+  it('lists the workspace folder and every linked worktree, grouped by session', async () => {
     renderScene('terminal-studio-newmenu');
     await settle();
     fireEvent.click(screen.getByRole('combobox', { name: 'New terminal in' }));
@@ -244,21 +255,35 @@ describe('the terminal studio scenes', () => {
       .getAllByRole('option')
       .map((option) => option.textContent ?? '');
     expect(names).toHaveLength(4);
-    expect(names.some((name) => name.startsWith('Workspace folder'))).toBe(true);
+    expect(names[0]?.startsWith('Workspace folder')).toBe(true);
+    expect(names.some((name) => name.startsWith('payments-api · hl/fix-duplicate-credit'))).toBe(
+      true,
+    );
     expect(names.some((name) => name.startsWith('ledger-core · hl/ledger-rounding'))).toBe(true);
-    expect(names.some((name) => name.startsWith('Main checkout'))).toBe(true);
+    expect(names.some((name) => name.startsWith('notify-relay · hl/retry-backoff'))).toBe(true);
+    expect(names.some((name) => name.startsWith('Main checkout'))).toBe(false);
+    expect(within(list).getByText('Round settlement totals to minor units')).toBeDefined();
+    expect(within(list).getByText('Back off failed notification retries')).toBeDefined();
   });
 
-  it('opens a terminal at the picked target', async () => {
+  it('opens a terminal in a worktree of another session and focuses it', async () => {
     renderScene('terminal-studio-newmenu');
     await settle();
     fireEvent.click(screen.getByRole('combobox', { name: 'New terminal in' }));
 
-    fireEvent.click(await screen.findByRole('option', { name: /^Main checkout/ }));
+    fireEvent.click(
+      await screen.findByRole('option', { name: /^notify-relay · hl\/retry-backoff/ }),
+    );
     await settle();
 
-    const tabs = store.getState().terminalTabs['mock-u24-session-ledger'] ?? [];
-    expect(tabs.at(-1)?.cwd).toBe('/mock/harborline/payments-api');
+    const tabs = store.getState().terminalTabs['mock-u24-session-notify'] ?? [];
+    expect(tabs).toHaveLength(2);
+    expect(tabs.at(-1)?.cwd).toBe('/mock/worktrees/hl-retry-backoff/notify-relay');
+    expect(store.getState().appStudio).toMatchObject({
+      kind: 'terminal',
+      terminalId: tabs.at(-1)?.id,
+      sessionId: 'mock-u24-session-notify',
+    });
   });
 
   it('offers cd only while the shell is idle', async () => {
@@ -281,8 +306,10 @@ describe('the terminal studio scenes', () => {
     await settle();
 
     expect(screen.getByText('No terminal yet')).toBeDefined();
+    expect(screen.queryByRole('complementary', { name: 'Terminals' })).toBeNull();
     const buttons = screen.getAllByRole('button', { name: 'New terminal' });
-    fireEvent.click(buttons[buttons.length - 1] ?? document.body);
+    expect(buttons).toHaveLength(1);
+    fireEvent.click(buttons[0] ?? document.body);
     await settle();
 
     const tabs = store.getState().terminalTabs['ws:mock-u24-workspace-harborline'] ?? [];
@@ -295,6 +322,7 @@ describe('the terminal studio scenes', () => {
     await settle();
 
     expect(screen.getByRole('heading', { name: 'Terminal' })).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'New terminal' })).toHaveLength(1);
     expect(
       within(groupNamed('Round settlement totals to minor units')).getByRole('button', {
         name: 'payments-api',

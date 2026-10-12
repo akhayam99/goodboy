@@ -125,6 +125,7 @@ card-rails
 changelog
 chat-empty-noprojects
 chat-empty-stage
+chat-first-run
 chat-list-idle
 chat-list-loading
 chat-room

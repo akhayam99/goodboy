@@ -112,6 +112,40 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
+const renderEmptyStudio = async () => {
+  holder.backend = newChatBackend();
+  useAppStore.setState({ currentWorkspaceId: CHAT_WORKSPACE_ID });
+  await useAppStore.getState().loadChats({ workspaceId: CHAT_WORKSPACE_ID });
+  render(<Host />);
+  await pressChatDoor();
+};
+
+describe('the Chat first-run page', () => {
+  it('shows one Start a chat and no rail when there are no chats', async () => {
+    await renderEmptyStudio();
+
+    await screen.findByRole('heading', { name: 'No chats yet' });
+    expect(screen.getAllByRole('button', { name: /^(Start a chat|New chat)$/ })).toHaveLength(1);
+    expect(screen.queryByRole('complementary', { name: 'Chat list' })).toBeNull();
+  });
+
+  it('brings the rail and the composer in once Start a chat is pressed', async () => {
+    await renderEmptyStudio();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Start a chat' }));
+
+    expect(screen.getByRole('complementary', { name: 'Chat list' })).toBeDefined();
+    expect(screen.queryByRole('heading', { name: 'No chats yet' })).toBeNull();
+  });
+
+  it('keeps the rail when a chat exists', async () => {
+    await renderStudio();
+
+    expect(screen.getByRole('complementary', { name: 'Chat list' })).toBeDefined();
+    expect(screen.queryByRole('heading', { name: 'No chats yet' })).toBeNull();
+  });
+});
+
 describe('the Chat door', () => {
   it('opens the most recent chat when none was open before', async () => {
     await renderStudio();
