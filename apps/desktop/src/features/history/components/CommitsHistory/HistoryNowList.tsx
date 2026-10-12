@@ -1,17 +1,21 @@
 import type { ReactNode, RefObject } from 'react';
 import { ArrowUp } from 'lucide-react';
 import { Button, cn } from '@goodboy/ui';
-import type { BranchCommit, HistoryGraph } from '@goodboy/types';
+import type { BranchCommit, HistoryGraph, SessionId } from '@goodboy/types';
 import { NAMES } from '../../../../shared/names';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { HISTORY_GRAPH } from '../../historyGraphGeometry';
 import type { HistoryDropTarget } from '../../useHistoryDrag';
 import type { RowPositions } from '../../useRowPositions';
+import { HistoryBaseRow, type RebaseRequest } from './HistoryBaseRow';
 import { HistoryLaneSvg, type LaneNode } from './HistoryLaneSvg';
 import type { HistoryRowView } from './historyRowLine';
 
 type Props = {
+  readonly sessionId: SessionId;
+  readonly repoPath: string;
+  readonly ownBranch: string;
   readonly view: HistoryRowView;
   readonly rows: ReadonlyArray<BranchCommit>;
   readonly listRef: RefObject<HTMLDivElement | null>;
@@ -26,11 +30,15 @@ type Props = {
   readonly nowMs: number;
   readonly renderRow: (commit: BranchCommit) => ReactNode;
   readonly onStartFromMain: () => void;
+  readonly onRebase: (params: RebaseRequest) => void;
 };
 
 const MAIN_ROW_LIMIT = 5;
 
 export const HistoryNowList = ({
+  sessionId,
+  repoPath,
+  ownBranch,
   view,
   rows,
   listRef,
@@ -45,6 +53,7 @@ export const HistoryNowList = ({
   nowMs,
   renderRow,
   onStartFromMain,
+  onRebase,
 }: Props) => {
   const behind = graph?.behind ?? 0;
   const isPlannedOnMain = view === 'planned' && onto !== null;
@@ -101,19 +110,18 @@ export const HistoryNowList = ({
               <span className="min-w-0 truncate">{mainHead?.subject ?? ''}</span>
             </>
           ) : (
-            <>
-              <span className="shrink-0 text-foreground">
-                {behind === 0 && view !== 'done'
-                  ? "Your branch starts on today's main"
-                  : 'Your branch starts here'}
-              </span>
-              <span className="shrink-0 font-mono tabular-nums">{baseSha.slice(0, 7)}</span>
-              <span className="min-w-0 truncate">
-                {graph === null
-                  ? `${baseBranch} · merge base`
-                  : `${baseBranch} at ${graph.mergeBase.subject}, ${forkAge}`}
-              </span>
-            </>
+            <HistoryBaseRow
+              sessionId={sessionId}
+              graph={graph}
+              baseBranch={baseBranch}
+              baseSha={baseSha}
+              forkAge={forkAge}
+              repoPath={repoPath}
+              ownBranch={ownBranch}
+              isInteractive={isInteractive && view === 'now'}
+              isDone={view === 'done'}
+              onRebase={onRebase}
+            />
           )}
         </span>
       </div>

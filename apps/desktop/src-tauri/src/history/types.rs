@@ -211,3 +211,21 @@ pub struct HistoryBackup {
     pub created_at: u64,
     pub is_legacy: bool,
 }
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct HistoryBackupCommit {
+    pub sha: String,
+    pub subject: String,
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct HistoryBackupFacts {
+    pub commits: Vec<HistoryBackupCommit>,
+    pub is_same_fork_as_next: bool,
+    pub next_commit_count: u32,
+    pub files_changed_vs_now: u32,
+    pub additions_vs_now: u32,
+    pub deletions_vs_now: u32,
+}

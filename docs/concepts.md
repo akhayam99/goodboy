@@ -310,8 +310,8 @@ The recovery, on the banner: `Undo rewrite`
 for a rewrite, `Retry with a note` when History rewriter needs you, `Bring them
 into the plan` when the online copy moved, `Retry rebase` when the branch moved,
 `Retry push` when the push failed. In the Commits section: `Rewrite with an agent`,
-`Change the plan` and `Discard plan` for a stopped plan, `Restore previous
-history` for a push. A stopped rewrite waits in Needs you until a later outcome settles it. Every notification
+`Change the plan` and `Discard plan` for a stopped plan, `Reset branch to this
+version` for a push. A stopped rewrite waits in Needs you until a later outcome settles it. Every notification
 of the engine points at the row with `Open in Activity`, so closing it loses
 nothing.
 

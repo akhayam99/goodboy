@@ -336,6 +336,7 @@ pub fn run() {
             history::history_plan_apply,
             history::history_restore,
             history::history_backups_list,
+            history::history_backup_facts,
             history::history_git_supported,
             history::history_rebase_plan,
             history::history_origin_ahead,

@@ -175,6 +175,10 @@ export type HistoryMountInput = {
   readonly mountId: MountId;
 };
 
+export type RebaseBranchInput = HistoryMountInput & {
+  readonly ontoBranch?: string;
+};
+
 export type RebaseBranchOutcome = 'rebased' | 'rewriting' | 'stopped' | 'busy';
 
 export type ApplyHistoryRewriteInput = HistoryMountInput & {

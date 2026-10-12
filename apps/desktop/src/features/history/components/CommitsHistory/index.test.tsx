@@ -14,9 +14,9 @@ import {
 } from '../../historyPlan';
 import { LEDGER, LEDGER_COMMITS, LEDGER_GRAPH } from '../../testing/ledgerFixture';
 import { LEDGER_PRESET } from '../../testing/ledgerPreset';
+import { HISTORY_FOCUS_BASE_EVENT, diffEventName } from '../../../actions/kinds/diff';
 import { historyBackupRef } from '../../historyBackupRef';
 import { installFakeResizeObserver } from '../../../../test/fakeResizeObserver';
-import { TabActionsSlotContext } from '../../../../shared/components/TabActions/tabActionsSlotContext';
 
 vi.useFakeTimers({ toFake: ['Date'] });
 vi.setSystemTime(new Date(2026, 8, 30, 12, 0, 0));
@@ -27,6 +27,13 @@ const SESSION_ID = 'session-ledger' as SessionId;
 const MOUNT_ID = 'mount-ledger' as MountId;
 const BASE = initialPlanItems({ commits: LEDGER_COMMITS });
 const { a, b, c, d, x, e, f } = LEDGER;
+
+const extra = vi.hoisted(
+  (): { backups: ReadonlyArray<unknown>; branches: ReadonlyArray<string> } => ({
+    backups: [],
+    branches: ['main', 'release/2.4'],
+  }),
+);
 
 const h = vi.hoisted(() => ({
   state: {} as Record<string, unknown>,
@@ -55,6 +62,18 @@ vi.mock('../../../../store/slices/project-mounts/selectors', () => ({
   }),
   selectMountBaseBranch: () => h.chosenBase,
 }));
+
+vi.mock('../../historyEngine', async () => {
+  const actual = await vi.importActual<typeof import('../../historyEngine')>('../../historyEngine');
+  return { ...actual, listHistoryBackups: vi.fn(async () => extra.backups) };
+});
+
+vi.mock('../../../worktree/worktree', async () => {
+  const actual = await vi.importActual<typeof import('../../../worktree/worktree')>(
+    '../../../worktree/worktree',
+  );
+  return { ...actual, listBranchNames: vi.fn(async () => extra.branches) };
+});
 
 vi.mock('../../../session/hooks/useWorktreeStatuses', () => ({
   useWorktreeStatuses: () => new Map([['/w/payments', h.status]]),
@@ -113,6 +132,8 @@ const seed = ({
     restoreHistory: vi.fn(async () => 'restored'),
     bringOriginIntoHistory: vi.fn(async () => 'applied'),
     dismissHistoryRun: vi.fn(),
+    openDrawer: vi.fn(),
+    rebaseBranch: vi.fn(async () => 'rebased'),
     requestScribe: vi.fn(async () => 'scribe'),
     openMountTerminal: vi.fn(),
   };
@@ -163,6 +184,8 @@ const lastItems = (actions: ReturnType<typeof setup>) =>
 beforeEach(() => {
   h.width = 1000;
   h.chosenBase = 'main';
+  extra.backups = [];
+  extra.branches = ['main', 'release/2.4'];
   h.status = {
     upstream: 'origin/hl/ledger-export',
     workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
@@ -179,26 +202,17 @@ describe('CommitsHistory toolbar', () => {
   const mountWithSlot = () => {
     seed({});
     const slot = document.createElement('div');
-    document.body.appendChild(slot);
-    render(
-      <TabActionsSlotContext.Provider value={slot}>
-        <CommitsHistory sessionId={SESSION_ID} worktreePath="/w/payments" />
-      </TabActionsSlotContext.Provider>,
-    );
+    render(<CommitsHistory sessionId={SESSION_ID} worktreePath="/w/payments" />);
     return slot;
   };
 
-  it('puts Backups alone in the tab row actions, with no Refresh, terminal or menu', () => {
-    const slot = mountWithSlot();
+  it('puts no Backups button in the header and no Refresh, terminal or menu', () => {
+    mountWithSlot();
 
-    const inSlot = within(slot);
-    expect(inSlot.getAllByRole('button')).toHaveLength(1);
-    expect(inSlot.getByRole('button', { name: 'Backups' })).toBeDefined();
-    expect(screen.getAllByRole('button', { name: 'Backups' })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'Backups' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Refresh' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Open terminal here' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'More history actions' })).toBeNull();
-    slot.remove();
   });
 
   it('draws no fact chips above the graph', () => {
@@ -247,12 +261,88 @@ describe('CommitsHistory toolbar', () => {
     slot.remove();
   });
 
-  it('keeps Backups inline when no tab row hands it a slot', () => {
+  it('offers no previous versions link while there are none', () => {
     seed({});
     render(<CommitsHistory sessionId={SESSION_ID} worktreePath="/w/payments" />);
 
-    expect(screen.queryByRole('button', { name: 'Refresh' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Backups' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /previous versions/i })).toBeNull();
+  });
+
+  it('shows previous versions under the graph and opens the drawer on click', async () => {
+    extra.backups = [
+      { refName: BACKUP_REF, sha: a, subject: 'Add ledger export', createdAt: 1, isLegacy: false },
+    ];
+    const actions = seed({});
+    render(<CommitsHistory sessionId={SESSION_ID} worktreePath="/w/payments" />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Show previous versions (1)' }));
+
+    expect(actions.openDrawer).toHaveBeenCalledWith({
+      kind: 'history-versions',
+      sessionId: SESSION_ID,
+      payload: { mountId: MOUNT_ID, worktreePath: '/w/payments' },
+    });
+  });
+});
+
+describe('the base row', () => {
+  it('reads how many commits main gained and offers Rebase onto latest', () => {
+    setup();
+
+    expect(screen.getByText('3 new commits on main')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Rebase onto latest' })).toBeDefined();
+  });
+
+  it('rebases only after the anchored confirm', () => {
+    const actions = setup();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Rebase onto latest' }));
+    const dialog = screen.getByRole('dialog', { name: 'Rebase onto main?' });
+    expect(actions.rebaseBranch).not.toHaveBeenCalled();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Rebase' }));
+
+    expect(actions.rebaseBranch).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+    });
+  });
+
+  it('offers no rebase when main has nothing new', () => {
+    setup({ graph: { ...LEDGER_GRAPH, behind: 0, mainCommits: [] } });
+
+    expect(screen.queryByRole('button', { name: 'Rebase onto latest' })).toBeNull();
+    expect(screen.getByText("Your branch starts on today's main")).toBeDefined();
+  });
+
+  it('rebases onto another base picked from the chip', async () => {
+    const actions = setup({ graph: { ...LEDGER_GRAPH, behind: 0, mainCommits: [] } });
+
+    fireEvent.click(await screen.findByRole('combobox', { name: 'Rebase onto branch' }));
+    fireEvent.click(await screen.findByRole('option', { name: /release\/2\.4/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Rebase onto release/2.4' }));
+    const dialog = screen.getByRole('dialog', { name: 'Rebase onto release/2.4?' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Rebase' }));
+
+    expect(actions.rebaseBranch).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      ontoBranch: 'release/2.4',
+    });
+  });
+
+  it('scrolls to the base row and focuses its rebase button when asked', () => {
+    setup();
+    const scroll = vi.fn();
+    Element.prototype.scrollIntoView = scroll;
+
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent(diffEventName({ name: HISTORY_FOCUS_BASE_EVENT, sessionId: SESSION_ID })),
+      );
+    });
+
+    expect(scroll).toHaveBeenCalled();
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Rebase onto latest' }));
   });
 });
 
@@ -265,7 +355,7 @@ describe('CommitsHistory', () => {
       .map((item) => item.getAttribute('aria-label'));
     expect(labels).toEqual(LEDGER_COMMITS.map((entry) => entry.subject));
     expect(screen.getByText('3 newer')).toBeDefined();
-    expect(screen.getByText('Your branch starts here')).toBeDefined();
+    expect(screen.getByText('3 new commits on main')).toBeDefined();
     expect(screen.queryByText('online')).toBeNull();
     expect(screen.queryByText(/already online/)).toBeNull();
     expect(screen.queryByText(/of your own/)).toBeNull();

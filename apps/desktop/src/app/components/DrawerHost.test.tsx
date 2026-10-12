@@ -227,6 +227,16 @@ const ENTRIES: ReadonlyArray<Entry> = [
     },
   },
   {
+    kind: 'history-versions',
+    region: 'Previous versions',
+    seed: seedSession,
+    drawer: {
+      kind: 'history-versions',
+      sessionId: SESSION,
+      payload: { mountId: MOUNT_ID, worktreePath: '/w/payments-api' },
+    },
+  },
+  {
     kind: 'fix-comments',
     region: 'Fix comments',
     seed: () => {

@@ -333,6 +333,8 @@ export type { ProviderPolicy, ProviderPolicyEntry, ProviderPolicyState } from '.
 export { PROVIDER_POLICY_STATES, parseProviderPolicy } from './provider-policy';
 export type {
   HistoryBackup,
+  HistoryBackupCommit,
+  HistoryBackupFacts,
   HistoryCommitFiles,
   HistoryGraph,
   HistoryGraphCommit,

@@ -383,6 +383,9 @@ rebase-origin-moved
 rebase-push-failed
 rebase-restore-conflict
 rebase-review-change
+rebase-row-behind
+rebase-row-picker
+rebase-row-versions
 rebase-stuck-note
 rebasedirty
 repo-status

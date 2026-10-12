@@ -1,6 +1,6 @@
 use super::{
-    backup_namespace, is_backup_of, list_backups, now_nanos, prune_backups, prune_backups_before,
-    BACKUP_PREFIX, KEPT_STAMP,
+    backup_facts, backup_namespace, is_backup_of, list_backups, now_nanos, prune_backups,
+    prune_backups_before, BACKUP_PREFIX, KEPT_STAMP,
 };
 use crate::history::apply::{move_branch_blocking, restore_blocking};
 use crate::history::check::lines_of;
@@ -290,4 +290,47 @@ fn the_backup_a_restore_leaves_is_never_pruned() {
     assert!(listed
         .iter()
         .any(|backup| backup.ref_name == restore_backup));
+}
+
+#[test]
+fn backup_facts_count_the_old_commits_and_the_difference_with_now() {
+    let b = branch("backup-facts");
+    git_ok(&b.root, &["checkout", "-q", "main"]);
+    let main_head = crate::history::fixtures::commit(&b.root, "main.txt", "m\n", "main moves");
+    git_ok(&b.root, &["checkout", "-q", "feature"]);
+    git_ok(&b.root, &["rebase", "-q", "main"]);
+    let now = git_ok(&b.root, &["rev-parse", "HEAD"]);
+
+    let facts = backup_facts(&b.root, "main", &b.c, &now, &now).unwrap();
+
+    assert_eq!(facts.commits.len(), 3);
+    assert_eq!(facts.commits[0].subject, "A edits the policy");
+    assert_eq!(facts.commits[2].sha, b.c);
+    assert!(!facts.is_same_fork_as_next);
+    assert_eq!(facts.next_commit_count, 3);
+    assert_eq!(facts.files_changed_vs_now, 1);
+    assert_eq!(facts.additions_vs_now, 1);
+    assert_eq!(facts.deletions_vs_now, 0);
+    assert_eq!(git_ok(&b.root, &["rev-parse", "main"]), main_head);
+
+    let same = backup_facts(&b.root, "main", &now, &now, &now).unwrap();
+    assert!(same.is_same_fork_as_next);
+    assert_eq!(same.files_changed_vs_now, 0);
+}
+
+#[test]
+fn backup_facts_fail_when_the_backup_commit_is_gone() {
+    let b = branch("backup-facts-gone");
+    let now = git_ok(&b.root, &["rev-parse", "HEAD"]);
+    let gone = "0123456789abcdef0123456789abcdef01234567";
+
+    assert!(backup_facts(&b.root, "main", gone, &now, &now).is_err());
+}
+
+#[test]
+fn backup_facts_fail_when_the_base_ref_is_gone() {
+    let b = branch("backup-facts-no-base");
+    let now = git_ok(&b.root, &["rev-parse", "HEAD"]);
+
+    assert!(backup_facts(&b.root, "refs/heads/deleted-base", &b.c, &now, &now).is_err());
 }

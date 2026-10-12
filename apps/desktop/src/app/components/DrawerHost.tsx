@@ -12,6 +12,7 @@ import { FileDiffDrawer } from '../../features/diff/components/FileDiffDrawer';
 import { FileWholeDrawer } from '../../features/diff/components/FileWholeDrawer';
 import { AskDrawer } from '../../features/session/ask/components/AskDrawer';
 import { AgentTranscriptDrawer } from '../../features/chat/components/AgentTranscriptDrawer';
+import { HistoryVersionsDrawer } from '../../features/history/components/HistoryVersionsDrawer';
 import { FixCommentsDrawer } from '../../features/resolve/components/FixCommentsDrawer';
 import { FixRunLead } from '../../features/resolve/components/FixRunSummary/FixRunLead';
 import { ExploreFileChanges } from './ExploreFileChanges';
@@ -138,6 +139,16 @@ export const DrawerHost = () => {
           sessionId={drawer.sessionId}
           focusThreadId={drawer.payload.focusThreadId ?? null}
           threadIds={drawer.payload.threadIds ?? null}
+          onClose={closeDrawer}
+        />
+      );
+    case 'history-versions':
+      return (
+        <HistoryVersionsDrawer
+          key={drawerKey(drawer)}
+          sessionId={drawer.sessionId}
+          mountId={drawer.payload.mountId}
+          worktreePath={drawer.payload.worktreePath}
           onClose={closeDrawer}
         />
       );

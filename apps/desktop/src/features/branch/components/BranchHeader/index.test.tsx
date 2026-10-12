@@ -700,9 +700,17 @@ describe('BranchHeader actions by state', () => {
     expect(within(confirm).getByRole('button', { name: 'Abort rebase' })).toBeDefined();
   });
 
-  it('leaves Rebase on main to the Commits section and the Overview', () => {
+  it('offers Rebase on main as a secondary while the branch is behind its base', () => {
     withMountPr();
     status = statusOf({ behind: 18 });
+    renderHeader({ pr: PR });
+
+    expect(screen.getByRole('button', { name: /Rebase on main/ })).toBeDefined();
+  });
+
+  it('offers no Rebase on main once the branch is level with its base', () => {
+    withMountPr();
+    status = statusOf({ behind: 0 });
     renderHeader({ pr: PR });
 
     expect(screen.queryByRole('button', { name: /Rebase on main/ })).toBeNull();

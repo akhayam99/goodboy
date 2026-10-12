@@ -158,6 +158,7 @@ vi.mock('../../worktree/worktree', async (importOriginal) => ({
 vi.mock('../../session/contextWindowFor', () => ({ contextWindowFor: () => null }));
 
 import { resetWorktreeStatusCache } from '../../../store/slices/worktreeStatuses/cache';
+import { HISTORY_FOCUS_BASE_EVENT, diffEventName } from '../../actions/kinds/diff';
 import { useSuggestionActions } from './index';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -276,7 +277,7 @@ describe('useSuggestionActions', () => {
     expect(spies.requestReviewLaunch).not.toHaveBeenCalled();
   });
 
-  it('rebases the mount the suggestion names without moving the write destination', async () => {
+  it('opens the Commits page of the mount the suggestion names and focuses the base row', async () => {
     const actions = actionsFor({
       suggestion: {
         ...suggestionBase,
@@ -300,13 +301,20 @@ describe('useSuggestionActions', () => {
       },
     });
 
-    expect(actions.primary?.label).toBe('Rebase');
+    const focused = vi.fn();
+    const eventName = diffEventName({ name: HISTORY_FOCUS_BASE_EVENT, sessionId: SESSION_ID });
+    window.addEventListener(eventName, focused);
+    expect(actions.primary?.label).toBe('Open rebase');
     expect(actions.primary?.isDisabled).toBe(false);
     actions.primary?.run();
 
-    await vi.waitFor(() => expect(spies.rebaseRun).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() =>
+      expect(spies.openRewriteHistory).toHaveBeenCalledWith(SESSION_ID, '/tmp/web'),
+    );
+    await vi.waitFor(() => expect(focused).toHaveBeenCalledTimes(1));
+    window.removeEventListener(eventName, focused);
+    expect(spies.rebaseRun).not.toHaveBeenCalled();
     expect(spies.setSessionActiveProject).not.toHaveBeenCalled();
-    expect(spies.rebaseRun).toHaveBeenCalledWith({ mountId: WEB_MOUNT_ID, behind: 2 });
   });
 
   it('marks the rebase action busy while a rebase runs', () => {
@@ -343,7 +351,7 @@ describe('useSuggestionActions', () => {
     expect(actions.primary?.isBusy).toBe(true);
   });
 
-  it('runs the second rebase choice with that mount and distance', async () => {
+  it('opens the Commits page of the second rebase choice', async () => {
     const actions = actionsFor({
       suggestion: {
         ...suggestionBase,
@@ -381,9 +389,11 @@ describe('useSuggestionActions', () => {
     expect(actions.primary?.choices?.[1]?.description).toBe('feature/web-second');
     actions.primary?.choices?.[1]?.run();
 
-    await vi.waitFor(() => expect(spies.rebaseRun).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() =>
+      expect(spies.openRewriteHistory).toHaveBeenCalledWith(SESSION_ID, '/tmp/web-second'),
+    );
+    expect(spies.rebaseRun).not.toHaveBeenCalled();
     expect(spies.setSessionActiveProject).not.toHaveBeenCalled();
-    expect(spies.rebaseRun).toHaveBeenCalledWith({ mountId: WEB_SECOND_MOUNT_ID, behind: 3 });
   });
 
   it('ignores completed mounts when polling and choosing the behind status', () => {

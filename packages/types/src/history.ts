@@ -189,6 +189,20 @@ export type HistoryBackup = {
   readonly isLegacy: boolean;
 };
 
+export type HistoryBackupCommit = {
+  readonly sha: string;
+  readonly subject: string;
+};
+
+export type HistoryBackupFacts = {
+  readonly commits: ReadonlyArray<HistoryBackupCommit>;
+  readonly isSameForkAsNext: boolean;
+  readonly nextCommitCount: number;
+  readonly filesChangedVsNow: number;
+  readonly additionsVsNow: number;
+  readonly deletionsVsNow: number;
+};
+
 export type HistoryRemoteLease =
   | { readonly kind: 'absent' }
   | { readonly kind: 'included'; readonly sha: string }

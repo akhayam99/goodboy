@@ -49,7 +49,6 @@ import { NoPullRequest } from '../PullRequestTab/NoPullRequest';
 import { PullRequestTab } from '../PullRequestTab';
 import type { ReviewerRequest } from '../PullRequestTab/ReviewersProperty';
 import { BranchDetail } from './BranchDetail';
-import { TabActionsSlotContext } from '../../../../shared/components/TabActions/tabActionsSlotContext';
 
 type Props = {
   readonly session: Session;
@@ -67,7 +66,6 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   const diffFocus = useAppStore((s) => s.diffFocus[sessionId] ?? null);
   const github = useAppStore((s) => s.sessionGithub[sessionId] ?? null);
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
-  const [tabActionsSlot, setTabActionsSlot] = useState<HTMLElement | null>(null);
   const [railHost, setRailHost] = useState<HTMLElement | null>(null);
   const dock = useBranchRailDock();
   const historyMountId = identity.mount?.mountId ?? null;
@@ -441,11 +439,6 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
             <PushBanner sessionId={sessionId} push={push} />
             {baseRow}
             <JobBanner sessionId={sessionId} worktreePath={identity.mountPath} />
-            <div
-              ref={setTabActionsSlot}
-              data-slot="branch-tab-actions"
-              className="flex min-w-0 shrink-0 items-center justify-end gap-2 empty:hidden"
-            />
           </div>
         }
       >
@@ -456,33 +449,31 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
 
   return (
     <BranchDiffContext.Provider value={identity.mountPath === null ? null : diff}>
-      <TabActionsSlotContext.Provider value={tabActionsSlot}>
-        <DiffRailContext.Provider value={railSlot}>
-          <div
-            ref={dock.paneRef}
-            data-branch-pane=""
-            className="relative flex h-full min-h-0 min-w-0 flex-1"
-          >
-            <StudioRailLayout
-              railLabel="Branch sections"
-              railWidth="standard"
-              surface={BRANCH_RAIL_SURFACE}
-              placement="page"
-              isCollapsed={!dock.isDocked}
-              railHeader={
-                <div className="flex h-6 min-w-0 flex-1 items-center px-2">
-                  <Eyebrow label="Sections" muted />
-                </div>
-              }
-              rail={dock.isDocked ? railNode : null}
-              detail={detail}
-            />
-            {dock.isOverlayOpen ? (
-              <BranchRailOverlay rail={railNode} onClose={dock.closeOverlay} />
-            ) : null}
-          </div>
-        </DiffRailContext.Provider>
-      </TabActionsSlotContext.Provider>
+      <DiffRailContext.Provider value={railSlot}>
+        <div
+          ref={dock.paneRef}
+          data-branch-pane=""
+          className="relative flex h-full min-h-0 min-w-0 flex-1"
+        >
+          <StudioRailLayout
+            railLabel="Branch sections"
+            railWidth="standard"
+            surface={BRANCH_RAIL_SURFACE}
+            placement="page"
+            isCollapsed={!dock.isDocked}
+            railHeader={
+              <div className="flex h-6 min-w-0 flex-1 items-center px-2">
+                <Eyebrow label="Sections" muted />
+              </div>
+            }
+            rail={dock.isDocked ? railNode : null}
+            detail={detail}
+          />
+          {dock.isOverlayOpen ? (
+            <BranchRailOverlay rail={railNode} onClose={dock.closeOverlay} />
+          ) : null}
+        </div>
+      </DiffRailContext.Provider>
     </BranchDiffContext.Provider>
   );
 };

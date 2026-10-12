@@ -142,7 +142,7 @@ opens it on a mode. Commands is the first mode.
      and outcome log as the session's next-step slot (`useSessionPalette` calls
      `useSessionSuggestions` and `useSuggestionActions`). Needs-you rows first.
      A step the slot confirms (Merge, Close branch) confirms here too. Mount
-     proposals stay in the slot. Push, Create pull request and Rebase live here:
+     proposals stay in the slot. Push, Create pull request and Rebase (the step reads `Open rebase` and lands on the Commits base row) live here:
      a mount target needs live git status, so the palette takes them from the
      model that already reads it.
   2. **For this session** (above it **For this agent**, **For this run** or
@@ -2792,14 +2792,13 @@ pull request's `Write review` action and swaps the tab body for the review form 
 drafts. The section carries no Fix, Push, Rewrite or `PR #N` control of its own.
 
 **Commits.** The home of history: the branch commits and the rewriter are one
-surface (`CommitsHistory`), with `Backups` (secondary, `xs`) alone at the right
-end of the tab row, in the slot `BranchPage` hands down
-(`TabActionsSlotContext`, filled with `TabActions`), so the body starts with the
-graph itself. There is no `Refresh` (the draft reloads by itself when the
+surface (`CommitsHistory`). The tab row carries no action (no `Backups`
+button), so the body starts with the graph itself. There is no `Refresh` (the draft reloads by itself when the
 head of the worktree status moved and nothing is planned) and no overflow
 (`Open terminal` is on the mount menu). There is no legend. The body takes the
-page's column with no `px-6` of its own. Backups
-(`Restore previous history`, `Restore branch`) and the result of a run (`Undo
+page's column with no `px-6` of its own. Previous versions
+(`Show previous versions (n)` under the graph, the `Previous versions` drawer,
+`Reset branch to this version`) and the result of a run (`Undo
 rewrite`) live here. There is no Rewrite history page: the old `files/…/history`
 address, the palette verb, a mount row's `Rewrite history` and an Activity
 history row (which has no verb and no `⋯` of its own) all land on
@@ -2823,14 +2822,24 @@ with lease.
 The Commits tab draws the branch as a graph (`history_graph`): a grey main
 trunk with its head node (`main is here now`, how many commits it gained,
 `Rebase on main`), your branch leaving it at the real fork point, one
-row per commit newest first, and `Your branch starts here` at the fork. There
+row per commit newest first, and the base row at the fork. There
 is no row of fact chips over it: the graph already says how many commits are
 yours, how far main moved and what is online. At rest the section is one
 column (`grid-cols-1`) on a 72px lane (trunk at x 20, lane at x 52): the first
 row is `main is here now` with its head node, `15 newer` and a secondary
 `Rebase on main`, then one row per commit (title, then sha, author and age in
 `text-meta`, a faint `Not pushed` chip only on a commit that is not on the
-online copy, the grip on hover and focus only), then `Your branch starts here`.
+online copy, the grip on hover and focus only), then the base row.
+
+**The base row** (`HistoryBaseRow`) is the action point for the base. Behind the
+base it reads `78 new commits on main` with `Rebase onto latest`; level with it
+the `Your branch starts on today's main` line. The base chip (`branch → main`, a
+searchable listbox of the repository's branches) picks another base; the button
+then reads `Rebase onto <branch>`. The button asks in a `ConfirmPopover` anchored
+to it and runs the rebase command (`rebaseBranch`, with `ontoBranch` for another
+base) with a version of the current history kept. The Activity rebase suggestion
+(`Open rebase`) opens this page on the mount it names, scrolled to the row with
+the button focused (`HISTORY_FOCUS_BASE_EVENT`).
 Under the list one muted line, `Drag a commit to move it, drop it on another to
 fold it in.`, with a ghost `Keys` button that opens an anchored popover listing
 the keys of the focused row (`useHistoryKeys/historyKeys.ts`). There is no
@@ -2843,7 +2852,7 @@ commits become 4`, draws the planned result with a dashed lane, each node level
 with its own row when the order allows (the Now rows and the After nodes share
 one row pitch), and under the list `Planned changes` shows its count and `Reset
 all`, the planned rows and one primary `Apply`. Resetting the last change slides
-the panel out. The Branch header carries no `Rebase on main`: it lives in this section's list. Under
+the panel out. The Branch header shows `Rebase on main` as a secondary only while the branch is behind its base. Under
 760px of content the side graph becomes a `Now | After Apply` toggle, shown
 only while a plan exists. Every action has one color (Keep green, Fold in
 azure, Combine yellow, Move violet, Rename neutral, Remove red, Start from
@@ -2904,13 +2913,12 @@ rewrite in a copy and leaves `Push with lease` on the new origin sha. The
 result section lists what changed in the action colors, says whether the
 online copy was updated, what the check found, and the backup, with `Restore
 it` and `Done`. Every move leaves a backup under `refs/goodboy/backup/`, in a
-namespace made from the full branch name, kept 30 days; `Backups` in the page menu lists them with `Restore previous
-history`, which moves the branch back and, on a branch with an upstream,
+namespace made from the full branch name, kept 30 days; `Show previous versions (n)` under the graph (and `Previous versions…` in the page menu) opens the `Previous versions` drawer (kind `history-versions`, side tier). Each version shows when, why (`Before a rebase`, `Before a fold or drop`, `Before a reword or edit`, worked out from the version and the next one by `history_backup_facts`), the commit count, the difference with now (`+2 / -1 commits`, files changed) and an expandable commit list. `Reset branch to this version` (danger, anchored confirm) moves the branch back and the drawer offers `Undo` right after; it moves the branch back and, on a branch with an upstream,
 pushes it with a lease only when the online copy has nothing newer than that
 backup, or is the last rewrite this page pushed and the online copy it replaced
 was already in that backup; otherwise it stays restored here and the page says
 nothing was pushed.
-Backups made while restoring are kept past the 30 days. The newest 20 per
+Versions made while restoring are kept past the 30 days. The newest 20 per
 branch are kept, and an older one is dropped only while a branch, tag,
 remote-tracking ref or another restore backup still contains its commit. The
 newest backup of a branch is never pruned. Backups made before the current

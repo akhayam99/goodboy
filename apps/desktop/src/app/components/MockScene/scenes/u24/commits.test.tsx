@@ -58,7 +58,7 @@ describe('the u24 commits scenes', () => {
       screen.getByText('Drag a commit to move it, drop it on another to fold it in.'),
     ).toBeDefined();
     expect(screen.getByRole('button', { name: 'Keys' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Backups' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Backups' })).toBeNull();
     expect(screen.queryByRole('group', { name: 'Legend' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Planned changes' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Apply' })).toBeNull();

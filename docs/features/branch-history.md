@@ -59,7 +59,7 @@ When a step stops on a conflict, the notice names the step and the file, and you
 
 ### Backups
 
-Choose **Backups** in the `⋯` menu to see the older histories of the branch. **Restore previous history** puts one back and keeps the history you leave as a new backup.
+Under the graph, **Show previous versions** opens the older histories of the branch with when and why each was saved. **Reset branch to this version** puts one back, keeps the history you leave and offers Undo.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-backups-dark.webp">

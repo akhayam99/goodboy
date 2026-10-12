@@ -5,6 +5,7 @@ import {
   usePendingAction,
   type PendingActionRun,
 } from '../../../../../shared/hooks/usePendingAction';
+import type { RebaseRequest } from '../HistoryBaseRow';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -21,6 +22,7 @@ export const useHistoryRunFlow = ({ sessionId, mountId, hasUpstream }: Params) =
   const rewriteDraftWithAgent = useAppStore((s) => s.rewriteDraftWithAgent);
   const pushHistoryRewrite = useAppStore((s) => s.pushHistoryRewrite);
   const restoreHistory = useAppStore((s) => s.restoreHistory);
+  const rebaseBranch = useAppStore((s) => s.rebaseBranch);
   const bringOriginIntoHistory = useAppStore((s) => s.bringOriginIntoHistory);
   const dismissHistoryRun = useAppStore((s) => s.dismissHistoryRun);
   if (mountId === null) {
@@ -43,6 +45,13 @@ export const useHistoryRunFlow = ({ sessionId, mountId, hasUpstream }: Params) =
         key: 'apply',
         failureTitle: "Couldn't apply the rewritten history",
         task: () => applyRewrittenHistory({ sessionId, mountId, shouldPush }),
+      }),
+    rebaseOnto: ({ ontoBranch }: RebaseRequest) =>
+      attempt({
+        key: 'rebase',
+        failureTitle: "Couldn't rebase the branch",
+        task: () =>
+          rebaseBranch({ sessionId, mountId, ...(ontoBranch === null ? {} : { ontoBranch }) }),
       }),
     restoreBackup: (backup: HistoryBackup) =>
       attempt({

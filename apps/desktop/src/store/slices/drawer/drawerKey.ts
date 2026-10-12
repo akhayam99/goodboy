@@ -26,6 +26,8 @@ export const drawerKey = (content: DrawerContent): string => {
       return `fix-comments:${content.payload.mountId ?? ''}`;
     case 'terminal':
       return `terminal:${content.payload.terminalId}`;
+    case 'history-versions':
+      return `history-versions:${content.payload.mountId}`;
     case 'file-diff':
       return `file-diff:${
         content.payload.source.kind === 'commit'

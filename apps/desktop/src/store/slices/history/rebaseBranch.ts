@@ -12,7 +12,7 @@ import { identityOf, identityChange } from './historyIdentity';
 import { isHistoryRunActive } from './isHistoryRunActive';
 import { reportHistoryStop } from './reportHistoryStop';
 import { setHistoryRun } from './setHistoryRun';
-import type { GetFn, HistoryMountInput, HistoryStop, RebaseBranchOutcome, SetFn } from './types';
+import type { GetFn, HistoryStop, RebaseBranchInput, RebaseBranchOutcome, SetFn } from './types';
 
 type PlanParams = {
   readonly worktreePath: string;
@@ -28,7 +28,11 @@ export const rebasePlanArgs = ({ worktreePath, rebase }: PlanParams): HistoryPla
 });
 
 export const rebaseBranch = (set: SetFn, get: GetFn) => {
-  return async ({ sessionId, mountId }: HistoryMountInput): Promise<RebaseBranchOutcome> => {
+  return async ({
+    sessionId,
+    mountId,
+    ontoBranch,
+  }: RebaseBranchInput): Promise<RebaseBranchOutcome> => {
     const target = historyTargetOf({ get, sessionId, mountId });
     const identity = identityOf({ target });
     const origin = 'rebase' as const;
@@ -37,14 +41,17 @@ export const rebaseBranch = (set: SetFn, get: GetFn) => {
       await reportHistoryStop({ get, set, target, origin, stop, planId: null });
       return 'stopped';
     };
-    const current = get().historyRuns[mountId];
-    if (
-      current !== undefined &&
-      (isHistoryRunActive({ phase: current.phase }) ||
-        current.phase === 'choosing' ||
-        current.phase === 'set-aside' ||
-        current.phase === 'restore-conflict')
-    ) {
+    const isBlocked = (): boolean => {
+      const current = get().historyRuns[mountId];
+      return (
+        current !== undefined &&
+        (isHistoryRunActive({ phase: current.phase }) ||
+          current.phase === 'choosing' ||
+          current.phase === 'set-aside' ||
+          current.phase === 'restore-conflict')
+      );
+    };
+    if (isBlocked()) {
       return 'busy';
     }
     try {
@@ -58,6 +65,9 @@ export const rebaseBranch = (set: SetFn, get: GetFn) => {
         return stopWith({ reason: 'dirty', message: error.message, files: [], sha: null });
       }
       throw error;
+    }
+    if (isBlocked()) {
+      return 'busy';
     }
     setHistoryRun({
       set,
@@ -83,7 +93,7 @@ export const rebaseBranch = (set: SetFn, get: GetFn) => {
     let requestRun = get().historyRuns[mountId];
     const rebase = await readRebasePlan({
       worktreePath: target.worktreePath,
-      baseBranch: target.baseBranch,
+      baseBranch: ontoBranch ?? target.baseBranch,
       fetches: true,
     }).catch((error: unknown) => formatError(error));
     if (

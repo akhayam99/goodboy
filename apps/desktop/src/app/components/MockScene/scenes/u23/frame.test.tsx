@@ -169,22 +169,14 @@ describe('the u23 frame scenes', () => {
     expect(screen.getAllByText(/Nothing is published yet/)).toHaveLength(1);
   });
 
-  it('puts Backups alone in the Commits tab row, with no legend', async () => {
+  it('puts no action in the Commits tab row and no legend', async () => {
     await renderScene('branch-commits-toolbar');
 
-    const slot = (await waitFor(() => {
-      const found = document.querySelector('[data-slot="branch-tab-actions"]');
-      if (found === null) {
-        throw new Error('no tab row yet');
-      }
-      return found;
-    })) as HTMLElement;
-    await waitFor(() =>
-      expect(within(slot).getByRole('button', { name: 'Backups' })).toBeDefined(),
-    );
-    expect(within(slot).queryByRole('button', { name: 'Refresh' })).toBeNull();
-    expect(within(slot).queryByRole('button', { name: 'Open terminal here' })).toBeNull();
-    expect(within(slot).queryByRole('button', { name: 'More history actions' })).toBeNull();
+    await screen.findByRole('list', { name: 'Commits' }, { timeout: 4_000 });
+    expect(screen.queryByRole('button', { name: 'Backups' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Refresh' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open terminal here' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'More history actions' })).toBeNull();
     expect(screen.queryByRole('group', { name: 'Legend' })).toBeNull();
   });
 });

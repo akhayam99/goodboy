@@ -15,7 +15,6 @@
   "apps/desktop/src/features/diff/components/DiffView/LineGutter.tsx": "code",
   "apps/desktop/src/features/explore/components/ExplorePane/ExploreSpawnPopover.tsx": "path",
   "apps/desktop/src/features/history/components/CommitsHistory/HistoryAbsorbedGroup.tsx": "sha",
-  "apps/desktop/src/features/history/components/CommitsHistory/HistoryBackups.tsx": "sha",
   "apps/desktop/src/features/history/components/CommitsHistory/HistoryCommitRow.tsx": "sha",
   "apps/desktop/src/features/history/components/CommitsHistory/HistoryEditRow.tsx": "command",
   "apps/desktop/src/features/history/components/CommitsHistory/HistoryNowList.tsx": "sha",

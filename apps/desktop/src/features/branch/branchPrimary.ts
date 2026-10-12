@@ -101,6 +101,10 @@ const secondaryOf = ({ diff, review, hasPullRequest, state }: Params): BranchPri
       isBusy: review.isPushing,
     });
   }
+  const rebase = find(diff, 'diff.rebase');
+  if (rebase !== null) {
+    return fromAction({ source: 'diff', action: rebase, icon: GitBranch });
+  }
   const push = find(diff, 'diff.push');
   if (push !== null) {
     return fromAction({ source: 'diff', action: push, icon: ArrowUp });

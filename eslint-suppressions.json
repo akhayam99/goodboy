@@ -27,6 +27,14 @@
       "count": 7
     }
   },
+  "apps/desktop/src/__tests__/footer-studio-reachability.test.tsx": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 10
+    },
+    "@typescript-eslint/no-floating-promises": {
+      "count": 2
+    }
+  },
   "apps/desktop/src/__tests__/helpers/actionFixtures.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 13
@@ -260,14 +268,6 @@
   "apps/desktop/src/__tests__/store/unknown-payload.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 4
-    }
-  },
-  "apps/desktop/src/__tests__/footer-studio-reachability.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 10
-    },
-    "@typescript-eslint/no-floating-promises": {
-      "count": 2
     }
   },
   "apps/desktop/src/__tests__/surfaces/context-drawer.test.tsx": {
@@ -1305,7 +1305,7 @@
   },
   "apps/desktop/src/app/components/MockScene/scenes/u23/frame.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 12
+      "count": 11
     }
   },
   "apps/desktop/src/app/components/MockScene/scenes/u23/gitlab.test.tsx": {

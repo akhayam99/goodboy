@@ -75,13 +75,13 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
-    name: 'branch history backups inside the Commits tab',
+    name: 'previous versions drawer from the Commits tab',
     covers: ['openRewriteHistory'],
     open: async () => {
       await openDiffHistory();
-      await clickButton(/^Backups/);
+      await clickButton(/^Show previous versions/);
     },
-    lands: () => visible('region', 'Backups'),
+    lands: () => visible('region', 'Previous versions'),
   },
   {
     name: 'context drawer from the overview chip',

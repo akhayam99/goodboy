@@ -5,19 +5,18 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import { loadStateOf } from '../../../../shared/lib/loadStateOf';
 import { keptOrder } from '../../historyPlan';
-import { HistoryActions } from './HistoryActions';
 import { HistoryAfterColumn } from './HistoryAfterColumn';
 import { HistoryAppliedResult } from './HistoryAppliedResult';
-import { HistoryBackups } from './HistoryBackups';
 import { HistoryDragGhost } from './HistoryDragGhost';
 import { HistoryKeysHint } from './HistoryKeysHint';
 import { HistoryNowColumn } from './HistoryNowColumn';
 import { HistoryPlannedSection } from './HistoryPlannedSection';
 import { HistoryResultHead } from './HistoryResultHead';
 import { HistoryStatusSlot } from './HistoryStatusSlot';
+import { HistoryVersionsLink } from './HistoryVersionsLink';
 import { buildHistoryRowRenderer } from './buildHistoryRowRenderer';
 import { historyLaneNodes } from './historyLaneNodes';
-import { useHistoryBackupsPanel } from './useHistoryBackupsPanel';
+import { useHistoryVersionsDrawer } from './useHistoryVersionsDrawer';
 import { useHistoryEditing } from './useHistoryEditing';
 import { useHistoryExpanded } from './useHistoryExpanded';
 import { useHistoryFocus } from './useHistoryFocus';
@@ -30,7 +29,7 @@ import { useHistoryRowCallbacks } from './useHistoryRowCallbacks';
 import { useHistoryRows } from './useHistoryRows';
 import { useHistoryRunFlow } from './useHistoryRunFlow';
 import { useHistoryScribe } from './useHistoryScribe';
-import { TabActions } from '../../../../shared/components/TabActions';
+import { useHistoryBackupCount } from '../../useHistoryBackupCount';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -67,7 +66,12 @@ export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: 
   } = plan;
   const isInteractive = isEditable && !isReadOnly;
   const flow = useHistoryRunFlow({ sessionId, mountId, hasUpstream });
-  const backups = useHistoryBackupsPanel({ sessionId });
+  const versionsDrawer = useHistoryVersionsDrawer({ sessionId, mountId, worktreePath });
+  const backupCount = useHistoryBackupCount({
+    worktreePath,
+    branch: mount?.branch ?? '',
+    revision: run?.updatedAt ?? 0,
+  });
   const [editingSha, setEditingSha] = useState<string | null>(null);
   const [narrowView, setNarrowView] = useState<'now' | 'planned'>('now');
   const [nowMs] = useState(() => Date.now());
@@ -191,8 +195,6 @@ export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: 
     setEditingSha,
     callbacksFor,
   });
-  const actions = <HistoryActions onShowBackups={backups.showBackups} />;
-
   const loadState = loadStateOf({
     hasLoaded: draft !== null,
     isLoading: draft === null,
@@ -229,16 +231,6 @@ export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: 
       />
     ) : (
       <div className="flex flex-col gap-6" onKeyDown={keys.onPageKey}>
-        {backups.isShowingBackups ? (
-          <HistoryBackups
-            worktreePath={worktreePath}
-            branch={mount.branch}
-            hasUpstream={hasUpstream}
-            revision={run?.updatedAt ?? 0}
-            onRestore={flow.restoreBackup}
-            onClose={backups.hideBackups}
-          />
-        ) : null}
         {applied !== null && run !== null ? <HistoryResultHead applied={applied} /> : null}
         <div className="flex flex-col gap-4">
           <div
@@ -251,6 +243,10 @@ export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: 
             )}
           >
             <HistoryNowColumn
+              sessionId={sessionId}
+              repoPath={mount.repoRoot}
+              ownBranch={mount.branch}
+              onRebase={flow.rebaseOnto}
               view={view}
               isDone={isDone}
               isNarrow={isNarrow}
@@ -297,6 +293,9 @@ export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: 
             ) : null}
           </div>
         </div>
+        {backupCount > 0 ? (
+          <HistoryVersionsLink count={backupCount} onOpen={versionsDrawer.showVersions} />
+        ) : null}
         {isInteractive && !isDone ? <HistoryKeysHint /> : null}
         {applied !== null && run !== null ? (
           <HistoryAppliedResult
@@ -348,11 +347,8 @@ export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: 
     );
 
   return (
-    <>
-      <TabActions>{actions}</TabActions>
-      <ScrollFade className="min-h-0 flex-1" fadeSize="h-6">
-        <div className="flex min-w-0 flex-col gap-4 pb-6">{body}</div>
-      </ScrollFade>
-    </>
+    <ScrollFade className="min-h-0 flex-1" fadeSize="h-6">
+      <div className="flex min-w-0 flex-col gap-4 pb-6">{body}</div>
+    </ScrollFade>
   );
 };

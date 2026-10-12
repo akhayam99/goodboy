@@ -74,6 +74,10 @@ export type DrawerContent =
       readonly payload: { readonly terminalId: TerminalTabId };
     }
   | {
+      readonly kind: 'history-versions';
+      readonly payload: { readonly mountId: MountId; readonly worktreePath: string };
+    }
+  | {
       readonly kind: 'file-diff';
       readonly payload: {
         readonly source: FileDiffSource;
