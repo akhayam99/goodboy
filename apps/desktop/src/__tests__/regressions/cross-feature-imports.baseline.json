@@ -33,7 +33,6 @@
     "chat -> workflows": 1,
     "context -> attachments": 2,
     "context -> providers": 1,
-    "diff -> actions": 1,
     "diff -> permissions": 1,
     "explore -> chat": 1,
     "explore -> session": 1,

@@ -2719,7 +2719,7 @@ it was viewed; none on a merged or closed pull request), then the name (a rename
 tooltip names the kinds (`2 notes, 1 on GitHub`), `+N −N` only at a rail of 340 or more, and
 the status letter. A name too long for the rail keeps its first six characters and its last
 six with the extension chain (`Statem…ceCard.test.tsx`, `cutFileName`); the full name stays
-for a screen reader and the full path is the tooltip. The tree is a `tree`: Up and Down move
+for a screen reader. A file or folder row has no tooltip: the full path is in the file header of the diff. The tree is a `tree`: Up and Down move
 its cursor, Home and End go to the ends, Right and Left open, close and climb, `Enter` jumps
 the diff and keeps focus in the tree, `Space` toggles viewed (or folds a folder) and `Esc`
 returns to the diff. One key hint line ends the tree (`? all keys` opens the full list).
@@ -2747,8 +2747,7 @@ as they are. A click, `J`/`K`, next unviewed and `Viewed` call the diff's
 scroller directly (`registerScroller` on `DiffView`); `focusPath` is only for a
 link from another page such as `Open in Files`. A refresh keeps the tree and
 the diff on screen (`isRefreshing` on `useSessionDiff`); skeletons show only
-on the first load and when the scope changes. Hovering a row shows its full path
-in a tooltip, never a native `title`. The diff resets its mounted
+on the first load and when the scope changes. The diff resets its mounted
 batch, its observer and its place only when the list of paths changes, never on
 a new array with the same paths, so marking a file viewed or a note changing
 neither shortens the page nor drops an open composer. Folder row ids start with
@@ -2757,10 +2756,15 @@ file, open folders, notes, `Viewed`), and a model in `features/diff/lib/changeTr
 builds the rows. The file cards sit 8 apart on the 960 column (never the pane's width); a
 card header is 44 high on the panel surface and holds the fold chevron, the status square,
 the path (folders faint, the name whole, cut from the left, with a real tooltip) and
-`+N −N`, then three 28px controls that are always there: `Viewed` (a checkbox with the
+`+N −N`, then five 28px controls that are always there: `Viewed` (a checkbox with the
 word; checked folds the file, tooltip `Changed since you viewed it` when it went stale),
-`Comment` with the count of both kinds, and one `⋯` (Open in editor, Open in a drawer, Show
-whole file, Copy path). A merged or closed pull request hides Viewed, Comment, Reply and
+then icon-only `Comment` (tooltip with the count of both kinds), `Open in editor`, `Copy path`
+(the tooltip reads `Copied` after the click) and `Show whole file`. There is no overflow menu;
+a right click on the header still lists Open in editor, Show whole file and Copy path.
+`Show whole file` opens a right drawer (`FileWholeDrawer`) with the full file and the change
+marked, loaded for the same view as the page (branch, working tree or commit). The drawer starts
+in the page's Display layout and has its own Unified and Split toggle in its header: it is local
+state and never changes the page's Display setting. A merged or closed pull request hides Viewed, Comment, Reply and
 the other writes. Split needs a column content of 880 or more, otherwise `Display` says
 `Split needs a wider window`. The write review form is not on this toolbar: it opens from the
 pull request's `Write review` action and swaps the tab body for the review form with line

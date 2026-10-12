@@ -587,4 +587,41 @@ describe('Tooltip shortcut', () => {
 
     expect(screen.queryByRole('tooltip')).toBeNull();
   });
+
+  it('closes when an ancestor scrolls so it never stays at the old place', async () => {
+    vi.useFakeTimers();
+    render(
+      <div data-testid="scroller">
+        <Tooltip content="test tip">
+          <button type="button">btn</button>
+        </Tooltip>
+      </div>,
+    );
+    fireEvent.mouseEnter(screen.getByRole('button'));
+    await act(async () => {
+      vi.advanceTimersByTime(400);
+    });
+    expect(screen.getByRole('tooltip')).toBeDefined();
+    act(() => {
+      fireEvent.scroll(screen.getByTestId('scroller'));
+    });
+    expect(screen.queryByRole('tooltip')).toBeNull();
+    vi.useRealTimers();
+  });
+
+  it('keeps a controlled tooltip open and placed when an ancestor scrolls', async () => {
+    render(
+      <div data-testid="scroller">
+        <Tooltip content="test tip" isOpen>
+          <button type="button">btn</button>
+        </Tooltip>
+      </div>,
+    );
+    act(() => {
+      fireEvent.scroll(screen.getByTestId('scroller'));
+    });
+    const tip = screen.getByRole('tooltip');
+    expect(tip.style.visibility).toBe('visible');
+    expect(tip.style.top).not.toBe('-9999px');
+  });
 });

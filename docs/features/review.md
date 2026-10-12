@@ -73,7 +73,7 @@ Tidy the fix commits before reviewers see them, in the **Commits** section. Fold
 
 ### Notes before a pull request
 
-Review your own diff before anyone else does. Leave notes on lines or whole files in the **Files** section, then hand the open ones to an agent with **Fix comments** or move one into your GitHub review with **Post to GitHub**. Notes stay on their branch, and notes with no branch wait on the Session overview.
+Review your own diff before anyone else does. Leave notes on lines or whole files in the **Files** section, where each file header has icons to comment, open in your editor, copy the path and show the whole file in a drawer. Then hand the open ones to an agent with **Fix comments** or move one into your GitHub review with **Post to GitHub**. Notes stay on their branch, and notes with no branch wait on the Session overview.
 
 ### Pull request on the Branch page
 

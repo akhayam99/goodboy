@@ -95,6 +95,16 @@ describe('diff context interaction', () => {
     expect(screen.getByRole('button', { name: 'Show all 29 hidden lines' })).toBeDefined();
   });
 
+  it('expands the whole file again when the same path reopens at another revision', async () => {
+    const view = render(<DiffView files={[FILE]} loadFileSides={load} isWholeFile />);
+    expect(await screen.findByText('ledger1')).toBeDefined();
+    view.rerender(
+      <DiffView files={[{ ...FILE, hunks: [...FILE.hunks] }]} loadFileSides={load} isWholeFile />,
+    );
+    expect(await screen.findByText('ledger1')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Show all 29 hidden lines' })).toBeNull();
+  });
+
   it('expand all reveals windowed hunks and opens a collapsed file', async () => {
     const text = Array.from({ length: 1200 }, (_, index) => `ledger${index + 1}`).join('\n');
     stubStoryInvoke({ worktree_file_sides: { old: text, new: text, too_large: false } });
@@ -138,7 +148,7 @@ describe('diff context interaction', () => {
     expect(await screen.findByText('ledger1200')).toBeDefined();
     expect(screen.getByText('ledger1109')).toBeDefined();
     expect(screen.getByText('ledger1')).toBeDefined();
-    expect(screen.queryByRole('button', { name: /^Show / })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Show \d/ })).toBeNull();
   });
 
   it('expand all opens a rename with no changed hunk', async () => {

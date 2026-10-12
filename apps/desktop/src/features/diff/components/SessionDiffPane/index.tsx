@@ -115,23 +115,6 @@ export const SessionDiffPane = ({
     },
     [editorBinary, emitNotification, sessionId, workingDir],
   );
-  const openInDrawer = useCallback(
-    (path: string) =>
-      openDrawer({
-        kind: 'file-diff',
-        sessionId,
-        payload: { source: { kind: 'worktree', worktreePath }, path },
-      }),
-    [openDrawer, sessionId, worktreePath],
-  );
-  const fileActions = useMemo(
-    () => ({
-      onOpenInDrawer: openInDrawer,
-      ...(workingDir !== null && { onOpenInEditor: (path: string) => void openInEditor(path) }),
-    }),
-    [openInDrawer, openInEditor, workingDir],
-  );
-
   const isCommitView = diff.view.kind === 'commit';
   const identifierPeek = useMemo(
     () =>
@@ -159,25 +142,53 @@ export const SessionDiffPane = ({
     [isCommitView, openDrawer, sessionId, worktreePath],
   );
 
-  const loadFileSides = useCallback(
-    (file: FileDiff) => {
-      const oldRev =
-        diff.view.kind === 'commit'
-          ? `${diff.view.sha}^`
-          : diff.view.kind === 'working'
-            ? diff.view.scope === 'unstaged'
-              ? ':0'
-              : 'HEAD'
-            : null;
-      const newRev =
-        diff.view.kind === 'commit'
-          ? diff.view.sha
-          : diff.view.kind === 'working' && diff.view.scope === 'staged'
+  const revs = useMemo(() => {
+    const oldRev =
+      diff.view.kind === 'commit'
+        ? `${diff.view.sha}^`
+        : diff.view.kind === 'working'
+          ? diff.view.scope === 'unstaged'
             ? ':0'
-            : null;
-      return worktreeFileSides({ worktreePath, path: file.path, oldRev, newRev, baseBranch });
-    },
-    [baseBranch, diff.view, worktreePath],
+            : 'HEAD'
+          : null;
+    const newRev =
+      diff.view.kind === 'commit'
+        ? diff.view.sha
+        : diff.view.kind === 'working' && diff.view.scope === 'staged'
+          ? ':0'
+          : null;
+    return { oldRev, newRev };
+  }, [diff.view]);
+  const loadFileSides = useCallback(
+    (file: FileDiff) =>
+      worktreeFileSides({
+        worktreePath,
+        path: file.path,
+        oldRev: revs.oldRev,
+        newRev: revs.newRev,
+        baseBranch,
+      }),
+    [baseBranch, revs, worktreePath],
+  );
+  const showWhole = useCallback(
+    (file: FileDiff) =>
+      openDrawer({
+        kind: 'file-diff',
+        sessionId,
+        payload: {
+          source: { kind: 'worktree', worktreePath },
+          path: file.path,
+          whole: { file, oldRev: revs.oldRev, newRev: revs.newRev, baseBranch },
+        },
+      }),
+    [baseBranch, openDrawer, revs, sessionId, worktreePath],
+  );
+  const fileActions = useMemo(
+    () => ({
+      onShowWhole: showWhole,
+      ...(workingDir !== null && { onOpenInEditor: (path: string) => void openInEditor(path) }),
+    }),
+    [openInEditor, showWhole, workingDir],
   );
 
   const selector = (

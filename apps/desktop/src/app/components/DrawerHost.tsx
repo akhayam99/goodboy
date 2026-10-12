@@ -8,6 +8,7 @@ import { ArtifactDocumentDrawer } from '../../features/artifacts/components/Arti
 import { PlanPartDrawer } from '../../features/plans/components/PlanParts/PlanPartDrawer';
 import { ScriptRunDrawer } from '../../features/scripts/components/ScriptRunDrawer';
 import { FileDiffDrawer } from '../../features/diff/components/FileDiffDrawer';
+import { FileWholeDrawer } from '../../features/diff/components/FileWholeDrawer';
 import { AskDrawer } from '../../features/session/ask/components/AskDrawer';
 import { AgentTranscriptDrawer } from '../../features/chat/components/AgentTranscriptDrawer';
 import { FixCommentsDrawer } from '../../features/resolve/components/FixCommentsDrawer';
@@ -140,6 +141,16 @@ export const DrawerHost = () => {
         />
       );
     case 'file-diff':
+      if (drawer.payload.whole !== undefined && drawer.payload.source.kind === 'worktree') {
+        return (
+          <FileWholeDrawer
+            key={drawerKey(drawer)}
+            worktreePath={drawer.payload.source.worktreePath}
+            whole={drawer.payload.whole}
+            onClose={closeDrawer}
+          />
+        );
+      }
       return (
         <FileDiffDrawer
           key={drawerKey(drawer)}

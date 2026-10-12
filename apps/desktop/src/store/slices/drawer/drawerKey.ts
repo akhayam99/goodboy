@@ -29,7 +29,7 @@ export const drawerKey = (content: DrawerContent): string => {
         content.payload.source.kind === 'commit'
           ? `${content.payload.source.repo}@${content.payload.source.sha}`
           : content.payload.source.worktreePath
-      }:${content.payload.path ?? ''}`;
+      }:${content.payload.path ?? ''}${content.payload.whole === undefined ? '' : ':whole'}`;
     default: {
       const exhaustive: never = content;
       return String(exhaustive);

@@ -81,5 +81,5 @@ export type DiffViewed = {
 
 export type DiffFileActions = {
   readonly onOpenInEditor?: (path: string) => void;
-  readonly onOpenInDrawer?: (path: string) => void;
+  readonly onShowWhole?: (file: FileDiff) => void;
 };

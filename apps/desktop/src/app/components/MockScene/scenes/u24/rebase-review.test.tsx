@@ -5,7 +5,7 @@ vi.mock('@tauri-apps/api/core', async () => {
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -71,14 +71,19 @@ describe('the rebase review scene', () => {
     screen.getByText('The result did not match your branch');
     expect(screen.queryByRole('button', { name: 'Review the change' })).toBeNull();
   });
-  it('offers two real actions in each file menu', async () => {
+  it('puts Open in editor and Copy path on each file header as icons', async () => {
     render(
       <ToastProvider>
         <RebaseReviewScene />
       </ToastProvider>,
     );
-    fireEvent.click(await screen.findByRole('button', { name: 'More actions for webhook.ts' }));
-    screen.getByRole('menuitem', { name: 'Open in editor' });
-    screen.getByRole('menuitem', { name: 'Copy path' });
+    const collapse = await screen.findByRole('button', { name: 'Collapse webhook.ts' });
+    const header = collapse.closest<HTMLElement>('[data-slot="diff-file-header"]');
+    if (header === null) {
+      throw new Error('no file header');
+    }
+    expect(screen.queryByRole('button', { name: 'More actions for webhook.ts' })).toBeNull();
+    within(header).getByRole('button', { name: 'Open in editor' });
+    within(header).getByRole('button', { name: 'Copy path' });
   });
 });

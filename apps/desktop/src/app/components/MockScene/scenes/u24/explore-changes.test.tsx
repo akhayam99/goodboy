@@ -86,6 +86,6 @@ describe('the explore changes scenes', () => {
     expect(screen.getByRole('tab', { name: 'Changes' }).getAttribute('aria-selected')).toBe('true');
     expect(screen.getByRole('tab', { name: 'Preview' })).toBeDefined();
     expect(screen.queryByRole('tab', { name: 'Source' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Copy path' })).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'Copy path' }).length).toBeGreaterThan(0);
   });
 });

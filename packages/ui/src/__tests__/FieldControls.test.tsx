@@ -10,6 +10,18 @@ import { Textarea } from '../components/Textarea';
 
 afterEach(cleanup);
 
+type FieldOfParams = {
+  readonly input: HTMLElement;
+};
+
+const fieldOf = ({ input }: FieldOfParams): HTMLElement => {
+  const field = input.parentElement;
+  if (field === null) {
+    throw new Error('the input has no field around it');
+  }
+  return field;
+};
+
 const classesOf = (element: HTMLElement): ReadonlyArray<string> => element.className.split(' ');
 
 describe('Input', () => {
@@ -52,7 +64,10 @@ describe('SearchField', () => {
     render(<SearchField ariaLabel="Search scripts" value="" onChange={vi.fn()} />);
 
     const input = screen.getByRole('searchbox', { name: 'Search scripts' });
-    expect(classesOf(input)).toEqual(expect.arrayContaining(['h-7', 'text-label', 'pl-7']));
+    expect(classesOf(input)).toContain('text-label');
+    expect(classesOf(fieldOf({ input }))).toEqual(
+      expect.arrayContaining(['h-7', 'rounded-md', 'border']),
+    );
     expect(screen.queryByRole('button', { name: 'Clear search' })).toBeNull();
   });
 
@@ -80,7 +95,21 @@ describe('SearchField', () => {
   it('takes md at 32', () => {
     render(<SearchField ariaLabel="Search" size="md" value="" onChange={vi.fn()} />);
 
-    expect(classesOf(screen.getByRole('searchbox', { name: 'Search' }))).toContain('h-8');
+    const input = screen.getByRole('searchbox', { name: 'Search' });
+    expect(classesOf(fieldOf({ input }))).toContain('h-8');
+  });
+
+  it('draws one focus ring on the field and none of its own on the input', () => {
+    render(<SearchField ariaLabel="Search" value="" onChange={vi.fn()} />);
+
+    const input = screen.getByRole('searchbox', { name: 'Search' });
+    expect(classesOf(fieldOf({ input }))).toEqual(
+      expect.arrayContaining(['focus-within:ring-2', 'focus-within:ring-focus-ring']),
+    );
+    expect(classesOf(input)).toEqual(
+      expect.arrayContaining(['border-0', 'outline-none', 'ring-0']),
+    );
+    expect(classesOf(input)).not.toContain('focus-visible:ring-2');
   });
 });
 

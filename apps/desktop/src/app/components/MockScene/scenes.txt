@@ -226,6 +226,10 @@ features-review-push-confirm
 features-script-drawer
 features-start-tabs
 features-write-review
+file-actions-header
+file-whole-drawer-split
+file-whole-drawer-unified
+filter-files-focused
 first-lap
 first-lap-move
 first-lap-moving

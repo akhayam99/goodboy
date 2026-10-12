@@ -99,7 +99,6 @@ describe('the u24 prpage files scenes', () => {
     for (const header of headers) {
       expect(within(header).getByRole('checkbox', { name: 'Viewed' })).toBeDefined();
       expect(within(header).getByRole('button', { name: /^Comment/ })).toBeDefined();
-      expect(within(header).getByRole('button', { name: /^More actions for/ })).toBeDefined();
       expect(header.querySelector('[title]')).toBeNull();
     }
   });
@@ -115,17 +114,24 @@ describe('the u24 prpage files scenes', () => {
     }
   });
 
-  it('opens a menu on a file header with the editor, the drawer, the whole file and the path', async () => {
+  it('shows the file actions as icons on every file header and no overflow menu', async () => {
     renderScene({ name: 'branch-files-both' });
     await screen.findAllByRole('article', { name: /^Note from You/ }, WAIT);
 
-    const [menu] = screen.getAllByRole('button', { name: /^More actions for/ });
-    fireEvent.click(menu ?? document.body);
-
-    const names = screen.getAllByRole('menuitem').map((item) => item.textContent);
-    expect(names).toContain('Open in a drawer');
-    expect(names).toContain('Show whole file');
-    expect(names).toContain('Copy path');
+    const [header] = Array.from(
+      document.querySelectorAll<HTMLElement>('[data-slot="diff-file-header"]'),
+    );
+    expect(within(header ?? document.body).getByRole('button', { name: 'Comment' })).toBeDefined();
+    expect(
+      within(header ?? document.body).getByRole('button', { name: 'Open in editor' }),
+    ).toBeDefined();
+    expect(
+      within(header ?? document.body).getByRole('button', { name: 'Copy path' }),
+    ).toBeDefined();
+    expect(
+      within(header ?? document.body).getByRole('button', { name: 'Show whole file' }),
+    ).toBeDefined();
+    expect(screen.queryByRole('button', { name: /^More actions for/ })).toBeNull();
   });
 
   it('shows Comments with notes only and no host before a pull request, and no Checks', async () => {

@@ -1268,7 +1268,7 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       await pressed('diff.focusFilterAlias', document.body);
     },
     lands: async () => {
-      const field = await screen.findByRole('textbox', { name: 'Filter files' });
+      const field = await screen.findByRole('searchbox', { name: 'Filter files' });
       expect(document.activeElement).toBe(field);
       expect(field.hasAttribute('data-diff-filter')).toBe(true);
     },

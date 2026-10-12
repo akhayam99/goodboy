@@ -1,4 +1,4 @@
-import type { AgentId, ArtifactId, MountId, SessionId } from '@goodboy/types';
+import type { AgentId, ArtifactId, FileDiff, MountId, SessionId } from '@goodboy/types';
 import type { ExploreEntry } from '../../../features/explore/explore';
 
 export type ArtifactDrawerTab = 'details' | 'chat';
@@ -70,8 +70,19 @@ export type DrawerContent =
     }
   | {
       readonly kind: 'file-diff';
-      readonly payload: { readonly source: FileDiffSource; readonly path: string | null };
+      readonly payload: {
+        readonly source: FileDiffSource;
+        readonly path: string | null;
+        readonly whole?: FileDiffWhole;
+      };
     };
+
+export type FileDiffWhole = {
+  readonly file: FileDiff;
+  readonly oldRev: string | null;
+  readonly newRev: string | null;
+  readonly baseBranch: string | null;
+};
 
 export type FileDiffSource =
   | { readonly kind: 'worktree'; readonly worktreePath: string }

@@ -88,42 +88,37 @@ export const FileRow = ({
           isViewed ? 'text-muted-foreground' : 'text-foreground',
         )}
       >
-        <Tooltip
-          content={<span className="text-code">{row.id}</span>}
-          anchorClassName="min-w-0 flex-1"
-        >
-          <span className="flex min-w-0 flex-1 flex-col">
-            <span className="flex min-w-0 items-baseline gap-2">
-              <span
-                className={cn(
-                  'truncate',
-                  row.file.status === 'deleted' && 'text-faint-foreground line-through',
-                )}
-              >
-                {shownName === row.name ? (
-                  <MiddleText value={row.name} tail={EXTENSION} />
-                ) : (
-                  <>
-                    <span className="sr-only">{row.name}</span>
-                    <span aria-hidden>{shownName}</span>
-                  </>
-                )}
-              </span>
-              {row.dir === null ? null : (
-                <span className="min-w-0 truncate text-meta text-faint-foreground">{row.dir}</span>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="flex min-w-0 items-baseline gap-2">
+            <span
+              className={cn(
+                'truncate',
+                row.file.status === 'deleted' && 'text-faint-foreground line-through',
+              )}
+            >
+              {shownName === row.name ? (
+                <MiddleText value={row.name} tail={EXTENSION} />
+              ) : (
+                <>
+                  <span className="sr-only">{row.name}</span>
+                  <span aria-hidden>{shownName}</span>
+                </>
               )}
             </span>
-            {row.fromPath === null ? null : (
-              <span className="flex min-w-0 gap-1 text-meta text-faint-foreground">
-                <span className="sr-only">from {row.fromPath}</span>
-                <span aria-hidden className="shrink-0">
-                  from
-                </span>
-                <MiddleText value={row.fromPath} tail={LAST_SEGMENT} />
-              </span>
+            {row.dir === null ? null : (
+              <span className="min-w-0 truncate text-meta text-faint-foreground">{row.dir}</span>
             )}
           </span>
-        </Tooltip>
+          {row.fromPath === null ? null : (
+            <span className="flex min-w-0 gap-1 text-meta text-faint-foreground">
+              <span className="sr-only">from {row.fromPath}</span>
+              <span aria-hidden className="shrink-0">
+                from
+              </span>
+              <MiddleText value={row.fromPath} tail={LAST_SEGMENT} />
+            </span>
+          )}
+        </span>
         {count === 0 ? null : (
           <Tooltip content={kindsLabelOf({ kinds })} anchorClassName="shrink-0">
             <span

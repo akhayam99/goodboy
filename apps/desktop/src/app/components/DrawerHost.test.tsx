@@ -163,6 +163,32 @@ const ENTRIES: ReadonlyArray<Entry> = [
     },
   },
   {
+    kind: 'file-diff',
+    region: 'importer.ts',
+    seed: seedSession,
+    drawer: {
+      kind: 'file-diff',
+      sessionId: SESSION,
+      payload: {
+        source: { kind: 'worktree', worktreePath: '/mock/ledger-core' },
+        path: 'src/importer.ts',
+        whole: {
+          file: {
+            path: 'src/importer.ts',
+            status: 'modified',
+            additions: 1,
+            deletions: 0,
+            binary: false,
+            hunks: [],
+          },
+          oldRev: null,
+          newRev: null,
+          baseBranch: null,
+        },
+      },
+    },
+  },
+  {
     kind: 'artifact-document',
     region: 'Rounding drift in ledger-core',
     seed: seedSession,
