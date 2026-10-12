@@ -1,47 +1,43 @@
 import { useState, type FormEvent } from 'react';
-import { Plus } from 'lucide-react';
+import { Pin } from 'lucide-react';
 import {
   AnchoredPopover,
   Button,
   ICON_SIZE,
   Input,
-  Listbox,
   useDropdown,
   type ButtonVariant,
 } from '@goodboy/ui';
-import type { Project } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { projectById } from '../../../../store/slices/projects/projectIndex';
 import { isValidPort } from '../../../../store/slices/monitoring/isValidPort';
+import { PIN_DESCRIPTION_MAX } from '../../../../store/slices/monitoring/pinDescription';
 
 type Props = {
-  readonly projects: ReadonlyArray<Project>;
-  readonly defaultProjectId: string | null;
   readonly variant: ButtonVariant;
 };
 
-export const WatchPortPopover = ({ projects, defaultProjectId, variant }: Props) => {
+export const PinPortPopover = ({ variant }: Props) => {
   const dropdown = useDropdown({ align: 'end', width: 'w-80', expectedWidth: 320 });
-  const watchPort = useAppStore((state) => state.watchPort);
+  const pinPort = useAppStore((state) => state.pinPort);
   const [portText, setPortText] = useState('');
-  const [projectId, setProjectId] = useState<string | null>(null);
-  const chosenId = projectId ?? defaultProjectId ?? projects[0]?.id ?? null;
+  const [description, setDescription] = useState('');
+  const [hasFailed, setHasFailed] = useState(false);
   const port = Number(portText);
   const isPortValid = portText.trim() !== '' && isValidPort({ port });
   const hasError = portText.trim() !== '' && !isPortValid;
-  const project = projectById(projects, chosenId);
 
   const submit = async (event: FormEvent): Promise<void> => {
     event.preventDefault();
-    if (!isPortValid || project === undefined) {
+    if (!isPortValid) {
       return;
     }
-    await watchPort({ projectId: project.id, port });
-    const isWatched = useAppStore.getState().monitorWatched[project.id]?.includes(port) === true;
-    if (!isWatched) {
+    const isPinned = await pinPort({ port, description });
+    setHasFailed(!isPinned);
+    if (!isPinned) {
       return;
     }
     setPortText('');
+    setDescription('');
     dropdown.close();
   };
 
@@ -49,28 +45,31 @@ export const WatchPortPopover = ({ projects, defaultProjectId, variant }: Props)
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
-      ariaLabel="Watch a port"
+      ariaLabel="Pin a port"
       hasBackdrop
       className="p-3"
       trigger={
         <Button size="sm" variant={variant} onClick={dropdown.toggle} aria-expanded={dropdown.open}>
-          <Plus size={ICON_SIZE.row} aria-hidden />
-          Watch a port
+          <Pin size={ICON_SIZE.row} aria-hidden />
+          Pin a port
         </Button>
       }
     >
       <form onSubmit={(event) => void submit(event)} className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <label htmlFor="watch-port-number" className="text-label text-foreground">
+          <label htmlFor="pin-port-number" className="text-label text-foreground">
             Port
           </label>
           <Input
-            id="watch-port-number"
+            id="pin-port-number"
             inputMode="numeric"
             placeholder="5005"
             value={portText}
             aria-invalid={hasError}
-            onChange={(event) => setPortText(event.target.value)}
+            onChange={(event) => {
+              setPortText(event.target.value);
+              setHasFailed(false);
+            }}
             autoFocus
           />
           {hasError ? (
@@ -80,17 +79,27 @@ export const WatchPortPopover = ({ projects, defaultProjectId, variant }: Props)
           ) : null}
         </div>
         <div className="flex flex-col gap-1">
-          <span className="text-label text-foreground">Project</span>
-          <Listbox
-            ariaLabel="Project"
-            value={chosenId}
-            options={projects.map((item) => ({ value: item.id, label: item.name }))}
-            onChange={setProjectId}
-            isBlock
+          <label htmlFor="pin-port-description" className="text-label text-foreground">
+            Description
+          </label>
+          <Input
+            id="pin-port-description"
+            placeholder="Optional"
+            maxLength={PIN_DESCRIPTION_MAX}
+            value={description}
+            onChange={(event) => {
+              setDescription(event.target.value);
+              setHasFailed(false);
+            }}
           />
         </div>
-        <Button type="submit" size="sm" disabled={!isPortValid || project === undefined}>
-          Watch
+        {hasFailed ? (
+          <span role="alert" className="text-meta text-danger">
+            Couldn't pin the port. Try again.
+          </span>
+        ) : null}
+        <Button type="submit" size="sm" disabled={!isPortValid}>
+          Pin
         </Button>
       </form>
     </AnchoredPopover>

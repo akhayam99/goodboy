@@ -28,11 +28,11 @@ export const forcePushSessionBranch = async ({
   confirmedOnlyOnline,
 }: Params): Promise<PushResult> => {
   const session = sessionById(get().sessions, sessionId);
-  if (!session) {
+  if (session === undefined) {
     return { ok: false, error: 'session not found' };
   }
   const repo = getSessionRepo({ get, sessionId, mountId });
-  if (repo == null || repo.branch.length === 0) {
+  if (repo === null || repo === undefined || repo.branch.length === 0) {
     return { ok: false, error: 'no branch resolved for this mount to push from' };
   }
   const target = {

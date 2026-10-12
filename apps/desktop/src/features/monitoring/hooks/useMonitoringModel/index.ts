@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { LedgerRow, MonitorProcess, PortRow } from '@goodboy/core';
-import type { Project } from '@goodboy/types';
+import type { MonitorProcess, PortRow } from '@goodboy/core';
 import { useAppStore } from '../../../../store';
 import { projectById } from '../../../../store/slices/projects/projectIndex';
 import { selectPortRows } from '../../../../store/slices/monitoring/selectPortRows';
@@ -8,7 +7,8 @@ import { filterPortRows } from '../../filterPortRows';
 import { portSummary, type PortSummary } from '../../portSummary';
 import { splitPortRows } from '../../splitPortRows';
 import { startedByGoodboy, type StartedRow } from '../../startedByGoodboy';
-import { watchedPortSet } from '../../watchedPortSet';
+import { unmatchedStarted } from '../../unmatchedStarted';
+import { workspacePortSet } from '../../workspacePortSet';
 
 type MonitoringStatus = 'loading' | 'failed' | 'unsupported' | 'ready';
 
@@ -17,12 +17,14 @@ export type MonitoringModel = {
   readonly error: string | null;
   readonly takenAt: number | null;
   readonly summary: PortSummary;
-  readonly ports: ReadonlyArray<PortRow>;
-  readonly also: ReadonlyArray<PortRow>;
-  readonly started: ReadonlyArray<StartedRow>;
-  readonly projects: ReadonlyArray<Project>;
+  readonly pinned: ReadonlyArray<PortRow>;
+  readonly goodboy: ReadonlyArray<PortRow>;
+  readonly workspace: ReadonlyArray<PortRow>;
+  readonly listening: ReadonlyArray<PortRow>;
+  readonly processes: ReadonlyArray<StartedRow>;
+  readonly hiddenCount: number;
+  readonly isTrackedEmpty: boolean;
   readonly processOf: (pid: number | null) => MonitorProcess | null;
-  readonly ledger: ReadonlyArray<LedgerRow>;
   readonly query: string;
   readonly setQuery: (query: string) => void;
 };
@@ -48,21 +50,30 @@ export const useMonitoringModel = (): MonitoringModel => {
   const error = useAppStore((state) => state.monitorError);
   const rows = useAppStore(selectPortRows);
   const scanned = useAppStore((state) => state.monitorScanned);
-  const watched = useAppStore((state) => state.monitorWatched);
-  const learned = useAppStore((state) => state.monitorLearned);
+  const pinned = useAppStore((state) => state.monitorPinned);
+  const hidden = useAppStore((state) => state.monitorHidden);
   const projects = useAppStore((state) => state.projects);
   const sessionMounts = useAppStore((state) => state.sessionMounts);
   const [query, setQuery] = useState('');
 
   return useMemo(() => {
-    const watchedPorts = watchedPortSet({ scanned, watched, learned });
-    const split = splitPortRows({ rows, watchedPorts });
+    const split = splitPortRows({
+      rows,
+      pinned,
+      hidden,
+      workspacePorts: workspacePortSet({ scanned }),
+    });
     const projectNameOf = (projectId: string | null): string | null =>
       projectById(projects, projectId)?.name ?? null;
     const processes = new Map<number, MonitorProcess>();
     for (const process of snapshot?.processes ?? []) {
       processes.set(process.pid, process);
     }
+    const tracked = [...split.pinned, ...split.goodboy, ...split.workspace];
+    const processRows = unmatchedStarted({
+      started: startedByGoodboy({ snapshot, ledger, projects, sessionMounts }),
+      rows,
+    });
     return {
       status: statusOf({
         hasSnapshot: snapshot !== null,
@@ -71,15 +82,17 @@ export const useMonitoringModel = (): MonitoringModel => {
       }),
       error,
       takenAt: snapshot?.takenAt ?? null,
-      summary: portSummary({ ports: split.ports }),
-      ports: filterPortRows({ rows: split.ports, query, projectNameOf }),
-      also: filterPortRows({ rows: split.also, query, projectNameOf }),
-      started: startedByGoodboy({ snapshot, ledger, projects, sessionMounts }),
-      projects,
+      summary: portSummary({ ports: tracked }),
+      pinned: filterPortRows({ rows: split.pinned, query, projectNameOf }),
+      goodboy: filterPortRows({ rows: split.goodboy, query, projectNameOf }),
+      workspace: filterPortRows({ rows: split.workspace, query, projectNameOf }),
+      listening: filterPortRows({ rows: split.listening, query, projectNameOf }),
+      processes: processRows,
+      hiddenCount: split.hiddenCount,
+      isTrackedEmpty: tracked.length === 0 && split.hiddenCount === 0,
       processOf: (pid) => (pid === null ? null : (processes.get(pid) ?? null)),
-      ledger,
       query,
       setQuery,
     };
-  }, [snapshot, ledger, error, rows, scanned, watched, learned, projects, sessionMounts, query]);
+  }, [snapshot, ledger, error, rows, scanned, pinned, hidden, projects, sessionMounts, query]);
 };

@@ -125,7 +125,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Monitoring',
-        desc: 'Monitoring, a door in the left column, says which ports are taken and by whom: a worktree, a main checkout, or a script, terminal or agent Goodboy started. Watch a port adds one. Stop acts on a row, Force stop follows if the process stays, and Leftovers lists what an earlier run left behind.',
+        desc: 'Monitoring, a door in the left column, says which ports are taken and by whom: a worktree, a main checkout, or a script, terminal or agent Goodboy started. Pinned holds the ports you add with Pin a port, each with an optional description, and starts empty; Run by Goodboy, From workspace and Listening on this Mac follow, and a port shows in one of them only. Pin or Hide a row from its menu. Stop acts on a row, Force stop follows if the process stays, and Leftovers lists what an earlier run left behind.',
       },
     ],
     links: [

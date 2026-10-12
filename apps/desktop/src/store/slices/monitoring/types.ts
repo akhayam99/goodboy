@@ -1,8 +1,19 @@
+import type { HiddenPortSource } from '@goodboy/core';
+
 export type { SetFn, GetFn } from '../../slice-types';
 
-export type WatchPortParams = {
-  readonly projectId: string;
+export type PinPortParams = {
   readonly port: number;
+  readonly description: string;
+};
+
+export type UnpinPortParams = {
+  readonly port: number;
+};
+
+export type HidePortParams = {
+  readonly port: number;
+  readonly source: HiddenPortSource;
 };
 
 type StopOutcome = 'stopped' | 'still-running' | 'refused';

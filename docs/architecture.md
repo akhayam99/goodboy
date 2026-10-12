@@ -148,11 +148,17 @@ cwd, startedAt }`. A turn, a chat, a planner or a summary joins it in
   worktree by the longest cwd prefix, a project's main checkout, else an
   external process by name. A watched port held by one worktree while another
   worktree of the same project is running carries `collision: { others }`.
-  Watched ports nobody holds come back as `free` rows. A port a Goodboy-owned
-  process held joins the project's learned set (`monitor.learnedPorts.<id>`);
-  the user's own set lives in `monitor.watchedPorts.<id>`. The store slice
-  `store/slices/monitoring/` keeps the snapshot and applies a result only if
-  its `takenAt` is not older than the one held.
+  Each row carries the `source` that named its port (`script`, `env`, `vite`,
+  `compose` or `learned`). Declared ports nobody holds come back as `free`
+  rows. A port a Goodboy-owned process held joins the project's learned set
+  (`monitor.learnedPorts.<id>`). The pins are not per project: `monitor.pinnedPorts`
+  holds the user's pinned ports with an optional description and
+  `monitor.hiddenPorts` the ports hidden from a layer, both global settings.
+  The first load folds the old `monitor.watchedPorts.<id>` keys into the pins
+  and deletes them. `features/monitoring/splitPortRows.ts` files each port in
+  one layer, Pinned, Run by Goodboy, From workspace, then Listening on this
+  Mac. The store slice `store/slices/monitoring/` keeps the snapshot and
+  applies a result only if its `takenAt` is not older than the one held.
 - **Windows.** Each CLI spawn is assigned to its own Job Object with
   kill-on-close (`process_group::Job`), so a cancel ends the whole tree
   (`TerminateJobObject`) and so does the app dying. The assignment happens

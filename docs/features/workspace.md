@@ -86,7 +86,7 @@ Choose how new session branches are named: a **Branch prefix**, with or without 
 
 ### Monitoring
 
-See which ports are taken and by whom. **Monitoring** lists the ports your projects use with the session, script or terminal that holds them, the processes Goodboy started, and leftovers from earlier runs, with **Stop** on each. It works on macOS and Linux.
+See which ports are taken and by whom, in four groups: **Pinned** (ports you pin, with your own description), **Run by Goodboy**, **From workspace** and **Listening on this Mac**. Any row can be pinned, hidden with Undo, or stopped. It works on macOS and Linux.
 
 ### Copy settings from another workspace
 

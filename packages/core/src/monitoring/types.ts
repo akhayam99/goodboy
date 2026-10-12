@@ -92,8 +92,21 @@ export type PortRow = {
   readonly owner: PortOwner | null;
   readonly projectId: string | null;
   readonly label: string | null;
+  readonly source: WatchedSource | null;
   readonly isWatched: boolean;
   readonly collision?: { readonly others: number };
+};
+
+export type PinnedPort = {
+  readonly port: number;
+  readonly description: string;
+};
+
+export type HiddenPortSource = 'goodboy' | 'workspace' | 'listening';
+
+export type HiddenPort = {
+  readonly port: number;
+  readonly source: HiddenPortSource;
 };
 
 export type LearnedPorts = Readonly<Record<string, ReadonlyArray<number>>>;

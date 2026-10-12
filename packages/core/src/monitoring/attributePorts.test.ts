@@ -180,6 +180,7 @@ describe('attributePorts watched set', () => {
       port: 5005,
       projectId: 'p1',
       label: 'dev',
+      source: 'script',
       isWatched: true,
     });
   });
@@ -187,12 +188,27 @@ describe('attributePorts watched set', () => {
   it('turns the free row into a listening row when the port is held', () => {
     const rows = run(snap([[5005, 10]], [proc(10, WT_A)]), [entry('script', 10)], watched);
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ state: 'listening', isWatched: true, label: 'dev' });
+    expect(rows[0]).toMatchObject({
+      state: 'listening',
+      isWatched: true,
+      label: 'dev',
+      source: 'script',
+    });
   });
 
   it('includes learned ports as free rows', () => {
     const rows = run(snap([], []), [], {}, { p1: [4321] });
-    expect(rows[0]).toMatchObject({ state: 'free', port: 4321, projectId: 'p1' });
+    expect(rows[0]).toMatchObject({
+      state: 'free',
+      port: 4321,
+      projectId: 'p1',
+      source: 'learned',
+    });
+  });
+
+  it('carries no source for a port outside every set', () => {
+    const rows = run(snap([[6006, 10]], [proc(10, WT_A)]));
+    expect(rows[0]?.source).toBeNull();
   });
 
   it('flags a collision when another worktree of the project is running', () => {

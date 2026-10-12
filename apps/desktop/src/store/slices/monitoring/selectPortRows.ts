@@ -3,7 +3,6 @@ import {
   type AttributionProject,
   type AttributionSession,
   type PortRow,
-  type WatchedByProject,
 } from '@goodboy/core';
 import type { Project, SessionMountView } from '@goodboy/types';
 import type { AppStore } from '../../store';
@@ -13,7 +12,6 @@ type Input = Pick<
   | 'monitorSnapshot'
   | 'monitorLedger'
   | 'monitorScanned'
-  | 'monitorWatched'
   | 'monitorLearned'
   | 'projects'
   | 'sessionMounts'
@@ -41,19 +39,6 @@ const projectsOf = (projects: ReadonlyArray<Project>): ReadonlyArray<Attribution
     .filter((project) => project.disconnectedAt === undefined)
     .map((project) => ({ id: project.id, rootPath: project.rootPath }));
 
-const watchedOf = (state: Input): WatchedByProject => {
-  const merged: Record<string, WatchedByProject[string]> = { ...state.monitorScanned };
-  for (const [projectId, ports] of Object.entries(state.monitorWatched)) {
-    const scanned = merged[projectId] ?? [];
-    const known = new Set(scanned.map((item) => item.port));
-    const added = ports
-      .filter((port) => !known.has(port))
-      .map((port) => ({ port, label: `:${port}`, source: 'user' as const, relDir: '' }));
-    merged[projectId] = [...scanned, ...added];
-  }
-  return merged;
-};
-
 type Memo = {
   readonly input: Input;
   readonly rows: ReadonlyArray<PortRow>;
@@ -65,7 +50,6 @@ const isSameInput = (a: Input, b: Input): boolean =>
   a.monitorSnapshot === b.monitorSnapshot &&
   a.monitorLedger === b.monitorLedger &&
   a.monitorScanned === b.monitorScanned &&
-  a.monitorWatched === b.monitorWatched &&
   a.monitorLearned === b.monitorLearned &&
   a.projects === b.projects &&
   a.sessionMounts === b.sessionMounts;
@@ -89,7 +73,7 @@ export const selectPortRows = (state: Input): ReadonlyArray<PortRow> => {
       ledger: state.monitorLedger,
       sessions: sessionsOf(state.sessionMounts),
       projects: projectsOf(state.projects),
-      watched: watchedOf(state),
+      watched: state.monitorScanned,
       learned: state.monitorLearned,
     }),
   ].sort((a, b) => {

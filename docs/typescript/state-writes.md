@@ -45,7 +45,7 @@ state and shows the error.
   the control.
 - A bare `.catch(() => undefined)`, `null` or `{}` hides the failure. The
   `catch-swallow` ratchet counts them and only falls.
-- In use: `watchPort` and `unwatchPort` in `store/slices/monitoring/`.
+- In use: `pinPort`, `unpinPort`, `hidePort` and `unhidePort` in `store/slices/monitoring/`.
 - Test: `commitAfterConfirm.sqlite.test.ts` (nothing committed while pending,
   nothing committed on failure, the error stored on the target).
 

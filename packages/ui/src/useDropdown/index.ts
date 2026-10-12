@@ -32,6 +32,7 @@ export type DropdownController = {
   readonly popupStyle: CSSProperties | undefined;
   readonly popupClassName: string;
   readonly portalTarget: Element;
+  readonly markPress: () => void;
 };
 
 export const useDropdown = ({
@@ -49,7 +50,11 @@ export const useDropdown = ({
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
+  const isPressInsideRef = useRef(false);
   const close = useCallback(() => setOpen(false), []);
+  const markPress = useCallback(() => {
+    isPressInsideRef.current = true;
+  }, []);
   const popupStyle = useDropdownDirection({
     triggerRef: containerRef,
     popupRef,
@@ -65,11 +70,14 @@ export const useDropdown = ({
 
   useEffect(() => {
     const onMouseDown = (event: MouseEvent) => {
+      const wasPressInside = isPressInsideRef.current;
+      isPressInsideRef.current = false;
       const target = event.target;
       if (!(target instanceof Node)) {
         return;
       }
       if (
+        wasPressInside ||
         containerRef.current?.contains(target) === true ||
         popupRef.current?.contains(target) === true ||
         (target instanceof Element && target.closest('[data-menu-portal]') !== null)
@@ -128,5 +136,6 @@ export const useDropdown = ({
     popupStyle,
     popupClassName: cn('fixed z-popover', width),
     portalTarget,
+    markPress,
   };
 };

@@ -10,6 +10,7 @@ import { DIFF_FILE_KIND } from './kinds/diffFile';
 import { EXPLORE_FILE_KIND } from './kinds/exploreFile';
 import { LINK_KIND } from './kinds/link';
 import { PLAN_PART_KIND } from './kinds/planPart';
+import { PORT_KIND } from './kinds/port';
 import { PULL_REQUEST_KIND } from './kinds/pullRequest';
 import { MESSAGE_KIND } from './kinds/message';
 import { MOUNT_KIND } from './kinds/mount';
@@ -137,6 +138,8 @@ export const bindTarget = ({ state, target }: TargetParams): BoundObject | null 
       return bind({ definition: CHAT_KIND, state, target });
     case 'chats':
       return bind({ definition: CHATS_KIND, state, target });
+    case 'port':
+      return bind({ definition: PORT_KIND, state, target });
     case 'link':
       return bind({ definition: LINK_KIND, state, target });
     case 'review':

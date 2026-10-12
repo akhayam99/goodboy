@@ -15,6 +15,9 @@ export const filterPortRows = ({ rows, query, projectNameOf }: Params): Readonly
     if (String(row.port).includes(needle)) {
       return true;
     }
+    if (row.label?.toLowerCase().includes(needle) === true) {
+      return true;
+    }
     const project = projectNameOf(row.projectId);
     return project !== null && project.toLowerCase().includes(needle);
   });

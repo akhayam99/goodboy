@@ -5,6 +5,7 @@ import { ARTIFACT_KIND } from './kinds/artifact';
 import { DIFF_KIND } from './kinds/diff';
 import { LINK_KIND } from './kinds/link';
 import { PLAN_PART_KIND } from './kinds/planPart';
+import { PORT_KIND } from './kinds/port';
 import { PROJECT_KIND } from './kinds/project';
 import { PULL_REQUEST_KIND } from './kinds/pullRequest';
 import { CHAT_KIND } from './kinds/chat';
@@ -48,6 +49,7 @@ const KINDS: ReadonlyArray<readonly [string, ReadonlyArray<AnyDefinition>]> = [
   ['chat', CHAT_KIND.actions],
   ['chats', CHATS_KIND.actions],
   ['diff', DIFF_KIND.actions],
+  ['port', PORT_KIND.actions],
   ['link', LINK_KIND.actions],
   ['review', REVIEW_KIND.actions],
   ['reviewComment', REVIEW_COMMENT_KIND.actions],

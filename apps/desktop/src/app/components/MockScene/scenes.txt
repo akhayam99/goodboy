@@ -350,6 +350,12 @@ planner-transcript
 planner-transcript-drawer
 planner-transcript-replaced
 planner-transcript-revising
+ports-hidden
+ports-layers
+ports-listening
+ports-pin-popover
+ports-pinned-menu
+ports-row-menu
 processes-stopped
 providerhealth
 providerhistory

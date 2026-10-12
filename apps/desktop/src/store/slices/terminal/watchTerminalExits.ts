@@ -1,6 +1,7 @@
 import { forgetTerminalCommand } from '../../../features/terminal/commandTracker';
 import { terminalOutputBus } from '../../../features/terminal/outputBus';
 import type { TerminalTab } from '../../../shared/types/terminal';
+import { exitCapture } from './exitCapture';
 import { terminalOwnerKey } from './terminalOwner';
 import type { GetFn } from './types';
 
@@ -21,11 +22,16 @@ const tabOf = ({ terminalId, tabs }: FindParams): TerminalTab | null => {
 
 let stopWatching: (() => void) | null = null;
 
-export const watchTerminalExits = (get: GetFn) => {
+type WatchParams = {
+  readonly get: GetFn;
+};
+
+export const watchTerminalExits = ({ get }: WatchParams) => {
   return (): void => {
     stopWatching?.();
     stopWatching = terminalOutputBus.subscribeExits({
       listener: ({ terminalId }) => {
+        exitCapture.record({ terminalId });
         const state = get();
         const tab = tabOf({ terminalId, tabs: state.terminalTabs });
         if (tab === null) {

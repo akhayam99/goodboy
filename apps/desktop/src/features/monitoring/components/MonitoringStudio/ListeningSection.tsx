@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { ICON_SIZE, ROW_INTERACTIVE, cn } from '@goodboy/ui';
 import type { MonitorProcess, PortRow } from '@goodboy/core';
+import { portLabel } from '../../portLabel';
+import { PortRowMenu } from '../../../actions/PortRowMenu';
 import { PortRowView } from './PortRowView';
 
 type Props = {
@@ -9,15 +11,14 @@ type Props = {
   readonly processOf: (pid: number | null) => MonitorProcess | null;
   readonly now: number;
   readonly isForcedOpen: boolean;
-  readonly onWatch: (row: PortRow) => void;
 };
 
-export const AlsoListeningSection = ({ rows, processOf, now, isForcedOpen, onWatch }: Props) => {
+export const ListeningSection = ({ rows, processOf, now, isForcedOpen }: Props) => {
   const [isToggledOpen, setIsToggledOpen] = useState(false);
   const isOpen = isToggledOpen || isForcedOpen;
 
   return (
-    <section aria-label="Also listening on this Mac" className="flex flex-col gap-2">
+    <section aria-label="Listening on this Mac" className="flex flex-col gap-2">
       <button
         type="button"
         aria-expanded={isOpen}
@@ -32,7 +33,7 @@ export const AlsoListeningSection = ({ rows, processOf, now, isForcedOpen, onWat
           aria-hidden
           className={cn('shrink-0 motion-safe:transition-transform', isOpen && 'rotate-90')}
         />
-        <span className="min-w-0 flex-1 truncate text-foreground">Also listening on this Mac</span>
+        <span className="min-w-0 flex-1 truncate text-foreground">Listening on this Mac</span>
         <span className="shrink-0 text-meta tabular-nums text-faint-foreground">
           {isOpen ? rows.length : `${rows.length} more`}
         </span>
@@ -45,7 +46,10 @@ export const AlsoListeningSection = ({ rows, processOf, now, isForcedOpen, onWat
               row={row}
               process={processOf(row.pid)}
               now={now}
-              onWatch={() => onWatch(row)}
+              name=""
+              actions={
+                <PortRowMenu port={row.port} layer="listening" description={portLabel({ row })} />
+              }
             />
           ))}
         </ul>

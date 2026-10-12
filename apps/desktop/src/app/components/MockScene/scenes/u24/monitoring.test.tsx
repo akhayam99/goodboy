@@ -79,7 +79,7 @@ describe('the monitoring scenes', () => {
     expect(within(portRow(5005)).getByText('Also in 2 other worktrees')).toBeDefined();
   });
 
-  it('shows a free watched port as one dim Free line', async () => {
+  it('shows a free workspace port as one dim Free line', async () => {
     renderScene('monitoring-ports');
     await waitFor(() => expect(hasPortRow(5002)).toBe(true));
     const row = portRow(5002);
@@ -88,11 +88,11 @@ describe('the monitoring scenes', () => {
     expect(within(row).getByText('Free')).toBeDefined();
   });
 
-  it('counts watched ports in use in the header', async () => {
+  it('counts the ports in use across Pinned, Run by Goodboy and From workspace', async () => {
     renderScene('monitoring-ports');
     await waitFor(() => expect(hasPortRow(5005)).toBe(true));
 
-    expect(screen.getByText(/^1 of 2 watched ports in use · updated /)).toBeDefined();
+    expect(screen.getByText(/^1 of 2 tracked ports in use · updated /)).toBeDefined();
   });
 
   it('narrows the rows by port and by project name', async () => {
@@ -109,53 +109,50 @@ describe('the monitoring scenes', () => {
     expect(hasPortRow(5005)).toBe(false);
   });
 
-  it('starts the Also listening fold closed and counts what is inside', async () => {
+  it('starts the Listening on this Mac fold closed and counts what is inside', async () => {
     renderScene('monitoring-ports');
     await waitFor(() => expect(hasPortRow(5005)).toBe(true));
 
-    const fold = screen.getByRole('button', { name: /^Also listening on this Mac/ });
+    const fold = screen.getByRole('button', { name: /^Listening on this Mac/ });
     expect(fold.getAttribute('aria-expanded')).toBe('false');
     expect(fold.textContent).toContain('2 more');
     expect(hasPortRow(7000)).toBe(false);
   });
 
-  it('moves a row into Ports when Watch is pressed on it', async () => {
+  it('moves a row into Pinned when Pin is pressed on it', async () => {
     renderScene('monitoring-alsolistening');
     await waitFor(() => expect(hasPortRow(5005)).toBe(true));
-    fireEvent.click(screen.getByRole('button', { name: /^Also listening on this Mac/ }));
-    const also = screen.getByRole('region', { name: 'Also listening on this Mac' });
-    expect(within(also).getByText(':3000')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: /^Listening on this Mac/ }));
+    const listening = screen.getByRole('region', { name: 'Listening on this Mac' });
+    expect(within(listening).getByText(':3000')).toBeDefined();
 
-    fireEvent.click(within(also).getByRole('button', { name: 'Watch :3000' }));
+    fireEvent.click(within(listening).getByRole('button', { name: 'Actions for :3000' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Pin' }));
     await waitFor(() => {
-      const ports = screen.getByRole('region', { name: 'Ports' });
-      expect(within(ports).getByText(':3000')).toBeDefined();
+      const pinned = screen.getByRole('region', { name: 'Pinned' });
+      expect(within(pinned).getByText(':3000')).toBeDefined();
     });
 
     expect(
-      within(screen.getByRole('region', { name: 'Also listening on this Mac' })).queryByText(
-        ':3000',
-      ),
+      within(screen.getByRole('region', { name: 'Listening on this Mac' })).queryByText(':3000'),
     ).toBeNull();
-    expect(store.getState().monitorWatched).toMatchObject({
-      'mock-u24-project-ledger-core': [3000],
-    });
+    expect(store.getState().monitorPinned).toEqual([{ port: 3000, description: '' }]);
   });
 
   it('keeps an external process low key, by name only', async () => {
     renderScene('monitoring-alsolistening');
     await waitFor(() => expect(hasPortRow(5005)).toBe(true));
-    fireEvent.click(screen.getByRole('button', { name: /^Also listening on this Mac/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Listening on this Mac/ }));
 
     const row = portRow(7000);
     expect(within(row).getAllByText('ControlCenter').length).toBeGreaterThan(0);
     expect(within(row).queryByRole('button', { name: /^Open session/ })).toBeNull();
   });
 
-  it('lists what Goodboy started with its worktree and age', async () => {
+  it('lists the agents Goodboy started under Run by Goodboy with their worktree', async () => {
     renderScene('monitoring-ports');
     await waitFor(() => expect(hasPortRow(5005)).toBe(true));
-    const started = screen.getByRole('region', { name: 'Started by Goodboy' });
+    const started = screen.getByRole('region', { name: 'Run by Goodboy' });
 
     expect(within(started).getAllByText(/^Agent · claude$/)).toHaveLength(2);
     expect(within(started).getByText('payments-api · hl/refund-rounding')).toBeDefined();
@@ -175,13 +172,13 @@ describe('the monitoring scenes', () => {
     expect(document.body.textContent ?? '').not.toMatch(/--token=(?!\*\*\*|•)\S/);
   });
 
-  it('shows the empty state with a way to watch a port', async () => {
+  it('shows the empty state with a way to pin a port', async () => {
     renderScene('monitoring-empty');
     await waitFor(() =>
       expect(screen.getByText('Goodboy found no ports in your projects')).toBeDefined(),
     );
 
-    expect(screen.getByRole('button', { name: 'Watch a port' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Pin a port' })).toBeDefined();
   });
 
   it('shows a failed read with a Retry that reads again', async () => {
@@ -194,10 +191,11 @@ describe('the monitoring scenes', () => {
     expect(screen.getByText("Couldn't read ports")).toBeDefined();
   });
 
-  it('shows skeleton rows before the first snapshot lands', () => {
+  it('shows skeleton rows before the first snapshot lands', async () => {
     renderScene('monitoring-ports');
 
     expect(screen.getByRole('status', { name: 'Reading ports' })).toBeDefined();
+    await waitFor(() => expect(hasPortRow(5005)).toBe(true));
   });
 
   it('stops polling when the page unmounts', async () => {

@@ -1126,6 +1126,12 @@ the popover before whatever it opened from, and it returns focus to the trigger
 when Esc closed it from inside. Pass `isEscapeEnabled: false` only when the
 surface must keep Esc for itself.
 
+A press inside a popover opened from within another popover (a `Listbox` in an
+`AnchoredPopover`) counts as inside the outer one, so choosing an option does not
+close it. `AnchoredPopover` marks the press on its surface through
+`dropdown.markPress`, and React carries it across the portal; a press outside
+both still closes both.
+
 ## Primitives
 
 The register taxonomy, and the rule that all registers share one family, live

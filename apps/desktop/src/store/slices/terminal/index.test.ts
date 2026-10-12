@@ -370,6 +370,58 @@ describe('store contract', () => {
       expect(store.getState().activeTerminalTab[SESSION_ID]).toBe(first);
     });
 
+    it('drops a terminal that exits while the live list is loading', async () => {
+      const store = useAppStore;
+      const gone = `${SESSION_ID}::t1`;
+      const kept = `${SESSION_ID}::t2`;
+      let resolveList: (value: ReadonlyArray<{ id: string; cwd: string }>) => void = () =>
+        undefined;
+      storySpies.invokeTerminalListLive.mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveList = resolve;
+        }),
+      );
+
+      const pending = store.getState().reattachTerminalTabs();
+      await vi.waitFor(() => expect(storySpies.invokeTerminalListLive).toHaveBeenCalled());
+      emitTerminalExit({ terminalId: gone, exitCode: 0 });
+      resolveList([
+        { id: gone, cwd: '/worktrees/api' },
+        { id: kept, cwd: '/worktrees/api' },
+      ]);
+      await pending;
+
+      const tabs = store.getState().terminalTabs[SESSION_ID] ?? [];
+      expect(tabs.map((tab) => tab.id)).toEqual([kept]);
+      expect(store.getState().activeTerminalTab[SESSION_ID]).toBe(kept);
+    });
+
+    it('does not resurrect a known tab whose exit arrives while the list is loading', async () => {
+      const store = useAppStore;
+      await store.getState().reattachTerminalTabs();
+      const first = store.getState().addTerminalTab({ owner: SESSION_OWNER, cwd: null });
+      const second = store.getState().addTerminalTab({ owner: SESSION_OWNER, cwd: null });
+      let resolveList: (value: ReadonlyArray<{ id: string; cwd: string }>) => void = () =>
+        undefined;
+      storySpies.invokeTerminalListLive.mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveList = resolve;
+        }),
+      );
+
+      const pending = store.getState().reattachTerminalTabs();
+      await vi.waitFor(() => expect(storySpies.invokeTerminalListLive).toHaveBeenCalled());
+      emitTerminalExit({ terminalId: second, exitCode: 0 });
+      resolveList([
+        { id: first, cwd: '/worktrees/api' },
+        { id: second, cwd: '/worktrees/api' },
+      ]);
+      await pending;
+
+      const tabs = store.getState().terminalTabs[SESSION_ID] ?? [];
+      expect(tabs.map((tab) => tab.id)).toEqual([first]);
+    });
+
     it('closes a tab on a non-zero exit and ignores an unknown terminal', async () => {
       const store = useAppStore;
       await store.getState().reattachTerminalTabs();
