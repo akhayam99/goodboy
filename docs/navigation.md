@@ -1020,9 +1020,14 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
   The per-file expand-all registration in
   `features/diff/components/DiffView` lets file actions reveal the whole file.
 - **A double click on a name in a diff line shows where it is defined and used.**
-  Alt click does the same. An anchored popover under the word lists a Defined in
-  group and a Used in group from the worktree, marks files of this change, and
-  says when it shows only the first 300. A result in this diff scrolls to its
+  Alt click does the same. The anchored popover shows project constants,
+  functions, methods and types; a word without a project definition reads
+  "Not defined in this project" and lists no uses. It shows the symbol kind and
+  definition, use and change counts. Defined in comes first, then In this change
+  with changed lines first and tagged, then Elsewhere with five references and
+  Show more. Directory paths truncate in the middle and keep their separator
+  before the filename. It says when it shows only the first 300. This contract
+  lives in `features/diff/components/IdentifierPeek`. A result in this diff scrolls to its
   line and flashes it, expanding the hidden range first when the line sits in
   one; any other result opens the Explore file drawer on that line. The commit
   view has no peek, because its lines are not the working tree's.

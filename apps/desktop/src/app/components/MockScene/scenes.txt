@@ -182,6 +182,8 @@ diff-gaps-expanded
 diff-gaps-toolarge
 diff-notes
 diff-peek-empty
+diff-peek-library
+diff-peek-more
 diff-peek-open
 diff-tree-indent
 drawer-ask-draft

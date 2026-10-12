@@ -1,32 +1,38 @@
-import { useEffect, useRef, type KeyboardEvent } from 'react';
-import { AnchoredPopover, EmptyLine, Skeleton, useDropdown } from '@goodboy/ui';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import {
+  AnchoredPopover,
+  EmptyLine,
+  PopoverBody,
+  ROW_INTERACTIVE,
+  Skeleton,
+  cn,
+  useDropdown,
+} from '@goodboy/ui';
 import type { GrepMatch } from '../../../worktree/worktree';
 import { useIdentifierUses } from '../../hooks/useIdentifierUses';
-import { isDefinition } from '../../lib/definitionOf';
 import type { PeekAnchor } from '../../lib/wordAtEvent';
-import { PeekRow } from './PeekRow';
+import { PeekGroup } from './PeekGroup';
+import { peekGroups } from './peekGroups';
 
 type Props = {
   readonly anchor: PeekAnchor;
   readonly word: string;
   readonly worktreePath: string;
   readonly changedPaths: ReadonlySet<string>;
+  readonly changedLines?: ReadonlyMap<string, ReadonlySet<number>>;
   readonly onPick: (match: GrepMatch) => void;
   readonly onClose: () => void;
 };
 
-type PlacesParams = { readonly count: number };
-
 const MAX_HEIGHT_PX = 360;
 const WIDTH_PX = 420;
-
-const places = ({ count }: PlacesParams): string => `${count} ${count === 1 ? 'place' : 'places'}`;
 
 export const IdentifierPeek = ({
   anchor,
   word,
   worktreePath,
   changedPaths,
+  changedLines,
   onPick,
   onClose,
 }: Props) => {
@@ -36,6 +42,7 @@ export const IdentifierPeek = ({
     expectedHeight: MAX_HEIGHT_PX,
     expectedWidth: WIDTH_PX,
   });
+  const [isExpanded, setIsExpanded] = useState(false);
   const uses = useIdentifierUses({ worktreePath, word });
   const contentRef = useRef<HTMLDivElement | null>(null);
   const wasOpen = useRef(false);
@@ -62,12 +69,26 @@ export const IdentifierPeek = ({
   }, [isOpen, onClose]);
 
   const matches = uses.status === 'ready' ? uses.matches : [];
-  const definitions = matches.filter((match) =>
-    isDefinition({ path: match.path, word, text: match.text }),
-  );
-  const references = matches.filter((match) => !definitions.includes(match));
+  const groups = peekGroups({ matches, word, changedPaths, changedLines, isExpanded });
 
-  const pick = (match: GrepMatch) => {
+  const firstRevealed = groups.firstRevealed;
+  useEffect(() => {
+    if (firstRevealed === undefined) {
+      return;
+    }
+    const rows = Array.from(
+      contentRef.current?.querySelectorAll<HTMLElement>('[data-peek-row]') ?? [],
+    );
+    rows
+      .find(
+        (row) => row.getAttribute('aria-label') === `${firstRevealed.path}:${firstRevealed.line}`,
+      )
+      ?.focus();
+  }, [firstRevealed]);
+
+  type PickParams = { readonly match: GrepMatch };
+
+  const pick = ({ match }: PickParams) => {
     onPick(match);
     dropdown.close();
   };
@@ -89,22 +110,6 @@ export const IdentifierPeek = ({
     rows[Math.min(rows.length - 1, Math.max(0, next))]?.focus();
   };
 
-  const group = (label: string, list: ReadonlyArray<GrepMatch>) =>
-    list.length === 0 ? null : (
-      <div role="group" aria-label={label} className="flex flex-col">
-        <h3 className="px-3 pb-1 pt-2 text-eyebrow text-faint-foreground">{label}</h3>
-        {list.map((match) => (
-          <PeekRow
-            key={`${match.path}:${match.line}:${match.column}`}
-            match={match}
-            word={word}
-            isInChange={changedPaths.has(match.path)}
-            onPick={pick}
-          />
-        ))}
-      </div>
-    );
-
   return (
     <div
       className="fixed"
@@ -119,41 +124,73 @@ export const IdentifierPeek = ({
         tabIndex={-1}
         className="max-h-[360px] outline-none"
       >
-        <div
-          ref={contentRef}
-          tabIndex={-1}
-          onKeyDown={onKeyDown}
-          className="flex min-h-0 flex-col pb-1 outline-none"
-        >
-          <div className="flex items-center gap-2 px-3 py-2 text-label text-muted-foreground">
-            <span className="text-code text-foreground">{word}</span>
-            <span aria-hidden>·</span>
-            {uses.status === 'searching' ? (
-              <span role="status" className="flex items-center gap-2">
-                <Skeleton className="h-3 w-8 rounded-sm" />
-                Searching
-              </span>
+        <PopoverBody>
+          <div
+            ref={contentRef}
+            tabIndex={-1}
+            onKeyDown={onKeyDown}
+            className="flex min-h-0 flex-col gap-3 p-1 outline-none"
+          >
+            <div className="flex flex-col gap-1 px-2 py-1 text-label text-muted-foreground">
+              <div className="flex min-w-0 items-baseline gap-2">
+                <span className="truncate text-code text-foreground">{word}</span>
+                {groups.kind !== null ? <span className="text-meta">{groups.kind}</span> : null}
+              </div>
+              {uses.status === 'searching' ? (
+                <span role="status" className="flex items-center gap-2">
+                  <Skeleton className="h-3 w-8 rounded-sm" />
+                  Searching
+                </span>
+              ) : null}
+              {uses.status === 'ready' && groups.kind !== null ? (
+                <span className="text-meta">{groups.summary}</span>
+              ) : null}
+              {uses.status === 'error' ? <span role="alert">Search failed</span> : null}
+            </div>
+            {uses.status === 'error' ? (
+              <p className="px-2 text-meta text-muted-foreground">{uses.message}</p>
             ) : null}
-            {uses.status === 'ready' ? (
-              <span>
-                Defined in {places({ count: definitions.length })} · Used in{' '}
-                {places({ count: references.length })}
-              </span>
+            {uses.status === 'ready' && groups.kind === null ? (
+              <EmptyLine>Not defined in this project</EmptyLine>
             ) : null}
-            {uses.status === 'error' ? <span role="alert">Search failed</span> : null}
+            {groups.kind !== null ? (
+              <>
+                {[
+                  { label: 'Defined in', matches: groups.definitions },
+                  { label: 'In this change', matches: groups.inChange },
+                  { label: 'Elsewhere', matches: groups.elsewhere },
+                ].map(({ label, matches: groupMatches }) => (
+                  <PeekGroup
+                    key={label}
+                    label={label}
+                    matches={groupMatches}
+                    word={word}
+                    changedPaths={changedPaths}
+                    changedLines={changedLines}
+                    onPick={(match) => pick({ match })}
+                  />
+                ))}
+                {groups.hiddenCount > 0 ? (
+                  <button
+                    type="button"
+                    data-peek-row=""
+                    aria-expanded={isExpanded}
+                    onClick={() => setIsExpanded(true)}
+                    className={cn(
+                      ROW_INTERACTIVE,
+                      'min-h-8 rounded-sm px-2 text-left text-label text-muted-foreground',
+                    )}
+                  >
+                    Show {groups.hiddenCount} more
+                  </button>
+                ) : null}
+              </>
+            ) : null}
+            {uses.status === 'ready' && groups.kind !== null && uses.isTruncated ? (
+              <p className="px-2 text-meta text-faint-foreground">Showing the first 300.</p>
+            ) : null}
           </div>
-          {uses.status === 'error' ? (
-            <p className="px-3 pb-2 text-meta text-muted-foreground">{uses.message}</p>
-          ) : null}
-          {uses.status === 'ready' && matches.length === 0 ? (
-            <EmptyLine>Nothing found in this worktree.</EmptyLine>
-          ) : null}
-          {group('Defined in', definitions)}
-          {group('Used in', references)}
-          {uses.status === 'ready' && uses.isTruncated ? (
-            <p className="px-3 pt-1 text-meta text-faint-foreground">Showing the first 300.</p>
-          ) : null}
-        </div>
+        </PopoverBody>
       </AnchoredPopover>
     </div>
   );

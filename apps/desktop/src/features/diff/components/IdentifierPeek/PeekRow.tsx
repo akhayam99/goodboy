@@ -1,24 +1,23 @@
 import { ROW_INTERACTIVE, StateBadge, cn } from '@goodboy/ui';
 import type { GrepMatch } from '../../../worktree/worktree';
+import { splitPeekPath } from './splitPeekPath';
 
 type Props = {
   readonly match: GrepMatch;
   readonly word: string;
   readonly isInChange: boolean;
+  readonly isChangedLine: boolean;
   readonly onPick: (match: GrepMatch) => void;
 };
 
-type SplitParams = { readonly path: string };
-
-const splitPath = ({ path }: SplitParams) => {
-  const cut = path.lastIndexOf('/') + 1;
-  return { folder: path.slice(0, cut), name: path.slice(cut) };
-};
-
-export const PeekRow = ({ match, word, isInChange, onPick }: Props) => {
-  const { folder, name } = splitPath({ path: match.path });
-  const start = match.column - 1;
-  const isMarked = match.text.slice(start, start + word.length) === word;
+export const PeekRow = ({ match, word, isInChange, isChangedLine, onPick }: Props) => {
+  const { directory, separator, name } = splitPeekPath({ path: match.path });
+  const requestedStart = match.column - 1;
+  const start =
+    match.text.slice(requestedStart, requestedStart + word.length) === word
+      ? requestedStart
+      : match.text.indexOf(word);
+  const isMarked = start >= 0;
   return (
     <button
       type="button"
@@ -27,15 +26,19 @@ export const PeekRow = ({ match, word, isInChange, onPick }: Props) => {
       onClick={() => onPick(match)}
       className={cn(
         ROW_INTERACTIVE,
-        'flex min-h-8 w-full shrink-0 items-center gap-3 px-3 text-left',
+        'grid min-h-8 w-full shrink-0 grid-cols-[11rem_minmax(0,1fr)_auto] items-center gap-3 rounded-sm px-2 text-left',
       )}
     >
-      <span className="flex min-w-0 max-w-[45%] shrink-0 items-baseline text-label">
-        <span className="min-w-0 truncate text-faint-foreground">{folder}</span>
-        <span className="shrink-0 text-foreground">{name}</span>
+      <span data-peek-path="" className="flex min-w-0 items-baseline text-label">
+        <span className="min-w-0 max-w-[40%] truncate text-faint-foreground">{directory}</span>
+        <span className="shrink-0 text-faint-foreground">{separator}</span>
+        <span className="min-w-0 truncate text-foreground">{name}</span>
         <span className="shrink-0 tabular-nums text-faint-foreground">:{match.line}</span>
       </span>
-      <span className="min-w-0 flex-1 truncate whitespace-pre text-code text-muted-foreground">
+      <span
+        data-peek-snippet=""
+        className="min-w-0 truncate whitespace-pre text-code text-muted-foreground"
+      >
         {isMarked ? (
           <>
             {match.text.slice(0, start)}
@@ -48,7 +51,9 @@ export const PeekRow = ({ match, word, isInChange, onPick }: Props) => {
           match.text
         )}
       </span>
-      {isInChange ? <StateBadge tone="info">In this change</StateBadge> : null}
+      {isInChange ? (
+        <StateBadge tone="info">{isChangedLine ? 'Changed line' : 'In this change'}</StateBadge>
+      ) : null}
     </button>
   );
 };

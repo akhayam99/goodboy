@@ -286,8 +286,11 @@ through the `Git` helper with an argument array and a 3 second deadline. It keep
 the first 300 matches (`truncated` says more existed) and trims each line to 240
 characters. Exit 1 is an empty list. The definition guess is
 `features/diff/lib/definitionOf.ts`: it reads declaration keywords for TS and JS,
-Rust, Python and Go, and does not guess class methods or Go receivers. The
-command lives in `apps/desktop/src-tauri/src/worktree/grep.rs`;
+Rust, Python and Go. It also recognizes TS and JS method signatures with a
+body on the same line and Go receivers. The heuristic does not resolve imports
+or establish symbol identity across scopes. Definitions under dependency and
+vendor directories or in lockfiles do not qualify. Without a project
+definition the popover hides all uses. The command lives in `apps/desktop/src-tauri/src/worktree/grep.rs`;
 `features/diff/hooks/useIdentifierUses` keeps only the latest answer.
 
 ### History module

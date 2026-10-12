@@ -64,6 +64,23 @@ export const PeekHost = ({ config, files, expandersRef, children }: Props) => {
   const flashed = useRef<Element | null>(null);
   const changedPaths = useMemo(() => new Set(files.map((file) => file.path)), [files]);
 
+  const changedLines = useMemo(
+    () =>
+      new Map(
+        files.map((file) => [
+          file.path,
+          new Set(
+            file.hunks.flatMap((hunk) =>
+              hunk.lines.flatMap((line) =>
+                line.kind === 'add' && line.newLine !== null ? [line.newLine] : [],
+              ),
+            ),
+          ),
+        ]),
+      ),
+    [files],
+  );
+
   const clearFlash = useCallback(() => {
     if (flashTimer.current !== null) {
       clearTimeout(flashTimer.current);
@@ -171,6 +188,7 @@ export const PeekHost = ({ config, files, expandersRef, children }: Props) => {
           word={open.word}
           worktreePath={config.worktreePath}
           changedPaths={changedPaths}
+          changedLines={changedLines}
           onPick={pick}
           onClose={close}
         />
