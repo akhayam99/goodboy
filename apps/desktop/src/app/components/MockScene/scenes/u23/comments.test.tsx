@@ -96,16 +96,22 @@ describe('the u23 comments scenes', () => {
     expect(within(list()).getByRole('region', { name: 'Done' }).textContent).toContain('Done 1');
   });
 
-  it("orders Needs you as Question, Push failed, To review, and never calls a failed push Couldn't fix", async () => {
+  it("orders Needs you as Question for you, Push failed, Fix ready, and never calls a failed push Couldn't fix", async () => {
     await renderScene({ name: 'comments-groups' });
 
     const needsYou = within(list()).getByRole('region', { name: 'Needs you' });
     const words = Array.from(needsYou.querySelectorAll('[data-row-state]')).map(
       (node) => node.textContent,
     );
-    expect(words).toEqual(['Question', 'Push failed', 'To review', 'To review', 'To review']);
+    expect(words).toEqual([
+      'Question for you',
+      'Push failed',
+      'Fix ready',
+      'Fix ready',
+      'Fix ready',
+    ]);
     expect(within(list()).queryByText("Couldn't fix")).toBeNull();
-    expect(within(needsYou).getByRole('button', { name: /^Accept \d/ })).toBeDefined();
+    expect(within(needsYou).getByRole('button', { name: /^Apply \d/ })).toBeDefined();
   });
 
   it('shows Ready to push with a quiet Push link that reads what the header reads', async () => {
@@ -116,7 +122,7 @@ describe('the u23 comments scenes', () => {
     const pushes = screen.getAllByRole('button', { name: /^Push 3/ });
     expect(pushes).toHaveLength(2);
     expect(within(ready).getByRole('button', { name: 'Push 3' })).toBeDefined();
-    expect(within(ready).getAllByText('Ready')).toHaveLength(3);
+    expect(within(ready).getAllByText('Applied')).toHaveLength(3);
   });
 
   it('draws a failed push as Push failed in Needs you, with a red mark on the session', async () => {
@@ -142,11 +148,11 @@ describe('the u23 comments scenes', () => {
     expect(within(bar()).getByRole('button', { name: /^Undo skip/ })).toBeDefined();
   });
 
-  it('puts Accept in the bar after the thread, outside the scrolling column', async () => {
+  it('puts Apply fix in the bar after the thread, outside the scrolling column', async () => {
     await renderScene({ name: 'comments-action-bar' });
 
     const article = screen.getByRole('article', { name: 'Comment' });
-    const accept = within(bar()).getByRole('button', { name: /^Accept/ });
+    const accept = within(bar()).getByRole('button', { name: /^Apply fix/ });
     expect(article.contains(accept)).toBe(false);
     expect(article.compareDocumentPosition(bar()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(bar().closest('[data-radix-scroll-area-viewport]')).toBeNull();

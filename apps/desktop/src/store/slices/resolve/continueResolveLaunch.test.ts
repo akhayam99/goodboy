@@ -5,11 +5,13 @@ import type {
   AgentId,
   OpenQuestion,
   OpenQuestionId,
+  ProviderRunId,
   ResolveAttempt,
   ResolveThread,
   SessionId,
 } from '@goodboy/types';
 import { TEST_NOW } from '@goodboy/types/testing';
+import { brandedId } from '../../../features/history/testing/brandedId';
 import type { ResolveQueueRow } from '../../../features/resolve/buildResolveQueueRows';
 import type { SessionGithubState } from '../../types';
 
@@ -571,5 +573,61 @@ describe('continueResolveThreads', () => {
     const input = h.sendTurn.mock.calls[0]?.[0] as Record<string, unknown>;
     expect(input).toMatchObject({ agentId: AGENT_ID, resolveThreadIds: ['PRRT_1'] });
     expect(String(input.content)).toContain('Operator notes\nPrefer a guard clause');
+  });
+
+  it('refuses to continue while the agent turn is running and sends nothing', async () => {
+    const { get } = stateOf({ threads: [threadOf({ threadId: 'PRRT_1', state: 'fixed' })] });
+    useAppStore.setState({
+      agentTurnState: {
+        [AGENT_ID]: {
+          kind: 'running',
+          runId: brandedId<ProviderRunId>({ value: 'run-1' }),
+          startedAt: TEST_NOW,
+        },
+      },
+    });
+
+    await expect(
+      continueResolveThreads({ get, sessionId: SESSION_ID, threadIds: ['PRRT_1'], hint: '' }),
+    ).rejects.toThrow('still working');
+    expect(h.sendTurn).not.toHaveBeenCalled();
+    useAppStore.setState({ agentTurnState: {} });
+  });
+
+  it('starts no group when a later group is still running', async () => {
+    const other = brandedId<AgentId>({ value: 'agent-other' });
+    const { get } = stateOf({
+      threads: [
+        threadOf({ threadId: 'PRRT_1', state: 'fixed', activeAttemptId: 'attempt-1' }),
+        threadOf({ threadId: 'PRRT_2', state: 'fixed', activeAttemptId: 'attempt-2' }),
+      ],
+    });
+    useAppStore.setState({
+      sessionResolveAttempts: {
+        [SESSION_ID]: [
+          attemptOf({ threadIds: ['PRRT_1'] }),
+          attemptOf({ id: 'attempt-2', agentId: other, threadIds: ['PRRT_2'] }),
+        ],
+      },
+      sessionPhaseRuns: { [SESSION_ID]: [agent, { ...agent, id: other }] },
+      agentTurnState: {
+        [other]: {
+          kind: 'running',
+          runId: brandedId<ProviderRunId>({ value: 'run-2' }),
+          startedAt: TEST_NOW,
+        },
+      },
+    });
+
+    await expect(
+      continueResolveThreads({
+        get,
+        sessionId: SESSION_ID,
+        threadIds: ['PRRT_1', 'PRRT_2'],
+        hint: '',
+      }),
+    ).rejects.toThrow('still working');
+    expect(h.sendTurn).not.toHaveBeenCalled();
+    useAppStore.setState({ agentTurnState: {} });
   });
 });

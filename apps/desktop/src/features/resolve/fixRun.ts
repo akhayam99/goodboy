@@ -88,7 +88,7 @@ export const fixRunOf = ({
       threadIds: members.map((member) => member.threadId),
       total: members.length,
       tally,
-      isLive: tally.working + tally.question > 0,
+      isLive: tally.working > 0,
       model: fixRunModelLabel({ attempt: newest.attempt }),
     };
   }

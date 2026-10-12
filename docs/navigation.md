@@ -1950,13 +1950,17 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   Comments is one flow: the list grouped by delivery (Needs you, Working,
   Ready to push, Open, Done and Left open on its host, the last two closed)
   under the run status line, and the focused comment beside it in the page
-  itself, never in a drawer. A comment reads one word (Question, To review,
-  Push failed, Couldn't fix, Working, Ready, Done, Left open, Open) and
-  `reviewTally` is the one count behind every number of them. A thread in the address is
+  itself, never in a drawer. A comment reads one word (Question for you, Fix ready,
+  Push failed, Failed, Working, Applied, Done, Left open, Open), all from `RESOLVE_WORD_LABEL`
+  in `commentProjection.ts`, and `reviewTally` is the one count behind every number of them.
+  The action that takes a fix is `Apply fix` (`Apply N fixes`) in the list, the bar and the
+  drawer. A fix run is one agent and one transcript for all its comments: answers, retries and
+  hints continue that run, only a model the owner picks starts a new one, and a finished turn
+  without a result for a comment reads Failed with Retry, never a question. A thread in the address is
   `s/{session}/branch/comments/t/{thread}`. A comment nobody started shows `Fix` on hover (and `F`), which opens the **Fix comments** drawer
   (kind `fix-comments`, side tier) with that comment checked; a checkbox on hover picks comments (`X` on the focused row,
   Cmd+A for every fixable comment, open or couldn't fix, Esc clears) and the bar `N selected ·
-Fix N` opens the same panel, or `Accept N` for comments to review. With no fix run
+Fix N` opens the same panel, or `Apply N fixes` for comments with a fix ready. With no fix run
   the line under the tabs says `Fix N`; the Overview card and
   the board card open that same panel pre-filled. Bulk answers, Retry N and
   `N accepted · Undo` (Cmd+Z) are described in
@@ -2695,7 +2699,7 @@ around the commented line above it (`hunkAround`, linking to Files). Comments ex
 request exists or at least one comment exists, a local note or a thread open or resolved; its count is
 the notes alone while there is no pull request. The
 properties (Origin, Attempts, Fix commit) sit inline under the thread at every width, never in a margin rail. The
-actions of the comment sit in a 48px bar (`ReviewActionBar`) at the bottom of the thread column, outside the scrolling thread, so Accept is in view at 1440x900; `⋯` holds the transcript, Resolve without a reply, Open on the host and Copy link.
+actions of the comment sit in a 48px bar (`ReviewActionBar`) at the bottom of the thread column, outside the scrolling thread, so Apply fix is in view at 1440x900; `⋯` holds the transcript, Resolve without a reply, Open on the host and Copy link.
 Every Branch section sits on the 960px column (`PaneShell width="column"`, bodies in
 `PageColumn width="column"`), the header and Ask included, so nothing
 moves from one section to the next. The Comments section reads the width of its own pane

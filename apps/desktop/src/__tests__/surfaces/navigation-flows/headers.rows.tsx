@@ -86,7 +86,7 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
       publish.mockClear();
       useAppStore.setState({ publishConversations: publish });
       await openComments(ctx);
-      await click(within(group('Needs you')).getByRole('button', { name: 'Accept 2' }));
+      await click(within(group('Needs you')).getByRole('button', { name: 'Apply 2 fixes' }));
       expect(headerPush().getAttribute('data-variant')).toBe('secondary');
       await click(headerPush());
     },

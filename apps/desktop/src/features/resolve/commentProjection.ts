@@ -23,14 +23,28 @@ type ResolveSub = 'waiting' | 'pushing' | 'stopped' | 'resolved_remote';
 export const RESOLVE_WORD_LABEL: Readonly<Record<ResolveWord, string>> = {
   open: 'Open',
   working: 'Working',
-  question: 'Question',
-  to_review: 'To review',
+  question: 'Question for you',
+  to_review: 'Fix ready',
   push_failed: 'Push failed',
-  couldnt_fix: "Couldn't fix",
-  ready: 'Ready',
+  couldnt_fix: 'Failed',
+  ready: 'Applied',
   done: 'Done',
   left_open: 'Left open',
 };
+
+export const RESOLVE_VOCAB = {
+  applyFix: 'Apply fix',
+  applied: 'Applied',
+  replied: 'Replied',
+  wontFix: "Won't fix",
+} as const;
+
+type CountParams = {
+  readonly count: number;
+};
+
+export const applyFixesLabel = ({ count }: CountParams): string =>
+  count === 1 ? RESOLVE_VOCAB.applyFix : `Apply ${count} fixes`;
 
 export const RESOLVE_WORD_TONE: Readonly<Record<ResolveWord, Tone>> = {
   open: 'neutral',

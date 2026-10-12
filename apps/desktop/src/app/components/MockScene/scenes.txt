@@ -397,6 +397,10 @@ resolve-bulk-review
 resolve-drift
 resolve-failed
 resolve-failed-history
+resolve-fix-failed
+resolve-fix-question
+resolve-fix-ready
+resolve-fix-working
 resolve-gitlab
 resolve-item
 resolve-launch

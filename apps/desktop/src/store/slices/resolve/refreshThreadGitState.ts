@@ -1,4 +1,5 @@
 import {
+  listResolveCandidates,
   listResolveQueueItems,
   listResolveThreadFacts,
   listResolveThreads,
@@ -23,6 +24,7 @@ import {
   type ThreadGitFacts,
   type ThreadGitPorts,
 } from './threadGitState';
+import { pendingCandidateShas } from './pendingCandidateShas';
 import { viewerLoginsOf } from './viewerLogins';
 import type { SessionParams, SliceParams } from './types';
 import { sessionById } from '../sessions/sessionIndex';
@@ -86,6 +88,9 @@ export const refreshThreadGitState = async ({ set, get, sessionId }: Params): Pr
   const comments = github?.detail?.comments ?? EMPTY_COMMENTS;
   const viewerLogins = viewerLoginsOf({ state: get() });
   const ownShas = await ownShasOf({ sessionId, rows });
+  const pendingShas = pendingCandidateShas({
+    candidates: await listResolveCandidates({ db: tauriDatabase, sessionId }),
+  });
   const dismissals = get().threadFixDismissals[sessionId] ?? {};
   const computed = await Promise.all(
     watched.map(async (row): Promise<readonly [string, ThreadGitFacts]> => [
@@ -95,6 +100,7 @@ export const refreshThreadGitState = async ({ set, get, sessionId }: Params): Pr
         comments,
         viewerLogins,
         ownShas,
+        pendingShas,
         branch,
         ports,
         isDismissed: ({ sha }) => dismissals[row.threadId]?.includes(sha) === true,

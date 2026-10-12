@@ -506,7 +506,7 @@ export const SHORTCUTS = {
   },
   'review.accept': {
     combo: 'KeyA',
-    label: 'Accept',
+    label: 'Apply fix',
     plane: 'app',
     group: 'review',
     scope: 'review',

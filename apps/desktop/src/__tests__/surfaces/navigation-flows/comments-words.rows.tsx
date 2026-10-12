@@ -326,7 +326,7 @@ export const COMMENTS_WORDS_ROWS: ReadonlyArray<Row> = [
       expect(nodeText(group('Needs you'))).toContain('Needs you 3');
       sidebarNeedsYou(3);
 
-      await click(within(group('Needs you')).getByRole('button', { name: 'Accept 2' }));
+      await click(within(group('Needs you')).getByRole('button', { name: 'Apply 2 fixes' }));
     },
     lands: async () => {
       await waitFor(
@@ -344,7 +344,7 @@ export const COMMENTS_WORDS_ROWS: ReadonlyArray<Row> = [
     open: async (ctx) => {
       installComments({ sessionId: ctx.sessionId, seeds: SEEDS });
       await openComments(ctx);
-      await click(within(group('Needs you')).getByRole('button', { name: 'Accept 2' }));
+      await click(within(group('Needs you')).getByRole('button', { name: 'Apply 2 fixes' }));
       const headerPush = screen
         .getAllByRole('button', { name: /^Push 2/ })
         .find((button) => !list().contains(button));

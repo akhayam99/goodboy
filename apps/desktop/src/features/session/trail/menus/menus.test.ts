@@ -464,7 +464,7 @@ describe('conversationMenu', () => {
     ]);
     expect(menu.count).toBe('3 open');
     expect(rowsOf(menu).map((candidate) => candidate.state?.word)).toEqual([
-      'To review',
+      'Fix ready',
       'Open',
       'Working',
       'Done',

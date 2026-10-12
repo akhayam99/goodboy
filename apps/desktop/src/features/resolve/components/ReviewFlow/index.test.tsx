@@ -159,7 +159,7 @@ describe('Review as one flow', () => {
     expect(focusedThread()).toBe(EXPANDED_THREAD_ID);
     expect(screen.queryByRole('complementary', { name: 'Conversation' })).toBeNull();
     expect(document.querySelector('[data-conversation-slot]')).toBeNull();
-    expect(within(bar()).getByRole('button', { name: /^Accept/ })).toBeDefined();
+    expect(within(bar()).getByRole('button', { name: /^Apply fix/ })).toBeDefined();
     expect(
       comment().compareDocumentPosition(bar()) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
@@ -217,7 +217,15 @@ describe('Review as one flow', () => {
         (node) => node.textContent ?? '',
       ),
     ];
-    for (const word of ['To review', 'Question', 'Working', 'Ready', 'Open', 'Left open', 'Done']) {
+    for (const word of [
+      'Fix ready',
+      'Question for you',
+      'Working',
+      'Applied',
+      'Open',
+      'Left open',
+      'Done',
+    ]) {
       expect(words, word).toContain(word);
     }
     expect(words).not.toContain('Needs you');
@@ -433,7 +441,7 @@ describe('Review as one flow', () => {
     const changed = rowDescribed(/Comment changed/);
     expect(changed.querySelector('[data-row-author]')?.textContent).toBe('kenji-w');
     expect(changed.querySelector('[data-row-file]')?.textContent).toMatch(/\.ts/);
-    expect(changed.querySelector('[data-row-state]')?.textContent).toBe('To review');
+    expect(changed.querySelector('[data-row-state]')?.textContent).toBe('Fix ready');
     expect(changed.textContent).not.toContain('Comment changed');
   });
 
@@ -459,7 +467,7 @@ describe('Review as one flow', () => {
     );
   });
 
-  it('shows a new reply as a fact and keeps Accept available', async () => {
+  it('shows a new reply as a fact and keeps Apply fix available', async () => {
     await mount({ threadId: 'PRRT_thread_retry_metrics' });
 
     expect(row(/Same loop should emit/).getAttribute('aria-description') ?? '').not.toContain(
@@ -470,7 +478,7 @@ describe('Review as one flow', () => {
     expect(within(comment()).getAllByText(/A counter per give-up reason/).length).toBeGreaterThan(
       0,
     );
-    expect(within(bar()).getByRole('button', { name: /^Accept/ })).toBeDefined();
+    expect(within(bar()).getByRole('button', { name: /^Apply fix/ })).toBeDefined();
   });
 
   it('shows the moved line as a fact on the comment without changing its state', async () => {
@@ -572,7 +580,7 @@ describe('Review as one flow', () => {
     fireEvent.click(row(/Working/));
     await settle();
 
-    expect(within(bar()).queryAllByRole('button', { name: /^Accept|^Edit|^Reply/ })).toEqual([]);
+    expect(within(bar()).queryAllByRole('button', { name: /^Apply fix|^Edit|^Reply/ })).toEqual([]);
     expect(within(bar()).getByRole('button', { name: 'Open transcript' })).toBeDefined();
     fireEvent.click(within(bar()).getByRole('button', { name: 'Stop' }));
     expect(await screen.findByText('Stop this fix run?')).toBeDefined();

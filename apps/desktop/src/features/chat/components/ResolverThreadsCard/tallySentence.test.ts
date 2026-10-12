@@ -20,7 +20,7 @@ describe('tallySentence', () => {
       }),
     });
 
-    expect(sentence).toBe('1 fixed · 1 closed');
+    expect(sentence).toBe('1 fix ready · 1 closed');
   });
 
   it('still ends on what the operator has left to do', () => {
@@ -30,7 +30,7 @@ describe('tallySentence', () => {
       }),
     });
 
-    expect(sentence).toBe('1 closed · 1 needs you');
+    expect(sentence).toBe('1 closed · 1 question for you');
   });
 
   it('says closed, not fixed, about a fix whose thread the reviewer closed', () => {
@@ -58,6 +58,6 @@ describe('tallySentence', () => {
       }),
     });
 
-    expect(sentence).toBe('1 fixed · 1 no change · 1 needs you');
+    expect(sentence).toBe('1 fix ready · 1 no change · 1 question for you');
   });
 });

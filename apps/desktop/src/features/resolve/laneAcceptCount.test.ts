@@ -52,13 +52,13 @@ describe('laneAcceptCountOf', () => {
   });
 
   it('labels the single accept plainly and the group by its size', () => {
-    expect(acceptUpToLabel({ count: 1 })).toBe('Accept');
-    expect(acceptUpToLabel({ count: 3 })).toBe('Accept 3 fixes');
+    expect(acceptUpToLabel({ count: 1 })).toBe('Apply fix');
+    expect(acceptUpToLabel({ count: 3 })).toBe('Apply 3 fixes');
   });
 
   it('names how many of the fixes in a mixed chain are notes', () => {
-    expect(acceptUpToLabel({ count: 3, notes: 1 })).toBe('Accept 3 fixes · 1 is a note');
-    expect(acceptUpToLabel({ count: 3, notes: 2 })).toBe('Accept 3 fixes · 2 are notes');
-    expect(acceptUpToLabel({ count: 1, notes: 1 })).toBe('Accept');
+    expect(acceptUpToLabel({ count: 3, notes: 1 })).toBe('Apply 3 fixes · 1 is a note');
+    expect(acceptUpToLabel({ count: 3, notes: 2 })).toBe('Apply 3 fixes · 2 are notes');
+    expect(acceptUpToLabel({ count: 1, notes: 1 })).toBe('Apply fix');
   });
 });

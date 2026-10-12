@@ -50,6 +50,7 @@ type Params = {
   readonly comments: ReadonlyArray<PrComment>;
   readonly viewerLogins: ReadonlySet<string>;
   readonly ownShas: ReadonlySet<string>;
+  readonly pendingShas?: ReadonlySet<string>;
   readonly branch: string;
   readonly ports: ThreadGitPorts;
   readonly isDismissed: (params: { readonly sha: string }) => boolean;
@@ -123,10 +124,13 @@ const probeFix = async ({
   path,
   ports,
   isDismissed,
-}: Pick<Params, 'row' | 'branch' | 'ports' | 'isDismissed'> & {
+  pendingShas,
+}: Pick<Params, 'row' | 'branch' | 'ports' | 'isDismissed' | 'pendingShas'> & {
   readonly path: string | null;
 }): Promise<ThreadGitFacts | null> => {
-  const shas = row.disposition === 'fix' ? (row.commitShas ?? []) : [];
+  const shas = (row.disposition === 'fix' ? (row.commitShas ?? []) : []).filter(
+    (sha) => pendingShas?.has(sha) !== true,
+  );
   if (shas.length === 0) {
     return null;
   }
@@ -269,6 +273,7 @@ export const computeThreadGitFacts = async ({
   comments,
   viewerLogins,
   ownShas,
+  pendingShas,
   branch,
   ports,
   isDismissed,
@@ -292,7 +297,7 @@ export const computeThreadGitFacts = async ({
       ? null
       : { commentId: reply.id, createdAtMs: new Date(reply.createdAt).getTime() };
   const probed =
-    (await probeFix({ row, branch, path: head?.path ?? null, ports, isDismissed })) ??
+    (await probeFix({ row, branch, path: head?.path ?? null, ports, isDismissed, pendingShas })) ??
     (await probeElsewhere({ row, comments, ownShas, ports, isDismissed })) ??
     LOCAL;
   return { ...probed, userReply };

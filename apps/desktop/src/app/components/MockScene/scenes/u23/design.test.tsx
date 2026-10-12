@@ -40,7 +40,7 @@ describe('design-comments', () => {
       'Ready to push 2',
     );
     screen.getByRole('toolbar', { name: 'Comment actions' });
-    expect(within(list).getAllByText('To review', { selector: '[data-row-state]' })).toHaveLength(
+    expect(within(list).getAllByText('Fix ready', { selector: '[data-row-state]' })).toHaveLength(
       2,
     );
   });

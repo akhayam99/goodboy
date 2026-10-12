@@ -2,32 +2,46 @@ const FIX_STARTED_TITLE = 'Fix run started';
 
 const FIX_QUEUED_TITLE = 'Fix queued after the current fix';
 
-export const fixStartKeyOf = ({ batchId }: { readonly batchId: string }): string =>
-  `batch:${batchId}`;
+const FIX_NEW_MODEL_TITLE = 'New fix run on the model you picked';
 
-export const fixStartedTitleOf = ({ isQueued }: { readonly isQueued: boolean }): string =>
-  isQueued ? FIX_QUEUED_TITLE : FIX_STARTED_TITLE;
+type FixStartKeyParams = {
+  readonly batchId: string;
+};
 
-export const fixStartedMessageOf = ({
-  count,
-  noun,
-  where,
-}: {
+export const fixStartKeyOf = ({ batchId }: FixStartKeyParams): string => `batch:${batchId}`;
+
+type FixStartedTitleParams = {
+  readonly isQueued: boolean;
+  readonly isModelChange?: boolean;
+};
+
+type FixStartedMessageParams = {
   readonly count: number;
   readonly noun: 'comment' | 'note';
   readonly where: string | null;
-}): string => {
+};
+
+type FixStartedWhereParams = {
+  readonly repo: string | null;
+  readonly prNumber: number | null;
+};
+
+export const fixStartedTitleOf = ({
+  isQueued,
+  isModelChange = false,
+}: FixStartedTitleParams): string => {
+  if (isQueued) {
+    return FIX_QUEUED_TITLE;
+  }
+  return isModelChange ? FIX_NEW_MODEL_TITLE : FIX_STARTED_TITLE;
+};
+
+export const fixStartedMessageOf = ({ count, noun, where }: FixStartedMessageParams): string => {
   const counted = `${count} ${noun}${count === 1 ? '' : 's'}`;
   return where === null ? counted : `${counted} on ${where}`;
 };
 
-export const fixStartedWhereOf = ({
-  repo,
-  prNumber,
-}: {
-  readonly repo: string | null;
-  readonly prNumber: number | null;
-}): string | null => {
+export const fixStartedWhereOf = ({ repo, prNumber }: FixStartedWhereParams): string | null => {
   const name = repo?.split('/').at(-1) ?? null;
   if (name !== null && name !== '') {
     return name;

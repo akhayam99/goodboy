@@ -44,15 +44,15 @@ const facts = (over: Partial<ResolveCommentFacts> & Pick<ResolveCommentFacts, 's
 
 describe('projectResolveComment', () => {
   it.each<[ReviewCommentState, boolean, string, string, string, string]>([
-    ['needs', false, 'question', 'Question', 'warning', 'needs_you'],
-    ['ready', false, 'to_review', 'To review', 'warning', 'needs_you'],
-    ['edited', false, 'to_review', 'To review', 'warning', 'needs_you'],
-    ['outdated', false, 'to_review', 'To review', 'warning', 'needs_you'],
+    ['needs', false, 'question', 'Question for you', 'warning', 'needs_you'],
+    ['ready', false, 'to_review', 'Fix ready', 'warning', 'needs_you'],
+    ['edited', false, 'to_review', 'Fix ready', 'warning', 'needs_you'],
+    ['outdated', false, 'to_review', 'Fix ready', 'warning', 'needs_you'],
     ['failed', true, 'push_failed', 'Push failed', 'danger', 'needs_you'],
-    ['failed', false, 'couldnt_fix', "Couldn't fix", 'warning', 'needs_you'],
+    ['failed', false, 'couldnt_fix', 'Failed', 'warning', 'needs_you'],
     ['drafting', false, 'working', 'Working', 'info', 'working'],
-    ['accepted', false, 'ready', 'Ready', 'success', 'ready_to_push'],
-    ['replied', false, 'ready', 'Ready', 'success', 'ready_to_push'],
+    ['accepted', false, 'ready', 'Applied', 'success', 'ready_to_push'],
+    ['replied', false, 'ready', 'Applied', 'success', 'ready_to_push'],
     ['pushed', false, 'done', 'Done', 'neutral', 'done'],
     ['resolved', false, 'done', 'Done', 'neutral', 'done'],
     ['skipped', false, 'left_open', 'Left open', 'neutral', 'left_open'],
@@ -104,8 +104,8 @@ describe('projectResolveComment', () => {
     const label = (state: ReviewCommentState) => projectResolveComment(facts({ state })).label;
     expect(label('pushed')).toBe('Done');
     expect(label('skipped')).toBe('Left open');
-    expect(label('replied')).toBe('Ready');
-    expect(label('accepted')).toBe('Ready');
+    expect(label('replied')).toBe('Applied');
+    expect(label('accepted')).toBe('Applied');
     expect(projectResolveComment(facts({ state: 'resolved', sourceLabel: 'GitLab' })).label).toBe(
       'Resolved on GitLab',
     );
@@ -197,7 +197,7 @@ describe('projectResolveComment', () => {
         hasFailedChecks: true,
       }),
     );
-    expect(projection).toMatchObject({ word: 'to_review', label: 'To review', isChanged: true });
+    expect(projection).toMatchObject({ word: 'to_review', label: 'Fix ready', isChanged: true });
     expect(projection.chips).toEqual(['Comment changed', 'Still needed', 'Checks failed']);
   });
 
@@ -208,7 +208,7 @@ describe('projectResolveComment', () => {
         gitChip: { word: 'Still needed', node: 'stopped', tone: 'warning' },
       }),
     );
-    expect(projection).toMatchObject({ word: 'question', label: 'Question' });
+    expect(projection).toMatchObject({ word: 'question', label: 'Question for you' });
     expect(projection.chips).toEqual(['Still needed']);
   });
 
@@ -224,9 +224,9 @@ describe('projectResolveComment', () => {
 
 describe('resolveLabelOfState', () => {
   it('names a state by its word', () => {
-    expect(resolveLabelOfState({ state: 'edited' })).toBe('To review');
+    expect(resolveLabelOfState({ state: 'edited' })).toBe('Fix ready');
     expect(resolveLabelOfState({ state: 'drafting' })).toBe('Working');
-    expect(resolveLabelOfState({ state: 'failed' })).toBe("Couldn't fix");
+    expect(resolveLabelOfState({ state: 'failed' })).toBe('Failed');
     expect(resolveLabelOfState({ state: 'failed', isPushFailure: true })).toBe('Push failed');
   });
 });

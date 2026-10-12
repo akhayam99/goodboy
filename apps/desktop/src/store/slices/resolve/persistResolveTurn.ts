@@ -9,15 +9,15 @@ import {
   setResolveAttemptPhase,
 } from '@goodboy/db';
 import { saveResolveThread } from './saveResolveThread';
+import { extractMarkers } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type { ResolveAttempt, ResolveThread, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { agentLastMessage } from '../../../features/resolve/agentLastMessage';
 import { agentThreadIds } from '../../../features/session/agentThreadIds';
 import { resolverTurnOutcomes } from '../../../features/session/resolverTurnOutcomes';
 import { captureResolveCandidate } from './captureResolveCandidate';
 import { createResolveThread } from './createResolveThread';
-import { outcomePatch } from './outcomePatch';
+import { resolveTurnPatchOf } from './resolveTurnPatch';
 import { projectResolveRows } from './projectResolveRows';
 import { threadOutcome } from './threadOutcome';
 import type { SliceParams, TurnParams } from './types';
@@ -113,9 +113,10 @@ export const persistResolveTurn = async ({
   const hasAsked = Object.keys(parsed.questions).length > 0;
   const question = hasAsked
     ? null
-    : (questions.find((item) => item.createdByAgentId === agent.id && item.status === 'open')
-        ?.text ?? null);
-  const lastMessage = agentLastMessage({ assistantText });
+    : (extractMarkers(assistantText).questions[0]?.text ??
+      questions.find((item) => item.createdByAgentId === agent.id && item.status === 'open')
+        ?.text ??
+      null);
   let hasSilentThread = false;
   const processed: Array<string> = [];
   for (const threadId of owned) {
@@ -141,35 +142,16 @@ export const persistResolveTurn = async ({
         projectId: get().sessionActiveProject[sessionId] ?? null,
         prNumber: activeReviewSourceOf({ state: get(), sessionId })?.prNumber,
       });
-    const retained = threadOutcome({ row });
-    const verdict =
-      parsed.analysisVerdicts[threadId] ??
-      (row.disposition === 'no_change' ? 'wontfix' : undefined);
-    const askedText = question ?? (lastMessage === '' ? null : lastMessage);
-    const kept = retained !== null && (hasOwnedMarkers || question !== null) ? retained : null;
-    const asking = retained === null ? { stateReason: 'question' } : {};
-    const patch: Partial<ResolveThread> = (() => {
-      if (asked !== undefined) {
-        return { state: 'needs_answer', question: asked.question, ...asking };
-      }
-      if (outcome !== undefined) {
-        return outcomePatch({ outcome, verdict, previous });
-      }
-      if (kept !== null) {
-        return outcomePatch({ outcome: kept, verdict, previous });
-      }
-      if (askedText === null) {
-        return { state: 'failed' };
-      }
-      return { state: 'needs_answer', question: askedText, ...asking };
-    })();
-    hasSilentThread =
-      hasSilentThread ||
-      (!isCandidate &&
-        asked === undefined &&
-        outcome === undefined &&
-        kept === null &&
-        askedText === null);
+    const patch = resolveTurnPatchOf({
+      row,
+      previous,
+      outcome,
+      asked,
+      analysisVerdict: parsed.analysisVerdicts[threadId],
+      question,
+    });
+    const isSilent = asked === undefined && outcome === undefined && patch.state === 'failed';
+    hasSilentThread = hasSilentThread || (!isCandidate && isSilent);
     const next = {
       ...row,
       ...patch,
@@ -192,7 +174,7 @@ export const persistResolveTurn = async ({
             db,
             id: attempt.id,
             phase: 'failed',
-            error: 'the provider returned no message',
+            error: 'No result from the run',
             failureCause: 'provider_error',
           }
         : { db, id: attempt.id, phase: waiting ? 'waiting' : 'finished' },

@@ -264,6 +264,11 @@ describe('durable resolve store', () => {
       state: 'needs_answer',
       reason: 'proposed_fix',
     },
+    {
+      marker: '<<ctx-question>>Alias the export or rename it?<</ctx-question>>',
+      state: 'needs_answer',
+      reason: 'question',
+    },
     { marker: 'No marker survived.', state: 'failed', reason: null },
   ])(
     'recovers an interrupted candidate as $state after the import is already stamped',
@@ -1085,7 +1090,7 @@ describe('durable resolve store', () => {
     });
   };
 
-  it('turns a turn that ended with no outcome into a question carrying the agent message', async () => {
+  it('fails a turn that ended with a report and no marker instead of asking', async () => {
     const live = createHarness();
     const attemptId = await runningAttempt({ live });
 
@@ -1098,17 +1103,41 @@ describe('durable resolve store', () => {
 
     const rows = await listResolveThreads({ db, sessionId: SESSION_ID });
     for (const row of rows) {
+      expect(row.state).toBe('failed');
+      expect(row.question).toBeNull();
+    }
+    const [attempt] = await listResolveAttempts({ db, sessionId: SESSION_ID });
+    expect(attempt).toMatchObject({
+      phase: 'failed',
+      failureCause: 'provider_error',
+      error: 'No result from the run',
+    });
+  });
+
+  it('asks only through the open question marker', async () => {
+    const live = createHarness();
+    const attemptId = await runningAttempt({ live });
+
+    await live.actions.persistResolveTurn({
+      sessionId: SESSION_ID,
+      agent,
+      attemptId,
+      assistantText:
+        'Both guards changed.\n<<ctx-question>>Should the second wait for the schema change?<</ctx-question>>',
+    });
+
+    const rows = await listResolveThreads({ db, sessionId: SESSION_ID });
+    for (const row of rows) {
       expect(row).toMatchObject({
         state: 'needs_answer',
-        stage: 'asking',
-        question: 'I changed both guards and the tests pass. Can I commit?',
+        question: 'Should the second wait for the schema change?',
       });
     }
     const [attempt] = await listResolveAttempts({ db, sessionId: SESSION_ID });
     expect(attempt).toMatchObject({ phase: 'waiting', failureCause: null });
   });
 
-  it('never reads a markerless turn as a failed one, even for a thread that was ready before', async () => {
+  it('keeps what a thread already resolved when a later turn has no marker for it', async () => {
     const live = createHarness();
     await live.actions.loadResolveSession({ sessionId: SESSION_ID });
     await live.actions.persistResolveTurn({
@@ -1122,12 +1151,11 @@ describe('durable resolve store', () => {
       sessionId: SESSION_ID,
       agent,
       attemptId,
-      assistantText:
-        'The first fix still stands. Should the second one wait for the schema change?',
+      assistantText: 'The first fix still stands.',
     });
 
     const rows = await listResolveThreads({ db, sessionId: SESSION_ID });
-    expect(rows.every((row) => row.state === 'needs_answer')).toBe(true);
+    expect(rows.some((row) => row.state === 'failed' || row.state === 'needs_answer')).toBe(false);
     expect(outcomesFor({ get: live.get })).toMatchObject({
       PRRT_1: { kind: 'resolved', commitSha: 'abcdef1234567890' },
       PRRT_2: { kind: 'wontfix', reason: 'intentional' },

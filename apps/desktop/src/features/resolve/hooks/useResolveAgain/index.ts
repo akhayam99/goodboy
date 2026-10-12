@@ -41,7 +41,7 @@ export const useResolveAgain = ({
             threadIds: [threadId],
             launchChoice: launchChoiceOf({ routing: picked, commitStyle: null, hint: instruction }),
           });
-          announceStart({ sessionId, started, count: 1 });
+          announceStart({ sessionId, started, count: 1, isModelChange: true });
           return 'started';
         }
         await continueResolveThreads({ sessionId, threadIds: [threadId], hint: instruction });

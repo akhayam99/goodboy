@@ -3,7 +3,8 @@ import { Button, formatError } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { isReportedError } from '../../../../store/slices/notifications/reportedError';
-import { applyFixesLabel, postRepliesLabel } from '../../commentOutcomeCopy';
+import { applyFixesLabel } from '../../commentProjection';
+import { postRepliesLabel } from '../../commentOutcomeCopy';
 import { postOutcomeReply } from '../../postOutcomeReply';
 import type { ReviewEntry } from '../ReviewFlow/useReviewEntries';
 

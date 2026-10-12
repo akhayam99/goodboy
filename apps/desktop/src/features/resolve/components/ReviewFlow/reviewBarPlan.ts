@@ -88,7 +88,8 @@ export const reviewBarPlanOf = ({
   readonly hasRemote: boolean;
   readonly actions: ReadonlyArray<PlanAction>;
 }): ReadonlyArray<BarItem> => {
-  const items = hasRemote ? null : stateItemsOf({ word, state });
+  const isStateOwned = word === 'to_review' || word === 'ready';
+  const items = hasRemote && !isStateOwned ? null : stateItemsOf({ word, state });
   if (items === null) {
     return genericPlanOf({ actions });
   }

@@ -116,6 +116,38 @@ describe('useResolverCommit', () => {
     await waitFor(() => expect(result.current?.isOnBranch).toBe(false));
   });
 
+  it('does not call a commit rewritten while it waits in a ready candidate', async () => {
+    worktreeIsAncestor.mockResolvedValue(false);
+    listBranchCommits.mockResolvedValue([]);
+    useAppStore.setState({
+      sessionResolveCandidates: {
+        [SESSION_ID]: [
+          {
+            candidate: {
+              id: 'cand-1',
+              sessionId: SESSION_ID,
+              revision: 1,
+              baseSha: 'b'.repeat(40),
+              candidateSha: SHA,
+              worktreePath: '/work/ledger-core',
+              mountTarget: null,
+              state: 'ready',
+              integratedSha: null,
+              createdAt: 1,
+              updatedAt: 1,
+            },
+            items: [],
+          },
+        ],
+      },
+    });
+
+    const { result } = renderCommit();
+
+    expect(result.current?.isOnBranch).toBeNull();
+    expect(worktreeIsAncestor).not.toHaveBeenCalled();
+  });
+
   it('still answers when the list fails', async () => {
     worktreeIsAncestor.mockResolvedValue(true);
     listBranchCommits.mockRejectedValue(new Error('list failed'));

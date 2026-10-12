@@ -15,7 +15,7 @@ Turn review comments into commits without writing the fixes yourself. Check the 
 
 ### Bulk actions
 
-Handle many comments at once. **Fix comments** checks every open comment, **Use the recommended answers** answers the agent's open questions in one go, and **Accept** takes every waiting fix, with **Undo** right after.
+Handle many comments at once. **Fix comments** checks every open comment, **Use the recommended answers** answers the agent's open questions in one go, and **Apply fix** takes every waiting fix, with **Undo** right after.
 
 ### Review sources
 
@@ -23,7 +23,7 @@ Read pull request comments and your own notes in one list in the Comments sectio
 
 ### Comment states
 
-See what each comment needs next. The list groups comments under **Needs you**, **Working**, **Ready to push**, **Done** and **Left open**, and each comment names its state, such as **Question**, **To review** or **Couldn't fix**. If the reviewer edits a comment after the agent drafted an answer, you choose to redraft or keep the draft.
+See what each comment needs next. The list groups comments under **Needs you**, **Working**, **Ready to push**, **Done** and **Left open**, and each comment names its state, such as **Question for you**, **Fix ready** or **Failed**. If the reviewer edits a comment after the agent drafted an answer, you choose to redraft or keep the draft.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-comment-states-dark.webp">

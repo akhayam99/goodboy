@@ -611,7 +611,7 @@ describe('a note fix and comment fixes stack in one lane', () => {
         count: laneAcceptCountOf({ candidates: ready, itemId: itemC }),
         notes: laneAcceptNotesOf({ candidates: ready, itemId: itemC, noteItemIds }),
       }),
-    ).toBe('Accept 3 fixes · 1 is a note');
+    ).toBe('Apply 3 fixes · 1 is a note');
 
     await live.actions.acceptResolveQueueItem({
       sessionId: SESSION_ID,

@@ -810,7 +810,7 @@ arrives the notes stay notes; `Post to GitHub` on a note in Comments turns it in
 comment (a note on a whole file too), never on its own.
 
 A note goes through the same flow with the same resolver, but there is no
-reply to write: `Accept` keeps the fix on the branch and closes the note, with
+reply to write: `Apply fix` keeps the fix on the branch and closes the note, with
 or without a pull request, and `Close the note` closes it without a change.
 Reopening a closed note opens a new conversation generation instead of
 reviving the closed one, so the resolved history stays next to the reopened
@@ -871,7 +871,7 @@ Open transcript and Stop; a component with an `actions` slot, so bulk buttons
 sit on the same line.
 
 The state word carries the tone: Needs you is the only warning, Ready is neutral
-(the Accept button is the signal), Couldn't fix is the danger tone, except a stop
+(the Apply fix button is the signal), Failed is the danger tone, except a stop
 by you.
 
 Review reads git after a fetch when it opens and again before every push, and
@@ -906,18 +906,18 @@ fix can be answered without undoing its accepted decision. The git facts live in
 `src-tauri/src/thread_git.rs`.
 
 Each comment has four verbs, with single keys while the list has focus:
-`Accept` (A), `Edit` (E, `Answer` when the agent asked, `Redraft with the new
+`Apply fix` (A), `Edit` (E, `Answer` when the agent asked, `Redraft with the new
 comment` when the reviewer changed it, `Add a hint` when the run failed), `Reply only` (R, drops the change and sends a reply; `Reply`, which opens the text box, where there is no change to drop) and `Skip` (S), plus `Undo` (U, `Undo skip` on a skipped
 comment) until the push and `Fix` (F) on a comment nobody started, which opens
 the Fix comments drawer. They sit in the bar at the bottom of the thread (`ReviewActionBar`). `Retry push` shows on a comment whose push failed. J and K move. A checkbox appears on hover on the comments you
 can fix (open, or couldn't fix) and on comments to review (X toggles the focused
 row, Cmd+A picks every fixable one, Esc clears): the bar `3 selected · Fix 3`
-opens the panel for the fixable pick and `Accept 3` accepts the pick to review, and
+opens the panel for the fixable pick and `Apply 3 fixes` applies the pick to review, and
 a batch is born only from a selection or one `Fix`. Edit, Answer and Reply share one text box, a document: ⌘Enter sends, Enter
 adds a line, Esc cancels, and Preview shows the markdown. Clicking the reply edits it in place.
 `…` also offers Stop drafting, Resolve, Open in Files, Agent
-transcript, Open on GitHub and Copy link. Accept and Skip move focus to the
-next open comment. Accept never talks to GitHub: it marks the comment for the
+transcript, Open on GitHub and Copy link. Apply fix and Skip move focus to the
+next open comment. Apply fix never talks to GitHub: it marks the comment for the
 push and, for a fix, lands the commit on the local branch. The actions are the
 `review` and `reviewComment` kinds of the action registry
 (`features/actions/kinds/`), so the buttons, `…`, the right click and the
@@ -1007,7 +1007,7 @@ N`, the `apply` mode of today. The choice is `ResolveLaunchChoice.mode`
   where each question has its recommended option chosen, `Drop` leaves one in
   Needs you, and `Continue with N answers` calls `answerQuestions` once for the
   launch (the same agent, no new one); `Retry N that couldn't fix` calls
-  `retryCouldntFix` with every could-not-fix comment of the launch. `Accept N`
+  `retryCouldntFix` with every could-not-fix comment of the launch. `Apply N fixes`
   on the group header of the ready comments and in the selection bar calls
   `acceptReviewComments` (`review-bulk` slice): it walks the comments in order
   through the same accept as the single `Accept` (`acceptReviewItem`), skips
