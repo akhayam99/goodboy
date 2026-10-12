@@ -725,7 +725,7 @@
         },
         {
           "title": "Close on GitHub",
-          "text": "One Push in the Branch header. Select commits, press Push N and read the preview inline. Replies post and threads resolve after a confirm that counts them.",
+          "text": "Finish a review with the one Push in the Branch header. A preview counts the fixes, replies and threads first, then Push sends them all.",
           "group": "Review and resolve on the Branch page",
           "main": true
         },

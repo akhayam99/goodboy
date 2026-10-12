@@ -1,12 +1,14 @@
 # Search and navigation
 
-Find any session, message, plan or action, and reach it from the keyboard.
+Find any session, message, plan or action, and reach it from the keyboard. One sidebar holds every place you go, and **⌘K** and **⌘F** cover the rest.
 
 ### Sidebar
 
-Every place you go sits in one sidebar on the left, on the board, in a session and beside every studio: **New session** on top, then **Board**, **Tasks**, **Chat** and **Workflows**, your sessions, and **Settings** with the Goodboy row and a bug button at the bottom. **⌘B** folds it into a slim bar of icons that keeps every door, and resting the pointer at the left edge brings the full sidebar back over the page. Settings takes over the sidebar with **Back to app**, a search field and its pages, and **Esc** brings the doors back. Spend in the top bar opens Impact, and a click on a limits bar opens the providers menu. **Legacy layout** in Settings > App > General brings back the top bar buttons and footer of 0.20.0.
+Every place you go sits in one sidebar on the left: **New session**, **Board**, **Tasks**, **Chat**, **Workflows**, your sessions and **Settings**. **⌘B** folds it into a slim bar of icons that keeps every door.
 
 ### Go anywhere
+
+Reach any screen without the mouse. **⌘K** opens a window where a few letters find any session, agent, plan, page or script in any workspace, and **Enter** opens it.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/search-go-anywhere-dark.webp">
@@ -15,9 +17,9 @@ Every place you go sits in one sidebar on the left, on the board, in a session a
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
-Reach any screen without the mouse. **⌘K** opens on what you are looking at, and a few letters find any session of any workspace, an agent, a plan, a page or a script. The row you highlight shows its stage, project, branch and pull request on the right, and **Enter** opens it. **⌘F** switches the same window to search.
-
 ### Command palette
+
+Press **⌘K** to act on what you are looking at. Inside a session it opens on **Next**, the step Goodboy would take now, then the actions that fit the session, ranked by how often you use them. Any text you type can also go to **Ask in Chat** as a new question.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/search-command-palette-dark.webp">
@@ -26,9 +28,9 @@ Reach any screen without the mouse. **⌘K** opens on what you are looking at, a
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
-Press **⌘K** to act on what you are looking at. The window keeps one height while you type, and the preview on the right hides when the highlighted row has nothing to show, so the list never jumps. In a session, the first row is the session's own action, ahead of messaging a running agent. Inside a session it opens on **Next**, the steps Goodboy would take now, such as answering a question or pushing commits, then **For this session**, the actions that fit what the session is doing (a running agent first, a finished one last), and **Runs** with the verbs of the session’s runs. **→** shows every action of any row. Results are ranked by how well they match and how often you use them, and the composer's prefixes work here too. Any search with text starts with **Ask in Chat**, which opens a new chat with what you typed as its first message.
-
 ### Search
+
+Find a message, a plan, a decision, an issue or a branch with **⌘F**. Search starts in the open session and widens to the workspace or everything, with filters for type, project and date. **Open in transcript** lands on the hit in context, and the index stays on your computer.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/search-overlay-dark.webp">
@@ -37,8 +39,6 @@ Press **⌘K** to act on what you are looking at. The window keeps one height wh
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
-Find a message, a plan, a decision, an issue or a branch with **⌘F**. Search starts in the open session and **⌫** widens it to the workspace, then to everything. Narrow the results with **Type**, **Project**, **Provider**, **Status** and **Date**, and pick a hit to see its details and actions. **Open in transcript** lands on it in context. The index stays on your computer.
-
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/search-jump-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/search-jump-light.webp" alt="The session transcript after opening a hit, with credit highlighted in the messages and a find bar reading credit, 2 of 3, with previous, next and close buttons">
@@ -46,8 +46,6 @@ Find a message, a plan, a decision, an issue or a branch with **⌘F**. Search s
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
-Once you land on a hit, walk the other matches in that view with **⌘G**.
-
 ### Right click menus
 
-Right click a session, agent, run, artifact, pull request, worktree row, diff file or message to see every action it has, at the pointer. The **⋯** menu and the palette list the same actions, the palette in the order that fits what the session is doing, and one that cannot run says why. **Shift+F10** opens the menu on the focused row.
+Right click a session, agent, run, artifact, pull request, file or message to see every action it has. The `⋯` menu and the palette list the same actions, and one that cannot run says why.

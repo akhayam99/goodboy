@@ -1,8 +1,10 @@
 # Set up
 
-Get from install to a first agent: connect a provider, check what it can do, link your tools and tell agents who you are.
+Get from install to a first agent. Connect a provider, check what it can do, link your tools and tell agents who you are.
 
 ### Welcome to Goodboy
+
+Five short steps take you from install to a first agent reading your project: **Provider**, **Project**, **Code host**, **Tasks** and **First session**. Code host and tasks are optional, and **Skip setup** takes you straight in. The last step hands you a session draft already filled in.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-welcome-dark.webp">
@@ -11,9 +13,9 @@ Get from install to a first agent: connect a provider, check what it can do, lin
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
-Follow five short steps from install to a first agent reading your project: **Provider**, **Project**, **Code host**, **Tasks** and **First session**. Code host and tasks are optional, steps that do not apply to you are skipped, and **Skip setup** takes you straight in. The last step hands you a session draft already filled in.
-
 ### Provider connection
+
+Connect the provider you already pay for, with a login or an API key. Each card says where it stands, such as **Connected** or **Not signed in**, and **Connect** walks you through the sign-in. You can add more providers later.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-provider-connection-dark.webp">
@@ -22,9 +24,9 @@ Follow five short steps from install to a first agent reading your project: **Pr
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
-Pick the provider you already pay for and connect it with a login or an API key. Each card says what the provider needs and where it stands: **Connected**, **Not signed in**, **Not installed**. **Connect** walks you through the sign-in, and **Open the sign-in page again** helps when no browser tab opened. You can add more providers later.
-
 ### One page per provider
+
+Each provider has its own page in **Providers & models** with its usage, the models shown in the picker, its permissions and your account. Providers billed per token say so instead of showing usage windows.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-provider-page-dark.webp">
@@ -33,9 +35,9 @@ Pick the provider you already pay for and connect it with a login or an API key.
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
-Find everything about a provider on its own page in **Providers & models**: **Usage** with the weekly window, **Models in the picker** with a switch per model, **Permissions**, and **Account** with **Sign in again** and **Disconnect**. Providers billed per token say so instead of showing usage windows.
-
 ### Update the provider CLI
+
+When a model needs a newer provider CLI, the provider page says so and one button installs it. The update waits for running turns to finish.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-cli-update-dark.webp">
@@ -44,9 +46,9 @@ Find everything about a provider on its own page in **Providers & models**: **Us
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
-See when a model needs a newer CLI, right under the Account rows of the provider page, and press **Update Claude CLI** to install it. The update waits for running turns to finish. A turn the CLI refuses retries on the closest model in the same family.
-
 ### Permissions for each provider
+
+See which permission modes a provider can honor before you pick one, from **Read only** to **Full access**. A mode a provider cannot honor never runs looser: it falls back to a stricter one and the table says why.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-permissions-dark.webp">
@@ -55,9 +57,9 @@ See when a model needs a newer CLI, right under the Account rows of the provider
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
-Check which permission modes a provider can honor before you pick one: **Read only**, **Ask first**, **Edits allowed** and **Full access**. The table marks each cell as **Works**, **Partly** or **Runs Read only**, with the reason underneath, and adds a **Rules** row and a **Role limits** row. A mode a provider cannot honor never runs looser: **Ask first** on Codex runs as **Read only**. The default mode for new sessions sits above the table.
-
 ### Integrations
+
+Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack from one page, and see the account behind each. A project can use a different account than its workspace. Keys stay in your system credential store.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-integrations-dark.webp">
@@ -66,9 +68,9 @@ Check which permission modes a provider can honor before you pick one: **Read on
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
-Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack from one page. The list shows the account behind each tool and how many are connected, and each tool opens to its own page. Give a project a different account than its workspace when you need to. Keys stay in your system credential store.
-
 ### About you
+
+Tell agents once who you are and how you like to work, in four short fields. **See who reads what** shows which agent role reads each part, and **Learned** collects what agents explained to you about your topics.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-about-you-dark.webp">
@@ -77,11 +79,9 @@ Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack from one page.
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
-Tell agents once who you are and how you like to work, in four short parts: **Your job**, **About your work**, **How agents should work with you** and **Explain more when it touches**. **See who reads what** shows which role reads each part. Under **Explain more when it touches**, **Learned · 12 · Open** opens what agents explained about your topics in this workspace, grouped by topic, with the project and age of each one. A learning from a deleted session stays and says **Deleted session**.
-
 ### Settings
 
-Find any setting from the sidebar: Settings takes it over with **Back to app**, a **Search settings** field and every page. **Settings** at the foot of the sidebar and **⌘,** open on the page you used last, or on General the first time after the app starts. The rail lists **App**, **Workspace**, **Providers & models** and **Integrations**, and a small dot marks a row that needs you, named by what is wrong. Every page is also in the palette, like **Settings: Storage**; a link that names a page opens that page. **Open with**, in General, picks the editor worktrees open in and the browser for links and artifacts. Drag the edge of a rail, or use the keys or a double click, to resize it, and each one remembers its width.
+Settings opens from the foot of the sidebar or with **⌘,**, on the page you used last. **Search settings** finds any setting, every page is also in the command palette, and a dot marks a page that needs you.
 
 **Also in this area**
 

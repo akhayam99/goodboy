@@ -1,8 +1,10 @@
 # Storage
 
-Free disk space and clean up branches, with what is safe to remove spelled out.
+Free disk space and clean up branches, with what is safe to remove spelled out. Goodboy tells you why each folder or branch exists and what removing it costs, so you can clear space without guessing.
 
 ### Worktree folders
+
+Free disk space from the checkout folders of archived, deleted or gone sessions. **Worktrees** lists each with its size and whether it is safe to remove, and **Remove 3 safe folders in Harborline** clears them together. Folders with changes, running agents or a process inside are skipped, with the reason.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/storage-worktrees-dark.webp">
@@ -11,9 +13,9 @@ Free disk space and clean up branches, with what is safe to remove spelled out.
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
-Free disk space without guessing. **Worktrees** lists the checkout folders of archived, deleted or gone sessions by repo, with their size, when each last changed, why it exists and whether it is safe to remove. **Remove 3 safe folders in Harborline** clears them together, and it takes only clean folders idle for over 30 days. Folders with changes, running agents, a git operation in progress or a process running inside them (a dev server, say) are skipped, with the reason. Closing a branch from a session says the same and offers **Stop it**, which stops the processes and checks again.
-
 ### Branches
+
+Delete old branches with confidence. **Branches**, under App settings, opens on the ones that are **Safe to delete** and shows how each was merged. Deleted branches wait in **Recently deleted** with **Restore**, and a merged branch can be removed with **Undo**.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/storage-branches-dark.webp">
@@ -22,21 +24,13 @@ Free disk space without guessing. **Worktrees** lists the checkout folders of ar
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
-Delete old branches with confidence. **Branches** has its own page under App settings, next to **Storage**. It opens on the branches that are **Safe to delete**, with how many **need a look**; **Show all branches** brings in the rest, and the **Made by** picker narrows them to **Made by Goodboy** or **Yours**. Each row shows its session, whether it still exists on origin and how it was merged: merge commit, rebase or pull request. **Delete** on a merged branch acts at once and offers **Undo**; an unmerged one asks first, above the selection bar. A row checkbox, X or ⌘A picks several, and the bar can also delete them on origin.
-
-Every deleted branch goes to **Recently deleted** at the top of the page, with the days it has left, **Restore** and **Delete permanently**, which asks inline. The list comes from the database, so it is still there after you leave the page or restart. Opening the page releases the kept refs of deletions older than 14 days.
-
 ### Storage scope
 
-Clean up this workspace, other workspaces, removed ones or all of them, each with its weight, from the picker in the page header. Bulk actions name the scope they act on. **Branches** shares the scope but has no removed workspaces, since a branch lives in a project you still have. **Suggest cleanup after** sits beside the scope on **Storage**, and **Scan another repository** at the foot of **Worktrees** reads a repository from a workspace you removed. The cleanup notice and every other way in land on **Storage**, never on **Branches**.
+Clean up this workspace, other workspaces, removed ones or all of them, from the picker in the page header. Bulk actions name the scope they act on.
 
 ### Artifacts from deleted sessions
 
 Decide what to keep from sessions you deleted: their plans, reports and wireframes, with **Keep** or **Delete**.
-
-The same goes for the role and task models a project had before the project layer went away: they stay in the settings table under `legacy.projectModels.<projectId>` (migration m228), one small row per project, until you apply or discard them on **Models**. Nothing else reads them.
-
-The tasks a workspace used to track in the Board's Ongoing row are stars now: migration m229 copied each one into the workspace's starred issues (open, dated by when it was linked, and an existing star wins) and dropped the old table. The next refresh fills in their state.
 
 ### Goodboy can free N GB
 
@@ -44,6 +38,4 @@ Hear about reclaimable space once, when idle safe folders pass 10 GB or the disk
 
 ### Other tools
 
-See how much space the other coding tools keep, without risking their history. At the foot of **Storage**, **Other tools** lists Claude Code, Codex and Cursor with their folder, how many sessions or chats they hold, their size and how much of it comes from Goodboy sessions, each with **Show in Finder**. It is read only and never counted in what can go. Goodboy measures sizes and names only, never the files inside, in the background while the page is open, and stops when you leave. It follows the folder each tool is set to use: CODEX_HOME, CLAUDE_CONFIG_DIR and the Cursor config folder. Goodboy sessions are recognised by name alone: a Claude Code project folder whose encoded path is a Goodboy worktree or the Goodboy data folder, and a Codex rollout or Cursor chat whose id a Goodboy agent used. Tools under 100 MB are left out.
-
-Branch deletion Undo joins the shared app operation stack. The toast lasts about 10 seconds; Cmd+Z outside text fields also restores the latest reversible operation.
+See how much space the other coding tools keep, without risking their history. **Other tools** at the foot of **Storage** lists Claude Code, Codex and Cursor with their size and how much comes from Goodboy sessions. It is read only, and Goodboy measures sizes and names, never the files inside.

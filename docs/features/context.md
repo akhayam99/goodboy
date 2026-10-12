@@ -1,8 +1,10 @@
 # Shared context
 
-What one agent learns, the next one reads. The goal, decisions and a running summary travel with the session.
+What one agent learns, the next one reads. The goal, decisions and a running summary travel with the session, so a new agent starts informed instead of from a blank chat.
 
 ### Decisions
+
+Record a decision once and have the agents after it read it. Each one gets a number, and replacing or withdrawing it needs a reason that stays next to it. Click a decision to open it, with **Edit** and **Remove**, and **Undo** is there while the drawer is open.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-decisions-dark.webp">
@@ -11,13 +13,13 @@ What one agent learns, the next one reads. The goal, decisions and a running sum
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
-Record a decision once and have the agents after it read it. Each one gets a number and a byline, and replacing or withdrawing it needs a reason that stays next to it. Here decision 3 replaces decision 1, so the brief the implementer received carries the new one and says why. Click a decision to open it, with **Edit** and **Remove** inside. A removed decision is retired at once and stays in the list with **Undo** while the drawer is open, and closed decisions are split into **Removed by you** and **Replaced**.
-
 ### See why each decision was made
 
-Read the reason behind a decision without opening the run. When Goodboy records a decision from a session, it keeps the reason that came with it, and the context drawer shows it as a muted line under the decision, with **Show more** when it runs long.
+Read the reason behind a decision without opening the run. When Goodboy records a decision from a session, it keeps the reason and shows it as a muted line under the decision, with **Show more** when it runs long.
 
 ### Running summary
+
+Hand the next agent where things stand. After a turn the summary is updated with **State**, **Next**, **Open questions** and **Learned**, and an edit you made in the meantime is kept.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-summary-dark.webp">
@@ -26,9 +28,9 @@ Read the reason behind a decision without opening the run. When Goodboy records 
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
-Hand the next agent where things stand. After a turn the summary is updated with **State**, **Next**, **Open questions** and **Learned**, and an edit you made in the meantime is kept. Turns that finish while an update runs wait together and the next update reads them all, so one update can cover several turns. Each block shows its key line first and folds the rest behind **Show 3 more**.
-
 ### Context drawer
+
+Open goal, decisions and summary from any session page with the **Context** button, and copy them all with **Copy context**. **Context updates** shows the last update and its model and cost, and **Update now** runs one on demand. The Goal tab can write a title and goal from linked work, and nothing changes until you apply it.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-drawer-dark.webp">
@@ -37,22 +39,13 @@ Hand the next agent where things stand. After a turn the summary is updated with
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
-Open goal, decisions and summary from any session page with the **Context** button, and use the copy icon at the top for **Copy context**. **Context updates** at the top of the drawer says how the context engine is doing and opens to show the last update ("2 min ago, after 3 turns"), the model and effort it ran on with **Change model**, which goes to Step summaries in Defaults, the tokens and cost it used, and what it changed (Goal, 2 decisions, Summary). **Update now** joins the session's queue, one update at a time, and shows **Queued** until its turn; when an update failed the same button reads **Retry**. A dot on **Decisions** says something changed since you last looked, and **Changed since you last looked** lists added, removed and reworded decisions first. Active decisions show their reason under the text when they have one.
-
-The Goal tab offers **Write title and goal from linked work** when issues are
-linked. It opens the editable proposal on Overview. The current goal stays
-until you apply the proposal. The button lives in
-`apps/desktop/src/features/session/components/ContextDrawer/GoalTab.tsx`;
-[Start blank](start.md#start-blank) owns the proposal and
-Undo rules.
-
 ### Who receives what
 
-See which agents read each part of the context. Under the tabs, **Visible to** says which roles receive the open tab ("All roles except Scout, Docs") and opens to one chip per role. Each role receives a fixed set: planners, implementers, reviewers, debuggers and resolvers get the decisions, scouts and docs agents do not, and the generalist, tester, report, scribe, wireframe and history rewriter get everything. You always see everything; the limit is only on what goes into an agent's prompt.
+See which agents read each part of the context. **Visible to** under the tabs lists the roles that receive the open tab. Planners, implementers, reviewers, debuggers and resolvers get the decisions, scouts and docs agents do not, and you always see everything.
 
 ### Learned
 
-Read back what agents explained about the topics you follow. When you list topics under **Explain more when it touches** in About you, and an agent concretely explains something that touches one of them, a short learning appears in the **Learned** tab with its topic, the turns it came from and who wrote it. Activity shows it as a compact **Learned · Rust · title** row. Learnings are written for you, so **Visible to** reads **You only**. **Dismiss** hides one, with **Undo**.
+Read back what agents explained about the topics you follow. List topics under **Explain more when it touches** in About you, and a short learning appears in the **Learned** tab when an agent explains one. **Dismiss** hides it, with **Undo**.
 
 ### Context budgets
 

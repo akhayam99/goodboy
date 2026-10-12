@@ -8,7 +8,7 @@ Most pictures follow one team and one task. Harborline keeps three repos, paymen
 
 ## Set up
 
-Get from install to a first agent: connect a provider, check what it can do, link your tools and tell agents who you are.
+Get from install to a first agent. Connect a provider, check what it can do, link your tools and tell agents who you are.
 
 - Welcome to Goodboy
 - Provider connection
@@ -20,7 +20,7 @@ Get from install to a first agent: connect a provider, check what it can do, lin
 
 ## Start a task
 
-Begin from an issue, a workflow or a question, in one draft that turns into a session when you press Start.
+Begin from an issue, a workflow or a question. Everything starts as one draft, and it becomes a session only when you press Start, so empty sessions do not pile up.
 
 - Pick up a task, with a drafted brief
 - Review a pull request
@@ -34,7 +34,7 @@ Begin from an issue, a workflow or a question, in one draft that turns into a se
 
 ## Overview and activity
 
-Open a session and read everything about the task in one place: its goal, its projects, and the timeline of what happened.
+Open a session to see everything about its task in one place: the goal, the projects and branches it touches, what happened so far and what waits on you.
 
 - Session overview
 - Activity
@@ -46,7 +46,7 @@ Open a session and read everything about the task in one place: its goal, its pr
 
 ## Switch between tasks
 
-Move between the tasks of a workspace, and see from any screen which one needs you.
+Move between the tasks of a workspace without losing your place, and see from any screen which one needs you.
 
 - Session list
 - Pin a session to keep it at the top
@@ -59,7 +59,7 @@ Move between the tasks of a workspace, and see from any screen which one needs y
 
 ## Search and navigation
 
-Find any session, message, plan or action, and reach it from the keyboard.
+Find any session, message, plan or action, and reach it from the keyboard. One sidebar holds every place you go, and **⌘K** and **⌘F** cover the rest.
 
 - Sidebar
 - Go anywhere
@@ -72,7 +72,7 @@ Find any session, message, plan or action, and reach it from the keyboard.
 
 ## Workspace and projects
 
-Keep your repos together, and let sessions work across them.
+A workspace keeps your repos together, and one session can work across several of them. Each branch an agent works on gets its own worktree, so agents edit in parallel without touching your checkout.
 
 - Workspace with several projects
 - Worktrees
@@ -85,7 +85,7 @@ Keep your repos together, and let sessions work across them.
 
 ## Commits and history
 
-The Commits section of the Branch page shapes a branch before it goes to review: fold, move, reword and drop commits, see what would conflict, and apply with a backup one click away.
+The Commits section of the Branch page lets you clean up a branch before it goes to review. Fold, move, reword and drop commits, see what would conflict before you apply, and keep a backup one click away.
 
 - Shape the history
 - Safe apply
@@ -97,7 +97,7 @@ The Commits section of the Branch page shapes a branch before it goes to review:
 
 ## Review and resolve on the Branch page
 
-One Branch page per branch holds the Overview, Comments, Files, Commits and Checks sections in a rail on its left, and only the ones that make sense: with no pull request it shows Overview, Files and Commits, and Comments once a note exists. Edit the pull request in place, merge it your way, turn review comments into commits with a Fix run, push them back with one Push, and read your own diff and notes before anyone else does. On GitLab the same page reads Merge request, MR !42 and Open on GitLab: you edit it, ask reviewers, mark it ready, merge it the ways the project allows and read the jobs of its pipeline. On Bitbucket it works the same on a pull request.
+The Branch page holds one branch: its pull request, review comments, changed files, commits and checks. Use it to read your own diff, let an agent turn review comments into commits and send everything back with one push. It works the same on GitHub, GitLab and Bitbucket.
 
 - Resolve
 - Review sources
@@ -110,7 +110,7 @@ One Branch page per branch holds the Overview, Comments, Files, Commits and Chec
 
 ## The board
 
-The board shows every session of a workspace by stage. Workflows chain agents into one run you can steer.
+The board shows every session of a workspace in lanes by stage, so you see where each task stands and which ones need you. Sessions move between lanes by themselves as their work changes.
 
 - Stage board
 - Session card
@@ -121,7 +121,7 @@ The board shows every session of a workspace by stage. Workflows chain agents in
 
 ## Workflows
 
-A workflow runs several agents in one session, each step with its own role, model and effort.
+A workflow runs several agents in one session, each step with its own role, model and effort. Use it to split a job into steps such as scout, plan, implement and review, and to steer the run while it goes. You choose how much it asks you and how much it may spend.
 
 - Workflow builder
 - Orchestrated
@@ -135,7 +135,7 @@ A workflow runs several agents in one session, each step with its own role, mode
 
 ## Tasks and your tools
 
-Connect your trackers, code hosts and Slack once. Their work lands in one list called Tasks, and agents can read and act on it.
+Connect your trackers, code hosts and Slack once. Their work lands in one list called Tasks, and agents can read and act on it without leaving Goodboy.
 
 - Tasks
 - Trackers
@@ -148,7 +148,7 @@ Connect your trackers, code hosts and Slack once. Their work lands in one list c
 
 ## Plans, reports and wireframes
 
-Plans, reports and wireframes live next to the task, not inside a chat.
+Plans, reports and wireframes live next to the task, not inside a chat. You can read, comment on, version and run them, and every one stays available as a file on disk.
 
 - Artifacts
 - Create a wireframe
@@ -160,7 +160,7 @@ Plans, reports and wireframes live next to the task, not inside a chat.
 
 ## Shared context
 
-What one agent learns, the next one reads. The goal, decisions and a running summary travel with the session.
+What one agent learns, the next one reads. The goal, decisions and a running summary travel with the session, so a new agent starts informed instead of from a blank chat.
 
 - Decisions
 - Running summary
@@ -174,7 +174,7 @@ What one agent learns, the next one reads. The goal, decisions and a running sum
 
 ## Providers, limits and cost
 
-Watch how much of each plan is left, keep work moving when a provider runs out, and see what it all costs.
+Watch how much of each plan is left, keep work moving when a provider runs out, and see what it all costs. Goodboy shows limits in the top bar and spend in one place, so you decide where work goes before a limit stops it.
 
 - Usage limits chip
 - Fallback when a limit is hit
@@ -188,7 +188,7 @@ Watch how much of each plan is left, keep work moving when a provider runs out, 
 
 ## Storage
 
-Free disk space and clean up branches, with what is safe to remove spelled out.
+Free disk space and clean up branches, with what is safe to remove spelled out. Goodboy tells you why each folder or branch exists and what removing it costs, so you can clear space without guessing.
 
 - Worktree folders
 - Branches
@@ -201,7 +201,7 @@ Free disk space and clean up branches, with what is safe to remove spelled out.
 
 ## Security, backup and updates
 
-Keep tokens out of what you save, move your setup between machines, and update without losing data.
+Keep tokens out of what you save, move your setup between machines, and update without losing data. Goodboy checks locally, backs up before it changes your data, and tells you what each release does.
 
 - Security findings
 - Export and import your setup
@@ -213,7 +213,7 @@ Keep tokens out of what you save, move your setup between machines, and update w
 
 ## Agents
 
-Talk to agents, watch what they do and steer them while they work.
+Talk to agents, watch what they do and steer them while they work. You can ask questions without starting a session, see exactly what each agent was told and cost, and stop or redirect one without losing its work.
 
 - Workspace chat
 - Ask in a session
@@ -236,7 +236,7 @@ The best support is running Goodboy on the work you already have. When something
 
 ## Keyboard and terminal
 
-Open a real login shell in the workspace folder or in any worktree. **⌃`** opens the Terminal studio with every terminal of the workspace, **⌘T** adds one, and the shells and their output are still there after a reload. **⌘F** finds in its scrollback.
+Drive Goodboy from the keyboard, run a shell in the session's worktree, and open the code in your own editor. Scripts, files and terminals sit next to the session, so you rarely leave the app to check on them.
 
 - Terminal
 - Keyboard shortcuts, back and forward
