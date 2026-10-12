@@ -177,6 +177,8 @@ The recipe column links the steps for the change you are about to make: [recipes
 
 ## Read on demand
 
+- [keyboard.md](keyboard.md): when a contextual shortcut takes precedence over a global action.
+
 These docs are kept on purpose. Nobody reads them ahead of time. Open one
 only when your task reaches the case it covers.
 

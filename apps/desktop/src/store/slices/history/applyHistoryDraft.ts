@@ -308,6 +308,9 @@ export const applyRewrittenHistory = (set: SetFn, get: GetFn) => {
       byAgent: run.result.byAgent,
       identity: run.result.identity,
     });
+    if (outcome === 'busy') {
+      return outcome;
+    }
     setHistoryRun({ set, sessionId, mountId, origin: run.origin, patch: { result: null } });
     await get().loadHistoryDraft({ sessionId, mountId });
     return outcome;
@@ -320,7 +323,9 @@ export const rewriteDraftWithAgent = (_set: SetFn, get: GetFn) => {
     mountId,
     note,
   }: HistoryMountInput & { readonly note?: string }): Promise<void> => {
-    const plan = draftPlanArgs({ get, sessionId, mountId });
+    const plan =
+      get().historyLiveSessions[mountId]?.pending?.plan ??
+      draftPlanArgs({ get, sessionId, mountId });
     if (plan === null) {
       return;
     }

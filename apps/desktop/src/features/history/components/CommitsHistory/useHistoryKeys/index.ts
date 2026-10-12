@@ -34,7 +34,7 @@ export const useHistoryKeys = ({
   setEditingSha,
   setLive,
 }: Params) => {
-  const undoHistoryDraft = useAppStore((s) => s.undoHistoryDraft);
+  const changeLiveHistory = useAppStore((s) => s.changeLiveHistory);
   const onRowKey = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     const target = event.target;
     if (!(target instanceof HTMLElement) || target.dataset.historyRow === undefined) {
@@ -87,9 +87,18 @@ export const useHistoryKeys = ({
       return;
     }
     event.preventDefault();
-    void undoHistoryDraft({ sessionId, mountId }).then((isUndone) =>
-      setLive(isUndone ? 'Undone' : 'Nothing to undo'),
-    );
+    const direction = event.shiftKey ? 'redo' : 'undo';
+    const stack = useAppStore.getState().historyLiveSessions[mountId]?.[direction] ?? [];
+    if (stack.length === 0) {
+      setLive(`Nothing to ${direction}`);
+      return;
+    }
+    void changeLiveHistory({ sessionId, mountId, direction }).then((hasChanged) => {
+      if (!hasChanged) {
+        return;
+      }
+      setLive(direction === 'redo' ? 'Redone' : 'Undone');
+    });
   };
   return { onRowKey, onPageKey };
 };

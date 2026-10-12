@@ -28,6 +28,7 @@ export const HistoryStatusSlot = ({ run, flow, titleOf, hasUpstream }: Props) =>
       run={run}
       titleOf={titleOf}
       hasUpstream={hasUpstream}
+      isApplying={flow.isApplying}
       onRewriteWithAgent={flow.rewriteWithAgent}
       onApplyRewritten={flow.applyRewritten}
       onDismiss={flow.dismiss}

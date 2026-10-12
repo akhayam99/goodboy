@@ -9,6 +9,7 @@ import { identityChange } from './historyIdentity';
 import { editPostedReplies } from '../resolve/editPostedReplies';
 import { remoteForPush } from './remoteForPush';
 import { remapRewrittenCommits } from './remapRewrittenCommits';
+import { historyThreadSnapshots } from './historyThreadSnapshots';
 import { shouldHandleLateOutcome } from './shouldHandleLateOutcome';
 import { setHistoryRun } from './setHistoryRun';
 import { recordHistoryEvent } from './recordHistoryEvent';
@@ -33,6 +34,7 @@ const sleep = ({ ms }: { readonly ms: number }): Promise<void> =>
 export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
   return async (input: ApplyHistoryRewriteInput): Promise<ApplyHistoryRewriteOutcome> => {
     const { sessionId, mountId, origin, planId } = input;
+    const live = get().historyLiveSessions[mountId];
     const target = historyTargetOf({ get, sessionId, mountId });
     const stopWith = async (stop: HistoryStop): Promise<ApplyHistoryRewriteOutcome> => {
       setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'stopped', stop, planId } });
@@ -42,6 +44,16 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
     const changed = identityChange({ get, sessionId, mountId, identity: input.identity });
     if (changed !== null) {
       return stopWith({ reason: 'blocked', message: changed, files: [], sha: null });
+    }
+    const isLiveAgentEdit = live !== undefined && origin === 'plan' && input.byAgent;
+    if (isLiveAgentEdit) {
+      setHistoryRun({
+        set,
+        sessionId,
+        mountId,
+        origin,
+        patch: { phase: 'applying', planId, stop: null },
+      });
     }
     const sourceRun = get().historyRuns[mountId];
     const remote = await remoteForPush({
@@ -121,6 +133,24 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
         return 'stopped';
       }
       if (outcome.kind === 'busy') {
+        if (isLiveAgentEdit) {
+          setHistoryRun({
+            set,
+            sessionId,
+            mountId,
+            origin,
+            patch: {
+              phase: 'rewritten',
+              stop: {
+                reason: 'blocked',
+                message: `${outcome.holder ?? 'An agent'} is writing here. Try again when it finishes.`,
+                files: [],
+                sha: null,
+              },
+            },
+          });
+          return 'busy';
+        }
         if (Date.now() - startedAt > WAIT_LIMIT_MS) {
           return stopWith({
             reason: 'blocked',
@@ -154,6 +184,38 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
         return stopWith({ reason: 'blocked', message: outcome.reason, files: [], sha: null });
       }
       const threadShas = await remapRewrittenCommits({ set, get, sessionId, map: input.map });
+      if (input.byAgent && live !== undefined) {
+        set((state) => {
+          const current = state.historyLiveSessions[mountId];
+          if (current?.token !== live.token) {
+            return state;
+          }
+          return {
+            historyLiveSessions: {
+              ...state.historyLiveSessions,
+              [mountId]: {
+                ...current,
+                undo: [
+                  ...current.undo,
+                  {
+                    identity: input.identity,
+                    backupRef: outcome.backupRef,
+                    head: outcome.head,
+                    threadShas,
+                    reciprocalThreadShas: historyThreadSnapshots({ threadShas, map: input.map })
+                      .after,
+                  },
+                ],
+                redo: [],
+                error: null,
+                pending: null,
+                hasConflict: false,
+                shouldStashFiles: false,
+              },
+            },
+          };
+        });
+      }
       const agentId = get().historyRuns[mountId]?.agentId ?? null;
       await recordHistoryEvent({
         get,

@@ -3202,7 +3202,7 @@
   },
   "apps/desktop/src/features/history/components/CommitsHistory/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 10
+      "count": 7
     }
   },
   "apps/desktop/src/features/history/components/CommitsHistory/useHistoryFocus/index.ts": {
@@ -10411,7 +10411,7 @@
   },
   "apps/desktop/src/store/slices/project-mounts/mountOperations.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 9
+      "count": 8
     }
   },
   "apps/desktop/src/store/slices/project-mounts/mountRecoveryGuard.test.ts": {

@@ -615,16 +615,16 @@
           "main": true
         },
         {
-          "title": "Safe apply",
-          "text": "Your plan is tried on a temporary copy first, and a backup is saved before anything changes. If a step stops, your branch stays as it was.",
+          "title": "Safe edits",
+          "text": "Each edit is tried on a temporary copy first, and a backup is saved before the branch moves. Undo and Redo restore edits while the Commits page stays open.",
           "group": "Commits and history",
           "main": true
         },
         {
-          "title": "Conflict prediction",
-          "text": "While you edit the plan, Goodboy tries it in memory and marks each change that may conflict. Your checkout stays untouched.",
+          "title": "Conflicting edits",
+          "text": "A conflicting edit names the file and leaves the branch as it was. Rewrite with an agent offers help, and Undo dismisses the failed edit.",
           "group": "Commits and history",
-          "also": "conflict prediction",
+          "also": "conflicting edits",
           "shown": true
         },
         {

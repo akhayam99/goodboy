@@ -48,6 +48,7 @@ type Props = {
   readonly arrival: { readonly nonce: number; readonly action: HistoryAction } | null;
   readonly isInteractive: boolean;
   readonly isEditing: boolean;
+  readonly isBusy?: boolean;
   readonly isExpanded: boolean;
   readonly editor: ReactNode;
   readonly nowMs: number;
@@ -78,6 +79,7 @@ const HistoryCommitRowView = ({
   arrival,
   isInteractive,
   isEditing,
+  isBusy = false,
   isExpanded,
   editor,
   nowMs,
@@ -115,6 +117,7 @@ const HistoryCommitRowView = ({
     <div
       ref={rowRef}
       role="listitem"
+      aria-busy={isBusy ? true : undefined}
       tabIndex={isInteractive ? 0 : undefined}
       data-history-row={commit.sha}
       data-graph-key={commit.sha}
@@ -174,7 +177,12 @@ const HistoryCommitRowView = ({
             )}
           />
         ) : null}
-        <span className="flex min-w-0 flex-1 flex-col">
+        <span className="flex min-w-0 flex-1 flex-col gap-1">
+          {isBusy ? (
+            <span role="status" className="text-label text-muted-foreground text-shimmer">
+              Editing commit
+            </span>
+          ) : null}
           {isEditing ? (
             editor
           ) : (

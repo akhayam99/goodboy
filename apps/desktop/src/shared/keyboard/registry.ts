@@ -20,6 +20,7 @@ export type ShortcutScope =
   | 'list'
   | 'selection'
   | 'review'
+  | 'commits'
   | 'pullRequest'
   | 'diff'
   | 'terminal'
@@ -37,6 +38,7 @@ export const SHORTCUT_SCOPE_LABEL: Readonly<Record<ShortcutScope, string>> = {
   list: 'In the Tasks and Notifications lists',
   selection: 'In a list with checkboxes',
   review: 'On the Comments tab',
+  commits: 'On the Commits tab',
   pullRequest: 'On the Pull request tab',
   diff: 'On the Files tab',
   terminal: 'In the terminal',
@@ -65,6 +67,22 @@ export type ShortcutEntry = {
 };
 
 export const SHORTCUTS = {
+  'history.undo': {
+    combo: 'cmd+KeyZ',
+    label: 'Undo commit edit',
+    plane: 'app',
+    group: 'review',
+    scope: 'commits',
+    yieldsToText: true,
+  },
+  'history.redo': {
+    combo: 'cmd+shift+KeyZ',
+    label: 'Redo commit edit',
+    plane: 'session',
+    group: 'review',
+    scope: 'commits',
+    yieldsToText: true,
+  },
   'app.undo': {
     combo: 'cmd+KeyZ',
     label: 'Undo last operation',

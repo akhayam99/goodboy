@@ -6,6 +6,8 @@ import { initialPlanItems, normalizePlanItems } from '../../../features/history/
 import { listBranchCommits } from '../../../features/worktree/worktree';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { historyTargetOf } from './historyTargetOf';
+import { identityChange, identityOf } from './historyIdentity';
+import { historyDraftReads } from './historyDraftReads';
 import type {
   EditHistoryDraftInput,
   GetFn,
@@ -129,52 +131,67 @@ export const loadHistoryDraft = (set: SetFn, get: GetFn) => {
   return async ({ sessionId, mountId }: HistoryMountInput): Promise<void> => {
     const target = historyTargetOf({ get, sessionId, mountId });
     try {
-      const [commits, graph] = await Promise.all([
-        listBranchCommits(target.worktreePath),
-        readHistoryGraph({
-          worktreePath: target.worktreePath,
-          baseBranch: target.baseBranch,
-          branch: target.branch,
-        }).catch((): HistoryGraph | null => null),
-      ]);
-      const head = commits[0]?.sha ?? '';
-      const base = commits[commits.length - 1]?.parentSha ?? head;
-      const stored = await getDraftHistoryPlan({ db: tauriDatabase, mountId });
-      const isStoredValid =
-        stored !== null &&
-        stored.headSha === head &&
-        stored.baseSha === base &&
-        isStillValid({ items: stored.items, commits });
-      const items = normalizePlanItems({
-        items: isStoredValid ? stored.items : initialPlanItems({ commits }),
-      });
-      const previous = get().historyDrafts[mountId];
-      const isSameBranch =
-        previous !== undefined && previous.headSha === head && previous.baseSha === base;
-      set((state) => ({
-        historyDrafts: {
-          ...state.historyDrafts,
-          [mountId]: {
-            sessionId,
-            mountId,
-            planId: isStoredValid ? stored.id : null,
-            branch: target.branch,
-            baseSha: base,
-            headSha: head,
-            commits,
-            items,
-            onto: isSameBranch ? previous.onto : null,
-            graph,
-            undo: isSameBranch ? previous.undo : [],
-            prediction: null,
-            isPredicting: false,
-            loadError: null,
-          },
+      await historyDraftReads.run({
+        key: mountId,
+        request: async () => {
+          const [commits, graph] = await Promise.all([
+            listBranchCommits(target.worktreePath),
+            readHistoryGraph({
+              worktreePath: target.worktreePath,
+              baseBranch: target.baseBranch,
+              branch: target.branch,
+            }).catch((): HistoryGraph | null => null),
+          ]);
+          const stored = await getDraftHistoryPlan({ db: tauriDatabase, mountId });
+          return { commits, graph, stored };
         },
-      }));
-      if (commits.length > 0) {
-        schedulePrediction({ set, get, mountId, delayMs: 0 });
-      }
+        apply: ({ commits, graph, stored }) => {
+          if (
+            identityChange({ get, sessionId, mountId, identity: identityOf({ target }) }) !== null
+          ) {
+            return;
+          }
+          const head = commits[0]?.sha ?? '';
+          const base = commits[commits.length - 1]?.parentSha ?? head;
+          const isLive = get().historyLiveSessions[mountId] !== undefined;
+          const isStoredValid =
+            !isLive &&
+            stored !== null &&
+            stored.headSha === head &&
+            stored.baseSha === base &&
+            isStillValid({ items: stored.items, commits });
+          const items = normalizePlanItems({
+            items: isStoredValid ? stored.items : initialPlanItems({ commits }),
+          });
+          const previous = get().historyDrafts[mountId];
+          const isSameBranch =
+            previous !== undefined && previous.headSha === head && previous.baseSha === base;
+          set((state) => ({
+            historyDrafts: {
+              ...state.historyDrafts,
+              [mountId]: {
+                sessionId,
+                mountId,
+                planId: isStoredValid ? stored.id : null,
+                branch: target.branch,
+                baseSha: base,
+                headSha: head,
+                commits,
+                items,
+                onto: isSameBranch ? previous.onto : null,
+                graph,
+                undo: isSameBranch ? previous.undo : [],
+                prediction: null,
+                isPredicting: false,
+                loadError: null,
+              },
+            },
+          }));
+          if (commits.length > 0 && !isLive) {
+            schedulePrediction({ set, get, mountId, delayMs: 0 });
+          }
+        },
+      });
     } catch (error) {
       set((state) => ({
         historyDrafts: {

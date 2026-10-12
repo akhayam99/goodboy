@@ -71,7 +71,7 @@ describe('shortcut registry', () => {
     }
   });
 
-  it('never lets a scoped combo shadow a global one', () => {
+  it('lets scoped undo override global undo while both yield to text', () => {
     const globals = new Map(
       entries
         .filter(([, entry]) => entry.scope === undefined)
@@ -82,6 +82,14 @@ describe('shortcut registry', () => {
         continue;
       }
       const shadowed = globals.get(entry.combo);
+      const globalEntry = entries.find(([candidate]) => candidate === shadowed)?.[1];
+      if (
+        entry.combo === 'cmd+KeyZ' &&
+        entry.yieldsToText === true &&
+        globalEntry?.yieldsToText === true
+      ) {
+        continue;
+      }
       expect(shadowed, `${id} in ${entry.scope} shadows ${shadowed}`).toBeUndefined();
     }
   });
@@ -183,7 +191,10 @@ describe('shortcut registry', () => {
 
   it('never binds a combo macOS reserves, or the text field owns', () => {
     for (const [id, entry] of entries) {
-      if (id === 'app.undo' && entry.combo === 'cmd+KeyZ' && entry.yieldsToText === true) {
+      if (
+        (entry.combo === 'cmd+KeyZ' || entry.combo === 'cmd+shift+KeyZ') &&
+        entry.yieldsToText === true
+      ) {
         continue;
       }
       if (SCOPED_RESERVED[id] === entry.combo && entry.scope !== undefined) {

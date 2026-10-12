@@ -19,6 +19,7 @@ type Props = {
 };
 
 const MENU_LABEL = 'Branch actions';
+const PUSH_ID = 'diff.push';
 const MIN_DRAWN_ENTRIES = 2;
 
 export const BranchOverflow = ({ diffControls, pullRequestControls }: Props) => {
@@ -38,7 +39,7 @@ export const BranchOverflow = ({ diffControls, pullRequestControls }: Props) => 
       const { target } = controls;
       const actions = ids.flatMap((id) => {
         const action = controls.actions.find((candidate) => candidate.id === id);
-        return action === undefined ? [] : [action];
+        return action === undefined || (id === PUSH_ID && action.slot !== 'menu') ? [] : [action];
       });
       return target === null
         ? []

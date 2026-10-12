@@ -28,6 +28,7 @@ type MoveBranchParams = {
 };
 
 type RestoreParams = {
+  readonly isLive?: boolean;
   readonly shouldStash?: boolean;
   readonly worktreePath: string;
   readonly branch: string;
@@ -123,11 +124,16 @@ export const forgetSavedFiles = async ({
   });
 
 export const restoreHistoryBackup = async ({
+  isLive,
   shouldStash,
   ...args
 }: RestoreParams): Promise<HistoryMoveOutcome> =>
   invokeCommand<HistoryMoveOutcome>('history_restore', {
-    args: { ...args, ...(shouldStash === true ? { stash: true } : {}) },
+    args: {
+      ...args,
+      ...(isLive === true ? { isLive: true } : {}),
+      ...(shouldStash === true ? { stash: true } : {}),
+    },
   });
 
 export const listHistoryBackups = async ({

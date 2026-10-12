@@ -81,15 +81,15 @@ A workspace keeps your repos together, and one session can work across several o
 
 [More on workspace and projects](docs/features/workspace.md)
 
-<a id="rewrite-history"></a><a id="safe-apply"></a><a id="conflict-prediction"></a><a id="conflicts-merged-in-a-copy"></a><a id="push-with-lease-and-restore"></a><a id="backups"></a><a id="suggest-a-message"></a><a id="bring-them-into-the-plan"></a><a id="rebase-on-main"></a><a id="after-a-pull-request-merges"></a><a id="shape-the-history"></a>
+<a id="rewrite-history"></a><a id="safe-apply"></a><a id="conflict-prediction"></a><a id="conflicts-merged-in-a-copy"></a><a id="push-with-lease-and-restore"></a><a id="backups"></a><a id="suggest-a-message"></a><a id="bring-them-into-the-plan"></a><a id="rebase-on-main"></a><a id="after-a-pull-request-merges"></a><a id="shape-the-history"></a><a id="safe-edits"></a><a id="conflicting-edits"></a>
 
 ## Commits and history
 
-The Commits section of the Branch page lets you clean up a branch before it goes to review. Fold, move, reword and drop commits, see what would conflict before you apply, and keep a backup one click away.
+The Commits section of the Branch page lets you clean up a branch before it goes to review. Fold, move, reword and drop commits live, with Undo and Redo and a backup before every edit.
 
 - Shape the history
-- Safe apply
-- Conflict prediction
+- Safe edits
+- Conflicting edits
 
 [More on commits and history](docs/features/branch-history.md)
 

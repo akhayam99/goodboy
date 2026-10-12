@@ -147,6 +147,8 @@ pub struct MoveBranchArgs {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RestoreArgs {
+    #[serde(default)]
+    pub is_live: bool,
     #[serde(default, rename = "stash")]
     pub should_stash: bool,
     pub worktree_path: String,

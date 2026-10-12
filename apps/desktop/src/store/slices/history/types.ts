@@ -162,13 +162,16 @@ export type HistoryRewriterBinding = {
 export type BranchPushFix = {
   readonly sessionId: SessionId;
   readonly mountId: MountId;
+  readonly identity: HistoryIdentity;
   readonly isForce: boolean;
   readonly confirmedOnlyOnline: ReadonlyArray<string> | null;
+  readonly confirmedRemoteSha: string | null;
 };
 
 export type BranchPushInput = HistoryMountInput & {
   readonly isForce: boolean;
   readonly confirmedOnlyOnline: ReadonlyArray<string> | null;
+  readonly confirmedRemoteSha: string | null;
 };
 
 export type HistoryTarget = {
@@ -253,4 +256,42 @@ export type EditHistoryDraftInput = HistoryMountInput & {
 
 export type ApplyHistoryDraftInput = HistoryMountInput & {
   readonly shouldPush: boolean;
+};
+
+type HistoryLiveEntry = {
+  readonly identity: HistoryIdentity;
+  readonly backupRef: string;
+  readonly head: string;
+  readonly threadShas: ReadonlyArray<HistoryThreadShas>;
+  readonly reciprocalThreadShas: ReadonlyArray<HistoryThreadShas>;
+};
+
+export type HistoryLiveRequest = {
+  readonly busySha: string | null;
+  readonly identity: HistoryIdentity;
+  readonly expectedHead: string;
+  readonly direction: 'edit' | 'undo' | 'redo';
+  readonly plan: HistoryPlanArgs | null;
+  readonly entry: HistoryLiveEntry | null;
+};
+
+export type HistoryLiveSession = {
+  readonly token: string;
+  readonly undo: ReadonlyArray<HistoryLiveEntry>;
+  readonly redo: ReadonlyArray<HistoryLiveEntry>;
+  readonly isBusy: boolean;
+  readonly busySha: string | null;
+  readonly error: string | null;
+  readonly hasConflict: boolean;
+  readonly shouldStashFiles: boolean;
+  readonly pending: HistoryLiveRequest | null;
+};
+
+export type ChangeLiveHistoryInput = HistoryMountInput & {
+  readonly items?: ReadonlyArray<HistoryStep>;
+  readonly onto?: string | null;
+  readonly sha?: string;
+  readonly direction?: 'undo' | 'redo';
+  readonly shouldRetry?: boolean;
+  readonly shouldStash?: boolean;
 };

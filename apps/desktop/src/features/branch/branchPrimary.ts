@@ -173,6 +173,7 @@ export const BRANCH_MENU_PULL_REQUEST: ReadonlyArray<string> = [
 ];
 
 export const BRANCH_MENU_DIFF: ReadonlyArray<string> = [
+  'diff.push',
   'diff.changeBase',
   'diff.openTerminal',
   'diff.openInEditor',

@@ -22,16 +22,6 @@ export type HistoryRowMark = {
   readonly isRemoved: boolean;
 };
 
-export const HISTORY_ACTION_TERM: Readonly<Record<HistoryAction, string>> = {
-  pick: 'pick',
-  fixup: 'fixup',
-  squash: 'squash',
-  move: 'reorder',
-  reword: 'reword',
-  drop: 'drop',
-  rebase: 'rebase',
-};
-
 export const HISTORY_ACTION_LABEL: Readonly<Record<HistoryAction, string>> = {
   pick: 'Keep',
   fixup: 'Fold in, keep its title',

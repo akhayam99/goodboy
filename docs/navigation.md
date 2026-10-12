@@ -433,7 +433,7 @@ never exists on one surface only.
   removal plan, the forced remove) in their own menu. A reversible verb runs at once with an Undo toast (Archive, Delete on an artifact,
   Close agent, Unlink, Stop tracking, Take off this branch). The toast lasts
   about 10 seconds and Cmd+Z undoes the latest operation outside a text field.
-  Reversible removals never ask for confirmation. A draft verb on the Commits tab (Drop) needs neither.
+  Reversible removals never ask for confirmation. Removing a commit on the Commits tab acts immediately with Undo.
 - **Blocked verbs stay.** A verb that cannot run now stays in the menu, dimmed,
   with its reason under the label, and does nothing when chosen. A verb that
   does not apply to the state is not shown.
@@ -1493,7 +1493,7 @@ saved location that still names it lands on the session overview (`withoutRemove
 `New terminal` (`action:new-terminal`, the workspace folder) and, in a session with worktrees,
 `Open <repo · branch> in terminal` (`session.openWorktreeTerminal`, one choice per worktree).
 - **A session terminal opens in a right drawer.** `openSessionTerminal` adds a session terminal at
-  the worktree (or reuses a running one there) and opens the `terminal` drawer over the session
+  the worktree (or reuses a running one there, never when it carries a `prefill`) and opens the `terminal` drawer over the session
   (`DrawerContent` `{ kind: 'terminal'; payload: { terminalId } }`, `TerminalDrawer` in
   `DrawerHost`, side sizing, resizable like the others). The mount row and diff `Open terminal`,
   the rebase banners (`openMountTerminal`), the session row menu, ⌘K `Open <repo · branch> in
@@ -2598,10 +2598,14 @@ pushes again with the same lease, `settlePushFix`, and the banner follows it wit
 transcript), `Open terminal here` (the session terminal drawer at the worktree with the exact
 push typed at the prompt and not run, `openSessionTerminal` with `prefill`) and `Retry push`.
 The same two actions sit beside Retry on the inline failure line of the header Push and Force
-push (`PushFailureActions`, shown when the failed action's error is a `PushFailedError`): the
+push (`PushFailureActions`, shown when the failed action's error is a push failure (`pushFailedError`)): the
 agent is `fixBranchPushWithAgent`, its finish runs `settleBranchPushFix` (plain push, or force push
 with the lease read before the agent started and the commits the confirm named), and the terminal
-is `prefillBranchPushTerminal` (`git push`, or `--force-with-lease` pinned to that sha).
+is `prefillBranchPushTerminal` (`git push`, or `--force-with-lease` pinned to the remote sha the
+confirm showed, `PushFailedError.confirmedRemoteSha`; when the online copy moved since, nothing is
+typed and the header says `The online copy changed. Check again before force pushing.`, and a
+prefill always opens a new terminal tab). A retry that pushed clears the failure line
+(`settledBranchPushes`).
 Only the header pushes: a thread has no
 Push, Push again or Sync button. With an accepted thread opened in Comments the
 primary reads `Push 1` (it counts threads) and pushes just that fix
@@ -2624,7 +2628,7 @@ row's tooltip) and Checks never appears without a pull request. A row is 32px wi
 right-aligned count (a muted `-` named `Not loaded` until it is known); Files shows its viewed
 ring and `12/39`; Checks adds a dot while one fails. The current row carries `aria-current="page"`,
 Up and Down move between rows while the rail has focus, and a pick replaces the address. Merged and
-Closed make the page read only (`isBranchReadOnly`): Commits shows its list without Rebase or Apply. Every door that means "go to the
+Closed make the page read only (`isBranchReadOnly`): Commits shows its list without editing or Rebase. Every door that means "go to the
 branch" lands through one pure rule (`branchLandingTabOf`,
 `features/branch/branchLandingTab.ts`): an explicit section in the place wins, else
 `Overview` when the active mount has a pull request, else `Files`; then the door resolver
@@ -2800,18 +2804,28 @@ the other writes. Split needs a column content of 880 or more, otherwise `Displa
 pull request's `Write review` action and swaps the tab body for the review form with line
 drafts. The section carries no Fix, Push, Rewrite or `PR #N` control of its own.
 
-**Commits.** The home of history: the branch commits and the rewriter are one
-surface (`CommitsHistory`). The tab row carries no action (no `Backups`
-button), so the body starts with the graph itself. There is no `Refresh` (the draft reloads by itself when the
-head of the worktree status moved and nothing is planned) and no overflow
-(`Open terminal` is on the mount menu). There is no legend. The body takes the
-page's column with no `px-6` of its own. Previous versions
-(`Show previous versions (n)` under the graph, the `Previous versions` drawer,
-`Reset branch to this version`) and the result of a run (`Undo
-rewrite`) live here. There is no Rewrite history page: the old `files/…/history`
-address, the palette verb, a mount row's `Rewrite history` and an Activity
-history row (which has no verb and no `⋯` of its own) all land on
-`branch/commits`. **Checks.** The checks of the pull request. A GitLab or Bitbucket
+**Commits.** The branch graph updates immediately when a commit is moved,
+folded, renamed or removed. Undo and Redo icon buttons sit in the Commits
+header. The same actions use ⌘Z and ⌘⇧Z while the page is open;
+text fields keep their own undo. Leaving the page clears the edit stack but
+keeps its backup refs. The graph fills the page column at every width.
+There is no preview column, saved edit plan or Apply step for manual edits.
+The existing Force push action updates the online branch separately. While the branch is behind its base, `Rebase on main` takes the secondary slot and Force push moves to `Branch actions`.
+
+Each live edit takes the shown mount, branch, worktree and expected head
+(`changeLiveHistory`). The Git command (`history_live_edit`) holds a writer
+lease across replay and branch movement, saves a backup before replay and
+checks the result on a temporary copy. An agent reservation blocks inline,
+and a busy row disables further edits without a queue. A conflict leaves the
+branch, index and files unchanged, names the error inline and offers Rewrite
+with an agent or Undo to dismiss the failed edit. Dirty files use the stash
+consent and recovery flow. Undo and Redo restore a backup with an expected
+head check; failures retain the stack and the captured retry target. None
+of these operations pushes to GitHub, GitLab or Bitbucket.
+
+Previous versions (`Show previous versions (n)` under the graph, the `Previous versions` drawer, `Reset branch to this version`) live here. There is no
+Rewrite history page: the old history address, the palette verb and Activity
+history rows land on `branch/commits`. **Checks.** The checks of the pull request. A GitLab or Bitbucket
 session reads them through the same five states once its host's
 `canReadChecks` is on (GitLab: the jobs of the head pipeline, a job allowed to
 fail counts as skipped; Bitbucket: its commit statuses; a token that cannot read pipelines gets the denied
@@ -2850,87 +2864,31 @@ the button focused (`HISTORY_FOCUS_BASE_EVENT`).
 Under the list one muted line, `Drag a commit to move it, drop it on another to
 fold it in.`, with a ghost `Keys` button that opens an anchored popover listing
 the keys of the focused row (`useHistoryKeys/historyKeys.ts`). There is no
-Planned changes block and no Apply at rest. The big list is always the branch as
-it is and never reorders while you plan. The first planned change (an edit, or
-`Rebase on main` from the list) turns the grid into
-`grid-cols-[minmax(0,1fr)_320px]` with a 200ms reveal (instant under reduced
-motion, `useHistoryPanelReveal`): the After panel, titled `After Apply · 7
-commits become 4`, draws the planned result with a dashed lane, each node level
-with its own row when the order allows (the Now rows and the After nodes share
-one row pitch), and under the list `Planned changes` shows its count and `Reset
-all`, the planned rows and one primary `Apply`. Resetting the last change slides
-the panel out. The Branch header shows `Rebase on main` as a secondary only while the branch is behind its base. Under
-760px of content the side graph becomes a `Now | After Apply` toggle, shown
-only while a plan exists. Every action has one color (Keep green, Fold in
-azure, Combine yellow, Move violet, Rename neutral, Remove red, Start from
-today's main grey) used on the row's change mark, its node, a 2px edge, the
-dot of its "what happens" line and its planned change. Drag a row between two
-others to move it and drop it onto a row to fold it in (fixup, `Keep title`).
-A folded row carries one always visible control, `Keep title · Keep both ·
-Separate`: `Keep both` combines (squash) and `Separate` makes it its own commit
-again, the same edit as `Separate` in its menu; its planned change keeps
-`Keep title | Keep both`. The row buttons (icons) and the `⋯` menu sit in a
-slot reserved at the end of the row, so they never cover the control; a folded
-row shows only the menu. The drag is pointer events on the shared `usePointerDrag` engine with our
-own hit testing (`useHistoryDrag`), never HTML5 drag and drop: the window's native file drop
-owns the drag session on macOS, and the composer's file drop needs it on. Keys
-on a focused row: Alt with the arrows moves, C folds into the one below, S
-combines keeping both messages, R or Enter renames, Delete or Backspace
-removes, ⌘Z undoes the last edit. Hovering a row, a node in After Apply or a
-planned change lights up the same commit in all three places; on a fold,
-hovering any member or the node lights the whole group, the commit that takes
-them in and every commit it takes in. Nothing touches
-git while you edit: the plan is a draft saved per worktree in `history_plans`,
-the planned changes are derived from it (each with its own `Undo`, plus
-`Reset all`), and once the plan rests for a quarter of a second the engine
-predicts it in memory with one `git merge-tree --stdin` process for every
-commit and one `git fast-import` that writes the predicted commits (git 2.45
-or newer; older git spawns one merge and one commit per step). A predicted
-conflict shows on its row (`may conflict in webhook.ts`) and in a notice with
-`Rewrite with an agent`. The action row sits at the end of the content
-(`FormActions`, no dock): `Apply`, or `Apply here only` and `Apply and update
-online` when the plan replaces commits that are already online and Apply is
-possible (a disabled Apply is one button), which also
-shows the notice about the pull request and the push with lease. Apply never
-rewrites the branch first. `history_plan_run` checks the worktree (right
-branch, nothing uncommitted, head where the plan started), replays the whole
-plan on a temporary git worktree outside your checkout, reports each step
-while the page says `Trying your changes on a temporary copy. Your branch is
-untouched until this finishes.`, checks the result (no conflict left, no merge
-commit, the planned number of commits, and the same tree as the branch, or the
-branch merged with today's main, except the files of removed commits), and
-removes the copy on every exit. A stop names the step and why and says the
-branch is exactly as it was. Only a passing check moves the branch, after a
-backup ref: the files move first with a two-way `read-tree` that refuses to
-overwrite local or untracked work (ignored files and folders included), then
-the branch ref moves with a compare and swap while HEAD still points at that
-branch, and nothing ever runs a hard reset on your checkout. The worktree and
-branch the trial ran on travel with the run to the move and the push, and any
-switch stops them. A rewrite interrupted by a crash is settled before the next
-one checks the worktree; a record Goodboy cannot tie to its branch blocks
-Apply with a notice instead of being guessed. Empty commits are
-kept; only what the plan removes or folds disappears. Commits before the first change keep their shas, so an edit to local
-commits never rewrites what is online. The push always carries
-`--force-with-lease` on the online sha the plan already contains
-(`history_remote_lease`), never a bare force or a sha read after the trial;
-a push that lands during the trial stops the apply before anything moves; if
-origin moved, nothing is pushed and the result offers `Bring them into the
-plan`, which fetches the commits origin gained, replays them on top of the
-rewrite in a copy and leaves `Push with lease` on the new origin sha. The
-result section lists what changed in the action colors, says whether the
-online copy was updated, what the check found, and the backup, with `Restore
-it` and `Done`. Every move leaves a backup under `refs/goodboy/backup/`, in a
-namespace made from the full branch name, kept 30 days; `Show previous versions (n)` under the graph (and `Previous versions…` in the page menu) opens the `Previous versions` drawer (kind `history-versions`, side tier). Each version shows when, why (`Before a rebase`, `Before a fold or drop`, `Before a reword or edit`, worked out from the version and the next one by `history_backup_facts`), the commit count, the difference with now (`+2 / -1 commits`, files changed) and an expandable commit list. `Reset branch to this version` (danger, anchored confirm) moves the branch back and the drawer offers `Undo` right after; it moves the branch back and, on a branch with an upstream,
-pushes it with a lease only when the online copy has nothing newer than that
-backup, or is the last rewrite this page pushed and the online copy it replaced
-was already in that backup; otherwise it stays restored here and the page says
-nothing was pushed.
-Versions made while restoring are kept past the 30 days. The newest 20 per
-branch are kept, and an older one is dropped only while a branch, tag,
-remote-tracking ref or another restore backup still contains its commit. The
-newest backup of a branch is never pruned. Backups made before the current
-naming never move: they show read-only as older backups under every branch
-whose name matches, can't be restored from the page and are never pruned. History rewriter's writable directories
+preview or Apply step. The graph shows the live branch. Drag a row between
+two others to move it, or onto another to fold it in. Focused-row keys are
+Alt with arrows to move, C to fold, S to combine both messages, R or Enter to
+rename, and Delete or Backspace to remove. Row titles and accessible names
+read the refreshed commits after each successful edit.
+
+The move refuses to overwrite local or untracked work. Files move with a
+two-way read-tree, then the branch ref moves with compare-and-swap. Undo
+and Redo use the same guarded move, writing a reciprocal backup first.
+A changed branch or head stops the operation. Resolve-thread commit
+references follow successful edits and return with Undo and Redo. A failed
+metadata update leaves the recovery refs available and shows an error.
+Empty commits stay; only removed or folded commits disappear. Commits before
+the first edit keep their shas.
+
+Every move leaves a backup under `refs/goodboy/backup/`, in a namespace made
+from the full branch name. Live edits, Undo and Redo keep their backups for 30 days; they do not count
+toward the retained-backup cap. Restoring an older version
+uses the retained policy: the newest 20 per branch are kept, and an older one
+is dropped only while another retained ref contains its commit. The newest backup is
+never pruned. Older backups from the former naming remain read-only.
+
+`Show previous versions (n)` under the graph (and `Previous versions…` in the page menu) opens the `Previous versions` drawer (kind `history-versions`, side tier). Each version shows when, why (`Before a rebase`, `Before a fold or drop`, `Before a reword or edit`, worked out by `history_backup_facts`), the commit count, the difference with now and an expandable commit list. `Reset branch to this version` (danger, anchored confirm) moves the branch back and the drawer offers `Undo` right after.
+
+History rewriter's writable directories
 are its copy, that copy's own git admin folder, the object store and the
 packed-refs lock file git takes when it clears a rebase marker. They confine
 it only under an OS sandbox or permission check (Codex in `workspace-write`,

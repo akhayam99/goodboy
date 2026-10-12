@@ -32,6 +32,7 @@ export const useHistoryRunFlow = ({ sessionId, mountId, hasUpstream }: Params) =
     void history.run({ key, failureTitle, task });
   };
   return {
+    isApplying: history.pendingKeys.has('apply'),
     refresh: () => void loadHistoryDraft({ sessionId, mountId }),
     dismiss: () => dismissHistoryRun({ sessionId, mountId }),
     rewriteWithAgent: () =>

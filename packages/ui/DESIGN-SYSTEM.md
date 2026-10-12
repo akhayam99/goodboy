@@ -622,12 +622,10 @@ Rewrite history draws one branch on the same grammar: newer above older,
 solid for what happened, dashed for what has not happened yet. Main is a
 straight `idle` trunk with its head node and one dot per commit it gained
 (the subject on hover); the branch leaves it with a quarter curve at the real
-fork point and climbs in a `muted-foreground` lane, one node per commit. The
-big graph is Now and never reorders while you plan; After Apply is a compact
-dashed copy beside it whose nodes sit level with their own rows when the order
-allows (`historyAfterLayout`). No line is ever drawn between the two graphs or
-across rows: hovering a row, a node or a planned change lights the same
-commit in all three places.
+fork point and climbs in a `muted-foreground` lane, one node per commit. The graph shows the local branch and updates after each successful edit.
+There is one full-width column at every window size. The moved row shows
+an inline busy state while Git works; controls ignore further edits until it
+finishes. Undo and Redo are icon buttons with tooltips in the Commits header.
 
 Each action has one colour, read only through `HISTORY_ACTION_CLASSES` in
 `apps/desktop/src/features/history/historyActionClasses.ts`:
@@ -642,19 +640,11 @@ Each action has one colour, read only through `HISTORY_ACTION_CLASSES` in
 | Remove                      | drop     | red        | `--color-danger`           |
 | Rebase on the base branch   | rebase   | trunk grey | `--color-idle`             |
 
-The colour shows on the change mark (a 12% wash, a 40% border and the colour
-as text), on the node and the outer ring of a commit that takes others in, on
-a 2px bar inside the left of the row, on the dot of each part of the "what
-happens" line, on the mark that leads each planned change and on the pressed
-half of `Keep title | Keep both`. A kept row gets a green node and nothing
-else. Warnings keep `warning` and the triangle. `token-contrast-floor.test.ts`
-holds the three history tokens at 4.5:1 on every surface and on their own
-mark, which is why the light theme draws them darker than the dark one. The
-edited row keeps a fading wash for 1.4s (`animate-history-arrive`), the
-narrow After Apply list and the settle after Apply slide rows with
-`useFlipList` (360ms), and After Apply nodes tween in 380ms; reduced motion
-turns all three into instant swaps. The planned changes and the result end
-with `FormActions`, inline at the end of the content, never in a dock.
+A kept row gets a green node. Warnings keep `warning` and the triangle.
+`token-contrast-floor.test.ts` holds the history tokens at 4.5:1 on every
+surface and their own marks. Successful row updates settle with `useFlipList`;
+reduced motion makes the update instant. Errors and stash consent stay inline
+with actions next to their reason.
 
 ### Work nodes and row states
 

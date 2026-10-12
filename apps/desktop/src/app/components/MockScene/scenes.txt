@@ -294,6 +294,10 @@ lens-switcher-closed
 link-scope
 linkwork-star
 listbox
+live-edit-after
+live-edit-busy
+live-edit-conflict
+live-edit-stash
 model-picker
 model-picker-claude
 model-picker-codex

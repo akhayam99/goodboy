@@ -7,6 +7,7 @@ mod dirty;
 #[cfg(test)]
 mod fixtures;
 mod journal;
+mod live;
 mod merge_tree;
 mod plan;
 mod predict;
@@ -23,6 +24,7 @@ mod types;
 pub(crate) use apply::*;
 pub(crate) use backups::*;
 pub(crate) use copies::*;
+pub(crate) use live::*;
 pub(crate) use predict::*;
 pub(crate) use rebase::*;
 pub(crate) use remote::*;

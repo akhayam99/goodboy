@@ -1,5 +1,4 @@
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode, RefObject } from 'react';
-import { SegmentedTabs } from '@goodboy/ui';
 import type { BranchCommit, HistoryGraph, SessionId } from '@goodboy/types';
 import type { HistoryDropTarget } from '../../useHistoryDrag';
 import type { RowPositions } from '../../useRowPositions';
@@ -14,9 +13,6 @@ type Props = {
   readonly ownBranch: string;
   readonly view: HistoryRowView;
   readonly isDone: boolean;
-  readonly isNarrow: boolean;
-  readonly hasPlan: boolean;
-  readonly narrowView: 'now' | 'planned';
   readonly rows: ReadonlyArray<BranchCommit>;
   readonly listRef: RefObject<HTMLDivElement | null>;
   readonly positions: RowPositions;
@@ -29,14 +25,8 @@ type Props = {
   readonly nowMs: number;
   readonly renderRow: (commit: BranchCommit) => ReactNode;
   readonly onKeyDown: (event: ReactKeyboardEvent<HTMLDivElement>) => void;
-  readonly onNarrowViewChange: (view: 'now' | 'planned') => void;
   readonly onRebase: (params: RebaseRequest) => void;
 };
-
-const NOW_VIEW_OPTIONS = [
-  { value: 'now', label: 'Now' },
-  { value: 'planned', label: 'After Apply' },
-] as const;
 
 export const HistoryNowColumn = ({
   sessionId,
@@ -44,9 +34,6 @@ export const HistoryNowColumn = ({
   ownBranch,
   view,
   isDone,
-  isNarrow,
-  hasPlan,
-  narrowView,
   rows,
   listRef,
   positions,
@@ -59,25 +46,9 @@ export const HistoryNowColumn = ({
   nowMs,
   renderRow,
   onKeyDown,
-  onNarrowViewChange,
   onRebase,
 }: Props) => (
   <div className="flex min-w-0 flex-col gap-2" onKeyDown={onKeyDown}>
-    {hasPlan && !isDone ? (
-      <div className="flex h-6 items-center justify-between gap-2 pl-2">
-        {isNarrow ? (
-          <SegmentedTabs
-            size="sm"
-            ariaLabel="Show"
-            options={NOW_VIEW_OPTIONS}
-            value={narrowView}
-            onChange={onNarrowViewChange}
-          />
-        ) : (
-          <span className="text-label text-foreground">Now</span>
-        )}
-      </div>
-    ) : null}
     <HistoryNowList
       sessionId={sessionId}
       repoPath={repoPath}

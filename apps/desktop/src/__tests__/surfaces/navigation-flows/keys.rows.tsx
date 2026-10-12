@@ -981,6 +981,14 @@ const KEYS_DIFF = [
 ].join('\n');
 
 export const keysBridge = (command: string, args?: BridgeArgs): Promise<unknown> => {
+  if (command === 'history_restore') {
+    return Promise.resolve({
+      kind: 'moved',
+      head: 'history-key-head',
+      backupRef: 'history-key-reciprocal',
+      carriedCount: 0,
+    });
+  }
   if (command === 'worktree_diff') {
     return Promise.resolve(KEYS_DIFF);
   }

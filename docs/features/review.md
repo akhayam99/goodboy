@@ -100,7 +100,7 @@ A description Goodboy wrote is updated after a history push, so it keeps matchin
 
 ### Read the code
 
-Read the branch against its base in the **Files** section, unified or split, with a file tree that tracks what you marked **Viewed**. Quote lines into a note, or choose **Ask agent** to send them to an agent with your question. The Branch header offers the next step, such as **Push**, **Mark ready for review** or **Merge**.
+Read the branch against its base in the **Files** section, unified or split, with a file tree that tracks what you marked **Viewed**. Quote lines into a note, or choose **Ask agent** to send them to an agent with your question. The Branch header refreshes after a local commit edit and offers **Force push**, **Mark ready for review** or **Merge** as appropriate.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-diff-dark.webp">

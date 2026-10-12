@@ -66,16 +66,15 @@ describe('the u24 commits scenes', () => {
     expect(document.querySelector('[data-after-node]')).toBeNull();
   });
 
-  it('opens the After panel, Planned changes and one Apply once a change is planned', async () => {
+  it('ignores legacy staged edits and keeps the live branch visible', async () => {
     renderScene({ name: 'commits-planned' });
 
     await screen.findByRole('list', { name: 'Commits' }, { timeout: 4_000 });
     await settle();
 
-    expect(document.querySelector('[data-after-node]')).not.toBeNull();
-    expect(screen.getByRole('heading', { name: 'Planned changes' })).toBeDefined();
-    expect(screen.getAllByRole('button', { name: /^Apply/ }).length).toBeGreaterThan(0);
-    expect(screen.getByRole('button', { name: 'Reset all' })).toBeDefined();
+    expect(screen.queryByRole('heading', { name: 'Planned changes' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Apply/ })).toBeNull();
+    screen.getByRole('button', { name: 'Undo commit edit' });
   });
 
   it('keeps the single column on a 1920 stage', async () => {

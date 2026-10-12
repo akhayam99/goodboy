@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { BranchCommit, HistoryStep, SessionId } from '@goodboy/types';
+import type { BranchCommit, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { useWorktreeStatuses } from '../../../../session/hooks/useWorktreeStatuses';
 import {
@@ -11,13 +11,13 @@ import { isHistoryRunActive } from '../../../../../store/slices/history/isHistor
 import { deriveHistoryEdits } from '../../../historyEdits';
 import { historyGraphModel } from '../../../historyGraphModel';
 import { historyRowMarks } from '../../../historyRowMarks';
+import { initialPlanItems } from '../../../historyPlan';
 
 type Params = {
   readonly sessionId: SessionId;
   readonly worktreePath: string;
 };
 
-const EMPTY_ITEMS: ReadonlyArray<HistoryStep> = [];
 const EMPTY_COMMITS: ReadonlyArray<BranchCommit> = [];
 
 export const useHistoryPlan = ({ sessionId, worktreePath }: Params) => {
@@ -42,9 +42,9 @@ export const useHistoryPlan = ({ sessionId, worktreePath }: Params) => {
     void loadHistoryDraft({ sessionId, mountId });
   }, [loadHistoryDraft, mountId, sessionId]);
 
-  const items = draft?.items ?? EMPTY_ITEMS;
   const commits = draft?.commits ?? EMPTY_COMMITS;
-  const onto = draft?.onto ?? null;
+  const items = useMemo(() => initialPlanItems({ commits }), [commits]);
+  const onto = null;
   const graph = draft?.graph ?? null;
   const original = useMemo(() => [...commits].reverse().map((commit) => commit.sha), [commits]);
   const commitBySha = useMemo(
@@ -76,8 +76,8 @@ export const useHistoryPlan = ({ sessionId, worktreePath }: Params) => {
       ? 0
       : status.workingTree.staged + status.workingTree.unstaged + status.workingTree.unmerged;
   const isBusy = run !== null && isHistoryRunActive({ phase: run.phase });
-  const applied = run !== null && run.phase !== 'restored' ? run.applied : null;
-  const isDone = applied !== null;
+  const applied = null;
+  const isDone = false;
   const isInteractive = draft !== null && !isBusy && !isDone && commits.length > 0;
   const statusHead = status?.head ?? null;
   const draftHead = draft?.headSha ?? null;
@@ -106,7 +106,6 @@ export const useHistoryPlan = ({ sessionId, worktreePath }: Params) => {
     prNumber,
     items,
     commits,
-    onto,
     graph,
     original,
     commitBySha,
