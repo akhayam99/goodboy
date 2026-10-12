@@ -73,6 +73,7 @@ export const JobBannerActions = ({ controls, actions, isNoteOpen, onToggleNote }
         </>
       );
     case 'merging':
+    case 'fixing-push':
       return seeWhatItDid;
     case 'done':
       return (
@@ -133,11 +134,19 @@ export const JobBannerActions = ({ controls, actions, isNoteOpen, onToggleNote }
     case 'push-failed':
       return (
         <>
-          <Button size="sm" isBusy={pendingKeys.has('retry-push')} onClick={actions.retryPush}>
-            Retry push
+          <Button size="sm" isBusy={pendingKeys.has('fix-push')} onClick={actions.fixPush}>
+            Fix with agent
           </Button>
-          <Button size="sm" variant="ghost" onClick={controls.openTerminal}>
-            Open terminal
+          <Button size="sm" variant="secondary" onClick={controls.openPushTerminal}>
+            Open terminal here
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            isBusy={pendingKeys.has('retry-push')}
+            onClick={actions.retryPush}
+          >
+            Retry push
           </Button>
           {job.detail === null ? null : <JobBannerDetails detail={job.detail} />}
           {dismiss}

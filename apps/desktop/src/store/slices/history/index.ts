@@ -19,6 +19,8 @@ import { bringBackHistoryFiles } from './bringBackHistoryFiles';
 import { forgetHistoryFiles } from './forgetHistoryFiles';
 import { acceptHistoryChange } from './acceptHistoryChange';
 import { discardHistoryChange } from './discardHistoryChange';
+import { fixPushWithAgent } from './fixPushWithAgent';
+import { settlePushFix } from './settlePushFix';
 import { settleHistoryRewriter } from './settleHistoryRewriter';
 import { startHistoryRewriter } from './startHistoryRewriter';
 import { syncBranchWithRemote } from './syncBranchWithRemote';
@@ -35,6 +37,8 @@ export const createHistorySlice = ({ set, get }: SliceDeps) => {
     pushHistoryRewrite: pushHistoryRewrite(set, get),
     startHistoryRewriter: startHistoryRewriter(set, get),
     settleHistoryRewriter: settleHistoryRewriter(set, get),
+    fixPushWithAgent: fixPushWithAgent(set, get),
+    settlePushFix: settlePushFix(set, get),
     loadHistoryDraft: loadHistoryDraft(set, get),
     editHistoryDraft: editHistoryDraft(set, get),
     undoHistoryDraft: undoHistoryDraft(set, get),

@@ -8,6 +8,8 @@ import {
 } from '../../../store/slices/project-mounts/selectors';
 import { refreshWorktreeStatuses } from '../../../store/slices/worktreeStatuses/cache';
 import { changedCount } from '../../../shared/lib/gitStatus';
+import { openSessionTerminal } from '../../terminal/openSessionTerminal';
+import { pushFixCommand } from '../pushFixCommand';
 import { openSettings } from '../../settings/openSettings';
 import { useHistoryRunFlow } from '../components/CommitsHistory/useHistoryRunFlow';
 import { useWorktreeTree } from '../useWorktreeTree';
@@ -26,6 +28,7 @@ export type RebaseJobControls = {
   readonly undo: () => void;
   readonly checkAgain: () => void;
   readonly openTerminal: () => void;
+  readonly openPushTerminal: () => void;
   readonly openProviders: () => void;
   readonly seeWhatItDid: () => void;
 };
@@ -63,7 +66,7 @@ export const useRebaseJob = ({ sessionId, worktreePath }: Params): RebaseJobCont
   if (isCleared) {
     return null;
   }
-  const agentId = run.agentId;
+  const agentId = run.pushFix?.agentId ?? run.agentId;
   return {
     job,
     agentId,
@@ -72,6 +75,13 @@ export const useRebaseJob = ({ sessionId, worktreePath }: Params): RebaseJobCont
     undo: () => flow.restoreApplied(run),
     checkAgain: () => void refreshWorktreeStatuses({ worktreePaths: [worktreePath] }),
     openTerminal: () => openMountTerminal(sessionId, worktreePath),
+    openPushTerminal: () =>
+      openSessionTerminal({
+        state: useAppStore.getState(),
+        sessionId,
+        cwd: worktreePath,
+        prefill: pushFixCommand({ branch: mount.branch, remoteSha: run.remoteSha }),
+      }),
     openProviders: () => openSettings({ scope: 'providers' }),
     seeWhatItDid: () => {
       if (agentId === null) {

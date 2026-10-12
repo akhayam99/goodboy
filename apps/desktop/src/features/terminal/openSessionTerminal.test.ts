@@ -41,6 +41,33 @@ describe('openSessionTerminal', () => {
     });
   });
 
+  it('hands the prefill to a new terminal and never writes it into an existing tab', async () => {
+    const { openSessionTerminal } = await import('./openSessionTerminal');
+
+    openSessionTerminal({
+      state: store.getState(),
+      sessionId: SESSION_ID,
+      cwd: '/wt/ledger-core',
+      prefill: 'git push origin hl/ledger-rounding',
+    });
+    const first = store.getState().terminalTabs[SESSION_ID]?.[0];
+    expect(first?.prefill).toBe('git push origin hl/ledger-rounding');
+
+    if (first !== undefined) {
+      store.getState().setTerminalPrefill({ owner: first.owner, tabId: first.id, prefill: null });
+    }
+    openSessionTerminal({
+      state: store.getState(),
+      sessionId: SESSION_ID,
+      cwd: '/wt/ledger-core',
+      prefill: 'git push origin again',
+    });
+    const tabs = store.getState().terminalTabs[SESSION_ID] ?? [];
+    expect(tabs).toHaveLength(2);
+    expect(tabs[0]?.prefill).toBeUndefined();
+    expect(tabs[1]?.prefill).toBe('git push origin again');
+  });
+
   it('reuses a running terminal at the same worktree instead of adding one', async () => {
     const { openSessionTerminal } = await import('./openSessionTerminal');
 
@@ -75,11 +102,11 @@ describe('toggleSessionTerminal', () => {
       sessionBranches: { [SESSION_ID]: 'hl/ledger-rounding' },
     });
 
-    toggleSessionTerminal();
+    toggleSessionTerminal({});
     expect(store.getState().drawer?.kind).toBe('terminal');
     expect(store.getState().terminalTabs[SESSION_ID]).toHaveLength(1);
 
-    toggleSessionTerminal();
+    toggleSessionTerminal({});
     expect(store.getState().drawer).toBeNull();
     expect(store.getState().terminalTabs[SESSION_ID]).toHaveLength(1);
   });
@@ -91,7 +118,7 @@ describe('toggleSessionTerminal', () => {
       sessionBranches: { [OTHER_SESSION_ID]: '' },
     });
 
-    toggleSessionTerminal();
+    toggleSessionTerminal({});
 
     expect(store.getState().drawer).toBeNull();
   });

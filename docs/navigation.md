@@ -2583,7 +2583,13 @@ push one), drift and the result per thread. Under it sits the rebase job banner
 on main, on every tab of the page, which replaces the red line that used to
 tell a stop. It reads the run of the branch (`historyRuns`), never local state,
 and its stops carry only the actions that exist today (Dismiss, Refresh, Open
-terminal, Open providers, Check again, Undo rewrite, See what it did). Only the header pushes: a thread has no
+terminal, Open providers, Check again, Undo rewrite, See what it did). A failed push after
+a rebase offers `Fix with agent` (the primary: an Implementer on that worktree briefed with the
+command and git output, `fixPushWithAgent`; it commits the fix and never pushes, Goodboy then
+pushes again with the same lease, `settlePushFix`, and the banner follows it with a link to its
+transcript), `Open terminal here` (the session terminal drawer at the worktree with the exact
+push typed at the prompt and not run, `openSessionTerminal` with `prefill`) and `Retry push`.
+Only the header pushes: a thread has no
 Push, Push again or Sync button. With an accepted thread opened in Comments the
 primary reads `Push 1` (it counts threads) and pushes just that fix
 (`preparePublication` with `isolated`, `isolatedPushOf` unchanged); the preview

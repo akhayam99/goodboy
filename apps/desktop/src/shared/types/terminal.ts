@@ -17,5 +17,6 @@ export type TerminalTab = {
   readonly mountId?: MountId;
   readonly status: TerminalTabStatus;
   readonly openError?: string;
+  readonly prefill?: string;
   readonly createdAt: number;
 };

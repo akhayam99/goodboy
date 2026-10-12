@@ -4,7 +4,7 @@ import type { TerminalTab } from '../../../../shared/types/terminal';
 import { LazyGenericTerminalPanel } from '../../../../shared/components/GenericTerminalPanel/LazyGenericTerminalPanel';
 import { useAppStore } from '../../../../store';
 import { createTerminalDriver } from '../../terminalDriver';
-import { invokeTerminalOpen } from '../../terminal';
+import { openTerminalOnce } from '../../openTerminalOnce';
 
 type Props = {
   readonly tab: TerminalTab;
@@ -19,7 +19,11 @@ export const TerminalPane = ({ tab, isActive }: Props) => {
     if (tab.status === 'exited') {
       return;
     }
-    invokeTerminalOpen(tab.id, tab.cwd, 100, 24).catch((error: unknown) => {
+    let isCancelled = false;
+    openTerminalOnce({ id: tab.id, cwd: tab.cwd, owner: tab.owner }).catch((error: unknown) => {
+      if (isCancelled) {
+        return;
+      }
       setTerminalTabStatus({
         owner: tab.owner,
         tabId: tab.id,
@@ -27,7 +31,10 @@ export const TerminalPane = ({ tab, isActive }: Props) => {
         openError: formatError(error),
       });
     });
-  }, [tab.id, tab.cwd, tab.owner, tab.status, setTerminalTabStatus]);
+    return () => {
+      isCancelled = true;
+    };
+  }, [tab.id, tab.cwd, tab.owner, tab.status, tab.prefill, setTerminalTabStatus]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">

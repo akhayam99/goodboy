@@ -100,6 +100,7 @@ export type HistoryRun = {
   readonly movedHead: string | null;
   readonly threadShas: ReadonlyArray<HistoryThreadShas>;
   readonly commitCount: number | null;
+  readonly pushFix?: { readonly agentId: AgentId };
   readonly pendingMove?:
     | { readonly kind: 'apply'; readonly input: ApplyHistoryRewriteInput }
     | {
