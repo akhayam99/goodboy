@@ -49,11 +49,21 @@ const portRows = (port: number): ReadonlyArray<Element> => [
 
 type ReadyParams = {
   readonly name?: keyof typeof U25_PORTS_SCENES;
+  readonly isFreeOpen?: boolean;
 };
 
-const ready = async ({ name = 'ports-layers' }: ReadyParams = {}) => {
+const openFreeFolds = () => {
+  for (const fold of screen.queryAllByRole('button', { name: /^\d+ free: / })) {
+    fireEvent.click(fold);
+  }
+};
+
+const ready = async ({ name = 'ports-layers', isFreeOpen = true }: ReadyParams = {}) => {
   renderScene({ name });
   await waitFor(() => expect(portRows(5005)).toHaveLength(1), { timeout: 4000 });
+  if (isFreeOpen && name === 'ports-layers') {
+    openFreeFolds();
+  }
 };
 
 type NameParams = {
@@ -103,7 +113,7 @@ describe('the four layers', () => {
 
     expect(within(goodboy).getByText(':5173')).toBeDefined();
     expect(within(goodboy).getByText(':4321')).toBeDefined();
-    expect(within(goodboy).getAllByText(/^Agent · claude$/)).toHaveLength(2);
+    expect(within(goodboy).getAllByText(/^Agent$/)).toHaveLength(2);
     expect(within(goodboy).getByText('payments-api · hl/refund-rounding')).toBeDefined();
   });
 
@@ -244,7 +254,11 @@ describe('the row menu of a workspace or Goodboy port', () => {
     expect(store.getState().monitorHidden).toContainEqual({ port: 5002, source: 'workspace' });
 
     await act(() => store.getState().undoLastOperation({}));
-    await waitFor(() => expect(portRows(5002)).toHaveLength(1));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: '1 free: :5002' })).toBeDefined(),
+    );
+    openFreeFolds();
+    expect(portRows(5002)).toHaveLength(1);
     expect(screen.getByText('1 hidden')).toBeDefined();
   });
 
@@ -260,9 +274,11 @@ describe('the row menu of a workspace or Goodboy port', () => {
   it('performs the hide the scene scripts and leaves the Undo in the store', async () => {
     await ready({ name: 'ports-hidden' });
 
-    await waitFor(() => expect(portRows(5002)).toHaveLength(0), { timeout: 4000 });
+    await waitFor(() => expect(store.getState().undoStack.length).toBeGreaterThan(0), {
+      timeout: 4000,
+    });
 
-    expect(store.getState().undoStack.length).toBeGreaterThan(0);
+    expect(portRows(5002)).toHaveLength(0);
   });
 });
 
@@ -348,8 +364,10 @@ describe('the row menu of a pinned port', () => {
 
     await act(() => store.getState().undoLastOperation({}));
     await waitFor(() =>
-      expect(within(layer({ name: 'Pinned' })).getByText('Mock API')).toBeDefined(),
+      expect(within(layer({ name: 'Pinned' })).getByText(/^1 free: /)).toBeDefined(),
     );
+    openFreeFolds();
+    expect(within(layer({ name: 'Pinned' })).getByText('Mock API')).toBeDefined();
   });
 });
 

@@ -14,6 +14,8 @@ export type StartedRow = {
   readonly spawnId: string;
   readonly kind: LedgerKind;
   readonly name: string;
+  readonly kindWord: string;
+  readonly processName: string;
   readonly where: string;
   readonly startedAt: number;
   readonly rssBytes: number;
@@ -57,6 +59,8 @@ export const startedByGoodboy = ({
         spawnId: entry.spawnId,
         kind: entry.kind,
         name: `${ledgerKindWord({ kind: entry.kind })} · ${process?.name ?? 'process'}`,
+        kindWord: ledgerKindWord({ kind: entry.kind }),
+        processName: process?.name ?? 'process',
         where: whereOf({ entry, projects, sessionMounts }),
         startedAt: entry.startedAt,
         rssBytes: process?.rssBytes ?? 0,

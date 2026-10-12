@@ -7,6 +7,7 @@ import { useLeftoverRows } from '../../hooks/useLeftoverRows';
 import { useMonitoringModel } from '../../hooks/useMonitoringModel';
 import { useMonitorPolling } from '../../hooks/useMonitorPolling';
 import { summaryMeta } from '../../summaryMeta';
+import { ColumnHeader } from './ColumnHeader';
 import { GoodboySection } from './GoodboySection';
 import { HiddenFooter } from './HiddenFooter';
 import { ListeningSection } from './ListeningSection';
@@ -67,6 +68,7 @@ export const MonitoringPage = () => {
             action={<PinPortPopover variant="primary" />}
           />
         ) : null}
+        {isReady && !isEmpty ? <ColumnHeader /> : null}
         {isReady && model.pinned.length > 0 ? (
           <PinnedSection rows={model.pinned} processOf={model.processOf} now={now} />
         ) : null}

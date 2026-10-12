@@ -33,6 +33,8 @@ artifacts-lens-shell
 artifacts-loading
 artifacts-no-match
 artifacts-rows
+b-monitoring-busy
+b-monitoring-expanded
 board
 board-delete-confirm
 board-empty-lanes

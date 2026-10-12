@@ -33,10 +33,10 @@ const CLICK_MS = 300;
 const BUTTON_CLICKS: Readonly<Record<Variant, ReadonlyArray<string>>> = {
   layers: [],
   popover: ['Pin a port'],
-  rowmenu: ['Actions for :5002'],
-  pinnedmenu: ['Actions for :9000'],
+  rowmenu: ['1 free: :5002', 'Actions for :5002'],
+  pinnedmenu: ['1 free: :9000', 'Actions for :9000'],
   listening: ['Listening on this Mac'],
-  hidden: ['Actions for :5002'],
+  hidden: ['1 free: :5002', 'Actions for :5002'],
 };
 
 const ITEM_CLICKS: Readonly<Record<Variant, ReadonlyArray<string>>> = {

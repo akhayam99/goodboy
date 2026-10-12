@@ -1,10 +1,13 @@
 import { StatusDot, cn } from '@goodboy/ui';
+import { MiddleText } from '../../../../shared/components/MiddleText';
 import { formatMemory } from '../../formatMemory';
 import { formatUptime } from '../../formatUptime';
+import { MIDDLE_TAIL } from '../../middleTail';
 import type { StartedRow } from '../../startedByGoodboy';
 import { isStuck } from '../../stuckProcesses';
 import { ActionsCell } from './ActionsCell';
 import { PORT_GRID } from './portGrid';
+import { ProcessCell } from './ProcessCell';
 import { StopControl } from './StopControl';
 
 type Props = {
@@ -16,10 +19,13 @@ type Props = {
 export const ProcessRowView = ({ row, idleCounts, now }: Props) => (
   <li data-started-row={row.spawnId} className={cn(PORT_GRID, 'min-h-8 text-label')}>
     <StatusDot tone="neutral" size="md" className="opacity-40" />
-    <span className="col-span-2 min-w-0 truncate text-foreground">{row.name}</span>
-    <span className="min-w-0 truncate text-muted-foreground">{row.where}</span>
-    <span className="flex min-w-0 items-center gap-1">
-      <span className="shrink-0 text-meta tabular-nums text-faint-foreground">{row.pid}</span>
+    <span className="text-faint-foreground">no port</span>
+    <span className="min-w-0 truncate text-muted-foreground">{row.kindWord}</span>
+    <span className="flex min-w-0 text-muted-foreground">
+      <MiddleText value={row.where} tail={MIDDLE_TAIL} />
+    </span>
+    <span className="flex min-w-0 items-center gap-2">
+      <ProcessCell name={row.processName} pid={row.pid} />
       {isStuck({
         kind: row.kind,
         pid: row.pid,
