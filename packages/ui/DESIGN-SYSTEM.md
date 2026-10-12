@@ -2088,7 +2088,7 @@ no draft pull requests`, `Turned off in payments-api`, `Set by the project`), a
 control for a concept the host does not have is left out. The merge
 confirm is an inline panel with one `ChoiceCards` group (`ActionConfirm.choice`):
 the option cards carry the effect sentence, draw no icon tile when they have no
-icon, and a forbidden one is disabled with its reason. States follow the five of Empty states: no pull request is a page
+icon, and a forbidden one is disabled with its reason. A card hugs its content: a title line with an optional `badge` tag, then one muted `hint` line. States follow the five of Empty states: no pull request is a page
 `EmptyState` over the create form, the activity loads as a `SkeletonRow`, a
 failed read is an inline danger `Notice` with Retry.
 

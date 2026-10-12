@@ -122,8 +122,8 @@ Review someone else's pull request from its diff. Click a line number to leave a
 
 **Also in this area**
 
-| Feature            | What it does for you                                                               |
-| ------------------ | ---------------------------------------------------------------------------------- |
-| Written by Goodboy | Comments Goodboy posts end with a line that says so, and a setting turns it off    |
-| Resolve again      | Rereads a comment and tries the fix once more                                      |
-| Checks             | Lists CI checks with their durations, and **Analyze** asks an agent why one failed |
+| Feature            | What it does for you                                                                                                |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| Written by Goodboy | Comments Goodboy posts end with a line that says so, and a setting turns it off                                     |
+| Resolve again      | Rereads a comment and tries the fix once more                                                                       |
+| Checks             | Lists CI checks with their durations, and **Analyze** asks an agent why one failed and proposes a fix you can start |

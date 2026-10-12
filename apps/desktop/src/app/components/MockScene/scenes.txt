@@ -169,6 +169,8 @@ controls-ladder
 controls-topbar
 conversation
 crash-report
+debugger-drawer-ci-log
+debugger-drawer-options
 debugger-drawer-proposal
 debugger-drawer-running
 design-comments

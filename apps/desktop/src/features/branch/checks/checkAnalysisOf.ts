@@ -1,5 +1,7 @@
 import type { Agent, TurnEvent, TurnState } from '@goodboy/types';
+import { findingOf } from './findingOf';
 import { proposalOf } from './proposalOf';
+import { proposalOptionsOf } from './proposalOptionsOf';
 
 type Params = {
   readonly agent: Agent;
@@ -18,6 +20,7 @@ export const checkAnalysisOf = ({ agent, events, turnState }: Params) => {
     .map((event) => event.delta)
     .join('');
   const proposal = proposalOf({ text });
+  const options = proposal === null ? null : proposalOptionsOf({ text: proposal });
   const isRunning =
     turnState?.kind === 'starting' ||
     turnState?.kind === 'running' ||
@@ -44,7 +47,9 @@ export const checkAnalysisOf = ({ agent, events, turnState }: Params) => {
             .find((line) => line.trim().length > 0) ?? 'Starting the analysis');
   return {
     text,
+    finding: findingOf({ text }),
     proposal,
+    options,
     isRunning,
     activity,
     label: isRunning

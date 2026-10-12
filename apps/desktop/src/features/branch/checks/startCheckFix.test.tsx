@@ -43,7 +43,9 @@ import {
 } from '../../../store/storyHarness';
 import { ToastProvider } from '../../../shared/components/Toast';
 import { checksAnalyzeSeed } from '../../../app/components/MockScene/scenes/u24/checksAnalyzeSeed';
+import { DEBUGGER_OPTIONS_TEXT } from '../../../app/components/MockScene/scenes/u25/debuggerSeed';
 import { BranchChecks } from '../components/BranchChecks';
+import { CheckAnalysisDrawer } from '../components/CheckAnalysisDrawer';
 import { startCheckFix } from './startCheckFix';
 import { buildTimelineGroups } from '../../session/timeline/buildTimelineGroups';
 import { buildTimelineStream } from '../../session/timeline/buildTimelineStream';
@@ -213,6 +215,60 @@ describe('Start fix with the real store and SQLite', () => {
     expect(
       screen.getByText('Fixed by Implementer. The checks run again when you push.'),
     ).toBeDefined();
+  });
+  it.each([
+    {
+      optionKey: 'B',
+      included: 'Option B: Dedupe in the retry queue',
+      excluded: ['Guard in the ledger', 'Option C'],
+    },
+    {
+      optionKey: undefined,
+      included: 'Option A: Guard in the ledger',
+      excluded: ['Dedupe in the retry queue', 'Option C'],
+    },
+  ])(
+    'seeds the Implementer with the finding and only the chosen option: $optionKey',
+    async ({ optionKey, included, excluded }) => {
+      seed = checksAnalyzeSeed({ phase: 'proposal', analysisText: DEBUGGER_OPTIONS_TEXT });
+      const spawn = vi.spyOn(store.getState(), 'spawnAgent');
+      await startCheckFix({
+        sessionId: seed.sessionId,
+        url: seed.check.detailsUrl ?? '',
+        mountId: seed.repo.mountId,
+        ...(optionKey !== undefined && { optionKey }),
+      });
+      const prompt = spawn.mock.calls[0]?.[1].initialPrompt ?? '';
+      expect(prompt).toContain('The retry path applies the credit again');
+      expect(prompt).toContain(included);
+      for (const text of excluded) {
+        expect(prompt).not.toContain(text);
+      }
+      expect(prompt).not.toContain('Recommended: A');
+      expect(prompt).toContain('Make this fix on this branch, commit it, and push nothing.');
+    },
+  );
+  it('starts the option picked in the drawer and no other', async () => {
+    seed = checksAnalyzeSeed({ phase: 'proposal', analysisText: DEBUGGER_OPTIONS_TEXT });
+    const spawn = vi.spyOn(store.getState(), 'spawnAgent');
+    render(
+      <ToastProvider>
+        <CheckAnalysisDrawer
+          sessionId={seed.sessionId}
+          mountId={seed.repo.mountId}
+          checkUrl={seed.check.detailsUrl ?? ''}
+          onClose={() => undefined}
+        />
+      </ToastProvider>,
+    );
+    fireEvent.click(screen.getByRole('tab', { name: /Option C/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start option C' }));
+    await waitFor(() => expect(spawn).toHaveBeenCalledTimes(1));
+    const prompt = spawn.mock.calls[0]?.[1].initialPrompt ?? '';
+    expect(prompt).toContain('Option C: Make credits idempotent by key');
+    expect(prompt).not.toContain('Dedupe in the retry queue');
+    expect(prompt).not.toContain('Guard in the ledger');
+    await waitFor(() => expect(implementers().length).toBe(1));
   });
   it('reads as one tree in Activity: the Debugger on top, the Implementer its only child', async () => {
     await startCheckFix({

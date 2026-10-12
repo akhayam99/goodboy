@@ -31,14 +31,21 @@ const pullRequest: PullRequestState = {
 const log =
   'FAIL src/ledger.test.ts\nExpected credits: 1\nReceived credits: 2\nRetry applies the same credit twice.';
 const proposal =
-  'The retry path does not check whether the invoice was already credited.\n\n## Proposed fix\nAdd an idempotency guard in src/ledger.ts and a retry test in src/ledger.test.ts.\nRun the ledger-core unit suite.\n\n```diff\n--- a/src/ledger.ts\n+++ b/src/ledger.ts\n@@ -1,1 +1,2 @@\n+if (hasCredit(invoice)) return;\n applyCredit(invoice);\n```';
+  '## Finding\nThe retry path does not check whether the invoice was already credited.\n\n## Proposed fix\nAdd an idempotency guard in src/ledger.ts and a retry test in src/ledger.test.ts.\nRun the ledger-core unit suite.\n\n```diff\n--- a/src/ledger.ts\n+++ b/src/ledger.ts\n@@ -1,1 +1,2 @@\n+if (hasCredit(invoice)) return;\n applyCredit(invoice);\n```';
 
 type Params = {
   readonly phase: 'failing' | 'running' | 'proposal' | 'no-fix';
   readonly shouldOpenDrawer?: boolean;
+  readonly analysisText?: string;
+  readonly log?: string;
 };
 
-export const checksAnalyzeSeed = ({ phase, shouldOpenDrawer = false }: Params) => {
+export const checksAnalyzeSeed = ({
+  phase,
+  shouldOpenDrawer = false,
+  analysisText = proposal,
+  log: failedLog = log,
+}: Params) => {
   seedActivityRunScene();
   const state = useAppStore.getState();
   const repo = resolveSessionRepo({ state, sessionId: SESSION_ID });
@@ -68,7 +75,7 @@ export const checksAnalyzeSeed = ({ phase, shouldOpenDrawer = false }: Params) =
   };
   const kickoff = buildAnalyzeChecksPrompt({
     pullRequest,
-    checks: [{ ...check, log }],
+    checks: [{ ...check, log: failedLog }],
     paths: ['src/ledger.ts', 'src/ledger.test.ts'],
   });
   const events: ReadonlyArray<TurnEvent> = [
@@ -78,7 +85,7 @@ export const checksAnalyzeSeed = ({ phase, shouldOpenDrawer = false }: Params) =
       runId: running.runId,
       delta:
         phase === 'proposal'
-          ? proposal
+          ? analysisText
           : phase === 'no-fix'
             ? 'Could not reproduce the failure.'
             : 'Running the retry reproduction in ledger-core.',
