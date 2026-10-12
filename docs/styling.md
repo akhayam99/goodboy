@@ -258,7 +258,10 @@ composer) puts its own `PageColumn` around the scrolling content and the
 composer, so it shares the header's edges; the scroll viewport spans the pane
 and carries no gutter.
 
-Prose keeps its 720px measure aligned left inside the column. The `full` tier
+Prose keeps its 720px measure aligned left inside the column, except on an
+artifact document page (a plan, a report): its prose, parts, editor, skeleton
+and past versions fill the column and share one right edge. The drawer copy of
+a plan keeps the reading measure. The `full` tier
 is the only exception to centring and ignores the slide below: its right edge
 follows the drawer exactly as before.
 

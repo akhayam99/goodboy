@@ -36,9 +36,6 @@
   font-size: var(--text-label);
   line-height: 20px;
 }
-.artifact-prose-measure {
-  max-width: var(--measure);
-}
 .artifact-prose :where([data-tone='summary'], [data-tone='goal']) [data-block='callout-body'] {
   font-size: var(--text-title);
   line-height: 28px;

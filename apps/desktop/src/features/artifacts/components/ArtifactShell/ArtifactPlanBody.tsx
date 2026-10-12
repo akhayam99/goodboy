@@ -18,6 +18,7 @@ type Props = {
   readonly onOpenPart: (row: PlanPartRow) => void;
   readonly onSent?: (result: SendArtifactCommentsResult) => void;
   readonly isApproveInBar?: boolean;
+  readonly measure?: 'reading' | 'full';
 };
 
 export const ArtifactPlanBody = ({
@@ -28,6 +29,7 @@ export const ArtifactPlanBody = ({
   onOpenPart,
   onSent,
   isApproveInBar = true,
+  measure = 'reading',
 }: Props) => {
   const hasRows = rows.length > 0;
   const body = useMemo(() => {
@@ -46,7 +48,7 @@ export const ArtifactPlanBody = ({
       isApproveInBar={isApproveInBar}
     >
       <div data-testid="plan-body" className="flex min-w-0 flex-1 flex-col gap-6">
-        {hasLead ? <PlanProse text={body.lead} section="lead" /> : null}
+        {hasLead ? <PlanProse text={body.lead} section="lead" measure={measure} /> : null}
         <PlanParts
           sessionId={plan.sessionId}
           planId={plan.id}
@@ -61,7 +63,12 @@ export const ArtifactPlanBody = ({
           )}
         />
         {body.rest.trim().length === 0 ? null : (
-          <PlanProse text={body.rest} section="rest" hasLead={!hasLead && !hasRows} />
+          <PlanProse
+            text={body.rest}
+            section="rest"
+            hasLead={!hasLead && !hasRows}
+            measure={measure}
+          />
         )}
       </div>
     </PlanCommentsProvider>

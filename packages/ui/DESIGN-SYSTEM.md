@@ -1500,7 +1500,8 @@ by `PageColumn` (`mx-auto`) and nowhere else: Overview, Runs, Agents,
 Artifacts, plans, reports, Chat, Workflows, settings pages, agent and pull
 request detail. Header, trail band (crumbs and the Ask button, whose right
 edge is the column's), body and footer share its edges. Prose keeps the 720px
-measure aligned left inside it. Three tiers: **measure** (`--measure`, 720px,
+measure aligned left inside it, except an artifact page, which fills the column
+(the plan drawer keeps the measure). Three tiers: **measure** (`--measure`, 720px,
 `PageColumn width="measure"` or `PANE_RHYTHM.prose`) for prose, **column**
 (`--column-max`, 960px) for the page column, and **full** for work surfaces,
 which start at the pane's left edge and are the only exception. `PageColumn`

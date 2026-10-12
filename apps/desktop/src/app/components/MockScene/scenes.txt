@@ -23,6 +23,7 @@ artifact-create-report
 artifact-create-wireframe
 artifact-generating
 artifact-plan-comments
+artifact-plan-fill
 artifact-report
 artifact-states
 artifact-wireframe-high
@@ -195,6 +196,7 @@ explore
 explore-changedempty
 explore-changedfilter
 explore-changes
+explore-dot-warning
 explore-drawerchanges
 explore-nomount
 explore-rows
