@@ -33,6 +33,7 @@ export const bringOriginIntoHistory = (set: SetFn, get: GetFn) => {
       worktreePath: target.worktreePath,
       branch: target.branch,
       since: run?.remoteSha ?? null,
+      isBringingIn: true,
       workspaceId: target.workspaceId,
       projectId: target.projectId,
     }).catch((error: unknown) => formatError(error));

@@ -14,28 +14,33 @@ export const ACTIVITY_VIEW_LABEL: Readonly<Record<ActivityView, string>> = {
 type Params = {
   readonly entry: TimelineTopLevelEntry;
   readonly events: ReadonlyArray<SessionEvent>;
+  readonly liveAgentIds?: ReadonlySet<string>;
 };
 
 const hasRecovery = ({
   entry,
   events,
+  liveAgentIds,
 }: {
   readonly entry: TimelineEventEntry;
   readonly events: ReadonlyArray<SessionEvent>;
+  readonly liveAgentIds: ReadonlySet<string> | undefined;
 }): boolean => {
   const { event } = entry;
   if (event.kind === 'branch_deleted') {
     return event.payload?.deletedBranchId !== undefined;
   }
-  return hasHistoryRecovery({ event, events });
+  return hasHistoryRecovery({ event, events, liveAgentIds });
 };
 
 const eventViewOf = ({
   entry,
   events,
+  liveAgentIds,
 }: {
   readonly entry: TimelineEventEntry;
   readonly events: ReadonlyArray<SessionEvent>;
+  readonly liveAgentIds: ReadonlySet<string> | undefined;
 }): ActivityView | null => {
   const { kind } = entry.event;
   if (kind === 'workflow_started') {
@@ -45,12 +50,12 @@ const eventViewOf = ({
     return entry.lane == null ? 'log' : 'activity';
   }
   if (kind === 'history_stopped') {
-    return hasRecovery({ entry, events }) ? null : 'log';
+    return hasRecovery({ entry, events, liveAgentIds }) ? null : 'log';
   }
-  return hasRecovery({ entry, events }) ? 'activity' : 'log';
+  return hasRecovery({ entry, events, liveAgentIds }) ? 'activity' : 'log';
 };
 
-const activityViewOf = ({ entry, events }: Params): ActivityView | null => {
+const activityViewOf = ({ entry, events, liveAgentIds }: Params): ActivityView | null => {
   switch (entry.kind) {
     case 'run':
     case 'agent':
@@ -65,7 +70,7 @@ const activityViewOf = ({ entry, events }: Params): ActivityView | null => {
       }
       return entry.questions.some((question) => question.status === 'open') ? null : 'log';
     case 'event':
-      return eventViewOf({ entry, events });
+      return eventViewOf({ entry, events, liveAgentIds });
     case 'issue':
     case 'branch':
       return 'log';
@@ -80,9 +85,11 @@ export const entriesOfView = ({
   entries,
   events,
   view,
+  liveAgentIds,
 }: {
   readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
   readonly events: ReadonlyArray<SessionEvent>;
   readonly view: ActivityView;
+  readonly liveAgentIds?: ReadonlySet<string>;
 }): ReadonlyArray<TimelineTopLevelEntry> =>
-  entries.filter((entry) => activityViewOf({ entry, events }) === view);
+  entries.filter((entry) => activityViewOf({ entry, events, liveAgentIds }) === view);

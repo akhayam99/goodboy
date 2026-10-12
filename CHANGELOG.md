@@ -12,6 +12,64 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.24.1
+
+Ports sort into four groups, Terminal works like Chat, the side column is tidier, and pushes, deletes and popovers behave.
+
+### Improved
+
+#### Ports in four groups
+<!-- gb area=sessions image=ports -->
+
+Monitoring lists a port in one group only: Pinned, Run by Goodboy, From workspace or Listening on this Mac. Pin a port adds one with an optional description, and a row's menu offers Pin, Edit description, Unpin and Hide. Show hidden ports brings hidden ones back.
+
+#### Terminal works like Chat
+<!-- gb area=sessions image=terminal-page -->
+
+Terminal opens a page like Chat, with a first-run state and any linked worktree one click away. Cmd+K has Terminal and New terminal. A + beside Terminal in the side column starts one.
+
+#### A tidier side column
+<!-- gb area=app image=side-column -->
+
+The + sits on the Chat and Terminal doors, and New session is the first row of your sessions. A session row shows its branch name, its diff and a Running tone, and the column spacing is even.
+
+#### The Debugger drawer in boxes
+<!-- gb area=review image=debugger-drawer -->
+
+The Debugger drawer shows what it was given, the cleaned failing log and its proposed fix in separate boxes. When it offers options, Start fix begins the one you choose.
+
+#### A clearer identifier popover
+<!-- gb area=review image=identifier-popover -->
+
+Double click an identifier in Files and the popover lists the definition first, then the uses, changed lines first. Paths are split into folder and name, long snippets are cut, and Show more opens the rest with arrow keys.
+
+#### Artifact pages use the full column
+<!-- gb area=artifacts image=artifact-width -->
+
+Plans and reports fill the page's column instead of a narrow reading strip. The drawer keeps the reading width.
+
+#### Shorter feature pages
+<!-- gb area=app -->
+
+Every feature page in the docs and on the site is a name and up to three sentences.
+
+#### Legacy layout is gone
+<!-- gb area=settings -->
+
+The Legacy layout switch in Settings, App, General is removed, and with it the top bar buttons and footer it brought back. The side column is the only layout.
+
+### Fixed
+
+- Exiting a shell closes its terminal tab. <!-- gb area=sessions -->
+- Picking from a list inside a popover no longer closes the popover. <!-- gb area=app -->
+- Deleting a blocked agent clears its Needs you. <!-- gb area=agents -->
+- Not now fades while a step runs. <!-- gb area=sessions -->
+- Force push N commits counts your commits and pushes with lease after you confirm. <!-- gb area=review -->
+- A failed push says why. <!-- gb area=review -->
+- The diff tree has no stacked guide lines. <!-- gb area=review -->
+- The Explore folder dot is amber. <!-- gb area=sessions -->
+- The Workspace folder chip is removed. <!-- gb area=sessions -->
+
 ## Goodboy v0.24.0
 
 The Branch page is one page, Terminal and Monitoring join the column, and one drawer fixes every open comment.

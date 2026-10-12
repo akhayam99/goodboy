@@ -204,4 +204,12 @@ describe('StudioRailLayout', () => {
 
     expect(onCollapsedChange).toHaveBeenCalledWith(true);
   });
+
+  it('renders only the detail, with no rail and no handle, when the rail is null', () => {
+    renderLayout({ rail: null });
+
+    expect(screen.queryByRole('complementary', { name: 'Project navigation' })).toBeNull();
+    expect(screen.queryByRole('separator', { name: 'Resize project navigation' })).toBeNull();
+    expect(screen.getByText('Detail content')).toBeDefined();
+  });
 });

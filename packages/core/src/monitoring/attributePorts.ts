@@ -240,6 +240,7 @@ export const attributePorts = ({
       owner,
       projectId,
       label: watchedItem?.label ?? null,
+      source: watchedItem?.source ?? null,
       isWatched: watchedItem !== undefined,
       ...(others > 0 ? { collision: { others } } : {}),
     });
@@ -260,6 +261,7 @@ export const attributePorts = ({
         owner: null,
         projectId: project.id,
         label: item.label,
+        source: item.source,
         isWatched: true,
       });
     }

@@ -32,7 +32,10 @@ export const ExploreChangeMark = ({ change, folderChangeCount }: Props) => {
           aria-label={label}
           className="flex size-4 shrink-0 items-center justify-center"
         >
-          <span className="size-1.5 rounded-full bg-muted-foreground ring-1 ring-border" />
+          <span
+            data-tone="warning"
+            className={cn('size-1.5 rounded-full', tintClasses('warning').dot)}
+          />
         </span>
       </Tooltip>
     );

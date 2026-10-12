@@ -3,7 +3,7 @@ import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useMountDiffStats } from '../../../../store';
 import { resolveDiffMount } from '../SessionWorkspace/parts/resolveDiffMount';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
-import { DiffStat } from '../DiffStat';
+import { DiffStat } from '../../../../shared/components/DiffStat';
 import { useSessionCrumbs } from '../../hooks/useSessionCrumbs';
 import { useIsBranchlessSession } from '../../hooks/useIsBranchlessSession';
 import { useTrailMenus } from '../../hooks/useTrailMenus';

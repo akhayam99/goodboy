@@ -13,22 +13,18 @@ import {
   type InboxStudioFocus,
   type StudioPlace,
 } from '../../../store';
-import { homeFolder } from '../../../shared/lib/homeFolder';
-import { selectTerminalWorkspaceFolder } from '../../../store/slices/terminal/selectors';
-import { workspaceTerminalOwner } from '../../../store/slices/terminal/terminalOwner';
+import { openWorkspaceTerminal } from '../../../features/terminal/openWorkspaceTerminal';
 import { terminalStudioPlace } from '../../../features/terminal/terminalStudioPlace';
 import { selectChatDoor } from '../../../store/slices/chat-last-open/selectChatDoor';
 import { AppOverlayRouter, AppStudio } from '../../components/AppOverlayRouter';
 import type { StudioPlacement } from '../../components/StudioFrame/studioPlacement';
 import { clearCurrentSessionStudio } from './clearCurrentSessionStudio';
-import { footerTarget, type ConnectedIntegrations } from './overlayState';
 import type { OpenPaletteParams, PaletteRequest } from '../../../features/palette/paletteModeTypes';
 import { useCommitDiff } from './useCommitDiff';
 import { useSessionSurfaceEvents } from './useSessionSurfaceEvents';
 import { useStudioEvents } from './useStudioEvents';
 
 type Params = {
-  readonly connected: ConnectedIntegrations;
   readonly currentSession: Session | null;
   readonly currentWorkspace: Workspace | null;
   readonly workspaceProjectRoot: string | null;
@@ -43,12 +39,7 @@ type OpenParams = {
   readonly overlay: StudioPlace;
 };
 
-type OpenIntegrationParams = {
-  readonly provider: IntegrationGlyphProvider;
-};
-
 export const useAppOverlays = ({
-  connected,
   currentSession,
   currentWorkspace,
   workspaceProjectRoot,
@@ -110,8 +101,6 @@ export const useAppOverlays = ({
     [goTo],
   );
 
-  const openImpact = useCallback(() => goTo({ overlay: { kind: 'impact', scope: null } }), [goTo]);
-
   const openChangelog = useCallback(() => goTo({ overlay: { kind: 'changelog' } }), [goTo]);
 
   const openGuide = useCallback(() => goTo({ overlay: { kind: 'guide' } }), [goTo]);
@@ -154,41 +143,14 @@ export const useAppOverlays = ({
     if (workspaceId === undefined) {
       return;
     }
-    void homeFolder().then((home) => {
-      const state = useAppStore.getState();
-      if (state.currentWorkspaceId !== workspaceId) {
-        return;
-      }
-      const folder = selectTerminalWorkspaceFolder({ state, workspaceId, home });
-      const id = state.addTerminalTab({
-        owner: workspaceTerminalOwner({ workspaceId }),
-        cwd: folder,
-      });
-      goTo({ overlay: { kind: 'terminal', terminalId: id, sessionId: state.currentSessionId } });
-    });
-  }, [currentWorkspace?.id, goTo]);
+    void openWorkspaceTerminal({ workspaceId });
+  }, [currentWorkspace?.id]);
 
   const openMonitoring = useCallback(() => goTo({ overlay: { kind: 'monitoring' } }), [goTo]);
 
   const openShortcutHelp = useCallback(
     () => goTo({ overlay: { kind: 'settings', focus: { scope: 'app', section: 'shortcuts' } } }),
     [goTo],
-  );
-
-  const openIntegration = useCallback(
-    ({ provider }: OpenIntegrationParams) => {
-      if (!connected[provider]) {
-        goTo({ overlay: { kind: 'settings', focus: { scope: 'tools', tool: provider } } });
-        return;
-      }
-      goTo({
-        overlay: {
-          kind: 'inbox',
-          focus: { provider, kind: null, recordKey: null, sessionId: null },
-        },
-      });
-    },
-    [connected, goTo],
   );
 
   const changeSettingsScope = useCallback(
@@ -280,7 +242,6 @@ export const useAppOverlays = ({
   });
 
   return {
-    footer: footerTarget({ overlay, connected }),
     settingsProviderId:
       overlay?.kind === 'settings' && overlay.focus.scope === 'providers'
         ? (overlay.focus.provider ?? null)
@@ -290,9 +251,7 @@ export const useAppOverlays = ({
     openChangelog,
     openChat,
     openGuide,
-    openImpact,
     openInbox,
-    openIntegration,
     openPalette,
     openProviders,
     openSettings,

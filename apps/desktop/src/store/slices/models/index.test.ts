@@ -17,7 +17,8 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../storyHarness';
-import { selectModelContext, selectResolution } from './index';
+import { selectModelContext } from './selectModelContext';
+import { selectResolution } from './selectResolution';
 
 const WORKSPACE = aWorkspace({ name: 'Harborline' });
 

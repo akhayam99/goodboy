@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FOOTER_INTEGRATIONS } from '../../app/components/AppFooter/categories';
+import { TOOL_CATALOG } from './toolCatalog';
 import { TOOL_ORDER, toolRailEntries } from './toolRailEntries';
 
 const NONE_CONNECTED = {
@@ -14,7 +14,7 @@ const NONE_CONNECTED = {
 
 describe('toolRailEntries', () => {
   it('lists the tools in the order the footer and the Integrations rail use', () => {
-    expect(TOOL_ORDER).toEqual(FOOTER_INTEGRATIONS.map(({ provider }) => provider));
+    expect(TOOL_ORDER).toEqual(TOOL_CATALOG.map(({ provider }) => provider));
   });
 
   it('names the signed in GitHub account and leaves the others not connected', () => {

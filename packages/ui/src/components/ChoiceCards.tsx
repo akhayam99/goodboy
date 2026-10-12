@@ -57,7 +57,7 @@ export const ChoiceCards = <T extends string>({
             onClick={() => onChange(option.value)}
             onKeyDown={(event) => moveTabFocus({ event, index, options, tablistRef, onChange })}
             className={cn(
-              'relative flex h-16 items-center gap-3 rounded-md px-3 text-left motion-safe:transition-colors',
+              'relative flex min-h-12 items-center gap-3 rounded-md px-3 py-2 text-left motion-safe:transition-colors',
               FOCUS_RING,
               isActive ? 'bg-selected' : 'hover:bg-hover',
               option.disabled === true && 'cursor-not-allowed opacity-50 hover:bg-transparent',
@@ -74,7 +74,10 @@ export const ChoiceCards = <T extends string>({
               </span>
             )}
             <span className="flex min-w-0 flex-col">
-              <span className="truncate text-row text-foreground">{option.label}</span>
+              <span className="flex min-w-0 items-center gap-2">
+                <span className="truncate text-row text-foreground">{option.label}</span>
+                {option.badge}
+              </span>
               {option.hint != null && (
                 <span className="truncate text-meta text-muted-foreground">{option.hint}</span>
               )}

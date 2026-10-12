@@ -125,7 +125,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Monitoring',
-        desc: 'Monitoring, a door in the left column, says which ports are taken and by whom: a worktree, a main checkout, or a script, terminal or agent Goodboy started. Watch a port adds one. Stop acts on a row, Force stop follows if the process stays, and Leftovers lists what an earlier run left behind.',
+        desc: 'Monitoring, a door in the left column, says which ports are taken and by whom: a worktree, a main checkout, or a script, terminal or agent Goodboy started. Pinned holds the ports you add with Pin a port, each with an optional description, and starts empty; Run by Goodboy, From workspace and Listening on this Mac follow, and a port shows in one of them only. Pin or Hide a row from its menu. Stop acts on a row, Force stop follows if the process stays, and Leftovers lists what an earlier run left behind.',
       },
     ],
     links: [
@@ -254,7 +254,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Left column',
-        desc: 'One row of + Session, + Chat and + Terminal starts something new. Board, Tasks, Chat, Workflows, Terminal and Monitoring come next, then your sessions, then Settings, the Goodboy row and the bug report button. The Goodboy row opens a menu with the Guide. ⌘B folds it into icons. Legacy layout in Settings, App, General brings back the top bar buttons and the footer.',
+        desc: 'Board, Tasks, Chat, Workflows, Terminal and Monitoring are the doors. A + on Chat and on Terminal starts a new chat or terminal. Your sessions follow, with a New session row on top, then Settings, the Goodboy row and the bug report button. The Goodboy row opens a menu with the Guide. ⌘B folds it into icons.',
       },
       {
         term: 'Session rows',

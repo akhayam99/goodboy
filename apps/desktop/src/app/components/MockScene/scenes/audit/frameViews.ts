@@ -40,12 +40,6 @@ export const triggerFrameView = ({ view, openers }: TriggerParams): void => {
     case 'inbox':
       openers.openInbox();
       return;
-    case 'github':
-      openers.openIntegration({ provider: 'github' });
-      return;
-    case 'impact':
-      openers.openImpact();
-      return;
     case 'spend':
       openers.openSpend();
       return;

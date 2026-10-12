@@ -47,6 +47,7 @@ export const AnchoredPopover = ({
                 ariaLabel={ariaLabel}
                 tabIndex={tabIndex}
                 onKeyDown={onMenuKeyDown}
+                onMouseDown={dropdown.markPress}
                 style={dropdown.popupStyle}
                 className={cn(dropdown.popupClassName, className)}
               >

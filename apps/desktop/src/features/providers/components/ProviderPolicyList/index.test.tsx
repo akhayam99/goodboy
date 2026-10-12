@@ -29,7 +29,7 @@ import {
   storySpies,
   type StoryStore,
 } from '../../../../store/storyHarness';
-import { ProvidersMenu } from '../../../../app/components/ProvidersMenu';
+import { LimitsProvidersMenu } from '../../../../app/components/AppTopBar/LimitsStrip/LimitsProvidersMenu';
 import { ProvidersInOrder } from '../ProviderStudio/DefaultsPanel/ProvidersInOrder';
 import { ProviderPolicyList } from './index';
 
@@ -235,7 +235,7 @@ describe('ProviderPolicyList', () => {
 
     await resetStoryStore();
     seed({ policy: POLICY });
-    render(<ProvidersMenu workspaceId={WORKSPACE.id} />);
+    render(<LimitsProvidersMenu workspaceId={WORKSPACE.id} chips={[]} nowMs={0} />);
     fireEvent.click(screen.getByRole('button', { name: 'Providers' }));
     fireEvent.click(
       within(screen.getByRole('tablist', { name: 'Cursor policy' })).getByRole('tab', {

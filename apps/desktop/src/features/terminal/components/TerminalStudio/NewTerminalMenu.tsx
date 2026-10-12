@@ -1,5 +1,6 @@
 import { Plus } from 'lucide-react';
-import { Button, ICON_SIZE } from '@goodboy/ui';
+import { Button } from '@goodboy/ui';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { TerminalTarget } from '../../terminalTargets';
 import { TargetPicker } from './TargetPicker';
 
@@ -11,8 +12,8 @@ type Props = {
 
 export const NewTerminalMenu = ({ targets, onNew, onOpenAt }: Props) => (
   <div className="flex items-center gap-1">
-    <Button size="sm" onClick={onNew}>
-      <Plus size={ICON_SIZE.row} aria-hidden />
+    <Button variant="secondary" className="min-w-0 flex-1 justify-start" onClick={onNew}>
+      <Plus size={ICON_SIZE.control} aria-hidden />
       New terminal
     </Button>
     {targets.length > 1 ? (

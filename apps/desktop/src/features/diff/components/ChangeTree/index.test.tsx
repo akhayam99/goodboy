@@ -192,6 +192,18 @@ describe('ChangeTree', () => {
     expect(rowById('dir:src/ledger/export').getAttribute('aria-expanded')).toBe('true');
   });
 
+  it('shows depth by a 12px indent per level and draws no guide line on any row', () => {
+    renderTree();
+
+    const paddingOf = ({ id }: { readonly id: string }): string =>
+      rowById(id).querySelector<HTMLElement>('button')?.style.paddingLeft ?? '';
+    expect(paddingOf({ id: 'dir:src/ledger' })).toBe('8px');
+    expect(paddingOf({ id: 'dir:src/ledger/export' })).toBe('20px');
+    screen.getAllByRole('treeitem').forEach((row) => {
+      expect(row.querySelectorAll('i')).toHaveLength(0);
+    });
+  });
+
   it('jumps to a file on click', () => {
     const onPick = vi.fn();
     renderTree({ onPick });

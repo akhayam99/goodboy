@@ -11,9 +11,11 @@ type SettingRow = {
 type Seed = {
   readonly settings?: Readonly<Record<string, string>>;
   readonly liveSessionIds?: (workspaceId: string) => ReadonlyArray<string>;
+  readonly fallback?: (command: string, payload: InvokeArgs | undefined) => unknown;
 };
 
 const SETTING_BY_KEY = /FROM settings WHERE key = \?/;
+const SETTINGS_BY_PREFIX = /FROM settings WHERE substr\(key, 1, \?\) = \?/;
 const LIVE_SESSIONS = /FROM sessions WHERE workspace_id = \? AND deleted_at IS NULL/;
 const INSERT_IF_ABSENT = /INSERT INTO settings[\s\S]*ON CONFLICT\(key\) DO NOTHING/;
 const UPSERT = /INSERT INTO settings[\s\S]*DO UPDATE/;
@@ -49,7 +51,11 @@ const rowOf = ({
     ? { key, value, updated_at: Date.now() }
     : null;
 
-export const installSceneDatabase = ({ settings = {}, liveSessionIds }: Seed = {}): void => {
+export const installSceneDatabase = ({
+  settings = {},
+  liveSessionIds,
+  fallback,
+}: Seed = {}): void => {
   const database = {
     settings: new Map<string, SettingRow>(
       Object.entries(settings).map(([key, value]) => [key, { key, value, updated_at: 0 }]),
@@ -66,6 +72,10 @@ export const installSceneDatabase = ({ settings = {}, liveSessionIds }: Seed = {
     if (SETTING_BY_KEY.test(sql)) {
       const row = database.settings.get(String(params[0]));
       return row === undefined ? [] : [row];
+    }
+    if (SETTINGS_BY_PREFIX.test(sql)) {
+      const prefix = String(params[1]);
+      return [...database.settings.values()].filter((row) => row.key.startsWith(prefix));
     }
     if (LIVE_SESSIONS.test(sql)) {
       return (liveSessionIds?.(String(params[0])) ?? []).map((id) => ({ id }));
@@ -120,6 +130,6 @@ export const installSceneDatabase = ({ settings = {}, liveSessionIds }: Seed = {
     if (command === 'db_execute') {
       return execute({ sql, params });
     }
-    return undefined;
+    return fallback?.(command, payload);
   });
 };

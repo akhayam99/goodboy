@@ -51,7 +51,6 @@ export const NAMES = {
   retry: 'Retry',
   removeLink: 'Remove link',
   removeLinkFromSession: 'Remove link from this session',
-  legacyLayout: 'Legacy layout',
   repliesAndCommits: 'Replies and commits',
   start: 'Start',
   starting: 'Starting…',

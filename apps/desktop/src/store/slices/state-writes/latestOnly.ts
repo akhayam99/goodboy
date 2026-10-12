@@ -1,4 +1,4 @@
-export type LatestOutcome = 'applied' | 'stale';
+type LatestOutcome = 'applied' | 'stale';
 
 type RunParams<Value> = {
   readonly key: string;

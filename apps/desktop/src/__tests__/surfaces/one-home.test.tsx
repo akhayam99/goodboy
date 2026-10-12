@@ -22,7 +22,7 @@ import {
   seedSettingsBase,
 } from '../../app/components/MockScene/scenes/audit/settingsSeed';
 import { StageBoard } from '../../features/workspace/components/StageBoard';
-import { ProvidersMenu } from '../../app/components/ProvidersMenu';
+import { LimitsProvidersMenu } from '../../app/components/AppTopBar/LimitsStrip/LimitsProvidersMenu';
 import { LinkedWorkChips } from '../../features/session/components/SessionOverviewPane/LinkedWorkChips';
 
 const STAGE_DEFAULT_REASONS = ['no PR yet', 'awaiting review'];
@@ -98,7 +98,9 @@ describe('one home per fact', () => {
 
   it('shows no limit figure twice in the providers menu', async () => {
     seedSettingsBase();
-    await mount({ ui: <ProvidersMenu workspaceId={SETTINGS_WORKSPACE.id} /> });
+    await mount({
+      ui: <LimitsProvidersMenu workspaceId={SETTINGS_WORKSPACE.id} chips={[]} nowMs={0} />,
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Providers' }));
     const menu = await screen.findByRole('dialog', { name: 'Providers' });
 

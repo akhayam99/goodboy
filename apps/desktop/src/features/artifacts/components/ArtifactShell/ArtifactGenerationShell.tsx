@@ -78,7 +78,7 @@ export const ArtifactGenerationShell = ({ sessionId, generation }: Props) => {
           />
         </div>
         {generation.state === 'generating' ? (
-          <div aria-hidden className="artifact-prose-measure flex flex-col gap-3">
+          <div aria-hidden className="flex flex-col gap-3">
             {SKELETON_WIDTHS.map((width) => (
               <Skeleton key={width} className={cn('h-2.5 rounded-sm', width)} />
             ))}

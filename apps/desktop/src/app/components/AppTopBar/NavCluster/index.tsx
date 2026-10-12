@@ -1,23 +1,13 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../../../store';
-import { useChatActivity } from '../../../../features/workspace-chat/hooks/useChatActivity';
-import { selectChatDoor } from '../../../../store/slices/chat-last-open/selectChatDoor';
-import { selectIsSessionDraftShown } from '../../../../store/slices/sessionDraft/selectIsSessionDraftShown';
-import { useGoToBoard } from '../../../hooks/useGoToBoard';
-import { BoardButton } from './BoardButton';
-import { ChatButton } from './ChatButton';
 import { HistoryArrow } from './HistoryArrow';
 import type { HistoryItem } from './HistoryMenu';
 import { historyLabel } from './historyLabel';
 
 const HISTORY_MENU_LIMIT = 12;
 
-type Props = {
-  readonly hasDoors?: boolean;
-};
-
-export const NavCluster = ({ hasDoors = false }: Props) => {
+export const NavCluster = () => {
   const stack = useAppStore((s) => s.navigation[s.currentWorkspaceId ?? ''] ?? null);
   const sessions = useAppStore(
     useShallow((s) => {
@@ -35,17 +25,9 @@ export const NavCluster = ({ hasDoors = false }: Props) => {
       return s.sessions.filter((session) => ids.has(session.id));
     }),
   );
-  const isOnBoard = useAppStore(
-    (s) => s.currentSessionId === null && !selectIsSessionDraftShown({ state: s }),
-  );
-  const studioKind = useAppStore((s) => s.appStudio?.kind ?? null);
-  const hasWorkspace = useAppStore((s) => s.currentWorkspaceId !== null);
-  const switchStudio = useAppStore((s) => s.switchStudio);
   const back = useAppStore((s) => s.back);
   const forward = useAppStore((s) => s.forward);
   const goToHistory = useAppStore((s) => s.goToHistory);
-  const goToBoard = useGoToBoard();
-  const chatActivity = useChatActivity();
 
   const { backTarget, forwardTarget, items } = useMemo(() => {
     if (stack === null) {
@@ -81,21 +63,6 @@ export const NavCluster = ({ hasDoors = false }: Props) => {
         onGo={forward}
         onJump={(index) => goToHistory({ index })}
       />
-      {hasDoors ? (
-        <BoardButton isOnBoard={isOnBoard} hasStudio={studioKind !== null} onBoard={goToBoard} />
-      ) : null}
-      {hasDoors && hasWorkspace ? (
-        <ChatButton
-          isOnChat={studioKind === 'chat'}
-          runningCount={chatActivity.runningCount}
-          hasUnread={chatActivity.hasUnread}
-          onChat={() =>
-            switchStudio({
-              studio: { kind: 'chat', chatId: selectChatDoor({ state: useAppStore.getState() }) },
-            })
-          }
-        />
-      ) : null}
     </div>
   );
 };

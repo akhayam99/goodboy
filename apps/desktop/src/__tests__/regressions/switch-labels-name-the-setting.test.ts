@@ -4,9 +4,7 @@ import { openingTags, productSources } from './scanControls';
 
 const STATE_WORD = /['"`]\s*(?:On|Off)\s*['"`]/;
 
-const ALLOWLIST: ReadonlyArray<string> = [
-  'apps/desktop/src/features/settings/components/SettingsStudio/LegacyLayoutField.tsx',
-];
+const ALLOWLIST: ReadonlyArray<string> = [];
 
 const stateLabels = ({ text }: { readonly text: string }): number =>
   openingTags({ text, name: 'Switch' }).filter((tag) => STATE_WORD.test(tag)).length;

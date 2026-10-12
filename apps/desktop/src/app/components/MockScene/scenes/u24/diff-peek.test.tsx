@@ -25,18 +25,20 @@ describe('diff peek scenes', () => {
       expect(MOCK_SCENES[id]).toBe(scene);
     }
   });
-  it('opens with both groups', async () => {
+  it('opens with the definition, change and elsewhere groups', async () => {
     const Scene = U24_DIFF_PEEK_SCENES['diff-peek-open'];
     render(<Scene />);
     const dialog = await screen.findByRole('dialog', { name: 'Uses of creditKey' });
-    expect(await within(dialog).findByText(/Defined in 1 place/)).toBeDefined();
-    expect(within(dialog).getByText(/Used in 4 places/)).toBeDefined();
-    expect(within(dialog).getAllByText('In this change').length).toBeGreaterThan(0);
+    await within(dialog).findByText('1 definition · 4 uses · 2 in this change');
+    within(dialog).getByRole('group', { name: 'Defined in' });
+    within(dialog).getByRole('group', { name: 'In this change' });
+    within(dialog).getByRole('group', { name: 'Elsewhere' });
   });
-  it('says nothing was found', async () => {
+  it('says the symbol is not defined in the project', async () => {
     const Scene = U24_DIFF_PEEK_SCENES['diff-peek-empty'];
     render(<Scene />);
     const dialog = await screen.findByRole('dialog', { name: 'Uses of creditKey' });
-    expect(await within(dialog).findByText('Nothing found in this worktree.')).toBeDefined();
+    await within(dialog).findByText('Not defined in this project');
+    expect(within(dialog).queryByRole('button')).toBeNull();
   });
 });

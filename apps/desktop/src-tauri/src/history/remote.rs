@@ -9,8 +9,36 @@ use std::path::{Path, PathBuf};
 #[serde(rename_all = "camelCase")]
 pub struct OriginAhead {
     pub remote_sha: String,
+    pub known_remote_sha: Option<String>,
     pub commits: Vec<RebaseCommit>,
+    pub only_online: Vec<RebaseCommit>,
     pub fetch_error: Option<String>,
+}
+
+fn commits_only_online(cwd: &Path, remote_sha: &str) -> Result<Vec<RebaseCommit>, WorktreeError> {
+    let range = format!("HEAD...{remote_sha}");
+    let raw = git(
+        cwd,
+        &[
+            "log",
+            "--cherry-pick",
+            "--right-only",
+            "--reverse",
+            "--format=%H%x1f%s",
+            &range,
+        ],
+    )?;
+    Ok(raw
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .map(|line| {
+            let (sha, subject) = line.split_once('\u{1f}').unwrap_or((line, ""));
+            RebaseCommit {
+                sha: sha.to_string(),
+                subject: subject.to_string(),
+            }
+        })
+        .collect())
 }
 
 pub(crate) fn origin_ahead(
@@ -18,7 +46,9 @@ pub(crate) fn origin_ahead(
     branch: &str,
     since: Option<&str>,
     token: Option<&str>,
+    refuse_merges: bool,
 ) -> Result<OriginAhead, WorktreeError> {
+    let known_remote_sha = resolve_commit(cwd, &format!("refs/remotes/origin/{branch}")).ok();
     let fetch_error = crate::branch_remote::fetch_branch_ref(cwd, "origin", branch, token);
     let remote_sha = resolve_commit(cwd, &format!("origin/{branch}"))?;
     let from = match since.map(str::trim).filter(|sha| !sha.is_empty()) {
@@ -34,7 +64,8 @@ pub(crate) fn origin_ahead(
     for line in raw.lines().filter(|line| !line.trim().is_empty()) {
         let mut parts = line.splitn(3, '\u{1f}');
         let sha = parts.next().unwrap_or_default().to_string();
-        if parts.next().unwrap_or_default().split_whitespace().count() != 1 {
+        let is_merge = parts.next().unwrap_or_default().split_whitespace().count() != 1;
+        if is_merge && refuse_merges {
             return Err(plan_error(&format!(
                 "{} on origin is a merge commit: bring it in by hand",
                 short(&sha)
@@ -45,9 +76,12 @@ pub(crate) fn origin_ahead(
             subject: parts.next().unwrap_or_default().to_string(),
         });
     }
+    let only_online = commits_only_online(cwd, &remote_sha)?;
     Ok(OriginAhead {
         remote_sha,
+        known_remote_sha,
         commits,
+        only_online,
         fetch_error,
     })
 }
@@ -57,6 +91,7 @@ pub async fn history_origin_ahead(
     worktree_path: String,
     branch: String,
     since: Option<String>,
+    refuse_merges: bool,
     workspace_id: Option<String>,
     project_id: Option<String>,
 ) -> Result<OriginAhead, WorktreeError> {
@@ -66,7 +101,13 @@ pub async fn history_origin_ahead(
             return Err(WorktreeError::RepoNotFound(worktree_path));
         }
         let token = crate::github::read_token(workspace_id.as_deref(), project_id.as_deref());
-        origin_ahead(&cwd, &branch, since.as_deref(), token.as_deref())
+        origin_ahead(
+            &cwd,
+            &branch,
+            since.as_deref(),
+            token.as_deref(),
+            refuse_merges,
+        )
     })
     .await
     .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?

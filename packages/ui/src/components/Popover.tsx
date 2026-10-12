@@ -1,4 +1,4 @@
-import type { CSSProperties, KeyboardEventHandler, ReactNode, Ref } from 'react';
+import type { CSSProperties, KeyboardEventHandler, MouseEventHandler, ReactNode, Ref } from 'react';
 import { cn } from '../cn';
 import { FLOATING_SURFACE } from '../floatingSurface';
 import { ScrollFade } from './ScrollFade';
@@ -12,6 +12,7 @@ export type PopoverProps = {
   readonly innerRef?: Ref<HTMLDivElement>;
   readonly tabIndex?: number;
   readonly onKeyDown?: KeyboardEventHandler<HTMLDivElement>;
+  readonly onMouseDown?: MouseEventHandler<HTMLDivElement>;
 };
 
 export type PopoverBodyProps = {
@@ -28,6 +29,7 @@ export const Popover = ({
   innerRef,
   tabIndex,
   onKeyDown,
+  onMouseDown,
 }: PopoverProps) => {
   return (
     <div
@@ -36,6 +38,7 @@ export const Popover = ({
       aria-label={ariaLabel}
       tabIndex={tabIndex}
       onKeyDown={onKeyDown}
+      onMouseDown={onMouseDown}
       style={style}
       className={cn(
         FLOATING_SURFACE,

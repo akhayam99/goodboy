@@ -54,7 +54,7 @@ const mount = async (name: string): Promise<Element> => {
   return container;
 };
 
-describe('the create row scenes', () => {
+describe('the create entry scenes', () => {
   it('registers every scene for the capture', () => {
     expect(Object.keys(U24_DOORS_SCENES).sort()).toEqual([
       'column-create-draft',
@@ -66,15 +66,20 @@ describe('the create row scenes', () => {
     }
   });
 
-  it('column-create-row draws three buttons in one row and no dot', async () => {
+  it('column-create-row puts a plus on the Chat and Terminal doors and New session under Sessions', async () => {
     await mount('column-create-row');
 
-    const buttons = ['New session', 'New chat', 'New terminal'].map((name) =>
-      screen.getByRole('button', { name }),
+    expect(screen.getByRole('button', { name: 'New chat' }).hasAttribute('data-door-create')).toBe(
+      true,
     );
-    expect(new Set(buttons.map((button) => button.parentElement)).size).toBe(1);
+    expect(
+      screen.getByRole('button', { name: 'New terminal' }).hasAttribute('data-door-create'),
+    ).toBe(true);
+    expect(screen.getByRole('button', { name: 'New session' }).getAttribute('data-create')).toBe(
+      'session',
+    );
+    expect(document.querySelector('[data-column-create]')).toBeNull();
     expect(document.querySelector('[data-slot="draft-dot"]')).toBeNull();
-    expect(screen.queryByRole('button', { name: /^New .*\+/ })).toBeNull();
   });
 
   it('column-create-draft shows the dot on New session', async () => {

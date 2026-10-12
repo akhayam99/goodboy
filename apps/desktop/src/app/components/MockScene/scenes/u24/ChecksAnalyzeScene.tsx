@@ -10,29 +10,39 @@ import { shellArrangement } from '../../../../shellArrangement';
 
 const arrangement = shellArrangement({
   hasWorkspace: true,
-  hasActiveSession: true,
   isSidebarCollapsed: false,
 });
 
 type Props = {
   readonly phase: 'failing' | 'running' | 'proposal';
   readonly shouldOpenDrawer?: boolean;
+  readonly analysisText?: string;
+  readonly log?: string;
 };
 
-export const ChecksAnalyzeScene = ({ phase, shouldOpenDrawer = false }: Props) => {
+export const ChecksAnalyzeScene = ({
+  phase,
+  shouldOpenDrawer = false,
+  analysisText,
+  log,
+}: Props) => {
   const [isReady, setIsReady] = useState(false);
   const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
   useEffect(() => {
-    checksAnalyzeSeed({ phase, shouldOpenDrawer });
+    checksAnalyzeSeed({
+      phase,
+      shouldOpenDrawer,
+      ...(analysisText !== undefined && { analysisText }),
+      ...(log !== undefined && { log }),
+    });
     setIsReady(true);
-  }, [phase, shouldOpenDrawer]);
+  }, [phase, shouldOpenDrawer, analysisText, log]);
   if (!isReady) {
     return null;
   }
   return (
-    <div className="[&>div]:w-full" style={{ width: 1440 }}>
+    <div className="[&>div]:w-full" style={{ width: 1360 }}>
       <AppShell
-        leftHidden={arrangement.leftHidden}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={<div aria-hidden />}
         main={

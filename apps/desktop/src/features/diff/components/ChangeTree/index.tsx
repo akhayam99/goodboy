@@ -28,7 +28,7 @@ import {
 import { FileRow } from './FileRow';
 import { FolderRow } from './FolderRow';
 import { KeyHints } from './KeyHints';
-import { TREE_BASE_PX, TREE_INDENT_PX } from './TreeGuides';
+import { TREE_BASE_PX, TREE_INDENT_PX } from './treeMetrics';
 import { TreeHead } from './TreeHead';
 import { treeKeyAction } from './treeKeys';
 

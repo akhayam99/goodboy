@@ -522,10 +522,11 @@ describe('ChatList initial read states', () => {
     expect(screen.queryByRole('status', { name: 'Loading chats' })).toBeNull();
   });
 
-  it('offers Start a chat only after the empty list has been read', async () => {
+  it('leaves the empty first-run state to the page and keeps one New chat button', async () => {
     await renderList([]);
-    screen.getByRole('heading', { name: 'No chats yet' });
-    screen.getByRole('button', { name: 'Start a chat' });
+    screen.getByRole('button', { name: 'New chat' });
+    expect(screen.queryByRole('heading', { name: 'No chats yet' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Start a chat' })).toBeNull();
     expect(screen.queryByRole('status', { name: 'Loading chats' })).toBeNull();
   });
 

@@ -47,8 +47,22 @@ describe('the check analysis kickoff', () => {
     expect(prompt).toContain('Pull request: #318');
     expect(prompt).toContain('Head: abc123');
     expect(prompt).toContain('src/ledger.ts');
-    expect(prompt).toContain('Do not change files. End with a section `## Proposed fix`');
-    expect(prompt).toContain('in at most ten lines.');
+    expect(prompt).toContain('Do not change files.');
+  });
+  it('asks for a finding and either one plain fix or lettered options with a recommendation', () => {
+    const prompt = buildAnalyzeChecksPrompt({
+      pullRequest,
+      paths: [],
+      checks: [{ ...check, log: 'Assertion failed' }],
+    });
+    expect(prompt).toContain('`## Finding`: the cause, in at most four lines.');
+    expect(prompt).toContain('`## Proposed fix`');
+    expect(prompt).toContain(
+      'one fix is clearly right, describe it in plain text, in at most ten lines',
+    );
+    expect(prompt).toContain('`### Option A: <short title>`, `### Option B: <short title>`');
+    expect(prompt).toContain('`Recommended: A` followed by the reason');
+    expect(prompt).toContain('English headings even when you answer in another language');
   });
   it.each([
     '',

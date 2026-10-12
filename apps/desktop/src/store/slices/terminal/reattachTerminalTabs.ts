@@ -3,6 +3,7 @@ import { invokeTerminalListLive } from '../../../features/terminal/terminal';
 import { terminalOutputBus } from '../../../features/terminal/outputBus';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { TerminalTab, TerminalTabId } from '../../../shared/types/terminal';
+import { exitCapture } from './exitCapture';
 import { SETTING_TERMINAL_NAMES } from './state';
 import {
   DEFAULT_TERMINAL_NAME,
@@ -11,6 +12,7 @@ import {
   terminalOwnerKey,
 } from './terminalOwner';
 import type { GetFn, SetFn } from './types';
+import { watchTerminalExits } from './watchTerminalExits';
 
 const isNameRecord = (value: unknown): value is Record<string, string> =>
   typeof value === 'object' &&
@@ -34,10 +36,19 @@ const readNames = async (): Promise<Record<string, string>> => {
 export const reattachTerminalTabs = (set: SetFn, get: GetFn) => {
   return async (): Promise<void> => {
     await terminalOutputBus.register();
-    const [liveTerminals, names] = await Promise.all([invokeTerminalListLive(), readNames()]);
+    let exitedDuringLoad: ReadonlySet<string> = new Set();
+    exitCapture.begin();
+    watchTerminalExits({ get })();
+    const loaded = await Promise.all([invokeTerminalListLive(), readNames()]).finally(() => {
+      exitedDuringLoad = exitCapture.end();
+    });
+    const [liveTerminals, names] = loaded;
     const state = get();
     const rebuilt = new Map<string, TerminalTab[]>();
     for (const live of liveTerminals) {
+      if (exitedDuringLoad.has(live.id)) {
+        continue;
+      }
       const parsed = parseTerminalId({ id: live.id });
       if (parsed === null) {
         continue;

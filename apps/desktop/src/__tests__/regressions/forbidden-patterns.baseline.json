@@ -457,7 +457,6 @@
     "packages/ui/src/components/Markdown/index.tsx": 1
   },
   "raw-scroller": {
-    "apps/desktop/src/app/components/AppFooter/index.tsx": 1,
     "apps/desktop/src/app/components/MockScene/scenes/ActivityScenes.tsx": 1,
     "apps/desktop/src/app/components/MockScene/scenes/CardRailsScene.tsx": 1,
     "apps/desktop/src/app/components/MockScene/scenes/ConversationScene.tsx": 1,

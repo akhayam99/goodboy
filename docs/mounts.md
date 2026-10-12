@@ -492,7 +492,7 @@ empty out (the Changes lens still has the diff). The row's actions come from
 the `mount` kind of the action registry
 (`features/actions/kinds/mount.ts`). The action cell shows the one action
 the state calls for, picked by its `inline` slot: `Rebase on main` when main
-moved, `Push N commits` when commits wait on a branch with a pull request,
+moved, `Push N commits` when commits wait on a branch with a pull request (`Force push N commits` once the branch diverged from origin: N counts the branch's own commits, and the tooltip says the two copies differ and force push replaces the online copy with lease; the verb is enabled and asks "Replace the online copy?" in a popover on the button, or "Replace the online copy and drop N commits?" with up to three subjects when `history_origin_ahead` (`onlyOnline`, read by `loadOnlyOnline` for the active session) found commits that exist only online (merge commits included; only bringing origin into a rewrite refuses a merge), then re-reads the origin and pushes only when every commit that exists only online is one the confirm listed (otherwise it shows "The online copy changed. Check again before force pushing." and pushes nothing; a confirm that said nothing was checked accepts only an empty list), with a lease on the origin sha it just read, and a stale lease shows that origin has new commits and nothing was pushed; a diverged branch with no own commits stays blocked),
 `Create PR` when the branch has commits and no pull request, `Close branch`
 once the pull request merged, `Reopen` on a closed row. A blocked action stays
 visible, disabled, with its reason in the tooltip. The row menu

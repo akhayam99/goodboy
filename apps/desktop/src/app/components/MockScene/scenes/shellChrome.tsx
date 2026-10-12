@@ -22,8 +22,6 @@ import { DEFAULT_PREFS } from '../../../../store/slices/session-view/types';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { sceneClock } from '../sceneClock';
 import { shellArrangement } from '../../../shellArrangement';
-import { SceneFooter } from './SceneFooter';
-import { sceneShellMode } from './sceneShell';
 import { useSceneShell } from './useSceneShell';
 
 const clock = sceneClock({ anchor: '2026-09-20T09:00:00.000Z' });
@@ -118,9 +116,7 @@ export const ShellFrame = ({
   const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
   const arrangement = shellArrangement({
     hasWorkspace: true,
-    hasActiveSession: true,
     isSidebarCollapsed: sidebar === 'collapsed',
-    mode: sceneShellMode(),
   });
   const shell = useSceneShell({ arrangement });
 
@@ -129,9 +125,8 @@ export const ShellFrame = ({
       <AppShell
         studio={shell.studio}
         studioCoversLeft={arrangement.studioCoversLeft}
-        topBar={<AppTopBar mode={arrangement.mode} onOpenSpend={noop} onOpenScript={noop} />}
+        topBar={<AppTopBar onOpenSpend={noop} onOpenScript={noop} />}
         drawer={isDrawerOpen ? <DrawerHost /> : null}
-        leftHidden={arrangement.leftHidden}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={
           <ShellLeft
@@ -143,9 +138,6 @@ export const ShellFrame = ({
             onToggle={noop}
             settingsSlotRef={shell.settingsSlotRef}
           />
-        }
-        footer={
-          arrangement.footer === null ? undefined : <SceneFooter scope={arrangement.footer} />
         }
         main={
           hasOwnTrail ? (

@@ -20,7 +20,6 @@ import {
   installNavigationHooks,
   settle,
   useAppStore,
-  type Bars,
   type BridgeArgs,
 } from './harness';
 
@@ -39,10 +38,7 @@ const DOORS: ReadonlyArray<Door> = [
   { name: 'Chat', kind: 'chat' },
 ];
 
-const ARRANGEMENTS: ReadonlyArray<Bars> = ['column', 'classic'];
-
-const doorsOf = ({ bars }: { readonly bars: Bars }): ReadonlyArray<Door> =>
-  DOORS.filter((door) => bars === 'classic' || door.kind !== 'impact');
+const COLUMN_DOORS: ReadonlyArray<Door> = DOORS.filter((door) => door.kind !== 'impact');
 
 const historyButton = (verb: 'Back' | 'Forward'): HTMLElement => {
   const found = Array.from(
@@ -111,21 +107,17 @@ const currentMarks = (): ReadonlyArray<string> => {
   );
 };
 
-const openDoor = async ({ door, bars }: { readonly door: Door; readonly bars: Bars }) => {
-  if (bars === 'column' && door.kind === 'impact') {
+const openDoor = async ({ door }: { readonly door: Door }) => {
+  if (door.kind === 'impact') {
     await clickButton(/^Spend today/);
     return;
   }
-  if (bars === 'column') {
-    const id = door.kind === 'workflow' ? 'workflows' : door.kind;
-    const control = document.querySelector<HTMLElement>(
-      `[data-side-column] [data-column-door="${id}"]`,
-    );
-    expect(control).not.toBeNull();
-    await click(control as HTMLElement);
-    return;
-  }
-  await clickButton(door.name);
+  const id = door.kind === 'workflow' ? 'workflows' : door.kind;
+  const control = document.querySelector<HTMLElement>(
+    `[data-side-column] [data-column-door="${id}"]`,
+  );
+  expect(control).not.toBeNull();
+  await click(control as HTMLElement);
 };
 
 const fireOpenSettings = async (detail: Readonly<Record<string, unknown>>): Promise<void> => {
@@ -135,7 +127,7 @@ const fireOpenSettings = async (detail: Readonly<Record<string, unknown>>): Prom
   await settle();
 };
 
-describe.each(ARRANGEMENTS)('every studio exits the same way, %s', (bars) => {
+describe('every studio exits the same way', () => {
   it.each(
     DOORS.flatMap((door) =>
       EXITS.map((exit) => [`${door.name} by ${exit.name}`, door, exit] as const),
@@ -143,11 +135,11 @@ describe.each(ARRANGEMENTS)('every studio exits the same way, %s', (bars) => {
   )(
     '%s lands where it started with the same forward',
     async (_name, door, exit) => {
-      await boot({ seed: 'pr', bars });
+      await boot({ seed: 'pr' });
       const startSession = useAppStore.getState().currentSessionId;
       const startIndex = stack()?.index ?? 0;
 
-      await openDoor({ door, bars });
+      await openDoor({ door });
       expect(appStudioKind()).toBe(door.kind);
 
       await exit.run();
@@ -163,14 +155,14 @@ describe.each(ARRANGEMENTS)('every studio exits the same way, %s', (bars) => {
   );
 });
 
-describe.each(ARRANGEMENTS)('the Board door leaves an open studio for the board, %s', (bars) => {
+describe('the Board door leaves an open studio for the board', () => {
   it.each(DOORS.map((door) => [door.name, door] as const))(
     'closes %s and shows the board',
     async (_name, door) => {
-      await boot({ seed: 'pr', bars });
+      await boot({ seed: 'pr' });
 
-      await openDoor({ door, bars });
-      if (door.kind === 'settings' && bars === 'column') {
+      await openDoor({ door });
+      if (door.kind === 'settings') {
         await click(screen.getByRole('button', { name: /^Back to app/ }));
       }
       await clickButton(/^Board/);
@@ -186,11 +178,11 @@ describe('doors replace the open studio and content links stack', () => {
   it('replaces the open studio when another door is pressed', async () => {
     await boot({ seed: 'pr' });
 
-    await openDoor({ door: { name: 'Tasks', kind: 'inbox' }, bars: 'column' });
+    await openDoor({ door: { name: 'Tasks', kind: 'inbox' } });
     const withOneStudio = stack()?.entries.length ?? 0;
-    await openDoor({ door: { name: 'Workflows', kind: 'workflow' }, bars: 'column' });
+    await openDoor({ door: { name: 'Workflows', kind: 'workflow' } });
     await clickButton(/^Spend today/);
-    await openDoor({ door: { name: 'Chat', kind: 'chat' }, bars: 'column' });
+    await openDoor({ door: { name: 'Chat', kind: 'chat' } });
 
     expect(appStudioKind()).toBe('chat');
     expect(stack()?.entries.length).toBe(withOneStudio);
@@ -222,16 +214,16 @@ describe('doors replace the open studio and content links stack', () => {
   });
 });
 
-describe.each(ARRANGEMENTS)('exactly one door in the frame is marked current, %s', (bars) => {
-  it.each(doorsOf({ bars }).map((door) => [door.name, door] as const))(
+describe('exactly one door in the frame is marked current', () => {
+  it.each(COLUMN_DOORS.map((door) => [door.name, door] as const))(
     'marks only %s while its studio is open',
     async (_name, door) => {
-      await boot({ seed: 'pr', bars });
+      await boot({ seed: 'pr' });
 
-      await openDoor({ door, bars });
+      await openDoor({ door });
 
       expect(currentMarks()).toEqual([door.name]);
-      if (door.kind === 'settings' && bars === 'column') {
+      if (door.kind === 'settings') {
         expect(
           document.querySelector('[data-column-layer="settings"]')?.hasAttribute('inert'),
         ).toBe(false);
@@ -244,24 +236,22 @@ describe.each(ARRANGEMENTS)('exactly one door in the frame is marked current, %s
   );
 
   it('marks one door at a time while the doors replace each other', async () => {
-    await boot({ seed: 'pr', bars });
+    await boot({ seed: 'pr' });
 
-    for (const door of doorsOf({ bars }).filter(
-      (candidate) => bars === 'classic' || candidate.kind !== 'settings',
-    )) {
-      await openDoor({ door, bars });
+    for (const door of COLUMN_DOORS.filter((candidate) => candidate.kind !== 'settings')) {
+      await openDoor({ door });
       expect(currentMarks()).toEqual([door.name]);
     }
   });
 
   it('marks nothing doubled on a session page', async () => {
-    await boot({ seed: 'pr', bars });
+    await boot({ seed: 'pr' });
 
     expect(currentMarks().length).toBeLessThanOrEqual(1);
   });
 
   it('marks Board once the board is shown', async () => {
-    await boot({ seed: 'pr', bars });
+    await boot({ seed: 'pr' });
 
     await clickButton(/^Board/);
 
@@ -305,7 +295,7 @@ const drawerRoute = (kind: 'context' | 'ask'): Route => ({
 const ROUTES: ReadonlyArray<Route> = [
   ...DOORS.map((door): Route => ({
     name: door.name,
-    open: () => openDoor({ door, bars: 'column' }),
+    open: () => openDoor({ door }),
     isOpen: () => appStudioKind() === door.kind,
   })),
   drawerRoute('context'),

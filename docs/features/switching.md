@@ -1,8 +1,10 @@
 # Switch between tasks
 
-Move between the tasks of a workspace, and see from any screen which one needs you.
+Move between the tasks of a workspace without losing your place, and see from any screen which one needs you.
 
 ### Session list
+
+The left column lists the sessions of the workspace, one line each, with a sign that says whether an agent is working, you must act, or the task is done. Sessions that need you sit on top, and the open one shows its pages under its row. Hold **Control** and press **Tab** to flip through recent sessions without the list.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-rail-dark.webp">
@@ -11,10 +13,6 @@ Move between the tasks of a workspace, and see from any screen which one needs y
 
 <sub>Screenshot from Goodboy 0.23.0</sub>
 
-Move between tasks without losing your place. The list in the left column holds the sessions of the workspace, one line each: a small sign and the title. A turning ring means an agent is working, an amber **?**, shield or **!** means you must answer, approve or act, a green check means the pull request is ready to merge, a red **!** means something broke, a filled violet check means it is done, and a plain ring means it is quiet. The sessions that need you sit on top, and the rest follow their last activity, so the list holds still while you click through it.
-
-Rest the pointer on a row for half a second, or move the keyboard focus to it, and a card shows where it stands: the stage, the pull request and its checks, the linked tasks, the projects, the agents, the spend and the last activity. The session you have open sits in a card with its pages under its row, **Overview**, **Branch**, **Runs**, **Agents** and **Artifacts**, each with its count, so it is clear they belong to that session. **Questions** joins them while one is open. A chevron at the right end of the open session's row folds and shows its pages, and Goodboy remembers the choice for each session. Whatever you have open, one row shows where you are: the page, or the session itself when the page is a tool such as Terminal. A session with several branches lists them under **Branch** while you are on that page, and choosing one opens that branch on the tab it lands on.
-
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-display-options-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-display-options-light.webp" alt="The Sessions options menu open in the left column of the Northwind workspace, with Sort set to Needs you first, Alphabetical, Last activity and Created, Group set to None, PR state, Stage and Project, Filter by project and a View section with Show archived">
@@ -22,17 +20,13 @@ Rest the pointer on a row for half a second, or move the keyboard focus to it, a
 
 <sub>Screenshot from Goodboy 0.21.1</sub>
 
-The funnel in the **Sessions** header, **Filter sessions**, narrows the list by status (**Needs you**, **Running**, **In review**, **Building**, **Done**) or by project, shows archived sessions, sorts it by **Needs you first**, **Alphabetical**, **Last activity** or **Created** and groups it by **None**, **PR state**, **Stage** or **Project**. A badge counts the active filters, and a filter never hides a pinned session or the one you have open. A quiet line under the list says how many sessions the filters hide, with **Clear**. Goodboy keeps your choice for each workspace. The first eight rows show, and **Show more** opens the rest.
-
-To switch without looking at the list, hold **Control** and press **Tab** to flip through your recent sessions, then let go to open one. **Option Command Down** jumps to the next session that needs you.
-
 ### Pin a session to keep it at the top
 
-With many sessions, keep the ones you return to at the top of the list. Choose **Pin session** from a row's right-click menu or from the command palette, and the session moves to a **Pinned** group above the rest, in the order you pinned them, whatever the sort, grouping or project filter. **Unpin session** puts it back. A pinned session you archive comes back to Pinned when you restore it. Hover a row to pin it from the pin at its right end, or use the pin in the session's title row. **Move up** and **Move down** in the row menu and the command palette set the order. The same order shows on the Board card, which carries a small pin, in the **Pinned** section of the Control-Tab switcher, and on the rail.
-
-Fold the sidebar with the toggle and the rail keeps your pinned sessions as small signs under the doors, always in pin order. The open one wears a quiet frame; if it is not pinned it sits after the others. Hover or focus the open session to see its pages, its branches and your pinned sessions, and choose one. **New** shows a dot while a draft waits.
+Keep the sessions you return to at the top of the list. **Pin session** in a row's right-click menu moves it to a **Pinned** group that ignores sort and filters, and **Unpin session** puts it back. Pinned sessions keep their order on the Board and in the folded sidebar too.
 
 ### Now chip
+
+Know what needs you from any screen. The chip in the top bar counts sessions that need you and the ones running, and a click opens a list where each row jumps to its session.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-now-chip-dark.webp">
@@ -41,9 +35,9 @@ Fold the sidebar with the toggle and the rail keeps your pinned sessions as smal
 
 <sub>Screenshot from Goodboy 0.21.0</sub>
 
-Know what needs you from any screen. The chip in the top bar counts sessions that need you, running sessions and running scripts. Click it to open **Now in Harborline**, which lists each one, and click a row to jump to that session.
-
 ### Notifications
+
+Catch up in one place. Everything Goodboy has to tell you, from a pull request opened to a session near its spend cap, lands in one list behind the bell, and **Needs action** shows only what waits on you.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-notifications-dark.webp">
@@ -52,8 +46,6 @@ Know what needs you from any screen. The chip in the top bar counts sessions tha
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
-Catch up in one place. Everything Goodboy has to tell you, from a pull request opened to a session close to its spending cap, lands in one list: a bell with an unread count, and a page grouped by severity, source and workspace. **Unread** and **Needs action** cut it down, and a row that needs you carries its next step, like **Open spend** or **Review storage**.
-
 ### Open in new window
 
-Give each workspace its own window, so switching does not interrupt running agents. A workspace that is already open brings its window forward instead of opening twice. After a reload or an update, and on every launch with **Reopen last workspace on launch** on, every window comes back on the screen, tab and panel it showed.
+Give each workspace its own window, so switching does not interrupt running agents. After a reload or an update, every window comes back on the screen it showed.

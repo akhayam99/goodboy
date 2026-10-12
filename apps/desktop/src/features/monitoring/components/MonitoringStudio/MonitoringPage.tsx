@@ -1,20 +1,20 @@
 import { Activity } from 'lucide-react';
-import type { PortRow } from '@goodboy/core';
 import { EmptyState, HeaderActions, PaneShell, ScrollFade, SearchField } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { useNow } from '../../../../shared/hooks/useNow';
-import { defaultProjectId } from '../../defaultProjectId';
 import { useIdleCounts } from '../../hooks/useIdleCounts';
 import { useLeftoverRows } from '../../hooks/useLeftoverRows';
 import { useMonitoringModel } from '../../hooks/useMonitoringModel';
 import { useMonitorPolling } from '../../hooks/useMonitorPolling';
 import { summaryMeta } from '../../summaryMeta';
-import { AlsoListeningSection } from './AlsoListeningSection';
+import { GoodboySection } from './GoodboySection';
+import { HiddenFooter } from './HiddenFooter';
+import { ListeningSection } from './ListeningSection';
 import { MonitoringSkeleton } from './MonitoringSkeleton';
-import { PortsSection } from './PortsSection';
+import { PinnedSection } from './PinnedSection';
+import { PinPortPopover } from './PinPortPopover';
 import { ReadFailedNotice } from './ReadFailedNotice';
-import { StartedSection } from './StartedSection';
-import { WatchPortPopover } from './WatchPortPopover';
+import { WorkspaceSection } from './WorkspaceSection';
 
 export const MonitoringPage = () => {
   useMonitorPolling();
@@ -23,27 +23,9 @@ export const MonitoringPage = () => {
   const leftovers = useLeftoverRows();
   const idleCounts = useIdleCounts();
   const sweptCount = useAppStore((state) => state.monitorSweptCount);
-  const watchPort = useAppStore((state) => state.watchPort);
-  const fallbackProjectId = defaultProjectId({ projects: model.projects });
   const isReady = model.status === 'ready';
-  const isEmpty = isReady && model.query === '' && model.ports.length === 0;
-
-  const watchListening = (row: PortRow) => {
-    const projectId = row.projectId ?? fallbackProjectId;
-    if (projectId === null) {
-      return;
-    }
-    void watchPort({ projectId, port: row.port });
-  };
-
-  const watchButton =
-    isReady && !isEmpty ? (
-      <WatchPortPopover
-        projects={model.projects}
-        defaultProjectId={fallbackProjectId}
-        variant="primary"
-      />
-    ) : null;
+  const isEmpty = isReady && model.query === '' && model.isTrackedEmpty;
+  const hasGoodboy = model.goodboy.length > 0 || model.processes.length > 0 || leftovers.length > 0;
 
   return (
     <PaneShell
@@ -65,7 +47,7 @@ export const MonitoringPage = () => {
               />
             ) : null
           }
-          primary={watchButton}
+          primary={isReady && !isEmpty ? <PinPortPopover variant="primary" /> : null}
         />
       }
     >
@@ -82,36 +64,35 @@ export const MonitoringPage = () => {
           <EmptyState
             icon={Activity}
             title="Goodboy found no ports in your projects"
-            action={
-              <WatchPortPopover
-                projects={model.projects}
-                defaultProjectId={fallbackProjectId}
-                variant="primary"
-              />
-            }
+            action={<PinPortPopover variant="primary" />}
           />
         ) : null}
-        {isReady && model.ports.length > 0 ? (
-          <PortsSection rows={model.ports} processOf={model.processOf} now={now} />
+        {isReady && model.pinned.length > 0 ? (
+          <PinnedSection rows={model.pinned} processOf={model.processOf} now={now} />
         ) : null}
-        {isReady && (model.started.length > 0 || leftovers.length > 0) ? (
-          <StartedSection
-            rows={model.started}
+        {isReady && hasGoodboy ? (
+          <GoodboySection
+            rows={model.goodboy}
+            processes={model.processes}
             leftovers={leftovers}
             sweptCount={sweptCount}
             idleCounts={idleCounts}
+            processOf={model.processOf}
             now={now}
           />
         ) : null}
-        {isReady && model.also.length > 0 ? (
-          <AlsoListeningSection
-            rows={model.also}
+        {isReady && model.workspace.length > 0 ? (
+          <WorkspaceSection rows={model.workspace} processOf={model.processOf} now={now} />
+        ) : null}
+        {isReady && model.listening.length > 0 ? (
+          <ListeningSection
+            rows={model.listening}
             processOf={model.processOf}
             now={now}
             isForcedOpen={model.query !== ''}
-            onWatch={watchListening}
           />
         ) : null}
+        {isReady && model.hiddenCount > 0 ? <HiddenFooter count={model.hiddenCount} /> : null}
       </ScrollFade>
     </PaneShell>
   );

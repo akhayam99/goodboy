@@ -9,7 +9,7 @@ import type { TreeRow } from '../../lib/changeTree';
 import type { ViewedState } from '../../lib/reviewedFiles';
 import { rowHeightOf } from '../../lib/rowHeightOf';
 import { Delta } from './Delta';
-import { TREE_BASE_PX, TREE_INDENT_PX, TreeGuides } from './TreeGuides';
+import { TREE_BASE_PX, TREE_INDENT_PX } from './treeMetrics';
 
 type FileTreeRow = Extract<TreeRow, { readonly kind: 'file' }>;
 
@@ -76,7 +76,6 @@ export const FileRow = ({
         isCursor && isTreeFocused && 'ring-2 ring-inset ring-focus-ring',
       )}
     >
-      <TreeGuides depth={row.depth} />
       <button
         type="button"
         tabIndex={-1}

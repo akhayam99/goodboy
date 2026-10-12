@@ -11,7 +11,6 @@ import { analyzeFixSeed } from './analyzeFixSeed';
 
 const arrangement = shellArrangement({
   hasWorkspace: true,
-  hasActiveSession: true,
   isSidebarCollapsed: false,
 });
 
@@ -45,7 +44,6 @@ export const AnalyzeFixScene = ({ phase, surface, shouldOpenDrawer = false }: Pr
   return (
     <div className="[&>div]:w-full" style={{ width: 1440 }}>
       <AppShell
-        leftHidden={arrangement.leftHidden}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={<div aria-hidden />}
         main={

@@ -115,9 +115,6 @@
   },
   "shellImportsByFile": {
     "features/actions/components/ObjectMenuProvider/index.tsx": 1,
-    "features/actions/useObjectMenuTrigger/index.ts": 1,
-    "features/integrations/components/ToolSettingsScope/ToolDetailPanel.tsx": 1,
-    "features/integrations/components/ToolSettingsScope/ToolsRail.tsx": 1,
-    "features/integrations/components/ToolSettingsScope/index.tsx": 1
+    "features/actions/useObjectMenuTrigger/index.ts": 1
   }
 }

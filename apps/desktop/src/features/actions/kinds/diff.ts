@@ -17,7 +17,18 @@ import { SCRIBE_WRITING_REASON } from '../../../store/slices/scribe/scribeWritin
 import { selectMountForPath } from '../../../store/slices/project-mounts/selectors';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import type { ActionDefinition, DiffActionTarget, ObjectKindDefinition } from '../types';
-import { abortRebase, plural, pushMount, rebaseMount, settleRequest } from './gitRuns';
+import {
+  abortRebase,
+  plural,
+  pushDescription,
+  pushLabel,
+  pushMount,
+  rebaseMount,
+  settleRequest,
+  canForcePush,
+  pushBlockedReason,
+  pushConfirm,
+} from './gitRuns';
 import { mountFactsFor } from './mount';
 import type { MountFacts } from './mountFacts';
 
@@ -111,16 +122,14 @@ const DIFF_ACTIONS: ReadonlyArray<ActionDefinition<DiffFacts>> = [
   },
   {
     id: 'diff.push',
-    label: ({ facts }) =>
-      `Push ${plural({ count: facts.unpushed, one: 'commit', many: 'commits' })}`,
+    label: pushLabel,
+    description: pushDescription,
     icon: ArrowUpToLine,
     group: 'act',
     when: ({ facts }) =>
       facts.unpushed > 0 && hasPr({ facts }) && facts.pr !== 'merged' && !facts.isRebasing,
-    blockedReason: ({ facts }) =>
-      facts.isDiverged
-        ? 'Origin has a commit this branch lacks. Rebase on it first; Rewrite history owns force pushes.'
-        : null,
+    blockedReason: pushBlockedReason,
+    confirm: pushConfirm,
     slot: ({ facts }) => (facts.behind === 0 && !facts.isDiverged ? 'primary' : 'menu'),
     pendingLabel: () => 'Pushing…',
     run: ({ facts, env }) =>
@@ -128,6 +137,8 @@ const DIFF_ACTIONS: ReadonlyArray<ActionDefinition<DiffFacts>> = [
         env,
         sessionId: facts.sessionId,
         mountId: facts.mountId,
+        isForce: canForcePush({ facts }),
+        confirmedOnlyOnline: facts.onlyOnline,
         ...statusParams({ facts }),
       }),
   },

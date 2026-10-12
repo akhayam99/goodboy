@@ -576,7 +576,7 @@ describe('SettingsStudio, the frame it draws', () => {
     expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
   });
 
-  it('keeps the trail and the rail layout in the legacy layout and the launcher', () => {
+  it('keeps the trail and the rail layout outside the column, in the launcher', () => {
     render(
       <SettingsStudio
         currentWorkspace={null}

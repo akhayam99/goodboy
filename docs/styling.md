@@ -112,13 +112,12 @@ and the contrast floors are in
 class with no `--color-*` token behind it fails `no-token-bypass.test.ts`.
 
 `bg-chrome` is the app frame and nothing else: `AppShell` paints it on the
-window and the left column, and `AppTopBar` (and `AppFooter` under Classic
-bars) paint their bars with it. The main pane stays on `bg-background`, one step in front.
+window and the left column, and `AppTopBar` paints its bar with it. The main pane stays on `bg-background`, one step in front.
 `no-token-bypass.test.ts` fails a `bg-chrome` anywhere else.
 
 ## The window grid
 
-Columns, resize handles, the studio slot and (under Legacy layout) the footer
+Columns, resize handles and the studio slot
 are areas of **one** CSS grid. Their
 widths are saved, and clamped when read back. They are never nested flex
 containers. So hiding or resizing a column is one template declaration, and
@@ -258,7 +257,10 @@ composer) puts its own `PageColumn` around the scrolling content and the
 composer, so it shares the header's edges; the scroll viewport spans the pane
 and carries no gutter.
 
-Prose keeps its 720px measure aligned left inside the column. The `full` tier
+Prose keeps its 720px measure aligned left inside the column, except on an
+artifact document page (a plan, a report): its prose, parts, editor, skeleton
+and past versions fill the column and share one right edge. The drawer copy of
+a plan keeps the reading measure. The `full` tier
 is the only exception to centring and ignores the slide below: its right edge
 follows the drawer exactly as before.
 
@@ -374,7 +376,8 @@ sharp.
 
 Chrome and content separate with the edge of the content sheet, not with a
 line: the top bar, the left column and a studio rail draw no horizontal `Divider`
-against the content, and the board header sits `gap-6` above its columns. A
+against the content (the left column's one `h-px` separator between its doors and the
+Sessions list is inside the chrome), and the board header sits `gap-6` above its columns. A
 `Divider` marks what is left of the boundary between chrome and a pane's
 content, never a boundary inside content. Allowed: a vertical divider inside
 the chrome (between top bar or footer groups), a pane's fixed header against its

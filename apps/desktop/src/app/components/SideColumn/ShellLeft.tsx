@@ -1,6 +1,4 @@
 import type { SessionId, WorkspaceId } from '@goodboy/types';
-import { SessionNavSidebar } from '../../../features/session/components/SessionNavSidebar';
-import { CollapsedRail } from '../../../features/session/components/SessionNavSidebar/parts/CollapsedRail';
 import { useColumnPlace } from '../../hooks/useColumnPlace';
 import type { ShellArrangement } from '../../shellArrangement';
 import { ColumnRail } from './ColumnRail';
@@ -37,27 +35,6 @@ export const ShellLeft = ({
   const place = placeOverride === undefined ? storePlace : placeOverride;
   const isPeek = variant === 'peek';
   const isCollapsed = arrangement.leftSidebarCollapsed;
-
-  if (arrangement.mode === 'classic') {
-    if (isPeek) {
-      return (
-        <SessionNavSidebar
-          currentSessionId={currentSessionId}
-          {...(onNavigate !== undefined && { onNavigate })}
-          isCollapsed={isCollapsed}
-          onToggleSidebar={onToggle}
-        />
-      );
-    }
-    if (arrangement.leftSlot === 'none') {
-      return null;
-    }
-    return arrangement.leftSlot === 'rail' ? (
-      <CollapsedRail onToggleSidebar={onToggle} isDraftShown={isDraftShown} />
-    ) : (
-      <SessionNavSidebar currentSessionId={currentSessionId} onToggleSidebar={onToggle} />
-    );
-  }
 
   if (!isPeek && arrangement.leftSlot === 'rail') {
     return (

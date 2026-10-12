@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useAppStore } from '../../../../../store';
 import { SideColumn } from '../../../SideColumn';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
 import type { ColumnPlace } from '../../../SideColumn/columnPlace';
@@ -34,8 +35,15 @@ type Props = {
 export const SidebarNavColumnScene = ({ config, place = null }: Props) => {
   const [seed, setSeed] = useState<SidebarNavSeed | null>(null);
   useEffect(() => {
-    setSeed(seedSidebarNav({ ...SIDEBAR_NAV_DEFAULTS, ...config }));
-  }, [config]);
+    const next = seedSidebarNav({ ...SIDEBAR_NAV_DEFAULTS, ...config });
+    if (place === 'new') {
+      useAppStore.setState({
+        openSessionDraftWorkspaceId: next.workspaceId,
+        currentSessionId: null,
+      });
+    }
+    setSeed(next);
+  }, [config, place]);
   if (seed === null) {
     return null;
   }

@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import type { MountId, ProjectId, SessionId } from '@goodboy/types';
 import { matrixOf, slotCount } from '../../../__tests__/helpers/actionMatrix';
+import { resolveActions } from '../resolveActions';
 import { DIFF_KIND, type DiffFacts } from './diff';
 
 const NO_PR = {
@@ -33,6 +34,7 @@ const facts = (overrides: Partial<DiffFacts>): DiffFacts => ({
   behind: 0,
   dirty: 0,
   isDiverged: false,
+  onlyOnline: null,
   isRebasing: false,
   comments: 0,
   canStartTurnsHere: false,
@@ -117,7 +119,7 @@ const STATES: ReadonlyArray<{
     facts: facts({ unpushed: 1, isDiverged: true }),
     expected: [
       ...TOOLS,
-      'diff.push menu (Origin has a commit this branch lacks. Rebase on it first; Rewrite history owns force pushes.)',
+      'diff.push menu',
       'diff.rewriteHistory secondary',
       'diff.changeBase menu',
       'diff.restoreBackup menu',
@@ -168,5 +170,82 @@ describe('diff, the rebase label', () => {
         ? label({ facts: facts({ behind: 4, rebaseConflicts: 2 }) })
         : label,
     ).toBe('Rebase on main · 2 conflicts');
+  });
+
+  it('counts own commits and says force push once the branch diverged from origin', () => {
+    const push = ({ overrides }: { readonly overrides: Parameters<typeof facts>[0] }) =>
+      resolveActions({ definitions: DIFF_KIND.actions, facts: facts(overrides) }).find(
+        (action) => action.id === 'diff.push',
+      );
+
+    expect(push({ overrides: { ahead: 5, unpushed: 83, isDiverged: true } })?.label).toBe(
+      'Force push 5 commits',
+    );
+    expect(push({ overrides: { ahead: 1, unpushed: 9, isDiverged: true } })?.label).toBe(
+      'Force push 1 commit',
+    );
+    expect(push({ overrides: { ahead: 6, unpushed: 2 } })?.label).toBe('Push 2 commits');
+    expect(push({ overrides: { ahead: 5, unpushed: 83, isDiverged: true } })?.description).toBe(
+      'Your branch and the online copy differ. Force push replaces the online copy (with lease).',
+    );
+    expect(push({ overrides: { ahead: 6, unpushed: 2 } })?.description).toBeNull();
+  });
+
+  it('enables the force push with a confirm only when the branch has own commits', () => {
+    const push = ({ overrides }: { readonly overrides: Parameters<typeof facts>[0] }) =>
+      resolveActions({ definitions: DIFF_KIND.actions, facts: facts(overrides) }).find(
+        (action) => action.id === 'diff.push',
+      );
+
+    const forced = push({ overrides: { ahead: 5, unpushed: 83, isDiverged: true } });
+    expect(forced?.blockedReason).toBeNull();
+    expect(forced?.confirm).toEqual({
+      title: 'Replace the online copy?',
+      description:
+        'This machine has not checked the online copy yet. Anything pushed there since is lost.',
+      confirmLabel: 'Force push',
+      role: 'danger',
+    });
+    expect(
+      push({ overrides: { ahead: 5, unpushed: 83, isDiverged: true, onlyOnline: [] } })?.confirm,
+    ).toEqual({
+      title: 'Replace the online copy?',
+      description: 'The online copy has no commits you lack. Nothing online is lost.',
+      confirmLabel: 'Force push',
+      role: 'danger',
+    });
+    expect(
+      push({
+        overrides: {
+          ahead: 5,
+          unpushed: 83,
+          isDiverged: true,
+          onlyOnline: ['Fix rounding', 'Add retry', 'Drop flag', 'Bump deps', 'Tidy'].map(
+            (subject, index) => ({ sha: `sha-${index}`, subject }),
+          ),
+        },
+      })?.confirm,
+    ).toEqual({
+      title: 'Replace the online copy and drop 5 commits?',
+      description: 'These exist only online and are lost if you force push.',
+      notes: ['Fix rounding', 'Add retry', 'Drop flag', 'and 2 more'],
+      confirmLabel: 'Force push anyway',
+      role: 'danger',
+    });
+    expect(
+      push({
+        overrides: {
+          ahead: 5,
+          unpushed: 83,
+          isDiverged: true,
+          onlyOnline: [{ sha: 'sha-0', subject: 'Fix rounding' }],
+        },
+      })?.confirm?.title,
+    ).toBe('Replace the online copy and drop 1 commit?');
+    expect(push({ overrides: { ahead: 0, unpushed: 2, isDiverged: true } })?.blockedReason).toBe(
+      'Origin has a commit this branch lacks. Rebase on it first.',
+    );
+    expect(push({ overrides: { ahead: 6, unpushed: 2 } })?.confirm).toBeNull();
+    expect(push({ overrides: { ahead: 6, unpushed: 2 } })?.blockedReason).toBeNull();
   });
 });

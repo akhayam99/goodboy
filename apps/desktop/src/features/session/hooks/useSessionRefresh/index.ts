@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
-export const REFRESH_FAILED_TITLE = "Couldn't refresh this session";
+const REFRESH_FAILED_TITLE = "Couldn't refresh this session";
 
 type RefreshParams = {
   readonly sessionId: SessionId;

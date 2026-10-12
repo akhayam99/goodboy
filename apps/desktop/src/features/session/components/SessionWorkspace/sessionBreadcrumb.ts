@@ -18,7 +18,7 @@ export type SessionBreadcrumbHandlers = {
   toPullRequestHome: () => void;
 };
 
-export type BranchCrumbs = {
+type BranchCrumbs = {
   readonly leaf: BreadcrumbCrumb | null;
 };
 

@@ -41,6 +41,8 @@ export const buildAnalyzeChecksPrompt = ({ pullRequest, checks, paths }: Params)
     '## Failed log tail',
     logs.join('\n\n'),
     '## Instructions',
-    'Reproduce the failure locally and find the cause. Do not change files. End with a section `## Proposed fix`: what to change, in which files, and how to check it, in at most ten lines.',
+    'Reproduce the failure locally and find the cause. Do not change files. Finish with exactly these two sections, with these English headings even when you answer in another language.',
+    '`## Finding`: the cause, in at most four lines.',
+    '`## Proposed fix`: when one fix is clearly right, describe it in plain text, in at most ten lines: what to change, in which files, and how to check it. When two or three fixes are reasonable, write each as `### Option A: <short title>`, `### Option B: <short title>` and so on, each in at most ten lines, then end with one line `Recommended: A` followed by the reason. Never rename these headings.',
   ].join('\n\n');
 };

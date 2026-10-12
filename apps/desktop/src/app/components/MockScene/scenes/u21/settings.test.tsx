@@ -58,11 +58,7 @@ describe('the Settings scenes', () => {
   it('keeps one scene for the General page of the default shell', () => {
     const names = Object.keys(U21_SETTINGS_SCENES).sort();
 
-    expect(names).toEqual([
-      'settings-general-legacy',
-      'settings-general-pinned',
-      'settings-providers-rail',
-    ]);
+    expect(names).toEqual(['settings-general-pinned', 'settings-providers-rail']);
     expect(names).not.toContain('settings-general-rail');
   });
 
@@ -89,16 +85,6 @@ describe('the Settings scenes', () => {
     ).toBeDefined();
     expect(screen.getByRole('heading', { name: 'Claude' })).toBeDefined();
     expect(screen.getByText('Claude is about to run out.')).toBeDefined();
-  });
-
-  it('settings-general-legacy keeps the covering studio with its band, trail and rail', async () => {
-    await mount('settings-general-legacy');
-
-    expect(screen.getByRole('button', { name: 'Close settings' })).toBeDefined();
-    expect(document.querySelector('[data-studio-band]')).not.toBeNull();
-    expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toBeDefined();
-    expect(document.querySelector('[data-studio-rail]')).not.toBeNull();
-    expect(screen.queryByRole('button', { name: /^Back to app/ })).toBeNull();
   });
 
   it.each(Object.keys(U21_SETTINGS_SCENES))(

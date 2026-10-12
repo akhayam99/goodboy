@@ -306,7 +306,9 @@ describe('the base branch of a history run', () => {
     const { slice } = harness({ mount: 'develop', project: 'main' });
     engine.readOriginAhead.mockResolvedValue({
       remoteSha: 'remote-now',
+      knownRemoteSha: 'remote-now',
       commits: [],
+      onlyOnline: [],
       fetchError: null,
     });
 
@@ -1399,7 +1401,9 @@ describe('bring origin into the plan', () => {
     });
     engine.readOriginAhead.mockResolvedValue({
       remoteSha: 'remote-now',
+      knownRemoteSha: 'remote-now',
       commits: [{ sha: 'teammate1', subject: 'Teammate adds a note' }],
+      onlyOnline: [],
       fetchError: null,
     });
     engine.tryHistoryPlan.mockResolvedValue({

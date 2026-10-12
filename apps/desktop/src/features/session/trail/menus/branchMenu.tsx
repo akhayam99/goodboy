@@ -27,7 +27,7 @@ import {
   type OpenRequestHead,
 } from '../../../../shared/lib/branchPresence';
 import { pullRequestWord } from '../../../branch/pullRequestWord';
-import { DiffStat } from '../../components/DiffStat';
+import { DiffStat } from '../../../../shared/components/DiffStat';
 
 type BranchStat = {
   readonly additions: number;

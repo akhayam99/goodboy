@@ -143,6 +143,7 @@ describe('palette verbs follow the session state', () => {
       'Open Files',
       'Open Terminal',
       'Open in editor',
+      'Open ledger-core in terminal',
       'Rename',
       'Pin session',
       'Start agent',

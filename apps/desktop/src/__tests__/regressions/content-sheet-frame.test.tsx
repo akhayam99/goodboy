@@ -8,10 +8,7 @@ import { AppShell, StudioRailLayout } from '@goodboy/ui';
 import { StudioFrame } from '../../app/components/StudioFrame';
 
 const REPO_ROOT = join(__dirname, '..', '..', '..', '..', '..');
-const CHROME_FILES = [
-  'apps/desktop/src/app/components/AppTopBar/index.tsx',
-  'apps/desktop/src/app/components/AppFooter/index.tsx',
-];
+const CHROME_FILES = ['apps/desktop/src/app/components/AppTopBar/index.tsx'];
 const HORIZONTAL_DIVIDER = /<Divider(?![^>]*orientation="vertical")[^>]*\/>/;
 
 afterEach(cleanup);

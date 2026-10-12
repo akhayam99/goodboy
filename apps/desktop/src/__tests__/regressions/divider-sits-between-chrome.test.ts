@@ -28,7 +28,6 @@ type Allowance = {
 };
 
 const ALLOWED: Readonly<Record<string, Allowance>> = {
-  'apps/desktop/src/app/components/AppFooter/index.tsx': { count: 1, reason: 'chrome' },
   'apps/desktop/src/app/components/GoodboyChip/GoodboyMenu.tsx': {
     count: 2,
     reason: 'chrome',

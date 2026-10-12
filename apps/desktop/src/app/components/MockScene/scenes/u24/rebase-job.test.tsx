@@ -88,10 +88,7 @@ const BANNER_TEXT: Readonly<Record<RebaseJobSceneState, ReadonlyArray<string>>> 
   stuck: ['History rewriter needs you', 'It could not merge webhook.ts.'],
   'origin-moved': ['Someone pushed to the online copy', 'Nothing was pushed.'],
   'head-moved': ['The branch moved', 'Nothing was changed.'],
-  'push-failed': [
-    'Rebased, but the push failed',
-    'A pre-push hook stopped it. Details has the output.',
-  ],
+  'push-failed': ['Rebased, but the push failed', 'pre-push hook declined'],
   'no-provider': ['No provider is connected', 'History rewriter needs one to merge the conflict.'],
   dirty: [
     '11 files have changes that are not committed',

@@ -61,16 +61,10 @@ describe('checks analysis scenes', () => {
     expect(container.querySelector('[data-container="page"]')?.contains(drawer)).toBe(false);
     expect(store.getState().drawer?.kind).toBe('check-analysis');
     expect(store.getState().selectedAgentId).toEqual({});
-    for (const name of [
-      'Activity',
-      'Status',
-      'Finding',
-      'Proposed fix',
-      'What it was given',
-      'Failed log tail',
-    ]) {
+    for (const name of ['Finding', 'Proposed fix', 'What it was given', 'Failed log tail']) {
       expect(within(drawer).getByRole('heading', { level: 3, name })).toBeDefined();
     }
+    expect(within(drawer).queryByRole('heading', { level: 3, name: 'Status' })).toBeNull();
   });
   it('renders the proposal as a mini diff with its file and counts', () => {
     show({ name: 'debugger-drawer-proposal' });

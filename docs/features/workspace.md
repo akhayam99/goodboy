@@ -1,12 +1,14 @@
 # Workspace and projects
 
-Keep your repos together, and let sessions work across them.
+A workspace keeps your repos together, and one session can work across several of them. Each branch an agent works on gets its own worktree, so agents edit in parallel without touching your checkout.
 
 ### Start a project from nothing
 
-Begin with an empty folder and no repository. **Start a new project** on the empty screen, in the workspace launcher and in the setup wizard makes the folder, starts a git repository on main with a first commit that holds only a .gitignore, and opens a first session that works in that folder. **Publish** creates a repository on your GitHub account, private or public, or links one you already have. Without GitHub's command line tool the panel opens on **Use an existing repository**; choosing GitHub there shows the install command (`brew install gh` on macOS, a link elsewhere) with **Copy** and **Check again**, and the **Publish** button appears only once it can work. When main is on the remote, **Move my work** puts what you have not committed into a session named bootstrap with its own worktree, and the folder is clean again.
+Begin with an empty folder and no repository. **Start a new project** makes the folder, starts a git repository with a first commit and opens a first session in it. **Publish** later creates a GitHub repository for it, or links one you already have.
 
 ### Workspace with several projects
+
+Keep your repos together as one workspace, and let one session work across several of them. The **Projects** section of a session lists each repo it touches, with its branch and the size of its changes. A project gets a branch only when an agent needs to edit it.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-several-projects-dark.webp">
@@ -15,13 +17,9 @@ Begin with an empty folder and no repository. **Start a new project** on the emp
 
 <sub>Screenshot from Goodboy 0.23.0</sub>
 
-The session column aligns its hidden-filter summary with the shared row inset (`features/workspace/components/SessionActivityBar/index.tsx`, `PANE_RHYTHM.sessionList.rowInset`).
-
-Keep your repos together as one workspace, and let one session work across several of them. The **Projects** section of the session lists each repo it touches, with its branch, the size of its changes and **New branch**. A project gets a branch only when an agent needs to edit it.
-
-A terminal opened from the Terminal studio starts in the workspace folder: the nearest common parent of your project roots when it sits below your home folder, otherwise the first starred project, otherwise the first project. The setting `terminal.workspaceFolder.<workspace>` overrides it.
-
 ### Starred projects, descriptions and base branch
+
+Point agents at the right repo without naming it. Star a project and give it a one-line description: both go into each agent's brief, and starred projects come first in the pickers. Each repo shows its base branch, read from origin.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-starred-dark.webp">
@@ -30,9 +28,9 @@ A terminal opened from the Terminal studio starts in the workspace folder: the n
 
 <sub>Screenshot from Goodboy 0.23.0</sub>
 
-Point agents at the right repo without naming it. Star a project and give it a one-line description: both go into each agent's brief, and starred projects come first in the project pickers. In the project list they sit under **Starred**, and the rest under **Other projects**. Each repo shows its base branch, **main** here, read from origin.
-
 ### Worktrees
+
+Let agents edit in parallel without touching your checkout. Each branch gets its own worktree, a separate folder with its own changes and pull request. **New branch** adds one, **Close branch** clears a merged one, and **Reopen** brings back one whose files were kept.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-worktrees-dark.webp">
@@ -41,9 +39,9 @@ Point agents at the right repo without naming it. Star a project and give it a o
 
 <sub>Screenshot from Goodboy 0.23.0</sub>
 
-Let agents edit in parallel without touching your checkout. Each branch gets its own worktree, a separate folder next to your checkout with its own changes and pull request, and every row shows its part, its lines changed and its pull request. **New branch** adds one, **Close branch** clears a merged one, and **Reopen** brings back one whose files were kept. **Copy worktree path** in **⌘K** copies where a session works, or lets you pick one when it has several, with **⌘Enter** to copy them all.
-
 ### Several branches per project
+
+Work on several branches of one repo in the same session, each in its own worktree. If a worktree ends up on another branch, a card says so and offers **Use this branch here** or **Keep both branches**.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-branches-dark.webp">
@@ -52,13 +50,13 @@ Let agents edit in parallel without touching your checkout. Each branch gets its
 
 <sub>Screenshot from Goodboy 0.23.0</sub>
 
-Work on several branches of one repo in the same session: ledger-core shows two, each in its own worktree. If a worktree drifts to another branch, a card says the project is not on the branch it was left on and offers **Use this branch here** or **Keep both branches**, which opens the original branch again in a worktree of its own. When git already has that branch checked out in another worktree, the card offers **Check again** instead.
-
 ### Workspace switcher and Reconnect
 
 Jump between workspaces and projects from one search. Disconnecting a workspace keeps its history, and adding its folder again offers **Reconnect**.
 
 ### Repo status across projects
+
+See which repos are behind, uncommitted or diverged from the **N repos** popover in the board header. **Update** brings the safe ones up to date together, fast-forward only, and leaves the rest to you.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-repo-status-dark.webp">
@@ -67,9 +65,9 @@ Jump between workspaces and projects from one search. Disconnecting a workspace 
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
-See which repos are behind, uncommitted or diverged from the **N repos** popover in the board header, and update the safe ones together with **Update 1**. Updates are fast-forward only and leave dirty or diverged repos to you. **Check origin** refreshes the list.
-
 ### Locate moved projects
+
+If you moved your repos to a new folder, the workspace settings name the projects Goodboy cannot find. **Locate folders** finds them in the parent folder you pick, by their first commit and remote, and repairs the worktrees, with **Undo move**.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-locate-dark.webp">
@@ -78,22 +76,18 @@ See which repos are behind, uncommitted or diverged from the **N repos** popover
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
-Moved your repos to a new folder? The warning in the workspace settings names the projects Goodboy cannot find, and their sessions wait. Choose **Locate folders**, pick the parent folder, and Goodboy finds them, fixes the stored paths and repairs the worktrees, with **Undo move**. Repos are matched by their first commit and remote, not by folder name.
-
 ### Keep .goodboy out of git
 
-Keep Goodboy's own folder out of your commits with one click. The card shows up only when git does not already ignore `.goodboy`, your global rules included.
+Keep Goodboy's own folder out of your commits with one click. The card shows up only when git does not already ignore `.goodboy`.
 
 ### Branch names
 
-Pick how new session branches are named. New sessions, in workspace settings, holds both fields: the **Branch prefix** takes letters, numbers, `-` and `/`, and **Branch name** offers the name without a task id, the name with the task id first (the default), or **Custom**, a template with `{prefix}`, `{task-id}`, `{slug}` and `{user}`. Each choice is labelled with the name it gives your last session, and a template git would refuse says why before it is saved. Existing branches keep their names.
+Choose how new session branches are named: a **Branch prefix**, with or without the task id, or a **Custom** template. Each choice shows the name it would give your last session, and existing branches keep their names.
 
 ### Monitoring
 
-Monitoring, a door in the column and **Go to Monitoring** in ⌘K, says which ports are taken and by whom. **Ports** lists your watched ports (the ones your projects name, the ones Goodboy has seen a session or script hold, and the ones you add with **Watch a port**) with the owner as a chip: the session worktree, `<project> main checkout`, or a Goodboy script, terminal or agent, which opens its session. A free watched port is one dim **Free** line, and a port held while other worktrees run agents against the same project says **Also in N other worktrees**. **Started by Goodboy** lists the agent processes, scripts and terminals Goodboy launched, with where they run, their age and memory. **Stop** on one of these rows acts at once through the owner's own stop (a script's Stop, closing a terminal, cancelling an agent turn) so its cleanup runs, and the row reads **Stopping** until the next read shows the port **Free**. **Stop** on a process Goodboy did not start opens a confirm anchored to it ("Goodboy did not start this process. Stop it?"); a process still alive after 3 seconds offers **Force stop**. **Leftovers** lists processes an earlier run left behind (warning tone on its heading only), with **Stop leftovers (N)** and no confirm, and a line says how many the startup sweep stopped. An agent run idle for over 2 hours at 0% CPU over the last 3 reads says **Looks stuck**. **Also listening on this Mac** is folded; **Watch** on a row moves it into Ports. Each row shows the process name, and a disclosure reveals the command line with secrets masked. The header filters by port number or project name, and the page reads again every few seconds only while it is open and the window is in focus. The Now chip ends with **Open Monitoring**, and a terminal row whose processes listen shows a `:5005` chip. Monitoring needs macOS or Linux.
+See which ports are taken and by whom, in four groups: **Pinned** (ports you pin, with your own description), **Run by Goodboy**, **From workspace** and **Listening on this Mac**. Any row can be pinned, hidden with Undo, or stopped. It works on macOS and Linux.
 
 ### Copy settings from another workspace
 
-Workspace settings has one page per area: Projects, About you, New sessions, After merge, Replies and commits, Permissions and Skills. **Disconnect** sits at the end of Projects and App > Backup ends with **Reset**. A dot after a label means the value is not the default; its menu has **Reset**. From the menu of a page, **Restore defaults** puts that page back, and **Copy from…** takes the values of another workspace. **Copy all pages from…** and **Restore all workspace defaults**, under a line in the same menu, do the same for every page at once, workflow rules included, which are edited only in the Run defaults tab of Workflows. **⌘K** offers the same two as **Copy settings from another workspace** and **Restore workspace defaults**. You see what changes, page by page, before anything is saved, and **Undo** puts it back. Projects, folders, accounts and permission history are never copied.
-
-Stop tracking acts immediately and offers Undo for about 10 seconds. Cmd+Z outside text fields restores the latest app operation; restoring a tracked task never changes its session links.
+Set up a new workspace by copying another one. **Copy from…** in a settings page menu takes that page's values from another workspace, and **Copy all pages from…** takes them all. You see what changes before anything is saved, and projects, folders and accounts are never copied.

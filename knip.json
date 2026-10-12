@@ -15,16 +15,11 @@
         "!src/store/storyHarness.ts!"
       ],
       "ignoreIssues": {
-        "src/app/components/AppFooter/GoodboyChip/index.tsx": ["exports"],
         "src/app/components/BootSplash/index.tsx": ["exports"],
-        "src/app/components/MockScene/index.tsx": ["exports"],
-        "src/app/components/MockScene/scenes/activityRunSeed.ts": ["exports"],
         "src/app/components/MockScene/scenes/u23/bitbucketSeed.ts": ["exports"],
         "src/app/components/MockScene/scenes/u23/prPageSeed.ts": ["exports"],
         "src/app/components/MockScene/scenes/u23/gitlabSeed.ts": ["exports"],
-        "src/app/components/MockScene/scenes/u24/rebaseJobSeed.ts": ["exports"],
         "src/shared/components/Toast/toastTiming.ts": ["exports"],
-        "src/features/artifacts/artifact-status.ts": ["exports"],
         "src/features/artifacts/artifactMirror/artifactMirrorQueue.ts": ["exports"],
         "src/features/artifacts/artifactQuestionContract.ts": ["exports"],
         "src/features/artifacts/artifactScoutSection.ts": ["exports"],
@@ -44,20 +39,16 @@
         "src/features/chat/utils/transcript-items-trace.ts": ["exports"],
         "src/features/companion/commandExecutor.ts": ["exports", "types"],
         "src/features/companion/mobileConfinement.ts": ["exports"],
-        "src/features/diff/hooks/useDiffReviewThreads/index.tsx": ["exports"],
         "src/features/diff/hooks/useDiffTokens/index.ts": ["exports"],
-        "src/features/diff/hooks/useFileJump/index.ts": ["exports"],
         "src/features/integrations/github/components/PullRequest/useGithubIssues.ts": ["exports"],
         "src/features/integrations/github/components/PullRequest/useGithubPrs/index.ts": [
           "exports"
         ],
-        "src/features/integrations/github/prDraftAgent.ts": ["exports"],
         "src/features/history/historyEngine.ts": ["exports"],
         "src/features/history/historyGraphModel.ts": ["exports"],
         "src/features/history/useHistoryDrag/index.ts": ["exports"],
         "src/features/inbox/kindFilter.ts": ["exports"],
         "src/features/integrations/bitbucket/bitbucketPrPresentation.ts": ["exports"],
-        "src/features/integrations/bitbucket/bitbucketPrStateKind.ts": ["exports"],
         "src/features/integrations/components/ConnectForm/index.tsx": ["types"],
         "src/features/integrations/gitlab/MergeRequest/MrDetailPanel/mrDraftTitle.ts": ["exports"],
         "src/features/integrations/gitlab/MergeRequest/useGitlabIssues.ts": ["exports"],
@@ -78,7 +69,6 @@
         "src/features/onboarding/OnboardingWizard/wizardSteps.ts": ["exports"],
         "src/features/palette/frecency.ts": ["exports"],
         "src/features/palette/score.ts": ["exports"],
-        "src/features/providers/provider-pricing.ts": ["types"],
         "src/features/providers/providers.ts": ["exports"],
         "src/features/providers/slot-routing.ts": ["exports"],
         "src/features/providers/taskModelRouting.ts": ["exports"],
@@ -91,7 +81,6 @@
         "src/features/resolve/learnWorkspaceReplyStyle.ts": ["exports"],
         "src/features/session/agent-kind.ts": ["exports"],
         "src/features/session/agent-status.ts": ["exports"],
-        "src/features/session/resolvePullRequestProvider.ts": ["types"],
         "src/features/session/components/SessionWorkspace/sessionBreadcrumb.ts": ["types"],
         "src/features/workflows/components/WorkflowBuilderView/index.tsx": ["exports"],
         "src/features/workflows/components/WorkflowBuilderView/parts/BuilderTitleField.tsx": [
@@ -100,12 +89,10 @@
         "src/features/session/context/shareableContext.ts": ["exports"],
         "src/features/session/hooks/useRebaseAgent/index.ts": ["exports"],
         "src/features/session/hooks/useSessionFocusRecheck/index.ts": ["exports"],
-        "src/features/session/hooks/useSessionRefresh/index.ts": ["exports"],
         "src/store/slices/worktreeStatuses/cache.ts": ["exports"],
         "src/features/session/lens-destinations.ts": ["types"],
         "src/features/session/mountQueryBridge/index.ts": ["exports"],
         "src/features/session/projectMaterializeBridge.ts": ["exports"],
-        "src/features/session/timeline/activityFilter.ts": ["exports"],
         "src/features/session/timeline/sessionEventPresentation.ts": ["exports"],
         "src/features/settings/components/SettingsStudio/UpdatesSection.tsx": ["exports"],
         "src/features/settings/components/SettingsStudio/types.ts": ["types"],
@@ -136,7 +123,6 @@
         "src/features/workspace/hooks/useWindowLayout/index.ts": ["exports"],
         "src/shared/hooks/useTitlebarInset/index.ts": ["exports"],
         "src/shared/lib/db.ts": ["exports"],
-        "src/shared/lib/invokeCommand.ts": ["exports"],
         "src/shared/lib/theme.ts": ["exports"],
         "src/shared/utils/actionRing.ts": ["exports"],
         "src/shared/utils/attribution.ts": ["exports"],
@@ -151,7 +137,6 @@
         "src/store/slices/chats/planChatTurn.ts": ["exports"],
         "src/store/slices/contextDrawer/decisionChangesSince.ts": ["exports"],
         "src/store/slices/github/prWriteContext.ts": ["exports"],
-        "src/store/slices/github/sweepGithub.ts": ["exports"],
         "src/store/slices/live-work/selectLiveWork.ts": ["types"],
         "src/store/slices/open-questions/dismissOpenQuestion.ts": ["exports"],
         "src/store/slices/open-questions/resolveQuestionDelegate.ts": ["exports"],
@@ -178,17 +163,10 @@
         "src/store/slices/turn/turnHelpers.ts": ["exports"],
         "src/features/providers/components/ProviderStudio/DefaultsPanel/resolutionNote.ts": [
           "exports"
-        ],
-        "src/store/slices/models/selectResolution.ts": ["exports"],
-        "src/store/slices/state-writes/latestOnly.ts": ["types"]
+        ]
       },
       "ignoreDependencies": ["tailwindcss"],
-      "ignore": [
-        "src/store/slices/*/hotKeys.ts",
-        "src/store/slices/models/index.ts",
-        "src/features/monitoring/hooks/useMonitorPolling/index.ts",
-        "src/store/slices/monitoring/selectLeftovers.ts"
-      ]
+      "ignore": ["src/store/slices/*/hotKeys.ts"]
     },
     "packages/core": {
       "entry": ["src/**/*.test.ts", "src/**/__tests__/**/*.test.ts"],

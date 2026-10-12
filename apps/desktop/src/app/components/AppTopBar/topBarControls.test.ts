@@ -8,8 +8,6 @@ const SRC = join(__dirname, '..', '..', '..');
 
 const CONTROL_SOURCES: ReadonlyArray<string> = [
   'app/components/AppTopBar/NavCluster/HistoryArrow.tsx',
-  'app/components/AppTopBar/NavCluster/BoardButton.tsx',
-  'app/components/AppTopBar/NavCluster/ChatButton.tsx',
   'app/components/AppTopBar/CommandCenter.tsx',
   'app/components/AppTopBar/SpendButton.tsx',
   'app/components/AppTopBar/ThemeToggle.tsx',

@@ -1,3 +1,4 @@
+import { readOnlyOnline } from '../../../store/slices/worktreeStatuses/onlyOnline';
 import {
   ArrowUpToLine,
   Copy,
@@ -40,7 +41,18 @@ import type {
   ObjectKindDefinition,
   MountActionTarget,
 } from '../types';
-import { abortRebase, plural, pushMount, rebaseMount, settleRequest } from './gitRuns';
+import {
+  abortRebase,
+  plural,
+  pushDescription,
+  pushLabel,
+  pushMount,
+  rebaseMount,
+  settleRequest,
+  canForcePush,
+  pushBlockedReason,
+  pushConfirm,
+} from './gitRuns';
 import { mountFacts, type MountFacts } from './mountFacts';
 import { selectProjectById } from '../../../store/slices/projects/selectProjectById';
 
@@ -229,8 +241,8 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
   },
   {
     id: 'mount.push',
-    label: ({ facts }) =>
-      `Push ${plural({ count: facts.unpushed, one: 'commit', many: 'commits' })}`,
+    label: pushLabel,
+    description: pushDescription,
     icon: ArrowUpToLine,
     group: 'act',
     when: ({ facts }) =>
@@ -239,10 +251,8 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
       !facts.isRebasing &&
       facts.pr !== null &&
       facts.pr !== 'merged',
-    blockedReason: ({ facts }) =>
-      facts.isDiverged
-        ? 'Origin has a commit this branch lacks. Rebase on it first; Rewrite history owns force pushes.'
-        : null,
+    blockedReason: pushBlockedReason,
+    confirm: pushConfirm,
     slot: ({ facts }) => (facts.behind === 0 && !facts.isDiverged ? 'inline' : 'menu'),
     pendingLabel: () => 'Pushing…',
     run: ({ facts, env }) =>
@@ -250,6 +260,8 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
         env,
         sessionId: facts.sessionId,
         mountId: facts.mountId,
+        isForce: canForcePush({ facts }),
+        confirmedOnlyOnline: facts.onlyOnline,
         ...statusParams({ facts }),
       }),
   },
@@ -501,6 +513,7 @@ export const mountFactsFor = ({
       selectActiveMountId({ state, sessionId }) !== mountId,
     isScribeWriting: isScribeWriting({ scribeWork: state.scribeWork, mountId }),
     editors: state.detectedEditors.filter((editor) => REFERENCE_EDITORS.has(editor.binary)),
+    onlyOnline: readOnlyOnline({ mountId, branch: view.branch }),
     blockers: mountCleanupBlockers({
       state,
       sessionId,

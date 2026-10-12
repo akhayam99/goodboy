@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { IsoDateTime, Session, SessionId, WorkspaceId } from '@goodboy/types';
 import type { TerminalTab, TerminalTabId } from '../../../../shared/types/terminal';
 import {
@@ -55,6 +55,7 @@ const TAB: TerminalTab = {
 };
 
 let store: StoryStore;
+let openCalls = 0;
 
 beforeAll(async () => {
   store = await importStore();
@@ -62,11 +63,15 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
+  openCalls = 0;
   stubStoryInvoke({
     terminal_open: () => {
+      openCalls += 1;
       throw new Error('spawn /bin/zsh ENOENT');
     },
     terminal_list_live: [],
+    terminal_close: null,
+    db_execute: { rowsAffected: 0 },
     db_select: [],
     monitor_snapshot: { listeners: [], processes: [], takenAt: 0, isPlatformSupported: true },
     process_ledger_list: [],
@@ -102,5 +107,48 @@ describe('a terminal that fails to open', () => {
     expect(tab?.openError).toBe('spawn /bin/zsh ENOENT');
     expect(await screen.findByText('failed to open')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Restart' })).toBeDefined();
+  });
+
+  it('never opens a failed tab again when its pane mounts a second time', async () => {
+    const first = render(
+      <SessionTerminalLens
+        workspaceId={WORKSPACE_ID}
+        sessionId={SESSION_ID}
+        isActive
+        sessionCwd="/repo"
+      />,
+    );
+    await screen.findByRole('alert');
+    expect(openCalls).toBe(1);
+    first.unmount();
+
+    render(
+      <SessionTerminalLens
+        workspaceId={WORKSPACE_ID}
+        sessionId={SESSION_ID}
+        isActive
+        sessionCwd="/repo"
+      />,
+    );
+
+    await screen.findByRole('alert');
+    expect(openCalls).toBe(1);
+  });
+
+  it('retries into a fresh terminal when Restart is pressed', async () => {
+    render(
+      <SessionTerminalLens
+        workspaceId={WORKSPACE_ID}
+        sessionId={SESSION_ID}
+        isActive
+        sessionCwd="/repo"
+      />,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Restart' }));
+
+    await waitFor(() => expect(openCalls).toBe(2));
+    const tabs = store.getState().terminalTabs[SESSION_ID] ?? [];
+    expect(tabs).toHaveLength(1);
+    expect(tabs[0]?.id).not.toBe(TAB_ID);
   });
 });

@@ -4,6 +4,7 @@ export type PageCountFacts = {
   readonly waiting: number;
   readonly notes: number;
   readonly mounts: number;
+  readonly branchName: string | null;
   readonly runs: number;
   readonly runningRuns: number;
   readonly agents: number;
@@ -13,6 +14,8 @@ export type PageCountFacts = {
 };
 
 export type PageSummaries = Partial<Record<CountedPageId, string>>;
+
+const RUNNING_SUFFIX = ' running';
 
 type NounParams = {
   readonly count: number;
@@ -29,7 +32,7 @@ type RunningParams = {
 
 const runningOr = ({ running, total, noun }: RunningParams): string | null => {
   if (running > 0) {
-    return `${running} running`;
+    return `${running}${RUNNING_SUFFIX}`;
   }
   return total > 0 ? nounOf({ count: total, noun }) : null;
 };
@@ -43,7 +46,10 @@ const COUNT_WORD: Readonly<Record<CountedPageId, (facts: PageCountFacts) => stri
     if (parts.length > 0) {
       return parts.join(' · ');
     }
-    return facts.mounts > 1 ? `${facts.mounts} branches` : null;
+    if (facts.mounts > 1) {
+      return `${facts.mounts} branches`;
+    }
+    return facts.branchName;
   },
   runs: (facts) => runningOr({ running: facts.runningRuns, total: facts.runs, noun: 'run' }),
   agents: (facts) =>
@@ -62,3 +68,10 @@ type WordParams = {
 
 export const pageCountWordOf = ({ page, facts }: WordParams): string | null =>
   COUNT_WORD[page](facts);
+
+type RunningWordParams = {
+  readonly word: string;
+};
+
+export const isRunningWord = ({ word }: RunningWordParams): boolean =>
+  word.endsWith(RUNNING_SUFFIX);

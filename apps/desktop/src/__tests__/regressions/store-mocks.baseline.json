@@ -1,7 +1,6 @@
 {
   "apps/desktop/src/__tests__/a11y/smoke.test.tsx": 1,
   "apps/desktop/src/__tests__/destructive-session-shortcuts.test.tsx": 1,
-  "apps/desktop/src/__tests__/footer-studio-reachability.test.tsx": 1,
   "apps/desktop/src/__tests__/keyboard/lens-shortcuts.test.tsx": 1,
   "apps/desktop/src/__tests__/keyboard/navigation.test.tsx": 1,
   "apps/desktop/src/__tests__/regressions/sidebar-toggle-axis.test.tsx": 1,
@@ -127,7 +126,6 @@
   "apps/desktop/src/features/session/components/NewSessionBridge/index.test.tsx": 1,
   "apps/desktop/src/features/session/components/SessionKickoff/index.test.tsx": 1,
   "apps/desktop/src/features/session/components/SessionNavSidebar/index.test.tsx": 1,
-  "apps/desktop/src/features/session/components/SessionNavSidebar/parts/CollapsedRail.test.tsx": 1,
   "apps/desktop/src/features/session/components/SessionOverviewPane/ContextChip.test.tsx": 1,
   "apps/desktop/src/features/session/components/SessionOverviewPane/LinkIssueAction.test.tsx": 1,
   "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/AlsoInChip.test.tsx": 1,
@@ -254,5 +252,6 @@
   "apps/desktop/src/store/slices/workflows/orchestratorHintActions.test.ts": 1,
   "apps/desktop/src/store/slices/workflows/scoutTree.fanout.test.ts": 1,
   "apps/desktop/src/store/slices/workspaces/setCurrentWorkspace.test.ts": 3,
-  "apps/desktop/src/store/store.plan-consumption-ordering.test.ts": 1
+  "apps/desktop/src/store/store.plan-consumption-ordering.test.ts": 1,
+  "apps/desktop/src/__tests__/footer-studio-reachability.test.tsx": 1
 }

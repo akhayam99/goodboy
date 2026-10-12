@@ -356,7 +356,8 @@ export const seedScriptsLive = ({ variant }: VariantParams): void => {
     monitorScanned: {
       [PROJECT_ID]: [{ port: DEV_PORT, label: 'dev', source: 'script', relDir: '' }],
     },
-    monitorWatched: {},
+    monitorPinned: [],
+    monitorHidden: [],
     monitorLearned: {},
     loadWatchedPorts: async () => undefined,
     refreshMonitorSnapshot: async () => undefined,

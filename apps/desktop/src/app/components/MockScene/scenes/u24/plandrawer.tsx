@@ -14,9 +14,7 @@ const WIDE_DRAWER_PX = 1000;
 
 const arrangement = shellArrangement({
   hasWorkspace: true,
-  hasActiveSession: true,
   isSidebarCollapsed: false,
-  mode: 'column',
 });
 
 const saveReaderWidth = (widthPx: number | null): void => {
@@ -56,7 +54,6 @@ const ReaderDrawerStage = ({ savedWidthPx, prepare, main }: StageProps) => {
   return (
     <div data-testid="plandrawer-stage" className="[&>div]:w-full" style={{ width: WIDTH_PX }}>
       <AppShell
-        leftHidden={arrangement.leftHidden}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={<div aria-hidden />}
         main={main}

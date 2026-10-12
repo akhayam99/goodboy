@@ -98,7 +98,7 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('SideColumn', () => {
-  it('stacks the toggle, the create row, the six doors, the sessions, then Settings and the Goodboy row', () => {
+  it('stacks the toggle, the six doors, the sessions, then Settings and the Goodboy row', () => {
     mountColumn();
     const nav = navLayer();
 
@@ -119,6 +119,26 @@ describe('SideColumn', () => {
     expect(within(foot).getByRole('button', { name: 'Settings' })).toBeDefined();
     expect(within(foot).getByTestId('goodboy-chip')).toBeDefined();
     expect(within(foot).getByRole('button', { name: 'Report a bug' })).toBeDefined();
+  });
+
+  it('renders one row per door and keeps each plus inside its own row', () => {
+    mountColumn();
+    const nav = navLayer();
+    const rows = Array.from(nav.querySelectorAll<HTMLElement>('[data-column-door-row]'));
+    const rowOf = ({ id }: { readonly id: string }): HTMLElement => {
+      const row = nav.querySelector<HTMLElement>(`[data-column-door-row="${id}"]`);
+      if (row === null) {
+        throw new Error(`no row for ${id}`);
+      }
+      return row;
+    };
+
+    expect(rows.map((row) => row.getAttribute('data-column-door-row'))).toEqual(doorNames(nav));
+    expect(within(rowOf({ id: 'chat' })).getByRole('button', { name: /^New chat/ })).toBeDefined();
+    expect(
+      within(rowOf({ id: 'terminal' })).getByRole('button', { name: /^New terminal/ }),
+    ).toBeDefined();
+    expect(within(nav).getAllByRole('button', { name: /^New (chat|terminal)/ })).toHaveLength(2);
   });
 
   it.each([
@@ -159,7 +179,7 @@ describe('SideColumn', () => {
     expect(doors.openInbox).not.toHaveBeenCalled();
   });
 
-  it('asks for a new session from the primary create button', () => {
+  it('asks for a new session from the row under Sessions', () => {
     const onNew = vi.fn();
     window.addEventListener('goodboy:new-session', onNew);
     mountColumn();
@@ -170,7 +190,7 @@ describe('SideColumn', () => {
     window.removeEventListener('goodboy:new-session', onNew);
   });
 
-  it('opens a new chat and a new terminal from the create row', () => {
+  it('opens a new chat and a new terminal from the plus on their own door', () => {
     const doors = actions();
     mountColumn({ doors });
 
@@ -195,14 +215,35 @@ describe('SideColumn', () => {
     }
   });
 
-  it('lays the three create buttons in one grid row', () => {
+  it('has no create row: the plus buttons live on the Chat and Terminal doors', () => {
     mountColumn();
-    const buttons = ['New session', 'New chat', 'New terminal'].map((name) =>
-      within(navLayer()).getByRole('button', { name }),
-    );
+    const nav = navLayer();
 
-    expect(new Set(buttons.map((button) => button.parentElement)).size).toBe(1);
-    expect(buttons[0]?.parentElement?.hasAttribute('data-column-create')).toBe(true);
+    expect(nav.querySelector('[data-column-create]')).toBeNull();
+    const chatPlus = within(nav).getByRole('button', { name: 'New chat' });
+    const terminalPlus = within(nav).getByRole('button', { name: 'New terminal' });
+    expect(nav.querySelector('[data-column-door="chat"]')?.parentElement?.contains(chatPlus)).toBe(
+      true,
+    );
+    expect(
+      nav.querySelector('[data-column-door="terminal"]')?.parentElement?.contains(terminalPlus),
+    ).toBe(true);
+    expect(nav.querySelectorAll('[data-door-create]')).toHaveLength(2);
+  });
+
+  it('puts New session first under the Sessions header, after one separator', () => {
+    mountColumn();
+    const sessions = navLayer().querySelector('[data-column-sessions]');
+    const row = within(navLayer()).getByRole('button', { name: 'New session' });
+
+    expect(sessions?.contains(row)).toBe(true);
+    expect(row.getAttribute('data-create')).toBe('session');
+    expect(within(navLayer()).getAllByRole('separator')).toHaveLength(1);
+    expect(
+      navLayer()
+        .querySelector('[role="separator"]')
+        ?.parentElement?.nextElementSibling?.contains(row),
+    ).toBe(true);
   });
 
   it('opens the report sheet from the bug button beside the Goodboy row', () => {

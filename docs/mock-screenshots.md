@@ -63,8 +63,8 @@ Use real branded id casts (e.g. `'x' as Agent['id']`) and real enum values.
 Pass it straight in. No store involved.
 
 **The component reads the zustand store.** `SessionOverviewPane`,
-`WorkflowRunDetail`, `DefaultsPanel`, `SessionNavSidebar` and `AppFooter`'s
-enabling flags work this way. `useAppStore` is a bare `create()` store: no `persist` middleware,
+`WorkflowRunDetail`, `DefaultsPanel` and `SessionNavSidebar` work
+this way. `useAppStore` is a bare `create()` store: no `persist` middleware,
 and no Tauri side effect on `setState`. So it is safe to fill it directly:
 
 ```tsx
@@ -109,9 +109,8 @@ be used inside ToastProvider`.** `main.tsx` renders `MockScene` in place of
   `App` under the `MOCK_ENABLED` gate, so a scene never inherits `App`'s
   `ToastProvider`. A scene that renders such a component wraps itself in
   `ToastProvider`.
-- **`AppShell` already has `leftSidebar` and `footer` slots.** You need no
-  layout code to add the real session sidebar or the real app footer to a
-  scene. Pass the components into those two props.
+- **`AppShell` already has a `leftSidebar` slot.** You need no layout code to
+  add the real side column to a scene. Pass the component into that prop.
 - **A fixed timestamp drifts every day.** The UI measures elapsed and relative
   times against the real clock, so a literal `'2026-08-25T17:57:00.000Z'`
   reads as a step running for days. Wrap every seeded instant in
@@ -243,8 +242,7 @@ uses (a store opener or a click on the real control), never by mounting the
 studio itself.
 
 The Settings frames of the default shell are `settings-general-pinned` and
-`settings-providers-rail`, and the legacy layout has `settings-general-legacy`;
-they live in `scenes/u21/settings.tsx`. Each mounts `audit/AppFrame` and opens
+`settings-providers-rail`; they live in `scenes/u21/settings.tsx`. Each mounts `audit/AppFrame` and opens
 Settings through the store, so the column, the rail and the page behave as in
 the app. Settings replaces the sidebar with its own column, so the General page
 has one scene, not one per sidebar state. `settings-providers-rail` folds the
@@ -372,7 +370,9 @@ saves `docs/changelog/next/<name>-<before|after>-{dark,light}.webp`.
   whole instead, at a 1360×850 window and DPR 1, so the picture keeps the same
   size. Extra scene params ride in the scene argument
   (`'session-start&kind=workflow'`), and `GOODBOY_SHOT_URL` points the script
-  at a dev server on another port.
+  at a dev server on another port. `GOODBOY_SHOT_WAIT` (milliseconds) lengthens
+  the render wait, and `GOODBOY_SHOT_BLUR=1` drops focus before the capture so no
+  focus ring or tooltip shows.
 - **Both themes, one command each.** The script captures dark and light in
   one run; a scene that renders differently per theme needs no extra work,
   the `&theme=` query param already switches it (`MockScene/index.tsx`).

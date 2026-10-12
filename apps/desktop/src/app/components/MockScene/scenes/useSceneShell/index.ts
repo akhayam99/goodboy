@@ -4,7 +4,6 @@ import { useAppOverlays } from '../../../../hooks/useAppOverlays';
 import { useGoToBoard } from '../../../../hooks/useGoToBoard';
 import type { ShellArrangement } from '../../../../shellArrangement';
 import { useAppStore, useCurrentSession, useCurrentWorkspace } from '../../../../../store';
-import { SCENE_CONNECTED } from '../sceneShell';
 
 const noop = () => undefined;
 
@@ -28,7 +27,6 @@ export const useSceneShell = ({ arrangement }: Params): SceneShell => {
   const goToBoard = useGoToBoard();
   const [settingsSlot, setSettingsSlot] = useState<HTMLDivElement | null>(null);
   const overlays = useAppOverlays({
-    connected: SCENE_CONNECTED,
     currentSession,
     currentWorkspace,
     workspaceProjectRoot: null,

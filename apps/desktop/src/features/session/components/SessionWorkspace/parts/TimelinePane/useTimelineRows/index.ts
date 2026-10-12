@@ -74,6 +74,7 @@ export type TimelineRows = {
   readonly laneRuns: TimelineLaneRuns;
   readonly owners: ReadonlyArray<NeedsYouOwner>;
   readonly unreadAgentIds: ReadonlySet<string>;
+  readonly liveAgentIds: ReadonlySet<string> | undefined;
   readonly shownQuestions: ReadonlySet<string>;
   readonly stepById: ReadonlyMap<string, Step>;
   readonly spendByAgentId: ReadonlyMap<string, number>;
@@ -214,6 +215,11 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
     return unread;
   }, [agents]);
 
+  const liveAgentIds = useMemo(
+    () => (areAgentsLoaded ? new Set(agents.map((agent) => agent.id)) : undefined),
+    [agents, areAgentsLoaded],
+  );
+
   const decidingRunIds = useMemo(() => {
     const deciding = new Set<string>();
     for (const { run } of workflows) {
@@ -240,12 +246,14 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
         entries: model.entries,
         events,
         resolveFactsByAgentId: resolveActivity.factsByAgentId,
+        liveAgentIds,
       }),
     [
       advanceByRunId,
       decidingRunIds,
       events,
       jobActivity,
+      liveAgentIds,
       model.entries,
       resolveActivity,
       unreadAgentIds,
@@ -253,9 +261,9 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
   );
 
   const viewEntries = useMemo(() => {
-    const inView = entriesOfView({ entries: model.entries, events, view });
+    const inView = entriesOfView({ entries: model.entries, events, view, liveAgentIds });
     return view === 'log' ? logEntriesMatching({ entries: inView, query }) : inView;
-  }, [events, model.entries, query, view]);
+  }, [events, liveAgentIds, model.entries, query, view]);
 
   const stream = useMemo(
     () =>
@@ -374,6 +382,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
     laneRuns,
     owners,
     unreadAgentIds,
+    liveAgentIds,
     shownQuestions,
     stepById,
     spendByAgentId,

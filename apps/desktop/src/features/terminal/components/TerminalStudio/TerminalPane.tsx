@@ -16,6 +16,9 @@ export const TerminalPane = ({ tab, isActive }: Props) => {
   const driver = useMemo(() => createTerminalDriver({ terminalId: tab.id }), [tab.id]);
 
   useEffect(() => {
+    if (tab.status === 'exited') {
+      return;
+    }
     invokeTerminalOpen(tab.id, tab.cwd, 100, 24).catch((error: unknown) => {
       setTerminalTabStatus({
         owner: tab.owner,
@@ -24,7 +27,7 @@ export const TerminalPane = ({ tab, isActive }: Props) => {
         openError: formatError(error),
       });
     });
-  }, [tab.id, tab.cwd, tab.owner, setTerminalTabStatus]);
+  }, [tab.id, tab.cwd, tab.owner, tab.status, setTerminalTabStatus]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">
@@ -43,9 +46,6 @@ export const TerminalPane = ({ tab, isActive }: Props) => {
           terminalId={tab.id}
           driver={driver}
           isActive={isActive}
-          onExit={(exitCode) =>
-            setTerminalTabStatus({ owner: tab.owner, tabId: tab.id, status: 'exited', exitCode })
-          }
         />
       </div>
     </div>

@@ -8,10 +8,9 @@ import { TerminalPane } from './TerminalPane';
 type Props = {
   readonly model: TerminalStudioModel;
   readonly isActive: boolean;
-  readonly onDock: (() => void) | undefined;
 };
 
-export const TerminalDetail = ({ model, isActive, onDock }: Props) => {
+export const TerminalDetail = ({ model, isActive }: Props) => {
   const { selected } = model;
   if (selected === null) {
     return (
@@ -22,7 +21,7 @@ export const TerminalDetail = ({ model, isActive, onDock }: Props) => {
         title="No terminal yet"
         description="Open a terminal in your workspace folder."
         action={
-          <Button size="sm" variant="secondary" onClick={model.openDefault}>
+          <Button size="sm" onClick={model.openDefault}>
             New terminal
           </Button>
         }
@@ -36,8 +35,6 @@ export const TerminalDetail = ({ model, isActive, onDock }: Props) => {
         cwd={displayCwd({ cwd: selected.cwd, folder: model.folder, home: model.home })}
         targets={model.targets}
         isIdle={isIdle}
-        onDock={onDock}
-        onOpenAt={model.openAt}
         onChangeDirectory={model.changeDirectory}
       />
       <TerminalPane key={selected.id} tab={selected} isActive={isActive} />

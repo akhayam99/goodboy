@@ -298,38 +298,4 @@ export const SETTINGS_FRAME_ROWS: ReadonlyArray<Row> = [
       ).toBe(true);
     },
   },
-  {
-    name: 'settings frame: the legacy layout opens Settings over the page with its band and rail and closes it',
-    bars: 'classic',
-    covers: ['openSettings', 'scope:home'],
-    open: async () => {
-      await clickButton('Settings');
-      await band('Settings');
-      await click(await screen.findByRole('button', { name: 'Close settings' }));
-      await settle(12);
-    },
-    lands: async (ctx) => {
-      await waitFor(() => expect(studioKind()).toBeNull(), WAIT);
-      expect(document.querySelector('[data-studio-frame]')).toBeNull();
-      expect(useAppStore.getState().currentSessionId).toBe(ctx.sessionId);
-      expect(screen.queryByRole('button', { name: /^Back to app/ })).toBeNull();
-    },
-  },
-  {
-    name: 'settings frame: the legacy layout draws the trail and the rail layout, and Esc closes it',
-    bars: 'classic',
-    covers: ['openSettings', 'scope:home'],
-    open: async () => {
-      await clickButton('Settings');
-      await band('Settings');
-      await visible('navigation', 'Settings scopes');
-      expect(document.querySelector('[data-studio-rail]')).not.toBeNull();
-      expect(screen.queryByRole('button', { name: /^Back to app/ })).toBeNull();
-      await escape();
-    },
-    lands: both(
-      async () => expect(studioKind()).toBeNull(),
-      async () => expect(document.querySelector('[data-studio-frame]')).toBeNull(),
-    ),
-  },
 ];

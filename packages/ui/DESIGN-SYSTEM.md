@@ -208,8 +208,12 @@ The Sessions block shares one left edge and one gap. The `Sessions` eyebrow
 `navRail.door`) and the session row icons (`sessionList.pad` plus
 `sessionList.rowInset`) all start at 16px, and the doors and the session rows
 share one vertical gap (`navRail.doorGap` equals `sessionList.rowGap`). The view
-menu trigger is a 28px target (`sessionList.menuTrigger`). `paneRhythm.test.ts`
-holds the three edges and the gap.
+menu trigger is a 28px target (`sessionList.menuTrigger`). The groups of the list
+are spaced by that same gap (`sessionList.listGap`), and a group header has no
+top margin of its own. One separator sits between the doors and the Sessions
+header, with the doors' gap above and below it, and the first row under the
+header is New session, shaped like a session row. `paneRhythm.test.ts` holds the
+three edges and the gaps.
 
 A stat card holds its label to two lines (`line-clamp-2`), pins the figure to
 the bottom of the card with `mt-auto`, and puts the delta and the hint on their
@@ -1122,6 +1126,12 @@ the popover before whatever it opened from, and it returns focus to the trigger
 when Esc closed it from inside. Pass `isEscapeEnabled: false` only when the
 surface must keep Esc for itself.
 
+A press inside a popover opened from within another popover (a `Listbox` in an
+`AnchoredPopover`) counts as inside the outer one, so choosing an option does not
+close it. `AnchoredPopover` marks the press on its surface through
+`dropdown.markPress`, and React carries it across the portal; a press outside
+both still closes both.
+
 ## Primitives
 
 The register taxonomy, and the rule that all registers share one family, live
@@ -1143,7 +1153,7 @@ One ladder of control heights runs through every register: **24** (`xs`),
 | `SegmentedTabs`                      | `xs` frame 28 (inside a title row that also holds actions), `sm` frame 32 (page-level tabs on their own row)    | The tab keeps one weight selected or not; selection is a fill. A group of two to four choices is `SegmentedTabs`; a group of cards with a description is `ChoiceCards`.                                                                                                                             |
 | `Input`, `Textarea`, `Listbox` field | `sm` 28 (default), `md` 32                                                                                      | 12px text, `rounded-md`. `SearchField` (28, search icon, clear button, `ariaLabel` required) is the one search input; it takes a `hint` for a registered shortcut.                                                                                                                                  |
 | `Checkbox`                           | 16 box, 4px radius, inside a 24 hit area                                                                        |                                                                                                                                                                                                                                                                                                     |
-| `Switch`                             | 16 by 28 track inside a 24 target                                                                               | The label names the setting and never says On or Off: the setting goes in `ariaLabel`. The Legacy layout row keeps its state word on purpose.                                                                                                                                                       |
+| `Switch`                             | 16 by 28 track inside a 24 target                                                                               | The label names the setting and never says On or Off: the setting goes in `ariaLabel`.                                                                                                                                                                                                              |
 
 A bar has one control height. Every control in the top bar is 28 and
 `rounded-md`: the history arrows, Board, Chat, the command centre, the bell,
@@ -1436,7 +1446,11 @@ its filters (Tasks, Notifications) uses `StudioRailLayout` with
 draws the only line between it and the detail. Every page rail is 288 wide
 (`standard`), resizes between 220 and 420 unless the page passes `min` and
 `max`, and can take `railHeader` (Tasks' search) plus `onCollapsedChange`, which
-adds the fold control to the first row; `isCollapsed` hides the rail. The page
+adds the fold control to the first row; `isCollapsed` hides the rail, and
+`rail={null}` draws no rail at all, for a page with nothing to list (Chat before
+its first chat, Terminal before its first terminal). Chat and Terminal rails
+never fold, and their first child is the full-width secondary New chat / New
+terminal button. The page
 owns the folded state through `useStudioRailFold` (remembered per surface, and
 forced under a pane of 880px), and a folded rail leaves `FilterButton` in the
 title row: a 28px secondary button with the funnel and the count of active
@@ -1500,7 +1514,8 @@ by `PageColumn` (`mx-auto`) and nowhere else: Overview, Runs, Agents,
 Artifacts, plans, reports, Chat, Workflows, settings pages, agent and pull
 request detail. Header, trail band (crumbs and the Ask button, whose right
 edge is the column's), body and footer share its edges. Prose keeps the 720px
-measure aligned left inside it. Three tiers: **measure** (`--measure`, 720px,
+measure aligned left inside it, except an artifact page, which fills the column
+(the plan drawer keeps the measure). Three tiers: **measure** (`--measure`, 720px,
 `PageColumn width="measure"` or `PANE_RHYTHM.prose`) for prose, **column**
 (`--column-max`, 960px) for the page column, and **full** for work surfaces,
 which start at the pane's left edge and are the only exception. `PageColumn`
@@ -1787,7 +1802,7 @@ icon outside `packages/ui`, and its baseline only falls. Convert such a button t
 `IconButton` (`tooltipSide` moves its tooltip to the side of a rail).
 
 **One shortcut format.** A tooltip that names a key takes `shortcut="<id>"`, a
-registry id, on `Tooltip`, `IconButton` or a wrapper such as `FooterButton`. The
+registry id, on `Tooltip`, `IconButton` or a wrapper. The
 tooltip draws the label, then the keys from `shortcutGlyphs` as faint `Kbd` text
 a `gap-2` after it: `Ask an agent  ⌘L`, two nodes, never `Ask an agent (⌘L)`
 and never a key typed into the string. `tooltip-shortcuts-use-the-prop` fails on
@@ -2017,7 +2032,7 @@ old shape, and the next round moves it.
 | Comments       | 0.22.1                                   | 0.22.1                                                                                            | 0.22.1                                                   | 0.22.1                                                              | 0.22.1                                    |
 | Commits        | Three skeleton rows                      | `section`: No commits yet on this branch                                                          | N/A                                                      | `Notice` danger: Could not load commits, Retry and Details          | N/A                                       |
 | Impact         | Skeleton cards                           | `page`: Impact fills in as sessions finish, spend line                                            | N/A                                                      | `Notice` danger: Retry and Details                                  | N/A                                       |
-| Chat           | Three skeleton rows                      | `page`: No chats yet, Start a chat                                                                | `EmptyLine`: No chats match this filter, Clear filter    | `Notice` danger: Could not load chats, Retry and Details            | N/A                                       |
+| Chat           | Three skeleton rows                      | `page`, no rail: No chats yet, Start a chat                                                       | `EmptyLine`: No chats match this filter, Clear filter    | `Notice` danger: Could not load chats, Retry and Details            | N/A                                       |
 | Settings lists | 0.22.1                                   | 0.22.1                                                                                            | 0.22.1                                                   | 0.22.1                                                              | 0.22.1                                    |
 
 The new session draft is the kickoff. It asks "How do you want to
@@ -2087,7 +2102,7 @@ no draft pull requests`, `Turned off in payments-api`, `Set by the project`), a
 control for a concept the host does not have is left out. The merge
 confirm is an inline panel with one `ChoiceCards` group (`ActionConfirm.choice`):
 the option cards carry the effect sentence, draw no icon tile when they have no
-icon, and a forbidden one is disabled with its reason. States follow the five of Empty states: no pull request is a page
+icon, and a forbidden one is disabled with its reason. A card hugs its content: a title line with an optional `badge` tag, then one muted `hint` line. States follow the five of Empty states: no pull request is a page
 `EmptyState` over the create form, the activity loads as a `SkeletonRow`, a
 failed read is an inline danger `Notice` with Retry.
 
@@ -2271,7 +2286,7 @@ Compatibility empty-state and keyboard aliases remain only while callers owned b
 parallel units are migrated during integration. New callers name EmptyState section
 and Kbd inline or cap directly.
 
-The Terminal first-time page offers New terminal. Loading the terminal view
+The Terminal first-time page has no rail and offers the one New terminal. Loading the terminal view
 announces Starting the shell. Permission rules and recent decisions use section
 states that explain when rows are added. Other Settings scope lists retain their
 existing states until their separate loading contracts are covered.

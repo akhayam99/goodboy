@@ -312,7 +312,6 @@
     "apps/desktop/src/features/session/components/AgentTree/ScoutSubtree.test.tsx": 1,
     "apps/desktop/src/features/session/components/SessionKickoff/index.test.tsx": 2,
     "apps/desktop/src/features/session/components/SessionNavSidebar/index.test.tsx": 1,
-    "apps/desktop/src/features/session/components/SessionNavSidebar/parts/CollapsedRail.test.tsx": 1,
     "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/ProjectBranchChip.test.tsx": 2,
     "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/ProjectMountRow.test.tsx": 1,
     "apps/desktop/src/features/session/components/SessionTrail/SessionCrumbs.test.tsx": 6,

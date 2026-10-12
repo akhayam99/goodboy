@@ -37,6 +37,7 @@ import {
   SESSION_ID as REVIEW_SESSION,
   seedResolveScene,
 } from '../../app/components/MockScene/scenes/resolveSeed';
+import { brandedId } from '../../features/history/testing/brandedId';
 import { ALL_CHOICES_ID, type ActionEnv, type ObjectTarget } from '../../features/actions/types';
 import {
   AGENT,
@@ -157,6 +158,7 @@ const SESSION_STATES: ReadonlyArray<readonly [string, ActionSeed | null, Readonl
       'session.diff',
       'session.terminal',
       'session.editor',
+      'session.openWorktreeTerminal',
       'session.rename',
       'session.pin',
       'session.startAgent',
@@ -183,6 +185,7 @@ const SESSION_STATES: ReadonlyArray<readonly [string, ActionSeed | null, Readonl
       'session.diff',
       'session.terminal',
       'session.editor',
+      'session.openWorktreeTerminal',
       'session.rename',
       'session.pin',
       'session.startAgent',
@@ -274,6 +277,42 @@ describe('session menu in every state', () => {
       '/worktrees/notify-relay',
       `${mountFixture().worktreePath}\n/worktrees/notify-relay`,
     ]);
+  });
+
+  it('opens a terminal at the only worktree straight away, with no choices', async () => {
+    seed({ mounts: [mountFixture()] });
+    const action = bindTarget({ state: useAppStore.getState(), target: SESSION_TARGET })
+      ?.resolve()
+      .find((candidate) => candidate.id === 'session.openWorktreeTerminal');
+    expect(action?.choices).toEqual([]);
+    await run(SESSION_TARGET, 'session.openWorktreeTerminal');
+    const tabs = useAppStore.getState().terminalTabs[SESSION] ?? [];
+    expect(tabs.map((tab) => tab.cwd)).toEqual([mountFixture().worktreePath]);
+    expect(useAppStore.getState().appStudio).toMatchObject({
+      kind: 'terminal',
+      terminalId: tabs[0]?.id,
+      sessionId: SESSION,
+    });
+  });
+
+  it('offers one terminal per worktree and opens the chosen one', async () => {
+    const second = mountFixture({
+      mountId: brandedId<MountId>({ value: 'mount-notify-relay' }),
+      mountName: 'notify-relay',
+      worktreePath: '/worktrees/notify-relay',
+      branch: 'hl/payout-webhook',
+    });
+    seed({ mounts: [mountFixture(), second] });
+    const action = bindTarget({ state: useAppStore.getState(), target: SESSION_TARGET })
+      ?.resolve()
+      .find((candidate) => candidate.id === 'session.openWorktreeTerminal');
+    expect(action?.choices?.map((choice) => choice.label)).toEqual([
+      `Open ${mountFixture().mountName} · ${mountFixture().branch} in terminal`,
+      'Open notify-relay · hl/payout-webhook in terminal',
+    ]);
+    await run(SESSION_TARGET, 'session.openWorktreeTerminal', 'mount-notify-relay');
+    const tabs = useAppStore.getState().terminalTabs[SESSION] ?? [];
+    expect(tabs.map((tab) => tab.cwd)).toEqual(['/worktrees/notify-relay']);
   });
 
   it('names what a branchless delete removes and keeps', () => {
@@ -1284,14 +1323,7 @@ const MOUNT_STATES: ReadonlyArray<
     'diverged from origin',
     { pr: 'open' },
     gitStatus({ unpushed: 1, originAhead: 1 }),
-    [
-      ...WT_PR,
-      ...WT_TOOLS,
-      'mount.push menu (Origin has a commit this branch lacks. Rebase on it first; Rewrite history owns force pushes.)',
-      ...WT_HISTORY,
-      ...WT_COPIES,
-      'mount.close menu',
-    ],
+    [...WT_PR, ...WT_TOOLS, 'mount.push menu', ...WT_HISTORY, ...WT_COPIES, 'mount.close menu'],
   ],
   [
     'rebase stopped',
@@ -1513,12 +1545,7 @@ const DIFF_STATES: ReadonlyArray<
     'diverged',
     'open',
     gitStatus({ unpushed: 1, originAhead: 1 }),
-    [
-      ...DIFF_TOOLS,
-      'diff.push menu (Origin has a commit this branch lacks. Rebase on it first; Rewrite history owns force pushes.)',
-      'diff.rewriteHistory secondary',
-      ...DIFF_TAIL,
-    ],
+    [...DIFF_TOOLS, 'diff.push menu', 'diff.rewriteHistory secondary', ...DIFF_TAIL],
   ],
   [
     'rebase stopped',

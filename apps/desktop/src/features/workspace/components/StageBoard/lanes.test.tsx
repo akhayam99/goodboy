@@ -380,7 +380,7 @@ describe('StageBoard header', () => {
     inProgress: null,
   });
 
-  it('reads the repo summary as quiet text after the title, with the filter and New session on the right', () => {
+  it('reads the repo summary as quiet text after the title, with the filter on the right', () => {
     const building = sessionOf('Add idempotency keys to the refund endpoint');
     const repos = ['payments-api', 'notify-relay', 'ledger-core'].map((name) =>
       aProject({ workspaceId: workspace.id, name, kind: 'repo', rootPath: `/tmp/${name}` }),
@@ -399,12 +399,9 @@ describe('StageBoard header', () => {
 
     const title = screen.getByRole('heading', { level: 1, name: 'Board' });
     const chip = screen.getByRole('button', { name: '3 repository git statuses' });
-    const newSession = screen.getByRole('button', { name: 'New session' });
 
     expect(title.compareDocumentPosition(chip) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
-    expect(chip.compareDocumentPosition(newSession) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
     expect(title.parentElement?.contains(chip)).toBe(true);
-    expect(newSession.parentElement?.contains(chip)).toBe(false);
     expect(within(chip).getByText('3 repos')).toBeDefined();
     expect(within(chip).getByText(/uncommitted$/)).toBeDefined();
   });

@@ -148,11 +148,17 @@ cwd, startedAt }`. A turn, a chat, a planner or a summary joins it in
   worktree by the longest cwd prefix, a project's main checkout, else an
   external process by name. A watched port held by one worktree while another
   worktree of the same project is running carries `collision: { others }`.
-  Watched ports nobody holds come back as `free` rows. A port a Goodboy-owned
-  process held joins the project's learned set (`monitor.learnedPorts.<id>`);
-  the user's own set lives in `monitor.watchedPorts.<id>`. The store slice
-  `store/slices/monitoring/` keeps the snapshot and applies a result only if
-  its `takenAt` is not older than the one held.
+  Each row carries the `source` that named its port (`script`, `env`, `vite`,
+  `compose` or `learned`). Declared ports nobody holds come back as `free`
+  rows. A port a Goodboy-owned process held joins the project's learned set
+  (`monitor.learnedPorts.<id>`). The pins are not per project: `monitor.pinnedPorts`
+  holds the user's pinned ports with an optional description and
+  `monitor.hiddenPorts` the ports hidden from a layer, both global settings.
+  The first load folds the old `monitor.watchedPorts.<id>` keys into the pins
+  and deletes them. `features/monitoring/splitPortRows.ts` files each port in
+  one layer, Pinned, Run by Goodboy, From workspace, then Listening on this
+  Mac. The store slice `store/slices/monitoring/` keeps the snapshot and
+  applies a result only if its `takenAt` is not older than the one held.
 - **Windows.** Each CLI spawn is assigned to its own Job Object with
   kill-on-close (`process_group::Job`), so a cancel ends the whole tree
   (`TerminateJobObject`) and so does the app dying. The assignment happens
@@ -286,8 +292,11 @@ through the `Git` helper with an argument array and a 3 second deadline. It keep
 the first 300 matches (`truncated` says more existed) and trims each line to 240
 characters. Exit 1 is an empty list. The definition guess is
 `features/diff/lib/definitionOf.ts`: it reads declaration keywords for TS and JS,
-Rust, Python and Go, and does not guess class methods or Go receivers. The
-command lives in `apps/desktop/src-tauri/src/worktree/grep.rs`;
+Rust, Python and Go. It also recognizes TS and JS method signatures with a
+body on the same line and Go receivers. The heuristic does not resolve imports
+or establish symbol identity across scopes. Definitions under dependency and
+vendor directories or in lockfiles do not qualify. Without a project
+definition the popover hides all uses. The command lives in `apps/desktop/src-tauri/src/worktree/grep.rs`;
 `features/diff/hooks/useIdentifierUses` keeps only the latest answer.
 
 ### History module

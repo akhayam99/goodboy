@@ -8,7 +8,7 @@ type Params = {
 };
 
 export const summaryMeta = ({ summary, takenAt, now }: Params): string => {
-  const counts = `${summary.inUse} of ${summary.total} watched ports in use`;
+  const counts = `${summary.inUse} of ${summary.total} tracked ports in use`;
   if (takenAt === null) {
     return counts;
   }

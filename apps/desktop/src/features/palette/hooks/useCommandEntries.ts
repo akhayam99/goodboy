@@ -26,6 +26,8 @@ import { LENS_ICON } from '../../session/lens-labels';
 import { requestNewSession } from '../../session/requestNewSession';
 import { openReportSheet } from '../../bug-report/openReportSheet';
 import { NOTIFICATIONS_STUDIO_EVENT } from '../../notifications/studioEvent';
+import { terminalStudioPlace } from '../../terminal/terminalStudioPlace';
+import { openWorkspaceTerminal } from '../../terminal/openWorkspaceTerminal';
 import { openImpactStudio } from '../../impact/openImpactStudio';
 import { openWorkflowRules } from '../../workflows/openWorkflowRules';
 import { openChangelogStudio } from '../../changelog/changelogStudioEvent';
@@ -84,6 +86,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
   const openWorkspace = useAppStore((s) => s.openWorkspace);
   const navigate = useAppStore((s) => s.navigate);
   const openStudio = useAppStore((s) => s.openStudio);
+  const switchStudio = useAppStore((s) => s.switchStudio);
   const toggleContextDrawer = useAppStore((s) => s.toggleContextDrawer);
   const projectPairs = useAppStore((s) =>
     Object.entries(s.sessionProjectMounts)
@@ -232,6 +235,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     }
 
     if (hasWorkspace) {
+      const workspaceId = currentWorkspace.id;
       out.push(
         {
           key: 'goto:inbox',
@@ -252,6 +256,28 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
             openStudio({
               studio: { kind: 'chat', chatId: selectChatDoor({ state: useAppStore.getState() }) },
             }),
+        },
+        {
+          key: 'goto:terminal',
+          label: 'Terminal',
+          secondary: ['Go to Terminal', 'Terminals'],
+          kind: 'goto',
+          group: null,
+          icon: CONCEPT_ICONS.terminal,
+          shortcut: 'terminal.studio',
+          run: () =>
+            switchStudio({
+              studio: terminalStudioPlace({ sessionId: useAppStore.getState().currentSessionId }),
+            }),
+        },
+        {
+          key: 'action:new-terminal',
+          label: 'New terminal',
+          kind: 'page',
+          group: 'action',
+          icon: Plus,
+          secondary: ['Open terminal'],
+          run: () => void openWorkspaceTerminal({ workspaceId }),
         },
         {
           key: 'goto:workflows',
@@ -505,6 +531,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     openWorkspace,
     navigate,
     openStudio,
+    switchStudio,
     toggleContextDrawer,
     runScript,
     reportError,

@@ -65,6 +65,7 @@ export const NextStepRow = ({
   const choices = primary?.choices ?? [];
   const runsOn = primary?.runsOn ?? null;
   const isChoicePending = pendingChoiceIds.size > 0;
+  const isActionBusy = isPending || isChoicePending || primary?.isBusy === true;
 
   const runPrimary = () => {
     if (primary == null) {
@@ -169,9 +170,17 @@ export const NextStepRow = ({
       ) : (
         primaryButton
       )}
-      <Button size="sm" variant="ghost" onClick={onNotNow}>
-        Not now
-      </Button>
+      <span
+        aria-hidden={isActionBusy}
+        className={cn(
+          'shrink-0 overflow-hidden transition-[max-width,opacity] duration-150 ease-out motion-reduce:transition-none',
+          isActionBusy ? 'max-w-0 opacity-0' : 'max-w-24 opacity-100',
+        )}
+      >
+        <Button size="sm" variant="ghost" disabled={isActionBusy} onClick={onNotNow}>
+          Not now
+        </Button>
+      </span>
     </div>
   );
 };

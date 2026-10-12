@@ -257,6 +257,7 @@ type OriginAheadParams = {
   readonly worktreePath: string;
   readonly branch: string;
   readonly since: string | null;
+  readonly isBringingIn: boolean;
   readonly workspaceId: string | null;
   readonly projectId: string | null;
 };
@@ -265,6 +266,7 @@ export const readOriginAhead = async ({
   worktreePath,
   branch,
   since,
+  isBringingIn,
   workspaceId,
   projectId,
 }: OriginAheadParams): Promise<HistoryOriginAhead> =>
@@ -272,6 +274,7 @@ export const readOriginAhead = async ({
     worktreePath,
     branch,
     since,
+    refuseMerges: isBringingIn,
     workspaceId,
     projectId,
   });

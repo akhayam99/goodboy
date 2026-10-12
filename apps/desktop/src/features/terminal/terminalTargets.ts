@@ -7,6 +7,7 @@ export type TerminalTarget =
       readonly key: string;
       readonly label: string;
       readonly kind: 'workspace';
+      readonly group?: string;
       readonly path: string;
     }
   | {
@@ -14,6 +15,7 @@ export type TerminalTarget =
       readonly label: string;
       readonly kind: 'session';
       readonly sessionId: SessionId;
+      readonly group?: string;
       readonly path: string;
     };
 
@@ -23,6 +25,18 @@ type TargetsParams = {
   readonly mounts: ReadonlyArray<SessionProjectMount>;
   readonly projects: ReadonlyArray<Pick<Project, 'id' | 'name' | 'rootPath'>>;
   readonly selectedMountPath: string | null;
+};
+
+type MenuSession = {
+  readonly id: SessionId;
+  readonly title: string;
+};
+
+type MenuTargetsParams = {
+  readonly folder: string | null;
+  readonly sessions: ReadonlyArray<MenuSession>;
+  readonly mountsBySession: Readonly<Record<string, ReadonlyArray<SessionProjectMount>>>;
+  readonly projects: ReadonlyArray<Pick<Project, 'id' | 'name' | 'rootPath'>>;
 };
 
 type CwdParams = {
@@ -75,6 +89,40 @@ export const terminalTargets = ({
       sessionId,
       path: main,
     });
+  }
+  return targets;
+};
+
+export const terminalMenuTargets = ({
+  folder,
+  sessions,
+  mountsBySession,
+  projects,
+}: MenuTargetsParams): ReadonlyArray<TerminalTarget> => {
+  const targets: TerminalTarget[] = [];
+  if (folder !== null) {
+    targets.push({
+      key: 'workspace',
+      label: WORKSPACE_FOLDER_LABEL,
+      kind: 'workspace',
+      path: folder,
+    });
+  }
+  for (const session of sessions) {
+    const attached = (mountsBySession[session.id] ?? []).filter(
+      (mount) => mount.isAttached && mount.diskState === 'present',
+    );
+    for (const mount of attached) {
+      const name = projectById(projects, mount.projectId)?.name ?? mount.mountName;
+      targets.push({
+        key: `mount:${mount.mountId}`,
+        label: `${name} · ${mount.branch}`,
+        kind: 'session',
+        sessionId: session.id,
+        group: session.title,
+        path: mount.worktreePath,
+      });
+    }
   }
   return targets;
 };

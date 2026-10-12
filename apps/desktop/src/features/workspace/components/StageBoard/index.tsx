@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Plus } from 'lucide-react';
-import { Button, cn, EmptyState, ScrollFade, Skeleton, Tooltip } from '@goodboy/ui';
+import { Button, cn, EmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
 import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -64,10 +64,9 @@ const BoardSkeleton = ({ lanes }: SkeletonProps) => (
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly sessions: ReadonlyArray<Session>;
-  readonly hasNewSession?: boolean;
 };
 
-export const StageBoard = ({ workspaceId, sessions, hasNewSession = true }: Props) => {
+export const StageBoard = ({ workspaceId, sessions }: Props) => {
   const groups = useStageGroupedSessions(workspaceId, sessions);
   const nav = useBoardNavigation();
   const archivedList = useAppStore((s) => s.archivedSessions[workspaceId]);
@@ -165,17 +164,6 @@ export const StageBoard = ({ workspaceId, sessions, hasNewSession = true }: Prop
     ? unreachableDescription
     : 'Sessions branch from the latest commit. Open the git pill on the project and make the first commit, or link another project in workspace settings.';
 
-  const newSessionButton = (
-    <Button
-      size="sm"
-      onClick={() => window.dispatchEvent(new CustomEvent('goodboy:new-session'))}
-      disabled={!hasUsableProject}
-    >
-      <Plus size={ICON_SIZE.control} aria-hidden />
-      New session
-    </Button>
-  );
-
   return (
     <div ref={boardRef} className={cn('relative flex h-full w-full', PANE_RHYTHM.board.pad)}>
       <div
@@ -198,13 +186,6 @@ export const StageBoard = ({ workspaceId, sessions, hasNewSession = true }: Prop
               </span>
               <span className="flex shrink-0 items-center gap-2">
                 <ProjectFilter workspaceId={workspaceId} sessions={filterSessions} />
-                {!hasNewSession ? null : hasUsableProject ? (
-                  newSessionButton
-                ) : (
-                  <Tooltip content={blockedReason} side="bottom">
-                    {newSessionButton}
-                  </Tooltip>
-                )}
               </span>
             </div>
           </div>

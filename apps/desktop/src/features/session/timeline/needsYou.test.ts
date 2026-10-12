@@ -197,6 +197,38 @@ describe('needsYouOwners', () => {
     expect(settled).toEqual([]);
   });
 
+  it('drops a stopped rebase once the agent that stopped it was deleted', () => {
+    const stopped = event({
+      id: 'ev-1',
+      kind: 'history_stopped',
+      at: '2026-10-03T17:57:00.000Z',
+      payload: { origin: 'rebase', reason: 'conflict', branch: 'feat/export', agentId: 'agent-1' },
+    });
+    const stopRow = row({
+      id: 'event:ev-1',
+      familyId: null,
+      rowState: DONE_ROW_STATE,
+      entry: { kind: 'event', id: 'event:ev-1', event: stopped, repeatCount: 1 },
+      at: stopped.createdAt,
+    });
+
+    const alive = needsYouOwners({
+      items: [stopRow],
+      entries: [],
+      events: [stopped],
+      liveAgentIds: new Set(['agent-1']),
+    });
+    const deleted = needsYouOwners({
+      items: [stopRow],
+      entries: [],
+      events: [stopped],
+      liveAgentIds: new Set(),
+    });
+
+    expect(alive).toHaveLength(1);
+    expect(deleted).toEqual([]);
+  });
+
   it('orders owners newest first', () => {
     const early = agentEntry({ id: 'early', questions: [question({ id: 'a' })] });
     const late = agentEntry({ id: 'late', questions: [question({ id: 'b' })] });

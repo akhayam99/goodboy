@@ -1,7 +1,6 @@
 import { useEffect, useState, type ComponentType } from 'react';
 import type { SettingsFocus } from '../../../../../features/settings/settingsFocus';
 import { useAppStore } from '../../../../../store';
-import type { ShellMode } from '../../../../shellArrangement';
 import { AppFrame } from '../audit/AppFrame';
 import { seedFrame } from '../audit/frameSeed';
 import { installSettingsInvokeMocks } from '../audit/installSettingsInvokeMocks';
@@ -14,11 +13,10 @@ type FrameContext = 'board' | 'session' | 'rail';
 type Props = {
   readonly context: FrameContext;
   readonly focus: SettingsFocus;
-  readonly mode?: ShellMode;
   readonly hasLimits?: boolean;
 };
 
-const SettingsOverApp = ({ context, focus, mode = 'column', hasLimits = false }: Props) => {
+const SettingsOverApp = ({ context, focus, hasLimits = false }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -45,7 +43,7 @@ const SettingsOverApp = ({ context, focus, mode = 'column', hasLimits = false }:
   if (!isReady) {
     return null;
   }
-  return <AppFrame view="settings-over-app" isRailCollapsed={context === 'rail'} mode={mode} />;
+  return <AppFrame view="settings-over-app" isRailCollapsed={context === 'rail'} />;
 };
 
 const GENERAL: SettingsFocus = { scope: 'app', section: 'general' };
@@ -55,7 +53,4 @@ const CLAUDE_PAGE: SettingsFocus = { scope: 'providers', provider: 'anthropic' }
 export const U21_SETTINGS_SCENES: Readonly<Record<string, ComponentType>> = {
   'settings-general-pinned': () => <SettingsOverApp context="session" focus={GENERAL} />,
   'settings-providers-rail': () => <SettingsOverApp context="rail" focus={CLAUDE_PAGE} hasLimits />,
-  'settings-general-legacy': () => (
-    <SettingsOverApp context="board" focus={GENERAL} mode="classic" />
-  ),
 };

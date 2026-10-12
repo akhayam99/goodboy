@@ -132,23 +132,8 @@ const WORKSPACE = { id: WORKSPACE_ID, name: 'Northwind' } as unknown as Workspac
 
 const handle: { current: Overlays | null } = { current: null };
 
-const Harness = ({
-  connectedGithub,
-  isLauncher = false,
-}: {
-  readonly connectedGithub: boolean;
-  readonly isLauncher?: boolean;
-}) => {
+const Harness = ({ isLauncher = false }: { readonly isLauncher?: boolean }) => {
   const overlays = useAppOverlays({
-    connected: {
-      github: connectedGithub,
-      linear: false,
-      sentry: false,
-      jira: false,
-      gitlab: false,
-      bitbucket: false,
-      slack: false,
-    },
     currentSession: null,
     currentWorkspace: isLauncher ? null : WORKSPACE,
     workspaceProjectRoot: '/repo',
@@ -174,8 +159,7 @@ const overlays = (): Overlays => {
   return handle.current;
 };
 
-const renderHarness = ({ connectedGithub = false }: { readonly connectedGithub?: boolean } = {}) =>
-  render(<Harness connectedGithub={connectedGithub} />);
+const renderHarness = () => render(<Harness />);
 
 const openStudios = async (): Promise<ReadonlyArray<string>> => {
   await act(async () => undefined);
@@ -330,15 +314,12 @@ describe('app overlay hook', () => {
     expect(screen.getByTestId('studio').getAttribute('data-provider')).toBe('linear');
   });
 
-  it('opens impact on spend from the spend figure and on overview from the footer', async () => {
+  it('opens impact on spend from the spend figure', async () => {
     renderHarness();
 
     act(() => overlays().openSpend());
     expect(await openStudios()).toEqual(['impact']);
     expect(screen.getByTestId('studio').getAttribute('data-scope')).toBe('spend');
-
-    act(() => overlays().openImpact());
-    expect(screen.getByTestId('studio').getAttribute('data-scope')).toBe('');
   });
 
   it('lands an old efficiency scope from an event on spend', async () => {
@@ -350,7 +331,7 @@ describe('app overlay hook', () => {
     expect(screen.getByTestId('studio').getAttribute('data-scope')).toBe('spend');
   });
 
-  it('replaces the open studio when a footer opener runs', async () => {
+  it('replaces the open studio when a door opener runs', async () => {
     renderHarness();
 
     act(() => overlays().openSettings());
@@ -358,26 +339,6 @@ describe('app overlay hook', () => {
 
     act(() => overlays().openWorkflows());
     expect(await openStudios()).toEqual(['workflow']);
-  });
-
-  it('opens the inbox on github when github is connected and rings its glyph', async () => {
-    renderHarness({ connectedGithub: true });
-
-    act(() => overlays().openIntegration({ provider: 'github' }));
-
-    expect(await openStudios()).toEqual(['inbox']);
-    expect(screen.getByTestId('studio').getAttribute('data-provider')).toBe('github');
-    expect(overlays().footer).toEqual({ place: 'inbox', tool: 'github' });
-  });
-
-  it('opens the tools form for a disconnected integration and lights the link action', async () => {
-    renderHarness();
-
-    act(() => overlays().openIntegration({ provider: 'github' }));
-
-    expect(await openStudios()).toEqual(['settings']);
-    expect(screen.getByTestId('studio').getAttribute('data-scope')).toBe('tools');
-    expect(overlays().footer).toEqual({ place: 'link', tool: null });
   });
 
   it('leaves only settings when the shortcut help opens over another studio', async () => {
@@ -413,7 +374,7 @@ describe('app overlay hook', () => {
 });
 
 describe('app overlay hook, workspace launcher', () => {
-  const renderLauncher = () => render(<Harness connectedGithub={false} isLauncher />);
+  const renderLauncher = () => render(<Harness isLauncher />);
 
   it('mounts settings over the launcher from the settings opener', async () => {
     renderLauncher();

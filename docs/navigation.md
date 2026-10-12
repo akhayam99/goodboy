@@ -51,12 +51,13 @@
   reads like a figure, not a place you work in. The spend chip is state that
   opens the studio that owns that number, on Impact's Spend tab, and the Limits
   chips open the Providers menu. The bar never edits a record in place.
-- **The column holds every door.** One create row of three labelled buttons (+ Session,
-  - Chat, + Terminal) sits under the toggle; Board, Tasks, Chat, Workflows, Terminal and
-    Monitoring sit under it with no plus of their own, the Sessions list follows, Settings and the Goodboy row sit at
-    the foot. Board is home and the first door (⌘⇧H). The column is on every
-    screen with a workspace: the board, a session, the draft and every studio but
-    Settings, which swaps the column's content (see Studios).
+- **The column holds every door.** Board, Tasks, Chat, Workflows, Terminal and
+  Monitoring sit under the toggle; Chat and Terminal each end in a plus (New chat, New
+  terminal) that shows on hover, on focus and while the door is open. One separator,
+  then the Sessions list with a New session row first, Settings and the Goodboy row sit at
+  the foot. Board is home and the first door (⌘⇧H). The column is on every
+  screen with a workspace: the board, a session, the draft and every studio but
+  Settings, which swaps the column's content (see Studios).
 - **One home per thing.** Say a thing must exist in state A and can exist in
   state B. It lives where it must, and B gets no second copy. Workspace identity
   is always pinned at the left of the top bar. Neither the column nor a studio
@@ -100,7 +101,7 @@
   below, Close rewrites the top entry as the page without the studio. Esc is
   layered: it closes a popover or a confirmation inside the studio before the
   studio itself.
-- **One selected sign.** The open studio's door, + Session while the draft is
+- **One selected sign.** The open studio's door, New session while the draft is
   open, or Board on the board, takes `bg-selected` with `cursor-default` and
   `aria-current="page"`, in the column and on the rail alike. Every door reads it from one place (`columnPlaceOf`, through
   `useColumnPlace`), so at most one door carries it; inside a session no door
@@ -191,7 +192,7 @@ opens it on a mode. Commands is the first mode.
   only when searched by name (every word a word prefix of its label), dimmed
   with its reason, and Enter does nothing. Delete and the other confirmed verbs
   swap the list for an InlineConfirm; Archive runs at once with Undo. The
-  registry owns Comments, Files and Terminal of a session in scope, so the lens
+  registry owns Comments, Files, Terminal and Open in terminal of a session in scope, so the lens
   rows with the same names step aside. The lens rows read their labels from
   the shortcut registry, which reads `NAMES` (`Overview`, `Comments`, `Files`,
   `Pull request`), so the palette, the page menu and the shortcut sheet cannot
@@ -358,7 +359,8 @@ never exists on one surface only.
   `__tests__/actions/handBuiltMenus.test.ts` fails on a menu built by hand
   outside the registry, against a shrinking list of menus that are not objects
   (creation pickers, property pickers, page chrome).
-- **What each object offers.** A session: Open, Comments, Files, Terminal, Open in
+- **What each object offers.** A session: Open, Comments, Files, Terminal, Open in terminal
+  (one choice per worktree), Open in
   editor; Rename (inline, in the row that opened the menu), Start agent, Link
   work (L on the Overview); copy the title, worktree path, branch and pull request link; Archive with Undo and
   Delete with its confirm (Restore once archived). Several sessions: Copy
@@ -457,14 +459,16 @@ reference material beside the page and closes with the pane that opened it.
 
 **The column** (`app/components/SideColumn/`) is on every screen with a
 workspace, in the same shape everywhere: the toggle on the traffic-light axis,
-the create row, three equal buttons side by side, each a 12px plus and a word
-(`CreateRow`): + Session (⌘N, the only emphasised control, selected while the draft is
-open, a primary dot and `Draft in progress` while a draft waits), + Chat (⌘⇧N, always a
-new chat, never the last one) and + Terminal (a new terminal in the workspace folder);
-then the doors Board
+the doors Board
 (⌘⇧H), Tasks, Chat, Workflows, Terminal (⌃`) and Monitoring as one 28px row each (icon and word, the
-shortcut on hover), the Sessions list (`SessionNavSidebar`, its rows and header
-belong to the sessions list), then at the foot Settings (⌘,), the Goodboy row
+shortcut on hover); Chat ends in a plus (`DoorCreateButton`, New chat, ⌘⇧N, always a
+new chat, never the last one) and Terminal in a plus (New terminal in the workspace folder),
+both visible on hover and focus and while their door is open; one separator
+(`h-px bg-border-soft`) with the same gap above and below; the Sessions list
+(`SessionNavSidebar`), whose first row is New session (`NewSessionRow`, ⌘N, shaped like a
+session row, selected while the draft is open, a primary dot and `Draft in progress` while a
+draft waits) and whose group headers carry no top margin: the list's one gap (`listGap`, equal to the
+doors' gap) spaces the groups; then at the foot Settings (⌘,), the Goodboy row
 and a bug icon that opens the report sheet. Chat's door carries a running dot
 or a new-reply dot. Before any workspace exists the column keeps only its app
 half: Settings, the Goodboy row and the bug. The column is 240px by default and
@@ -500,15 +504,6 @@ Step routing, Archive run and Delete run, never **Stop run** or **Approve plan**
 The title is the only h1 of the page; the trail says `Session > Runs > Run`, the
 Runs crumb or Esc goes back to the list, and no chevron on the page does.
 Scripts reads `[search] [New script]`. A page with no actions draws no `...`.
-
-**Legacy layout.** Settings > App > General > Legacy layout (setting
-`shell.classicBars`, off by default; the stored key kept its name when the
-setting was renamed) brings back the 0.20.0 frame: Board and Chat in the top
-bar, the footer with its doors and integration glyphs, the sessions sidebar
-only inside a session, studios covering it, Settings drawn as a covering studio
-with its own rail and band. The field says it may be removed in a future
-version; the tests of exits, doors and restore run on both arrangements while
-it exists.
 
 A window is a strip, a set of columns, and a pane. Each owns one thing.
 
@@ -710,7 +705,7 @@ returns focus to the button, and `→` or `↓` on the button moves into it. A s
 over the session leaves its button `remembered` (full foreground, no marker). The
 other nodes carry the session title and the stage words in their tooltip. `+N`
 counts the pins past the seventh and opens the same flyout with every pin. `New`
-shows the draft dot and reads `New session, draft in progress` while a written
+shows the draft dot and reads `New session, Draft in progress` while a written
 draft waits elsewhere.
 
 **Two keys switch sessions without the list.** `⌃Tab` opens a list of the
@@ -983,8 +978,9 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
   lists the session's pages with a count that names what it counts,
   grouped as pages, Tools and Linked. One pure table, `pageCountWordOf`
   (`features/session/pageCountWord.ts`), reads noun last and empty at zero:
-  Branch `5 need you` (else `3 branches` with more than one mount), Runs
-  `2 running` (else `4 runs`), Agents `1 running` (else `3 agents`), Artifacts
+  Branch `5 need you` (else `3 branches` with more than one mount, else the branch name of the one
+  mount, with its `+x -y` diff beside it on the open session's row only), Runs
+  `2 running` in the info tone (else `4 runs`, every kept run), Agents `1 running` (else `3 agents`), Artifacts
   `4 artifacts`, Questions `2 open`. The sidebar row and the menu read it
   through `usePageSummaries`; `Session`
   has no menu once it has children. A run lists the session's runs (Running,
@@ -1020,16 +1016,22 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
   The per-file expand-all registration in
   `features/diff/components/DiffView` lets file actions reveal the whole file.
 - **A double click on a name in a diff line shows where it is defined and used.**
-  Alt click does the same. An anchored popover under the word lists a Defined in
-  group and a Used in group from the worktree, marks files of this change, and
-  says when it shows only the first 300. A result in this diff scrolls to its
+  Alt click does the same. The anchored popover shows project constants,
+  functions, methods and types; a word without a project definition reads
+  "Not defined in this project" and lists no uses. It shows the symbol kind and
+  definition, use and change counts. Defined in comes first, then In this change
+  with changed lines first and tagged, then Elsewhere with five references and
+  Show more. Directory paths truncate in the middle and keep their separator
+  before the filename. It says when it shows only the first 300. This contract
+  lives in `features/diff/components/IdentifierPeek`. A result in this diff scrolls to its
   line and flashes it, expanding the hidden range first when the line sits in
   one; any other result opens the Explore file drawer on that line. The commit
   view has no peek, because its lines are not the working tree's.
 - **A fix run has no segment of its own.** Its transcript is a drawer on the
   Comments tab, so the trail reads Session, Branch, Comments.
-- **In the legacy layout, Settings claims its studio band** with Settings, the
-  scope and the App section (the default shell draws no band for Settings). The scope segment lists App, the workspace, Providers & models and
+- **Settings draws no band in the column.** In the launcher, where it covers the
+  window, it claims its studio band with Settings, the scope and the App
+  section. The scope segment lists App, the workspace, Providers & models and
   Tools; the section segment lists the App sections. Neither carries an
   action: Settings has no project scope, so there is no `Use workspace values`
   to offer. A segment without an action is plain text and has no hover state.
@@ -1079,8 +1081,7 @@ covered.
   (24px icons) name their destination in the tooltip (`Back to Comments ·
 {session}  ⌘[`), sit at 40% with `Nothing to go back to` when the history is
   empty, and open the last 12 entries on right click or a 400ms hold. Board and
-  Chat left the bar for the column (under Legacy layout they come back here, in
-  their old shape). Board, the column's first door, is pressed
+  Chat left the bar for the column. Board, the column's first door, is pressed
   (`aria-current="page"`) on the board and does nothing; over a studio on the
   board it closes the studio; in a session it navigates to the board as a
   history entry. ⌘⇧H does the same. Chat is a door to the `chat` studio on the
@@ -1120,8 +1121,7 @@ covered.
   reset since, and a dashed track means no data. The card tooltip always
   carries every window, its percentage and its reset. A click on any chip, or
   on a provider under `+N`, opens the Providers menu anchored under the strip
-  (`LimitsProvidersMenu`, the same `ProvidersMenuPanel` the classic footer
-  opens): the policy list, Connect for each CLI provider that is missing, and
+  (`LimitsProvidersMenu` and its `ProvidersMenuPanel`): the policy list, Connect for each CLI provider that is missing, and
   Manage providers. Usage stays in the chip tooltip and in Settings >
   Providers & models. Without a workspace a chip still opens that usage page.
   The strip is a toolbar: arrow keys move between chips. With no provider
@@ -1131,8 +1131,7 @@ covered.
   Then Spend, the one door to Impact: the figure with `today`, named `Spend
 today. Open Impact`, opening the Impact studio on its Spend tab (it is never
   merged with a count). The other Impact tabs are reached inside the studio and
-  from ⌘K. The bar holds no Impact icon in the column layout; the Legacy layout
-  keeps its own Impact door in the footer. Last the bell, which opens the
+  from ⌘K. The bar holds no Impact icon. Last the bell, which opens the
   notification popover.
 
 The bar is an `@container/topbar` and degrades on its own width, never the
@@ -1195,12 +1194,10 @@ and opens the report sheet (⌘I), nothing else. On the rail the three keep thei
 place at the bottom: the Settings icon, the bug and the Goodboy mark, which
 carries a dot while an update or setup waits.
 
-The Goodboy row (`app/components/GoodboyChip`, variants `column`, `rail` and
-the classic `footer`) holds everything about Goodboy itself, the way the Apple
+The Goodboy row (`app/components/GoodboyChip`, variants `column` and `rail`) holds everything about Goodboy itself, the way the Apple
 menu or Linear's help menu does. Its label says one thing, in this order: an
 update is ready, setup is unfinished (with its progress), or
-"Goodboy | BETA v<version>" with the installed version. The classic footer
-chip keeps only the mark and the version below the `chrome-labels` width. The version is
+"Goodboy | BETA v<version>" with the installed version. The version is
 `APP_VERSION` (`shared/lib/appVersion.ts`), which the build stamps from
 `apps/desktop/package.json` as `__APP_VERSION__`, so it never waits on Tauri
 and shows in mock scenes too. The update pill is soft, enters once and holds
@@ -1317,11 +1314,6 @@ filter is the tool door, and Connect a tool lives in Settings > Integrations.
   App and Providers & models groups, and Providers opens on an account instead
   of on the workspace defaults. Precedent: VS Code keeps its status bar and
   Manage gear with no folder open.
-- **Under Legacy layout the 0.20.0 footer comes back** (`AppFooter`): the
-  connected integration glyphs and Link integration on the left, the Goodboy
-  chip in the centre, Tasks, Workflows, Impact, Providers and Settings on the
-  right. Its target is a pair, the place and the tool (`FooterTarget`), so a
-  scoped tool glyph and Tasks never light together.
 
 ## Shortcuts
 
@@ -1418,9 +1410,8 @@ Esc and Back land alike. A session key (⌃Tab, ⌥⌘↓, ⌘⇧[) is a forward
 closes Settings on its way. On close, `StudioFrame` gives focus back to what
 opened the studio, or to the studio's door when that is gone (the palette),
 unless focus already sits outside the studio (`restoreStudioOpener`). The
-exceptions are the legacy layout and the workspace launcher, which have no
-column to give. In the legacy layout Settings covers the window as before, with
-its band, its crumbs and its own rail beside the page. In the launcher, Add
+exception is the workspace launcher, which has no column to give. In the
+launcher, Add
 workspace takes the whole window, and so do the app studios: Settings (its
 corner gear, ⌘, or ⌘/ for shortcuts) and the guide. The palette opens there
 too.
@@ -1469,20 +1460,31 @@ one is open at a time.
   (`ChatHeader`). Exactly one `h1` per studio scene.
 - **One Terminal studio for every terminal.** The Terminal door (⌃`, `terminal.studio`)
 opens `StudioPlace` `{ kind: 'terminal'; terminalId; sessionId }`in`TerminalStudio`:
-`StudioShell`plus`StudioRailLayout surface="terminal"`(the rail folds like Tasks).
-The rail lists a`Workspace`group first (terminals that belong to the workspace), then one
-group per session that has terminals, headed by the session title, its branch and a count;
-the open session's group is expanded and the others folded. A row is a state dot (idle,
-busy, exited), the name (the cwd's last folder, renamed by double click, Enter saves, Esc
-cancels), the command a busy shell runs and, once exited,`exited 127`with Restart. The
-close x shows on hover and focus: an idle shell closes at once, a busy one asks in a`ConfirmPopover` anchored to the x (`Keep`, danger `Close`). The detail is a 32px location
-row, the cwd trimmed to the workspace folder, chips for `Workspace folder`, one per mount of
-the session (`ledger-core · hl/ledger-rounding`) and `Main checkout`, then the shell. A
-chip opens a new terminal there and selects it; it never types into a shell, and the `cd`menu does that only while the shell is idle.`New terminal`in the header opens in the
-workspace folder, its chevron lists the same targets. A terminal id is`<sessionId>::t<n>`for a session and`ws:<workspaceId>::t<n>` for the workspace (`terminalOwner.ts`); both
-reattach after a reload with their owners and renamed names (setting `terminal.names`).
-The session Terminal lens is the same body (`SessionTerminalLens`) focused on that session.
-`⌘T` (`terminal.newTab`) still adds a terminal in both places.
+`StudioShell`plus`StudioRailLayout surface="terminal"`. The rail does not fold, and its first
+child is `New terminal`, the same full-width secondary button as Chat's New chat, with a chevron
+beside it when there is more than one target. The menu lists `Workspace folder`, then one group
+per session that has attached worktrees, headed by the session title, with one row per worktree
+(`ledger-core · hl/ledger-rounding`); a row opens a terminal there, under that session, and
+selects it. With no terminal at all the page has no rail: the empty state owns the single
+`New terminal`. The rail lists a `Workspace` group first (terminals that belong to the workspace),
+then one group per session that has terminals, headed by the session title, its branch and a
+count; the open session's group is expanded and the others folded. A row is a state dot (idle,
+busy, failed), the name (the cwd's last folder, renamed by double click, Enter saves, Esc
+cancels) and the command a busy shell runs. When the shell exits, whatever the code, the tab
+closes and the studio selects a neighbour of the same owner: the watch lives in the terminal
+slice (`watchTerminalExits`, started by `reattachTerminalTabs`), so it works with the page closed.
+Only a terminal that failed to start stays, as `failed to open`with Restart, and it is never
+opened again on its own. The close x shows on hover and focus: an idle shell closes at once, a
+busy one asks in a`ConfirmPopover` anchored to the x (`Keep`, danger `Close`). The detail is a
+32px location row, the cwd trimmed to the workspace folder and the `cd`menu (only while the
+shell is idle, it types`cd`into the shell), then the shell. A terminal id is`<sessionId>::t<n>`for a session and`ws:<workspaceId>::t<n>` for the workspace
+(`terminalOwner.ts`); both reattach after a reload with their owners and renamed names (setting
+`terminal.names`). The session Terminal lens is the same body (`SessionTerminalLens`) focused on
+that session, with the same rail and no header button. `⌘T` (`terminal.newTab`) still adds a
+terminal in both places. ⌘K has `Terminal` (`goto:terminal`), `New terminal`
+(`action:new-terminal`, the workspace folder) and, in a session with worktrees, `Open <repo ·
+  branch> in terminal` (`session.openWorktreeTerminal`, one choice per worktree), which spawns a
+  terminal there on the Terminal page.
 - **One Esc stack.** The frame, a body that holds Esc (Tasks with a record
   open), the agent overlay and the delete confirm all register with
   `useEscapeLayer`, so Esc closes the topmost layer only. So does every
@@ -1587,7 +1589,7 @@ The session Terminal lens is the same body (`SessionTerminalLens`) focused on th
   amends the history entry to the concrete page. The rail is the only index,
   portaled into the column (`SettingsColumnNav`, `Back to app` first, then
   `Search settings`, then the groups) in both sidebar states, or drawn beside
-  the page in the legacy layout: its four groups (App, Workspace, Providers &
+  the page in the launcher: its four groups (App, Workspace, Providers &
   models, Integrations) come from `settingsDirectory`. Every row is one 28px
   line of one grammar (`SettingsNavRow`): a group row carries its icon, a page
   row is nested by `PANE_RHYTHM.navRail.nest`, and a row has no second line,

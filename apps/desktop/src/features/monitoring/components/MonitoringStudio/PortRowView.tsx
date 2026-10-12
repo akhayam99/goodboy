@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { Button, ICON_SIZE, IconButton, StatusDot, cn } from '@goodboy/ui';
+import { ICON_SIZE, IconButton, StatusDot, cn } from '@goodboy/ui';
 import type { MonitorProcess, PortRow } from '@goodboy/core';
 import { formatCpu } from '../../formatCpu';
 import { formatMemory } from '../../formatMemory';
 import { formatUptime } from '../../formatUptime';
-import { portLabel } from '../../portLabel';
+import { ActionsCell } from './ActionsCell';
 import { CommandLine } from './CommandLine';
 import { OwnerChip } from './OwnerChip';
 import { PORT_GRID } from './portGrid';
@@ -16,7 +16,9 @@ type Props = {
   readonly row: PortRow;
   readonly process: MonitorProcess | null;
   readonly now: number;
-  readonly onWatch?: () => void;
+  readonly name: string;
+  readonly nameSlot?: ReactNode;
+  readonly actions?: ReactNode;
 };
 
 type OthersParams = {
@@ -26,7 +28,7 @@ type OthersParams = {
 const otherWorktrees = ({ others }: OthersParams): string =>
   `Also in ${others} other ${others === 1 ? 'worktree' : 'worktrees'}`;
 
-export const PortRowView = ({ row, process, now, onWatch }: Props) => {
+export const PortRowView = ({ row, process, now, name, nameSlot, actions }: Props) => {
   const [isCommandOpen, setIsCommandOpen] = useState(false);
   const isExternal = row.owner?.kind === 'external';
   const hasCollision = row.collision !== undefined;
@@ -48,13 +50,7 @@ export const PortRowView = ({ row, process, now, onWatch }: Props) => {
           ariaLabel={hasCollision ? 'Collision' : 'In use'}
         />
         <span className="tabular-nums text-foreground">:{row.port}</span>
-        {onWatch === undefined ? (
-          <span className="min-w-0 truncate text-muted-foreground">{portLabel({ row })}</span>
-        ) : (
-          <Button size="xs" variant="ghost" onClick={onWatch} aria-label={`Watch :${row.port}`}>
-            Watch
-          </Button>
-        )}
+        {nameSlot ?? <span className="min-w-0 truncate text-muted-foreground">{name}</span>}
         <div className="flex min-w-0 flex-col items-start py-1">
           {row.owner === null ? null : <OwnerChip owner={row.owner} />}
           {row.collision === undefined ? null : (
@@ -89,16 +85,19 @@ export const PortRowView = ({ row, process, now, onWatch }: Props) => {
         <span className="text-right tabular-nums text-muted-foreground">
           {process === null ? '' : formatMemory({ bytes: process.rssBytes })}
         </span>
-        <div className="flex justify-end">
-          {row.pid === null ? null : (
-            <StopControl
-              pid={row.pid}
-              name={stopName}
-              folder={folderName({ path: process?.cwd ?? null })}
-              spawnId={spawnId}
-            />
-          )}
-        </div>
+        <ActionsCell
+          stop={
+            row.pid === null ? null : (
+              <StopControl
+                pid={row.pid}
+                name={stopName}
+                folder={folderName({ path: process?.cwd ?? null })}
+                spawnId={spawnId}
+              />
+            )
+          }
+          actions={actions}
+        />
         {isCommandOpen && process !== null ? <CommandLine args={process.argsMasked} /> : null}
       </div>
     </li>

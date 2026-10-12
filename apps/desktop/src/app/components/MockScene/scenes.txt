@@ -23,6 +23,7 @@ artifact-create-report
 artifact-create-wireframe
 artifact-generating
 artifact-plan-comments
+artifact-plan-fill
 artifact-report
 artifact-states
 artifact-wireframe-high
@@ -124,6 +125,7 @@ card-rails
 changelog
 chat-empty-noprojects
 chat-empty-stage
+chat-first-run
 chat-list-idle
 chat-list-loading
 chat-room
@@ -168,6 +170,8 @@ controls-ladder
 controls-topbar
 conversation
 crash-report
+debugger-drawer-ci-log
+debugger-drawer-options
 debugger-drawer-proposal
 debugger-drawer-running
 design-comments
@@ -179,7 +183,10 @@ diff-gaps-expanded
 diff-gaps-toolarge
 diff-notes
 diff-peek-empty
+diff-peek-library
+diff-peek-more
 diff-peek-open
+diff-tree-indent
 drawer-ask-draft
 drawer-headers
 drawer-overlay-narrow
@@ -194,6 +201,7 @@ explore
 explore-changedempty
 explore-changedfilter
 explore-changes
+explore-dot-warning
 explore-drawerchanges
 explore-nomount
 explore-rows
@@ -295,6 +303,7 @@ monitoring-stopconfirm
 mount-mismatch
 mounts
 needs-you-card
+next-step-rebase
 notifications
 notifications-delete-all
 notifications-empty
@@ -341,6 +350,12 @@ planner-transcript
 planner-transcript-drawer
 planner-transcript-replaced
 planner-transcript-revising
+ports-hidden
+ports-layers
+ports-listening
+ports-pin-popover
+ports-pinned-menu
+ports-row-menu
 processes-stopped
 providerhealth
 providerhistory
@@ -426,7 +441,6 @@ sessions-hidden
 sessions-menu
 sessions-nomatch
 settings-app
-settings-general-legacy
 settings-general-pinned
 settings-no-workspace
 settings-projects-failed
@@ -442,7 +456,10 @@ settings-workspace
 shell
 sidebar-branches
 sidebar-branches-many
+sidebar-meta-branch
+sidebar-meta-branches
 sidebar-pages-folded
+sidebar-rhythm
 sidebar-terminal-current
 slack-permissions
 space-diff-comment

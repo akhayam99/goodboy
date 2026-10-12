@@ -3,7 +3,7 @@ import type { SessionId } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../store';
 import { useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { DiffStat } from '../../DiffStat';
+import { DiffStat } from '../../../../../shared/components/DiffStat';
 import {
   hasDiffCounts,
   mountWorktreeStateLabel,

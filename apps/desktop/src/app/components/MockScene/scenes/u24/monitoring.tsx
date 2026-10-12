@@ -68,7 +68,8 @@ const MonitoringScene = ({ variant }: Props) => {
       monitorLedger: [],
       monitorError: null,
       monitorScanned: {},
-      monitorWatched: {},
+      monitorPinned: [],
+      monitorHidden: [],
       monitorLearned: {},
     });
     useAppStore.getState().openStudio({ studio: { kind: 'monitoring' } });
@@ -77,7 +78,7 @@ const MonitoringScene = ({ variant }: Props) => {
 
   useSceneClicks({
     isReady,
-    labels: variant === 'alsolistening' ? ['Also listening'] : [],
+    labels: variant === 'alsolistening' ? ['Listening on this Mac'] : [],
     selector: 'button',
     match: 'prefix',
     intervalMs: CLICK_MS,

@@ -54,11 +54,12 @@ export const PANE_RHYTHM = {
     cardGap: 'gap-3',
   },
   sessionList: {
-    pad: 'px-2 py-2',
+    pad: 'px-2 pb-2',
     cardGap: 'gap-2',
     rowInset: 'px-2',
     headerInset: 'pl-4 pr-2',
     rowGap: 'gap-1',
+    listGap: 'gap-1',
     menuTrigger: 'size-7',
   },
 } as const;

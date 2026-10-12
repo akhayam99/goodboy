@@ -23,7 +23,7 @@ import { TimelineRoleGlyph } from './TimelineRoleGlyph';
 import type { TimelineRowIdentity } from './timelineRowIdentity';
 import { TimelineRowWorktrees } from './TimelineRowWorktrees';
 import { TimelineRunLabel } from './TimelineRunLabel';
-import { DiffStat } from '../../../DiffStat';
+import { DiffStat } from '../../../../../../shared/components/DiffStat';
 
 type Props = {
   readonly item: TimelineRowItem;

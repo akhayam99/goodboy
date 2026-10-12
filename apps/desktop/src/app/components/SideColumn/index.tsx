@@ -7,7 +7,6 @@ import { ChatDoorActivity } from './ChatDoorActivity';
 import { ColumnDoorRow } from './ColumnDoorRow';
 import { ColumnFoot } from './ColumnFoot';
 import { ColumnToggleButton } from './ColumnToggleButton';
-import { CreateRow } from './CreateRow';
 import { COLUMN_DOORS, openColumnDoor, type ColumnActions } from './columnDoors';
 import { isStudioOverSession, type ColumnPlace } from './columnPlace';
 
@@ -61,12 +60,6 @@ export const SideColumn = ({
         </div>
         {scope === 'workspace' && workspaceId !== null ? (
           <>
-            <CreateRow
-              workspaceId={workspaceId}
-              place={place}
-              actions={actions}
-              {...(onNavigate !== undefined && { onNavigate })}
-            />
             <div className={cn('flex shrink-0 flex-col px-2', PANE_RHYTHM.navRail.doorGap)}>
               {COLUMN_DOORS.map((door) => (
                 <ColumnDoorRow
@@ -79,9 +72,22 @@ export const SideColumn = ({
                   })}
                   isCurrent={place === door.id}
                   {...(door.id === 'chat' && { trailing: <ChatDoorActivity /> })}
+                  {...(door.id === 'chat' && {
+                    create: {
+                      label: 'New chat',
+                      shortcut: 'chat.new',
+                      onCreate: go(actions.openNewChat),
+                    },
+                  })}
+                  {...(door.id === 'terminal' && {
+                    create: { label: 'New terminal', onCreate: go(actions.openNewTerminal) },
+                  })}
                   onSelect={go(() => openColumnDoor({ id: door.id, actions }))}
                 />
               ))}
+            </div>
+            <div className="shrink-0 px-2">
+              <div role="separator" className="h-px bg-border-soft" />
             </div>
             <div data-column-sessions="" className="flex min-h-0 flex-1 flex-col">
               <SessionNavSidebar

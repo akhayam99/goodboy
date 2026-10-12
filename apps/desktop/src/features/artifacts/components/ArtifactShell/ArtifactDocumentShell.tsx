@@ -280,7 +280,7 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
             aria-label={`Edit ${artifact.title}`}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
-            className="artifact-prose-measure w-full font-mono text-body"
+            className="w-full font-mono text-body"
             autoGrow
             minRows={12}
             maxRows={80}
@@ -289,6 +289,7 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
         {plan === null ? null : <PlanEditor editor={editor} title={artifact.title} />}
         {!editor.isEditing && subject.kind === 'plan' ? (
           <ArtifactPlanBody
+            measure="full"
             plan={subject.plan}
             rows={partRows}
             hasRun={hasRun}

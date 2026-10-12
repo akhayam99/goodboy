@@ -2,6 +2,7 @@ import { markHistoryPlan } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { applyHistoryPlan, pushWithLease } from '../../../features/history/historyEngine';
+import { ORIGIN_MOVED_MESSAGE } from '../../../features/history/originMovedMessage';
 import { refreshWorktreeStatuses } from '../worktreeStatuses/cache';
 import { historyTargetOf } from './historyTargetOf';
 import { identityChange } from './historyIdentity';
@@ -314,7 +315,7 @@ export const pushHistoryRewrite = (set: SetFn, get: GetFn) => {
       pushed.kind === 'stale'
         ? {
             reason: 'origin-moved',
-            message: 'Origin has new commits since the rewrite. Nothing was pushed.',
+            message: ORIGIN_MOVED_MESSAGE,
             files: [],
             sha: null,
           }

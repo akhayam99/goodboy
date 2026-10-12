@@ -27,7 +27,9 @@ const doorIn = (name: string): HTMLElement => {
 };
 
 const createIn = (name: string): HTMLElement => {
-  const button = document.querySelector<HTMLElement>(`[data-side-column] [data-create="${name}"]`);
+  const button = document.querySelector<HTMLElement>(
+    `[data-side-column] [data-create="${name}"], [data-side-column] [data-door-create="${name}"]`,
+  );
   if (button === null) {
     throw new Error(`The column has no create button ${name}`);
   }
@@ -122,7 +124,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     open: () => click(doorIn('terminal')),
     lands: both(
       () => band('Terminal'),
-      () => visible('complementary', 'Terminals'),
+      () => visible('heading', 'No terminal yet'),
       async () => expect(doorIn('terminal').getAttribute('aria-current')).toBe('page'),
     ),
   },
@@ -265,45 +267,11 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     lands: () => visible('dialog', 'Report a bug'),
   },
   {
-    name: 'classic footer: impact',
-    covers: ['openImpact', 'studio:impact'],
-    door: 'visible',
-    bars: 'classic',
-    open: () => clickButton('Impact'),
-    lands: () => band('Impact'),
-  },
-  {
     name: 'top bar: spend',
     covers: ['openSpend', 'studio:impact'],
     door: 'visible',
     open: () => clickButton(/^Spend today/),
     lands: () => heading('Spend'),
-  },
-  {
-    name: 'classic footer: inbox',
-    covers: ['studio:inbox'],
-    door: 'visible',
-    bars: 'classic',
-    open: () => clickButton('Tasks'),
-    lands: () => heading('Tasks'),
-  },
-  {
-    name: 'classic footer: integrations',
-    covers: ['openIntegration', 'integrations'],
-    bars: 'classic',
-    open: () => clickButton(/^Connect your first integration/),
-    lands: () => visible('dialog', 'Integrations'),
-  },
-  {
-    name: 'classic top bar: chat',
-    covers: ['openStudio', 'studio:chat'],
-    door: 'visible',
-    bars: 'classic',
-    open: () => clickButton(/^Chat$/),
-    lands: both(
-      () => band('Chat'),
-      () => heading('New chat'),
-    ),
   },
   {
     name: 'top bar: all notifications',

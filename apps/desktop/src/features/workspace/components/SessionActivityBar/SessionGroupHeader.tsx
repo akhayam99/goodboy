@@ -38,7 +38,7 @@ export const SessionGroupHeader = ({
     </>
   );
   if (onToggle === undefined) {
-    return <div className="mt-2 flex h-6 w-full items-center gap-1 px-2">{content}</div>;
+    return <div className="flex h-6 w-full items-center gap-1 px-2">{content}</div>;
   }
   return (
     <Tooltip content={title}>
@@ -46,7 +46,7 @@ export const SessionGroupHeader = ({
         type="button"
         onClick={onToggle}
         aria-expanded={!isCollapsed}
-        className="group mt-2 flex h-6 w-full items-center gap-1 rounded-sm px-2 text-left"
+        className="group flex h-6 w-full items-center gap-1 rounded-sm px-2 text-left"
       >
         {content}
       </button>

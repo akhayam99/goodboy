@@ -66,6 +66,7 @@ export const SessionNavSidebar = ({
               isStudioOver={isStudioOver}
               onSelectSession={onSelectSession}
               onArchivedTabOpen={onArchivedTabOpen}
+              {...(onNavigate !== undefined && { onNavigate })}
             />
           ) : null}
         </div>
