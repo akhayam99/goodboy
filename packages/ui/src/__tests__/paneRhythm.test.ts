@@ -10,6 +10,11 @@ describe('PANE_RHYTHM', () => {
     expect(PANE_RHYTHM.detail.body).toContain(PANE_RHYTHM.inset);
   });
 
+  it('indents a user message by a fixed start gap and leaves assistant messages the full column', () => {
+    expect(PANE_RHYTHM.message.user).toBe('max-w-[calc(100%-3rem)]');
+    expect(Object.keys(PANE_RHYTHM)).not.toContain('proseBlocks');
+  });
+
   it('keeps the detail band shorter than the pane header it replaces', () => {
     expect(PANE_RHYTHM.detail.band).toBe('px-6 py-2');
     expect(PANE_RHYTHM.header).toBe('px-6 py-5');

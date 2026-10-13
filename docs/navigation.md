@@ -53,7 +53,7 @@
   chips open the Providers menu. The bar never edits a record in place.
 - **The column holds every door.** Board, Tasks, Chat, Workflows, Terminal and
   Monitoring sit under the toggle; Chat and Terminal each end in a plus (New chat, New
-  terminal) that shows on hover, on focus and while the door is open. One separator,
+  terminal) that is always visible. One separator,
   then the Sessions list with a New session row first, Settings and the Goodboy row sit at
   the foot. Board is home and the first door (⌘⇧H). The column is on every
   screen with a workspace: the board, a session, the draft and every studio but
@@ -463,18 +463,21 @@ the doors Board
 (⌘⇧H), Tasks, Chat, Workflows, Terminal (⌃`) and Monitoring as one 28px row each (icon and word, the
 shortcut on hover); Chat ends in a plus (`DoorCreateButton`, New chat, ⌘⇧N, always a
 new chat, never the last one) and Terminal in a plus (New terminal in the workspace folder),
-both visible on hover and focus and while their door is open; one separator
+both always visible; one separator
 (`h-px bg-border-soft`) with the same gap above and below; the Sessions list
 (`SessionNavSidebar`), whose first row is New session (`NewSessionRow`, ⌘N, shaped like a
 session row, selected while the draft is open, a primary dot and `Draft in progress` while a
 draft waits) and whose group headers carry no top margin: the list's one gap (`listGap`, equal to the
 doors' gap) spaces the groups; then at the foot Settings (⌘,), the Goodboy row
-and a bug icon that opens the report sheet. Chat's door carries a running dot
-or a new-reply dot. Terminal's door counts the terminal tabs still alive, all owners, and Monitoring's
-door counts the pinned ports and the ports Goodboy started that are in use, both in the info tone and
-hidden at zero; a pinned port that is down swaps Monitoring's count for a warning dot. The door's
-accessible name carries the fact (`Terminal, 2 running`, `Monitoring, 3 in use`), and both read the
-store (`useDoorSignals`). While the Monitoring page is closed,
+and a bug icon that opens the report sheet. Every door row has one trailing grid
+(`ColumnDoorRow`): a 20px signal slot right aligned, then a 24px action slot reserved on every
+row (the plus sits in it on Chat and Terminal), so counts and dots share one edge. A count means
+things running or in use, in the info tone and hidden at zero; a dot means attention without a
+number. Chat counts the running chats, and with none running shows a primary dot for a new reply.
+Terminal counts the terminal tabs still alive, all owners, and Monitoring counts the pinned ports
+and the ports Goodboy started that are in use; a pinned port that is down swaps Monitoring's count
+for a warning dot. The door's accessible name carries the fact (`Chat, unread`, `Terminal, 2 running`,
+`Monitoring, 3 in use`), and all read the store (`useDoorSignals`). While the Monitoring page is closed,
 `useMonitoringSignalRefresh` rescans only the pinned, learned and Goodboy-run ports every 30 seconds
 (`monitor_snapshot` with a port list, merged into the snapshot), only while the window is visible and
 the snapshot is older than 15 seconds, and never beside another scan. The collapsed rail shows a dot
@@ -750,7 +753,9 @@ empty session reads as a young version of the same document, not a wall of
 placeholders. Finished work collapses into one summary row per category. The
 surface itself shows urgency, never a badge parked beside it.
 
-**New session is a draft, not a session.** New, ⌘N, the board, the palette
+**New session is a draft, not a session.** New, ⌘N (on Chat, Terminal and
+inside Ask the same chord is new chat, new terminal and Reset chat, see
+[keyboard.md](keyboard.md)), the board, the palette
 and the checklist open the `New session` draft (the `session-draft` place,
 address `new`). Nothing is written: no row in the database, the column or
 the board. The trail and the title say `New session`, the title is faint and
@@ -986,8 +991,9 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
   lists the session's pages with a count that names what it counts,
   grouped as pages, Tools and Linked. One pure table, `pageCountWordOf`
   (`features/session/pageCountWord.ts`), reads noun last and empty at zero:
-  Branch `5 need you` (else `3 branches` with more than one mount, else the branch name of the one
-  mount, with its `+x -y` diff beside it on the open session's row only), Runs
+  Branch `3 branches` with more than one mount and no diff, else `5 need you`, else the branch name of
+  the one mount with its `+x -y` diff beside it on the open session's row only (a review note is not
+  a branch fact and is not counted here), Runs
   `2 running` in the info tone (else `4 runs`, every kept run), Agents `1 running` (else `3 agents`), Artifacts
   `4 artifacts`, Questions `2 open`. The sidebar row and the menu read it
   through `usePageSummaries`; `Session`
@@ -2364,8 +2370,11 @@ revises the plan the body is dimmed and Run plan waits.
 The `ask` kind carries no payload: the thread on screen lives in the `ask`
 slice (`askThreadId` per session, `null` for a fresh thread). `AskDrawer`
 (`features/session/ask/components/AskDrawer/`) puts the thread in the frame's
-`ScrollFade` and the composer in its `dock`. Its header is **Ask** and **New**,
-with no session title. The body starts with
+`ScrollFade` and the composer in its `dock`. Its header is **Ask** and a **Reset chat**
+icon button (⌘N while focus is inside the panel, also in ⌘K), with no session
+title. Reset starts a clean thread (`newAskThread`, `askThreadId` back to `null`,
+the next question makes a new chat id) and the old thread stays under **Earlier**,
+so nothing is lost and no Undo is needed. It waits while a reply streams. The body starts with
 **Right now** (no model call: `askRightNow` over `askDigestOf`, the five
 comment words, running agents, open questions and the session cost) and three
 suggested questions; each line's mark is a `LineMark` (one text line tall), so
@@ -2442,7 +2451,9 @@ When something changed since the previous look (`sessionDecisionsBaseline`,
 the `context_seen_at` captured when the drawer opened), it starts with
 **Changed since you last looked**: one line per row, `+` added, `−` removed
 (`Replaced by 7` or `Withdrawn`), a pencil for reworded, and a click scrolls to
-the row and highlights it. Then **Active**, with its count: active decisions
+the row and highlights it. **Mark as read** in its header fades the block, moves
+the marker to the moment of the click (`markContextRead`, saved before the state changes) and clears the
+tab dot; a later change brings the block back. Then **Active**, with its count: active decisions
 newest first, each with its number, at most two lines of
 text, its why as one muted line under the text when the row has one (clamped
 to two lines, **Show more** when longer; older rows show nothing), and who

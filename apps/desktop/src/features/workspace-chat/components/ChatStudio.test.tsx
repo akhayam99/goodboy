@@ -40,6 +40,8 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../store/storyHarness';
+import { registerShortcut } from '../../../shared/keyboard/dispatcher';
+import { currentPlatform } from '../../../shared/platform';
 import { selectChatDoor } from '../../../store/slices/chat-last-open/selectChatDoor';
 import type { ChatBackend } from '../chatBackend';
 import { ChatStudio } from './ChatStudio';
@@ -207,5 +209,51 @@ describe('the Chat door', () => {
     await pressChatDoor();
 
     expect(openedChat()).toBe(chatIdOf({ key: 'consent' }));
+  });
+});
+
+describe('the Chat page new chat chord', () => {
+  it('starts a new chat and never a new session', async () => {
+    await renderStudio();
+    const newSession = vi.fn();
+    const stop = registerShortcut('session.new', newSession);
+    expect(openedChat()).not.toBeNull();
+    const isMac = currentPlatform() === 'darwin';
+
+    act(() => {
+      fireEvent.keyDown(document.body, { code: 'KeyN', metaKey: isMac, ctrlKey: !isMac });
+    });
+    stop();
+
+    expect(openedChat()).toBeNull();
+    expect(newSession).not.toHaveBeenCalled();
+  });
+
+  it('leaves the empty first-run page for a new chat', async () => {
+    await renderEmptyStudio();
+    await screen.findByRole('heading', { name: 'No chats yet' });
+    const isMac = currentPlatform() === 'darwin';
+
+    act(() => {
+      fireEvent.keyDown(document.body, { code: 'KeyN', metaKey: isMac, ctrlKey: !isMac });
+    });
+
+    expect(screen.queryByRole('heading', { name: 'No chats yet' })).toBeNull();
+    expect(screen.getByRole('complementary', { name: 'Chat list' })).toBeDefined();
+  });
+
+  it('gives the chord back to new session once the page is left', async () => {
+    await renderStudio();
+    await leaveForBoard();
+    const newSession = vi.fn();
+    const stop = registerShortcut('session.new', newSession);
+    const isMac = currentPlatform() === 'darwin';
+
+    act(() => {
+      fireEvent.keyDown(document.body, { code: 'KeyN', metaKey: isMac, ctrlKey: !isMac });
+    });
+    stop();
+
+    expect(newSession).toHaveBeenCalledTimes(1);
   });
 });

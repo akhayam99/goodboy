@@ -108,6 +108,28 @@ const renderTrail = (menu: CrumbMenuModel) =>
 const openLast = () => fireEvent.click(screen.getByRole('button', { name: /Implement the fix/ }));
 
 describe('CrumbMenu', () => {
+  it('bounds textual meta so a long model id truncates, and leaves node meta unclipped', () => {
+    const longModel = 'anthropic.claude-sonnet-5-5-20261001-v1:0-extended-context';
+    const menu: CrumbMenuModel = {
+      ...pageLikeMenu(),
+      groups: [
+        {
+          id: 'steps',
+          label: null,
+          rows: [
+            row({ id: 'a', label: 'Scout the module', metaA: longModel }),
+            row({ id: 'b', label: 'Implement the fix', metaA: <span>+120 -8</span> }),
+          ],
+        },
+      ],
+    };
+    renderTrail(menu);
+    openLast();
+
+    expect(screen.getByText(longModel).className).toContain('truncate');
+    expect(screen.getByText('+120 -8').parentElement?.className).not.toContain('truncate');
+  });
+
   it('opens from the last segment with a word for every state and the current row checked', () => {
     renderTrail(stepMenu(vi.fn()));
     openLast();

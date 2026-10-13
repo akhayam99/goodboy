@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Play } from 'lucide-react';
-import { CopyButton, Markdown, Notice, PANE_RHYTHM, cn } from '@goodboy/ui';
+import { CopyButton, Markdown, Notice } from '@goodboy/ui';
 import type { ChatMessage, ChatMessageId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { NAMES } from '../../../../shared/names';
@@ -14,7 +14,7 @@ type Props = {
   readonly onStartWork?: (messageId: ChatMessageId) => void;
 };
 
-const PROSE_CLASS = cn('text-prose', PANE_RHYTHM.proseBlocks);
+const PROSE_CLASS = 'text-prose';
 
 const ChatAssistantMessageView = ({ message, workspaceName, onStartWork }: Props) => {
   const isStreaming = message.status === 'streaming';

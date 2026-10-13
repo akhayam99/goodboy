@@ -71,7 +71,25 @@ describe('shortcut registry', () => {
     }
   });
 
-  it('lets scoped undo override global undo while both yield to text', () => {
+  it('gives cmd+N one meaning per place: new session, or new where you are', () => {
+    const byScope = new Map(
+      entries
+        .filter(([, entry]) => entry.combo === 'cmd+KeyN')
+        .map(([id, entry]) => [domainOf(entry), id] as const),
+    );
+
+    expect(Object.fromEntries(byScope)).toEqual({
+      global: 'session.new',
+      ask: 'ask.reset',
+      chatPage: 'chat.newHere',
+      terminalPage: 'terminal.newHere',
+    });
+    expect(SHORTCUTS['ask.reset'].label).toBe('Reset chat');
+    expect(SHORTCUTS['chat.newHere'].label).toBe('New chat');
+    expect(SHORTCUTS['terminal.newHere'].label).toBe('New terminal');
+  });
+
+  it('lets only scoped undo and scoped new override their global chord', () => {
     const globals = new Map(
       entries
         .filter(([, entry]) => entry.scope === undefined)
@@ -88,6 +106,9 @@ describe('shortcut registry', () => {
         entry.yieldsToText === true &&
         globalEntry?.yieldsToText === true
       ) {
+        continue;
+      }
+      if (entry.combo === 'cmd+KeyN' && shadowed === 'session.new') {
         continue;
       }
       expect(shadowed, `${id} in ${entry.scope} shadows ${shadowed}`).toBeUndefined();

@@ -33,6 +33,7 @@ artifacts-lens-shell
 artifacts-loading
 artifacts-no-match
 artifacts-rows
+ask-reset
 b-monitoring-busy
 b-monitoring-expanded
 board
@@ -169,6 +170,7 @@ confirm-signout
 confirm-worktree-remove
 confirmpopover
 context-drawer
+context-mark-read
 controls-fields
 controls-hints
 controls-ladder
@@ -315,6 +317,7 @@ monitoring-forcestop
 monitoring-leftovers
 monitoring-ports
 monitoring-stopconfirm
+mount-big-stats
 mount-mismatch
 mounts
 needs-you-card
@@ -481,6 +484,9 @@ settings-run-defaults-link
 settings-tools
 settings-workspace
 shell
+side-info-branch
+side-info-branches
+side-info-framed
 side-signals-idle
 side-signals-running
 sidebar-branches
@@ -545,6 +551,7 @@ trail-artifact-create
 trail-run
 transcript
 transcript-mount
+transcript-width
 turn-override-off
 update-card
 update-card-long-version

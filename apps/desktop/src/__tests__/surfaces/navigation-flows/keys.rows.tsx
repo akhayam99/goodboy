@@ -533,6 +533,59 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     lands: () => heading('New session'),
   }),
   keyRow({
+    id: 'chat.newHere',
+    note: 'on the Chat page the new chord means a new chat, not a session',
+    open: async () => {
+      const state = useAppStore.getState();
+      const workspaceId = state.currentWorkspaceId;
+      if (workspaceId === null) {
+        throw new Error('The journey needs its workspace');
+      }
+      state.openStudio({
+        studio: { kind: 'chat', chatId: brandedId<ChatId>({ value: 'keys-here-chat' }) },
+      });
+      await settle();
+      await pressed('chat.newHere', document.body);
+    },
+    lands: async () => {
+      await waitFor(() => {
+        expect(useAppStore.getState().appStudio).toEqual({ kind: 'chat', chatId: null });
+      }, WAIT);
+    },
+  }),
+  keyRow({
+    id: 'terminal.newHere',
+    note: 'on the Terminal page the new chord opens a terminal, not a session',
+    open: async () => {
+      await press('terminal.studio')();
+      await screen.findByRole('heading', { name: 'No terminal yet' }, WAIT);
+      await pressed('terminal.newHere', document.body);
+    },
+    lands: async () => waitFor(() => expect(terminalRows().length).toBeGreaterThan(0), WAIT),
+  }),
+  keyRow({
+    id: 'ask.reset',
+    note: 'inside the Ask panel the new chord resets the chat, not a session',
+    open: async (ctx) => {
+      await press('ask.open')();
+      const composer = await screen.findByPlaceholderText('Ask about this session…', {}, WAIT);
+      useAppStore.setState((state) => ({
+        askThreadId: {
+          ...state.askThreadId,
+          [ctx.sessionId]: brandedId<ChatId>({ value: 'keys-ask-thread' }),
+        },
+      }));
+      composer.focus();
+      await pressed('ask.reset', composer);
+    },
+    lands: async (ctx) => {
+      await waitFor(
+        () => expect(useAppStore.getState().askThreadId[ctx.sessionId]).toBeNull(),
+        WAIT,
+      );
+    },
+  }),
+  keyRow({
     id: 'session.refresh',
     open: press('session.refresh'),
     lands: async (ctx) =>

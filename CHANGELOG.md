@@ -12,6 +12,38 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.25.1
+
+Decisions can be marked as read, Ask has a Reset chat, the chat transcript fills its column, and question blocks and diff stats show right.
+
+### Improved
+
+#### Mark the changed decisions as read
+<!-- gb area=sessions image=mark-read -->
+
+Mark as read on the changed section of Decisions clears what changed since you last looked and the dot on Context. Only Decisions has a changed section.
+
+#### Reset chat in Ask
+<!-- gb area=agents image=ask-reset -->
+
+Reset chat in the Ask header starts a new chat and keeps the old one under Earlier. Cmd+N is the new thing of the page you are on: a new chat on Chat, a new terminal on Terminal, Reset chat inside Ask. Cmd+K goes anywhere else.
+
+#### The chat transcript fills the column
+<!-- gb area=agents image=transcript-width -->
+
+Messages in a chat use the whole column instead of a narrow strip beside empty space. Only the column itself is capped, so long replies read the same on a wide window.
+
+#### Side column info lines up
+<!-- gb area=sessions image=side-column -->
+
+The side column puts every count and dot on one edge. Chat and Terminal always show their plus. Chat counts running chats and shows a dot for a new reply. A session with several branches reads "3 branches" with no diff, and one branch keeps its +/- diff.
+
+### Fixed
+
+- The diff stat column is no longer cut when a count has many digits. <!-- gb area=review -->
+- A question block whose opening tag ends with one bracket shows as a question card you can answer instead of raw text. <!-- gb area=agents -->
+- A context block with an arrow in an attribute is stripped from the transcript instead of showing as text. <!-- gb area=agents -->
+
 ## Goodboy v0.25.0
 
 You edit branch history live with Undo and Redo, the session terminal moves to a drawer, and Monitoring, Resolve and the queue get clearer.

@@ -11,6 +11,7 @@ describe('doorSignalOf', () => {
     expect(doorSignalOf({ kind: 'terminal', count: 2 })).toEqual({
       count: 2,
       isWarning: false,
+      isUnread: false,
       fact: '2 running',
     });
   });
@@ -23,6 +24,7 @@ describe('doorSignalOf', () => {
     expect(doorSignalOf({ kind: 'monitoring', inUse: 3, hasDownPin: false })).toEqual({
       count: 3,
       isWarning: false,
+      isUnread: false,
       fact: '3 in use',
     });
   });
@@ -31,8 +33,25 @@ describe('doorSignalOf', () => {
     expect(doorSignalOf({ kind: 'monitoring', inUse: 3, hasDownPin: true })).toEqual({
       count: 3,
       isWarning: true,
+      isUnread: false,
       fact: 'a pinned port is down',
     });
     expect(doorSignalOf({ kind: 'monitoring', inUse: 0, hasDownPin: true })?.isWarning).toBe(true);
+  });
+
+  it('counts the running chats and shows a dot only for unread with none running', () => {
+    expect(doorSignalOf({ kind: 'chat', count: 0, hasUnread: false })).toBeUndefined();
+    expect(doorSignalOf({ kind: 'chat', count: 2, hasUnread: true })).toEqual({
+      count: 2,
+      isWarning: false,
+      isUnread: false,
+      fact: '2 running',
+    });
+    expect(doorSignalOf({ kind: 'chat', count: 0, hasUnread: true })).toEqual({
+      count: 0,
+      isWarning: false,
+      isUnread: true,
+      fact: 'unread',
+    });
   });
 });

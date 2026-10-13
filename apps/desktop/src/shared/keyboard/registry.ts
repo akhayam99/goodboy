@@ -25,6 +25,9 @@ export type ShortcutScope =
   | 'diff'
   | 'terminal'
   | 'composer'
+  | 'ask'
+  | 'chatPage'
+  | 'terminalPage'
   | 'find'
   | 'overview'
   | 'row'
@@ -43,6 +46,9 @@ export const SHORTCUT_SCOPE_LABEL: Readonly<Record<ShortcutScope, string>> = {
   diff: 'On the Files tab',
   terminal: 'In the terminal',
   composer: 'Where a chat composer is open',
+  ask: 'In the Ask panel',
+  chatPage: 'On the Chat page',
+  terminalPage: 'On the Terminal page',
   find: 'After a search in the view',
   overview: 'On a session overview',
   row: 'On a focused row',
@@ -343,6 +349,13 @@ export const SHORTCUTS = {
     plane: 'app',
     group: 'session',
   },
+  'ask.reset': {
+    combo: 'cmd+KeyN',
+    label: 'Reset chat',
+    plane: 'app',
+    group: 'session',
+    scope: 'ask',
+  },
 
   'lens.overview': { combo: 'cmd+alt+KeyO', label: NAMES.overview, plane: 'lens', group: 'views' },
   'lens.context': { combo: 'cmd+alt+KeyC', label: 'Show context', plane: 'lens', group: 'views' },
@@ -640,6 +653,20 @@ export const SHORTCUTS = {
     scope: 'diff',
   },
 
+  'chat.newHere': {
+    combo: 'cmd+KeyN',
+    label: 'New chat',
+    plane: 'app',
+    group: 'general',
+    scope: 'chatPage',
+  },
+  'terminal.newHere': {
+    combo: 'cmd+KeyN',
+    label: 'New terminal',
+    plane: 'app',
+    group: 'general',
+    scope: 'terminalPage',
+  },
   'chat.new': { combo: 'cmd+shift+KeyN', label: 'New chat', plane: 'session', group: 'general' },
 
   'zoom.in': { combo: 'cmd+Equal', label: 'Zoom in', plane: 'app', group: 'window' },

@@ -10,7 +10,6 @@ import {
 
 const QUIET: PageCountFacts = {
   waiting: 0,
-  notes: 0,
   mounts: 1,
   branchName: null,
   runs: 0,
@@ -32,16 +31,13 @@ describe('pageCountWordOf', () => {
   it.each([
     [{ waiting: 5 }, '5 need you'],
     [{ waiting: 1 }, '1 need you'],
-    [{ waiting: 5, mounts: 3 }, '5 need you'],
-    [{ notes: 1 }, '1 note'],
-    [{ notes: 2 }, '2 notes'],
-    [{ waiting: 3, notes: 1 }, '3 need you · 1 note'],
-    [{ notes: 1, mounts: 3 }, '1 note'],
+    [{ waiting: 5, mounts: 3 }, '3 branches'],
     [{ mounts: 3 }, '3 branches'],
     [{ mounts: 2 }, '2 branches'],
     [{ mounts: 1 }, null],
     [{ mounts: 1, branchName: 'ak/fix-ledger-sync' }, 'ak/fix-ledger-sync'],
     [{ mounts: 3, branchName: null }, '3 branches'],
+    [{ mounts: 4, branchName: 'ak/fix-ledger-sync' }, '4 branches'],
     [{ waiting: 2, mounts: 1, branchName: 'ak/fix-ledger-sync' }, '2 need you'],
   ])('reads Branch for %j as %s', (facts, expected) => {
     expect(wordOf('branch', facts)).toBe(expected);
@@ -79,7 +75,6 @@ describe('pageCountWordOf', () => {
   it('puts the noun last and never a bare number', () => {
     const everything: PageCountFacts = {
       waiting: 0,
-      notes: 0,
       mounts: 4,
       branchName: null,
       runs: 4,

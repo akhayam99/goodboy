@@ -13,6 +13,13 @@ export const DoorSignalMark = ({ signal }: Props) => {
       </span>
     );
   }
+  if (signal.isUnread) {
+    return (
+      <span aria-hidden data-door-signal="unread" className="flex shrink-0">
+        <StatusDot tone="primary" size="md" />
+      </span>
+    );
+  }
   return (
     <span
       aria-hidden

@@ -42,6 +42,7 @@ export type SidebarNavConfig = {
   readonly pinCount: number;
   readonly hasDraft: boolean;
   readonly hasQuestion: boolean;
+  readonly hasDiff: boolean;
 };
 
 export const SIDEBAR_NAV_DEFAULTS: SidebarNavConfig = {
@@ -52,6 +53,7 @@ export const SIDEBAR_NAV_DEFAULTS: SidebarNavConfig = {
   pinCount: 0,
   hasDraft: false,
   hasQuestion: false,
+  hasDiff: false,
 };
 
 const BRANCH_NAMES = [
@@ -190,6 +192,19 @@ export const seedSidebarNav = (config: SidebarNavConfig): SidebarNavSeed => {
       ...state.sessionOpenQuestions,
       [session.id]: config.hasQuestion ? [questionOf()] : [],
     },
+    sessionWorktreeRecords: config.hasDiff
+      ? {
+          ...state.sessionWorktreeRecords,
+          [session.id]: mounts.map((mount, index) => ({
+            id: `mock-sidebar-worktree-${index}`,
+            sessionId: session.id,
+            worktreePath: mount.worktreePath ?? '',
+            branch: mount.branch,
+            parallelIndex: index,
+            createdAt: 1,
+          })),
+        }
+      : state.sessionWorktreeRecords,
     sessionPagesFolded: config.isFolded ? { [session.id]: true } : {},
     sessionPins: {
       [session.workspaceId]: pinned.map((entry, index) => ({

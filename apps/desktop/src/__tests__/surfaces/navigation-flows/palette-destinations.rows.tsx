@@ -342,6 +342,13 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
+    name: 'palette: New chat',
+    covers: ['openStudio', 'studio:chat', 'palette:New chat'],
+    door: 'palette',
+    open: () => openPalette(/^New chat/),
+    lands: () => band('Chat'),
+  },
+  {
     name: 'palette: New session',
     covers: ['openSessionDraft', 'palette:New session'],
     open: () => openPalette(/^New session/),

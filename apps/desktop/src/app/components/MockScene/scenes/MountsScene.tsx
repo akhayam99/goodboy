@@ -206,6 +206,7 @@ type MountsVariant =
   | 'many'
   | 'many-open'
   | 'closed-rows'
+  | 'big-stats'
   | 'gone-branch'
   | 'gone-branch-restore'
   | 'refreshing'
@@ -706,17 +707,29 @@ export const MountsScene = ({ variant = DEFAULT_VARIANT }: Props) => {
   const seeds =
     variant === 'many' || variant === 'many-open'
       ? [...MOUNT_SEEDS, ...EXTRA_SEEDS]
-      : variant === 'closed-rows' || variant === 'gone-branch' || variant === 'gone-branch-restore'
-        ? [MOUNT_SEEDS[1], MOUNT_SEEDS[2], MOUNT_SEEDS[3]]
-            .filter((seed) => seed !== undefined)
-            .map((seed) =>
-              seed.id === RELAY_MOUNT ? { ...seed, worktreePath: null, isAttached: false } : seed,
-            )
-        : variant === 'task-split'
-          ? [MOUNT_SEEDS[2]].filter((seed) => seed !== undefined)
-          : variant === 'branch-split'
-            ? [MOUNT_SEEDS[0], MOUNT_SEEDS[1]].filter((seed) => seed !== undefined)
-            : MOUNT_SEEDS;
+      : variant === 'big-stats'
+        ? MOUNT_SEEDS.map((seed) =>
+            seed.id === ROUNDING_MOUNT || seed.id === POSTINGS_MOUNT
+              ? {
+                  ...seed,
+                  worktreePath: `${seed.worktreePath}-bulk`,
+                  lastWorktreePath: `${seed.worktreePath}-bulk`,
+                }
+              : seed,
+          )
+        : variant === 'closed-rows' ||
+            variant === 'gone-branch' ||
+            variant === 'gone-branch-restore'
+          ? [MOUNT_SEEDS[1], MOUNT_SEEDS[2], MOUNT_SEEDS[3]]
+              .filter((seed) => seed !== undefined)
+              .map((seed) =>
+                seed.id === RELAY_MOUNT ? { ...seed, worktreePath: null, isAttached: false } : seed,
+              )
+          : variant === 'task-split'
+            ? [MOUNT_SEEDS[2]].filter((seed) => seed !== undefined)
+            : variant === 'branch-split'
+              ? [MOUNT_SEEDS[0], MOUNT_SEEDS[1]].filter((seed) => seed !== undefined)
+              : MOUNT_SEEDS;
   const views = viewsOf(seeds);
 
   useEffect(() => {

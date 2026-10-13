@@ -21,8 +21,9 @@ export const setSessionContextSeenAt = async (
   sessionId: SessionId,
   seenAt: IsoDateTime,
 ): Promise<void> => {
-  await db.execute('UPDATE sessions SET context_seen_at = ? WHERE id = ?', [
-    Date.parse(seenAt),
-    sessionId,
-  ]);
+  const seenAtMs = Date.parse(seenAt);
+  await db.execute(
+    'UPDATE sessions SET context_seen_at = ? WHERE id = ? AND (context_seen_at IS NULL OR context_seen_at < ?)',
+    [seenAtMs, sessionId, seenAtMs],
+  );
 };

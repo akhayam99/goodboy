@@ -4,6 +4,7 @@ import { extractArtifactBlocks } from './artifacts/grammar';
 import { parseArtifactEnvelope } from './artifacts/parseArtifactEnvelope';
 import { unwrapEdgeFence } from './code-fence';
 import { normalizeDecisionText } from './context/decisions-ledger';
+import { stripControlMarkers } from './context/marker-parsing';
 import { parseCliVersion } from './providers/cliVersion';
 import { parseClaudeUsageText } from './providers/limits/parseClaudeUsageText';
 import { parseIssueBrief } from './summarizer/issue-brief';
@@ -30,6 +31,14 @@ type Case = {
 };
 
 const CASES: ReadonlyArray<Case> = [
+  {
+    name: 'stripControlMarkers on repeated unrecognized opening tags',
+    run: () => stripControlMarkers('<<ctx-widget '.repeat(8_000)),
+  },
+  {
+    name: 'stripControlMarkers on repeated block opening tags without a close',
+    run: () => stripControlMarkers('<<plan '.repeat(8_000)),
+  },
   {
     name: 'unwrapEdgeFence on tabs after an opening fence',
     run: () => unwrapEdgeFence({ text: `\`\`\`${'\t'.repeat(RUN)}x` }),

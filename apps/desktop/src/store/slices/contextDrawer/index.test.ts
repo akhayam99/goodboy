@@ -18,6 +18,7 @@ vi.mock('@goodboy/db', async () =>
 );
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
+import { nowIso } from '../project-mounts/nowIso';
 import { createContextDrawerSlice } from './index';
 import { initialContextDrawerState } from './state';
 import { decisionChangesSince, NO_DECISION_CHANGES } from './decisionChangesSince';
@@ -136,6 +137,93 @@ describe('context drawer slice', () => {
     const seenAt = (h.getState()['sessionContextSeenAt'] as Record<string, string>)[SESSION_ID];
     expect(seenAt).toBeDefined();
     expect(db.setSessionContextSeenAt).toHaveBeenCalledWith(SESSION_ID, seenAt);
+  });
+
+  it('marks the context read: persists the marker and moves seen and baseline together', async () => {
+    db.getSessionContextSeenAt.mockResolvedValueOnce(BEFORE);
+    await h.slice.loadSessionContextSeen(SESSION_ID);
+    h.slice.openContextDrawer({ sessionId: SESSION_ID, tab: 'decisions' });
+
+    await h.slice.markContextRead({ sessionId: SESSION_ID, readAt: nowIso({}) });
+
+    const written = db.setSessionContextSeenAt.mock.calls.at(-1)?.[1];
+    expect(typeof written).toBe('string');
+    expect(written).not.toBe(BEFORE);
+    expect(h.getState()['sessionContextSeenAt']).toEqual({ [SESSION_ID]: written });
+    expect(h.getState()['sessionDecisionsBaseline']).toEqual({ [SESSION_ID]: written });
+  });
+
+  it('clears the changes on read and brings them back when newer ones arrive', async () => {
+    db.getSessionContextSeenAt.mockResolvedValueOnce(BEFORE);
+    await h.slice.loadSessionContextSeen(SESSION_ID);
+    h.slice.openContextDrawer({ sessionId: SESSION_ID, tab: 'decisions' });
+    const ledger = [decision({ number: 2, createdAt: AFTER, updatedAt: AFTER })];
+    const baselineOf = (): string | null => {
+      const value = Reflect.get(Object(h.getState()['sessionDecisionsBaseline']), SESSION_ID);
+      return typeof value === 'string' ? value : null;
+    };
+    expect(decisionChangesSince({ ledger, since: baselineOf() }).added).toHaveLength(1);
+
+    await h.slice.markContextRead({ sessionId: SESSION_ID, readAt: nowIso({}) });
+    await new Promise((resolve) => setTimeout(resolve, 5));
+
+    expect(decisionChangesSince({ ledger, since: baselineOf() })).toBe(NO_DECISION_CHANGES);
+    const later = [
+      ...ledger,
+      decision({ number: 3, createdAt: nowIso({}), updatedAt: nowIso({}) }),
+    ];
+    expect(decisionChangesSince({ ledger: later, since: baselineOf() }).added).toHaveLength(1);
+  });
+
+  it('keeps the old marker and rejects when the write fails', async () => {
+    db.getSessionContextSeenAt.mockResolvedValueOnce(BEFORE);
+    await h.slice.loadSessionContextSeen(SESSION_ID);
+    h.slice.openContextDrawer({ sessionId: SESSION_ID, tab: 'decisions' });
+    db.setSessionContextSeenAt.mockRejectedValueOnce(new Error('disk full'));
+
+    await expect(
+      h.slice.markContextRead({ sessionId: SESSION_ID, readAt: nowIso({}) }),
+    ).rejects.toThrow('disk full');
+
+    expect(h.getState()['sessionDecisionsBaseline']).toEqual({ [SESSION_ID]: BEFORE });
+    expect(h.getState()['sessionContextSeenAt']).toEqual({ [SESSION_ID]: BEFORE });
+  });
+
+  it('stamps the cutoff the user saw, so a decision landing after it stays new', async () => {
+    db.getSessionContextSeenAt.mockResolvedValueOnce(BEFORE);
+    await h.slice.loadSessionContextSeen(SESSION_ID);
+    const clicked = nowIso({ at: new Date('2026-10-12T10:00:00.000Z') });
+    const landed = nowIso({ at: new Date('2026-10-12T10:00:00.100Z') });
+
+    await h.slice.markContextRead({ sessionId: SESSION_ID, readAt: clicked });
+
+    expect(db.setSessionContextSeenAt.mock.calls.at(-1)?.[1]).toBe(clicked);
+    const ledger = [decision({ number: 5, createdAt: landed, updatedAt: landed })];
+    const baseline = Reflect.get(Object(h.getState()['sessionDecisionsBaseline']), SESSION_ID);
+    const since = typeof baseline === 'string' ? baseline : null;
+    expect(decisionChangesSince({ ledger, since }).added).toHaveLength(1);
+  });
+
+  it('drops a late save that is older than the cutoff already applied', async () => {
+    db.getSessionContextSeenAt.mockResolvedValueOnce(BEFORE);
+    await h.slice.loadSessionContextSeen(SESSION_ID);
+    const older = nowIso({ at: new Date('2026-10-12T10:00:00.000Z') });
+    const newer = nowIso({ at: new Date('2026-10-12T10:00:05.000Z') });
+    let finishOlder: (value?: undefined) => void = () => undefined;
+    db.setSessionContextSeenAt.mockImplementationOnce(
+      () =>
+        new Promise<undefined>((resolve) => {
+          finishOlder = resolve;
+        }),
+    );
+
+    const first = h.slice.markContextRead({ sessionId: SESSION_ID, readAt: older });
+    await h.slice.markContextRead({ sessionId: SESSION_ID, readAt: newer });
+    finishOlder();
+    await first;
+
+    expect(h.getState()['sessionContextSeenAt']).toEqual({ [SESSION_ID]: newer });
+    expect(h.getState()['sessionDecisionsBaseline']).toEqual({ [SESSION_ID]: newer });
   });
 
   it('loads when the context was last seen once', async () => {

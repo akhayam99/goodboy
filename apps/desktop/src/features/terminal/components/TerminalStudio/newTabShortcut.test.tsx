@@ -4,6 +4,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { IsoDateTime, Session, SessionId, WorkspaceId } from '@goodboy/types';
 import type { TerminalTab, TerminalTabId } from '../../../../shared/types/terminal';
+import { registerShortcut } from '../../../../shared/keyboard/dispatcher';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -147,5 +148,32 @@ describe('the terminal page new terminal shortcut', () => {
 
     expect(screen.getByRole('button', { name: 'payments-api' })).toBeDefined();
     expect(screen.queryByText(/^Terminal \d+$/)).toBeNull();
+  });
+});
+
+describe('the terminal page new chord', () => {
+  it('opens a terminal on the contextual new chord and never a new session', () => {
+    mountLens();
+    const newSession = vi.fn();
+    const stop = registerShortcut('session.new', newSession);
+
+    fireEvent.keyDown(document.body, { code: 'KeyN', metaKey: true });
+    stop();
+
+    expect(tabCount()).toBe(2);
+    expect(newSession).not.toHaveBeenCalled();
+  });
+
+  it('gives the chord back to new session once the page is gone', () => {
+    mountLens();
+    cleanup();
+    const newSession = vi.fn();
+    const stop = registerShortcut('session.new', newSession);
+
+    fireEvent.keyDown(document.body, { code: 'KeyN', metaKey: true });
+    stop();
+
+    expect(newSession).toHaveBeenCalledTimes(1);
+    expect(tabCount()).toBe(1);
   });
 });

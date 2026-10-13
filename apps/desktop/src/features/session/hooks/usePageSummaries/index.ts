@@ -6,9 +6,7 @@ import {
   useSessionOpenQuestions,
   useSessionPlans,
 } from '../../../../store';
-import { useResolveQueueRows } from '../../../resolve/hooks/useResolveQueueRows';
 import { useReviewTally } from '../../../resolve/useReviewTally';
-import { waitingNotesOf } from '../../../resolve/notes/waitingNotes';
 import { selectOpenQuestions } from '../../components/SessionOverviewPane/lib';
 import { selectResolverAgentIds } from '../../../review/selectResolverAgentIds';
 import { isRunHeldForPlan } from '../../../../store/slices/workflows/workflowPlanApproval';
@@ -35,7 +33,6 @@ const summariesOf = ({ facts }: { readonly facts: PageCountFacts }): PageSummari
 
 export const usePageSummaries = ({ session }: Params): PageSummaries => {
   const sessionId = session.id as SessionId;
-  const rows = useResolveQueueRows({ sessionId });
   const tally = useReviewTally({ sessionId });
   const openQuestions = useSessionOpenQuestions(sessionId);
   const plans = useSessionPlans(sessionId);
@@ -66,7 +63,6 @@ export const usePageSummaries = ({ session }: Params): PageSummaries => {
     return summariesOf({
       facts: {
         waiting: tally.needsYou,
-        notes: waitingNotesOf({ rows }),
         mounts: mounts.length,
         branchName: singleBranchName({ mounts, sessionBranch }),
         runs: runs.length,
@@ -78,7 +74,6 @@ export const usePageSummaries = ({ session }: Params): PageSummaries => {
       },
     });
   }, [
-    rows,
     tally,
     openQuestions,
     agents,

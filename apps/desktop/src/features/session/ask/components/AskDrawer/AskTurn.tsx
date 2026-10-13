@@ -1,5 +1,5 @@
 import { memo, useMemo } from 'react';
-import { Notice, WorkNode } from '@goodboy/ui';
+import { Notice, PANE_RHYTHM, WorkNode } from '@goodboy/ui';
 import type { ChatMessage, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type { AskButtonFacts } from '../../askButtons';
@@ -37,7 +37,9 @@ const AskTurnView = ({ sessionId, question, reply, facts, onOpen }: Props) => {
   const hasText = answer.blocks.length > 0;
   return (
     <div data-testid="ask-turn" className="flex flex-col gap-3">
-      <div className="max-w-[92%] self-end rounded-lg bg-fill px-3 py-2 text-prose text-foreground">
+      <div
+        className={`${PANE_RHYTHM.message.user} self-end rounded-lg bg-fill px-3 py-2 text-prose text-foreground`}
+      >
         {question.content}
       </div>
       {reply === null ? null : (

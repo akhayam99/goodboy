@@ -348,6 +348,72 @@ describe('counts on the pages and in the page menu', () => {
     });
     await waitFor(() => expect(within(branch).getByTestId('diff-stat').textContent).toBe('+12-3'));
   });
+
+  it('names the branches and drops the diff and the review notes', async () => {
+    storySpies.tauriInvoke.mockImplementation(async (command: unknown) =>
+      command === 'worktree_changed_files'
+        ? { paths: [], entries: [], additions: 12, deletions: 3, numstat: '' }
+        : undefined,
+    );
+    mountBoth();
+    act(() => {
+      useAppStore.setState({
+        sessionProjectMounts: {
+          [withRuns.id]: [
+            mountOf({ session: withRuns, project: paymentsApi }),
+            mountOf({ session: withRuns, project: ledgerCore }),
+          ],
+        },
+        sessionWorktreeRecords: {
+          [withRuns.id]: [
+            {
+              id: 'wt-1',
+              sessionId: withRuns.id,
+              worktreePath: '/tmp/payments-api/worktrees/one',
+              branch: 'goodboy/webhook-retries',
+              parallelIndex: 0,
+              createdAt: 1,
+            },
+          ],
+        },
+      });
+    });
+    renderBar();
+    const branch = within(screen.getByRole('list', { name: 'Pages' })).getByRole('button', {
+      name: /^Branch/,
+    });
+    await waitFor(() =>
+      expect(storySpies.tauriInvoke.mock.calls.map((call) => call[0])).toContain(
+        'worktree_changed_files',
+      ),
+    );
+    expect(within(branch).queryByTestId('diff-stat')).toBeNull();
+    expect(branch.textContent).toBe('Branch2 branches');
+    expect(branch.textContent).not.toMatch(/note/);
+  });
+
+  it('tags each trailing value with its tone', () => {
+    mountBoth();
+    act(() => {
+      useAppStore.setState({
+        sessionProjectMounts: {
+          [withRuns.id]: [
+            mountOf({ session: withRuns, project: paymentsApi }),
+            mountOf({ session: withRuns, project: ledgerCore }),
+          ],
+        },
+      });
+    });
+    renderBar();
+    const values = Array.from(
+      document.querySelectorAll<HTMLElement>('[data-session-card] [data-page-value]'),
+    );
+
+    expect(values.length).toBeGreaterThan(0);
+    for (const value of values) {
+      expect(['count', 'running', 'needs-you']).toContain(value.getAttribute('data-tone'));
+    }
+  });
 });
 
 describe('the card around the open session', () => {

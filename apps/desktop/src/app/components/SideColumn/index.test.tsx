@@ -9,6 +9,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { COLLAPSED_RAIL_WIDTH } from '@goodboy/ui';
 import { aWorkspace } from '@goodboy/types/testing';
+import type { ChatId, ChatMessageId, ProviderRunId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -20,7 +21,7 @@ import { brandedId } from '../../../features/history/testing/brandedId';
 import type { TerminalTabId } from '../../../shared/types/terminal';
 import { ColumnRail } from './ColumnRail';
 import { SideColumn } from './index';
-import type { ColumnActions } from './columnDoors';
+import { COLUMN_DOORS, type ColumnActions } from './columnDoors';
 import type { ColumnPlace } from './columnPlace';
 
 const WORKSPACE = aWorkspace({ name: 'Harborline' });
@@ -94,6 +95,8 @@ beforeEach(async () => {
     workspaces: [WORKSPACE],
     currentWorkspaceId: WORKSPACE.id,
     archivedSessions: { [WORKSPACE.id]: [] },
+    chatStreams: {},
+    unreadChatIds: [],
   });
 });
 
@@ -279,6 +282,56 @@ describe('SideColumn', () => {
       nav.querySelector('[data-column-door="terminal"]')?.parentElement?.contains(terminalPlus),
     ).toBe(true);
     expect(nav.querySelectorAll('[data-door-create]')).toHaveLength(2);
+  });
+
+  it('keeps the plus on Chat and Terminal visible at rest, not only on hover', () => {
+    mountColumn({ place: 'board' });
+    const nav = navLayer();
+
+    for (const name of ['New chat', 'New terminal']) {
+      const plus = within(nav).getByRole('button', { name });
+      expect(plus.closest('[class*="opacity-0"]')).toBeNull();
+    }
+  });
+
+  it('gives every door the same signal slot and action slot so trailing info shares an edge', () => {
+    mountColumn({ place: 'board' });
+    const nav = navLayer();
+
+    for (const { id } of COLUMN_DOORS) {
+      const door = nav.querySelector(`[data-column-door-row="${id}"] [data-column-door]`);
+      expect(door?.querySelectorAll('[data-door-slot="signal"]')).toHaveLength(1);
+      expect(door?.querySelectorAll('[data-door-slot="action"]')).toHaveLength(1);
+    }
+  });
+
+  it('counts running chats and dots unread chats inside the signal slot', () => {
+    useAppStore.setState({
+      chatStreams: {
+        [brandedId<ChatId>({ value: 'chat-1' })]: {
+          runId: brandedId<ProviderRunId>({ value: 'run-1' }),
+          messageId: brandedId<ChatMessageId>({ value: 'message-1' }),
+          isStopping: false,
+        },
+      },
+    });
+    mountColumn({ place: 'board' });
+
+    const running = screen.getByRole('button', { name: 'Chat, 1 running' });
+    expect(
+      running.querySelector('[data-door-slot="signal"] [data-door-signal="count"]'),
+    ).not.toBeNull();
+    cleanup();
+    useAppStore.setState({
+      chatStreams: {},
+      unreadChatIds: [brandedId<ChatId>({ value: 'chat-2' })],
+    });
+    mountColumn({ place: 'board' });
+
+    const unread = screen.getByRole('button', { name: 'Chat, unread' });
+    expect(
+      unread.querySelector('[data-door-slot="signal"] [data-door-signal="unread"]'),
+    ).not.toBeNull();
   });
 
   it('puts New session first under the Sessions header, after one separator', () => {

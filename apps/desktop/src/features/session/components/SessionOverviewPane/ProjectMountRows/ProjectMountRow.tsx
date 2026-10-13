@@ -248,7 +248,7 @@ export const ProjectMountRow = ({
             />
           )}
         </div>
-        <div className="flex min-w-0 items-center overflow-hidden">
+        <div className="flex items-center">
           {!row.isAttached || !isRepo ? null : isSkeleton ? (
             <Skeleton className="h-3.5 w-16" />
           ) : (

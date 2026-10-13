@@ -1236,6 +1236,59 @@ describe('stripControlMarkers', () => {
     ).toBe('ok  done');
   });
 
+  it('strips a ctx-question block whose suggestions hold an arrow, with inline code in its body', () => {
+    const text =
+      'Remote tip moved, stopping.\n\n<<ctx-question blocking="true" suggestions="Use the new lease -> push | Stop, inspect the remote commits first" recommended="Stop, inspect the remote commits first" select="one">>The ledger-core remote is at `be3d04fc9` (not `29aa41a98`). How do I proceed?<</ctx-question>>';
+    expect(stripControlMarkers(text)).toBe('Remote tip moved, stopping.');
+    expect(extractMarkers(text).questions).toEqual([
+      {
+        text: 'The ledger-core remote is at `be3d04fc9` (not `29aa41a98`). How do I proceed?',
+        suggestedAnswers: ['Use the new lease -> push', 'Stop, inspect the remote commits first'],
+        recommendedAnswer: 'Stop, inspect the remote commits first',
+        selectMode: 'one',
+        isBlocking: true,
+      },
+    ]);
+  });
+
+  it('extracts and strips the owner shape: opening tag closed with one angle bracket', () => {
+    const text =
+      'The lease stays failed: the remote is at be3d04fc9.\n\n<<ctx-question blocking="true" suggestions="Force the lease push on be3d04fc9 | Stop, do not push" recommended="Force the lease push on be3d04fc9" select="one">The remote `acme-explore-variant` is at `be3d04fc9`, not `29aa41a98` as expected. Overwrite with `--force-with-lease=...:be3d04fc9`?\n<</ctx-question>>';
+    expect(stripControlMarkers(text)).toBe('The lease stays failed: the remote is at be3d04fc9.');
+    expect(extractMarkers(text).questions).toEqual([
+      {
+        text: 'The remote `acme-explore-variant` is at `be3d04fc9`, not `29aa41a98` as expected. Overwrite with `--force-with-lease=...:be3d04fc9`?',
+        suggestedAnswers: ['Force the lease push on be3d04fc9', 'Stop, do not push'],
+        recommendedAnswer: 'Force the lease push on be3d04fc9',
+        selectMode: 'one',
+        isBlocking: true,
+      },
+    ]);
+  });
+
+  it('extracts the same question when the opening tag uses the double bracket', () => {
+    const text =
+      '<<ctx-question blocking="true" suggestions="A | B" recommended="A" select="one">>Which one?<</ctx-question>>';
+    expect(stripControlMarkers(text)).toBe('');
+    expect(extractMarkers(text).questions).toHaveLength(1);
+  });
+
+  it('keeps unrecognized literal tags as text', () => {
+    expect(stripControlMarkers('a <</ctx-widget>> b')).toBe('a <</ctx-widget>> b');
+    expect(stripControlMarkers('a <<ctx-widget x="1">> b')).toBe('a <<ctx-widget x="1">> b');
+  });
+
+  it('keeps a single-bracket decision as text instead of dropping it', () => {
+    const text = 'Note <<ctx-decision kind="x">use retries<</ctx-decision>> done';
+    expect(stripControlMarkers(text)).toContain('use retries');
+    expect(extractMarkers(text).decisions).toEqual([]);
+  });
+
+  it('drops a stray ctx tag that has no matching close', () => {
+    expect(stripControlMarkers('a <</ctx-question>> b')).toBe('a  b');
+    expect(stripControlMarkers('a <<ctx-question blocking="true">> b')).toBe('a');
+  });
+
   it('collapses excessive newlines to double', () => {
     const text = 'a\n\n\n\n\nb';
     expect(stripControlMarkers(text)).toBe('a\n\nb');

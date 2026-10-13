@@ -2,6 +2,7 @@ import type { KeyboardEvent } from 'react';
 import { StudioRailLayout } from '@goodboy/ui';
 import { eventMatches } from '../../../../shared/keyboard/dispatcher';
 import { SHORTCUTS } from '../../../../shared/keyboard/registry';
+import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import type { TerminalStudioModel } from '../../hooks/useTerminalStudioModel';
 import { TerminalDetail } from './TerminalDetail';
 import { TerminalRail } from './TerminalRail';
@@ -12,6 +13,7 @@ type Props = {
 };
 
 export const TerminalStudioBody = ({ model, isActive }: Props) => {
+  useShortcut('terminal.newHere', model.openDefault, isActive);
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     if (
       !isActive ||

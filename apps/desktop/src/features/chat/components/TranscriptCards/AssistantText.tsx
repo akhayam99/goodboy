@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { CopyButton, Markdown, PANE_RHYTHM } from '@goodboy/ui';
+import { CopyButton, Markdown } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { extractAllCommentResolved, isReviewThreadId, stripControlMarkers } from '@goodboy/core';
 import { HandoffChip } from '../HandoffChip';
@@ -35,9 +35,7 @@ export const AssistantText = ({ text, sessionId, agentId = null }: Props) => {
           <CopyButton value={text} label="message" />
         </div>
       )}
-      {displayText.length > 0 ? (
-        <Markdown text={displayText} className={PANE_RHYTHM.proseBlocks} />
-      ) : null}
+      {displayText.length > 0 ? <Markdown text={displayText} /> : null}
       {sessionId && agentId && hasScribeText ? (
         <ScribeTextCard assistantText={text} sessionId={sessionId} agentId={agentId} />
       ) : null}

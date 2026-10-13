@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, ChevronRight, Undo2 } from 'lucide-react';
 import {
   EmptyLine,
@@ -17,7 +17,7 @@ import {
   type DecisionChangesSince,
 } from '../../../../store/slices/contextDrawer/decisionChangesSince';
 import { AddDecisionRow } from './AddDecisionRow';
-import { DecisionChangesList } from './DecisionChangesList';
+import { DecisionChangesList, type ReadParams } from './DecisionChangesList';
 import { ClosedDecisionRow } from './ClosedDecisionRow';
 import { DecisionRowItem } from './DecisionRowItem';
 import { EnteringRow } from './EnteringRow';
@@ -81,6 +81,8 @@ export const DecisionsSection = ({
   const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId]);
   const loadSessionDecisions = useAppStore((state) => state.loadSessionDecisions);
   const applySessionDecisionOps = useAppStore((state) => state.applySessionDecisionOps);
+  const markContextRead = useAppStore((state) => state.markContextRead);
+  const reportError = useAppStore((state) => state.reportError);
   const [isClosedOpen, setIsClosedOpen] = useState(false);
   const [closedFilter, setClosedFilter] = useState<ClosedFilter>('removed');
   const [closedQuery, setClosedQuery] = useState('');
@@ -174,6 +176,19 @@ export const DecisionsSection = ({
     return map;
   }, [decisions]);
 
+  const markRead = useCallback(
+    async ({ readAt }: ReadParams): Promise<boolean> => {
+      try {
+        await markContextRead({ sessionId, readAt });
+        return true;
+      } catch (error: unknown) {
+        void reportError({ title: "Couldn't mark the changes as read", error, sessionId });
+        return false;
+      }
+    },
+    [markContextRead, reportError, sessionId],
+  );
+
   if (isRawEditing) {
     return (
       <RawDocumentEditor
@@ -255,7 +270,7 @@ export const DecisionsSection = ({
   return (
     <div className="flex flex-col gap-3">
       {hasDecisionChanges(changes) ? (
-        <DecisionChangesList changes={changes} onJump={jumpTo} />
+        <DecisionChangesList changes={changes} onJump={jumpTo} onRead={markRead} />
       ) : null}
       {activeRows.length === 0 ? (
         <EmptyLine className="text-body text-muted-foreground">

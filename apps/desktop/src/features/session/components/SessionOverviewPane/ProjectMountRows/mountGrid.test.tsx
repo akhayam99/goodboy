@@ -15,7 +15,7 @@ describe('mountGridTracksOf', () => {
   it.each([
     { index: 0, track: 'minmax(0,1fr)', name: 'branch, flexible' },
     { index: 1, track: '96px', name: 'pull request' },
-    { index: 2, track: '96px', name: 'changes' },
+    { index: 2, track: 'minmax(96px,max-content)', name: 'changes' },
     { index: 3, track: '200px', name: 'action' },
   ])('track $index is $track ($name)', ({ index, track }) => {
     expect(mountGridTracksOf()[index]).toBe(track);
@@ -23,7 +23,7 @@ describe('mountGridTracksOf', () => {
 
   it('has four tracks and joins them into one template', () => {
     expect(mountGridTracksOf()).toHaveLength(4);
-    expect(mountGridTracksOf().join(' ')).toBe('minmax(0,1fr) 96px 96px 200px');
+    expect(mountGridTracksOf().join(' ')).toBe('minmax(0,1fr) 96px minmax(96px,max-content) 200px');
   });
 
   it.each([
