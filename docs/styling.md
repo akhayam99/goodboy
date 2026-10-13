@@ -246,19 +246,19 @@ walks every studio and session studio so a new place cannot sit on the left.
 
 Three width tiers, one rule each:
 
-| Tier    | Width                 | Used by                                                                                                                                          |
-| ------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| measure | `--measure`, 720px    | prose: transcript assistant text, plan prose, comment and note bodies, a Brief, Chat answers (`PANE_RHYTHM.prose`, `PageColumn width="measure"`) |
-| column  | `--column-max`, 960px | the page column, centred: Overview, settings, cards, code blocks and tool output inside the transcript (`PageColumn`, `FormPage`)                |
-| full    | the pane, fluid       | work surfaces, from the pane's left edge: the terminal, Tasks lists, the Board (`PageColumn width="full"`)                                       |
+| Tier    | Width                 | Used by                                                                                                                           |
+| ------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| measure | `--measure`, 720px    | prose: plan prose, comment and note bodies, a Brief (`PANE_RHYTHM.prose`, `PageColumn width="measure"`)                           |
+| column  | `--column-max`, 960px | the page column, centred: Overview, settings, cards, code blocks and tool output inside the transcript (`PageColumn`, `FormPage`) |
+| full    | the pane, fluid       | work surfaces, from the pane's left edge: the terminal, Tasks lists, the Board (`PageColumn width="full"`)                        |
 
 A body that owns its scroll (`scroll="self"`: the agent transcript and its
 composer) puts its own `PageColumn` around the scrolling content and the
 composer, so it shares the header's edges; the scroll viewport spans the pane
 and carries no gutter.
 
-Prose keeps its 720px measure aligned left inside the column, except on an
-artifact document page (a plan, a report): its prose, parts, editor, skeleton
+Prose keeps its 720px measure aligned left inside the column, except in a
+conversation (see below) and on an artifact document page (a plan, a report): its prose, parts, editor, skeleton
 and past versions fill the column and share one right edge. The drawer copy of
 a plan keeps the reading measure. The `full` tier
 is the only exception to centring and ignores the slide below: its right edge
@@ -298,6 +298,12 @@ transcript or a diff, asks for `scroll="self"`.
 A Session or Agent page reads as one centred column: every child, banner, card
 and footer sits on the same edges. Only prose keeps the 720px measure, aligned
 left inside the column. Tables, code and cards take the whole column.
+
+A conversation is the exception: assistant messages fill the transcript column,
+so their right edge lines up with the composer. The 960px column is the cap, not
+the message. A user or injected card keeps a fixed 48px start gap
+(`PANE_RHYTHM.message.user`) in the agent transcript, Chat, the Ask panel and
+the fix run drawer.
 
 **The Branch page** is a split page: a rail of sections, always docked from a page of 780, and one
 detail whose header, trail, Ask button and every section body share the 960px column, so nothing

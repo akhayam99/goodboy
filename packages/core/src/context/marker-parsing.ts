@@ -34,7 +34,7 @@ const FAN_OUT_OPEN = '<<fan-out>>';
 const FAN_OUT_CLOSE = '<</fan-out>>';
 const SCOUT_SPLIT_OPEN = '<<scout-split>>';
 const SCOUT_SPLIT_CLOSE = '<</scout-split>>';
-const QUESTION_OPEN_RE = /<<ctx-question((?:\s+[\w-]+="[^"]*")*)\s*>>/g;
+const QUESTION_OPEN_RE = /<<ctx-question((?:\s+[\w-]+="[^"]*")*)\s*>>?/g;
 const QUESTION_CLOSE = '<</ctx-question>>';
 const OPEN_QUESTION_ANSWER_OPEN = '<<oq-answer>>';
 const OPEN_QUESTION_ANSWER_CLOSE = '<</oq-answer>>';
@@ -1282,12 +1282,18 @@ const BLOCK_MARKER_ALT =
 const SELF_MARKER_ALT =
   'handoff|comment-analysis|comment-resolved|comment-wontfix|comment-verdict|review-comment|cluster-done|step-done|scout-domains|history-step|history-done|history-stuck|materialize:';
 
+const MARKER_ATTRS = '(?:\\s(?:"[^"]{0,2000}"|[^>"]){0,4000})?';
+const MARKER_OPEN = `<<(?:(?:${BLOCK_MARKER_ALT})${MARKER_ATTRS}>>|ctx-question${MARKER_ATTRS}>>?)`;
 const CONTROL_BLOCK_STRIP_RE = new RegExp(
-  `<<(?:${BLOCK_MARKER_ALT})(?:\\s[^>]*)?>>[\\s\\S]*?<<\\/(?:${BLOCK_MARKER_ALT})>>`,
+  `${MARKER_OPEN}[\\s\\S]*?<<\\/(?:${BLOCK_MARKER_ALT})>>`,
+  'g',
+);
+const CONTROL_STRAY_TAG_RE = new RegExp(
+  `<<\\/?(?:(?:ctx-decision|ctx-resolved)${MARKER_ATTRS}>>|ctx-question${MARKER_ATTRS}>>?)`,
   'g',
 );
 const CONTROL_SELF_OPEN_RE = new RegExp(`<<(?:${SELF_MARKER_ALT})\\s`, 'g');
-const CONTROL_OPEN_TAIL_RE = new RegExp(`<<(?:${BLOCK_MARKER_ALT})(?:\\s[^>]*)?>>[\\s\\S]*$`);
+const CONTROL_OPEN_TAIL_RE = new RegExp(`${MARKER_OPEN}[\\s\\S]*$`);
 const CONTROL_PARTIAL_TAIL_RE = /<<?\/?[a-z-]*:?(?:\s[^>]*)?$/;
 const UNSUMMARIZED_STEP_OUTPUT_RE = /\[unsummarized step output(?:, [a-z ]+)?\][ \t]*\n?/g;
 
@@ -1310,10 +1316,12 @@ const stripSelfMarkers = (text: string): string => {
 
 export const stripControlMarkers = (text: string): string => {
   CONTROL_BLOCK_STRIP_RE.lastIndex = 0;
+  CONTROL_STRAY_TAG_RE.lastIndex = 0;
   UNSUMMARIZED_STEP_OUTPUT_RE.lastIndex = 0;
   return stripSelfMarkers(text.replace(CONTROL_BLOCK_STRIP_RE, ''))
     .replace(UNSUMMARIZED_STEP_OUTPUT_RE, '')
     .replace(CONTROL_OPEN_TAIL_RE, '')
+    .replace(CONTROL_STRAY_TAG_RE, '')
     .replace(CONTROL_PARTIAL_TAIL_RE, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();

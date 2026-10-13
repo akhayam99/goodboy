@@ -122,7 +122,10 @@ describe('autoPopulateContext', () => {
     expect(result.updatedSlots).toEqual([]);
   });
 
-  it('persists open questions to the open_questions table with suggestions', async () => {
+  it.each([
+    '<<ctx-question suggestions="a | b" blocking="true">>foo `x`<</ctx-question>>',
+    'Stopping.\n\n<<ctx-question suggestions="a | b" blocking="true" select="one">foo `x`\n<</ctx-question>>',
+  ])('persists open questions to the open_questions table with suggestions: %s', async (text) => {
     const db = makeDb();
     await migrate(db);
     const sessionId = 'task_ap_q1' as SessionId;
@@ -132,7 +135,7 @@ describe('autoPopulateContext', () => {
       db,
       sessionId,
       filesEdited: [],
-      assistantText: '<<ctx-question suggestions="a | b" blocking="true">>foo<</ctx-question>>',
+      assistantText: text,
     });
 
     expect(result.openQuestionsChanged).toBe(true);
@@ -142,7 +145,7 @@ describe('autoPopulateContext', () => {
       [sessionId],
     );
     expect(rows).toHaveLength(1);
-    expect(rows[0]?.text).toBe('foo');
+    expect(rows[0]?.text).toBe('foo `x`');
     expect(rows[0]?.status).toBe('open');
     expect(JSON.parse(rows[0]?.suggested_answers ?? '[]')).toEqual(['a', 'b']);
     expect(rows[0]?.is_blocking).toBe(1);

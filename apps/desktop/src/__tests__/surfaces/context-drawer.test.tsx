@@ -22,7 +22,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../store/storyHarness';
-import { nowIso } from '../../store/slices/project-mounts/mountOperations';
+import { nowIso } from '../../store/slices/project-mounts/nowIso';
 import { DrawerHost } from '../../app/components/DrawerHost';
 import { ContextChip } from '../../features/session/components/SessionOverviewPane/ContextChip';
 import {
@@ -208,7 +208,7 @@ describe('Context drawer mark as read', () => {
 
     const template = ledger()[0]!;
     await new Promise((resolve) => setTimeout(resolve, 5));
-    const arrived = nowIso();
+    const arrived = nowIso({});
     act(() => {
       useAppStore.setState((state) => ({
         sessionDecisions: {

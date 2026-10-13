@@ -1086,7 +1086,10 @@ describe('advanceClusterImplementation', () => {
     expect(loadSessionOpenQuestions).toHaveBeenCalledWith(SID);
   });
 
-  it('waits for the user on a marker question in a subagent', async () => {
+  it.each([
+    '<<ctx-question blocking="true">>Push with force?<</ctx-question>>',
+    'Stopping.\n<<ctx-question blocking="true" suggestions="Force push | Stop" recommended="Stop" select="one">Push with `--force-with-lease`?\n<</ctx-question>>',
+  ])('waits for the user on a marker question in a subagent: %s', async (markerText) => {
     const child = childAgent({ id: 'ask-marker', ordinal: 0 });
     const store = makeStore({
       sessionPhaseRuns: { [SID]: [container({ status: 'running' }), child] },
@@ -1096,7 +1099,7 @@ describe('advanceClusterImplementation', () => {
     await advanceClusterImplementation(store.set, store.get)(
       SID,
       'ask-marker' as AgentId,
-      '<<ctx-question blocking="true">>Push with force?<</ctx-question>>',
+      markerText,
     );
 
     expect(store.sendTurn).not.toHaveBeenCalled();

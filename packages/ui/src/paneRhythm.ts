@@ -13,16 +13,9 @@ export const PANE_RHYTHM = {
     section: 'pb-6',
   },
   prose: 'max-w-[var(--measure)]',
-  proseBlocks: [
-    '[&>div>p]:max-w-[var(--measure)]',
-    '[&>div>ul]:max-w-[var(--measure)]',
-    '[&>div>ol]:max-w-[var(--measure)]',
-    '[&>div>blockquote]:max-w-[var(--measure)]',
-    '[&>div>h1]:max-w-[var(--measure)]',
-    '[&>div>h2]:max-w-[var(--measure)]',
-    '[&>div>h3]:max-w-[var(--measure)]',
-    '[&>div>h4]:max-w-[var(--measure)]',
-  ].join(' '),
+  message: {
+    user: 'max-w-[calc(100%-3rem)]',
+  },
   hero: 'max-w-[640px]',
   detail: {
     band: 'px-6 py-2',

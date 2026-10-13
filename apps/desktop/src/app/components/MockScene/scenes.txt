@@ -548,6 +548,7 @@ trail-artifact-create
 trail-run
 transcript
 transcript-mount
+transcript-width
 turn-override-off
 update-card
 update-card-long-version

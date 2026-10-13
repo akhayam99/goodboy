@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Markdown } from '@goodboy/ui';
+import { Markdown, PANE_RHYTHM } from '@goodboy/ui';
 import type { ChatMessage } from '@goodboy/types';
 import { ChatImageTile } from './ChatImageTile';
 
@@ -10,7 +10,7 @@ type Props = {
 const ChatUserMessageView = ({ message }: Props) => (
   <div
     data-chat-message="user"
-    className="flex min-w-0 max-w-[80%] flex-col gap-2 self-end wrap-anywhere rounded-lg bg-subtle px-3 py-2 text-prose text-foreground"
+    className={`flex min-w-0 ${PANE_RHYTHM.message.user} flex-col gap-2 self-end wrap-anywhere rounded-lg bg-subtle px-3 py-2 text-prose text-foreground`}
   >
     {message.content === '' ? null : <Markdown text={message.content} />}
     {message.attachments.length === 0 ? null : (
