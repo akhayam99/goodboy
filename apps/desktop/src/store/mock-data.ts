@@ -18,6 +18,9 @@ const MOCK_MOUNT_DIFF_STATS = new Map([
   ['~/code/harborline/payments-api-idempotency', { additions: 224, deletions: 58 }],
   ['~/code/harborline/payments-api-backfill', { additions: 47, deletions: 12 }],
   ['~/code/harborline/notify-relay-retry-state', { additions: 41, deletions: 6 }],
+  ['/mock/harborline/payments-api/worktrees/0', { additions: 1882, deletions: 17 }],
+  ['/mock/harborline/ledger-core/worktrees/1', { additions: 214, deletions: 9 }],
+  ['/mock/harborline/notify-relay/worktrees/2', { additions: 61, deletions: 4 }],
   ['/mock/cascadia/payments-api-webhook-credits', { additions: 224, deletions: 58 }],
   ['/mock/cascadia/notify-relay-webhook-credits', { additions: 41, deletions: 6 }],
 ]);

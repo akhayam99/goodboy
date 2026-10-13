@@ -312,8 +312,11 @@ export const openComments = async (ctx: Ctx): Promise<void> => {
   await waitFor(() => expect(list()).toBeDefined(), WAIT);
 };
 
-const sidebarNeedsYou = (count: number): void => {
-  expect(screen.getAllByText(new RegExp(`${count} need you`)).length).toBeGreaterThan(0);
+const sidebarNamesTheBranches = (): void => {
+  const pages = screen.getByRole('list', { name: 'Pages' });
+  expect(within(pages).getByRole('button', { name: /^Branch/ }).textContent).toBe(
+    'Branch2 branches',
+  );
 };
 
 export const COMMENTS_WORDS_ROWS: ReadonlyArray<Row> = [
@@ -324,7 +327,7 @@ export const COMMENTS_WORDS_ROWS: ReadonlyArray<Row> = [
       installComments({ sessionId: ctx.sessionId, seeds: SEEDS });
       await openComments(ctx);
       expect(nodeText(group('Needs you'))).toContain('Needs you 3');
-      sidebarNeedsYou(3);
+      sidebarNamesTheBranches();
 
       await click(within(group('Needs you')).getByRole('button', { name: 'Apply 2 fixes' }));
     },
@@ -335,7 +338,7 @@ export const COMMENTS_WORDS_ROWS: ReadonlyArray<Row> = [
       );
       expect(nodeText(group('Needs you'))).toContain('Needs you 1');
       expect(screen.getAllByRole('button', { name: /^Push 2/ })).toHaveLength(2);
-      sidebarNeedsYou(1);
+      sidebarNamesTheBranches();
     },
   },
   {

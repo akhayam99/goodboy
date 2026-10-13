@@ -152,6 +152,19 @@ const captureThemePng = async ({ theme }) => {
       throw new Error(`could not read the box model of [data-shot] in scene "${scene}"`);
     }
     const clip = { ...contentBox({ quad }), scale: 1 };
+    const neededHeight = Math.ceil(clip.y + clip.height);
+    if (neededHeight > CSS_HEIGHT) {
+      await send({
+        method: 'Emulation.setDeviceMetricsOverride',
+        params: {
+          width: CSS_WIDTH,
+          height: neededHeight,
+          deviceScaleFactor: DEVICE_SCALE_FACTOR,
+          mobile: false,
+        },
+      });
+      await sleep({ ms: 500 });
+    }
     const shot = await send({
       method: 'Page.captureScreenshot',
       params: { format: 'png', clip },

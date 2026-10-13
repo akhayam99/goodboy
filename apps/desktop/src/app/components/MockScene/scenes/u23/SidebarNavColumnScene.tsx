@@ -30,9 +30,16 @@ const ACTIONS: ColumnActions = {
 type Props = {
   readonly config: Partial<SidebarNavConfig>;
   readonly place?: ColumnPlace;
+  readonly isFramed?: boolean;
+  readonly onSeeded?: () => void;
 };
 
-export const SidebarNavColumnScene = ({ config, place = null }: Props) => {
+export const SidebarNavColumnScene = ({
+  config,
+  place = null,
+  isFramed = false,
+  onSeeded,
+}: Props) => {
   const [seed, setSeed] = useState<SidebarNavSeed | null>(null);
   useEffect(() => {
     const next = seedSidebarNav({ ...SIDEBAR_NAV_DEFAULTS, ...config });
@@ -42,10 +49,26 @@ export const SidebarNavColumnScene = ({ config, place = null }: Props) => {
         currentSessionId: null,
       });
     }
+    onSeeded?.();
     setSeed(next);
-  }, [config, place]);
+  }, [config, place, onSeeded]);
   if (seed === null) {
     return null;
+  }
+  if (isFramed) {
+    return (
+      <div data-shot className="h-[600px] w-72 bg-background">
+        <SideColumn
+          scope="workspace"
+          workspaceId={seed.workspaceId}
+          currentSessionId={seed.session.id}
+          place={place}
+          isCollapsed={false}
+          actions={ACTIONS}
+          onToggle={noop}
+        />
+      </div>
+    );
   }
   return (
     <div className="flex h-screen min-h-0 bg-background">

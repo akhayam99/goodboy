@@ -484,6 +484,9 @@ settings-run-defaults-link
 settings-tools
 settings-workspace
 shell
+side-info-branch
+side-info-branches
+side-info-framed
 side-signals-idle
 side-signals-running
 sidebar-branches

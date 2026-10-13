@@ -57,8 +57,8 @@ const waitingNote = (): ResolveQueueItemWithThread => {
   return { item: row.item, thread: { ...row.thread, state: 'needs_answer', stage: 'asking' } };
 };
 
-describe('usePageSummaries counts comments and notes apart', () => {
-  it('counts the comments that need you once, and one waiting note on the Branch page', () => {
+describe('usePageSummaries counts comments and leaves notes out', () => {
+  it('counts the comments that need you once and leaves a waiting note out of the Branch page', () => {
     seedResolveScene({ expandedThreadId: null });
     useAppStore.setState({
       sessionResolveQueueItems: { [SESSION_ID]: [...QUEUE_ITEMS, waitingNote()] },
@@ -67,7 +67,7 @@ describe('usePageSummaries counts comments and notes apart', () => {
       usePageSummaries({ session: aSession({ id: SESSION_ID }) }),
     );
 
-    expect(result.current.branch).toBe('4 need you · 1 note');
+    expect(result.current.branch).toBe('4 need you');
   });
 
   it('says nothing about notes when only comments wait', () => {

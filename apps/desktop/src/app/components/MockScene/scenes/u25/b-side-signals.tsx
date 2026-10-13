@@ -70,25 +70,30 @@ type Props = {
   readonly isBusy: boolean;
 };
 
+type SeedParams = {
+  readonly isBusy: boolean;
+};
+
+export const seedSideSignals = ({ isBusy }: SeedParams): void => {
+  useAppStore.setState({
+    terminalTabs: isBusy
+      ? {
+          [WORKSPACE_KEY]: [tabOf({ id: 'dev', title: 'dev' }), tabOf({ id: 'api', title: 'api' })],
+        }
+      : {},
+    monitorSnapshot: isBusy ? SNAPSHOT : null,
+    monitorLedger: isBusy ? LEDGER : [],
+    monitorPinned: isBusy ? PINNED : [],
+    monitorHidden: [],
+    monitorScanned: {},
+    monitorLearned: {},
+  });
+};
+
 const SideSignalsScene = ({ isBusy }: Props) => {
   const [isReady, setIsReady] = useState(false);
   useEffect(() => {
-    useAppStore.setState({
-      terminalTabs: isBusy
-        ? {
-            [WORKSPACE_KEY]: [
-              tabOf({ id: 'dev', title: 'dev' }),
-              tabOf({ id: 'api', title: 'api' }),
-            ],
-          }
-        : {},
-      monitorSnapshot: isBusy ? SNAPSHOT : null,
-      monitorLedger: isBusy ? LEDGER : [],
-      monitorPinned: isBusy ? PINNED : [],
-      monitorHidden: [],
-      monitorScanned: {},
-      monitorLearned: {},
-    });
+    seedSideSignals({ isBusy });
     setIsReady(true);
   }, [isBusy]);
   if (!isReady) {

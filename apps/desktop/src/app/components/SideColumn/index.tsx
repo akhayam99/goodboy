@@ -3,7 +3,6 @@ import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 import { SessionNavSidebar } from '../../../features/session/components/SessionNavSidebar';
 import type { ShellColumnScope } from '../../shellArrangement';
-import { ChatDoorActivity } from './ChatDoorActivity';
 import { ColumnDoorRow } from './ColumnDoorRow';
 import { ColumnFoot } from './ColumnFoot';
 import { ColumnToggleButton } from './ColumnToggleButton';
@@ -74,7 +73,6 @@ export const SideColumn = ({
                   })}
                   isCurrent={place === door.id}
                   signal={signals[door.id]}
-                  {...(door.id === 'chat' && { trailing: <ChatDoorActivity /> })}
                   {...(door.id === 'chat' && {
                     create: {
                       label: 'New chat',

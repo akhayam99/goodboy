@@ -9,7 +9,6 @@ import { requestNewSession } from '../../../features/session/requestNewSession';
 import type { ShellColumnScope } from '../../shellArrangement';
 import { GoodboyChip } from '../GoodboyChip';
 import { ColumnToggleButton } from './ColumnToggleButton';
-import { ChatDoorActivity } from './ChatDoorActivity';
 import { RailButton } from './RailButton';
 import { RailSessions } from './RailSessions';
 import { ReportBugButton } from './ReportBugButton';
@@ -86,21 +85,19 @@ export const ColumnRail = ({
                     shortcut: door.shortcutId,
                   })}
                   isCurrent={place === door.id}
-                  {...(door.id === 'chat' && {
-                    badge: (
-                      <span className="absolute right-0.5 top-0.5 flex">
-                        <ChatDoorActivity />
-                      </span>
-                    ),
-                  })}
                   {...(signal !== undefined && {
                     badge: (
                       <span
                         aria-hidden
-                        data-door-signal={signal.isWarning ? 'warning' : 'dot'}
+                        data-door-signal={
+                          signal.isWarning ? 'warning' : signal.isUnread ? 'unread' : 'dot'
+                        }
                         className="absolute right-0.5 top-0.5 flex"
                       >
-                        <StatusDot tone={signal.isWarning ? 'warning' : 'info'} size="sm" />
+                        <StatusDot
+                          tone={signal.isWarning ? 'warning' : signal.isUnread ? 'primary' : 'info'}
+                          size="sm"
+                        />
                       </span>
                     ),
                   })}

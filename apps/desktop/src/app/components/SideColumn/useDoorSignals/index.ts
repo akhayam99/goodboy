@@ -4,6 +4,7 @@ import { selectPortRows } from '../../../../store/slices/monitoring/selectPortRo
 import { monitoringSignal } from '../../../../features/monitoring/monitoringSignal';
 import { splitPortRows } from '../../../../features/monitoring/splitPortRows';
 import { workspacePortSet } from '../../../../features/monitoring/workspacePortSet';
+import { useChatActivity } from '../../../../features/workspace-chat/hooks/useChatActivity';
 import { runningTerminalCount } from '../../../../features/terminal/runningTerminalCount';
 import type { ColumnDoorId } from '../columnPlace';
 import { doorSignalOf, type DoorSignal } from '../doorSignal';
@@ -17,6 +18,7 @@ export const useDoorSignals = ({}: Params): Partial<Record<ColumnDoorId, DoorSig
   const scanned = useAppStore((state) => state.monitorScanned);
   const pinned = useAppStore((state) => state.monitorPinned);
   const hidden = useAppStore((state) => state.monitorHidden);
+  const { runningCount, hasUnread } = useChatActivity();
 
   return useMemo(() => {
     const split = splitPortRows({
@@ -26,6 +28,7 @@ export const useDoorSignals = ({}: Params): Partial<Record<ColumnDoorId, DoorSig
       workspacePorts: workspacePortSet({ scanned }),
     });
     return {
+      chat: doorSignalOf({ kind: 'chat', count: runningCount, hasUnread }),
       terminal: doorSignalOf({
         kind: 'terminal',
         count: runningTerminalCount({ tabs: terminalTabs }),
@@ -34,5 +37,5 @@ export const useDoorSignals = ({}: Params): Partial<Record<ColumnDoorId, DoorSig
         ? doorSignalOf({ kind: 'monitoring', ...monitoringSignal({ split }) })
         : undefined,
     };
-  }, [terminalTabs, rows, hasSnapshot, scanned, pinned, hidden]);
+  }, [runningCount, hasUnread, terminalTabs, rows, hasSnapshot, scanned, pinned, hidden]);
 };

@@ -26,6 +26,18 @@ type Props = {
 const iconClassOf = ({ page }: { readonly page: Page }): string =>
   page.tint === null ? 'text-muted-foreground' : lensIconClass({ lens: page.tint });
 
+type ToneParams = {
+  readonly isWarning: boolean;
+  readonly isRunning: boolean;
+};
+
+const valueToneOf = ({ isWarning, isRunning }: ToneParams): string => {
+  if (isWarning) {
+    return 'needs-you';
+  }
+  return isRunning ? 'running' : 'count';
+};
+
 export const SessionPages = ({
   session,
   pages,
@@ -66,7 +78,8 @@ export const SessionPages = ({
         const isRunning = page.id === 'runs' && count !== null && isRunningWord({ word: count });
         const isBranchName = page.id === 'branch' && count !== null && count === branchName;
         const { head, tail } = splitBranchLabel({ branch: isBranchName ? count : '' });
-        const hasDiff = page.id === 'branch' && (diff.additions > 0 || diff.deletions > 0);
+        const hasDiff =
+          page.id === 'branch' && mountCount < 2 && (diff.additions > 0 || diff.deletions > 0);
         return (
           <li key={page.id}>
             <SelectableRow
@@ -83,8 +96,10 @@ export const SessionPages = ({
               <span className="min-w-0 flex-1 truncate">{page.label}</span>
               {count === null ? null : (
                 <span
+                  data-page-value={page.id}
+                  data-tone={valueToneOf({ isWarning, isRunning })}
                   className={cn(
-                    'flex min-w-0 items-center',
+                    'flex min-w-0 items-center justify-end',
                     isBranchName ? 'max-w-[60%] text-code' : 'shrink-0 text-meta tabular-nums',
                     isWarning && 'text-warning',
                     isRunning && tintClasses('info').text,
