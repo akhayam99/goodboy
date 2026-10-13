@@ -478,19 +478,19 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Commits',
-        desc: 'The Commits section of the Branch page shapes the history, and at rest it is one column: the branch as it is, with Rebase on main on its first row. Drag a commit to move it or onto another to fold it in, or reword, squash or drop it from the row. A folded commit chooses Keep title, Keep both or Separate. Once you plan a change, a panel beside the list shows what the branch becomes, After Apply. Apply tries the plan on a temporary copy, and your branch moves only when it comes out clean. It also folds the resolve commits into their originals or into one commit before you push, with a preview and an Undo.',
+        desc: 'The Commits section of the Branch page shapes the history, and at rest it is one column: the branch as it is, with a base row that says how far it is behind and holds Rebase onto latest. Drag a commit to move it or onto another to fold it in, or reword, squash or drop it from the row. Each edit applies to the branch at once, with Undo and Redo in the header. A conflict stops the edit and leaves the branch as it was.',
       },
       {
         term: 'A rebase is one job',
         desc: 'One banner under the Branch header tells the rebase, on every section. When it would touch files you have not committed, Stash and rebase sets them aside and brings them back, and if that conflicts they stay in a stash and the banner says so. A stopped rewrite offers Retry with a note.',
       },
       {
-        term: 'Conflicts ahead of time',
-        desc: 'See which files would conflict while you edit the plan, without touching your checkout.',
+        term: 'Conflicts stop an edit',
+        desc: 'A history edit that would conflict changes nothing. The row names the error and offers Rewrite with an agent.',
       },
       {
         term: 'Push and restore',
-        desc: "Apply and update online replaces the online branch only when nothing newer is there, so it never overwrites a teammate's work. Every rewrite saves a backup, and Backups restores it for 30 days.",
+        desc: "Apply and update online replaces the online branch only when nothing newer is there, so it never overwrites a teammate's work. Every rewrite saves a version, and Previous versions lists them with Reset branch to go back to one.",
       },
       {
         term: 'After a merge',
@@ -692,7 +692,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Terminal',
-        desc: 'Control and the backtick key open Terminal, with every terminal of the workspace and its sessions in one list. A new terminal opens in the workspace folder, chips open one in a worktree or the main checkout, and the shells and their output are still there after a reload. ⌘T adds a terminal while one has focus.',
+        desc: 'Control and the backtick key open Terminal, with every terminal of the workspace and its sessions in one list. A new terminal opens in the workspace folder, chips open one in a worktree or the main checkout, and the shells and their output are still there after a reload. ⌘T adds a terminal while one has focus. From a session, a terminal opens in a drawer on the right and stays in the list.',
       },
       {
         term: 'Search',

@@ -108,7 +108,7 @@ Follow a run from the top: the status with **Pause** and **Stop run**, the steps
 
 ### Hints to the orchestrator
 
-Steer a run while it goes with a markdown hint, images included. **Queue** keeps it for the next decision, and **Read now** stops the step in flight, keeps what it wrote and decides again.
+Steer a run while it goes with a markdown hint, images included. **Queue** keeps it for the next decision; on a finished run, **Read 2 queued** reads them all in one new turn. **Read now** stops the step in flight, keeps what it wrote and decides again.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-hints-dark.webp">

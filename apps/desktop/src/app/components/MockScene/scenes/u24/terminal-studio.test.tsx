@@ -316,20 +316,4 @@ describe('the terminal studio scenes', () => {
     expect(tabs).toHaveLength(1);
     expect(tabs[0]?.cwd).toBe('/mock/harborline');
   });
-
-  it('renders the same rows inside the session page frame', async () => {
-    renderScene('terminal-studio-session');
-    await settle();
-
-    expect(screen.getByRole('heading', { name: 'Terminal' })).toBeDefined();
-    expect(screen.getAllByRole('button', { name: 'New terminal' })).toHaveLength(1);
-    expect(
-      within(groupNamed('Round settlement totals to minor units')).getByRole('button', {
-        name: 'payments-api',
-      }),
-    ).toBeDefined();
-    expect(screen.getByTestId('terminal-panel').getAttribute('data-terminal')).toBe(
-      'mock-u24-session-ledger::t1',
-    );
-  });
 });

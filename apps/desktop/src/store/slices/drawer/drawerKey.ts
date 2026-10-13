@@ -24,12 +24,16 @@ export const drawerKey = (content: DrawerContent): string => {
       return `transcript:${content.payload.agentId}`;
     case 'fix-comments':
       return `fix-comments:${content.payload.mountId ?? ''}`;
+    case 'terminal':
+      return `terminal:${content.payload.terminalId}`;
+    case 'history-versions':
+      return `history-versions:${content.payload.mountId}`;
     case 'file-diff':
       return `file-diff:${
         content.payload.source.kind === 'commit'
           ? `${content.payload.source.repo}@${content.payload.source.sha}`
           : content.payload.source.worktreePath
-      }:${content.payload.path ?? ''}`;
+      }:${content.payload.path ?? ''}${content.payload.whole === undefined ? '' : ':whole'}`;
     default: {
       const exhaustive: never = content;
       return String(exhaustive);

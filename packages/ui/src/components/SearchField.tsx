@@ -4,7 +4,7 @@ import { Search, X } from 'lucide-react';
 import { cn } from '../cn';
 import { ICON_SIZE } from '../iconSize';
 import { IconButton } from './IconButton';
-import { FIELD_SIZE_CLASSES, type FieldSize } from './Input';
+import type { FieldSize } from './Input';
 
 export type SearchFieldProps = Omit<
   ComponentProps<'input'>,
@@ -18,6 +18,11 @@ export type SearchFieldProps = Omit<
   readonly hint?: ReactNode;
   readonly inputRef?: Ref<HTMLInputElement>;
 };
+
+const FIELD_HEIGHT_CLASSES = {
+  sm: 'h-7',
+  md: 'h-8',
+} as const satisfies Record<FieldSize, string>;
 
 export const SearchField = ({
   ariaLabel,
@@ -50,12 +55,16 @@ export const SearchField = ({
   };
 
   return (
-    <div data-size={size} className={cn('relative flex w-full items-center', className)}>
-      <Search
-        size={ICON_SIZE.row}
-        aria-hidden
-        className="pointer-events-none absolute left-2 shrink-0 text-muted-foreground"
-      />
+    <div
+      data-size={size}
+      className={cn(
+        'flex w-full items-center gap-2 rounded-md border border-border bg-background px-2 focus-within:ring-2 focus-within:ring-focus-ring',
+        FIELD_HEIGHT_CLASSES[size],
+        hasValue && 'pr-1',
+        className,
+      )}
+    >
+      <Search size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
       <input
         {...rest}
         ref={attach}
@@ -63,20 +72,11 @@ export const SearchField = ({
         aria-label={ariaLabel}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className={cn(
-          'w-full appearance-none rounded-md border border-border bg-background text-label [&::-webkit-search-cancel-button]:hidden text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:bg-fill disabled:text-disabled-foreground',
-          FIELD_SIZE_CLASSES[size],
-          'pl-7',
-          hasValue || hint != null ? 'pr-7' : '',
-        )}
+        className="h-full min-w-0 flex-1 appearance-none border-0 bg-transparent p-0 text-label text-foreground outline-none ring-0 placeholder:text-muted-foreground focus-visible:outline-none disabled:text-disabled-foreground [&::-webkit-search-cancel-button]:hidden"
       />
-      {hasValue ? (
-        <span className="absolute right-0.5 flex items-center">
-          <IconButton size="xs" icon={X} label={clearLabel} onClick={clear} />
-        </span>
-      ) : null}
+      {hasValue ? <IconButton size="xs" icon={X} label={clearLabel} onClick={clear} /> : null}
       {!hasValue && hint != null ? (
-        <span className="pointer-events-none absolute right-1 flex items-center">{hint}</span>
+        <span className="pointer-events-none flex shrink-0 items-center">{hint}</span>
       ) : null}
     </div>
   );

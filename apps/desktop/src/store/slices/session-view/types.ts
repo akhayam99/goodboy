@@ -33,7 +33,6 @@ export type LensKind =
   | 'review'
   | 'plans'
   | 'scripts'
-  | 'terminal'
   | 'context'
   | 'goal'
   | 'decisions'
@@ -55,7 +54,6 @@ export const LENS_KINDS: ReadonlySet<LensKind> = new Set<LensKind>([
   'review',
   'plans',
   'scripts',
-  'terminal',
   'context',
   'goal',
   'decisions',
@@ -210,7 +208,6 @@ type SessionViewSliceState = {
   readonly sessionPagesFolded: Readonly<Record<SessionId, boolean>>;
   readonly dismissedCheckProposals: Readonly<Record<SessionId, ReadonlyArray<AgentId>>>;
   readonly branchThreadId: Readonly<Record<SessionId, string | null>>;
-  readonly terminalMountPath: Readonly<Record<SessionId, string | null>>;
   readonly sessionCreations: Readonly<Record<SessionId, ReadonlyArray<SessionCreation>>>;
   readonly sessionGroupExpanded: Readonly<Record<string, boolean>>;
   readonly exploreExpanded: Readonly<

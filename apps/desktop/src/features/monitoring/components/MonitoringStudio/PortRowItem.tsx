@@ -10,11 +10,12 @@ type Props = {
   readonly name: string;
   readonly nameSlot?: ReactNode;
   readonly actions?: ReactNode;
+  readonly isNested?: boolean;
 };
 
-export const PortRowItem = ({ row, process, now, name, nameSlot, actions }: Props) =>
+export const PortRowItem = ({ row, process, now, name, nameSlot, actions, isNested }: Props) =>
   row.state === 'free' ? (
-    <FreePortRow row={row} name={name} nameSlot={nameSlot} actions={actions} />
+    <FreePortRow row={row} name={name} nameSlot={nameSlot} actions={actions} isNested={isNested} />
   ) : (
     <PortRowView
       row={row}
@@ -23,5 +24,6 @@ export const PortRowItem = ({ row, process, now, name, nameSlot, actions }: Prop
       name={name}
       nameSlot={nameSlot}
       actions={actions}
+      isNested={isNested}
     />
   );

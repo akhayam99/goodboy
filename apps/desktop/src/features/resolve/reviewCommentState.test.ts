@@ -18,16 +18,16 @@ describe('review comment words', () => {
     );
     expect(
       reviewCommentWord({ state: reviewCommentStateOf({ row: proposed }), row: proposed }),
-    ).toBe('To review');
+    ).toBe('Fix ready');
   });
 
   it('keeps To review for an edited reply and says Question for an asking thread', () => {
     const proposed = queueRowAt({ stage: 'proposed' });
     expect(reviewCommentStateOf({ row: proposed, isEdited: true })).toBe('edited');
-    expect(reviewCommentWord({ state: 'edited', row: proposed })).toBe('To review');
+    expect(reviewCommentWord({ state: 'edited', row: proposed })).toBe('Fix ready');
     const asking = queueRowAt({ stage: 'asking' });
     expect(reviewCommentWord({ state: reviewCommentStateOf({ row: asking }), row: asking })).toBe(
-      'Question',
+      'Question for you',
     );
   });
 
@@ -35,7 +35,7 @@ describe('review comment words', () => {
     const push = queueRowAt({ stage: 'failed', failedStep: 'push' });
     const run = queueRowAt({ stage: 'failed', failedStep: 'run' });
     expect(reviewCommentWord({ state: 'failed', row: push })).toBe('Push failed');
-    expect(reviewCommentWord({ state: 'failed', row: run })).toBe("Couldn't fix");
+    expect(reviewCommentWord({ state: 'failed', row: run })).toBe('Failed');
     expect(reviewCommentToneKeyOf({ state: 'failed', row: push })).toBe('push_failed');
     expect(reviewCommentToneKeyOf({ state: 'failed', row: run })).toBe('failed');
   });

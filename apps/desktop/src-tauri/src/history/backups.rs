@@ -1,5 +1,5 @@
 use super::runner::git_run;
-use super::types::HistoryBackup;
+use super::types::{HistoryBackup, HistoryBackupCommit, HistoryBackupFacts};
 use crate::worktree::{git, sanitize_slug, WorktreeError};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -186,6 +186,83 @@ fn prune_backups_before(cwd: &Path, cutoff: u64) {
             }
         }
     }
+}
+
+fn fork_of(cwd: &Path, base_ref: &str, sha: &str) -> Result<String, WorktreeError> {
+    Ok(git(cwd, &["merge-base", sha, base_ref])?.trim().to_string())
+}
+
+fn own_commits(
+    cwd: &Path,
+    base_ref: &str,
+    sha: &str,
+) -> Result<Vec<HistoryBackupCommit>, WorktreeError> {
+    let fork = fork_of(cwd, base_ref, sha)?;
+    let range = format!("{fork}..{sha}");
+    let raw = git(cwd, &["log", "--reverse", "--format=%H%x1f%s", &range])?;
+    Ok(raw
+        .lines()
+        .filter_map(|line| {
+            let (sha, subject) = line.split_once('\u{1f}')?;
+            Some(HistoryBackupCommit {
+                sha: sha.to_string(),
+                subject: subject.to_string(),
+            })
+        })
+        .collect())
+}
+
+pub(crate) fn backup_facts(
+    cwd: &Path,
+    base_ref: &str,
+    backup_sha: &str,
+    next_sha: &str,
+    head: &str,
+) -> Result<HistoryBackupFacts, WorktreeError> {
+    let numstat = git(cwd, &["diff", "--numstat", backup_sha, head])?;
+    let mut files_changed = 0u32;
+    let mut additions = 0u32;
+    let mut deletions = 0u32;
+    for line in numstat.lines().filter(|line| !line.trim().is_empty()) {
+        let mut parts = line.splitn(3, '\t');
+        files_changed += 1;
+        additions += parts
+            .next()
+            .and_then(|value| value.parse::<u32>().ok())
+            .unwrap_or_default();
+        deletions += parts
+            .next()
+            .and_then(|value| value.parse::<u32>().ok())
+            .unwrap_or_default();
+    }
+    let fork = fork_of(cwd, base_ref, backup_sha)?;
+    Ok(HistoryBackupFacts {
+        commits: own_commits(cwd, base_ref, backup_sha)?,
+        is_same_fork_as_next: !fork.is_empty() && fork == fork_of(cwd, base_ref, next_sha)?,
+        next_commit_count: own_commits(cwd, base_ref, next_sha)?.len() as u32,
+        files_changed_vs_now: files_changed,
+        additions_vs_now: additions,
+        deletions_vs_now: deletions,
+    })
+}
+
+#[tauri::command]
+pub async fn history_backup_facts(
+    worktree_path: String,
+    base_ref: String,
+    backup_sha: String,
+    next_sha: String,
+    head: String,
+) -> Result<HistoryBackupFacts, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let cwd = PathBuf::from(&worktree_path);
+        if !cwd.exists() {
+            return Err(WorktreeError::RepoNotFound(worktree_path));
+        }
+        backup_facts(&cwd, &base_ref, &backup_sha, &next_sha, &head)
+    })
+    .await
+    .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
 #[tauri::command]

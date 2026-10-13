@@ -89,7 +89,7 @@ export const RewordEditor = ({
       <div className="flex items-center gap-1">
         <GhostActionButton
           icon={Check}
-          label="Save to the plan"
+          label="Save message"
           disabled={!canSave}
           onClick={() => onSave(message)}
         />

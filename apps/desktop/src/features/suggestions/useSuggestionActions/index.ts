@@ -8,6 +8,8 @@ import type { Agent, Session, SessionProjectMount } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, agentPlace, sessionPlace } from '../../../store';
 import { branchPlace } from '../../../store/slices/navigation/place';
 import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
+import { dispatchAfterNavigation } from '../../actions/dispatchAfterNavigation';
+import { HISTORY_FOCUS_BASE_EVENT, diffEventName } from '../../actions/kinds/diff';
 import { distanceBehind } from '../../../shared/lib/gitStatus';
 import { usePlanRunToast } from '../../plans/usePlanRun';
 import type { AgentKind, AgentKindRouting } from '../../session/agent-kind';
@@ -176,8 +178,10 @@ export const useSuggestionActions = ({
     });
   };
 
-  const startRebase = ({ target }: StartRebaseParams): Promise<void> =>
-    rebase.run({ mountId: target.mountId, behind: target.behind });
+  const startRebase = async ({ target }: StartRebaseParams): Promise<void> => {
+    openRewriteHistory(sessionId, target.worktreePath);
+    dispatchAfterNavigation({ name: diffEventName({ name: HISTORY_FOCUS_BASE_EVENT, sessionId }) });
+  };
 
   const startWorkflowStep = ({
     suggestion,
@@ -231,7 +235,7 @@ export const useSuggestionActions = ({
       const firstTarget = suggestion.payload.targets[0] ?? null;
       return {
         primary: {
-          label: rebase.isRunning ? 'Rebasing' : 'Rebase',
+          label: rebase.isRunning ? 'Rebasing' : 'Open rebase',
           isDisabled: firstTarget == null || rebase.isRunning,
           isBusy: rebase.isRunning,
           failureTitle: REBASE_FAILURE_TITLE,

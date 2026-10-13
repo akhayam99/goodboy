@@ -29,6 +29,7 @@ type Params = {
 };
 
 const NO_RUN = 'This fix run is no longer available. Start the fix again';
+const STILL_RUNNING = 'The fix run is still working. Continue once it stops';
 const NO_COMMENT = 'This comment is no longer on the pull request';
 
 type Group = {
@@ -67,6 +68,16 @@ const groupsOf = ({
   return [...groups.values()];
 };
 
+type RunningParams = {
+  readonly get: GetFn;
+  readonly agentId: AgentId;
+};
+
+const isAgentWorking = ({ get, agentId }: RunningParams): boolean => {
+  const turnKind = get().agentTurnState[agentId]?.kind;
+  return turnKind === 'running' || turnKind === 'starting';
+};
+
 export const continueResolveLaunch = async ({
   get,
   sessionId,
@@ -79,7 +90,16 @@ export const continueResolveLaunch = async ({
   const rows = launchRowsOf({ state, sessionId });
   const pr = state.sessionGithub[sessionId]?.pr ?? null;
   const base = sessionResolveStyle({ state, sessionId });
-  for (const group of groupsOf({ entries, rows, attempts })) {
+  const groups = groupsOf({ entries, rows, attempts });
+  for (const group of groups) {
+    if (group.entries.every(({ row }) => row.commentThread === null)) {
+      throw new Error(NO_COMMENT);
+    }
+    if (isAgentWorking({ get, agentId: group.attempt.agentId })) {
+      throw new Error(STILL_RUNNING);
+    }
+  }
+  for (const group of groups) {
     const threads = group.entries.flatMap(({ row }) =>
       row.commentThread === null ? [] : [row.commentThread],
     );
@@ -97,6 +117,9 @@ export const continueResolveLaunch = async ({
       voice: base.voice,
       styleNote: base.styleNote,
     };
+    if (isAgentWorking({ get, agentId: group.attempt.agentId })) {
+      throw new Error(STILL_RUNNING);
+    }
     const priorContext: ReadonlyArray<PriorContext> = group.entries.map(({ entry, row }) => ({
       threadId: entry.threadId,
       reply: row.thread.replyDraft,

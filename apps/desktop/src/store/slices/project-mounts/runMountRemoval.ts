@@ -24,6 +24,7 @@ type Params = {
   readonly finish: MountRemovalFinish;
   readonly expectedRevision: number;
   readonly finishRow: (cleanup: MountCleanupResult) => Promise<boolean>;
+  readonly isStillRemovable?: () => Promise<boolean>;
 };
 
 const errorCodeOf = ({ error }: { readonly error: unknown }): string => {
@@ -42,11 +43,22 @@ export const runMountRemoval = async ({
   finish,
   expectedRevision,
   finishRow,
+  isStillRemovable,
 }: Params): Promise<MountCleanupResult> =>
   withRepositoryAndMountLock({
     repoRoot: target.repoRoot,
     mountKey: `${target.sessionId}:${target.mountId}`,
     run: async () => {
+      if (isStillRemovable !== undefined && !(await isStillRemovable())) {
+        return {
+          decision: {
+            kind: 'kept',
+            path: target.worktreePath,
+            reason: 'the mount changed while waiting to remove it',
+          },
+          diskState: target.diskState,
+        };
+      }
       const operation = await beginMountOperation({
         sessionId: target.sessionId,
         requestId: crypto.randomUUID(),

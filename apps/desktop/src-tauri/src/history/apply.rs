@@ -423,7 +423,7 @@ pub async fn history_restore(
                 &args.branch,
                 &args.expected_head,
                 &target,
-                true,
+                !args.is_live,
                 args.should_stash,
             )
         })

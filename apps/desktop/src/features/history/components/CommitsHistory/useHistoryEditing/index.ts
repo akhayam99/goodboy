@@ -23,7 +23,6 @@ export type HistoryChange = (params: ChangeParams) => void;
 
 type ChangeParams = {
   readonly items: ReadonlyArray<HistoryStep>;
-  readonly onto?: string | null;
   readonly arrive?: { readonly sha: string; readonly action: HistoryAction } | null;
   readonly message: string;
 };
@@ -32,7 +31,6 @@ type Params = {
   readonly sessionId: SessionId;
   readonly mountId: MountId | null;
   readonly items: ReadonlyArray<HistoryStep>;
-  readonly onto: string | null;
   readonly original: ReadonlyArray<string>;
   readonly titleOf: (sha: string) => string;
   readonly clearHover: () => void;
@@ -42,32 +40,41 @@ export const useHistoryEditing = ({
   sessionId,
   mountId,
   items,
-  onto,
   original,
   titleOf,
   clearHover,
 }: Params) => {
-  const editHistoryDraft = useAppStore((s) => s.editHistoryDraft);
+  const changeLiveHistory = useAppStore((s) => s.changeLiveHistory);
   const [arrival, setArrival] = useState<HistoryArrival | null>(null);
   const [live, setLive] = useState('');
 
-  const change: HistoryChange = ({ items: next, onto: nextOnto, arrive = null, message }) => {
+  const change: HistoryChange = ({ items: next, arrive = null, message }) => {
     if (mountId === null) {
       return;
     }
-    const isSameOnto = nextOnto === undefined || nextOnto === onto;
-    if (next === items && isSameOnto) {
+    if (next === items) {
       return;
     }
-    if (arrive !== null) {
-      setArrival({ ...arrive, nonce: Date.now() });
-    }
-    setLive(message);
-    void editHistoryDraft({
+    const token = useAppStore.getState().historyLiveSessions[mountId]?.token;
+    setLive('Editing commit');
+    void changeLiveHistory({
       sessionId,
       mountId,
       items: next,
-      ...(nextOnto === undefined ? {} : { onto: nextOnto }),
+      ...(arrive === null ? {} : { sha: arrive.sha }),
+    }).then(() => {
+      const completed = useAppStore.getState().historyLiveSessions[mountId];
+      if (completed?.token !== token || completed?.isBusy === true || completed === undefined) {
+        return;
+      }
+      if (completed.error !== null) {
+        setLive(completed.error);
+        return;
+      }
+      if (arrive !== null) {
+        setArrival({ ...arrive, nonce: Date.now() });
+      }
+      setLive(message);
     });
   };
   const foldDown = ({ sha, mode }: { readonly sha: string; readonly mode: CombineMode }) => {
@@ -116,10 +123,6 @@ export const useHistoryEditing = ({
     change({ items: resetStep({ items, sha }), message: `Separated ${titleOf(sha)}` });
   const undoEdit = (edit: HistoryEdit) => {
     clearHover();
-    if (edit.kind === 'rebase') {
-      change({ items, onto: null, message: 'Undone' });
-      return;
-    }
     change({ items: invertHistoryEdit({ items, original, edit }), message: 'Undone' });
   };
 

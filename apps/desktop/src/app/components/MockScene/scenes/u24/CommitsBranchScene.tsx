@@ -15,6 +15,7 @@ import { REBASE_JOB_MOUNT_ID } from './rebaseJobSeed';
 type Props = {
   readonly isPlanned: boolean;
   readonly stageWidth?: number;
+  readonly answers?: Readonly<Record<string, (payload: unknown) => unknown>>;
 };
 
 const HANDLERS = handlersFor(BRANCH_FILES_PATCH);
@@ -88,7 +89,7 @@ const STATUS: WorktreeStatus = {
 
 const BaseScene = U21_BRANCH_SCENES['branch-description-open'];
 
-export const CommitsBranchScene = ({ isPlanned, stageWidth }: Props) => {
+export const CommitsBranchScene = ({ isPlanned, stageWidth, answers }: Props) => {
   useEffect(() => {
     mockSceneIpc((command, payload) => {
       if (command === 'gh_run') {
@@ -109,6 +110,9 @@ export const CommitsBranchScene = ({ isPlanned, stageWidth }: Props) => {
       if (command === 'worktree_status') {
         return STATUS;
       }
+      if (answers !== undefined && command in answers) {
+        return answers[command]?.(payload);
+      }
       return HANDLERS[command]?.(undefined) ?? null;
     });
     useAppStore.setState((current) => ({
@@ -117,7 +121,7 @@ export const CommitsBranchScene = ({ isPlanned, stageWidth }: Props) => {
       historyRuns: {},
       loadHistoryDraft: async () => undefined,
     }));
-  }, [isPlanned]);
+  }, [answers, isPlanned]);
   if (stageWidth === undefined) {
     return <BaseScene />;
   }

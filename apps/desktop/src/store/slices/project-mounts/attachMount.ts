@@ -52,9 +52,21 @@ const canReusePath = async ({ view, path, isRepo }: ReuseParams): Promise<boolea
 };
 
 export const attachMount = (set: SetFn, get: GetFn) => {
-  return async ({ sessionId, mountId, requestId }: AttachMountInput): Promise<SessionMountView> => {
+  return async ({
+    sessionId,
+    mountId,
+    requestId,
+    expectedRevision,
+  }: AttachMountInput): Promise<SessionMountView> => {
     const views = await loadMountViews({ get, sessionId });
     const view = requireMountView({ views, mountId });
+    if (expectedRevision !== undefined && expectedRevision !== view.revision) {
+      throw mountError({
+        code: 'revision-conflict',
+        message: 'the mount changed before it could be attached',
+        mountId,
+      });
+    }
     const { session, project } = requireMountContext({
       get,
       sessionId,

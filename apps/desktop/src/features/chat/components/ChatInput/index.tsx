@@ -280,7 +280,7 @@ export const ChatInput = ({
         </div>
         {showsDeliveryChoice ? (
           <p className="px-1 text-meta text-faint-foreground">
-            Queue waits for this turn to end. Send now stops the turn, keeps what it wrote, and
+            Queue waits for this turn to end. Read now stops the turn, keeps what it wrote, and
             continues with your message.
           </p>
         ) : null}

@@ -1,10 +1,9 @@
-import { ChevronRight, MessageSquare } from 'lucide-react';
-import { Button, Checkbox, Tooltip, cn, tintClasses } from '@goodboy/ui';
+import { ChevronRight, ExternalLink, FileText, MessageSquare } from 'lucide-react';
+import { Checkbox, CopyButton, IconButton, Tooltip, cn, tintClasses } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { STATUS_LETTER, STATUS_TONE, STATUS_WORD, splitPath } from '../../lib/fileStatus';
 import type { ViewedState } from '../../lib/reviewedFiles';
-import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import type { DiffFileActionTarget } from '../../../actions/types';
 
@@ -17,7 +16,6 @@ type Props = {
   readonly onToggleViewed: (() => void) | null;
   readonly onOpenInEditor: (() => void) | null;
   readonly onShowWhole: (() => void) | null;
-  readonly onOpenInDrawer: (() => void) | null;
   readonly onCommentOnFile: (() => void) | null;
 };
 
@@ -34,7 +32,6 @@ export const FileHeader = ({
   onToggleViewed,
   onOpenInEditor,
   onShowWhole,
-  onOpenInDrawer,
   onCommentOnFile,
 }: Props) => {
   const { dir, name } = splitPath(file.path);
@@ -43,7 +40,7 @@ export const FileHeader = ({
   const isStale = viewed === 'stale';
   const target: DiffFileActionTarget = {
     kind: 'diffFile',
-    facts: { path: file.path, onOpenInEditor, onShowWhole, onOpenInDrawer },
+    facts: { path: file.path, onOpenInEditor, onShowWhole },
   };
   const menu = useObjectMenuTrigger({ target, anchorKey: `diff-file:${file.path}` });
   const pathTip =
@@ -126,27 +123,27 @@ export const FileHeader = ({
         </Tooltip>
       )}
       {onCommentOnFile === null ? null : (
-        <Button
-          size="sm"
-          variant="quiet"
+        <IconButton
+          icon={MessageSquare}
+          label="Comment"
+          tooltip={commentCount > 0 ? `Comment, ${commentCount} open` : 'Comment'}
           data-file-comment-trigger=""
           onClick={onCommentOnFile}
-          className="shrink-0"
-        >
-          <MessageSquare size={ICON_SIZE.row} aria-hidden />
-          Comment
-          {commentCount > 0 ? (
-            <span className="tabular-nums text-faint-foreground">{commentCount}</span>
-          ) : null}
-        </Button>
+        />
       )}
-      <ObjectOverflowMenu
-        target={target}
-        label={`More actions for ${file.path}`}
-        anchorKey={`diff-file:${file.path}`}
-        size="control"
-        hideWhenEmpty
+      {onOpenInEditor === null ? null : (
+        <IconButton icon={ExternalLink} label="Open in editor" onClick={onOpenInEditor} />
+      )}
+      <CopyButton
+        presentation="icon"
+        label="Copy path"
+        size={ICON_SIZE.control}
+        className="size-7 justify-center"
+        value={file.path}
       />
+      {onShowWhole === null ? null : (
+        <IconButton icon={FileText} label="Show whole file" onClick={onShowWhole} />
+      )}
     </div>
   );
 };

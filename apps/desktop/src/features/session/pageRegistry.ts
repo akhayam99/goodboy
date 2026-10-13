@@ -138,13 +138,6 @@ const REST: ReadonlyArray<Page> = [
     group: 'tools',
     count: null,
   }),
-  lensPage({
-    id: 'terminal',
-    lens: 'terminal',
-    shortcut: 'lens.terminal',
-    group: 'tools',
-    count: null,
-  }),
   lensPage({ id: 'linear', lens: 'linear', shortcut: 'lens.linear', group: 'linked', count: null }),
   lensPage({
     id: 'gitlab',

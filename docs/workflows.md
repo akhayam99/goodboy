@@ -327,8 +327,8 @@ A hint is a note you send the orchestrator while the run is going. Every hint
 stays with the orchestrator for the rest of the run. It is marked as new, or
 with the step where the orchestrator first read it.
 
-- **Queue** waits until the next decision
-- **Read now** restarts a decision that is in progress. If a step is running, it stops that step, keeps what it wrote, and decides again
+- **Queue** is the primary button and waits until the next decision. You may queue several messages, edit or remove them until they are read, and they survive a reload. On a finished run, nothing starts by itself: the orchestrator card shows **Read 2 queued** (**Read queued message** for one), and one click starts one new turn with all of them in order. On a run you stopped the same button reads **Resume and read 2 queued**
+- **Read now** is the quiet button, and every composer with both (run and agent) uses the same pair, Read now then Queue. It restarts a decision that is in progress. If a step is running, it stops that step, keeps what it wrote, and decides again
 - The help sits in each button's tooltip, not in a sentence under the field. Read now says what it does in the state the run is in
 - The field is a message box: Enter queues, Shift+Enter adds a line, ⌘Enter reads now. **Preview** shows it as markdown, and the hint log reads it as markdown too
 - Paste, drop or attach images. They are saved as files of the run, so the next agent gets them, and the hint keeps their ids

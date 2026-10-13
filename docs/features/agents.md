@@ -27,7 +27,7 @@ Give each agent the job it is good at. Nine roles come with the app, **Scout**, 
 
 ### Agent header
 
-Read who an agent is before you read its transcript. The title, the **Brief** and **Transcript** tabs and the actions share one row, with role, status, time and model on a line under it. The agent opens on the **Brief**, and the header offers the next step, such as **Interrupt**, **Close** or **Reopen**.
+Read who an agent is before you read its transcript. The title, the **Brief** and **Transcript** tabs and the actions share one row, with role, status, time and model on a line under it. A new agent with nothing to show yet opens on the **Transcript**, any other on the **Brief**, and the header offers the next step, such as **Interrupt**, **Close** or **Reopen**.
 
 ### What the agent received
 
@@ -57,7 +57,7 @@ When an agent recommends another role, its transcript shows **Agent suggests** w
 
 ### Queue or send now
 
-Keep talking while an agent works. **Enter** queues your message for its next turn, **⌘Enter** interrupts and sends it now, and the queue survives a restart.
+Keep talking while an agent works. **Enter** queues your message for its next turn, **⌘Enter** reads it now, interrupting the turn, and the queue survives a restart.
 
 ### Message and document fields
 

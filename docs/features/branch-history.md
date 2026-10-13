@@ -1,10 +1,10 @@
 # Commits and history
 
-The Commits section of the Branch page lets you clean up a branch before it goes to review. Fold, move, reword and drop commits, see what would conflict before you apply, and keep a backup one click away.
+The Commits section of the Branch page lets you clean up a branch before it goes to review. Fold, move, reword and drop commits live, with Undo and Redo and a backup before every edit.
 
 ### Shape the history
 
-Clean up a branch by hand in the **Commits** section. Drag a commit to move it, drop it onto another to fold it in, or rename or remove it, and a panel shows what the branch becomes before you press **Apply**. Commits not yet on the online copy are marked **Not pushed**.
+Clean up a branch by hand in the **Commits** section. Drag a commit to move it, drop it onto another to fold it in, or rename or remove it; each edit updates the local branch immediately. Commits not yet on the online copy are marked **Not pushed**.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-rewrite-dark.webp">
@@ -13,9 +13,9 @@ Clean up a branch by hand in the **Commits** section. Drag a commit to move it, 
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
-### Safe apply
+### Safe edits
 
-**Apply here only** and **Apply and update online** try the whole plan on a temporary copy first and check the result before your branch moves. A backup is saved before anything changes. If a step stops, it says which one and why, and your branch stays as it was.
+**Undo** and **Redo**, also **⌘Z** and **⌘⇧Z**, restore edits while the Commits page stays open. Each edit checks a temporary copy and saves a backup before the branch moves. An agent writing in the worktree blocks edits, and overlapping uncommitted files require stash consent.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-trial-dark.webp">
@@ -24,9 +24,9 @@ Clean up a branch by hand in the **Commits** section. Drag a commit to move it, 
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
-### Conflict prediction
+### Conflicting edits
 
-While you edit the plan, Goodboy tries it in memory and marks each change that may conflict, naming the file. Your checkout is not touched.
+A conflicting edit names the file and leaves the branch as it was. **Rewrite with an agent** offers help, and **Undo** dismisses the failed edit.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-conflicts-dark.webp">
@@ -48,7 +48,7 @@ When a step stops on a conflict, the notice names the step and the file, and you
 
 ### Push with lease and restore
 
-**Apply and update online** replaces the online branch only when nothing newer is there, so a teammate's push is never overwritten. The result says how many commits became how many. **Restore it** takes the old history back, and the backup stays for 30 days.
+**Force push** updates the online branch separately after a local edit. While the branch is behind main it sits in **Branch actions**. It checks the online copy with a lease so a teammate's newer push is never overwritten. Undo and Redo remain local, and leaving the page clears their stack while keeping the backup refs.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-result-dark.webp">
@@ -59,7 +59,7 @@ When a step stops on a conflict, the notice names the step and the file, and you
 
 ### Backups
 
-Choose **Backups** in the `⋯` menu to see the older histories of the branch. **Restore previous history** puts one back and keeps the history you leave as a new backup.
+Under the graph, **Show previous versions** opens the older histories of the branch with when and why each was saved. **Reset branch to this version** puts one back, keeps the history you leave and offers Undo.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-backups-dark.webp">
@@ -70,7 +70,7 @@ Choose **Backups** in the `⋯` menu to see the older histories of the branch. *
 
 ### Suggest a message
 
-Get a commit message drafted for a squash or a reword. Scribe writes it in place, and you can edit it before you apply.
+Get a commit message drafted for a reword. Scribe writes it in place, and saving the message updates the local branch.
 
 ### Bring them into the plan
 
@@ -78,7 +78,7 @@ If someone pushed after you applied, Goodboy lists their new commits and offers 
 
 ### Rebase on main
 
-**Rebase on main** moves the branch onto the latest main and calls an agent only on a conflict. If your uncommitted files are in the way, Goodboy asks once to set them aside and brings them back after the move. A banner under the Branch header follows the rebase, says in one line why a push failed, and **Force push** replaces the online copy only if nobody pushed since you last looked.
+**Rebase on main** moves the branch onto the latest main and calls an agent only on a conflict. If your uncommitted files are in the way, Goodboy asks once to set them aside and brings them back after the move. A banner under the Branch header follows the rebase, says in one line why a push failed with **Fix with agent** or **Open terminal here** beside it, and **Force push** replaces the online copy only if nobody pushed since you last looked. A failed Push or Force push in the Branch header offers the same two actions.
 
 ### After a pull request merges
 

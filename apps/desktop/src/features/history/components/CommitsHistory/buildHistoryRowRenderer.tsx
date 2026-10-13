@@ -26,6 +26,7 @@ type Params = {
   readonly isInteractive: boolean;
   readonly applied: HistoryApplied | null;
   readonly conflictStep: HistoryStepPrediction | null;
+  readonly workingSha: string | null;
   readonly headSha: string | null;
   readonly model: HistoryGraphModel;
   readonly prNumber: number | null;
@@ -58,6 +59,7 @@ export const buildHistoryRowRenderer =
     isInteractive,
     applied,
     conflictStep,
+    workingSha,
     headSha,
     model,
     prNumber,
@@ -150,6 +152,7 @@ export const buildHistoryRowRenderer =
         arrival={arrival !== null && arrival.sha === commit.sha ? arrival : null}
         isInteractive={isInteractive}
         isEditing={isEditing}
+        isBusy={workingSha === commit.sha}
         isExpanded={expanded.has(commit.sha)}
         nowMs={nowMs}
         target={target}

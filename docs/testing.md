@@ -26,6 +26,8 @@ This file says what to test and how. Where test files go: [file-system.md](file-
 - `__tests__/regressions/class-assertions.test.ts` counts `toHaveClass`, `classList.contains` and `className` or `class` attribute checks in `apps/desktop` test files, per file, against `class-assertions.baseline.json`. A class pins the look, not the behavior, and the class contract belongs to `packages/ui`. A count may fall and never grow, and a new file starts at zero. Regenerate it the same way with `src/__tests__/regressions/class-assertions.test.ts` when a change removes assertions.
 - `__tests__/regressions/rust-spawn-sites.test.ts` counts `.spawn()` and `.kill()` in the Rust sources under `apps/desktop/src-tauri/src`, outside `proc/`, per file, against `rust-spawn-sites.baseline.json`. Comment lines and the trailing test module of a file are not counted. A count may fall and never grow, and a new file starts at zero. A process is started and stopped through `proc/` (`docs/architecture.md`, Processes Goodboy starts). Regenerate the baseline when a change removes call sites: `GOODBOY_UPDATE_BASELINE=1 pnpm --filter @goodboy/desktop exec vitest run src/__tests__/regressions/rust-spawn-sites.test.ts`.
 
+Rust history tests reserve copies in their isolated temporary test root, so a real-Git test never touches the application's live reservations.
+
 ## Rules for every change
 
 These hold for each change that touches a test, and they come from tests that stayed green while the app was wrong.

@@ -41,6 +41,7 @@ import { useKeepFullScreenOnEscape } from './shared/hooks/useKeepFullScreenOnEsc
 import { useTitlebarInset } from './shared/hooks/useTitlebarInset';
 import { useUnhandledRejectionNotice } from './shared/hooks/useUnhandledRejectionNotice';
 import { useArtifactMirror } from './features/artifacts/hooks/useArtifactMirror';
+import { useMonitoringSignalRefresh } from './features/monitoring/hooks/useMonitoringSignalRefresh';
 import {
   useAppStore,
   useCurrentSession,
@@ -184,6 +185,7 @@ export const App = () => {
   useWindowLayout();
   useWindowShortcuts();
   useArtifactMirror({ isReady: hydrated });
+  useMonitoringSignalRefresh({ isReady: hydrated });
   useTitlebarInset();
   useKeepFullScreenOnEscape();
   useUnhandledRejectionNotice();

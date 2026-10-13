@@ -102,7 +102,7 @@ vi.mock('../../../../shared/components/GenericTerminalPanel/LazyGenericTerminalP
   return { LazyGenericTerminalPanel: panel.GenericTerminalPanel };
 });
 
-import { SessionTerminalLens } from './SessionTerminalLens';
+import { TerminalStudio } from './index';
 import { terminalOutputBus } from '../../outputBus';
 import { brandedId } from '../../../../features/history/testing/brandedId';
 
@@ -182,17 +182,24 @@ const flush = async (): Promise<void> => {
 
 let store: StoryStore;
 
-const mountDock = (activeId: TerminalTabId) => {
-  store.setState({ activeTerminalTab: { [SESSION_ID]: activeId } });
-  return render(
-    <SessionTerminalLens
-      workspaceId={WORKSPACE_ID}
-      sessionId={SESSION_ID}
-      isActive
-      sessionCwd="/repo"
-    />,
-  );
+type StudioOnParams = {
+  readonly activeId: TerminalTabId;
 };
+
+const studioOn = ({ activeId }: StudioOnParams) => (
+  <TerminalStudio
+    workspaceId={WORKSPACE_ID}
+    terminalId={activeId}
+    sessionId={SESSION_ID}
+    onClose={() => undefined}
+  />
+);
+
+type MountDockParams = {
+  readonly activeId: TerminalTabId;
+};
+
+const mountDock = ({ activeId }: MountDockParams) => render(studioOn({ activeId }));
 
 beforeAll(async () => {
   store = await importStore();
@@ -219,14 +226,14 @@ afterEach(() => {
 describe('terminal output while a terminal is in the background', () => {
   it('shows the last line of a tab that printed 2000 chunks with no panel mounted', async () => {
     await terminalOutputBus.register();
-    mountDock(FOREGROUND_ID);
+    const view = mountDock({ activeId: FOREGROUND_ID });
     await flush();
     for (let index = 0; index < 2000; index++) {
       emitOutput({ terminalId: BACKGROUND_ID, text: `line-${index}\n` });
     }
     harness.writes.length = 0;
 
-    act(() => store.setState({ activeTerminalTab: { [SESSION_ID]: BACKGROUND_ID } }));
+    act(() => view.rerender(studioOn({ activeId: BACKGROUND_ID })));
     await flush();
 
     const shown = harness.writes.join('');
@@ -241,7 +248,7 @@ describe('terminal output while a terminal is in the background', () => {
     harness.snapshotGate = new Promise<void>((resolve) => {
       release = resolve;
     });
-    mountDock(BACKGROUND_ID);
+    mountDock({ activeId: BACKGROUND_ID });
     await flush();
 
     emitOutput({ terminalId: BACKGROUND_ID, text: 'bbbb' });

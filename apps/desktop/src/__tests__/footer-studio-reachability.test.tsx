@@ -233,6 +233,9 @@ vi.mock('../store', async () => {
 vi.mock('../features/integrations/github/hooks/useGithubPolling', () => ({
   useGithubPolling: vi.fn(),
 }));
+vi.mock('../features/monitoring/hooks/useMonitoringSignalRefresh', () => ({
+  useMonitoringSignalRefresh: vi.fn(),
+}));
 vi.mock('../features/updater/hooks/useUpdaterPolling', () => ({ useUpdaterPolling: vi.fn() }));
 vi.mock('../features/artifacts/hooks/useArtifactMirror', () => ({ useArtifactMirror: vi.fn() }));
 

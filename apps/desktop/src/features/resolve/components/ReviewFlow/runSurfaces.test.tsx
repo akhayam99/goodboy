@@ -13,6 +13,9 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../store/storyHarness';
+import type { ProviderRunId } from '@goodboy/types';
+import { TEST_NOW } from '@goodboy/types/testing';
+import { brandedId } from '../../../history/testing/brandedId';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import {
   QUESTION_OPTIONS,
@@ -158,6 +161,40 @@ describe('Question from the fix run', () => {
       launchId: LAUNCH_ID,
       answers: [{ threadId: ERROR_SHAPE_THREAD_ID, answer: QUESTION_OPTIONS[1] }],
     });
+  });
+
+  it('keeps Continue disabled while the run is still working', async () => {
+    const answerQuestions = vi.fn<StoreState['answerQuestions']>(async () => undefined);
+    stub({ answerQuestions });
+    await mount({ threadId: ERROR_SHAPE_THREAD_ID });
+    const attempt = useAppStore
+      .getState()
+      .sessionResolveAttempts[SESSION.id]?.find((item) =>
+        item.threadIds.includes(ERROR_SHAPE_THREAD_ID),
+      );
+    if (attempt === undefined) {
+      throw new Error('no attempt for the question thread');
+    }
+    const turns = useAppStore.getState().agentTurnState;
+    restore = { ...restore, agentTurnState: turns };
+    act(() => {
+      useAppStore.setState({
+        agentTurnState: {
+          ...turns,
+          [attempt.agentId]: {
+            kind: 'running',
+            runId: brandedId<ProviderRunId>({ value: 'run-1' }),
+            startedAt: TEST_NOW,
+          },
+        },
+      });
+    });
+
+    const card = within(screen.getByTestId('resolver-question'));
+    const button = card.getByRole('button', { name: 'Continue the fix run' });
+    expect(button.hasAttribute('disabled')).toBe(true);
+    fireEvent.click(button);
+    expect(answerQuestions).not.toHaveBeenCalled();
   });
 
   it('sends what the reviewer typed instead of an option', async () => {

@@ -86,7 +86,7 @@ Choose how new session branches are named: a **Branch prefix**, with or without 
 
 ### Monitoring
 
-See which ports are taken and by whom, in four groups: **Pinned** (ports you pin, with your own description), **Run by Goodboy**, **From workspace** and **Listening on this Mac**. Any row can be pinned, hidden with Undo, or stopped. It works on macOS and Linux.
+See which ports are taken and by whom, in four groups: **Pinned** (ports you pin, with your own description), **Run by Goodboy**, **From workspace** and **Listening on this Mac**. Every group shares one column grid under one sticky header (Port, Label, Opened by, Process, Up, CPU, Memory), a process on many ports is one expandable row, and free ports fold into one quiet line after the ports in use. Expanded rows sit one step in. A terminal or script with no port shows "no port" and its process. Any row can be pinned, hidden with Undo, or stopped. It works on macOS and Linux.
 
 ### Copy settings from another workspace
 

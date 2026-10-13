@@ -63,6 +63,7 @@ export const ActionPanelScene = () => {
     },
     cancel: () => setIsConfirming(false),
     retry: () => undefined,
+    dismissFailure: () => undefined,
   };
   return (
     <main

@@ -1527,7 +1527,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     );
   });
 
-  it('a resolver that ends without a marker still lets the queue advance', async () => {
+  it('a resolver that ends without a marker fails its thread and still lets the queue advance', async () => {
     const workflowsMod = await import('../features/workflows/workflows');
     (workflowsMod.invokeAgentList as ReturnType<typeof vi.fn>).mockResolvedValue([
       { ...buildAgent(AGENT_A, 0), sourceThreadIds: ['PRRT_1'], status: 'completed' },
@@ -1638,7 +1638,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
 
     expect(
       (useAppStore.getState().sessionResolveThreads[SESSION_ID] ?? []).map((row) => row.state),
-    ).toContain('needs_answer');
+    ).toEqual(['failed']);
     await vi.waitFor(() => expect(runTurnSpy).toHaveBeenCalledTimes(2));
     expect(runTurnSpy.mock.calls[1]?.[0]?.prompt).toContain('kick B');
   });

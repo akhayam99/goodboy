@@ -101,6 +101,10 @@ const secondaryOf = ({ diff, review, hasPullRequest, state }: Params): BranchPri
       isBusy: review.isPushing,
     });
   }
+  const rebase = find(diff, 'diff.rebase');
+  if (rebase !== null) {
+    return fromAction({ source: 'diff', action: rebase, icon: GitBranch });
+  }
   const push = find(diff, 'diff.push');
   if (push !== null) {
     return fromAction({ source: 'diff', action: push, icon: ArrowUp });
@@ -169,6 +173,7 @@ export const BRANCH_MENU_PULL_REQUEST: ReadonlyArray<string> = [
 ];
 
 export const BRANCH_MENU_DIFF: ReadonlyArray<string> = [
+  'diff.push',
   'diff.changeBase',
   'diff.openTerminal',
   'diff.openInEditor',

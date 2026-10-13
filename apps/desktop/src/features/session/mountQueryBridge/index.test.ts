@@ -6,7 +6,15 @@ const { state, links } = vi.hoisted(() => ({
   links: [] as Array<Record<string, unknown>>,
   state: {
     sessions: [{ id: 'session-1', workspaceId: 'ws-1', goal: 'split the pull request' }],
-    projects: [] as Array<{ id: string; baseBranch: string | null }>,
+    projects: [] as Array<{
+      id: string;
+      baseBranch: string | null;
+      overrides: Record<string, string>;
+    }>,
+    archivedSessions: {},
+    workspaceOverrides: {},
+    githubStatus: null,
+    githubWorkspaceStatus: {},
     terminalTabs: {} as Record<string, ReadonlyArray<unknown>>,
     sessionActiveMount: {} as Record<string, string | null>,
     sessionMounts: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
@@ -116,7 +124,7 @@ beforeEach(() => {
   state.sessionMounts = { 'session-1': state.views };
   links.length = 0;
   state.sessionActiveMount = {};
-  state.projects = [{ id: 'p-api', baseBranch: null }];
+  state.projects = [{ id: 'p-api', baseBranch: null, overrides: {} }];
   vi.mocked(worktreeStatus).mockClear();
   clearMountContinuations();
   for (const call of Object.values(state)) {
@@ -239,6 +247,18 @@ describe('executeMountRequest', () => {
     expect(outcome.data).toMatchObject({ previousBranch: 'goodboy/one' });
   });
 
+  it('puts a branch cut by switch --create under the workspace prefix', async () => {
+    state.projects = [{ id: 'p-api', baseBranch: null, overrides: { defaultBranchPrefix: 'ak' } }];
+
+    await executeMountRequest(
+      request({ verb: 'switch', args: { branch: 'feat/flow-split', create: true } }),
+    );
+
+    expect(state.switchMount).toHaveBeenCalledWith(
+      expect.objectContaining({ branch: 'ak/feat-flow-split', createNew: true }),
+    );
+  });
+
   it('refuses to cut a new branch and adopt an observed one in the same request', async () => {
     const outcome = await executeMountRequest(
       request({
@@ -315,7 +335,7 @@ describe('executeMountRequest', () => {
       { ...state.views[0], baseBranch: null },
       state.views[1] as Record<string, unknown>,
     ];
-    state.projects = [{ id: 'p-api', baseBranch: 'develop' }];
+    state.projects = [{ id: 'p-api', baseBranch: 'develop', overrides: {} }];
 
     await executeMountRequest(request({ verb: 'inspect' }));
 

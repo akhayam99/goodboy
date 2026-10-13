@@ -3,6 +3,7 @@ import { screen, within } from '@testing-library/react';
 import { APP_SECTIONS } from '../../../features/settings/components/SettingsStudio/appSections';
 import {
   type Row,
+  WAIT,
   both,
   branchTab,
   click,
@@ -11,6 +12,7 @@ import {
   heading,
   lens,
   openBranchFiles,
+  useAppStore,
   visible,
 } from './harness';
 
@@ -92,12 +94,15 @@ export const SETTINGS_AND_MOUNT_ROWS: ReadonlyArray<Row> = [
   },
   {
     name: 'mount row menu: terminal',
-    covers: ['openMountTerminal', 'lens:terminal'],
+    covers: ['openMountTerminal'],
     open: async () => {
       await clickFirstButton(/ on .+ actions$/);
       await click(await screen.findByRole('menuitem', { name: /^Open terminal/ }));
     },
-    lands: lens('terminal'),
+    lands: async () => {
+      await screen.findByRole('button', { name: 'Open on Terminal page' }, WAIT);
+      expect(useAppStore.getState().drawer?.kind).toBe('terminal');
+    },
   },
   {
     name: 'linked issue chip',

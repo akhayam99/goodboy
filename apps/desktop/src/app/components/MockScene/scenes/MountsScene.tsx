@@ -206,10 +206,13 @@ type MountsVariant =
   | 'many'
   | 'many-open'
   | 'closed-rows'
+  | 'gone-branch'
+  | 'gone-branch-restore'
   | 'refreshing'
   | 'full'
   | 'branch-tasks'
   | 'task-split'
+  | 'branch-split'
   | 'unassigned-notes';
 
 const UNASSIGNED_NOTES: ReadonlyArray<DiffComment> = [
@@ -703,7 +706,7 @@ export const MountsScene = ({ variant = DEFAULT_VARIANT }: Props) => {
   const seeds =
     variant === 'many' || variant === 'many-open'
       ? [...MOUNT_SEEDS, ...EXTRA_SEEDS]
-      : variant === 'closed-rows'
+      : variant === 'closed-rows' || variant === 'gone-branch' || variant === 'gone-branch-restore'
         ? [MOUNT_SEEDS[1], MOUNT_SEEDS[2], MOUNT_SEEDS[3]]
             .filter((seed) => seed !== undefined)
             .map((seed) =>
@@ -711,7 +714,9 @@ export const MountsScene = ({ variant = DEFAULT_VARIANT }: Props) => {
             )
         : variant === 'task-split'
           ? [MOUNT_SEEDS[2]].filter((seed) => seed !== undefined)
-          : MOUNT_SEEDS;
+          : variant === 'branch-split'
+            ? [MOUNT_SEEDS[0], MOUNT_SEEDS[1]].filter((seed) => seed !== undefined)
+            : MOUNT_SEEDS;
   const views = viewsOf(seeds);
 
   useEffect(() => {
@@ -737,6 +742,16 @@ export const MountsScene = ({ variant = DEFAULT_VARIANT }: Props) => {
       },
       sessionActiveProject: { [SESSION_ID]: LEDGER_ID },
       mountBranchObservations: { [SESSION_ID]: [] },
+      mountBranchGone:
+        variant === 'gone-branch' || variant === 'gone-branch-restore'
+          ? {
+              [RELAY_MOUNT]: {
+                restorableBranchId: variant === 'gone-branch-restore' ? 'mock-deleted-relay' : null,
+              },
+            }
+          : {},
+      checkMountBranchGone: async () =>
+        variant === 'gone-branch' || variant === 'gone-branch-restore',
       mountCleanupProposals: { [SESSION_ID]: [] },
       prSeries: { [SESSION_ID]: [SERIES] },
       mountGithub: {

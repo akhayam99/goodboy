@@ -42,7 +42,9 @@ const commentLine = ({
   commentWords,
   prNumber,
 }: Pick<AskRightNowInput, 'commentWords' | 'prNumber'>): AskRightNowLine | null => {
-  const live = commentWords.filter((word) => word !== 'done' && word !== 'left_open');
+  const live = commentWords.filter(
+    (word) => word !== 'done' && word !== 'replied' && word !== 'left_open',
+  );
   if (live.length === 0) {
     return null;
   }

@@ -37,7 +37,7 @@ export const reviewTallyOfWords = ({
     couldntFix,
     working: count('working'),
     readyToPush: count('ready'),
-    done: count('done'),
+    done: count('done') + count('replied'),
     leftOpen: count('left_open'),
     open,
     fixable: open + couldntFix,

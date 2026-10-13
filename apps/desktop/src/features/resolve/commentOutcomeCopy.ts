@@ -1,14 +1,15 @@
 import type { Tone } from '@goodboy/ui';
 import type { CommentOutcomeKind } from './commentOutcome';
+import { RESOLVE_VOCAB, RESOLVE_WORD_LABEL } from './commentProjection';
 
 export const OUTCOME_LABEL: Readonly<Record<CommentOutcomeKind, string>> = {
   waiting: 'Waiting',
-  working: 'Working',
-  'fix-proposed': 'Fix proposed',
-  fixed: 'Fixed',
-  question: 'Question',
-  'no-change': 'No change',
-  failed: 'Failed',
+  working: RESOLVE_WORD_LABEL.working,
+  'fix-proposed': RESOLVE_WORD_LABEL.to_review,
+  fixed: RESOLVE_VOCAB.applied,
+  question: RESOLVE_WORD_LABEL.question,
+  'no-change': RESOLVE_VOCAB.wontFix,
+  failed: RESOLVE_WORD_LABEL.couldnt_fix,
 };
 
 export const OUTCOME_TONE: Readonly<Record<CommentOutcomeKind, Tone>> = {
@@ -22,7 +23,7 @@ export const OUTCOME_TONE: Readonly<Record<CommentOutcomeKind, Tone>> = {
 };
 
 export const OUTCOME_ACTION = {
-  applyFix: 'Apply fix',
+  applyFix: RESOLVE_VOCAB.applyFix,
   discard: 'Discard',
   postReply: 'Post reply',
   closeNote: 'Close note',
@@ -40,9 +41,6 @@ export const OUTCOME_ACTION = {
 type CountParams = {
   readonly count: number;
 };
-
-export const applyFixesLabel = ({ count }: CountParams): string =>
-  `Apply ${count} ${count === 1 ? 'fix' : 'fixes'}`;
 
 export const postRepliesLabel = ({ count }: CountParams): string =>
   `Post ${count} ${count === 1 ? 'reply' : 'replies'}`;

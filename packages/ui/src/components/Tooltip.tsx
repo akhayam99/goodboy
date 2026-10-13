@@ -301,13 +301,22 @@ export const Tooltip = ({
     if (!visible) {
       return;
     }
-    window.addEventListener('scroll', reposition, true);
+    const closeOnScroll = () => {
+      if (isOpen) {
+        reposition();
+        return;
+      }
+      clearDelay();
+      setIsHovered(false);
+      setCoords(null);
+    };
+    window.addEventListener('scroll', closeOnScroll, true);
     window.addEventListener('resize', reposition);
     return () => {
-      window.removeEventListener('scroll', reposition, true);
+      window.removeEventListener('scroll', closeOnScroll, true);
       window.removeEventListener('resize', reposition);
     };
-  }, [visible, reposition]);
+  }, [visible, isOpen, reposition]);
 
   const childRef = (children.props as { ref?: React.Ref<HTMLElement> }).ref;
   const mergedRef = useCallback(

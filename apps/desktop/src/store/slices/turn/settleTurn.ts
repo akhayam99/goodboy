@@ -74,6 +74,26 @@ export const settleTurn = async ({ set, get, ctx }: Params) => {
       .catch(() => undefined);
   }
 
+  void get()
+    .settlePushFix({
+      sessionId,
+      agentId: activeAgentId,
+      hasFailed: lastError !== null || turnWasCancelled,
+    })
+    .catch((error: unknown) =>
+      get().reportError({ title: "Couldn't push the fix.", error, sessionId }),
+    );
+
+  void get()
+    .settleBranchPushFix({
+      sessionId,
+      agentId: activeAgentId,
+      hasFailed: lastError !== null || turnWasCancelled,
+    })
+    .catch((error: unknown) =>
+      get().reportError({ title: "Couldn't push the fix.", error, sessionId }),
+    );
+
   if (assistantText.length > 0 && !purgedAgentIds.has(activeAgentId)) {
     const assistantMessage: Message = {
       id: crypto.randomUUID() as MessageId,

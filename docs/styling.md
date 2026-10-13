@@ -463,6 +463,10 @@ two-pixel `focus-ring` token and removes the native outline. A control clipped
 inside an overflow-hidden row adds `ring-inset`; it does not weaken or resize
 the shared ring.
 
+The global `:focus-visible` outline lives in `@layer base`, so `outline-none` on a utility wins
+and a field draws one ring: the container with `focus-within:ring-2`, the inner input with no
+border, ring or outline (`SearchField` is that pattern).
+
 A ring shows on keyboard focus only: it is `focus-visible`, so a click never
 draws it. Every control in the top bar, every switch and every checkbox composes
 `FOCUS_RING`, and the `controls` journey tabs through the bar and a Settings row

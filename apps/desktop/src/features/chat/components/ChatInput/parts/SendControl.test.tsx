@@ -34,7 +34,7 @@ describe('SendControl', () => {
   it('shows queue and send now once the turn runs with a draft to deliver', () => {
     render(<SendControl {...base} isRunning showsDeliveryChoice />);
     expect(screen.getByRole('button', { name: /^Queue/ })).toBeTruthy();
-    expect(screen.getByRole('button', { name: /^Send now/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^Read now/ })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
   });
 
@@ -55,11 +55,20 @@ describe('SendControl', () => {
   it('labels the delivery keys with the platform glyphs', () => {
     render(<SendControl {...base} isRunning showsDeliveryChoice />);
     expect(screen.getByRole('button', { name: /^Queue/ }).textContent).toContain('↵');
-    expect(screen.getByRole('button', { name: /^Send now/ }).textContent).toContain('⌘↵');
+    expect(screen.getByRole('button', { name: /^Read now/ }).textContent).toContain('⌘↵');
     cleanup();
     platform.current = 'linux';
     render(<SendControl {...base} isRunning showsDeliveryChoice />);
     expect(screen.getByRole('button', { name: /^Queue/ }).textContent).toContain('Enter');
-    expect(screen.getByRole('button', { name: /^Send now/ }).textContent).toContain('Ctrl+Enter');
+    expect(screen.getByRole('button', { name: /^Read now/ }).textContent).toContain('Ctrl+Enter');
+  });
+
+  it('makes Queue the primary and Read now the quiet button, in that order', () => {
+    render(<SendControl {...base} isRunning showsDeliveryChoice />);
+    const queue = screen.getByRole('button', { name: /^Queue/ });
+    const readNow = screen.getByRole('button', { name: /^Read now/ });
+    expect(queue.getAttribute('data-variant')).toBe('primary');
+    expect(readNow.getAttribute('data-variant')).toBe('ghost');
+    expect(readNow.compareDocumentPosition(queue) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

@@ -65,6 +65,7 @@ type SpawnArgs = {
   sourceCommentUrl?: string;
   sourceKind?: AgentSourceKind;
   focus?: SpawnFocus;
+  shouldDeferKickoff?: boolean;
   parentAgentId?: AgentId;
   resolveBatch?: ResolveAttemptBatch;
   resolveLaunch?: ResolveAttemptLaunch;
@@ -292,7 +293,7 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
     if (kickoff.length > 0) {
       void get().drainResolveQueue({ sessionId });
     }
-  } else if (kickoff.length > 0) {
+  } else if (kickoff.length > 0 && args.shouldDeferKickoff !== true) {
     const handedPlan = planSection === '' ? null : planForKickoff;
     void get()
       .sendTurn({

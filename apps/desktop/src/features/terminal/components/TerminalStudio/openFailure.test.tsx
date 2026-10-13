@@ -22,7 +22,7 @@ vi.mock('../../../../shared/components/GenericTerminalPanel/LazyGenericTerminalP
   LazyGenericTerminalPanel: () => <div data-testid="terminal-panel" />,
 }));
 
-import { SessionTerminalLens } from './SessionTerminalLens';
+import { TerminalStudio } from './index';
 import { brandedId } from '../../../../features/history/testing/brandedId';
 
 const NOW = brandedId<IsoDateTime>({ value: '2026-10-10T09:12:00.000Z' });
@@ -91,11 +91,11 @@ afterEach(() => {
 describe('a terminal that fails to open', () => {
   it('reports the failure on the pane and moves the tab to exited', async () => {
     render(
-      <SessionTerminalLens
+      <TerminalStudio
         workspaceId={WORKSPACE_ID}
+        terminalId={TAB_ID}
         sessionId={SESSION_ID}
-        isActive
-        sessionCwd="/repo"
+        onClose={() => undefined}
       />,
     );
 
@@ -111,11 +111,11 @@ describe('a terminal that fails to open', () => {
 
   it('never opens a failed tab again when its pane mounts a second time', async () => {
     const first = render(
-      <SessionTerminalLens
+      <TerminalStudio
         workspaceId={WORKSPACE_ID}
+        terminalId={TAB_ID}
         sessionId={SESSION_ID}
-        isActive
-        sessionCwd="/repo"
+        onClose={() => undefined}
       />,
     );
     await screen.findByRole('alert');
@@ -123,11 +123,11 @@ describe('a terminal that fails to open', () => {
     first.unmount();
 
     render(
-      <SessionTerminalLens
+      <TerminalStudio
         workspaceId={WORKSPACE_ID}
+        terminalId={TAB_ID}
         sessionId={SESSION_ID}
-        isActive
-        sessionCwd="/repo"
+        onClose={() => undefined}
       />,
     );
 
@@ -137,11 +137,11 @@ describe('a terminal that fails to open', () => {
 
   it('retries into a fresh terminal when Restart is pressed', async () => {
     render(
-      <SessionTerminalLens
+      <TerminalStudio
         workspaceId={WORKSPACE_ID}
+        terminalId={TAB_ID}
         sessionId={SESSION_ID}
-        isActive
-        sessionCwd="/repo"
+        onClose={() => undefined}
       />,
     );
     fireEvent.click(await screen.findByRole('button', { name: 'Restart' }));

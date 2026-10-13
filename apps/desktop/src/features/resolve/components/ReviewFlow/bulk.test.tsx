@@ -274,14 +274,14 @@ describe('accept in bulk', () => {
     return acceptReviewComments;
   };
 
-  it('puts Accept N on the Needs you header and accepts exactly the proposals to review', async () => {
+  it('puts Apply N fixes on the Needs you header and accepts exactly the proposals to review', async () => {
     const acceptReviewComments = acceptStub();
     await mount({ stage: 'retry' });
     useAppStore.getState().clearReviewSelection({ sessionId: SESSION.id });
 
     const needsYou = within(list()).getByRole('region', { name: 'Needs you' });
-    const header = await within(needsYou).findByRole('button', { name: 'Accept 7' });
-    expect(within(list()).getAllByRole('button', { name: /^Accept \d+$/ })).toHaveLength(1);
+    const header = await within(needsYou).findByRole('button', { name: 'Apply 7 fixes' });
+    expect(within(list()).getAllByRole('button', { name: /^Apply \d+ fixes$/ })).toHaveLength(1);
     fireEvent.click(header);
 
     await waitFor(() => expect(acceptReviewComments).toHaveBeenCalledOnce());
@@ -289,14 +289,14 @@ describe('accept in bulk', () => {
     expect(acceptReviewComments.mock.calls[0]?.[0].threadIds).not.toContain('PRRT_bulk_f1');
   });
 
-  it('says Accept 3 in the selection bar when three ready rows are selected, with Fix left out', async () => {
+  it('says Apply 3 fixes in the selection bar when three ready rows are selected, with Fix left out', async () => {
     const acceptReviewComments = acceptStub();
     await mount({ stage: 'review' });
 
     const bar = screen.getByRole('toolbar', { name: 'Selected comments' });
     expect(within(bar).getByText('3 selected')).toBeDefined();
     expect(within(bar).queryByRole('button', { name: /^Fix \d/ })).toBeNull();
-    fireEvent.click(within(bar).getByRole('button', { name: 'Accept 3' }));
+    fireEvent.click(within(bar).getByRole('button', { name: 'Apply 3 fixes' }));
 
     await waitFor(() => expect(acceptReviewComments).toHaveBeenCalledOnce());
     expect(acceptReviewComments.mock.calls[0]?.[0].threadIds).toEqual([
@@ -321,9 +321,9 @@ describe('accept in bulk', () => {
     await mount({ stage: 'accepted' });
 
     const ready = within(list()).getByRole('region', { name: 'Ready to push' });
-    expect(within(ready).getAllByText('Ready')).toHaveLength(5);
+    expect(within(ready).getAllByText('Applied')).toHaveLength(5);
     expect(within(ready).queryByText('Accepted')).toBeNull();
-    expect(within(ready).queryByRole('button', { name: /^Accept \d+$/ })).toBeNull();
+    expect(within(ready).queryByRole('button', { name: /^Apply \d+ fixes$/ })).toBeNull();
     fireEvent.click(screen.getByRole('tab', { name: 'Resolved' }));
     const done = within(list()).getByRole('region', { name: 'Done' });
     expect(within(done).queryByText('Accepted')).toBeNull();
@@ -383,7 +383,7 @@ describe('accept in bulk', () => {
     await mount({ stage: 'retry' });
     useAppStore.getState().clearReviewSelection({ sessionId: SESSION.id });
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Accept 7' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Apply 7 fixes' }));
 
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain('1 comment not accepted');

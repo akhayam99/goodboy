@@ -153,6 +153,7 @@ export const FIX_RUN_QUESTION_COPY = {
   continue: 'Continue the fix run',
   hint: 'Continues the same run, in the same copy of the branch.',
   answered: 'You answered:',
+  isWorking: 'The run is still working. Continue once it stops.',
 } as const;
 
 export const FIX_RUN_THREAD_COPY = {

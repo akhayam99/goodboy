@@ -29,7 +29,6 @@ export type SessionViewState = {
   readonly sessionPagesFolded: Readonly<Record<SessionId, boolean>>;
   readonly dismissedCheckProposals: Readonly<Record<SessionId, ReadonlyArray<AgentId>>>;
   readonly branchThreadId: Readonly<Record<SessionId, string | null>>;
-  readonly terminalMountPath: Readonly<Record<SessionId, string | null>>;
   readonly sessionCreations: Readonly<Record<SessionId, ReadonlyArray<SessionCreation>>>;
   readonly sessionGroupExpanded: Readonly<Record<string, boolean>>;
   readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;

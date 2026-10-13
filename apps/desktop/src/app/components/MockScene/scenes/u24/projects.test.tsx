@@ -86,7 +86,7 @@ describe('the u24 projects scenes', () => {
     }
   });
 
-  it('overview-closed-rows shows Reopen and Remove from session on each closed row', async () => {
+  it('overview-closed-rows shows Reopen on each closed row and Remove from session in its menu', async () => {
     renderScene('overview-closed-rows');
 
     await screen.findAllByTestId('project-mount-row', {}, WAIT);
@@ -96,7 +96,8 @@ describe('the u24 projects scenes', () => {
     expect(closed).toHaveLength(2);
     for (const row of closed) {
       within(row).getByRole('button', { name: /^Reopen for/ });
-      within(row).getByRole('button', { name: /^Remove from session for/ });
+      expect(within(row).queryByRole('button', { name: /^Remove from session for/ })).toBeNull();
+      within(row).getByRole('button', { name: / actions$/ });
     }
   });
 

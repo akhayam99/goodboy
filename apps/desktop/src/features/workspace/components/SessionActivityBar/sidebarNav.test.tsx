@@ -123,7 +123,7 @@ describe('the one current sign', () => {
     expect(markedPages()[0]?.textContent).toMatch(/^Agents/);
   });
 
-  it.each(['terminal', 'scripts', 'explore'] as const)(
+  it.each(['scripts', 'explore'] as const)(
     'marks the session row on %s, which has no row of its own',
     (lens) => {
       mountOpen();

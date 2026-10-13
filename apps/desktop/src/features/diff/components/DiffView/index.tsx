@@ -46,6 +46,8 @@ type Props = {
   readonly presentation?: 'pane' | 'peek' | 'inline';
   readonly footer?: ReactNode;
   readonly isReadOnly?: boolean;
+  readonly isWholeFile?: boolean;
+  readonly layoutOverride?: DiffLayoutMode | null;
   readonly toolbarStart?: ReactNode;
   readonly toolbarEnd?: ReactNode;
   readonly belowToolbar?: ReactNode;
@@ -82,6 +84,8 @@ export const DiffView = ({
   presentation = 'pane',
   footer,
   isReadOnly = false,
+  isWholeFile = false,
+  layoutOverride = null,
   toolbarStart,
   toolbarEnd,
   belowToolbar = null,
@@ -93,7 +97,7 @@ export const DiffView = ({
   const [savedWrap, setWrap] = useDiffWrap();
   const inner = useElementWidth();
   const fit = effectiveDiffLayout({ preference: savedLayout, innerWidthPx: inner.width });
-  const layout: DiffLayoutMode = isPeek ? 'unified' : fit.layout;
+  const layout: DiffLayoutMode = isPeek ? (layoutOverride ?? 'unified') : fit.layout;
   const wrap = isPeek || savedWrap;
   const [mountedCount, setMountedCount] = useState(BATCH_SIZE);
   const [activePath, setActivePath] = useState<string | null>(null);
@@ -462,6 +466,7 @@ export const DiffView = ({
           registerRef={registerRef(file.path)}
           isVisible={seen.has(file.path)}
           isReadOnly={isReadOnly}
+          isWhole={isWholeFile}
           focusThreadId={threadFocusOf.get(file.path) ?? null}
           onThreadFocused={clearPendingThread}
         />

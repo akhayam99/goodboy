@@ -1,14 +1,12 @@
 import { useState, type ReactNode } from 'react';
-import { ChevronRight } from 'lucide-react';
-import { ICON_SIZE, IconButton, StatusDot, cn } from '@goodboy/ui';
+import { ROW_HOVER, StatusDot, cn } from '@goodboy/ui';
 import type { MonitorProcess, PortRow } from '@goodboy/core';
-import { formatCpu } from '../../formatCpu';
-import { formatMemory } from '../../formatMemory';
-import { formatUptime } from '../../formatUptime';
 import { ActionsCell } from './ActionsCell';
 import { CommandLine } from './CommandLine';
-import { OwnerChip } from './OwnerChip';
+import { MetricCells } from './MetricCells';
+import { OwnerCell } from './OwnerCell';
 import { PORT_GRID } from './portGrid';
+import { ProcessCell } from './ProcessCell';
 import { StopControl } from './StopControl';
 import { folderName } from '../../../../store/slices/terminal/terminalOwner';
 
@@ -19,16 +17,18 @@ type Props = {
   readonly name: string;
   readonly nameSlot?: ReactNode;
   readonly actions?: ReactNode;
+  readonly isNested?: boolean;
 };
 
-type OthersParams = {
-  readonly others: number;
-};
-
-const otherWorktrees = ({ others }: OthersParams): string =>
-  `Also in ${others} other ${others === 1 ? 'worktree' : 'worktrees'}`;
-
-export const PortRowView = ({ row, process, now, name, nameSlot, actions }: Props) => {
+export const PortRowView = ({
+  row,
+  process,
+  now,
+  name,
+  nameSlot,
+  actions,
+  isNested = false,
+}: Props) => {
   const [isCommandOpen, setIsCommandOpen] = useState(false);
   const isExternal = row.owner?.kind === 'external';
   const hasCollision = row.collision !== undefined;
@@ -38,56 +38,58 @@ export const PortRowView = ({ row, process, now, name, nameSlot, actions }: Prop
       ? row.owner.spawnId
       : null;
   const stopName = row.processName ?? `Process ${row.pid ?? ''}`.trim();
+  const canOpen = process !== null && !isNested;
 
   return (
-    <li data-port-row={row.port} className="flex flex-col">
+    <li
+      data-port-row={row.port}
+      className={cn('group/row relative flex flex-col rounded-md', canOpen && ROW_HOVER)}
+    >
       <div className={cn(PORT_GRID, 'min-h-8 text-label')}>
-        <StatusDot
-          tone={tone}
-          size="md"
-          className={cn(isExternal && !hasCollision && 'opacity-40')}
-          role="status"
-          ariaLabel={hasCollision ? 'Collision' : 'In use'}
-        />
-        <span className="tabular-nums text-foreground">:{row.port}</span>
+        {isNested ? null : (
+          <StatusDot
+            tone={tone}
+            size="md"
+            className={cn(isExternal && !hasCollision && 'opacity-40')}
+            role="status"
+            ariaLabel={hasCollision ? 'Collision' : 'In use'}
+          />
+        )}
+        <span
+          className={cn(
+            'tabular-nums',
+            isNested ? 'col-span-2 pl-8 text-muted-foreground' : 'text-foreground',
+          )}
+        >
+          :{row.port}
+        </span>
         {nameSlot ?? <span className="min-w-0 truncate text-muted-foreground">{name}</span>}
-        <div className="flex min-w-0 flex-col items-start py-1">
-          {row.owner === null ? null : <OwnerChip owner={row.owner} />}
-          {row.collision === undefined ? null : (
-            <span className="truncate text-meta text-warning">
-              {otherWorktrees({ others: row.collision.others })}
-            </span>
-          )}
-        </div>
-        <div className="flex min-w-0 items-center gap-1">
-          <span className="min-w-0 truncate text-muted-foreground">{row.processName ?? ''}</span>
-          {row.pid === null ? null : (
-            <span className="shrink-0 text-meta tabular-nums text-faint-foreground">{row.pid}</span>
-          )}
-          {process === null ? null : (
-            <IconButton
-              icon={ChevronRight}
-              iconSize={ICON_SIZE.row}
-              size="xs"
-              label={isCommandOpen ? 'Hide command line' : 'Show command line'}
-              aria-expanded={isCommandOpen}
-              className={cn(isCommandOpen && 'rotate-90')}
-              onClick={() => setIsCommandOpen((wasOpen) => !wasOpen)}
-            />
-          )}
-        </div>
-        <span className="text-right tabular-nums text-muted-foreground">
-          {process === null ? '' : formatUptime({ startedAt: process.startedAt, now })}
-        </span>
-        <span className="text-right tabular-nums text-muted-foreground">
-          {process === null ? '' : formatCpu({ percent: process.cpuPercent })}
-        </span>
-        <span className="text-right tabular-nums text-muted-foreground">
-          {process === null ? '' : formatMemory({ bytes: process.rssBytes })}
-        </span>
+        {isNested ? <span /> : <OwnerCell row={row} />}
+        {isNested ? (
+          <span />
+        ) : (
+          <ProcessCell
+            name={row.processName}
+            pid={row.pid}
+            toggleLabel={
+              canOpen ? (isCommandOpen ? 'Hide command line' : 'Show command line') : undefined
+            }
+            isOpen={isCommandOpen}
+            onToggle={canOpen ? () => setIsCommandOpen((wasOpen) => !wasOpen) : undefined}
+          />
+        )}
+        {isNested ? (
+          <>
+            <span />
+            <span />
+            <span />
+          </>
+        ) : (
+          <MetricCells process={process} now={now} />
+        )}
         <ActionsCell
           stop={
-            row.pid === null ? null : (
+            row.pid === null || isNested ? null : (
               <StopControl
                 pid={row.pid}
                 name={stopName}

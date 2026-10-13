@@ -14,6 +14,7 @@ const REBASE_JOB_SCENE_STATES = [
   'origin-moved',
   'head-moved',
   'push-failed',
+  'fixing-push',
   'no-provider',
   'dirty',
   'result-differs',
@@ -27,6 +28,8 @@ export const REBASE_JOB_MOUNT_ID: MountId = JSON.parse(
 );
 
 const REBASE_JOB_AGENT_ID: AgentId = JSON.parse(JSON.stringify('mock-u24-agent-history-rewriter'));
+
+const PUSH_FIX_AGENT_ID: AgentId = JSON.parse(JSON.stringify('mock-u25-agent-push-fixer'));
 
 const clock = sceneClock({ anchor: '2026-10-10T09:12:00.000Z' });
 
@@ -102,6 +105,13 @@ const PATCHES: Readonly<Record<RebaseJobSceneState, Patch>> = {
     phase: 'stopped',
     commitCount: 7,
     backupRef: 'refs/goodboy/backup/hl-fix-duplicate-credit/1',
+    stop: stopOf({ reason: 'push-failed', message: `pre-push hook declined\n${HOOK_OUTPUT}` }),
+  },
+  'fixing-push': {
+    phase: 'stopped',
+    commitCount: 7,
+    backupRef: 'refs/goodboy/backup/hl-fix-duplicate-credit/1',
+    pushFix: { agentId: PUSH_FIX_AGENT_ID },
     stop: stopOf({ reason: 'push-failed', message: `pre-push hook declined\n${HOOK_OUTPUT}` }),
   },
   'no-provider': {

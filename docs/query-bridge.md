@@ -131,7 +131,7 @@ The GitHub verbs and `gitlab mr-create` act on one mount. Most of them use the m
 
 `git checkout -b` does not say what the agent meant. The worktree looks the same whether the agent moved this line of work to another branch or started a second one next to it. So the agent says which one it means:
 
-- `mount switch` moves the mount and keeps earlier pull requests as history
+- `mount switch` moves the mount and keeps earlier pull requests as history; `--create` also puts a new name under the workspace prefix
 - `mount fork` creates another mount with its own worktree and leaves the source as it is
 
 Start by reading the mounts:
@@ -194,7 +194,7 @@ The response keeps the same `mountId` and `mountPath` and adds `previousBranch`.
 
 ### Mismatch recovery
 
-A plain `git checkout`, `git switch` or detached HEAD never changes the branch Goodboy has on record for a mount. Inspection notes the mismatch. Writes on that mount then refuse with `branch_mismatch` until `mount resolve` says which branch is right.
+A plain `git checkout`, `git switch`, `git branch -m` or detached HEAD is never what the agent is told to use: `mount switch --create` renames or moves a mount under the workspace prefix and `mount fork` splits. When the worktree still lands on another branch, the app follows it on the next status read (`reconcileSessionBranch` adopts the observed branch and logs `branch_switched`). Only a mismatch it cannot adopt, such as a rebase in progress, a branch held by another mount or a detached HEAD, is noted at inspection. Writes on that mount then refuse with `branch_mismatch` until `mount resolve` says which branch is right.
 
 ```
 "$GOODBOY_BIN" query mount resolve \

@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { HistoryAbsorbed } from '../../store/slices/history/types';
-import { appliedChips, groupAppliedEdits } from './groupAppliedEdits';
+import { groupAppliedEdits } from './groupAppliedEdits';
 
 const absorbedOf = ({
   titles,
@@ -53,24 +53,5 @@ describe('groupAppliedEdits', () => {
       absorbed: absorbedOf({ titles: ['Fix: typo', 'fixup! feat: thing'] }),
     });
     expect(groups.map((group) => group.type)).toEqual(['fix', 'other']);
-  });
-});
-
-describe('appliedChips', () => {
-  it('counts folds and combines together, then the other kinds', () => {
-    const chips = appliedChips({
-      lines: [
-        { action: 'fixup' },
-        { action: 'squash' },
-        { action: 'fixup' },
-        { action: 'move' },
-        { action: 'reword' },
-      ],
-    });
-    expect(chips.map((chip) => `${chip.count} ${chip.noun}`)).toEqual([
-      '3 folded',
-      '1 renamed',
-      '1 moved',
-    ]);
   });
 });

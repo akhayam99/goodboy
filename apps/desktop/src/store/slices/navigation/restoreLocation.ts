@@ -2,6 +2,7 @@ import { applyLocation } from './applyLocation';
 import { canonicalLocation } from './canonicalLocation';
 import { currentStack, stackKey } from './currentStack';
 import { replaceTop } from './history';
+import { withoutRemovedPages } from './withoutRemovedPages';
 import type { GetFn, Location, SetFn } from './types';
 
 type Params = {
@@ -22,7 +23,7 @@ const placeStillThere = ({ get, location }: { readonly get: GetFn } & Params): L
 export const restoreLocation = (set: SetFn, get: GetFn) => {
   return ({ location }: Params): void => {
     const state = get();
-    const kept = placeStillThere({ get, location });
+    const kept = placeStillThere({ get, location: withoutRemovedPages({ location }) });
     const canonical = canonicalLocation({ state, request: kept.place });
     const next: Location = {
       ...kept,

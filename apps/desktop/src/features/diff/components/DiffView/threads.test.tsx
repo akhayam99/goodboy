@@ -322,26 +322,29 @@ describe('the file header', () => {
     return header;
   };
 
-  it('is 44 high and shows Viewed, Comment and the menu at rest, each a 28 control', () => {
+  it('is 44 high and shows Viewed and the four file actions as icons at rest, each a 28 control', () => {
     render(
       <DiffView
         files={[FILE]}
         comments={commentsWith([NOTE, HOST])}
         viewed={{ stateOf: () => 'none', onToggle: vi.fn() }}
-        fileActions={{ onOpenInDrawer: vi.fn() }}
+        fileActions={{ onOpenInEditor: vi.fn() }}
+        loadFileSides={vi.fn()}
       />,
     );
 
     const header = headerOf();
     expect(header.style.height).toBe('44px');
     expect(within(header).getByRole('checkbox', { name: 'Viewed' })).toBeDefined();
-    const comment = within(header).getByRole('button', { name: 'Comment 2' });
-    expect(comment.getAttribute('data-size')).toBe('sm');
-    const menu = within(header).getByRole('button', { name: /^More actions for/ });
-    expect(menu.getAttribute('data-size')).toBe('control');
+    for (const name of ['Comment', 'Open in editor', 'Show whole file']) {
+      expect(within(header).getByRole('button', { name }).getAttribute('data-size')).toBe('sm');
+    }
+    expect(within(header).getByRole('button', { name: 'Copy path' })).toBeDefined();
+    expect(within(header).queryByRole('button', { name: /^More actions for/ })).toBeNull();
   });
 
-  it('counts the open threads of both kinds in Comment and not the resolved ones', () => {
+  it('counts the open threads of both kinds in the Comment tooltip and not the resolved ones', async () => {
+    vi.useFakeTimers();
     render(
       <DiffView
         files={[FILE]}
@@ -353,7 +356,12 @@ describe('the file header', () => {
       />,
     );
 
-    expect(within(headerOf()).getByRole('button', { name: 'Comment 2' })).toBeDefined();
+    fireEvent.mouseEnter(within(headerOf()).getByRole('button', { name: 'Comment' }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(600);
+    });
+
+    expect(screen.getByRole('tooltip').textContent).toBe('Comment, 2 open');
   });
 
   it('leaves the path to a real tooltip and carries no native title', async () => {
@@ -394,7 +402,7 @@ describe('the file header', () => {
     expect(onToggle).toHaveBeenCalledWith(FILE, true);
   });
 
-  it('opens the whole file from its menu', async () => {
+  it('shows the whole file in place from its icon when the page gives no drawer', async () => {
     const loadFileSides = vi.fn(async () => ({
       old: 'a\nb\nc',
       new: 'a\nb\nc',
@@ -402,26 +410,46 @@ describe('the file header', () => {
     }));
     render(<DiffView files={[FILE]} loadFileSides={loadFileSides} />);
 
-    fireEvent.click(within(headerOf()).getByRole('button', { name: /^More actions for/ }));
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'Show whole file' }));
+    fireEvent.click(within(headerOf()).getByRole('button', { name: 'Show whole file' }));
 
     await waitFor(() => expect(loadFileSides).toHaveBeenCalledWith(FILE));
   });
 
-  it('opens the file in a drawer and in the editor from its menu, and copies the path', async () => {
-    const onOpenInDrawer = vi.fn();
+  it('hands the file to the page from the Show whole file icon', () => {
+    const onShowWhole = vi.fn();
+    render(<DiffView files={[FILE]} loadFileSides={vi.fn()} fileActions={{ onShowWhole }} />);
+
+    fireEvent.click(within(headerOf()).getByRole('button', { name: 'Show whole file' }));
+
+    expect(onShowWhole).toHaveBeenCalledWith(FILE);
+  });
+
+  it('opens the file in the editor from its icon and has no Open in a drawer', () => {
     const onOpenInEditor = vi.fn();
-    render(<DiffView files={[FILE]} fileActions={{ onOpenInDrawer, onOpenInEditor }} />);
+    render(<DiffView files={[FILE]} fileActions={{ onOpenInEditor }} />);
 
-    fireEvent.click(within(headerOf()).getByRole('button', { name: /^More actions for/ }));
-    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
-      'Open in editor',
-      'Open in a drawer',
-      'Copy path',
-    ]);
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Open in a drawer' }));
+    fireEvent.click(within(headerOf()).getByRole('button', { name: 'Open in editor' }));
 
-    expect(onOpenInDrawer).toHaveBeenCalledWith(FILE.path);
+    expect(onOpenInEditor).toHaveBeenCalledWith(FILE.path);
+    expect(screen.queryByRole('button', { name: 'Open in a drawer' })).toBeNull();
+  });
+
+  it('copies the path from its icon and confirms it', async () => {
+    const writeText = vi.fn(async () => undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    vi.useFakeTimers();
+    render(<DiffView files={[FILE]} />);
+
+    await act(async () => {
+      fireEvent.click(within(headerOf()).getByRole('button', { name: 'Copy path' }));
+    });
+    fireEvent.mouseEnter(within(headerOf()).getByRole('button', { name: 'Copy path' }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(600);
+    });
+
+    expect(writeText).toHaveBeenCalledWith(FILE.path);
+    expect(screen.getByRole('tooltip').textContent).toBe('Copied');
   });
 
   it('offers no Viewed and no Comment on a read only change', () => {
@@ -430,14 +458,14 @@ describe('the file header', () => {
         files={[FILE]}
         comments={commentsWith([NOTE])}
         viewed={{ stateOf: () => 'none', onToggle: vi.fn() }}
-        fileActions={{ onOpenInDrawer: vi.fn() }}
+        fileActions={{ onOpenInEditor: vi.fn() }}
         isReadOnly
       />,
     );
 
     expect(within(headerOf()).queryByRole('checkbox', { name: 'Viewed' })).toBeNull();
     expect(within(headerOf()).queryByRole('button', { name: /^Comment/ })).toBeNull();
-    expect(within(headerOf()).getByRole('button', { name: /^More actions for/ })).toBeDefined();
+    expect(within(headerOf()).getByRole('button', { name: 'Copy path' })).toBeDefined();
   });
 });
 

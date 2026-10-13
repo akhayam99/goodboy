@@ -7,9 +7,12 @@ import { ArtifactShellDrawer } from '../../features/artifacts/components/Artifac
 import { ArtifactDocumentDrawer } from '../../features/artifacts/components/ArtifactDocumentDrawer';
 import { PlanPartDrawer } from '../../features/plans/components/PlanParts/PlanPartDrawer';
 import { ScriptRunDrawer } from '../../features/scripts/components/ScriptRunDrawer';
+import { TerminalDrawer } from '../../features/terminal/components/TerminalDrawer';
 import { FileDiffDrawer } from '../../features/diff/components/FileDiffDrawer';
+import { FileWholeDrawer } from '../../features/diff/components/FileWholeDrawer';
 import { AskDrawer } from '../../features/session/ask/components/AskDrawer';
 import { AgentTranscriptDrawer } from '../../features/chat/components/AgentTranscriptDrawer';
+import { HistoryVersionsDrawer } from '../../features/history/components/HistoryVersionsDrawer';
 import { FixCommentsDrawer } from '../../features/resolve/components/FixCommentsDrawer';
 import { FixRunLead } from '../../features/resolve/components/FixRunSummary/FixRunLead';
 import { ExploreFileChanges } from './ExploreFileChanges';
@@ -139,13 +142,42 @@ export const DrawerHost = () => {
           onClose={closeDrawer}
         />
       );
+    case 'history-versions':
+      return (
+        <HistoryVersionsDrawer
+          key={drawerKey(drawer)}
+          sessionId={drawer.sessionId}
+          mountId={drawer.payload.mountId}
+          worktreePath={drawer.payload.worktreePath}
+          onClose={closeDrawer}
+        />
+      );
     case 'file-diff':
+      if (drawer.payload.whole !== undefined && drawer.payload.source.kind === 'worktree') {
+        return (
+          <FileWholeDrawer
+            key={drawerKey(drawer)}
+            worktreePath={drawer.payload.source.worktreePath}
+            whole={drawer.payload.whole}
+            onClose={closeDrawer}
+          />
+        );
+      }
       return (
         <FileDiffDrawer
           key={drawerKey(drawer)}
           sessionId={drawer.sessionId}
           source={drawer.payload.source}
           path={drawer.payload.path}
+          onClose={closeDrawer}
+        />
+      );
+    case 'terminal':
+      return (
+        <TerminalDrawer
+          key={drawerKey(drawer)}
+          sessionId={drawer.sessionId}
+          terminalId={drawer.payload.terminalId}
           onClose={closeDrawer}
         />
       );

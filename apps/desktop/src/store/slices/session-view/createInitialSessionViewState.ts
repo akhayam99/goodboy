@@ -21,7 +21,6 @@ export const createInitialSessionViewState = ({}: Params) => ({
   sessionPagesFolded: {},
   dismissedCheckProposals: {},
   branchThreadId: {},
-  terminalMountPath: {},
   resolveQueueView: {},
   resolveItemDrafts: {},
   sessionCreations: {},

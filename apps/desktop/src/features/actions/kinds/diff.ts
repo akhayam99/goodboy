@@ -41,6 +41,7 @@ type FactsOnly = { readonly facts: DiffFacts };
 
 export const DIFF_CHANGE_BASE_EVENT = 'goodboy:diff-change-base';
 export const HISTORY_SHOW_BACKUPS_EVENT = 'goodboy:history-show-backups';
+export const HISTORY_FOCUS_BASE_EVENT = 'goodboy:history-focus-base';
 
 export const diffEventName = ({
   name,
@@ -66,7 +67,7 @@ const DIFF_ACTIONS: ReadonlyArray<ActionDefinition<DiffFacts>> = [
     label: 'Open terminal',
     icon: CONCEPT_ICONS.terminal,
     group: 'open',
-    shortcut: 'lens.terminal',
+    shortcut: 'session.terminal',
     when: ({ facts }) => facts.isRebasing,
     slot: () => 'primary',
     run: ({ facts, env }) => {
@@ -80,7 +81,7 @@ const DIFF_ACTIONS: ReadonlyArray<ActionDefinition<DiffFacts>> = [
     label: 'Open terminal',
     icon: CONCEPT_ICONS.terminal,
     group: 'open',
-    shortcut: 'lens.terminal',
+    shortcut: 'session.terminal',
     when: ({ facts }) => !facts.isRebasing,
     run: ({ facts, env }) => {
       if (facts.worktreePath !== null) {
@@ -207,7 +208,7 @@ const DIFF_ACTIONS: ReadonlyArray<ActionDefinition<DiffFacts>> = [
   },
   {
     id: 'diff.restoreBackup',
-    label: 'Restore a backup…',
+    label: 'Previous versions…',
     icon: ArchiveRestore,
     group: 'act',
     when: ({ facts }) => facts.ahead > 0,

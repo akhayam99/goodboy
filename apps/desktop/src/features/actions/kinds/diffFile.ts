@@ -1,11 +1,10 @@
-import { Copy, ExternalLink, FileText, PanelRight } from 'lucide-react';
+import { Copy, ExternalLink, FileText } from 'lucide-react';
 import type { DiffFileActionTarget, ObjectKindDefinition } from '../types';
 
 export type DiffFileFacts = {
   readonly path: string;
   readonly onOpenInEditor: (() => void) | null;
   readonly onShowWhole: (() => void) | null;
-  readonly onOpenInDrawer: (() => void) | null;
 };
 
 export const DIFF_FILE_KIND: ObjectKindDefinition<DiffFileActionTarget, DiffFileFacts> = {
@@ -19,14 +18,6 @@ export const DIFF_FILE_KIND: ObjectKindDefinition<DiffFileActionTarget, DiffFile
       group: 'open',
       when: ({ facts }) => facts.onOpenInEditor !== null,
       run: ({ facts }) => facts.onOpenInEditor?.(),
-    },
-    {
-      id: 'diffFile.openInDrawer',
-      label: 'Open in a drawer',
-      icon: PanelRight,
-      group: 'open',
-      when: ({ facts }) => facts.onOpenInDrawer !== null,
-      run: ({ facts }) => facts.onOpenInDrawer?.(),
     },
     {
       id: 'diffFile.showWhole',

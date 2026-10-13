@@ -3,7 +3,6 @@ import { useShallow } from 'zustand/react/shallow';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { isAgentStatusSettled } from '@goodboy/core';
 import { cn, useEscapeLayer, UnderTrailContext, PaneBannerContext, PaneShell } from '@goodboy/ui';
-import { SessionTerminalLens } from '../../../terminal/components/TerminalStudio/SessionTerminalLens';
 import { ArtifactStudio } from '../../../artifacts/components/ArtifactStudio';
 import { ScriptsPanel } from '../../../scripts';
 import { EMPTY_ARRAY, useAppStore, useIsSessionCollectionLoaded } from '../../../../store';
@@ -66,12 +65,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const sessionRepo = useAppStore(useShallow((state) => resolveSessionRepo({ state, sessionId })));
   const projectWorktreePath = sessionRepo?.worktreePath ?? null;
   const sessionMounts = useAppStore((s) => s.sessionProjectMounts?.[sessionId] ?? EMPTY_ARRAY);
-  const requestedTerminalMountPath = useAppStore((s) => s.terminalMountPath?.[sessionId] ?? null);
-  const terminalWorkingDir = resolveDiffMount({
-    mounts: sessionMounts,
-    requestedPath: requestedTerminalMountPath,
-    fallbackPath: workingDir,
-  });
   const studio = useAppStore((s) => s.sessionStudio[sessionId] ?? null);
   const artifactConversationAgentId = useAppStore(
     (s) => s.artifactConversationAgentId[sessionId] ?? null,
@@ -257,17 +250,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                 onBack={leaveAgentOverlay}
               />
             </PaneBannerContext.Provider>
-          ) : null}
-
-          {!isBranchless && lens === 'terminal' && showLens ? (
-            <div className="absolute inset-0 z-10 flex flex-col">
-              <SessionTerminalLens
-                workspaceId={session.workspaceId}
-                sessionId={sessionId}
-                isActive={isActive}
-                sessionCwd={terminalWorkingDir}
-              />
-            </div>
           ) : null}
 
           {studio != null ? (

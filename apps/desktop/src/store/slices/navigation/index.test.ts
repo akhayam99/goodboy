@@ -200,6 +200,36 @@ describe('restoring a saved window location', () => {
     expect(store.getState().currentSessionId).toBeNull();
     expect(keyOf(store)).toBe('board');
   });
+
+  it('lands a saved session terminal page on the session overview', () => {
+    const store = makeStore();
+    const saved = parseLocation({
+      value: JSON.parse(
+        JSON.stringify({
+          workspaceId: WS,
+          place: {
+            at: 'session',
+            sessionId: S1,
+            view: {
+              lens: 'terminal',
+              agentId: null,
+              studio: null,
+              target: { kind: 'terminal', mountPath: '/wt/ledger-core' },
+            },
+          },
+          studio: null,
+          focus: { drawer: null, selection: {}, scroll: {}, revealed: [] },
+        }),
+      ),
+    });
+    if (saved === null) {
+      throw new Error('the saved location did not parse');
+    }
+    store.getState().restoreLocation({ location: saved });
+    expect(store.getState().currentSessionId).toBe(S1);
+    expect(store.getState().activeLens[S1] ?? null).toBeNull();
+    expect(keyOf(store)).toBe(`s/${S1}`);
+  });
 });
 
 describe('navigation slice', () => {
@@ -1060,7 +1090,7 @@ describe('Explore project', () => {
     store.setState({ exploreMountPath: { [S1]: NOTIFY } });
     store.getState().openDrawer(README_IN_NOTIFY);
 
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'terminal' }) });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'scripts' }) });
     store.setState({ exploreMountPath: { [S1]: LEDGER } });
 
     store.getState().back();
@@ -1076,7 +1106,7 @@ describe('Explore project', () => {
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'explore' }) });
     store.setState({ exploreMountPath: { [S1]: NOTIFY } });
 
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'terminal' }) });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'scripts' }) });
     expect(store.getState().exploreMountPath[S1]).toBe(NOTIFY);
 
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'explore' }) });
@@ -1101,7 +1131,7 @@ describe('Explore project', () => {
   it('restores an entry captured before any pick as the default project', () => {
     const store = makeStore();
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'explore' }) });
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'terminal' }) });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'scripts' }) });
     store.setState({ exploreMountPath: { [S1]: NOTIFY } });
 
     store.getState().back();

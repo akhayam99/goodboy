@@ -38,7 +38,7 @@ export const startSteeredAttempt = async ({
   threadId,
   mode,
   hint,
-}: Params): Promise<StartedBatch> => {
+}: Params): Promise<StartedBatch | null> => {
   const state = getState();
   const row = launchRowsOf({ state, sessionId }).find(
     (candidate) => candidate.thread.threadId === threadId,
@@ -52,6 +52,18 @@ export const startSteeredAttempt = async ({
   }
   if (row !== undefined && row.item.approvalState === 'wont_fix') {
     await state.takeUpResolveQueueItem({ sessionId, itemId: row.item.id });
+  }
+  const attemptAgentId = row?.attempt?.agentId ?? null;
+  const isRunKnown =
+    attemptAgentId !== null &&
+    (getState().sessionPhaseRuns[sessionId] ?? []).some((agent) => agent.id === attemptAgentId);
+  if (isRunKnown) {
+    await getState().continueResolveThreads({
+      sessionId,
+      threadIds: [threadId],
+      hint: steerHintOf({ mode, hint }),
+    });
+    return null;
   }
   return startBatch({
     getState,

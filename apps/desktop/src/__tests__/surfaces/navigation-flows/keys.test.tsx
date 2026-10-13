@@ -42,6 +42,7 @@ import { SHORTCUTS } from '../../../shared/keyboard/registry';
 import { installNavigationHooks, runNavigationRows, type BridgeArgs } from './harness';
 import { reloads, worldDatabase, zoomFactors } from './keys.effects';
 import { SCRIPT_KEY_ROWS } from './keys.scripts';
+import { HISTORY_KEY_ROWS } from './keys.history';
 import {
   KEY_ROWS,
   MORE_KEY_ROWS,
@@ -65,7 +66,13 @@ beforeEach(() => {
   });
 });
 
-const ALL_ROWS = [...KEY_ROWS, ...MORE_KEY_ROWS, ...SESSION_KEY_ROWS, ...SCRIPT_KEY_ROWS];
+const ALL_ROWS = [
+  ...KEY_ROWS,
+  ...MORE_KEY_ROWS,
+  ...SESSION_KEY_ROWS,
+  ...SCRIPT_KEY_ROWS,
+  ...HISTORY_KEY_ROWS,
+];
 
 runNavigationRows({ rows: ALL_ROWS });
 

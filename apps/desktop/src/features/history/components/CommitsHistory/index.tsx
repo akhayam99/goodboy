@@ -1,35 +1,31 @@
 import { useRef, useState } from 'react';
-import { Button, Notice, EmptyState, PageColumn, ScrollFade, SkeletonRow, cn } from '@goodboy/ui';
+import { Button, Notice, EmptyState, PageColumn, ScrollFade, SkeletonRow } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import { loadStateOf } from '../../../../shared/lib/loadStateOf';
-import { keptOrder } from '../../historyPlan';
 import { HistoryActions } from './HistoryActions';
-import { HistoryAfterColumn } from './HistoryAfterColumn';
-import { HistoryAppliedResult } from './HistoryAppliedResult';
-import { HistoryBackups } from './HistoryBackups';
 import { HistoryDragGhost } from './HistoryDragGhost';
 import { HistoryKeysHint } from './HistoryKeysHint';
 import { HistoryNowColumn } from './HistoryNowColumn';
-import { HistoryPlannedSection } from './HistoryPlannedSection';
-import { HistoryResultHead } from './HistoryResultHead';
 import { HistoryStatusSlot } from './HistoryStatusSlot';
+import { HistoryVersionsLink } from './HistoryVersionsLink';
 import { buildHistoryRowRenderer } from './buildHistoryRowRenderer';
 import { historyLaneNodes } from './historyLaneNodes';
-import { useHistoryBackupsPanel } from './useHistoryBackupsPanel';
+import { useHistoryVersionsDrawer } from './useHistoryVersionsDrawer';
 import { useHistoryEditing } from './useHistoryEditing';
 import { useHistoryExpanded } from './useHistoryExpanded';
 import { useHistoryFocus } from './useHistoryFocus';
 import { useHistoryKeys } from './useHistoryKeys';
-import { useHistoryPanelReveal } from './useHistoryPanelReveal';
 import { useHistoryPlan } from './useHistoryPlan';
 import { useHistoryPlanDrag } from './useHistoryPlanDrag';
-import { useHistoryPrediction } from './useHistoryPrediction';
 import { useHistoryRowCallbacks } from './useHistoryRowCallbacks';
 import { useHistoryRows } from './useHistoryRows';
 import { useHistoryRunFlow } from './useHistoryRunFlow';
 import { useHistoryScribe } from './useHistoryScribe';
+import { useHistoryBackupCount } from '../../useHistoryBackupCount';
+import { useHistoryLiveSession } from './useHistoryLiveSession';
+import { HistoryLiveNotice } from './HistoryLiveNotice';
 import { TabActions } from '../../../../shared/components/TabActions';
 
 type Props = {
@@ -37,8 +33,6 @@ type Props = {
   readonly worktreePath: string;
   readonly isReadOnly?: boolean;
 };
-
-const NARROW_WIDTH = 760;
 
 export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: Props) => {
   const plan = useHistoryPlan({ sessionId, worktreePath });
@@ -50,7 +44,6 @@ export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: 
     prNumber,
     items,
     commits,
-    onto,
     graph,
     commitBySha,
     titleOf,
@@ -58,48 +51,41 @@ export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: 
     edits,
     model,
     chosenBase,
-    status,
     hasUpstream,
-    dirtyCount,
     applied,
     isDone,
     isInteractive: isEditable,
   } = plan;
-  const isInteractive = isEditable && !isReadOnly;
+  const { live, undo, redo } = useHistoryLiveSession({ sessionId, mountId, isReadOnly });
+  const isInteractive = isEditable && !isReadOnly && live?.isBusy !== true;
   const flow = useHistoryRunFlow({ sessionId, mountId, hasUpstream });
-  const backups = useHistoryBackupsPanel({ sessionId });
+  const versionsDrawer = useHistoryVersionsDrawer({ sessionId, mountId, worktreePath });
+  const backupCount = useHistoryBackupCount({
+    worktreePath,
+    branch: mount?.branch ?? '',
+    revision: run?.updatedAt ?? 0,
+  });
   const [editingSha, setEditingSha] = useState<string | null>(null);
-  const [narrowView, setNarrowView] = useState<'now' | 'planned'>('now');
   const [nowMs] = useState(() => Date.now());
   const { expanded, toggleExpanded } = useHistoryExpanded();
   const listRef = useRef<HTMLDivElement | null>(null);
   const stage = useElementWidth();
-  const { setHover, highlightedRows, highlightedEdits } = useHistoryFocus({
+  const { setHover, highlightedRows } = useHistoryFocus({
     edits,
     marks,
     run,
     isDone,
   });
-  const { conflictStep, conflict, isPredictionSupported } = useHistoryPrediction({
-    draft,
-    edits,
-    onto,
-  });
   const editing = useHistoryEditing({
     sessionId,
     mountId,
     items,
-    onto,
     original: plan.original,
     titleOf,
     clearHover: () => setHover(null),
   });
-  const isNarrow = stage.width !== null && stage.width < NARROW_WIDTH;
-  const hasPlan = edits.length > 0 && !isDone;
-  const reveal = useHistoryPanelReveal({ isOpen: hasPlan && !isNarrow });
-  const view = isDone ? 'done' : isNarrow && narrowView === 'planned' ? 'planned' : 'now';
-  const workingSha =
-    run?.phase === 'trying' && run.progress?.stage === 'step' ? run.progress.sha : null;
+  const view = 'now';
+  const workingSha = live?.busySha ?? null;
   const { rows, positions } = useHistoryRows({
     view,
     commits,
@@ -163,8 +149,7 @@ export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: 
     workingSha,
     isDone,
   });
-  const headSha =
-    view === 'planned' ? ([...keptOrder({ items })].reverse()[0] ?? model.headSha) : model.headSha;
+  const headSha = model.headSha;
   const renderRow = buildHistoryRowRenderer({
     sessionId,
     view,
@@ -175,7 +160,8 @@ export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: 
     isDone,
     isInteractive,
     applied,
-    conflictStep,
+    conflictStep: null,
+    workingSha,
     headSha,
     model,
     prNumber,
@@ -191,7 +177,16 @@ export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: 
     setEditingSha,
     callbacksFor,
   });
-  const actions = <HistoryActions onShowBackups={backups.showBackups} />;
+  const actions = (
+    <HistoryActions
+      canUndo={(live?.undo.length ?? 0) > 0}
+      canRedo={(live?.redo.length ?? 0) > 0}
+      isBusy={live?.isBusy === true || plan.isBusy}
+      isReadOnly={isReadOnly}
+      onUndo={undo}
+      onRedo={redo}
+    />
+  );
 
   const loadState = loadStateOf({
     hasLoaded: draft !== null,
@@ -229,33 +224,19 @@ export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: 
       />
     ) : (
       <div className="flex flex-col gap-6" onKeyDown={keys.onPageKey}>
-        {backups.isShowingBackups ? (
-          <HistoryBackups
-            worktreePath={worktreePath}
-            branch={mount.branch}
-            hasUpstream={hasUpstream}
-            revision={run?.updatedAt ?? 0}
-            onRestore={flow.restoreBackup}
-            onClose={backups.hideBackups}
-          />
-        ) : null}
-        {applied !== null && run !== null ? <HistoryResultHead applied={applied} /> : null}
+        <HistoryLiveNotice sessionId={sessionId} mountId={mountId} live={live} />
+        {run === null ? null : (
+          <HistoryStatusSlot run={run} flow={flow} titleOf={titleOf} hasUpstream={hasUpstream} />
+        )}
         <div className="flex flex-col gap-4">
-          <div
-            ref={stage.ref}
-            className={cn(
-              'grid items-start motion-safe:transition-[grid-template-columns,column-gap] motion-safe:duration-200',
-              !reveal.isMounted && 'grid-cols-1',
-              reveal.isMounted && !reveal.isExpanded && 'grid-cols-[minmax(0,1fr)_0px] gap-x-0',
-              reveal.isMounted && reveal.isExpanded && 'grid-cols-[minmax(0,1fr)_320px] gap-x-3',
-            )}
-          >
+          <div ref={stage.ref} className="grid grid-cols-1 items-start">
             <HistoryNowColumn
+              sessionId={sessionId}
+              repoPath={mount.repoRoot}
+              ownBranch={mount.branch}
+              onRebase={flow.rebaseOnto}
               view={view}
               isDone={isDone}
-              isNarrow={isNarrow}
-              hasPlan={hasPlan}
-              narrowView={narrowView}
               rows={rows}
               listRef={listRef}
               positions={positions}
@@ -263,81 +244,18 @@ export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: 
               graph={graph}
               baseSha={draft?.baseSha ?? ''}
               baseBranch={baseBranch}
-              onto={onto}
               isInteractive={isInteractive}
               dropTarget={drag.drag?.target ?? null}
               nowMs={nowMs}
               renderRow={renderRow}
               onKeyDown={keys.onRowKey}
-              onNarrowViewChange={setNarrowView}
-              onStartFromMain={() => {
-                if (graph === null) {
-                  return;
-                }
-                editing.change({
-                  items,
-                  onto: graph.mainHead,
-                  message: "Your branch will start from today's main on Apply",
-                });
-              }}
             />
-            {reveal.isMounted ? (
-              <HistoryAfterColumn
-                beforeCount={model.ownCount}
-                afterCount={model.afterCount}
-                keep={[...keptOrder({ items })]}
-                marks={marks}
-                positions={positions}
-                isOnMain={onto !== null}
-                highlighted={highlightedRows}
-                workingSha={workingSha}
-                titleOf={titleOf}
-                onHover={(sha) => setHover(sha === null ? null : { kind: 'row', sha })}
-              />
-            ) : null}
           </div>
         </div>
+        {backupCount > 0 ? (
+          <HistoryVersionsLink count={backupCount} onOpen={versionsDrawer.showVersions} />
+        ) : null}
         {isInteractive && !isDone ? <HistoryKeysHint /> : null}
-        {applied !== null && run !== null ? (
-          <HistoryAppliedResult
-            applied={applied}
-            run={run}
-            flow={flow}
-            branch={mount.branch}
-            nowMs={nowMs}
-            hasUpstream={hasUpstream}
-            prNumber={prNumber}
-          />
-        ) : (
-          <HistoryPlannedSection
-            edits={edits}
-            titleOf={titleOf}
-            model={model}
-            highlightedKeys={highlightedEdits}
-            conflict={conflict}
-            isPredictionSupported={isPredictionSupported}
-            hasUpstream={hasUpstream}
-            prNumber={prNumber}
-            dirtyCount={dirtyCount}
-            isInteractive={isInteractive}
-            status={
-              run === null ? null : (
-                <HistoryStatusSlot
-                  run={run}
-                  flow={flow}
-                  titleOf={titleOf}
-                  hasUpstream={hasUpstream}
-                />
-              )
-            }
-            flow={flow}
-            onUndo={editing.undoEdit}
-            onModeChange={editing.setMode}
-            setHover={setHover}
-            setLive={editing.setLive}
-            setEditingSha={setEditingSha}
-          />
-        )}
         <p aria-live="polite" className="sr-only">
           {editing.live}
         </p>

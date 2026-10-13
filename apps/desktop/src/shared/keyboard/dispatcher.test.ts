@@ -436,3 +436,18 @@ describe('shortcut dispatcher with a handler that can decline', () => {
     expect(event.defaultPrevented).toBe(true);
   });
 });
+
+describe('contextual history undo', () => {
+  it('takes precedence over app undo and releases the chord when the page closes', () => {
+    const app = vi.fn();
+    const history = vi.fn();
+    bind('app.undo', app);
+    const release = registerShortcut('history.undo', history);
+    press({ code: 'KeyZ', metaKey: true });
+    expect(history).toHaveBeenCalledTimes(1);
+    expect(app).not.toHaveBeenCalled();
+    release();
+    press({ code: 'KeyZ', metaKey: true });
+    expect(app).toHaveBeenCalledTimes(1);
+  });
+});

@@ -619,7 +619,7 @@ describe('DiffView file-level comments', () => {
 
     const section = screen.getByRole('region', { name: LEDGER.path });
     expect(within(section).getByText('Split this file before it grows')).toBeDefined();
-    expect(within(section).getByRole('button', { name: 'Comment 1' })).toBeDefined();
+    expect(within(section).getByRole('button', { name: 'Comment' })).toBeDefined();
   });
 
   it('has no Comment on file action when the comments do not allow file level', () => {

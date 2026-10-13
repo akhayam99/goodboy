@@ -42,7 +42,7 @@ describe('lens tones', () => {
     expect(lensIconClass({ lens: 'workflows' })).toBe(tintClasses('primary').icon);
     expect(lensIconClass({ lens: 'files' })).toBe(tintClasses('info').icon);
     expect(lensIconClass({ lens: 'questions' })).toBe(tintClasses('warning').icon);
-    expect(lensIconClass({ lens: 'terminal' })).toBe(tintClasses('neutral').icon);
+    expect(lensIconClass({ lens: 'scripts' })).toBe(tintClasses('info').icon);
   });
 
   it('keeps the tool brand color on the linked tools whatever the tone', () => {

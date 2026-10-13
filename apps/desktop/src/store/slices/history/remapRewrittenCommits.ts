@@ -9,6 +9,7 @@ type Params = {
   readonly get: GetFn;
   readonly sessionId: SessionId;
   readonly map: ReadonlyArray<HistoryShaMove>;
+  readonly shouldRequireSaved?: boolean;
 };
 
 const moved = ({ map }: { readonly map: ReadonlyArray<HistoryShaMove> }) =>
@@ -52,6 +53,7 @@ export const remapRewrittenCommits = async ({
   get,
   sessionId,
   map,
+  shouldRequireSaved = false,
 }: Params): Promise<ReadonlyArray<HistoryThreadShas>> => {
   const moves = moved({ map });
   if (moves.size === 0) {
@@ -110,7 +112,7 @@ export const remapRewrittenCommits = async ({
         isFolded: folded.has(fromSha),
       }).catch(() => undefined);
     }
-    await get().updateResolveThread({
+    const hasSaved = await get().updateResolveThread({
       sessionId,
       threadId: row.threadId,
       patch: {
@@ -119,6 +121,9 @@ export const remapRewrittenCommits = async ({
         replacesSha: remapSha({ sha: row.replacesSha, moves }),
       },
     });
+    if (!hasSaved && shouldRequireSaved) {
+      throw new Error('The branch changed, but its comment references could not be updated.');
+    }
   }
   return before;
 };

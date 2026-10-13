@@ -147,8 +147,22 @@ fn details(list: &str) -> Result<Details, String> {
 }
 
 #[cfg(target_os = "macos")]
-fn collect(ledger: &[LedgerEntry]) -> Result<MonitorSnapshot, String> {
-    let listeners_text = run_tool("lsof", &["-nP", "-iTCP", "-sTCP:LISTEN", "-Fpn"])?;
+fn listen_filter(ports: &[u16]) -> String {
+    if ports.is_empty() {
+        return "-iTCP".to_string();
+    }
+    let list = ports
+        .iter()
+        .map(|port| port.to_string())
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("-iTCP:{list}")
+}
+
+#[cfg(target_os = "macos")]
+fn collect(ledger: &[LedgerEntry], ports: &[u16]) -> Result<MonitorSnapshot, String> {
+    let filter = listen_filter(ports);
+    let listeners_text = run_tool("lsof", &["-nP", &filter, "-sTCP:LISTEN", "-Fpn"])?;
     let raw_listeners = parse::parse_lsof_listeners(&listeners_text);
     let scope = ledger_scope(ledger, &raw_listeners);
     let table = run_tool(
@@ -187,8 +201,11 @@ fn to_listeners(raw: Vec<parse::RawListener>, alive: &BTreeSet<u32>) -> Vec<List
 }
 
 #[cfg(target_os = "linux")]
-fn collect(ledger: &[LedgerEntry]) -> Result<MonitorSnapshot, String> {
-    let sockets = linux::listening_sockets();
+fn collect(ledger: &[LedgerEntry], ports: &[u16]) -> Result<MonitorSnapshot, String> {
+    let sockets: Vec<(String, u16, u64)> = linux::listening_sockets()
+        .into_iter()
+        .filter(|(_, port, _)| ports.is_empty() || ports.contains(port))
+        .collect();
     let inode_owner = linux::inode_owners();
     let raw_listeners: Vec<parse::RawListener> = sockets
         .into_iter()
@@ -228,7 +245,7 @@ fn collect(ledger: &[LedgerEntry]) -> Result<MonitorSnapshot, String> {
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "linux")))]
-fn collect(_ledger: &[LedgerEntry]) -> Result<MonitorSnapshot, String> {
+fn collect(_ledger: &[LedgerEntry], _ports: &[u16]) -> Result<MonitorSnapshot, String> {
     Ok(MonitorSnapshot {
         listeners: Vec::new(),
         processes: Vec::new(),
@@ -363,14 +380,17 @@ mod linux {
 }
 
 pub(crate) fn snapshot() -> Result<MonitorSnapshot, String> {
-    collect(&crate::proc::ledger::global().list())
+    collect(&crate::proc::ledger::global().list(), &[])
 }
 
 #[tauri::command]
-pub(crate) async fn monitor_snapshot() -> Result<MonitorSnapshot, String> {
-    tauri::async_runtime::spawn_blocking(snapshot)
-        .await
-        .map_err(|error| error.to_string())?
+pub(crate) async fn monitor_snapshot(ports: Option<Vec<u16>>) -> Result<MonitorSnapshot, String> {
+    let ports = ports.unwrap_or_default();
+    tauri::async_runtime::spawn_blocking(move || {
+        collect(&crate::proc::ledger::global().list(), &ports)
+    })
+    .await
+    .map_err(|error| error.to_string())?
 }
 
 #[cfg(test)]
@@ -408,6 +428,26 @@ mod tests {
         assert_eq!(actual, expected);
         assert!(process.rss_bytes > 0);
         drop(socket);
+    }
+
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[test]
+    fn a_port_list_narrows_the_listeners_to_those_ports() {
+        let socket = TcpListener::bind("127.0.0.1:0").expect("bind ephemeral");
+        let other = TcpListener::bind("127.0.0.1:0").expect("bind second");
+        let port = socket.local_addr().expect("local addr").port();
+        let other_port = other.local_addr().expect("local addr").port();
+        let narrowed = collect(&[], &[port]).expect("narrow snapshot");
+        assert!(narrowed
+            .listeners
+            .iter()
+            .any(|listener| listener.port == port));
+        assert!(narrowed
+            .listeners
+            .iter()
+            .all(|listener| listener.port != other_port));
+        drop(socket);
+        drop(other);
     }
 
     #[test]

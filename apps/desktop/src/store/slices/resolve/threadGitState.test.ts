@@ -129,6 +129,28 @@ describe('computeThreadGitFacts', () => {
     expect(remoteKindOf({ facts })).toBe('missing');
   });
 
+  it('does not probe a proposed fix that waits in a pending candidate', async () => {
+    const isOnLocalHead = vi.fn(async () => false);
+    const facts = await computeThreadGitFacts({
+      ...base,
+      row: rowOf({ stage: 'proposed' }),
+      pendingShas: new Set(['c81e5aa0000000000000000000000000000000aa']),
+      ports: ports({ isOnLocalHead }),
+    });
+    expect(facts.gitState).toBe('local');
+    expect(isOnLocalHead).not.toHaveBeenCalled();
+  });
+
+  it('still flags a lost fix once its candidate is no longer pending', async () => {
+    const facts = await computeThreadGitFacts({
+      ...base,
+      row: rowOf({ stage: 'approved' }),
+      pendingShas: new Set(['other']),
+      ports: ports({ isOnLocalHead: async () => false }),
+    });
+    expect(facts.gitState).toBe('missing');
+  });
+
   it('reads a missing fix as folded when the same patch sits on the branch under another sha', async () => {
     const locateFix = vi.fn(async () => ({
       isKnown: true,

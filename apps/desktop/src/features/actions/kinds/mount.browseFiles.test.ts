@@ -31,6 +31,8 @@ const facts = (overrides: Partial<MountFacts> = {}): MountFacts => ({
   keptPath: MOUNT.worktreePath,
   isRepo: true,
   isClosed: false,
+  isBranchGone: false,
+  canRestoreBranch: false,
   pr: null,
   requestLabel: null,
   requestNumber: null,

@@ -9,7 +9,6 @@ const LENS_ADDRESS: Record<LensKind, string> = {
   review: 'review',
   plans: 'artifacts',
   scripts: 'scripts',
-  terminal: 'terminal',
   context: 'context',
   goal: 'context/goal',
   decisions: 'context/decisions',
@@ -54,7 +53,6 @@ const targetAddress = ({ target }: TargetParams): string => {
       const path = target.focus?.path == null ? '' : `#${target.focus.path}`;
       return `${target.tab}${mount}${thread}${focus}${sha}${path}`;
     }
-    case 'terminal':
     case 'explore':
       return target.mountPath;
     case 'thread':

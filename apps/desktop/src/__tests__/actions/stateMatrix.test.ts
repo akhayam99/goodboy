@@ -133,7 +133,6 @@ const SESSION_STATES: ReadonlyArray<readonly [string, ActionSeed | null, Readonl
       'session.open',
       'session.review',
       'session.diff (Add a project to this session first)',
-      'session.terminal',
       'session.editor (This session has no worktree yet)',
       'session.rename',
       'session.pin',
@@ -156,7 +155,6 @@ const SESSION_STATES: ReadonlyArray<readonly [string, ActionSeed | null, Readonl
       'session.open',
       'session.review',
       'session.diff',
-      'session.terminal',
       'session.editor',
       'session.openWorktreeTerminal',
       'session.rename',
@@ -183,7 +181,6 @@ const SESSION_STATES: ReadonlyArray<readonly [string, ActionSeed | null, Readonl
       'session.open',
       'session.review',
       'session.diff',
-      'session.terminal',
       'session.editor',
       'session.openWorktreeTerminal',
       'session.rename',
@@ -288,11 +285,12 @@ describe('session menu in every state', () => {
     await run(SESSION_TARGET, 'session.openWorktreeTerminal');
     const tabs = useAppStore.getState().terminalTabs[SESSION] ?? [];
     expect(tabs.map((tab) => tab.cwd)).toEqual([mountFixture().worktreePath]);
-    expect(useAppStore.getState().appStudio).toMatchObject({
+    expect(useAppStore.getState().drawer).toEqual({
       kind: 'terminal',
-      terminalId: tabs[0]?.id,
       sessionId: SESSION,
+      payload: { terminalId: tabs[0]?.id },
     });
+    expect(useAppStore.getState().appStudio).toBeNull();
   });
 
   it('offers one terminal per worktree and opens the chosen one', async () => {
@@ -1783,10 +1781,9 @@ const GIT_STATES: ReadonlyArray<readonly [string, ObjectTarget, ReadonlyArray<st
         path: 'src/importer.ts',
         onOpenInEditor: noop,
         onShowWhole: noop,
-        onOpenInDrawer: noop,
       },
     },
-    ['diffFile.openInEditor', 'diffFile.openInDrawer', 'diffFile.showWhole', 'diffFile.copyPath'],
+    ['diffFile.openInEditor', 'diffFile.showWhole', 'diffFile.copyPath'],
   ],
   [
     'diff file in the drawer',
@@ -1796,7 +1793,6 @@ const GIT_STATES: ReadonlyArray<readonly [string, ObjectTarget, ReadonlyArray<st
         path: 'src/importer.ts',
         onOpenInEditor: null,
         onShowWhole: null,
-        onOpenInDrawer: null,
       },
     },
     ['diffFile.copyPath'],

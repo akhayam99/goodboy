@@ -36,6 +36,7 @@ type Props = {
   readonly registerRef: RefCallback<HTMLElement>;
   readonly isVisible: boolean;
   readonly isReadOnly: boolean;
+  readonly isWhole: boolean;
   readonly focusThreadId: string | null;
   readonly onThreadFocused: () => void;
 };
@@ -86,6 +87,7 @@ const DiffFileView = ({
   registerRef,
   isVisible,
   isReadOnly,
+  isWhole,
   focusThreadId,
   onThreadFocused,
 }: Props) => {
@@ -317,6 +319,27 @@ const DiffFileView = ({
     setVisibleLines(totalLines);
     setCollapsed(false);
   }, [expandContextAll, totalLines]);
+  const autoExpanded = useRef<{
+    readonly path: string;
+    readonly hunks: FileDiff['hunks'];
+    readonly load: FileSidesLoader | null;
+  } | null>(null);
+  useEffect(() => {
+    if (!isWhole) {
+      return;
+    }
+    const last = autoExpanded.current;
+    if (
+      last !== null &&
+      last.path === file.path &&
+      last.hunks === file.hunks &&
+      last.load === loadFileSides
+    ) {
+      return;
+    }
+    autoExpanded.current = { path: file.path, hunks: file.hunks, load: loadFileSides };
+    void expandAll();
+  }, [expandAll, file.hunks, file.path, isWhole, loadFileSides]);
   useEffect(() => {
     registerExpandAll?.(file.path, expandAll);
     return () => registerExpandAll?.(file.path, null);
@@ -343,9 +366,12 @@ const DiffFileView = ({
         onOpenInEditor={
           fileActions?.onOpenInEditor ? () => fileActions.onOpenInEditor?.(file.path) : null
         }
-        onShowWhole={file.binary || loadFileSides === null ? null : () => void expandAll()}
-        onOpenInDrawer={
-          fileActions?.onOpenInDrawer ? () => fileActions.onOpenInDrawer?.(file.path) : null
+        onShowWhole={
+          file.binary || loadFileSides === null
+            ? null
+            : fileActions?.onShowWhole
+              ? () => fileActions.onShowWhole?.(file)
+              : () => void expandAll()
         }
         onCommentOnFile={
           comments?.allowFileLevel === true && !isReadOnly

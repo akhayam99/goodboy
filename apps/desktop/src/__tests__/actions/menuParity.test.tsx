@@ -122,7 +122,6 @@ const overflowThenContext = async ({
 const NAV: BoardNavigation = {
   selectCard: vi.fn(),
   openAgent: vi.fn(),
-  openTerminal: vi.fn(),
   openIDE: vi.fn(),
   openQuestions: vi.fn(),
   openWorkflows: vi.fn(),
@@ -185,22 +184,13 @@ describe('every ⋯ menu and its right click list the same actions in the same o
         onToggleViewed={null}
         onOpenInEditor={vi.fn()}
         onShowWhole={vi.fn()}
-        onOpenInDrawer={vi.fn()}
         onCommentOnFile={vi.fn()}
       />,
     );
     const header = document.querySelector('[data-slot="diff-file-header"]') as HTMLElement;
-    const { fromOverflow, fromContext } = await overflowThenContext({
-      overflow: screen.getByRole('button', { name: /More actions for/ }),
-      context: header,
-    });
-    expect(fromOverflow).toEqual([
-      'Open in editor',
-      'Open in a drawer',
-      'Show whole file',
-      'Copy path',
-    ]);
-    expect(fromContext).toEqual(fromOverflow);
+    expect(screen.queryByRole('button', { name: /More actions for/ })).toBeNull();
+    fireEvent.contextMenu(header);
+    expect(menuLabels()).toEqual(['Open in editor', 'Show whole file', 'Copy path']);
   });
 
   it('script row', async () => {

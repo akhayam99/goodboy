@@ -19,15 +19,26 @@ import { bringBackHistoryFiles } from './bringBackHistoryFiles';
 import { forgetHistoryFiles } from './forgetHistoryFiles';
 import { acceptHistoryChange } from './acceptHistoryChange';
 import { discardHistoryChange } from './discardHistoryChange';
+import { fixPushWithAgent } from './fixPushWithAgent';
+import { settlePushFix } from './settlePushFix';
+import { fixBranchPushWithAgent } from './fixBranchPushWithAgent';
+import { settleBranchPushFix } from './settleBranchPushFix';
+import { prefillBranchPushTerminal } from './prefillBranchPushTerminal';
 import { settleHistoryRewriter } from './settleHistoryRewriter';
 import { startHistoryRewriter } from './startHistoryRewriter';
 import { syncBranchWithRemote } from './syncBranchWithRemote';
 import type { SliceDeps } from '../../slice-types';
+import { changeLiveHistory } from './changeLiveHistory';
+import { setHistoryLiveSession } from './setHistoryLiveSession';
+import { clearLiveHistoryError } from './clearLiveHistoryError';
 
 export { historyInitialState } from './state';
 
 export const createHistorySlice = ({ set, get }: SliceDeps) => {
   return {
+    changeLiveHistory: changeLiveHistory({ set, get }),
+    setHistoryLiveSession: setHistoryLiveSession({ set, get }),
+    clearLiveHistoryError: clearLiveHistoryError({ set, get }),
     rebaseBranch: rebaseBranch(set, get),
     acceptHistoryChange: acceptHistoryChange({ set, get }),
     discardHistoryChange: discardHistoryChange({ set, get }),
@@ -35,6 +46,11 @@ export const createHistorySlice = ({ set, get }: SliceDeps) => {
     pushHistoryRewrite: pushHistoryRewrite(set, get),
     startHistoryRewriter: startHistoryRewriter(set, get),
     settleHistoryRewriter: settleHistoryRewriter(set, get),
+    fixPushWithAgent: fixPushWithAgent({ set, get }),
+    settlePushFix: settlePushFix({ set, get }),
+    fixBranchPushWithAgent: fixBranchPushWithAgent({ set, get }),
+    settleBranchPushFix: settleBranchPushFix({ set, get }),
+    prefillBranchPushTerminal: prefillBranchPushTerminal({ get }),
     loadHistoryDraft: loadHistoryDraft(set, get),
     editHistoryDraft: editHistoryDraft(set, get),
     undoHistoryDraft: undoHistoryDraft(set, get),

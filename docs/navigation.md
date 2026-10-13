@@ -142,7 +142,7 @@ opens it on a mode. Commands is the first mode.
      and outcome log as the session's next-step slot (`useSessionPalette` calls
      `useSessionSuggestions` and `useSuggestionActions`). Needs-you rows first.
      A step the slot confirms (Merge, Close branch) confirms here too. Mount
-     proposals stay in the slot. Push, Create pull request and Rebase live here:
+     proposals stay in the slot. Push, Create pull request and Rebase (the step reads `Open rebase` and lands on the Commits base row) live here:
      a mount target needs live git status, so the palette takes them from the
      model that already reads it.
   2. **For this session** (above it **For this agent**, **For this run** or
@@ -192,7 +192,7 @@ opens it on a mode. Commands is the first mode.
   only when searched by name (every word a word prefix of its label), dimmed
   with its reason, and Enter does nothing. Delete and the other confirmed verbs
   swap the list for an InlineConfirm; Archive runs at once with Undo. The
-  registry owns Comments, Files, Terminal and Open in terminal of a session in scope, so the lens
+  registry owns Comments, Files and Open in terminal of a session in scope, so the lens
   rows with the same names step aside. The lens rows read their labels from
   the shortcut registry, which reads `NAMES` (`Overview`, `Comments`, `Files`,
   `Pull request`), so the palette, the page menu and the shortcut sheet cannot
@@ -249,7 +249,7 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
 
 - **A `Location` is where you are plus how the page was.** Its `place` is the
   board or a session view: lens, open agent, session studio and one target
-  (artifact, run, issue, diff focus, terminal mount, Explore project). Its `studio` is the app
+  (artifact, run, issue, diff focus, Explore project). Its `studio` is the app
   studio open over that place, if any. Its `focus` is the page state: the open
   drawer, selection, scroll and revealed rows. `locationKey` prints the text
   form used by tests and logs: `board`, `s/{session}`, `s/{session}/branch/comments`,
@@ -359,7 +359,7 @@ never exists on one surface only.
   `__tests__/actions/handBuiltMenus.test.ts` fails on a menu built by hand
   outside the registry, against a shrinking list of menus that are not objects
   (creation pickers, property pickers, page chrome).
-- **What each object offers.** A session: Open, Comments, Files, Terminal, Open in terminal
+- **What each object offers.** A session: Open, Comments, Files, Open in terminal
   (one choice per worktree), Open in
   editor; Rename (inline, in the row that opened the menu), Start agent, Link
   work (L on the Overview); copy the title, worktree path, branch and pull request link; Archive with Undo and
@@ -433,7 +433,7 @@ never exists on one surface only.
   removal plan, the forced remove) in their own menu. A reversible verb runs at once with an Undo toast (Archive, Delete on an artifact,
   Close agent, Unlink, Stop tracking, Take off this branch). The toast lasts
   about 10 seconds and Cmd+Z undoes the latest operation outside a text field.
-  Reversible removals never ask for confirmation. A draft verb on the Commits tab (Drop) needs neither.
+  Reversible removals never ask for confirmation. Removing a commit on the Commits tab acts immediately with Undo.
 - **Blocked verbs stay.** A verb that cannot run now stays in the menu, dimmed,
   with its reason under the label, and does nothing when chosen. A verb that
   does not apply to the state is not shown.
@@ -470,7 +470,15 @@ session row, selected while the draft is open, a primary dot and `Draft in progr
 draft waits) and whose group headers carry no top margin: the list's one gap (`listGap`, equal to the
 doors' gap) spaces the groups; then at the foot Settings (⌘,), the Goodboy row
 and a bug icon that opens the report sheet. Chat's door carries a running dot
-or a new-reply dot. Before any workspace exists the column keeps only its app
+or a new-reply dot. Terminal's door counts the terminal tabs still alive, all owners, and Monitoring's
+door counts the pinned ports and the ports Goodboy started that are in use, both in the info tone and
+hidden at zero; a pinned port that is down swaps Monitoring's count for a warning dot. The door's
+accessible name carries the fact (`Terminal, 2 running`, `Monitoring, 3 in use`), and both read the
+store (`useDoorSignals`). While the Monitoring page is closed,
+`useMonitoringSignalRefresh` rescans only the pinned, learned and Goodboy-run ports every 30 seconds
+(`monitor_snapshot` with a port list, merged into the snapshot), only while the window is visible and
+the snapshot is older than 15 seconds, and never beside another scan. The collapsed rail shows a dot
+(no number) on those two doors, with the fact in the tooltip. Before any workspace exists the column keeps only its app
 half: Settings, the Goodboy row and the bug. The column is 240px by default and
 resizes from 200 to 400 (`goodboy:left-sidebar-width:v3`, so an older saved
 width resets once). Its first button or ⌘B folds it, on every screen, into the
@@ -663,7 +671,7 @@ the same compare and swap. Dragging is not built.
 or `remembered` for the open session. A page that has a row in the card
 (Overview, Branch, Runs, Agents, Artifacts, and Questions while one is open)
 takes `bg-selected` and `aria-current="page"` alone. Where no row matches (the
-Tools Explore, Scripts and Terminal, a linked record, Questions with nothing
+Tools Explore and Scripts, a linked record, Questions with nothing
 open) or the pages are folded, the session row takes the sign. While a studio
 (Tasks, Chat, Workflows, Terminal, Impact) sits over the session the row is `remembered`:
 medium weight, no fill, no `aria-current`; closing the studio returns the sign to
@@ -1479,12 +1487,23 @@ busy one asks in a`ConfirmPopover` anchored to the x (`Keep`, danger `Close`). T
 32px location row, the cwd trimmed to the workspace folder and the `cd`menu (only while the
 shell is idle, it types`cd`into the shell), then the shell. A terminal id is`<sessionId>::t<n>`for a session and`ws:<workspaceId>::t<n>` for the workspace
 (`terminalOwner.ts`); both reattach after a reload with their owners and renamed names (setting
-`terminal.names`). The session Terminal lens is the same body (`SessionTerminalLens`) focused on
-that session, with the same rail and no header button. `⌘T` (`terminal.newTab`) still adds a
-terminal in both places. ⌘K has `Terminal` (`goto:terminal`), `New terminal`
-(`action:new-terminal`, the workspace folder) and, in a session with worktrees, `Open <repo ·
-  branch> in terminal` (`session.openWorktreeTerminal`, one choice per worktree), which spawns a
-  terminal there on the Terminal page.
+`terminal.names`). A session has no Terminal page of its own: the session terminal lens is gone, and a
+saved location that still names it lands on the session overview (`withoutRemovedPages`). `⌘T`
+(`terminal.newTab`) adds a terminal while one has focus. ⌘K has `Terminal` (`goto:terminal`),
+`New terminal` (`action:new-terminal`, the workspace folder) and, in a session with worktrees,
+`Open <repo · branch> in terminal` (`session.openWorktreeTerminal`, one choice per worktree).
+- **A session terminal opens in a right drawer.** `openSessionTerminal` adds a session terminal at
+  the worktree (or reuses a running one there, never when it carries a `prefill`) and opens the `terminal` drawer over the session
+  (`DrawerContent` `{ kind: 'terminal'; payload: { terminalId } }`, `TerminalDrawer` in
+  `DrawerHost`, side sizing, resizable like the others). The mount row and diff `Open terminal`,
+  the rebase banners (`openMountTerminal`), the session row menu, ⌘K `Open <repo · branch> in
+terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active worktree) all go
+  through it. The header holds the terminal name, a worktree chip, `Open on Terminal page` and
+  `Close`. Closing the drawer never kills the shell: the tab stays in the Terminal list under the
+  session's group, and the drawer closes by itself when its terminal exits. `Open on Terminal page`
+  closes the drawer and selects the same tab on the page; the pane remounts on the same pty and
+  replays its scrollback. The page group title is the session title, cut in the middle past 28
+  characters (`middleTruncate`); the group's `aria-label` keeps the full title.
 - **One Esc stack.** The frame, a body that holds Esc (Tasks with a record
   open), the agent overlay and the delete confirm all register with
   `useEscapeLayer`, so Esc closes the topmost layer only. So does every
@@ -1903,7 +1922,10 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   every mount row is `MOUNT_ROW_HEIGHT` (36px), so a long branch or a failure
   never moves a column. A failed row action raises an inline `Notice`
   (`danger`, title `Couldn't <verb> <project>`, `Details`, `Retry`) under its
-  row; a branch mismatch is a `warning` `Notice` with `Use this branch here`,
+  row; a mount follows a branch renamed or switched in its worktree on the
+  next status read and logs it as a `Branch` activity row, and only a mismatch
+  it cannot follow (a git operation in progress, the branch held by another
+  mount, a detached HEAD) is a `warning` `Notice` with `Use this branch here`,
   `Keep both branches` and `Not now`. A card whose mounts have not loaded
   draws skeleton rows on the same tracks. `Add project` stays a button in the
   header; once nothing is left to add its popover says every project is already in
@@ -1931,13 +1953,18 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   Comments is one flow: the list grouped by delivery (Needs you, Working,
   Ready to push, Open, Done and Left open on its host, the last two closed)
   under the run status line, and the focused comment beside it in the page
-  itself, never in a drawer. A comment reads one word (Question, To review,
-  Push failed, Couldn't fix, Working, Ready, Done, Left open, Open) and
-  `reviewTally` is the one count behind every number of them. A thread in the address is
+  itself, never in a drawer. A comment reads one word (Question for you, Fix ready,
+  Push failed, Failed, Working, Applied, Replied, Done, Left open, Open), all from `RESOLVE_WORD_LABEL`
+  in `commentProjection.ts` (Applied is a fix on the branch whose reply is not sent, Replied is a
+  thread delivered and resolved on the host), and `reviewTally` is the one count behind every number of them.
+  The action that takes a fix is `Apply fix` (`Apply N fixes`) in the list, the bar and the
+  drawer. A fix run is one agent and one transcript for all its comments: answers, retries and
+  hints continue that run, only a model the owner picks starts a new one, and a finished turn
+  without a result for a comment reads Failed with Retry, never a question. A thread in the address is
   `s/{session}/branch/comments/t/{thread}`. A comment nobody started shows `Fix` on hover (and `F`), which opens the **Fix comments** drawer
   (kind `fix-comments`, side tier) with that comment checked; a checkbox on hover picks comments (`X` on the focused row,
   Cmd+A for every fixable comment, open or couldn't fix, Esc clears) and the bar `N selected ·
-Fix N` opens the same panel, or `Accept N` for comments to review. With no fix run
+Fix N` opens the same panel, or `Apply N fixes` for comments with a fix ready. With no fix run
   the line under the tabs says `Fix N`; the Overview card and
   the board card open that same panel pre-filled. Bulk answers, Retry N and
   `N accepted · Undo` (Cmd+Z) are described in
@@ -1990,7 +2017,9 @@ on you] }`. Any other agent keeps its page, and its pane tab is part of the
   address: `agentPlace({ sessionId, agentId, pane })` asks for `brief` or
   `transcript`. The agent page opens on Brief from every door. Without a
   `pane` the pane picks its tab (`agentOpenTab`: the `pane` of the address,
-  else the tab the user picked by hand on that agent, else Brief). A door asks
+  else the tab the user picked by hand on that agent, else Brief when the Brief has
+  something to show (an outcome, a latest reply, an open question, a plan or a subagent) and Transcript when it has
+  nothing yet, as for an agent that just started). A door asks
   for `transcript` only when it targets a place inside the chat: a search hit
   on a message, Message this agent, Open the agent from a message, and the
   hint that points at the transcript. A door that targets the Brief, such as a
@@ -2562,7 +2591,22 @@ push one), drift and the result per thread. Under it sits the rebase job banner
 on main, on every tab of the page, which replaces the red line that used to
 tell a stop. It reads the run of the branch (`historyRuns`), never local state,
 and its stops carry only the actions that exist today (Dismiss, Refresh, Open
-terminal, Open providers, Check again, Undo rewrite, See what it did). Only the header pushes: a thread has no
+terminal, Open providers, Check again, Undo rewrite, See what it did). A failed push after
+a rebase offers `Fix with agent` (the primary: an Implementer on that worktree briefed with the
+command and git output, `fixPushWithAgent`; it commits the fix and never pushes, Goodboy then
+pushes again with the same lease, `settlePushFix`, and the banner follows it with a link to its
+transcript), `Open terminal here` (the session terminal drawer at the worktree with the exact
+push typed at the prompt and not run, `openSessionTerminal` with `prefill`) and `Retry push`.
+The same two actions sit beside Retry on the inline failure line of the header Push and Force
+push (`PushFailureActions`, shown when the failed action's error is a push failure (`pushFailedError`)): the
+agent is `fixBranchPushWithAgent`, its finish runs `settleBranchPushFix` (plain push, or force push
+with the lease read before the agent started and the commits the confirm named), and the terminal
+is `prefillBranchPushTerminal` (`git push`, or `--force-with-lease` pinned to the remote sha the
+confirm showed, `PushFailedError.confirmedRemoteSha`; when the online copy moved since, nothing is
+typed and the header says `The online copy changed. Check again before force pushing.`, and a
+prefill always opens a new terminal tab). A retry that pushed clears the failure line
+(`settledBranchPushes`).
+Only the header pushes: a thread has no
 Push, Push again or Sync button. With an accepted thread opened in Comments the
 primary reads `Push 1` (it counts threads) and pushes just that fix
 (`preparePublication` with `isolated`, `isolatedPushOf` unchanged); the preview
@@ -2584,7 +2628,7 @@ row's tooltip) and Checks never appears without a pull request. A row is 32px wi
 right-aligned count (a muted `-` named `Not loaded` until it is known); Files shows its viewed
 ring and `12/39`; Checks adds a dot while one fails. The current row carries `aria-current="page"`,
 Up and Down move between rows while the rail has focus, and a pick replaces the address. Merged and
-Closed make the page read only (`isBranchReadOnly`): Commits shows its list without Rebase or Apply. Every door that means "go to the
+Closed make the page read only (`isBranchReadOnly`): Commits shows its list without editing or Rebase. Every door that means "go to the
 branch" lands through one pure rule (`branchLandingTabOf`,
 `features/branch/branchLandingTab.ts`): an explicit section in the place wins, else
 `Overview` when the active mount has a pull request, else `Files`; then the door resolver
@@ -2668,7 +2712,7 @@ around the commented line above it (`hunkAround`, linking to Files). Comments ex
 request exists or at least one comment exists, a local note or a thread open or resolved; its count is
 the notes alone while there is no pull request. The
 properties (Origin, Attempts, Fix commit) sit inline under the thread at every width, never in a margin rail. The
-actions of the comment sit in a 48px bar (`ReviewActionBar`) at the bottom of the thread column, outside the scrolling thread, so Accept is in view at 1440x900; `⋯` holds the transcript, Resolve without a reply, Open on the host and Copy link.
+actions of the comment sit in a 48px bar (`ReviewActionBar`) at the bottom of the thread column, outside the scrolling thread, so Apply fix is in view at 1440x900; `⋯` holds the transcript, Resolve without a reply, Open on the host and Copy link.
 Every Branch section sits on the 960px column (`PaneShell width="column"`, bodies in
 `PageColumn width="column"`), the header and Ask included, so nothing
 moves from one section to the next. The Comments section reads the width of its own pane
@@ -2709,7 +2753,7 @@ it was viewed; none on a merged or closed pull request), then the name (a rename
 tooltip names the kinds (`2 notes, 1 on GitHub`), `+N −N` only at a rail of 340 or more, and
 the status letter. A name too long for the rail keeps its first six characters and its last
 six with the extension chain (`Statem…ceCard.test.tsx`, `cutFileName`); the full name stays
-for a screen reader and the full path is the tooltip. The tree is a `tree`: Up and Down move
+for a screen reader. A file or folder row has no tooltip: the full path is in the file header of the diff. The tree is a `tree`: Up and Down move
 its cursor, Home and End go to the ends, Right and Left open, close and climb, `Enter` jumps
 the diff and keeps focus in the tree, `Space` toggles viewed (or folds a folder) and `Esc`
 returns to the diff. One key hint line ends the tree (`? all keys` opens the full list).
@@ -2737,8 +2781,7 @@ as they are. A click, `J`/`K`, next unviewed and `Viewed` call the diff's
 scroller directly (`registerScroller` on `DiffView`); `focusPath` is only for a
 link from another page such as `Open in Files`. A refresh keeps the tree and
 the diff on screen (`isRefreshing` on `useSessionDiff`); skeletons show only
-on the first load and when the scope changes. Hovering a row shows its full path
-in a tooltip, never a native `title`. The diff resets its mounted
+on the first load and when the scope changes. The diff resets its mounted
 batch, its observer and its place only when the list of paths changes, never on
 a new array with the same paths, so marking a file viewed or a note changing
 neither shortens the page nor drops an open composer. Folder row ids start with
@@ -2747,28 +2790,42 @@ file, open folders, notes, `Viewed`), and a model in `features/diff/lib/changeTr
 builds the rows. The file cards sit 8 apart on the 960 column (never the pane's width); a
 card header is 44 high on the panel surface and holds the fold chevron, the status square,
 the path (folders faint, the name whole, cut from the left, with a real tooltip) and
-`+N −N`, then three 28px controls that are always there: `Viewed` (a checkbox with the
+`+N −N`, then five 28px controls that are always there: `Viewed` (a checkbox with the
 word; checked folds the file, tooltip `Changed since you viewed it` when it went stale),
-`Comment` with the count of both kinds, and one `⋯` (Open in editor, Open in a drawer, Show
-whole file, Copy path). A merged or closed pull request hides Viewed, Comment, Reply and
+then icon-only `Comment` (tooltip with the count of both kinds), `Open in editor`, `Copy path`
+(the tooltip reads `Copied` after the click) and `Show whole file`. There is no overflow menu;
+a right click on the header still lists Open in editor, Show whole file and Copy path.
+`Show whole file` opens a right drawer (`FileWholeDrawer`) with the full file and the change
+marked, loaded for the same view as the page (branch, working tree or commit). The drawer starts
+in the page's Display layout and has its own Unified and Split toggle in its header: it is local
+state and never changes the page's Display setting. A merged or closed pull request hides Viewed, Comment, Reply and
 the other writes. Split needs a column content of 880 or more, otherwise `Display` says
 `Split needs a wider window`. The write review form is not on this toolbar: it opens from the
 pull request's `Write review` action and swaps the tab body for the review form with line
 drafts. The section carries no Fix, Push, Rewrite or `PR #N` control of its own.
 
-**Commits.** The home of history: the branch commits and the rewriter are one
-surface (`CommitsHistory`), with `Backups` (secondary, `xs`) alone at the right
-end of the tab row, in the slot `BranchPage` hands down
-(`TabActionsSlotContext`, filled with `TabActions`), so the body starts with the
-graph itself. There is no `Refresh` (the draft reloads by itself when the
-head of the worktree status moved and nothing is planned) and no overflow
-(`Open terminal` is on the mount menu). There is no legend. The body takes the
-page's column with no `px-6` of its own. Backups
-(`Restore previous history`, `Restore branch`) and the result of a run (`Undo
-rewrite`) live here. There is no Rewrite history page: the old `files/…/history`
-address, the palette verb, a mount row's `Rewrite history` and an Activity
-history row (which has no verb and no `⋯` of its own) all land on
-`branch/commits`. **Checks.** The checks of the pull request. A GitLab or Bitbucket
+**Commits.** The branch graph updates immediately when a commit is moved,
+folded, renamed or removed. Undo and Redo icon buttons sit in the Commits
+header. The same actions use ⌘Z and ⌘⇧Z while the page is open;
+text fields keep their own undo. Leaving the page clears the edit stack but
+keeps its backup refs. The graph fills the page column at every width.
+There is no preview column, saved edit plan or Apply step for manual edits.
+The existing Force push action updates the online branch separately. While the branch is behind its base, `Rebase on main` takes the secondary slot and Force push moves to `Branch actions`.
+
+Each live edit takes the shown mount, branch, worktree and expected head
+(`changeLiveHistory`). The Git command (`history_live_edit`) holds a writer
+lease across replay and branch movement, saves a backup before replay and
+checks the result on a temporary copy. An agent reservation blocks inline,
+and a busy row disables further edits without a queue. A conflict leaves the
+branch, index and files unchanged, names the error inline and offers Rewrite
+with an agent or Undo to dismiss the failed edit. Dirty files use the stash
+consent and recovery flow. Undo and Redo restore a backup with an expected
+head check; failures retain the stack and the captured retry target. None
+of these operations pushes to GitHub, GitLab or Bitbucket.
+
+Previous versions (`Show previous versions (n)` under the graph, the `Previous versions` drawer, `Reset branch to this version`) live here. There is no
+Rewrite history page: the old history address, the palette verb and Activity
+history rows land on `branch/commits`. **Checks.** The checks of the pull request. A GitLab or Bitbucket
 session reads them through the same five states once its host's
 `canReadChecks` is on (GitLab: the jobs of the head pipeline, a job allowed to
 fail counts as skipped; Bitbucket: its commit statuses; a token that cannot read pipelines gets the denied
@@ -2786,101 +2843,52 @@ moves only after the engine checks the result, with a backup ref and a push
 with lease.
 
 The Commits tab draws the branch as a graph (`history_graph`): a grey main
-trunk with its head node (`main is here now`, how many commits it gained,
-`Rebase on main`), your branch leaving it at the real fork point, one
-row per commit newest first, and `Your branch starts here` at the fork. There
+trunk, your branch leaving it at the real fork point, one
+row per commit newest first, and the base row at the fork. There
 is no row of fact chips over it: the graph already says how many commits are
 yours, how far main moved and what is online. At rest the section is one
-column (`grid-cols-1`) on a 72px lane (trunk at x 20, lane at x 52): the first
-row is `main is here now` with its head node, `15 newer` and a secondary
-`Rebase on main`, then one row per commit (title, then sha, author and age in
+column (`grid-cols-1`) on a 72px lane (trunk at x 20, lane at x 52): one row
+per commit (title, then sha, author and age in
 `text-meta`, a faint `Not pushed` chip only on a commit that is not on the
-online copy, the grip on hover and focus only), then `Your branch starts here`.
+online copy, the grip on hover and focus only), then the base row.
+
+**The base row** (`HistoryBaseRow`) is the action point for the base. Behind the
+base it reads `78 new commits on main` with `Rebase onto latest`; level with it
+the `Your branch starts on today's main` line. The base chip (`branch → main`, a
+searchable listbox of the repository's branches) picks another base; the button
+then reads `Rebase onto <branch>`. The button asks in a `ConfirmPopover` anchored
+to it and runs the rebase command (`rebaseBranch`, with `ontoBranch` for another
+base) with a version of the current history kept. The Activity rebase suggestion
+(`Open rebase`) opens this page on the mount it names, scrolled to the row with
+the button focused (`HISTORY_FOCUS_BASE_EVENT`).
 Under the list one muted line, `Drag a commit to move it, drop it on another to
 fold it in.`, with a ghost `Keys` button that opens an anchored popover listing
 the keys of the focused row (`useHistoryKeys/historyKeys.ts`). There is no
-Planned changes block and no Apply at rest. The big list is always the branch as
-it is and never reorders while you plan. The first planned change (an edit, or
-`Rebase on main` from the list) turns the grid into
-`grid-cols-[minmax(0,1fr)_320px]` with a 200ms reveal (instant under reduced
-motion, `useHistoryPanelReveal`): the After panel, titled `After Apply · 7
-commits become 4`, draws the planned result with a dashed lane, each node level
-with its own row when the order allows (the Now rows and the After nodes share
-one row pitch), and under the list `Planned changes` shows its count and `Reset
-all`, the planned rows and one primary `Apply`. Resetting the last change slides
-the panel out. The Branch header carries no `Rebase on main`: it lives in this section's list. Under
-760px of content the side graph becomes a `Now | After Apply` toggle, shown
-only while a plan exists. Every action has one color (Keep green, Fold in
-azure, Combine yellow, Move violet, Rename neutral, Remove red, Start from
-today's main grey) used on the row's change mark, its node, a 2px edge, the
-dot of its "what happens" line and its planned change. Drag a row between two
-others to move it and drop it onto a row to fold it in (fixup, `Keep title`).
-A folded row carries one always visible control, `Keep title · Keep both ·
-Separate`: `Keep both` combines (squash) and `Separate` makes it its own commit
-again, the same edit as `Separate` in its menu; its planned change keeps
-`Keep title | Keep both`. The row buttons (icons) and the `⋯` menu sit in a
-slot reserved at the end of the row, so they never cover the control; a folded
-row shows only the menu. The drag is pointer events on the shared `usePointerDrag` engine with our
-own hit testing (`useHistoryDrag`), never HTML5 drag and drop: the window's native file drop
-owns the drag session on macOS, and the composer's file drop needs it on. Keys
-on a focused row: Alt with the arrows moves, C folds into the one below, S
-combines keeping both messages, R or Enter renames, Delete or Backspace
-removes, ⌘Z undoes the last edit. Hovering a row, a node in After Apply or a
-planned change lights up the same commit in all three places; on a fold,
-hovering any member or the node lights the whole group, the commit that takes
-them in and every commit it takes in. Nothing touches
-git while you edit: the plan is a draft saved per worktree in `history_plans`,
-the planned changes are derived from it (each with its own `Undo`, plus
-`Reset all`), and once the plan rests for a quarter of a second the engine
-predicts it in memory with one `git merge-tree --stdin` process for every
-commit and one `git fast-import` that writes the predicted commits (git 2.45
-or newer; older git spawns one merge and one commit per step). A predicted
-conflict shows on its row (`may conflict in webhook.ts`) and in a notice with
-`Rewrite with an agent`. The action row sits at the end of the content
-(`FormActions`, no dock): `Apply`, or `Apply here only` and `Apply and update
-online` when the plan replaces commits that are already online and Apply is
-possible (a disabled Apply is one button), which also
-shows the notice about the pull request and the push with lease. Apply never
-rewrites the branch first. `history_plan_run` checks the worktree (right
-branch, nothing uncommitted, head where the plan started), replays the whole
-plan on a temporary git worktree outside your checkout, reports each step
-while the page says `Trying your changes on a temporary copy. Your branch is
-untouched until this finishes.`, checks the result (no conflict left, no merge
-commit, the planned number of commits, and the same tree as the branch, or the
-branch merged with today's main, except the files of removed commits), and
-removes the copy on every exit. A stop names the step and why and says the
-branch is exactly as it was. Only a passing check moves the branch, after a
-backup ref: the files move first with a two-way `read-tree` that refuses to
-overwrite local or untracked work (ignored files and folders included), then
-the branch ref moves with a compare and swap while HEAD still points at that
-branch, and nothing ever runs a hard reset on your checkout. The worktree and
-branch the trial ran on travel with the run to the move and the push, and any
-switch stops them. A rewrite interrupted by a crash is settled before the next
-one checks the worktree; a record Goodboy cannot tie to its branch blocks
-Apply with a notice instead of being guessed. Empty commits are
-kept; only what the plan removes or folds disappears. Commits before the first change keep their shas, so an edit to local
-commits never rewrites what is online. The push always carries
-`--force-with-lease` on the online sha the plan already contains
-(`history_remote_lease`), never a bare force or a sha read after the trial;
-a push that lands during the trial stops the apply before anything moves; if
-origin moved, nothing is pushed and the result offers `Bring them into the
-plan`, which fetches the commits origin gained, replays them on top of the
-rewrite in a copy and leaves `Push with lease` on the new origin sha. The
-result section lists what changed in the action colors, says whether the
-online copy was updated, what the check found, and the backup, with `Restore
-it` and `Done`. Every move leaves a backup under `refs/goodboy/backup/`, in a
-namespace made from the full branch name, kept 30 days; `Backups` in the page menu lists them with `Restore previous
-history`, which moves the branch back and, on a branch with an upstream,
-pushes it with a lease only when the online copy has nothing newer than that
-backup, or is the last rewrite this page pushed and the online copy it replaced
-was already in that backup; otherwise it stays restored here and the page says
-nothing was pushed.
-Backups made while restoring are kept past the 30 days. The newest 20 per
-branch are kept, and an older one is dropped only while a branch, tag,
-remote-tracking ref or another restore backup still contains its commit. The
-newest backup of a branch is never pruned. Backups made before the current
-naming never move: they show read-only as older backups under every branch
-whose name matches, can't be restored from the page and are never pruned. History rewriter's writable directories
+preview or Apply step. The graph shows the live branch. Drag a row between
+two others to move it, or onto another to fold it in. Focused-row keys are
+Alt with arrows to move, C to fold, S to combine both messages, R or Enter to
+rename, and Delete or Backspace to remove. Row titles and accessible names
+read the refreshed commits after each successful edit.
+
+The move refuses to overwrite local or untracked work. Files move with a
+two-way read-tree, then the branch ref moves with compare-and-swap. Undo
+and Redo use the same guarded move, writing a reciprocal backup first.
+A changed branch or head stops the operation. Resolve-thread commit
+references follow successful edits and return with Undo and Redo. A failed
+metadata update leaves the recovery refs available and shows an error.
+Empty commits stay; only removed or folded commits disappear. Commits before
+the first edit keep their shas.
+
+Every move leaves a backup under `refs/goodboy/backup/`, in a namespace made
+from the full branch name. Live edits, Undo and Redo keep their backups for 30 days; they do not count
+toward the retained-backup cap. Restoring an older version
+uses the retained policy: the newest 20 per branch are kept, and an older one
+is dropped only while another retained ref contains its commit. The newest backup is
+never pruned. Older backups from the former naming remain read-only.
+
+`Show previous versions (n)` under the graph (and `Previous versions…` in the page menu) opens the `Previous versions` drawer (kind `history-versions`, side tier). Each version shows when, why (`Before a rebase`, `Before a fold or drop`, `Before a reword or edit`, worked out by `history_backup_facts`), the commit count, the difference with now and an expandable commit list. `Reset branch to this version` (danger, anchored confirm) moves the branch back and the drawer offers `Undo` right after.
+
+History rewriter's writable directories
 are its copy, that copy's own git admin folder, the object store and the
 packed-refs lock file git takes when it clears a rebase marker. They confine
 it only under an OS sandbox or permission check (Codex in `workspace-write`,

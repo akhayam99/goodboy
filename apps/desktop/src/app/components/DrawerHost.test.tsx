@@ -12,6 +12,9 @@ vi.mock('../../features/wireframes/components/WireframeViewer', () => ({
     <p>Wireframe {artifact.title}</p>
   ),
 }));
+vi.mock('../../shared/components/GenericTerminalPanel/LazyGenericTerminalPanel', () => ({
+  LazyGenericTerminalPanel: () => <div data-testid="drawer-terminal" />,
+}));
 vi.mock('../../features/chat/components/ChatView', () => ({
   ChatView: () => <div data-testid="drawer-transcript" />,
 }));
@@ -31,6 +34,7 @@ import type {
 } from '@goodboy/types';
 import { aSession, anAgent } from '@goodboy/types/testing';
 import { useAppStore } from '../../store';
+import type { TerminalTabId } from '../../shared/types/terminal';
 import type { DrawerRequest } from '../../store/slices/drawer/state';
 import { ToastProvider } from '../../shared/components/Toast';
 import { CTX_SESSION_ID } from './MockScene/scenes/brand/contextBase';
@@ -38,12 +42,14 @@ import { SESSION_ID as RESOLVE_SESSION_ID } from './MockScene/scenes/resolveSeed
 import { seedBulkScene } from './MockScene/scenes/bulkSeed';
 import { PLAN_FIXTURE_ID, PLAN_FIXTURE_SESSION } from '../../test/planFixtures';
 import { seedPlanDrawer } from '../../test/planDrawerFixtures';
+import { brandedId } from '../../features/history/testing/brandedId';
 import { DrawerHost } from './DrawerHost';
 
 const MOUNT_ID: MountId = JSON.parse(JSON.stringify('mount-1'));
 const SESSION = 'session-harborline' as SessionId;
 const REPORT = 'artifact-report' as ArtifactId;
 const AGENT = 'agent-resolver' as AgentId;
+const TERMINAL = brandedId<TerminalTabId>({ value: `${SESSION}::t1` });
 const AT = '2026-10-05T10:00:00.000Z' as IsoDateTime;
 
 const REPORT_ARTIFACT: ReportArtifact = {
@@ -163,6 +169,32 @@ const ENTRIES: ReadonlyArray<Entry> = [
     },
   },
   {
+    kind: 'file-diff',
+    region: 'importer.ts',
+    seed: seedSession,
+    drawer: {
+      kind: 'file-diff',
+      sessionId: SESSION,
+      payload: {
+        source: { kind: 'worktree', worktreePath: '/mock/ledger-core' },
+        path: 'src/importer.ts',
+        whole: {
+          file: {
+            path: 'src/importer.ts',
+            status: 'modified',
+            additions: 1,
+            deletions: 0,
+            binary: false,
+            hunks: [],
+          },
+          oldRev: null,
+          newRev: null,
+          baseBranch: null,
+        },
+      },
+    },
+  },
+  {
     kind: 'artifact-document',
     region: 'Rounding drift in ledger-core',
     seed: seedSession,
@@ -195,6 +227,16 @@ const ENTRIES: ReadonlyArray<Entry> = [
     },
   },
   {
+    kind: 'history-versions',
+    region: 'Previous versions',
+    seed: seedSession,
+    drawer: {
+      kind: 'history-versions',
+      sessionId: SESSION,
+      payload: { mountId: MOUNT_ID, worktreePath: '/w/payments-api' },
+    },
+  },
+  {
     kind: 'fix-comments',
     region: 'Fix comments',
     seed: () => {
@@ -205,6 +247,28 @@ const ENTRIES: ReadonlyArray<Entry> = [
       sessionId: RESOLVE_SESSION_ID,
       payload: { mountId: null },
     },
+  },
+  {
+    kind: 'terminal',
+    region: 'payments-api',
+    seed: () => {
+      seedSession();
+      useAppStore.setState({
+        terminalTabs: {
+          [SESSION]: [
+            {
+              id: TERMINAL,
+              owner: { kind: 'session', sessionId: SESSION },
+              title: 'payments-api',
+              cwd: '/mock/payments-api',
+              status: 'running',
+              createdAt: 0,
+            },
+          ],
+        },
+      });
+    },
+    drawer: { kind: 'terminal', sessionId: SESSION, payload: { terminalId: TERMINAL } },
   },
   {
     kind: 'plan-part',

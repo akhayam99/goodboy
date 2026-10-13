@@ -225,7 +225,7 @@ describe('main flows on the real store', () => {
 
     await mountFlow(<BranchPage session={RESOLVE_SESSION} workingDir={null} />);
     const bar = screen.getByRole('toolbar', { name: 'Comment actions' });
-    fireEvent.click(within(bar).getByRole('button', { name: /^Accept/ }));
+    fireEvent.click(within(bar).getByRole('button', { name: /^Apply fix/ }));
 
     await waitFor(() => expect(acceptResolveQueueItem).toHaveBeenCalledOnce());
     expect(acceptResolveQueueItem).toHaveBeenCalledWith(

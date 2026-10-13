@@ -622,12 +622,10 @@ Rewrite history draws one branch on the same grammar: newer above older,
 solid for what happened, dashed for what has not happened yet. Main is a
 straight `idle` trunk with its head node and one dot per commit it gained
 (the subject on hover); the branch leaves it with a quarter curve at the real
-fork point and climbs in a `muted-foreground` lane, one node per commit. The
-big graph is Now and never reorders while you plan; After Apply is a compact
-dashed copy beside it whose nodes sit level with their own rows when the order
-allows (`historyAfterLayout`). No line is ever drawn between the two graphs or
-across rows: hovering a row, a node or a planned change lights the same
-commit in all three places.
+fork point and climbs in a `muted-foreground` lane, one node per commit. The graph shows the local branch and updates after each successful edit.
+There is one full-width column at every window size. The moved row shows
+an inline busy state while Git works; controls ignore further edits until it
+finishes. Undo and Redo are icon buttons with tooltips in the Commits header.
 
 Each action has one colour, read only through `HISTORY_ACTION_CLASSES` in
 `apps/desktop/src/features/history/historyActionClasses.ts`:
@@ -642,19 +640,11 @@ Each action has one colour, read only through `HISTORY_ACTION_CLASSES` in
 | Remove                      | drop     | red        | `--color-danger`           |
 | Rebase on the base branch   | rebase   | trunk grey | `--color-idle`             |
 
-The colour shows on the change mark (a 12% wash, a 40% border and the colour
-as text), on the node and the outer ring of a commit that takes others in, on
-a 2px bar inside the left of the row, on the dot of each part of the "what
-happens" line, on the mark that leads each planned change and on the pressed
-half of `Keep title | Keep both`. A kept row gets a green node and nothing
-else. Warnings keep `warning` and the triangle. `token-contrast-floor.test.ts`
-holds the three history tokens at 4.5:1 on every surface and on their own
-mark, which is why the light theme draws them darker than the dark one. The
-edited row keeps a fading wash for 1.4s (`animate-history-arrive`), the
-narrow After Apply list and the settle after Apply slide rows with
-`useFlipList` (360ms), and After Apply nodes tween in 380ms; reduced motion
-turns all three into instant swaps. The planned changes and the result end
-with `FormActions`, inline at the end of the content, never in a dock.
+A kept row gets a green node. Warnings keep `warning` and the triangle.
+`token-contrast-floor.test.ts` holds the history tokens at 4.5:1 on every
+surface and their own marks. Successful row updates settle with `useFlipList`;
+reduced motion makes the update instant. Errors and stash consent stay inline
+with actions next to their reason.
 
 ### Work nodes and row states
 
@@ -1151,7 +1141,7 @@ One ladder of control heights runs through every register: **24** (`xs`),
 | `IconButton`                         | `xs` 24, `sm` 28, `md` 32 squares, `rounded-md`, glyph 12, 14, 14                                               | Ghost by default. A border only for `variant="outline"`. A smaller glyph sits inside the 24 target. Every icon-only control keeps its tooltip.                                                                                                                                                      |
 | `Chip`                               | `kind="state"` pill 20 (11/16), `reference` badge 24 (12/16, clickable), `id` 4px mono badge 20, `count` dot 16 | The kind is the meaning; the old `size` and `shape` props map onto it until the sweep. `StateBadge` is `Chip kind="state"`. A routing chip (effort, reply length, mode) is neutral and selected by fill.                                                                                            |
 | `SegmentedTabs`                      | `xs` frame 28 (inside a title row that also holds actions), `sm` frame 32 (page-level tabs on their own row)    | The tab keeps one weight selected or not; selection is a fill. A group of two to four choices is `SegmentedTabs`; a group of cards with a description is `ChoiceCards`.                                                                                                                             |
-| `Input`, `Textarea`, `Listbox` field | `sm` 28 (default), `md` 32                                                                                      | 12px text, `rounded-md`. `SearchField` (28, search icon, clear button, `ariaLabel` required) is the one search input; it takes a `hint` for a registered shortcut.                                                                                                                                  |
+| `Input`, `Textarea`, `Listbox` field | `sm` 28 (default), `md` 32                                                                                      | 12px text, `rounded-md`. `SearchField` (28, search icon, clear button, `ariaLabel` required) is the one search input, with one focus ring on its container and none on the inner input; it takes a `hint` for a registered shortcut.                                                                |
 | `Checkbox`                           | 16 box, 4px radius, inside a 24 hit area                                                                        |                                                                                                                                                                                                                                                                                                     |
 | `Switch`                             | 16 by 28 track inside a 24 target                                                                               | The label names the setting and never says On or Off: the setting goes in `ariaLabel`.                                                                                                                                                                                                              |
 
@@ -1638,7 +1628,7 @@ Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action
 
 A verb blocked for a moment stays visible with its reason in the tooltip; a verb the tool refuses is not shown. Merge confirms in a `ConfirmPopover` on its button, and a destructive verb confirms in its menu with a plain menu swap. Properties that can change (state, assignee) change from the control that shows them, never from a button. `RecordHeader` and the `RecordVerbs` type own the contract.
 
-**Row verbs.** The action ladder of a row in a list of objects (the Overview's worktrees) has three rungs, left to right: the verb the state asks for as a quiet text button (Rebase, Push, Create PR, Reopen), the one verb every row can need as a quiet `IconButton` that asks in a `ConfirmPopover` (Close branch, Remove from session), then the `...` with the rare verbs. The menu does not exist when it would hold fewer than two. Rows nest by one constant: a child row's leading glyph sits under the parent's name, `MOUNT_CHILD_INDENT = 22` (the 14px parent glyph and its 8px gap, `ProjectMountRows/mountGrid.ts`), every row of a band has the same 8px left edge and every trailing control ends 8px from the band's right edge. A "Show finished (n)" `CountToggle` and an empty line start on the child rail too.
+**Row verbs.** The action ladder of a row in a list of objects (the Overview's worktrees) has three rungs, left to right: the verb the state asks for as a quiet text button (Rebase, Push, Create PR, Reopen), the one verb every row can need as a quiet `IconButton` that asks in a `ConfirmPopover` (Close branch; a closed row keeps Remove from session in its menu), then the `...` with the rare verbs. The menu does not exist when it would hold fewer than two. Rows nest by one constant: a child row's leading glyph sits under the parent's name, `MOUNT_CHILD_INDENT = 22` (the 14px parent glyph and its 8px gap, `ProjectMountRows/mountGrid.ts`), every row of a band has the same 8px left edge and every trailing control ends 8px from the band's right edge. A "Show finished (n)" `CountToggle` and an empty line start on the child rail too.
 
 A confirm has one placement: anchored. A destructive or one-shot trigger (icon button, sidebar row action, header action, rail row, a text button) opens `ConfirmPopover`, which draws the `plain` surface of `InlineConfirm` in an `AnchoredPopover` beside the trigger, so the page under it never moves. Anything restorable does not ask: it acts at once and offers Undo. A confirmation detached in the body, or a destructive footer dock, is not another zone. Notifications uses it: `Delete all` in the studio header opens it aligned to its end edge, with the scope's count in the title, and the title row never changes height. Push review stays in its banner.
 

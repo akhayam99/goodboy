@@ -2,6 +2,7 @@ import { Channel } from '@tauri-apps/api/core';
 import { invokeCommand } from '../../shared/lib/invokeCommand';
 import type {
   HistoryBackup,
+  HistoryBackupFacts,
   HistoryForgetOutcome,
   HistoryGraph,
   HistoryMoveOutcome,
@@ -27,6 +28,7 @@ type MoveBranchParams = {
 };
 
 type RestoreParams = {
+  readonly isLive?: boolean;
   readonly shouldStash?: boolean;
   readonly worktreePath: string;
   readonly branch: string;
@@ -122,11 +124,16 @@ export const forgetSavedFiles = async ({
   });
 
 export const restoreHistoryBackup = async ({
+  isLive,
   shouldStash,
   ...args
 }: RestoreParams): Promise<HistoryMoveOutcome> =>
   invokeCommand<HistoryMoveOutcome>('history_restore', {
-    args: { ...args, ...(shouldStash === true ? { stash: true } : {}) },
+    args: {
+      ...args,
+      ...(isLive === true ? { isLive: true } : {}),
+      ...(shouldStash === true ? { stash: true } : {}),
+    },
   });
 
 export const listHistoryBackups = async ({
@@ -134,6 +141,29 @@ export const listHistoryBackups = async ({
   branch,
 }: BackupsParams): Promise<ReadonlyArray<HistoryBackup>> =>
   invokeCommand<ReadonlyArray<HistoryBackup>>('history_backups_list', { worktreePath, branch });
+
+type BackupFactsParams = {
+  readonly worktreePath: string;
+  readonly baseRef: string;
+  readonly backupSha: string;
+  readonly nextSha: string;
+  readonly head: string;
+};
+
+export const readHistoryBackupFacts = async ({
+  worktreePath,
+  baseRef,
+  backupSha,
+  nextSha,
+  head,
+}: BackupFactsParams): Promise<HistoryBackupFacts> =>
+  invokeCommand<HistoryBackupFacts>('history_backup_facts', {
+    worktreePath,
+    baseRef,
+    backupSha,
+    nextSha,
+    head,
+  });
 
 export const isHistoryPredictionSupported = async (): Promise<boolean> =>
   invokeCommand<boolean>('history_git_supported').catch(() => false);

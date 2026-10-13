@@ -6,6 +6,7 @@ import { loadTerminalWorkspaceFolder } from './loadTerminalWorkspaceFolder';
 import { reattachTerminalTabs } from './reattachTerminalTabs';
 import { renameTerminalTab } from './renameTerminalTab';
 import { setActiveTerminalTab } from './setActiveTerminalTab';
+import { setTerminalPrefill } from './setTerminalPrefill';
 import { setTerminalTabStatus } from './setTerminalTabStatus';
 import { setTerminalWorkspaceFolder } from './setTerminalWorkspaceFolder';
 import type { SliceDeps } from '../../slice-types';
@@ -21,6 +22,7 @@ export const createTerminalSlice = ({ set, get }: SliceDeps) => {
     closeTerminalTab: closeTerminalTab(set, get),
     setActiveTerminalTab: setActiveTerminalTab(set),
     setTerminalTabStatus: setTerminalTabStatus(set),
+    setTerminalPrefill: setTerminalPrefill({ set }),
     closeSessionTerminals: closeSessionTerminals(set, get),
   };
 };

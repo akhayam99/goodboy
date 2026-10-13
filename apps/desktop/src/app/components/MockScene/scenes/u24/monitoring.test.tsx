@@ -79,9 +79,12 @@ describe('the monitoring scenes', () => {
     expect(within(portRow(5005)).getByText('Also in 2 other worktrees')).toBeDefined();
   });
 
-  it('shows a free workspace port as one dim Free line', async () => {
+  it('folds a free workspace port into one quiet line and lists it on expand', async () => {
     renderScene('monitoring-ports');
-    await waitFor(() => expect(hasPortRow(5002)).toBe(true));
+    await waitFor(() => expect(hasPortRow(5005)).toBe(true));
+    expect(hasPortRow(5002)).toBe(false);
+
+    fireEvent.click(screen.getByRole('button', { name: '1 free: :5002' }));
     const row = portRow(5002);
 
     expect(within(row).getByText('blog')).toBeDefined();
@@ -101,6 +104,7 @@ describe('the monitoring scenes', () => {
     const filter = screen.getByRole('searchbox', { name: 'Filter ports' });
 
     fireEvent.change(filter, { target: { value: '5002' } });
+    fireEvent.click(screen.getByRole('button', { name: '1 free: :5002' }));
     expect(hasPortRow(5002)).toBe(true);
     expect(hasPortRow(5005)).toBe(false);
 
@@ -154,7 +158,7 @@ describe('the monitoring scenes', () => {
     await waitFor(() => expect(hasPortRow(5005)).toBe(true));
     const started = screen.getByRole('region', { name: 'Run by Goodboy' });
 
-    expect(within(started).getAllByText(/^Agent · claude$/)).toHaveLength(2);
+    expect(within(started).getAllByText(/^Agent$/)).toHaveLength(2);
     expect(within(started).getByText('payments-api · hl/refund-rounding')).toBeDefined();
   });
 

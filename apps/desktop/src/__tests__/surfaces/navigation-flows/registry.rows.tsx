@@ -17,7 +17,7 @@ import {
 
 const PAGES = ['Overview', 'Branch', 'Runs', 'Agents', 'Artifacts'];
 
-const TOOLS = ['Explore', 'Scripts', 'Terminal'];
+const TOOLS = ['Explore', 'Scripts'];
 
 const menuLabels = async (): Promise<ReadonlyArray<string>> => {
   const rows = await screen.findAllByRole('menuitemradio', undefined, WAIT);

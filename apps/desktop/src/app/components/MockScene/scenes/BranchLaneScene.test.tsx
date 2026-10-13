@@ -45,8 +45,8 @@ describe('the branch lane scenes', () => {
   it('offers the whole chain at once on the last ready fix', async () => {
     renderLane('chain');
 
-    const accept = await screen.findByRole('button', { name: 'Accept 3 fixes' });
+    const accept = await screen.findAllByRole('button', { name: 'Apply 3 fixes' });
 
-    expect(accept).toBeDefined();
+    expect(accept.length).toBeGreaterThan(0);
   });
 });

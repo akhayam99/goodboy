@@ -51,12 +51,12 @@ const resolvedOutcome = ({
   readonly isQueued: boolean;
 }): string => {
   if (isClosed) {
-    return 'fix committed, thread closed';
+    return 'applied, thread closed';
   }
   if (isQueued) {
-    return 'fix committed, reply queued';
+    return 'applied, reply queued';
   }
-  return 'fix committed locally';
+  return 'diff ready to review';
 };
 
 const wontfixOutcome = ({

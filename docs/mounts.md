@@ -32,7 +32,7 @@ and `apps/desktop/src/store/slices/mount-cleanup/`.
   gets `<prefix>/<slug>`. The task id only enters when the session starts from a
   task: a task linked later never renames the branch. The prefix may hold `/`
   (`team/ak`); the worktree folder stays flat because `/` becomes `-`.
-- A name an agent or the New branch form asks for goes through the same
+- A name an agent asks for (`mount fork`, `mount switch --create`) or the New branch form gives goes through the same
   prefix (project, then workspace, then the default). A name that already
   starts with `<prefix>/` stays as it is, `feat/x` becomes `<prefix>/feat-x`
   and a bare `x` becomes `<prefix>/x` (`prefixedBranchName` in
@@ -132,7 +132,7 @@ before projecting it as writable. Disk states:
 ## Lifecycle
 
 - **Attach** creates or adopts a worktree and inserts the row.
-- **Switch** changes the branch of one mount in place.
+- **Switch** changes the branch of one mount in place, and a mount follows by itself when its worktree lands on another branch (a rename or a checkout), adopting it unless git is mid-operation or another mount holds that branch.
 - **Fork** creates another mount from an explicit base and leaves the source
   intact.
 - **Unmount** removes the worktree and keeps the row with no current path.
@@ -499,7 +499,7 @@ visible, disabled, with its reason in the tooltip. The row menu
 (`⋯`, also on right click) lists only the rare verbs of the worktree: the terminal, the editor (one submenu level
 of detected editors), scripts, Rewrite history, Switch branch,
 Start new turns here (only with two or more mounts) and the copies. It is not drawn when fewer than two would be left.
-The verbs of every day sit on the row: the state verb (Rebase, Push, Create PR), a quiet Close branch icon that asks in a `ConfirmPopover` (`MountConfirmAction`, from the action's own confirm), Reopen and a quiet Remove from session icon on a closed row, and Close branch as text on a finished row. There are no hover-only icons
+The verbs of every day sit on the row: the state verb (Rebase, Push, Create PR), a quiet Close branch icon that asks in a `ConfirmPopover` (`MountConfirmAction`, from the action's own confirm), Reopen on a closed row (Remove from session sits in its `...` menu), and on a closed row whose branch was deleted locally and on origin the chip reads Branch deleted, Reopen gives way to Restore branch (only when Goodboy kept a saved copy of the branch) and a Remove button that also deletes the kept folder after the dirty-files guard (`checkMountBranchGone`, `removeGoneMount`, `restoreGoneBranch`), a failed Reopen whose cause cannot change (branch gone) shows no Retry and can be dismissed, and Close branch as text on a finished row. There are no hover-only icons
 on the row. When a rebase stops, the notice under the row brings the terminal
 and Abort rebase forward. Below a 28rem container New branch shows its icon
 only. The project row has no menu: `MountActionsMenu` is the quiet Remove from session icon, a `ConfirmPopover` anchored to it

@@ -23,10 +23,12 @@ import type { SliceDeps } from '../../slice-types';
 type BranchPushParams = {
   readonly sessionId: SessionId;
   readonly mountId: MountId;
+  readonly expectedWorktreePath?: string;
 };
 
 type ForcePushParams = BranchPushParams & {
   readonly confirmedOnlyOnline: ReadonlyArray<string> | null;
+  readonly confirmedRemoteSha: string | null;
 };
 
 export const createGithubSlice = ({ set, get }: SliceDeps) => {
@@ -38,10 +40,15 @@ export const createGithubSlice = ({ set, get }: SliceDeps) => {
     refreshSessionPr: refreshSessionPr(set, get),
     refreshSessionPrDetail: refreshSessionPrDetail(set, get),
     selectSessionPr: selectSessionPr(set, get),
-    pushSessionBranch: ({ sessionId, mountId }: BranchPushParams) =>
-      pushSessionBranch({ get, sessionId, mountId }),
-    forcePushSessionBranch: ({ sessionId, mountId, confirmedOnlyOnline }: ForcePushParams) =>
-      forcePushSessionBranch({ get, sessionId, mountId, confirmedOnlyOnline }),
+    pushSessionBranch: ({ sessionId, mountId, expectedWorktreePath }: BranchPushParams) =>
+      pushSessionBranch({ get, sessionId, mountId, expectedWorktreePath }),
+    forcePushSessionBranch: ({
+      sessionId,
+      mountId,
+      confirmedOnlyOnline,
+      confirmedRemoteSha,
+    }: ForcePushParams) =>
+      forcePushSessionBranch({ get, sessionId, mountId, confirmedOnlyOnline, confirmedRemoteSha }),
     createPrForSession: createPrForSession(set, get),
     markPrReady: markPrReady(set, get),
     convertPrToDraft: convertPrToDraft(set, get),

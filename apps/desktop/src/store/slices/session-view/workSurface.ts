@@ -5,6 +5,7 @@ import { PROVIDER_LENS } from '../../../features/integrations/providerLens';
 import { workSurfaceFocus } from './workSurfaceFocus';
 import { drawerAfterArtifactFocus } from '../drawer/drawerAfterArtifactFocus';
 import { branchPlace, sessionPlace } from '../navigation/place';
+import { openSessionTerminal } from '../../../features/terminal/openSessionTerminal';
 import { sessionById } from '../sessions/sessionIndex';
 
 export const setActiveLens = (set: SetFn) => {
@@ -24,8 +25,6 @@ export const setActiveLens = (set: SetFn) => {
           : { ...s.focusedWorkflowRunId, [sessionId]: null },
       diffFocus: isDiffLens ? s.diffFocus : { ...s.diffFocus, [sessionId]: null },
       diffMountPath: isDiffLens ? s.diffMountPath : { ...s.diffMountPath, [sessionId]: null },
-      terminalMountPath:
-        lens === 'terminal' ? s.terminalMountPath : { ...s.terminalMountPath, [sessionId]: null },
       focusedArtifactId:
         lens === 'plans' ? s.focusedArtifactId : { ...s.focusedArtifactId, [sessionId]: null },
       focusedGithubIssueNumber:
@@ -90,13 +89,7 @@ export const openRewriteHistory = (get: GetFn) => {
 
 export const openMountTerminal = (get: GetFn) => {
   return (sessionId: SessionId, worktreePath: string): void => {
-    get().navigate({
-      to: sessionPlace({
-        sessionId,
-        lens: 'terminal',
-        target: { kind: 'terminal', mountPath: worktreePath },
-      }),
-    });
+    openSessionTerminal({ state: get(), sessionId, cwd: worktreePath });
   };
 };
 

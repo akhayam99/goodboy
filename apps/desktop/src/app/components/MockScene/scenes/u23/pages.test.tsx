@@ -51,7 +51,6 @@ describe('the Pages menu scenes', () => {
       'Questions1 open',
       'Explore',
       'Scripts',
-      'Terminal',
     ]);
   });
 
@@ -66,7 +65,6 @@ describe('the Pages menu scenes', () => {
       'Artifacts',
       'Explore',
       'Scripts',
-      'Terminal',
     ]);
   });
 });

@@ -94,11 +94,11 @@ describe('the header status of an agent', () => {
   it('shows the Review state word of a resolver instead of Done', async () => {
     await show({ isResolver: true });
 
-    expect(screen.getByText('To review')).toBeDefined();
+    expect(screen.getByText('Fix ready')).toBeDefined();
     expect(screen.queryByText('Done')).toBeNull();
   });
 
-  it('says Question while one comment of the run needs an answer, then Working, then To review', async () => {
+  it('says Question for you while one comment of the run needs an answer, then Working, then Fix ready', async () => {
     useAppStore.setState({
       sessionResolveAttempts: {
         [SESSION.id]: [{ ...ATTEMPT, threadIds: [EXPANDED_THREAD_ID, THREAD_IDS.errorShape] }],
@@ -106,8 +106,8 @@ describe('the header status of an agent', () => {
     });
     await show({ isResolver: true });
 
-    expect(screen.getByText('Question')).toBeDefined();
-    expect(screen.queryByText('To review')).toBeNull();
+    expect(screen.getByText('Question for you')).toBeDefined();
+    expect(screen.queryByText('Fix ready')).toBeNull();
     cleanup();
 
     useAppStore.setState({
@@ -120,7 +120,7 @@ describe('the header status of an agent', () => {
     expect(screen.getByText('Working')).toBeDefined();
   });
 
-  it('keeps an accepted comment Ready until it is pushed', async () => {
+  it('keeps an accepted comment Applied until it is pushed', async () => {
     const items = useAppStore.getState().sessionResolveQueueItems[SESSION.id] ?? [];
     useAppStore.setState({
       sessionResolveQueueItems: {
@@ -137,7 +137,7 @@ describe('the header status of an agent', () => {
 
     await show({ isResolver: true });
 
-    expect(screen.getByText('Ready')).toBeDefined();
+    expect(screen.getByText('Applied')).toBeDefined();
     expect(screen.queryByText('Done')).toBeNull();
   });
 

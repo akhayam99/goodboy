@@ -84,7 +84,11 @@ const onKeyDown = (event: KeyboardEvent): void => {
   if (typingWins(event)) {
     return;
   }
-  for (const registration of registrations.values()) {
+  const ordered = [...registrations.values()].sort(
+    (first, second) =>
+      Number('scope' in SHORTCUTS[second.id]) - Number('scope' in SHORTCUTS[first.id]),
+  );
+  for (const registration of ordered) {
     const entry: ShortcutEntry = SHORTCUTS[registration.id];
     if (!eventMatches({ event, entry })) {
       continue;

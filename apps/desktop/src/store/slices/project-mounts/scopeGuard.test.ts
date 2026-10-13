@@ -434,7 +434,13 @@ describe('buildScopeGuard', () => {
     expect(guard).toContain('becomes `<prefix>/feat-sensitive-paths-prefilled-codes`');
     expect(guard).toContain('Pass `--existing` to attach a branch that already exists as it is');
     expect(guard).toContain(
-      'NEVER run `git worktree add`, `git checkout -b`, `git switch -c` or `git branch <name>`',
+      'NEVER run `git worktree add`, `git checkout -b`, `git switch -c`, `git branch <name>` or `git branch -m`',
+    );
+    expect(guard).toContain(
+      'To rename the branch of this mount, or to move it onto another branch, run `mount switch --mount <id> --branch <type>/<kebab-desc>`',
+    );
+    expect(guard).toContain(
+      'NEVER run `git branch -m`, `git checkout` or `git switch` on a mounted worktree.',
     );
   });
 

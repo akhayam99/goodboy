@@ -1,4 +1,5 @@
 import type { ResolveAttempt } from '@goodboy/types';
+import { RESOLVE_VOCAB, applyFixesLabel } from './commentProjection';
 
 export const LANE_REBUILD_HINT =
   'An earlier fix on this branch was dropped or changed, so this fix is rebuilt on top of the branch as it is now. Start from the earlier attempt and adapt it to the current code.';
@@ -45,9 +46,9 @@ export const acceptUpToLabel = ({
   readonly notes?: number;
 }): string => {
   if (count === 1) {
-    return 'Accept';
+    return RESOLVE_VOCAB.applyFix;
   }
-  const head = `Accept ${count} fixes`;
+  const head = applyFixesLabel({ count });
   if (notes === 0) {
     return head;
   }

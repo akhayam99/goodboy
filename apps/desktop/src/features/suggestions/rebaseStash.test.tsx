@@ -89,7 +89,7 @@ describe('the rebase suggestion with dirty files', () => {
       expect(rebase?.payload.targets[0]?.dirtyCount).toBe(11);
     });
   });
-  it('offers Rebase and leaves overlap consent to the move', () => {
+  it('offers Open rebase and leaves overlap consent to the move', () => {
     const suggestions = deriveNextSteps({
       sessionId: session.id,
       workflowRuns: [],
@@ -123,7 +123,7 @@ describe('the rebase suggestion with dirty files', () => {
       { wrapper },
     );
     const actions = result.current({ suggestion });
-    expect(actions.primary?.label).toBe('Rebase');
+    expect(actions.primary?.label).toBe('Open rebase');
     expect(actions.primary?.isDisabled).toBe(false);
     expect(actions.extras).toBeUndefined();
   });

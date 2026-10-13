@@ -21,7 +21,6 @@ const DESTINATIONS = [
   { lens: 'files', shortcut: 'lens.files' },
   { lens: 'explore', shortcut: 'lens.explore' },
   { lens: 'scripts', shortcut: 'lens.scripts' },
-  { lens: 'terminal', shortcut: 'lens.terminal' },
   { lens: 'pr', shortcut: 'lens.pr' },
   { lens: 'linear', shortcut: 'lens.linear' },
   { lens: 'gitlab_issues', shortcut: 'lens.gitlab_issues' },

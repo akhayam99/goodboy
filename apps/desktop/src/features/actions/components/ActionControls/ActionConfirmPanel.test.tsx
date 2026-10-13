@@ -72,6 +72,7 @@ const controlsOf = ({
   confirm,
   cancel: () => undefined,
   retry: () => undefined,
+  dismissFailure: () => undefined,
 });
 
 describe('ActionConfirmPanel with a choice', () => {

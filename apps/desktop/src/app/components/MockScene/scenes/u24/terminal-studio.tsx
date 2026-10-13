@@ -11,7 +11,6 @@ import type {
 } from '@goodboy/types';
 import { trackTerminalInput } from '../../../../../features/terminal/commandTracker';
 import { TerminalStudio } from '../../../../../features/terminal/components/TerminalStudio';
-import { SessionTerminalLens } from '../../../../../features/terminal/components/TerminalStudio/SessionTerminalLens';
 import type { TerminalTab, TerminalTabId } from '../../../../../shared/types/terminal';
 import { useAppStore } from '../../../../../store';
 import { sceneClock } from '../../sceneClock';
@@ -267,7 +266,7 @@ const seed = ({ hasTerminals }: SeedParams): void => {
 
 const NOOP = () => undefined;
 
-type Variant = 'list' | 'newmenu' | 'closeconfirm' | 'empty' | 'session';
+type Variant = 'list' | 'newmenu' | 'closeconfirm' | 'empty';
 
 type Props = {
   readonly variant: Variant;
@@ -283,7 +282,6 @@ const clickLabelOf = ({ variant }: Props): ReadonlyArray<string> => {
       return ['Close payments-api'];
     case 'list':
     case 'empty':
-    case 'session':
       return [];
     default: {
       const unreachable: never = variant;
@@ -299,15 +297,13 @@ const TerminalStudioScene = ({ variant }: Props) => {
   useEffect(() => {
     mockSceneIpc((command) => (command === 'terminal_list_live' ? BUSY_LEDGER : null));
     seed({ hasTerminals: variant !== 'empty' });
-    if (variant !== 'session') {
-      useAppStore.getState().openStudio({
-        studio: {
-          kind: 'terminal',
-          terminalId: variant === 'empty' ? null : PAYMENTS_TERMINAL,
-          sessionId: SESSION_ID,
-        },
-      });
-    }
+    useAppStore.getState().openStudio({
+      studio: {
+        kind: 'terminal',
+        terminalId: variant === 'empty' ? null : PAYMENTS_TERMINAL,
+        sessionId: SESSION_ID,
+      },
+    });
     setIsReady(true);
   }, [variant]);
 
@@ -326,21 +322,12 @@ const TerminalStudioScene = ({ variant }: Props) => {
   return (
     <main className="flex h-screen overflow-hidden bg-background text-foreground">
       <PageSheet>
-        {variant === 'session' ? (
-          <SessionTerminalLens
-            workspaceId={WORKSPACE_ID}
-            sessionId={SESSION_ID}
-            isActive
-            sessionCwd={null}
-          />
-        ) : (
-          <TerminalStudio
-            workspaceId={WORKSPACE_ID}
-            terminalId={studio?.kind === 'terminal' ? studio.terminalId : null}
-            sessionId={studio?.kind === 'terminal' ? studio.sessionId : SESSION_ID}
-            onClose={NOOP}
-          />
-        )}
+        <TerminalStudio
+          workspaceId={WORKSPACE_ID}
+          terminalId={studio?.kind === 'terminal' ? studio.terminalId : null}
+          sessionId={studio?.kind === 'terminal' ? studio.sessionId : SESSION_ID}
+          onClose={NOOP}
+        />
       </PageSheet>
     </main>
   );
@@ -351,5 +338,4 @@ export const U24_TERMINAL_STUDIO_SCENES = {
   'terminal-studio-newmenu': () => <TerminalStudioScene variant="newmenu" />,
   'terminal-studio-closeconfirm': () => <TerminalStudioScene variant="closeconfirm" />,
   'terminal-studio-empty': () => <TerminalStudioScene variant="empty" />,
-  'terminal-studio-session': () => <TerminalStudioScene variant="session" />,
 };

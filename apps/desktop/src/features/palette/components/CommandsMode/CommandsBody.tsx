@@ -93,11 +93,7 @@ const sessionIdOf = (scope: PaletteScope | null): SessionId | null =>
     ? scope.sessionId
     : null;
 
-const REGISTRY_LENS_KEYS: ReadonlySet<string> = new Set([
-  'lens:review',
-  'lens:files',
-  'lens:terminal',
-]);
+const REGISTRY_LENS_KEYS: ReadonlySet<string> = new Set(['lens:review', 'lens:files']);
 
 const confirmOf = (entry: PaletteEntry): ActionConfirm | null =>
   entry.confirm ?? entry.action?.confirm ?? null;

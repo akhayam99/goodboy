@@ -11,11 +11,3 @@ export const historyBackupRef = ({ branch, atMs }: RefParams): string => {
     .join('');
   return `${BACKUP_PREFIX}/b-${encoded}/${Math.floor(atMs)}000000`;
 };
-
-export const historyBackupTimeMs = ({ ref }: { readonly ref: string }): number | null => {
-  const stamp = ref.slice(ref.lastIndexOf('/') + 1);
-  if (!/^\d{7,}$/.test(stamp)) {
-    return null;
-  }
-  return Number(stamp.slice(0, -6));
-};

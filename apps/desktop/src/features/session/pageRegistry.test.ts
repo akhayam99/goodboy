@@ -119,11 +119,11 @@ describe('the Pages menu', () => {
     ]);
   });
 
-  it('groups Explore, Scripts and Terminal as Tools', () => {
+  it('groups Explore and Scripts as Tools', () => {
     const menu = menuOf();
 
     expect(menu.groups.map((group) => group.label)).toEqual([null, 'Tools']);
-    expect(groupLabelsOf(menu, 'tools')).toEqual(['Explore', 'Scripts', 'Terminal']);
+    expect(groupLabelsOf(menu, 'tools')).toEqual(['Explore', 'Scripts']);
   });
 
   it('keeps the linked records group as it was', () => {

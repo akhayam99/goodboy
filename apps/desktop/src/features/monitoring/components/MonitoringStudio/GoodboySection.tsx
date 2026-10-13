@@ -4,6 +4,7 @@ import { portRowName } from '../../portRowName';
 import type { LeftoverRow } from '../../leftoverRows';
 import type { StartedRow } from '../../startedByGoodboy';
 import { LeftoversList } from './LeftoversList';
+import { PortGroupList } from './PortGroupList';
 import { PortListSection } from './PortListSection';
 import { PortRowItem } from './PortRowItem';
 import { PortRowMenu } from '../../../actions/PortRowMenu';
@@ -41,21 +42,25 @@ export const GoodboySection = ({
         {sweptLine({ count: sweptCount })}
       </p>
     ) : null}
-    <ul className="flex flex-col">
-      {rows.map((row) => (
+    <PortGroupList
+      rows={rows}
+      processOf={processOf}
+      now={now}
+      renderRow={({ row, isNested }) => (
         <PortRowItem
           key={row.key}
           row={row}
           process={processOf(row.pid)}
           now={now}
           name={portRowName({ row, isPinned: false })}
+          isNested={isNested}
           actions={<PortRowMenu port={row.port} layer="goodboy" description={portLabel({ row })} />}
         />
-      ))}
-      {processes.map((row) => (
+      )}
+      extraRows={processes.map((row) => (
         <ProcessRowView key={row.spawnId} row={row} idleCounts={idleCounts} now={now} />
       ))}
-    </ul>
+    />
     {leftovers.length > 0 ? <LeftoversList rows={leftovers} now={now} /> : null}
   </PortListSection>
 );

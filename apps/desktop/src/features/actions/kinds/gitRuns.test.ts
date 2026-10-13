@@ -67,6 +67,7 @@ describe('pushMount', () => {
       sessionId: SESSION_ID,
       mountId: MOUNT_ID,
       confirmedOnlyOnline: ['a1', 'b2'],
+      confirmedRemoteSha: null,
     });
     expect(pushSessionBranch).not.toHaveBeenCalled();
   });
@@ -88,7 +89,26 @@ describe('pushMount', () => {
       sessionId: SESSION_ID,
       mountId: MOUNT_ID,
       confirmedOnlyOnline: null,
+      confirmedRemoteSha: null,
     });
+  });
+
+  it('keeps the remote sha the confirm listed on the failure it throws', async () => {
+    const onlineModule = await import('../../../store/slices/worktreeStatuses/onlyOnline');
+    const forcePushSessionBranch = vi.fn<ForcePushFn>(async () => ({ ok: false, error: 'stale' }));
+    vi.spyOn(onlineModule, 'readOnlineRemoteSha').mockReturnValue('confirmed-sha');
+
+    const failure = await pushMount({
+      env: envWith({ forcePushSessionBranch, pushSessionBranch: vi.fn<PushFn>() }),
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      worktreePath: '/work/payments-api',
+      baseBranch: null,
+      isForce: true,
+      confirmedOnlyOnline: null,
+    }).catch((error: unknown) => error);
+
+    expect(failure).toMatchObject({ confirmedRemoteSha: 'confirmed-sha' });
   });
 
   it('throws the refusal so the user sees it', async () => {

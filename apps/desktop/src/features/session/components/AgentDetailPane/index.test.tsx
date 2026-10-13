@@ -21,12 +21,23 @@ const state = vi.hoisted(() => ({
   historyRuns: {},
 }));
 
+type BriefFacts = {
+  sessionPhaseRuns: Record<string, ReadonlyArray<{ id: string; parentAgentId: string }>>;
+  sessionPlans: Record<string, ReadonlyArray<unknown>>;
+};
+
+const briefFacts = vi.hoisted((): BriefFacts => ({
+  sessionPhaseRuns: {},
+  sessionPlans: {},
+}));
+
 const executedRouting = vi.hoisted(() => ({
   value: null as { provider: ProviderName; model: string; effort: string | null } | null,
 }));
 
 vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (value: typeof state) => T) => selector(state),
+  useAppStore: <T,>(selector: (value: typeof state & BriefFacts) => T) =>
+    selector({ ...state, ...briefFacts }),
   useExecutedAgentRouting: () => executedRouting.value,
   EMPTY_ARRAY: [],
 }));
@@ -72,6 +83,12 @@ const detailTime = vi.hoisted(() => ({
 
 vi.mock('../../hooks/useAgentDetailWorkTime', () => ({
   useAgentDetailWorkTime: () => detailTime.value,
+}));
+
+const outcome = vi.hoisted(() => ({ text: 'Shipped the chat page' }));
+
+vi.mock('../../../../shared/hooks/useAgentOutcome', () => ({
+  useAgentOutcome: () => ({ text: outcome.text, isFromReply: false, raw: outcome.text }),
 }));
 
 vi.mock('../../../chat/components/ChatView', () => ({
@@ -120,8 +137,11 @@ beforeEach(() => {
     sessionOpenQuestions: {},
     sessionResolveAttempts: {},
   });
+  briefFacts.sessionPhaseRuns = {};
+  briefFacts.sessionPlans = {};
   executedRouting.value = null;
   detailTime.value = undefined;
+  outcome.text = 'Shipped the chat page';
 });
 
 describe('AgentDetailPane', () => {
@@ -230,6 +250,53 @@ describe('AgentDetailPane', () => {
     expect(within(row).queryByRole('tablist')).toBeNull();
     expect(tabs).toBeDefined();
     expect(meta.compareDocumentPosition(tabsRow) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('opens on the transcript when the brief has nothing to show yet', () => {
+    outcome.text = '';
+    render(
+      <AgentDetailPane
+        session={session}
+        agent={{ ...agent, status: 'running' }}
+        isChatActive
+        onBack={() => undefined}
+      />,
+    );
+
+    expect(screen.getByRole('tab', { name: 'Transcript' }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
+    expect(screen.getByText('Transcript body')).toBeDefined();
+  });
+
+  it('opens on the brief when the agent only has subagents so far', () => {
+    outcome.text = '';
+    briefFacts.sessionPhaseRuns = {
+      [session.id]: [{ id: 'child-1', parentAgentId: agent.id }],
+    };
+    render(
+      <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => undefined} />,
+    );
+
+    expect(screen.getByRole('tab', { name: 'Brief' }).getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('opens on the brief when the agent already has something to show', () => {
+    render(
+      <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => undefined} />,
+    );
+
+    expect(screen.getByRole('tab', { name: 'Brief' }).getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('keeps a tab picked by hand over the empty-brief default', () => {
+    outcome.text = '';
+    state.agentTab = { [agent.id]: 'brief' };
+    render(
+      <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => undefined} />,
+    );
+
+    expect(screen.getByRole('tab', { name: 'Brief' }).getAttribute('aria-selected')).toBe('true');
   });
 
   it('opens on the brief while the agent is running', () => {

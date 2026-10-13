@@ -24,7 +24,6 @@ const layoutInputs = (state: AppStore): ReadonlyArray<unknown> => [
   state.diffMountPath,
   state.branchTab,
   state.branchThreadId,
-  state.terminalMountPath,
   state.exploreMountPath,
 ];
 

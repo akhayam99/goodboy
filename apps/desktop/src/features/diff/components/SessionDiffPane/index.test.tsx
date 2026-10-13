@@ -250,7 +250,7 @@ describe('SessionDiffPane with the tree in the docked rail', () => {
     renderPane({ diff: diffOf(FILES) });
 
     expect(hostOf().contains(treeOf())).toBe(true);
-    expect(within(hostOf()).getByRole('textbox', { name: 'Filter files' })).toBeDefined();
+    expect(within(hostOf()).getByRole('searchbox', { name: 'Filter files' })).toBeDefined();
     expect(within(hostOf()).getByRole('tablist', { name: 'Show files' })).toBeDefined();
     expect(within(hostOf()).getByRole('button', { name: /^Next unviewed/ })).toBeDefined();
     expect(screen.getByTestId('diff-view').contains(treeOf())).toBe(false);
@@ -289,11 +289,11 @@ describe('SessionDiffPane with the tree in the docked rail', () => {
     renderPane({ diff: diffOf(FILES) });
 
     pressShortcut({ id: 'diff.focusFilter' });
-    expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Filter files' }));
+    expect(document.activeElement).toBe(screen.getByRole('searchbox', { name: 'Filter files' }));
     (document.activeElement as HTMLElement).blur();
 
     pressShortcut({ id: 'diff.focusFilterAlias' });
-    expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Filter files' }));
+    expect(document.activeElement).toBe(screen.getByRole('searchbox', { name: 'Filter files' }));
   });
 
   it('counts the unviewed files on the filter and the footer, from the whole review', () => {
@@ -307,7 +307,7 @@ describe('SessionDiffPane with the tree in the docked rail', () => {
     };
     renderPane({ diff });
 
-    fireEvent.change(screen.getByRole('textbox', { name: 'Filter files' }), {
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Filter files' }), {
       target: { value: 'postings' },
     });
 
@@ -363,7 +363,7 @@ describe('SessionDiffPane with the rail hidden behind Sections', () => {
 
     pressShortcut({ id: 'diff.focusFilter' });
 
-    expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Filter files' }));
+    expect(document.activeElement).toBe(screen.getByRole('searchbox', { name: 'Filter files' }));
   });
 
   it('closes the rail on a pick', () => {
@@ -410,7 +410,7 @@ describe('SessionDiffPane files', () => {
     const other: FileDiff = { ...FILE, path: 'src/ledger/export.ts' };
     renderPane({ diff: diffOf([FILE, other]) });
 
-    fireEvent.change(screen.getByRole('textbox', { name: 'Filter files' }), {
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Filter files' }), {
       target: { value: 'export' },
     });
 
@@ -447,7 +447,7 @@ describe('SessionDiffPane files', () => {
   it('says no file matches and offers Clear in the diff when the filter hides everything', () => {
     renderPane({ diff: diffOf([FILE]) });
 
-    fireEvent.change(screen.getByRole('textbox', { name: 'Filter files' }), {
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Filter files' }), {
       target: { value: 'zzz' },
     });
 

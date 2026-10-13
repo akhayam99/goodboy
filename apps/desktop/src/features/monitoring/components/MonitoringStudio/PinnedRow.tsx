@@ -13,6 +13,7 @@ type Props = {
   readonly row: PortRow;
   readonly process: MonitorProcess | null;
   readonly now: number;
+  readonly isNested?: boolean;
 };
 
 type EventParams = {
@@ -35,7 +36,7 @@ const editRequestOf = ({ event }: EventParams): PortEditRequest | null => {
   return typeof port === 'number' ? { port } : null;
 };
 
-export const PinnedRow = ({ row, process, now }: Props) => {
+export const PinnedRow = ({ row, process, now, isNested }: Props) => {
   const pinPort = useAppStore((state) => state.pinPort);
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState('');
@@ -123,6 +124,7 @@ export const PinnedRow = ({ row, process, now }: Props) => {
       now={now}
       name={portRowName({ row, isPinned: true })}
       nameSlot={nameSlot}
+      isNested={isNested}
       actions={<PortRowMenu port={row.port} layer="pinned" description={portLabel({ row })} />}
     />
   );

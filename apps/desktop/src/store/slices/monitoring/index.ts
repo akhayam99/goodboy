@@ -1,7 +1,7 @@
 import { hidePort } from './hidePort';
 import { loadWatchedPorts } from './loadWatchedPorts';
 import { pinPort } from './pinPort';
-import { refreshMonitorSnapshot } from './refreshMonitorSnapshot';
+import { createMonitorRefresh } from './createMonitorRefresh';
 import { recordOrphansSwept } from './recordOrphansSwept';
 import { showHiddenPorts } from './showHiddenPorts';
 import { stopGoodboyRow } from './stopGoodboyRow';
@@ -13,7 +13,7 @@ import type { SliceDeps } from '../../slice-types';
 
 export const createMonitoringSlice = ({ set, get }: SliceDeps) => {
   return {
-    refreshMonitorSnapshot: refreshMonitorSnapshot(set, get),
+    ...createMonitorRefresh({ set, get }),
     loadWatchedPorts: loadWatchedPorts(set, get),
     pinPort: pinPort({ set, get }),
     unpinPort: unpinPort({ set, get }),

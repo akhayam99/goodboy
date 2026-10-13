@@ -79,7 +79,7 @@ describe('ResolverThreadsCard', () => {
     expect(screen.queryByTestId('resolver-threads-card')).toBeNull();
     expect(screen.getByTestId('resolver-thread-verdict')).toBeDefined();
     expect(screen.getByText('thread 1')).toBeDefined();
-    expect(screen.getByText('fix committed locally')).toBeDefined();
+    expect(screen.getByText('diff ready to review')).toBeDefined();
   });
 
   it('groups multiple threads under one collapsed card', () => {
@@ -90,7 +90,7 @@ describe('ResolverThreadsCard', () => {
 
     expect(screen.getByTestId('resolver-threads-card')).toBeDefined();
     expect(screen.getByText('2')).toBeDefined();
-    expect(screen.getByText('1 fixed · 1 no change')).toBeDefined();
+    expect(screen.getByText('1 fix ready · 1 no change')).toBeDefined();
     expect(screen.queryByText('thread 1')).toBeNull();
     expect(screen.queryByTestId('resolver-thread-verdict-0')).toBeNull();
   });
@@ -199,8 +199,8 @@ describe('ResolverThreadsCard', () => {
     render(<ResolverThreadsCard assistantText="x" sessionId={'s' as never} />);
     fireEvent.click(screen.getByRole('button', { name: /Expand resolve findings/ }));
 
-    expect(screen.getByText('fix committed, thread closed')).toBeDefined();
-    expect(screen.getByText('fix committed, reply queued')).toBeDefined();
+    expect(screen.getByText('applied, thread closed')).toBeDefined();
+    expect(screen.getByText('applied, reply queued')).toBeDefined();
   });
 
   it('summarises the card in the same words its rows carry', () => {
@@ -213,17 +213,17 @@ describe('ResolverThreadsCard', () => {
 
     render(<ResolverThreadsCard assistantText="x" sessionId={'s' as never} />);
 
-    expect(screen.getByText('1 fixed · 1 no change · 1 closed')).toBeDefined();
+    expect(screen.getByText('1 fix ready · 1 no change · 1 closed')).toBeDefined();
 
     fireEvent.click(screen.getByRole('button', { name: /Expand resolve findings/ }));
 
     const rowWords = [0, 1, 2].map(
       (index) =>
         within(screen.getByTestId(`resolver-thread-verdict-${index}`)).getByText(
-          /^(fixed|no change|explained|closed|needs you)$/,
+          /^(fix ready|no change|explained|closed|question for you)$/,
         ).textContent,
     );
 
-    expect(rowWords.slice().sort()).toEqual(['closed', 'fixed', 'no change']);
+    expect(rowWords.slice().sort()).toEqual(['closed', 'fix ready', 'no change']);
   });
 });

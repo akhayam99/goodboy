@@ -42,7 +42,6 @@ const RIGHT_CLICK_SESSION_ROWS: ReadonlyArray<{
 }> = [
   { label: 'Comments', lens: 'branch', lands: branchTab('comments') },
   { label: 'Files', lens: 'branch', lands: branchTab('files') },
-  { label: 'Terminal', lens: 'terminal', lands: () => heading('Terminal') },
 ];
 
 export const LENS_ENTRY_ROWS: ReadonlyArray<Row> = [

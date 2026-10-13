@@ -814,7 +814,7 @@ describe('Branch page rail', () => {
     expect(railOf().contains(tree)).toBe(true);
     const column = headerColumnElement();
     expect(column.contains(tree)).toBe(false);
-    expect(within(group).getByRole('textbox', { name: 'Filter files' })).toBeDefined();
+    expect(within(group).getByRole('searchbox', { name: 'Filter files' })).toBeDefined();
     expect(within(group).getByRole('tablist', { name: 'Show files' })).toBeDefined();
     expect(within(group).getByRole('button', { name: /^Next unviewed/ })).toBeDefined();
 

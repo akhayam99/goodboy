@@ -4,11 +4,11 @@ Drive Goodboy from the keyboard, run a shell in the session's worktree, and open
 
 ### Terminal
 
-Open a real login shell in the workspace folder or any linked worktree. **⌃`** opens the Terminal studio with every terminal of the workspace, **⌘⌥T** the session's terminal, and ⌘K offers **Open <repo · branch> in terminal**. Typing `exit` closes the tab, **⌘F** searches the scrollback, and shells survive a reload.
+Open a real login shell in the workspace folder or any linked worktree. **⌃`** opens the Terminal page with every terminal, grouped by session. **⌘⌥T**, a mount row and ⌘K **Open <repo · branch> in terminal** open a session terminal in a drawer, one click from the page. Typing `exit` closes the tab, **⌘F** searches the scrollback, and shells survive a reload.
 
 ### Keyboard shortcuts, back and forward
 
-Drive Goodboy from the keyboard. A **⌘⌥** key opens each view, **⌘1** to **⌘9** switch workspaces, **⌘[** and **⌘]** walk your history, and **⌘/** opens the full list. A key that only works in one place says where, and tooltips show their keys the same way everywhere.
+A **⌘⌥** key opens each view, **⌘1** to **⌘9** switch workspaces, **⌘[** and **⌘]** walk your history, and **⌘/** opens the full list. On the Commits page, **⌘Z** undoes a local commit edit and **⌘⇧Z** redoes it; text fields keep their own undo. Tooltips show keys beside their controls.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-shortcuts-dark.webp">

@@ -95,6 +95,16 @@ export const useJobBannerActions = ({ sessionId, worktreePath, agentId }: Params
         task: () => useAppStore.getState().bringOriginIntoHistory({ sessionId, mountId }),
       });
     },
+    fixPush: () => {
+      if (mountId === null) {
+        return;
+      }
+      attempt({
+        key: 'fix-push',
+        failureTitle: "Couldn't start the agent.",
+        task: () => useAppStore.getState().fixPushWithAgent({ sessionId, mountId }),
+      });
+    },
     retryPush: () => {
       if (mountId === null) {
         return;

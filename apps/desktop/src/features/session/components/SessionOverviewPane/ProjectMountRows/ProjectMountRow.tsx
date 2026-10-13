@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { Unlink, X } from 'lucide-react';
+import { useEffect, useMemo } from 'react';
+import { Trash2, X } from 'lucide-react';
 import { EmptyLine, Chip, Skeleton, SkeletonChip, cn } from '@goodboy/ui';
 import type { SessionId, WorktreeStatus } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../store';
@@ -56,6 +56,9 @@ export const ProjectMountRow = ({
   isSkeleton = false,
 }: Props) => {
   const turnMountCount = useAppStore((state) => selectTurnMountCount({ state, sessionId }));
+  const isBranchGone = useAppStore((state) => state.mountBranchGone[row.mountId] !== undefined);
+  const reportError = useAppStore((state) => state.reportError);
+  const checkMountBranchGone = useAppStore((state) => state.checkMountBranchGone);
   const presence = useMountPresence({ sessionId, mountId: row.mountId });
   const isRepo = row.projectKind === 'repo';
   const worktreePath = row.worktreePath;
@@ -84,6 +87,28 @@ export const ProjectMountRow = ({
   const dropState = useTaskDropState({ target: { projectId: row.projectId, branch: row.branch } });
   const isDragLive = isDropTarget && dropState !== 'idle';
   const isPutTaskShown = row.branch !== '' && row.isAttached && !row.isFinished;
+  const hasFailure = controls.failure !== null;
+  const dismissFailure = controls.dismissFailure;
+  useEffect(() => {
+    if (row.isAttached || row.projectKind !== 'repo') {
+      return;
+    }
+    checkMountBranchGone({ sessionId, mountId: row.mountId }).catch((error: unknown) => {
+      void reportError({ title: "Couldn't check the branch", error, sessionId });
+    });
+  }, [
+    checkMountBranchGone,
+    hasFailure,
+    reportError,
+    row.isAttached,
+    row.mountId,
+    row.projectKind,
+    row.revision,
+    sessionId,
+  ]);
+  useEffect(() => {
+    dismissFailure();
+  }, [dismissFailure, isBranchGone, row.isAttached, row.revision]);
   const hasInlineClose = controls
     .inSlot({ slot: 'inline' })
     .some((action) => action.id === 'mount.close');
@@ -94,7 +119,7 @@ export const ProjectMountRow = ({
         .filter((action) => action.slot === 'inline' || action.id === 'mount.putTaskOnBranch')
         .map((action) => action.id),
       'mount.close',
-      'mount.forget',
+      'mount.removeGone',
     ],
     [controls.actions],
   );
@@ -211,11 +236,13 @@ export const ProjectMountRow = ({
               kind="state"
               bordered={false}
               icon={<CONCEPT_ICONS.worktree size={ICON_SIZE.mark} aria-hidden />}
-              label={row.isOnDisk ? 'Files kept' : 'Files gone'}
+              label={isBranchGone ? 'Branch deleted' : row.isOnDisk ? 'Files kept' : 'Files gone'}
               title={
-                row.isOnDisk
-                  ? 'Closed. Its files are still on disk.'
-                  : 'Closed. Its files were removed.'
+                isBranchGone
+                  ? 'Closed. Its branch was deleted.'
+                  : row.isOnDisk
+                    ? 'Closed. Its files are still on disk.'
+                    : 'Closed. Its files were removed.'
               }
               className="shrink-0"
             />
@@ -252,12 +279,13 @@ export const ProjectMountRow = ({
                   glyph={X}
                 />
               )}
-              {row.isAttached ? null : (
+              {row.isAttached || !isBranchGone ? null : (
                 <MountConfirmAction
                   controls={controls}
-                  actionId="mount.forget"
+                  actionId="mount.removeGone"
                   label={label}
-                  glyph={Unlink}
+                  glyph={Trash2}
+                  isLabelShown
                 />
               )}
             </>

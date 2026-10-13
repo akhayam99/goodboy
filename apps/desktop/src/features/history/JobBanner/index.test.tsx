@@ -333,8 +333,9 @@ describe('the job banner', () => {
     });
 
     expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual([
+      'Fix with agent',
+      'Open terminal here',
       'Retry push',
-      'Open terminal',
       'Details',
       'Dismiss',
     ]);
@@ -342,6 +343,48 @@ describe('the job banner', () => {
     await settle();
 
     expect(pushHistoryRewrite).toHaveBeenCalledTimes(1);
+  });
+
+  it('hands a failed push to an agent', async () => {
+    const fixPushWithAgent = vi.fn(async () => undefined);
+    useAppStore.setState({ fixPushWithAgent });
+    await showRun({
+      phase: 'stopped',
+      stop: { reason: 'push-failed', message: 'declined\nlint error', files: [], sha: null },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fix with agent' }));
+    await settle();
+
+    expect(fixPushWithAgent).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens the terminal with the exact lease push typed, not run', async () => {
+    await showRun({
+      phase: 'stopped',
+      remoteSha: 'a1b2c3d',
+      stop: { reason: 'push-failed', message: 'declined\nlint error', files: [], sha: null },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open terminal here' }));
+
+    const tabs = useAppStore.getState().terminalTabs[A_REBASE_SESSION_ID] ?? [];
+    expect(tabs[0]?.prefill).toBe(
+      "git push --force-with-lease='hl/fix-duplicate-credit:a1b2c3d' origin 'hl/fix-duplicate-credit'",
+    );
+    expect(useAppStore.getState().drawer?.kind).toBe('terminal');
+  });
+
+  it('shows the agent working and drops the failure actions', async () => {
+    await showRun({
+      phase: 'stopped',
+      stop: { reason: 'push-failed', message: 'declined\nlint error', files: [], sha: null },
+      pushFix: { agentId: A_REBASE_AGENT_ID },
+    });
+
+    expect(screen.queryByRole('button', { name: 'Fix with agent' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Retry push' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'See what it did' })).toBeDefined();
   });
 
   it('opens the output of a failed push on Details', async () => {
@@ -364,7 +407,7 @@ describe('the job banner', () => {
     expect(screen.getByRole('dialog', { name: 'Push output' }).textContent).toContain(
       'postCredit.ts 14:7 error',
     );
-    expect(screen.getByRole('button', { name: 'Open terminal' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Open terminal here' })).toBeDefined();
   });
 
   it('sends a missing provider to Providers', async () => {

@@ -4,6 +4,7 @@ import {
   listResolveThreads,
   setResolveAttemptPhase,
 } from '@goodboy/db';
+import { extractMarkers } from '@goodboy/core';
 import { saveResolveThread } from './saveResolveThread';
 import type { ResolveAttempt, ResolveThread } from '@goodboy/types';
 import { listLiveRunIds } from '../../../features/chat/turn';
@@ -12,14 +13,10 @@ import {
   type WorktreeWriterLease,
 } from '../../../features/worktree/worktree';
 import { tauriDatabase } from '../../../shared/lib/db';
-import {
-  resolverTurnOutcomes,
-  type ResolverThreadOutcome,
-  type ResolverThreadQuestion,
-} from '../../../features/session/resolverTurnOutcomes';
+import { resolverTurnOutcomes } from '../../../features/session/resolverTurnOutcomes';
 import { isTurnSettling } from '../turn/turnSettled';
-import { outcomePatch } from './outcomePatch';
 import { projectResolveRows } from './projectResolveRows';
+import { resolveTurnPatchOf } from './resolveTurnPatch';
 import { resolveWorktreePath } from './resolveWorktreePath';
 import type { SessionParams, SliceParams } from './types';
 
@@ -60,31 +57,6 @@ const downgradeTargetless = async ({ attempts, rows }: DowngradeParams): Promise
       });
     }
   }
-};
-
-const reconciledPatch = ({
-  outcome,
-  asked,
-  verdict,
-}: {
-  readonly outcome: ResolverThreadOutcome | undefined;
-  readonly asked: ResolverThreadQuestion | undefined;
-  readonly verdict: 'fix' | 'wontfix' | undefined;
-}): Partial<ResolveThread> => {
-  if (outcome !== undefined) {
-    return outcomePatch({ outcome, verdict });
-  }
-  if (asked !== undefined) {
-    return { state: 'needs_answer', stateReason: 'question', question: asked.question };
-  }
-  return {
-    state: 'failed',
-    stateReason: null,
-    disposition: null,
-    commitShas: null,
-    replyDraft: null,
-    question: null,
-  };
 };
 
 const reconcileWrites = async ({ get, sessionId, rows, attempts }: Params): Promise<void> => {
@@ -172,10 +144,13 @@ const reconcileWrites = async ({ get, sessionId, rows, attempts }: Params): Prom
     for (const row of working) {
       const outcome = parsed.turnOutcomes[row.threadId];
       const asked = parsed.questions[row.threadId];
-      const patch = reconciledPatch({
+      const patch = resolveTurnPatchOf({
+        row,
+        previous: row,
         outcome,
         asked,
-        verdict: parsed.analysisVerdicts[row.threadId],
+        analysisVerdict: parsed.analysisVerdicts[row.threadId],
+        question: extractMarkers(assistantText).questions[0]?.text ?? null,
       });
       hasFailure = hasFailure || patch.state === 'failed';
       hasQuestion = hasQuestion || patch.state === 'needs_answer';

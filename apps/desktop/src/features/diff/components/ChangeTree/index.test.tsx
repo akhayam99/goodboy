@@ -253,7 +253,7 @@ describe('ChangeTree', () => {
     expect(document.querySelector('[title="src/ledger/export/page.tsx"]')).toBeNull();
   });
 
-  it('shows the full path of a folder and a file in a tooltip on hover', async () => {
+  it('shows no path tooltip on a folder or a file row', async () => {
     vi.useFakeTimers();
     try {
       renderTree();
@@ -262,14 +262,14 @@ describe('ChangeTree', () => {
       await act(async () => {
         await vi.advanceTimersByTimeAsync(600);
       });
-      expect(screen.getByRole('tooltip').textContent).toBe('src/ledger/export');
+      expect(screen.queryByRole('tooltip')).toBeNull();
 
       fireEvent.mouseLeave(within(itemOf(/\bexport\b/)).getByRole('button'));
       fireEvent.mouseEnter(within(itemOf(/page\.tsx/)).getByText('page.tsx'));
       await act(async () => {
         await vi.advanceTimersByTimeAsync(600);
       });
-      expect(screen.getByRole('tooltip').textContent).toBe('src/ledger/export/page.tsx');
+      expect(screen.queryByRole('tooltip')).toBeNull();
     } finally {
       vi.useRealTimers();
     }
@@ -518,7 +518,7 @@ describe('ChangeTree', () => {
     const onQuery = vi.fn();
     renderTree({ filter: { ...NO_FILTER, query: 'csv', onQuery } });
 
-    const input = screen.getByRole('textbox', { name: 'Filter files' });
+    const input = screen.getByRole('searchbox', { name: 'Filter files' });
     fireEvent.change(input, { target: { value: 'csvx' } });
     fireEvent.focus(input);
     fireEvent.keyDown(input, { key: 'Escape', code: 'Escape' });

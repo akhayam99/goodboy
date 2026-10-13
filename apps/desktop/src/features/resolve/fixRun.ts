@@ -88,7 +88,7 @@ export const fixRunOf = ({
       threadIds: members.map((member) => member.threadId),
       total: members.length,
       tally,
-      isLive: tally.working + tally.question > 0,
+      isLive: tally.working > 0,
       model: fixRunModelLabel({ attempt: newest.attempt }),
     };
   }
@@ -113,6 +113,7 @@ const WORD_PRECEDENCE: ReadonlyArray<ResolveWord> = [
   'to_review',
   'couldnt_fix',
   'ready',
+  'replied',
   'done',
   'left_open',
   'open',

@@ -27,10 +27,14 @@ export const ResolverQuestionCard = ({ sessionId, row }: Props) => {
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const attempt = row.attempt;
+  const isRunning = useAppStore((s) => {
+    const kind = attempt === null ? undefined : s.agentTurnState[attempt.agentId]?.kind;
+    return kind === 'running' || kind === 'starting';
+  });
   const selected = picked ?? recommended;
   const typed = free.trim();
   const answer = typed !== '' ? typed : (selected ?? '');
-  const canSend = answer !== '' && attempt !== null && !isBusy;
+  const canSend = answer !== '' && attempt !== null && !isBusy && !isRunning;
 
   const send = async (): Promise<void> => {
     if (!canSend || attempt === null) {
@@ -108,7 +112,9 @@ export const ResolverQuestionCard = ({ sessionId, row }: Props) => {
         >
           {FIX_RUN_QUESTION_COPY.continue}
         </Button>
-        <span className="text-meta text-muted-foreground">{FIX_RUN_QUESTION_COPY.hint}</span>
+        <span className="text-meta text-muted-foreground">
+          {isRunning ? FIX_RUN_QUESTION_COPY.isWorking : FIX_RUN_QUESTION_COPY.hint}
+        </span>
       </div>
       {error !== null && (
         <p role="alert" className="text-meta text-danger">

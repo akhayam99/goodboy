@@ -23,7 +23,6 @@ describe('names', () => {
     expect(LENS_LABEL.review).toBe(NAMES.comments);
     expect(LENS_LABEL.plans).toBe(NAMES.artifacts);
     expect(LENS_LABEL.scripts).toBe(NAMES.scripts);
-    expect(LENS_LABEL.terminal).toBe(NAMES.terminal);
     expect(LENS_LABEL.context).toBe(NAMES.context);
     expect(LENS_LABEL.goal).toBe(NAMES.goal);
     expect(LENS_LABEL.decisions).toBe(NAMES.decisions);

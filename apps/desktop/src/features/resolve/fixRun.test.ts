@@ -100,6 +100,15 @@ describe('fixRunOf', () => {
     expect(run?.isLive).toBe(false);
   });
 
+  it('is not live while the run only waits for answers', () => {
+    const run = fixRunOf({
+      sources: [source('t1', 'needs', FIRST), source('t2', 'needs', FIRST)],
+    });
+
+    expect(run?.tally.question).toBe(2);
+    expect(run?.isLive).toBe(false);
+  });
+
   it('drops the run once every comment is pushed or skipped', () => {
     expect(
       fixRunOf({ sources: [source('t1', 'pushed', FIRST), source('t2', 'skipped', FIRST)] }),

@@ -12,6 +12,7 @@ export type ResolveWord =
   | 'push_failed'
   | 'couldnt_fix'
   | 'ready'
+  | 'replied'
   | 'done'
   | 'left_open';
 
@@ -23,14 +24,29 @@ type ResolveSub = 'waiting' | 'pushing' | 'stopped' | 'resolved_remote';
 export const RESOLVE_WORD_LABEL: Readonly<Record<ResolveWord, string>> = {
   open: 'Open',
   working: 'Working',
-  question: 'Question',
-  to_review: 'To review',
+  question: 'Question for you',
+  to_review: 'Fix ready',
   push_failed: 'Push failed',
-  couldnt_fix: "Couldn't fix",
-  ready: 'Ready',
+  couldnt_fix: 'Failed',
+  ready: 'Applied',
+  replied: 'Replied',
   done: 'Done',
   left_open: 'Left open',
 };
+
+export const RESOLVE_VOCAB = {
+  applyFix: 'Apply fix',
+  applied: 'Applied',
+  replied: 'Replied',
+  wontFix: "Won't fix",
+} as const;
+
+type CountParams = {
+  readonly count: number;
+};
+
+export const applyFixesLabel = ({ count }: CountParams): string =>
+  count === 1 ? RESOLVE_VOCAB.applyFix : `Apply ${count} fixes`;
 
 export const RESOLVE_WORD_TONE: Readonly<Record<ResolveWord, Tone>> = {
   open: 'neutral',
@@ -40,6 +56,7 @@ export const RESOLVE_WORD_TONE: Readonly<Record<ResolveWord, Tone>> = {
   push_failed: 'danger',
   couldnt_fix: 'warning',
   ready: 'success',
+  replied: 'neutral',
   done: 'neutral',
   left_open: 'neutral',
 };
@@ -72,6 +89,7 @@ export const RESOLVE_GROUP_OF_WORD: Readonly<Record<ResolveWord, ResolveGroup>> 
   push_failed: 'needs_you',
   couldnt_fix: 'needs_you',
   ready: 'ready_to_push',
+  replied: 'done',
   done: 'done',
   left_open: 'left_open',
 };
@@ -84,8 +102,9 @@ export const RESOLVE_WORD_RANK: Readonly<Record<ResolveWord, number>> = {
   working: 4,
   ready: 5,
   open: 6,
-  done: 7,
-  left_open: 8,
+  replied: 7,
+  done: 8,
+  left_open: 9,
 };
 
 const SUB_LABEL: Readonly<Record<Exclude<ResolveSub, 'resolved_remote'>, string>> = {
@@ -105,7 +124,7 @@ const RESOLVE_WORD_OF_STATE: Readonly<Record<ReviewCommentState, ResolveWord>> =
   accepted: 'ready',
   replied: 'ready',
   skipped: 'left_open',
-  pushed: 'done',
+  pushed: 'replied',
   resolved: 'done',
 };
 

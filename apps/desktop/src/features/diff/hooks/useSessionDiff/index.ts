@@ -47,7 +47,7 @@ type Params = {
   readonly worktreePath: string | null;
   readonly loader?: (() => Promise<string>) | null;
   readonly diffFocus?: DiffFocus | null;
-  readonly branchRevision?: number;
+  readonly branchRevision?: number | string;
 };
 
 export type DiffAlternate = {

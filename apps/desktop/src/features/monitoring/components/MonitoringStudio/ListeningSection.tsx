@@ -4,7 +4,8 @@ import { ICON_SIZE, ROW_INTERACTIVE, cn } from '@goodboy/ui';
 import type { MonitorProcess, PortRow } from '@goodboy/core';
 import { portLabel } from '../../portLabel';
 import { PortRowMenu } from '../../../actions/PortRowMenu';
-import { PortRowView } from './PortRowView';
+import { PortGroupList } from './PortGroupList';
+import { PortRowItem } from './PortRowItem';
 
 type Props = {
   readonly rows: ReadonlyArray<PortRow>;
@@ -39,20 +40,24 @@ export const ListeningSection = ({ rows, processOf, now, isForcedOpen }: Props) 
         </span>
       </button>
       {isOpen ? (
-        <ul className="flex flex-col">
-          {rows.map((row) => (
-            <PortRowView
+        <PortGroupList
+          rows={rows}
+          processOf={processOf}
+          now={now}
+          renderRow={({ row, isNested }) => (
+            <PortRowItem
               key={row.key}
               row={row}
               process={processOf(row.pid)}
               now={now}
               name=""
+              isNested={isNested}
               actions={
                 <PortRowMenu port={row.port} layer="listening" description={portLabel({ row })} />
               }
             />
-          ))}
-        </ul>
+          )}
+        />
       ) : null}
     </section>
   );

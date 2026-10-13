@@ -7,6 +7,7 @@ type Props = {
   readonly run: HistoryRun;
   readonly titleOf: (sha: string) => string;
   readonly hasUpstream: boolean;
+  readonly isApplying?: boolean;
   readonly onRewriteWithAgent: () => void;
   readonly onApplyRewritten: (shouldPush: boolean) => void;
   readonly onDismiss: () => void;
@@ -54,6 +55,7 @@ export const HistoryRunStatus = ({
   run,
   titleOf,
   hasUpstream,
+  isApplying = false,
   onRewriteWithAgent,
   onApplyRewritten,
   onDismiss,
@@ -66,7 +68,7 @@ export const HistoryRunStatus = ({
     const result = run.result;
     return (
       <Notice
-        tone="success"
+        tone={run.stop === null ? 'success' : 'warning'}
         placement="inline"
         title={
           result.byAgent
@@ -74,13 +76,20 @@ export const HistoryRunStatus = ({
             : 'The plan replayed cleanly on the temporary copy'
         }
         body={
-          result.isTreeEqual
-            ? 'Your branch has not moved yet. Apply it to move the branch.'
-            : `${result.changedFiles.length} ${result.changedFiles.length === 1 ? 'file differs' : 'files differ'} from the branch today: ${result.changedFiles.join(', ')}`
+          run.stop !== null
+            ? run.stop.message
+            : result.isTreeEqual
+              ? 'Your branch has not moved yet. Apply it to move the branch.'
+              : `${result.changedFiles.length} ${result.changedFiles.length === 1 ? 'file differs' : 'files differ'} from the branch today: ${result.changedFiles.join(', ')}`
         }
         actions={
-          <Button size="sm" variant="secondary" onClick={() => onApplyRewritten(hasUpstream)}>
-            {hasUpstream ? 'Apply and update online' : 'Apply'}
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={isApplying}
+            onClick={() => onApplyRewritten(false)}
+          >
+            Apply here
           </Button>
         }
       />

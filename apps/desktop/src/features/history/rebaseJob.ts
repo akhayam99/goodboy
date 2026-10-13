@@ -22,6 +22,7 @@ type RebaseJobState =
   | 'origin-moved'
   | 'head-moved'
   | 'push-failed'
+  | 'fixing-push'
   | 'blocked'
   | 'failed';
 
@@ -179,6 +180,9 @@ type StoppedStateOfParams = {
 
 const stoppedStateOf = ({ run }: StoppedStateOfParams): RebaseJobState => {
   const reason = run.stop?.reason;
+  if (reason === 'push-failed' && run.pushFix !== undefined) {
+    return 'fixing-push';
+  }
   switch (reason) {
     case 'dirty':
       return 'dirty';
@@ -228,6 +232,7 @@ const WORDS: Readonly<Record<RebaseJobState, string>> = {
   'origin-moved': 'Stopped',
   'head-moved': 'Stopped',
   'push-failed': 'Stopped',
+  'fixing-push': 'Fixing',
   blocked: 'Stopped',
   failed: 'Stopped',
 };
@@ -352,6 +357,12 @@ const copyOf = ({
         line: pushFailureLine({ reason: stop?.reason, message }),
         detail: message.trim() === '' ? null : message.trim(),
       };
+    case 'fixing-push':
+      return {
+        tone: 'info',
+        title: 'Rebased, fixing the push',
+        line: 'An agent is fixing what stopped it. The push runs again when it finishes.',
+      };
     case 'blocked':
       return {
         tone: 'warn',
@@ -404,7 +415,7 @@ export const rebaseJobOf = (params: Params): RebaseJob | null => {
   }
   const state = rebaseJobStateOf({ run });
   const copy = copyOf({ ...params, state });
-  const isRunning = isHistoryRunActive({ phase: run.phase });
+  const isRunning = isHistoryRunActive({ phase: run.phase }) || state === 'fixing-push';
   return {
     state,
     tone: copy.tone,

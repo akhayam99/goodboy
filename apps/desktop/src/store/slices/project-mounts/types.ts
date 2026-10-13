@@ -52,6 +52,7 @@ export type AttachMountInput = {
   readonly sessionId: SessionId;
   readonly mountId: MountId;
   readonly requestId?: string;
+  readonly expectedRevision?: number;
 };
 
 export type UnmountMountInput = {

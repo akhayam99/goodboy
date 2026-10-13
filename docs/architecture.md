@@ -116,7 +116,7 @@ cwd, startedAt }`. A turn, a chat, a planner or a summary joins it in
   `foregroundPid`, the leader of its foreground process group when the
   platform reports it. A script's exit code is the real one: a signal reads as
   128 plus its number (a SIGKILL is 137), where it used to collapse to 1.
-- **The monitor snapshot.** `monitor/mod.rs` answers `monitor_snapshot` with
+- **The monitor snapshot.** `monitor/mod.rs` answers `monitor_snapshot` (an optional `ports` list narrows the listener scan) with
   `{ listeners, processes, taken_at, platform_supported }` (the last one is `isPlatformSupported` on the wire) from one read of the
   machine: on macOS `lsof -nP -iTCP -sTCP:LISTEN -Fpn`, one `ps -axo`, one
   batched `lsof -a -d cwd -p` and one `ps -o pid=,args=`; on Linux

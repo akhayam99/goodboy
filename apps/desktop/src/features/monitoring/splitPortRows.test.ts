@@ -261,6 +261,8 @@ describe('unmatchedStarted', () => {
     spawnId,
     kind: 'turn',
     name: 'Agent · claude',
+    kindWord: 'Agent',
+    processName: 'claude',
     where: 'payments-api',
     startedAt: 0,
     rssBytes: 0,

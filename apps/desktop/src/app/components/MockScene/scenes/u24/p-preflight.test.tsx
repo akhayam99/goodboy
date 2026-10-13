@@ -47,14 +47,18 @@ const waitForSettledReads = (): Promise<void> =>
   act(() => new Promise<void>((resolve) => window.setTimeout(resolve, SETTLE_MS)));
 
 describe('the u24 preflight scenes', () => {
-  it('keeps Rebase available in Next while files are not committed', async () => {
+  it('keeps Open rebase available in Next while files are not committed', async () => {
     renderScene('rebasedirty');
 
-    expect(await screen.findByRole('button', { name: 'Rebase' }, { timeout: 3_000 })).toBeDefined();
+    expect(
+      await screen.findByRole('button', { name: 'Open rebase' }, { timeout: 3_000 }),
+    ).toBeDefined();
 
     await waitForSettledReads();
     expect(screen.getByText('18 behind')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Rebase' }).hasAttribute('disabled')).toBe(false);
+    expect(screen.getByRole('button', { name: 'Open rebase' }).hasAttribute('disabled')).toBe(
+      false,
+    );
     expect(screen.queryByRole('button', { name: 'Check again' })).toBeNull();
     expect(screen.queryByText('11 files not committed')).toBeNull();
   });

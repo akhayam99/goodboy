@@ -63,6 +63,7 @@ const SCENE_STATES = [
   'origin-moved',
   'head-moved',
   'push-failed',
+  'fixing-push',
   'no-provider',
   'dirty',
   'result-differs',
@@ -89,6 +90,7 @@ const BANNER_TEXT: Readonly<Record<RebaseJobSceneState, ReadonlyArray<string>>> 
   'origin-moved': ['Someone pushed to the online copy', 'Nothing was pushed.'],
   'head-moved': ['The branch moved', 'Nothing was changed.'],
   'push-failed': ['Rebased, but the push failed', 'pre-push hook declined'],
+  'fixing-push': ['Rebased, fixing the push', 'An agent is fixing what stopped it.'],
   'no-provider': ['No provider is connected', 'History rewriter needs one to merge the conflict.'],
   dirty: [
     '11 files have changes that are not committed',

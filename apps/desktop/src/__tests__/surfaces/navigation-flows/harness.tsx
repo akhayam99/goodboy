@@ -58,7 +58,15 @@ const BRIDGE: Readonly<Record<string, unknown>> = {
     deletions: 3,
     numstat: '12\t3\tsrc/importer.ts',
   },
-  history_backups_list: [],
+  history_backups_list: [
+    {
+      refName: 'refs/goodboy/backup/b-686c2f6c6564676572/1789900000000000000',
+      sha: 'a1f3c20aa0000000000000000000000000000000',
+      subject: 'Add ledger export endpoint',
+      createdAt: 1_789_900_000,
+      isLegacy: false,
+    },
+  ],
   history_graph: {
     baseRef: 'origin/main',
     mergeBase: {
@@ -430,7 +438,6 @@ export const CRUMB_ROWS: ReadonlyArray<LensRow> = [
   },
   { label: 'Explore', lens: 'explore', lands: () => heading('Explore') },
   { label: 'Scripts', lens: 'scripts', lands: () => heading('Scripts') },
-  { label: 'Terminal', lens: 'terminal', lands: () => heading('Terminal') },
 ];
 
 export const LENS_ROWS: ReadonlyArray<LensRow> = [
@@ -455,7 +462,6 @@ export const LENS_ROWS: ReadonlyArray<LensRow> = [
   },
   { label: 'Explore', lens: 'explore', lands: () => heading('Explore') },
   { label: 'Scripts', lens: 'scripts', lands: () => heading('Scripts') },
-  { label: 'Terminal', lens: 'terminal', lands: () => heading('Terminal') },
 ];
 
 export const openBranchFiles = async (): Promise<void> => {

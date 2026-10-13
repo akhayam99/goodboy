@@ -98,7 +98,6 @@ describe('useBoardNavigation', () => {
   });
 
   it.each([
-    ['openTerminal', 'terminal'],
     ['openQuestions', 'questions'],
     ['openWorkflows', 'workflows'],
   ] as const)('%s opens the %s lens', (action, lens) => {

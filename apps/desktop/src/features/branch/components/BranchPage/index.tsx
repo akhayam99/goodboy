@@ -78,6 +78,11 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     (s) => historyMountId !== null && s.historyDrafts[historyMountId] !== undefined,
   );
   const loadHistoryDraft = useAppStore((s) => s.loadHistoryDraft);
+  const historyRevision = useAppStore((s) =>
+    historyMountId === null
+      ? ''
+      : `${s.historyDrafts[historyMountId]?.headSha ?? ''}:${s.historyRuns[historyMountId]?.updatedAt ?? 0}`,
+  );
   const projectName = useAppStore(
     (s) => projectById(s.projects, identity.mount?.projectId ?? null)?.name ?? null,
   );
@@ -96,7 +101,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     sessionId,
     worktreePath: identity.mountPath,
     diffFocus,
-    branchRevision: 0,
+    branchRevision: historyRevision,
   });
 
   const { pr } = identity;

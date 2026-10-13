@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { pendingCandidateShas } from '../../../../store/slices/resolve/pendingCandidateShas';
 import {
   selectActiveMount,
   selectMountById,
@@ -29,6 +30,15 @@ export const useResolverCommit = ({
         : selectMountById({ state, sessionId, mountId });
     return mount?.worktreePath ?? null;
   });
+  const isPending = useAppStore(
+    (state) =>
+      sha !== null &&
+      pendingCandidateShas({
+        candidates: (state.sessionResolveCandidates[sessionId] ?? []).map(
+          ({ candidate }) => candidate,
+        ),
+      }).has(sha),
+  );
   const [found, setFound] = useState<{
     readonly sha: string;
     readonly subject: string | null;
@@ -36,7 +46,7 @@ export const useResolverCommit = ({
   } | null>(null);
 
   useEffect(() => {
-    if (sha === null || worktreePath === null || worktreePath === '') {
+    if (sha === null || isPending || worktreePath === null || worktreePath === '') {
       return;
     }
     let isCurrent = true;
@@ -55,10 +65,13 @@ export const useResolverCommit = ({
     return () => {
       isCurrent = false;
     };
-  }, [sha, worktreePath]);
+  }, [sha, worktreePath, isPending]);
 
   if (sha === null) {
     return null;
+  }
+  if (isPending) {
+    return { sha, subject: null, isOnBranch: null };
   }
   return found?.sha === sha
     ? { sha, subject: found.subject, isOnBranch: found.isOnBranch }
