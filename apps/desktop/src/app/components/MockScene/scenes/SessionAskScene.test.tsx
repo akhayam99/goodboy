@@ -14,6 +14,9 @@ import {
   resetStoryStore,
 } from '../../../../store/storyHarness';
 import { useAppStore } from '../../../../store';
+import { registerShortcut } from '../../../../shared/keyboard/dispatcher';
+import { currentPlatform } from '../../../../shared/platform';
+import { requestAskReset } from '../../../../features/session/ask/requestAskReset';
 import { SESSION } from './activityRunSeed';
 import { SessionAskScene } from './SessionAskScene';
 
@@ -148,6 +151,17 @@ describe('the session Ask scene', () => {
     expect(useAppStore.getState().drawer).toMatchObject({ kind: 'ask' });
   });
 
+  it('a palette reset inside a plan restores the composer', async () => {
+    await renderState('plan');
+    await screen.findByTestId('ask-plan');
+    expect(screen.queryByPlaceholderText('Ask about this session…')).toBeNull();
+    act(() => {
+      requestAskReset({ sessionId: SESSION.id });
+    });
+    expect(await screen.findByPlaceholderText('Ask about this session…')).toBeDefined();
+    expect(screen.queryByTestId('ask-plan')).toBeNull();
+  });
+
   it('shows a follow-up as a second turn in the same thread and folds Right now', async () => {
     await renderState('followup');
     await screen.findAllByTestId('ask-answer');
@@ -156,14 +170,84 @@ describe('the session Ask scene', () => {
     expect(within(askDrawer()).getByRole('button', { name: /Right now/ })).toBeDefined();
   });
 
-  it('disables New while a reply streams and enables it once idle', async () => {
+  it('disables Reset chat while a reply streams and enables it once idle', async () => {
     await renderState('streaming');
-    const newButton = within(askDrawer()).getByRole('button', { name: /New/ });
-    expect((newButton as HTMLButtonElement).disabled).toBe(true);
+    const resetButton = within(askDrawer()).getByRole('button', { name: 'Reset chat' });
+    expect((resetButton as HTMLButtonElement).disabled).toBe(true);
     cleanup();
     await renderState('answer');
-    const idleButton = within(askDrawer()).getByRole('button', { name: /New/ });
+    const idleButton = within(askDrawer()).getByRole('button', { name: 'Reset chat' });
     expect((idleButton as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('has no New button left in the header', async () => {
+    await renderState('answer');
+    expect(within(askDrawer()).queryByRole('button', { name: /^New$/ })).toBeNull();
+  });
+
+  it('Reset chat empties the transcript and keeps the old chat under Earlier', async () => {
+    await renderState('followup');
+    await screen.findAllByTestId('ask-turn');
+    const before = useAppStore.getState().askThreadId[SESSION.id];
+    expect(before).not.toBeNull();
+
+    act(() => {
+      fireEvent.click(within(askDrawer()).getByRole('button', { name: 'Reset chat' }));
+    });
+
+    expect(useAppStore.getState().askThreadId[SESSION.id]).toBeNull();
+    expect(screen.queryAllByTestId('ask-turn')).toHaveLength(0);
+    expect(screen.getByTestId('ask-right-now')).toBeDefined();
+    expect(
+      useAppStore.getState().askThreads[SESSION.id]?.some((thread) => thread.id === before),
+    ).toBe(true);
+  });
+
+  it('Reset chat answers the chord from inside the panel, and only there', async () => {
+    await renderState('followup');
+    await screen.findAllByTestId('ask-turn');
+    const newSession = vi.fn();
+    const stop = registerShortcut('session.new', newSession);
+    const isMac = currentPlatform() === 'darwin';
+    const chord = { code: 'KeyN', metaKey: isMac, ctrlKey: !isMac };
+
+    const composer = screen.getByPlaceholderText('Ask about this session…');
+    act(() => {
+      composer.blur();
+      fireEvent.keyDown(document.body, chord);
+    });
+    const callsOutside = newSession.mock.calls.length;
+    const turnsOutside = screen.getAllByTestId('ask-turn').length;
+    act(() => {
+      composer.focus();
+      fireEvent.keyDown(composer, chord);
+    });
+    stop();
+
+    expect(callsOutside).toBe(1);
+    expect(turnsOutside).toBe(2);
+
+    expect(newSession).toHaveBeenCalledTimes(1);
+    expect(useAppStore.getState().askThreadId[SESSION.id]).toBeNull();
+    expect(screen.queryAllByTestId('ask-turn')).toHaveLength(0);
+  });
+
+  it('keeps the chord from starting a session while a reply streams', async () => {
+    await renderState('streaming');
+    const newSession = vi.fn();
+    const stop = registerShortcut('session.new', newSession);
+    const isMac = currentPlatform() === 'darwin';
+    const composer = screen.getByPlaceholderText('Ask about this session…');
+    const before = useAppStore.getState().askThreadId[SESSION.id];
+
+    act(() => {
+      composer.focus();
+      fireEvent.keyDown(composer, { code: 'KeyN', metaKey: isMac, ctrlKey: !isMac });
+    });
+    stop();
+
+    expect(newSession).not.toHaveBeenCalled();
+    expect(useAppStore.getState().askThreadId[SESSION.id]).toBe(before);
   });
 
   it('streams an answer with the composer offering Stop', async () => {

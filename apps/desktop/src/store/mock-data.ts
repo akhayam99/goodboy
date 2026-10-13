@@ -11,6 +11,8 @@ const MOCK_MOUNT_DIFF_STATS = new Map([
   ['/mock/northwind/workflow/storefront-web', { additions: 64, deletions: 9 }],
   ['~/code/harborline/ledger-core-rounding', { additions: 312, deletions: 148 }],
   ['~/code/harborline/ledger-core-postings', { additions: 187, deletions: 42 }],
+  ['~/code/harborline/ledger-core-rounding-bulk', { additions: 12842, deletions: 10406 }],
+  ['~/code/harborline/ledger-core-postings-bulk', { additions: 99999, deletions: 101 }],
   ['~/code/harborline/ledger-core-backfill', { additions: 96, deletions: 23 }],
   ['~/code/harborline/notify-relay-backoff', { additions: 74, deletions: 31 }],
   ['~/code/harborline/payments-api-idempotency', { additions: 224, deletions: 58 }],

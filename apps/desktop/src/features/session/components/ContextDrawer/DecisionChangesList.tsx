@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { Minus, Pencil, Plus, type LucideIcon } from 'lucide-react';
-import { ROW_INTERACTIVE, cn } from '@goodboy/ui';
-import type { SessionDecision } from '@goodboy/types';
+import { Button, ROW_INTERACTIVE, cn } from '@goodboy/ui';
+import type { IsoDateTime, SessionDecision } from '@goodboy/types';
 import type { DecisionChangesSince } from '../../../../store/slices/contextDrawer/decisionChangesSince';
+import { nowIso } from '../../../../store/slices/project-mounts/nowIso';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ContextBlock } from './ContextBlock';
 
@@ -33,20 +35,45 @@ const verbOf = ({ kind, decision }: ChangeRow): string => {
   return `Replaced by ${decision.replacedBy}`;
 };
 
+export type ReadParams = {
+  readonly readAt: IsoDateTime;
+};
+
 type Props = {
   readonly changes: DecisionChangesSince;
   readonly onJump: (number: number) => void;
+  readonly onRead: (params: ReadParams) => Promise<boolean>;
 };
 
-export const DecisionChangesList = ({ changes, onJump }: Props) => {
+export const DecisionChangesList = ({ changes, onJump, onRead }: Props) => {
+  const [readAt, setReadAt] = useState<IsoDateTime | null>(null);
+  const isLeaving = readAt !== null;
   const rows: ReadonlyArray<ChangeRow> = [
     ...changes.added.map((decision) => ({ kind: 'added' as const, decision })),
     ...changes.removed.map((decision) => ({ kind: 'removed' as const, decision })),
     ...changes.reworded.map((decision) => ({ kind: 'reworded' as const, decision })),
   ];
 
+  const markRead = () => {
+    const clickedAt = nowIso({});
+    setReadAt(clickedAt);
+    void onRead({ readAt: clickedAt }).then(() => setReadAt(null));
+  };
+
   return (
-    <ContextBlock title="Changed since you last looked" count={rows.length}>
+    <ContextBlock
+      title="Changed since you last looked"
+      count={rows.length}
+      className={cn(
+        'transition-opacity duration-150 motion-reduce:transition-none',
+        isLeaving && 'opacity-0',
+      )}
+      action={
+        <Button variant="ghost" size="sm" disabled={isLeaving} onClick={markRead}>
+          Mark as read
+        </Button>
+      }
+    >
       <ul className="-mx-2 flex flex-col">
         {rows.map((row) => {
           const mark = MARK[row.kind];

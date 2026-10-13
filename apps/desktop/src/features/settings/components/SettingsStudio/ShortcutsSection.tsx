@@ -6,6 +6,9 @@ import { SHORTCUT_COLUMNS } from './shortcutRows';
 
 export const ShortcutsSection = () => (
   <div className="flex flex-col gap-4">
+    <p className="text-meta text-muted-foreground">
+      {`A key does what fits where you are: ${shortcutGlyphs('session.new')} starts a session, but on Chat, Terminal and Ask it starts a chat, a terminal or a reset. ${shortcutGlyphs('palette.open')} goes anywhere.`}
+    </p>
     <Band
       inset="content"
       label="Message boxes"

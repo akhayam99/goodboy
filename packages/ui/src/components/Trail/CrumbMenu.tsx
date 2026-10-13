@@ -8,9 +8,9 @@ import { CrumbMenuRow } from './CrumbMenuRow';
 const FILTER_THRESHOLD = 9;
 
 const META_WIDTH: Record<CrumbMenuModel['width'], string> = {
-  narrow: 'w-28',
-  regular: 'w-20',
-  wide: 'w-16',
+  narrow: 'min-w-28',
+  regular: 'min-w-20',
+  wide: 'min-w-16',
 };
 
 type Props = {

@@ -20,7 +20,10 @@ export const DiffStat = ({ additions, deletions, size = 'sm' }: Props) => {
     <span
       data-testid="diff-stat"
       data-size={size}
-      className={cn('flex shrink-0 items-center gap-1 tabular-nums', SIZE_CLASS[size])}
+      className={cn(
+        'flex shrink-0 items-center gap-1 whitespace-nowrap tabular-nums',
+        SIZE_CLASS[size],
+      )}
     >
       {additions === 0 ? null : (
         <span className={cn(tintClasses('success').text)}>{`+${additions}`}</span>

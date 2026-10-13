@@ -750,7 +750,9 @@ empty session reads as a young version of the same document, not a wall of
 placeholders. Finished work collapses into one summary row per category. The
 surface itself shows urgency, never a badge parked beside it.
 
-**New session is a draft, not a session.** New, ⌘N, the board, the palette
+**New session is a draft, not a session.** New, ⌘N (on Chat, Terminal and
+inside Ask the same chord is new chat, new terminal and Reset chat, see
+[keyboard.md](keyboard.md)), the board, the palette
 and the checklist open the `New session` draft (the `session-draft` place,
 address `new`). Nothing is written: no row in the database, the column or
 the board. The trail and the title say `New session`, the title is faint and
@@ -2364,8 +2366,11 @@ revises the plan the body is dimmed and Run plan waits.
 The `ask` kind carries no payload: the thread on screen lives in the `ask`
 slice (`askThreadId` per session, `null` for a fresh thread). `AskDrawer`
 (`features/session/ask/components/AskDrawer/`) puts the thread in the frame's
-`ScrollFade` and the composer in its `dock`. Its header is **Ask** and **New**,
-with no session title. The body starts with
+`ScrollFade` and the composer in its `dock`. Its header is **Ask** and a **Reset chat**
+icon button (⌘N while focus is inside the panel, also in ⌘K), with no session
+title. Reset starts a clean thread (`newAskThread`, `askThreadId` back to `null`,
+the next question makes a new chat id) and the old thread stays under **Earlier**,
+so nothing is lost and no Undo is needed. It waits while a reply streams. The body starts with
 **Right now** (no model call: `askRightNow` over `askDigestOf`, the five
 comment words, running agents, open questions and the session cost) and three
 suggested questions; each line's mark is a `LineMark` (one text line tall), so
@@ -2442,7 +2447,9 @@ When something changed since the previous look (`sessionDecisionsBaseline`,
 the `context_seen_at` captured when the drawer opened), it starts with
 **Changed since you last looked**: one line per row, `+` added, `−` removed
 (`Replaced by 7` or `Withdrawn`), a pencil for reworded, and a click scrolls to
-the row and highlights it. Then **Active**, with its count: active decisions
+the row and highlights it. **Mark as read** in its header fades the block, moves
+the marker to the moment of the click (`markContextRead`, saved before the state changes) and clears the
+tab dot; a later change brings the block back. Then **Active**, with its count: active decisions
 newest first, each with its number, at most two lines of
 text, its why as one muted line under the text when the row has one (clamped
 to two lines, **Show more** when longer; older rows show nothing), and who

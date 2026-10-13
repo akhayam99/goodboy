@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Plus, Smartphone } from 'lucide-react';
+import { Plus, RotateCcw, Smartphone } from 'lucide-react';
 import type { AgentId, ProjectScript, SessionId } from '@goodboy/types';
 import {
   BOARD_PLACE,
@@ -38,6 +38,9 @@ import type { SettingsFocus } from '../../settings/settingsFocus';
 import { useToast } from '../../../shared/components/Toast';
 import { agentEntries } from '../sources/agentEntries';
 import { openPlanAnywhere } from '../../plans/openPlanAnywhere';
+import { requestAskReset } from '../../session/ask/requestAskReset';
+import { isAskStreaming } from '../../../store/slices/ask/isAskStreaming';
+import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
 import { artifactEntries } from '../sources/artifactEntries';
 import { sessionEntries } from '../sources/sessionEntries';
 import { workflowEntries } from '../sources/workflowEntries';
@@ -108,6 +111,13 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
   );
   const plans = useSessionPlans(sessionId);
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
+  const isAskOpen = useAppStore((s) => {
+    const drawer = selectOpenDrawer(s);
+    return drawer !== null && drawer.kind === 'ask' && drawer.sessionId === sessionId;
+  });
+  const isAskReplying = useAppStore((s) =>
+    sessionId === null ? false : isAskStreaming({ state: s, sessionId }),
+  );
   const destinations = useLensDestinations({ sessionId });
   const runScript = useAppStore((s) => s.runScript);
   const workspaceProjects = useMemo(
@@ -146,6 +156,21 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         open: openSessionAnywhere,
       }),
     ];
+
+    if (isAskOpen && !isAskReplying && sessionId !== null) {
+      out.push({
+        key: 'action:ask-reset',
+        label: 'Reset chat',
+        secondary: ['Reset Ask', 'New Ask chat'],
+        kind: 'action',
+        group: 'action',
+        icon: RotateCcw,
+        shortcut: 'ask.reset',
+        run: () => {
+          requestAskReset({ sessionId });
+        },
+      });
+    }
 
     if (sessionId !== null) {
       out.push(
@@ -347,6 +372,15 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           shortcut: 'session.new',
           run: requestNewSession,
         },
+        {
+          key: 'action:new-chat',
+          label: 'New chat',
+          kind: 'action',
+          group: 'action',
+          icon: Plus,
+          shortcut: 'chat.new',
+          run: () => openStudio({ studio: { kind: 'chat', chatId: null } }),
+        },
       );
     }
     out.push(
@@ -527,6 +561,8 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     scriptPins,
     workspaceProjects,
     agentKindOverride,
+    isAskOpen,
+    isAskReplying,
     destinations,
     openWorkspace,
     navigate,

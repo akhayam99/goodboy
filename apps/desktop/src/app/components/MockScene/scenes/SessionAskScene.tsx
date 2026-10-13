@@ -8,8 +8,12 @@ const stateFromUrl = (): AskSceneState =>
 
 const PLAN_CHIP_DELAY_MS = 50;
 
-export const SessionAskScene = () => {
-  const state = stateFromUrl();
+type Props = {
+  readonly state?: AskSceneState;
+};
+
+export const SessionAskScene = ({ state: forced }: Props) => {
+  const state = forced ?? stateFromUrl();
   const seed = useCallback(() => seedSessionAsk({ state }), [state]);
 
   useEffect(() => {

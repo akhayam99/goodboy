@@ -18,6 +18,7 @@ vi.mock('@goodboy/db', async () =>
 );
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
+import { nowIso } from '../project-mounts/mountOperations';
 import { createContextDrawerSlice } from './index';
 import { initialContextDrawerState } from './state';
 import { decisionChangesSince, NO_DECISION_CHANGES } from './decisionChangesSince';
@@ -136,6 +137,51 @@ describe('context drawer slice', () => {
     const seenAt = (h.getState()['sessionContextSeenAt'] as Record<string, string>)[SESSION_ID];
     expect(seenAt).toBeDefined();
     expect(db.setSessionContextSeenAt).toHaveBeenCalledWith(SESSION_ID, seenAt);
+  });
+
+  it('marks the context read: persists the marker and moves seen and baseline together', async () => {
+    db.getSessionContextSeenAt.mockResolvedValueOnce(BEFORE);
+    await h.slice.loadSessionContextSeen(SESSION_ID);
+    h.slice.openContextDrawer({ sessionId: SESSION_ID, tab: 'decisions' });
+
+    await h.slice.markContextRead({ sessionId: SESSION_ID });
+
+    const written = db.setSessionContextSeenAt.mock.calls.at(-1)?.[1];
+    expect(typeof written).toBe('string');
+    expect(written).not.toBe(BEFORE);
+    expect(h.getState()['sessionContextSeenAt']).toEqual({ [SESSION_ID]: written });
+    expect(h.getState()['sessionDecisionsBaseline']).toEqual({ [SESSION_ID]: written });
+  });
+
+  it('clears the changes on read and brings them back when newer ones arrive', async () => {
+    db.getSessionContextSeenAt.mockResolvedValueOnce(BEFORE);
+    await h.slice.loadSessionContextSeen(SESSION_ID);
+    h.slice.openContextDrawer({ sessionId: SESSION_ID, tab: 'decisions' });
+    const ledger = [decision({ number: 2, createdAt: AFTER, updatedAt: AFTER })];
+    const baselineOf = (): string | null => {
+      const value = Reflect.get(Object(h.getState()['sessionDecisionsBaseline']), SESSION_ID);
+      return typeof value === 'string' ? value : null;
+    };
+    expect(decisionChangesSince({ ledger, since: baselineOf() }).added).toHaveLength(1);
+
+    await h.slice.markContextRead({ sessionId: SESSION_ID });
+    await new Promise((resolve) => setTimeout(resolve, 5));
+
+    expect(decisionChangesSince({ ledger, since: baselineOf() })).toBe(NO_DECISION_CHANGES);
+    const later = [...ledger, decision({ number: 3, createdAt: nowIso(), updatedAt: nowIso() })];
+    expect(decisionChangesSince({ ledger: later, since: baselineOf() }).added).toHaveLength(1);
+  });
+
+  it('keeps the old marker and rejects when the write fails', async () => {
+    db.getSessionContextSeenAt.mockResolvedValueOnce(BEFORE);
+    await h.slice.loadSessionContextSeen(SESSION_ID);
+    h.slice.openContextDrawer({ sessionId: SESSION_ID, tab: 'decisions' });
+    db.setSessionContextSeenAt.mockRejectedValueOnce(new Error('disk full'));
+
+    await expect(h.slice.markContextRead({ sessionId: SESSION_ID })).rejects.toThrow('disk full');
+
+    expect(h.getState()['sessionDecisionsBaseline']).toEqual({ [SESSION_ID]: BEFORE });
+    expect(h.getState()['sessionContextSeenAt']).toEqual({ [SESSION_ID]: BEFORE });
   });
 
   it('loads when the context was last seen once', async () => {

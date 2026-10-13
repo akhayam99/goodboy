@@ -62,7 +62,10 @@ export const CrumbMenuRow = ({ row, metaWidthClass, showMeta, showState, onActiv
       {showMeta ? (
         <span
           className={cn(
-            'shrink-0 truncate text-right text-meta tabular-nums text-muted-foreground',
+            'text-right text-meta tabular-nums text-muted-foreground',
+            typeof row.metaA === 'string'
+              ? 'min-w-0 max-w-40 shrink truncate'
+              : 'shrink-0 whitespace-nowrap',
             metaWidthClass,
           )}
         >

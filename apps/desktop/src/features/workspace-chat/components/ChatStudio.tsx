@@ -4,6 +4,7 @@ import type { ChatId, ChatSummary, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../shared/components/StudioShell';
 import { StudioDetail } from '../../../shared/components/StudioShell/StudioDetail';
+import { useShortcut } from '../../../shared/keyboard/useShortcut';
 import { useAppStore } from '../../../store';
 import { mostRecentChat } from '../../../store/slices/chat-last-open/selectChatDoor';
 import { ChatList } from './ChatList';
@@ -58,6 +59,11 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
 
   const select = (next: ChatId | null): void =>
     amendStudio({ studio: { kind: 'chat', chatId: next } });
+
+  useShortcut('chat.newHere', () => {
+    setHasStarted(true);
+    select(null);
+  });
 
   const leave = ({ removedIds }: LeaveParams): void => {
     if (chatId === null || !removedIds.includes(chatId)) {

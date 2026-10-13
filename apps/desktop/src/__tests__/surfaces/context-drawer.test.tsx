@@ -1,13 +1,20 @@
 // @vitest-environment happy-dom
 
+const { bridge } = vi.hoisted(() => ({
+  bridge: {
+    answer: (_command: string, _args?: { sql?: string }): Promise<unknown> =>
+      new Promise<never>(() => undefined),
+  },
+}));
+
 vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(() => new Promise<never>(() => undefined)),
+  invoke: vi.fn((command: string, args?: { sql?: string }) => bridge.answer(command, args)),
 }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { IsoDateTime, SessionDecision } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -15,6 +22,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../store/storyHarness';
+import { nowIso } from '../../store/slices/project-mounts/mountOperations';
 import { DrawerHost } from '../../app/components/DrawerHost';
 import { ContextChip } from '../../features/session/components/SessionOverviewPane/ContextChip';
 import {
@@ -29,6 +37,7 @@ beforeAll(async () => {
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
+  bridge.answer = () => new Promise<never>(() => undefined);
   await resetStoryStore();
   seedActivityRunScene();
 });
@@ -117,7 +126,7 @@ describe('Context drawer change marks', () => {
     ).toBe('true');
     const changed = within(drawer).getByRole('region', { name: 'Changed since you last looked' });
     const labels = within(changed)
-      .getAllByRole('button')
+      .getAllByRole('button', { name: /: decision \d+$/ })
       .map((button) => button.getAttribute('aria-label'));
     expect(labels).toEqual([
       'Added: decision 7',
@@ -146,6 +155,103 @@ describe('Context drawer change marks', () => {
     expect(
       within(drawer).queryByRole('region', { name: 'Changed since you last looked' }),
     ).toBeNull();
+  });
+});
+
+const changesRegion = () => screen.queryByRole('region', { name: 'Changed since you last looked' });
+
+const persistSeenAt = () => {
+  const writes: unknown[] = [];
+  bridge.answer = (command, args) => {
+    if (command === 'db_execute' && args?.sql?.includes('context_seen_at') === true) {
+      writes.push(args);
+      return Promise.resolve({ rowsAffected: 1, rows: [] });
+    }
+    return new Promise<never>(() => undefined);
+  };
+  return writes;
+};
+
+describe('Context drawer mark as read', () => {
+  it('clears the changes section and the tab dot without closing the drawer', async () => {
+    const writes = persistSeenAt();
+    renderSurface();
+    await settle();
+    fireEvent.click(screen.getByTestId('context-chip'));
+    await settle();
+    const drawer = screen.getByRole('region', { name: 'Context' });
+    expect(changesRegion()).not.toBeNull();
+    expect(
+      within(drawer).getByRole('img', { name: 'Changed since you last looked' }),
+    ).toBeDefined();
+
+    fireEvent.click(within(changesRegion()!).getByRole('button', { name: 'Mark as read' }));
+
+    await waitFor(() => expect(changesRegion()).toBeNull());
+    expect(screen.getByRole('region', { name: 'Context' })).toBeDefined();
+    expect(
+      within(screen.getByRole('region', { name: 'Context' })).queryByRole('img', {
+        name: 'Changed since you last looked',
+      }),
+    ).toBeNull();
+    expect(writes).toHaveLength(2);
+  });
+
+  it('brings the section back when a newer change arrives', async () => {
+    persistSeenAt();
+    renderSurface();
+    await settle();
+    fireEvent.click(screen.getByTestId('context-chip'));
+    await settle();
+    fireEvent.click(within(changesRegion()!).getByRole('button', { name: 'Mark as read' }));
+    await waitFor(() => expect(changesRegion()).toBeNull());
+
+    const template = ledger()[0]!;
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    const arrived = nowIso();
+    act(() => {
+      useAppStore.setState((state) => ({
+        sessionDecisions: {
+          ...state.sessionDecisions,
+          [SESSION_ID]: [
+            ...ledger(),
+            {
+              ...template,
+              id: 'decision-new-after-read',
+              number: 99,
+              author: 'agent',
+              status: 'active',
+              createdAt: arrived,
+              updatedAt: arrived,
+            },
+          ],
+        },
+      }));
+    });
+
+    await waitFor(() => expect(changesRegion()).not.toBeNull());
+    within(changesRegion()!).getByRole('button', { name: 'Added: decision 99' });
+  });
+
+  it('keeps the section and says why when the marker cannot be saved', async () => {
+    bridge.answer = (command) =>
+      command === 'db_execute'
+        ? Promise.reject(new Error('disk full'))
+        : new Promise<never>(() => undefined);
+    renderSurface();
+    await settle();
+    fireEvent.click(screen.getByTestId('context-chip'));
+    await settle();
+
+    fireEvent.click(within(changesRegion()!).getByRole('button', { name: 'Mark as read' }));
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    expect(changesRegion()).not.toBeNull();
+    expect(
+      within(changesRegion()!)
+        .getByRole('button', { name: 'Mark as read' })
+        .hasAttribute('disabled'),
+    ).toBe(false);
   });
 });
 

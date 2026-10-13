@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Plus } from 'lucide-react';
-import { Button, DrawerFrame } from '@goodboy/ui';
+import { RotateCcw } from 'lucide-react';
+import { DrawerFrame, IconButton } from '@goodboy/ui';
 import type { ArtifactId, ChatMessage, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { isAskStreaming } from '../../../../../store/slices/ask/isAskStreaming';
 import { requestAskFocus } from '../../askFocusEvent';
 import { askTurnsOf } from '../../askTurnsOf';
 import { useAskActionFacts } from '../../hooks/useAskActionFacts';
 import { useAskChipOpen } from '../../hooks/useAskChipOpen';
+import { useAskResetRequest } from '../../hooks/useAskResetRequest';
+import { useAskResetShortcut } from '../../hooks/useAskResetShortcut';
 import { useAskRightNow } from '../../hooks/useAskRightNow';
 import { AskComposer } from './AskComposer';
 import { AskEarlier } from './AskEarlier';
@@ -65,6 +67,19 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
     [rightNow.text, sendAskQuestion, sessionId],
   );
 
+  const reset = useCallback(() => {
+    if (isAnyStreaming) {
+      return;
+    }
+    setInsideId(null);
+    setIsRightNowOpen(false);
+    newAskThread({ sessionId });
+    requestAskFocus();
+  }, [isAnyStreaming, newAskThread, sessionId]);
+
+  useAskResetShortcut({ onReset: reset });
+  useAskResetRequest({ sessionId, onReset: reset });
+
   const composer =
     insideId === null ? (
       <AskComposer
@@ -83,20 +98,13 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
       iconClassName="text-muted-foreground"
       onClose={onClose}
       action={
-        <Button
-          variant="ghost"
-          size="sm"
+        <IconButton
+          icon={RotateCcw}
+          label="Reset chat"
+          shortcut="ask.reset"
           disabled={isAnyStreaming}
-          onClick={() => {
-            setInsideId(null);
-            setIsRightNowOpen(false);
-            newAskThread({ sessionId });
-            requestAskFocus();
-          }}
-        >
-          <Plus size={ICON_SIZE.row} aria-hidden />
-          New
-        </Button>
+          onClick={reset}
+        />
       }
       dock={composer}
     >
