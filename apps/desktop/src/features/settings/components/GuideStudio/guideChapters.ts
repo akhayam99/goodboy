@@ -270,7 +270,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Ask in a session',
-        desc: 'Ask, in the page bar or on ⌘L, opens a panel that reads the session: what needs you now, and answers with buttons for what you can do. Nothing runs in one click.',
+        desc: 'Ask, in the page bar or on ⌘L, opens a panel that reads the session: what needs you now, and answers with buttons for what you can do. Nothing runs in one click. Its header button, or ⌘N inside the panel, starts a new chat and keeps the old one under Earlier.',
       },
     ],
     links: [{ label: 'Go to the board', target: { kind: 'board' } }],
@@ -347,7 +347,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Context drawer',
-        desc: 'Open the goal, decisions and summary from any session page, and Copy context. A dot on Context means something changed since you last looked, and those changes come first. Context updates, at the top, shows the last update with its model and cost, and Update now queues one. Learned lists what agents explained about your topics, for you only, with Dismiss and Undo.',
+        desc: 'Open the goal, decisions and summary from any session page, and Copy context. A dot on Context means something changed since you last looked, and those changes come first, with Mark as read on the Decisions list. Context updates, at the top, shows the last update with its model and cost, and Update now queues one. Learned lists what agents explained about your topics, for you only, with Dismiss and Undo.',
       },
       {
         term: 'Visible to',
