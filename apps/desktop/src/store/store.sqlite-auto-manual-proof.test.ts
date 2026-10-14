@@ -393,11 +393,13 @@ describe('a restart in the middle of a delegation, on the real store', () => {
     }
 
     await vi.waitFor(() => expect(turns.started).toHaveLength(5));
-    const results = (await listAutoOutbox({ db: first.world.db, treeId: first.treeId })).filter(
-      (row) => row.kind === 'results',
+    const resultsOf = async () =>
+      (await listAutoOutbox({ db: first.world.db, treeId: first.treeId })).filter(
+        (row) => row.kind === 'results',
+      );
+    await vi.waitFor(async () =>
+      expect((await resultsOf()).map((row) => row.state)).toEqual(['accepted']),
     );
-    expect(results).toHaveLength(1);
-    expect(results[0]?.state).toBe('accepted');
     const ended = await listAutoAttemptsOfTree({ db: first.world.db, treeId: first.treeId });
     expect(ended.map((attempt) => attempt.state)).toEqual(['ended', 'ended', 'ended']);
     const lastRun = turns.started[4]?.runId ?? '';
@@ -440,8 +442,11 @@ describe('a crash between the claim of a delivery and its acceptance, on the rea
     await second.recoverAll();
 
     await vi.waitFor(() => expect(turns.started).toHaveLength(1));
-    const outbox = await listAutoOutbox({ db: world.db, treeId });
-    expect(outbox.map((row) => [row.id, row.state])).toEqual([[claimed?.id, 'accepted']]);
+    await vi.waitFor(async () =>
+      expect(
+        (await listAutoOutbox({ db: world.db, treeId })).map((row) => [row.id, row.state]),
+      ).toEqual([[claimed?.id, 'accepted']]),
+    );
     const spoken = (useAppStore.getState().transcripts[world.rootAgentId] ?? []).flatMap((event) =>
       event.kind === 'user_text' ? [event.text] : [],
     );

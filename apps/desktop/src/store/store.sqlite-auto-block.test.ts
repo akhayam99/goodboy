@@ -453,10 +453,11 @@ describe('the block of an Auto turn, on the real store', () => {
     expect(await listAutoDelegations({ db: booted.world.db, treeId: booted.treeId })).toHaveLength(
       0,
     );
+    await vi.waitFor(async () =>
+      expect((await refusalsOf(booted)).map((row) => row.state)).toEqual(['accepted']),
+    );
     const refusals = await refusalsOf(booted);
-    expect(refusals).toHaveLength(1);
     const text = storedDeliveryOf({ value: refusals[0]?.payload })?.text ?? '';
-    expect(refusals[0]?.state).toBe('accepted');
     expect(text).toContain('your delegate block was refused (mount_missing)');
     expect(text).toContain('mount-ledger-core');
     expect(text).toContain('STATE OF THIS CONVERSATION');
