@@ -4,7 +4,7 @@ export { SHEET_CLASSES } from './sheet';
 export { StudioSlotContext } from './studioSlotContext';
 export type { ResizeActivity, SheetEdge } from './sheet';
 export { FOCUS_RING } from './focusRing';
-export { registerEscapeLayer } from './escape';
+export { dismissTopEscapeLayer, registerEscapeLayer } from './escape';
 export { useEscapeLayer } from './useEscapeLayer';
 export { copyToClipboard } from './copyToClipboard';
 export { useCopyLink } from './useCopyLink';

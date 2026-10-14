@@ -1,12 +1,12 @@
 import type { WorkspaceId } from '@goodboy/types';
 import { kickoffDraftKey } from '../workflowDrafts/kickoffDraftKey';
-import type { SetFn } from './types';
+import type { GetFn, SetFn } from './types';
 
 export type DiscardSessionDraftParams = {
   readonly workspaceId: WorkspaceId;
 };
 
-export const discardSessionDraft = (set: SetFn) => {
+export const discardSessionDraft = (set: SetFn, get: GetFn) => {
   return ({ workspaceId }: DiscardSessionDraftParams): void => {
     const builderKeys = [
       kickoffDraftKey({ workspaceId }),
@@ -26,5 +26,6 @@ export const discardSessionDraft = (set: SetFn) => {
       }
       return { sessionDrafts, workflowDrafts };
     });
+    get().closeSessionDraft({ workspaceId });
   };
 };

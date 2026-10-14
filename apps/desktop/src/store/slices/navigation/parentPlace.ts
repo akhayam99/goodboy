@@ -1,6 +1,7 @@
 import type { AppState } from '../../types';
 import { agentHomeFor } from './agentHomeFor';
 import { sessionPlace } from './place';
+import { placeBeforeDraft } from './placeBeforeDraft';
 import type { Place } from './types';
 
 type Params = {
@@ -9,8 +10,11 @@ type Params = {
 };
 
 export const parentPlace = ({ state, place }: Params): Place | null => {
-  if (place.at === 'board' || place.at === 'session-draft') {
+  if (place.at === 'board') {
     return null;
+  }
+  if (place.at === 'session-draft') {
+    return placeBeforeDraft({ state });
   }
   const { sessionId, view } = place;
   if (view.studio !== null) {

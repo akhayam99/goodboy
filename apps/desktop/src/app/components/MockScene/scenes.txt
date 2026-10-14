@@ -463,6 +463,8 @@ scripts-rows
 search
 session-ask
 session-card
+session-close-ask
+session-close-written
 session-hover
 session-marks
 session-marks-bitbucket

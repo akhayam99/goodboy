@@ -171,7 +171,7 @@ const withDetail = ({
   detailError: null,
 });
 
-const PREVIEW: ResolvePublicationPreview = {
+export const PREVIEW: ResolvePublicationPreview = {
   publicationId: 'journey-publication',
   repo: 'harborline/payments-api',
   prNumber: 318,
@@ -355,10 +355,6 @@ export const COMMENTS_WORDS_ROWS: ReadonlyArray<Row> = [
         throw new Error('the header has no Push button');
       }
       await click(headerPush);
-      const confirm = await screen.findByRole('group', {
-        name: 'Push 1 commit to hl/fix-duplicate-credit?',
-      });
-      await click(within(confirm).getByRole('button', { name: 'Push' }));
       await settle();
     },
     lands: async () => {

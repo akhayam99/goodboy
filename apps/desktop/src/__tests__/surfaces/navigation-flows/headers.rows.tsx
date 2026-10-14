@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import type { AgentId } from '@goodboy/types';
 import { agentPlace } from '../../../store';
 import { type Row, WAIT, click, settle, useAppStore } from './harness';
-import { SEEDS, group, installComments, openComments } from './comments-words.rows';
+import { PREVIEW, SEEDS, group, installComments, openComments } from './comments-words.rows';
 
 const OTHER_AGENT: AgentId = JSON.parse(JSON.stringify('headers-journey-other-agent'));
 
@@ -21,6 +21,16 @@ const publish = vi.fn(async () => ({
   failed: 0,
   error: null,
 }));
+
+const EARLIER_COMMIT = {
+  sha: '9e4f1c2bbbb',
+  shortSha: '9e4f1c2',
+  subject: 'Batch the ledger lookups',
+  author: 'resolver',
+  timestamp: 0,
+  pushed: false,
+  parentSha: null,
+};
 
 const headerPush = (): HTMLElement => {
   const button = screen
@@ -84,7 +94,10 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
     open: async (ctx) => {
       installComments({ sessionId: ctx.sessionId, seeds: SEEDS });
       publish.mockClear();
-      useAppStore.setState({ publishConversations: publish });
+      useAppStore.setState({
+        publishConversations: publish,
+        preparePublication: async () => ({ ...PREVIEW, earlierCommits: [EARLIER_COMMIT] }),
+      });
       await openComments(ctx);
       await click(within(group('Needs you')).getByRole('button', { name: 'Apply 2 fixes' }));
       expect(headerPush().getAttribute('data-variant')).toBe('secondary');

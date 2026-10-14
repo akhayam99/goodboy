@@ -8,12 +8,11 @@ import { hasSessionDraftContent } from '../../../../store/slices/sessionDraft/ha
 
 type Props = {
   readonly workspaceId: WorkspaceId;
-  readonly onDiscarded: () => void;
 };
 
 const START_BLANK_HINT = 'Create the session now. Set the goal and the rest on its Overview.';
 
-export const SessionDraftHeader = ({ workspaceId, onDiscarded }: Props) => {
+export const SessionDraftHeader = ({ workspaceId }: Props) => {
   const hasContent = useAppStore((state) =>
     hasSessionDraftContent({ draft: selectSessionDraft({ state, workspaceId }) }),
   );
@@ -39,14 +38,7 @@ export const SessionDraftHeader = ({ workspaceId, onDiscarded }: Props) => {
     <div className="flex min-w-0 items-center gap-2">
       <h1 className="min-w-0 flex-1 truncate text-title text-faint-foreground">New session</h1>
       {hasContent ? (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            discardSessionDraft({ workspaceId });
-            onDiscarded();
-          }}
-        >
+        <Button variant="ghost" size="sm" onClick={() => discardSessionDraft({ workspaceId })}>
           Discard draft
         </Button>
       ) : null}

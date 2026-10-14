@@ -1,0 +1,182 @@
+// @vitest-environment happy-dom
+
+vi.mock('@tauri-apps/api/core', () => ({
+  invoke: vi.fn(() => new Promise<never>(() => undefined)),
+}));
+vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
+vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
+
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import type { SessionId } from '@goodboy/types';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../../../store/storyHarness';
+import { sessionPlace } from '../../../../store/slices/navigation/place';
+import { selectIsSessionDraftShown } from '../../../../store/slices/sessionDraft/selectIsSessionDraftShown';
+import { ToastProvider } from '../../../../shared/components/Toast';
+import {
+  WORKSPACE_ID,
+  seedBoardScene,
+} from '../../../../app/components/MockScene/scenes/BoardScene';
+import { SessionDraftPane } from '.';
+
+let useAppStore: StoryStore;
+let cameFrom: SessionId;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+  seedBoardScene();
+  const first = useAppStore.getState().sessions[0];
+  if (first === undefined) {
+    throw new Error('the board seed has no session');
+  }
+  cameFrom = first.id;
+});
+
+afterEach(() => {
+  cleanup();
+});
+
+const settle = async (): Promise<void> => {
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
+};
+
+const openDraft = async ({ text = '' }: { readonly text?: string } = {}): Promise<void> => {
+  useAppStore.getState().navigate({ to: sessionPlace({ sessionId: cameFrom }) });
+  useAppStore.getState().openSessionDraft();
+  if (text !== '') {
+    useAppStore.getState().patchSessionDraft({
+      workspaceId: WORKSPACE_ID,
+      patch: { workflowGoal: text, choice: 'workflow' },
+    });
+  }
+  render(
+    <ToastProvider>
+      <SessionDraftPane workspaceId={WORKSPACE_ID} />
+    </ToastProvider>,
+  );
+  await settle();
+};
+
+const pressEscape = async (): Promise<void> => {
+  fireEvent.keyDown(document.body, { key: 'Escape', code: 'Escape' });
+  await settle();
+};
+
+const isDraftShown = (): boolean => selectIsSessionDraftShown({ state: useAppStore.getState() });
+
+const goalOfDraft = (): string =>
+  useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.workflowGoal ?? '';
+
+describe('closing the New session page', () => {
+  it('shows no Esc label and no close button, and Discard draft only with content', async () => {
+    await openDraft();
+
+    expect(screen.queryByText('Esc')).toBeNull();
+    expect(screen.queryByRole('button', { name: /close|esc/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Discard draft' })).toBeNull();
+    expect(screen.getByRole('button', { name: /Start blank/ })).toBeDefined();
+  });
+
+  it('shows Discard draft once something is written', async () => {
+    await openDraft({ text: 'Round the ledger postings' });
+
+    expect(screen.getByRole('button', { name: 'Discard draft' })).toBeDefined();
+  });
+
+  it('closes on Esc with nothing written, back to where you were', async () => {
+    await openDraft();
+    expect(isDraftShown()).toBe(true);
+
+    await pressEscape();
+
+    expect(isDraftShown()).toBe(false);
+    expect(useAppStore.getState().currentSessionId).toBe(cameFrom);
+    expect(screen.queryByText('Keep this draft?')).toBeNull();
+  });
+
+  it('asks on Esc with text, inline and without a dialog', async () => {
+    await openDraft({ text: 'Round the ledger postings' });
+
+    await pressEscape();
+
+    expect(screen.getByText('Keep this draft?')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Keep draft' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Discard' })).toBeDefined();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(isDraftShown()).toBe(true);
+    expect(goalOfDraft()).toBe('Round the ledger postings');
+  });
+
+  it('keeps the draft on Keep draft, and New brings it back', async () => {
+    await openDraft({ text: 'Round the ledger postings' });
+    await pressEscape();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Keep draft' }));
+    await settle();
+
+    expect(isDraftShown()).toBe(false);
+    expect(useAppStore.getState().currentSessionId).toBe(cameFrom);
+    expect(goalOfDraft()).toBe('Round the ledger postings');
+
+    act(() => useAppStore.getState().openSessionDraft());
+    await settle();
+    expect(isDraftShown()).toBe(true);
+    expect(goalOfDraft()).toBe('Round the ledger postings');
+  });
+
+  it('keeps the draft on a second Esc, the answer that loses nothing', async () => {
+    await openDraft({ text: 'Round the ledger postings' });
+    await pressEscape();
+
+    await pressEscape();
+
+    expect(isDraftShown()).toBe(false);
+    expect(goalOfDraft()).toBe('Round the ledger postings');
+  });
+
+  it('discards for real on Discard, clearing the draft and leaving the page', async () => {
+    await openDraft({ text: 'Round the ledger postings' });
+    await pressEscape();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
+    await settle();
+
+    expect(isDraftShown()).toBe(false);
+    expect(useAppStore.getState().openSessionDraftWorkspaceId).toBeNull();
+    expect(useAppStore.getState().currentSessionId).toBe(cameFrom);
+    expect(goalOfDraft()).toBe('');
+  });
+
+  it('discards for real from the header, leaving the page', async () => {
+    await openDraft({ text: 'Round the ledger postings' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Discard draft' }));
+    await settle();
+
+    expect(isDraftShown()).toBe(false);
+    expect(useAppStore.getState().openSessionDraftWorkspaceId).toBeNull();
+    expect(goalOfDraft()).toBe('');
+  });
+
+  it('lets up() leave the page from a written draft', async () => {
+    await openDraft({ text: 'Round the ledger postings' });
+
+    act(() => useAppStore.getState().up());
+    await settle();
+
+    expect(isDraftShown()).toBe(false);
+    expect(useAppStore.getState().currentSessionId).toBe(cameFrom);
+    expect(goalOfDraft()).toBe('Round the ledger postings');
+  });
+});

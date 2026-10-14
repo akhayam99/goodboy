@@ -770,9 +770,16 @@ cannot be renamed, and there is no `⋯`, no chip and no projects section. The
 column's New session row stays selected while the draft is open. Each workspace
 keeps one draft in memory (`store/slices/sessionDraft/`), never on disk:
 leaving it keeps it intact, New brings it back, and the button shows a primary
-dot with `Draft in progress` while a written draft waits. `Discard draft` in
-the header empties it; Esc never does. Back returns to the draft like any
-other place. **Start blank** in the header (`startBlankSession`) is the way
+dot with `Draft in progress` while a written draft waits. The header has no
+`Esc` label and no X: Esc closes the page (`closeSessionDraft`) and lands on
+the place before it, or the board when there was none, which is also the
+parent `up()` goes to (`placeBeforeDraft`). With nothing written Esc leaves at
+once. With text Esc raises `Keep this draft?` at the top of the page, inline
+and without a modal: `Keep draft` (or a second Esc) leaves and keeps the
+draft, `Discard` empties it. `Discard draft` in the header shows only with
+content and does the same as `Discard`: `discardSessionDraft` clears the
+draft and both builder drafts of that workspace, then closes the page. Back
+returns to the draft like any other place. **Start blank** in the header (`startBlankSession`) is the way
 to start from the goal: it creates a session with no title and no goal slot
 and lands on its normal Overview (`Untitled session`, `Add a goal`), where
 the goal, projects and work are added from the usual controls. Nothing is
