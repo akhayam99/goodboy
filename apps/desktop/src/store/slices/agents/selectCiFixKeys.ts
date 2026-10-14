@@ -33,7 +33,7 @@ type FlagParams = {
 
 const flag = ({ isOn }: FlagParams): string => (isOn ? '1' : '0');
 
-export const encodeCiFixKey = ({
+const encodeCiFixKey = ({
   agentId,
   chainState,
   isDismissed,

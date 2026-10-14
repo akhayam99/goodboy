@@ -1,6 +1,6 @@
 import type { CheckChain } from '../../../store/slices/agents/selectCheckChain';
 
-export type CiFixStageId = 'analyze' | 'fix' | 'push';
+type CiFixStageId = 'analyze' | 'fix' | 'push';
 
 export type CiFixStageStatus = 'wait' | 'run' | 'done' | 'need' | 'failed';
 
@@ -10,7 +10,7 @@ export type CiFixStage = {
   readonly status: CiFixStageStatus;
 };
 
-export type CiFixPhase = 'running' | 'waiting' | 'failed' | 'done';
+type CiFixPhase = 'running' | 'waiting' | 'failed' | 'done';
 
 export type CiFixProgress = {
   readonly stages: ReadonlyArray<CiFixStage>;

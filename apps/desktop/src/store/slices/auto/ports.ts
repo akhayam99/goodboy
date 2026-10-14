@@ -59,7 +59,7 @@ export type RoutingOutcome =
       message: string;
     }>;
 
-export type LoadMountsParams = Readonly<{
+type LoadMountsParams = Readonly<{
   sessionId: SessionId;
 }>;
 
@@ -173,7 +173,7 @@ export type RunOutcome = Readonly<{
   costUsd: number | null;
 }>;
 
-export type IsRunLiveParams = Readonly<{
+type IsRunLiveParams = Readonly<{
   runId: string;
 }>;
 

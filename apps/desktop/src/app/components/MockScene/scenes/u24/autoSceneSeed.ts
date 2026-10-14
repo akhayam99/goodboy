@@ -33,9 +33,9 @@ export const AUTO_SESSION = SESSION;
 
 export const AUTO_ROOT_ID = brandId<AgentId>({ value: 'mock-auto-root' });
 export const PLANNER_ID = brandId<AgentId>({ value: 'mock-auto-planner' });
-export const IMPLEMENTER_ID = brandId<AgentId>({ value: 'mock-auto-implementer' });
-export const TESTER_ID = brandId<AgentId>({ value: 'mock-auto-tester' });
-export const REVIEWER_ID = brandId<AgentId>({ value: 'mock-auto-reviewer' });
+const IMPLEMENTER_ID = brandId<AgentId>({ value: 'mock-auto-implementer' });
+const TESTER_ID = brandId<AgentId>({ value: 'mock-auto-tester' });
+const REVIEWER_ID = brandId<AgentId>({ value: 'mock-auto-reviewer' });
 export const AUTO_PLAN_ID = brandId<ArtifactId>({ value: 'mock-auto-plan-retries' });
 
 const RUN_ONE = brandId<ProviderRunId>({ value: 'mock-auto-run-1' });

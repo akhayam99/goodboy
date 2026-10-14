@@ -1,6 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 
-export type NewDrawerDraft = {
+type NewDrawerDraft = {
   readonly autoGoal: string;
 };
 

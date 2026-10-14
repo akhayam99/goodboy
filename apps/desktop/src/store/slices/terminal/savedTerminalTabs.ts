@@ -8,7 +8,7 @@ import type {
 
 export const SETTING_TERMINAL_TABS = 'terminal.tabs';
 
-export type SavedTerminalTab = {
+type SavedTerminalTab = {
   readonly id: TerminalTabId;
   readonly owner: TerminalOwner;
   readonly title: string;

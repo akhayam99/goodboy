@@ -44,7 +44,7 @@ const SETTLED_STATUS: Readonly<Record<NonNullable<AutoDelegation['outcome']>, De
   timed_out: { word: 'Timed out', tone: 'warning', isLive: false },
 };
 
-export const delegationStatusOf = ({ delegation }: StatusParams): DelegationStatus => {
+const delegationStatusOf = ({ delegation }: StatusParams): DelegationStatus => {
   if (delegation.isStopping && delegation.state !== 'settled') {
     return { word: 'Stopping', tone: 'neutral', isLive: true };
   }

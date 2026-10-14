@@ -85,12 +85,12 @@ export type ActionChoice = {
 
 export const ALL_CHOICES_ID = 'choice.all';
 
-export type ActionPreview = {
+type ActionPreview = {
   readonly kind: 'role';
   readonly agentKind: AgentKind;
 };
 
-export type ActionTrackParams = {
+type ActionTrackParams = {
   readonly actionId: string;
   readonly task: () => Promise<void>;
 };

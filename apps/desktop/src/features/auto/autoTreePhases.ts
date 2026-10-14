@@ -6,6 +6,6 @@ type PhaseParams = {
   readonly phase: AutoPhase;
 };
 
-export const isAutoTreeTerminal = ({ phase }: PhaseParams): boolean => TERMINAL_PHASES.has(phase);
+const isAutoTreeTerminal = ({ phase }: PhaseParams): boolean => TERMINAL_PHASES.has(phase);
 
 export const isAutoTreeActive = ({ phase }: PhaseParams): boolean => !isAutoTreeTerminal({ phase });

@@ -33,7 +33,7 @@ type ClustersParams = {
   readonly projects: ReadonlyArray<Pick<Project, 'id' | 'name'>>;
 };
 
-export const WORKSPACE_FOLDER_TITLE = 'Workspace folder';
+const WORKSPACE_FOLDER_TITLE = 'Workspace folder';
 
 export const pickerClusters = ({
   folder,

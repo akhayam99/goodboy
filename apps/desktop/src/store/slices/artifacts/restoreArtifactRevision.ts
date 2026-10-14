@@ -9,7 +9,7 @@ export type RestoreArtifactRevisionParams = {
   readonly revision: number;
 };
 
-export const RESTORE_CONFLICT_MESSAGE = 'A newer version arrived. Review it before restoring.';
+const RESTORE_CONFLICT_MESSAGE = 'A newer version arrived. Review it before restoring.';
 
 export const restoreArtifactRevision = (set: SetFn) => {
   return async ({ sessionId, artifact, revision }: RestoreArtifactRevisionParams) => {

@@ -1,7 +1,7 @@
 import type { AutoPorts, ReadRunOutcomeParams, RunOutcome } from './ports';
 import type { SleepParams } from './startDeliveredTurn';
 
-export const WATCH_RUN_POLL_MS = 1_000;
+const WATCH_RUN_POLL_MS = 1_000;
 
 export type WatchRunParams = Readonly<{
   ports: AutoPorts;

@@ -58,15 +58,11 @@ type ActiveParams = {
   readonly terminalId: TerminalTabId | null;
 };
 
-type WorktreeParams = {
-  readonly worktree: TerminalWorktree;
-};
-
 const WORKSPACE_GROUP_KEY = 'workspace';
 const WORKSPACE_GROUP_TITLE = 'Workspace folder';
 const UNKNOWN_FOLDER_NAME = 'Terminal';
 
-export const terminalWorktreesOf = ({
+const terminalWorktreesOf = ({
   tabs,
   mounts,
   projects,
@@ -180,6 +176,3 @@ export const activeTabOf = ({ worktree, active, terminalId }: ActiveParams): Ter
   const remembered = worktree.tabs.find((tab) => tab.id === active[worktree.key]);
   return remembered ?? worktree.tabs[0] ?? null;
 };
-
-export const worktreeLabel = ({ worktree }: WorktreeParams): string =>
-  worktree.branch === null ? worktree.projectName : `${worktree.projectName} · ${worktree.branch}`;

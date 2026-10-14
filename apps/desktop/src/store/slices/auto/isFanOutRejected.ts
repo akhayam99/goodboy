@@ -1,6 +1,6 @@
 import { isAutoChildAgent, type Database } from '@goodboy/db';
 
-export const MIN_FAN_OUT_AREAS = 2;
+const MIN_FAN_OUT_AREAS = 2;
 
 export type IsFanOutRejectedParams = Readonly<{
   db: Database;

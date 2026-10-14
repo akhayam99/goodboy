@@ -35,7 +35,7 @@ type Params = {
   readonly now: () => IsoDateTime;
 };
 
-export const AUTO_FAN_OUT_NOTE =
+const AUTO_FAN_OUT_NOTE =
   'Splitting the work into parallel agents is off inside an Auto conversation. This reply was kept as it is and goes back to Auto.';
 
 export const completeResolvedAgent = async ({

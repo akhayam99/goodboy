@@ -10,9 +10,9 @@ type DecisionChangeLine = {
 
 const MAX_LINES = 6;
 
-export const DECISION_DETAIL_LINE_HEIGHT = 20;
+const DECISION_DETAIL_LINE_HEIGHT = 20;
 
-export const DECISION_DETAIL_ACTION_HEIGHT = 24;
+const DECISION_DETAIL_ACTION_HEIGHT = 24;
 
 export type DetailHeightParams = {
   readonly rowId: string;

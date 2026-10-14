@@ -20,7 +20,7 @@ type ActionFailure = {
 
 const RUN_KEY = 'action';
 
-export type ActionOutcome = {
+type ActionOutcome = {
   readonly actionId: string;
   readonly message: string;
 };

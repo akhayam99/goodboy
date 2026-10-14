@@ -2,7 +2,7 @@ import { isAutoChildAgent, type Database } from '@goodboy/db';
 
 export type QuestionRoute = 'open_questions' | 'tree';
 
-export const QUESTION_MARKER = '<<ctx-question';
+const QUESTION_MARKER = '<<ctx-question';
 
 export type RouteQuestionsParams = Readonly<{
   db: Database;

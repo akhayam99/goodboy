@@ -33,7 +33,7 @@ export type SchedulerParams = Readonly<{
   now: () => number;
 }>;
 
-export type TransitionParams = Readonly<{
+type TransitionParams = Readonly<{
   treeId: AutoTreeId;
   expect: AutoTreeExpectation;
   to: AutoPhase;

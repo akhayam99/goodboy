@@ -9,7 +9,7 @@ import {
   type TurnEvent,
 } from '@goodboy/types';
 import { summarizerQueues } from './slices/turn/turnHelpers';
-import type { TurnSettledInfo } from './slices/turn/types';
+import type { SendTurnInput } from './slices/turn/types';
 import {
   buildStoryWorkspace,
   connectedAnthropicState,
@@ -22,6 +22,8 @@ import {
   stubStoryInvoke,
   type StoryStore,
 } from './storyHarness';
+
+type TurnSettledInfo = Parameters<NonNullable<SendTurnInput['onSettled']>>[0];
 
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
 vi.mock('@tauri-apps/api/event', async () =>

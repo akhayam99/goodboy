@@ -25,7 +25,7 @@ import {
   type WorkspaceLimitParams,
 } from './startAutoTrees';
 
-export const AUTO_TICK_MS = 15_000;
+const AUTO_TICK_MS = 15_000;
 
 const sleep = ({ ms }: SleepParams): Promise<void> =>
   new Promise((resolve) => {

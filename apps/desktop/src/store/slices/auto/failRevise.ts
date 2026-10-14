@@ -8,7 +8,7 @@ import {
 } from '@goodboy/db';
 import type { ArtifactId, AutoDelegationId, AutoTreeId } from '@goodboy/types';
 
-export type ReviseFailureReason =
+type ReviseFailureReason =
   'no_new_version' | 'lost_structure' | 'stale_base' | 'stale_result' | 'kickoff_failed';
 
 export type FailReviseParams = Readonly<{

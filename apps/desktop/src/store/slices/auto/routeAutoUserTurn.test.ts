@@ -6,12 +6,12 @@ import {
   type AutoUserTurnPort,
 } from '../../../features/auto/autoUserTurnPort';
 import type { SendTurnInput } from '../turn/types';
-import {
-  AUTO_ATTACHMENTS_MESSAGE,
-  AUTO_MESSAGE_LOST_MESSAGE,
-  routeAutoUserTurn,
-  type AutoTurnState,
-} from './routeAutoUserTurn';
+import { routeAutoUserTurn, type RouteAutoUserTurnParams } from './routeAutoUserTurn';
+
+type AutoTurnState = ReturnType<RouteAutoUserTurnParams['get']>;
+
+const AUTO_ATTACHMENTS_MESSAGE = 'Auto does not take files in a message yet.';
+const AUTO_MESSAGE_LOST_MESSAGE = 'Auto could not take your message. Send it again in a moment.';
 
 const SESSION = brandId<SessionId>({ value: 'session-harborline' });
 const WORKSPACE = brandId<WorkspaceId>({ value: 'workspace-harborline' });

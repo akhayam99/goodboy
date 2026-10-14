@@ -17,7 +17,7 @@ export type StopTreeParams = Readonly<{
   treeId: AutoTree['id'];
 }>;
 
-export type StuckAgent = Readonly<{
+type StuckAgent = Readonly<{
   agentId: string;
   outcome: Exclude<CancelRunOutcome['outcome'], 'exited'>;
 }>;

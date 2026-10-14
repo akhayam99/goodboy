@@ -23,7 +23,7 @@ export type RailRow = Readonly<{
   isLive: boolean;
 }>;
 
-export type RailRouting = Readonly<{
+type RailRouting = Readonly<{
   provider: string | null;
   model: string | null;
   effort: string | null;

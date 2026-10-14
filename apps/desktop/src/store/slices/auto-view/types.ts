@@ -1,8 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import type { AutoViewState } from './state';
 
-export type { SetFn, GetFn } from '../../slice-types';
-
 type LoadAutoTreesParams = {
   readonly sessionId: SessionId;
 };

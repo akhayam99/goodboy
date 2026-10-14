@@ -71,7 +71,7 @@ export type AdmitBatchParams = Readonly<{
   isPlanApprovalRequired: boolean;
 }>;
 
-export type AdmitReceiptEntry = Readonly<{
+type AdmitReceiptEntry = Readonly<{
   delegationId: AutoDelegationId;
   childAgentId: AgentId;
   attemptId: AutoAttemptId;
@@ -80,7 +80,7 @@ export type AdmitReceiptEntry = Readonly<{
   ceilingUsd: number;
 }>;
 
-export type AdmitReceipt = Readonly<{
+type AdmitReceipt = Readonly<{
   requestId: AutoRequestId;
   batchId: AutoBatchId;
   delegations: ReadonlyArray<AdmitReceiptEntry>;

@@ -1,12 +1,12 @@
 import { isJsonRecord, listField, numberField, recordField, textField } from './readJson';
 
-export type ResultCheckView = Readonly<{
+type ResultCheckView = Readonly<{
   name: string;
   status: 'pass' | 'fail' | 'unknown';
   isClaimed: boolean;
 }>;
 
-export type ResultArtifactView = Readonly<{
+type ResultArtifactView = Readonly<{
   artifactId: string;
   kind: string;
   title: string;

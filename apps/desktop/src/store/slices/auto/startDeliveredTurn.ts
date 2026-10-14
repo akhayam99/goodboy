@@ -2,15 +2,15 @@ import { formatError } from '@goodboy/ui';
 import type { SendTurnInput, SendTurnResult } from '../turn/types';
 import type { DeliveryRun, LookupDeliveryRunParams, TurnExit } from './ports';
 
-export const DELIVERED_TURN_POLL_MS = 50;
-export const DELIVERED_TURN_FAST_POLLS = 40;
-export const DELIVERED_TURN_SLOW_POLL_MS = 500;
+const DELIVERED_TURN_POLL_MS = 50;
+const DELIVERED_TURN_FAST_POLLS = 40;
+const DELIVERED_TURN_SLOW_POLL_MS = 500;
 
 type PollPlanParams = {
   readonly acceptTimeoutMs: number;
 };
 
-export const pollCountOf = ({ acceptTimeoutMs }: PollPlanParams): number => {
+const pollCountOf = ({ acceptTimeoutMs }: PollPlanParams): number => {
   const fastMs = DELIVERED_TURN_FAST_POLLS * DELIVERED_TURN_POLL_MS;
   if (acceptTimeoutMs <= fastMs) {
     return Math.ceil(acceptTimeoutMs / DELIVERED_TURN_POLL_MS);
@@ -24,7 +24,7 @@ type PollIntervalParams = {
   readonly poll: number;
 };
 
-export const pollIntervalOf = ({ poll }: PollIntervalParams): number =>
+const pollIntervalOf = ({ poll }: PollIntervalParams): number =>
   poll < DELIVERED_TURN_FAST_POLLS ? DELIVERED_TURN_POLL_MS : DELIVERED_TURN_SLOW_POLL_MS;
 
 export type ReadRunCostParams = Readonly<{ runId: string }>;
@@ -39,7 +39,7 @@ export type DeliveredTurnDeps = Readonly<{
   nowMs: () => number;
 }>;
 
-export type DeliveredTurnEnded = Readonly<{
+type DeliveredTurnEnded = Readonly<{
   assistantText: string;
   exit: TurnExit;
   costUsd: number | null;

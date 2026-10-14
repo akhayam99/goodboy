@@ -400,10 +400,3 @@ export const polishWorkflowGuidanceText = ({
   guidance,
 }: PolishGuidanceParams): Promise<string | null> =>
   polishWorkflowGuidance({ ...deps, invokeFn: invokeCommand }, guidance);
-
-type PlannerParams = {
-  readonly deps: Omit<PlannerClientDeps, 'invokeFn'>;
-};
-
-export const createWorkflowPlanner = ({ deps }: PlannerParams): PlannerClient =>
-  new PlannerClient({ ...deps, invokeFn: invokeCommand });

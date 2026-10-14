@@ -3,7 +3,7 @@ import { AUTO_CONFINED_ROLE } from '../turn/confinedRoleOf';
 import type { StartAutoTurnParams, TurnStartOutcome } from './ports';
 import { startDeliveredTurn, type DeliveredTurnDeps } from './startDeliveredTurn';
 
-export const AUTO_TURN_ACCEPT_TIMEOUT_MS = 20_000;
+const AUTO_TURN_ACCEPT_TIMEOUT_MS = 20_000;
 
 export type StartAutoTurnDeps = DeliveredTurnDeps;
 

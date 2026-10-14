@@ -2,7 +2,7 @@ import type { WorkspaceId } from '@goodboy/types';
 import { STORAGE_PREFIXES, persistedPref } from '../../shared/lib/storage-keys';
 import type { NewDrawerTab } from '../../store/slices/drawer/state';
 
-export const NEW_DRAWER_TABS: ReadonlyArray<NewDrawerTab> = ['run', 'agent', 'write'];
+const NEW_DRAWER_TABS: ReadonlyArray<NewDrawerTab> = ['run', 'agent', 'write'];
 
 const FIRST_TAB: NewDrawerTab = 'run';
 

@@ -30,7 +30,7 @@ export type AutoRuntimeOptions = Readonly<{
   watchPolls?: number;
 }>;
 
-export type ConfirmRuntimeParams = Readonly<{
+type ConfirmRuntimeParams = Readonly<{
   delegationId: AutoDelegationId;
   decision: 'confirm' | 'decline';
 }>;

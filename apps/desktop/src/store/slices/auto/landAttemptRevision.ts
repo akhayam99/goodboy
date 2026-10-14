@@ -38,7 +38,7 @@ type SnapshotParams = {
   readonly attempt: AutoAttempt;
 };
 
-export const landingOf = ({ attempt }: SnapshotParams): RevisionLanding | null => {
+const landingOf = ({ attempt }: SnapshotParams): RevisionLanding | null => {
   const snapshot = attempt.resultSnapshot;
   if (!isRecord(snapshot)) {
     return null;

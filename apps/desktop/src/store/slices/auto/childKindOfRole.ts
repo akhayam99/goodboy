@@ -1,7 +1,7 @@
 import type { AutoDelegationRole } from '@goodboy/core';
 import type { AgentKind } from '../../../features/session/agent-kind';
 
-export const AGENT_KIND_OF_ROLE = {
+const AGENT_KIND_OF_ROLE = {
   scout: 'scout',
   planner: 'planner',
   investigator: 'debugger',

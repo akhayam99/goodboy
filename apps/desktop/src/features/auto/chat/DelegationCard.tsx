@@ -17,7 +17,7 @@ type Props = {
   readonly confirm?: DelegationConfirm;
 };
 
-export type DelegationConfirm = Readonly<{
+type DelegationConfirm = Readonly<{
   line: string;
   isBusy: boolean;
   onConfirm: () => void;

@@ -32,7 +32,7 @@ export type LandRevisionParams = Readonly<{
   result: unknown;
 }>;
 
-export type LandDropReason =
+type LandDropReason =
   'generation' | 'not_owner' | 'delegation' | 'attempt' | 'not_open' | 'stale_base';
 
 export type LandRevisionOutcome =

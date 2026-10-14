@@ -6,7 +6,7 @@ import { ReportedError } from '../notifications/reportedError';
 import { AUTO_CONFINED_ROLE } from '../turn/confinedRoleOf';
 import type { SendTurnInput, SendTurnResult } from '../turn/types';
 
-export type AutoTurnState = Readonly<{
+type AutoTurnState = Readonly<{
   sessions: ReadonlyArray<Pick<Session, 'id' | 'workspaceId'>>;
   sessionPhaseRuns: Readonly<
     Record<SessionId, ReadonlyArray<Pick<Agent, 'id' | 'kind' | 'parentAgentId'>>>
@@ -20,9 +20,8 @@ export type RouteAutoUserTurnParams = Readonly<{
   input: SendTurnInput;
 }>;
 
-export const AUTO_ATTACHMENTS_MESSAGE = 'Auto does not take files in a message yet.';
-export const AUTO_MESSAGE_LOST_MESSAGE =
-  'Auto could not take your message. Send it again in a moment.';
+const AUTO_ATTACHMENTS_MESSAGE = 'Auto does not take files in a message yet.';
+const AUTO_MESSAGE_LOST_MESSAGE = 'Auto could not take your message. Send it again in a moment.';
 
 const REFUSED_TITLE = "Auto didn't get your message";
 

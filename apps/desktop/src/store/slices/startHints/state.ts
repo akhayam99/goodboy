@@ -1,6 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 
-export type StartHintDraft = {
+type StartHintDraft = {
   readonly text: string;
   readonly revision: number;
 };

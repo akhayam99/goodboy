@@ -20,7 +20,7 @@ export type SendTurnResult = Readonly<{
   isLaneQueued?: boolean;
 }>;
 
-export type TurnSettledInfo = Readonly<{
+type TurnSettledInfo = Readonly<{
   runId: ProviderRunId;
   assistantText: string;
   hasFailed: boolean;

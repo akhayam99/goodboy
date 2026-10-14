@@ -25,7 +25,7 @@ import { resolveChildRouting } from './resolveChildRouting';
 import { makeStartAutoTurn } from './startAutoTurn';
 import { startDeliveredTurn, type ReadRunCostParams, type SleepParams } from './startDeliveredTurn';
 
-export const CHILD_TURN_ACCEPT_TIMEOUT_MS = 31 * 60 * 1000;
+const CHILD_TURN_ACCEPT_TIMEOUT_MS = 31 * 60 * 1000;
 
 export type RealAutoPortsDeps = Readonly<{
   db: Database;

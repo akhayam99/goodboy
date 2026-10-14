@@ -13,7 +13,6 @@ import type {
 } from '@goodboy/types';
 import {
   addStep,
-  draftFromPlannerSteps,
   draftFromWorkflow,
   duplicateStep,
   removeStep,
@@ -178,80 +177,17 @@ describe('workflow authoring engine', () => {
     });
   });
 
-  it('normalizes planner role aliases and unknown roles', () => {
-    const steps = draftFromPlannerSteps({
-      steps: [
-        {
-          name: 'Known',
-          role: 'reviewer',
-          promptPrefix: 'Review',
-          expectedOutput: 'Notes',
-          size: null,
-        },
-        {
-          name: 'Docs',
-          role: 'writer',
-          promptPrefix: 'Document',
-          expectedOutput: 'Docs',
-          size: null,
-        },
-        {
-          name: 'Debug',
-          role: 'debugger',
-          promptPrefix: 'Debug',
-          expectedOutput: 'Fix',
-          size: null,
-        },
-        {
-          name: 'General',
-          role: 'generic',
-          promptPrefix: 'Handle',
-          expectedOutput: 'Result',
-          size: null,
-        },
-        {
-          name: 'Unknown',
-          role: 'emperor',
-          promptPrefix: 'Rule',
-          expectedOutput: 'Order',
-          size: null,
-        },
-      ],
-    });
-    expect(steps.map((step) => step.role)).toEqual([
-      'reviewer',
-      'docs',
-      'investigator',
-      'custom',
-      'custom',
-    ]);
-  });
-
-  it('keeps the planner size for this run and leaves it out of a preset', () => {
-    const steps = draftFromPlannerSteps({
-      steps: [
-        {
-          name: 'Build',
-          role: 'implementer',
-          promptPrefix: 'Build',
-          expectedOutput: 'Diff',
-          size: 'large',
-        },
-        {
-          name: 'Check',
-          role: 'reviewer',
-          promptPrefix: 'Check',
-          expectedOutput: 'Notes',
-          size: null,
-        },
-      ],
-    });
+  it('keeps the step size for this run and leaves it out of a preset', () => {
+    const steps = draftFromWorkflow({ workflow }).steps.map((step, index) => ({
+      ...step,
+      size: index === 0 ? ('large' as const) : null,
+    }));
     expect(steps.map((step) => step.size)).toEqual(['large', null]);
 
     const draft = { ...draftFromWorkflow({ workflow }), steps, isPreset: false };
     const oneOff = upsertArgsFromDraft({ draft, workspaceId: workflow.workspaceId });
     expect(oneOff.steps.map((step) => step.size)).toEqual(['large', undefined]);
-    expect(oneOff.steps[0]?.promptPrefix).toBe('Build');
+    expect(oneOff.steps[0]?.promptPrefix).toBe('Review it');
 
     const preset = upsertArgsFromDraft({
       draft: { ...draft, isPreset: true },

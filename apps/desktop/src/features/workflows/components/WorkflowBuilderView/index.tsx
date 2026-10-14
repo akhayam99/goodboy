@@ -89,7 +89,7 @@ export type BuilderKickoff = {
   readonly start: (run: (session: Session) => Promise<void>) => Promise<void>;
 };
 
-export type BuilderSlots = {
+type BuilderSlots = {
   readonly actionsHost: HTMLElement | null;
   readonly action: HTMLElement | null;
 };

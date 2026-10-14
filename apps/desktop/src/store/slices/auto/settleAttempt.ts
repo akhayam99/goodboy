@@ -19,7 +19,7 @@ import {
 } from '@goodboy/db';
 import type { AutoAttemptId } from '@goodboy/types';
 
-export type AttemptEnding =
+type AttemptEnding =
   | Readonly<{
       kind: 'ended';
       outcome: AutoOutcome;
@@ -44,7 +44,7 @@ export type SettleAttemptParams = Readonly<{
   outbox?: ReadonlyArray<NewAutoOutbox>;
 }>;
 
-export type SettleDropReason = 'unknown_attempt' | 'generation' | 'attempt_state' | 'not_owner';
+type SettleDropReason = 'unknown_attempt' | 'generation' | 'attempt_state' | 'not_owner';
 
 export type SettleAttemptOutcome =
   | Readonly<{ kind: 'settled'; attempt: AutoAttempt }>

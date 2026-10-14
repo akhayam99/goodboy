@@ -1,7 +1,7 @@
 import { listAutoDelegationsOfRequest, type Database } from '@goodboy/db';
 import type { AutoRequestId, AutoTreeId } from '@goodboy/types';
 
-export type ReceiptEntry = Readonly<{
+type ReceiptEntry = Readonly<{
   delegationId: string;
   childAgentId: string;
   role: string;
