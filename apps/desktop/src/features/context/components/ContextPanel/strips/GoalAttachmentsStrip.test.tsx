@@ -44,7 +44,7 @@ vi.mock('../../../../chat/turn', () => ({
   readAttachment: vi.fn(async () => ''),
 }));
 
-vi.mock('../../../../chat/components/ImageLightbox', () => ({
+vi.mock('../../../../../shared/components/ImageLightbox', () => ({
   ImageLightbox: () => null,
 }));
 

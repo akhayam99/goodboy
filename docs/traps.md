@@ -473,6 +473,12 @@ fails silently at runtime.
   the two reads. The monitor reads exit 0 and 1 as success and anything else,
   or a timeout, as a failed snapshot; treating 1 as an error would show a
   broken monitor on a quiet machine.
+- The webview content security policy lives in `apps/desktop/src-tauri/tauri.conf.json`
+  and the dev server has none, so a scene never shows what it blocks. `img-src`
+  admits `'self'`, `data:` and `blob:` and nothing remote: a preview built with
+  `URL.createObjectURL` (the composer chip, the workspace chat bubble) is a
+  broken box without `blob:`, with only a console error. `csp-img-src.test.ts`
+  pins the rule; widen no other directive for an image.
 
 ## History stashes are shared across worktrees
 

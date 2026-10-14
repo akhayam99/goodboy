@@ -9,6 +9,7 @@ export type MessageAttachment = Readonly<{
   fileName: string;
   mimeType: string;
   relPath: string;
+  dir?: string;
 }>;
 
 export type AttachmentInput = Readonly<{

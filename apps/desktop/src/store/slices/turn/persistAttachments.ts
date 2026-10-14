@@ -16,6 +16,7 @@ type Params = {
   attachmentInputs: ReadonlyArray<AttachmentInput>;
   workingDir: string;
   attachmentDir?: string;
+  isScratchSession?: boolean;
   activeAgentId: AgentId;
   sessionId: SessionId;
   resolvedPrompt: string;
@@ -28,6 +29,7 @@ export const persistAttachments = async (
     attachmentInputs,
     workingDir,
     attachmentDir = workingDir,
+    isScratchSession = false,
     activeAgentId,
     sessionId,
     resolvedPrompt,
@@ -54,6 +56,7 @@ export const persistAttachments = async (
             fileName: a.fileName,
             mimeType: a.mimeType,
             relPath,
+            ...((attachmentDir !== workingDir || isScratchSession) && { dir: attachmentDir }),
           };
         }),
       );

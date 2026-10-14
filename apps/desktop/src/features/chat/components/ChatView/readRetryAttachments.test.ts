@@ -56,6 +56,23 @@ describe('readRetryAttachments', () => {
     expect(h.readAttachment).not.toHaveBeenCalled();
   });
 
+  it('reads a first lap file from the folder it was written to', async () => {
+    h.readAttachment.mockResolvedValue('data:text/plain;base64,aGVsbG8=');
+
+    const result = await readRetryAttachments({
+      worktreePath: '/repos/ledger-core',
+      attachments: [
+        { ...attachment({ id: 'a', fileName: 'notes.md' }), dir: '/scratch/session-1' },
+      ],
+    });
+
+    expect(h.readAttachment).toHaveBeenCalledWith(
+      '/scratch/session-1',
+      '.goodboy/attachments/notes.md',
+    );
+    expect(result.missing).toEqual([]);
+  });
+
   it('names the missing files in the warning', () => {
     expect(missingAttachmentsMessage({ missing: ['gone.md'] })).toBe(
       'Retried without gone.md. The file is no longer readable.',

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ImageOff, X } from 'lucide-react';
 import { IconButton, Skeleton, Tooltip } from '@goodboy/ui';
 import { attachmentKindFor, fileIconFor } from '../../../chat/attachment-kinds';
-import { ImageLightbox } from '../../../chat/components/ImageLightbox';
+import { ImageLightbox } from '../../../../shared/components/ImageLightbox';
 import type { PendingAttachment } from '../../pendingAttachment';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 

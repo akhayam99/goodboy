@@ -215,6 +215,11 @@ export const prepareTurn = async ({ set, get, input }: Params) => {
       : await persistAttachments(get, {
           attachmentInputs,
           workingDir,
+          isScratchSession:
+            rewriterCopy === null &&
+            copyPath === null &&
+            activeMount === undefined &&
+            firstLapProject === null,
           ...(firstLapProject !== null &&
             attachmentInputs.length > 0 && {
               attachmentDir: await scratchDirPrepare({ sessionId }),

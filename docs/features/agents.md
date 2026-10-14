@@ -19,7 +19,7 @@ Ask what is happening in a session without leaving it. **Ask**, or **⌘L**, ope
 
 ### Images in chat
 
-Paste, drop or attach images in the chat message box, up to 10 per message, in PNG, JPEG, GIF or WebP. The model reads them with your question, on Claude and on Codex.
+Paste, drop or attach images in the chat message box, up to 10 per message, in PNG, JPEG, GIF or WebP. The model reads them with your question, on Claude and on Codex. The image shows as a thumbnail in the message box and in your message, and a click on it opens it large.
 
 ### Roles
 

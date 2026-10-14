@@ -25,10 +25,11 @@ type MessageAttachmentChipProps = {
 };
 
 const MessageAttachmentChip = ({ attachment, workingDir }: MessageAttachmentChipProps) => {
+  const readDir = attachment.dir ?? workingDir;
   const thumbnail = useAttachmentThumbnail({
     kind: attachment.kind,
     relPath: attachment.relPath,
-    workingDir,
+    workingDir: readDir,
   });
   const isPdf = attachment.mimeType === 'application/pdf';
 
@@ -39,8 +40,8 @@ const MessageAttachmentChip = ({ attachment, workingDir }: MessageAttachmentChip
       thumbnail={attachment.kind === 'image' ? thumbnail : undefined}
       preview={thumbnail.status === 'ready' ? { src: thumbnail.src } : undefined}
       lazyPreview={
-        isPdf && workingDir
-          ? { load: () => readAttachment(workingDir, attachment.relPath), media: 'pdf' }
+        isPdf && readDir
+          ? { load: () => readAttachment(readDir, attachment.relPath), media: 'pdf' }
           : undefined
       }
       title={attachment.fileName}

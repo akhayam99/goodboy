@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Button, Markdown, ScrollFade, Skeleton, EmptyState } from '@goodboy/ui';
-import { ImageLightbox } from '../../../chat/components/ImageLightbox';
+import { ImageLightbox } from '../../../../shared/components/ImageLightbox';
 import { type ExploreEntry } from '../../explore';
 import type { ExplorePreviewState } from '../../hooks/useExplorePreview';
 import type { ExplorePreviewKind } from '../../previewKindOf';

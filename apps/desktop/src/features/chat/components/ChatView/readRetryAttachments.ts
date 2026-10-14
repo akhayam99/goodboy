@@ -19,14 +19,16 @@ export const readRetryAttachments = async ({
   if (attachments.length === 0) {
     return { inputs: [], missing: [] };
   }
-  if (worktreePath === null) {
-    return { inputs: [], missing: attachments.map((attachment) => attachment.fileName) };
-  }
   const inputs: AttachmentInput[] = [];
   const missing: string[] = [];
   for (const attachment of attachments) {
+    const readDir = attachment.dir ?? worktreePath;
+    if (readDir === null) {
+      missing.push(attachment.fileName);
+      continue;
+    }
     try {
-      const dataUrl = await readAttachment(worktreePath, attachment.relPath);
+      const dataUrl = await readAttachment(readDir, attachment.relPath);
       inputs.push({
         id: attachment.id,
         fileName: attachment.fileName,

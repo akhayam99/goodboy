@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { SegmentedTabs, Skeleton } from '@goodboy/ui';
 import { useChangelogImage } from '../../hooks/useChangelogImage';
 import type { ChangelogImageVariant } from '../../changelogImageFiles';
-import { ImageLightbox } from '../../../chat/components/ImageLightbox';
+import { ImageLightbox } from '../../../../shared/components/ImageLightbox';
 
 type Props = {
   readonly version: string;

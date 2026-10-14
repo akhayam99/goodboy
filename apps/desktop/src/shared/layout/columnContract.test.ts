@@ -10,7 +10,7 @@ const SRC = join(__dirname, '..', '..');
 const FEATURES = join(SRC, 'features');
 const WORKSPACE = 'features/session/components/SessionWorkspace/index.tsx';
 
-const WIDTH_ALLOWLIST = new Set(['features/chat/components/ImageLightbox/index.tsx']);
+const WIDTH_ALLOWLIST = new Set(['shared/components/ImageLightbox/index.tsx']);
 
 const NARROW_ALLOWLIST = new Set([
   'features/chat/components/HandoffChip/index.tsx',
