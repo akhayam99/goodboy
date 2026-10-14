@@ -2,10 +2,12 @@ import type { Workflow } from '@goodboy/types';
 
 export const ORCHESTRATED_WORKFLOW_NAME = 'Orchestrated workflow';
 
-export const uniqueWorkflowName = (
-  requested: string,
-  existing: ReadonlyArray<Workflow>,
-): string => {
+type UniqueWorkflowNameParams = {
+  readonly requested: string;
+  readonly existing: ReadonlyArray<Workflow>;
+};
+
+export const uniqueWorkflowName = ({ requested, existing }: UniqueWorkflowNameParams): string => {
   const names = new Set(existing.filter((t) => !t.deletedAt).map((t) => t.name));
   if (!names.has(requested)) {
     return requested;

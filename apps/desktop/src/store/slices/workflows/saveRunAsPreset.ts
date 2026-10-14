@@ -25,10 +25,10 @@ export const saveRunAsPreset = (get: GetFn) => {
       throw new Error('A run with no steps yet cannot be saved as a preset.');
     }
     const draft = draftFromWorkflow({ workflow });
-    const name = uniqueWorkflowName(
-      run.title ?? workflow.name,
-      get().phaseTemplates[workflow.workspaceId] ?? [],
-    );
+    const name = uniqueWorkflowName({
+      requested: run.title ?? workflow.name,
+      existing: get().phaseTemplates[workflow.workspaceId] ?? [],
+    });
     return get().savePhaseTemplate(
       upsertArgsFromDraft({
         workspaceId: workflow.workspaceId,

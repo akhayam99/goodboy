@@ -14,6 +14,12 @@ describe('pathTail', () => {
     expect(tailOf('/mock/harborline/payments-api')).toBe('/harborline/payments-api');
   });
 
+  it('keeps the same tail of a Windows worktree path', () => {
+    expect(tailOf('C:\\mock\\harborline\\payments-api\\.goodboy\\worktrees\\gb-7k2q9x')).toBe(
+      '\\payments-api\\.goodboy\\worktrees\\gb-7k2q9x',
+    );
+  });
+
   it('keeps nothing apart for a path of one folder', () => {
     expect('/harborline'.search(pathTail({ path: '/harborline' }))).toBe(-1);
   });

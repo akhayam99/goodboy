@@ -625,7 +625,7 @@ export const WorkflowBuilderView = (props: Props) => {
   const presetName = selectedPreset?.name ?? basePreset?.name ?? null;
   const fallbackTitle =
     mode === 'dynamic'
-      ? uniqueWorkflowName(ORCHESTRATED_WORKFLOW_NAME, phaseTemplates)
+      ? uniqueWorkflowName({ requested: ORCHESTRATED_WORKFLOW_NAME, existing: phaseTemplates })
       : (presetName ?? PRESET_FALLBACK_NAME);
   const activeSuggestion = mode === 'preset' ? null : titleSuggestion;
   const defaultTitle = activeSuggestion ?? fallbackTitle;
@@ -645,7 +645,7 @@ export const WorkflowBuilderView = (props: Props) => {
     }
     const now = new Date().toISOString() as Workflow['createdAt'];
     const workflowId = `wf_builder_${crypto.randomUUID()}` as WorkflowId;
-    const name = uniqueWorkflowName(resolvedTitle, phaseTemplates);
+    const name = uniqueWorkflowName({ requested: resolvedTitle, existing: phaseTemplates });
     const description =
       mode === 'dynamic'
         ? 'Steps are decided at runtime from the latest results.'

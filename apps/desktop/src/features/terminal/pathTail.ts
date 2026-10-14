@@ -1,6 +1,6 @@
-const WORKTREE_TAIL = /\/[^/]+\/\.goodboy\/worktrees\/[^/]+$/;
+const WORKTREE_TAIL = /[\\/][^\\/]+[\\/]\.goodboy[\\/]worktrees[\\/][^\\/]+$/;
 
-const LAST_TWO = /\/[^/]+\/[^/]+$/;
+const LAST_TWO = /[\\/][^\\/]+[\\/][^\\/]+$/;
 
 type TailParams = {
   readonly path: string;
