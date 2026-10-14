@@ -59,4 +59,33 @@ describe('reading how a child closed its work', () => {
     expect(closing.summary.length).toBe(2_000);
     expect(closing.summary.endsWith('END')).toBe(true);
   });
+
+  it('reads a long run of dashes in a closing line in linear time', () => {
+    const dashes = '-'.repeat(50_000);
+    const startedAt = performance.now();
+    const unmatched = parseChildClosing({
+      text: `<<step-done ${dashes}>>`,
+      childAgentId: ID,
+    });
+    const unterminated = parseChildClosing({
+      text: `<<step-done ${dashes} id="${ID}>>`,
+      childAgentId: ID,
+    });
+    const matched = parseChildClosing({
+      text: `<<step-done ${dashes} id="${ID}" ${dashes}>>`,
+      childAgentId: ID,
+    });
+    expect(performance.now() - startedAt).toBeLessThan(500);
+    expect(unmatched.completion).toBe('none');
+    expect(unterminated.completion).toBe('none');
+    expect(matched.completion).toBe('done');
+  });
+
+  it('reads attributes written with spaces around the equals sign', () => {
+    const closing = parseChildClosing({
+      text: `<<step-done status = "blocked" id = "${ID}">>`,
+      childAgentId: ID,
+    });
+    expect(closing.completion).toBe('blocked');
+  });
 });

@@ -15,7 +15,29 @@ export type ChildClosing = Readonly<{
 }>;
 
 const STEP_DONE_RE = /<<step-done\s([^<>]*)>>/g;
-const ATTR_RE = /([\w-]+)\s*=\s*"([^"]*)"/g;
+const NAME_CHAR_RE = /[\w-]/;
+const SPACE_CHAR_RE = /\s/;
+
+type ScanParams = {
+  readonly raw: string;
+  readonly from: number;
+};
+
+const skipSpaces = ({ raw, from }: ScanParams): number => {
+  let index = from;
+  while (index < raw.length && SPACE_CHAR_RE.test(raw.charAt(index))) {
+    index += 1;
+  }
+  return index;
+};
+
+const skipName = ({ raw, from }: ScanParams): number => {
+  let index = from;
+  while (index < raw.length && NAME_CHAR_RE.test(raw.charAt(index))) {
+    index += 1;
+  }
+  return index;
+};
 
 type AttrsParams = {
   readonly raw: string;
@@ -23,11 +45,29 @@ type AttrsParams = {
 
 const attrsOf = ({ raw }: AttrsParams): Readonly<Record<string, string>> => {
   const attrs: Record<string, string> = {};
-  ATTR_RE.lastIndex = 0;
-  let match: RegExpExecArray | null = ATTR_RE.exec(raw);
-  while (match !== null) {
-    attrs[match[1] ?? ''] = match[2] ?? '';
-    match = ATTR_RE.exec(raw);
+  let index = 0;
+  while (index < raw.length) {
+    const nameEnd = skipName({ raw, from: index });
+    if (nameEnd === index) {
+      index += 1;
+      continue;
+    }
+    const equalsAt = skipSpaces({ raw, from: nameEnd });
+    if (raw.charAt(equalsAt) !== '=') {
+      index = nameEnd;
+      continue;
+    }
+    const quoteAt = skipSpaces({ raw, from: equalsAt + 1 });
+    if (raw.charAt(quoteAt) !== '"') {
+      index = nameEnd;
+      continue;
+    }
+    const closeAt = raw.indexOf('"', quoteAt + 1);
+    if (closeAt === -1) {
+      return attrs;
+    }
+    attrs[raw.slice(index, nameEnd)] = raw.slice(quoteAt + 1, closeAt);
+    index = closeAt + 1;
   }
   return attrs;
 };
