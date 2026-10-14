@@ -12,6 +12,7 @@ export type BranchPrimary = {
   readonly label: string;
   readonly icon: LucideIcon;
   readonly blockedReason: string | null;
+  readonly pendingLabel: string | null;
   readonly isBusy: boolean;
   readonly isSecondary: boolean;
   readonly note: string | null;
@@ -60,6 +61,7 @@ const fromAction = ({
   label: label ?? action.shortLabel,
   icon: icon ?? action.icon,
   blockedReason: action.blockedReason,
+  pendingLabel: action.pendingLabel,
   isBusy: action.isBusy,
   isSecondary,
   note: action.description,
@@ -84,6 +86,7 @@ const reviewAction = ({
   label,
   icon,
   blockedReason,
+  pendingLabel: null,
   isBusy,
   isSecondary: false,
   note: null,

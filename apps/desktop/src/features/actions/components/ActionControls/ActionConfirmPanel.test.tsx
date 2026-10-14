@@ -17,6 +17,7 @@ const MERGE: ResolvedAction = {
   group: 'act',
   slot: 'primary',
   pendingLabel: null,
+  doneLabel: null,
   shortcut: null,
   description: null,
   blockedReason: null,
@@ -68,11 +69,13 @@ const controlsOf = ({
   pendingId: null,
   confirming,
   failure: null,
+  outcome: null,
   trigger: () => undefined,
   confirm,
   cancel: () => undefined,
   retry: () => undefined,
   dismissFailure: () => undefined,
+  dismissOutcome: () => undefined,
 });
 
 describe('ActionConfirmPanel with a choice', () => {

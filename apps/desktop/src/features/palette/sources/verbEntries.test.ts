@@ -15,6 +15,7 @@ const action = (label: string): ResolvedAction => ({
   group: 'danger',
   slot: 'menu',
   pendingLabel: null,
+  doneLabel: null,
   shortcut: null,
   description: null,
   blockedReason: null,

@@ -27,11 +27,13 @@ const controlsOf = ({ error }: ControlsParams): ActionControls => ({
   pendingId: null,
   confirming: null,
   failure: { actionId: 'diff.push', message: error.message, error, choice: null },
+  outcome: null,
   trigger: () => undefined,
   confirm: async () => undefined,
   cancel: () => undefined,
   retry: () => undefined,
   dismissFailure: () => undefined,
+  dismissOutcome: () => undefined,
 });
 
 export const PushFailureScene = ({ variant }: Props) => {

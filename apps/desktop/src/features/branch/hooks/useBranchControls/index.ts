@@ -32,6 +32,7 @@ export type BranchControls = {
   readonly primary: BranchPrimary | null;
   readonly secondary: BranchPrimary | null;
   readonly press: (action: BranchPrimary) => void;
+  readonly controlsOf: (action: BranchPrimary) => ActionControls | null;
   readonly isChangingBase: boolean;
   readonly closeChangingBase: () => void;
   readonly projectId: ProjectId | null;
@@ -109,8 +110,9 @@ export const useBranchControls = ({
     }),
     [pr?.number, remoteHost, sessionId],
   );
-  const diffControls = useActionControls({ target: diffTarget });
-  const pullRequestControls = useActionControls({ target: pullRequestTarget });
+  const scopeKey = `${sessionId}:${worktreePath ?? ''}`;
+  const diffControls = useActionControls({ target: diffTarget, scopeKey });
+  const pullRequestControls = useActionControls({ target: pullRequestTarget, scopeKey });
 
   const [isChangingBase, setIsChangingBase] = useState(false);
   useEffect(() => {
@@ -138,6 +140,16 @@ export const useBranchControls = ({
     [diffControls.actions, isRequestMerged, pr, pullRequestControls.actions, review, state],
   );
 
+  const controlsOf = useCallback(
+    (action: BranchPrimary): ActionControls | null => {
+      if (action.source === 'review') {
+        return null;
+      }
+      return action.source === 'diff' ? diffControls : pullRequestControls;
+    },
+    [diffControls, pullRequestControls],
+  );
+
   const press = useCallback(
     (action: BranchPrimary) => {
       if (action.blockedReason !== null) {
@@ -163,6 +175,7 @@ export const useBranchControls = ({
     primary,
     secondary,
     press,
+    controlsOf,
     isChangingBase,
     closeChangingBase,
     projectId,

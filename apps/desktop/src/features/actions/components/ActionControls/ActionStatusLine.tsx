@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { Button, cn, tintClasses } from '@goodboy/ui';
+import { X } from 'lucide-react';
+import { Button, IconButton, cn, tintClasses } from '@goodboy/ui';
 import type { ActionControls } from '../../useActionControls';
 
 type Props = {
@@ -28,7 +29,7 @@ export const ActionStatusLine = ({
     controls.failure === null
       ? null
       : (controls.actions.find((action) => action.id === controls.failure?.actionId) ?? null);
-  if (reasons.length === 0 && controls.failure === null) {
+  if (reasons.length === 0 && controls.failure === null && controls.outcome === null) {
     return null;
   }
   return (
@@ -41,6 +42,18 @@ export const ActionStatusLine = ({
           <span className="text-muted-foreground">{reason}</span>
         </p>
       ))}
+      {controls.outcome !== null && (
+        <div role="status" className="flex min-w-0 items-center gap-1">
+          <p className="min-w-0 text-right text-foreground">{controls.outcome.message}</p>
+          <IconButton
+            icon={X}
+            label="Dismiss"
+            size="xs"
+            variant="ghost"
+            onClick={controls.dismissOutcome}
+          />
+        </div>
+      )}
       {controls.failure !== null && (
         <div role="alert" className="flex min-w-0 items-center gap-2">
           <p className={cn('min-w-0 text-right', tintClasses('danger').text)}>

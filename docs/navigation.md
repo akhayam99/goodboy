@@ -386,7 +386,14 @@ never exists on one surface only.
   palette ignore `slot` and list every available action.
   `useActionControls` renders those controls with the pending words on the
   control, the blocked reason on the line under the header and a failure with
-  Retry under the control. `__tests__/actions/stateMatrix.test.ts` pins, per
+  Retry under the control. A button reads `pendingId` through
+  `actionButtonStateOf` (busy, `pendingLabel` while it runs, disabled), and a
+  run ignores a press while another run is in flight. An action that mutates
+  defines `pendingLabel` and `doneLabel`; when it finishes `ActionStatusLine`
+  shows the `doneLabel` sentence with a dismiss button until the next action,
+  and a run that returns `'unchanged'` (a rebase that stopped or went to the
+  history rewriter) shows no sentence. `kinds/mutationFeedback.test.ts` fails
+  a new async diff or pull request action that lacks either word. `__tests__/actions/stateMatrix.test.ts` pins, per
   kind and per state, which verbs show, in which slot, and why a verb is
   blocked, and runs them on the real store; `kinds/*.matrix.test.ts` pins the
   same for the three UX5 kinds against the plan's state table.

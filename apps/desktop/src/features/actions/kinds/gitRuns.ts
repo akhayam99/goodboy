@@ -6,7 +6,7 @@ import type { OnlineCommit } from '../../../store/slices/worktreeStatuses/onlyOn
 import { ensure, worktreeStatusKey } from '../../../store/slices/worktreeStatuses/cache';
 import { REVIEW_TARGET_REASON_COPY } from '../../review/reviewTargetCopy';
 import { worktreeAbortRebase } from '../../worktree/worktree';
-import type { ActionConfirm, ActionEnv } from '../types';
+import type { ActionConfirm, ActionEnv, ActionRunOutcome } from '../types';
 
 type MountParams = {
   readonly env: ActionEnv;
@@ -91,6 +91,12 @@ export const pushLabel = ({ facts }: PushParams): string => {
   return facts.isDiverged ? `Force push ${noun}` : `Push ${noun}`;
 };
 
+export const pushDoneLabel = ({ facts }: PushParams): string => {
+  const own = facts.isDiverged && facts.ahead > 0 ? facts.ahead : facts.unpushed;
+  const noun = plural({ count: own, one: 'commit', many: 'commits' });
+  return facts.isDiverged ? `Force pushed ${noun} to origin.` : `Pushed ${noun} to origin.`;
+};
+
 export const pushDescription = ({ facts }: PushParams): string | null =>
   facts.isDiverged
     ? 'Your branch and the online copy differ. Force push replaces the online copy (with lease).'
@@ -111,7 +117,7 @@ export const rebaseMount = async ({
   mountId,
   worktreePath,
   baseBranch,
-}: MountParams & StatusParams): Promise<void> => {
+}: MountParams & StatusParams): Promise<ActionRunOutcome> => {
   const outcome = await env.getState().rebaseBranch({ sessionId, mountId });
   if (outcome === 'rewriting') {
     env.showToast({
@@ -122,6 +128,7 @@ export const rebaseMount = async ({
     });
   }
   await refreshWorktreeStatus({ worktreePath, baseBranch });
+  return outcome === 'rebased' ? 'done' : 'unchanged';
 };
 
 type PushMountParams = MountParams &

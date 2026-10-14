@@ -13,6 +13,7 @@ const MERGE: ResolvedAction = {
   group: 'act',
   slot: 'primary',
   pendingLabel: null,
+  doneLabel: null,
   shortcut: null,
   description: null,
   blockedReason: null,
@@ -55,6 +56,7 @@ export const ActionPanelScene = () => {
     pendingId: null,
     confirming: isConfirming ? MERGE : null,
     failure: null,
+    outcome: null,
     trigger: () => setIsConfirming(true),
     confirm: async () => {
       await Promise.resolve();
@@ -64,6 +66,7 @@ export const ActionPanelScene = () => {
     cancel: () => setIsConfirming(false),
     retry: () => undefined,
     dismissFailure: () => undefined,
+    dismissOutcome: () => undefined,
   };
   return (
     <main

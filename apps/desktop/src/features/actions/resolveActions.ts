@@ -31,6 +31,7 @@ const resolveOne = <F>({
     group: definition.group,
     slot: definition.slot?.({ facts }) ?? 'menu',
     pendingLabel: definition.pendingLabel?.({ facts }) ?? null,
+    doneLabel: definition.doneLabel?.({ facts }) ?? null,
     shortcut: definition.shortcut ?? null,
     description: definition.description?.({ facts }) ?? null,
     blockedReason: definition.blockedReason?.({ facts }) ?? null,

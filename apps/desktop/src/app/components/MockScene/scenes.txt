@@ -177,6 +177,9 @@ controls-ladder
 controls-topbar
 conversation
 crash-report
+cta-push-done
+cta-push-failed
+cta-push-pending
 debugger-drawer-ci-log
 debugger-drawer-options
 debugger-drawer-proposal

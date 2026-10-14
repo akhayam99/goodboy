@@ -8,6 +8,7 @@ import type { BranchTab } from '../../../../store/slices/navigation/types';
 import { usePullRequestTitleEdit } from '../../hooks/usePullRequestTitleEdit';
 import { PullRequestTitle } from '../PullRequestTab/PullRequestTitle';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { actionButtonStateOf } from '../../../actions/actionButtonStateOf';
 import { ActionConfirmPanel } from '../../../actions/components/ActionControls/ActionConfirmPanel';
 import { ActionStatusLine } from '../../../actions/components/ActionControls/ActionStatusLine';
 import type { BranchControls } from '../../hooks/useBranchControls';
@@ -99,6 +100,13 @@ export const BranchHeader = ({
   const failedError = controls.diffControls.failure?.error;
   const pushFailure = pushFailureOf({ error: failedError });
   const buttonOf = ({ action, slot, variant }: ButtonParams) => {
+    const state = actionButtonStateOf({
+      controls: controls.controlsOf(action),
+      actionId: action.actionId,
+      label: action.label,
+      pendingLabel: action.pendingLabel,
+      isBusy: action.isBusy || isPushBusy,
+    });
     const button = (
       <Button
         size="sm"
@@ -106,7 +114,8 @@ export const BranchHeader = ({
         data-branch-primary={slot === 'primary' ? action.actionId : undefined}
         data-branch-secondary={slot === 'secondary' ? action.actionId : undefined}
         disabled={action.blockedReason !== null}
-        isBusy={action.isBusy || isPushBusy}
+        isBusy={state.isBusy}
+        busyLabel={state.label}
         onClick={() => controls.press(action)}
       >
         <action.icon size={ICON_SIZE.control} aria-hidden />

@@ -141,8 +141,9 @@ const notificationFor = (agentId: AgentId): Notification => ({
 const DOORS: ReadonlyArray<Door> = [
   {
     name: 'the palette and the object menu (Open agent)',
-    open: (agentId) =>
-      agentAction('agent.open').run({ facts: agentFacts(agentId), env, choice: null }),
+    open: async (agentId) => {
+      await agentAction('agent.open').run({ facts: agentFacts(agentId), env, choice: null });
+    },
     lands: 'brief',
   },
   {
@@ -178,8 +179,9 @@ const DOORS: ReadonlyArray<Door> = [
   },
   {
     name: 'Message this agent',
-    open: (agentId) =>
-      agentAction('agent.message').run({ facts: agentFacts(agentId), env, choice: null }),
+    open: async (agentId) => {
+      await agentAction('agent.message').run({ facts: agentFacts(agentId), env, choice: null });
+    },
     lands: 'transcript',
   },
   {

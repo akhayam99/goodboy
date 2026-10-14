@@ -57,7 +57,9 @@ A response applies only while it is the answer to the newest request.
   One instance per loader; `run({ key, request, apply })` takes a token per
   key and drops a late result as `'stale'`. A stale failure is dropped too;
   the latest failure is thrown. `cancel({ key })` invalidates a pending request.
-- In use: `refreshMonitorSnapshot` in `store/slices/monitoring/`.
+- In use: `refreshMonitorSnapshot` in `store/slices/monitoring/`; the run of a
+  registry button in `features/actions/useActionControls` (a finish after the
+  `scopeKey` changed is dropped, outcome and failure alike).
 - Test: `latestOnly.test.ts` (a newer request wins, tokens are per key, a stale
   error is dropped).
 

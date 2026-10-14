@@ -1,7 +1,11 @@
 // @vitest-environment happy-dom
 
+const t = vi.hoisted(() => ({ isOffline: false }));
+
 vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(() => new Promise<never>(() => undefined)),
+  invoke: vi.fn(() =>
+    t.isOffline ? Promise.reject(new Error('offline')) : new Promise<never>(() => undefined),
+  ),
 }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
@@ -162,6 +166,7 @@ beforeEach(async () => {
 
 afterEach(() => {
   cleanup();
+  t.isOffline = false;
 });
 
 const NO_REVIEW: BranchReviewCounts = { accepted: 0, replies: 0, failed: 0, isPushing: false };
@@ -1010,5 +1015,108 @@ describe('BranchHeader push failure', () => {
 
     await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
     expect(screen.queryByRole('button', { name: 'Open terminal here' })).toBeNull();
+  });
+});
+
+describe('BranchHeader push feedback', () => {
+  const open: PullRequestState = { ...PR, isDraft: false };
+  const pushStatus = (): WorktreeStatus => ({
+    ...statusOf({ ahead: 1 }),
+    upstreamDistance: { kind: 'known', ahead: 1, behind: 0 },
+  });
+
+  type PushResult = Awaited<ReturnType<StoreState['pushSessionBranch']>>;
+  type Deferred = {
+    readonly promise: Promise<PushResult>;
+    readonly resolve: () => void;
+  };
+
+  const deferredPush = (): Deferred => {
+    let resolve: () => void = () => undefined;
+    const promise = new Promise<PushResult>((done) => {
+      resolve = () => done({ ok: true });
+    });
+    return { promise, resolve };
+  };
+
+  const setup = () => {
+    t.isOffline = true;
+    withRequest(open);
+    status = pushStatus();
+    const gate = deferredPush();
+    const pushSessionBranch = vi.fn<StoreState['pushSessionBranch']>(() => gate.promise);
+    useAppStore.setState({ pushSessionBranch });
+    renderHeader({ pr: open });
+    return { gate, pushSessionBranch };
+  };
+
+  it('shows the busy word on the button while the push runs and ignores a second click', async () => {
+    const { gate, pushSessionBranch } = setup();
+
+    const button = screen.getByRole('button', { name: 'Push 1 commit' });
+    fireEvent.click(button);
+    fireEvent.click(button);
+
+    const busy = await screen.findByRole('button', { name: 'Pushing…' });
+    expect(busy.getAttribute('aria-busy')).toBe('true');
+    expect(busy.hasAttribute('disabled')).toBe(true);
+    fireEvent.click(busy);
+    expect(pushSessionBranch).toHaveBeenCalledTimes(1);
+
+    await act(async () => gate.resolve());
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Pushing…' })).toBeNull());
+  });
+
+  it('says what happened after the push, even while the count has not refreshed', async () => {
+    const { gate } = setup();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Push 1 commit' }));
+    await act(async () => gate.resolve());
+
+    const line = await screen.findByRole('status');
+    expect(line.textContent).toContain('Pushed 1 commit to origin.');
+    expect(screen.getByRole('button', { name: 'Push 1 commit' })).toBeDefined();
+    expect(screen.queryByRole('alert')).toBeNull();
+
+    fireEvent.click(within(line).getByRole('button', { name: 'Dismiss' }));
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('clears the outcome line when the next action starts', async () => {
+    const { gate, pushSessionBranch } = setup();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Push 1 commit' }));
+    await act(async () => gate.resolve());
+    await screen.findByRole('status');
+
+    const second = deferredPush();
+    pushSessionBranch.mockImplementationOnce(() => second.promise);
+    fireEvent.click(screen.getByRole('button', { name: 'Push 1 commit' }));
+
+    await screen.findByRole('button', { name: 'Pushing…' });
+    expect(screen.queryByRole('status')).toBeNull();
+    await act(async () => second.resolve());
+    await waitFor(() => expect(screen.getByRole('status')).toBeDefined());
+  });
+
+  it('shows the failure line with Retry and no outcome when the push fails', async () => {
+    t.isOffline = true;
+    withRequest(open);
+    status = pushStatus();
+    useAppStore.setState({
+      pushSessionBranch: vi.fn<StoreState['pushSessionBranch']>(async () => ({
+        ok: false,
+        error: 'pre-push hook declined',
+      })),
+    });
+    renderHeader({ pr: open });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Push 1 commit' }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('pre-push hook declined');
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeDefined();
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Pushing…' })).toBeNull();
   });
 });

@@ -110,6 +110,8 @@ type ActionRunParams<F> = {
   readonly choice: string | null;
 };
 
+export type ActionRunOutcome = 'done' | 'unchanged';
+
 export type ActionDefinition<F> = {
   readonly id: string;
   readonly label: string | ((params: FactsParams<F>) => string);
@@ -126,8 +128,11 @@ export type ActionDefinition<F> = {
   readonly choices?: (params: FactsParams<F>) => ReadonlyArray<ActionChoice>;
   readonly slot?: (params: FactsParams<F>) => ActionSlot;
   readonly pendingLabel?: (params: FactsParams<F>) => string;
+  readonly doneLabel?: (params: FactsParams<F>) => string;
   readonly isBusy?: (params: FactsParams<F>) => boolean;
-  readonly run: (params: ActionRunParams<F>) => void | Promise<void>;
+  readonly run: (
+    params: ActionRunParams<F>,
+  ) => void | ActionRunOutcome | Promise<void | ActionRunOutcome>;
 };
 
 type FactsSourceParams<T> = {
@@ -150,6 +155,7 @@ export type ResolvedAction = {
   readonly group: ActionGroup;
   readonly slot: ActionSlot;
   readonly pendingLabel: string | null;
+  readonly doneLabel: string | null;
   readonly shortcut: ShortcutId | null;
   readonly description: string | null;
   readonly blockedReason: string | null;

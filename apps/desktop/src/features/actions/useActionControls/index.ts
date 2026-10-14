@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatError } from '@goodboy/ui';
+import { createLatestOnly } from '../../../store/slices/state-writes/latestOnly';
 import { useActionEnv } from '../useActionEnv';
 import { useObjectActions } from '../useObjectActions';
 import type { ActionSlot, ObjectTarget, ResolvedAction } from '../types';
@@ -7,6 +8,7 @@ import type { ActionSlot, ObjectTarget, ResolvedAction } from '../types';
 type Params = {
   readonly target: ObjectTarget | null;
   readonly anchorKey?: string | null;
+  readonly scopeKey?: string | null;
 };
 
 type ActionFailure = {
@@ -16,6 +18,13 @@ type ActionFailure = {
   readonly choice: string | null;
 };
 
+const RUN_KEY = 'action';
+
+export type ActionOutcome = {
+  readonly actionId: string;
+  readonly message: string;
+};
+
 export type ActionControls = {
   readonly target: ObjectTarget | null;
   readonly actions: ReadonlyArray<ResolvedAction>;
@@ -23,19 +32,37 @@ export type ActionControls = {
   readonly pendingId: string | null;
   readonly confirming: ResolvedAction | null;
   readonly failure: ActionFailure | null;
+  readonly outcome: ActionOutcome | null;
   readonly trigger: (params: { readonly actionId: string }) => void;
   readonly confirm: (params?: { readonly choice?: string | null }) => Promise<void>;
   readonly cancel: () => void;
   readonly retry: () => void;
   readonly dismissFailure: () => void;
+  readonly dismissOutcome: () => void;
 };
 
-export const useActionControls = ({ target, anchorKey = null }: Params): ActionControls => {
+export const useActionControls = ({
+  target,
+  anchorKey = null,
+  scopeKey = null,
+}: Params): ActionControls => {
   const env = useActionEnv({ origin: 'button', anchorKey });
-  const { actions, run } = useObjectActions({ target, env });
+  const { actions, runWithOutcome } = useObjectActions({ target, env });
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [failure, setFailure] = useState<ActionFailure | null>(null);
+  const [outcome, setOutcome] = useState<ActionOutcome | null>(null);
+  const isRunningRef = useRef(false);
+  const latest = useRef(createLatestOnly());
+
+  useEffect(() => {
+    latest.current.cancel({ key: RUN_KEY });
+    isRunningRef.current = false;
+    setPendingId(null);
+    setConfirmingId(null);
+    setFailure(null);
+    setOutcome(null);
+  }, [scopeKey]);
 
   const execute = useCallback(
     async ({
@@ -45,23 +72,40 @@ export const useActionControls = ({ target, anchorKey = null }: Params): ActionC
       readonly actionId: string;
       readonly choice?: string | null;
     }) => {
+      if (isRunningRef.current) {
+        return;
+      }
+      const doneLabel = actions.find((candidate) => candidate.id === actionId)?.doneLabel ?? null;
+      isRunningRef.current = true;
       setFailure(null);
+      setOutcome(null);
       setPendingId(actionId);
       try {
-        await run({ actionId, choice });
+        const status = await latest.current.run({
+          key: RUN_KEY,
+          request: () => runWithOutcome({ actionId, choice }),
+          apply: (result) => {
+            if (doneLabel !== null && result === 'done') {
+              setOutcome({ actionId, message: doneLabel });
+            }
+          },
+        });
+        if (status === 'stale') {
+          return;
+        }
       } catch (error) {
         setFailure({ actionId, message: formatError(error), error, choice });
-      } finally {
-        setPendingId(null);
       }
+      isRunningRef.current = false;
+      setPendingId(null);
     },
-    [run],
+    [actions, runWithOutcome],
   );
 
   const trigger = useCallback(
     ({ actionId }: { readonly actionId: string }) => {
       const action = actions.find((candidate) => candidate.id === actionId);
-      if (action === undefined || action.blockedReason !== null || pendingId !== null) {
+      if (action === undefined || action.blockedReason !== null || isRunningRef.current) {
         return;
       }
       if (action.confirm !== null) {
@@ -71,7 +115,7 @@ export const useActionControls = ({ target, anchorKey = null }: Params): ActionC
       }
       void execute({ actionId });
     },
-    [actions, execute, pendingId],
+    [actions, execute],
   );
 
   const confirming = useMemo(
@@ -105,6 +149,7 @@ export const useActionControls = ({ target, anchorKey = null }: Params): ActionC
   }, [execute, failure]);
 
   const dismissFailure = useCallback(() => setFailure(null), []);
+  const dismissOutcome = useCallback(() => setOutcome(null), []);
 
   const inSlot = useCallback(
     ({ slot }: { readonly slot: ActionSlot }) => actions.filter((action) => action.slot === slot),
@@ -118,10 +163,12 @@ export const useActionControls = ({ target, anchorKey = null }: Params): ActionC
     pendingId,
     confirming,
     failure,
+    outcome,
     trigger,
     confirm,
     cancel,
     retry,
     dismissFailure,
+    dismissOutcome,
   };
 };
