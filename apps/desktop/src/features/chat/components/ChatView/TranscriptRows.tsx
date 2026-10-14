@@ -20,6 +20,7 @@ import { SlackDraftCard } from './SlackDraftCard';
 import { dayKey, formatDayLabel } from './lib';
 import { planBlockVersions } from './planBlockVersions';
 import { isWorkflowRailRow } from './workflowRailGroup';
+import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 
 type Props = {
   rows: ReadonlyArray<TranscriptRow>;
@@ -38,6 +39,11 @@ type Props = {
   activeRunId?: ProviderRunId | null;
   turnFooters?: ReadonlyMap<ProviderRunId, TurnFooterInfo>;
   briefLabel?: string;
+  insertions?: ReadonlyArray<TranscriptInsertion>;
+};
+
+type FlushParams = {
+  readonly beforeMs: number | null;
 };
 
 const RUN_BEARING_KINDS = new Set<TranscriptItem['kind']>([
@@ -87,6 +93,7 @@ export const TranscriptRows = ({
   activeRunId,
   turnFooters,
   briefLabel,
+  insertions = [],
 }: Props) => {
   const out: ReactNode[] = [];
   const suggestions = mountSuggestionsByRun ?? new Map<ProviderRunId, ReactNode>();
@@ -105,6 +112,18 @@ export const TranscriptRows = ({
       }
       placedRunIds.add(runId);
       out.push(<li key={`mount-suggestion-${runId}`}>{node}</li>);
+    }
+  };
+  const placedInsertions = new Set<string>();
+  const flushInsertions = ({ beforeMs }: FlushParams) => {
+    for (const insertion of insertions) {
+      const isDue =
+        beforeMs === null || (insertion.beforeMs !== null && insertion.beforeMs <= beforeMs);
+      if (placedInsertions.has(insertion.key) || !isDue) {
+        continue;
+      }
+      placedInsertions.add(insertion.key);
+      out.push(<li key={`insertion-${insertion.key}`}>{insertion.node}</li>);
     }
   };
   const todayKey = dayKey(new Date().toISOString());
@@ -155,6 +174,7 @@ export const TranscriptRows = ({
       flushOrdinal(userTurnOrdinal);
       userTurnOrdinal += 1;
       const at = row.item.at;
+      flushInsertions({ beforeMs: Date.parse(at) });
       const day = dayKey(at);
       const dayChanged = day !== lastDay;
       const isLeadingToday = lastDay === null && day === todayKey;
@@ -241,6 +261,7 @@ export const TranscriptRows = ({
   });
 
   flushOrdinal(userTurnOrdinal);
+  flushInsertions({ beforeMs: null });
   const remainingOrdinals = [...oqByTurnOrdinal.keys()]
     .filter((ordinal): ordinal is number => ordinal !== null && ordinal > userTurnOrdinal)
     .sort((a, b) => a - b);

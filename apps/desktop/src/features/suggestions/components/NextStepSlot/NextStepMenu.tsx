@@ -1,10 +1,13 @@
 import { useCallback } from 'react';
 import { OverflowMenu, type OverflowMenuItem } from '@goodboy/ui';
 import type { SuggestionActionChoice } from '../../useSuggestionActions';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { agentKindPalette, type AgentKind } from '../../../session/agent-kind';
 import { NEXT_STEP_CELLS } from './nextStepGrid';
 
 const MIN_MENU_ITEMS = 2;
+
+export const TALK_IT_THROUGH_LABEL = 'Talk it through with Auto';
 
 type Props = {
   readonly title: string;
@@ -13,6 +16,7 @@ type Props = {
   readonly isHeld: boolean;
   readonly isDisabled: boolean;
   readonly onPreview: (kind: AgentKind | null) => void;
+  readonly onTalk?: () => void;
 };
 
 export const NextStepMenu = ({
@@ -22,6 +26,7 @@ export const NextStepMenu = ({
   isHeld,
   isDisabled,
   onPreview,
+  onTalk,
 }: Props) => {
   const onOpenChange = useCallback(
     (isOpen: boolean) => {
@@ -32,7 +37,8 @@ export const NextStepMenu = ({
     [onPreview],
   );
 
-  if (choices.length < MIN_MENU_ITEMS) {
+  const entryCount = choices.length + (onTalk === undefined ? 0 : 1);
+  if (entryCount < MIN_MENU_ITEMS) {
     return <span aria-hidden data-column="menu" className={NEXT_STEP_CELLS.menu} />;
   }
 
@@ -55,10 +61,25 @@ export const NextStepMenu = ({
     };
   });
 
+  const talkItems: ReadonlyArray<OverflowMenuItem> =
+    onTalk === undefined
+      ? []
+      : [
+          {
+            kind: 'item',
+            key: 'talk-it-through-with-auto',
+            label: TALK_IT_THROUGH_LABEL,
+            icon: CONCEPT_ICONS.auto,
+            iconClassName: agentKindPalette({ kind: 'auto' }).fg,
+            disabled: isDisabled,
+            onClick: onTalk,
+          },
+        ];
+
   return (
     <span data-column="menu" className={NEXT_STEP_CELLS.menu}>
       <OverflowMenu
-        items={items}
+        items={[...items, ...talkItems]}
         label={`More options for ${title}`}
         size="control"
         disabled={isDisabled}

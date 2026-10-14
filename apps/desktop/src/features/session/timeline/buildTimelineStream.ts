@@ -36,6 +36,7 @@ import type {
 } from '../../workTreeModel/railGeometry';
 import { runIdentity, runIdentitySeed, type RunIdentity } from './runIdentity';
 import type { JobActivityFacts } from '../../../store/slices/history/jobFactsByAgentId';
+import type { AutoRowFacts } from '../../auto/autoRowFacts';
 import type { CiFixStage } from '../../branch/checks/ciFixStages';
 import { jobRowState } from './jobActivity';
 import { resolverRowState, type ResolveActivityFacts } from './resolveActivity';
@@ -161,6 +162,7 @@ type Params = {
   readonly showQuestions?: boolean;
   readonly resolveFactsByAgentId?: ReadonlyMap<string, ResolveActivityFacts>;
   readonly jobFactsByAgentId?: ReadonlyMap<string, JobActivityFacts>;
+  readonly autoFactsByAgentId?: ReadonlyMap<string, AutoRowFacts>;
   readonly expandedGroupIds?: ReadonlySet<string>;
   readonly fullGroupIds?: ReadonlySet<string>;
   readonly foldsFinished?: boolean;
@@ -566,6 +568,7 @@ const NO_QUESTION_ROWS: ReadonlySet<string> = new Set();
 const NO_RESOLVE_FACTS: ReadonlyMap<string, ResolveActivityFacts> = new Map();
 
 const NO_JOB_FACTS: ReadonlyMap<string, JobActivityFacts> = new Map();
+const NO_AUTO_FACTS: ReadonlyMap<string, AutoRowFacts> = new Map();
 
 const NO_OUTPUTS: ReadonlyArray<TimelineOutputEntry> = [];
 
@@ -652,6 +655,7 @@ type EmitContext = {
   readonly questionRowIds: ReadonlySet<string>;
   readonly resolveFactsByAgentId: ReadonlyMap<string, ResolveActivityFacts>;
   readonly jobFactsByAgentId: ReadonlyMap<string, JobActivityFacts>;
+  readonly autoFactsByAgentId: ReadonlyMap<string, AutoRowFacts>;
   readonly outputsByAgentEntryId: ReadonlyMap<string, ReadonlyArray<TimelineOutputEntry>>;
   readonly expandedGroupIds: ReadonlySet<string>;
   readonly fullGroupIds: ReadonlySet<string>;
@@ -693,11 +697,13 @@ const rowStateOfAgentRow = ({
   resolved,
   reviewFacts,
   jobFacts,
+  autoFacts,
   isSkippedUnderClosed,
 }: {
   readonly resolved: RowState;
   readonly reviewFacts: ResolveActivityFacts | undefined;
   readonly jobFacts: JobActivityFacts | undefined;
+  readonly autoFacts: AutoRowFacts | undefined;
   readonly isSkippedUnderClosed: boolean;
 }): RowState => {
   if (reviewFacts !== undefined && resolved.phase !== 'closed') {
@@ -705,6 +711,13 @@ const rowStateOfAgentRow = ({
   }
   if (jobFacts !== undefined && resolved.phase !== 'closed') {
     return jobRowState({ facts: jobFacts, resolved });
+  }
+  if (autoFacts !== undefined && resolved.phase !== 'closed') {
+    return {
+      phase: autoFacts.phase,
+      reason: { kind: 'auto', word: autoFacts.word, short: autoFacts.short },
+      ask: resolved.ask?.kind === 'answer' ? resolved.ask : null,
+    };
   }
   return isSkippedUnderClosed ? SKIPPED_UNDER_CLOSED : resolved;
 };
@@ -733,8 +746,15 @@ const entryRowStateOf = ({
   const isSkippedUnderClosed = isParentClosed && resolved.phase === 'queued';
   const reviewFacts = context.resolveFactsByAgentId.get(entry.agent.id);
   const jobFacts = context.jobFactsByAgentId.get(entry.agent.id);
+  const autoFacts = context.autoFactsByAgentId.get(entry.agent.id);
   return {
-    rowState: rowStateOfAgentRow({ resolved, reviewFacts, jobFacts, isSkippedUnderClosed }),
+    rowState: rowStateOfAgentRow({
+      resolved,
+      reviewFacts,
+      jobFacts,
+      autoFacts,
+      isSkippedUnderClosed,
+    }),
     isSkippedUnderClosed,
   };
 };
@@ -1924,6 +1944,7 @@ export const buildTimelineStream = ({
   showQuestions = true,
   resolveFactsByAgentId = NO_RESOLVE_FACTS,
   jobFactsByAgentId = NO_JOB_FACTS,
+  autoFactsByAgentId = NO_AUTO_FACTS,
   expandedGroupIds = NO_EXPANDED_GROUPS,
   fullGroupIds = NO_EXPANDED_GROUPS,
   foldsFinished = false,
@@ -1952,6 +1973,7 @@ export const buildTimelineStream = ({
     questionRowIds: showQuestions ? openQuestionRowIds({ entries }) : NO_QUESTION_ROWS,
     resolveFactsByAgentId,
     jobFactsByAgentId,
+    autoFactsByAgentId,
     outputsByAgentEntryId: outputsByAgentEntryIdOf({ entries }),
     expandedGroupIds,
     fullGroupIds,
@@ -2133,6 +2155,7 @@ export const buildRunTreeStream = ({
     questionRowIds: NO_QUESTION_ROWS,
     resolveFactsByAgentId: NO_RESOLVE_FACTS,
     jobFactsByAgentId: NO_JOB_FACTS,
+    autoFactsByAgentId: NO_AUTO_FACTS,
     outputsByAgentEntryId: NO_OUTPUTS_BY_AGENT,
     expandedGroupIds: NO_EXPANDED_GROUPS,
     fullGroupIds: NO_EXPANDED_GROUPS,
@@ -2187,6 +2210,7 @@ export const buildAgentTreeStream = ({
     questionRowIds: NO_QUESTION_ROWS,
     resolveFactsByAgentId: NO_RESOLVE_FACTS,
     jobFactsByAgentId: NO_JOB_FACTS,
+    autoFactsByAgentId: NO_AUTO_FACTS,
     outputsByAgentEntryId: NO_OUTPUTS_BY_AGENT,
     expandedGroupIds: NO_EXPANDED_GROUPS,
     fullGroupIds: NO_EXPANDED_GROUPS,

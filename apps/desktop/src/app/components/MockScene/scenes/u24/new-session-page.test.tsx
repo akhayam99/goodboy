@@ -83,14 +83,15 @@ describe('the New session page scenes', () => {
     expect(screen.queryByRole('region', { name: 'Auto' })).toBeNull();
   });
 
-  it('new-session-page-agent-auto is the Auto composer with the experimental note', async () => {
+  it('new-session-page-agent-auto is the Auto composer with one line about Auto', async () => {
     mount({ id: 'new-session-page-agent-auto' });
 
     expect(await screen.findByRole('region', { name: 'Auto' }, WAIT)).toBeDefined();
     expect(
       screen.getByText('Auto answers, or hands the work to the roles it picks.'),
     ).toBeDefined();
-    expect(screen.getByText('It may not work well yet.')).toBeDefined();
+    expect(screen.queryByText('It may not work well yet.')).toBeNull();
+    expect(screen.queryByText('Experimental')).toBeNull();
     expect(screen.getByRole('button', { name: 'Start Auto' })).toBeDefined();
   });
 });

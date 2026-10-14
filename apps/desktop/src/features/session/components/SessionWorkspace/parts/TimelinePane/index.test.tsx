@@ -120,6 +120,7 @@ vi.mock('../../../SessionOverviewPane/SessionCostChip', () => ({
 vi.mock('../../../CreateAgentPopover', () => ({
   CreateAgentPopover: () => <button type="button">Start agent</button>,
 }));
+vi.mock('../../../../../auto/useAutoTrees', () => ({ useAutoTrees: () => [] }));
 vi.mock('../../../../hooks/useResolveActivity', () => ({
   useResolveActivity: () => resolveActivity.current,
 }));

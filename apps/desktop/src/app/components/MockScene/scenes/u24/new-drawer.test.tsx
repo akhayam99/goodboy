@@ -114,11 +114,15 @@ describe('the New drawer scenes', () => {
     expect(inDrawer.queryByRole('textbox')).toBeNull();
   });
 
-  it('opens the Auto composer with the experimental note', async () => {
+  it('opens the Auto composer with one line about Auto', async () => {
     show({ id: 'new-drawer-agent-auto' });
 
     const inDrawer = await drawer();
-    expect(inDrawer.getByText('It may not work well yet.')).toBeDefined();
+    expect(
+      inDrawer.getAllByText('Auto answers, or hands the work to the roles it picks.'),
+    ).toHaveLength(1);
+    expect(inDrawer.queryByText('It may not work well yet.')).toBeNull();
+    expect(inDrawer.queryByText('Experimental')).toBeNull();
     expect(inDrawer.getByRole('button', { name: 'Start Auto' })).toBeDefined();
     expect(inDrawer.queryByText('Generalist')).toBeNull();
   });

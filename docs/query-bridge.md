@@ -10,6 +10,8 @@ The query bridge lets an agent working in a Goodboy session use the tools your w
 
 Your tokens and keys stay inside Goodboy the whole time. The agent never sees them.
 
+Auto is the one agent that hands work to other agents through the bridge; [auto.md](auto.md) says what a person sees of it.
+
 ## What agents can do
 
 While they work, agents can read from your tools:

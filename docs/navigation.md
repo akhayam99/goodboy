@@ -880,13 +880,16 @@ reach NW-230 anymore`. Pick up a task shows only the open starred issues,
   Discard button of its launch bar (the row's Discard draft does it), the
   title suggestion (the orchestrated title is generated after start, as in a
   session) and the worktree as the planner's working folder.
-- **Ask an agent** with the Auto experiment on (`useAutoExperiment`) is the
-  Auto composer (`AutoStart`): one goal with files, one model chip, **Start Auto**,
+- **Ask an agent** with the Auto experiment on (`useIsAutoOn`) is the
+  Auto composer (`AutoStart`): one goal with files, one model chip, a **Spend cap** chip, **Start Auto**,
   no role list, no project field, no guidance. Its goal and model live in the
   draft (`autoGoal`, `autoRouting`) and count as written for Discard draft. Start
-  runs `startSessionFromDraft` kind `scout` with the generic agent, the goal as
-  its prompt and the chosen routing. With the experiment off the choice is the
-  next one.
+  first reads the stored setting (`useConfirmStartMode`): when it differs from the
+  form on screen, another window changed it, so the form repaints for the stored
+  mode, keeps the text (the goal moves between `autoGoal` and the legacy prompt
+  field) and waits for a new Start click. Then it runs `startSessionFromDraft`
+  kind `scout` with an Auto agent (`agentKind: 'auto'`), the goal as its prompt
+  and the chosen routing. With the experiment off the choice is the next one.
 - **Ask an agent** (`AgentStart`) is the real chat composer's field: role,
   model and project sit below it as chips (`AgentStartFields`), opening the
   same role grid and model picker `Start agent` uses. The role defaults to
@@ -1331,6 +1334,19 @@ issue source at all, Pick up a task says so and leads back to Code host. The che
 items (provider, project, code host, task manager, first session, profile); a
 skipped code host or task manager reopens its own step, and the first session
 ticks when an agent finishes a turn, not when a session row exists.
+
+## Auto in the shell
+
+Auto is described in [auto.md](auto.md); this is where it sits. Settings, App,
+General ends with the band **Experiments** (`ExperimentsBand`), drawn only
+while the release gate is open. The agent overlay (`AgentOverlay`) wraps the
+detail pane of an Auto agent, and of each child of an Auto tree, in
+`AutoWorkRailHost`, which draws the Work rail on its left when the tree has a
+child. The chat of an Auto agent gets its delegation cards through the
+`insertions` prop of `ChatView` and its wait line through `composerLead`. The
+plan drawer swaps its toolbar for `AutoPlanToolbar` when the plan belongs to an
+Auto tree, and the Overview timeline hides the children of a tree and draws its
+state from `autoFactsByAgentId`.
 
 ## Column doors
 

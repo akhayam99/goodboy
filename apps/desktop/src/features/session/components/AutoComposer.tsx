@@ -6,7 +6,11 @@ import { useAppStore } from '../../../store';
 import { usePromptFiles } from '../../../shared/hooks/usePromptFiles';
 import { useAgentRouting } from '../hooks/useAgentRouting';
 import { useAutoStart } from '../hooks/useAutoStart';
-import { AUTO_PROVIDERS } from '../autoProviders';
+import { useConfirmStartMode } from '../../auto/useConfirmStartMode';
+import { useAutoTreeLimit } from '../../auto/useAutoTreeLimit';
+import { sessionById } from '../../../store/slices/sessions/sessionIndex';
+import { AUTO_OWN_PROVIDERS } from '../../auto/autoProviders';
+import { autoOwnRouting } from '../../auto/autoOwnRouting';
 import { AutoComposerView } from './AutoComposerView';
 
 type Props = {
@@ -28,13 +32,23 @@ export const AutoComposer = ({
   const setGoal = useAppStore((state) => state.setNewDrawerAutoGoal);
   const connected = useAppStore(
     useShallow((state) =>
-      AUTO_PROVIDERS.filter((provider) =>
+      AUTO_OWN_PROVIDERS.filter((provider) =>
         state.providers.some((entry) => entry.id === provider && entry.connection === 'connected'),
       ),
     ),
   );
-  const choice = useAgentRouting({ sessionId, kind: 'generic' });
+  const routed = useAgentRouting({ sessionId, kind: 'auto' });
+  const choice = {
+    ...routed,
+    effective: autoOwnRouting({ routing: routed.effective }),
+    suggestion: autoOwnRouting({ routing: routed.suggestion }),
+  };
   const start = useAutoStart({ sessionId });
+  const confirmMode = useConfirmStartMode();
+  const workspaceId = useAppStore(
+    (state) => sessionById(state.sessions, sessionId)?.workspaceId ?? null,
+  );
+  const limit = useAutoTreeLimit({ workspaceId, sessionId });
   const files = usePromptFiles({ note: 'Files go to Auto' });
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +62,10 @@ export const AutoComposer = ({
     setIsStarting(true);
     setError(null);
     try {
+      if (!(await confirmMode({ isShown: true }))) {
+        return;
+      }
+      await limit.persist();
       await start({ goal, routing: choice.effective });
       setGoal({ sessionId, goal: '' });
       files.clear();
@@ -67,6 +85,7 @@ export const AutoComposer = ({
       promptFiles={files}
       connected={connected}
       choice={choice}
+      limit={limit}
       isStarting={isStarting}
       error={error}
       {...(actionsHost !== undefined && { actionsHost })}

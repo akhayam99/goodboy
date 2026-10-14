@@ -16,6 +16,7 @@ import { PromptField } from '../../../../shared/components/PromptField';
 import { usePromptFiles } from '../../../../shared/hooks/usePromptFiles';
 import { toAttachmentInputs } from '../../../attachments/pendingAttachment';
 import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
+import { useConfirmStartMode } from '../../../auto/useConfirmStartMode';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -54,9 +55,15 @@ export const AgentStart = ({ workspaceId }: Props) => {
       patchSessionDraft({ workspaceId, patch: { projectId: firstProjectId } });
     }
   }, [draft.projectId, projects, patchSessionDraft, workspaceId]);
+  useEffect(() => {
+    if (draft.autoGoal.trim() !== '' && draft.agentPrompt.trim() === '') {
+      patchSessionDraft({ workspaceId, patch: { agentPrompt: draft.autoGoal, autoGoal: '' } });
+    }
+  }, [draft.autoGoal, draft.agentPrompt, patchSessionDraft, workspaceId]);
   const roleDefault = useWorkspaceKindRouting({ workspaceId, kind });
   const suggestion = resolveSpawnRouting({ kind, roleDefault, session: null });
   const { start, isStarting, error } = useDraftStart({ workspaceId });
+  const confirmMode = useConfirmStartMode();
   const hasProject = draft.projectId !== null;
   const promptFiles = usePromptFiles({
     note: 'Files go to the agent you start',
@@ -73,6 +80,9 @@ export const AgentStart = ({ workspaceId }: Props) => {
 
   const startAgent = async () => {
     if (!canStart) {
+      return;
+    }
+    if (!(await confirmMode({ isShown: false }))) {
       return;
     }
     const prompt = isScout

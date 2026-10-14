@@ -723,6 +723,14 @@ refuses the file with `DatabaseFromNewerBuildError` instead of reading it.
   the Auto landing both call it.
 - A run started for an Auto delivery carries a `deliveryId`, and Rust refuses a
   second run for it ([turns.md](./turns.md) → Surviving a reload or a restart).
+- The screens read the registry through one slice, `store/slices/auto-view/`:
+  `loadAutoTrees({ sessionId })` reads the trees of a session with their
+  delegations, artifact ledger and `treeSpend` budget (`readAutoTreeViews`),
+  keeps only the latest answer and writes the store only when something
+  changed (`sameAutoTreeViews`). `features/auto/useAutoTrees` loads on mount
+  and polls every 2 seconds while the session has an Auto agent or a tree that
+  is not finished; nothing pushes tree changes to a window yet. The Settings
+  row counts the working trees with `countLiveAutoTrees`.
 
 ### On-disk data layout
 

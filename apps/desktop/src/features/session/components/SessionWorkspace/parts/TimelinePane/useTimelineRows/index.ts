@@ -53,6 +53,9 @@ import { keepEqualById } from '../../../../../../../shared/utils/keepEqualById';
 import type { ExplodeGroups } from '../../../../../hooks/useExplodeGroups';
 import { useResolveActivity } from '../../../../../hooks/useResolveActivity';
 import { useJobActivity } from '../../../../../hooks/useJobActivity';
+import { autoRowFacts, type AutoRowFacts } from '../../../../../../auto/autoRowFacts';
+import { useAutoTrees } from '../../../../../../auto/useAutoTrees';
+import { withoutAutoChildren } from '../../../../../../auto/withoutAutoChildren';
 
 const NO_EXPANDED_ROWS: ReadonlySet<string> = new Set();
 
@@ -110,6 +113,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
   const workflows = useAttachedWorkflowRuns({ session });
   const resolveActivity = useResolveActivity({ sessionId });
   const jobActivity = useJobActivity({ sessionId });
+  const autoTrees = useAutoTrees({ sessionId });
   const telemetry = useAppStore(
     (s) => s.sessionTelemetry[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
   );
@@ -150,11 +154,27 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
     [answeredQuestions, dismissedQuestions, openQuestions],
   );
 
+  const autoFactsByAgentId = useMemo(() => {
+    const facts = new Map<string, AutoRowFacts>();
+    for (const view of autoTrees) {
+      const rowFacts = autoRowFacts({ view });
+      if (rowFacts !== null) {
+        facts.set(view.tree.rootAgentId, rowFacts);
+      }
+    }
+    return facts;
+  }, [autoTrees]);
+
+  const topLevelAgents = useMemo(
+    () => withoutAutoChildren({ agents, views: autoTrees }),
+    [agents, autoTrees],
+  );
+
   const model = useMemo(
     () =>
       buildTimelineGroups({
         sessionId,
-        agents,
+        agents: topLevelAgents,
         workflows,
         plans,
         artifacts,
@@ -167,7 +187,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
       }),
     [
       agentKindOverride,
-      agents,
+      topLevelAgents,
       artifacts,
       events,
       externalTasks,
@@ -190,10 +210,15 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
     return steps;
   }, [workflows]);
 
-  const spendByAgentId = useMemo(
-    () => agentSpendById({ records: telemetry, agents, agentRunHistory }),
-    [agentRunHistory, agents, telemetry],
-  );
+  const spendByAgentId = useMemo(() => {
+    const spend = new Map(agentSpendById({ records: telemetry, agents, agentRunHistory }));
+    for (const view of autoTrees) {
+      if (view.budget !== null) {
+        spend.set(view.tree.rootAgentId, view.budget.spentUsd);
+      }
+    }
+    return spend;
+  }, [agentRunHistory, agents, autoTrees, telemetry]);
 
   const spendByRunId = useMemo(() => {
     const spend = new Map<string, number>();
@@ -245,6 +270,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
           showQuestions: false,
           resolveFactsByAgentId: resolveActivity.factsByAgentId,
           jobFactsByAgentId: jobActivity.factsByAgentId,
+          autoFactsByAgentId,
         }).items,
         entries: model.entries,
         events,
@@ -253,6 +279,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
       }),
     [
       advanceByRunId,
+      autoFactsByAgentId,
       decidingRunIds,
       events,
       jobActivity,
@@ -279,12 +306,14 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
         showQuestions: view === 'log',
         resolveFactsByAgentId: resolveActivity.factsByAgentId,
         jobFactsByAgentId: jobActivity.factsByAgentId,
+        autoFactsByAgentId,
         expandedGroupIds: explode.expandedIds,
         fullGroupIds: explode.fullIds,
         foldsFinished: true,
       }),
     [
       advanceByRunId,
+      autoFactsByAgentId,
       decidingRunIds,
       explode.expandedIds,
       explode.fullIds,

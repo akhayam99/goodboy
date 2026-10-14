@@ -35,6 +35,14 @@ const executedRouting = vi.hoisted(() => ({
   value: null as { provider: ProviderName; model: string; effort: string | null } | null,
 }));
 
+vi.mock('../../../auto/chat/useAutoChat', () => ({
+  useAutoChat: () => ({
+    tree: null,
+    insertions: undefined,
+    composerLead: undefined,
+    composerPlaceholder: undefined,
+  }),
+}));
 vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (value: typeof state & BriefFacts) => T) =>
     selector({ ...state, ...briefFacts }),

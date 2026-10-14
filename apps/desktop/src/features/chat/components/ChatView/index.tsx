@@ -47,6 +47,7 @@ import { mountProposalsByRun } from '../../../suggestions/transcriptMountProposa
 import { ChatEmptyState } from './ChatEmptyState';
 import { TranscriptRows } from './TranscriptRows';
 import { ChatImageLoaderProvider } from './ChatImageLoaderProvider';
+import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 import { USER_SCROLL_EVENTS, useScrollPin } from './useScrollPin';
 import { TranscriptSkeleton } from './parts/TranscriptSkeleton';
 import { WorkflowAdvanceRow } from './parts/WorkflowAdvanceRow';
@@ -66,6 +67,8 @@ type Props = {
   readonly composerPlaceholder?: string;
   readonly composerNotice?: ReactNode;
   readonly briefLabel?: string;
+  readonly insertions?: ReadonlyArray<TranscriptInsertion>;
+  readonly composerLead?: ReactNode;
 };
 
 type RetrySource = {
@@ -126,6 +129,8 @@ export const ChatView = ({
   composerPlaceholder,
   composerNotice,
   briefLabel,
+  insertions,
+  composerLead,
 }: Props) => {
   const storedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null) as AgentId | null;
   const selectedAgentId = agentId === undefined ? storedAgentId : agentId;
@@ -559,6 +564,7 @@ export const ChatView = ({
                     activeRunId={activeRunId}
                     turnFooters={turnFooters}
                     briefLabel={briefLabel}
+                    {...(insertions !== undefined && { insertions })}
                   />
                 </ChatImageLoaderProvider>
               </ul>
@@ -609,6 +615,9 @@ export const ChatView = ({
       ) : null}
       {hasComposer && !isEnded && selectedAgentId != null ? (
         <WorkflowAdvanceRow session={session} />
+      ) : null}
+      {hasComposer && !isEnded && selectedAgentId != null && composerLead !== undefined ? (
+        <PageColumn className="py-1">{composerLead}</PageColumn>
       ) : null}
       {!hasComposer ? (
         composerNotice === undefined ? null : (

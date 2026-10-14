@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -7,7 +8,10 @@ import { useWorkspaceKindRouting } from '../../../../shared/hooks/useWorkspaceKi
 import type { PickedRoute } from '../../../../shared/components/RoutingPicker/PickedRoute';
 import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 import { toAttachmentInputs } from '../../../attachments/pendingAttachment';
-import { AUTO_PROVIDERS } from '../../autoProviders';
+import { useConfirmStartMode } from '../../../auto/useConfirmStartMode';
+import { useAutoTreeLimit } from '../../../auto/useAutoTreeLimit';
+import { AUTO_OWN_PROVIDERS } from '../../../auto/autoProviders';
+import { autoOwnRouting } from '../../../auto/autoOwnRouting';
 import { resolveSpawnRouting } from '../../spawn-routing';
 import { AutoComposerView, type AutoRoutingChoice } from '../AutoComposerView';
 import { useDraftStart } from './useDraftStart';
@@ -23,25 +27,34 @@ export const AutoStart = ({ workspaceId }: Props) => {
   const draft = useAppStore((state) => selectSessionDraft({ state, workspaceId }));
   const connected = useAppStore(
     useShallow((state) =>
-      AUTO_PROVIDERS.filter((provider) =>
+      AUTO_OWN_PROVIDERS.filter((provider) =>
         state.providers.some((entry) => entry.id === provider && entry.connection === 'connected'),
       ),
     ),
   );
-  const roleDefault = useWorkspaceKindRouting({ workspaceId, kind: 'generic' });
-  const spawnDefault = resolveSpawnRouting({ kind: 'generic', roleDefault, session: null });
-  const suggestion = {
-    provider: spawnDefault.provider,
-    model: spawnDefault.model,
-    effort: spawnDefault.effort,
-  };
+  useEffect(() => {
+    if (draft.agentPrompt.trim() !== '' && draft.autoGoal.trim() === '') {
+      patchSessionDraft({ workspaceId, patch: { autoGoal: draft.agentPrompt, agentPrompt: '' } });
+    }
+  }, [draft.autoGoal, draft.agentPrompt, patchSessionDraft, workspaceId]);
+  const roleDefault = useWorkspaceKindRouting({ workspaceId, kind: 'auto' });
+  const spawnDefault = resolveSpawnRouting({ kind: 'auto', roleDefault, session: null });
+  const suggestion = autoOwnRouting({
+    routing: {
+      provider: spawnDefault.provider,
+      model: spawnDefault.model,
+      effort: spawnDefault.effort,
+    },
+  });
   const promptFiles = usePromptFiles({ note: 'Files go to Auto' });
   const { start, isStarting, error } = useDraftStart({ workspaceId });
+  const confirmMode = useConfirmStartMode();
+  const limit = useAutoTreeLimit({ workspaceId });
   const goal = draft.autoGoal;
 
   const choice: AutoRoutingChoice = {
     routing: draft.autoRouting,
-    effective: draft.autoRouting ?? suggestion,
+    effective: autoOwnRouting({ routing: draft.autoRouting ?? suggestion }),
     suggestion,
     suggestionReason: SUGGESTION_REASON,
     pick: ({ provider, model, effort }: PickedRoute) => {
@@ -61,11 +74,15 @@ export const AutoStart = ({ workspaceId }: Props) => {
     if (goal.trim() === '') {
       return;
     }
+    if (!(await confirmMode({ isShown: true }))) {
+      return;
+    }
+    await limit.persist();
     const staged = promptFiles.attachments;
     const attachmentInputs = staged.length === 0 ? [] : await toAttachmentInputs(staged);
     const isStarted = await start({
       kind: 'scout',
-      agentKind: 'generic',
+      agentKind: 'auto',
       focus: goal,
       prompt: goal.trim(),
       routing: choice.effective,
@@ -84,6 +101,7 @@ export const AutoStart = ({ workspaceId }: Props) => {
       promptFiles={promptFiles}
       connected={connected}
       choice={choice}
+      limit={limit}
       isStarting={isStarting}
       error={error}
       onGoalChange={(next) => patchSessionDraft({ workspaceId, patch: { autoGoal: next } })}

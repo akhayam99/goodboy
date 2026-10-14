@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
-import { useAutoExperiment } from '../../hooks/useAutoExperiment';
+import { useIsAutoOn } from '../../../auto/useIsAutoOn';
 import { SessionDraftActions } from '../SessionDraftPane/SessionDraftActions';
 import { useKickoffIssues } from './useKickoffIssues';
 import { preselectStartChoice, startChoiceLine, type StartChoice } from './startChoice';
@@ -20,7 +20,7 @@ type Props = {
 const KICKOFF_QUESTION = 'How do you want to start?';
 
 export const SessionKickoff = ({ workspaceId, isAuto }: Props) => {
-  const isAutoExperiment = useAutoExperiment();
+  const isAutoExperiment = useIsAutoOn();
   const isAutoOn = isAuto ?? isAutoExperiment;
   const issues = useKickoffIssues({ workspaceId });
   const storedChoice = useAppStore((state) => selectSessionDraft({ state, workspaceId }).choice);

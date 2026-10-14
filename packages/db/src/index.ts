@@ -756,6 +756,7 @@ export {
   type InsertAutoTreeOutcome,
   type NewAutoTree,
 } from './queries/auto-trees';
+export { countLiveAutoTrees } from './queries/auto-live-trees';
 export {
   AUTO_ADMISSION_TREE_ABORT,
   autoAdmissionArtifactAbort,

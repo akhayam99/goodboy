@@ -590,3 +590,13 @@ The hint a person types before a fix is plain text carried as a field, never re-
 - The echo **Your hint** reads the hint back from the sent message with `hintOfMessage` (`apps/desktop/src/features/chat/utils/hintOfMessage.ts`), which anchors on the fixed guidance line (`OPERATOR_NOTES_GUIDANCE`) written just before the notes. Change that sentence in one place; the golden prompt files under `__prompts__` and the echo follow it. The rewriter keeps its own `note` line and has no echo.
 - A draft is cleared by `settleStartHint` only when its captured revision is still current, and only from a callback that fires when the agent's first turn started (`onKickoffAccepted` in `spawnAgent`, `onAccepted` in `spawnPushFixer` and `startHistoryRewriter`). A resolver launch counts as accepted when its batch and attempt are recorded: its kickoff drains afterwards, and a refused drain shows **Failed** with the batch hint, which **Retry** reuses.
 - `analyzeFailingChecks` rejects a second call that carries a hint while the same check is being analyzed, instead of returning the running agent and dropping the hint.
+
+## Auto switch and screens
+
+Auto is gated twice and the legacy role grid never lists it. `AUTO_GATES.isDelegationEnabled` (compile time, read through `AutoReleaseContext`) decides whether any Auto control exists; the setting `agents.autoExperiment` decides, per person, whether the start is Auto. `isAutoStartEnabled` is the only place that combines them, and `visibleAgentKinds()` stays static, so do not add `auto` to a role list to make a menu complete.
+
+- An Auto start reads the stored setting at the click (`useConfirmStartMode`), never the cached one. A form that shows the other mode repaints and waits for a new click, so a test that clicks Start must wait for the spawn: the call happens after one database read.
+- Delegation cards are inserted into the transcript by time: before the first user or handoff row at or after the last settle of their batch. Do not anchor them on a run id; the delegation row does not keep the run that created it.
+- The approval of a plan tells Auto once. `approveAutoPlan` reads the artifact before the swap and does not send "Approved plan vN." when that version was already approved, which is what a second window sees. The swap itself is idempotent, so the read is the guard.
+- `useAutoTreeActions.stop` stops the live children and the root agent turn by turn. The tree phase is written by the scheduler, not by this button; once the tree stop of the runtime exists, replace the body and keep the name.
+- A mock scene that shows an Auto chat must give every agent a `lastViewedAt` after its `lastFinishedAt`; otherwise the chat marks it viewed on every render of the real store.

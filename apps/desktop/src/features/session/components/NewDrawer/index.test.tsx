@@ -13,8 +13,25 @@ vi.mock('../../../../shared/lib/db', async () =>
 
 const experiment = vi.hoisted(() => ({ isOn: false }));
 
-vi.mock('../../hooks/useAutoExperiment', () => ({
-  useAutoExperiment: () => experiment.isOn,
+vi.mock('../../../auto/useIsAutoOn', () => ({
+  useIsAutoOn: () => experiment.isOn,
+}));
+
+vi.mock('../../../auto/useConfirmStartMode', () => ({
+  useConfirmStartMode:
+    () =>
+    async ({ isShown }: { readonly isShown: boolean }) =>
+      experiment.isOn === isShown,
+}));
+
+vi.mock('../../../auto/useAutoTreeLimit', () => ({
+  useAutoTreeLimit: () => ({
+    usd: 5,
+    isFromSession: false,
+    isStored: true,
+    change: () => undefined,
+    persist: async () => undefined,
+  }),
 }));
 
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
@@ -362,14 +379,46 @@ describe('NewDrawer (Agent, experiment on)', () => {
     expect(
       screen.getByText('Auto answers, or hands the work to the roles it picks.'),
     ).toBeDefined();
-    expect(screen.getByText('Experimental')).toBeDefined();
-    expect(screen.getByText('It may not work well yet.')).toBeDefined();
+    expect(screen.queryByText('Experimental')).toBeNull();
+    expect(screen.queryByText('It may not work well yet.')).toBeNull();
     expect(screen.getByRole('textbox', { name: 'Describe the work' })).toBeDefined();
     expect(screen.getAllByRole('button', { name: /^Auto model/ })).toHaveLength(1);
     expect(screen.queryByRole('button', { name: 'Generalist' })).toBeNull();
     expect(screen.queryByText('Routing')).toBeNull();
     expect(screen.queryByRole('button', { name: /^add guidance/i })).toBeNull();
     expect(screen.queryByText(/project/i)).toBeNull();
+  });
+
+  it('keeps Start Auto disabled and says why when Claude is not connected', () => {
+    useAppStore.setState({ providers: [{ ...connected('anthropic'), connection: 'missing' }] });
+    openDrawer({ payload: { tab: 'agent' } });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Describe the work' }), {
+      target: { value: 'Find why webhooks retry' },
+    });
+
+    expect(buttonOf(screen.getByRole('button', { name: 'Start Auto' })).disabled).toBe(true);
+    expect(screen.getByText('Auto runs on Claude. Connect Claude in Providers.')).toBeDefined();
+  });
+
+  it('puts Auto on Claude even when the workspace default is another provider', async () => {
+    useAppStore.setState({
+      providers: [connected('anthropic'), connected('codex')],
+      sessions: [
+        {
+          ...SESSION,
+          providerPreference: { defaultProvider: 'codex', allowTurnOverride: true },
+        },
+      ],
+    });
+    openDrawer({ payload: { tab: 'agent' } });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Describe the work' }), {
+      target: { value: 'Find why webhooks retry' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start Auto' }));
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
+    expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({ provider: 'anthropic' });
   });
 
   it('keeps Start Auto disabled until a goal is written', () => {
@@ -419,7 +468,11 @@ describe('NewDrawer (Agent, experiment on)', () => {
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
     expect(spawnAgent).toHaveBeenCalledWith(
       SESSION_ID,
-      expect.objectContaining({ initialPrompt: 'Find why webhooks retry', focus: 'agent' }),
+      expect.objectContaining({
+        kindOverride: 'auto',
+        initialPrompt: 'Find why webhooks retry',
+        focus: 'agent',
+      }),
     );
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
     expect(useAppStore.getState().newDrawerDrafts[SESSION_ID]).toBeUndefined();

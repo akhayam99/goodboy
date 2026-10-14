@@ -65,6 +65,17 @@ const h = vi.hoisted(() => ({
   sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
 }));
 
+vi.mock('../../../auto/useConfirmStartMode', () => ({
+  useConfirmStartMode:
+    () =>
+    async ({ isShown }: { readonly isShown: boolean }) =>
+      !isShown,
+}));
+
+vi.mock('../../../auto/useIsAutoOn', () => ({
+  useIsAutoOn: () => false,
+}));
+
 vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (state: Store) => T) =>
     selector({
@@ -140,7 +151,7 @@ describe('CreateAgentPopover', () => {
     expect(dialog.className).toContain('fixed');
   });
 
-  it('shows only the selected kind description and spawns the picked one', () => {
+  it('shows only the selected kind description and spawns the picked one', async () => {
     renderControl();
     openPopover();
 
@@ -158,16 +169,18 @@ describe('CreateAgentPopover', () => {
     ).toBeNull();
     confirm();
 
-    expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
-      kindOverride: 'docs',
-      provider: 'anthropic',
-      model: 'sonnet-5.5',
-      effort: 'low',
-      focus: 'agent',
-    });
+    await waitFor(() =>
+      expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
+        kindOverride: 'docs',
+        provider: 'anthropic',
+        model: 'sonnet-5.5',
+        effort: 'low',
+        focus: 'agent',
+      }),
+    );
   });
 
-  it('gives a generic agent the model the chat is on without a summary row', () => {
+  it('gives a generic agent the model the chat is on without a summary row', async () => {
     h.sessions = [
       makeSession({
         providerOverride: 'anthropic',
@@ -181,16 +194,18 @@ describe('CreateAgentPopover', () => {
     expect(screen.queryByText('Claude · Opus 5, high effort')).toBeNull();
 
     confirm();
-    expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
-      kindOverride: 'generic',
-      provider: 'anthropic',
-      model: 'claude-opus-5',
-      effort: 'high',
-      focus: 'agent',
-    });
+    await waitFor(() =>
+      expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
+        kindOverride: 'generic',
+        provider: 'anthropic',
+        model: 'claude-opus-5',
+        effort: 'high',
+        focus: 'agent',
+      }),
+    );
   });
 
-  it('explains the Suggested routing and offers the last model used for that kind', () => {
+  it('explains the Suggested routing and offers the last model used for that kind', async () => {
     h.sessions = [makeSession()];
     h.sessionPhaseRuns = {
       [SID]: [
@@ -210,14 +225,20 @@ describe('CreateAgentPopover', () => {
     ).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: /^Last used here / }));
     confirm();
-    expect(h.spawnAgent).toHaveBeenCalledWith(
-      SID,
-      expect.objectContaining({ kindOverride: 'scout', provider: 'codex', model: 'gpt-5.6-luna' }),
+    await waitFor(() =>
+      expect(h.spawnAgent).toHaveBeenCalledWith(
+        SID,
+        expect.objectContaining({
+          kindOverride: 'scout',
+          provider: 'codex',
+          model: 'gpt-5.6-luna',
+        }),
+      ),
     );
     h.sessionPhaseRuns = {};
   });
 
-  it('keeps a scout on its smaller model even when the chat is on opus', () => {
+  it('keeps a scout on its smaller model even when the chat is on opus', async () => {
     h.sessions = [
       makeSession({
         providerOverride: 'anthropic',
@@ -233,13 +254,15 @@ describe('CreateAgentPopover', () => {
     expect(screen.getByRole('button', { name: 'Haiku' }).getAttribute('aria-pressed')).toBe('true');
 
     confirm();
-    expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
-      kindOverride: 'scout',
-      provider: 'anthropic',
-      model: 'haiku-4.5',
-      effort: 'low',
-      focus: 'agent',
-    });
+    await waitFor(() =>
+      expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
+        kindOverride: 'scout',
+        provider: 'anthropic',
+        model: 'haiku-4.5',
+        effort: 'low',
+        focus: 'agent',
+      }),
+    );
   });
 
   it('selects a model family and version as separate ladder levels', () => {
@@ -252,7 +275,7 @@ describe('CreateAgentPopover', () => {
     expect(screen.getByRole('button', { name: '5' }).getAttribute('aria-pressed')).toBe('true');
   });
 
-  it('spawns exactly the pinned model the picker shows', () => {
+  it('spawns exactly the pinned model the picker shows', async () => {
     renderControl();
     openPopover();
     expandRouting();
@@ -260,13 +283,15 @@ describe('CreateAgentPopover', () => {
     fireEvent.click(screen.getByRole('button', { name: '5' }));
 
     confirm();
-    expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
-      kindOverride: 'generic',
-      provider: 'anthropic',
-      model: 'claude-opus-5',
-      effort: 'medium',
-      focus: 'agent',
-    });
+    await waitFor(() =>
+      expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
+        kindOverride: 'generic',
+        provider: 'anthropic',
+        model: 'claude-opus-5',
+        effort: 'medium',
+        focus: 'agent',
+      }),
+    );
   });
 
   it('blocks repeated spawn gestures while creation is pending', async () => {
@@ -282,7 +307,7 @@ describe('CreateAgentPopover', () => {
     const action = screen.getByRole('button', { name: 'Starting Generalist' });
     fireEvent.click(action);
 
-    expect(h.spawnAgent).toHaveBeenCalledOnce();
+    await waitFor(() => expect(h.spawnAgent).toHaveBeenCalledOnce());
     expect(action.getAttribute('aria-busy')).toBe('true');
 
     await act(async () => {
@@ -324,7 +349,7 @@ describe('CreateAgentPopover', () => {
     expect(screen.getByRole('dialog', { name: 'Start agent' })).toBeDefined();
   });
 
-  it('renders codex checkpoints as chips without a native select', () => {
+  it('renders codex checkpoints as chips without a native select', async () => {
     h.providers = [
       { id: 'anthropic' as ProviderId, connection: 'connected' },
       { id: 'codex' as ProviderId, connection: 'connected' },
@@ -348,13 +373,15 @@ describe('CreateAgentPopover', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Terra' }));
     confirm();
-    expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
-      kindOverride: 'generic',
-      provider: 'codex',
-      model: 'gpt-5.6-terra',
-      effort: 'high',
-      focus: 'agent',
-    });
+    await waitFor(() =>
+      expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
+        kindOverride: 'generic',
+        provider: 'codex',
+        model: 'gpt-5.6-terra',
+        effort: 'high',
+        focus: 'agent',
+      }),
+    );
   });
 
   it('announces the same Cursor effort clamp as the routing picker', () => {
@@ -401,19 +428,21 @@ describe('CreateAgentPopover', () => {
     expect(screen.queryByRole('dialog', { name: 'Start agent' })).toBeNull();
   });
 
-  it('keeps the role section available for a folder project', () => {
+  it('keeps the role section available for a folder project', async () => {
     renderControl();
     openPopover();
 
     expect(screen.getByText('Role')).toBeDefined();
     confirm();
-    expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
-      kindOverride: 'generic',
-      provider: 'anthropic',
-      model: 'sonnet-5.5',
-      effort: 'medium',
-      focus: 'agent',
-    });
+    await waitFor(() =>
+      expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
+        kindOverride: 'generic',
+        provider: 'anthropic',
+        model: 'sonnet-5.5',
+        effort: 'medium',
+        focus: 'agent',
+      }),
+    );
   });
 
   it('renders a compact header control without its own edge inset', () => {
@@ -449,7 +478,7 @@ describe('CreateAgentPopover', () => {
     expect(screen.getByRole('button', { name: 'Opus' })).toBeTruthy();
   });
 
-  it('has no instructions field and never sends a first prompt', () => {
+  it('has no instructions field and never sends a first prompt', async () => {
     renderControl();
     openPopover();
 
@@ -458,10 +487,12 @@ describe('CreateAgentPopover', () => {
     expect(screen.getByText('You write the first message in its chat.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Open Scout' }));
 
-    expect(h.spawnAgent).toHaveBeenCalledOnce();
-    expect(h.spawnAgent).toHaveBeenCalledWith(
-      SID,
-      expect.not.objectContaining({ initialPrompt: expect.anything() }),
+    await waitFor(() => expect(h.spawnAgent).toHaveBeenCalledOnce());
+    await waitFor(() =>
+      expect(h.spawnAgent).toHaveBeenCalledWith(
+        SID,
+        expect.not.objectContaining({ initialPrompt: expect.anything() }),
+      ),
     );
   });
 
@@ -492,7 +523,7 @@ describe('CreateAgentPopover', () => {
     expect(screen.getByTestId('launch-estimate').textContent).toBe('Starts now · usually 9-13m');
   });
 
-  it('starts an implementer on the active plan and says so', () => {
+  it('starts an implementer on the active plan and says so', async () => {
     h.sessionPlans = { [SID]: [{ title: 'Round once per batch', status: 'active' }] };
     renderControl();
     openPopover();
@@ -500,9 +531,11 @@ describe('CreateAgentPopover', () => {
 
     expect(screen.getByText('Starts now from plan: Round once per batch')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Start Implementer on the plan' }));
-    expect(h.spawnAgent).toHaveBeenCalledWith(
-      SID,
-      expect.objectContaining({ kindOverride: 'implementer' }),
+    await waitFor(() =>
+      expect(h.spawnAgent).toHaveBeenCalledWith(
+        SID,
+        expect.objectContaining({ kindOverride: 'implementer' }),
+      ),
     );
   });
 

@@ -8,10 +8,28 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 const experiment = vi.hoisted(() => ({ isOn: false }));
 
-vi.mock('../../hooks/useAutoExperiment', () => ({
-  useAutoExperiment: () => experiment.isOn,
+vi.mock('../../../auto/useIsAutoOn', () => ({
+  useIsAutoOn: () => experiment.isOn,
 }));
 
+vi.mock('../../../auto/useConfirmStartMode', () => ({
+  useConfirmStartMode:
+    () =>
+    async ({ isShown }: { readonly isShown: boolean }) =>
+      experiment.isOn === isShown,
+}));
+
+vi.mock('../../../auto/useAutoTreeLimit', () => ({
+  useAutoTreeLimit: () => ({
+    usd: 5,
+    isFromSession: false,
+    isStored: true,
+    change: () => undefined,
+    persist: async () => undefined,
+  }),
+}));
+
+import { PROVIDER_CAPABILITIES } from '@goodboy/core';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type {
@@ -274,11 +292,50 @@ describe('New session page, Agent (experiment off)', () => {
     expect(screen.getByRole('button', { name: 'Start Scout on the whole project' })).toBeDefined();
     expect(screen.queryByRole('region', { name: 'Auto' })).toBeNull();
   });
+
+  it('moves the goal written for Auto into the instructions of the legacy form, never dropping it', async () => {
+    useAppStore.getState().openSessionDraft();
+    useAppStore
+      .getState()
+      .patchSessionDraft({ workspaceId: WORKSPACE_ID, patch: { autoGoal: GOAL } });
+
+    await openPage({ choice: 'scout' });
+
+    expect(textBox('Scout focus').value).toBe(GOAL);
+    expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.autoGoal).toBe('');
+  });
 });
 
 describe('New session page, Agent (experiment on)', () => {
   beforeEach(() => {
     experiment.isOn = true;
+    useAppStore.setState({
+      providers: [
+        {
+          id: 'anthropic',
+          binary: 'anthropic',
+          capabilities: PROVIDER_CAPABILITIES.anthropic,
+          connection: 'connected',
+          version: null,
+          identity: null,
+          label: 'anthropic',
+          error: null,
+          docsUrl: '',
+        },
+      ],
+    });
+  });
+
+  it('moves the instructions written for the legacy form into the Auto goal', async () => {
+    useAppStore.getState().openSessionDraft();
+    useAppStore
+      .getState()
+      .patchSessionDraft({ workspaceId: WORKSPACE_ID, patch: { agentPrompt: GOAL } });
+
+    await openPage({ choice: 'scout' });
+
+    expect(textBox('Describe the work').value).toBe(GOAL);
+    expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.agentPrompt).toBe('');
   });
 
   it('is the Auto composer: one goal, one model chip, no roles and no project field', async () => {
@@ -288,8 +345,8 @@ describe('New session page, Agent (experiment on)', () => {
       screen.getByText('Auto answers, or hands the work to the roles it picks.'),
     ).toBeDefined();
     expect(screen.getByRole('region', { name: 'Auto' })).toBeDefined();
-    expect(screen.getByText('Experimental')).toBeDefined();
-    expect(screen.getByText('It may not work well yet.')).toBeDefined();
+    expect(screen.queryByText('Experimental')).toBeNull();
+    expect(screen.queryByText('It may not work well yet.')).toBeNull();
     expect(screen.getByRole('button', { name: /auto model/i })).toBeDefined();
     expect(screen.queryByRole('combobox', { name: /project/i })).toBeNull();
     expect(screen.queryByText(/guidance/i)).toBeNull();
@@ -304,7 +361,7 @@ describe('New session page, Agent (experiment on)', () => {
     expect(screen.getByRole('button', { name: 'Start Auto' })).toHaveProperty('disabled', false);
   });
 
-  it('creates the session and starts Auto with the goal on the generic agent', async () => {
+  it('creates the session and starts Auto with the goal on the auto agent', async () => {
     await openPage({ choice: 'scout' });
     fireEvent.change(textBox('Describe the work'), { target: { value: GOAL } });
 
@@ -314,7 +371,7 @@ describe('New session page, Agent (experiment on)', () => {
     expect(createSession).toHaveBeenCalledOnce();
     expect(spawnAgent.mock.calls[0]?.[0]).toBe(cameFrom.id);
     expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({
-      kindOverride: 'generic',
+      kindOverride: 'auto',
       initialPrompt: GOAL,
     });
     await waitFor(() =>

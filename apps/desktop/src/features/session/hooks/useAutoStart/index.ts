@@ -16,7 +16,7 @@ export const useAutoStart = ({ sessionId }: Params) => {
   const spawnAgent = useAppStore((state) => state.spawnAgent);
   return async ({ goal, routing }: StartParams): Promise<void> => {
     await spawnAgent(sessionId, {
-      kindOverride: 'generic',
+      kindOverride: 'auto',
       provider: routing.provider,
       model: routing.model,
       effort: routing.effort,

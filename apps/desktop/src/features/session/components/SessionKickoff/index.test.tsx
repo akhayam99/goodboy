@@ -32,6 +32,13 @@ const { holder, hooks, spies } = vi.hoisted(() => ({
   },
 }));
 
+vi.mock('../../../auto/useConfirmStartMode', () => ({
+  useConfirmStartMode:
+    () =>
+    async ({ isShown }: { readonly isShown: boolean }) =>
+      !isShown,
+}));
+
 vi.mock('../../../../store', async () => {
   const { create } = await vi.importActual<typeof import('zustand')>('zustand');
   const store = create<TestState>(() => ({}));

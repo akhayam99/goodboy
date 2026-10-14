@@ -20,6 +20,7 @@ import { RoutingLabel } from '../../../shared/components/RoutingLabel';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 import { openAgentRevealEvent } from '../../../shared/utils/openAgentReveal';
+import { useConfirmStartMode } from '../../auto/useConfirmStartMode';
 
 const ROUTING_PANEL_ID = 'create-agent-routing';
 
@@ -46,6 +47,7 @@ export const AgentStartBlock = ({
   const [spawnError, setSpawnError] = useState<string | null>(null);
   const isSpawningRef = useRef(false);
   const spawnAgent = useAppStore((state) => state.spawnAgent);
+  const confirmMode = useConfirmStartMode();
   const agentKinds = visibleAgentKinds();
   const selectedKind = agentKinds.includes(kind) ? kind : (agentKinds[0] ?? 'generic');
   const connectedProviders = useAppStore(
@@ -84,6 +86,9 @@ export const AgentStartBlock = ({
     setIsSpawning(true);
     setSpawnError(null);
     try {
+      if (!(await confirmMode({ isShown: false }))) {
+        return;
+      }
       await spawnAgent(sessionId, {
         kindOverride: selectedKind,
         provider: effective.provider,

@@ -58,6 +58,8 @@ import {
 import { createSessionViewSlice } from './slices/session-view';
 import { createSavedProjectModelsSlice } from './slices/saved-project-models';
 import { savedProjectModelsInitialState } from './slices/saved-project-models/state';
+import { createAutoViewSlice } from './slices/auto-view';
+import { autoViewInitialState } from './slices/auto-view/state';
 import { createSessionPinsSlice } from './slices/session-pins';
 import { sessionPinsInitialState } from './slices/session-pins/state';
 import { createSessionFiltersSlice } from './slices/sessionFilters';
@@ -262,6 +264,7 @@ export type AppStore = AppState &
   ReturnType<typeof createSessionViewSlice> &
   ReturnType<typeof createSavedProjectModelsSlice> &
   ReturnType<typeof createSessionPinsSlice> &
+  ReturnType<typeof createAutoViewSlice> &
   ReturnType<typeof createSessionsSlice> &
   ReturnType<typeof createTranscriptsSlice> &
   ReturnType<typeof createSummariesSlice> &
@@ -324,6 +327,7 @@ export const initialState: AppState = {
   ...createInitialSessionViewState({}),
   ...savedProjectModelsInitialState,
   ...sessionPinsInitialState,
+  ...autoViewInitialState,
   ...sessionFiltersInitialState,
   ...workspacesInitialState,
   ...projectsInitialState,
@@ -429,6 +433,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createSessionViewSlice({ set, get }),
   ...createSavedProjectModelsSlice({ set, get }),
   ...createSessionPinsSlice({ set, get }),
+  ...createAutoViewSlice({ set, get }),
   ...createSessionFiltersSlice({ set, get }),
   ...createTerminalSlice({ set, get }),
   ...createScriptsSlice({ set, get }),

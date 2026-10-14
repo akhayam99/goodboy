@@ -521,6 +521,18 @@ step in its next action, because closing it would leave the run blocked with
 no instruction. `isAgentFinished` and `isAgentClosable` in
 `apps/desktop/src/features/session/agent-lifecycle.ts` hold both rules.
 
+### Auto
+
+**Auto** is an agent that answers questions itself and hands the work it cannot
+do alone to agents of the right role, with a model it picks for each, then
+reads their results and goes on. Its children are agents of the roles Scout,
+Plan, Investigate, Review, Implement, Test and Docs, never more than four at a
+time and one level deep. It is an experiment: off by default, switched on in
+Settings, General, **Experiments**, and while it is off the roles you pick
+today are the only start. A person sees an Auto tree as one row in the
+Overview and as one chat with a Work rail and a card for each delegation
+([auto.md](auto.md)).
+
 ### Agent kinds
 
 The **kind** decides how an agent works: what it may change and what it gives

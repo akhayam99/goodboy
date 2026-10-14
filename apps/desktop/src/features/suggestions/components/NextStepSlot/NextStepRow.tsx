@@ -9,6 +9,7 @@ import {
   type AgentKind,
   type AgentKindRouting,
 } from '../../../session/agent-kind';
+import { useTalkItThrough } from '../../../auto/useTalkItThrough';
 import { NextStepMenu } from './NextStepMenu';
 import { NextStepRunsOn } from './NextStepRunsOn';
 import { NextStepTile } from './NextStepTile';
@@ -58,6 +59,7 @@ export const NextStepRow = ({
     setPreviewKind(null);
   }, [suggestion.id]);
 
+  const talk = useTalkItThrough({ sessionId: suggestion.sessionId });
   const primary = actions.primary;
   const shouldConfirm = primary?.requiresConfirm === true;
   const choices = primary?.choices ?? NO_CHOICES;
@@ -173,6 +175,10 @@ export const NextStepRow = ({
         isHeld={primary?.isDisabled === true || isPending || isChoicePending}
         isDisabled={isActionBusy}
         onPreview={setPreviewKind}
+        {...(talk.isAvailable &&
+          agentKind !== null && {
+            onTalk: () => talk.talk({ title: suggestion.title, detail: suggestion.detail ?? null }),
+          })}
       />
     </div>
   );

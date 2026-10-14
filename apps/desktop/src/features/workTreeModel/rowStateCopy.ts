@@ -88,6 +88,7 @@ const reasonSentence = ({ reason }: ReasonParams): string | null => {
       return null;
     case 'job':
     case 'review':
+    case 'auto':
       return reason.word;
     default: {
       const exhaustive: never = reason;
@@ -137,6 +138,8 @@ const reasonShortSentence = ({ reason }: ReasonParams): string | null => {
       return 'Needs permission';
     case 'stepBlocked':
       return reason.stepLabel == null ? 'Step blocked' : `Step ${reason.stepLabel} blocked`;
+    case 'auto':
+      return reason.short;
     case 'failed':
     case 'stepFailed':
     case 'skipped':
@@ -245,7 +248,11 @@ const nodeStateOf = ({ state }: StateParams): RowNode['state'] => {
 
 export const rowStateNode = ({ state }: StateParams): RowNode => {
   const node = nodeStateOf({ state });
-  if (state.reason?.kind === 'review' || state.reason?.kind === 'job') {
+  if (
+    state.reason?.kind === 'review' ||
+    state.reason?.kind === 'job' ||
+    state.reason?.kind === 'auto'
+  ) {
     return { state: node, label: state.reason.word };
   }
   if (state.reason?.kind === 'deciding') {

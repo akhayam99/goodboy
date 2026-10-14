@@ -24,6 +24,9 @@ vi.mock('../../../../store', async () => ({
   useAppStore: <T,>(selector: (state: Record<string, unknown>) => T) =>
     selector({ sessionPhaseRuns: {}, reportError }),
 }));
+vi.mock('../../../auto/useTalkItThrough', () => ({
+  useTalkItThrough: () => ({ isAvailable: false, talk: vi.fn() }),
+}));
 vi.mock('../../useSessionSuggestions', () => ({
   useSessionSuggestions: () => suggestionState.list,
 }));

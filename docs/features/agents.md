@@ -98,6 +98,10 @@ Hear about it when an agent steps outside its role, like a planner editing files
 
 Run a plan part by part. An implementer given a plan splits into one sub-agent per part, shown as 3.1 and 3.2, and a plan can give each part done-when checks and the files it expects to touch.
 
+### Auto agent
+
+Try an agent that picks the roles for you. **Auto** answers a question itself and, when there is something to make, hands it to a Planner, Implementer, Tester, Reviewer or another role, chooses a model for each and reads what comes back. It is an experiment and is off until you turn on **Auto agent** in Settings, General, **Experiments**; off, you pick the role as before. Auto shows up as one row in the Overview, and its chat has a **Work** list on the left, a card for each agent it starts and **Approve plan** when a Planner finished. Set a **Spend cap** once per workspace, and **Stop** or **Change approach** while it waits.
+
 ### History rewriter and Scribe
 
 Let two helpers work on your history and your pull request text without the power to push. **Write with Scribe** in the create form writes the title and description, and you read and edit them before you press Create. If it fails, the card says so and offers **Retry**.

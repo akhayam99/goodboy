@@ -1,10 +1,12 @@
-import { Button, Chip, FormActions } from '@goodboy/ui';
+import { Button, FormActions } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { Docked } from '../../../shared/components/Docked';
 import { PromptField } from '../../../shared/components/PromptField';
 import { RoutingPicker } from '../../../shared/components/RoutingPicker';
 import type { usePromptFiles } from '../../../shared/hooks/usePromptFiles';
 import type { AgentRoutingChoice } from '../hooks/useAgentRouting';
+import { AutoLimitChip } from '../../auto/AutoLimitChip';
+import type { AutoTreeLimitModel } from '../../auto/useAutoTreeLimit';
 
 type PromptFiles = ReturnType<typeof usePromptFiles>;
 
@@ -18,6 +20,7 @@ type Props = {
   readonly promptFiles: PromptFiles;
   readonly connected: ReadonlyArray<ProviderId>;
   readonly choice: AutoRoutingChoice;
+  readonly limit?: AutoTreeLimitModel;
   readonly isStarting: boolean;
   readonly error: string | null;
   readonly actionsHost?: HTMLElement | null;
@@ -29,12 +32,26 @@ type Props = {
 };
 
 const EMPTY_REASON = 'Set a goal to start';
+const NO_CLAUDE_REASON = 'Auto runs on Claude. Connect Claude in Providers.';
+
+type ReasonParams = {
+  readonly hasClaude: boolean;
+  readonly hasGoal: boolean;
+};
+
+const startReason = ({ hasClaude, hasGoal }: ReasonParams): string | null => {
+  if (!hasClaude) {
+    return NO_CLAUDE_REASON;
+  }
+  return hasGoal ? null : EMPTY_REASON;
+};
 
 export const AutoComposerView = ({
   goal,
   promptFiles,
   connected,
   choice,
+  limit,
   isStarting,
   error,
   actionsHost,
@@ -45,21 +62,18 @@ export const AutoComposerView = ({
   onDiscard,
 }: Props) => {
   const hasGoal = goal.trim() !== '';
+  const hasClaude = connected.length > 0;
+  const canStart = hasGoal && hasClaude;
   return (
     <>
       <section aria-label="Auto" className="flex min-w-0 flex-col gap-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="text-label text-foreground">Auto</span>
-          <Chip tone="warning" kind="state" shape="badge" label="Experimental" />
-          <span className="text-meta text-muted-foreground">It may not work well yet.</span>
-        </div>
         <PromptField
           kind="message"
           label="Describe the work"
           value={goal}
           onChange={onGoalChange}
           onSubmit={onSubmit}
-          isSubmitBlocked={!hasGoal || isStarting}
+          isSubmitBlocked={!canStart || isStarting}
           placeholder="Describe the work."
           minRows={4}
           maxRows={12}
@@ -85,11 +99,20 @@ export const AutoComposerView = ({
               reason: choice.suggestionReason,
             }}
             recommendationKind="auto"
+            autoTrigger="resolved"
             disabled={isStarting}
             overridden={choice.routing !== null}
             onReset={choice.reset}
             onChange={choice.pick}
           />
+          {limit === undefined ? null : (
+            <AutoLimitChip
+              usd={limit.usd}
+              isFromSession={limit.isFromSession}
+              isDisabled={isStarting}
+              onChange={limit.change}
+            />
+          )}
         </div>
       </section>
       {hasGoal && onDiscard !== undefined ? (
@@ -103,12 +126,12 @@ export const AutoComposerView = ({
         <FormActions
           {...(footerClassName !== undefined && { className: footerClassName })}
           error={error}
-          reason={hasGoal ? null : EMPTY_REASON}
+          reason={startReason({ hasClaude, hasGoal })}
         >
           <Button
             size="md"
             onClick={onSubmit}
-            disabled={!hasGoal || isStarting}
+            disabled={!canStart || isStarting}
             isBusy={isStarting}
             busyLabel="Starting Auto"
           >
