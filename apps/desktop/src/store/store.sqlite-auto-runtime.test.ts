@@ -59,7 +59,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
-  stubStoryInvoke({ auto_capability_revoke_tree: 0 });
+  stubStoryInvoke({});
   await openStorySqlite();
 });
 

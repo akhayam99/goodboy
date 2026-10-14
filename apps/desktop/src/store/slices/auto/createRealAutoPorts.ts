@@ -19,9 +19,7 @@ import type {
   ChildStartOutcome,
   LookupDeliveryRunParams,
   ReadMountSnapshotParams,
-  RevokeCapabilitiesParams,
   StartChildTurnParams,
-  WatchYieldParams,
 } from './ports';
 import { resolveChildRouting } from './resolveChildRouting';
 import { makeStartAutoTurn } from './startAutoTurn';
@@ -44,10 +42,8 @@ export type RealAutoPortsDeps = Readonly<{
   refreshAgents: (params: RefreshAgentsParams) => Promise<void>;
   lookupDeliveryRun: (params: LookupDeliveryRunParams) => Promise<DeliveryRun | null>;
   worktreeSnapshot: (params: ReadMountSnapshotParams) => Promise<WorktreeSnapshot>;
-  revokeTreeCapabilities: (params: RevokeCapabilitiesParams) => Promise<number>;
   listLiveRunIds: () => Promise<ReadonlySet<string>>;
   isPlanApprovalRequired: () => boolean;
-  watchYield: (params: WatchYieldParams) => void;
   sleep: (params: SleepParams) => Promise<void>;
   nowMs: () => number;
   newId: () => string;
@@ -128,7 +124,6 @@ export const createRealAutoPorts = (deps: RealAutoPortsDeps): AutoPorts => {
     resolveRouting: async (request) =>
       resolveChildRouting({ state: deps.getState(), request, nowMs: deps.nowMs() }),
     isPlanApprovalRequired: deps.isPlanApprovalRequired,
-    watchYield: deps.watchYield,
     startAutoTurn: makeStartAutoTurn(deliveredDeps),
     lookupDeliveryRun: deps.lookupDeliveryRun,
     ensureChildAgent: makeEnsureChildAgent({ db: deps.db, refreshAgents: deps.refreshAgents }),
@@ -137,9 +132,6 @@ export const createRealAutoPorts = (deps: RealAutoPortsDeps): AutoPorts => {
     cancelRun: async ({ sessionId, agentId }) => {
       const cancelled = await deps.cancelTurnConfirmed({ sessionId, agentId, reason: 'user' });
       return { outcome: cancelled.outcome };
-    },
-    revokeCapabilities: async ({ treeId }) => {
-      await deps.revokeTreeCapabilities({ treeId });
     },
     isRunLive: async ({ runId }) => (await deps.listLiveRunIds()).has(runId),
     readRunOutcome: ({ runId, agentId }) => readRunLedgerOutcome({ db: deps.db, runId, agentId }),

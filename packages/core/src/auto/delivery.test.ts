@@ -65,6 +65,8 @@ const rows = [
 const input = {
   ledgerBlock: 'Artifacts in this tree: None yet.',
   budgetLine: 'Budget for this conversation: 5.00 USD.',
+  digestBlock: 'STATE OF THIS CONVERSATION\nNo agent is open.',
+  artifactsBlock: '',
   rows,
   isRestart: false,
 };
@@ -100,7 +102,7 @@ describe('the message that delivers stored rows to Auto', () => {
     expect(text).toContain('(delegation delegation-2, question question-1)');
     expect(text).toContain('Which mount?');
     expect(text).toContain('options: a | b');
-    expect(text).toContain('answer command from your instructions');
+    expect(text).toContain('answer block for delegation delegation-2 and question question-1');
   });
 
   it('adds the restart notice first when the answer was cut short', () => {
@@ -118,5 +120,43 @@ describe('the message that delivers stored rows to Auto', () => {
       storedDeliveryOf({ value: { delivery: { text: 'hello', rowIds: ['a', 7, 'b'] } } }),
     ).toEqual({ text: 'hello', rowIds: ['a', 'b'] });
     expect(storedDeliveryOf({ value: { kind: 'user' } })).toBeNull();
+  });
+});
+
+describe('refusals and the state digest in a delivery', () => {
+  const refusal = {
+    kind: 'refusal',
+    runId: 'run-1',
+    action: 'delegate',
+    code: 'budget',
+    text: 'The budget left does not cover this batch.\nchild 1: budget',
+  };
+
+  it('shows a refusal with its code and per child lines, before the results', () => {
+    const text = buildDeliveryText({
+      ...input,
+      rows: [...rows, { id: 'refusal-row', payload: refusal }],
+    });
+
+    expect(text).toContain('REFUSED, NOT DONE');
+    expect(text).toContain('your delegate block was refused (budget):');
+    expect(text).toContain('  child 1: budget');
+    expect(text.indexOf('REFUSED, NOT DONE')).toBeLessThan(
+      text.indexOf('RESULTS FROM YOUR AGENTS'),
+    );
+  });
+
+  it('places the digest and the artifact text around the results', () => {
+    const text = buildDeliveryText({
+      ...input,
+      digestBlock: 'STATE OF THIS CONVERSATION\nOpen agents:',
+      artifactsBlock: 'ARTIFACT artifact-1 (report) "Report" v1\nbody text',
+    });
+
+    const order = ['Budget for this', 'STATE OF THIS', 'RESULTS FROM', 'ARTIFACT artifact-1'].map(
+      (part) => text.indexOf(part),
+    );
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+    expect(order.every((index) => index >= 0)).toBe(true);
   });
 });

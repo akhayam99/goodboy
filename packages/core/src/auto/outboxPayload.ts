@@ -37,6 +37,14 @@ export type UserPayload = Readonly<{
   facts: UserFacts;
 }>;
 
+export type RefusalPayload = Readonly<{
+  kind: 'refusal';
+  runId: string;
+  action: string;
+  code: string;
+  text: string;
+}>;
+
 export type StoredDelivery = Readonly<{
   text: string;
   rowIds: ReadonlyArray<string>;
@@ -76,6 +84,12 @@ export const isUserPayload = (value: unknown): value is UserPayload =>
   value['kind'] === 'user' &&
   typeof value['text'] === 'string' &&
   isRecord(value['facts']);
+
+export const isRefusalPayload = (value: unknown): value is RefusalPayload =>
+  isRecord(value) &&
+  value['kind'] === 'refusal' &&
+  typeof value['runId'] === 'string' &&
+  typeof value['text'] === 'string';
 
 export const storedDeliveryOf = ({ value }: ValueParams): StoredDelivery | null => {
   if (!isRecord(value)) {

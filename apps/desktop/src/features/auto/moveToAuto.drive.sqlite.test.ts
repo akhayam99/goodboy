@@ -91,7 +91,6 @@ const withRuntime = () => {
       ports,
       now: Date.now,
     },
-    isEnabled: true,
     onError: (error) => {
       throw error instanceof Error ? error : new Error('runtime error');
     },

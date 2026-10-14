@@ -12,6 +12,7 @@ import {
   type Statement,
 } from '@goodboy/db';
 import { brandId, type AutoOutboxId } from '@goodboy/types';
+import { applyAutoBlock } from './applyAutoBlock';
 import type { AutoTurnEnded } from './ports';
 import type { AgentVerbContext } from './verbContext';
 
@@ -89,11 +90,13 @@ const nextPhaseOf = ({ pendingCount, openCount, hasDelegations }: NextPhaseParam
 type AttemptParams = {
   readonly ctx: AgentVerbContext;
   readonly ended: AutoTurnEnded;
+  readonly isRefused: boolean;
 };
 
 const settleOnce = async ({
   ctx,
   ended,
+  isRefused,
 }: AttemptParams): Promise<SettleAutoTurnOutcome | 'retry'> => {
   const tree = await getAutoTree({ db: ctx.db, treeId: ended.treeId });
   if (tree === null) {
@@ -127,7 +130,8 @@ const settleOnce = async ({
         openCount: open.length,
         hasDelegations: all.length > 0,
       });
-  const hasProgress = isYield || (ended.exit === 'ok' && ended.assistantText.trim() !== '');
+  const hasProgress =
+    isYield || (ended.exit === 'ok' && !isRefused && ended.assistantText.trim() !== '');
   const applied = await ctx.scheduler.transition({
     treeId: tree.id,
     expect: { phaseRev: tree.phaseRev, generation: tree.generation, from: [tree.phase] },
@@ -149,8 +153,10 @@ export const settleAutoTurn = async ({
   ended,
 }: SettleAutoTurnParams): Promise<SettleAutoTurnOutcome> => {
   await reconcileTurnCost({ ctx, ended });
+  const applied = await applyAutoBlock({ ctx, ended });
+  const isRefused = applied.kind === 'refused';
   for (let attempt = 0; attempt < MAX_CAS_ATTEMPTS; attempt += 1) {
-    const outcome = await settleOnce({ ctx, ended });
+    const outcome = await settleOnce({ ctx, ended, isRefused });
     if (outcome !== 'retry') {
       return outcome;
     }

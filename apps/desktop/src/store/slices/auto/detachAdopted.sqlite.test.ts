@@ -112,7 +112,6 @@ describe('detaching an agent from Auto', () => {
         ports,
         now: () => AUTO_SEED_NOW,
       },
-      isEnabled: true,
       onError: () => undefined,
       sleep: async () => undefined,
       watchPolls: 3,

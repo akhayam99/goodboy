@@ -10,7 +10,6 @@ import { useAutoStart } from '../hooks/useAutoStart';
 import { useConfirmStartMode } from '../../auto/useConfirmStartMode';
 import { useAutoTreeLimit } from '../../auto/useAutoTreeLimit';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
-import { autoOwnRouting } from '../../auto/autoOwnRouting';
 import { AutoComposerView } from './AutoComposerView';
 
 type Props = {
@@ -38,11 +37,6 @@ export const AutoComposer = ({
     ),
   );
   const routed = useAgentRouting({ sessionId, kind: 'auto' });
-  const choice = {
-    ...routed,
-    effective: autoOwnRouting({ routing: routed.effective }),
-    suggestion: autoOwnRouting({ routing: routed.suggestion }),
-  };
   const start = useAutoStart({ sessionId });
   const confirmMode = useConfirmStartMode();
   const workspaceId = useAppStore(
@@ -66,10 +60,10 @@ export const AutoComposer = ({
         return;
       }
       await limit.persist();
-      await start({ goal, routing: choice.effective });
+      await start({ goal, routing: routed.effective });
       setGoal({ sessionId, goal: '' });
       files.clear();
-      choice.reset();
+      routed.reset();
       onDone();
     } catch (cause) {
       setError(formatError(cause));
@@ -84,7 +78,7 @@ export const AutoComposer = ({
       goal={goal}
       promptFiles={files}
       connected={connected}
-      choice={choice}
+      choice={routed}
       limit={limit}
       isStarting={isStarting}
       error={error}

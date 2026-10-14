@@ -5,18 +5,10 @@ import { advancePhase } from './advancePhase';
 import { confirmDelegation, type ConfirmDelegationOutcome } from './confirmDelegation';
 import { deliverNext } from './deliver';
 import { enforceDeadlines } from './enforceDeadlines';
-import { enforceYield } from './enforceYield';
-import { executeAgentCommand } from './executeAgentCommand';
 import { finishAttempt } from './finishAttempt';
 import { joinReady } from './join';
 import { launchChildren } from './launchChildren';
-import type {
-  AgentCommand,
-  AutoTurnEnded,
-  BridgeOutcome,
-  ChildTurnEnded,
-  WatchYieldParams,
-} from './ports';
+import type { AutoTurnEnded, ChildTurnEnded } from './ports';
 import { recoverTree } from './recover';
 import { settleAutoTurn } from './settleAutoTurn';
 import type { SleepParams } from './startDeliveredTurn';
@@ -33,7 +25,6 @@ const DEFAULT_WATCH_POLLS = 3_600;
 
 export type AutoRuntimeOptions = Readonly<{
   ctx: AgentVerbContext;
-  isEnabled: boolean;
   onError: (error: unknown) => void;
   sleep?: (params: SleepParams) => Promise<void>;
   watchPolls?: number;
@@ -46,11 +37,9 @@ export type ConfirmRuntimeParams = Readonly<{
 
 export type AutoRuntime = Readonly<{
   ctx: AgentVerbContext;
-  executeCommand: (command: AgentCommand) => Promise<BridgeOutcome>;
   drive: (treeId: AutoTree['id']) => Promise<void>;
   onAutoTurnEnded: (ended: AutoTurnEnded) => void;
   onChildEnded: (ended: ChildTurnEnded) => void;
-  watchYield: (params: WatchYieldParams) => void;
   stop: (treeId: AutoTree['id']) => Promise<StopTreeOutcome>;
   confirm: (params: ConfirmRuntimeParams) => Promise<ConfirmDelegationOutcome>;
   say: (params: Omit<SubmitUserMessageParams, 'ctx'>) => Promise<SubmitUserMessageOutcome>;
@@ -66,7 +55,6 @@ const realSleep = ({ ms }: SleepParams): Promise<void> =>
 
 export const createAutoRuntime = ({
   ctx,
-  isEnabled,
   onError,
   sleep = realSleep,
   watchPolls = DEFAULT_WATCH_POLLS,
@@ -121,16 +109,12 @@ export const createAutoRuntime = ({
   };
   const runtime: AutoRuntime = {
     ctx,
-    executeCommand: (command) => executeAgentCommand({ ctx, command, isEnabled }),
     drive,
     onAutoTurnEnded: (ended) => {
       track(settleAutoTurn({ ctx, ended }).then(() => drive(ended.treeId)));
     },
     onChildEnded: (ended) => {
       track(finishAttempt({ ctx, ended }).then(() => drive(ended.treeId)));
-    },
-    watchYield: (params) => {
-      track(enforceYield({ ctx, watch: params, sleep }).then(() => drive(params.treeId)));
     },
     stop: async (treeId) => {
       const outcome = await stopTree({ ctx, treeId });

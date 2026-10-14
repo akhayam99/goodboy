@@ -55,7 +55,6 @@ describe('stopping a tree', () => {
 
     expect(outcome).toEqual({ kind: 'stopped' });
     expect(world.state.ports.cancels).toHaveLength(3);
-    expect(world.state.ports.revocations).toEqual([{ treeId: world.treeId }]);
     expect(await treeOf(world)).toMatchObject({
       phase: 'stopped',
       stopState: 'confirmed',
@@ -238,7 +237,6 @@ describe('stopping a tree', () => {
     const world = await running();
     const other = createAutoRuntime({
       ctx: { ...world.state.ctx, scheduler: secondScheduler({ world: world.state.world }) },
-      isEnabled: true,
       onError: () => undefined,
     });
 

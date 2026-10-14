@@ -11,7 +11,6 @@ import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 import { toAttachmentInputs } from '../../../attachments/pendingAttachment';
 import { useConfirmStartMode } from '../../../auto/useConfirmStartMode';
 import { useAutoTreeLimit } from '../../../auto/useAutoTreeLimit';
-import { autoOwnRouting } from '../../../auto/autoOwnRouting';
 import { resolveSpawnRouting } from '../../spawn-routing';
 import { AutoComposerView, type AutoRoutingChoice } from '../AutoComposerView';
 import { useDraftStart } from './useDraftStart';
@@ -39,13 +38,11 @@ export const AutoStart = ({ workspaceId }: Props) => {
   }, [draft.autoGoal, draft.agentPrompt, patchSessionDraft, workspaceId]);
   const roleDefault = useWorkspaceKindRouting({ workspaceId, kind: 'auto' });
   const spawnDefault = resolveSpawnRouting({ kind: 'auto', roleDefault, session: null });
-  const suggestion = autoOwnRouting({
-    routing: {
-      provider: spawnDefault.provider,
-      model: spawnDefault.model,
-      effort: spawnDefault.effort,
-    },
-  });
+  const suggestion = {
+    provider: spawnDefault.provider,
+    model: spawnDefault.model,
+    effort: spawnDefault.effort,
+  };
   const promptFiles = usePromptFiles({ note: 'Files go to Auto' });
   const { start, isStarting, error } = useDraftStart({ workspaceId });
   const confirmMode = useConfirmStartMode();
@@ -54,7 +51,7 @@ export const AutoStart = ({ workspaceId }: Props) => {
 
   const choice: AutoRoutingChoice = {
     routing: draft.autoRouting,
-    effective: autoOwnRouting({ routing: draft.autoRouting ?? suggestion }),
+    effective: draft.autoRouting ?? suggestion,
     suggestion,
     suggestionReason: SUGGESTION_REASON,
     pick: ({ provider, model, effort }: PickedRoute) => {

@@ -216,12 +216,5 @@ export const delegate = async ({ ctx, command }: DelegateParams): Promise<Bridge
   if (outcome.kind === 'refused') {
     return refusedAdmit({ outcome });
   }
-  if (outcome.kind === 'accepted') {
-    ctx.ports.watchYield({
-      treeId: grant.treeId,
-      generation: grant.generation,
-      runId: grant.runId,
-    });
-  }
   return receiptOutcome({ ctx, command, requestId, isReplay: outcome.kind === 'replayed' });
 };

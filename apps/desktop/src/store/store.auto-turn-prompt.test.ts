@@ -55,8 +55,6 @@ const SESSION_ID = 'session-1' as SessionId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 const AUTO_AGENT_ID = 'agent-auto' as AgentId;
 const PLAIN_AGENT_ID = 'agent-plain' as AgentId;
-const BRIDGE_COMMAND =
-  '"/Users/ana/Library/Application Support/Goodboy/Goodboy.app/Contents/MacOS/goodboy" query agent';
 
 const autoAgent: Agent = buildStoryAgent({
   id: AUTO_AGENT_ID,
@@ -84,7 +82,6 @@ type TurnParams = {
 const systemPromptOfTurn = async ({ agentId, isServing }: TurnParams): Promise<string> => {
   stubStoryInvoke({
     query_bridge_serving: isServing,
-    query_bridge_agent_command: isServing ? BRIDGE_COMMAND : null,
   });
   await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, agentId, content: 'go' });
   return String(
@@ -117,40 +114,34 @@ describe('the system prompt of an Auto turn', () => {
     });
   });
 
-  it('holds the absolute quoted command and no variable while the bridge serves', async () => {
-    const prompt = await systemPromptOfTurn({ agentId: AUTO_AGENT_ID, isServing: true });
+  it('teaches the block and names no command, serving or not', async () => {
+    for (const isServing of [true, false]) {
+      const prompt = await systemPromptOfTurn({ agentId: AUTO_AGENT_ID, isServing });
 
-    expect(prompt).toContain('You are Auto');
-    expect(prompt).toContain(`${BRIDGE_COMMAND} delegate --request-id`);
-    expect(prompt).not.toContain('GOODBOY_BIN');
-    expect(prompt).not.toContain('$');
+      expect(prompt).toContain('You are Auto');
+      expect(prompt).toContain('<<auto>>');
+      expect(prompt).not.toContain('query agent');
+      expect(prompt).not.toContain('Application Support');
+      storySpies.runTurn.mockClear();
+    }
   });
 
-  it('is the answer-only prompt while the delegation gate is off, serving or not', async () => {
+  it('is the answer-only prompt while the delegation gate is off', async () => {
     gates.isDelegationEnabled = false;
     try {
       const prompt = await systemPromptOfTurn({ agentId: AUTO_AGENT_ID, isServing: true });
 
       expect(prompt).toContain('not available yet');
-      expect(prompt).not.toContain('Application Support');
+      expect(prompt).not.toContain('<<auto>>');
     } finally {
       gates.isDelegationEnabled = true;
     }
-  });
-
-  it('is the answer-only prompt while the bridge does not serve', async () => {
-    const prompt = await systemPromptOfTurn({ agentId: AUTO_AGENT_ID, isServing: false });
-
-    expect(prompt).toContain('You are Auto');
-    expect(prompt).toContain('not available yet');
-    expect(prompt).not.toContain('Application Support');
-    expect(prompt).not.toContain('GOODBOY_BIN');
   });
 
   it('leaves the prompt of another kind unchanged', async () => {
     const prompt = await systemPromptOfTurn({ agentId: PLAIN_AGENT_ID, isServing: true });
 
     expect(prompt).not.toContain('You are Auto');
-    expect(prompt).not.toContain('Application Support');
+    expect(prompt).not.toContain('<<auto>>');
   });
 });

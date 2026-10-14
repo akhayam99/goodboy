@@ -6,7 +6,7 @@ import {
   listAutoReservations,
 } from '@goodboy/db';
 import { brandId, type AutoDelegationId } from '@goodboy/types';
-import { executeAgentCommand } from './executeAgentCommand';
+import { runAutoCommand } from './runAutoCommand';
 import type { AgentCommand } from './ports';
 import { makeAutoWorld, secondScheduler, WORLD_TREE, type AutoWorld } from './testing/autoWorld';
 import { makeFakePorts, WORLD_GRANT, type FakePorts } from './testing/fakePorts';
@@ -35,7 +35,7 @@ const delegateCommand = (spec: unknown, requestId = 'request-1'): AgentCommand =
 });
 
 const run = (setupResult: Setup, command: AgentCommand) =>
-  executeAgentCommand({ ctx: setupResult.ctx, command, isEnabled: true });
+  runAutoCommand({ ctx: setupResult.ctx, command });
 
 const scoutAndImplementer = {
   children: [
@@ -49,7 +49,7 @@ const scoutAndImplementer = {
   ],
 };
 
-describe('the delegate verb', () => {
+describe('the delegate command', () => {
   it('accepts a batch, captures each mount and answers with a receipt', async () => {
     const state = await setup();
     const outcome = await run(state, delegateCommand(scoutAndImplementer));
@@ -88,9 +88,6 @@ describe('the delegate verb', () => {
     const tree = await getAutoTree({ db: state.world.db, treeId: WORLD_TREE });
     expect(tree).toMatchObject({ phase: 'delegating', isYieldRequested: true });
     expect(await listAutoReservations({ db: state.world.db, treeId: WORLD_TREE })).toHaveLength(2);
-    expect(state.ports.yields).toEqual([
-      { treeId: WORLD_TREE, generation: 1, runId: 'run-auto-1' },
-    ]);
   });
 
   it('returns the same receipt for the same request and starts nothing twice', async () => {
@@ -101,7 +98,6 @@ describe('the delegate verb', () => {
     expect(second.isOk).toBe(true);
     expect(second.data).toMatchObject({ replayed: true, batchId: rows[0]?.batchId });
     expect(rows).toHaveLength(2);
-    expect(state.ports.yields).toHaveLength(1);
   });
 
   it('refuses the same request id with another spec', async () => {
@@ -132,7 +128,6 @@ describe('the delegate verb', () => {
       refusalsUsed: 1,
       turnDelegateCalls: 1,
     });
-    expect(state.ports.yields).toHaveLength(0);
   });
 
   it('refuses a mount that was deleted before admission and never writes on another one', async () => {
@@ -225,65 +220,12 @@ describe('the delegate verb', () => {
   it('leaves a window that does not own the tree out', async () => {
     const state = await setup();
     const other = secondScheduler({ world: state.world });
-    const outcome = await executeAgentCommand({
+    const outcome = await runAutoCommand({
       ctx: { ...state.ctx, scheduler: other },
       command: delegateCommand(scoutAndImplementer),
-      isEnabled: true,
     });
     expect(outcome).toMatchObject({ isOk: false, code: 'not_owner' });
     expect(await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE })).toHaveLength(0);
-  });
-
-  it('answers unavailable while delegation is switched off', async () => {
-    const state = await setup();
-    const outcome = await executeAgentCommand({
-      ctx: state.ctx,
-      command: delegateCommand(scoutAndImplementer),
-      isEnabled: false,
-    });
-    expect(outcome).toMatchObject({ isOk: false, code: 'delegation_unavailable' });
-    expect(await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE })).toHaveLength(0);
-  });
-
-  it('reads a receipt back by request id, and says when there is none', async () => {
-    const state = await setup();
-    await run(state, delegateCommand(scoutAndImplementer));
-    const found = await run(state, {
-      verb: 'request-status',
-      args: { 'request-id': 'request-1' },
-      grant: WORLD_GRANT,
-    });
-    expect(found.data).toMatchObject({ status: 'accepted', delegations: [{}, {}] });
-    const missing = await run(state, {
-      verb: 'request-status',
-      args: { 'request-id': 'request-9' },
-      grant: WORLD_GRANT,
-    });
-    expect(missing.data).toMatchObject({ status: 'not_found' });
-  });
-
-  it('reports the state of the conversation and of one agent', async () => {
-    const state = await setup();
-    await run(state, delegateCommand(scoutAndImplementer));
-    const overview = await run(state, { verb: 'status', args: {}, grant: WORLD_GRANT });
-    expect(overview.data).toMatchObject({
-      phase: 'delegating',
-      budget: expect.stringContaining('Budget'),
-      delegations: [{ role: 'scout' }, { role: 'implementer' }],
-    });
-    const rows = await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE });
-    const one = await run(state, {
-      verb: 'status',
-      args: { delegation: rows[0]?.id },
-      grant: WORLD_GRANT,
-    });
-    expect(one.data).toMatchObject({ role: 'scout', state: 'accepted' });
-    const unknown = await run(state, {
-      verb: 'status',
-      args: { delegation: 'delegation-nope' },
-      grant: WORLD_GRANT,
-    });
-    expect(unknown).toMatchObject({ isOk: false, code: 'delegation_unknown' });
   });
 
   it('refuses to finish while agents are still open', async () => {
@@ -305,15 +247,5 @@ describe('the delegate verb', () => {
     const state = await setup();
     const outcome = await run(state, { verb: 'finish', args: {}, grant: WORLD_GRANT });
     expect(outcome).toMatchObject({ isOk: true, data: { finished: true } });
-  });
-
-  it('refuses an artifact that is not in this conversation', async () => {
-    const state = await setup();
-    const outcome = await run(state, {
-      verb: 'status',
-      args: { artifact: 'artifact-elsewhere' },
-      grant: WORLD_GRANT,
-    });
-    expect(outcome).toMatchObject({ isOk: false, code: 'artifact_unknown' });
   });
 });

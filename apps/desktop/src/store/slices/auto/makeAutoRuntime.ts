@@ -4,7 +4,6 @@ import { invokeAgentList } from '../../../features/workflows/workflows';
 import { lookupDeliveryRun, listLiveRunIds } from '../../../features/chat/turn';
 import { worktreeSnapshot } from '../../../features/worktree/worktree';
 import { useAppStore, type AppStore } from '../../store';
-import { revokeTreeCapabilities } from './capabilityCommands';
 import { createAutoRuntime, type AutoRuntime } from './createAutoRuntime';
 import { createRealAutoPorts } from './createRealAutoPorts';
 import { createAutoScheduler } from './scheduler';
@@ -43,10 +42,8 @@ export const makeAutoRuntime = ({
     },
     lookupDeliveryRun,
     worktreeSnapshot,
-    revokeTreeCapabilities,
     listLiveRunIds,
     isPlanApprovalRequired: () => isAutoPlanApprovalRequired({ settings: getState().settings }),
-    watchYield: (params) => holder.runtime?.watchYield(params),
     sleep,
     nowMs: Date.now,
     newId: () => crypto.randomUUID(),
@@ -54,7 +51,6 @@ export const makeAutoRuntime = ({
   const scheduler = createAutoScheduler({ db, ownerId: crypto.randomUUID(), now: Date.now });
   holder.runtime = createAutoRuntime({
     ctx: { db, scheduler, ports, now: Date.now },
-    isEnabled: true,
     sleep,
     ...(watchPolls === undefined ? {} : { watchPolls }),
     onError: (error) => {

@@ -83,7 +83,6 @@ describe('starting the turn of Auto through the store', () => {
       confinedRole: 'auto',
       runId: 'run-planned',
       deliveryId: 'outbox-1',
-      autoTree: { treeId: 'tree-1', generation: 2 },
       content: 'hello',
     });
     expect(state.ended[0]).toMatchObject({

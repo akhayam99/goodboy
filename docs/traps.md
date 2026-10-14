@@ -438,7 +438,8 @@ fails silently at runtime.
   runs: `spawnAgent` (first message) and `sendTurn` (every later operator message) call
   the door `currentAutoUserTurnPort`, which queues a `user` outbox row. The door exists
   only in the main window and only while delegation is on; in another window the plain
-  turn answers without the bridge. Never send an Auto root a turn by hand with
+  turn answers, and an `<<auto>>` block in its reply is never applied: only `settleAutoTurn`
+  applies a block. Never send an Auto root a turn by hand with
   `origin: 'operator'` expecting the plain path; a delivery uses `origin: 'delegation'`.
 - `auto_*` money columns are REAL dollars. Compare them through
   `autoRemainingUsdSql` and `AUTO_USD_EPSILON`, not with `===`.

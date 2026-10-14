@@ -79,9 +79,6 @@ export const readTurnStream = async ({ set, get, ctx }: Params) => {
       ...(writeSetLease !== undefined && { writeSetLease }),
       ...(confinedRole !== undefined && { confinedRole }),
       ...(ctx.input.deliveryId !== undefined && { deliveryId: ctx.input.deliveryId }),
-      ...(ctx.input.autoTree !== undefined && {
-        autoTree: { ...ctx.input.autoTree, agentId: activeAgentId },
-      }),
       ...((isolatedCopyPath !== null || isScribeTurn) && { blocksPush: true }),
       ...(rewriterCopy !== null && { excludesTmp: true }),
       ...(apiKeyBinding ?? {}),

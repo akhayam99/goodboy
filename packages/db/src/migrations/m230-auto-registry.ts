@@ -124,7 +124,7 @@ CREATE TABLE IF NOT EXISTS auto_outbox (
   id TEXT PRIMARY KEY,
   tree_id TEXT NOT NULL,
   generation INTEGER NOT NULL CHECK (generation >= 1),
-  kind TEXT NOT NULL CHECK (kind IN ('results', 'question', 'user')),
+  kind TEXT NOT NULL CHECK (kind IN ('results', 'question', 'user', 'refusal')),
   join_key TEXT NOT NULL,
   payload_json TEXT NOT NULL CHECK (json_valid(payload_json)),
   state TEXT NOT NULL DEFAULT 'pending' CHECK (state IN ('pending', 'claimed', 'accepted', 'dropped')),

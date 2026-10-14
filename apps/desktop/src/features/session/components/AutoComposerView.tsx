@@ -32,16 +32,16 @@ type Props = {
 };
 
 const EMPTY_REASON = 'Set a goal to start';
-const NO_CLAUDE_REASON = 'Auto runs on Claude. Connect Claude in Providers.';
+const NO_PROVIDER_REASON = 'Auto needs a connected provider. Connect one in Providers.';
 
 type ReasonParams = {
-  readonly hasClaude: boolean;
+  readonly hasProvider: boolean;
   readonly hasGoal: boolean;
 };
 
-const startReason = ({ hasClaude, hasGoal }: ReasonParams): string | null => {
-  if (!hasClaude) {
-    return NO_CLAUDE_REASON;
+const startReason = ({ hasProvider, hasGoal }: ReasonParams): string | null => {
+  if (!hasProvider) {
+    return NO_PROVIDER_REASON;
   }
   return hasGoal ? null : EMPTY_REASON;
 };
@@ -62,8 +62,8 @@ export const AutoComposerView = ({
   onDiscard,
 }: Props) => {
   const hasGoal = goal.trim() !== '';
-  const hasClaude = connected.length > 0;
-  const canStart = hasGoal && hasClaude;
+  const hasProvider = connected.length > 0;
+  const canStart = hasGoal && hasProvider;
   return (
     <>
       <section aria-label="Auto" className="flex min-w-0 flex-col gap-3">
@@ -126,7 +126,7 @@ export const AutoComposerView = ({
         <FormActions
           {...(footerClassName !== undefined && { className: footerClassName })}
           error={error}
-          reason={startReason({ hasClaude, hasGoal })}
+          reason={startReason({ hasProvider, hasGoal })}
         >
           <Button
             size="md"

@@ -4,7 +4,7 @@
 > switch, how a person starts it, what it shows in the Overview and its chat,
 > how a plan is approved, and which providers it may use. **Not for** the
 > tables and the scheduler behind it ([architecture.md](architecture.md), Auto
-> tree registry), the verbs it calls ([query-bridge.md](query-bridge.md)) or
+> tree registry) or
 > what a role is ([concepts.md](concepts.md)).
 
 Auto is an agent that answers questions itself and hands the work it cannot do
@@ -54,9 +54,8 @@ start is the one of before: role grid, Generalist as default, Routing.
   first turn is a delivery like every later one. A start that loses the message
   says "Auto didn't start" and the chat keeps no half-started turn.
 - The composer is one goal, files, one model chip and **Start Auto**. Auto runs
-  on Claude: a route on another provider is replaced by the Claude default for
-  Auto (`autoOwnRouting`), and **Start Auto** says why it is off when Claude is
-  not connected.
+  on any connected provider, because it only reads (`AUTO_OWN_PROVIDERS`), with the
+  route the workspace picks for the role. **Start Auto** says why it is off when no provider is connected.
 - The **Spend cap** chip proposes 5 USD, or shows the budget of the session when
   there is one. The first start stores the cap for the workspace
   (`auto.treeLimitUsd.<workspace id>`, compare and swap), so the next start is
@@ -178,30 +177,45 @@ Retry-safe credit retries at v2?" with **Confirm** and **Cancel**. The answer
 goes through one port, `registerDelegationDecisionPort`, which the runtime
 registers; without a port the click says Auto cannot take the answer yet.
 
-## How Auto calls the bridge
+## How Auto decides
 
-Auto runs on Claude with a Bash allow list that names one rule,
-`Bash("<exe>" query agent:*)`, where `<exe>` is the absolute path of the running
-Goodboy executable. The Auto system prompt (`buildAutoSystemPrompt`) writes every
-command with that same quoted path and no variable, because Claude refuses a Bash
-command that holds a variable even when the allow list names it. The path and the
-rule come from one Rust function (`query_bridge::agent_bridge_prefix`), so they
-cannot drift, and the prompt reads it from the `query_bridge_agent_command`
-command when the turn is built (`buildTurnSpawn`). While the bridge is not
-serving, or the path cannot be quoted, Auto gets the answer-only prompt. Auto
-cannot write files, so it passes the delegate spec inline, as one JSON object on one
-line in single quotes (`delegate --request-id <id> --spec '{"children":[...]}'`). The
-CLI already reads a `--spec` value that starts with `{` as the spec itself
-(`query_bridge/cli.rs`, `spec_text`). An apostrophe inside the JSON is written
-`\u0027` and a line break `\n`, so the shell quoting never needs an escape and the
-command stays one Bash call that matches the allow rule. See
-[turns.md](turns.md) for the confinement and [query-bridge.md](query-bridge.md)
-for the verbs.
+Auto runs read-only on any provider: the same role access scouts and reviewers get (Claude with
+`--tools Read,Grep,Glob` in plan mode, Codex `-s read-only`, Cursor `--mode plan`, and so on). It
+has no shell and never calls Goodboy from inside its turn, so there is no bridge command, no
+capability token and no allow rule. It decides by ending its final reply with at most one block:
+
+```
+<<auto>>{"action":"delegate","requestId":"r1","children":[...]}<</auto>>
+```
+
+- `delegate` hands one to four children to agents of a role (`requestId` is optional and
+  derived from the run when missing; `children` is the spec `parseDelegateSpec` validates).
+- `answer` answers the question of a child (`delegation`, `question`, `text`).
+- `finish` says the work is done (`summary`). It is refused while an agent is open or a result
+  waits.
+- No block is a plain answer to the user.
+
+`parseAutoBlock` (`packages/core/src/auto/autoBlock.ts`) reads only the settled text of a turn that
+ended ok: it takes the last complete block, strips code fences, escapes raw line breaks in strings
+and falls back to the last `}` when the close marker is missing. `store/slices/auto/applyAutoBlock.ts`
+runs at the top of `settleAutoTurn` and only for the current run of a `deciding` tree that is not
+stopping, so a duplicate settle, a late settle after a stop and a recovered turn that passes the
+same text admit once (the admission guards and the request id replay do the rest).
+
+What Auto cannot say comes back as a message, not as a reply inside the turn. A refused spec, a
+budget or limit refusal and a block that does not parse become a `refusal` row in the outbox,
+delivered with the next turn under REFUSED, NOT DONE; such a turn counts as no progress, so
+`noProgressStreak` bounds retries. Every delivery starts with a digest of the tree (open agents
+with role, state and age, questions waiting, the budget) and carries the artifact text of each
+result, cut when long, so a provider that does not resume sessions still has its memory. The
+`<<auto>>` block is hidden in the transcript like the other markers; the delegation cards show
+what it did. See [query-bridge.md](query-bridge.md) for the bridge Auto does not use.
 
 ## Providers
 
-Auto itself runs on Claude. Its children run on Claude and Codex, never on
-Cursor or Gemini, which cannot confine a role. The pool of a tree is the run
+Auto itself runs on any provider (`AUTO_OWN_PROVIDERS`), because it only reads. Its children run
+on Claude and Codex, never on Cursor or Gemini, which cannot confine a role
+(`AUTO_CHILD_PROVIDERS`). The pool of a tree is the run
 pool when there is one, else the workspace pool (the providers the workspace
 policy on the Models page does not turn off), else every allowed provider
 (`autoChildPool`, `runProviderPool`).

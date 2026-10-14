@@ -405,7 +405,6 @@ describe('a restart right after the hand-over', () => {
         ports,
         now: () => AUTO_SEED_NOW,
       },
-      isEnabled: true,
       onError: (error) => {
         throw error instanceof Error ? error : new Error('runtime error');
       },

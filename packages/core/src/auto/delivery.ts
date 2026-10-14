@@ -1,8 +1,10 @@
 import {
   isQuestionPayload,
+  isRefusalPayload,
   isResultsPayload,
   isUserPayload,
   type QuestionPayload,
+  type RefusalPayload,
   type ResultsPayload,
   type UserFacts,
   type UserPayload,
@@ -17,6 +19,8 @@ export type DeliveryRow = Readonly<{
 export type BuildDeliveryParams = Readonly<{
   ledgerBlock: string;
   budgetLine: string;
+  digestBlock: string;
+  artifactsBlock: string;
   rows: ReadonlyArray<DeliveryRow>;
   isRestart: boolean;
 }>;
@@ -59,10 +63,29 @@ const questionsBlock = ({ payloads }: QuestionsBlockParams): string | null => {
       `  ${question.text.replace(/\s+/g, ' ').trim()}`,
       ...suggestions,
       ...recommended,
-      '  Answer it with the answer command from your instructions, or ask the user in this chat.',
+      `  Answer it with an answer block for delegation ${question.delegationId} and question ${question.questionId}, or ask the user in this chat.`,
     ];
   });
   return ['QUESTIONS FROM YOUR AGENTS', ...lines].join('\n');
+};
+
+type RefusalsBlockParams = {
+  readonly payloads: ReadonlyArray<RefusalPayload>;
+};
+
+const refusalsBlock = ({ payloads }: RefusalsBlockParams): string | null => {
+  if (payloads.length === 0) {
+    return null;
+  }
+  const lines = payloads.flatMap((payload) => [
+    `- your ${payload.action} block was refused (${payload.code}):`,
+    ...payload.text.split('\n').map((line) => `  ${line}`),
+  ]);
+  return [
+    'REFUSED, NOT DONE',
+    ...lines,
+    'Nothing in the refused blocks was started. Choose again; do not send the same block.',
+  ].join('\n');
 };
 
 type FactsLinesParams = {
@@ -112,11 +135,14 @@ const userBlock = ({ payloads }: UserBlockParams): string | null => {
 export const buildDeliveryText = ({
   ledgerBlock,
   budgetLine,
+  digestBlock,
+  artifactsBlock,
   rows,
   isRestart,
 }: BuildDeliveryParams): string => {
   const results: ResultsPayload[] = [];
   const questions: QuestionPayload[] = [];
+  const refusals: RefusalPayload[] = [];
   const users: UserPayload[] = [];
   for (const row of rows) {
     const value = row.payload;
@@ -128,6 +154,10 @@ export const buildDeliveryText = ({
       questions.push(value);
       continue;
     }
+    if (isRefusalPayload(value)) {
+      refusals.push(value);
+      continue;
+    }
     if (isUserPayload(value)) {
       users.push(value);
     }
@@ -136,7 +166,10 @@ export const buildDeliveryText = ({
     isRestart ? AUTO_RESTART_NOTICE : null,
     ledgerBlock,
     budgetLine,
+    digestBlock,
+    refusalsBlock({ payloads: refusals }),
     resultsBlock({ payloads: results }),
+    artifactsBlock,
     questionsBlock({ payloads: questions }),
     userBlock({ payloads: users }),
   ];

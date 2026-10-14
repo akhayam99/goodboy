@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import type { ProviderPolicy } from '@goodboy/types';
 import { aSession, aWorkflowRun } from '@goodboy/types/testing';
 import { autoChildPool } from './autoChildPool';
-import { autoOwnRouting } from './autoOwnRouting';
 import { workspaceProviderPool } from './workspaceProviderPool';
 
 const POOLED_RUN = aWorkflowRun({ providerPool: ['codex'] });
@@ -90,23 +89,5 @@ describe('workspaceProviderPool', () => {
       }),
     ).toEqual(['anthropic']);
     expect(workspaceProviderPool({ policy: [{ id: 'anthropic', state: 'off' }] })).toBeNull();
-  });
-});
-
-describe('autoOwnRouting', () => {
-  it('keeps a Claude route as it is', () => {
-    const routing = { provider: 'anthropic', model: 'opus', effort: 'high' } as const;
-
-    expect(autoOwnRouting({ routing })).toEqual(routing);
-  });
-
-  it('puts Auto on the Claude default when the route is on another provider', () => {
-    const routed = autoOwnRouting({
-      routing: { provider: 'codex', model: 'gpt-6-astra', effort: 'high' },
-    });
-
-    expect(routed.provider).toBe('anthropic');
-    expect(routed.model).not.toBe('gpt-6-astra');
-    expect(routed.effort).toBe('medium');
   });
 });

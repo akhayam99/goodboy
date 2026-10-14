@@ -5,7 +5,7 @@ const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke }));
 
-import { isQueryBridgeServing, queryBridgeAgentCommand } from './queryBridge';
+import { isQueryBridgeServing } from './queryBridge';
 
 describe('isQueryBridgeServing', () => {
   beforeEach(() => {
@@ -29,28 +29,5 @@ describe('isQueryBridgeServing', () => {
     invoke.mockRejectedValueOnce(new Error('command not found'));
 
     await expect(isQueryBridgeServing()).resolves.toBe(false);
-  });
-});
-
-describe('queryBridgeAgentCommand', () => {
-  beforeEach(() => {
-    invoke.mockReset();
-  });
-
-  it('returns the quoted absolute command the backend builds', async () => {
-    invoke.mockResolvedValueOnce('"/Applications/Goodboy.app/Contents/MacOS/goodboy" query agent');
-
-    await expect(queryBridgeAgentCommand()).resolves.toBe(
-      '"/Applications/Goodboy.app/Contents/MacOS/goodboy" query agent',
-    );
-    expect(invoke).toHaveBeenCalledWith('query_bridge_agent_command');
-  });
-
-  it('returns null when the bridge is not serving or the command is unreachable', async () => {
-    invoke.mockResolvedValueOnce(null);
-    await expect(queryBridgeAgentCommand()).resolves.toBeNull();
-
-    invoke.mockRejectedValueOnce(new Error('command not found'));
-    await expect(queryBridgeAgentCommand()).resolves.toBeNull();
   });
 });

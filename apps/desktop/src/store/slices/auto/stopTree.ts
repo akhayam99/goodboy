@@ -188,7 +188,6 @@ export const stopTree = async ({ ctx, treeId }: StopTreeParams): Promise<StopTre
     if (!isRequested) {
       return { kind: 'idle', reason: 'not_owner' };
     }
-    await ctx.ports.revokeCapabilities({ treeId });
     tree = await getAutoTree({ db: ctx.db, treeId });
     if (tree === null) {
       return { kind: 'idle', reason: 'no_tree' };

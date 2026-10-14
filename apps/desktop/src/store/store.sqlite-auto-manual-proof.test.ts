@@ -90,6 +90,7 @@ type Turns = {
   readonly deliveries: Map<string, string>;
   readonly live: Set<string>;
   readonly releases: Map<string, () => void>;
+  readonly texts: Map<string, string>;
   readonly started: Array<{ readonly runId: string; readonly content: string }>;
 };
 
@@ -97,6 +98,7 @@ const turns: Turns = {
   deliveries: new Map(),
   live: new Set(),
   releases: new Map(),
+  texts: new Map(),
   started: [],
 };
 
@@ -119,7 +121,12 @@ const heldStream = (runId: ProviderRunId): AsyncIterable<TurnEvent> =>
       turns.releases.set(runId, resolve);
     });
     turns.live.delete(runId);
-    yield { kind: 'assistant_text', runId, delta: 'Done for now.', at: TEST_NOW };
+    yield {
+      kind: 'assistant_text',
+      runId,
+      delta: turns.texts.get(runId) ?? 'Done for now.',
+      at: TEST_NOW,
+    };
   })();
 
 const finishRun = (runId: string): void => {
@@ -161,6 +168,7 @@ beforeEach(async () => {
   turns.deliveries.clear();
   turns.live.clear();
   turns.releases.clear();
+  turns.texts.clear();
   turns.started.length = 0;
   await resetStoryStore();
   await insertWorkspace({ db: await openStorySqlite(), workspace });
@@ -180,7 +188,7 @@ beforeEach(async () => {
     fallbackUsed: false,
   });
   storySpies.scratchDirPrepare.mockResolvedValue(SCRATCH);
-  stubStoryInvoke({ workspaces_with_unread: [], auto_capability_revoke_tree: 1 });
+  stubStoryInvoke({ workspaces_with_unread: [] });
   storySpies.cancelTurn.mockImplementation(async (runId: unknown) => {
     finishRun(String(runId));
   });
@@ -285,19 +293,7 @@ describe('stopping an Auto tree with three children, on the real store', () => {
     await runtime.say({ treeId, text: GOAL });
     await vi.waitFor(() => expect(turns.started).toHaveLength(1));
     const planned = (await treeOf(world, treeId))?.activeRunId ?? '';
-    const delegated = await runtime.executeCommand({
-      verb: 'delegate',
-      args: { 'request-id': 'request-1', spec: JSON.stringify(THREE_SCOUTS) },
-      grant: {
-        agentId: world.rootAgentId,
-        treeId,
-        generation: 1,
-        workspaceId: String(workspace.id),
-        sessionId: world.sessionId,
-        runId: planned,
-      },
-    });
-    expect(delegated).toMatchObject({ isOk: true });
+    turns.texts.set(planned, delegateBlockText({ requestId: 'request-1' }));
     finishRun(planned);
     await vi.waitFor(() => expect(turns.live.size).toBe(3));
     await vi.waitFor(async () => expect((await treeOf(world, treeId))?.phase).toBe('waiting'));
@@ -331,24 +327,19 @@ type DelegateScoutsParams = {
   readonly booted: Booted;
 };
 
+type BlockTextParams = {
+  readonly requestId: string;
+};
+
+const delegateBlockText = ({ requestId }: BlockTextParams): string =>
+  `I will start three agents.\n<<auto>>${JSON.stringify({ action: 'delegate', requestId, ...THREE_SCOUTS })}<</auto>>`;
+
 const delegateThreeScouts = async ({ booted }: DelegateScoutsParams): Promise<string> => {
   const { world, runtime, treeId } = booted;
   await runtime.say({ treeId, text: GOAL });
   await vi.waitFor(() => expect(turns.started).toHaveLength(1));
   const planned = (await treeOf(world, treeId))?.activeRunId ?? '';
-  const delegated = await runtime.executeCommand({
-    verb: 'delegate',
-    args: { 'request-id': 'request-1', spec: JSON.stringify(THREE_SCOUTS) },
-    grant: {
-      agentId: world.rootAgentId,
-      treeId,
-      generation: 1,
-      workspaceId: String(workspace.id),
-      sessionId: world.sessionId,
-      runId: planned,
-    },
-  });
-  expect(delegated).toMatchObject({ isOk: true });
+  turns.texts.set(planned, delegateBlockText({ requestId: 'request-1' }));
   finishRun(planned);
   await vi.waitFor(() => expect(turns.live.size).toBe(3));
   await vi.waitFor(async () => expect((await treeOf(world, treeId))?.phase).toBe('waiting'));

@@ -118,7 +118,7 @@ afterEach(async () => {
 });
 
 describe('a delegation turn through the real store', () => {
-  it('runs on the planned run id and hands the delivery and the tree to the spawn', async () => {
+  it('runs on the planned run id and hands the delivery to the spawn', async () => {
     const planned = brandId<ProviderRunId>({ value: 'run-planned-by-the-scheduler' });
     storySpies.runTurn.mockImplementation(({ runId }: { readonly runId: ProviderRunId }) =>
       saying(runId, 'Here is what I found.'),
@@ -132,7 +132,6 @@ describe('a delegation turn through the real store', () => {
       origin: 'delegation',
       runId: planned,
       deliveryId: 'outbox-1',
-      autoTree: { treeId: 'tree-1', generation: 2 },
       onSettled: (info) => {
         settled.push(info);
       },
@@ -142,7 +141,6 @@ describe('a delegation turn through the real store', () => {
     expect(spawn).toMatchObject({
       runId: planned,
       deliveryId: 'outbox-1',
-      autoTree: { treeId: 'tree-1', generation: 2, agentId: first.agentId },
     });
     expect(settled).toEqual([
       expect.objectContaining({
@@ -189,7 +187,6 @@ describe('a delegation turn through the real store', () => {
     const spawn = storySpies.runTurn.mock.calls[0]?.[0];
     expect(spawn).toBeDefined();
     expect(spawn).not.toHaveProperty('deliveryId');
-    expect(spawn).not.toHaveProperty('autoTree');
     expect(spawn).not.toHaveProperty('confinedRole');
   });
 

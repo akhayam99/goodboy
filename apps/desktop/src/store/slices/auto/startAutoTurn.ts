@@ -18,7 +18,6 @@ export const makeStartAutoTurn =
         content: params.text,
         origin: 'delegation',
         confinedRole: AUTO_CONFINED_ROLE,
-        autoTree: { treeId: params.treeId, generation: params.generation },
       },
       runId: brandId<ProviderRunId>({ value: params.runId }),
       deliveryId: params.deliveryId,

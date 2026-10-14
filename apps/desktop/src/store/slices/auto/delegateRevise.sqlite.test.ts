@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { EMPTY_USER_FACTS } from '@goodboy/core';
 import { getAutoArtifact, getAutoDelegation, insertAutoOutbox } from '@goodboy/db';
 import { brandId, type ArtifactId, type AutoDelegationId, type AutoOutboxId } from '@goodboy/types';
-import { executeAgentCommand } from './executeAgentCommand';
+import { runAutoCommand } from './runAutoCommand';
 import type { AgentCommand } from './ports';
 import {
   batchInput,
@@ -89,8 +89,7 @@ const reviseCommand = (child: Record<string, unknown>): AgentCommand => ({
   grant: WORLD_GRANT,
 });
 
-const run = (state: Setup, command: AgentCommand) =>
-  executeAgentCommand({ ctx: state.ctx, command, isEnabled: true });
+const run = (state: Setup, command: AgentCommand) => runAutoCommand({ ctx: state.ctx, command });
 
 describe('delegating a revise of an artifact the tree already has', () => {
   it('sends it to the producer with the user words verbatim and the current version', async () => {
@@ -209,21 +208,5 @@ describe('delegating a revise of an artifact the tree already has', () => {
       }),
     );
     expect(outcome.data).toMatchObject({ delegations: [{ state: 'accepted' }] });
-  });
-
-  it('lets Auto read the artifact it revises, only in its own tree', async () => {
-    const state = await setup();
-    const own = await run(state, {
-      verb: 'status',
-      args: { artifact: 'plan-1' },
-      grant: WORLD_GRANT,
-    });
-    expect(own.data).toMatchObject({
-      artifactId: 'plan-1',
-      kind: 'plan',
-      revision: 1,
-      approval: 'needs_approval',
-      body: PLAN_SOURCE,
-    });
   });
 });

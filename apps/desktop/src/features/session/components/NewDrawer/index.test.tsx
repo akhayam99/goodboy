@@ -389,7 +389,7 @@ describe('NewDrawer (Agent, experiment on)', () => {
     expect(screen.queryByText(/project/i)).toBeNull();
   });
 
-  it('keeps Start Auto disabled and says why when Claude is not connected', () => {
+  it('keeps Start Auto disabled and says why when no provider is connected', () => {
     useAppStore.setState({ providers: [{ ...connected('anthropic'), connection: 'missing' }] });
     openDrawer({ payload: { tab: 'agent' } });
     fireEvent.change(screen.getByRole('textbox', { name: 'Describe the work' }), {
@@ -397,10 +397,12 @@ describe('NewDrawer (Agent, experiment on)', () => {
     });
 
     expect(buttonOf(screen.getByRole('button', { name: 'Start Auto' })).disabled).toBe(true);
-    expect(screen.getByText('Auto runs on Claude. Connect Claude in Providers.')).toBeDefined();
+    expect(
+      screen.getByText('Auto needs a connected provider. Connect one in Providers.'),
+    ).toBeDefined();
   });
 
-  it('puts Auto on Claude even when the workspace default is another provider', async () => {
+  it('keeps the workspace default provider for Auto', async () => {
     useAppStore.setState({
       providers: [connected('anthropic'), connected('codex')],
       sessions: [
@@ -418,7 +420,7 @@ describe('NewDrawer (Agent, experiment on)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Start Auto' }));
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
-    expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({ provider: 'anthropic' });
+    expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({ provider: 'codex' });
   });
 
   it('keeps Start Auto disabled until a goal is written', () => {

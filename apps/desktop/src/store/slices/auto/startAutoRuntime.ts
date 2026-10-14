@@ -1,4 +1,3 @@
-import type { UnlistenFn } from '@tauri-apps/api/event';
 import { AUTO_GATES } from '@goodboy/core';
 import { listAutoTreesToRecover, type Database } from '@goodboy/db';
 import { brandId, type AutoDelegationId, type AutoTreeId, type WorkspaceId } from '@goodboy/types';
@@ -12,8 +11,6 @@ import { isMainWindow } from '../../../features/workspace/window';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { useAppStore } from '../../store';
 import type { AutoRuntime } from './createAutoRuntime';
-import { AGENT_UNAVAILABLE } from './executeAgentCommand';
-import { listenAgentCommands } from './listenAgentCommands';
 import { makeAutoRuntime } from './makeAutoRuntime';
 import type { SleepParams } from './startDeliveredTurn';
 import {
@@ -40,7 +37,7 @@ export const startAutoRuntime = async ({
   db = tauriDatabase,
   isEnabled = AUTO_GATES.isDelegationEnabled,
   tickMs = AUTO_TICK_MS,
-}: StartAutoRuntimeParams = {}): Promise<UnlistenFn> => {
+}: StartAutoRuntimeParams = {}): Promise<() => void> => {
   if (!isMainWindow()) {
     return () => undefined;
   }
@@ -66,12 +63,7 @@ export const startAutoRuntime = async ({
       return outcome.kind === 'idle' && outcome.reason === 'not_owner' ? 'not_owner' : 'stopped';
     },
   });
-  const unlisten = await listenAgentCommands({
-    handle: async (command) =>
-      isEnabled ? runtimeOf().executeCommand(command) : AGENT_UNAVAILABLE,
-  });
   const unregister = (): void => {
-    unlisten();
     registerAutoUserTurnPort({ port: null });
     registerAutoDrivePort({ port: null });
     registerDelegationDecisionPort({ port: null });

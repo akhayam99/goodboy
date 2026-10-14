@@ -1,5 +1,6 @@
 import type { AutoTree } from '@goodboy/db';
 import { createAutoRuntime, type AutoRuntime } from '../createAutoRuntime';
+import { runAutoCommand } from '../runAutoCommand';
 import type { AgentCommand, ChildTurnEnded } from '../ports';
 import { WORLD_TREE } from './autoWorld';
 import { WORLD_GRANT } from './fakePorts';
@@ -33,7 +34,6 @@ export const makeRuntimeWorld = async ({
   const errors: Array<unknown> = [];
   const runtime = createAutoRuntime({
     ctx: state.ctx,
-    isEnabled: true,
     onError: (error) => {
       errors.push(error);
     },
@@ -73,7 +73,6 @@ export const restartedWorld = ({ world, isLeaseLapsed = true }: RestartParams): 
   const errors: Array<unknown> = [];
   const runtime = createAutoRuntime({
     ctx,
-    isEnabled: true,
     onError: (error) => {
       errors.push(error);
     },
@@ -109,7 +108,7 @@ export const autoDelegates = ({ world, spec, requestId = 'request-1', runId }: D
     args: { 'request-id': requestId, spec: JSON.stringify(spec) },
     grant: { ...WORLD_GRANT, runId: currentRun },
   };
-  return world.runtime.executeCommand(command);
+  return runAutoCommand({ ctx: world.runtime.ctx, command });
 };
 
 type CommandParams = {
@@ -126,7 +125,7 @@ export const autoCommand = ({ world, verb, args, runId }: CommandParams) => {
     args,
     grant: { ...WORLD_GRANT, runId: currentRun },
   };
-  return world.runtime.executeCommand(command);
+  return runAutoCommand({ ctx: world.runtime.ctx, command });
 };
 
 type AnswerParams = {
@@ -168,6 +167,24 @@ export const autoTurnEnds = async ({
   );
   await world.runtime.settled();
 };
+
+export const autoBlockText = (block: unknown): string =>
+  `<<auto>>${JSON.stringify(block)}<</auto>>`;
+
+type EndWithBlockParams = {
+  readonly world: RuntimeWorld;
+  readonly block: unknown;
+  readonly before?: string;
+  readonly after?: string;
+};
+
+export const autoTurnEndsWithBlock = ({
+  world,
+  block,
+  before = 'Handing this over.',
+  after = '',
+}: EndWithBlockParams): Promise<void> =>
+  autoTurnEnds({ world, text: `${before}\n\n${autoBlockText(block)}${after}` });
 
 type ChildEndParams = {
   readonly world: RuntimeWorld;

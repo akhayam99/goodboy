@@ -53,10 +53,8 @@ const worldWithPorts = async (patch: Partial<RealAutoPortsDeps> = {}) => {
     refreshAgents,
     lookupDeliveryRun: vi.fn(async () => null),
     worktreeSnapshot: vi.fn(async () => ({ head: 'abc123', entries: [], isPartial: false })),
-    revokeTreeCapabilities: vi.fn(async () => 1),
     listLiveRunIds: vi.fn(async () => new Set(['run-live'])),
     isPlanApprovalRequired: () => true,
-    watchYield: vi.fn(),
     sleep: async () => undefined,
     nowMs: () => NOW,
     newId: () => 'id-1',
@@ -131,7 +129,6 @@ describe('the ports of Auto on the real store', () => {
         },
       }),
     );
-    expect(sendTurn.mock.calls[0]?.[0]).not.toHaveProperty('autoTree');
   });
 
   it('reports the end of a child with its text, exit, cost and files', async () => {
@@ -204,13 +201,11 @@ describe('the ports of Auto on the real store', () => {
     });
   });
 
-  it('knows a live run from a finished one and revokes the tokens of a tree', async () => {
+  it('knows a live run from a finished one', async () => {
     const { ports, deps } = await worldWithPorts();
 
     expect(await ports.isRunLive({ runId: 'run-live' })).toBe(true);
     expect(await ports.isRunLive({ runId: 'run-gone' })).toBe(false);
-    await ports.revokeCapabilities({ treeId: WORLD_TREE });
-    expect(deps.revokeTreeCapabilities).toHaveBeenCalledWith({ treeId: WORLD_TREE });
   });
 
   it('reads the snapshot of a mount through the worktree command', async () => {

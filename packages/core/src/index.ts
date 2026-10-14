@@ -159,7 +159,6 @@ export {
   AUTO_TREE_DEPTH,
   AUTO_TREE_LIMITS,
   AUTO_TURN_CEILING_USD,
-  AUTO_YIELD_GRACE_SECONDS,
   attemptCeilingUsd,
   effectiveTreeLimits,
   type AutoEffectiveLimits,
@@ -224,12 +223,7 @@ export {
   type TurnGateParams,
 } from './auto/turnGate';
 export { AUTO_REFUSAL_TEXT, describeAutoRefusal, type RefusalChild } from './auto/refusalText';
-export {
-  AUTO_CHILD_PROVIDERS,
-  AUTO_OWN_PROVIDERS,
-  isAutoChildProvider,
-  isAutoOwnProvider,
-} from './auto/providers';
+export { AUTO_CHILD_PROVIDERS, AUTO_OWN_PROVIDERS, isAutoChildProvider } from './auto/providers';
 export {
   DELEGATE_FIELD_CHARS,
   DELEGATE_LIST_MAX,
@@ -282,14 +276,34 @@ export {
   EMPTY_USER_FACTS,
   isQuestionPayload,
   isResultsPayload,
+  isRefusalPayload,
   isUserPayload,
   storedDeliveryOf,
   type QuestionPayload,
   type ResultsPayload,
   type StoredDelivery,
   type UserFacts,
+  type RefusalPayload,
   type UserPayload,
 } from './auto/outboxPayload';
+export {
+  buildArtifactBodiesBlock,
+  buildStateDigest,
+  type ArtifactBodiesParams,
+  type DeliveryArtifactBody,
+  type DigestDelegation,
+  type DigestQuestion,
+  type StateDigestParams,
+} from './auto/digest';
+export {
+  AUTO_BLOCK_ACTIONS,
+  AUTO_BLOCK_CLOSE,
+  AUTO_BLOCK_OPEN,
+  parseAutoBlock,
+  type AutoBlock,
+  type AutoBlockOutcome,
+  type ParseAutoBlockParams,
+} from './auto/autoBlock';
 export {
   AUTO_RESTART_NOTICE,
   buildDeliveryText,

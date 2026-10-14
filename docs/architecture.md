@@ -730,16 +730,18 @@ refuses the file with `DatabaseFromNewerBuildError` instead of reading it.
   `detachAdoptionStatements` is the inverse.
 - A run started for an Auto delivery carries a `deliveryId`, and Rust refuses a
   second run for it ([turns.md](./turns.md) → Surviving a reload or a restart).
-- The bridge verbs of the Auto agent end in `store/slices/auto/executeAgentCommand.ts`.
-  Rust has already checked the capability against the live tree row
-  ([query-bridge.md](./query-bridge.md) → Capability tokens). `delegate.ts` parses the
+- Auto decides with one `<<auto>>` block at the end of its turn ([auto.md](./auto.md) → How Auto
+  decides). `applyAutoBlock.ts` reads it when `settleAutoTurn.ts` runs, for a turn that ended
+  ok on the current run of a tree that is `deciding` and not stopping, and calls `delegate.ts`,
+  `answerQuestion.ts` or `finishTree.ts` through `runAutoCommand.ts`. A refusal, or a block that
+  does not parse, becomes a `refusal` outbox row (join key `refusal:<run id>`, so a recovered
+  turn writes it once) that the next delivery shows. `delegate.ts` parses the
   spec (`core/auto/delegateSpec.ts`: a closed role list, rejected before any
   normalization), resolves each child (`resolveDelegateChild.ts`: the mount through
   `core/auto/mountPick.ts`, the model through `resolveProposedRouting`, the artifact
   bodies and the kickoff text from `core/auto/kickoff.ts`) and admits the batch in one
   transaction. A writer must name its mount; a reader without one gets the primary
-  mount, captured at admission. Everything answers unavailable while
-  `AUTO_GATES.isDelegationEnabled` is false.
+  mount, captured at admission. Nothing runs while `AUTO_GATES.isDelegationEnabled` is false.
 - Delivery to Auto is `deliver.ts`. One transaction claims the pending rows, stores the
   built text on the first row, reserves the turn ceiling and makes the tree `deciding`
   on a planned run id; then the turn starts under the first row id as its delivery id,
@@ -747,7 +749,10 @@ refuses the file with `DatabaseFromNewerBuildError` instead of reading it.
   reservation and the turn count back and blocks the tree with the reason. A claim that
   dies in between is found again by the delivery id. `settleAutoTurn.ts` picks the next
   phase when the turn ends (delegating, waiting, merging, done or answering), puts the
-  batch back when the turn failed, and counts a turn with no answer and no work.
+  batch back when the turn failed, and counts a turn with no answer and no work, or whose
+  block was refused. The text it delivers (`buildDeliveryMessage.ts`) starts with a digest of the
+  tree (open agents with role, state and age, questions waiting, the budget) and carries each
+  result's artifact text, cut when long, because a provider may not resume the session.
 - Children start in `launchChildren.ts` only once the Auto turn is over. Each child
   gets its agent row with the preallocated id (`createAutoChild.ts`), a baseline
   snapshot of its mount (`worktree_snapshot`) and a turn with `origin: 'delegation'`,
@@ -761,7 +766,7 @@ refuses the file with `DatabaseFromNewerBuildError` instead of reading it.
   unique key and `advancePhase.ts` moves the tree on. `createAutoRuntime.ts` runs these
   in order, one tree at a time.
 - `stopTree.ts` writes the stop first: the generation goes up, the phase is `stopping`,
-  the rows of the old generation are dropped and the capability tokens are revoked. Then
+  the rows of the old generation are dropped. Then
   it cancels the run of Auto and of every live attempt with the confirmed cancel. Only
   when every process is confirmed gone does it close the attempts, settle the
   delegations as stopped, reconcile or release the reservations and set `stopped`; one
@@ -779,8 +784,8 @@ refuses the file with `DatabaseFromNewerBuildError` instead of reading it.
   getter; `store.sqlite-auto-manual-proof.test.ts` runs two of them on the real store for the
   stop, restart and crash proofs.
 - `startAutoRuntime.ts` is the only place the pieces meet the app. `App.tsx` starts it in
-  the main window. While `AUTO_GATES.isDelegationEnabled` is false it only listens and
-  answers every agent verb unavailable. When it is true it builds the real ports
+  the main window. While `AUTO_GATES.isDelegationEnabled` is false it only registers the ports of the
+  screens and starts nothing. When it is true it builds the real ports
   (`createRealAutoPorts.ts`: the store's `sendTurn` and confirmed cancel, the mount list,
   `worktree_snapshot`, the delivery lookup of Rust, the child agent rows and the run
   ledger of `provider_runs`), claims each tree it recovers, and drives every live tree
@@ -797,7 +802,7 @@ refuses the file with `DatabaseFromNewerBuildError` instead of reading it.
   operator message to the root of an Auto tree takes the same door from `sendTurn`
   (`routeAutoUserTurn.ts`).
 - A child that asks a blocking question ends its attempt `paused` and queues a question row
-  for Auto at once. `answerQuestion.ts` (the `answer` verb) resumes it: in one transaction
+  for Auto at once. `answerQuestion.ts` (the `answer` action) resumes it: in one transaction
   it admits a new attempt on the same agent with the question and the answer stored on it,
   reserves a new ceiling, counts it against the attempt limit
   (`core/auto/resumeAdmission.ts`) and moves the delegation from `paused` to `starting`.

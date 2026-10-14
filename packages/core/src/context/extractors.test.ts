@@ -1214,6 +1214,13 @@ describe('extractMaterializeRequests', () => {
 });
 
 describe('stripControlMarkers', () => {
+  it('hides the auto block, whole and while it streams', () => {
+    const block = '<<auto>>{"action":"finish","summary":"done"}<</auto>>';
+    expect(stripControlMarkers(`All set.\n\n${block}`)).toBe('All set.');
+    expect(stripControlMarkers('All set.\n\n<<auto>>{"action":"fin')).toBe('All set.');
+    expect(stripControlMarkers('The mode is automatic <<autopilot>>')).toContain('automatic');
+  });
+
   it('strips block markers (plan, clusters, fan-out, scout-split, ctx-*)', () => {
     const text = 'before <<plan>>some plan<</plan>> middle <<clusters>>json<</clusters>> after';
     expect(stripControlMarkers(text)).toBe('before  middle  after');

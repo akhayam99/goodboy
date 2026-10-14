@@ -115,6 +115,8 @@ export const buildArtifactLedgerBlock = ({
   }
   const hidden = entries.length - lines.length;
   const tail =
-    hidden > 0 ? [`${hidden} more not shown. Read one with agent status --artifact <id>.`] : [];
+    hidden > 0
+      ? [`${hidden} more not shown. The text of an artifact comes with the results that made it.`]
+      : [];
   return [header, ...lines, ...tail].join('\n');
 };

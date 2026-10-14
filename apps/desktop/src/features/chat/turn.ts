@@ -123,11 +123,6 @@ type SpawnArgs = {
   };
   readonly confinedRole?: string;
   readonly deliveryId?: string;
-  readonly autoTree?: {
-    readonly treeId: string;
-    readonly generation: number;
-    readonly agentId: string;
-  };
   readonly writeSetLease?: {
     readonly holder: string;
     readonly entries: ReadonlyArray<{ readonly path: string; readonly token: string }>;

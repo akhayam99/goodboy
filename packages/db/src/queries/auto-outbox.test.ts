@@ -29,7 +29,7 @@ type RowParams = {
   readonly id: string;
   readonly joinKey: string;
   readonly generation?: number;
-  readonly kind?: 'results' | 'question' | 'user';
+  readonly kind?: 'results' | 'question' | 'user' | 'refusal';
 };
 
 const row = ({ id, joinKey, generation = 1, kind = 'results' }: RowParams) => ({
@@ -43,6 +43,16 @@ const row = ({ id, joinKey, generation = 1, kind = 'results' }: RowParams) => ({
 });
 
 describe('auto outbox', () => {
+  it('stores a refusal row for the next delivery', async () => {
+    const db = await world();
+    await insertAutoOutbox({
+      db,
+      outbox: row({ id: 'outbox-r', joinKey: 'refusal:run-1', kind: 'refusal' }),
+    });
+    const rows = await listAutoOutbox({ db, treeId, states: ['pending'] });
+    expect(rows.map((entry) => entry.kind)).toEqual(['refusal']);
+  });
+
   it('keeps one row per join key, however many times the join fires', async () => {
     const db = await world();
     const first = await insertAutoOutbox({

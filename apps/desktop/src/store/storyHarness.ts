@@ -134,7 +134,6 @@ const storyInvokeHandlers = {
     scoped: false,
   },
   query_bridge_serving: false,
-  query_bridge_agent_command: null,
   get_workspace_overrides: null,
   get_session_overrides: null,
   set_workspace_overrides: null,

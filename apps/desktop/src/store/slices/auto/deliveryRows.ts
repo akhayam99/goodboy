@@ -4,7 +4,8 @@ import type { AutoOutboxKind, AutoOutboxRow, AutoPhase } from '@goodboy/db';
 const KIND_RANK: Readonly<Record<AutoOutboxKind, number>> = {
   results: 0,
   question: 1,
-  user: 2,
+  refusal: 2,
+  user: 3,
 };
 
 type KindAllowedParams = {
@@ -20,7 +21,7 @@ const isKindAllowed = ({ phase, kind }: KindAllowedParams): boolean => {
     case 'done':
       return true;
     case 'waiting':
-      return kind === 'question';
+      return kind === 'question' || kind === 'refusal';
     case 'deciding':
     case 'delegating':
     case 'stopping':

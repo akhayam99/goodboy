@@ -2,7 +2,7 @@ import { brandId, type AutoOutboxId, type AutoTreeId } from '@goodboy/types';
 import type { Database, GuardedStatement, PlainStatement } from '../client';
 import { parseAutoJson } from './auto-delegations';
 
-export const AUTO_OUTBOX_KINDS = ['results', 'question', 'user'] as const;
+export const AUTO_OUTBOX_KINDS = ['results', 'question', 'user', 'refusal'] as const;
 
 export type AutoOutboxKind = (typeof AUTO_OUTBOX_KINDS)[number];
 

@@ -63,12 +63,6 @@ export type LoadMountsParams = Readonly<{
   sessionId: SessionId;
 }>;
 
-export type WatchYieldParams = Readonly<{
-  treeId: AutoTreeId;
-  generation: number;
-  runId: string;
-}>;
-
 export type TurnExit = 'ok' | 'error' | 'cancelled';
 
 export type AutoTurnEnded = Readonly<{
@@ -167,10 +161,6 @@ export type CancelRunOutcome = Readonly<{
   outcome: 'exited' | 'still_running' | 'failed';
 }>;
 
-export type RevokeCapabilitiesParams = Readonly<{
-  treeId: AutoTreeId;
-}>;
-
 export type ReadRunOutcomeParams = Readonly<{
   runId: string;
   agentId: AgentId;
@@ -192,14 +182,12 @@ export type AutoPorts = Readonly<{
   loadMounts: (params: LoadMountsParams) => Promise<ReadonlyArray<PickableMount>>;
   resolveRouting: (params: RoutingRequest) => Promise<RoutingOutcome>;
   isPlanApprovalRequired: () => boolean;
-  watchYield: (params: WatchYieldParams) => void;
   startAutoTurn: (params: StartAutoTurnParams) => Promise<TurnStartOutcome>;
   lookupDeliveryRun: (params: LookupDeliveryRunParams) => Promise<DeliveryRun | null>;
   ensureChildAgent: (params: EnsureChildAgentParams) => Promise<void>;
   startChildTurn: (params: StartChildTurnParams) => Promise<ChildStartOutcome>;
   readMountSnapshot: (params: ReadMountSnapshotParams) => Promise<MountSnapshot | null>;
   cancelRun: (params: CancelRunParams) => Promise<CancelRunOutcome>;
-  revokeCapabilities: (params: RevokeCapabilitiesParams) => Promise<void>;
   isRunLive: (params: IsRunLiveParams) => Promise<boolean>;
   readRunOutcome: (params: ReadRunOutcomeParams) => Promise<RunOutcome | null>;
 }>;

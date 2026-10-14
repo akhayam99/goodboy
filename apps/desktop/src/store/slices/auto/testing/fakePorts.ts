@@ -8,13 +8,11 @@ import type {
   ChildStartOutcome,
   DeliveryRun,
   EnsureChildAgentParams,
-  RevokeCapabilitiesParams,
   RoutingOutcome,
   RunOutcome,
   StartAutoTurnParams,
   StartChildTurnParams,
   TurnStartOutcome,
-  WatchYieldParams,
 } from '../ports';
 import { WORLD_RUN, WORLD_TREE } from './autoWorld';
 
@@ -62,12 +60,10 @@ export const CLEAN_SNAPSHOT: MountSnapshot = { head: 'abc123', entries: [], isPa
 
 export type FakePorts = AutoPorts &
   Readonly<{
-    yields: Array<WatchYieldParams>;
     autoTurns: Array<StartAutoTurnParams>;
     childTurns: Array<StartChildTurnParams>;
     ensuredChildren: Array<EnsureChildAgentParams>;
     cancels: Array<CancelRunParams>;
-    revocations: Array<RevokeCapabilitiesParams>;
     liveRuns: Set<string>;
     runOutcomes: Map<string, RunOutcome>;
     deliveries: Map<string, DeliveryRun>;
@@ -108,19 +104,15 @@ export const makeFakePorts = ({
   let cancelOutcome: CancelRunOutcome = { outcome: 'exited' };
   const cancelOutcomes = new Map<string, CancelRunOutcome>();
   const snapshots = new Map<string, Array<MountSnapshot | null>>();
-  const yields: Array<WatchYieldParams> = [];
   const autoTurns: Array<StartAutoTurnParams> = [];
   const childTurns: Array<StartChildTurnParams> = [];
   const ensuredChildren: Array<EnsureChildAgentParams> = [];
   const cancels: Array<CancelRunParams> = [];
-  const revocations: Array<RevokeCapabilitiesParams> = [];
   return {
-    yields,
     autoTurns,
     childTurns,
     ensuredChildren,
     cancels,
-    revocations,
     liveRuns,
     runOutcomes,
     deliveries,
@@ -165,9 +157,6 @@ export const makeFakePorts = ({
     loadMounts: async () => mounts,
     resolveRouting: async () => routing,
     isPlanApprovalRequired: () => isApprovalRequired,
-    watchYield: (params) => {
-      yields.push(params);
-    },
     startAutoTurn: async (params) => {
       if (failure !== null) {
         throw failure;
@@ -222,9 +211,6 @@ export const makeFakePorts = ({
     cancelRun: async (params) => {
       cancels.push(params);
       return cancelOutcomes.get(params.agentId) ?? cancelOutcome;
-    },
-    revokeCapabilities: async (params) => {
-      revocations.push(params);
     },
     isRunLive: async ({ runId }) => liveRuns.has(runId),
     readRunOutcome: async ({ runId }) => runOutcomes.get(runId) ?? null,

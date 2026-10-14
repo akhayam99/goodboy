@@ -19,7 +19,6 @@ import { lastReplyOf } from '../session/lastReplyOf';
 import { invokeAgentList } from '../workflows/workflows';
 import { currentAutoDrivePort } from './autoDrivePort';
 import { readAutoTreeLimit } from './autoTreeLimit';
-import { autoOwnRouting } from './autoOwnRouting';
 import { readIsAutoOn } from './readIsAutoOn';
 
 const OFF_MESSAGE = 'Auto is turned off in Settings, Experiments.';
@@ -96,7 +95,7 @@ export const moveToAuto = async ({
     diskState: view.diskState,
   }));
   const settings = selectResolvedSettings({ state, sessionId });
-  const routing = autoOwnRouting({ routing: scopedKindRouting({ state, settings, kind: 'auto' }) });
+  const routing = scopedKindRouting({ state, settings, kind: 'auto' });
   const capUsd = autoTreeCapUsd({
     sessionCapUsd: state.sessionBudgets[sessionId]?.softCapUsd ?? null,
     workspaceLimitUsd: await readAutoTreeLimit({

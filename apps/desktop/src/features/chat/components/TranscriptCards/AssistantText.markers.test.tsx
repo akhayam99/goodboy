@@ -29,3 +29,22 @@ describe('AssistantText with a question marker', () => {
     expect(screen.queryByText(/Overwrite it/)).toBeNull();
   });
 });
+
+describe('AssistantText with an auto block', () => {
+  it('hides the whole block and keeps the words around it', () => {
+    const text =
+      'Two agents will look at the ledger export.\n\n<<auto>>{"action":"delegate","requestId":"r1","children":[{"role":"scout","task":"Map it","reason":"Orientation"}]}<</auto>>';
+    render(<AssistantText text={text} sessionId={null} />);
+
+    screen.getByText('Two agents will look at the ledger export.');
+    expect(screen.queryByText(/auto>>/)).toBeNull();
+    expect(screen.queryByText(/delegate/)).toBeNull();
+  });
+
+  it('hides a block that is still streaming', () => {
+    render(<AssistantText text={'Working on it.\n\n<<auto>>{"action":"deleg'} sessionId={null} />);
+
+    screen.getByText('Working on it.');
+    expect(screen.queryByText(/deleg/)).toBeNull();
+  });
+});

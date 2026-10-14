@@ -7,11 +7,3 @@ export const isQueryBridgeServing = async (): Promise<boolean> => {
     return false;
   }
 };
-
-export const queryBridgeAgentCommand = async (): Promise<string | null> => {
-  try {
-    return await invokeCommand<string | null>('query_bridge_agent_command');
-  } catch {
-    return null;
-  }
-};

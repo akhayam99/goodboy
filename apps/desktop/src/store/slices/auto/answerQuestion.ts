@@ -259,13 +259,6 @@ export const answerQuestion = async ({
       ? refuseOutcome({ code: 'not_paused' })
       : replayOutcome({ prior: raced, delegation, questionId, text });
   }
-  if (!tree.isYieldRequested) {
-    ctx.ports.watchYield({
-      treeId: grant.treeId,
-      generation: grant.generation,
-      runId: grant.runId,
-    });
-  }
   return {
     isOk: true,
     data: {
