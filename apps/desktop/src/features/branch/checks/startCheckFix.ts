@@ -41,7 +41,8 @@ export const startCheckFix = ({ sessionId, url, mountId, optionKey }: Params): P
   return state.startFollowUp({
     sessionId,
     sourceAgentId: chain.debugger.id,
-    kind: 'implementer',
+    kind: 'ci-fixer',
+    name: `${chain.debugger.name} · Fix`,
     routing: selectKindRouting({ state, sessionId, kind: 'implementer' }),
     seed,
     origin: { sourceKind: 'failed_check', sourceCommentUrl: url },

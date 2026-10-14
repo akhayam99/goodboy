@@ -10,9 +10,18 @@ type Props = {
   readonly isRunning: boolean;
   readonly detail?: string;
   readonly tone?: 'success' | 'warning' | 'danger' | 'neutral';
+  readonly linkLabel?: string;
 };
 
-export const AgentChainStep = ({ sessionId, name, agent, isRunning, detail, tone }: Props) => {
+export const AgentChainStep = ({
+  sessionId,
+  name,
+  agent,
+  isRunning,
+  detail,
+  tone,
+  linkLabel,
+}: Props) => {
   const navigate = useAppStore((state) => state.navigate);
   const resolvedTone =
     tone ?? (isRunning ? 'warning' : agent?.status === 'failed' ? 'danger' : 'success');
@@ -30,10 +39,12 @@ export const AgentChainStep = ({ sessionId, name, agent, isRunning, detail, tone
         <Button
           variant="ghost"
           size="sm"
-          aria-label={`Open agent ${agent.name}`}
+          aria-label={
+            linkLabel === undefined ? `Open agent ${agent.name}` : `${linkLabel} of ${agent.name}`
+          }
           onClick={() => navigate({ to: agentPlace({ sessionId, agentId: agent.id }) })}
         >
-          Open agent
+          {linkLabel ?? 'Open agent'}
         </Button>
       )}
     </li>

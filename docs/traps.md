@@ -398,7 +398,18 @@ fails silently at runtime.
   GitHub start a run with a new URL. After the push, `checkTargetOf` keeps the
   latest analysis of the mount (same URL, or same check name) so the chain does
   not fall back to `none`, and `checkOutcomeOf` reads the new run by name: the
-  old URL still listed is "running", never "still fails".
+  old URL still listed is "running", never "still fails". An agent carries no
+  mount id: `checkTargetOf` ties an analyst to its mount through
+  `selectCheckMount`, which matches the analyzed URL against the pull requests
+  and check runs of each mount.
+
+- The CI fix roles are `ci-debugger` and `ci-fixer`, stored as their own kind.
+  An older version stored `debugger` and `implementer` on the same agents, and
+  `ciFixRoleOf` still reads those as CI roles when the agent has a failed-check
+  source. A stored role nobody knows reads as the generalist and warns once in
+  development, so a downgrade or a newer build never breaks the Activity list.
+  The generic Next card "Review the changes" must not fire on a `ci-fixer`: the
+  CI fix card owns that step.
 
 - A scout fan-out parent consolidates once every child has ended, and an ended
   child is `completed`, `failed`, `skipped`, `blocked` or `stopped`

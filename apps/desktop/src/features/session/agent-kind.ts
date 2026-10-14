@@ -20,7 +20,9 @@ import {
   GitPullRequestArrow,
   MapIcon,
   ScanEye,
+  ScanSearch,
   Telescope,
+  Wrench,
   type LucideIcon,
 } from 'lucide-react';
 import type { AutoLimitContext } from '../../store/slices/providerLimits/autoLimitContext';
@@ -95,6 +97,8 @@ export const AGENT_KIND_ORDER: ReadonlyArray<AgentKind> = [
   'resolver',
   'rewriter',
   'scribe',
+  'ci-debugger',
+  'ci-fixer',
   'auto',
   'generic',
 ];
@@ -116,6 +120,7 @@ export const kindConsumesPlan = ({ kind }: KindParams): boolean => {
 const WRITE_CAPABLE_KINDS: ReadonlySet<AgentKind> = new Set<AgentKind>([
   'implementer',
   'debugger',
+  'ci-fixer',
   'tester',
   'docs',
   'resolver',
@@ -273,6 +278,24 @@ export const AGENT_KIND_META: Record<
     persona: 'scribble',
     expectedOutput: 'text for the engine to use, never a file',
   },
+  'ci-debugger': {
+    label: 'CI debugger',
+    noun: 'CI debugger',
+    firstMessagePrompt: null,
+    pluralLabel: 'CI debuggers',
+    hint: 'Reads a failed check and proposes the fix. Started from a failing check',
+    persona: 'patches',
+    expectedOutput: 'a finding and one proposed fix, or a few options',
+  },
+  'ci-fixer': {
+    label: 'CI fixer',
+    noun: 'CI fixer',
+    firstMessagePrompt: null,
+    pluralLabel: 'CI fixers',
+    hint: 'Applies the chosen fix for a failed check and commits it. Never pushes',
+    persona: 'patches',
+    expectedOutput: 'one local commit with the fix',
+  },
 };
 
 export type AgentKindPaletteEntry = {
@@ -360,6 +383,18 @@ export const AGENT_KIND_PALETTE: Record<AgentKind, AgentKindPaletteEntry> = {
     fg: 'text-agent-scribe',
     label: AGENT_KIND_META.scribe.noun,
     icon: Feather,
+  },
+  'ci-debugger': {
+    bg: 'bg-agent-ci-debugger',
+    fg: 'text-agent-ci-debugger',
+    label: AGENT_KIND_META['ci-debugger'].noun,
+    icon: ScanSearch,
+  },
+  'ci-fixer': {
+    bg: 'bg-agent-ci-fixer',
+    fg: 'text-agent-ci-fixer',
+    label: AGENT_KIND_META['ci-fixer'].noun,
+    icon: Wrench,
   },
   auto: {
     bg: 'bg-agent-auto',
@@ -467,6 +502,8 @@ export const KIND_TO_ROLE: Record<AgentKind, AgentRole> = {
   resolver: 'resolver',
   rewriter: 'rewriter',
   scribe: 'scribe',
+  'ci-debugger': 'ci-debugger',
+  'ci-fixer': 'ci-fixer',
   auto: 'auto',
   generic: 'custom',
 };
@@ -509,13 +546,14 @@ export const kindRouting = ({
   };
 };
 
-export const AGENT_KIND_DEFAULTS: Record<
-  AgentKind,
-  {
-    readonly systemPrompt?: string;
-    readonly visible?: boolean;
-  }
-> = {
+type KindDefaults = {
+  readonly systemPrompt?: string;
+  readonly visible?: boolean;
+};
+
+type CiKind = 'ci-debugger' | 'ci-fixer';
+
+const BASE_KIND_DEFAULTS: Record<Exclude<AgentKind, CiKind>, KindDefaults> = {
   scout: {
     systemPrompt:
       'you are a scout agent. explore the codebase, answer questions, locate files and symbols. ALLOWED: read files, search, summarize findings, report structure. FORBIDDEN: editing files, writing code, creating plans, running tests. for a focused or single-area question, answer directly: do NOT split. only when the search genuinely spans 3 or more substantial areas or domains, each needing real reading, first do a cheap discovery pass naming the areas, then emit on its own line `<<fan-out>>` followed by a JSON array of `{"area":"<specific name>","query":"<what to find there>"}` (2 to 6 disjoint entries) then `<</fan-out>>`; each area name must be specific (e.g. "auth domain", never "area 1"). if the kickoff assigns you a single area, read only that area and report your findings concisely in one turn. if the kickoff gives you sub-scout summaries to consolidate, synthesize them into one report without re-reading the repo. if you catch yourself editing or planning, stop that action, name the action you stopped, and recommend spawning an implementer or planner agent. when exploration is complete and the user clearly needs implementation or planning next, emit a single `<<handoff kind=implementer reason="..." >>` or `<<handoff kind=planner reason="..." >>` marker on its own line.',
@@ -613,6 +651,20 @@ export const AGENT_KIND_DEFAULTS: Record<
   },
 };
 
+export const AGENT_KIND_DEFAULTS: Record<AgentKind, KindDefaults> = {
+  ...BASE_KIND_DEFAULTS,
+  'ci-debugger': {
+    visible: false,
+    systemPrompt:
+      'you are the CI debugger. a check failed on a pull request and the kickoff holds the evidence: the facts, the failed log tail and the changed paths. reproduce the failure, find the root cause and propose the fix. ALLOWED: reading code and logs, running the failing command locally to reproduce. FORBIDDEN: editing files, committing, pushing, splitting the work into sub-agents, creating plans, writing documentation. finish with the sections the kickoff asks for, with its exact headings.',
+  },
+  'ci-fixer': {
+    visible: false,
+    systemPrompt:
+      'you are the CI fixer. a check failed on a pull request, the CI debugger proposed a fix and the kickoff holds it. apply that fix on this branch and commit it. ALLOWED: reading and editing the files the fix names, running the failing command and the related tests, staging and committing on this branch. FORBIDDEN: pushing, creating or switching branches, refactoring beyond the fix, creating plans, writing documentation. when the fix does not work, say why and stop instead of widening it. nobody answers while you work, so never ask for permission to edit or to commit. the owner pushes the commit.',
+  },
+};
+
 export const visibleAgentKinds = (): ReadonlyArray<AgentKind> =>
   AGENT_KIND_ORDER.filter(
     (kind) =>
@@ -662,18 +714,19 @@ type ClassifyAgentParams = {
   readonly override: AgentKind | null;
 };
 
+type StoredAgentKindParams = {
+  readonly kind: string;
+};
+
+export const storedAgentKind = ({ kind }: StoredAgentKindParams): AgentKind =>
+  kind === 'pr-reviewer' ? kind : presentationKeyForRole({ role: kind });
+
 const classifyAgentRow = ({ agent, override }: ClassifyAgentParams): AgentKind => {
   if (override != null) {
-    if (override === 'pr-reviewer') {
-      return override;
-    }
-    return presentationKeyForRole({ role: override });
+    return storedAgentKind({ kind: override });
   }
   if (agent.kind != null) {
-    if (agent.kind === 'pr-reviewer') {
-      return agent.kind;
-    }
-    return presentationKeyForRole({ role: agent.kind });
+    return storedAgentKind({ kind: agent.kind });
   }
   return inferAgentKindFromName({ name: agent.name });
 };
@@ -718,10 +771,7 @@ export const resolveAgentKind = ({
   override,
 }: ResolveAgentKindParams): AgentKind => {
   if (override != null) {
-    if (override === 'pr-reviewer') {
-      return override;
-    }
-    return presentationKeyForRole({ role: override });
+    return storedAgentKind({ kind: override });
   }
   const fromName = inferAgentKindFromName({ name });
   if (fromName !== 'generic') {

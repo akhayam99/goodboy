@@ -27,8 +27,8 @@ export const analyzeFixSeed = ({ phase, shouldOpenDrawer = false }: Params) => {
   const fix: Agent = {
     ...seed.agent,
     id: FIX_ID,
-    name: 'Implementer',
-    kind: 'implementer',
+    name: `${seed.agent.name} · Fix`,
+    kind: 'ci-fixer',
     status: isFinished ? 'completed' : 'running',
     ordinal: 2,
     parentAgentId: seed.agent.id,

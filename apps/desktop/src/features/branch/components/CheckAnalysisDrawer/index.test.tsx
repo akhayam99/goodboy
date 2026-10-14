@@ -66,7 +66,7 @@ describe('the Debugger drawer', () => {
     }
     expect(within(drawer).getByText('Sonnet 5.5')).toBeDefined();
     expect(within(drawer).getByText('Done')).toBeDefined();
-    expect(within(drawer).getByRole('button', { name: 'Open agent Debugger' })).toBeDefined();
+    expect(within(drawer).getByRole('button', { name: /^Transcript of / })).toBeDefined();
   });
   it('says Running with the live step while the analysis works', () => {
     const drawer = showDrawer({ name: 'debugger-drawer-running' });

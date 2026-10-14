@@ -18,9 +18,11 @@ import {
   kindConsumesPlan,
   kindForRole,
   kindRouting,
+  kindWritesFiles,
   resolveAgentKind,
   resolveRootAgent,
   selectNonResolverStandaloneAgents,
+  storedAgentKind,
   visibleAgentKinds,
   visibleAgentRoles,
   visibleWorkflowRoles,
@@ -667,6 +669,8 @@ describe('kindForRole', () => {
     resolver: 'resolver',
     rewriter: 'rewriter',
     scribe: 'scribe',
+    'ci-debugger': 'ci-debugger',
+    'ci-fixer': 'ci-fixer',
     auto: 'auto',
     custom: 'generic',
   } satisfies Record<AgentRole, AgentKind>;
@@ -821,6 +825,49 @@ describe('agent visibility', () => {
       'docs',
       'custom',
     ]);
+  });
+});
+
+describe('the CI debugger and the CI fixer', () => {
+  const CI_KINDS = ['ci-debugger', 'ci-fixer'] as const;
+
+  it('stay out of the spawn menu, the role pickers and the workflow builder', () => {
+    for (const kind of CI_KINDS) {
+      expect(visibleAgentKinds()).not.toContain(kind);
+      expect(visibleAgentRoles()).not.toContain(kind);
+      expect(visibleWorkflowRoles()).not.toContain(kind);
+      expect(AGENT_KIND_DEFAULTS[kind].visible).toBe(false);
+    }
+  });
+
+  it('read back from the stored kind as themselves and carry their own prompt', () => {
+    for (const kind of CI_KINDS) {
+      expect(classifyAgent({ agent: agentOf({ kind }), override: null })).toBe(kind);
+      expect(classifyAgent({ agent: agentOf({ name: 'Debugger' }), override: kind })).toBe(kind);
+      expect(AGENT_KIND_DEFAULTS[kind].systemPrompt).toContain('CI');
+    }
+    expect(AGENT_KIND_DEFAULTS['ci-debugger'].systemPrompt).toContain('FORBIDDEN: editing files');
+    expect(AGENT_KIND_DEFAULTS['ci-fixer'].systemPrompt).toContain('pushing');
+  });
+
+  it('do not take a plan and the analysis cannot write', () => {
+    expect(kindConsumesPlan({ kind: 'ci-debugger' })).toBe(false);
+    expect(kindConsumesPlan({ kind: 'ci-fixer' })).toBe(false);
+    expect(kindWritesFiles({ kind: 'ci-debugger' })).toBe(false);
+    expect(kindWritesFiles({ kind: 'ci-fixer' })).toBe(true);
+  });
+});
+
+describe('storedAgentKind', () => {
+  it('keeps a known kind, maps an old role name to its kind and reads the rest as generic', () => {
+    expect(storedAgentKind({ kind: 'ci-fixer' })).toBe('ci-fixer');
+    expect(storedAgentKind({ kind: 'pr-reviewer' })).toBe('pr-reviewer');
+    expect(storedAgentKind({ kind: 'investigator' })).toBe('debugger');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    expect(storedAgentKind({ kind: 'ci-pilot' })).toBe('generic');
+    expect(storedAgentKind({ kind: '' })).toBe('generic');
+    expect(warn).toHaveBeenCalledTimes(2);
+    warn.mockRestore();
   });
 });
 

@@ -8,8 +8,10 @@ type MountChecks = {
   } | null;
 };
 
+export type CheckMountState = { readonly mountGithub: Readonly<Record<MountId, MountChecks>> };
+
 type Params = {
-  readonly state: { readonly mountGithub: Readonly<Record<MountId, MountChecks>> };
+  readonly state: CheckMountState;
   readonly url: string;
 };
 

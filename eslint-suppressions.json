@@ -9239,7 +9239,7 @@
   },
   "apps/desktop/src/store/slices/agents/spawnAgent.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
+      "count": 1
     },
     "@typescript-eslint/naming-convention": {
       "count": 3
@@ -11502,7 +11502,7 @@
   },
   "apps/desktop/src/store/slices/sessions/setCurrentSession.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 6
+      "count": 5
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 5
@@ -12672,7 +12672,7 @@
   },
   "apps/desktop/src/store/slices/workspaces/setCurrentWorkspace.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
+      "count": 2
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1

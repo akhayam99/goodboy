@@ -10,6 +10,8 @@ const SET_NOUN = {
   reviewer: 'reviewing',
   rewriter: 'rewriting history',
   scribe: 'writing pull requests',
+  'ci-debugger': 'debugging checks',
+  'ci-fixer': 'fixing checks',
   docs: 'docs',
   report: 'reports',
   wireframe: 'wireframes',

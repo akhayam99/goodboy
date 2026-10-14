@@ -4,7 +4,7 @@ import { AGENT_KIND_META, type AgentKind } from './agent-kind';
 
 export type FollowUpKind = Exclude<
   AgentKind,
-  'resolver' | 'rewriter' | 'scribe' | 'pr-reviewer' | 'auto'
+  'resolver' | 'rewriter' | 'scribe' | 'pr-reviewer' | 'ci-debugger' | 'ci-fixer' | 'auto'
 >;
 
 type FollowUpMove = {
@@ -28,6 +28,8 @@ const FOLLOW_UP_KINDS: Readonly<Record<AgentKind, ReadonlyArray<FollowUpKind>>> 
   resolver: [],
   rewriter: [],
   scribe: [],
+  'ci-debugger': [],
+  'ci-fixer': [],
   'pr-reviewer': [],
 };
 

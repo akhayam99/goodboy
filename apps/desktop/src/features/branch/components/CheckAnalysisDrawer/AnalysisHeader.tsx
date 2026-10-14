@@ -35,10 +35,10 @@ export const AnalysisHeader = ({ sessionId, agent, isRunning, activity }: Props)
       <Button
         variant="ghost"
         size="sm"
-        aria-label={`Open agent ${agent.name}`}
+        aria-label={`Transcript of ${agent.name}`}
         onClick={() => navigate({ to: agentPlace({ sessionId, agentId: agent.id }) })}
       >
-        Open agent
+        Transcript
       </Button>
     </div>
   );

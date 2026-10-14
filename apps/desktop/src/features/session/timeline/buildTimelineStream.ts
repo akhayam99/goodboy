@@ -36,6 +36,7 @@ import type {
 } from '../../workTreeModel/railGeometry';
 import { runIdentity, runIdentitySeed, type RunIdentity } from './runIdentity';
 import type { JobActivityFacts } from '../../../store/slices/history/jobFactsByAgentId';
+import type { CiFixStage } from '../../branch/checks/ciFixStages';
 import { jobRowState } from './jobActivity';
 import { resolverRowState, type ResolveActivityFacts } from './resolveActivity';
 import { decisionCountsText, isEmptyDecisionDiff } from './sessionEventPresentation';
@@ -120,6 +121,7 @@ export type TimelineRowItem = StreamRail & {
   readonly explode?: TimelineExplodeSlot;
   readonly branches?: ReadonlyArray<TimelineRowBranch>;
   readonly hasSubagentAttention?: true;
+  readonly ciStages?: ReadonlyArray<CiFixStage>;
 };
 
 export type TimelineMoreItem = StreamRail & {
@@ -181,6 +183,7 @@ type DraftRow = {
   readonly explode?: TimelineExplodeSlot;
   readonly branches?: ReadonlyArray<TimelineRowBranch>;
   readonly hasSubagentAttention?: true;
+  readonly ciStages?: ReadonlyArray<CiFixStage>;
 };
 
 type DraftDay = {
@@ -954,6 +957,7 @@ const agentRows = ({
     }
   }
   const isPending = entry.agent.status === 'pending' && !isSkippedUnderClosed;
+  const ciStages = context.jobFactsByAgentId.get(entry.agent.id)?.stages;
   const origin: DraftRow = {
     kind: 'row',
     id: entry.id,
@@ -973,6 +977,7 @@ const agentRows = ({
     isPending,
     ...(branches.length === 0 ? {} : { branches }),
     ...(facts.some((fact) => isSubagentAttention({ fact })) ? { hasSubagentAttention: true } : {}),
+    ...(ciStages === undefined ? {} : { ciStages }),
   };
   return [...nested, origin];
 };
@@ -1887,6 +1892,7 @@ const streamItemsOf = ({ drafts }: StreamItemsParams): ReadonlyArray<TimelineStr
       ...(draft.explode === undefined ? {} : { explode: draft.explode }),
       ...(draft.branches === undefined ? {} : { branches: draft.branches }),
       ...(draft.hasSubagentAttention === undefined ? {} : { hasSubagentAttention: true }),
+      ...(draft.ciStages === undefined ? {} : { ciStages: draft.ciStages }),
     });
     previous = draft;
   }

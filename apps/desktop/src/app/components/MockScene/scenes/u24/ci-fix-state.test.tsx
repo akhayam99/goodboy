@@ -74,7 +74,7 @@ describe('CI fix state scenes', () => {
       within(drawer).getByText('Committed 9e4c1a7 on the branch, not pushed yet.'),
     ).toBeDefined();
     expect(within(drawer).queryByText(/runs again/)).toBeNull();
-    expect(within(drawer).getByText('Committed 9e4c1a7')).toBeDefined();
+    expect(within(drawer).getByText('Needs you')).toBeDefined();
   });
   it('turns the Next card into a success card with Push', () => {
     show({ name: 'activity-check-fixed-local' });

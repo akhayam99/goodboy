@@ -1,9 +1,13 @@
 import type { Agent, MountId, SessionId } from '@goodboy/types';
 import type { AppState } from '../../../store/types';
 import { analyzedCheckNameOf } from './analyzedCheckNameOf';
+import {
+  selectCheckMount,
+  type CheckMountState,
+} from '../../../store/slices/agents/selectCheckMount';
 
 type Params = {
-  readonly state: Pick<AppState, 'sessionPhaseRuns' | 'transcripts'>;
+  readonly state: Pick<AppState, 'sessionPhaseRuns' | 'transcripts'> & CheckMountState;
   readonly sessionId: SessionId;
   readonly mountId: MountId;
   readonly failingUrl: string | null;
@@ -26,7 +30,7 @@ export const checkTargetOf = ({
     (latest, agent) =>
       agent.sourceKind !== 'failed_check' ||
       agent.sourceCommentUrl === undefined ||
-      agent.mountId !== mountId ||
+      selectCheckMount({ state, url: agent.sourceCommentUrl }) !== mountId ||
       agent.parentAgentId !== undefined ||
       agent.deletedAt !== undefined ||
       (latest !== null && latest.ordinal > agent.ordinal)

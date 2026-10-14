@@ -16,6 +16,7 @@ import { worktreeChangedFiles } from '../../worktree/worktree';
 import { buildAnalyzeChecksPrompt } from './buildAnalyzeChecksPrompt';
 import { checkAnalysisOf } from './checkAnalysisOf';
 import { checkRoutingOf } from './checkRoutingOf';
+import { ciFixName } from './ciFixName';
 import { fetchFailedCheckLog } from './fetchFailedCheckLog';
 
 type Params = {
@@ -85,8 +86,8 @@ const start = async ({
     ).paths;
   }
   return state.spawnAgent(sessionId, {
-    kindOverride: 'debugger',
-    name: 'Debugger',
+    kindOverride: 'ci-debugger',
+    name: ciFixName({ check: checks[0], pullRequest }),
     initialPrompt: buildAnalyzeChecksPrompt({
       pullRequest,
       checks: logs.map(({ check, log }) => ({ ...check, log })),

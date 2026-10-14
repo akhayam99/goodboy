@@ -8,6 +8,7 @@ type Params = {
   readonly sessionId: SessionId;
   readonly sourceAgentId: AgentId;
   readonly kind: AgentKind;
+  readonly name?: string;
   readonly routing: AgentKindRouting;
   readonly seed?: string;
   readonly summary?: string;
@@ -24,6 +25,7 @@ export const startFollowUp = (get: GetFn) => {
     sessionId,
     sourceAgentId,
     kind,
+    name,
     routing,
     seed,
     summary,
@@ -67,6 +69,7 @@ export const startFollowUp = (get: GetFn) => {
     const result = state
       .spawnAgent(sessionId, {
         kindOverride: kind,
+        ...(name !== undefined && { name }),
         ...routing,
         ...(triggeredPlanId !== undefined && { triggeredPlanId }),
         ...(prompt !== undefined && { initialPrompt: prompt }),

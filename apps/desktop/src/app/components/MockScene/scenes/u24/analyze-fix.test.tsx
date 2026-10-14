@@ -81,7 +81,7 @@ describe('analyze fix scenes', () => {
   });
   it('shows the Debugger as the one row for the chain in Activity', () => {
     show({ name: 'activity-check-chain' });
-    expect(screen.getAllByText('Debugger').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('CI fix · payments-api / test · #318').length).toBeGreaterThan(0);
     expect(screen.queryByText('Implementer')).toBeNull();
     const next = screen.getByRole('region', { name: 'Next' });
     expect(within(next).getByText('Fixing payments-api / test on #318')).toBeDefined();

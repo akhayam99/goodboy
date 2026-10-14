@@ -15,6 +15,8 @@ describe('PROFILE_ACCESS', () => {
       resolver: ['roles', 'explainMore'],
       rewriter: ['roles', 'workingRules'],
       scribe: ['roles', 'aboutWork', 'explainMore'],
+      'ci-debugger': ['roles', 'aboutWork', 'explainMore'],
+      'ci-fixer': ['roles', 'workingRules'],
       report: ['roles', 'aboutWork', 'explainMore'],
       wireframe: ['roles', 'aboutWork', 'explainMore'],
       auto: ['roles', 'aboutWork', 'workingRules'],

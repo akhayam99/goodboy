@@ -30,6 +30,8 @@ export type RolePresentationKey =
   | 'resolver'
   | 'rewriter'
   | 'scribe'
+  | 'ci-debugger'
+  | 'ci-fixer'
   | 'docs'
   | 'report'
   | 'wireframe'
@@ -275,6 +277,55 @@ export const ROLE_REGISTRY = {
       autoReason: 'Balanced model. It writes from the diff, so it needs clarity more than depth.',
       splitNote: 'One text is one run.',
       launchNote: 'Nothing.',
+    },
+    fanOut: {
+      mode: 'never',
+      partitionKey: null,
+      condition: null,
+    },
+  },
+  'ci-debugger': {
+    id: 'ci-debugger',
+    summary: 'Reads a failed check and proposes the fix. Started from a failing check.',
+    aliases: [],
+    presentationKey: 'ci-debugger',
+    defaultRoutingTaskType: 'debugging',
+    outputKind: 'none',
+    workflowEligible: false,
+    classifierEligible: false,
+    selectionEligible: false,
+    pickerEligible: false,
+    description: 'read a failed check log, find the cause and propose one fix or a few options',
+    explain: {
+      does: 'Reads the log of a failed check, finds the cause and proposes the fix.',
+      autoReason:
+        'High effort. A root cause needs long, careful reasoning more than a bigger model.',
+      splitNote: 'One failing check is one run.',
+      launchNote: 'Nothing. You start the fix you pick.',
+    },
+    fanOut: {
+      mode: 'never',
+      partitionKey: null,
+      condition: null,
+    },
+  },
+  'ci-fixer': {
+    id: 'ci-fixer',
+    summary: 'Applies the fix you picked for a failed check and commits it. Never pushes.',
+    aliases: [],
+    presentationKey: 'ci-fixer',
+    defaultRoutingTaskType: 'implementation',
+    outputKind: 'none',
+    workflowEligible: false,
+    classifierEligible: false,
+    selectionEligible: false,
+    pickerEligible: false,
+    description: 'apply the chosen check fix on the branch and commit it locally',
+    explain: {
+      does: 'Applies the fix you picked for a failed check and commits it on the branch.',
+      autoReason: 'Medium effort. The analysis already says what to change.',
+      splitNote: 'One fix is one run.',
+      launchNote: 'Nothing. You push the commit.',
     },
     fanOut: {
       mode: 'never',

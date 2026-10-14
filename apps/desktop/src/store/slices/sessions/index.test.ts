@@ -312,6 +312,32 @@ describe('store contract', () => {
       });
     });
 
+    it('setCurrentSession reads the CI roles as they are and an unknown stored kind as the generalist', async () => {
+      const store = useAppStore;
+      const second: AgentId = JSON.parse(JSON.stringify('agent-ci-fixer'));
+      const third: AgentId = JSON.parse(JSON.stringify('agent-from-the-future'));
+      const fourth: AgentId = JSON.parse(JSON.stringify('agent-old-debugger'));
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      storySpies.invokeAgentList.mockResolvedValue([
+        buildAgent({ id: AGENT_ID, kind: 'ci-debugger', status: 'completed' }),
+        buildAgent({ id: second, kind: 'ci-fixer', status: 'completed' }),
+        buildAgent({ id: third, kind: 'ci-pilot', status: 'completed' }),
+        buildAgent({ id: fourth, kind: 'investigator', status: 'completed' }),
+      ]);
+
+      await store.getState().setCurrentSession(SESSION_ID);
+
+      await vi.waitFor(() => {
+        expect(store.getState().agentKindOverride).toMatchObject({
+          [AGENT_ID]: 'ci-debugger',
+          [second]: 'ci-fixer',
+          [third]: 'generic',
+          [fourth]: 'debugger',
+        });
+      });
+      warn.mockRestore();
+    });
+
     it('setCurrentSession rebuilds resolver verdicts from the persisted transcript', async () => {
       const store = useAppStore;
       storySpies.invokeAgentList.mockResolvedValue([

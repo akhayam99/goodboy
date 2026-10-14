@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import type { TurnEvent } from '@goodboy/types';
+import type { IsoDateTime, ProviderRunId, TurnEvent } from '@goodboy/types';
+import { TEST_NOW } from '@goodboy/types/testing';
 import { analyzedCheckNameOf } from './analyzedCheckNameOf';
 
-const kickoffOf = (text: string): TurnEvent => ({ kind: 'user_text', text }) as TurnEvent;
+const runId: ProviderRunId = JSON.parse(JSON.stringify('run-1'));
+const at: IsoDateTime = TEST_NOW;
+
+const kickoffOf = (text: string): TurnEvent => ({ kind: 'user_text', runId, text, at });
 
 describe('analyzedCheckNameOf', () => {
   it('reads the check name from the kickoff line', () => {

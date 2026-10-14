@@ -1,6 +1,7 @@
 import type { Agent, PrCheckRun, PullRequestState, TurnEvent } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { resolveSessionRepo } from '../../../../../store/slices/worktrees/resolveSessionRepo';
+import { ciFixName } from '../../../../../features/branch/checks/ciFixName';
 import { buildAnalyzeChecksPrompt } from '../../../../../features/branch/checks/buildAnalyzeChecksPrompt';
 import { sceneClock } from '../../sceneClock';
 import { SESSION_ID, seedActivityRunScene } from '../activityRunSeed';
@@ -62,8 +63,8 @@ export const checksAnalyzeSeed = ({
     workflowRunId: undefined,
     stepId: undefined,
     sessionId: SESSION_ID,
-    name: 'Debugger',
-    kind: 'debugger',
+    name: ciFixName({ check, pullRequest }),
+    kind: 'ci-debugger',
     status: phase === 'running' ? 'running' : 'completed',
     sourceKind: 'failed_check',
     sourceCommentUrl: check.detailsUrl ?? pullRequest.url,

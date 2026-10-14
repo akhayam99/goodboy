@@ -35,6 +35,8 @@ const GUIDANCE_ROLES: ReadonlyArray<AgentRole> = [
   'resolver',
   'rewriter',
   'scribe',
+  'ci-debugger',
+  'ci-fixer',
   'docs',
   'report',
   'wireframe',

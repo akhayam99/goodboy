@@ -126,7 +126,7 @@ const show = ({ phase = 'failing' }: ShowParams = {}) => {
 };
 
 describe('Analyze with the real store and SQLite', () => {
-  it('spawns one Debugger from a failing row with the check kickoff', async () => {
+  it('spawns one CI debugger from a failing row with the check kickoff', async () => {
     const spawn = vi.spyOn(store.getState(), 'spawnAgent');
     show();
     fireEvent.click(screen.getByRole('button', { name: 'Analyze' }));
@@ -134,7 +134,8 @@ describe('Analyze with the real store and SQLite', () => {
     expect(spawn).toHaveBeenCalledWith(
       seed.sessionId,
       expect.objectContaining({
-        kindOverride: 'debugger',
+        kindOverride: 'ci-debugger',
+        name: `CI fix · ${seed.check.name} · #${seed.pullRequest.number}`,
         sourceKind: 'failed_check',
         sourceCommentUrl: seed.check.detailsUrl,
         mountId: seed.repo.mountId,
@@ -147,8 +148,8 @@ describe('Analyze with the real store and SQLite', () => {
     expect(storySpies.runTurn.mock.calls[0]?.[0]).toEqual(
       expect.objectContaining({ prompt: expect.stringContaining(seed.check.name) }),
     );
-    expect(await rowsOf({ sql: 'SELECT source_kind FROM agents' })).toEqual([
-      { source_kind: 'failed_check' },
+    expect(await rowsOf({ sql: 'SELECT kind, source_kind FROM agents' })).toEqual([
+      { kind: 'ci-debugger', source_kind: 'failed_check' },
     ]);
   });
   it('captures the mount across a late log read and coalesces repeated starts', async () => {

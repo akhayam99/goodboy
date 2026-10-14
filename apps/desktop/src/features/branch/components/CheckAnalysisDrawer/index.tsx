@@ -116,6 +116,7 @@ export const CheckAnalysisDrawer = ({ sessionId, mountId, checkUrl, onClose }: P
               <DrawerBox label="Activity">
                 <AgentChain
                   sessionId={sessionId}
+                  linkLabel="Transcript"
                   steps={[
                     hasFixLanded
                       ? {

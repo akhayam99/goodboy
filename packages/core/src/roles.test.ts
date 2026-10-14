@@ -29,6 +29,8 @@ describe('ROLE_REGISTRY', () => {
       'resolver',
       'rewriter',
       'scribe',
+      'ci-debugger',
+      'ci-fixer',
       'docs',
       'report',
       'wireframe',
@@ -152,6 +154,24 @@ describe('ROLE_REGISTRY contract', () => {
       pickerEligible: false,
     });
     expect(normalizeSelectableAgentRole({ role: 'rewriter' })).toBe('custom');
+  });
+
+  it('keeps the CI debugger and the CI fixer out of every picker, workflow and classifier', () => {
+    for (const role of ['ci-debugger', 'ci-fixer'] as const) {
+      expect(ROLE_REGISTRY[role]).toMatchObject({
+        presentationKey: role,
+        workflowEligible: false,
+        classifierEligible: false,
+        selectionEligible: false,
+        pickerEligible: false,
+      });
+      expect(ROLE_REGISTRY[role].fanOut.mode).toBe('never');
+      expect(normalizeSelectableAgentRole({ role })).toBe('custom');
+      expect(normalizeWorkflowRole({ role })).toBe('custom');
+      expect(presentationKeyForRole({ role })).toBe(role);
+    }
+    expect(SELECTABLE_AGENT_ROLES).not.toContain('ci-debugger');
+    expect(SELECTABLE_AGENT_ROLES).not.toContain('ci-fixer');
   });
 
   it('keeps the Auto role out of every picker, workflow, classifier and selection', () => {

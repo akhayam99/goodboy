@@ -10,9 +10,10 @@ type Props = {
     readonly detail?: string;
     readonly tone?: 'success' | 'warning' | 'danger' | 'neutral';
   }>;
+  readonly linkLabel?: string;
 };
 
-export const AgentChain = ({ sessionId, steps }: Props) => (
+export const AgentChain = ({ sessionId, steps, linkLabel }: Props) => (
   <ul aria-label="Agent chain" className="flex flex-col gap-2">
     {steps.map((step) => (
       <AgentChainStep
@@ -23,6 +24,7 @@ export const AgentChain = ({ sessionId, steps }: Props) => (
         isRunning={step.isRunning}
         {...(step.detail !== undefined && { detail: step.detail })}
         {...(step.tone !== undefined && { tone: step.tone })}
+        {...(linkLabel !== undefined && { linkLabel })}
       />
     ))}
   </ul>

@@ -11,7 +11,7 @@ import {
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList } from '../../../features/workflows/workflows';
 import { listPlansForSession as invokeListPlansForSession } from '../../../features/plans/plans';
-import type { AgentKind } from '../../../features/session/agent-kind';
+import { storedAgentKind, type AgentKind } from '../../../features/session/agent-kind';
 import { SETTING_LAST_SESSION_ID } from '../../../features/settings/settings';
 import { EMPTY_LOADING } from './sessionMutators';
 import type { SessionLoadingFlags } from './state';
@@ -218,7 +218,7 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
           const kindOverridesFromDb: Record<string, AgentKind> = {};
           for (const agent of agents) {
             if (agent.kind) {
-              kindOverridesFromDb[agent.id] = agent.kind as AgentKind;
+              kindOverridesFromDb[agent.id] = storedAgentKind({ kind: agent.kind });
             }
           }
           set((state) => ({

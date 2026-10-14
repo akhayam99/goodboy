@@ -26,6 +26,7 @@ import {
 import {
   kindConsumesPlan,
   resolveAgentKind,
+  storedAgentKind,
   type AgentKind,
 } from '../../../features/session/agent-kind';
 import { buildPlanKickoffSection, composeKickoff, composePlanSection } from '../turn/kickoff';
@@ -219,7 +220,8 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
     stepPromptPrefix.length > 0 ? stepPromptPrefix : (args.initialPrompt ?? '');
   const baseKickoff = explicitPrompt.length > 0 ? explicitPrompt : (args.seedPrompt ?? '');
   const effectiveKind: AgentKind =
-    args.kindOverride ?? (inserted.kind as AgentKind | undefined) ?? resolvedKind;
+    args.kindOverride ??
+    (inserted.kind === undefined ? resolvedKind : storedAgentKind({ kind: inserted.kind }));
   const isImplementer = effectiveKind === 'implementer';
   const hasExplicitPlanContext = args.triggeredPlanId !== undefined || args.stepId !== undefined;
   const engagePlan =
