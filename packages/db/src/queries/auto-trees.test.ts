@@ -210,14 +210,26 @@ describe('auto trees', () => {
       recordAutoRefusal({ ...refusal, generation: 1, runId: 'run-1' }),
       recordAutoRefusal({ ...refusal, generation: 1, runId: 'run-1' }),
     ]);
-    const again = await recordAutoRefusal({ ...refusal, generation: 1, runId: 'run-1' });
-    const nextRun = await recordAutoRefusal({ ...refusal, generation: 1, runId: 'run-2' });
-    const nextGeneration = await recordAutoRefusal({ ...refusal, generation: 2, runId: 'run-2' });
+    const wasRepeatRecorded = await recordAutoRefusal({
+      ...refusal,
+      generation: 1,
+      runId: 'run-1',
+    });
+    const wasNextRunRecorded = await recordAutoRefusal({
+      ...refusal,
+      generation: 1,
+      runId: 'run-2',
+    });
+    const wasNextGenerationRecorded = await recordAutoRefusal({
+      ...refusal,
+      generation: 2,
+      runId: 'run-2',
+    });
 
     expect(first.filter(Boolean)).toHaveLength(1);
-    expect(again).toBe(false);
-    expect(nextRun).toBe(true);
-    expect(nextGeneration).toBe(true);
+    expect(wasRepeatRecorded).toBe(false);
+    expect(wasNextRunRecorded).toBe(true);
+    expect(wasNextGenerationRecorded).toBe(true);
     expect(await getAutoTree({ db, treeId })).toMatchObject({
       refusalsUsed: 3,
       turnDelegateCalls: 3,
