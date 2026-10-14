@@ -134,6 +134,14 @@ describe('Start agent with the Auto experiment', () => {
     expect(screen.queryByRole('textbox', { name: 'Describe the work' })).toBeNull();
   });
 
+  it('keeps the roles of today in the build that ships while the setting was never written', async () => {
+    render(<CreateAgentPopover sessionId={SESSION_ID} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Start agent' }));
+
+    expect(await screen.findByRole('button', { name: 'Open Generalist' })).toBeDefined();
+    expect(screen.queryByRole('textbox', { name: 'Describe the work' })).toBeNull();
+  });
+
   it('keeps the roles of today while the release gate is closed, whatever is stored', async () => {
     stored.set(SETTING_AUTO_EXPERIMENT, 'true');
     mount({ isReleased: false });

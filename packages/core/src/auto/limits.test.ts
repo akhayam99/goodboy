@@ -20,8 +20,8 @@ import {
 import { AUTO_DELEGATION_ROLES } from './roles';
 
 describe('Auto limits', () => {
-  it('keeps delegation switched off', () => {
-    expect(AUTO_GATES).toEqual({ isDelegationEnabled: false });
+  it('ships delegation released, entry still behind the experiment switch', () => {
+    expect(AUTO_GATES).toEqual({ isDelegationEnabled: true });
   });
 
   it('gives every delegable role one positive attempt ceiling and no other role', () => {

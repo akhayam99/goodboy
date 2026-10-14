@@ -89,14 +89,21 @@ describe('useIsAutoOn', () => {
     expect(screen.getByText('auto off')).toBeDefined();
   });
 
-  it('is off in the build that ships, whose gate is closed', async () => {
+  it('is on in the build that ships, whose gate is open, once the switch is on', async () => {
     await setSetting(db, SETTING_AUTO_EXPERIMENT, 'true');
 
     render(<Probe />);
 
-    await waitFor(() =>
-      expect(useAppStore.getState().settings[SETTING_AUTO_EXPERIMENT]).toBe('true'),
-    );
+    await waitFor(() => expect(screen.getByText('auto on')).toBeDefined());
+  });
+
+  it('is off in the build that ships while the switch is off', async () => {
+    render(<Probe />);
+
+    await act(async () => {
+      window.dispatchEvent(new Event('focus'));
+    });
+
     expect(screen.getByText('auto off')).toBeDefined();
   });
 });

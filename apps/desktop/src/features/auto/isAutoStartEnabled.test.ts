@@ -27,7 +27,9 @@ describe('isAutoStartEnabled', () => {
     expect(read({ raw: 'true', isReleased: false })).toBe(false);
   });
 
-  it('reads the closed gate of the build by default', () => {
-    expect(isAutoStartEnabled({ settings: { [SETTING_AUTO_EXPERIMENT]: 'true' } })).toBe(false);
+  it('reads the open gate of the build by default, so only the switch decides', () => {
+    expect(isAutoStartEnabled({ settings: { [SETTING_AUTO_EXPERIMENT]: 'true' } })).toBe(true);
+    expect(isAutoStartEnabled({ settings: {} })).toBe(false);
+    expect(isAutoStartEnabled({ settings: { [SETTING_AUTO_EXPERIMENT]: 'false' } })).toBe(false);
   });
 });

@@ -1,7 +1,7 @@
 import { FAN_OUT_MAX_CHILDREN } from '../roles';
 import type { AutoDelegationRole } from './roles';
 
-export const AUTO_GATES = { isDelegationEnabled: false } as const;
+export const AUTO_GATES = { isDelegationEnabled: true } as const;
 
 export const AUTO_ATTEMPT_CEILING_USD = {
   scout: 0.5,

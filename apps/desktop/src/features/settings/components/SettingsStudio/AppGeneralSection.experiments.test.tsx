@@ -59,9 +59,12 @@ describe('General page and the Experiments band', () => {
     expect(screen.queryByRole('switch', { name: 'Auto agent' })).toBeNull();
   });
 
-  it('has none in the build that ships, whose gate is closed', () => {
+  it('shows the band in the build that ships, whose gate is open, with the switch off', () => {
     render(<AppGeneralSection />);
 
-    expect(screen.queryByRole('heading', { name: 'Experiments' })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Experiments' })).toBeDefined();
+    expect(screen.getByRole('switch', { name: 'Auto agent' }).getAttribute('aria-checked')).toBe(
+      'false',
+    );
   });
 });

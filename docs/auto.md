@@ -13,6 +13,24 @@ their results, reads them and goes on. It ships as an experiment: off by
 default, labelled **Experimental**, and the roles you pick today stay as they
 are while it is off.
 
+## Status
+
+The feature is on behind the experiment switch: `AUTO_GATES.isDelegationEnabled` is `true`, the
+Experiments band shows in Settings, and `agents.autoExperiment` is off by default. The runtime
+(`startAutoRuntime`) runs in the main window and drives the trees that exist; with the switch off
+none is ever created, so nothing changes for a person who does not turn it on.
+
+**Live proof before the flip.** The real CLIs were launched with the exact argv and prompt
+Goodboy builds for an Auto turn:
+
+| CLI    | Version               | Model             | Posture                             |
+| ------ | --------------------- | ----------------- | ----------------------------------- |
+| claude | 2.1.296 (Claude Code) | claude-sonnet-5-5 | plan mode, `--tools Read,Grep,Glob` |
+| codex  | codex-cli 0.162.1     | gpt-5.6-sol       | `-s read-only`                      |
+
+Both ended with a valid `<<auto>>` delegate block that `parseAutoBlock` and `parseDelegateSpec`
+accept. Neither tried to write a file or run a shell command, and the work tree stayed clean.
+
 ## The experiment switch
 
 - Settings, App, General has a band **Experiments**, below Search, with one row
@@ -24,9 +42,12 @@ are while it is off.
   string `true`; absent or anything else is off.
 - `isAutoStartEnabled` (`features/auto/isAutoStartEnabled.ts`) is the one
   function that says whether Auto is on. `useIsAutoOn` reads it for every
-  surface. It needs the release gate too: `AUTO_GATES.isDelegationEnabled`
-  reaches the screens through `AutoReleaseContext`, and while it is false the
-  band, the Auto start and every Auto control stay hidden, whatever is stored.
+  surface. It needs the release gate too: `AUTO_GATES.isDelegationEnabled` is
+  `true` in this build and reaches the screens through `AutoReleaseContext`. A
+  build with the gate false would hide the band, the Auto start and every Auto
+  control, whatever is stored. With the gate on, the band always shows and the
+  switch is off until a person turns it on, so every start surface, menu and
+  runtime path stays exactly as it was before Auto.
 - The switch saves with a compare and swap (`writeAutoExperiment`): it reads the
   stored value, writes against it, rereads once on a lost swap, and when an
   answer is lost after the commit it rereads and accepts what is stored. The

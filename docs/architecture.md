@@ -692,9 +692,10 @@ cleanup) and moving those calls behind the commands is not done yet.
 ### Auto tree registry
 
 Migration m230 adds seven tables for Auto, the agent that hands work to agents
-of other roles. Nothing reaches a person yet: `AUTO_GATES.isDelegationEnabled`
-in `packages/core/src/auto/limits.ts` is `false`, nothing calls the scheduler,
-and the bridge has no verb for it. The tables are additive, so an older build
+of other roles. `AUTO_GATES.isDelegationEnabled` in
+`packages/core/src/auto/limits.ts` is `true`; no tree exists until a person
+turns on the setting `agents.autoExperiment` (off by default), and Auto decides
+through the `<<auto>>` block, not through a bridge verb. The tables are additive, so an older build
 refuses the file with `DatabaseFromNewerBuildError` instead of reading it.
 
 - `auto_trees` is one row per Auto agent: phase, `phase_rev`, generation, stop
@@ -741,7 +742,7 @@ refuses the file with `DatabaseFromNewerBuildError` instead of reading it.
   `core/auto/mountPick.ts`, the model through `resolveProposedRouting`, the artifact
   bodies and the kickoff text from `core/auto/kickoff.ts`) and admits the batch in one
   transaction. A writer must name its mount; a reader without one gets the primary
-  mount, captured at admission. Nothing runs while `AUTO_GATES.isDelegationEnabled` is false.
+  mount, captured at admission. Nothing runs for a person until the experiment switch is on, because no tree exists before.
 - Delivery to Auto is `deliver.ts`. One transaction claims the pending rows, stores the
   built text on the first row, reserves the turn ceiling and makes the tree `deciding`
   on a planned run id; then the turn starts under the first row id as its delivery id,
@@ -784,8 +785,8 @@ refuses the file with `DatabaseFromNewerBuildError` instead of reading it.
   getter; `store.sqlite-auto-manual-proof.test.ts` runs two of them on the real store for the
   stop, restart and crash proofs.
 - `startAutoRuntime.ts` is the only place the pieces meet the app. `App.tsx` starts it in
-  the main window. While `AUTO_GATES.isDelegationEnabled` is false it only registers the ports of the
-  screens and starts nothing. When it is true it builds the real ports
+  the main window. When `AUTO_GATES.isDelegationEnabled` is false it only registers the ports of the
+  screens and starts nothing. When it is true (the shipped value) it builds the real ports
   (`createRealAutoPorts.ts`: the store's `sendTurn` and confirmed cancel, the mount list,
   `worktree_snapshot`, the delivery lookup of Rust, the child agent rows and the run
   ledger of `provider_runs`), claims each tree it recovers, and drives every live tree

@@ -109,7 +109,7 @@ describe('buildAutoSystemPrompt', () => {
     }
   });
 
-  it('ships the answer-only prompt while delegation is off', () => {
-    expect(AUTO_SYSTEM_PROMPT).toBe(buildAutoSystemPrompt({ isDelegationEnabled: false }));
+  it('ships the delegation prompt now the release gate is on', () => {
+    expect(AUTO_SYSTEM_PROMPT).toBe(buildAutoSystemPrompt({ isDelegationEnabled: true }));
   });
 });
