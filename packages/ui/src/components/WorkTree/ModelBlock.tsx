@@ -13,6 +13,7 @@ type Props = Omit<HTMLAttributes<HTMLSpanElement>, 'children'> & {
   readonly name: string;
   readonly detail?: string | null;
   readonly isPlanned?: boolean;
+  readonly layout?: 'column' | 'inline';
   readonly className?: string;
   readonly testId?: string;
 };
@@ -22,6 +23,7 @@ export const ModelBlock = ({
   name,
   detail = null,
   isPlanned = false,
+  layout = 'column',
   className,
   testId,
   ref,
@@ -31,6 +33,7 @@ export const ModelBlock = ({
   const spread = GLYPH_SIZE + Math.max(shown.length - 1, 0) * GLYPH_STEP;
   const cellWidth = Math.max(spread, GLYPH_CELL_MIN);
   const offset = (cellWidth - spread) / 2;
+  const isInline = layout === 'inline';
   return (
     <span
       {...rest}
@@ -38,7 +41,7 @@ export const ModelBlock = ({
       data-meta-column="model"
       data-testid={testId}
       className={cn(
-        WORK_META_COLUMN.model,
+        isInline ? WORK_META_COLUMN.modelInline : WORK_META_COLUMN.model,
         isPlanned ? 'text-faint-foreground' : 'text-muted-foreground',
         className,
       )}
@@ -56,16 +59,34 @@ export const ModelBlock = ({
           ))}
         </span>
       )}
-      <span className={WORK_META_COLUMN.modelLines}>
-        <span data-routing-part="name" className={WORK_META_COLUMN.modelName}>
-          {name}
-        </span>
-        {detail === null || detail === '' ? null : (
-          <span data-routing-part="detail" className={WORK_META_COLUMN.modelDetail}>
-            {detail}
+      {isInline ? (
+        <span className={WORK_META_COLUMN.modelInlineLines}>
+          <span data-routing-part="name" className="min-w-0 truncate text-meta">
+            {name}
           </span>
-        )}
-      </span>
+          {detail === null || detail === '' ? null : (
+            <>
+              <span aria-hidden className="shrink-0 text-faint-foreground">
+                ·
+              </span>
+              <span data-routing-part="detail" className="shrink-0 text-meta text-faint-foreground">
+                {detail}
+              </span>
+            </>
+          )}
+        </span>
+      ) : (
+        <span className={WORK_META_COLUMN.modelLines}>
+          <span data-routing-part="name" className={WORK_META_COLUMN.modelName}>
+            {name}
+          </span>
+          {detail === null || detail === '' ? null : (
+            <span data-routing-part="detail" className={WORK_META_COLUMN.modelDetail}>
+              {detail}
+            </span>
+          )}
+        </span>
+      )}
     </span>
   );
 };

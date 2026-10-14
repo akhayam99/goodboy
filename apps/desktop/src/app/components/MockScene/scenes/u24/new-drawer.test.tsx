@@ -42,6 +42,7 @@ const SCENE_IDS: ReadonlyArray<SceneId> = [
   'new-drawer-run',
   'new-drawer-run-guidance',
   'new-drawer-run-preset',
+  'new-drawer-run-preset-pin',
   'new-drawer-agent',
   'new-drawer-agent-auto',
   'new-drawer-write',
@@ -102,6 +103,25 @@ describe('the New drawer scenes', () => {
     expect(inDrawer.getByRole('button', { name: 'Model for Scout the retry path' })).toBeDefined();
     expect(inDrawer.getByRole('button', { name: 'Model for Build the guard' })).toBeDefined();
     expect(inDrawer.getByText('Waits for you to approve the plan')).toBeDefined();
+  });
+
+  it('hugs each step model in one line and shows the estimate row', async () => {
+    show({ id: 'new-drawer-run-preset' });
+
+    const inDrawer = await drawer();
+    const chip = await inDrawer.findByRole('button', { name: 'Model for Plan the guard' }, WAIT);
+    expect(chip.querySelector('[data-routing-part="name"]')?.textContent).toBe('Opus 5.5');
+    expect(chip.querySelector('[data-routing-part="detail"]')?.textContent).toBe('High');
+    expect(chip.querySelector('[data-meta-column="model"]')?.className).not.toContain('w-34');
+    expect(inDrawer.getByTestId('plan-estimate')).toBeDefined();
+  });
+
+  it('lists the connected providers when a step pins a model', async () => {
+    show({ id: 'new-drawer-run-preset-pin' });
+
+    expect(await screen.findByText('Provider', {}, WAIT)).toBeDefined();
+    expect(screen.queryByText('No providers connected')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open providers' })).toBeNull();
   });
 
   it('opens on Agent with the roles of today and no message field', async () => {

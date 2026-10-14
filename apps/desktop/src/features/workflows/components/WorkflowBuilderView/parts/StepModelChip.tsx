@@ -34,14 +34,15 @@ export const StepModelChip = ({
   });
   const { open: isOpen, toggle } = dropdown;
   const [isFlashing, setIsFlashing] = useState(false);
-  const isFirstRender = useRef(true);
+  const shownRoute = useRef(`${provider}|${model}|${effort}`);
   const label = `Model for ${stepLabel}`;
 
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
+    const next = `${provider}|${model}|${effort}`;
+    if (shownRoute.current === next) {
       return;
     }
+    shownRoute.current = next;
     setIsFlashing(true);
     const timer = window.setTimeout(() => setIsFlashing(false), FLASH_MS);
     return () => window.clearTimeout(timer);
@@ -64,11 +65,17 @@ export const StepModelChip = ({
             aria-label={label}
             data-flashing={isFlashing ? 'true' : undefined}
             className={cn(
-              'flex min-h-8 items-center gap-1 rounded-md px-1 transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60',
+              'flex min-h-8 min-w-0 items-center gap-1 rounded-md px-2 text-left transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60',
               isFlashing && tintClasses('primary').bg,
             )}
           >
-            <RoutingModelBlock isPlanned provider={provider} model={model} effort={effort} />
+            <RoutingModelBlock
+              isPlanned
+              layout="inline"
+              provider={provider}
+              model={model}
+              effort={effort}
+            />
             {isPinned ? (
               <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-primary" />
             ) : null}

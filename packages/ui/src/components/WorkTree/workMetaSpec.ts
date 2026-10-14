@@ -14,6 +14,8 @@ export const WORK_META_COLUMN = {
   cost: 'w-12 shrink-0 truncate text-right @max-[620px]:hidden',
   costRange: 'w-18 shrink-0 truncate text-right @max-[620px]:hidden',
   model: 'flex w-34 shrink-0 items-center justify-start gap-2 overflow-hidden @max-[640px]:w-auto',
+  modelInline: 'flex min-w-0 items-center justify-start gap-2 overflow-hidden',
+  modelInlineLines: 'flex min-w-0 items-baseline gap-1 whitespace-nowrap @max-[640px]:sr-only',
   modelGlyph: 'relative h-6 shrink-0',
   modelLines: 'flex min-w-0 flex-1 flex-col @max-[640px]:sr-only',
   modelName: 'block h-4 truncate text-meta',

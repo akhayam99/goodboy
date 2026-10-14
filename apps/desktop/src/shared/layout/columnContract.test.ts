@@ -202,7 +202,6 @@ const H1_ALLOWLIST: ReadonlySet<string> = new Set([
   'features/artifacts/components/ArtifactShell/ArtifactShellHeader.tsx',
   'features/artifacts/components/ArtifactList/index.tsx',
   'features/workspace/components/WorkspaceLauncher/index.tsx',
-  'features/session/components/SessionDraftPane/SessionDraftHeader.tsx',
   'shared/components/StudioDetail/RecordHeader/index.tsx',
 ]);
 

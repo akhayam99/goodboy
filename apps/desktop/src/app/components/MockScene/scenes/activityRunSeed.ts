@@ -1316,7 +1316,7 @@ const historySamples = ({ nowMs }: { readonly nowMs: number }): ReadonlyArray<Du
     })),
   );
 
-const durationHistory = ({ nowMs }: { readonly nowMs: number }): DurationHistory => {
+export const durationHistory = ({ nowMs }: { readonly nowMs: number }): DurationHistory => {
   const samples = historySamples({ nowMs });
   return {
     steps: samples,

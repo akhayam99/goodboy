@@ -61,6 +61,7 @@ describe('the session close scenes', () => {
 
     expect(await screen.findByText('Keep this draft?', {}, WAIT)).toBeDefined();
     expect(screen.getByRole('button', { name: 'Keep draft' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Discard' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Discard' })).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Discard draft' })).toHaveLength(1);
   });
 });

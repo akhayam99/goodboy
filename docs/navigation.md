@@ -774,10 +774,12 @@ dot with `Draft in progress` while a written draft waits. The header has no
 `Esc` label and no X: Esc closes the page (`closeSessionDraft`) and lands on
 the place before it, or the board when there was none, which is also the
 parent `up()` goes to (`placeBeforeDraft`). With nothing written Esc leaves at
-once. With text Esc raises `Keep this draft?` at the top of the page, inline
-and without a modal: `Keep draft` (or a second Esc) leaves and keeps the
-draft, `Discard` empties it. `Discard draft` in the header shows only with
-content and does the same as `Discard`: `discardSessionDraft` clears the
+once. With text Esc raises `Keep this draft?` under the line that describes the
+selected choice, inline and without a modal. It floats over the page, aligned
+to the column, so nothing below it moves (`SessionKickoff` takes it as its
+`notice`). It holds one action: `Keep draft` (or a second Esc) leaves and keeps
+the draft. `Discard draft` in the header shows only with
+content and empties it: `discardSessionDraft` clears the
 draft and both builder drafts of that workspace, then closes the page. Back
 returns to the draft like any other place. **Start blank** in the header (`startBlankSession`) is the way
 to start from the goal: it creates a session with no title and no goal slot
@@ -790,8 +792,8 @@ on one row as compact tabs (`StartChoiceTabs`, `SegmentedTabs` pill variant) wit
 **Discard draft** and **Start blank** (`SessionDraftActions`) at the end of the same
 row. One line under the row describes the selected choice (`startChoiceLine`, the
 copy in `shared/lib/startCopy.ts` that the New drawer reads too): none sits under
-the other options. The page has no `h1` of its own, the trail names it (a screen
-reader heading stays). The Run lane and the Agent block are the New drawer's, at
+the other options. The page has no visible title, the trail names it (a screen
+reader heading stays, drawn by `PaneTitleRow` inside `sr-only`). The Run lane and the Agent block are the New drawer's, at
 page width: the lane is `WorkflowBuilderView` with a `kickoff` target and the
 Auto state is `AutoComposerView`, which `AutoComposer` (drawer, bound to a session)
 and `AutoStart` (page, bound to the draft) both draw.

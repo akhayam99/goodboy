@@ -8,6 +8,7 @@ import { useAppStore } from '../../../../../store';
 import { EMPTY_SESSION_DRAFT } from '../../../../../store/slices/sessionDraft/state';
 import type { StartChoice } from '../../../../../store/slices/sessionDraft/state';
 import { kickoffDraftKey } from '../../../../../store/slices/workflowDrafts/kickoffDraftKey';
+import { durationHistory } from '../activityRunSeed';
 import { sceneClock } from '../../sceneClock';
 import { mockSceneIpc } from '../mockSceneIpc';
 import { WORKSPACE_ID, seedBoardScene } from '../BoardScene';
@@ -84,6 +85,7 @@ export const NewSessionPageScene = ({ state }: Props) => {
     useAppStore.setState({
       phaseTemplates: { [WORKSPACE_ID]: [PRESET] },
       loadPhaseTemplates: async () => undefined,
+      workspaceDurationHistory: { [WORKSPACE_ID]: durationHistory({ nowMs: Date.now() }) },
       sessionDrafts: {
         [WORKSPACE_ID]: {
           ...EMPTY_SESSION_DRAFT,

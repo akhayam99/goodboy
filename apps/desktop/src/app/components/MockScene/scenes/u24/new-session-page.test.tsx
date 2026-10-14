@@ -73,6 +73,7 @@ describe('the New session page scenes', () => {
     ).toBeDefined();
     expect(await screen.findByRole('button', { name: 'Model for Build the guard' })).toBeDefined();
     expect(screen.getByRole('button', { name: /^Spend cap:/ })).toBeDefined();
+    expect(screen.getByTestId('plan-estimate')).toBeDefined();
   });
 
   it('new-session-page-agent is the agent start of today', async () => {

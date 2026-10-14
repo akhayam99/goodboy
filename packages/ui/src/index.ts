@@ -230,6 +230,7 @@ export { Reveal } from './components/Reveal';
 export type { RevealProps } from './components/Reveal';
 export type { ResizeHandleProps } from './components/ResizeHandle';
 export { PaneShell } from './components/PaneShell';
+export { PaneTitleRow } from './components/PaneShell/PaneTitleRow';
 export {
   PaneActionsContext,
   useInheritedPaneActions,

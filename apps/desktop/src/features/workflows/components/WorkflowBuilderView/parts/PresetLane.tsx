@@ -73,28 +73,33 @@ export const PresetLane = ({
                     isPlanned
                     isCostRange={false}
                     routing={
-                      <StepModelChip
-                        stepLabel={name}
-                        provider={row.provider}
-                        model={row.model}
-                        effort={row.effort}
-                        isPinned={row.isPinned}
-                        isDisabled={isDisabled}
+                      <span
+                        data-meta-column="model"
+                        className="flex w-52 min-w-0 shrink-0 justify-start @max-[640px]:w-auto"
                       >
-                        <StepModelFields
-                          step={step}
-                          routingLabel={`Model for ${name}`}
+                        <StepModelChip
+                          stepLabel={name}
+                          provider={row.provider}
+                          model={row.model}
                           effort={row.effort}
-                          recommendedProvider={row.recommendedProvider}
-                          recommendedModel={row.recommendedModel}
-                          connectedProviders={connectedProviders}
-                          isRoutingOverridden={row.isPinned}
+                          isPinned={row.isPinned}
                           isDisabled={isDisabled}
-                          onRoute={(route) => onRoute(step.key, route)}
-                          onRoutingReset={() => onFollowRole(step.key)}
-                          onPin={() => onPin(step.key)}
-                        />
-                      </StepModelChip>
+                        >
+                          <StepModelFields
+                            step={step}
+                            routingLabel={`Model for ${name}`}
+                            effort={row.effort}
+                            recommendedProvider={row.recommendedProvider}
+                            recommendedModel={row.recommendedModel}
+                            connectedProviders={connectedProviders}
+                            isRoutingOverridden={row.isPinned}
+                            isDisabled={isDisabled}
+                            onRoute={(route) => onRoute(step.key, route)}
+                            onRoutingReset={() => onFollowRole(step.key)}
+                            onPin={() => onPin(step.key)}
+                          />
+                        </StepModelChip>
+                      </span>
                     }
                     time={
                       row.estimate?.time == null ? undefined : (
@@ -107,13 +112,14 @@ export const PresetLane = ({
                 }
               >
                 <AgentKindChip kind={row.kind} density="glyph" isDecorative />
-                <span className="min-w-0 flex-1 truncate text-body text-foreground">{name}</span>
+                <span className="min-w-0 truncate text-body text-foreground">{name}</span>
                 {row.isEdited ? (
                   <span className="inline-flex shrink-0 items-center">
                     <span aria-hidden className="size-1.5 rounded-full bg-warning" />
                     <span className="sr-only">Edited</span>
                   </span>
                 ) : null}
+                <span aria-hidden className="min-w-0 flex-1" />
               </LaneRow>
               {pauses
                 .filter((pause) => pause.afterIndex === index)

@@ -10,6 +10,7 @@ type Props = {
   readonly planned?: PlannedRouting | null;
   readonly isEffortObserved?: boolean;
   readonly isPlanned?: boolean;
+  readonly layout?: 'column' | 'inline';
 };
 
 const GLYPH_SIZE = 14;
@@ -23,6 +24,7 @@ export const RoutingModelBlock = ({
   planned = null,
   isEffortObserved = false,
   isPlanned = false,
+  layout = 'column',
 }: Props) => {
   const shown = routingLabelModel({ provider, model, effort, planned, isEffortObserved });
   if (shown.label == null) {
@@ -51,6 +53,7 @@ export const RoutingModelBlock = ({
         testId={shown.isDiverged ? 'routing-divergence' : undefined}
         className={cn(shown.isDiverged && DIVERGED_CLASS)}
         isPlanned={isPlanned}
+        layout={layout}
         glyphs={glyphs}
         name={routingNameText(shown.label)}
         detail={shown.label.detail[0] ?? null}

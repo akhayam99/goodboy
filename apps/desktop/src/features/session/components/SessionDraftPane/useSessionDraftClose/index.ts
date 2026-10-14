@@ -12,7 +12,6 @@ type Params = {
 type SessionDraftClose = {
   readonly isAsking: boolean;
   readonly keepDraft: () => void;
-  readonly discardDraft: () => void;
 };
 
 export const useSessionDraftClose = ({ workspaceId }: Params): SessionDraftClose => {
@@ -20,7 +19,6 @@ export const useSessionDraftClose = ({ workspaceId }: Params): SessionDraftClose
     hasSessionDraftContent({ draft: selectSessionDraft({ state, workspaceId }) }),
   );
   const closeSessionDraft = useAppStore((state) => state.closeSessionDraft);
-  const discardSessionDraft = useAppStore((state) => state.discardSessionDraft);
   const [isAskRaised, setIsAskRaised] = useState(false);
   const isAsking = isAskRaised && hasContent;
 
@@ -28,11 +26,6 @@ export const useSessionDraftClose = ({ workspaceId }: Params): SessionDraftClose
     setIsAskRaised(false);
     closeSessionDraft({ workspaceId });
   }, [closeSessionDraft, workspaceId]);
-
-  const discardDraft = useCallback(() => {
-    setIsAskRaised(false);
-    discardSessionDraft({ workspaceId });
-  }, [discardSessionDraft, workspaceId]);
 
   const requestClose = useCallback(() => {
     if (hasContent && !isAsking) {
@@ -44,5 +37,5 @@ export const useSessionDraftClose = ({ workspaceId }: Params): SessionDraftClose
 
   useEscapeLayer(requestClose);
 
-  return { isAsking, keepDraft, discardDraft };
+  return { isAsking, keepDraft };
 };

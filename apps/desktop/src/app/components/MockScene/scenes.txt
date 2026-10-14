@@ -347,6 +347,7 @@ new-drawer-narrow
 new-drawer-run
 new-drawer-run-guidance
 new-drawer-run-preset
+new-drawer-run-preset-pin
 new-drawer-write
 new-drawer-write-wireframe
 new-session-page-agent
@@ -593,7 +594,6 @@ update-confirm
 update-whats-new
 wireframe-failed
 workflow
-workflow-builder
 workflow-builder-modes
 workflow-run
 workflow-run-finished-sets

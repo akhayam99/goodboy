@@ -68,7 +68,6 @@ import { ActivityQuestionScene } from '../scenes/ActivityQuestionScene';
 import { ActivityOneSignalScene } from '../scenes/ActivityOneSignalScene';
 import { ActivityGroupsScene } from '../scenes/ActivityGroupsScene';
 import { ContextDrawerScene } from '../scenes/ContextDrawerScene';
-import { WorkflowBuilderScene } from '../scenes/flow-audit/WorkflowBuilderScene';
 import { WorkflowRunScene } from '../scenes/flow-audit/WorkflowRunScene';
 import { OpenQuestionsScene } from '../scenes/flow-audit/OpenQuestionsScene';
 import { OpenQuestionProseScene } from '../scenes/flow-audit/OpenQuestionProseScene';
@@ -254,7 +253,6 @@ export const BASE_SCENES = {
   'activity-groups': ActivityGroupsScene,
   'context-drawer': ContextDrawerScene,
   'session-ask': SessionAskScene,
-  'workflow-builder': WorkflowBuilderScene,
   'workflow-run': WorkflowRunScene,
   'open-questions': OpenQuestionsScene,
   'open-question-prose': OpenQuestionProseScene,

@@ -112,8 +112,11 @@ describe('closing the New session page', () => {
 
     expect(screen.getByText('Keep this draft?')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Keep draft' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Discard' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Discard' })).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Discard draft' })).toHaveLength(1);
     expect(screen.queryByRole('dialog')).toBeNull();
+    const notice = screen.getByText('Keep this draft?').closest('[data-slot="kickoff-notice"]');
+    expect(notice?.closest('section[aria-label="Kickoff"]')).not.toBeNull();
     expect(isDraftShown()).toBe(true);
     expect(goalOfDraft()).toBe('Round the ledger postings');
   });
@@ -145,21 +148,9 @@ describe('closing the New session page', () => {
     expect(goalOfDraft()).toBe('Round the ledger postings');
   });
 
-  it('discards for real on Discard, clearing the draft and leaving the page', async () => {
+  it('discards for real from the header while asked, leaving the page', async () => {
     await openDraft({ text: 'Round the ledger postings' });
     await pressEscape();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
-    await settle();
-
-    expect(isDraftShown()).toBe(false);
-    expect(useAppStore.getState().openSessionDraftWorkspaceId).toBeNull();
-    expect(useAppStore.getState().currentSessionId).toBe(cameFrom);
-    expect(goalOfDraft()).toBe('');
-  });
-
-  it('discards for real from the header, leaving the page', async () => {
-    await openDraft({ text: 'Round the ledger postings' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Discard draft' }));
     await settle();

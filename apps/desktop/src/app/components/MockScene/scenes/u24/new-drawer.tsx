@@ -12,6 +12,8 @@ import { writeLastWorkflowMode } from '../../../../../features/workflows/compone
 import { writeLastNewTab } from '../../../../../features/session/newDrawerTab';
 import type { NewDrawerTab } from '../../../../../store/slices/drawer/state';
 import { sceneClock } from '../../sceneClock';
+import { useSceneClicks } from '../audit/useSceneClicks';
+import { RULES_PROVIDERS } from '../audit/workflowRulesSeed';
 import { SESSION, SESSION_ID, seedActivityRunScene } from '../activityRunSeed';
 
 const NO_OVERRIDES: OverrideSettings = {
@@ -98,6 +100,7 @@ type SceneState = {
   readonly isPreset?: boolean;
   readonly hasGuidance?: boolean;
   readonly autoGoal?: string;
+  readonly clicks?: ReadonlyArray<string>;
   readonly width: number;
 };
 
@@ -113,6 +116,8 @@ const NewDrawerScene = ({ state }: Props) => {
     const store = useAppStore.getState();
     const workspaceId = SESSION.workspaceId;
     useAppStore.setState({
+      providers: RULES_PROVIDERS,
+      refreshProviders: async () => undefined,
       phaseTemplates: { [workspaceId]: [PRESET] },
       workspaceOverrides: {
         [workspaceId]: {
@@ -148,6 +153,14 @@ const NewDrawerScene = ({ state }: Props) => {
     }
     setIsReady(true);
   }, [state]);
+
+  useSceneClicks({
+    isReady,
+    labels: state.clicks ?? [],
+    selector: 'button, [role="tab"], [role="radio"]',
+    match: 'prefix',
+    intervalMs: 300,
+  });
 
   if (!isReady) {
     return null;
@@ -191,6 +204,16 @@ export const U24_NEW_DRAWER_SCENES = {
   ),
   'new-drawer-run-preset': () => (
     <NewDrawerScene state={{ tab: 'run', isPreset: true, width: 1440 }} />
+  ),
+  'new-drawer-run-preset-pin': () => (
+    <NewDrawerScene
+      state={{
+        tab: 'run',
+        isPreset: true,
+        clicks: ['Model for Plan the guard', 'Pin a model'],
+        width: 1440,
+      }}
+    />
   ),
   'new-drawer-agent': () => <NewDrawerScene state={{ tab: 'agent', width: 1440 }} />,
   'new-drawer-agent-auto': () => (
