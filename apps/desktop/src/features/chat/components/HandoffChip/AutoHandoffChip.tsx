@@ -4,7 +4,7 @@ import type { AgentId } from '@goodboy/types';
 import { MOVE_TO_AUTO_EVENT, moveToAutoDetail } from '../../../auto/adopt/moveToAutoEvent';
 import { useIsAutoOn } from '../../../auto/useIsAutoOn';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { TranscriptShell } from '../TranscriptShell';
+import { HandoffCardShell } from './HandoffCardShell';
 
 type Props = {
   readonly reason: string;
@@ -17,12 +17,7 @@ export const AutoHandoffChip = ({ reason, agentId }: Props) => {
     return null;
   }
   return (
-    <TranscriptShell
-      data-testid="handoff-card"
-      tone="neutral"
-      variant="leftBorder"
-      className="flex w-full max-w-xl flex-col gap-2 text-label"
-    >
+    <HandoffCardShell>
       <span className="text-row text-foreground">Agent suggests: Auto</span>
       {reason.length > 0 ? <span className="text-muted-foreground">{reason}</span> : null}
       <div className="flex min-h-5 items-center gap-1">
@@ -42,6 +37,6 @@ export const AutoHandoffChip = ({ reason, agentId }: Props) => {
           <span>Move to Auto</span>
         </button>
       </div>
-    </TranscriptShell>
+    </HandoffCardShell>
   );
 };
