@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { BranchCommit } from '@goodboy/types';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
@@ -62,19 +62,160 @@ const show = ({ name }: Params) => {
 const nextCard = () => screen.getByRole('region', { name: 'Next' });
 
 describe('CI fix state scenes', () => {
-  it('labels the checks row as fixed and not pushed', () => {
+  it('labels the checks row as fixed and not pushed and offers Push', () => {
     show({ name: 'checks-fixed-local' });
     expect(screen.getByText('Fixed, not pushed')).toBeDefined();
     expect(screen.queryByText('The fix stopped')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Open' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Push' })).toBeDefined();
   });
-  it('tells the drawer that the commit is local, not that the check runs again', () => {
+  it('pushes from the checks row once and moves the row to re-running', async () => {
+    store.setState({
+      refreshSessionPr: async () => undefined,
+      loadSessionMounts: async () => [],
+    });
+    show({ name: 'checks-fixed-local' });
+    const pushes: Array<unknown> = [];
+    let isPushed = false;
+    mockSceneIpc((command, payload) => {
+      if (command === 'worktree_commits') {
+        return [
+          {
+            sha: '9e4c1a7d3b5f60718293a4b5c6d7e8f901234567',
+            shortSha: '9e4c1a7',
+            subject: 'Guard the retry against double credits',
+            author: 'Acme Dev',
+            timestamp: Math.floor(Date.now() / 1_000) + 3_600,
+            pushed: isPushed,
+            parentSha: null,
+          },
+        ];
+      }
+      if (command === 'git_push') {
+        pushes.push(payload);
+        isPushed = true;
+        return { stdout: '', stderr: '', exitCode: 0 };
+      }
+      return null;
+    });
+    const button = screen.getByRole('button', { name: 'Push' });
+    fireEvent.click(button);
+    fireEvent.click(button);
+    await waitFor(() => expect(screen.getByText('Pushed, re-running')).toBeDefined());
+    expect(pushes).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'Push' })).toBeNull();
+  });
+  it('keeps Push on the checks row and reports the error when the push fails', async () => {
+    const reportError = vi.fn(async (_params: unknown) => undefined);
+    store.setState({
+      refreshSessionPr: async () => undefined,
+      loadSessionMounts: async () => [],
+      reportError,
+    });
+    show({ name: 'checks-fixed-local' });
+    mockSceneIpc((command) => {
+      if (command === 'git_push') {
+        return { stdout: '', stderr: 'rejected: non-fast-forward', exitCode: 1 };
+      }
+      if (command === 'worktree_commits') {
+        return [
+          {
+            sha: '9e4c1a7d3b5f60718293a4b5c6d7e8f901234567',
+            shortSha: '9e4c1a7',
+            subject: 'Guard the retry against double credits',
+            author: 'Acme Dev',
+            timestamp: Math.floor(Date.now() / 1_000) + 3_600,
+            pushed: false,
+            parentSha: null,
+          },
+        ];
+      }
+      return null;
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Push' }));
+    await waitFor(() =>
+      expect(reportError).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Couldn't push the branch" }),
+      ),
+    );
+    expect(screen.getByText('Fixed, not pushed')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Push' })).toBeDefined();
+  });
+  it('leads the drawer with the outcome, Push as its one primary and the steps as rows', () => {
     show({ name: 'debugger-drawer-fixed-local' });
     const drawer = screen.getByRole('region', { name: 'Debugger' });
+    expect(within(drawer).getByText('payments-api / test is fixed on your branch')).toBeDefined();
     expect(
-      within(drawer).getByText('Committed 9e4c1a7 on the branch, not pushed yet.'),
+      within(drawer).getByText(
+        'Committed 9e4c1a7 on the branch, not pushed yet. Push it so the check runs again.',
+      ),
     ).toBeDefined();
-    expect(within(drawer).queryByText(/runs again/)).toBeNull();
-    expect(within(drawer).getByText('Needs you')).toBeDefined();
+    expect(within(drawer).queryByText(/is running again|Pushed 9e4c1a7/)).toBeNull();
+    const primaries = drawer.querySelectorAll('[data-variant="primary"]');
+    expect(primaries).toHaveLength(1);
+    expect(primaries[0]?.textContent).toBe('Push');
+    const chain = within(drawer).getByRole('list', { name: 'Agent chain' });
+    expect(within(chain).getAllByRole('listitem')).toHaveLength(3);
+    expect(within(chain).getByText('Needs you')).toBeDefined();
+    expect(within(drawer).queryByRole('heading', { level: 3, name: 'Activity' })).toBeNull();
+    for (const name of ['Finding', 'Proposed fix', 'What it was given', 'Failed log tail']) {
+      expect(within(drawer).getByRole('button', { name }).getAttribute('aria-expanded')).toBe(
+        'false',
+      );
+    }
+  });
+  it('pushes from the drawer and then reads the three green steps and the check', async () => {
+    store.setState({
+      refreshSessionPr: async () => undefined,
+      loadSessionMounts: async () => [],
+    });
+    show({ name: 'debugger-drawer-fixed-local' });
+    let isPushed = false;
+    mockSceneIpc((command) => {
+      if (command === 'worktree_commits') {
+        return [
+          {
+            sha: '9e4c1a7d3b5f60718293a4b5c6d7e8f901234567',
+            shortSha: '9e4c1a7',
+            subject: 'Guard the retry against double credits',
+            author: 'Acme Dev',
+            timestamp: Math.floor(Date.now() / 1_000) + 3_600,
+            pushed: isPushed,
+            parentSha: null,
+          },
+        ];
+      }
+      if (command === 'git_push') {
+        isPushed = true;
+        return { stdout: '', stderr: '', exitCode: 0 };
+      }
+      return null;
+    });
+    const drawer = screen.getByRole('region', { name: 'Debugger' });
+    fireEvent.click(within(drawer).getByRole('button', { name: 'Push' }));
+    await waitFor(() =>
+      expect(within(drawer).getByText('payments-api / test is running again')).toBeDefined(),
+    );
+    const chain = within(drawer).getByRole('list', { name: 'Agent chain' });
+    expect(within(chain).getAllByRole('listitem')).toHaveLength(4);
+    expect(within(chain).queryByText('Needs you')).toBeNull();
+    expect(within(drawer).queryByRole('button', { name: 'Push' })).toBeNull();
+  });
+  it('keeps the seeded projects and one model for the CI fix in the Activity scene', async () => {
+    show({ name: 'activity-check-fixed-local' });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    });
+    const body = document.body.textContent ?? '';
+    expect(body).toContain('hl/fix-duplicate-credit');
+    expect(body).not.toContain('No project yet');
+    const [title] = screen.getAllByText('CI fix · payments-api / test · #318');
+    let row: HTMLElement | null = title?.parentElement ?? null;
+    while (row !== null && !(row.textContent ?? '').includes('Analyze done')) {
+      row = row.parentElement;
+    }
+    expect(row?.textContent).toContain('Sonnet 5.5');
+    expect(row?.textContent).not.toContain('Composer 2.5');
   });
   it('turns the Next card into a success card with Push', () => {
     show({ name: 'activity-check-fixed-local' });

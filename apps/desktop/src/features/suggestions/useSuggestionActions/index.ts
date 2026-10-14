@@ -2,6 +2,7 @@ import { analyzeFailingChecks } from '../../branch/checks/analyzeFailingChecks';
 import { checkOutcomeOf } from '../../branch/checks/checkOutcomeOf';
 import { checkTargetOf } from '../../branch/checks/checkTargetOf';
 import { failingChecksOf } from '../../branch/checks/failingChecksOf';
+import { pushCheckFix } from '../../branch/checks/pushCheckFix';
 import { startCheckFix } from '../../branch/checks/startCheckFix';
 import { selectCheckChain } from '../../../store/slices/agents/selectCheckChain';
 import { NAMES } from '../../../shared/names';
@@ -125,7 +126,6 @@ export const useSuggestionActions = ({
   const proposalActions = useMountProposalActions({ sessionId });
   const runPlan = useAppStore((state) => state.runPlan);
   const pushSessionBranch = useAppStore((state) => state.pushSessionBranch);
-  const readCheckFixCommit = useAppStore((state) => state.readCheckFixCommit);
   const openRewriteHistory = useAppStore((state) => state.openRewriteHistory);
   const markPrReady = useAppStore((state) => state.markPrReady);
   const mergePr = useAppStore((state) => state.mergePr);
@@ -488,22 +488,7 @@ export const useSuggestionActions = ({
             label: 'Push',
             isDisabled: false,
             failureTitle: "Couldn't push the branch",
-            run: async () => {
-              const result = await pushSessionBranch({
-                sessionId,
-                mountId: suggestion.payload.mountId,
-              });
-              if (!result.ok) {
-                throw new Error(result.error);
-              }
-              if (fixAgentId !== undefined) {
-                await readCheckFixCommit({
-                  sessionId,
-                  mountId: suggestion.payload.mountId,
-                  fixAgentId,
-                });
-              }
-            },
+            run: () => pushCheckFix({ sessionId, mountId: suggestion.payload.mountId, fixAgentId }),
           },
           onDismiss: null,
         };

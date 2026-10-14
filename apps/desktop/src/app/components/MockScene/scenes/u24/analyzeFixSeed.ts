@@ -1,6 +1,7 @@
 import type { Agent, AgentId, BranchCommit, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { sceneClock } from '../../sceneClock';
+import { payloadString } from '../audit/ipcPayload';
 import { mockSceneIpc } from '../mockSceneIpc';
 import { checksAnalyzeSeed } from './checksAnalyzeSeed';
 
@@ -66,12 +67,19 @@ export const analyzeFixSeed = ({ phase, shouldOpenDrawer = false }: Params) => {
       },
       inProgress: null,
     };
-    mockSceneIpc((command) => {
+    const settled: WorktreeStatus = {
+      ...status,
+      head: 'mock-other-head',
+      headSubject: null,
+      upstreamDistance: { kind: 'known', ahead: 0, behind: 0 },
+    };
+    mockSceneIpc((command, payload) => {
+      const isFixTree = payloadString({ payload, key: 'worktreePath' }) === seed.repo.worktreePath;
       if (command === 'worktree_commits') {
-        return [commit];
+        return isFixTree ? [commit] : [];
       }
       if (command === 'worktree_status') {
-        return status;
+        return isFixTree ? status : settled;
       }
       return null;
     });

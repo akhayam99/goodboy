@@ -13,8 +13,8 @@ export const fixOutcomeText = ({ state, commit, checkName }: Params): string | n
       return 'Implementer is applying it on the branch.';
     case 'fixed-local':
       return commit === null
-        ? 'Committed on the branch, not pushed yet.'
-        : `Committed ${commit} on the branch, not pushed yet.`;
+        ? 'Committed on the branch, not pushed yet. Push it so the check runs again.'
+        : `Committed ${commit} on the branch, not pushed yet. Push it so the check runs again.`;
     case 'fixed-pushed':
       return commit === null
         ? `Pushed. ${subject} runs again.`

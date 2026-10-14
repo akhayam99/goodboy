@@ -20,6 +20,7 @@ import { analyzeFailingChecks } from '../checks/analyzeFailingChecks';
 import { checkRoutingOf } from '../checks/checkRoutingOf';
 import { startCheckFix } from '../checks/startCheckFix';
 import { useCheckChain } from '../hooks/useCheckChain';
+import { useCheckFixPush } from '../hooks/useCheckFixPush';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -53,6 +54,7 @@ export const CheckAnalysisActions = ({ sessionId, mountId, pullRequest, check }:
   const { chain } = useCheckChain({ sessionId, mountId, url });
   const routing = useAppStore(useShallow((state) => checkRoutingOf({ state, sessionId, mountId })));
   const fixRouting = useKindRouting({ sessionId, kind: 'implementer' });
+  const checkFixPush = useCheckFixPush({ sessionId, mountId, fixAgentId: chain.fix?.id });
   const reportError = useAppStore((state) => state.reportError);
   const openDrawer = useAppStore((state) => state.openDrawer);
   const [isStarting, setIsStarting] = useState(false);
@@ -110,6 +112,17 @@ export const CheckAnalysisActions = ({ sessionId, mountId, pullRequest, check }:
           </Button>
         </>
       )}
+      {chain.state === 'fixed-local' ? (
+        <Button
+          variant="secondary"
+          size="sm"
+          isBusy={checkFixPush.isPushing}
+          busyLabel="Pushing"
+          onClick={() => void checkFixPush.push()}
+        >
+          Push
+        </Button>
+      ) : null}
       {chain.state === 'proposal' ? (
         <Tooltip
           content={`Start an Implementer with this proposal: ${modelLabel(fixRouting.model, fixRouting.provider)} · ${fixRouting.effort}`}

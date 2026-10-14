@@ -5,7 +5,6 @@ import { StartHint } from '../../../../shared/components/StartHint';
 import { START_HINT_COPY } from '../../../../shared/components/startHintCopy';
 import { optionSummary } from '../../checks/optionSummary';
 import type { ProposalOptions } from '../../checks/proposalOptionsOf';
-import { DrawerBox } from './DrawerBox';
 import { Proposal } from './Proposal';
 
 export type StartParams = {
@@ -20,7 +19,6 @@ type Props = {
   readonly isActionable: boolean;
   readonly isStarting: boolean;
   readonly routing: string;
-  readonly outcome: string | null;
   readonly onStart: (params: StartParams) => void;
   readonly onDismiss: () => void;
 };
@@ -33,7 +31,6 @@ export const ProposedFix = ({
   isActionable,
   isStarting,
   routing,
-  outcome,
   onStart,
   onDismiss,
 }: Props) => {
@@ -45,7 +42,7 @@ export const ProposedFix = ({
         options.options.find((option) => option.key === options.recommendedKey) ??
         options.options[0]);
   return (
-    <DrawerBox label="Proposed fix">
+    <>
       {options === null || selected === undefined ? (
         <Proposal text={proposal} />
       ) : (
@@ -103,11 +100,6 @@ export const ProposedFix = ({
           <span className="text-meta text-faint-foreground">Implementer · {routing}</span>
         </div>
       ) : null}
-      {outcome === null ? null : (
-        <p role="status" className="text-body text-muted-foreground">
-          {outcome}
-        </p>
-      )}
-    </DrawerBox>
+    </>
   );
 };

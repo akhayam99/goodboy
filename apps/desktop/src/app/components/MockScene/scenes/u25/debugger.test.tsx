@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   importStore,
@@ -58,6 +58,7 @@ describe('Debugger scenes', () => {
   it('opens the log scene with the log folded', () => {
     show({ name: 'debugger-drawer-ci-log' });
     const drawer = screen.getByRole('region', { name: 'Debugger' });
+    fireEvent.click(within(drawer).getByRole('button', { name: 'Failed log tail' }));
     expect(
       within(drawer)
         .getByRole('button', { name: /^payments-api \/ test/ })

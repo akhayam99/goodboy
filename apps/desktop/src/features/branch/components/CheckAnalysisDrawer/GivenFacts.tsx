@@ -4,19 +4,18 @@ import { Button, Disclosure } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { openUrl } from '../../../../shared/lib/editor';
 import { givenOf } from '../../checks/givenOf';
-import { DrawerBox } from './DrawerBox';
 import { Fact } from './Fact';
 
 type Props = {
   readonly text: string;
 };
 
-export const GivenBox = ({ text }: Props) => {
+export const GivenFacts = ({ text }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const given = givenOf({ text });
   const isEmpty = given.pullRequest === null && given.head === null && given.checks.length === 0;
   return (
-    <DrawerBox label="What it was given">
+    <div className="flex min-w-0 flex-col gap-3">
       {isEmpty ? (
         <p className="text-body text-muted-foreground">{text}</p>
       ) : (
@@ -77,6 +76,6 @@ export const GivenBox = ({ text }: Props) => {
           </ul>
         </Disclosure>
       )}
-    </DrawerBox>
+    </div>
   );
 };

@@ -1,4 +1,4 @@
-import type { Agent, PrCheckRun, PullRequestState, TurnEvent } from '@goodboy/types';
+import type { Agent, AgentId, PrCheckRun, PullRequestState, TurnEvent } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { resolveSessionRepo } from '../../../../../store/slices/worktrees/resolveSessionRepo';
 import { ciFixName } from '../../../../../features/branch/checks/ciFixName';
@@ -6,6 +6,7 @@ import { buildAnalyzeChecksPrompt } from '../../../../../features/branch/checks/
 import { sceneClock } from '../../sceneClock';
 import { SESSION_ID, seedActivityRunScene } from '../activityRunSeed';
 
+const DEBUGGER_ID: AgentId = JSON.parse(JSON.stringify('mock-u24-checks-analyze-debugger'));
 const clock = sceneClock({ anchor: '2026-10-10T09:40:00.000Z' });
 const now = clock.iso({ at: '2026-10-10T09:40:00.000Z' });
 const check: PrCheckRun = {
@@ -60,6 +61,7 @@ export const checksAnalyzeSeed = ({
   }
   const agent: Agent = {
     ...previous,
+    id: DEBUGGER_ID,
     workflowRunId: undefined,
     stepId: undefined,
     sessionId: SESSION_ID,
@@ -115,6 +117,7 @@ export const checksAnalyzeSeed = ({
     detailError: null,
   };
   useAppStore.setState({
+    loadSessionMounts: async () => [],
     sessionPhaseRuns: { [SESSION_ID]: phase === 'failing' ? [] : [agent] },
     agentTurnState:
       phase === 'failing'
