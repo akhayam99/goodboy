@@ -51,6 +51,10 @@ import { createIntegrationsSlice } from './slices/integrations';
 import { createSidebarSlice } from './slices/sidebar';
 import { createSettingsLastPageSlice } from './slices/settings-last-page';
 import { createChatLastOpenSlice } from './slices/chat-last-open';
+import {
+  checkFixCommitsInitialState,
+  createCheckFixCommitsSlice,
+} from './slices/check-fix-commits';
 import { createSessionViewSlice } from './slices/session-view';
 import { createSavedProjectModelsSlice } from './slices/saved-project-models';
 import { savedProjectModelsInitialState } from './slices/saved-project-models/state';
@@ -241,6 +245,7 @@ export type AppStore = AppState &
   ReturnType<typeof createSidebarSlice> &
   ReturnType<typeof createSettingsLastPageSlice> &
   ReturnType<typeof createChatLastOpenSlice> &
+  ReturnType<typeof createCheckFixCommitsSlice> &
   ReturnType<typeof createSessionFiltersSlice> &
   ReturnType<typeof createSettingsSlice> &
   ReturnType<typeof createBootSlice> &
@@ -351,6 +356,7 @@ export const initialState: AppState = {
   ...sidebarInitialState,
   ...settingsLastPageInitialState,
   ...chatLastOpenInitialState,
+  ...checkFixCommitsInitialState,
   ...githubInitialState,
   ...initialGitlabMrState,
   ...initialBitbucketPrState,
@@ -411,6 +417,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createSidebarSlice({ set, get }),
   ...createSettingsLastPageSlice({ set, get }),
   ...createChatLastOpenSlice({ set, get }),
+  ...createCheckFixCommitsSlice({ set, get }),
   ...createSessionViewSlice({ set, get }),
   ...createSavedProjectModelsSlice({ set, get }),
   ...createSessionPinsSlice({ set, get }),

@@ -30,7 +30,8 @@ const WORDS: Readonly<Record<Exclude<CheckChainState, 'none'>, string>> = {
   analyzing: 'Debugger is analyzing',
   proposal: 'Debugger proposes a fix',
   fixing: 'Implementer is fixing',
-  fixed: 'Fixed by Implementer. The checks run again when you push.',
+  'fixed-local': 'Fixed, not pushed',
+  'fixed-pushed': 'Pushed, re-running',
   'fix-failed': 'The fix stopped',
   'no-fix': 'Debugger found no fix',
 };
@@ -39,14 +40,15 @@ const TONES = {
   analyzing: 'warning',
   fixing: 'warning',
   proposal: 'success',
-  fixed: 'success',
+  'fixed-local': 'warning',
+  'fixed-pushed': 'success',
   'fix-failed': 'danger',
   'no-fix': 'neutral',
 } as const satisfies Record<Exclude<CheckChainState, 'none'>, string>;
 
 export const CheckAnalysisActions = ({ sessionId, mountId, pullRequest, check }: Props) => {
   const url = check.detailsUrl ?? pullRequest.url;
-  const { chain } = useCheckChain({ sessionId, url });
+  const { chain } = useCheckChain({ sessionId, mountId, url });
   const routing = useAppStore(useShallow((state) => checkRoutingOf({ state, sessionId, mountId })));
   const fixRouting = useKindRouting({ sessionId, kind: 'implementer' });
   const reportError = useAppStore((state) => state.reportError);
@@ -81,7 +83,11 @@ export const CheckAnalysisActions = ({ sessionId, mountId, pullRequest, check }:
         <>
           <StatusDot
             tone={TONES[chain.state]}
-            pulsing={chain.state === 'analyzing' || chain.state === 'fixing'}
+            pulsing={
+              chain.state === 'analyzing' ||
+              chain.state === 'fixing' ||
+              chain.state === 'fixed-pushed'
+            }
             size="sm"
           />
           <span role="status" className="text-meta text-muted-foreground">

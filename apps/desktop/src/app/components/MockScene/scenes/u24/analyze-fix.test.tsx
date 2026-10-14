@@ -83,6 +83,11 @@ describe('analyze fix scenes', () => {
     show({ name: 'activity-check-chain' });
     expect(screen.getAllByText('Debugger').length).toBeGreaterThan(0);
     expect(screen.queryByText('Implementer')).toBeNull();
+    const next = screen.getByRole('region', { name: 'Next' });
+    expect(within(next).getByText('Fixing payments-api / test on #318')).toBeDefined();
+    expect(within(next).getByRole('button', { name: 'Open' })).toBeDefined();
+    expect(within(next).queryByRole('button', { name: 'Push' })).toBeNull();
+    expect(screen.queryByText('Review the changes')).toBeNull();
   });
   it.each(Object.keys(U24_ANALYZE_FIX_SCENES))(
     '%s has no accessibility violations',

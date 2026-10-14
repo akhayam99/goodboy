@@ -360,6 +360,23 @@ fails silently at runtime.
   `setResolveThreadReplyPosted`, a write that leaves the revision alone: going
   through `updateResolveThread` would bump it and strand an approved reply.
 
+- Never derive repository state from an agent's transcript. A fix agent that
+  commits quietly (`commit -qam ... && log --oneline -1`) prints no
+  `[branch sha]` line, and a regex over tool output reads "no commit" for a
+  commit that exists. Whether a CI fix committed, and whether that commit is
+  pushed, come from `readCheckFixCommit` (`listBranchCommits`: the newest
+  commit made after the fix started, and its `pushed` flag). A check chain
+  reads that fact through `selectCheckChain`; `commitOf` is only the fallback
+  when the repository is unreadable. Re-read after a push
+  (`useCheckFixCommitSync` does it when the mount's head or upstream distance
+  changes) or the card keeps saying "not pushed".
+
+- A CI fix chain is keyed by the check URL it analyzed, and a push makes
+  GitHub start a run with a new URL. After the push, `checkTargetOf` keeps the
+  latest analysis of the mount (same URL, or same check name) so the chain does
+  not fall back to `none`, and `checkOutcomeOf` reads the new run by name: the
+  old URL still listed is "running", never "still fails".
+
 ## Traps in the toolchain
 
 - A new worktree needs `pnpm install`. In this checkout that install exits 1

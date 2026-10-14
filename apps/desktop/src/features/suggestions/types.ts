@@ -12,6 +12,8 @@ import type {
   WorkflowId,
   WorkflowRunId,
 } from '@goodboy/types';
+import type { CheckChainState } from '../../store/slices/agents/selectCheckChain';
+import type { CheckOutcome } from '../branch/checks/checkOutcomeOf';
 import type { AgentKind } from '../session/agent-kind';
 
 export const SUGGESTION_KINDS = [
@@ -36,6 +38,14 @@ export const SUGGESTION_KINDS = [
 ] as const;
 
 export type SuggestionKind = (typeof SUGGESTION_KINDS)[number];
+
+export type FixChecksProgress = {
+  readonly chain: CheckChainState;
+  readonly checkName: string;
+  readonly commit: string | null;
+  readonly commitCount: number;
+  readonly outcome: CheckOutcome | null;
+};
 
 export type ScribeRequestState = 'writing' | 'ready' | 'creating';
 
@@ -136,6 +146,7 @@ export type SessionSuggestion =
         readonly mountId: MountId;
         readonly projectName: string;
         readonly prNumber: number;
+        readonly progress?: FixChecksProgress;
       };
     })
   | (SuggestionBase & {

@@ -1,5 +1,6 @@
 activity
 activity-check-chain
+activity-check-fixed-local
 activity-empty
 activity-groups
 activity-jobs
@@ -136,6 +137,7 @@ chat-list-idle
 chat-list-loading
 chat-room
 chat-shell
+checks-fixed-local
 checks-fixing
 checks-proposal
 cleanup-process-blocked
@@ -181,6 +183,7 @@ cta-push-done
 cta-push-failed
 cta-push-pending
 debugger-drawer-ci-log
+debugger-drawer-fixed-local
 debugger-drawer-options
 debugger-drawer-proposal
 debugger-drawer-running

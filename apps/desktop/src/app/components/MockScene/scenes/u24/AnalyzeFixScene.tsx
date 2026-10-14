@@ -7,7 +7,7 @@ import { BranchChecks } from '../../../../../features/branch/components/BranchCh
 import { DrawerHost } from '../../../DrawerHost';
 import { shellArrangement } from '../../../../shellArrangement';
 import { SESSION, SESSION_ID } from '../activityRunSeed';
-import { analyzeFixSeed } from './analyzeFixSeed';
+import { analyzeFixSeed, type AnalyzeFixPhase } from './analyzeFixSeed';
 
 const arrangement = shellArrangement({
   hasWorkspace: true,
@@ -15,7 +15,7 @@ const arrangement = shellArrangement({
 });
 
 type Props = {
-  readonly phase: 'proposal' | 'fixing';
+  readonly phase: AnalyzeFixPhase;
   readonly surface: 'checks' | 'activity';
   readonly shouldOpenDrawer?: boolean;
 };

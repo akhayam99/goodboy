@@ -8,6 +8,10 @@ import { AgentChain } from '../../../../shared/components/AgentChain';
 import { useKindRouting } from '../../../../shared/hooks/useKindRouting';
 import { routingShortText } from '../../../../shared/components/RoutingPicker/routingSummary';
 import { checkAnalysisOf } from '../../checks/checkAnalysisOf';
+import { analyzedCheckNameOf } from '../../checks/analyzedCheckNameOf';
+import { checkNameOf } from '../../checks/checkNameOf';
+import { checkOutcomeOf } from '../../checks/checkOutcomeOf';
+import { fixOutcomeText } from '../../checks/fixOutcomeText';
 import { sectionOf } from '../../checks/sectionOf';
 import { startCheckFix } from '../../checks/startCheckFix';
 import { useCheckChain } from '../../hooks/useCheckChain';
@@ -25,7 +29,7 @@ type Props = {
 };
 
 export const CheckAnalysisDrawer = ({ sessionId, mountId, checkUrl, onClose }: Props) => {
-  const { chain, events, turnState } = useCheckChain({ sessionId, url: checkUrl });
+  const { chain, events, turnState } = useCheckChain({ sessionId, mountId, url: checkUrl });
   const agent = chain.debugger;
   const fixRouting = useKindRouting({ sessionId, kind: 'implementer' });
   const dismissCheckProposal = useAppStore((state) => state.dismissCheckProposal);
@@ -56,18 +60,20 @@ export const CheckAnalysisDrawer = ({ sessionId, mountId, checkUrl, onClose }: P
   const kickoff = analysis?.kickoff ?? '';
   const given = sectionOf({ text: kickoff, heading: 'What it was given' })?.body ?? null;
   const log = sectionOf({ text: kickoff, heading: 'Failed log tail' })?.body ?? null;
+  const urlName = useAppStore((state) => checkNameOf({ state, mountId, url: checkUrl }));
+  const checkName = analyzedCheckNameOf({ events: events ?? [] }) ?? urlName;
+  const checkOutcome = useAppStore((state) =>
+    checkOutcomeOf({
+      checks: state.mountGithub[mountId]?.detail?.checks ?? [],
+      name: checkName,
+      analyzedUrl: checkUrl,
+    }),
+  );
+  const isPushed = chain.state === 'fixed-pushed';
+  const hasFixLanded = chain.state === 'fixed-local' || isPushed;
   const outcome =
-    chain.state === 'fixing'
-      ? 'Implementer is applying it on the branch.'
-      : chain.state === 'fixed'
-        ? chain.commit === null
-          ? 'Applied on the branch. The check runs again.'
-          : `Applied and committed ${chain.commit} on the branch. The check runs again.`
-        : chain.state === 'fix-failed'
-          ? 'The fix stopped. Open the Implementer to see why.'
-          : chain.isDismissed
-            ? 'Dismissed. Analyze again for another proposal.'
-            : null;
+    fixOutcomeText({ state: chain.state, commit: chain.commit, checkName }) ??
+    (chain.isDismissed ? 'Dismissed. Analyze again for another proposal.' : null);
   return (
     <DrawerFrame title="Debugger" icon={Bug} onClose={onClose}>
       {agent === null || analysis === null ? (
@@ -111,26 +117,73 @@ export const CheckAnalysisDrawer = ({ sessionId, mountId, checkUrl, onClose }: P
                 <AgentChain
                   sessionId={sessionId}
                   steps={[
-                    {
-                      name: 'Proposal',
-                      agent: null,
-                      isRunning: false,
-                      detail: chain.isDismissed
-                        ? 'Dismissed'
-                        : chain.fix === null
-                          ? 'Waiting for you'
-                          : 'Accepted',
-                      tone: chain.fix === null && !chain.isDismissed ? 'warning' : 'neutral',
-                    },
+                    hasFixLanded
+                      ? {
+                          name: 'Analyze',
+                          agent: null,
+                          isRunning: false,
+                          detail: 'Done',
+                          tone: 'success',
+                        }
+                      : {
+                          name: 'Proposal',
+                          agent: null,
+                          isRunning: false,
+                          detail: chain.isDismissed
+                            ? 'Dismissed'
+                            : chain.fix === null
+                              ? 'Waiting for you'
+                              : 'Accepted',
+                          tone: chain.fix === null && !chain.isDismissed ? 'warning' : 'neutral',
+                        },
                     {
                       name: 'Fix',
                       agent: chain.fix,
                       isRunning: chain.state === 'fixing',
                       ...(chain.fix === null && { detail: 'Not started' }),
-                      ...(chain.state === 'fixed' &&
-                        chain.commit !== null && { detail: `Committed ${chain.commit}` }),
+                      ...(hasFixLanded && { detail: 'Done', tone: 'success' as const }),
                       ...(chain.fix === null && { tone: 'neutral' as const }),
                     },
+                    ...(hasFixLanded
+                      ? [
+                          isPushed
+                            ? {
+                                name: 'Push',
+                                agent: null,
+                                isRunning: false,
+                                detail: 'Done',
+                                tone: 'success' as const,
+                              }
+                            : {
+                                name: 'Push',
+                                agent: null,
+                                isRunning: false,
+                                detail: 'Needs you',
+                                tone: 'warning' as const,
+                              },
+                        ]
+                      : []),
+                    ...(isPushed
+                      ? [
+                          {
+                            name: checkName ?? 'Check',
+                            agent: null,
+                            isRunning: checkOutcome === 'running',
+                            detail:
+                              checkOutcome === 'running'
+                                ? 'Running'
+                                : checkOutcome === 'passed'
+                                  ? 'Passed'
+                                  : 'Still failing',
+                            tone:
+                              checkOutcome === 'passed'
+                                ? ('success' as const)
+                                : checkOutcome === 'failed'
+                                  ? ('danger' as const)
+                                  : ('warning' as const),
+                          },
+                        ]
+                      : []),
                   ]}
                 />
               </DrawerBox>

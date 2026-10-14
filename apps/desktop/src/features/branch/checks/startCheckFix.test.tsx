@@ -178,11 +178,25 @@ describe('Start fix with the real store and SQLite', () => {
     );
     expect(screen.getByText('Implementer is fixing')).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Start fix' })).toBeNull();
+    storySpies.listBranchCommits.mockResolvedValue([
+      {
+        sha: '9e4c1a7d3b5f60718293a4b5c6d7e8f901234567',
+        shortSha: '9e4c1a7',
+        subject: 'Guard the retry',
+        author: 'Acme Dev',
+        timestamp: Math.floor(Date.now() / 1_000) + 3_600,
+        pushed: false,
+        parentSha: null,
+      },
+    ]);
     act(() =>
       store.setState({
         sessionPhaseRuns: {
           [seed.sessionId]: (store.getState().sessionPhaseRuns[seed.sessionId] ?? []).map(
-            (agent) => (agent.id === child.id ? { ...agent, status: 'completed' as const } : agent),
+            (agent) =>
+              agent.id === child.id
+                ? { ...agent, status: 'completed' as const, startedAt: seed.events[0]!.at }
+                : agent,
           ),
         },
         agentTurnState: {
@@ -197,14 +211,14 @@ describe('Start fix with the real store and SQLite', () => {
               runId: FIX_RUN,
               toolUseId: 'c1',
               toolName: 'Bash',
-              input: { command: 'git commit -m fix' },
+              input: { command: 'git commit -qam fix && git log --oneline -1' },
               at: seed.events[0]!.at,
             },
             {
               kind: 'tool_call_end',
               runId: FIX_RUN,
               toolUseId: 'c1',
-              output: '[acme/fix-credits 9e4c1a7] fix',
+              output: '9e4c1a7 fix\n',
               isError: false,
               at: seed.events[0]!.at,
             },
@@ -212,9 +226,32 @@ describe('Start fix with the real store and SQLite', () => {
         },
       }),
     );
-    expect(
-      screen.getByText('Fixed by Implementer. The checks run again when you push.'),
-    ).toBeDefined();
+    await waitFor(() => expect(screen.getByText('Fixed, not pushed')).toBeDefined());
+    expect(screen.queryByText('The fix stopped')).toBeNull();
+    expect(store.getState().checkFixCommits[child.id]).toMatchObject({
+      kind: 'found',
+      sha: '9e4c1a7',
+      unpushed: 1,
+    });
+    storySpies.listBranchCommits.mockResolvedValue([
+      {
+        sha: '9e4c1a7d3b5f60718293a4b5c6d7e8f901234567',
+        shortSha: '9e4c1a7',
+        subject: 'Guard the retry',
+        author: 'Acme Dev',
+        timestamp: Math.floor(Date.now() / 1_000) + 3_600,
+        pushed: true,
+        parentSha: null,
+      },
+    ]);
+    await act(() =>
+      store.getState().readCheckFixCommit({
+        sessionId: seed.sessionId,
+        mountId: seed.repo.mountId,
+        fixAgentId: child.id,
+      }),
+    );
+    expect(screen.getByText('Pushed, re-running')).toBeDefined();
   });
   it.each([
     {

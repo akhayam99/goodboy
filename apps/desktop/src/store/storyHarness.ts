@@ -16,6 +16,7 @@ import type { Notification } from '@goodboy/db';
 import type {
   Agent,
   AgentId,
+  BranchCommit,
   BudgetAlert,
   BudgetRule,
   DiffComment,
@@ -377,6 +378,9 @@ export const storySpies = {
     files: [],
     numstat: '',
   })),
+  listBranchCommits: vi.fn(
+    async (_worktreePath: string): Promise<ReadonlyArray<BranchCommit>> => [],
+  ),
   insertSession: vi.fn(async () => undefined),
   insertSessionEvent: vi.fn(
     async (_params: { readonly event: { readonly kind: string } }) => undefined,
@@ -465,6 +469,7 @@ export const resetStorySpies = () => {
     );
   }
   storySpies.listActiveResolveAttempts.mockImplementation(async () => []);
+  storySpies.listBranchCommits.mockImplementation(async () => []);
   storySpies.createWorktree.mockImplementation(async () => ({
     worktreePath: '/tmp/app/.goodboy/worktrees/goal-12345678',
     branchName: 'goodboy/goal-12345678',
@@ -845,7 +850,7 @@ export const worktreeModuleMock = () => ({
   worktreeFolderFacts: vi.fn(async () => []),
   diskFree: vi.fn(async () => ({ freeBytes: null, totalBytes: null })),
   removeWorktreeFolder: storySpies.removeWorktreeFolder,
-  listBranchCommits: vi.fn(async () => []),
+  listBranchCommits: (worktreePath: string) => storySpies.listBranchCommits(worktreePath),
   listBranchNames: vi.fn(async () => [] as ReadonlyArray<string>),
   worktreeIsAncestor: vi.fn(async () => true),
   worktreeRemoteHead: vi.fn(async () => ''),

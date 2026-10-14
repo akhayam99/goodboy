@@ -1,4 +1,7 @@
 import { analyzeFailingChecks } from '../../branch/checks/analyzeFailingChecks';
+import { checkOutcomeOf } from '../../branch/checks/checkOutcomeOf';
+import { checkTargetOf } from '../../branch/checks/checkTargetOf';
+import { failingChecksOf } from '../../branch/checks/failingChecksOf';
 import { startCheckFix } from '../../branch/checks/startCheckFix';
 import { selectCheckChain } from '../../../store/slices/agents/selectCheckChain';
 import { NAMES } from '../../../shared/names';
@@ -128,6 +131,7 @@ export const useSuggestionActions = ({
   const proposalActions = useMountProposalActions({ sessionId });
   const runPlan = useAppStore((state) => state.runPlan);
   const pushSessionBranch = useAppStore((state) => state.pushSessionBranch);
+  const readCheckFixCommit = useAppStore((state) => state.readCheckFixCommit);
   const openRewriteHistory = useAppStore((state) => state.openRewriteHistory);
   const markPrReady = useAppStore((state) => state.markPrReady);
   const mergePr = useAppStore((state) => state.mergePr);
@@ -401,34 +405,13 @@ export const useSuggestionActions = ({
       };
     }
     if (suggestion.kind === 'fix-checks') {
-      const readFailing = () => {
-        const state = useAppStore.getState();
-        const github = state.mountGithub[suggestion.payload.mountId];
-        const port = state.pullRequestViews[sessionId];
-        const portView = port?.mountId === suggestion.payload.mountId ? port.view : null;
-        const pullRequest = github?.pr ?? portView;
-        const detail = github?.detail;
-        const checks =
-          detail?.prNumber === pullRequest?.number
-            ? detail?.checks
-            : portView?.number === pullRequest?.number
-              ? portView?.checks.runs
-              : undefined;
-        if (
-          pullRequest === undefined ||
-          pullRequest === null ||
-          pullRequest.number !== suggestion.payload.prNumber ||
-          checks === undefined
-        ) {
-          return null;
-        }
-        return {
-          pullRequest,
-          checks: checks.filter((check) =>
-            ['failure', 'timed_out', 'cancelled'].includes(check.conclusion),
-          ),
-        };
-      };
+      const readFailing = () =>
+        failingChecksOf({
+          state: useAppStore.getState(),
+          sessionId,
+          mountId: suggestion.payload.mountId,
+          prNumber: suggestion.payload.prNumber,
+        });
       const analyze = async ({ routing }: AnalyzeParams = {}) => {
         const state = useAppStore.getState();
         const github = state.mountGithub[suggestion.payload.mountId];
@@ -454,7 +437,18 @@ export const useSuggestionActions = ({
         });
       };
       const failing = readFailing();
-      const url = failing?.checks[0]?.detailsUrl ?? failing?.pullRequest.url;
+      const firstFailing = failing?.checks[0];
+      const target = checkTargetOf({
+        state: useAppStore.getState(),
+        sessionId,
+        mountId: suggestion.payload.mountId,
+        failingUrl:
+          firstFailing === undefined
+            ? null
+            : (firstFailing.detailsUrl ?? failing?.pullRequest.url ?? null),
+        failingName: firstFailing?.name ?? null,
+      });
+      const url = target?.url;
       const chain =
         url === undefined
           ? null
@@ -467,6 +461,56 @@ export const useSuggestionActions = ({
             failureTitle: "Couldn't start the Implementer",
             run: async () => {
               await startCheckFix({ sessionId, url, mountId: suggestion.payload.mountId });
+            },
+          },
+          onDismiss: null,
+        };
+      }
+      if (url !== undefined && chain !== null && chain.state === 'fixed-local') {
+        const fixAgentId = chain.fix?.id;
+        return {
+          primary: {
+            label: 'Push',
+            isDisabled: false,
+            failureTitle: "Couldn't push the branch",
+            run: async () => {
+              const result = await pushSessionBranch({
+                sessionId,
+                mountId: suggestion.payload.mountId,
+              });
+              if (!result.ok) {
+                throw new Error(result.error);
+              }
+              if (fixAgentId !== undefined) {
+                await readCheckFixCommit({
+                  sessionId,
+                  mountId: suggestion.payload.mountId,
+                  fixAgentId,
+                });
+              }
+            },
+          },
+          onDismiss: null,
+        };
+      }
+      if (url !== undefined && chain !== null && chain.state === 'fixed-pushed') {
+        const outcome = checkOutcomeOf({
+          checks: failing?.allChecks ?? [],
+          name: target?.name ?? null,
+          analyzedUrl: url,
+        });
+        if (outcome !== 'failed') {
+          return NO_ACTIONS;
+        }
+        return {
+          primary: {
+            label: 'Analyze again',
+            isDisabled: false,
+            failureTitle: "Couldn't start the Debugger",
+            run: () => analyze(),
+            runsOn: {
+              kind: 'debugger',
+              runWith: (routing) => analyze({ routing }),
             },
           },
           onDismiss: null,
