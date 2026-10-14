@@ -95,9 +95,8 @@ Each turn Goodboy starts gets these environment variables:
 - `GOODBOY_QUERY_SOCKET`: the socket this running copy listens on
 - `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`: the workspace and session of the turn
 - `GOODBOY_MOUNT_ID`, `GOODBOY_RUN_ID`: the mount (one checkout of a project in the session) and the run the turn belongs to
-- `GOODBOY_CAP`: a capability token, set only on a turn that holds one. Only the turn of an Auto agent holds one (`turn_spawn` mints it for a spawn that carries `autoTree`), and the app sends `autoTree` only for an Auto turn, which needs delegation switched on, and it is not
 
-The prompt shows the call as `"$GOODBOY_BIN" query <provider> <verb>`. The path is quoted because it may contain a space. Output is plain text, and `--json` returns the raw payload. `"$GOODBOY_BIN" query <provider> --help` prints the exact arguments of each verb. The turn of an Auto agent is the one exception: it is confined to an allow list and Claude refuses a command that holds a variable, so its prompt gives the absolute path instead (see [auto.md](auto.md)).
+The prompt shows the call as `"$GOODBOY_BIN" query <provider> <verb>`. The path is quoted because it may contain a space. Output is plain text, and `--json` returns the raw payload. `"$GOODBOY_BIN" query <provider> --help` prints the exact arguments of each verb.
 
 Three scope flags work on every verb:
 
@@ -117,38 +116,10 @@ Every response has the shape `{ok, data, error}`. When the bridge refuses, it ca
 - `operation_pending`: the request may have run, so read it back
 - `request_conflict`: same request id, different arguments
 - `fork_unsatisfied`: the fork came back as the source mount, or on another branch, so no new turn starts
-- `capability_refused`: the turn holds no capability, a revoked or stale one, or one that does not allow that command
-- `delegation_unavailable`: the app is not delegating work right now
 
 New codes can be added over time. The response shape stays the same.
 
 The catalog also has one verb outside the integrations, `project materialize`. It adds a workspace project to the session as a mount with its own worktree and branch.
-
-### Capability tokens
-
-A capability is a random 256-bit token the app mints for one turn and keeps in memory in `query_bridge/capability.rs`. The turn carries it in `GOODBOY_CAP`. The record, never the variable, is the authority: it names the agent, the tree, the generation, the workspace, the session and the run, and it expires after an hour.
-
-`CapabilityRegistry::authorize` is the one check, and a call must pass all of it, in this order:
-
-1. A token is present and known, not revoked and not expired.
-2. The verb is one of the closed set `agent delegate`, `agent status`, `agent answer`, `agent finish` and `agent request-status`. Any other verb, `mount fork` included, is refused.
-3. The tree, the generation and the active run the caller reports match the record.
-
-A token is revoked when its turn ends (`revoke_turn`), when its tree stops (`revoke_tree`) and when a newer generation starts (`revoke_before_generation`). A revoked token stays refused until its record expires. A child agent is minted no token, so it cannot call these verbs.
-
-`turn_spawn` mints the token for an Auto turn only, binds it to the run it starts, passes it through `TurnBinding.capability`, and revokes it when the turn process exits or the spawn fails. The CLI sends `GOODBOY_CAP` as the `capability` field of the request. `query_bridge/agent.rs` reads the grant behind the token, reads the live tree row (`auto_trees.generation` and `active_run_id`) and runs `authorize` on every call; a refusal comes back as `capability_refused` with the reason in words. The app revokes a whole tree on a stop (`auto_capability_revoke_tree`) and the older turns on a new generation (`auto_capability_revoke_generation`). A child agent is minted no token, so every `agent` verb refuses it. A write verb from any other provider is refused when it comes from the run of an Auto turn, so `mount fork` is out of reach even without the token.
-
-### Delegating work (Auto)
-
-The `agent` provider is the Auto agent's way to hand work over. All five verbs need the capability above:
-
-- `agent delegate --request-id <id> --spec <file|->`: one to four children, each with a role from the closed list, a task, the reason for the role and optionally a model, an effort, a done-when line, artifact ids, a `mount` and `revises`. A child can instead be `retryOf` an earlier delegation plus a `reason` (and optionally a model), which repeats that work as it was. The CLI reads the spec file (or standard input, or inline JSON) and sends its text. The batch is accepted or refused as a whole, and the same id with the same spec returns the same receipt
-- `agent request-status --request-id <id>`: the receipt of an earlier call, for a call that timed out
-- `agent status [--artifact <id>] [--delegation <id>]`: the state of the agents of this conversation, or the full text of one artifact of this tree
-- `agent answer --delegation <id> --question <id> --text <text>`: answer a question an agent asked, once
-- `agent finish [--summary <text>]`: say the work is done
-
-The Rust side checks the capability and hands the call to the app over the `query-bridge://agent-command` event, with the same answer channel as the mount verbs. The app validates and writes the durable state (`store/slices/auto/`); a timeout is never read as "not accepted", it tells the caller to read the receipt back.
 
 ### Mounts
 

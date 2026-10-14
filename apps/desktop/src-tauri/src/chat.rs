@@ -417,7 +417,6 @@ fn build_chat_cli_args(
         confined_role: None,
         blocks_push: true,
         excludes_tmp: true,
-        capability: None,
     };
     let cli = turn_args(shape, &spawn);
     if shape == "codex" {

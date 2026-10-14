@@ -349,28 +349,12 @@ continuation never resumes, because it runs in another directory.
   a CLI whose help does not list the flags the role depends on is refused with
   `confinement_unproven`. Nothing sends `confinedRole` for today's agents; the
   Auto children do, and so does every turn of an Auto agent
-  (`confinedRoleOf.ts`: the role `auto`). Auto is a third access, the
-  orchestrator: on Claude it gets `--tools Read,Grep,Glob,Bash`, the permission
-  mode `default` whatever the session says, an allow list of `Read`, `Grep`,
-  `Glob` and one Bash rule, `Bash("<exe>" query agent:*)`, where `<exe>` is the
-  absolute path of Goodboy's own executable (`query_bridge::exe_path`, the same
-  value `GOODBOY_BIN` carries, resolved at runtime and never at build time), and
-  a deny list with the edit tools, `Task`, `Agent` and
-  MCP. Any other CLI is refused for `auto` with `confinement_unproven`, so Auto
-  itself runs on Claude only. The rule holds no variable on purpose: Claude
-  refuses any Bash command that contains one ("A variable in this command can't
-  be checked before it runs"), even when the allow list names it. So the Auto
-  prompt gives the same absolute path, quoted, and tells Auto to write it as
-  given. `query_bridge::agent_bridge_prefix` builds that text
-  (`"<exe>" query agent`) for both the allow rule and the prompt, which reads
-  it through the command `query_bridge_agent_command` (it answers `null` while
-  the bridge is not serving, and Auto then gets the answer-only prompt). Only
-  the confined Claude turn of Auto depends on this; every other role and
-  provider keeps `"$GOODBOY_BIN" query`; this rule is built for the `auto` role only. Whether
-  the installed Claude really refuses every other Bash call is for the
-  capability probe of the release (`write_the_argv_of_an_auto_turn_for_the_probe`
-  in `providers/cli_args.rs`, which takes the bridge path in
-  `GOODBOY_PROBE_BRIDGE`), not proven until the owner records a run.
+  (`confinedRoleOf.ts`: the role `auto`). `auto` is in the same read-only list
+  as `scout`, `planner`, `investigator` and `reviewer`: Auto runs read-only like
+  a scout on every provider, with the argv a scout gets (Claude `--tools
+Read,Grep,Glob` in plan mode, Codex `-s read-only`, Cursor and Agy `--mode
+plan`, opencode `--agent plan`) and no Bash allow rule. It never calls Goodboy
+  from inside its turn; its decision is the block it ends its reply with.
 - **stderr drains on its own thread.** A CLI that fills the stderr pipe
   mid-stream would otherwise block stdout and hang the turn.
 - Each stdout line is emitted as a `turn_event`, capped per line, followed by
@@ -420,8 +404,7 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   a live run is never forgotten. Only Auto sends one, and Auto is switched off.
   A turn started for Auto passes `SendTurnInput.origin: 'delegation'` with the
   planned `runId`, the `deliveryId` (the outbox row id of an Auto turn, the
-  attempt id of a child), `autoTree` (tree id and generation, which makes
-  `turn_spawn` mint the capability token of the turn) and `onSettled`, which
+  attempt id of a child), and `onSettled`, which
   `settleTurn` calls once with the text, the failure or cancel flag and the files
   the turn touched. `store/slices/auto/startAutoTurn.ts` waits for the delivery
   to appear in `turn_delivery_lookup` before it calls the turn accepted.

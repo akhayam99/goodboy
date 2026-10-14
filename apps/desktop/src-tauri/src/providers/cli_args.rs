@@ -289,15 +289,11 @@ pub(crate) fn side_job_args(side: &SideJob<'_>) -> Result<Vec<String>, ArgsError
 pub(crate) enum RoleAccess {
     ReadOnly,
     Writer,
-    Orchestrator,
 }
 
-const READ_ONLY_ROLES: &[&str] = &["scout", "planner", "investigator", "reviewer"];
+const READ_ONLY_ROLES: &[&str] = &["scout", "planner", "investigator", "reviewer", "auto"];
 const WRITER_ROLES: &[&str] = &["implementer", "tester", "docs"];
-const ORCHESTRATOR_ROLES: &[&str] = &["auto"];
 const READ_ONLY_CLAUDE_TOOLS: &str = "Read,Grep,Glob";
-const ORCHESTRATOR_CLAUDE_TOOLS: &str = "Read,Grep,Glob,Bash";
-const ORCHESTRATOR_DENIED_TOOLS: &[&str] = &["Edit", "Write", "MultiEdit", "NotebookEdit"];
 const NATIVE_SUBAGENT_TOOLS: &[&str] = &["Task", "Agent"];
 const READ_ONLY_DENIED_TOOLS: &[&str] = &["Bash", "Edit", "Write", "MultiEdit", "NotebookEdit"];
 
@@ -308,31 +304,14 @@ pub(crate) fn role_access(role: &str) -> Option<RoleAccess> {
     if WRITER_ROLES.contains(&role) {
         return Some(RoleAccess::Writer);
     }
-    if ORCHESTRATOR_ROLES.contains(&role) {
-        return Some(RoleAccess::Orchestrator);
-    }
     None
 }
 
 fn claude_allowed_tools(args: &SpawnOneArgs<'_>, access: Option<RoleAccess>) -> Vec<String> {
-    if access == Some(RoleAccess::Orchestrator) {
-        return orchestrator_allowed_tools(crate::query_bridge::exe_path());
-    }
     if access == Some(RoleAccess::ReadOnly) {
         return Vec::new();
     }
     args.allowed_tools.to_vec()
-}
-
-pub(crate) fn orchestrator_allowed_tools(exe: Option<&std::path::Path>) -> Vec<String> {
-    let mut allowed: Vec<String> = ["Read", "Grep", "Glob"]
-        .iter()
-        .map(|tool| tool.to_string())
-        .collect();
-    if let Some(prefix) = exe.and_then(crate::query_bridge::agent_bridge_prefix) {
-        allowed.push(format!("Bash({}:*)", prefix));
-    }
-    allowed
 }
 
 fn confinement_of(args: &SpawnOneArgs<'_>) -> Option<RoleAccess> {
@@ -340,18 +319,8 @@ fn confinement_of(args: &SpawnOneArgs<'_>) -> Option<RoleAccess> {
         .map(|role| role_access(role).unwrap_or(RoleAccess::ReadOnly))
 }
 
-fn effective_permission_mode<'a>(
-    args: &SpawnOneArgs<'a>,
-    access: Option<RoleAccess>,
-    cli: Cli,
-) -> &'a str {
+fn effective_permission_mode<'a>(args: &SpawnOneArgs<'a>, access: Option<RoleAccess>) -> &'a str {
     if access == Some(RoleAccess::ReadOnly) {
-        return "plan";
-    }
-    if access == Some(RoleAccess::Orchestrator) {
-        if cli == Cli::Claude {
-            return "default";
-        }
         return "plan";
     }
     args.permission_mode
@@ -360,7 +329,7 @@ fn effective_permission_mode<'a>(
 pub(crate) fn turn_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String> {
     let cli = Cli::of_binary(binary);
     let access = confinement_of(args);
-    let permission_mode = effective_permission_mode(args, access, cli);
+    let permission_mode = effective_permission_mode(args, access);
     match cli {
         Cli::Cursor => {
             let mut v = vec![
@@ -526,10 +495,6 @@ pub(crate) fn turn_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String> {
                 v.push("--tools".to_string());
                 v.push(READ_ONLY_CLAUDE_TOOLS.to_string());
             }
-            if access == Some(RoleAccess::Orchestrator) {
-                v.push("--tools".to_string());
-                v.push(ORCHESTRATOR_CLAUDE_TOOLS.to_string());
-            }
             let allowed_tools = claude_allowed_tools(args, access);
             if !allowed_tools.is_empty() {
                 v.push("--allowedTools".to_string());
@@ -546,13 +511,6 @@ pub(crate) fn turn_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String> {
             }
             if access == Some(RoleAccess::ReadOnly) {
                 disallowed_tools.extend(READ_ONLY_DENIED_TOOLS.iter().map(|tool| tool.to_string()));
-            }
-            if access == Some(RoleAccess::Orchestrator) {
-                disallowed_tools.extend(
-                    ORCHESTRATOR_DENIED_TOOLS
-                        .iter()
-                        .map(|tool| tool.to_string()),
-                );
             }
             disallowed_tools.push("mcp__*".to_string());
             v.push("--disallowedTools".to_string());
@@ -748,7 +706,6 @@ mod tests {
             confined_role,
             blocks_push: false,
             excludes_tmp: false,
-            capability: None,
         }
     }
 
@@ -867,37 +824,53 @@ mod tests {
     }
 
     #[test]
-    fn auto_gets_read_tools_and_bash_for_the_bridge_only_whatever_the_session_mode() {
+    fn auto_is_a_read_only_role_like_a_scout() {
+        assert_eq!(role_access("auto"), Some(RoleAccess::ReadOnly));
+        assert_eq!(role_access("auto"), role_access("scout"));
+    }
+
+    #[test]
+    fn auto_gets_the_argv_of_a_scout_on_every_provider() {
+        let roots = strings(&["/repo/.meta"]);
+        let allowed = strings(&["Bash(rm:*)"]);
+        let disallowed = strings(&["Read(.env)"]);
+        for mode in ["default", "acceptEdits", "bypassPermissions", "plan"] {
+            for binary in ["claude", "codex", "cursor-agent", "agy", "opencode"] {
+                let auto = spawn_args(mode, Some("auto"), &allowed, &disallowed, &roots);
+                let scout = spawn_args(mode, Some("scout"), &allowed, &disallowed, &roots);
+                assert_eq!(
+                    turn_args(binary, &auto),
+                    turn_args(binary, &scout),
+                    "{binary} in {mode}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn auto_on_claude_reads_only_and_holds_no_bash_rule() {
         let allowed = strings(&["Bash(rm:*)"]);
         let disallowed = strings(&["Read(.env)"]);
         for mode in ["default", "acceptEdits", "bypassPermissions", "plan"] {
             let args = spawn_args(mode, Some("auto"), &allowed, &disallowed, &[]);
             let argv = turn_args("claude", &args);
-            assert_eq!(role_access("auto"), Some(RoleAccess::Orchestrator));
             assert_eq!(
                 value_after(&argv, "--tools").as_deref(),
-                Some("Read,Grep,Glob,Bash")
+                Some("Read,Grep,Glob")
             );
             assert_eq!(
                 value_after(&argv, "--permission-mode").as_deref(),
-                Some("default")
+                Some("plan")
             );
-            let permitted = value_after(&argv, "--allowedTools").expect("allow list");
-            assert!(!permitted.contains("$GOODBOY_BIN"));
-            let prefix = crate::query_bridge::agent_bridge_prefix(
-                crate::query_bridge::exe_path().expect("a current executable"),
-            )
-            .expect("a prefix");
-            assert!(permitted
-                .split(',')
-                .any(|entry| entry == format!("Bash({prefix}:*)")));
-            assert!(!permitted.contains("rm"));
-            assert!(permitted.split(',').any(|entry| entry == "Read"));
+            assert!(!argv.contains(&"--allowedTools".to_string()));
+            assert!(argv.iter().all(|arg| !arg.contains("Bash(")));
+            assert!(argv.iter().all(|arg| !arg.contains("query agent")));
             let denied = value_after(&argv, "--disallowedTools").expect("deny list");
             for tool in [
                 "Read(.env)",
                 "Task",
                 "Agent",
+                "Bash",
                 "Edit",
                 "Write",
                 "MultiEdit",
@@ -909,44 +882,7 @@ mod tests {
                     "{tool} in {denied}"
                 );
             }
-            assert!(!denied.split(',').any(|entry| entry == "Bash"));
         }
-    }
-
-    #[test]
-    #[ignore = "writes the argv of an Auto turn for the capability probe of a release"]
-    fn write_the_argv_of_an_auto_turn_for_the_probe() {
-        let out = std::env::var("GOODBOY_PROBE_ARGV_OUT").expect("GOODBOY_PROBE_ARGV_OUT");
-        let dir = std::env::var("GOODBOY_PROBE_DIR").expect("GOODBOY_PROBE_DIR");
-        let bridge = std::env::var("GOODBOY_PROBE_BRIDGE").expect("GOODBOY_PROBE_BRIDGE");
-        let model = std::env::var("GOODBOY_PROBE_MODEL").expect("GOODBOY_PROBE_MODEL");
-        let prefix = crate::query_bridge::agent_bridge_prefix(std::path::Path::new(&bridge))
-            .expect("a bridge path without a double quote");
-        let spec = r#"{"children":[{"role":"scout","task":"Find where the retry limit is set.","reason":"Reading code is the scout\u0027s job."}]}"#;
-        let delegate = format!("{prefix} delegate --request-id probe-1 --spec '{spec}'");
-        let prompt = format!(
-            "Run `touch probe-written.txt` with the Bash tool. Then run this command with the Bash tool, exactly as written, on one line: {delegate}  Then report each of the two commands as ran or refused, and quote the refusal text if there was one."
-        );
-        let mut args = spawn_args("bypassPermissions", Some("auto"), &[], &[], &[]);
-        args.working_dir = &dir;
-        args.prompt = &prompt;
-        args.model = &model;
-        let mut argv = turn_args("claude", &args);
-        let allow = value_after(&argv, "--allowedTools").expect("allow list");
-        let rewritten = allow
-            .split(',')
-            .filter(|entry| !entry.starts_with("Bash("))
-            .map(str::to_string)
-            .chain(std::iter::once(format!("Bash({prefix}:*)")))
-            .collect::<Vec<_>>()
-            .join(",");
-        let at = argv
-            .iter()
-            .position(|arg| arg == "--allowedTools")
-            .expect("allow flag");
-        argv[at + 1] = rewritten;
-        std::fs::write(out, serde_json::to_string(&argv).expect("argv as json"))
-            .expect("write the argv");
     }
 
     #[test]
@@ -955,47 +891,16 @@ mod tests {
         let args = spawn_args("bypassPermissions", Some("auto"), &[], &[], &roots);
         let codex = turn_args("codex", &args);
         assert_eq!(value_after(&codex, "-s").as_deref(), Some("read-only"));
+        assert!(!codex.contains(&"--add-dir".to_string()));
         let cursor = turn_args("cursor-agent", &args);
         assert!(!cursor.contains(&"--force".to_string()));
-    }
-
-    #[test]
-    fn the_bridge_allow_list_names_the_executable_it_runs() {
-        let exe = std::path::Path::new("/Applications/Goodboy.app/Contents/MacOS/goodboy");
-        let allowed = orchestrator_allowed_tools(Some(exe));
-        assert!(allowed.contains(
-            &"Bash(\"/Applications/Goodboy.app/Contents/MacOS/goodboy\" query agent:*)".to_string()
-        ));
-        assert!(allowed.iter().all(|entry| !entry.contains("$GOODBOY_BIN")));
-        assert!(orchestrator_allowed_tools(None)
-            .iter()
-            .all(|entry| !entry.contains("Applications")));
-    }
-
-    #[test]
-    fn a_path_with_a_space_is_quoted_the_same_way_in_the_prompt_prefix_and_the_allow_rule() {
-        let exe = std::path::Path::new(
-            "/Users/ana/Library/Application Support/Goodboy/Goodboy.app/Contents/MacOS/goodboy",
-        );
-        let prefix = crate::query_bridge::agent_bridge_prefix(exe).expect("a prefix");
-        assert_eq!(
-            prefix,
-            "\"/Users/ana/Library/Application Support/Goodboy/Goodboy.app/Contents/MacOS/goodboy\" query agent"
-        );
-        let allowed = orchestrator_allowed_tools(Some(exe));
-        assert!(allowed.contains(&format!("Bash({prefix}:*)")));
-        let command = format!("{prefix} status");
-        let rule = format!("{prefix}:*");
-        assert!(command.starts_with(rule.trim_end_matches(":*")));
-    }
-
-    #[test]
-    fn a_path_holding_a_double_quote_gets_no_bridge_rule() {
-        let exe = std::path::Path::new("/tmp/we\"ird/goodboy");
-        assert!(crate::query_bridge::agent_bridge_prefix(exe).is_none());
-        assert!(orchestrator_allowed_tools(Some(exe))
-            .iter()
-            .all(|entry| !entry.starts_with("Bash(")));
+        assert_eq!(value_after(&cursor, "--mode").as_deref(), Some("plan"));
+        let agy = turn_args("agy", &args);
+        assert!(!agy.contains(&"--dangerously-skip-permissions".to_string()));
+        assert_eq!(value_after(&agy, "--mode").as_deref(), Some("plan"));
+        assert!(agy.contains(&"--sandbox".to_string()));
+        let opencode = turn_args("opencode", &args);
+        assert_eq!(value_after(&opencode, "--agent").as_deref(), Some("plan"));
     }
 
     #[test]

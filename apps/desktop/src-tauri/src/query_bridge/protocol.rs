@@ -9,7 +9,6 @@ pub const WORKSPACE_ENV: &str = "GOODBOY_WORKSPACE_ID";
 pub const SESSION_ENV: &str = "GOODBOY_SESSION_ID";
 pub const MOUNT_ENV: &str = "GOODBOY_MOUNT_ID";
 pub const RUN_ENV: &str = "GOODBOY_RUN_ID";
-pub const CAPABILITY_ENV: &str = "GOODBOY_CAP";
 pub const LEGACY_SOCKET_FILE: &str = "query.sock";
 pub const SOCKET_PREFIX: &str = "query-";
 pub const SOCKET_SUFFIX: &str = ".sock";
@@ -28,8 +27,6 @@ pub struct QueryRequest {
     pub mount: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub run_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub capability: Option<String>,
     pub provider: String,
     pub verb: String,
     #[serde(default)]
@@ -57,8 +54,6 @@ pub const UNSAFE_CLEANUP: &str = "unsafe_cleanup";
 pub const OPERATION_PENDING: &str = "operation_pending";
 pub const REQUEST_CONFLICT: &str = "request_conflict";
 pub const DB_RESET: &str = "db_reset";
-pub const CAPABILITY_REFUSED: &str = "capability_refused";
-pub const DELEGATION_UNAVAILABLE: &str = "delegation_unavailable";
 
 pub const ERROR_CODES: &[&str] = &[
     AMBIGUOUS_MOUNT,
@@ -69,8 +64,6 @@ pub const ERROR_CODES: &[&str] = &[
     OPERATION_PENDING,
     REQUEST_CONFLICT,
     DB_RESET,
-    CAPABILITY_REFUSED,
-    DELEGATION_UNAVAILABLE,
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -863,43 +856,6 @@ pub const CATALOG: &[VerbSpec] = &[
         access: Access::Write,
         summary: "add an emoji reaction to a message",
     },
-    VerbSpec {
-        provider: "agent",
-        verb: "delegate",
-        params: &[req("request-id"), req("spec")],
-        access: Access::Write,
-        summary:
-            "hand one to four pieces of work to agents of the right role; the whole batch is accepted or refused, and the same request id returns the same receipt",
-    },
-    VerbSpec {
-        provider: "agent",
-        verb: "request-status",
-        params: &[req("request-id")],
-        access: Access::Read,
-        summary: "the receipt of an earlier delegate call, for a call that timed out",
-    },
-    VerbSpec {
-        provider: "agent",
-        verb: "status",
-        params: &[opt("artifact"), opt("delegation")],
-        access: Access::Read,
-        summary:
-            "the state of this conversation's agents, or with --artifact the full text of one artifact an agent made",
-    },
-    VerbSpec {
-        provider: "agent",
-        verb: "answer",
-        params: &[req("delegation"), req("question"), req("text")],
-        access: Access::Write,
-        summary: "answer the question an agent asked, once, by its question id",
-    },
-    VerbSpec {
-        provider: "agent",
-        verb: "finish",
-        params: &[opt("summary")],
-        access: Access::Write,
-        summary: "say the work of this conversation is done",
-    },
 ];
 
 pub const UNIVERSAL_FLAGS: &[&str] = &["workspace", "project", "mount", "json"];
@@ -1406,8 +1362,7 @@ mod tests {
                 "gitlab",
                 "jira",
                 "bitbucket",
-                "slack",
-                "agent"
+                "slack"
             ]
         );
     }

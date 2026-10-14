@@ -139,16 +139,6 @@ pub struct SpawnArgs {
     pub excludes_tmp: bool,
     #[serde(default)]
     pub delivery_id: Option<String>,
-    #[serde(default)]
-    pub auto_tree: Option<AutoTreeBinding>,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct AutoTreeBinding {
-    pub tree_id: String,
-    pub generation: u64,
-    pub agent_id: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -223,7 +213,6 @@ pub(crate) struct SpawnOneArgs<'a> {
     pub confined_role: Option<&'a str>,
     pub blocks_push: bool,
     pub excludes_tmp: bool,
-    pub capability: Option<&'a str>,
 }
 
 pub(crate) const PUSH_BLOCK_URL: &str = "goodboy-blocked://history-rewriter";
@@ -326,7 +315,6 @@ fn spawn_one<E: TurnEmitter>(
             session_id: args.session_id,
             mount_id: args.mount_id,
             run_id: Some(args.run_id),
-            capability: args.capability,
         },
     );
 
@@ -388,7 +376,6 @@ fn spawn_one<E: TurnEmitter>(
     let registry_clone = Arc::clone(registry);
     let backlog_clone = backlog.clone();
     let run_id_owned = args.run_id.to_string();
-    let capability_owned = args.capability.map(str::to_string);
 
     // Drain stderr on its own thread so it runs concurrently with stdout
     // forwarding. Reading stderr only after stdout EOF used to deadlock: a CLI
@@ -406,9 +393,6 @@ fn spawn_one<E: TurnEmitter>(
             forward_lines(&sink, &live, stdout)
         });
         let stderr_buf = stderr_handle.join().unwrap_or_default();
-        if let Some(token) = capability_owned.as_deref() {
-            crate::query_bridge::capability::registry().revoke_turn(token);
-        }
         if !is_exiting() {
             if !exited.stopped.is_empty() {
                 sink.send(TurnEventPayload::Reaped {
@@ -476,19 +460,6 @@ pub async fn turn_spawn(
         .to_string();
 
     claim_delivery(&state, &args)?;
-    let capability = args.auto_tree.as_ref().map(|binding| {
-        crate::query_bridge::capability::registry().mint(
-            crate::query_bridge::capability::CapabilityGrant {
-                agent_id: binding.agent_id.clone(),
-                tree_id: binding.tree_id.clone(),
-                generation: binding.generation,
-                workspace_id: args.workspace_id.clone().unwrap_or_default(),
-                session_id: args.session_id.clone().unwrap_or_default(),
-                run_id: args.run_id.clone(),
-            },
-            crate::query_bridge::capability::now_ms(),
-        )
-    });
     let spawned = spawn_one(
         &app,
         &state.0,
@@ -523,14 +494,10 @@ pub async fn turn_spawn(
             confined_role: args.confined_role.as_deref(),
             blocks_push: args.blocks_push,
             excludes_tmp: args.excludes_tmp,
-            capability: capability.as_deref(),
         },
     );
     if spawned.is_err() {
         release_delivery(&state, &args);
-        if let Some(token) = capability.as_deref() {
-            crate::query_bridge::capability::registry().revoke_turn(token);
-        }
     }
     spawned
 }
@@ -869,7 +836,6 @@ mod tests {
             confined_role: None,
             blocks_push: false,
             excludes_tmp: false,
-            capability: None,
         };
         assert_eq!(args.run_id, "run-1");
         assert_eq!(args.binary, "echo");
@@ -906,7 +872,6 @@ mod tests {
             confined_role: None,
             blocks_push: false,
             excludes_tmp: false,
-            capability: None,
         }
     }
 

@@ -311,9 +311,9 @@ fails silently at runtime.
   is the release that turns the experiment on.
 - `AUTO_DELEGATION_ROLES` (`packages/core/src/auto/roles.ts`) and the
   `READ_ONLY_ROLES` and `WRITER_ROLES` of `providers/cli_args.rs` name the same
-  seven roles in two languages, and no test ties them. `auto` itself is the
-  third list there, `ORCHESTRATOR_ROLES`. Change one, change the
-  other. A role id outside the TypeScript list is rejected by
+  seven roles in two languages, and no test ties them. `READ_ONLY_ROLES` also
+  holds `auto`, which is not a delegation role. Change one, change the other.
+  A role id outside the TypeScript list is rejected by
   `parseAutoDelegationRole`, never passed through `normalizeAgentRole`, which
   would turn it into the Generalist.
 - Auto's glyph is `CONCEPT_ICONS.auto` (`Orbit`), not a sparkle: the AI glyph
@@ -629,5 +629,4 @@ Auto is gated twice and the legacy role grid never lists it. `AUTO_GATES.isDeleg
 - The approval of a plan tells Auto once. `approveAutoPlan` reads the artifact before the swap and does not send "Approved plan vN." when that version was already approved, which is what a second window sees. The swap itself is idempotent, so the read is the guard.
 - `useAutoTreeActions.stop` stops the live children and the root agent turn by turn. The tree phase is written by the scheduler, not by this button; once the tree stop of the runtime exists, replace the body and keep the name.
 - A mock scene that shows an Auto chat must give every agent a `lastViewedAt` after its `lastFinishedAt`; otherwise the chat marks it viewed on every render of the real store.
-- Claude refuses a Bash command holding a variable, even if the allow list names it. `"$GOODBOY_BIN" query agent status` is refused with "A variable in this command can't be checked before it runs" although `Bash("$GOODBOY_BIN" query agent:*)` is allowed. The Auto prompt and the allow rule both use the absolute path from `query_bridge::agent_bridge_prefix`. A read-only command such as `ls` proves nothing about confinement, because Claude allows it without a rule: probe with a command that writes.
-- The Auto delegate spec is inline JSON in single quotes. A raw apostrophe or line break in it ends the shell string and the command no longer matches the allow rule; the prompt tells Auto to write `\u0027` and `\n`. `AUTO_SPEC_EXAMPLE` in `packages/core/src/auto/prompt.ts` is the one example, parsed by a test through `parseDelegateSpec`.
+- History: Claude refuses a Bash command holding a variable, even if the allow list names it ("A variable in this command can't be checked before it runs"). That is why the old Auto bridge confinement used an absolute path and not `$GOODBOY_BIN`. Auto no longer holds any Bash rule, but the lesson stands for any future allow rule: a read-only command such as `ls` proves nothing about confinement, because Claude allows it without a rule, so probe with a command that writes.
