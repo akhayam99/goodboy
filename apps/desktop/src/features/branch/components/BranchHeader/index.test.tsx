@@ -980,6 +980,8 @@ describe('BranchHeader push failure', () => {
       confirmedOnlyOnline: null,
       confirmedRemoteSha: null,
       message: 'pre-push hook declined',
+      hint: '',
+      onAccepted: expect.any(Function),
     });
 
     fireEvent.click(within(alert).getByRole('button', { name: 'Open terminal here' }));
@@ -989,6 +991,27 @@ describe('BranchHeader push failure', () => {
       ),
     );
     expect(within(alert).getByRole('button', { name: 'Retry' })).toBeDefined();
+  });
+
+  it('sends the hint typed under a failed push to the agent', async () => {
+    withRequest(open);
+    status = upstreamAt({ ahead: 2, behind: 0 });
+    const { fixBranchPushWithAgent } = failPushWith({ error: 'pre-push hook declined' });
+    renderHeader({ pr: open });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Push 2 commits' }));
+    const alert = await screen.findByRole('alert');
+    fireEvent.click(screen.getByRole('button', { name: 'Add a hint' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Hint for the Implementer' }), {
+      target: { value: 'Keep the pre-push hook as it is.' },
+    });
+    fireEvent.click(within(alert).getByRole('button', { name: 'Fix with agent' }));
+
+    await waitFor(() =>
+      expect(fixBranchPushWithAgent).toHaveBeenCalledWith(
+        expect.objectContaining({ hint: 'Keep the pre-push hook as it is.' }),
+      ),
+    );
   });
 
   it('offers the same two actions on a failed force push and keeps the force lease', async () => {

@@ -184,6 +184,7 @@ cta-push-failed
 cta-push-pending
 debugger-drawer-ci-log
 debugger-drawer-fixed-local
+debugger-drawer-hint-filled
 debugger-drawer-options
 debugger-drawer-proposal
 debugger-drawer-running
@@ -251,6 +252,7 @@ first-run
 fix-run
 fix-run-question
 fixcomments-applied
+fixcomments-hint-filled
 fixcomments-list
 fixcomments-mixed
 fixcomments-question

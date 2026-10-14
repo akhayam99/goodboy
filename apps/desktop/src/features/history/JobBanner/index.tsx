@@ -4,6 +4,9 @@ import type { SessionId } from '@goodboy/types';
 import type { RebaseJobTone } from '../rebaseJob';
 import { useJobBannerActions } from '../hooks/useJobBannerActions';
 import { useRebaseJob } from '../useRebaseJob';
+import { StartHint } from '../../../shared/components/StartHint';
+import { START_HINT_COPY } from '../../../shared/components/startHintCopy';
+import { START_HINT_SCOPES } from '../../../store/slices/startHints/startHintScopes';
 import { JobBannerActions } from './JobBannerActions';
 import { JobBannerLine } from './JobBannerLine';
 import { JobBannerNote } from './JobBannerNote';
@@ -69,6 +72,14 @@ export const JobBanner = ({ sessionId, worktreePath }: Props) => {
       <div className="flex min-w-0 flex-col gap-2">
         <JobBannerLine job={job} />
         <JobBannerReview sessionId={sessionId} mountId={actions.mountId} />
+        {job.state === 'push-failed' && actions.mountId !== null ? (
+          <StartHint
+            sessionId={sessionId}
+            scope={START_HINT_SCOPES.pushFix({ mountId: actions.mountId })}
+            label={START_HINT_COPY.implementerLabel}
+            placeholder={START_HINT_COPY.pushFix}
+          />
+        ) : null}
       </div>
       {isNoteShown ? (
         <JobBannerNote

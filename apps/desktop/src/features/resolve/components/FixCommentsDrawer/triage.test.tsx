@@ -13,6 +13,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../store/storyHarness';
+import { agentIdOf } from '../../../../shared/lib/brandedIds';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { SESSION } from '../../../../app/components/MockScene/scenes/resolveSeed';
 import {
@@ -197,5 +198,87 @@ describe('the triage actions', () => {
 
     expect(before).toBe(1);
     expect(within(drawer()).getAllByRole('button', { name: /^Open agent/ })).toHaveLength(1);
+  });
+});
+
+describe('the retry of a failed comment', () => {
+  it('starts again with the hint of the request that failed', async () => {
+    const createResolveBatch = vi.fn<StoreState['createResolveBatch']>(async () => ({
+      id: 'batch-retry',
+      sessionId: SESSION.id,
+      threadIds: [],
+      launchChoice: {
+        provider: 'anthropic',
+        model: 'claude-sonnet-5-5',
+        effort: null,
+        commitStyle: null,
+        hint: null,
+      },
+      createdAt: 1,
+    }));
+    const spawnAgent = vi.fn<StoreState['spawnAgent']>(async () =>
+      agentIdOf({ value: 'agent-retry' }),
+    );
+    useAppStore.setState({
+      createResolveBatch,
+      spawnAgent,
+      setAgentConfig: vi.fn<StoreState['setAgentConfig']>(async () => undefined),
+    });
+    await mount({ phase: 'mixed' });
+    const failed = (useAppStore.getState().sessionResolveQueueItems[SESSION.id] ?? []).find(
+      (entry) => entry.thread.stage === 'failed',
+    );
+    if (failed === undefined) {
+      throw new Error('The mixed scene has no failed comment');
+    }
+    useAppStore.setState((state) => ({
+      sessionResolveAttempts: {
+        ...state.sessionResolveAttempts,
+        [SESSION.id]: [
+          {
+            id: 'attempt-failed',
+            sessionId: SESSION.id,
+            agentId: agentIdOf({ value: 'agent-failed' }),
+            prNumber: null,
+            threadIds: [failed.thread.threadId],
+            provider: 'anthropic',
+            model: 'claude-sonnet-5-5',
+            effort: null,
+            instructions: null,
+            phase: 'failed',
+            mountTarget: null,
+            startedAt: 1,
+            endedAt: 2,
+            error: 'the run ended',
+            createdAt: 1,
+            batchId: 'batch-failed',
+            copyPath: null,
+            launchChoice: {
+              provider: 'anthropic',
+              model: 'claude-sonnet-5-5',
+              effort: null,
+              commitStyle: null,
+              hint: 'Keep the guard inside ledger.ts.',
+            },
+          },
+        ],
+      },
+      sessionResolveQueueItems: {
+        ...state.sessionResolveQueueItems,
+        [SESSION.id]: (state.sessionResolveQueueItems[SESSION.id] ?? []).map((entry) =>
+          entry.thread.threadId === failed.thread.threadId
+            ? { ...entry, thread: { ...entry.thread, activeAttemptId: 'attempt-failed' } }
+            : entry,
+        ),
+      },
+    }));
+    await settle();
+
+    fireEvent.click(within(drawer()).getByRole('button', { name: 'Retry' }));
+
+    await waitFor(() => expect(createResolveBatch).toHaveBeenCalledOnce());
+    expect(createResolveBatch.mock.calls[0]?.[0].launchChoice.hint).toBe(
+      'Keep the guard inside ledger.ts.',
+    );
   });
 });

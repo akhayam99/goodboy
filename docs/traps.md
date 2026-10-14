@@ -581,3 +581,12 @@ filesystem write lock. Cleanup failure retains the stash instead of repeating re
 ## New drawer actions host
 
 The New drawer keeps the Start button in a sticky host at the end of its body (`actionsHost` in `NewDrawerBody`), not in the `DrawerFrame` `dock` slot: a dock is a footer bar and `forbidden-patterns` fails the build on it. The Run, Agent and Write panels portal their actions into that host through `Docked`, so each panel must render nothing until the host node exists. `WritePanel` lives in `features/artifacts` and reaches the drawer as the `writePanel` prop from `DrawerHost`, because `features/session` must not import artifacts components.
+
+## Hints when a fix starts
+
+The hint a person types before a fix is plain text carried as a field, never re-parsed out of a prompt to rebuild it. Four rules keep it safe.
+
+- `rulesOfKickoff` (`apps/desktop/src/features/chat/utils/resolverKickoffParts.ts`) tries every `Operator notes` marker from the last to the first and keeps the first split that matches the message, so a hint that holds the marker, a heading or a code fence still splits, and so does a comment that holds it. Do not go back to splitting on the last marker only.
+- The echo **Your hint** reads the hint back from the sent message with `hintOfMessage` (`apps/desktop/src/features/chat/utils/hintOfMessage.ts`), which anchors on the fixed guidance line (`OPERATOR_NOTES_GUIDANCE`) written just before the notes. Change that sentence in one place; the golden prompt files under `__prompts__` and the echo follow it. The rewriter keeps its own `note` line and has no echo.
+- A draft is cleared by `settleStartHint` only when its captured revision is still current, and only from a callback that fires when the agent's first turn started (`onKickoffAccepted` in `spawnAgent`, `onAccepted` in `spawnPushFixer` and `startHistoryRewriter`). A resolver launch counts as accepted when its batch and attempt are recorded: its kickoff drains afterwards, and a refused drain shows **Failed** with the batch hint, which **Retry** reuses.
+- `analyzeFailingChecks` rejects a second call that carries a hint while the same check is being analyzed, instead of returning the running agent and dropping the hint.

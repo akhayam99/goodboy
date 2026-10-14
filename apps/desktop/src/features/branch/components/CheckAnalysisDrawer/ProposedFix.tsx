@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { Button, ChoiceCards, Markdown, StateBadge } from '@goodboy/ui';
+import type { SessionId } from '@goodboy/types';
+import { StartHint } from '../../../../shared/components/StartHint';
+import { START_HINT_COPY } from '../../../../shared/components/startHintCopy';
 import { optionSummary } from '../../checks/optionSummary';
 import type { ProposalOptions } from '../../checks/proposalOptionsOf';
 import { DrawerBox } from './DrawerBox';
@@ -10,6 +13,8 @@ export type StartParams = {
 };
 
 type Props = {
+  readonly sessionId: SessionId;
+  readonly hintScope: string;
   readonly proposal: string;
   readonly options: ProposalOptions | null;
   readonly isActionable: boolean;
@@ -21,6 +26,8 @@ type Props = {
 };
 
 export const ProposedFix = ({
+  sessionId,
+  hintScope,
   proposal,
   options,
   isActionable,
@@ -72,6 +79,14 @@ export const ProposedFix = ({
           )}
         </>
       )}
+      {isActionable ? (
+        <StartHint
+          sessionId={sessionId}
+          scope={hintScope}
+          label={START_HINT_COPY.implementerLabel}
+          placeholder={START_HINT_COPY.checkFix}
+        />
+      ) : null}
       {isActionable ? (
         <div className="flex items-center gap-2">
           <Button

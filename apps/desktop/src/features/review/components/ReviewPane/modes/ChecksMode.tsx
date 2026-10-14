@@ -4,6 +4,7 @@ import { PrChecks } from '../../../../integrations/github/components/PullRequest
 
 type Props = {
   readonly renderCheckActions?: (check: PrCheckRun) => ReactNode;
+  readonly renderCheckHint?: (check: PrCheckRun) => ReactNode;
   readonly checks: ReadonlyArray<PrCheckRun>;
   readonly fallbackUrl: string;
   readonly hostLabel: string;
@@ -15,6 +16,7 @@ type Props = {
 
 export const ChecksMode = ({
   renderCheckActions,
+  renderCheckHint,
   checks,
   fallbackUrl,
   hostLabel,
@@ -26,6 +28,7 @@ export const ChecksMode = ({
   <section aria-label="Checks" className="flex flex-col gap-3">
     <PrChecks
       renderCheckActions={renderCheckActions}
+      renderCheckHint={renderCheckHint}
       checks={checks}
       fallbackUrl={fallbackUrl}
       hostLabel={hostLabel}

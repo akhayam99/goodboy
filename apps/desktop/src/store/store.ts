@@ -72,6 +72,7 @@ import { createAgentQueueSlice } from './slices/agentQueue';
 import { createArtifactDraftsSlice } from './slices/artifactDrafts';
 import { createWorkflowDraftsSlice } from './slices/workflowDrafts';
 import { createNewDrawerDraftsSlice } from './slices/newDrawerDrafts';
+import { createStartHintsSlice } from './slices/startHints';
 import { createWorkflowStudioSlice } from './slices/workflowStudio';
 import { initialWorkflowStudioState } from './slices/workflowStudio/state';
 import { createWorkflowRoutingSlice } from './slices/workflowRouting';
@@ -174,6 +175,7 @@ import { nudgesInitialState } from './slices/nudges/state';
 import { slackDraftsInitialState } from './slices/slack-drafts/state';
 import { workflowDraftsInitialState } from './slices/workflowDrafts/state';
 import { newDrawerDraftsInitialState } from './slices/newDrawerDrafts/state';
+import { startHintsInitialState } from './slices/startHints/state';
 import { artifactDraftsInitialState } from './slices/artifactDrafts/state';
 import { permissionsInitialState } from './slices/permissions/state';
 import { attachmentsInitialState } from './slices/attachments/state';
@@ -277,6 +279,7 @@ export type AppStore = AppState &
   ReturnType<typeof createWorkflowsSlice> &
   ReturnType<typeof createWorkflowDraftsSlice> &
   ReturnType<typeof createNewDrawerDraftsSlice> &
+  ReturnType<typeof createStartHintsSlice> &
   ReturnType<typeof createWorkflowStudioSlice> &
   ReturnType<typeof createWorkflowRoutingSlice> &
   ReturnType<typeof createSlotsSlice> &
@@ -378,6 +381,7 @@ export const initialState: AppState = {
   ...artifactCommentsInitialState,
   ...workflowDraftsInitialState,
   ...newDrawerDraftsInitialState,
+  ...startHintsInitialState,
   ...artifactDraftsInitialState,
   ...initialWorkflowStudioState,
   ...initialWorkflowRoutingState,
@@ -441,6 +445,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createReviewSourceSlice({ set, get }),
   ...createWorkflowDraftsSlice({ set, get }),
   ...createNewDrawerDraftsSlice({ set, get }),
+  ...createStartHintsSlice({ set, get }),
   ...createArtifactDraftsSlice({ set, get }),
   ...createWorkflowStudioSlice({ set, get }),
   ...createWorkflowRoutingSlice({ set, get }),

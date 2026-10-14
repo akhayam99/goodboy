@@ -7,12 +7,14 @@ type Props = {
   readonly controls: ActionControls;
   readonly showReasons?: boolean;
   readonly failureActions?: ReactNode;
+  readonly failureHint?: ReactNode;
 };
 
 export const ActionStatusLine = ({
   controls,
   showReasons = true,
   failureActions = null,
+  failureHint = null,
 }: Props) => {
   const visible = showReasons
     ? [...controls.inSlot({ slot: 'primary' }), ...controls.inSlot({ slot: 'secondary' })]
@@ -66,6 +68,7 @@ export const ActionStatusLine = ({
           </Button>
         </div>
       )}
+      {controls.failure !== null && failureHint}
     </div>
   );
 };

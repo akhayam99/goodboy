@@ -16,6 +16,7 @@ type Params = {
   readonly mountId?: MountId;
   readonly origin?: { readonly sourceKind: AgentSourceKind; readonly sourceCommentUrl: string };
   readonly focus?: SpawnFocus;
+  readonly onKickoffAccepted?: () => void;
 };
 
 const pending = new Map<string, Promise<AgentId>>();
@@ -33,6 +34,7 @@ export const startFollowUp = (get: GetFn) => {
     mountId,
     origin,
     focus = 'agent',
+    onKickoffAccepted,
   }: Params): Promise<AgentId> => {
     const key = JSON.stringify([sessionId, sourceAgentId, kind, origin?.sourceCommentUrl ?? null]);
     const inFlight = pending.get(key);
@@ -75,6 +77,7 @@ export const startFollowUp = (get: GetFn) => {
         ...(prompt !== undefined && { initialPrompt: prompt }),
         ...(mountId !== undefined && { mountId }),
         ...(origin !== undefined && origin),
+        ...(onKickoffAccepted !== undefined && { onKickoffAccepted }),
         parentAgentId: sourceAgentId,
         focus,
       })

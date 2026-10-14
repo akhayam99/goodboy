@@ -218,6 +218,7 @@ export type StartHistoryRewriterInput = HistoryMountInput & {
   readonly origin: HistoryRunOrigin;
   readonly planId: string | null;
   readonly note?: string;
+  readonly onAccepted?: () => void;
 };
 
 export type SettleHistoryRewriterInput = {

@@ -8,8 +8,13 @@ import { setHistoryRun } from './setHistoryRun';
 import type { SliceDeps } from '../../slice-types';
 import type { HistoryMountInput } from './types';
 
+type Params = HistoryMountInput & {
+  readonly hint?: string;
+  readonly onAccepted?: () => void;
+};
+
 export const fixPushWithAgent = ({ set, get }: SliceDeps) => {
-  return async ({ sessionId, mountId }: HistoryMountInput): Promise<void> => {
+  return async ({ sessionId, mountId, hint, onAccepted }: Params): Promise<void> => {
     const run = get().historyRuns[mountId];
     if (
       run === undefined ||
@@ -35,7 +40,9 @@ export const fixPushWithAgent = ({ set, get }: SliceDeps) => {
           branch: target.branch,
           command: pushFixCommand({ branch: target.branch, remoteSha: run.remoteSha }),
           output: run.stop.message,
+          ...(hint !== undefined && { hint }),
         }),
+        ...(onAccepted !== undefined && { onAccepted }),
         isStillValid: () =>
           get().historyRuns[mountId] === run &&
           identityChange({ get, sessionId, mountId, identity }) === null,

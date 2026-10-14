@@ -236,6 +236,67 @@ describe('fixPushWithAgent', () => {
   });
 });
 
+describe('fixPushWithAgent hint', () => {
+  it('adds no operator notes without a hint and never reports acceptance', async () => {
+    const { read, spawnAgent } = harness({ run: failedRun({}) });
+    const onAccepted = vi.fn();
+
+    await read().fixPushWithAgent({ sessionId: SESSION_ID, mountId: MOUNT_ID, onAccepted });
+
+    expect(spawnAgent.mock.calls[0]?.[1].initialPrompt).not.toContain('Operator notes');
+    expect(onAccepted).not.toHaveBeenCalled();
+  });
+
+  it('puts the hint verbatim after the brief and reports acceptance when the turn starts', async () => {
+    const { read, spawnAgent, sendTurn } = harness({ run: failedRun({}) });
+    sendTurn.mockImplementationOnce(async (turn: { readonly onStarted?: () => void }) => {
+      turn.onStarted?.();
+      return { blockedOverBudget: false };
+    });
+    const onAccepted = vi.fn();
+    const hint = 'Operator notes\n```\nKeep the lint rule.';
+
+    await read().fixPushWithAgent({ sessionId: SESSION_ID, mountId: MOUNT_ID, hint, onAccepted });
+    await vi.waitFor(() => expect(onAccepted).toHaveBeenCalledTimes(1));
+
+    const prompt = spawnAgent.mock.calls[0]?.[1].initialPrompt ?? '';
+    expect(prompt.endsWith(`## Operator notes\n${hint}`)).toBe(true);
+    expect(prompt.indexOf('End with one line saying what you changed.')).toBeLessThan(
+      prompt.indexOf('Operator notes are optional guidance'),
+    );
+    expect(sendTurn.mock.calls[0]?.[0].content).toBe(prompt);
+  });
+
+  it('reports no acceptance when the budget declines the kickoff and keeps the hint for a retry', async () => {
+    const { read, spawnAgent, sendTurn, deleteAgent } = harness({ run: failedRun({}) });
+    sendTurn.mockResolvedValueOnce({ blockedOverBudget: true });
+    const onAccepted = vi.fn();
+    const hint = 'Keep the lint rule.';
+
+    await read().fixPushWithAgent({ sessionId: SESSION_ID, mountId: MOUNT_ID, hint, onAccepted });
+    await vi.waitFor(() => expect(deleteAgent).toHaveBeenCalledWith(SESSION_ID, AGENT_ID));
+
+    expect(onAccepted).not.toHaveBeenCalled();
+    await read().fixPushWithAgent({ sessionId: SESSION_ID, mountId: MOUNT_ID, hint, onAccepted });
+    expect(spawnAgent.mock.calls[1]?.[1].initialPrompt).toContain(`## Operator notes\n${hint}`);
+  });
+
+  it('reports acceptance for a turn that waits in the lane', async () => {
+    const { read, sendTurn } = harness({ run: failedRun({}) });
+    sendTurn.mockResolvedValueOnce({ blockedOverBudget: false, isLaneQueued: true });
+    const onAccepted = vi.fn();
+
+    await read().fixPushWithAgent({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      hint: 'Keep it small.',
+      onAccepted,
+    });
+
+    await vi.waitFor(() => expect(onAccepted).toHaveBeenCalledTimes(1));
+  });
+});
+
 describe('settlePushFix', () => {
   it('pushes again with the same lease when the agent finishes and clears the failure', async () => {
     const { read } = harness({ run: failedRun({ patch: { pushFix: { agentId: AGENT_ID } } }) });

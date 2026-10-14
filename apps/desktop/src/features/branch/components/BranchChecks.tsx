@@ -18,6 +18,7 @@ import { checksViewOf, type ChecksHost, type ChecksHostKind } from '../checksVie
 import { usePullRequestView } from '../hooks/usePullRequestView';
 import { repoNameOf } from '../repoNameOf';
 import { CheckAnalysisActions } from './CheckAnalysisActions';
+import { CheckAnalysisHint } from './CheckAnalysisHint';
 import { ChecksDeniedNotice } from './ChecksDeniedNotice';
 import { ChecksFailedNotice } from './ChecksFailedNotice';
 
@@ -182,6 +183,18 @@ export const BranchChecks = ({ sessionId }: Props) => {
                 sessionId={sessionId}
                 mountId={repo.mountId}
                 pullRequest={analysisRequest}
+                check={check}
+              />
+            ) : null
+          }
+          renderCheckHint={(check) =>
+            analysisRequest !== null &&
+            repo !== null &&
+            ['failure', 'timed_out', 'cancelled'].includes(check.conclusion) ? (
+              <CheckAnalysisHint
+                sessionId={sessionId}
+                mountId={repo.mountId}
+                pullRequestUrl={analysisRequest.url}
                 check={check}
               />
             ) : null

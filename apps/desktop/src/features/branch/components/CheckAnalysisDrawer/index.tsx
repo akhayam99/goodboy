@@ -4,6 +4,8 @@ import { DrawerFrame, Markdown } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { isReportedError } from '../../../../store/slices/notifications/reportedError';
+import { captureStartHint } from '../../../../store/slices/startHints/captureStartHint';
+import { START_HINT_SCOPES } from '../../../../store/slices/startHints/startHintScopes';
 import { AgentChain } from '../../../../shared/components/AgentChain';
 import { useKindRouting } from '../../../../shared/hooks/useKindRouting';
 import { routingShortText } from '../../../../shared/components/RoutingPicker/routingSummary';
@@ -35,16 +37,21 @@ export const CheckAnalysisDrawer = ({ sessionId, mountId, checkUrl, onClose }: P
   const dismissCheckProposal = useAppStore((state) => state.dismissCheckProposal);
   const reportError = useAppStore((state) => state.reportError);
   const [isStarting, setIsStarting] = useState(false);
+  const hintScope = START_HINT_SCOPES.checkFix({ mountId, url: checkUrl });
   const startFix = async ({ optionKey }: StartParams) => {
     if (isStarting) {
       return;
     }
+    const state = useAppStore.getState();
+    const capture = captureStartHint({ state, sessionId, scope: hintScope });
     setIsStarting(true);
     try {
       await startCheckFix({
         sessionId,
         url: checkUrl,
         mountId,
+        hint: capture.text,
+        onAccepted: () => state.settleStartHint({ capture }),
         ...(optionKey !== undefined && { optionKey }),
       });
     } catch (error: unknown) {
@@ -104,6 +111,8 @@ export const CheckAnalysisDrawer = ({ sessionId, mountId, checkUrl, onClose }: P
           ) : (
             <>
               <ProposedFix
+                sessionId={sessionId}
+                hintScope={hintScope}
                 proposal={analysis.proposal}
                 options={analysis.options}
                 isActionable={chain.state === 'proposal'}

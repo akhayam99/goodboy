@@ -26,6 +26,7 @@ type Params = {
   readonly sessionId: SessionId;
   readonly mountId: MountId;
   readonly prompt: string;
+  readonly onAccepted?: () => void;
   readonly isStillValid: () => boolean;
   readonly bind: (params: BindParams) => void;
   readonly unbind: (params: BindParams) => void;
@@ -36,6 +37,7 @@ export const spawnPushFixer = async ({
   sessionId,
   mountId,
   prompt,
+  onAccepted,
   isStillValid,
   bind,
   unbind,
@@ -74,12 +76,16 @@ export const spawnPushFixer = async ({
       agentId,
       content: prompt,
       mountId,
+      ...(onAccepted !== undefined && { onStarted: onAccepted }),
       handoff: { instruction: prompt, plan: null },
     })
     .then(
       async (result) => {
         const refusal = refusalOf({ result });
         if (refusal === null) {
+          if (result.isLaneQueued === true) {
+            onAccepted?.();
+          }
           return;
         }
         await dropFix();

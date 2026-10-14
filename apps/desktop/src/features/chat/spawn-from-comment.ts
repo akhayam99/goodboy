@@ -11,6 +11,7 @@ import type { AgentKind } from '../session/agent-kind';
 import type { CommentThread } from '../integrations/github/comment-threads';
 import { prCommentLocation } from '../session/pr-comment-location';
 import { NOTE_AUTHOR_YOU } from '../resolve/notes/noteThread';
+import { OPERATOR_NOTES_GUIDANCE } from './utils/operatorNotesGuidance';
 import { RESOLVER_KICKOFF_LABELS } from './utils/resolverKickoffLabels';
 import {
   humanOfKickoff,
@@ -338,6 +339,9 @@ export const buildResolverKickoffParts = ({
       ...replyVoiceRules({ voice, styleNote }),
     );
   }
+  if (hint.trim().length > 0) {
+    rules.push('', OPERATOR_NOTES_GUIDANCE);
+  }
   return { head: head.join('\n'), rules: rules.join('\n'), tail: kickoffTail({ hint }) };
 };
 
@@ -387,6 +391,9 @@ export const buildRecheckKickoffParts = ({
   const threadId = threadIdOf({ comment: thread.head });
   if (threadId !== '') {
     rules.push('', ...recheckReporting({ threadId }));
+  }
+  if (hint.trim().length > 0) {
+    rules.push('', OPERATOR_NOTES_GUIDANCE);
   }
   return { head: head.join('\n'), rules: rules.join('\n'), tail: kickoffTail({ hint }) };
 };

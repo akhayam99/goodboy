@@ -18,6 +18,9 @@ import { pullRequestKindOf } from '../../../../shared/pullRequestKind';
 import type { PullRequestPresentationState } from '../../../../shared/pullRequestPresentation';
 import { pushFailureOf } from '../../../actions/kinds/pushFailureOf';
 import { PushFailureActions } from './PushFailureActions';
+import { StartHint } from '../../../../shared/components/StartHint';
+import { START_HINT_COPY } from '../../../../shared/components/startHintCopy';
+import { START_HINT_SCOPES } from '../../../../store/slices/startHints/startHintScopes';
 import { BranchStateChip } from './BranchStateChip';
 import { BranchOverflow } from './BranchOverflow';
 import { BranchSwitcher } from './BranchSwitcher';
@@ -274,6 +277,18 @@ export const BranchHeader = ({
       <ActionStatusLine
         controls={controls.diffControls}
         showReasons={false}
+        failureHint={
+          pushFailure === null ? null : (
+            <div className="w-full max-w-md">
+              <StartHint
+                sessionId={sessionId}
+                scope={START_HINT_SCOPES.pushFix({ mountId: pushFailure.mountId })}
+                label={START_HINT_COPY.implementerLabel}
+                placeholder={START_HINT_COPY.pushFix}
+              />
+            </div>
+          )
+        }
         failureActions={
           pushFailure === null ? null : (
             <PushFailureActions

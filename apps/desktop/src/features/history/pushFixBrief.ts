@@ -1,15 +1,18 @@
+import { withOperatorNotes } from '../chat/utils/withOperatorNotes';
+
 type Params = {
   readonly branch: string;
   readonly command: string;
   readonly output: string;
+  readonly hint?: string;
 };
 
 const OUTPUT_LIMIT = 6000;
 
-export const pushFixBrief = ({ branch, command, output }: Params): string => {
+export const pushFixBrief = ({ branch, command, output, hint = '' }: Params): string => {
   const trimmed = output.trim();
   const shown = trimmed.length > OUTPUT_LIMIT ? trimmed.slice(-OUTPUT_LIMIT) : trimmed;
-  return [
+  const brief = [
     `The push of ${branch} failed. Fix the cause in this worktree so the push can go through.`,
     '',
     `Command: ${command}`,
@@ -20,4 +23,5 @@ export const pushFixBrief = ({ branch, command, output }: Params): string => {
     'Never run git push or git push --force yourself, never edit the remote, and never rewrite commits that are already online. Goodboy pushes again with its lease checks when you finish.',
     'End with one line saying what you changed.',
   ].join('\n');
+  return withOperatorNotes({ text: brief, hint });
 };

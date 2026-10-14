@@ -5,6 +5,9 @@ import type { OpenQuestion, ResolveAttempt, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { requestHostOf } from '../../../../store/slices/review-source/requestHostOf';
 import { AgentChain } from '../../../../shared/components/AgentChain';
+import { StartHint } from '../../../../shared/components/StartHint';
+import { START_HINT_COPY } from '../../../../shared/components/startHintCopy';
+import { START_HINT_SCOPES } from '../../../../store/slices/startHints/startHintScopes';
 import { openQuestionOfThread } from '../../../../store/slices/resolve/threadQuestions';
 import { commentOutcomeOf, type CommentOutcome } from '../../commentOutcome';
 import { outcomeSummaryLine } from '../../commentOutcomeCopy';
@@ -124,6 +127,7 @@ export const FixCommentsDrawer = ({ sessionId, focusThreadId, threadIds, onClose
     routing: draft.routing,
     threadIds: selectedIds,
     hint: '',
+    hintScope: START_HINT_SCOPES.fixComments,
     onStarted: onClose,
   });
 
@@ -240,6 +244,12 @@ export const FixCommentsDrawer = ({ sessionId, focusThreadId, threadIds, onClose
             </ScrollFade>
           )}
           <BatchActions sessionId={sessionId} fixes={batchFixes} replies={batchReplies} />
+          <StartHint
+            sessionId={sessionId}
+            scope={START_HINT_SCOPES.fixComments}
+            label={START_HINT_COPY.agentLabel}
+            placeholder={START_HINT_COPY.fixComments}
+          />
           <FixCommentsLaunchRow
             count={selectedIds.length}
             startedMode={launch.startedMode}

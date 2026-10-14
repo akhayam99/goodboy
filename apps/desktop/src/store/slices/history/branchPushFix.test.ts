@@ -302,6 +302,54 @@ describe('fixBranchPushWithAgent', () => {
   });
 });
 
+describe('fixBranchPushWithAgent hint', () => {
+  it('adds the hint verbatim after the brief and reports acceptance when the turn starts', async () => {
+    const { read, spawnAgent, sendTurn } = harness();
+    sendTurn.mockImplementationOnce(async (turn: { readonly onStarted?: () => void }) => {
+      turn.onStarted?.();
+      return { blockedOverBudget: false };
+    });
+    const onAccepted = vi.fn();
+    const hint = 'Operator notes\n## Command\nKeep the hook.';
+
+    await read().fixBranchPushWithAgent({
+      ...input({ isForce: false }),
+      message: HOOK_OUTPUT,
+      hint,
+      onAccepted,
+    });
+    await vi.waitFor(() => expect(onAccepted).toHaveBeenCalledTimes(1));
+
+    expect(
+      spawnAgent.mock.calls[0]?.[1].initialPrompt?.endsWith(`## Operator notes\n${hint}`),
+    ).toBe(true);
+  });
+
+  it('adds nothing without a hint', async () => {
+    const { read, spawnAgent } = harness();
+
+    await read().fixBranchPushWithAgent({ ...input({ isForce: false }), message: HOOK_OUTPUT });
+
+    expect(spawnAgent.mock.calls[0]?.[1].initialPrompt).not.toContain('Operator notes');
+  });
+
+  it('reports no acceptance when the kickoff is rejected', async () => {
+    const { read, sendTurn, deleteAgent } = harness();
+    sendTurn.mockRejectedValueOnce(new Error('provider offline'));
+    const onAccepted = vi.fn();
+
+    await read().fixBranchPushWithAgent({
+      ...input({ isForce: false }),
+      message: HOOK_OUTPUT,
+      hint: 'Keep the hook.',
+      onAccepted,
+    });
+    await vi.waitFor(() => expect(deleteAgent).toHaveBeenCalledWith(SESSION_ID, AGENT_ID));
+
+    expect(onAccepted).not.toHaveBeenCalled();
+  });
+});
+
 describe('settleBranchPushFix', () => {
   it('pushes the branch again when the agent finishes a plain push fix', async () => {
     const { read } = harness();

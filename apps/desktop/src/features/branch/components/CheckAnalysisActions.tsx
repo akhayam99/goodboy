@@ -13,6 +13,8 @@ import { useKindRouting } from '../../../shared/hooks/useKindRouting';
 import { useAppStore } from '../../../store';
 import type { CheckChainState } from '../../../store/slices/agents/selectCheckChain';
 import { isReportedError } from '../../../store/slices/notifications/reportedError';
+import { captureStartHint } from '../../../store/slices/startHints/captureStartHint';
+import { START_HINT_SCOPES } from '../../../store/slices/startHints/startHintScopes';
 import { modelLabel } from '../../chat/utils/chat-constants';
 import { analyzeFailingChecks } from '../checks/analyzeFailingChecks';
 import { checkRoutingOf } from '../checks/checkRoutingOf';
@@ -138,8 +140,27 @@ export const CheckAnalysisActions = ({ sessionId, mountId, pullRequest, check }:
             onClick={() =>
               void run({
                 title: "Couldn't start the Debugger",
-                task: () =>
-                  analyzeFailingChecks({ sessionId, mountId, pullRequest, checks: [check] }),
+                task: () => {
+                  const state = useAppStore.getState();
+                  const capture =
+                    chain.state === 'none'
+                      ? null
+                      : captureStartHint({
+                          state,
+                          sessionId,
+                          scope: START_HINT_SCOPES.checkAnalyze({ mountId, url }),
+                        });
+                  return analyzeFailingChecks({
+                    sessionId,
+                    mountId,
+                    pullRequest,
+                    checks: [check],
+                    ...(capture !== null && {
+                      hint: capture.text,
+                      onAccepted: () => state.settleStartHint({ capture }),
+                    }),
+                  });
+                },
               })
             }
           >

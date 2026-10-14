@@ -18,7 +18,7 @@ export const OutcomeFailed = ({ sessionId, entry, sentence, routing, onStarted }
     sessionId,
     routing,
     threadIds: [entry.threadId],
-    hint: '',
+    hint: entry.row.attempt?.launchChoice?.hint ?? '',
     onStarted,
   });
   const mode = entry.row.attempt?.launchChoice?.mode ?? 'apply';

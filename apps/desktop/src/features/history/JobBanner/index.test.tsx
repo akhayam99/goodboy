@@ -338,6 +338,7 @@ describe('the job banner', () => {
       'Retry push',
       'Details',
       'Dismiss',
+      'Add a hint',
     ]);
     fireEvent.click(screen.getByRole('button', { name: 'Retry push' }));
     await settle();
@@ -357,6 +358,28 @@ describe('the job banner', () => {
     await settle();
 
     expect(fixPushWithAgent).toHaveBeenCalledTimes(1);
+  });
+
+  it('hands the hint of a failed push to the agent and keeps it after Escape', async () => {
+    const fixPushWithAgent = vi.fn(async () => undefined);
+    useAppStore.setState({ fixPushWithAgent });
+    await showRun({
+      phase: 'stopped',
+      stop: { reason: 'push-failed', message: 'declined\nlint error', files: [], sha: null },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add a hint' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Hint for the Implementer' }), {
+      target: { value: '  Keep the lint rule.  ' },
+    });
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+    expect(screen.queryByRole('textbox', { name: 'Hint for the Implementer' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Fix with agent' }));
+    await settle();
+
+    expect(fixPushWithAgent).toHaveBeenCalledWith(
+      expect.objectContaining({ hint: 'Keep the lint rule.', onAccepted: expect.any(Function) }),
+    );
   });
 
   it('opens the terminal with the exact lease push typed, not run', async () => {

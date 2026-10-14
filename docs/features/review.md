@@ -40,6 +40,12 @@ When a fix fails, the comment says why in one sentence and links to the agent's 
 
 Open a fix run from Activity or from a comment to see what the agent did. A drawer beside the list has two tabs. Fix shows the status, the comments the run covers, what it did and its commits. Transcript shows the whole conversation, and you can write to the agent from there. It opens on Transcript while the run works, and on Fix once it ended or when it asks a question. A dot on the other tab tells you when something new happens there.
 
+### Hints when a fix starts
+
+Tell the agent what to weigh before a fix starts. Every start that launches a fix has one quiet line, **Add a hint**, above its buttons: Fix comments (`apps/desktop/src/features/resolve/components/FixCommentsDrawer/index.tsx`), **Start fix** in the Debugger drawer (`apps/desktop/src/features/branch/components/CheckAnalysisDrawer/ProposedFix.tsx`), **Analyze again** on a failing check (`apps/desktop/src/features/branch/components/CheckAnalysisHint.tsx`), **Fix with agent** after a failed push and **Rewrite with an agent** on a conflict. The line is closed by default and never required. A click opens an unboxed field, **Hint for the agent** (**Hint for the Implementer** for a fix), that grows to six lines, shows a small counter near 2000 characters and clears with an x. **Esc** closes the open popover first, then the field with its text kept, then the page. The first **Analyze** of a failing check stays one click with no field.
+
+The hint goes to the agent as typed, trimmed, after the rules and after the evidence under **Operator notes**, with one line that ranks it below the role and the tool limits and asks the agent to say in a sentence how it applied it. It is never posted to GitHub, GitLab or Bitbucket. The first message of the run shows it once as **Your hint**. The draft lives in memory, per session and per target, and clears only once the agent's first turn has started: a failed start keeps it, and text typed while the start is pending stays. A **Retry** on a failed comment reuses the hint of the request that failed.
+
 ### Fixes already on the branch
 
 Goodboy checks origin before it pushes. A comment already fixed by a commit you pushed, or by a teammate's commit, offers **Reply and resolve** instead of a new fix.

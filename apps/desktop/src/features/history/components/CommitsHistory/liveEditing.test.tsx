@@ -15,6 +15,7 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
 } from '../../../../store/storyHarness';
 import { resetWorktreeStatusCache } from '../../../../store/slices/worktreeStatuses/cache';
+import { START_HINT_SCOPES } from '../../../../store/slices/startHints/startHintScopes';
 import { installFakeResizeObserver } from '../../../../test/fakeResizeObserver';
 import { CommitsHistory } from './index';
 
@@ -356,6 +357,82 @@ describe('live Commits page', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
     expect(screen.queryByRole('alert')).toBeNull();
     topRow();
+  });
+  it('hands the hint to the Rewriter and clears it once the first turn is accepted', async () => {
+    outcome = {
+      kind: 'stopped',
+      result: {
+        head: null,
+        map: [],
+        isTreeEqual: false,
+        changedFiles: [],
+        stop: {
+          sha: LEDGER.f,
+          index: 0,
+          kind: 'merge',
+          files: ['export.ts'],
+          message: 'export.ts conflicts',
+        },
+        copyPath: null,
+        order: [],
+        check: null,
+      },
+    };
+    const startHistoryRewriter = vi.fn(async (params: { readonly onAccepted?: () => void }) => {
+      params.onAccepted?.();
+      return 'rewriting' as const;
+    });
+    store.setState({ startHistoryRewriter });
+    await mountPage();
+    fireEvent.keyDown(topRow(), { key: 'Delete' });
+    await screen.findByRole('button', { name: 'Rewrite with an agent' });
+    fireEvent.click(screen.getByRole('button', { name: 'Add a hint' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Hint for the agent' }), {
+      target: { value: '  Keep the retry loop.  ' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Rewrite with an agent' }));
+    await waitFor(() => expect(startHistoryRewriter).toHaveBeenCalledTimes(1));
+    expect(startHistoryRewriter.mock.calls[0]?.[0]).toMatchObject({ note: 'Keep the retry loop.' });
+    const scope = START_HINT_SCOPES.rebase({ mountId: fixture.input.mountId });
+    await waitFor(() =>
+      expect(store.getState().startHints[fixture.input.sessionId]?.[scope]).toBeUndefined(),
+    );
+  });
+  it('keeps the hint when the Rewriter does not accept the first turn', async () => {
+    outcome = {
+      kind: 'stopped',
+      result: {
+        head: null,
+        map: [],
+        isTreeEqual: false,
+        changedFiles: [],
+        stop: {
+          sha: LEDGER.f,
+          index: 0,
+          kind: 'merge',
+          files: ['export.ts'],
+          message: 'export.ts conflicts',
+        },
+        copyPath: null,
+        order: [],
+        check: null,
+      },
+    };
+    const startHistoryRewriter = vi.fn(async () => 'stopped' as const);
+    store.setState({ startHistoryRewriter });
+    await mountPage();
+    fireEvent.keyDown(topRow(), { key: 'Delete' });
+    await screen.findByRole('button', { name: 'Rewrite with an agent' });
+    fireEvent.click(screen.getByRole('button', { name: 'Add a hint' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Hint for the agent' }), {
+      target: { value: 'Keep the retry loop.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Rewrite with an agent' }));
+    await waitFor(() => expect(startHistoryRewriter).toHaveBeenCalledTimes(1));
+    const scope = START_HINT_SCOPES.rebase({ mountId: fixture.input.mountId });
+    expect(store.getState().startHints[fixture.input.sessionId]?.[scope]?.text).toBe(
+      'Keep the retry loop.',
+    );
   });
   it('shows busy on the edited row and ignores new edits', async () => {
     let release: (result: HistoryLiveOutcome) => void = () => undefined;

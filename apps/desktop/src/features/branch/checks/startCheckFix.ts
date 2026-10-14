@@ -2,6 +2,7 @@ import type { AgentId, MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { selectCheckChain } from '../../../store/slices/agents/selectCheckChain';
 import { selectKindRouting } from '../../../store/slices/agents/selectKindRouting';
+import { withOperatorNotes } from '../../chat/utils/withOperatorNotes';
 import { checkAnalysisOf } from './checkAnalysisOf';
 
 type Params = {
@@ -9,12 +10,21 @@ type Params = {
   readonly url: string;
   readonly mountId: MountId;
   readonly optionKey?: string;
+  readonly hint?: string;
+  readonly onAccepted?: () => void;
 };
 
 const FIX_INSTRUCTION = 'Make this fix on this branch, commit it, and push nothing.';
 const NO_EVENTS = [] as const;
 
-export const startCheckFix = ({ sessionId, url, mountId, optionKey }: Params): Promise<AgentId> => {
+export const startCheckFix = ({
+  sessionId,
+  url,
+  mountId,
+  optionKey,
+  hint = '',
+  onAccepted,
+}: Params): Promise<AgentId> => {
   const state = useAppStore.getState();
   const chain = selectCheckChain({ state, sessionId, url });
   if (chain.debugger === null || chain.proposal === null) {
@@ -34,10 +44,11 @@ export const startCheckFix = ({ sessionId, url, mountId, optionKey }: Params): P
     chosen === undefined
       ? chain.proposal
       : `Option ${chosen.key}: ${chosen.title}\n\n${chosen.body}`;
-  const seed =
+  const evidence =
     finding.length === 0
       ? `${fix}\n\n${FIX_INSTRUCTION}`
       : `Finding:\n${finding}\n\nFix:\n${fix}\n\n${FIX_INSTRUCTION}`;
+  const seed = withOperatorNotes({ text: evidence, hint });
   return state.startFollowUp({
     sessionId,
     sourceAgentId: chain.debugger.id,
@@ -48,5 +59,6 @@ export const startCheckFix = ({ sessionId, url, mountId, optionKey }: Params): P
     origin: { sourceKind: 'failed_check', sourceCommentUrl: url },
     focus: 'none',
     mountId,
+    ...(onAccepted !== undefined && { onKickoffAccepted: onAccepted }),
   });
 };

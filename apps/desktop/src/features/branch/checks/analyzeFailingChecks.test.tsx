@@ -48,6 +48,7 @@ import {
 import { ToastProvider } from '../../../shared/components/Toast';
 import { checksAnalyzeSeed } from '../../../app/components/MockScene/scenes/u24/checksAnalyzeSeed';
 import { BranchChecks } from '../components/BranchChecks';
+import { START_HINT_SCOPES } from '../../../store/slices/startHints/startHintScopes';
 import { analyzeFailingChecks } from './analyzeFailingChecks';
 import { resetWorktreeStatusCache } from '../../../store/slices/worktreeStatuses/cache';
 import { useSuggestionActions } from '../../suggestions/useSuggestionActions';
@@ -243,6 +244,89 @@ describe('Analyze with the real store and SQLite', () => {
           .sessionPhaseRuns[seed.sessionId]?.some((agent) => agent.id !== seed.agent.id),
       ).toBe(true),
     );
+  });
+  it('offers no hint field on the first Analyze, which stays one click', async () => {
+    show();
+    expect(screen.queryByRole('button', { name: 'Add a hint' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Analyze' })).toBeDefined();
+  });
+  describe('the hint on Analyze again', () => {
+    const scope = () =>
+      START_HINT_SCOPES.checkAnalyze({
+        mountId: seed.repo.mountId,
+        url: seed.check.detailsUrl ?? '',
+      });
+    const draft = () => store.getState().startHints[seed.sessionId]?.[scope()]?.text;
+    const writeHint = (text: string) => {
+      fireEvent.click(screen.getByRole('button', { name: 'Add a hint' }));
+      fireEvent.change(screen.getByRole('textbox', { name: 'Hint for the agent' }), {
+        target: { value: text },
+      });
+    };
+    it('puts the hint after the instructions, never inside the evidence, and clears the draft', async () => {
+      const spawn = vi.spyOn(store.getState(), 'spawnAgent');
+      show({ phase: 'no-fix' });
+      writeHint('Look at the retry queue first.');
+      fireEvent.click(screen.getByRole('button', { name: 'Analyze again' }));
+      await waitFor(() => expect(spawn).toHaveBeenCalledTimes(1));
+      const prompt = spawn.mock.calls[0]?.[1].initialPrompt ?? '';
+      expect(prompt.endsWith('## Operator notes\nLook at the retry queue first.')).toBe(true);
+      expect(prompt.indexOf('## Operator notes')).toBeGreaterThan(
+        prompt.indexOf('## Instructions'),
+      );
+      expect(prompt.indexOf('## Failed log tail')).toBeLessThan(prompt.indexOf('## Instructions'));
+      await waitFor(() => expect(draft()).toBeUndefined());
+    });
+    it('keeps the hint when the start fails and sends it again on retry', async () => {
+      const spawn = vi.spyOn(store.getState(), 'spawnAgent');
+      injectDbFault({ match: /INSERT INTO agents/, message: 'Could not create the Debugger' });
+      show({ phase: 'no-fix' });
+      writeHint('Look at the retry queue first.');
+      fireEvent.click(screen.getByRole('button', { name: 'Analyze again' }));
+      await waitFor(() =>
+        expect(
+          store
+            .getState()
+            .notifications.some((notice) => notice.title === "Couldn't start the Debugger"),
+        ).toBe(true),
+      );
+      expect(draft()).toBe('Look at the retry queue first.');
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: 'Analyze again' }).hasAttribute('disabled')).toBe(
+          false,
+        ),
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Analyze again' }));
+      await waitFor(() => expect(spawn.mock.calls.length).toBeGreaterThanOrEqual(2));
+      expect(spawn.mock.calls.at(-1)?.[1].initialPrompt).toContain(
+        '## Operator notes\nLook at the retry queue first.',
+      );
+    });
+  });
+  it('says so instead of dropping a hint when the check is already being analyzed', async () => {
+    let release: (() => void) | undefined;
+    const wait = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    storySpies.tauriInvoke.mockImplementationOnce(async () => {
+      await wait;
+      return { stdout: 'Assertion failed', stderr: '', exitCode: 0 };
+    });
+    const first = analyzeFailingChecks({
+      ...seed,
+      mountId: seed.repo.mountId,
+      checks: [seed.check],
+    });
+    await expect(
+      analyzeFailingChecks({
+        ...seed,
+        mountId: seed.repo.mountId,
+        checks: [seed.check],
+        hint: 'Look at the retry queue first.',
+      }),
+    ).rejects.toThrow('A Debugger is already analyzing this check. Your hint was not applied.');
+    release?.();
+    await first;
   });
   it('does not create an agent when paths cannot be read and allows retry', async () => {
     storySpies.tauriInvoke.mockImplementationOnce(async () => ({

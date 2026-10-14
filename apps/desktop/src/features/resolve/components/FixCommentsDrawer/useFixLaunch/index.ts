@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import type { ResolveCommitStyle, ResolveLaunchMode, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
+import { captureStartHint } from '../../../../../store/slices/startHints/captureStartHint';
 import { sessionResolveStyle } from '../../../../../store/sessionReplySettings';
 import { isReportedError } from '../../../../../store/slices/notifications/reportedError';
 import type { AgentKindRouting } from '../../../../session/agent-kind';
@@ -16,6 +17,7 @@ type Params = {
   readonly routing: AgentKindRouting;
   readonly threadIds: ReadonlyArray<string>;
   readonly hint: string;
+  readonly hintScope?: string;
   readonly onStarted: () => void;
 };
 
@@ -41,6 +43,7 @@ export const useFixLaunch = ({
   routing,
   threadIds,
   hint,
+  hintScope,
   onStarted,
 }: Params): FixLaunch => {
   const announceStart = useFixStartedToast();
@@ -52,10 +55,12 @@ export const useFixLaunch = ({
     if (startedMode !== null || count === 0) {
       return;
     }
+    const state = useAppStore.getState();
+    const capture =
+      hintScope === undefined ? null : captureStartHint({ state, sessionId, scope: hintScope });
     setStartedMode(mode);
     setError(null);
     try {
-      const state = useAppStore.getState();
       const parentAgentId = parentResolverOf({
         attempts: state.sessionResolveAttempts[sessionId] ?? [],
         agents: state.sessionPhaseRuns[sessionId] ?? [],
@@ -70,10 +75,13 @@ export const useFixLaunch = ({
         launchChoice: launchChoiceOf({
           routing,
           commitStyle: storedCommitStyle({ sessionId }),
-          hint,
+          hint: capture === null ? hint : capture.text,
           mode,
         }),
       });
+      if (capture !== null) {
+        state.settleStartHint({ capture });
+      }
       announceStart({ sessionId, started, count });
       onStarted();
     } catch (caught) {

@@ -70,6 +70,7 @@ type SpawnArgs = {
   parentAgentId?: AgentId;
   resolveBatch?: ResolveAttemptBatch;
   resolveLaunch?: ResolveAttemptLaunch;
+  onKickoffAccepted?: () => void;
 };
 
 const NO_ALLOWED_MODEL_TITLE = 'No model is allowed for this agent';
@@ -303,6 +304,7 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
         agentId: inserted.id,
         content: kickoff,
         ...(args.mountId !== undefined && { mountId: args.mountId }),
+        ...(args.onKickoffAccepted !== undefined && { onStarted: args.onKickoffAccepted }),
         handoff:
           isRecheck && humanPrompt !== null && machineRules !== null
             ? {
@@ -319,6 +321,11 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
                 instruction: baseKickoff,
                 plan: handedPlan === null ? null : { id: handedPlan.id, title: handedPlan.title },
               },
+      })
+      .then((result) => {
+        if (result?.isLaneQueued === true) {
+          args.onKickoffAccepted?.();
+        }
       })
       .catch((error: unknown) => {
         if (isReportedError(error)) {

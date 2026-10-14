@@ -131,6 +131,7 @@ export const SESSION_EVICTION = [
   { key: 'sessionEvents', keyedBy: 'session', evictOn: 'delete' },
   { key: 'workflowDrafts', keyedBy: 'session', evictOn: 'delete' },
   { key: 'newDrawerDrafts', keyedBy: 'session', evictOn: 'delete' },
+  { key: 'startHints', keyedBy: 'session', evictOn: 'delete' },
   { key: 'artifactDrafts', keyedBy: 'session', evictOn: 'delete' },
   { key: 'sessionFileVersions', keyedBy: 'session', evictOn: 'delete' },
   { key: 'sessionFileVersionsLoading', keyedBy: 'session', evictOn: 'delete' },
@@ -337,6 +338,7 @@ export const NON_SESSION_STATE_KEYS = [
   'undoStack',
   'undoNotices',
   'pendingUndoId',
+  'startHintRevision',
 ] as const satisfies ReadonlyArray<keyof AppState>;
 
 type RegisteredKey =
