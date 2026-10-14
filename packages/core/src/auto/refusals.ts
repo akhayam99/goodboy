@@ -23,6 +23,17 @@ export const AUTO_REFUSAL_CODES = [
   'artifact_unapproved',
   'role_mismatch',
   'tree_busy',
+  'spec_invalid',
+  'role_unknown',
+  'no_provider',
+  'provider_unproven',
+  'mount_missing',
+  'mount_ambiguous',
+  'delegation_unknown',
+  'question_unknown',
+  'not_paused',
+  'no_run',
+  'retry_unavailable',
 ] as const;
 
 export type AutoRefusalCode = (typeof AUTO_REFUSAL_CODES)[number];

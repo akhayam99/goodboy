@@ -20,6 +20,18 @@ export const AUTO_WRITER_ROLES = [
 
 export type AutoWriterRole = (typeof AUTO_WRITER_ROLES)[number];
 
+export type AutoArtifactKind = 'plan' | 'report';
+
+export const AUTO_ROLE_ARTIFACT = {
+  scout: 'report',
+  planner: 'plan',
+  investigator: 'report',
+  reviewer: 'report',
+  implementer: null,
+  tester: null,
+  docs: null,
+} as const satisfies Readonly<Record<AutoDelegationRole, AutoArtifactKind | null>>;
+
 type ParseAutoDelegationRoleParams = {
   readonly role: unknown;
 };

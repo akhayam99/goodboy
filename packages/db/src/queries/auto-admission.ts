@@ -183,3 +183,49 @@ export const autoInputArtifactStatements = ({
     },
   ];
 };
+
+type ResumeTreeStatementParams = {
+  readonly treeId: AutoTreeId;
+  readonly rootAgentId: AgentId;
+  readonly ownerId: string;
+  readonly nowMs: number;
+  readonly generation: number;
+  readonly runId: string;
+  readonly maxAttempts: number;
+  readonly requestedUsd: number;
+};
+
+export const AUTO_RESUME_TREE_ABORT = 'resume_tree';
+
+export const autoResumeTreeStatement = ({
+  treeId,
+  rootAgentId,
+  ownerId,
+  nowMs,
+  generation,
+  runId,
+  maxAttempts,
+  requestedUsd,
+}: ResumeTreeStatementParams): GuardedStatement => ({
+  sql: `UPDATE auto_trees
+    SET phase = 'delegating', is_yield_requested = 1, phase_rev = phase_rev + 1, updated_at = ?,
+        attempts_used = attempts_used + 1
+    WHERE id = ? AND root_agent_id = ? AND generation = ?
+      AND phase IN ('deciding', 'delegating') AND stop_state = 'none' AND active_run_id = ?
+      AND ${AUTO_OWNER_GUARD_SQL}
+      AND ? < hard_deadline_at AND attempts_used + 1 <= ?
+      AND ${autoRemainingUsdSql({ treeRef: 'auto_trees.id' })} + ${AUTO_USD_EPSILON} >= ?`,
+  params: [
+    nowMs,
+    treeId,
+    rootAgentId,
+    generation,
+    runId,
+    ...autoOwnerGuardParams({ ownerId, nowMs }),
+    nowMs,
+    maxAttempts,
+    requestedUsd,
+  ],
+  abortWhen: 'noChanges',
+  abortCode: AUTO_RESUME_TREE_ABORT,
+});

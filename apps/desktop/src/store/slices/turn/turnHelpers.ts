@@ -769,6 +769,7 @@ type CaptureArtifactsParams = {
   readonly emittingProvider: ProviderId | null;
   readonly sourceTurnId: string;
   readonly workflowRunId?: WorkflowRunId | undefined;
+  readonly captureMode?: 'new' | 'revise' | undefined;
 };
 
 export type CapturedArtifacts = {
@@ -810,8 +811,9 @@ export const captureArtifactsFromTurn = async ({
   emittingProvider,
   sourceTurnId,
   workflowRunId,
+  captureMode,
 }: CaptureArtifactsParams): Promise<CapturedArtifacts> => {
-  if (hasBlockingQuestion({ assistantText })) {
+  if (hasBlockingQuestion({ assistantText }) || captureMode === 'revise') {
     return NOTHING_CAPTURED;
   }
   await recordArtifactAssumptions({ agentId, assistantText });
@@ -824,7 +826,7 @@ export const captureArtifactsFromTurn = async ({
   }
   const parsed = captured.artifact;
   try {
-    if (parsed.kind === 'plan') {
+    if (parsed.kind === 'plan' && captureMode !== 'new') {
       await invokeUpsertPlan({
         sessionId,
         agentId,
@@ -861,16 +863,19 @@ export const captureArtifactsFromTurn = async ({
       parsed.kind === 'wireframe'
         ? await overrideWireframeFidelity({ agentId, agentName, parsed })
         : parsed.metadata;
-    const revised = await reviseArtifactForAgent({
-      sessionId,
-      agentId,
-      kind: parsed.kind,
-      title: parsed.title,
-      sourceFormat: parsed.sourceFormat,
-      sourceText: parsed.sourceText,
-      metadata,
-      sourceTurnId,
-    });
+    const revised =
+      captureMode === 'new'
+        ? null
+        : await reviseArtifactForAgent({
+            sessionId,
+            agentId,
+            kind: parsed.kind,
+            title: parsed.title,
+            sourceFormat: parsed.sourceFormat,
+            sourceText: parsed.sourceText,
+            metadata,
+            sourceTurnId,
+          });
     const artifact =
       revised ??
       (await invokeCreateArtifact({
@@ -887,8 +892,13 @@ export const captureArtifactsFromTurn = async ({
       }));
     await completeArtifactRun({ agentId }).catch(() => undefined);
     const refreshed = await invokeListArtifactsForSession(sessionId);
+    const refreshedPlans =
+      parsed.kind === 'plan' ? await invokeListPlansForSession(sessionId) : null;
     set((state) => ({
       sessionArtifacts: { ...state.sessionArtifacts, [sessionId]: refreshed },
+      ...(refreshedPlans === null
+        ? {}
+        : { sessionPlans: { ...state.sessionPlans, [sessionId]: refreshedPlans } }),
     }));
     return { plan: null, artifact, error: null };
   } catch (err) {

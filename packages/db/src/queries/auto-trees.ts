@@ -193,6 +193,37 @@ export const listAutoTreesToRecover = async ({
   return rows.map((row) => toTree({ row }));
 };
 
+export type AutoAgentWithoutTree = Readonly<{
+  agentId: AgentId;
+  sessionId: SessionId;
+  workspaceId: string;
+}>;
+
+type ListAutoAgentsWithoutTreeParams = {
+  readonly db: Database;
+};
+
+export const listAutoAgentsWithoutTree = async ({
+  db,
+}: ListAutoAgentsWithoutTreeParams): Promise<ReadonlyArray<AutoAgentWithoutTree>> => {
+  const rows = await db.select<{
+    readonly id: string;
+    readonly session_id: string;
+    readonly workspace_id: string;
+  }>(
+    `SELECT a.id, a.session_id, s.workspace_id
+     FROM live_agents a JOIN sessions s ON s.id = a.session_id
+     WHERE a.kind = 'auto' AND a.parent_agent_id IS NULL
+       AND NOT EXISTS (SELECT 1 FROM auto_trees t WHERE t.root_agent_id = a.id)
+     ORDER BY a.session_id, a.ordinal`,
+  );
+  return rows.map((row) => ({
+    agentId: brandId<AgentId>({ value: row.id }),
+    sessionId: brandId<SessionId>({ value: row.session_id }),
+    workspaceId: row.workspace_id,
+  }));
+};
+
 export type NewAutoTree = Readonly<{
   id: AutoTreeId;
   rootAgentId: AgentId;

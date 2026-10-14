@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
+import { AUTO_OWN_PROVIDERS } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
@@ -9,7 +10,6 @@ import { useAutoStart } from '../hooks/useAutoStart';
 import { useConfirmStartMode } from '../../auto/useConfirmStartMode';
 import { useAutoTreeLimit } from '../../auto/useAutoTreeLimit';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
-import { AUTO_OWN_PROVIDERS } from '../../auto/autoProviders';
 import { autoOwnRouting } from '../../auto/autoOwnRouting';
 import { AutoComposerView } from './AutoComposerView';
 

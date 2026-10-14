@@ -860,7 +860,12 @@ When a provider ships or retires a model, update these together:
   for a pin that cannot run), the fallback model of a turn that changed provider
   (`selectModelOnProvider`), the report and wireframe spawns, the History rewriter
   (`historyRewriterConfig`), Scribe (`scribeModelConfig`) and every helper task
-  (`selectTaskModel`). A session's own layer reaches all of them.
+  (`selectTaskModel`). A session's own layer reaches all of them. A model a step or
+  an Auto child proposes goes through one function, `resolveProposedRouting`
+  (`store/slices/workflows/`): parse the proposal, keep it inside the role's set,
+  `rolePicks`, `resolveWorkflowRouting`. The orchestrator and the Auto delegation
+  verb both call it, and `resolveProposedRouting.test.ts` pins it against the chain
+  it was lifted from.
   `resolution.runtime.parity.test.ts` pins that they agree with the Models row on a
   Codex-only workspace with Anthropic pins and a session made before the change. The
   `resolver-entrypoints` ratchet counts the files that still import `resolveRoleRouting`,

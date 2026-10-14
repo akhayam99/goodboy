@@ -1,3 +1,4 @@
+pub mod agent;
 mod args;
 pub(crate) mod capability;
 mod cli;
@@ -80,7 +81,7 @@ fn abandoned_staged_files<'a>(
         .collect()
 }
 
-fn exe_path() -> Option<&'static Path> {
+pub(crate) fn exe_path() -> Option<&'static Path> {
     EXE_PATH
         .get_or_init(|| std::env::current_exe().ok())
         .as_deref()

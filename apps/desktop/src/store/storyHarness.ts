@@ -548,6 +548,7 @@ export const storyDbStubs = () => ({
   stopGhostAgents: vi.fn(async () => 0),
   insertAgentHandoff: vi.fn(async () => undefined),
   countUserTextEvents: vi.fn(async () => 0),
+  isAutoChildAgent: vi.fn(async () => false),
   listSessionDecisions: vi.fn(async () => []),
   listSessionContextItemsForRole: vi.fn(async () => []),
   listSessionContextItems: vi.fn(async () => []),
@@ -748,6 +749,7 @@ export const turnModuleMock = () => ({
   runTurn: (args: unknown) => storySpies.runTurn(args),
   cancelTurn: (runId: unknown) => storySpies.cancelTurn(runId),
   listLiveRunIds: storySpies.listLiveRunIds,
+  lookupDeliveryRun: vi.fn(async () => null),
   encodeAuthRequiredMessage: () => '',
   isAuthErrorMessage: () => false,
   writeAttachment: () => storySpies.writeAttachment(),
@@ -849,6 +851,7 @@ export const worktreeModuleMock = () => ({
   scratchDirPrepare: (args: unknown) => storySpies.scratchDirPrepare(args),
   scratchDirRemove: (args: unknown) => storySpies.scratchDirRemove(args),
   worktreeChangedFiles: (params: WorktreeBaseArgs) => storySpies.worktreeChangedFiles(params),
+  worktreeSnapshot: vi.fn(async () => ({ head: 'abc123', entries: [], isPartial: false })),
   worktreeStatus: (path: string) => storySpies.worktreeStatus(path),
   gitCommonDirectory: (args: { readonly repoPath: string }) => storySpies.gitCommonDirectory(args),
   acquireWorktreeWriter: (args: { readonly path: string; readonly holder?: string }) =>

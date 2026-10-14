@@ -236,6 +236,22 @@ export const getAutoDelegation = async ({
   return row === undefined ? null : toDelegation({ row });
 };
 
+type IsAutoChildAgentParams = {
+  readonly db: Database;
+  readonly agentId: string;
+};
+
+export const isAutoChildAgent = async ({
+  db,
+  agentId,
+}: IsAutoChildAgentParams): Promise<boolean> => {
+  const rows = await db.select<{ readonly found: number }>(
+    'SELECT 1 AS found FROM auto_delegations WHERE child_agent_id = ? LIMIT 1',
+    [agentId],
+  );
+  return rows.length > 0;
+};
+
 type ListAutoDelegationsParams = {
   readonly db: Database;
   readonly treeId: AutoTreeId;

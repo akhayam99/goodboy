@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { brandId, type AgentId, type ArtifactId, type SessionId } from '@goodboy/types';
 import { agentPlace, useAppStore } from '../../../../store';
 import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
+import { currentTreeStopPort } from '../../treeStopPort';
 import { focusAgentComposer } from '../focusAgentComposer';
 
 type Params = {
@@ -23,7 +24,6 @@ export type AutoTreeActions = Readonly<{
 export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
   const navigate = useAppStore((state) => state.navigate);
   const openDrawer = useAppStore((state) => state.openDrawer);
-  const cancelTurnConfirmed = useAppStore((state) => state.cancelTurnConfirmed);
   const reportError = useAppStore((state) => state.reportError);
   const [isStopping, setIsStopping] = useState(false);
 
@@ -31,11 +31,16 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
     async ({ view }: ViewParams): Promise<void> => {
       setIsStopping(true);
       try {
-        const children = view.delegations
-          .filter((delegation) => delegation.state !== 'settled')
-          .map((delegation) => delegation.childAgentId);
-        for (const agentId of [...children, view.tree.rootAgentId]) {
-          await cancelTurnConfirmed({ sessionId, agentId, reason: 'user' });
+        const port = currentTreeStopPort();
+        if (port === null) {
+          throw new Error('Auto cannot be stopped from this window.');
+        }
+        const result = await port({ treeId: view.tree.id });
+        if (result === 'stuck') {
+          throw new Error('Some agents are still running. Press Stop again to retry.');
+        }
+        if (result === 'not_owner') {
+          throw new Error('Another window runs this conversation. Stop it there.');
         }
       } catch (error) {
         await reportError({ title: "Couldn't stop the Auto agents", error, sessionId });
@@ -43,7 +48,7 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
         setIsStopping(false);
       }
     },
-    [cancelTurnConfirmed, reportError, sessionId],
+    [reportError, sessionId],
   );
 
   const changeApproach = useCallback(

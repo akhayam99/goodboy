@@ -94,6 +94,17 @@ impl Run {
         permission_mode: &str,
         writer_lease: Option<&WriterLeaseBinding>,
     ) -> Result<String, TurnError> {
+        self.spawn_core(binary, prompt, permission_mode, writer_lease, None)
+    }
+
+    fn spawn_core(
+        &self,
+        binary: &str,
+        prompt: &str,
+        permission_mode: &str,
+        writer_lease: Option<&WriterLeaseBinding>,
+        capability: Option<&str>,
+    ) -> Result<String, TurnError> {
         let empty: Vec<String> = Vec::new();
         let binary_path = self.fake.binary(binary);
         let work_dir = self.fake.work_dir();
@@ -122,6 +133,7 @@ impl Run {
             confined_role: None,
             blocks_push: true,
             excludes_tmp: false,
+            capability,
         };
         spawn_one(
             &self.recorder,
@@ -248,6 +260,7 @@ fn expected_argv(binary: &str, run: &Run) -> Vec<String> {
         confined_role: None,
         blocks_push: true,
         excludes_tmp: false,
+        capability: None,
     };
     turn_args(binary, &args)
 }
@@ -531,6 +544,42 @@ fn an_owned_writer_lease_is_released_and_announced_when_the_turn_ends() {
     assert_eq!(announced["reason"], "exited");
     assert_eq!(announced["holder"], "agent-1");
     assert!(crate::worktree_writer::lease_status(&run.leases.0, &path).has_exited);
+}
+
+#[test]
+fn the_capability_of_a_turn_is_revoked_when_the_turn_ends() {
+    use crate::query_bridge::capability::{
+        now_ms, registry, CapabilityGrant, CapabilityRefusal, LiveTree,
+    };
+
+    let run = Run::new("ok");
+    let grant = CapabilityGrant {
+        agent_id: "agent-auto".to_string(),
+        tree_id: "tree-fake-cli".to_string(),
+        generation: 1,
+        workspace_id: "workspace-northwind".to_string(),
+        session_id: "session-acme".to_string(),
+        run_id: "run-1".to_string(),
+    };
+    let token = registry().mint(grant, now_ms());
+    let live = LiveTree {
+        tree_id: "tree-fake-cli",
+        generation: 1,
+        active_run_id: "run-1",
+    };
+    assert!(registry()
+        .authorize(Some(&token), "agent status", live, now_ms())
+        .is_ok());
+
+    run.spawn_core("claude", PROMPT, "default", None, Some(&token))
+        .unwrap();
+    run.turn_events_until_end();
+    run.wait_until_backlog_finishes("run-1");
+
+    assert_eq!(
+        registry().authorize(Some(&token), "agent status", live, now_ms()),
+        Err(CapabilityRefusal::Revoked)
+    );
 }
 
 #[test]

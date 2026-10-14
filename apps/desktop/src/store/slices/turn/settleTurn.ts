@@ -147,6 +147,7 @@ export const settleTurn = async ({ set, get, ctx }: Params) => {
       emittingProvider: provider,
       sourceTurnId: runId,
       workflowRunId: phaseWorkflowRunId ?? undefined,
+      captureMode: ctx.input.captureMode,
     });
     const capturedPlan = captured.plan;
     const unchangedNote = unchangedPlanNote({
@@ -260,6 +261,13 @@ export const settleTurn = async ({ set, get, ctx }: Params) => {
       failureCause: 'provider_error',
     });
   }
+  ctx.input.onSettled?.({
+    runId,
+    assistantText,
+    hasFailed: lastError !== null,
+    wasCancelled: turnWasCancelled,
+    filesTouched: Array.from(filesTouchedThisTurn),
+  });
   if (lastError) {
     throw lastError;
   }

@@ -6,6 +6,7 @@ import type {
   MountId,
   MountTargetSnapshot,
   ProviderId,
+  ProviderRunId,
   SessionId,
   TurnProviderOverride,
   UserTurnSentVia,
@@ -19,6 +20,14 @@ export type SendTurnResult = Readonly<{
   isLaneQueued?: boolean;
 }>;
 
+export type TurnSettledInfo = Readonly<{
+  runId: ProviderRunId;
+  assistantText: string;
+  hasFailed: boolean;
+  wasCancelled: boolean;
+  filesTouched: ReadonlyArray<string>;
+}>;
+
 export type SendTurnInput = Readonly<{
   sessionId: SessionId;
   agentId?: AgentId;
@@ -28,11 +37,16 @@ export type SendTurnInput = Readonly<{
   resolveThreadIds?: ReadonlyArray<string>;
   onStarted?: () => void;
   confinedRole?: string;
+  runId?: ProviderRunId;
+  deliveryId?: string;
+  autoTree?: Readonly<{ treeId: string; generation: number }>;
+  onSettled?: (settled: TurnSettledInfo) => void;
+  captureMode?: 'new' | 'revise';
   content: string;
   attachments?: ReadonlyArray<AttachmentInput>;
   override?: TurnProviderOverride;
   force?: boolean;
-  origin?: 'operator' | 'workflow' | 'mount-continuation';
+  origin?: 'operator' | 'workflow' | 'mount-continuation' | 'delegation';
   handoff?: HandoffDraft;
   sentVia?: UserTurnSentVia;
   permissionOnceAllow?: string;

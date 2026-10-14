@@ -1,0 +1,211 @@
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AUTO_SEED_ROOT, AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
+import { brandId, type WorkspaceId } from '@goodboy/types';
+import { writeAutoTreeLimit } from '../features/auto/autoTreeLimit';
+import { currentDelegationDecisionPort } from '../features/auto/delegationDecisionPort';
+import { currentTreeStopPort } from '../features/auto/treeStopPort';
+import { createAutoScheduler } from './slices/auto/scheduler';
+import { WORLD_TREE } from './slices/auto/testing/autoWorld';
+import {
+  importStore,
+  openStorySqlite,
+  resetStoryStore,
+  STORE_IMPORT_TIMEOUT_MS,
+  stubStoryInvoke,
+  type StoryStore,
+} from './storyHarness';
+
+vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('./storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('../shared/lib/db', async () => (await import('./storyHarness')).sqliteDbLibModuleMock());
+vi.mock('../features/chat/turn', async () => (await import('./storyHarness')).turnModuleMock());
+vi.mock('../features/permissions/permissions', async () =>
+  (await import('./storyHarness')).permissionsModuleMock(),
+);
+vi.mock('../features/providers/providers', async () =>
+  (await import('./storyHarness')).providersModuleMock(),
+);
+vi.mock('../features/providers/routing', async () =>
+  (await import('./storyHarness')).routingModuleMock(),
+);
+vi.mock('../features/budget/budget', async () =>
+  (await import('./storyHarness')).budgetModuleMock(),
+);
+vi.mock('../features/skills/skills', async () =>
+  (await import('./storyHarness')).skillsModuleMock(),
+);
+vi.mock('../features/workflows/workflows', async () =>
+  (await import('./storyHarness')).workflowsModuleMock(),
+);
+vi.mock('../features/worktree/worktree', async () =>
+  (await import('./storyHarness')).worktreeModuleMock(),
+);
+vi.mock('../shared/lib/repo', async () => (await import('./storyHarness')).repoModuleMock());
+
+let useAppStore: StoryStore;
+let startAutoRuntime: typeof import('./slices/auto/startAutoRuntime').startAutoRuntime;
+const stops: Array<() => void> = [];
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+  ({ startAutoRuntime } = await import('./slices/auto/startAutoRuntime'));
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+  stubStoryInvoke({ auto_capability_revoke_tree: 0 });
+  await openStorySqlite();
+});
+
+afterEach(() => {
+  for (const stop of stops.splice(0)) {
+    stop();
+  }
+});
+
+type StoryDb = Awaited<ReturnType<typeof openStorySqlite>>;
+
+type SeedParams = {
+  readonly kind: string | null;
+};
+
+const seedSessionWithAutoAgent = async ({ kind }: SeedParams): Promise<StoryDb> => {
+  const db = await openStorySqlite();
+  await db.execute(
+    'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, 1, 1)',
+    ['workspace-harborline', 'Harborline', 'harborline'],
+  );
+  await db.execute(
+    "INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at) VALUES ('session-harborline', 'workspace-harborline', 'Goal', 'idle', 1, 1)",
+  );
+  await db.execute(
+    'INSERT INTO agents (id, session_id, ordinal, name, status, kind) VALUES (?, ?, 0, ?, ?, ?)',
+    [AUTO_SEED_ROOT, AUTO_SEED_SESSION, 'Auto', 'pending', kind],
+  );
+  return db;
+};
+
+const seedTree = async (db: StoryDb): Promise<void> => {
+  const scheduler = createAutoScheduler({ db, ownerId: 'window-before', now: Date.now });
+  await scheduler.createTree({
+    id: WORLD_TREE,
+    rootAgentId: AUTO_SEED_ROOT,
+    sessionId: AUTO_SEED_SESSION,
+    primaryMountId: null,
+    capUsd: 5,
+    hardDeadlineAt: Date.now() + 86_400_000,
+  });
+};
+
+describe('the Auto runtime on the real store', () => {
+  it('starts and stops without touching anything while delegation is off', async () => {
+    const stop = await startAutoRuntime({ isEnabled: false, tickMs: 10 });
+    stops.push(stop);
+
+    expect(typeof stop).toBe('function');
+    expect(useAppStore.getState().sessionPhaseRuns).toEqual({});
+  });
+
+  it('recovers nothing and ticks quietly with no tree when delegation is on', async () => {
+    const stop = await startAutoRuntime({ isEnabled: true, tickMs: 10 });
+    stops.push(stop);
+    await new Promise((resolve) => setTimeout(resolve, 40));
+
+    expect(useAppStore.getState().notifications ?? []).toEqual([]);
+  });
+
+  it('drives a stored tree on the next tick, so a lease taken by this window is renewed', async () => {
+    const db = await seedSessionWithAutoAgent({ kind: null });
+    await seedTree(db);
+    await db.execute(`UPDATE auto_trees SET phase = 'waiting'`);
+
+    const stop = await startAutoRuntime({ isEnabled: true, tickMs: 10 });
+    stops.push(stop);
+    await vi.waitFor(async () => {
+      const rows = await db.select<{ scheduler_owner: string | null }>(
+        'SELECT scheduler_owner FROM auto_trees',
+      );
+      expect(rows[0]?.scheduler_owner).not.toBeNull();
+    });
+  });
+
+  it('hands the screens a way to answer a card and to stop a tree, and takes it back on teardown', async () => {
+    const stop = await startAutoRuntime({ isEnabled: false, tickMs: 10 });
+
+    expect(currentDelegationDecisionPort()).not.toBeNull();
+    expect(currentTreeStopPort()).not.toBeNull();
+    stop();
+    expect(currentDelegationDecisionPort()).toBeNull();
+    expect(currentTreeStopPort()).toBeNull();
+  });
+
+  it('stops a stored tree through the port the Stop button uses', async () => {
+    const db = await seedSessionWithAutoAgent({ kind: null });
+    await seedTree(db);
+    await db.execute(`UPDATE auto_trees SET phase = 'waiting'`);
+    stops.push(await startAutoRuntime({ isEnabled: false, tickMs: 10 }));
+
+    const result = await currentTreeStopPort()?.({ treeId: WORLD_TREE });
+
+    expect(result).toBe('stopped');
+    const rows = await db.select<{ phase: string; stop_state: string }>(
+      'SELECT phase, stop_state FROM auto_trees',
+    );
+    expect(rows[0]).toMatchObject({ phase: 'stopped', stop_state: 'confirmed' });
+  });
+
+  it('answers a card of a delegation nobody remembers with lost', async () => {
+    stops.push(await startAutoRuntime({ isEnabled: false, tickMs: 10 }));
+
+    const result = await currentDelegationDecisionPort()?.({
+      delegationId: 'delegation-nope',
+      decision: 'confirm',
+    });
+
+    expect(result).toBe('lost');
+  });
+});
+
+describe('the tree an Auto agent starts with', () => {
+  const capOfTree = async (db: Awaited<ReturnType<typeof openStorySqlite>>) => {
+    await vi.waitFor(async () => {
+      const rows = await db.select<{ cap_usd: number }>('SELECT cap_usd FROM auto_trees');
+      expect(rows).toHaveLength(1);
+    });
+    const rows = await db.select<{ cap_usd: number }>('SELECT cap_usd FROM auto_trees');
+    return rows[0]?.cap_usd;
+  };
+
+  it('is capped at the budget of its session, ahead of the spend cap of the workspace', async () => {
+    const db = await seedSessionWithAutoAgent({ kind: 'auto' });
+    await writeAutoTreeLimit({
+      db,
+      workspaceId: brandId<WorkspaceId>({ value: 'workspace-harborline' }),
+      usd: 8,
+    });
+    useAppStore.setState({
+      sessionBudgets: {
+        [AUTO_SEED_SESSION]: { sessionId: AUTO_SEED_SESSION, softCapUsd: 25, onExceed: 'pause' },
+      },
+    });
+
+    stops.push(await startAutoRuntime({ isEnabled: true, tickMs: 10 }));
+
+    expect(await capOfTree(db)).toBe(25);
+  });
+
+  it('is capped at the spend cap of the workspace when the session has no budget', async () => {
+    const db = await seedSessionWithAutoAgent({ kind: 'auto' });
+    await writeAutoTreeLimit({
+      db,
+      workspaceId: brandId<WorkspaceId>({ value: 'workspace-harborline' }),
+      usd: 8,
+    });
+
+    stops.push(await startAutoRuntime({ isEnabled: true, tickMs: 10 }));
+
+    expect(await capOfTree(db)).toBe(8);
+  });
+});

@@ -507,6 +507,22 @@ export const worktreeChangedFiles = async ({
   });
 };
 
+export type WorktreeSnapshot = {
+  readonly head: string;
+  readonly entries: ReadonlyArray<{ readonly path: string; readonly hash: string }>;
+  readonly isPartial: boolean;
+};
+
+type WorktreeSnapshotParams = {
+  readonly worktreePath: string;
+};
+
+export const worktreeSnapshot = async ({
+  worktreePath,
+}: WorktreeSnapshotParams): Promise<WorktreeSnapshot> => {
+  return invokeCommand<WorktreeSnapshot>('worktree_snapshot', { worktreePath });
+};
+
 export const listBranchCommits = async (
   worktreePath: string,
 ): Promise<ReadonlyArray<BranchCommit>> => {

@@ -1,6 +1,6 @@
 use super::protocol::{
-    self, help_text, parse_argv, ArgvOutcome, QueryRequest, QueryResponse, MOUNT_ENV, RUN_ENV,
-    SESSION_ENV, SOCKET_ENV, SUBCOMMAND, WORKSPACE_ENV,
+    self, help_text, parse_argv, ArgvOutcome, QueryRequest, QueryResponse, CAPABILITY_ENV,
+    MOUNT_ENV, RUN_ENV, SESSION_ENV, SOCKET_ENV, SUBCOMMAND, WORKSPACE_ENV,
 };
 
 pub(crate) fn dispatch() -> Option<i32> {
@@ -37,18 +37,24 @@ fn run(argv: &[String]) -> Result<String, String> {
             WORKSPACE_ENV
         ));
     }
+    let project = project_scope(&parsed.args, argv);
+    let args = with_spec_text(&parsed.provider, &parsed.verb, parsed.args)?;
     let request = QueryRequest {
         workspace_id: workspace_id.trim().to_string(),
         session_id: std::env::var(SESSION_ENV)
             .unwrap_or_default()
             .trim()
             .to_string(),
-        project: project_scope(&parsed.args, argv),
+        project,
         mount: bound_value(argv, "mount", MOUNT_ENV),
         run_id: optional_bound_value(argv, "run", RUN_ENV),
+        capability: std::env::var(CAPABILITY_ENV)
+            .ok()
+            .map(|value| value.trim().to_string())
+            .filter(|value| !value.is_empty()),
         provider: parsed.provider,
         verb: parsed.verb,
-        args: parsed.args,
+        args,
     };
     let response = ask(&request)?;
     if !response.ok {
@@ -59,6 +65,40 @@ fn run(argv: &[String]) -> Result<String, String> {
         return serde_json::to_string_pretty(&data).map_err(|error| error.to_string());
     }
     Ok(render(&data))
+}
+
+type CliArgs = std::collections::BTreeMap<String, serde_json::Value>;
+
+fn with_spec_text(provider: &str, verb: &str, mut args: CliArgs) -> Result<CliArgs, String> {
+    if provider != "agent" || verb != "delegate" {
+        return Ok(args);
+    }
+    let Some(raw) = args
+        .get("spec")
+        .and_then(serde_json::Value::as_str)
+        .map(str::to_string)
+    else {
+        return Ok(args);
+    };
+    let text = spec_text(&raw, &mut std::io::stdin())?;
+    args.insert("spec".to_string(), serde_json::Value::String(text));
+    Ok(args)
+}
+
+fn spec_text(raw: &str, stdin: &mut impl std::io::Read) -> Result<String, String> {
+    let trimmed = raw.trim();
+    if trimmed == "-" {
+        let mut text = String::new();
+        stdin
+            .read_to_string(&mut text)
+            .map_err(|error| format!("cannot read the spec from standard input: {}", error))?;
+        return Ok(text);
+    }
+    if trimmed.starts_with('{') || trimmed.starts_with('[') {
+        return Ok(trimmed.to_string());
+    }
+    std::fs::read_to_string(trimmed)
+        .map_err(|error| format!("cannot read the spec file {}: {}", trimmed, error))
 }
 
 fn bound_value(argv: &[String], name: &str, variable: &str) -> String {
@@ -235,6 +275,43 @@ mod tests {
 
         assert!(argv.is_empty());
         assert!(run(&argv).expect("help").contains("usage:"));
+    }
+
+    #[test]
+    fn a_delegate_spec_can_be_inline_json_a_file_or_standard_input() {
+        let mut empty = std::io::empty();
+        assert_eq!(
+            spec_text(" {\"children\":[]} ", &mut empty).expect("inline"),
+            "{\"children\":[]}"
+        );
+        let mut piped = std::io::Cursor::new(b"[{\"role\":\"scout\"}]".to_vec());
+        assert_eq!(
+            spec_text("-", &mut piped).expect("stdin"),
+            "[{\"role\":\"scout\"}]"
+        );
+        let path = std::env::temp_dir().join(format!("goodboy-spec-{}.json", std::process::id()));
+        std::fs::write(&path, "{\"children\":[1]}").expect("write");
+        let read = spec_text(path.to_str().expect("path"), &mut std::io::empty());
+        std::fs::remove_file(&path).expect("cleanup");
+        assert_eq!(read.expect("file"), "{\"children\":[1]}");
+    }
+
+    #[test]
+    fn a_missing_spec_file_names_the_path() {
+        let error = spec_text("/no/such/spec.json", &mut std::io::empty()).expect_err("missing");
+
+        assert!(error.contains("/no/such/spec.json"));
+    }
+
+    #[test]
+    fn only_the_delegate_verb_has_its_spec_read_from_a_file() {
+        let mut args = CliArgs::new();
+        args.insert("spec".to_string(), serde_json::json!("/no/such/file.json"));
+
+        let unchanged = with_spec_text("agent", "status", args.clone()).expect("untouched");
+
+        assert_eq!(unchanged, args);
+        assert!(with_spec_text("agent", "delegate", args).is_err());
     }
 
     #[test]

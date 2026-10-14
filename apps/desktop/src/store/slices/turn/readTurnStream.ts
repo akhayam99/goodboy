@@ -15,6 +15,7 @@ import { feedAuthRefusal } from '../providers/feedAuthRefusal';
 import { recordUsageTelemetry } from './recordUsageTelemetry';
 import { codexMeasuredUsage } from './codexMeasuredUsage';
 import type { GetFn, SetFn } from './types';
+import { confinedRoleOf } from './confinedRoleOf';
 import type { TurnContext } from './turnContext';
 
 type Params = Readonly<{
@@ -54,8 +55,10 @@ export const readTurnStream = async ({ set, get, ctx }: Params) => {
     isolatedCopyPath,
     turnSpanBase,
     resolvedPrompt,
+    agentRowEarly,
   } = ctx;
   const { filesTouchedThisTurn, editedPathsThisTurn } = progress;
+  const confinedRole = confinedRoleOf({ input: ctx.input, agent: agentRowEarly });
   for await (const rawEvent of runTurn(
     {
       runId,
@@ -74,7 +77,11 @@ export const readTurnStream = async ({ set, get, ctx }: Params) => {
       ...(resolvedModel.maxMode === true && { cursorMaxMode: true }),
       ...(writerLease !== undefined && { writerLease }),
       ...(writeSetLease !== undefined && { writeSetLease }),
-      ...(ctx.input.confinedRole !== undefined && { confinedRole: ctx.input.confinedRole }),
+      ...(confinedRole !== undefined && { confinedRole }),
+      ...(ctx.input.deliveryId !== undefined && { deliveryId: ctx.input.deliveryId }),
+      ...(ctx.input.autoTree !== undefined && {
+        autoTree: { ...ctx.input.autoTree, agentId: activeAgentId },
+      }),
       ...((isolatedCopyPath !== null || isScribeTurn) && { blocksPush: true }),
       ...(rewriterCopy !== null && { excludesTmp: true }),
       ...(apiKeyBinding ?? {}),

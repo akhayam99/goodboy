@@ -1,6 +1,6 @@
 import type { ProviderId, ProviderPolicy, Session, SessionId, WorkflowRunId } from '@goodboy/types';
 import { runProviderPool } from '../workflows/runProviderPool';
-import { AUTO_CHILD_PROVIDERS } from './autoProviders';
+import { AUTO_CHILD_PROVIDERS } from '@goodboy/core';
 import { workspaceProviderPool } from './workspaceProviderPool';
 
 type Params = {

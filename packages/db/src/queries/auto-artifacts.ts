@@ -400,3 +400,54 @@ export const listAutoArtifactLedger = async ({
     lastAsk: row.last_ask,
   }));
 };
+
+export type AutoRunArtifact = Readonly<{
+  artifactId: ArtifactId;
+  kind: AutoArtifactKind;
+  title: string;
+  revision: number;
+  status: string;
+  sourceText: string;
+}>;
+
+type RunArtifactRow = {
+  readonly id: string;
+  readonly kind: string;
+  readonly title: string;
+  readonly revision: number;
+  readonly status: string;
+  readonly source_text: string;
+};
+
+type ListArtifactsOfRunParams = {
+  readonly db: Database;
+  readonly agentId: AgentId;
+  readonly runId: string;
+};
+
+export const listArtifactsOfRun = async ({
+  db,
+  agentId,
+  runId,
+}: ListArtifactsOfRunParams): Promise<ReadonlyArray<AutoRunArtifact>> => {
+  const rows = await db.select<RunArtifactRow>(
+    `SELECT id, kind, title, revision, status, source_text FROM session_artifacts
+     WHERE agent_id = ? AND source_turn_id = ? AND kind IN ('plan', 'report', 'wireframe')
+     ORDER BY created_at, id`,
+    [agentId, runId],
+  );
+  return rows.flatMap((row) =>
+    row.kind === 'plan' || row.kind === 'report' || row.kind === 'wireframe'
+      ? [
+          {
+            artifactId: brandId<ArtifactId>({ value: row.id }),
+            kind: row.kind,
+            title: row.title,
+            revision: row.revision,
+            status: row.status,
+            sourceText: row.source_text,
+          },
+        ]
+      : [],
+  );
+};

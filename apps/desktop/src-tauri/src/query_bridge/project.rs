@@ -210,6 +210,7 @@ mod tests {
             project: String::new(),
             mount: String::new(),
             run_id: None,
+            capability: None,
             provider: "project".to_string(),
             verb: "materialize".to_string(),
             args: args

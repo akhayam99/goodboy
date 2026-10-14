@@ -768,7 +768,10 @@ kept**: a warning says why, the request stays, and **Ask again** resends it.
 The version pill opens every version (who, when, what was asked and what
 changed) with **View**, **Compare** and **Restore**. Viewing an older one says
 so above the stage, and Restore writes it back as a new version, `Restored vN`,
-so the history is never rewritten.
+so the history is never rewritten. Restore brings back that version's own title,
+text and metadata, and only on top of the version you were looking at: when a
+newer one arrived meanwhile, nothing is written and the message says "A newer
+version arrived. Review it before restoring."
 
 **Compare** lays two versions side by side on the same screen. The diff is
 computed from the two specs by node id, never from the HTML: the rail marks

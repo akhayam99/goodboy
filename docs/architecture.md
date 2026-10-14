@@ -723,6 +723,79 @@ refuses the file with `DatabaseFromNewerBuildError` instead of reading it.
   the Auto landing both call it.
 - A run started for an Auto delivery carries a `deliveryId`, and Rust refuses a
   second run for it ([turns.md](./turns.md) → Surviving a reload or a restart).
+- The bridge verbs of the Auto agent end in `store/slices/auto/executeAgentCommand.ts`.
+  Rust has already checked the capability against the live tree row
+  ([query-bridge.md](./query-bridge.md) → Capability tokens). `delegate.ts` parses the
+  spec (`core/auto/delegateSpec.ts`: a closed role list, rejected before any
+  normalization), resolves each child (`resolveDelegateChild.ts`: the mount through
+  `core/auto/mountPick.ts`, the model through `resolveProposedRouting`, the artifact
+  bodies and the kickoff text from `core/auto/kickoff.ts`) and admits the batch in one
+  transaction. A writer must name its mount; a reader without one gets the primary
+  mount, captured at admission. Everything answers unavailable while
+  `AUTO_GATES.isDelegationEnabled` is false.
+- Delivery to Auto is `deliver.ts`. One transaction claims the pending rows, stores the
+  built text on the first row, reserves the turn ceiling and makes the tree `deciding`
+  on a planned run id; then the turn starts under the first row id as its delivery id,
+  and a second transaction accepts the rows. A refused start gives the rows, the
+  reservation and the turn count back and blocks the tree with the reason. A claim that
+  dies in between is found again by the delivery id. `settleAutoTurn.ts` picks the next
+  phase when the turn ends (delegating, waiting, merging, done or answering), puts the
+  batch back when the turn failed, and counts a turn with no answer and no work.
+- Children start in `launchChildren.ts` only once the Auto turn is over. Each child
+  gets its agent row with the preallocated id (`createAutoChild.ts`), a baseline
+  snapshot of its mount (`worktree_snapshot`) and a turn with `origin: 'delegation'`,
+  its `confinedRole`, the frozen mount target and its attempt id as delivery id.
+  `finishAttempt.ts` reads the closing line (`core/auto/closing.ts`: the `step-done` line
+  of its own agent id, and a blocking question), registers the artifacts the child
+  wrote, attributes the changed files by comparing snapshots, and settles the attempt
+  with a `DelegationResultV1`. A revise turn captures nothing in the old slot: the new
+  version is parsed (`core/auto/revisionParse.ts`) and lands through `landRevision`.
+  `join.ts` settles a batch only when every member ended, writes one results row under a
+  unique key and `advancePhase.ts` moves the tree on. `createAutoRuntime.ts` runs these
+  in order, one tree at a time.
+- `stopTree.ts` writes the stop first: the generation goes up, the phase is `stopping`,
+  the rows of the old generation are dropped and the capability tokens are revoked. Then
+  it cancels the run of Auto and of every live attempt with the confirmed cancel. Only
+  when every process is confirmed gone does it close the attempts, settle the
+  delegations as stopped, reconcile or release the reservations and set `stopped`; one
+  cancel that fails leaves the tree `stopping`, and a restart resumes it. A late result of
+  the old generation is dropped by the fences. A new user message reopens a stopped tree.
+- `enforceDeadlines.ts` cancels a child past its deadline and settles it timed out only
+  after the exit is confirmed; a waiting child needs no process to expire. `recover.ts`
+  rebuilds a tree after a restart in the order of the recovery table: claimed rows are
+  accepted when the registry holds the run and given back when it does not, a turn or a
+  child whose run is gone is closed from what the run left behind (a child with no
+  answer fails as interrupted), a live run is watched until it ends, and a revise whose
+  landing was cut short is landed from the version stored on its attempt. Two windows
+  recovering at once do not both act: the lease is the owner check.
+- `startAutoRuntime.ts` is the only place the pieces meet the app. `App.tsx` starts it in
+  the main window. While `AUTO_GATES.isDelegationEnabled` is false it only listens and
+  answers every agent verb unavailable. When it is true it builds the real ports
+  (`createRealAutoPorts.ts`: the store's `sendTurn` and confirmed cancel, the mount list,
+  `worktree_snapshot`, the delivery lookup of Rust, the child agent rows and the run
+  ledger of `provider_runs`), claims each tree it recovers, and drives every live tree
+  every fifteen seconds, which also renews the owner lease. Each tick also starts the tree
+  of an Auto agent that has none (`startAutoTrees.ts`), capped at the budget of its session,
+  else at the workspace key `auto.treeLimitUsd.<workspaceId>`, else at the default
+  (`autoTreeCapUsd`). It hands the screens the two ports they call, the answer to a
+  confirm card (`confirmDelegation`) and the Stop button (`stopTree`); the Stop button
+  reports a tree that did not stop, and one that another window runs.
+- A child that asks a blocking question ends its attempt `paused` and queues a question row
+  for Auto at once. `answerQuestion.ts` (the `answer` verb) resumes it: in one transaction
+  it admits a new attempt on the same agent with the question and the answer stored on it,
+  reserves a new ceiling, counts it against the attempt limit
+  (`core/auto/resumeAdmission.ts`) and moves the delegation from `paused` to `starting`.
+  The same question answered twice is one resume; a different text is refused. The question
+  of a child never reaches the open questions of the session
+  (`routeQuestions.ts`, read by `finalizeTurnStream.ts`), so the user never answers a
+  hidden child. Inside the tree no agent splits its work either: the kickoff forbids
+  `<<fan-out>>`, and a split that still comes from the child of a delegation is turned
+  down with a note on its turn (`isFanOutRejected.ts`, read by `completeResolvedAgent.ts`),
+  so every process of the tree has a delegation. A retry is a delegate entry with `retryOf` and a reason only
+  (`prepareRetry.ts`): it repeats the work of a settled delegation as a new delegation on
+  the same agent and mount, with the model of the earlier attempt unless one is given,
+  and the settled result stays as it was. A revise whose version already landed is not
+  repeated: the retry answers with the landed version.
 - The screens read the registry through one slice, `store/slices/auto-view/`:
   `loadAutoTrees({ sessionId })` reads the trees of a session with their
   delegations, artifact ledger and `treeSpend` budget (`readAutoTreeViews`),

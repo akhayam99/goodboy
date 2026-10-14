@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
+import { AUTO_OWN_PROVIDERS } from '@goodboy/core';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
@@ -10,7 +11,6 @@ import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 import { toAttachmentInputs } from '../../../attachments/pendingAttachment';
 import { useConfirmStartMode } from '../../../auto/useConfirmStartMode';
 import { useAutoTreeLimit } from '../../../auto/useAutoTreeLimit';
-import { AUTO_OWN_PROVIDERS } from '../../../auto/autoProviders';
 import { autoOwnRouting } from '../../../auto/autoOwnRouting';
 import { resolveSpawnRouting } from '../../spawn-routing';
 import { AutoComposerView, type AutoRoutingChoice } from '../AutoComposerView';

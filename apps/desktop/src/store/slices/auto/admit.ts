@@ -53,6 +53,7 @@ export type AdmitChildInput = Readonly<{
   inputArtifacts: ReadonlyArray<Readonly<{ artifactId: ArtifactId; revision: number }>>;
   isConfirmForced: boolean;
   deadlineAt: number;
+  retryOf?: AutoDelegationId | null;
 }>;
 
 export type AdmitBatchParams = Readonly<{
@@ -267,7 +268,7 @@ const buildStatements = ({
           target: child.target,
           routing: child.routing,
           state: child.isConfirmForced ? 'awaiting_confirm' : 'accepted',
-          retryOf: null,
+          retryOf: child.retryOf ?? null,
           reviseOf: revise === null ? null : revise.artifactId,
           baseRevision: revise === null ? null : revise.expectedRevision,
           isAdopted: false,
@@ -302,22 +303,26 @@ const countRefusal = async ({ params }: RecordRefusalParams): Promise<void> => {
 };
 
 type ReplayParams = {
-  readonly params: AdmitBatchParams;
+  readonly db: Database;
+  readonly treeId: AutoTreeId;
+  readonly requestId: AutoRequestId;
+  readonly requestHash: string;
 };
 
-const replayOf = async ({ params }: ReplayParams): Promise<AdmitOutcome | null> => {
-  const rows = await listAutoDelegationsOfRequest({
-    db: params.db,
-    treeId: params.treeId,
-    requestId: params.requestId,
-  });
+export const replayAdmission = async ({
+  db,
+  treeId,
+  requestId,
+  requestHash,
+}: ReplayParams): Promise<AdmitOutcome | null> => {
+  const rows = await listAutoDelegationsOfRequest({ db, treeId, requestId });
   if (rows.length === 0) {
     return null;
   }
-  if (rows[0]?.requestHash !== params.requestHash) {
+  if (rows[0]?.requestHash !== requestHash) {
     return { kind: 'refused', code: 'request_conflict', perChild: [] };
   }
-  const receipt = await receiptOfRows({ db: params.db, rows, requestId: params.requestId });
+  const receipt = await receiptOfRows({ db, rows, requestId });
   return { kind: 'replayed', receipt };
 };
 
@@ -335,7 +340,12 @@ const isRaceAbort = ({ abortCode, slots }: IsRaceAbortParams): boolean =>
 export const admitBatch = async (params: AdmitBatchParams): Promise<AdmitOutcome> => {
   const children = params.children.map((child) => toAdmissionChild({ child }));
   for (let attempt = 0; attempt < MAX_RACE_RETRIES; attempt += 1) {
-    const replay = await replayOf({ params });
+    const replay = await replayAdmission({
+      db: params.db,
+      treeId: params.treeId,
+      requestId: params.requestId,
+      requestHash: params.requestHash,
+    });
     if (replay !== null) {
       return replay;
     }

@@ -275,6 +275,12 @@ pub async fn dispatch(app: &AppHandle, request: &QueryRequest) -> Result<Value, 
     }
     let spec = spec_for(&request.provider, &request.verb)
         .ok_or_else(|| format!("unknown command: {} {}", request.provider, request.verb))?;
+    if request.provider == "agent" {
+        return super::agent::dispatch(app, request).await;
+    }
+    if spec.access == Access::Write && super::agent::is_auto_run(request) {
+        return Err(super::agent::auto_may_not_write());
+    }
     if request.provider == "project" {
         return super::project::materialize(app, request).await;
     }
@@ -1299,6 +1305,8 @@ mod tests {
     }
 
     const READ_VERBS: &[(&str, &str)] = &[
+        ("agent", "status"),
+        ("agent", "request-status"),
         ("mount", "list"),
         ("series", "list"),
         ("mount", "inspect"),
@@ -1346,6 +1354,9 @@ mod tests {
     ];
 
     const WRITE_VERBS: &[(&str, &str)] = &[
+        ("agent", "delegate"),
+        ("agent", "answer"),
+        ("agent", "finish"),
         ("project", "materialize"),
         ("mount", "fork"),
         ("mount", "switch"),

@@ -189,6 +189,31 @@ export const insertAutoReservationStatement = ({
   params: [id, treeId, ownerKind, ownerId, reservedUsd, nowMs, nowMs],
 });
 
+type ReserveReservationStatementParams = InsertReservationStatementParams & {
+  readonly abortCode: string;
+};
+
+export const reserveAutoReservationStatement = ({
+  id,
+  treeId,
+  ownerKind,
+  ownerId,
+  reservedUsd,
+  nowMs,
+  abortCode,
+}: ReserveReservationStatementParams): GuardedStatement => ({
+  sql: `INSERT INTO auto_reservations (
+      id, tree_id, owner_kind, owner_id, reserved_usd, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT (tree_id, owner_kind, owner_id) DO UPDATE SET
+      state = 'reserved', reserved_usd = excluded.reserved_usd, actual_usd = NULL,
+      cost_known = NULL, released_reason = NULL, updated_at = excluded.updated_at
+    WHERE auto_reservations.state = 'released'`,
+  params: [id, treeId, ownerKind, ownerId, reservedUsd, nowMs, nowMs],
+  abortWhen: 'noChanges',
+  abortCode,
+});
+
 type ReconcileReservationStatementParams = {
   readonly treeId: AutoTreeId;
   readonly ownerKind: AutoReservationOwnerKind;

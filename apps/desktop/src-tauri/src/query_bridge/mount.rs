@@ -396,6 +396,26 @@ fn guard_request(
 }
 
 pub(super) async fn handoff(app: &AppHandle, payload: Value) -> Result<Value, BridgeError> {
+    handoff_on(
+        app,
+        MOUNT_EVENT,
+        MOUNT_TIMEOUT,
+        BridgeError::coded(
+            OPERATION_PENDING,
+            "the app did not answer in time: the request may still be running, read it with `mount operation --request-id <id>`",
+        ),
+        payload,
+    )
+    .await
+}
+
+pub(super) async fn handoff_on(
+    app: &AppHandle,
+    event: &str,
+    timeout: Duration,
+    on_timeout: BridgeError,
+    payload: Value,
+) -> Result<Value, BridgeError> {
     let id = handoff_id();
     let (sender, receiver) = oneshot::channel::<Outcome>();
     pending()
@@ -407,7 +427,7 @@ pub(super) async fn handoff(app: &AppHandle, payload: Value) -> Result<Value, Br
         _ => Map::new(),
     };
     envelope.insert("id".to_string(), Value::String(id.clone()));
-    let emitted = app.emit(MOUNT_EVENT, Value::Object(envelope));
+    let emitted = app.emit(event, Value::Object(envelope));
     if let Err(error) = emitted {
         pending()
             .lock()
@@ -415,7 +435,7 @@ pub(super) async fn handoff(app: &AppHandle, payload: Value) -> Result<Value, Br
             .remove(&id);
         return Err(error.to_string().into());
     }
-    match tokio::time::timeout(MOUNT_TIMEOUT, receiver).await {
+    match tokio::time::timeout(timeout, receiver).await {
         Ok(Ok(result)) => result,
         Ok(Err(_)) => Err("the app dropped the mount request".into()),
         Err(_) => {
@@ -423,10 +443,7 @@ pub(super) async fn handoff(app: &AppHandle, payload: Value) -> Result<Value, Br
                 .lock()
                 .map_err(|_| "mount registry poisoned".to_string())?
                 .remove(&id);
-            Err(BridgeError::coded(
-                OPERATION_PENDING,
-                "the app did not answer in time: the request may still be running, read it with `mount operation --request-id <id>`",
-            ))
+            Err(on_timeout)
         }
     }
 }

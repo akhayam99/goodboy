@@ -1,6 +1,5 @@
-import { AUTO_DEFAULTS } from '@goodboy/core';
+import { AUTO_DEFAULTS, isAutoOwnProvider } from '@goodboy/core';
 import type { AgentKindRouting } from '../session/agent-kind';
-import { AUTO_OWN_PROVIDERS } from './autoProviders';
 
 type Params = {
   readonly routing: AgentKindRouting;
@@ -9,7 +8,7 @@ type Params = {
 const FALLBACK_EFFORT = 'medium';
 
 export const autoOwnRouting = ({ routing }: Params): AgentKindRouting => {
-  if (AUTO_OWN_PROVIDERS.includes(routing.provider)) {
+  if (isAutoOwnProvider({ provider: routing.provider })) {
     return routing;
   }
   const choice = AUTO_DEFAULTS.anthropic.auto[0];

@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std::collections::HashMap;
 use std::sync::{Mutex, MutexGuard, OnceLock};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -123,6 +121,16 @@ impl CapabilityRegistry {
             return Err(CapabilityRefusal::WrongRun);
         }
         Ok(record.grant.clone())
+    }
+
+    pub(crate) fn grant_of(&self, token: &str) -> Option<CapabilityGrant> {
+        self.lock().get(token).map(|record| record.grant.clone())
+    }
+
+    pub(crate) fn holds_run(&self, run_id: &str, now_ms: u64) -> bool {
+        self.lock()
+            .values()
+            .any(|record| record.expires_at_ms > now_ms && record.grant.run_id == run_id)
     }
 
     pub(crate) fn revoke_turn(&self, token: &str) -> bool {
@@ -264,6 +272,25 @@ mod tests {
                 "{verb}"
             );
         }
+    }
+
+    #[test]
+    fn the_grant_behind_a_token_can_be_read_to_find_its_tree() {
+        let (registry, token) = minted();
+
+        assert_eq!(registry.grant_of(&token), Some(grant()));
+        assert_eq!(registry.grant_of("forged"), None);
+    }
+
+    #[test]
+    fn a_run_that_held_a_token_stays_an_auto_run_until_the_record_expires() {
+        let (registry, token) = minted();
+
+        assert!(registry.holds_run("run-7", NOW));
+        registry.revoke_turn(&token);
+        assert!(registry.holds_run("run-7", NOW));
+        assert!(!registry.holds_run("run-8", NOW));
+        assert!(!registry.holds_run("run-7", NOW + CAPABILITY_TTL_MS));
     }
 
     #[test]

@@ -5,11 +5,15 @@ import { AUTO_SEED_NOW, seedAutoSession, seedAutoTree } from '../test-helpers/au
 import {
   acceptAutoOutboxStatement,
   claimAutoOutbox,
+  claimAutoOutboxStatement,
   dropAutoOutboxOfOldGenerationsStatement,
+  dropAutoOutboxStatement,
   getAutoOutbox,
   insertAutoOutbox,
   listAutoOutbox,
   releaseAutoOutboxClaim,
+  releaseAutoOutboxClaimsStatement,
+  storeAutoOutboxDeliveryStatement,
 } from './auto-outbox';
 
 const treeId = brandId<AutoTreeId>({ value: 'tree-1' });
@@ -114,6 +118,88 @@ describe('auto outbox', () => {
       state: 'accepted',
       acceptedRunId: 'run-9',
     });
+  });
+
+  it('claims several rows in one transaction and rolls all of them back when one is taken', async () => {
+    const db = await world();
+    await insertAutoOutbox({ db, outbox: row({ id: 'outbox-1', joinKey: 'join-a' }) });
+    await insertAutoOutbox({ db, outbox: row({ id: 'outbox-2', joinKey: 'join-b' }) });
+    await claimAutoOutbox({
+      db,
+      outboxId: brandId<AutoOutboxId>({ value: 'outbox-2' }),
+      generation: 1,
+      claimedBy: 'window-b',
+      nowMs: AUTO_SEED_NOW,
+      claimMs: 60_000,
+    });
+    const statements = ['outbox-1', 'outbox-2'].map((id) =>
+      claimAutoOutboxStatement({
+        outboxId: brandId<AutoOutboxId>({ value: id }),
+        generation: 1,
+        claimedBy: 'window-a',
+        nowMs: AUTO_SEED_NOW,
+        claimMs: 60_000,
+        abortCode: `claim:${id}`,
+      }),
+    );
+    const outcome = await db.transaction({ statements });
+    expect(outcome).toMatchObject({ status: 'aborted', abortCode: 'claim:outbox-2' });
+    expect(
+      (await listAutoOutbox({ db, treeId, states: ['pending'] })).map((item) => item.id),
+    ).toEqual(['outbox-1']);
+  });
+
+  it('stores the text of a delivery on the claimed row and keeps it through a released claim', async () => {
+    const db = await world();
+    const id = brandId<AutoOutboxId>({ value: 'outbox-1' });
+    await insertAutoOutbox({ db, outbox: row({ id: 'outbox-1', joinKey: 'join-a' }) });
+    const store = storeAutoOutboxDeliveryStatement({
+      outboxId: id,
+      claimedBy: 'window-a',
+      delivery: { text: 'the exact message', rowIds: ['outbox-1'] },
+      abortCode: 'store',
+    });
+    expect((await db.transaction({ statements: [store] })).status).toBe('aborted');
+    await claimAutoOutbox({
+      db,
+      outboxId: id,
+      generation: 1,
+      claimedBy: 'window-a',
+      nowMs: AUTO_SEED_NOW,
+      claimMs: 60_000,
+    });
+    expect((await db.transaction({ statements: [store] })).status).toBe('committed');
+    const release = releaseAutoOutboxClaimsStatement({ outboxIds: [id], claimedBy: 'window-a' });
+    await db.execute(release.sql, release.params);
+    expect(await getAutoOutbox({ db, outboxId: id })).toMatchObject({
+      state: 'pending',
+      payload: { text: 'payload outbox-1', delivery: { text: 'the exact message' } },
+    });
+  });
+
+  it('drops the rows of a stopped tree from the states it names only', async () => {
+    const db = await world();
+    await insertAutoOutbox({ db, outbox: row({ id: 'outbox-1', joinKey: 'join-a' }) });
+    await insertAutoOutbox({ db, outbox: row({ id: 'outbox-2', joinKey: 'join-b' }) });
+    await claimAutoOutbox({
+      db,
+      outboxId: brandId<AutoOutboxId>({ value: 'outbox-2' }),
+      generation: 1,
+      claimedBy: 'window-a',
+      nowMs: AUTO_SEED_NOW,
+      claimMs: 60_000,
+    });
+    const drop = dropAutoOutboxStatement({
+      treeId,
+      reason: 'stopped',
+      fromStates: ['pending'],
+    });
+    await db.execute(drop.sql, drop.params);
+    const rows = await listAutoOutbox({ db, treeId });
+    expect(rows.map((item) => [item.id, item.state])).toEqual([
+      ['outbox-1', 'dropped'],
+      ['outbox-2', 'claimed'],
+    ]);
   });
 
   it('drops what an older generation left unprocessed and keeps what was accepted', async () => {

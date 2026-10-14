@@ -348,7 +348,15 @@ continuation never resumes, because it runs in another directory.
   `--version` and `--help` of the binary once per version and role access, and
   a CLI whose help does not list the flags the role depends on is refused with
   `confinement_unproven`. Nothing sends `confinedRole` for today's agents; the
-  Auto children do.
+  Auto children do, and so does every turn of an Auto agent
+  (`confinedRoleOf.ts`: the role `auto`). Auto is a third access, the
+  orchestrator: on Claude it gets `--tools Read,Grep,Glob,Bash`, the permission
+  mode `default` whatever the session says, an allow list of `Read`, `Grep`,
+  `Glob` and Bash for `"$GOODBOY_BIN" query agent` only (and the same with the
+  executable path), and a deny list with the edit tools, `Task`, `Agent` and
+  MCP. Any other CLI is refused for `auto` with `confinement_unproven`, so Auto
+  itself runs on Claude only. Whether the installed Claude really refuses every
+  other Bash call is for the capability probe of the release, not proven here.
 - **stderr drains on its own thread.** A CLI that fills the stderr pipe
   mid-stream would otherwise block stdout and hang the turn.
 - Each stdout line is emitted as a `turn_event`, capped per line, followed by
@@ -395,8 +403,14 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   A spawn that fails gives the id back. `turn_delivery_lookup(deliveryId)`
   (`lookupDeliveryRun`) answers the run and whether it is still live, for as
   long as the app process lives; the newest 2048 deliveries are remembered and
-  a live run is never forgotten. Nothing sends one yet: Auto delivery
-  (`store/slices/auto`) is switched off.
+  a live run is never forgotten. Only Auto sends one, and Auto is switched off.
+  A turn started for Auto passes `SendTurnInput.origin: 'delegation'` with the
+  planned `runId`, the `deliveryId` (the outbox row id of an Auto turn, the
+  attempt id of a child), `autoTree` (tree id and generation, which makes
+  `turn_spawn` mint the capability token of the turn) and `onSettled`, which
+  `settleTurn` calls once with the text, the failure or cancel flag and the files
+  the turn touched. `store/slices/auto/startAutoTurn.ts` waits for the delivery
+  to appear in `turn_delivery_lookup` before it calls the turn accepted.
 - **The window that streams a turn owns it.** `runTurn` and `attachTurn`
   share one stream core (`features/chat/turn.ts`). After every event it hands
   on, it writes a cursor (`seq`, index inside that line, and the turn's owner:

@@ -7,7 +7,9 @@ import {
   fallbackStepOutputSummary,
   hasBlockingQuestion,
 } from '@goodboy/core';
-import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
+import type { AgentId, IsoDateTime, ProviderRunId, SessionId } from '@goodboy/types';
+import { tauriDatabase } from '../../../shared/lib/db';
+import { isFanOutRejected } from '../auto/isFanOutRejected';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { isQuestionDelegate } from '../../../features/context/questionDelegate';
 import { summarizeWorkflowAgentOutput } from '../workflows/summarizeWorkflowAgentOutput';
@@ -29,8 +31,12 @@ type Params = {
   readonly assistantText: string;
   readonly didAgentDie?: boolean;
   readonly resolveAttemptId?: string;
+  readonly runId?: ProviderRunId;
   readonly now: () => IsoDateTime;
 };
+
+export const AUTO_FAN_OUT_NOTE =
+  'Splitting the work into parallel agents is off inside an Auto conversation. This reply was kept as it is and goes back to Auto.';
 
 export const completeResolvedAgent = async ({
   set,
@@ -40,6 +46,7 @@ export const completeResolvedAgent = async ({
   assistantText,
   didAgentDie = false,
   resolveAttemptId,
+  runId,
   now,
 }: Params): Promise<boolean | null> => {
   const ranAgent = get().sessionPhaseRuns[sessionId]?.find((run) => run.id === resolvedAgentId);
@@ -91,9 +98,25 @@ export const completeResolvedAgent = async ({
           runs: get().sessionPhaseRuns[sessionId] ?? [],
           agentKindOverride: get().agentKindOverride,
         });
+  const hasSplit = extractedFanOut != null && extractedFanOut.length >= 2;
+  const isAutoChild =
+    hasSplit && ranAgent !== undefined
+      ? await isFanOutRejected({
+          db: tauriDatabase,
+          agentId: resolvedAgentId,
+          areaCount: extractedFanOut.length,
+        })
+      : false;
+  if (isAutoChild && runId !== undefined) {
+    get().appendTurnEvent(resolvedAgentId, sessionId, {
+      kind: 'decision_note',
+      runId,
+      message: AUTO_FAN_OUT_NOTE,
+      at: now(),
+    });
+  }
   const isFanOutNode =
-    capability.mode !== 'never' &&
-    (fanOutKind === 'scout-tree' || (extractedFanOut != null && extractedFanOut.length >= 2));
+    !isAutoChild && capability.mode !== 'never' && (fanOutKind === 'scout-tree' || hasSplit);
 
   if (isFanOutNode) {
     await get().advanceScoutTree(sessionId, resolvedAgentId, assistantText);

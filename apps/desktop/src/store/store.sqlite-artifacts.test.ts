@@ -225,3 +225,71 @@ describe('store on sqlite: deleting artifacts', () => {
     ).toBe(firstTime);
   });
 });
+
+describe('store on sqlite: restoring a revision', () => {
+  const stateOf = async (id: ArtifactId) =>
+    (
+      await rowsOf<{ revision: number; source_text: string; metadata_json: string }>({
+        sql: `SELECT revision, source_text, metadata_json FROM session_artifacts WHERE id = '${id}'`,
+      })
+    )[0];
+
+  const artifactOf = (id: ArtifactId) => {
+    const found = useAppStore
+      .getState()
+      .sessionArtifacts[SESSION_ID]?.find((artifact) => artifact.id === id);
+    if (found === undefined) {
+      throw new Error('an artifact was expected');
+    }
+    return found;
+  };
+
+  const editReport = async (text: string) => {
+    await useAppStore.getState().updateArtifactSource({
+      sessionId: SESSION_ID,
+      artifactId: REPORT_ID,
+      title: 'Q3 reconciliation drift',
+      sourceFormat: 'markdown',
+      sourceText: text,
+      metadata: { reportType: 'session-summary' },
+    });
+  };
+
+  it('restores the text of an earlier revision as a new one and refreshes the list', async () => {
+    await editReport('## Goal v2');
+
+    await useAppStore.getState().restoreArtifactRevision({
+      sessionId: SESSION_ID,
+      artifact: artifactOf(REPORT_ID),
+      revision: 1,
+    });
+
+    expect(await stateOf(REPORT_ID)).toMatchObject({ revision: 3, source_text: '## Goal' });
+    expect(artifactOf(REPORT_ID).revision).toBe(3);
+  });
+
+  it('keeps the latest version and says so when a newer one arrived', async () => {
+    const stale = artifactOf(REPORT_ID);
+    await editReport('## Goal v2');
+
+    await expect(
+      useAppStore
+        .getState()
+        .restoreArtifactRevision({ sessionId: SESSION_ID, artifact: stale, revision: 1 }),
+    ).rejects.toThrow('A newer version arrived. Review it before restoring.');
+
+    expect(await stateOf(REPORT_ID)).toMatchObject({ revision: 2, source_text: '## Goal v2' });
+    expect(artifactOf(REPORT_ID).revision).toBe(2);
+  });
+
+  it('refuses a revision that is not in the history', async () => {
+    await expect(
+      useAppStore.getState().restoreArtifactRevision({
+        sessionId: SESSION_ID,
+        artifact: artifactOf(REPORT_ID),
+        revision: 7,
+      }),
+    ).rejects.toThrow('v7 is not in the history of this artifact');
+    expect(await stateOf(REPORT_ID)).toMatchObject({ revision: 1 });
+  });
+});

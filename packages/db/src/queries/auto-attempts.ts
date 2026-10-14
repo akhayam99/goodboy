@@ -253,3 +253,34 @@ export const pauseAutoAttemptStatement = ({
   abortWhen: 'noChanges',
   abortCode,
 });
+
+type MergeAttemptBaselineStatementParams = {
+  readonly attemptId: AutoAttemptId;
+  readonly patch: AutoJsonObject;
+};
+
+export const mergeAutoAttemptBaselineStatement = ({
+  attemptId,
+  patch,
+}: MergeAttemptBaselineStatementParams): PlainStatement => ({
+  sql: `UPDATE auto_attempts
+    SET baseline_json = json_patch(COALESCE(baseline_json, '{}'), ?)
+    WHERE id = ?`,
+  params: [JSON.stringify(patch), attemptId],
+});
+
+type ListAttemptsOfTreeParams = {
+  readonly db: Database;
+  readonly treeId: AutoTreeId;
+};
+
+export const listAutoAttemptsOfTree = async ({
+  db,
+  treeId,
+}: ListAttemptsOfTreeParams): Promise<ReadonlyArray<AutoAttempt>> => {
+  const rows = await db.select<AttemptRow>(
+    `${ATTEMPT_SELECT} WHERE tree_id = ? ORDER BY started_at, ordinal`,
+    [treeId],
+  );
+  return rows.map((row) => toAttempt({ row }));
+};

@@ -263,3 +263,83 @@ export const dropAutoOutboxOfOldGenerationsStatement = ({
     WHERE tree_id = ? AND generation < ? AND state IN ('pending', 'claimed')`,
   params: [reason, treeId, currentGeneration],
 });
+
+type ClaimOutboxStatementParams = {
+  readonly outboxId: AutoOutboxId;
+  readonly generation: number;
+  readonly claimedBy: string;
+  readonly nowMs: number;
+  readonly claimMs: number;
+  readonly abortCode: string;
+};
+
+export const claimAutoOutboxStatement = ({
+  outboxId,
+  generation,
+  claimedBy,
+  nowMs,
+  claimMs,
+  abortCode,
+}: ClaimOutboxStatementParams): GuardedStatement => ({
+  sql: `UPDATE auto_outbox SET state = 'claimed', claimed_by = ?, claim_expires_at = ?
+    WHERE id = ? AND generation = ? AND state = 'pending'`,
+  params: [claimedBy, nowMs + claimMs, outboxId, generation],
+  abortWhen: 'noChanges',
+  abortCode,
+});
+
+type StoreOutboxDeliveryStatementParams = {
+  readonly outboxId: AutoOutboxId;
+  readonly claimedBy: string;
+  readonly delivery: Readonly<{ text: string; rowIds: ReadonlyArray<string> }>;
+  readonly abortCode: string;
+};
+
+export const storeAutoOutboxDeliveryStatement = ({
+  outboxId,
+  claimedBy,
+  delivery,
+  abortCode,
+}: StoreOutboxDeliveryStatementParams): GuardedStatement => ({
+  sql: `UPDATE auto_outbox SET payload_json = json_set(payload_json, '$.delivery', json(?))
+    WHERE id = ? AND state = 'claimed' AND claimed_by = ?`,
+  params: [JSON.stringify(delivery), outboxId, claimedBy],
+  abortWhen: 'noChanges',
+  abortCode,
+});
+
+type ReleaseOutboxClaimsStatementParams = {
+  readonly outboxIds: ReadonlyArray<AutoOutboxId>;
+  readonly claimedBy: string;
+};
+
+export const releaseAutoOutboxClaimsStatement = ({
+  outboxIds,
+  claimedBy,
+}: ReleaseOutboxClaimsStatementParams): PlainStatement => {
+  const marks = outboxIds.map(() => '?').join(', ');
+  return {
+    sql: `UPDATE auto_outbox SET state = 'pending', claimed_by = NULL, claim_expires_at = NULL
+      WHERE id IN (${marks}) AND state = 'claimed' AND claimed_by = ?`,
+    params: [...outboxIds, claimedBy],
+  };
+};
+
+type DropOutboxStatementParams = {
+  readonly treeId: AutoTreeId;
+  readonly reason: string;
+  readonly fromStates: ReadonlyArray<AutoOutboxState>;
+};
+
+export const dropAutoOutboxStatement = ({
+  treeId,
+  reason,
+  fromStates,
+}: DropOutboxStatementParams): PlainStatement => {
+  const marks = fromStates.map(() => '?').join(', ');
+  return {
+    sql: `UPDATE auto_outbox SET state = 'dropped', dropped_reason = ?
+      WHERE tree_id = ? AND state IN (${marks})`,
+    params: [reason, treeId, ...fromStates],
+  };
+};

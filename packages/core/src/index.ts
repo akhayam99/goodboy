@@ -178,6 +178,12 @@ export {
   type AutoApprovalView,
   type AutoLedgerEntry,
 } from './auto/ledger';
+export { autoTreeCapUsd, type AutoTreeCapParams } from './auto/treeCap';
+export {
+  diagnoseResume,
+  type DiagnoseResumeParams,
+  type ResumeVerdict,
+} from './auto/resumeAdmission';
 export {
   diagnoseAdmission,
   type AdmissionArtifactFacts,
@@ -196,10 +202,116 @@ export {
 } from './auto/refusals';
 export { AUTO_SYSTEM_PROMPT, autoRoleCatalog, buildAutoSystemPrompt } from './auto/prompt';
 export {
+  parseRevisionFromTurn,
+  type ParseRevisionParams,
+  type RevisionFailure,
+  type RevisionParseOutcome,
+} from './auto/revisionParse';
+export {
+  ATTRIBUTION_CLEAN,
+  ATTRIBUTION_LIST_CAP,
+  attributeChanges,
+  type AttributeChangesParams,
+  type AttributedChanges,
+  type MountSnapshot,
+  type SnapshotEntry,
+} from './auto/attribution';
+export {
+  AUTO_BLOCK_REASONS,
+  AUTO_BLOCK_TEXT,
+  turnGate,
+  type AutoBlockReason,
+  type TurnGateParams,
+} from './auto/turnGate';
+export { AUTO_REFUSAL_TEXT, describeAutoRefusal, type RefusalChild } from './auto/refusalText';
+export {
+  AUTO_CHILD_PROVIDERS,
+  AUTO_OWN_PROVIDERS,
+  isAutoChildProvider,
+  isAutoOwnProvider,
+} from './auto/providers';
+export {
+  DELEGATE_FIELD_CHARS,
+  DELEGATE_LIST_MAX,
+  DELEGATE_REASON_CHARS,
+  DELEGATE_TASK_CHARS,
+  hashDelegateChildren,
+  parseDelegateSpec,
+  type DelegateChildRefusal,
+  type DelegateChildSpec,
+  type DelegateRevise,
+  type DelegateSpecOutcome,
+} from './auto/delegateSpec';
+export {
+  AUTO_DEFAULT_DONE_WHEN,
+  AUTO_DEFAULT_EXPECTED,
+  AUTO_KICKOFF_HEADER,
+  composeAnswerKickoff,
+  composeDelegationKickoff,
+  type AnswerKickoffParams,
+  type DelegationKickoffParams,
+  type KickoffArtifactInput,
+  type KickoffHistoryEntry,
+  type KickoffRevise,
+} from './auto/kickoff';
+export {
+  parseChildClosing,
+  type ChildClosing,
+  type ChildCompletion,
+  type ChildQuestion,
+} from './auto/closing';
+export {
+  DELEGATION_RESULT_SCHEMA_VERSION,
+  DELEGATION_SUMMARY_CHARS,
+  buildDelegationResult,
+  renderDelegationResult,
+  resolveDelegationOutcome,
+  type BuildResultParams,
+  type DelegationOutcome,
+  type DelegationResultV1,
+  type FileOwnership,
+  type ProcessExit,
+  type ResolveOutcomeParams,
+  type ResolvedOutcome,
+  type ResultArtifact,
+  type ResultChangedFile,
+  type ResultCheck,
+  type ResultQuestion,
+} from './auto/result';
+export {
+  EMPTY_USER_FACTS,
+  isQuestionPayload,
+  isResultsPayload,
+  isUserPayload,
+  storedDeliveryOf,
+  type QuestionPayload,
+  type ResultsPayload,
+  type StoredDelivery,
+  type UserFacts,
+  type UserPayload,
+} from './auto/outboxPayload';
+export {
+  AUTO_RESTART_NOTICE,
+  buildDeliveryText,
+  type BuildDeliveryParams,
+  type DeliveryRow,
+} from './auto/delivery';
+export {
+  describeMounts,
+  isUsableMount,
+  pickAutoMount,
+  type MountPickOutcome,
+  type MountPickRefusalCode,
+  type PickMountParams,
+  type PickableMount,
+} from './auto/mountPick';
+export {
   AUTO_DELEGATION_ROLES,
+  AUTO_ROLE_ARTIFACT,
   AUTO_WRITER_ROLES,
   isAutoWriterRole,
   parseAutoDelegationRole,
+  type AutoArtifactKind as AutoRoleArtifactKind,
   type AutoDelegationRole,
   type AutoWriterRole,
 } from './auto/roles';

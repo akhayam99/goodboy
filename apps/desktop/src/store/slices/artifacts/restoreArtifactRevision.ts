@@ -1,5 +1,5 @@
 import type { SessionArtifact, SessionId } from '@goodboy/types';
-import { loadArtifactRevision, updateArtifactSource } from '../../../features/artifacts/artifacts';
+import { restoreArtifactToRevision } from '../../../features/artifacts/artifacts';
 import { refreshSessionArtifacts } from './refresh';
 import type { SetFn } from './types';
 
@@ -9,20 +9,26 @@ export type RestoreArtifactRevisionParams = {
   readonly revision: number;
 };
 
+export const RESTORE_CONFLICT_MESSAGE = 'A newer version arrived. Review it before restoring.';
+
 export const restoreArtifactRevision = (set: SetFn) => {
   return async ({ sessionId, artifact, revision }: RestoreArtifactRevisionParams) => {
-    const target = await loadArtifactRevision({ artifactId: artifact.id, revision });
-    if (target === null) {
+    const outcome = await restoreArtifactToRevision({
+      artifactId: artifact.id,
+      expectedRevision: artifact.revision,
+      revision,
+    });
+    if (outcome.kind === 'restored') {
+      await refreshSessionArtifacts(set, sessionId);
+      return;
+    }
+    if (outcome.kind === 'conflict') {
+      await refreshSessionArtifacts(set, sessionId);
+      throw new Error(RESTORE_CONFLICT_MESSAGE);
+    }
+    if (outcome.kind === 'missing_revision') {
       throw new Error(`v${revision} is not in the history of this artifact`);
     }
-    await updateArtifactSource({
-      artifactId: artifact.id,
-      title: target.title,
-      sourceFormat: artifact.sourceFormat,
-      sourceText: target.sourceText,
-      metadata: artifact.metadata,
-      note: { author: 'restore', ask: `Restored v${revision}` },
-    });
-    await refreshSessionArtifacts(set, sessionId);
+    throw new Error('This artifact is no longer there.');
   };
 };

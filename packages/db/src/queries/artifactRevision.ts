@@ -304,3 +304,42 @@ export const writeArtifactRevision = async ({
     ? { kind: 'missing' }
     : { kind: 'conflict', revision: current.revision };
 };
+
+export type RestoreArtifactToRevisionOutcome =
+  | Readonly<{ kind: 'restored'; revision: number }>
+  | Readonly<{ kind: 'conflict'; revision: number }>
+  | Readonly<{ kind: 'missing_revision' }>
+  | Readonly<{ kind: 'missing' }>;
+
+type RestoreArtifactToRevisionParams = {
+  readonly db: Database;
+  readonly artifactId: ArtifactId;
+  readonly expectedRevision: number;
+  readonly revision: number;
+  readonly nowMs: number;
+};
+
+export const restoreArtifactToRevision = async ({
+  db,
+  artifactId,
+  expectedRevision,
+  revision,
+  nowMs,
+}: RestoreArtifactToRevisionParams): Promise<RestoreArtifactToRevisionOutcome> => {
+  const target = await loadArtifactRevision({ db, artifactId, revision });
+  if (target === null) {
+    return { kind: 'missing_revision' };
+  }
+  const outcome = await writeArtifactRevision({
+    db,
+    artifactId,
+    expectedRevision,
+    author: 'restore',
+    ask: `Restored v${revision}`,
+    title: target.title,
+    sourceText: target.sourceText,
+    metadata: target.metadata,
+    nowMs,
+  });
+  return outcome.kind === 'saved' ? { kind: 'restored', revision: outcome.revision } : outcome;
+};

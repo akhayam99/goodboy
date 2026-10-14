@@ -32,6 +32,7 @@ import { listenOrphansSwept } from './features/monitoring/listenOrphansSwept';
 import { listenBridgeCommands } from './features/companion/commandExecutor';
 import { listenProjectMaterializeRequests } from './features/session/projectMaterializeBridge';
 import { listenMountCommands } from './features/session/mountQueryBridge';
+import { startAutoRuntime } from './store/slices/auto/startAutoRuntime';
 import { startWorktreeWriterBridge } from './features/session/resolve/worktreeWriterBridge';
 import { startPrWriteBridge } from './features/review/prWriteBridge';
 import { useProviderRefreshOnFocus } from './shared/hooks/useProviderRefreshOnFocus';
@@ -195,6 +196,7 @@ export const App = () => {
   useAsyncSubscription({ start: listenOrphansSwept });
   useAsyncSubscription({ start: listenProjectMaterializeRequests });
   useAsyncSubscription({ start: listenMountCommands });
+  useAsyncSubscription({ start: startAutoRuntime });
   useAsyncSubscription({ start: startWorktreeWriterBridge });
   useAsyncSubscription({ start: startPrWriteBridge });
 

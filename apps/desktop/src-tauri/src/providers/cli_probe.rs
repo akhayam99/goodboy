@@ -20,8 +20,14 @@ fn required_flags(cli: Cli, access: RoleAccess) -> &'static [&'static str] {
         (Cli::Claude, RoleAccess::ReadOnly) => {
             &["--tools", "--disallowedTools", "--permission-mode"]
         }
+        (Cli::Claude, RoleAccess::Orchestrator) => &[
+            "--tools",
+            "--allowedTools",
+            "--disallowedTools",
+            "--permission-mode",
+        ],
         (Cli::Claude, RoleAccess::Writer) => &["--disallowedTools", "--add-dir"],
-        (Cli::Codex, RoleAccess::ReadOnly) => &["--sandbox"],
+        (Cli::Codex, RoleAccess::ReadOnly | RoleAccess::Orchestrator) => &["--sandbox"],
         (Cli::Codex, RoleAccess::Writer) => &["--sandbox", "--add-dir"],
         (Cli::Cursor, _) => &["--mode"],
         (Cli::Agy, _) => &["--mode", "--sandbox"],
@@ -82,12 +88,18 @@ fn access_label(access: RoleAccess) -> &'static str {
     match access {
         RoleAccess::ReadOnly => "read_only",
         RoleAccess::Writer => "writer",
+        RoleAccess::Orchestrator => "orchestrator",
     }
 }
 
 pub(crate) fn ensure_confinement(binary: &str, role: &str) -> Verdict {
     let access = role_access(role).ok_or_else(|| format!("role {role} is not a confined role"))?;
     let cli = Cli::of_binary(binary);
+    if access == RoleAccess::Orchestrator && cli != Cli::Claude {
+        return Err(format!(
+            "{role} runs on Claude only, {binary} cannot be limited to the bridge command"
+        ));
+    }
     let version = version_of(&run_text(binary, &["--version"])?)
         .ok_or_else(|| format!("{binary} did not report a version"))?;
     let key: CacheKey = (binary.to_string(), version.clone(), access_label(access));
@@ -140,7 +152,11 @@ mod tests {
             Cli::Codex,
             Cli::Opencode,
         ] {
-            for access in [RoleAccess::ReadOnly, RoleAccess::Writer] {
+            for access in [
+                RoleAccess::ReadOnly,
+                RoleAccess::Writer,
+                RoleAccess::Orchestrator,
+            ] {
                 assert!(!required_flags(cli, access).is_empty());
             }
         }
@@ -159,6 +175,19 @@ mod tests {
             Some("codex-cli 0.58.0")
         );
         assert_eq!(version_of("no number here"), None);
+    }
+
+    #[test]
+    fn auto_is_proved_on_claude_only() {
+        assert!(role_access("auto") == Some(RoleAccess::Orchestrator));
+        let refusal = ensure_confinement("/nonexistent/codex", "auto").expect_err("refused");
+        assert!(refusal.contains("runs on Claude only"));
+        let claude_help = format!("{CLAUDE_HELP}  --allowedTools <tools...>\n");
+        assert!(missing_flags(Cli::Claude, RoleAccess::Orchestrator, &claude_help).is_empty());
+        assert_eq!(
+            missing_flags(Cli::Claude, RoleAccess::Orchestrator, CLAUDE_HELP),
+            vec!["--allowedTools"]
+        );
     }
 
     #[test]

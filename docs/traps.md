@@ -311,7 +311,8 @@ fails silently at runtime.
   is the release that turns the experiment on.
 - `AUTO_DELEGATION_ROLES` (`packages/core/src/auto/roles.ts`) and the
   `READ_ONLY_ROLES` and `WRITER_ROLES` of `providers/cli_args.rs` name the same
-  seven roles in two languages, and no test ties them. Change one, change the
+  seven roles in two languages, and no test ties them. `auto` itself is the
+  third list there, `ORCHESTRATOR_ROLES`. Change one, change the
   other. A role id outside the TypeScript list is rejected by
   `parseAutoDelegationRole`, never passed through `normalizeAgentRole`, which
   would turn it into the Generalist.
@@ -438,6 +439,19 @@ fails silently at runtime.
 - The sql of m230 is pinned by hash in `registry.test.ts`. While the release is
   unshipped, a change to it needs the new hash pasted there; once shipped, it
   is immutable.
+- The Auto resume is admitted twice on purpose too: `autoResumeTreeStatement`
+  (phase, run, attempt limit and money in one guarded update) decides, and
+  `diagnoseResume` only names the refusal. It accepts `deciding` and
+  `delegating`, because one turn may answer several questions after it already
+  handed work over; `delegate` accepts `deciding` only.
+- A `finalizeTurnStream` step that reads the database on every turn shifts the
+  timing of the orchestrated-run story tests: the next test starts while the
+  last turn is still settling and fails on a foreign key. `routeQuestions` and
+  `isFanOutRejected` therefore read only when the reply holds a question or a
+  split. Keep any new read there behind such a condition.
+- A child of an Auto tree is found by its delegation row (`isAutoChildAgent`),
+  never by a flag on the turn input: a reattached turn after a reload has no
+  input, and the question and split gates must still hold for it.
 
 ## Traps in the toolchain
 
