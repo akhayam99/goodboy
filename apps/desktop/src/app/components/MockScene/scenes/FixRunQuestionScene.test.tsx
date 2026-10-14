@@ -58,4 +58,13 @@ describe('the fix run transcript drawer scene', () => {
     expect(await within(lead).findByText('c81e5aa')).toBeDefined();
     expect(within(lead).getByText('3b7d10e')).toBeDefined();
   });
+
+  it('opens on the Fix tab while the run asks a question', async () => {
+    renderScene();
+
+    await screen.findByTestId('fix-run-lead');
+
+    expect(screen.getByRole('tab', { name: 'Fix' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.queryByRole('textbox', { name: 'Message to Fix run' })).toBeNull();
+  });
 });

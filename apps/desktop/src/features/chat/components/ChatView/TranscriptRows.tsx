@@ -15,6 +15,7 @@ import { OperationsCluster } from '../OperationsCluster';
 import { ThinkingIndicator } from '../ThinkingIndicator';
 import { TranscriptCard } from '../TranscriptCards';
 import { OpenQuestionCluster } from './OpenQuestionCluster';
+import { BriefCard } from './BriefCard';
 import { SlackDraftCard } from './SlackDraftCard';
 import { dayKey, formatDayLabel } from './lib';
 import { planBlockVersions } from './planBlockVersions';
@@ -36,6 +37,7 @@ type Props = {
   mountSuggestionsByRun?: ReadonlyMap<ProviderRunId, ReactNode>;
   activeRunId?: ProviderRunId | null;
   turnFooters?: ReadonlyMap<ProviderRunId, TurnFooterInfo>;
+  briefLabel?: string;
 };
 
 const RUN_BEARING_KINDS = new Set<TranscriptItem['kind']>([
@@ -84,12 +86,17 @@ export const TranscriptRows = ({
   mountSuggestionsByRun,
   activeRunId,
   turnFooters,
+  briefLabel,
 }: Props) => {
   const out: ReactNode[] = [];
   const suggestions = mountSuggestionsByRun ?? new Map<ProviderRunId, ReactNode>();
   const anchors = lastRowIndexByRun({ rows });
   const planVersions = planBlockVersions({ rows });
   const placedRunIds = new Set<ProviderRunId>();
+  const briefRow =
+    briefLabel === undefined
+      ? null
+      : rows.find((row) => row.kind === 'item' && row.item.kind === 'handoff');
 
   const flushMountSuggestion = ({ index }: { readonly index: number }) => {
     for (const [runId, node] of suggestions) {
@@ -202,6 +209,8 @@ export const TranscriptRows = ({
             retryingRunId={retryingRunId}
             activeRunId={activeRunId}
           />
+        ) : row === briefRow && briefLabel !== undefined && row.item.kind === 'handoff' ? (
+          <BriefCard label={briefLabel} text={row.item.text} />
         ) : (
           <TranscriptCard
             item={row.item}

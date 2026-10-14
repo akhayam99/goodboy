@@ -6,6 +6,7 @@ import { fixRunTranscript } from '../../../../store/slices/navigation/place';
 import { ResolverQuestionCard } from '../../ResolverQuestionCard';
 import { useReviewEntries, type ReviewEntry } from '../ReviewFlow/useReviewEntries';
 import type { ResolverBrief } from '../../hooks/useResolverBrief';
+import { fixRunAskingOf } from '../../fixRunAsking';
 import { fixRunCommitsViewOf, fixRunStatusOf } from '../../fixRunStatus';
 import { FIX_RUN_COPY } from '../../reviewFlowCopy';
 import { threadFixSha } from '../../threadFixSha';
@@ -68,9 +69,7 @@ export const FixRunSummary = ({ session, agent, brief }: Props) => {
   const openThread = (threadId: string): void =>
     navigate(fixRunTranscript({ sessionId, agentId: agent.id, threadId }));
 
-  const asking = entries.filter(
-    (entry) => entry.state === 'needs' && brief.batchThreadIds.includes(entry.threadId),
-  );
+  const asking = fixRunAskingOf({ entries, batchThreadIds: brief.batchThreadIds });
 
   return (
     <div className="flex min-w-0 flex-col gap-3">

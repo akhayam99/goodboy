@@ -11,10 +11,9 @@ import { TerminalDrawer } from '../../features/terminal/components/TerminalDrawe
 import { FileDiffDrawer } from '../../features/diff/components/FileDiffDrawer';
 import { FileWholeDrawer } from '../../features/diff/components/FileWholeDrawer';
 import { AskDrawer } from '../../features/session/ask/components/AskDrawer';
-import { AgentTranscriptDrawer } from '../../features/chat/components/AgentTranscriptDrawer';
 import { HistoryVersionsDrawer } from '../../features/history/components/HistoryVersionsDrawer';
 import { FixCommentsDrawer } from '../../features/resolve/components/FixCommentsDrawer';
-import { FixRunLead } from '../../features/resolve/components/FixRunSummary/FixRunLead';
+import { FixRunTranscriptDrawer } from './FixRunTranscriptDrawer';
 import { ExploreFileChanges } from './ExploreFileChanges';
 import { ArtifactReadingDrawer } from './ArtifactReadingDrawer';
 import { readingArtifactOf } from './ArtifactReadingDrawer/readingArtifact';
@@ -124,11 +123,10 @@ export const DrawerHost = () => {
       return <AskDrawer sessionId={drawer.sessionId} onClose={closeDrawer} />;
     case 'transcript':
       return (
-        <AgentTranscriptDrawer
+        <FixRunTranscriptDrawer
           key={drawerKey(drawer)}
           sessionId={drawer.sessionId}
           agentId={drawer.payload.agentId}
-          lead={<FixRunLead sessionId={drawer.sessionId} agentId={drawer.payload.agentId} />}
           onClose={closeDrawer}
         />
       );

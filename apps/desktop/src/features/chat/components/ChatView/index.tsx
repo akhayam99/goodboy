@@ -65,6 +65,7 @@ type Props = {
   readonly hasComposer?: boolean;
   readonly composerPlaceholder?: string;
   readonly composerNotice?: ReactNode;
+  readonly briefLabel?: string;
 };
 
 type RetrySource = {
@@ -124,6 +125,7 @@ export const ChatView = ({
   hasComposer = true,
   composerPlaceholder,
   composerNotice,
+  briefLabel,
 }: Props) => {
   const storedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null) as AgentId | null;
   const selectedAgentId = agentId === undefined ? storedAgentId : agentId;
@@ -556,6 +558,7 @@ export const ChatView = ({
                     mountSuggestionsByRun={mountSuggestionsByRun}
                     activeRunId={activeRunId}
                     turnFooters={turnFooters}
+                    briefLabel={briefLabel}
                   />
                 </ChatImageLoaderProvider>
               </ul>

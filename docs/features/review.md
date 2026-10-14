@@ -38,7 +38,7 @@ When a fix fails, the comment says why in one sentence and links to the agent's 
 
 ### See what a resolve did
 
-Open a fix run from Activity or from a comment to see what the agent did. A drawer beside the list shows its commits, the comments it touched and the whole conversation, and you can write to the agent from there.
+Open a fix run from Activity or from a comment to see what the agent did. A drawer beside the list has two tabs. Fix shows the status, the comments the run covers, what it did and its commits. Transcript shows the whole conversation, and you can write to the agent from there. It opens on Transcript while the run works, and on Fix once it ended or when it asks a question. A dot on the other tab tells you when something new happens there.
 
 ### Fixes already on the branch
 

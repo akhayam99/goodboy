@@ -86,21 +86,6 @@ describe('AgentTranscriptDrawer', () => {
     expect(transcript.getAttribute('data-composer')).toBe('false');
   });
 
-  it('puts the lead above the transcript', () => {
-    render(
-      <AgentTranscriptDrawer
-        sessionId={SESSION_ID}
-        agentId={RESOLVER}
-        lead={<p>Fix run summary</p>}
-        onClose={() => undefined}
-      />,
-    );
-
-    const lead = screen.getByText('Fix run summary');
-    const transcript = screen.getByTestId('drawer-transcript');
-    expect(lead.compareDocumentPosition(transcript) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
-  });
-
   it('opens with the quoted draft in its reply field, focused, and sends it to that agent', async () => {
     const sendTurn = vi.fn<StoreState['sendTurn']>(async () => ({ blockedOverBudget: false }));
     stub({ sendTurn });

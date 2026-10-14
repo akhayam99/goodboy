@@ -2010,18 +2010,34 @@ pull request`) and Comments lists the session's notes. Every door to a pull
   and a `thread` target, `.../review/t/{thread}/agent`), on a move and on a
   restore from history, which reopens the drawer. The thread is the one the
   address named, or the first thread of the attempt. The drawer takes the
-  saved drawer width, like Ask, and reads, top to bottom: the fix run summary (`FixRunSummary`: while
-  the run works, one status line, `Working · 2m 48s · Opus 5.5 · High`, and a
-  question the run waits on; the comments the run covers, each a row with
-  author, file and line and the first sentence, a link that keeps the drawer
-  open on that comment, and the comments fixed together, opened filtered in
-  Comments; after it ends, What it did, the run's final summary, never shown
-  while it works; its commits with a note when a later rewrite folded one,
-  nothing while the run works with none, `No commits yet` once it ended
-  without any, decided by `fixRunCommitsViewOf` and never an unresolved
-  placeholder), the transcript as one stream right under it, and a field to
-  write to that agent. The scenes `resolve-transcript-drawer-multi` and
-  `resolve-transcript-drawer-multi-done` show one run over four comments. The question card also
+  saved drawer width, like Ask, and holds two tabs under its title, a
+  `SegmentedTabs` like Brief and Transcript on the agent page: Fix and
+  Transcript (`FixRunTranscriptDrawer` in `app/components`, which hands
+  `AgentTranscriptDrawer` a `lead`; a drawer without a `lead` has no tabs).
+  Fix is the fix run summary at full height with its own scroll
+  (`FixRunSummary`: while the run works, one status line, `Working · 2m 48s ·
+Opus 5.5 · High`, and a question the run waits on; the comments the run
+  covers, each a row with author, file and line and the first sentence, a link
+  that keeps the drawer open on that comment, and the comments fixed together,
+  opened filtered in Comments; after it ends, What it did, the run's final
+  summary, never shown while it works; its commits with a note when a later
+  rewrite folded one, nothing while the run works with none, `No commits yet`
+  once it ended without any, decided by `fixRunCommitsViewOf` and never an
+  unresolved placeholder). Transcript is the transcript as one stream and the
+  field to write to that agent; the field is never shown on Fix. The first
+  message, the raw brief, is one closed card (`BriefCard`, label from
+  `FIX_RUN_COPY.briefCard`, `4 comments from #318`) that opens on click. Only the
+  shown tab is mounted. The tab follows the run until the user picks one
+  (`useDrawerTabs`): Transcript while the run works, Fix once `fixRunStatusOf`
+  says ended or while a resolver question row waits (`fixRunAskingOf`, the
+  same rows the summary lists). A pick holds for that drawer instance through
+  every later state change; a new drawer starts unpicked. A dot sits on the tab
+  that is not shown: on Transcript when its event count grew since it was last
+  shown (`New activity`), on Fix, in the warning tone, when the count of waiting questions grew since Fix
+  was last shown (`Question waiting`). Arrow keys move between the tabs, the
+  `SegmentedTabs` behavior; no global shortcut exists. The scenes
+  `resolve-transcript-drawer-multi` and `resolve-transcript-drawer-multi-done`
+  show one run over four comments, working and finished. The question card also
   stays in its thread. Accepting, replying, editing and Push live in Comments,
   never in the drawer. In Activity a fix run is one row, `Fix run · #318 · 9
 comments`; the Needs you row for the pull request calls `openReview` with the

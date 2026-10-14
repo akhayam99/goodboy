@@ -171,6 +171,16 @@ export const FIX_RUN_COPY = {
   commitsHeading: 'Commits',
   threadsHeading: ({ count }: { readonly count: number }): string =>
     count === 1 ? 'Covers 1 comment' : `Covers ${count} comments`,
+  briefCard: ({
+    count,
+    prNumber,
+  }: {
+    readonly count: number;
+    readonly prNumber: number | null;
+  }): string => {
+    const comments = count === 1 ? '1 comment' : `${count} comments`;
+    return prNumber === null ? comments : `${comments} from #${prNumber}`;
+  },
   openBatch: 'Open them in Comments',
   openBatchNotes: 'Open them in Notes',
   noCommit: 'No commits yet',
