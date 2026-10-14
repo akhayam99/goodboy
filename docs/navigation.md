@@ -2050,7 +2050,7 @@ pull request`) and Comments lists the session's notes. Every door to a pull
   state word, and while it drafts the last thing it said). Its transcript opens
   as a drawer of kind `transcript` on the Comments tab of its Branch, in the
   space on the right, so the list and the thread stay where they are: from the
-  run status line (**Open transcript** opens the drawer in place), from `…` →
+  run status line (**Open transcript** opens the drawer in place and is gone while that run's drawer is open), from `…` →
   Agent transcript on a thread, from the thread crumb menu, from a fix run row
   in Activity, from a notification, the agent-started toast and the palette.
   `fixRunTranscript({ sessionId, agentId, threadId })` builds the move (the
@@ -2065,15 +2065,21 @@ pull request`) and Comments lists the session's notes. Every door to a pull
   Transcript (`FixRunTranscriptDrawer` in `app/components`, which hands
   `AgentTranscriptDrawer` a `lead`; a drawer without a `lead` has no tabs).
   Fix is the fix run summary at full height with its own scroll
-  (`FixRunSummary`: while the run works, one status line, `Working · 2m 48s ·
-Opus 5.5 · High`, and a question the run waits on; the comments the run
+  (`FixRunSummary`: one status line that says each shared fact once, `Working ·
+2m 48s · Opus 5.5 · High` while it works and `Done · 8m · 8 fix ready · Opus 5.5
+· High` once it ended, and a question the run waits on; the comments the run
   covers, each a row with author, file and line and the first sentence, a link
   that keeps the drawer open on that comment, and the comments fixed together,
-  opened filtered in Comments; after it ends, What it did, the run's final
-  summary, never shown while it works; its commits with a note when a later
-  rewrite folded one, nothing while the run works with none, `No commits yet`
-  once it ended without any, decided by `fixRunCommitsViewOf` and never an
-  unresolved placeholder). Transcript is the transcript as one stream and the
+  opened filtered in Comments. A state chip sits on a row only while the
+  comments differ, in one aligned column; when every row shares one state it is
+  in the status line and not on the rows. After it ends, What it did, the run's
+  final summary, never shown while it works, and its commits as `sha message`
+  rows (no label in front), with a note when a later rewrite folded one, nothing
+  while the run works with none, `No commits yet` once it ended without any,
+  decided by `fixRunCommitsViewOf` and never an unresolved placeholder. Covers is
+  the one filled section; What it did and Commits are quiet labels, not equal
+  sections. The count of comments in the drawer and in the run banner comes from
+  `fixRunThreadIdsOf`, one agent per launch). Transcript is the transcript as one stream and the
   field to write to that agent; the field is never shown on Fix. The first
   message, the raw brief, is one closed card (`BriefCard`, label from
   `FIX_RUN_COPY.briefCard`, `4 comments from #318`) that opens on click. Only the
@@ -2737,7 +2743,9 @@ publication) and never pushes while the panel is open. A `stale` answer reopens
 the panel with one line above it saying what changed (`driftSentence`). An accepted
 thread opened in Comments offers `Push only this one` in its action bar
 (`preparePublication` with `isolated`, `isolatedPushOf` unchanged); the panel
-names the tip commit and the earlier commits that go along. A preview that is
+lists every commit that goes out, oldest first, with `Not a fix` on the earlier
+ones, under a title that counts them all (`pushCommitCount`). `Push only this
+one` is not shown while the panel is open, so one Push is visible at a time. A preview that is
 left (page unmounted, navigation, Cancel, a `missing` answer) is closed as
 cancelled in the database; `missing` says `The push was already handled or
 cancelled. Nothing changed.` in the outcome line. `Publish N replies` and `Retry N` stay the header primary of their state. A blocked primary stays visible, disabled, with its

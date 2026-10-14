@@ -57,6 +57,12 @@ export const CheckAnalysisActions = ({ sessionId, mountId, pullRequest, check }:
   const checkFixPush = useCheckFixPush({ sessionId, mountId, fixAgentId: chain.fix?.id });
   const reportError = useAppStore((state) => state.reportError);
   const openDrawer = useAppStore((state) => state.openDrawer);
+  const isDrawerOpen = useAppStore(
+    (state) =>
+      state.drawer?.kind === 'check-analysis' &&
+      state.drawer.payload.mountId === mountId &&
+      state.drawer.payload.checkUrl === url,
+  );
   const [isStarting, setIsStarting] = useState(false);
   const run = async ({
     title,
@@ -112,7 +118,7 @@ export const CheckAnalysisActions = ({ sessionId, mountId, pullRequest, check }:
           </Button>
         </>
       )}
-      {chain.state === 'fixed-local' ? (
+      {chain.state === 'fixed-local' && !isDrawerOpen ? (
         <Button
           variant="secondary"
           size="sm"

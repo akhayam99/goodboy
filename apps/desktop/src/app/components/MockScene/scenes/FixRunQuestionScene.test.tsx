@@ -6,7 +6,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -66,5 +66,38 @@ describe('the fix run transcript drawer scene', () => {
 
     expect(screen.getByRole('tab', { name: 'Fix' }).getAttribute('aria-selected')).toBe('true');
     expect(screen.queryByRole('textbox', { name: 'Message to Fix run' })).toBeNull();
+  });
+
+  it('says the same number in the banner and in the drawer', async () => {
+    renderScene();
+
+    const lead = await screen.findByTestId('fix-run-lead');
+    const banner = await screen.findByTestId('resolve-run-status');
+
+    expect(within(lead).getByRole('heading', { name: 'Covers 3 comments' })).toBeDefined();
+    expect(within(banner).getByText('Fix run · 3 comments')).toBeDefined();
+    expect(within(banner).queryByRole('button', { name: 'Open transcript' })).toBeNull();
+  });
+
+  it('keeps the other comment of the branch out of this run', async () => {
+    renderScene();
+
+    await screen.findByTestId('fix-run-lead');
+    const state = useAppStore.getState();
+
+    expect(
+      (state.sessionResolveAttempts[SESSION_ID] ?? []).map((attempt) => attempt.agentId),
+    ).toEqual(['mock-resolve-agent-retry']);
+  });
+
+  it('shows the brief and the answer on the Transcript tab, not the empty state of a role', async () => {
+    renderScene();
+
+    await screen.findByTestId('fix-run-lead');
+    fireEvent.click(screen.getByRole('tab', { name: 'Transcript' }));
+
+    expect(await screen.findByText('Fixed two comments and asked about the third.')).toBeDefined();
+    expect(screen.queryByText(/Addresses one comment/)).toBeNull();
+    expect(screen.queryByText(/shares the session brief/)).toBeNull();
   });
 });

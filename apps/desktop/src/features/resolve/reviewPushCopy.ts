@@ -14,12 +14,18 @@ const pushedCount = ({ preview }: { readonly preview: ResolvePublicationPreview 
     ...preview.notes.map((note) => note.threadId),
   ]).size;
 
+export const pushCommitCount = ({
+  preview,
+}: {
+  readonly preview: ResolvePublicationPreview;
+}): number => preview.commits.length + (preview.earlierCommits ?? []).length;
+
 export const pushConfirmTitle = ({
   preview,
 }: {
   readonly preview: ResolvePublicationPreview;
 }): string => {
-  const commits = preview.commits.length;
+  const commits = pushCommitCount({ preview });
   if (commits > 0 && preview.requiresPush && preview.branch !== '') {
     return `Push ${plural(commits, 'commit', 'commits')} to ${preview.branch}?`;
   }
@@ -75,11 +81,6 @@ export const pushConfirmBody = ({
   ].flatMap((part) => (part === null ? [] : [part]));
   return `${parts.join(', ')}.`;
 };
-
-export const PUSH_TIP_LABEL = 'Tip';
-
-export const earlierCommitsLine = ({ count }: { readonly count: number }): string =>
-  `This also pushes ${count} earlier ${count === 1 ? 'commit' : 'commits'}`;
 
 export type PushStyleNote = {
   readonly text: string;

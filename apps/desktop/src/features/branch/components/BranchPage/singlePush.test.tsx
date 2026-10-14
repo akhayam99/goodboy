@@ -221,16 +221,16 @@ describe('one Push at a time', () => {
     fireEvent.click(header);
 
     const panel = await screen.findByRole('group', {
-      name: 'Push 1 commit to hl/fix-duplicate-credit?',
+      name: 'Push 2 commits to hl/fix-duplicate-credit?',
     });
-    within(panel).getByText('This also pushes 1 earlier commit');
+    within(panel).getByText('Not a fix');
     expect(within(panel).getAllByRole('button', { name: 'Push' })).toHaveLength(1);
     expect(headerPush(/^Push \d+ (fix|fixes)$/).getAttribute('aria-expanded')).toBe('true');
     expect(publish).not.toHaveBeenCalled();
 
     fireEvent.click(headerPush(/^Push \d+ (fix|fixes)$/));
     await waitFor(() =>
-      expect(screen.queryByRole('group', { name: /^Push 1 commit to/ })).toBeNull(),
+      expect(screen.queryByRole('group', { name: /^Push 2 commits to/ })).toBeNull(),
     );
     expect(publish).not.toHaveBeenCalled();
     expect(cancel).toHaveBeenCalledWith({ sessionId: SESSION.id, publicationId: PUBLICATION_ID });
@@ -242,11 +242,11 @@ describe('one Push at a time', () => {
     await mount({ threadId: null });
 
     fireEvent.click(headerPush(/^Push \d+ (fix|fixes)$/));
-    const panel = await screen.findByRole('group', { name: /^Push 1 commit to/ });
+    const panel = await screen.findByRole('group', { name: /^Push 2 commits to/ });
     fireEvent.click(within(panel).getByRole('button', { name: 'Push' }));
 
     await waitFor(() => expect(publish).toHaveBeenCalledOnce());
-    expect(await screen.findByText(/^Pushed 1 commit to origin and posted 1 reply/)).toBeDefined();
+    expect(await screen.findByText(/^Pushed 2 commits to origin and posted 1 reply/)).toBeDefined();
   });
 
   it('pushes once on a double click', async () => {
@@ -293,9 +293,11 @@ describe('one Push at a time', () => {
       threadIds: [threadId],
       isolated: true,
     });
-    const panel = await screen.findByRole('group', { name: /^Push 1 commit to/ });
-    within(panel).getByText('This also pushes 1 earlier commit');
+    const panel = await screen.findByRole('group', { name: /^Push 2 commits to/ });
+    within(panel).getByText('Not a fix');
     within(panel).getByText('Batch the ledger lookups');
+    expect(screen.queryByRole('button', { name: 'Push only this one' })).toBeNull();
+    expect(within(panel).getAllByRole('button', { name: 'Push' })).toHaveLength(1);
   });
 
   it('closes the prepared publication when the page goes away with the panel open', async () => {
@@ -303,7 +305,7 @@ describe('one Push at a time', () => {
     await mount({ threadId: null });
 
     fireEvent.click(headerPush(/^Push \d+ (fix|fixes)$/));
-    await screen.findByRole('group', { name: /^Push 1 commit to/ });
+    await screen.findByRole('group', { name: /^Push 2 commits to/ });
     cleanup();
 
     expect(cancel).toHaveBeenCalledOnce();
@@ -316,11 +318,11 @@ describe('one Push at a time', () => {
     await mount({ threadId: null });
 
     fireEvent.click(headerPush(/^Push \d+ (fix|fixes)$/));
-    const panel = await screen.findByRole('group', { name: /^Push 1 commit to/ });
+    const panel = await screen.findByRole('group', { name: /^Push 2 commits to/ });
     fireEvent.click(within(panel).getByRole('button', { name: 'Push' }));
 
     expect(await screen.findByText(PUSH_MISSING)).toBeDefined();
-    expect(screen.queryByRole('group', { name: /^Push 1 commit to/ })).toBeNull();
+    expect(screen.queryByRole('group', { name: /^Push 2 commits to/ })).toBeNull();
     expect(cancel).toHaveBeenCalledWith({ sessionId: SESSION.id, publicationId: PUBLICATION_ID });
   });
 
@@ -336,13 +338,13 @@ describe('one Push at a time', () => {
     await mount({ threadId: null });
 
     fireEvent.click(headerPush(/^Push \d+ (fix|fixes)$/));
-    const panel = await screen.findByRole('group', { name: /^Push 1 commit to/ });
+    const panel = await screen.findByRole('group', { name: /^Push 2 commits to/ });
     fireEvent.click(within(panel).getByRole('button', { name: 'Push' }));
 
     const line = await screen.findByText('The remote moved from 7d02b11 to c5d9e08.', {
       selector: '[role="status"]',
     });
-    const refreshed = screen.getByRole('group', { name: /^Push 1 commit to/ });
+    const refreshed = screen.getByRole('group', { name: /^Push 2 commits to/ });
     expect(line.compareDocumentPosition(refreshed) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(publish).toHaveBeenCalledOnce();
   });

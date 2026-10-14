@@ -71,7 +71,7 @@ describe('the multi comment fix run drawer scenes', () => {
     const lead = await screen.findByTestId('fix-run-lead');
 
     expect(tabSelected('Fix')).toBe(true);
-    expect(within(lead).queryByTestId('fix-run-status')).toBeNull();
+    expect(within(lead).getByTestId('fix-run-status').textContent).toMatch(/^Done · /);
     expect(within(lead).getByRole('heading', { name: 'What it did' })).toBeDefined();
     expect(await within(lead).findByText('c81e5aa')).toBeDefined();
     expect(screen.queryByRole('textbox', { name: 'Message to Fix run' })).toBeNull();

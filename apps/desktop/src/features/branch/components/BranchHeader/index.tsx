@@ -1,4 +1,4 @@
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ChevronUp } from 'lucide-react';
 import { Button, HeaderActions, HeaderBand, Notice, Tooltip } from '@goodboy/ui';
 import { PULL_REQUEST_NOUNS } from '@goodboy/core';
 import type { PullRequestHost, PullRequestState, SessionId } from '@goodboy/types';
@@ -124,6 +124,7 @@ export const BranchHeader = ({
       >
         <action.icon size={ICON_SIZE.control} aria-hidden />
         {action.label}
+        {action.isExpanded === true && <ChevronUp size={ICON_SIZE.control} aria-hidden />}
       </Button>
     );
     return action.blockedReason === null ? (

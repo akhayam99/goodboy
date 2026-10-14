@@ -737,6 +737,10 @@ describe('AGENT_KIND_META', () => {
     }
   });
 
+  it('describes a Resolve run without counting its comments, since it covers several', () => {
+    expect(AGENT_KIND_META.resolver.hint).not.toMatch(/\bone comment\b/);
+  });
+
   it('labels the do-everything role Generalist, resolved from its unchanged id', () => {
     expect(AGENT_KIND_META.generic.label).toBe('Generalist');
     expect(classifyAgent({ agent: agentOf({ kind: 'generic' }), override: null })).toBe('generic');

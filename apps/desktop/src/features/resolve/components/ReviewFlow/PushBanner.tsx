@@ -1,6 +1,7 @@
 import { AlertCircle, ArrowUp, Check, GitMerge, X, type LucideIcon } from 'lucide-react';
 import {
   Button,
+  Chip,
   FOCUS_RING,
   GhostActionButton,
   IconButton,
@@ -17,13 +18,7 @@ import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptI
 import { SYNC_COPY } from '../../failedRunCopy';
 import { blockerCopy, driftSentence, excludedLine } from '../../resolvePublishCopy';
 import { useActiveReviewSource } from '../../hooks/useActiveReviewSource';
-import {
-  earlierCommitsLine,
-  pushConfirmBody,
-  PUSH_TIP_LABEL,
-  pushConfirmTitle,
-  pushStyleNote,
-} from '../../reviewPushCopy';
+import { pushConfirmBody, pushConfirmTitle, pushStyleNote } from '../../reviewPushCopy';
 import type { ReviewPush } from './useReviewPush';
 import { NAMES } from '../../../../shared/names';
 
@@ -49,6 +44,7 @@ const RECOVERY_ICON: Record<keyof typeof RECOVERY_LABEL, LucideIcon> = {
 const BANNER_SURFACE = 'rounded-lg bg-subtle';
 const PUSH_LABEL = 'Push';
 const DISMISS_LABEL = 'Dismiss';
+const NOT_A_FIX_LABEL = 'Not a fix';
 
 export const PushBanner = ({ sessionId, push }: Props) => {
   const commitStyle = useAppStore((s) => sessionReplySettings({ state: s, sessionId }).commitStyle);
@@ -127,7 +123,6 @@ export const PushBanner = ({ sessionId, push }: Props) => {
   const drift = driftSentence({ drift: preview.drift });
   const excluded = excludedLine({ preview });
   const earlier = preview.earlierCommits ?? [];
-  const tip = preview.commits.find((commit) => commit.sha === preview.localHead) ?? null;
 
   if (blocker !== null || preview.publicationId === null) {
     const recovery =
@@ -181,26 +176,30 @@ export const PushBanner = ({ sessionId, push }: Props) => {
       className={BANNER_SURFACE}
       note={
         <div className="flex min-w-0 flex-col gap-2">
-          {tip !== null && (
-            <p className="flex min-w-0 gap-2 text-muted-foreground">
-              <span className="shrink-0 text-foreground">{PUSH_TIP_LABEL}</span>
-              <span className="shrink-0 font-mono">{tip.shortSha}</span>
-              <span className="min-w-0 truncate">{tip.subject}</span>
-            </p>
-          )}
-          {earlier.length > 0 && (
-            <div className="flex min-w-0 flex-col gap-1">
-              <p className="text-foreground">{earlierCommitsLine({ count: earlier.length })}</p>
-              <ul className="flex min-w-0 flex-col">
-                {earlier.map((commit) => (
-                  <li key={commit.sha} className="flex min-w-0 gap-2 text-muted-foreground">
-                    <span className="shrink-0 font-mono">{commit.shortSha}</span>
-                    <span className="min-w-0 truncate">{commit.subject}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <ul className="flex min-w-0 flex-col">
+            {[
+              ...earlier.map((commit) => ({ commit, isFix: false })),
+              ...preview.commits.map((commit) => ({ commit, isFix: true })),
+            ].map(({ commit, isFix }) => (
+              <li
+                key={commit.sha}
+                className="flex min-w-0 items-center gap-2 text-muted-foreground"
+              >
+                <span className="shrink-0 font-mono">{commit.shortSha}</span>
+                <span className="min-w-0 flex-1 truncate">{commit.subject}</span>
+                {!isFix && (
+                  <Chip
+                    tone="neutral"
+                    size="xs"
+                    bordered={false}
+                    emphasis="subtle"
+                    label={NOT_A_FIX_LABEL}
+                    className="shrink-0"
+                  />
+                )}
+              </li>
+            ))}
+          </ul>
           <p className="text-muted-foreground">
             {[changed === undefined ? drift : null, excluded]
               .flatMap((line) => (line === null ? [] : [line.endsWith('.') ? line : `${line}.`]))

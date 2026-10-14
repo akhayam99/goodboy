@@ -2,7 +2,13 @@
 import { describe, expect, it } from 'vitest';
 import type { ResolvePublicationPreview } from '@goodboy/types';
 import type { PublicationOutcome } from '../../store/slices/resolve/publicationOutcome';
-import { pushConfirmBody, pushConfirmTitle, pushResultOf, pushStyleNote } from './reviewPushCopy';
+import {
+  pushCommitCount,
+  pushConfirmBody,
+  pushConfirmTitle,
+  pushResultOf,
+  pushStyleNote,
+} from './reviewPushCopy';
 
 const previewOf = (patch: Partial<ResolvePublicationPreview>): ResolvePublicationPreview => ({
   publicationId: 'pub-1',
@@ -65,6 +71,25 @@ describe('the push confirm', () => {
     expect(pushStyleNote({ commitStyle: 'fixup' }).text).toContain('fixups');
     expect(pushStyleNote({ commitStyle: 'new' }).text).toContain('its own new commit');
     expect(pushStyleNote({ commitStyle: 'new' }).linkLabel).toBe('Replies and commits');
+  });
+
+  it('counts the earlier commits that go along in the title, once, from one function', () => {
+    const preview = previewOf({
+      earlierCommits: [
+        {
+          sha: '9e4f1c2bbbb',
+          shortSha: '9e4f1c2',
+          subject: 'Batch ledger lookups',
+          author: 'resolver',
+          timestamp: 1,
+          pushed: false,
+          parentSha: null,
+        },
+      ],
+    });
+
+    expect(pushCommitCount({ preview })).toBe(2);
+    expect(pushConfirmTitle({ preview })).toBe('Push 2 commits to hl/fix-duplicate-credit?');
   });
 
   it('says when no commit goes out and points at the pull request instead of a branch', () => {

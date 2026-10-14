@@ -1,8 +1,8 @@
-import { Band } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { ResolverCommitLine } from '../../ResolverCommitLine';
 import type { FixRunCommitsView } from '../../fixRunStatus';
 import { FIX_RUN_COPY } from '../../reviewFlowCopy';
+import { FixRunNote } from './FixRunNote';
 
 type FixRunCommit = {
   readonly sha: string;
@@ -21,7 +21,7 @@ export const FixRunCommits = ({ sessionId, mountId, view, commits }: Props) => {
     return null;
   }
   return (
-    <Band inset="content" label={FIX_RUN_COPY.commitsHeading} headingLevel={2}>
+    <FixRunNote label={FIX_RUN_COPY.commitsHeading({ count: commits.length })}>
       {view === 'none' ? (
         <p className="text-body text-muted-foreground">{FIX_RUN_COPY.noCommit}</p>
       ) : (
@@ -41,6 +41,6 @@ export const FixRunCommits = ({ sessionId, mountId, view, commits }: Props) => {
           </div>
         ))
       )}
-    </Band>
+    </FixRunNote>
   );
 };

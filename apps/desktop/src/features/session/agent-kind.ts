@@ -256,9 +256,9 @@ export const AGENT_KIND_META: Record<
     noun: 'Resolver',
     firstMessagePrompt: 'What should Resolver address?',
     pluralLabel: 'resolvers',
-    hint: 'Addresses one comment with a local commit. Started from a review comment',
+    hint: 'Addresses review comments with local commits. Started from review comments',
     persona: 'patches',
-    expectedOutput: 'one local commit answering the comment',
+    expectedOutput: 'a local commit for each comment it fixes',
   },
   rewriter: {
     label: 'History rewriter',

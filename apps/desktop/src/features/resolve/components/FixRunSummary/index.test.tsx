@@ -316,10 +316,39 @@ describe('the fix run summary', () => {
     });
   });
 
-  it('shows no status line once the run ended', async () => {
+  it('reads Done in the status line once the run ended, with the state every comment shares', async () => {
     await mount({ agentId: SINGLE });
 
-    expect(screen.queryByTestId('fix-run-status')).toBeNull();
+    const status = within(screen.getByTestId('fix-run-status'));
+    expect(status.getByText(/^Done · /)).toBeDefined();
     expect(screen.getByText('Capped the retry loop and added jitter.')).toBeDefined();
+  });
+
+  it('says the state every comment shares once in the status line, not on each row', async () => {
+    await mount({ agentId: SINGLE });
+
+    const status = within(screen.getByTestId('fix-run-status')).getByText(/^Done · /);
+    expect(status.textContent).toMatch(/ · 1 [a-z ]+ · /);
+    const row = within(screen.getByRole('list')).getByRole('button');
+    expect(within(row).queryByText(/^(Fix ready|Open|Working|Question for you)$/)).toBeNull();
+  });
+
+  it('keeps a state chip first on every row while the comments differ', async () => {
+    await mount({ agentId: WORKING });
+
+    const rows = within(screen.getByRole('list')).getAllByRole('button');
+    const words = ['Fix ready', 'Open', 'Question for you'];
+    for (const row of rows) {
+      expect(words.some((word) => (row.textContent ?? '').startsWith(word))).toBe(true);
+    }
+    expect(screen.getByTestId('fix-run-status').textContent).not.toMatch(/ · 4 /);
+  });
+
+  it('names the commits with their message, without a label in front of each', async () => {
+    await mount({ agentId: SINGLE, commitShas: ['c81e5aa0f3b2d94e7a1c6580de4b9f2a37c1d085'] });
+
+    expect(await screen.findByText('c81e5aa')).toBeDefined();
+    expect(screen.queryByText('Commit')).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Commits 1' })).toBeDefined();
   });
 });

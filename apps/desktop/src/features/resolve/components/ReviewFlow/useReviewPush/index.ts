@@ -20,6 +20,7 @@ import {
   PUSH_BUSY,
   PUSH_MISSING,
   PUSH_STALE_FALLBACK,
+  pushCommitCount,
   pushFailedSentence,
   pushResultOf,
   type PushResult,
@@ -157,7 +158,7 @@ export const useReviewPush = ({ sessionId }: PushParams): ReviewPush => {
               result: pushResultOf({
                 outcome: result,
                 provider,
-                commits: preview.commits.length,
+                commits: pushCommitCount({ preview }),
               }),
             });
             return;

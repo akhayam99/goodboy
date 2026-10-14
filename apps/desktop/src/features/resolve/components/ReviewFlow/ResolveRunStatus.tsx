@@ -8,7 +8,7 @@ type Props = {
   readonly run: FixRun;
   readonly filter: FixRunChipKey | null;
   readonly onFilter: (key: FixRunChipKey | null) => void;
-  readonly onOpenTranscript: () => void;
+  readonly onOpenTranscript: (() => void) | null;
   readonly onStop: () => void;
   readonly lane?: LaneStatus | null;
   readonly actions?: ReactNode;
@@ -71,9 +71,11 @@ export const ResolveRunStatus = ({
       <span className="ml-auto flex min-w-0 shrink-0 items-center gap-1">
         {actions}
         <span className="px-2 text-meta text-muted-foreground">{run.model}</span>
-        <Button size="xs" variant="ghost" onClick={onOpenTranscript}>
-          Open transcript
-        </Button>
+        {onOpenTranscript !== null && (
+          <Button size="xs" variant="ghost" onClick={onOpenTranscript}>
+            Open transcript
+          </Button>
+        )}
         {isLive && <StopRunButton onStop={onStop} />}
       </span>
     </section>

@@ -105,7 +105,7 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
     },
     lands: async () => {
       const confirm = await screen.findByRole('group', {
-        name: 'Push 1 commit to hl/fix-duplicate-credit?',
+        name: 'Push 2 commits to hl/fix-duplicate-credit?',
       });
       expect(headerPush().getAttribute('data-variant')).toBe('secondary');
       expect(
@@ -119,7 +119,7 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
 
       await waitFor(() => expect(publish).toHaveBeenCalledTimes(1), WAIT);
       await waitFor(
-        () => expect(screen.queryByRole('group', { name: /^Push 1 commit/ })).toBeNull(),
+        () => expect(screen.queryByRole('group', { name: /^Push 2 commits/ })).toBeNull(),
         WAIT,
       );
     },

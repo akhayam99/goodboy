@@ -1,6 +1,7 @@
 import { mockSceneIpc } from './mockSceneIpc';
 import type { InvokeArgs } from '@tauri-apps/api/core';
 import type {
+  BranchCommit,
   PrComment,
   PullRequestState,
   ProjectId,
@@ -27,6 +28,7 @@ import type {
   OpenQuestionId,
   Session,
   SessionId,
+  SessionProjectMount,
   Workspace,
   WorkspaceId,
 } from '@goodboy/types';
@@ -655,6 +657,22 @@ export const MOUNT_TARGET: MountTargetSnapshot = {
   worktreePath: '~/code/harborline/payments-api-webhook-retry',
 };
 
+export const FIX_RUN_MOUNT: SessionProjectMount = {
+  projectId: PROJECT_ID,
+  mountName: 'payments-api',
+  worktreePath: MOUNT_TARGET.worktreePath,
+  repoRoot: '~/code/harborline/payments-api',
+  branch: 'hl/fix-duplicate-credit',
+  mountId: MOUNT_TARGET.mountId,
+  sessionId: SESSION_ID,
+  lastWorktreePath: null,
+  baseBranch: null,
+  parallelIndex: 0,
+  isAttached: true,
+  diskState: 'present',
+  revision: 0,
+};
+
 const ATTEMPT_RETRY: ResolveAttempt = {
   id: ATTEMPT_RETRY_ID,
   sessionId: SESSION_ID,
@@ -868,6 +886,31 @@ const payloadSql = ({ payload }: { readonly payload: InvokeArgs | undefined }): 
   return typeof sql === 'string' ? sql : '';
 };
 
+const COMMIT_SUBJECTS: Readonly<Record<string, string>> = {
+  [T1]: 'fix(webhooks): cap retries and honor Retry-After',
+  [T2]: 'feat(metrics): count exhausted retries',
+  [T3]: 'fix(errors): return a 200 with a warning',
+  [T4]: 'fix(db): add a unique constraint on event_id',
+  [T5]: 'fix(logging): redact the payload before logging',
+  [T6]: 'chore(config): move the timeout to config',
+  [T7]: 'test(retry): use fake timers between retries',
+  [T8]: 'docs(retry): fix the typo above the constant',
+  [T9]: 'refactor(config): move MAX_RETRY_ATTEMPTS to config',
+};
+
+const mockBranchCommits = (): ReadonlyArray<BranchCommit> =>
+  (useAppStore.getState().sessionResolveQueueItems[SESSION_ID] ?? []).flatMap(({ thread }) =>
+    (thread.commitShas ?? []).map((sha) => ({
+      sha,
+      shortSha: sha.slice(0, 7),
+      subject: COMMIT_SUBJECTS[thread.threadId] ?? 'chore: apply the fix',
+      author: 'resolver',
+      timestamp: 1,
+      pushed: false,
+      parentSha: null,
+    })),
+  );
+
 const installResolveMockIpc = ({
   deliveredReplyBody,
 }: {
@@ -876,6 +919,9 @@ const installResolveMockIpc = ({
   mockSceneIpc((cmd, payload) => {
     if (cmd === 'worktree_diff_range') {
       return FAKE_RETRY_DIFF;
+    }
+    if (cmd === 'worktree_commits') {
+      return mockBranchCommits();
     }
     if (cmd === 'worktree_diff_commit') {
       return FAKE_COMMIT_DIFF;

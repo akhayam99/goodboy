@@ -91,6 +91,10 @@ export const ReviewActionBar = ({ sessionId, entry, push: reviewPush, binding }:
     reviewPush.phase.kind === 'preparing' ||
     reviewPush.phase.kind === 'pushing' ||
     reviewPush.phase.kind === 'syncing';
+  const isPushPanelShown =
+    reviewPush.phase.kind === 'confirm' ||
+    reviewPush.phase.kind === 'sync_confirm' ||
+    (reviewPush.phase.kind === 'pushing' && reviewPush.phase.hasPanel);
   const { pendingActionId } = binding;
   const isIdle = binding.compose === null && !binding.isEditingReply;
   const isBusy = pendingActionId !== null || binding.isSubmitting;
@@ -99,7 +103,7 @@ export const ReviewActionBar = ({ sessionId, entry, push: reviewPush, binding }:
       return push !== undefined;
     }
     if (item.kind === 'pushOnly') {
-      return push !== undefined && entry.remote !== 'on_origin';
+      return push !== undefined && entry.remote !== 'on_origin' && !isPushPanelShown;
     }
     if (item.kind === 'viewOnHost') {
       return byId(OPEN_HOST_ACTION) !== undefined;

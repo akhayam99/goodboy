@@ -1098,11 +1098,13 @@ waiting to push. With a fix waiting it goes out with the push, and `Post reply
 now` beside its note posts it at once. `Push N fixes` in the Review header is the
 way out for every accepted comment at once, whatever comment is selected. A
 clean preview pushes on that one click; otherwise it
-confirms inline under the header with exactly what goes out (`Push 2 to
+confirms inline under the header with exactly what goes out (`Push 2 commits to
 hl/fix-duplicate-credit?`, then `1 fix in 1 new commit, 2 replies, 2 threads
 resolved on GitHub.`), naming the commit style set in Replies and commits, and
-the header button only opens and closes that panel. `Push only this one` in a
-comment's action bar sends just that fix, with the earlier commits it carries. A
+the header button only opens and closes that panel (it shows a chevron while
+open), and `Push only this one` hides while the panel is open. `Push only this
+one` in a comment's action bar sends just that fix, with the earlier commits it
+carries. A
 blocker (uncommitted changes, a commit nobody approved, a fix still running)
 replaces the confirm with its reason and the one move that clears it. The
 result stays on the layer in one line with its commit; a partial push says how

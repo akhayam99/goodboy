@@ -71,7 +71,7 @@ const push = (overrides: Partial<ReviewPush>): ReviewPush => ({
 });
 
 describe('PushBanner', () => {
-  it('names the tip, the earlier commits that go along and what is left out', () => {
+  it('lists every commit that goes out, marks the ones that are not fixes and says what is left out', () => {
     render(
       <PushBanner
         sessionId={SESSION.id}
@@ -80,12 +80,15 @@ describe('PushBanner', () => {
     );
 
     const confirm = screen.getByRole('group', {
-      name: 'Push 1 commit to hl/fix-duplicate-credit?',
+      name: 'Push 2 commits to hl/fix-duplicate-credit?',
     });
-    within(confirm).getByText('Tip');
-    within(confirm).getByText('Redact the webhook payload');
-    within(confirm).getByText('This also pushes 1 earlier commit');
-    within(confirm).getByText('Batch ledger lookups');
+    const rows = within(confirm).getAllByRole('listitem');
+    expect(rows).toHaveLength(2);
+    expect(rows[0]?.textContent).toContain('Batch ledger lookups');
+    expect(within(rows[0] as HTMLElement).getByText('Not a fix')).toBeDefined();
+    expect(rows[1]?.textContent).toContain('Redact the webhook payload');
+    expect(within(rows[1] as HTMLElement).queryByText('Not a fix')).toBeNull();
+    expect(within(confirm).queryByText('Tip')).toBeNull();
     within(confirm).getByText(/1 comment needs you first/);
   });
 
@@ -100,7 +103,7 @@ describe('PushBanner', () => {
     );
 
     const confirm = screen.getByRole('group', {
-      name: 'Push 1 commit to hl/fix-duplicate-credit?',
+      name: 'Push 2 commits to hl/fix-duplicate-credit?',
     });
     within(confirm).getByText(/set in/);
     fireEvent.click(within(confirm).getByRole('button', { name: 'Replies and commits' }));
@@ -126,7 +129,7 @@ describe('PushBanner', () => {
     );
 
     const line = screen.getByText('The remote moved from 7d02b11 to c5d9e08.');
-    const confirm = screen.getByRole('group', { name: /^Push 1 commit to/ });
+    const confirm = screen.getByRole('group', { name: /^Push 2 commits to/ });
     expect(line.compareDocumentPosition(confirm) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(confirm).queryByText(/The remote moved/)).toBeNull();
   });
@@ -150,7 +153,7 @@ describe('PushBanner', () => {
       />,
     );
 
-    expect(screen.getByRole('group', { name: /^Push 1 commit to/ })).toBeDefined();
+    expect(screen.getByRole('group', { name: /^Push 2 commits to/ })).toBeDefined();
   });
 
   it('offers Sync on a push that failed on a moved remote', () => {

@@ -228,6 +228,12 @@ export const ReviewFlow = ({ session, push }: Props) => {
   const addressThreadId = useAppStore((s) => s.branchThreadId[sessionId] ?? null);
   const navigate = useAppStore((s) => s.navigate);
   const openDrawer = useAppStore((s) => s.openDrawer);
+  const openTranscriptAgentId = useAppStore((s) =>
+    s.drawer?.kind === 'transcript' && s.drawer.sessionId === sessionId
+      ? s.drawer.payload.agentId
+      : null,
+  );
+  const isRunTranscriptOpen = run !== null && openTranscriptAgentId === run.agentId;
   const loadResolveSession = useAppStore((s) => s.loadResolveSession);
   const refreshReviewSource = useAppStore((s) => s.refreshReviewSource);
   const refreshThreadGitState = useAppStore((s) => s.refreshThreadGitState);
@@ -775,8 +781,15 @@ export const ReviewFlow = ({ session, push }: Props) => {
             run={run}
             filter={activeFilter}
             onFilter={setFilter}
-            onOpenTranscript={() =>
-              openDrawer({ kind: 'transcript', sessionId, payload: { agentId: run.agentId } })
+            onOpenTranscript={
+              isRunTranscriptOpen
+                ? null
+                : () =>
+                    openDrawer({
+                      kind: 'transcript',
+                      sessionId,
+                      payload: { agentId: run.agentId },
+                    })
             }
             lane={lane}
             onStop={() =>

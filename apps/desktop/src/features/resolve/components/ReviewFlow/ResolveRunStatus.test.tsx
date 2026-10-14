@@ -64,13 +64,14 @@ const renderStatus = ({
   readonly filter?: Parameters<typeof ResolveRunStatus>[0]['filter'];
   readonly onFilter?: () => void;
   readonly actions?: Parameters<typeof ResolveRunStatus>[0]['actions'];
+  readonly onOpenTranscript?: Parameters<typeof ResolveRunStatus>[0]['onOpenTranscript'];
 }) =>
   render(
     <ResolveRunStatus
       run={runOf(words)}
       filter={rest.filter ?? null}
       onFilter={rest.onFilter ?? vi.fn()}
-      onOpenTranscript={vi.fn()}
+      onOpenTranscript={rest.onOpenTranscript === undefined ? vi.fn() : rest.onOpenTranscript}
       onStop={vi.fn()}
       actions={rest.actions}
     />,
@@ -141,6 +142,13 @@ describe('ResolveRunStatus', () => {
       .map((button) => button.textContent);
     expect(names.indexOf('Accept 1')).toBeGreaterThan(names.indexOf('1 ready to push'));
     expect(names.indexOf('Accept 1')).toBeLessThan(names.indexOf('Open transcript'));
+  });
+
+  it('drops Open transcript while the transcript of the run is already open', () => {
+    renderStatus({ words: ['ready'], onOpenTranscript: null });
+
+    expect(screen.queryByRole('button', { name: 'Open transcript' })).toBeNull();
+    expect(screen.getByRole('button', { name: '1 ready to push' })).toBeDefined();
   });
 
   it('offers Stop only while the run works, and asks before stopping', () => {

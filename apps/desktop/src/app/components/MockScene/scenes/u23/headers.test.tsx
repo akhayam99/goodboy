@@ -37,9 +37,9 @@ describe('the header branch push scene', () => {
       await new Promise((resolve) => setTimeout(resolve, 600));
     });
 
-    const panel = screen.getByRole('group', { name: /^Push 1 commit to/ });
+    const panel = screen.getByRole('group', { name: /^Push 2 commits to/ });
     expect(within(panel).getAllByRole('button', { name: 'Push' })).toHaveLength(1);
-    within(panel).getByText('This also pushes 1 earlier commit');
+    within(panel).getByText('Not a fix');
     const header = screen.getByRole('button', { name: /^Push \d+ (fix|fixes)$/, expanded: true });
     expect(panel.contains(header)).toBe(false);
   });

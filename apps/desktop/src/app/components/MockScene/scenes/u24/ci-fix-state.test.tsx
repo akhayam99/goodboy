@@ -164,6 +164,18 @@ describe('CI fix state scenes', () => {
       );
     }
   });
+  it('shows one Push while the drawer of the check is open, the row gets it back on close', () => {
+    show({ name: 'debugger-drawer-fixed-local' });
+    const drawer = screen.getByRole('region', { name: 'Debugger' });
+    const pushes = screen.getAllByRole('button', { name: 'Push' });
+    expect(pushes).toHaveLength(1);
+    expect(drawer.contains(pushes[0] ?? null)).toBe(true);
+    act(() => {
+      store.getState().closeDrawer();
+    });
+    expect(screen.getAllByRole('button', { name: 'Push' })).toHaveLength(1);
+    expect(screen.queryByRole('region', { name: 'Debugger' })).toBeNull();
+  });
   it('pushes from the drawer and then reads the three green steps and the check', async () => {
     store.setState({
       refreshSessionPr: async () => undefined,

@@ -165,10 +165,19 @@ export const FIX_RUN_THREAD_COPY = {
     'Retry keeps the same run and the same copy of the branch. Start over begins a new agent.',
 } as const;
 
+type CountParams = {
+  readonly count: number;
+};
+
+type SharedStateParams = CountParams & {
+  readonly word: string;
+};
+
 export const FIX_RUN_COPY = {
   didHeading: 'What it did',
   fromReply: 'from the last reply',
-  commitsHeading: 'Commits',
+  commitsHeading: ({ count }: CountParams): string =>
+    count === 0 ? 'Commits' : `Commits ${count}`,
   threadsHeading: ({ count }: { readonly count: number }): string =>
     count === 1 ? 'Covers 1 comment' : `Covers ${count} comments`,
   briefCard: ({
@@ -186,10 +195,11 @@ export const FIX_RUN_COPY = {
   noCommit: 'No commits yet',
   statusWorking: 'Working',
   statusQueued: 'Queued',
+  statusDone: 'Done',
+  sharedState: ({ word, count }: SharedStateParams): string => `${count} ${word.toLowerCase()}`,
   statusWaiting: 'Waiting for you',
   gone: 'This comment is no longer on the branch.',
   comment: 'Comment',
-  commit: 'Commit',
   rewritten: 'no longer on this branch, it was squashed or rewritten',
   foldedInto: ({ sha }: { readonly sha: string }): string => `Folded into ${sha.slice(0, 7)}`,
   batch: ({ others }: { readonly others: number }): string =>
