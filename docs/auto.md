@@ -62,8 +62,10 @@ start is the one of before: role grid, Generalist as default, Routing.
   (`auto.treeLimitUsd.<workspace id>`, compare and swap), so the next start is
   not asked again; a person can change it from the chip.
 - A Next card that starts a role gets **Talk it through with Auto** as the last
-  entry of its more menu. It opens the Agent tab with the card as context and
-  starts nothing.
+  entry of its more menu. It is the registry verb `suggestion.talkWithAuto`
+  (`features/actions/kinds/suggestion.ts`), shown only while the experiment is
+  on and the card starts a role. It opens the Agent tab with the card as context
+  (`startTalkItThrough`) and starts nothing.
 - **Generalist** keeps its name, with no mark of being old, and existing
   Generalist agents are not changed. Auto never appears in the manual role list.
 

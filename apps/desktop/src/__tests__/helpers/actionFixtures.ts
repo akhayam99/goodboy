@@ -5,6 +5,7 @@ import type {
   MountId,
   OpenQuestion,
   OpenQuestionId,
+  PlanId,
   ProjectId,
   Session,
   SessionId,
@@ -18,7 +19,9 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
+import { brandId } from '@goodboy/types';
 import type { StoryStore } from '../../store/storyHarness';
+import type { RebaseSuggestionTarget, SessionSuggestion } from '../../features/suggestions/types';
 
 export const FIXTURE_NOW = '2026-09-27T09:00:00.000Z' as IsoDateTime;
 export const WORKSPACE = 'ws-harborline' as WorkspaceId;
@@ -181,3 +184,77 @@ export const seedActionState = ({
           },
   });
 };
+
+const NEXT_CARD = {
+  priority: 40,
+  band: 3,
+  sessionId: SESSION,
+  targetKey: null,
+} as const;
+
+export const checkChangesSuggestion = (): SessionSuggestion => ({
+  ...NEXT_CARD,
+  id: 'check-changes:agent-maya',
+  kind: 'check-changes',
+  title: 'Check the changes before you push',
+  detail: 'Maya finished the payout export',
+  fingerprint: 'check-changes:agent-maya',
+  payload: { agentId: AGENT },
+});
+
+export const planReadySuggestion = (): SessionSuggestion => ({
+  ...NEXT_CARD,
+  id: 'plan-ready:plan-payout',
+  kind: 'plan-ready',
+  title: 'Implement the payout export plan',
+  fingerprint: 'plan-ready:plan-payout',
+  payload: { planId: brandId<PlanId>({ value: 'plan-payout' }) },
+});
+
+export const pushSuggestion = (): SessionSuggestion => ({
+  ...NEXT_CARD,
+  id: 'push-branch:mount-ledger-core',
+  kind: 'push-branch',
+  title: '1 commit is ready to push',
+  fingerprint: 'push-branch:mount-ledger-core',
+  payload: {
+    mountId: brandId<MountId>({ value: 'mount-ledger-core' }),
+    projectId: brandId<ProjectId>({ value: 'project-ledger-core' }),
+    projectName: 'ledger-core',
+    branch: 'hl/payout-export',
+    worktreePath: '/w/ledger-core',
+    state: 'ahead',
+    ahead: 1,
+    behind: 0,
+  },
+});
+
+const REBASE_NAMES = ['ledger-core', 'notify-relay', 'payments-api'] as const;
+
+type RebaseCountParams = {
+  readonly count: number;
+};
+
+export const rebaseTargetsFixture = ({
+  count,
+}: RebaseCountParams): ReadonlyArray<RebaseSuggestionTarget> =>
+  REBASE_NAMES.slice(0, count).map((name, index) => ({
+    id: `mount:${name}`,
+    mountId: brandId<MountId>({ value: `mount-${name}` }),
+    projectId: brandId<ProjectId>({ value: `project-${name}` }),
+    projectName: name,
+    branch: `feature/${name}`,
+    worktreePath: `/w/${name}`,
+    baseBranch: 'main',
+    behind: 7 - index * 2,
+    dirtyCount: 0,
+  }));
+
+export const rebaseSuggestion = ({ count }: RebaseCountParams): SessionSuggestion => ({
+  ...NEXT_CARD,
+  id: 'rebase-project:session-payout-export',
+  kind: 'rebase-project',
+  title: 'Rebase the payout export',
+  fingerprint: 'rebase-project:session-payout-export',
+  payload: { targets: rebaseTargetsFixture({ count }) },
+});

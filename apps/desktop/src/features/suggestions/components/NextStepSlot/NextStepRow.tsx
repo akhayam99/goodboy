@@ -1,15 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button, ConfirmPopover, cn, tintClasses, type ConfirmRole } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { SUGGESTION_ICONS } from '../../suggestionIcons';
 import type { NextStepBand, SessionSuggestion } from '../../types';
-import type { SuggestionActionChoice, SuggestionActions } from '../../useSuggestionActions';
+import type { SuggestionActions } from '../../useSuggestionActions';
+import type { ActionTrack, SuggestionActionTarget } from '../../../actions/types';
 import {
   agentKindPalette,
   type AgentKind,
   type AgentKindRouting,
 } from '../../../session/agent-kind';
-import { useTalkItThrough } from '../../../auto/useTalkItThrough';
+import { useIsAutoOn } from '../../../auto/useIsAutoOn';
 import { NextStepMenu } from './NextStepMenu';
 import { NextStepRunsOn } from './NextStepRunsOn';
 import { NextStepTile } from './NextStepTile';
@@ -28,12 +29,13 @@ type Props = {
   readonly compact: boolean;
   readonly isPending: boolean;
   readonly pendingChoiceIds?: ReadonlySet<string>;
+  readonly trackChoice?: ActionTrack;
   readonly onNotNow: () => void;
 };
 
 const NO_PENDING_CHOICES: ReadonlySet<string> = new Set();
 
-const NO_CHOICES: ReadonlyArray<SuggestionActionChoice> = [];
+const runUntracked: ActionTrack = ({ task }) => task();
 
 const CONFIRM_ROLE: Partial<Record<SessionSuggestion['kind'], ConfirmRole>> = {
   'close-worktree': 'danger',
@@ -45,6 +47,7 @@ export const NextStepRow = ({
   compact,
   isPending,
   pendingChoiceIds = NO_PENDING_CHOICES,
+  trackChoice = runUntracked,
   onNotNow,
 }: Props) => {
   const Icon = SUGGESTION_ICONS[suggestion.kind];
@@ -59,12 +62,21 @@ export const NextStepRow = ({
     setPreviewKind(null);
   }, [suggestion.id]);
 
-  const talk = useTalkItThrough({ sessionId: suggestion.sessionId });
+  const isAutoOn = useIsAutoOn();
   const primary = actions.primary;
   const shouldConfirm = primary?.requiresConfirm === true;
-  const choices = primary?.choices ?? NO_CHOICES;
   const runsOn = primary?.runsOn ?? null;
   const agentKind = primary?.agentKind ?? null;
+  const menuTarget = useMemo(
+    (): SuggestionActionTarget => ({
+      kind: 'suggestion',
+      sessionId: suggestion.sessionId,
+      suggestion,
+      startsRole: agentKind,
+      isAutoOn,
+    }),
+    [agentKind, isAutoOn, suggestion],
+  );
   const shownKind = previewKind ?? agentKind;
   const isChoicePending = pendingChoiceIds.size > 0;
   const isActionBusy = isPending || isChoicePending || primary?.isBusy === true;
@@ -171,16 +183,12 @@ export const NextStepRow = ({
         </Button>
       </span>
       <NextStepMenu
-        title={suggestion.title}
-        choices={choices}
+        target={menuTarget}
         pendingChoiceIds={pendingChoiceIds}
         isHeld={primary?.isDisabled === true || isPending || isChoicePending}
         isDisabled={isActionBusy}
         onPreview={setPreviewKind}
-        {...(talk.isAvailable &&
-          agentKind !== null && {
-            onTalk: () => talk.talk({ title: suggestion.title, detail: suggestion.detail ?? null }),
-          })}
+        trackChoice={trackChoice}
       />
     </div>
   );

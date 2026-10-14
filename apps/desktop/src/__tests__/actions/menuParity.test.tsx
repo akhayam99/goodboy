@@ -31,7 +31,15 @@ import { ArtifactShellActions } from '../../features/artifacts/components/Artifa
 import { bindTarget } from '../../features/actions/registry';
 import { WorkflowRunDetail } from '../../features/session/components/SessionWorkspace/parts/WorkflowRunDetail';
 import { AgentHeaderActions } from '../../features/session/components/AgentHeaderActions';
-import type { ArtifactActionTarget, CommitActionTarget } from '../../features/actions/types';
+import type {
+  ArtifactActionTarget,
+  CommitActionTarget,
+  SuggestionActionTarget,
+} from '../../features/actions/types';
+import { NextStepRow } from '../../features/suggestions/components/NextStepSlot/NextStepRow';
+import type { SessionSuggestion } from '../../features/suggestions/types';
+import { AutoReleaseContext } from '../../features/auto/autoReleaseContext';
+import { SETTING_AUTO_EXPERIMENT } from '../../features/settings/settings';
 import { HistoryCommitRow } from '../../features/history/components/CommitsHistory/HistoryCommitRow';
 import { NO_EXPLORE_CHANGES } from '../../features/explore/exploreChanges';
 import { ExploreTree } from '../../features/explore/components/ExplorePane/ExploreTree';
@@ -46,8 +54,10 @@ import {
   STEP_PLAN,
   WORKSPACE,
   agentFixture,
+  checkChangesSuggestion,
   mountFixture,
   runFixture,
+  rebaseSuggestion,
   seedActionState,
   sessionFixture,
   stepAgent,
@@ -568,6 +578,78 @@ describe('an Explore row lists the same verbs on its buttons, its right click an
     ]);
     expect(fromPalette).toEqual(fromContext);
     expect(screen.getByText('For this file')).toBeDefined();
+  });
+});
+
+type NextCardParams = {
+  readonly suggestion: SessionSuggestion;
+  readonly startsRole: SuggestionActionTarget['startsRole'];
+};
+
+const nextCardMenu = ({ suggestion, startsRole }: NextCardParams) => {
+  useAppStore.setState({ settings: { [SETTING_AUTO_EXPERIMENT]: 'true' } });
+  render(
+    <ToastProvider>
+      <AutoReleaseContext.Provider value>
+        <NextStepRow
+          suggestion={suggestion}
+          actions={{
+            primary: {
+              label: 'Start reviewer',
+              isDisabled: false,
+              failureTitle: 'Failed',
+              ...(startsRole !== null && { agentKind: startsRole }),
+              run: vi.fn(async () => undefined),
+            },
+            onDismiss: null,
+          }}
+          compact={false}
+          isPending={false}
+          onNotNow={vi.fn()}
+        />
+      </AutoReleaseContext.Provider>
+    </ToastProvider>,
+  );
+  fireEvent.click(screen.getByRole('button', { name: `More options for ${suggestion.title}` }));
+  const drawn = menuLabels();
+  const registry = (
+    bindTarget({
+      state: useAppStore.getState(),
+      target: {
+        kind: 'suggestion',
+        sessionId: SESSION,
+        suggestion,
+        startsRole,
+        isAutoOn: true,
+      },
+    })?.resolve() ?? []
+  ).map((action) => action.label);
+  return { drawn, registry };
+};
+
+describe('the ⋯ menu of a Next card lists the registry set of its suggestion, in order', () => {
+  it('check changes: the other roles, then the talk', () => {
+    seedActionState({ useAppStore, seed: {} });
+    const { drawn, registry } = nextCardMenu({
+      suggestion: checkChangesSuggestion(),
+      startsRole: 'reviewer',
+    });
+    expect(registry).toEqual([
+      'Start tester instead',
+      'Start implementer instead',
+      'Talk it through with Auto',
+    ]);
+    expect(drawn).toEqual(registry);
+  });
+
+  it('rebase: one item per project and no talk', () => {
+    seedActionState({ useAppStore, seed: {} });
+    const { drawn, registry } = nextCardMenu({
+      suggestion: rebaseSuggestion({ count: 3 }),
+      startsRole: null,
+    });
+    expect(registry).toEqual(['ledger-core', 'notify-relay', 'payments-api']);
+    expect(drawn).toEqual(registry);
   });
 });
 

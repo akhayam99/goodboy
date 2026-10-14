@@ -39,6 +39,8 @@ import {
 } from '../../app/components/MockScene/scenes/resolveSeed';
 import { brandedId } from '../../features/history/testing/brandedId';
 import { ALL_CHOICES_ID, type ActionEnv, type ObjectTarget } from '../../features/actions/types';
+import type { AgentKind } from '../../features/session/agent-kind';
+import type { SessionSuggestion } from '../../features/suggestions/types';
 import {
   AGENT,
   FIXTURE_NOW,
@@ -48,8 +50,12 @@ import {
   STEP_PLAN,
   WORKSPACE,
   agentFixture,
+  checkChangesSuggestion,
   mountFixture,
+  planReadySuggestion,
+  pushSuggestion,
   questionFixture,
+  rebaseSuggestion,
   runFixture,
   seedActionState,
   sessionFixture,
@@ -2111,6 +2117,92 @@ describe('write review menu in every state', () => {
       'writeReview.submit (Submitting now.)',
       'writeReview.discard',
     ]);
+  });
+});
+
+type NextCardState = readonly [
+  string,
+  SessionSuggestion,
+  AgentKind | null,
+  boolean,
+  ReadonlyArray<string>,
+];
+
+const NEXT_CARD_STATES: ReadonlyArray<NextCardState> = [
+  [
+    'check changes, Auto off',
+    checkChangesSuggestion(),
+    'reviewer',
+    false,
+    ['suggestion.startTester menu', 'suggestion.startImplementer menu'],
+  ],
+  [
+    'check changes, Auto on',
+    checkChangesSuggestion(),
+    'reviewer',
+    true,
+    [
+      'suggestion.startTester menu',
+      'suggestion.startImplementer menu',
+      'suggestion.talkWithAuto menu',
+    ],
+  ],
+  [
+    'check changes, Auto on, the card starts no role',
+    checkChangesSuggestion(),
+    null,
+    true,
+    ['suggestion.startTester menu', 'suggestion.startImplementer menu'],
+  ],
+  [
+    'plan ready, Auto on: only the talk, so no menu is drawn',
+    planReadySuggestion(),
+    'implementer',
+    true,
+    ['suggestion.talkWithAuto menu'],
+  ],
+  ['plan ready, Auto off', planReadySuggestion(), 'implementer', false, []],
+  [
+    'rebase of three projects, Auto on: one item each and no talk',
+    rebaseSuggestion({ count: 3 }),
+    null,
+    true,
+    [
+      'suggestion.rebase.mount:ledger-core menu',
+      'suggestion.rebase.mount:notify-relay menu',
+      'suggestion.rebase.mount:payments-api menu',
+    ],
+  ],
+  ['rebase of one project', rebaseSuggestion({ count: 1 }), null, true, []],
+  ['push, Auto on', pushSuggestion(), null, true, []],
+];
+
+describe('next card menu in every state, on the real store', () => {
+  it.each(NEXT_CARD_STATES)('%s', (_name, suggestion, startsRole, isAutoOn, expected) => {
+    seed({});
+    expect(
+      slottedOf({ kind: 'suggestion', sessionId: SESSION, suggestion, startsRole, isAutoOn }),
+    ).toEqual(expected);
+  });
+
+  it('previews the role of each other role and none for a rebase target or the talk', () => {
+    seed({});
+    const previews = (suggestion: SessionSuggestion) =>
+      (
+        bindTarget({
+          state: useAppStore.getState(),
+          target: {
+            kind: 'suggestion',
+            sessionId: SESSION,
+            suggestion,
+            startsRole: 'reviewer',
+            isAutoOn: true,
+          },
+        })?.resolve() ?? []
+      ).map((action) => action.preview?.agentKind ?? null);
+
+    expect(previews(checkChangesSuggestion())).toEqual(['tester', 'implementer', null]);
+    expect(previews(rebaseSuggestion({ count: 2 }))).toEqual([null, null, null]);
   });
 });
 

@@ -31,12 +31,16 @@ export type MenuItemEntry = {
   readonly key: string;
   readonly label: string;
   readonly icon?: ComponentType<IconProps>;
+  readonly iconClassName?: string | null;
   readonly hint?: string | null;
   readonly description?: string | null;
   readonly blockedReason?: string | null;
   readonly isDestructive?: boolean;
+  readonly isDisabled?: boolean;
   readonly confirm?: MenuConfirm | null;
   readonly choices?: ReadonlyArray<MenuChoice> | null;
+  readonly onActive?: () => void;
+  readonly onInactive?: () => void;
   readonly onSelect: (choice: string | null) => void | Promise<void>;
 };
 

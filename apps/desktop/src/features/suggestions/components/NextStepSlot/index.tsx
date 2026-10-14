@@ -12,7 +12,10 @@ import { transcriptOwnedProjectIds } from '../../transcriptMountProposals';
 import { recordNextStepOutcome, revertNextStepOutcome } from '../../useNextStepOutcomes';
 import type { SessionSuggestion } from '../../types';
 import type { AgentKindRouting } from '../../../session/agent-kind';
+import type { ActionTrack } from '../../../actions/types';
 import { NextStepRow } from './NextStepRow';
+
+const CHOICE_FAILURE_TITLE = "Couldn't start that";
 
 const choiceKey = ({
   suggestion,
@@ -159,15 +162,31 @@ export const NextStepSlot = ({
               tracked({ key: suggestion.id, task: () => runsOn.runWith(routing) })(),
           },
         }),
-        ...(primary.choices !== undefined && {
-          choices: primary.choices.map((choice) => ({
-            ...choice,
-            run: tracked({ key: choiceKey({ suggestion, choiceId: choice.id }), task: choice.run }),
-          })),
-        }),
       },
     };
   };
+
+  const trackChoiceFor =
+    ({
+      suggestion,
+      actions,
+    }: {
+      readonly suggestion: SessionSuggestion;
+      readonly actions: SuggestionActions;
+    }): ActionTrack =>
+    async ({ actionId, task }) => {
+      void recordNextStepOutcome({
+        sessionId,
+        kind: suggestion.kind,
+        outcome: 'accepted',
+        fingerprint: suggestion.fingerprint,
+      });
+      await pending.run({
+        key: choiceKey({ suggestion, choiceId: actionId }),
+        failureTitle: actions.primary?.failureTitle ?? CHOICE_FAILURE_TITLE,
+        task,
+      });
+    };
 
   const rowFor = ({
     suggestion,
@@ -185,6 +204,7 @@ export const NextStepSlot = ({
         compact={isCompact}
         isPending={pending.pendingKeys.has(suggestion.id)}
         pendingChoiceIds={pendingChoiceIds({ suggestion, pendingKeys: pending.pendingKeys })}
+        trackChoice={trackChoiceFor({ suggestion, actions })}
         onNotNow={() => onNotNow(suggestion, actions)}
       />
     );

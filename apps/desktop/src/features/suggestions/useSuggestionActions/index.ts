@@ -12,8 +12,7 @@ import type { Agent, Session, SessionProjectMount } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, agentPlace, sessionPlace } from '../../../store';
 import { branchPlace } from '../../../store/slices/navigation/place';
 import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
-import { dispatchAfterNavigation } from '../../actions/dispatchAfterNavigation';
-import { HISTORY_FOCUS_BASE_EVENT, diffEventName } from '../../actions/kinds/diff';
+import { startRebaseTarget } from '../startRebaseTarget';
 import { distanceBehind } from '../../../shared/lib/gitStatus';
 import { usePlanRunToast } from '../../plans/usePlanRun';
 import type { AgentKind, AgentKindRouting } from '../../session/agent-kind';
@@ -51,7 +50,6 @@ type SuggestionAction = {
   readonly isBusy?: boolean;
   readonly failureTitle: string;
   readonly run: () => Promise<void>;
-  readonly choices?: ReadonlyArray<SuggestionActionChoice>;
   readonly requiresConfirm?: boolean;
   readonly runsOn?: SuggestionRunsOn;
 };
@@ -59,15 +57,6 @@ type SuggestionAction = {
 type SuggestionRunsOn = {
   readonly kind: AgentKind;
   readonly runWith: (routing: AgentKindRouting) => Promise<void>;
-};
-
-export type SuggestionActionChoice = {
-  readonly id: string;
-  readonly label: string;
-  readonly description: string;
-  readonly detail: string;
-  readonly agentKind?: AgentKind;
-  readonly run: () => Promise<void>;
 };
 
 export type SuggestionActions = {
@@ -177,8 +166,7 @@ export const useSuggestionActions = ({
   };
 
   const startRebase = async ({ target }: StartRebaseParams): Promise<void> => {
-    openRewriteHistory(sessionId, target.worktreePath);
-    dispatchAfterNavigation({ name: diffEventName({ name: HISTORY_FOCUS_BASE_EVENT, sessionId }) });
+    startRebaseTarget({ openRewriteHistory, sessionId, target });
   };
 
   const startWorkflowStep = ({
@@ -244,16 +232,6 @@ export const useSuggestionActions = ({
             }
             await startRebase({ target: firstTarget });
           },
-          choices:
-            suggestion.payload.targets.length > 1
-              ? suggestion.payload.targets.map((target) => ({
-                  id: target.id,
-                  label: target.projectName,
-                  description: target.branch,
-                  detail: `${target.behind} behind`,
-                  run: () => startRebase({ target }),
-                }))
-              : undefined,
         },
         onDismiss: null,
       };
@@ -391,28 +369,6 @@ export const useSuggestionActions = ({
               await spawnAgent(sessionId, { kindOverride: 'reviewer', focus: 'none', ...routing });
             },
           },
-          choices: [
-            {
-              id: 'start-tester',
-              label: 'Start tester instead',
-              description: 'Writes tests for the changes',
-              detail: '',
-              agentKind: 'tester',
-              run: async () => {
-                await spawnAgent(sessionId, { kindOverride: 'tester', focus: 'none' });
-              },
-            },
-            {
-              id: 'start-implementer',
-              label: 'Start implementer instead',
-              description: 'Makes the changes itself',
-              detail: '',
-              agentKind: 'implementer',
-              run: async () => {
-                await spawnAgent(sessionId, { kindOverride: 'implementer', focus: 'none' });
-              },
-            },
-          ],
         },
         onDismiss: null,
       };

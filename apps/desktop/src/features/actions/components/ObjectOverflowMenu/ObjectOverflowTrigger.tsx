@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { AnchoredPopover, MenuTriggerButton, useDropdown, type MenuTriggerSize } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import type { ActionViewing, ObjectTarget } from '../../types';
+import type { ActionMenuBehavior, ActionViewing, ObjectTarget } from '../../types';
 import type { OnArm } from '../../../../shared/components/HeaderConfirm/armedAction';
 import { ObjectOverflowList } from './ObjectOverflowList';
 
@@ -11,7 +11,7 @@ export type ObjectOverflowMenuProps = ObjectOverflowTriggerProps & {
   readonly hideWhenEmpty?: boolean;
 };
 
-export type ObjectOverflowTriggerProps = {
+export type ObjectOverflowTriggerProps = ActionMenuBehavior & {
   readonly target: ObjectTarget;
   readonly label: string;
   readonly trigger?: ReactNode;
@@ -37,6 +37,9 @@ export const ObjectOverflowTrigger = ({
   disabled = false,
   viewing = null,
   onArm,
+  onPreview,
+  track,
+  isHeld,
 }: ObjectOverflowTriggerProps) => {
   const dropdown = useDropdown({
     disabled,
@@ -78,6 +81,9 @@ export const ObjectOverflowTrigger = ({
         viewing={viewing}
         onClose={dropdown.close}
         onArm={onArm}
+        onPreview={onPreview}
+        track={track}
+        isHeld={isHeld}
       />
     </AnchoredPopover>
   );

@@ -1,16 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Eyebrow } from '@goodboy/ui';
-import type { IsoDateTime, Session, SessionId, WorkspaceId } from '@goodboy/types';
+import { brandId } from '@goodboy/types';
+import type { AgentId, IsoDateTime, Session, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useShowToast } from '../../../../shared/components/Toast/useShowToast';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { NextStepRow } from '../../../../features/suggestions/components/NextStepSlot/NextStepRow';
 import type { SessionSuggestion } from '../../../../features/suggestions/types';
-import type {
-  SuggestionActionChoice,
-  SuggestionActions,
-} from '../../../../features/suggestions/useSuggestionActions';
+import type { SuggestionActions } from '../../../../features/suggestions/useSuggestionActions';
 import type { AgentKind } from '../../../../features/session/agent-kind';
 import { RunsOnKickoffLine } from './RunsOnKickoffLine';
 
@@ -50,7 +48,6 @@ type CardSeed = {
   readonly shortLabel?: string;
   readonly startsKind?: AgentKind;
   readonly runsOnKind?: AgentKind;
-  readonly choices?: ReadonlyArray<SuggestionActionChoice>;
 };
 
 const CARDS: ReadonlyArray<CardSeed> = [
@@ -71,24 +68,6 @@ const CARDS: ReadonlyArray<CardSeed> = [
     shortLabel: 'Start',
     startsKind: 'reviewer',
     runsOnKind: 'reviewer',
-    choices: [
-      {
-        id: 'start-tester',
-        label: 'Start tester instead',
-        description: 'Writes tests for the changes',
-        detail: '',
-        agentKind: 'tester',
-        run: noopRun,
-      },
-      {
-        id: 'start-implementer',
-        label: 'Start implementer instead',
-        description: 'Makes the changes itself',
-        detail: '',
-        agentKind: 'implementer',
-        run: noopRun,
-      },
-    ],
   },
   {
     id: 'fix-checks:ledger-core',
@@ -137,7 +116,6 @@ const actionsOf = ({ card }: CardParams): SuggestionActions => ({
     ...(card.runsOnKind !== undefined && {
       runsOn: { kind: card.runsOnKind, runWith: noopRun },
     }),
-    ...(card.choices !== undefined && { choices: card.choices }),
   },
   onDismiss: null,
 });
@@ -149,6 +127,7 @@ export const RunsOnScene = () => {
 
   useEffect(() => {
     useAppStore.setState({
+      spawnAgent: async () => brandId<AgentId>({ value: 'mock-runs-on-agent' }),
       providers: PROVIDERS,
       sessions: [SESSION],
       currentSessionId: SESSION_ID,

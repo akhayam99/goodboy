@@ -18,7 +18,7 @@ type Props = {
 
 export const MenuRow = ({ entry, isExpanded, rowRef, onActivate, onHover, onKeyDown }: Props) => {
   const Icon = entry.icon;
-  const isBlocked = entry.blockedReason != null;
+  const isBlocked = entry.blockedReason != null || entry.isDisabled === true;
   const hasChoices = entry.choices != null && entry.choices.length > 0;
   const detail = entry.blockedReason ?? entry.description ?? null;
   return (
@@ -33,7 +33,13 @@ export const MenuRow = ({ entry, isExpanded, rowRef, onActivate, onHover, onKeyD
       aria-expanded={hasChoices ? isExpanded : undefined}
       aria-description={entry.blockedReason ?? undefined}
       onClick={onActivate}
-      onMouseEnter={onHover}
+      onMouseEnter={() => {
+        onHover();
+        entry.onActive?.();
+      }}
+      onFocus={entry.onActive}
+      onMouseLeave={entry.onInactive}
+      onBlur={entry.onInactive}
       onKeyDown={onKeyDown}
       className={cn(
         'flex w-full gap-2 rounded-sm px-2 text-left focus-visible:outline-none motion-safe:transition-colors',
@@ -56,7 +62,7 @@ export const MenuRow = ({ entry, isExpanded, rowRef, onActivate, onHover, onKeyD
                 ? 'text-disabled-foreground'
                 : entry.isDestructive === true
                   ? dangerTint.icon
-                  : 'text-faint-foreground',
+                  : (entry.iconClassName ?? 'text-faint-foreground'),
             )}
           />
         )}

@@ -382,12 +382,19 @@ whether you clicked it on the board or in the session overview.
   primary carries the same small icon. Suggestions that start no agent keep
   the `SUGGESTION_ICONS` glyph with the band tone, in the same disc and with the
   same glyph on the primary, so every row of the grid reads alike. A cut
-  `Runs on` line (`RunsOn`, `TruncatedText`) shows the whole route on hover. The alternatives (`choices`,
-  such as Start tester instead, or one rebase target each) are items of the
-  **⋯** menu (`NextStepMenu`, the shared `OverflowMenu`); hovering or focusing
-  one shows its `agentKind` on the tile, and closing the menu puts the
-  primary's role back. With fewer than two alternatives the cell stays empty,
-  because the menu primitive needs two rows.
+  `Runs on` line (`RunsOn`, `TruncatedText`) shows the whole route on hover. The alternatives (such as Start
+  tester instead, or one rebase target each) are items of the **⋯** menu. The
+  menu is the `suggestion` kind of the action registry
+  (`features/actions/kinds/suggestion.ts`), drawn by `SuggestionOverflowMenu`
+  from `NextStepMenu`; `NextStepRow` builds its target from the suggestion, the
+  role the primary starts (`agentKind`) and `useIsAutoOn`, so the alternatives
+  come from the card and not from closures of `useSuggestionActions`. Hovering
+  or focusing one shows its `preview` role on the tile, and closing the menu
+  puts the primary's role back. `NextStepSlot` wraps each alternative with
+  `track` (the accepted outcome, a pending key per action id, the failure title
+  of the primary), so the primary and the menu are held while one runs. With
+  fewer than two entries the cell stays empty, because the menu needs two
+  rows.
 - **Not now** registers an `undoable` operation on the app undo stack
   (`NextStepSlot`), so the toast says Dismissed with **Undo** and the
   `app.undo` chord, and ⌘Z (Ctrl+Z off macOS) restores dismissals in reverse

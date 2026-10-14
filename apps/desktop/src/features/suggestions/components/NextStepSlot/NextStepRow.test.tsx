@@ -2,13 +2,13 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { SessionSuggestion } from '../../types';
+import type { RebaseSuggestionTarget, SessionSuggestion } from '../../types';
 import type { SuggestionActions } from '../../useSuggestionActions';
 import type { AgentKindRouting } from '../../../session/agent-kind';
 import { NextStepRow } from './NextStepRow';
 import { useAppStore } from '../../../../store';
 import { getCapabilities } from '@goodboy/core';
-import type { ProviderId } from '@goodboy/types';
+import { brandId, type MountId, type ProjectId, type ProviderId } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../../../providers/providers';
 
 afterEach(() => {
@@ -45,6 +45,29 @@ const suggestion = (overrides: Partial<SessionSuggestion> = {}): SessionSuggesti
     payload: { mountId: 'mount-web', projectName: 'web', prNumber: 618, defaultMethod: 'squash' },
     ...overrides,
   }) as SessionSuggestion;
+
+type RebaseTargetSeed = {
+  readonly id: string;
+  readonly name: string;
+  readonly branch: string;
+};
+
+type RebaseTargetsParams = {
+  readonly seeds: ReadonlyArray<RebaseTargetSeed>;
+};
+
+const rebaseTargets = ({ seeds }: RebaseTargetsParams): ReadonlyArray<RebaseSuggestionTarget> =>
+  seeds.map((target, index) => ({
+    id: target.id,
+    mountId: brandId<MountId>({ value: `mount-${target.id}` }),
+    projectId: brandId<ProjectId>({ value: `project-${target.name}` }),
+    projectName: target.name,
+    branch: target.branch,
+    worktreePath: `/w/${target.id}`,
+    baseBranch: 'main',
+    behind: 7 - index * 4,
+    dirtyCount: 0,
+  }));
 
 describe('NextStepRow', () => {
   it('acts right away when the action does not require a confirm', () => {
@@ -217,8 +240,8 @@ describe('NextStepRow', () => {
   });
 
   it('keeps the alternatives out of the row and opens them from the more menu', () => {
-    const first = vi.fn(async () => undefined);
-    const second = vi.fn(async () => undefined);
+    const openRewriteHistory = vi.fn();
+    useAppStore.setState({ openRewriteHistory });
     const actions: SuggestionActions = {
       primary: {
         label: 'Open rebase',
@@ -226,28 +249,22 @@ describe('NextStepRow', () => {
         isDisabled: false,
         failureTitle: 'Failed',
         run: vi.fn(async () => undefined),
-        choices: [
-          {
-            id: 'mount:ledger-core',
-            label: 'ledger-core',
-            description: 'feature/ledger-first',
-            detail: '7 behind',
-            run: first,
-          },
-          {
-            id: 'mount:notify-relay',
-            label: 'notify-relay',
-            description: 'feature/relay',
-            detail: '3 behind',
-            run: second,
-          },
-        ],
       },
       onDismiss: null,
     };
     render(
       <NextStepRow
-        suggestion={suggestion({ kind: 'rebase-project' })}
+        suggestion={suggestion({
+          kind: 'rebase-project',
+          payload: {
+            targets: rebaseTargets({
+              seeds: [
+                { id: 'mount:ledger-core', name: 'ledger-core', branch: 'feature/ledger-first' },
+                { id: 'mount:notify-relay', name: 'notify-relay', branch: 'feature/relay' },
+              ],
+            }),
+          },
+        })}
         actions={actions}
         compact={false}
         isPending={false}
@@ -261,8 +278,8 @@ describe('NextStepRow', () => {
     expect(relay.textContent).toContain('feature/relay, 3 behind');
     fireEvent.click(relay);
 
-    expect(second).toHaveBeenCalledTimes(1);
-    expect(first).not.toHaveBeenCalled();
+    expect(openRewriteHistory).toHaveBeenCalledTimes(1);
+    expect(openRewriteHistory).toHaveBeenCalledWith('session-1', '/w/mount:notify-relay');
   });
 
   it('leaves the more cell empty when there is nothing to put in the menu', () => {
@@ -293,28 +310,22 @@ describe('NextStepRow', () => {
         isDisabled: false,
         failureTitle: 'Failed',
         run: vi.fn(async () => undefined),
-        choices: [
-          {
-            id: 'a',
-            label: 'ledger-core',
-            description: 'feature/one',
-            detail: '',
-            run: vi.fn(async () => undefined),
-          },
-          {
-            id: 'b',
-            label: 'ledger-core',
-            description: 'feature/two',
-            detail: '',
-            run: vi.fn(async () => undefined),
-          },
-        ],
       },
       onDismiss: null,
     };
     render(
       <NextStepRow
-        suggestion={suggestion({ kind: 'rebase-project' })}
+        suggestion={suggestion({
+          kind: 'rebase-project',
+          payload: {
+            targets: rebaseTargets({
+              seeds: [
+                { id: 'a', name: 'ledger-core', branch: 'feature/one' },
+                { id: 'b', name: 'ledger-core', branch: 'feature/two' },
+              ],
+            }),
+          },
+        })}
         actions={actions}
         compact={false}
         isPending={false}
@@ -337,24 +348,6 @@ describe('NextStepRow', () => {
         isDisabled: false,
         failureTitle: 'Failed',
         run: vi.fn(async () => undefined),
-        choices: [
-          {
-            id: 'start-tester',
-            label: 'Start tester instead',
-            description: '',
-            detail: '',
-            agentKind: 'tester',
-            run: vi.fn(async () => undefined),
-          },
-          {
-            id: 'start-implementer',
-            label: 'Start implementer instead',
-            description: '',
-            detail: '',
-            agentKind: 'implementer',
-            run: vi.fn(async () => undefined),
-          },
-        ],
       },
       onDismiss: null,
     };
@@ -364,7 +357,7 @@ describe('NextStepRow', () => {
         actions={actions}
         compact={false}
         isPending={false}
-        pendingChoiceIds={new Set(['start-tester'])}
+        pendingChoiceIds={new Set(['suggestion.startTester'])}
         onNotNow={vi.fn()}
       />,
     );
@@ -478,24 +471,6 @@ describe('NextStepRow', () => {
         isDisabled: false,
         failureTitle: 'Failed',
         run: vi.fn(async () => undefined),
-        choices: [
-          {
-            id: 'start-tester',
-            label: 'Start tester instead',
-            description: '',
-            detail: '',
-            agentKind: 'tester',
-            run: vi.fn(async () => undefined),
-          },
-          {
-            id: 'start-implementer',
-            label: 'Start implementer instead',
-            description: '',
-            detail: '',
-            agentKind: 'implementer',
-            run: vi.fn(async () => undefined),
-          },
-        ],
       },
       onDismiss: null,
     };
@@ -596,7 +571,10 @@ describe('NextStepRow', () => {
     };
     render(
       <NextStepRow
-        suggestion={suggestion({ kind: 'rebase-project' })}
+        suggestion={suggestion({
+          kind: 'rebase-project',
+          payload: { targets: rebaseTargets({ seeds: [] }) },
+        })}
         actions={actions}
         compact={false}
         isPending={false}

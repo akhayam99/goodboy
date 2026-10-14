@@ -207,3 +207,69 @@ describe('MenuItems keyboard', () => {
     expect(document.activeElement?.textContent).toBe('Copy path');
   });
 });
+
+describe('a row that reports hover and focus', () => {
+  const renderRows = () => {
+    const active = vi.fn();
+    const inactive = vi.fn();
+    const select = vi.fn<Select>();
+    render(
+      <ContextMenu
+        label="Session actions"
+        point={{ x: 20, y: 20 }}
+        entries={[
+          {
+            kind: 'item',
+            key: 'archive',
+            label: 'Archive',
+            icon: Archive,
+            iconClassName: 'text-agent-tester',
+            onActive: active,
+            onInactive: inactive,
+            onSelect: select,
+          },
+          {
+            kind: 'item',
+            key: 'delete',
+            label: 'Delete',
+            isDisabled: true,
+            onSelect: select,
+          },
+        ]}
+        onClose={vi.fn()}
+      />,
+    );
+    return { active, inactive, select };
+  };
+
+  it('calls onActive on hover and focus and onInactive on leave and blur', () => {
+    const { active, inactive } = renderRows();
+    const row = screen.getByRole('menuitem', { name: /Archive/ });
+    active.mockClear();
+
+    fireEvent.mouseEnter(row);
+    expect(active).toHaveBeenCalledTimes(1);
+    fireEvent.mouseLeave(row);
+    expect(inactive).toHaveBeenCalledTimes(1);
+    fireEvent.focus(row);
+    expect(active).toHaveBeenCalledTimes(2);
+    fireEvent.blur(row);
+    expect(inactive).toHaveBeenCalledTimes(2);
+  });
+
+  it('tints the icon with the given class', () => {
+    renderRows();
+    const icon = screen.getByRole('menuitem', { name: /Archive/ }).querySelector('svg');
+    expect(icon?.getAttribute('class')).toContain('text-agent-tester');
+  });
+
+  it('keeps a disabled row visible, marked disabled, and never runs it', () => {
+    const { select } = renderRows();
+    const row = screen.getByRole('menuitem', { name: /Delete/ });
+
+    fireEvent.click(row);
+
+    expect(row.getAttribute('aria-disabled')).toBe('true');
+    expect(select).not.toHaveBeenCalled();
+  });
+});

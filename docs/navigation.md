@@ -379,7 +379,17 @@ never exists on one surface only.
   project, the Diff of a branch (`diff`), a diff file, a file or folder row in
   Explore (`exploreFile`), a commit on the rewrite
   page, a storage worktree, a script, a transcript message and a link in
-  rendered text have their own kinds. One field says which available actions
+  rendered text have their own kinds. So has a card of the Next slot
+  (`suggestion`, `kinds/suggestion.ts`): its target holds the suggestion as data
+  (`suggestion`, the role the primary starts, whether Auto is on) and no
+  closure, and its verbs are the other ways to answer that card, the
+  items of its **⋯** menu: Start tester instead and Start implementer instead
+  on a check-changes card, one verb per project (`suggestion.rebase.<target id>`,
+  built by `adapted`) on a rebase card with two or more, and Talk it through
+  with Auto (`suggestion.talkWithAuto`) on a card that starts a role while the
+  experiment is on. The run handlers live in the kind (`spawnAgent`,
+  `startRebaseTarget`, `startTalkItThrough`); the row only adds the pending and
+  accepted bookkeeping around them (`track`). One field says which available actions
   also get a visible control on their surface: `slot` (`primary`,
   `secondary`, `inline`, `nudge`, `notice`, `hover`, `section`, `chip`,
   `empty`, and `menu`, the default, for the menu alone). A surface reads its
@@ -400,6 +410,15 @@ never exists on one surface only.
   kind and per state, which verbs show, in which slot, and why a verb is
   blocked, and runs them on the real store; `kinds/*.matrix.test.ts` pins the
   same for the three UX5 kinds against the plan's state table.
+- **Preview, tint and held rows.** A verb may carry a `preview` (a role
+  today): a menu that is given `onPreview` calls it with the descriptor while
+  the row is hovered or focused and with `null` when it leaves or the menu
+  closes, and the surface draws it (the Next tile shows the role). `iconClassName` tints
+  the icon of a verb in the menu (the role color). `ObjectOverflowMenu` also
+  takes `track`, which wraps every run of its rows (pending keys, accepted
+  outcomes), and `isHeld`, which keeps a row visible but unable to run
+  (`isDisabled` of a menu entry, `aria-disabled`, the description kept). All three
+  are optional, and no other surface sets them.
 - **Pointer and keys.** The menu opens at the pointer and flips to stay 8px
   inside the window. Shift+F10 (`menu.open`) and the Menu key open it on the
   focused row, and Control-click is a right click. The arrows, Home and End
