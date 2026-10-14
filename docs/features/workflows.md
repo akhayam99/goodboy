@@ -61,9 +61,9 @@ Put a light model on a scout and a strong one on the planner. A step follows its
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
-### When to ask
+### Autonomy
 
-Choose how often a run stops for you: **Ask before each step**, **Ask after the plan** to approve once and then run on, or **Run on its own**. A guard stops an unattended agent after 4 turns in an hour, and anything you write to it resets the count.
+Choose how often a run stops for you: **Ask me**, **Balanced** to approve once and then run on, or **Autopilot**. A guard stops an unattended agent after 4 turns in an hour, and anything you write to it resets the count.
 
 ### Pause, resume and skip
 

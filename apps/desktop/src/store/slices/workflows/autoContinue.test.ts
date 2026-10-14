@@ -136,7 +136,7 @@ describe('continueOrPause', () => {
         kind: 'error',
         severity: 'warning',
         title: 'Step blocked on cluster 1',
-        body: expect.stringContaining('is set to ask before each step'),
+        body: expect.stringContaining('is set to Ask me'),
         sessionId: SESSION_ID,
       }),
     );

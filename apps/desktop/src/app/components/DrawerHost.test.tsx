@@ -111,6 +111,12 @@ const ENTRIES: ReadonlyArray<Entry> = [
     drawer: { kind: 'ask', sessionId: SESSION, payload: null },
   },
   {
+    kind: 'new',
+    region: 'New',
+    seed: seedSession,
+    drawer: { kind: 'new', sessionId: SESSION, payload: null },
+  },
+  {
     kind: 'context',
     region: 'Context',
     seed: seedSession,

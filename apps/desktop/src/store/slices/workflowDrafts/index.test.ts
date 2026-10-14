@@ -17,22 +17,12 @@ type TestState = {
 };
 
 const buildDraft = (overrides: Partial<WorkflowBuilderDraft> = {}): WorkflowBuilderDraft => ({
-  mode: 'custom',
+  mode: 'dynamic',
   goalText: 'ship it',
   goalHistory: [],
   selectedPresetId: null,
   basePresetId: null,
-  processText: '',
-  plan: null,
-  workflow: {
-    name: '',
-    description: '',
-    goal: 'ship it',
-    steps: [],
-    origin: 'custom',
-    isPreset: false,
-  },
-  saveAsPreset: false,
+  steps: [],
   autoRun: false,
   title: '',
   orchestratorModel: { providerOverride: '', modelOverride: '', effortOverride: null },

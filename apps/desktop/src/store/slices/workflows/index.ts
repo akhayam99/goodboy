@@ -30,6 +30,7 @@ import { retryWorkflowOrchestration } from './retryWorkflowOrchestration';
 import { reprocessGoalForWorkflow } from './reprocessGoalForWorkflow';
 import { resetWorkflows } from './resetWorkflows';
 import { savePhaseTemplate } from './savePhaseTemplate';
+import { saveRunAsPreset } from './saveRunAsPreset';
 import { saveStepDef } from './saveStepDef';
 import { advanceScoutTree, joinFanOutParent } from './scoutTree';
 import { skipStuckStepAndAdvance } from './skipStuckStepAndAdvance';
@@ -49,6 +50,7 @@ export const createWorkflowsSlice = ({ set, get }: SliceDeps) => {
     loadPhaseTemplates: loadPhaseTemplates(set),
     copyWorkflowsFromWorkspaces: copyWorkflowsFromWorkspaces({ set }),
     savePhaseTemplate: savePhaseTemplate(set),
+    saveRunAsPreset: saveRunAsPreset(get),
     deleteWorkflow: deleteWorkflow(set, get),
     generateWorkflowTitle: generateWorkflowTitle(set, get),
     suggestWorkflowTitle: suggestWorkflowTitle(set, get),

@@ -47,6 +47,10 @@ Map an unfamiliar repo before you plan. **Scout** is the default role and only r
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
+### Start more work in a session
+
+**New** in a session opens one drawer with three tabs: **Run**, **Agent** and **Write**. **Run** takes a goal and plans the steps (Orchestrated, or a saved preset) with Autonomy (**Ask me**, **Balanced** or **Autopilot**), Starts and Spend cap at the end. **Agent** starts one role. **Write** drafts a report or a wireframe. The button is filled when nothing is running, blocked or waiting on a question, and neutral otherwise. A run you like can be kept from its page with **Save as preset**.
+
 ### Start blank
 
 Start from the goal instead. **Start blank** opens the session straight on its Overview, where you add the goal, projects and work. Once you link an issue, **Write** drafts a title and goal from it for you to review.

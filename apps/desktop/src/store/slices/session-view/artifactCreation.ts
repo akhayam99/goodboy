@@ -1,12 +1,7 @@
 import type { IsoDateTime } from '@goodboy/types';
 import { defaultArtifactDraft } from '../artifactDrafts/defaultArtifactDraft';
 import { sessionPlace } from '../navigation/place';
-import type {
-  CloseArtifactCreationParams,
-  GetFn,
-  OpenArtifactCreationParams,
-  SetFn,
-} from './types';
+import type { AwaitArtifactAgentParams, GetFn, OpenArtifactCreationParams, SetFn } from './types';
 
 export const openArtifactCreation = (set: SetFn, get: GetFn) => {
   return ({
@@ -29,16 +24,22 @@ export const openArtifactCreation = (set: SetFn, get: GetFn) => {
         },
       });
     }
-    get().navigate({ to: sessionPlace({ sessionId, lens: 'plans' }) });
-    set((s) => ({
-      focusedArtifactId: { ...s.focusedArtifactId, [sessionId]: null },
-      artifactCreation: { ...s.artifactCreation, [sessionId]: { kind, note } },
-    }));
+    if (get().currentSessionId !== sessionId) {
+      get().navigate({
+        to: sessionPlace({ sessionId, lens: get().activeLens[sessionId] ?? null }),
+      });
+    }
+    set((s) => ({ focusedArtifactId: { ...s.focusedArtifactId, [sessionId]: null } }));
+    get().openDrawer({
+      kind: 'new',
+      sessionId,
+      payload: { tab: 'write', writeKind: kind, ...(note !== null && { note }) },
+    });
   };
 };
 
-export const closeArtifactCreation = (set: SetFn) => {
-  return ({ sessionId }: CloseArtifactCreationParams): void => {
-    set((s) => ({ artifactCreation: { ...s.artifactCreation, [sessionId]: null } }));
+export const awaitArtifactAgent = (set: SetFn) => {
+  return ({ sessionId, agentId }: AwaitArtifactAgentParams): void => {
+    set((s) => ({ awaitedArtifactAgentId: { ...s.awaitedArtifactAgentId, [sessionId]: agentId } }));
   };
 };

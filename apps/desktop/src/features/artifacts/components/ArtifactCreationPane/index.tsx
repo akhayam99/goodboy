@@ -1,18 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { runsForWorkflowRun } from '@goodboy/core';
-import {
-  FormPage,
-  PANE_RHYTHM,
-  SectionHeader,
-  cn,
-  formatError,
-  useEscapeLayer,
-  PaneShell,
-} from '@goodboy/ui';
+import { PANE_RHYTHM, SectionHeader, cn, formatError } from '@goodboy/ui';
 import type { Agent, AgentId, ProviderId, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionSlots, useSessionSlotsLoad } from '../../../../store';
 import { selectSelectedMountId } from '../../../../store/slices/project-mounts/selectedMountId';
+import { Docked } from '../../../../shared/components/Docked';
 import { workflowAvailabilitySnapshot } from '../../../workflows/workflowAvailabilitySnapshot';
 import { workspacePolicyAvailability } from '../../../../store/slices/providerLimits/workspacePolicyAvailability';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
@@ -47,16 +40,16 @@ type Props = {
   readonly session: Session;
   readonly kind: GeneratedArtifactKind;
   readonly note: string | null;
-  readonly count: number;
+  readonly actionsHost?: HTMLElement | null;
   readonly onClose: () => void;
   readonly onStarted: (agentId: AgentId) => void;
 };
 
-const runOptions = ({
-  attached,
-}: {
+type RunOptionsParams = {
   readonly attached: ReturnType<typeof useAttachedWorkflowRuns>;
-}): ReadonlyArray<ArtifactRunOption> => {
+};
+
+const runOptions = ({ attached }: RunOptionsParams): ReadonlyArray<ArtifactRunOption> => {
   const live = attached.filter(({ run }) => run.discardedAt == null);
   const names = live.map(({ run, workflow }) => run.title ?? workflowKindName(workflow));
   return live.map(({ run, workflow }) => {
@@ -74,7 +67,7 @@ export const ArtifactCreationPane = ({
   session,
   kind,
   note,
-  count,
+  actionsHost,
   onClose,
   onStarted,
 }: Props) => {
@@ -217,8 +210,6 @@ export const ArtifactCreationPane = ({
     isCollecting: preview.status === 'collecting',
   });
 
-  useEscapeLayer(onClose);
-
   const generate = () => {
     if (gate.isDisabled || isStarting) {
       return;
@@ -242,110 +233,105 @@ export const ArtifactCreationPane = ({
   };
 
   return (
-    <PaneShell scroll="self" title={adapter.crumbLabel}>
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <FormPage>
-          <div data-testid="artifact-creation-pane" className={cn(PANE_RHYTHM.stack, 'min-w-0')}>
-            {note === null ? null : (
-              <span
-                className="text-meta text-muted-foreground"
-                data-testid="artifact-creation-note"
-              >
-                {note}
-              </span>
-            )}
-            <ArtifactBriefField
-              label={adapter.brief.label}
-              placeholder={adapter.brief.placeholder}
-              value={brief}
-              goal={goal.editorText}
-              isGoalPending={isGoalPending}
-              defaultRequest={adapter.defaultRequest({ choice })}
-              onChange={handle.setBrief}
-              onSubmit={generate}
-            />
-            <ArtifactAttachmentsField
-              attachments={attachments}
-              worktree={files.worktree}
-              isDragging={files.isDragging}
-              note={files.note}
-              composerRef={files.composerRef}
-              fileInputRef={files.fileInputRef}
-              onFileInputChange={files.onFileInputChange}
-              onRemove={files.remove}
-            />
-            <section className="flex min-w-0 flex-col gap-2">
-              <SectionHeader label={adapter.choice.label} />
-              <ArtifactChoiceRows
-                ariaLabel={adapter.choice.ariaLabel}
-                options={adapter.choice.options}
-                value={choice}
-                onChange={handle.setChoice}
-              />
-            </section>
-            {adapter.secondChoice === undefined ? null : (
-              <section className="flex min-w-0 flex-col gap-2">
-                <SectionHeader label={adapter.secondChoice.label} />
-                <ArtifactChoiceRows
-                  ariaLabel={adapter.secondChoice.ariaLabel}
-                  options={adapter.secondChoice.options}
-                  value={secondChoice}
-                  onChange={handle.setSecondChoice}
-                />
-              </section>
-            )}
-            {mountOptions.length === 0 ? null : (
-              <section className="flex min-w-0 flex-col gap-2">
-                <SectionHeader label="Read from" />
-                <ArtifactMountRows
-                  options={mountOptions}
-                  value={mountIds}
-                  onChange={(mountId) =>
-                    handle.setMountIds(toggleArtifactMountId({ mountIds, mountId }))
-                  }
-                />
-              </section>
-            )}
-            <ArtifactBasedOnField
-              runs={runs}
-              value={basedOn}
-              scopeLine={
-                basedOn.kind === 'workflow-run' ? adapter.scopeCopy.run : adapter.scopeCopy.session
-              }
-              onChange={setBasedOn}
-            />
-            <ArtifactContextDisclosure
-              rows={inventory}
-              truncations={preview.truncations}
-              repoLine={adapter.repoLine({ choice, repo })}
-              isCollecting={preview.status === 'collecting'}
-              isOpen={isContextOpen}
-              onOpenChange={setIsContextOpen}
-            />
-          </div>
-          <ArtifactCreationActions
-            generateLabel={adapter.generateLabel}
-            gate={gate}
-            connectedProviders={connectedProviders}
-            recommendation={recommendation}
-            routing={routing}
-            isStarting={isStarting}
-            isDiscardArmed={isDiscardArmed}
-            hasDraft={!isEmpty}
-            error={error}
-            onRouting={handle.setRouting}
-            onCancel={onClose}
-            onArmDiscard={() => setIsDiscardArmed(true)}
-            onDisarmDiscard={() => setIsDiscardArmed(false)}
-            onDiscard={() => {
-              files.discardAll();
-              clearArtifactDraft({ sessionId, kind });
-              onClose();
-            }}
-            onGenerate={generate}
+    <>
+      <div data-testid="artifact-creation-pane" className={cn(PANE_RHYTHM.stack, 'min-w-0')}>
+        {note === null ? null : (
+          <span className="text-meta text-muted-foreground" data-testid="artifact-creation-note">
+            {note}
+          </span>
+        )}
+        <ArtifactBriefField
+          label={adapter.brief.label}
+          placeholder={adapter.brief.placeholder}
+          value={brief}
+          goal={goal.editorText}
+          isGoalPending={isGoalPending}
+          defaultRequest={adapter.defaultRequest({ choice })}
+          onChange={handle.setBrief}
+          onSubmit={generate}
+        />
+        <ArtifactAttachmentsField
+          attachments={attachments}
+          worktree={files.worktree}
+          isDragging={files.isDragging}
+          note={files.note}
+          composerRef={files.composerRef}
+          fileInputRef={files.fileInputRef}
+          onFileInputChange={files.onFileInputChange}
+          onRemove={files.remove}
+        />
+        <section className="flex min-w-0 flex-col gap-2">
+          <SectionHeader label={adapter.choice.label} />
+          <ArtifactChoiceRows
+            ariaLabel={adapter.choice.ariaLabel}
+            options={adapter.choice.options}
+            value={choice}
+            onChange={handle.setChoice}
           />
-        </FormPage>
+        </section>
+        {adapter.secondChoice === undefined ? null : (
+          <section className="flex min-w-0 flex-col gap-2">
+            <SectionHeader label={adapter.secondChoice.label} />
+            <ArtifactChoiceRows
+              ariaLabel={adapter.secondChoice.ariaLabel}
+              options={adapter.secondChoice.options}
+              value={secondChoice}
+              onChange={handle.setSecondChoice}
+            />
+          </section>
+        )}
+        {mountOptions.length === 0 ? null : (
+          <section className="flex min-w-0 flex-col gap-2">
+            <SectionHeader label="Read from" />
+            <ArtifactMountRows
+              options={mountOptions}
+              value={mountIds}
+              onChange={(mountId) =>
+                handle.setMountIds(toggleArtifactMountId({ mountIds, mountId }))
+              }
+            />
+          </section>
+        )}
+        <ArtifactBasedOnField
+          runs={runs}
+          value={basedOn}
+          scopeLine={
+            basedOn.kind === 'workflow-run' ? adapter.scopeCopy.run : adapter.scopeCopy.session
+          }
+          onChange={setBasedOn}
+        />
+        <ArtifactContextDisclosure
+          rows={inventory}
+          truncations={preview.truncations}
+          repoLine={adapter.repoLine({ choice, repo })}
+          isCollecting={preview.status === 'collecting'}
+          isOpen={isContextOpen}
+          onOpenChange={setIsContextOpen}
+        />
       </div>
-    </PaneShell>
+      <Docked node={actionsHost}>
+        <ArtifactCreationActions
+          generateLabel={adapter.generateLabel}
+          gate={gate}
+          connectedProviders={connectedProviders}
+          recommendation={recommendation}
+          routing={routing}
+          isStarting={isStarting}
+          isDiscardArmed={isDiscardArmed}
+          hasDraft={!isEmpty}
+          error={error}
+          onRouting={handle.setRouting}
+          onCancel={onClose}
+          onArmDiscard={() => setIsDiscardArmed(true)}
+          onDisarmDiscard={() => setIsDiscardArmed(false)}
+          onDiscard={() => {
+            files.discardAll();
+            clearArtifactDraft({ sessionId, kind });
+            onClose();
+          }}
+          onGenerate={generate}
+        />
+      </Docked>
+    </>
   );
 };

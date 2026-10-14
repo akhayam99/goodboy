@@ -10,6 +10,7 @@ export const selectDrawerSizing = (
     return 'side';
   }
   if (
+    drawer.kind === 'new' ||
     drawer.kind === 'explore-file' ||
     drawer.kind === 'file-diff' ||
     drawer.kind === 'artifact-document'

@@ -55,12 +55,20 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
       workspaces: [] as ReadonlyArray<Record<string, unknown>>,
       selectedAgentId: {} as Record<string, string | null>,
       sessionStudio: {} as Record<string, unknown>,
-      artifactCreation: {} as Record<
-        string,
-        { readonly kind: string; readonly note: string | null } | null
-      >,
+      awaitedArtifactAgentId: {} as Record<string, string | null>,
+      awaitArtifactAgent: vi.fn(
+        ({
+          sessionId,
+          agentId,
+        }: {
+          readonly sessionId: string;
+          readonly agentId: string | null;
+        }) => {
+          state.awaitedArtifactAgentId = { ...state.awaitedArtifactAgentId, [sessionId]: agentId };
+          notify();
+        },
+      ),
       openArtifactCreation: vi.fn(),
-      closeArtifactCreation: vi.fn(),
       setArtifactDraft: vi.fn(),
       stopArtifactGeneration: vi.fn(async () => undefined),
       wireframeScoutVerification: {},
@@ -108,23 +116,6 @@ vi.mock('../../../../shared/components/Toast', () => ({
 
 vi.mock('../../useArtifactScoutRoster', () => ({
   useArtifactScoutRoster: () => ({ rows: [], isLoaded: true }),
-}));
-
-vi.mock('../ArtifactCreationPane', () => ({
-  ArtifactCreationPane: ({
-    kind,
-    onStarted,
-  }: {
-    readonly kind: string;
-    readonly onStarted: (agentId: string) => void;
-  }) => (
-    <div data-testid="artifact-creation-pane-stub">
-      {kind}
-      <button type="button" onClick={() => onStarted('agent-report-2')}>
-        stub generate
-      </button>
-    </div>
-  ),
 }));
 
 vi.mock('../../artifactProvenance', () => ({
@@ -221,7 +212,7 @@ beforeEach(() => {
   state.sessions = [{ id: 'sess-1', goal: 'fix the rounding drift' }];
   state.selectedAgentId = {};
   state.sessionStudio = {};
-  state.artifactCreation = {};
+  state.awaitedArtifactAgentId = {};
   vi.clearAllMocks();
 });
 afterEach(cleanup);
@@ -328,21 +319,17 @@ describe('ArtifactStudio list', () => {
     });
   });
 
-  it('renders the creation pane over the list when creation is open', () => {
-    state.artifactCreation = { 'sess-1': { kind: 'wireframe', note: null } };
-    renderStudio();
-    expect(screen.getByTestId('artifact-creation-pane-stub').textContent).toContain('wireframe');
-    expect(screen.queryByTestId('artifact-list')).toBeNull();
-  });
-
-  it('opens the reader when the awaited artifact arrives', () => {
-    state.artifactCreation = { 'sess-1': { kind: 'report', note: null } };
+  it('opens the reader when the awaited artifact arrives, and stops waiting', () => {
+    state.awaitedArtifactAgentId = { 'sess-1': 'agent-report-2' };
     const { rerender } = renderStudio();
-    fireEvent.click(screen.getByText('stub generate'));
-    state.artifactCreation = {};
+    expect(state.setFocusedArtifactId).not.toHaveBeenCalled();
     state.sessionArtifacts = { 'sess-1': [{ ...report, agentId: 'agent-report-2' }] };
     rerender(<ArtifactStudio sessionId={'sess-1' as never} />);
     expect(state.setFocusedArtifactId).toHaveBeenLastCalledWith('sess-1', 'artifact-report');
+    expect(state.awaitArtifactAgent).toHaveBeenLastCalledWith({
+      sessionId: 'sess-1',
+      agentId: null,
+    });
   });
 
   it('opens a plan and a report through the same artifact focus', () => {

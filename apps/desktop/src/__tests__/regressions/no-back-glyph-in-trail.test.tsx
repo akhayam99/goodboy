@@ -20,13 +20,7 @@ const SRC = join(__dirname, '..', '..');
 const TRAIL = '[data-slot="trail"]';
 const BACK_GLYPH = '.lucide-chevron-left, .lucide-arrow-left';
 const BACK_CHARACTERS = /[‹←]/;
-const TRAIL_SCENES = [
-  'trail-run',
-  'trail-artifact',
-  'trail-agent',
-  'trail-artifact-create',
-  'shell',
-] as const;
+const TRAIL_SCENES = ['trail-run', 'trail-artifact', 'trail-agent', 'shell'] as const;
 
 const KEPT = [
   'SettingsColumnNav.tsx',

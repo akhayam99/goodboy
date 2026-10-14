@@ -51,6 +51,7 @@ const { storeState, diffStats, unread, questions, agentsLoaded, attachedRuns, re
     },
     storeState: {
       sessionPhaseRuns: {},
+      sessionOpenQuestions: {},
       sessionPlans: {},
       sessionArtifacts: {} as Record<string, ReadonlyArray<unknown>>,
       sessionExternalTasks: {},
@@ -439,23 +440,14 @@ describe('TimelinePane on an empty session', () => {
   const renderEmptySession = () => {
     storeState.sessionEvents = { 'session-1': [] };
     return render(
-      <TimelinePane
-        session={SESSION}
-        actions={
-          <OverviewActions
-            session={SESSION}
-            onOpenWorkflowBuilder={() => undefined}
-            onOpenRun={() => undefined}
-          />
-        }
-      />,
+      <TimelinePane session={SESSION} actions={<OverviewActions session={SESSION} />} />,
     );
   };
 
   it('keeps the actions and the empty hint, with no kickoff', () => {
     renderEmptySession();
 
-    expect(screen.getByRole('button', { name: 'Start agent' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'New' })).toBeDefined();
     expect(screen.getByText('No runs or agents yet')).toBeDefined();
     expect(screen.queryByText(/Nothing yet/)).toBeNull();
     expect(screen.queryByRole('region', { name: 'Kickoff' })).toBeNull();

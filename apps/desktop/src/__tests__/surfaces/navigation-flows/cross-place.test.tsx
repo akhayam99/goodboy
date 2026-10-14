@@ -751,57 +751,6 @@ describe('moving across every place keeps one frame', () => {
   );
 
   it(
-    'centres Runs > Create like Runs at 1600, with and without a drawer',
-    async () => {
-      const { sessionId } = await boot({ seed: 'pr' });
-      seedShipAFix();
-      await click(sessionRow(sessionId));
-      await click(pageRow('Runs'));
-      expect(currentPage()).toBe('Runs');
-
-      const runsColumn = shown('[data-slot="pane-header"]')?.closest<HTMLElement>(
-        '[data-page-column]',
-      );
-      expect(runsColumn, 'Runs sits on a page column').not.toBeNull();
-      const runsTier = runsColumn?.getAttribute('data-width') as PageTier;
-      expect(runsTier).toBe('column');
-
-      act(() => {
-        window.dispatchEvent(
-          new CustomEvent('goodboy:open-workflow-builder', { detail: { sessionId } }),
-        );
-      });
-      await settle();
-      const form = await waitFor(() => {
-        const found = shown('[data-slot="form-page"]');
-        expect(found, 'Runs > Create form page').not.toBeNull();
-        return found as Element;
-      }, WAIT);
-
-      const createRail = (): string => railOf(form);
-      const createTier = (): PageTier =>
-        form.closest<HTMLElement>('[data-page-column]')?.getAttribute('data-width') as PageTier;
-      const PANE_WIDTH = 1600;
-      const boxOf = (tier: PageTier, drawerWidthPx: number | null) =>
-        pageBoxOf({ paneWidth: PANE_WIDTH, tier, drawerWidthPx });
-
-      expect(createRail(), 'Create sits on the Runs rail').toBe(COLUMN_RAIL);
-      expect(createTier()).toBe(runsTier);
-      expect(boxOf(createTier(), null)).toEqual({ left: 296, right: 1304, width: 1008 });
-      expect(boxOf(createTier(), null)).toEqual(boxOf(runsTier, null));
-
-      await openContextDrawer(sessionId);
-      expect(createRail(), 'Create keeps the rail with a drawer').toBe(COLUMN_RAIL);
-      expect(createTier()).toBe(runsTier);
-      const withDrawer = boxOf(createTier(), RIGHT_DRAWER_DEFAULT);
-      expect(withDrawer).toEqual({ left: 88, right: 1096, width: 1008 });
-      expect(withDrawer).toEqual(boxOf(runsTier, RIGHT_DRAWER_DEFAULT));
-      expectHealthy();
-    },
-    JOURNEY_MS,
-  );
-
-  it(
     'puts header, Ask, body and composer of every page on one rail, drawer or not',
     async () => {
       const { sessionId } = await boot({ seed: 'pr' });

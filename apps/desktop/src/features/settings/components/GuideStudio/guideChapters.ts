@@ -309,7 +309,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Run defaults',
-        desc: 'The Run defaults tab in Workflows sets what new runs start with: when to ask, a spend cap, which providers get the next step and guidance. Use providers with room left sends steps to the provider with room. A run keeps the copy of the rules it started with.',
+        desc: 'The Run defaults tab in Workflows sets what new runs start with: autonomy, a spend cap, which providers get the next step and guidance. Use providers with room left sends steps to the provider with room. A run keeps the copy of the rules it started with.',
       },
       {
         term: 'Orchestrated',
@@ -320,8 +320,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Pause lets the step in flight finish and starts nothing new. Resume picks up where the run was, Skip step cancels the step that is running, and Stop run ends it now. A step quiet for 15 minutes offers Ask it to continue.',
       },
       {
-        term: 'When to ask',
-        desc: 'Ask before each step, Ask after the plan or Run on its own. Ask after the plan waits once, on the plan: Review plan opens it in a drawer, and Approve runs the rest without you. A guard stops an agent after 4 unattended turns in an hour.',
+        term: 'Autonomy',
+        desc: 'Ask me, Balanced or Autopilot. Balanced waits once, on the plan: Review plan opens it in a drawer, and Approve runs the rest without you. A guard stops an agent after 4 unattended turns in an hour.',
       },
       {
         term: 'Open questions',

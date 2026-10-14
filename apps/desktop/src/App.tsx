@@ -60,6 +60,7 @@ import { shellArrangement } from './app/shellArrangement';
 import { DrawerHost } from './app/components/DrawerHost';
 import { selectIsSessionDraftShown } from './store/slices/sessionDraft/selectIsSessionDraftShown';
 import { selectDrawerPanel } from './store/slices/drawer/selectDrawerPanel';
+import { selectDrawerPlacement } from './store/slices/drawer/selectDrawerPlacement';
 import { selectDrawerSizing } from './store/slices/drawer/selectDrawerSizing';
 import { ReportSheetHost } from './features/bug-report/components/ReportSheetHost';
 import { LastCrashBridge } from './features/bug-report/components/LastCrashBridge';
@@ -77,6 +78,7 @@ export const App = () => {
   const hydrated = useAppStore((s) => s.hydrated);
   const isDrawerOpen = useAppStore((s) => selectDrawerPanel(s) !== null);
   const drawerSizing = useAppStore(selectDrawerSizing);
+  const drawerPlacement = useAppStore(selectDrawerPlacement);
   const bootPhase = useAppStore((s) => s.bootPhase);
   const bootFailedPhase = useAppStore((s) => s.bootFailedPhase);
   const error = useAppStore((s) => s.error);
@@ -331,6 +333,7 @@ export const App = () => {
           studioCoversLeft={arrangement.studioCoversLeft}
           drawer={isDrawerOpen ? <DrawerHost /> : null}
           drawerSizing={drawerSizing}
+          drawerPlacement={drawerPlacement}
           main={
             <div className="relative h-full w-full">
               {currentSession ? (

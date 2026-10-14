@@ -528,8 +528,14 @@ const pressConnected =
   };
 
 export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
-  pressRow({
+  keyRow({
     id: 'session.new',
+    note: 'off a session overview the new chord starts a session',
+    open: async () => {
+      useAppStore.getState().openStudio({ studio: { kind: 'guide' } });
+      await settle();
+      await pressed('session.new', document.body);
+    },
     lands: () => heading('New session'),
   }),
   keyRow({
@@ -590,6 +596,15 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     open: press('session.refresh'),
     lands: async (ctx) =>
       waitFor(() => expect(useAppStore.getState().sessionSyncing[ctx.sessionId]).toBe(true), WAIT),
+  }),
+  keyRow({
+    id: 'overview.newHere',
+    note: 'on a session overview the new chord opens the New drawer, not a new session',
+    open: async () => {
+      await settle();
+      await pressed('overview.newHere', document.body);
+    },
+    lands: () => visible('region', 'New'),
   }),
   keyRow({
     id: 'session.linkWork',

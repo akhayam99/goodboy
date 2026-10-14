@@ -1,12 +1,12 @@
 import type { WorkflowRules } from '@goodboy/types';
+import { NAMES } from '../../shared/names';
 import { RUN_AUTONOMY_OPTIONS } from './runAutonomy';
 
 const capAmount = ({ usd }: { readonly usd: number }): string =>
   Number.isInteger(usd) ? `$${usd}` : `$${usd.toFixed(2)}`;
 
 const autonomyLabel = ({ rules }: { readonly rules: WorkflowRules }): string =>
-  RUN_AUTONOMY_OPTIONS.find((option) => option.key === rules.autonomy)?.label ??
-  'Ask before each step';
+  RUN_AUTONOMY_OPTIONS.find((option) => option.key === rules.autonomy)?.label ?? NAMES.askMe;
 
 const spendRuleText = ({ rules }: { readonly rules: WorkflowRules }): string =>
   rules.spendLimitUsd === null

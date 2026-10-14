@@ -233,7 +233,6 @@ vi.mock('../SessionTrail/SessionCrumbs', () => ({
   SessionCrumbs: () => <div data-testid="session-crumb-bar" />,
 }));
 vi.mock('../../../bootstrap/FirstLapBanner', () => ({ FirstLapBanner: () => null }));
-vi.mock('./parts/SessionStudioLayer', () => ({ SessionStudioLayer: () => null }));
 vi.mock('./parts/QuestionsPane', () => ({ QuestionsPane: () => null }));
 vi.mock('./parts/FilesPane', () => ({ FilesPane: () => null }));
 vi.mock('./parts/IntegrationPane', () => ({

@@ -45,22 +45,12 @@ const makeStore = () =>
 type Store = ReturnType<typeof makeStore>;
 
 const builderDraft = (): WorkflowBuilderDraft => ({
-  mode: 'custom',
+  mode: 'dynamic',
   goalText: 'Round it',
   goalHistory: [],
   selectedPresetId: null,
   basePresetId: null,
-  processText: '',
-  plan: null,
-  workflow: {
-    name: '',
-    description: '',
-    goal: 'Round it',
-    steps: [],
-    origin: 'custom',
-    isPreset: false,
-  },
-  saveAsPreset: false,
+  steps: [],
   autoRun: false,
   title: '',
   orchestratorModel: { providerOverride: '', modelOverride: '', effortOverride: null },

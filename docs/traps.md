@@ -531,3 +531,7 @@ stash whose object is gone is clearable, never an error.
 lease covers cooperating Goodboy writers; an external editor writing during
 Git's capture and reset is outside that lease. Do not treat the lease as a
 filesystem write lock. Cleanup failure retains the stash instead of repeating restoration.
+
+## New drawer actions host
+
+The New drawer keeps the Start button in a sticky host at the end of its body (`actionsHost` in `NewDrawerBody`), not in the `DrawerFrame` `dock` slot: a dock is a footer bar and `forbidden-patterns` fails the build on it. The Run, Agent and Write panels portal their actions into that host through `Docked`, so each panel must render nothing until the host node exists. `WritePanel` lives in `features/artifacts` and reaches the drawer as the `writePanel` prop from `DrawerHost`, because `features/session` must not import artifacts components.

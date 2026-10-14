@@ -1,23 +1,18 @@
 import type { ReactNode } from 'react';
-import { ListChecks, PenLine } from 'lucide-react';
+import { ListChecks } from 'lucide-react';
 import { SegmentedTabs } from '@goodboy/ui';
 import type { Mode } from '../../../../../store/slices/workflowDrafts/types';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly mode: Mode;
-  readonly disabled: boolean;
+  readonly isDisabled: boolean;
   readonly control?: ReactNode;
+  readonly description: string;
   readonly onChange: (mode: Mode) => void;
 };
 
-const MODE_HINT: Record<Mode, string> = {
-  dynamic: 'Goodboy picks each next agent after the previous one finishes.',
-  custom: 'You set every step. Click a step to edit it.',
-  preset: 'A saved sequence. Edit any step before starting.',
-};
-
-export const ModeSwitch = ({ mode, disabled, control = null, onChange }: Props) => (
+export const RunModeBar = ({ mode, isDisabled, control = null, description, onChange }: Props) => (
   <div className="flex flex-col gap-2">
     <div className="flex flex-wrap items-center justify-between gap-3">
       <SegmentedTabs
@@ -28,17 +23,16 @@ export const ModeSwitch = ({ mode, disabled, control = null, onChange }: Props) 
         options={[
           {
             value: 'dynamic',
-            label: 'Orchestrated',
+            label: 'Orchestrate',
             icon: CONCEPT_ICONS.orchestrator,
             tooltip: 'Goodboy picks each next agent',
-            disabled,
+            disabled: isDisabled,
           },
-          { value: 'custom', label: 'Describe steps', icon: PenLine, disabled },
-          { value: 'preset', label: 'Pick a workflow', icon: ListChecks, disabled },
+          { value: 'preset', label: 'Preset', icon: ListChecks, disabled: isDisabled },
         ]}
       />
       {control}
     </div>
-    <div className="text-meta text-faint-foreground">{MODE_HINT[mode]}</div>
+    <p className="text-label text-muted-foreground">{description}</p>
   </div>
 );

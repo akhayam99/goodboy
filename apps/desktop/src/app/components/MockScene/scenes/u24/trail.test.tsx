@@ -36,15 +36,11 @@ const LAST_CRUMB_OF = {
   'trail-run': 'Run',
   'trail-artifact': 'Artifact',
   'trail-agent': 'Agent',
-  'trail-artifact-create': 'New artifact',
 } as const;
 
-const SCENE_IDS = [
-  'trail-run',
-  'trail-artifact',
-  'trail-agent',
-  'trail-artifact-create',
-] as const satisfies ReadonlyArray<keyof typeof LAST_CRUMB_OF>;
+const SCENE_IDS = ['trail-run', 'trail-artifact', 'trail-agent'] as const satisfies ReadonlyArray<
+  keyof typeof LAST_CRUMB_OF
+>;
 
 const renderScene = (id: keyof typeof LAST_CRUMB_OF) => {
   const Scene = U24_TRAIL_SCENES[id];

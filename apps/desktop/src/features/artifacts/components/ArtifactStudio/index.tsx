@@ -9,7 +9,6 @@ import {
   agentPlace,
 } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
-import { ArtifactCreationPane } from '../ArtifactCreationPane';
 import { ArtifactList } from '../ArtifactList';
 import { ArtifactShell } from '../ArtifactShell';
 import type { ArtifactShellSubject } from '../ArtifactShell/artifactShellSubject';
@@ -52,10 +51,10 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
   const navigate = useAppStore((s) => s.navigate);
   const filter = useAppStore((s) => s.artifactFilter[sessionId] ?? 'all');
   const setArtifactFilter = useAppStore((s) => s.setArtifactFilter);
-  const creation = useAppStore((s) => s.artifactCreation[sessionId] ?? null);
+  const awaitedAgentId = useAppStore((s) => s.awaitedArtifactAgentId[sessionId] ?? null);
+  const awaitArtifactAgent = useAppStore((s) => s.awaitArtifactAgent);
   const selectedAgentId = useAppStore((s) => s.selectedAgentId[sessionId] ?? null);
   const sessionStudio = useAppStore((s) => s.sessionStudio[sessionId] ?? null);
-  const closeArtifactCreation = useAppStore((s) => s.closeArtifactCreation);
   const verifications = useAppStore((s) => s.wireframeScoutVerification);
   const isArtifactDrawerOpen = useAppStore((s) => {
     const kind = selectOpenDrawer(s)?.kind ?? null;
@@ -78,7 +77,6 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
     });
     return { activeAgentIds: active, runningAgentIds: running };
   }, [agents, turnKinds]);
-  const [awaitedAgentId, setAwaitedAgentId] = useState<AgentId | null>(null);
   const [focusedRunAgentId, setFocusedRunAgentId] = useState<AgentId | null>(null);
 
   useEffect(() => {
@@ -86,7 +84,6 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
   }, [sessionId, loadSessionArtifacts]);
 
   useEffect(() => {
-    setAwaitedAgentId(null);
     setFocusedRunAgentId(null);
   }, [sessionId]);
 
@@ -98,20 +95,15 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
     if (arrived === null) {
       return;
     }
-    setAwaitedAgentId(null);
-    if (
-      focusedArtifactId === null &&
-      creation === null &&
-      selectedAgentId === null &&
-      sessionStudio === null
-    ) {
+    awaitArtifactAgent({ sessionId, agentId: null });
+    if (focusedArtifactId === null && selectedAgentId === null && sessionStudio === null) {
       setFocusedArtifactId(sessionId, arrived.id);
     }
   }, [
     artifacts,
     awaitedAgentId,
+    awaitArtifactAgent,
     focusedArtifactId,
-    creation,
     selectedAgentId,
     sessionId,
     sessionStudio,
@@ -233,23 +225,9 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
   }, [sessionId, setFocusedArtifactId]);
 
   useEscapeToList({
-    isActive: creation === null && subject !== null && !isArtifactDrawerOpen,
+    isActive: subject !== null && !isArtifactDrawerOpen,
     onEscape: backToList,
   });
-
-  if (creation !== null && session !== null) {
-    return (
-      <ArtifactCreationPane
-        sessionId={sessionId}
-        session={session}
-        kind={creation.kind}
-        note={creation.note}
-        count={artifacts.length}
-        onClose={() => closeArtifactCreation({ sessionId })}
-        onStarted={setAwaitedAgentId}
-      />
-    );
-  }
 
   if (subject !== null) {
     const key = subject.kind === 'generation' ? subject.generation.agentId : subject.artifact.id;

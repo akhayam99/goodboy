@@ -2,7 +2,7 @@ import { getSessionViewPrefs } from './getSessionViewPrefs';
 import { createInitialSessionViewState } from './createInitialSessionViewState';
 import { setArtifactFilter } from './artifactFilter';
 import { closeArtifactConversation, openArtifactConversation } from './artifactConversation';
-import { closeArtifactCreation, openArtifactCreation } from './artifactCreation';
+import { awaitArtifactAgent, openArtifactCreation } from './artifactCreation';
 import { markSessionOpened } from './markSessionOpened';
 import { setSessionViewPrefs } from './setSessionViewPrefs';
 import { setAgentTab } from './setAgentTab';
@@ -61,7 +61,7 @@ export const createSessionViewSlice = ({ set, get }: SliceDeps): SessionViewSlic
     openArtifactConversation: openArtifactConversation(set, get),
     closeArtifactConversation: closeArtifactConversation(set),
     openArtifactCreation: openArtifactCreation(set, get),
-    closeArtifactCreation: closeArtifactCreation(set),
+    awaitArtifactAgent: awaitArtifactAgent(set),
     setFocusedGithubIssueNumber: setFocusedGithubIssueNumber(set),
     setSessionStudio: setSessionStudio(set),
     setDiffFocus: setDiffFocus(set),

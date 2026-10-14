@@ -5,7 +5,6 @@ import { workflowStartGate } from './workflowStartGate';
 const ready = {
   mode: 'preset',
   isStarting: false,
-  isPlanning: false,
   hasGoal: true,
   hasSteps: true,
   isSpendLimitValid: true,
@@ -19,7 +18,6 @@ describe('workflowStartGate', () => {
   it('names the reason for every blocker, never leaving start mute', () => {
     const blockers = [
       { ...ready, isStarting: true },
-      { ...ready, isPlanning: true },
       { ...ready, hasGoal: false },
       { ...ready, hasSteps: false },
       { ...ready, isSpendLimitValid: false },
@@ -32,12 +30,9 @@ describe('workflowStartGate', () => {
     }
   });
 
-  it('speaks the steps language of the selected mode', () => {
+  it('asks for a preset when Preset has none picked', () => {
     expect(workflowStartGate({ ...ready, mode: 'preset', hasSteps: false }).reason).toBe(
       'Select a preset to start',
-    );
-    expect(workflowStartGate({ ...ready, mode: 'custom', hasSteps: false }).reason).toBe(
-      'Add a step or generate a plan to start',
     );
   });
 
@@ -48,8 +43,12 @@ describe('workflowStartGate', () => {
     });
   });
 
-  it('keeps an invalid spend cap from starting a run in silence', () => {
+  it('keeps an invalid spend cap from starting a run in silence, with Orchestrate and Preset', () => {
     expect(workflowStartGate({ ...ready, mode: 'dynamic', isSpendLimitValid: false })).toEqual({
+      isDisabled: true,
+      reason: 'Enter a valid spend cap to start',
+    });
+    expect(workflowStartGate({ ...ready, mode: 'preset', isSpendLimitValid: false })).toEqual({
       isDisabled: true,
       reason: 'Enter a valid spend cap to start',
     });

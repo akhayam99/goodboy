@@ -226,18 +226,28 @@ describe('store contract', () => {
       });
     });
 
-    it('opening artifact creation clears the studio, the selected agent and the focused artifact', async () => {
+    it('opening artifact creation clears the focused artifact and opens the New drawer on Write', async () => {
       const store = useAppStore;
-      store.getState().setSessionStudio(SESSION_ID, { kind: 'workflow' });
       store.getState().setFocusedArtifactId(SESSION_ID, PLAN_ID);
-      store.getState().openArtifactCreation({ sessionId: SESSION_ID, kind: 'report' });
-      expect(store.getState().artifactCreation[SESSION_ID]).toEqual({ kind: 'report', note: null });
-      expect(store.getState().activeLens[SESSION_ID]).toBe('plans');
-      expect(store.getState().sessionStudio[SESSION_ID]).toBeNull();
-      expect(store.getState().selectedAgentId[SESSION_ID]).toBeNull();
+      store.getState().openArtifactCreation({
+        sessionId: SESSION_ID,
+        kind: 'wireframe',
+        note: 'Start from the plan',
+      });
+      expect(store.getState().drawer).toEqual({
+        kind: 'new',
+        sessionId: SESSION_ID,
+        payload: { tab: 'write', writeKind: 'wireframe', note: 'Start from the plan' },
+      });
       expect(store.getState().focusedArtifactId[SESSION_ID]).toBeNull();
-      store.getState().closeArtifactCreation({ sessionId: SESSION_ID });
-      expect(store.getState().artifactCreation[SESSION_ID]).toBeNull();
+    });
+
+    it('awaiting an artifact agent is kept per session and cleared with null', async () => {
+      const store = useAppStore;
+      store.getState().awaitArtifactAgent({ sessionId: SESSION_ID, agentId: AGENT_ID_2 });
+      expect(store.getState().awaitedArtifactAgentId[SESSION_ID]).toBe(AGENT_ID_2);
+      store.getState().awaitArtifactAgent({ sessionId: SESSION_ID, agentId: null });
+      expect(store.getState().awaitedArtifactAgentId[SESSION_ID]).toBeNull();
     });
 
     it('opening from a run rewrites the drafted scope to that run', async () => {

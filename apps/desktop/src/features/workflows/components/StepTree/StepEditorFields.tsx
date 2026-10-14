@@ -1,20 +1,13 @@
-import { Eyebrow, Input, SegmentedTabs } from '@goodboy/ui';
+import { Input, SegmentedTabs } from '@goodboy/ui';
 import { PromptField } from '../../../../shared/components/PromptField';
 import type { AgentRole, EffortLevel, ProviderId, VerbosityLevel } from '@goodboy/types';
 import type { StepDraft } from '../../engine';
 import type { PolishField, StepPolishFields } from '../../stepPolishFields';
-import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import type { PickedRoute } from '../../../../shared/components/RoutingPicker/PickedRoute';
-import {
-  routingLabelParts,
-  routingNameText,
-} from '../../../../shared/components/RoutingPicker/routingSummary';
 import { RoleSelect } from '../../../session/components/RoleSelect';
-import { ROLE_LABEL } from '../../../session/agent-kind';
 import { VERBOSITY_LABEL, VERBOSITY_LEVELS } from '../../../settings/verbosity';
 import { StepFieldLabel } from './StepFieldLabel';
-
-type ModelSource = 'follow' | 'pin';
+import { StepModelFields } from './StepModelFields';
 
 type Props = {
   readonly step: StepDraft;
@@ -39,11 +32,6 @@ type Props = {
 };
 
 const FIELD_ID_PREFIX = 'plan-step';
-
-const MODEL_SOURCES = [
-  { value: 'follow', label: 'Follow role' },
-  { value: 'pin', label: 'Pin a model' },
-] as const satisfies ReadonlyArray<{ readonly value: ModelSource; readonly label: string }>;
 
 const VERBOSITY_OPTIONS = VERBOSITY_LEVELS.map((level) => ({
   value: level,
@@ -80,14 +68,7 @@ export const StepEditorFields = ({
   onSubmit,
 }: Props) => {
   const idOf = (field: string): string => `${FIELD_ID_PREFIX}-${step.key}-${field}`;
-  const source: ModelSource = isRoutingOverridden ? 'pin' : 'follow';
   const submit = onSubmit === undefined ? undefined : () => onSubmit();
-  const followLabel = routingLabelParts({
-    provider: recommendedProvider,
-    model: recommendedModel,
-    effort,
-  });
-  const followPick = [routingNameText(followLabel), ...followLabel.detail].join(' · ');
 
   return (
     <div className="grid grid-cols-1 gap-4 @min-[560px]:grid-cols-2">
@@ -167,53 +148,20 @@ export const StepEditorFields = ({
         </div>
       </div>
       <div className="flex min-w-0 flex-col gap-3">
-        <div className="px-3">
-          <Eyebrow label="Model" muted />
-        </div>
-        <div className="px-3">
-          <SegmentedTabs
-            ariaLabel="Model source"
-            size="sm"
-            fill
-            options={MODEL_SOURCES}
-            value={source}
-            onChange={(next) => {
-              if (disabled || next === source) {
-                return;
-              }
-              if (next === 'follow') {
-                onRoutingReset();
-                return;
-              }
-              onPin();
-            }}
-          />
-        </div>
-        {source === 'follow' && roleSetLine !== null ? (
-          <p data-testid="step-follows-role" className="px-3 text-meta text-muted-foreground">
-            {`Follows the role: ${roleSetLine}`}
-          </p>
-        ) : null}
-        {source === 'follow' && roleSetLine === null ? (
-          <p data-testid="step-follows-role" className="px-3 text-meta text-muted-foreground">
-            {`Follows the ${ROLE_LABEL[step.role]} role. Auto picks `}
-            <span className="text-foreground">{followPick}</span>
-            {' from the providers you can use now.'}
-          </p>
-        ) : null}
-        {source === 'follow' ? null : (
-          <RoutingPicker
-            presentation="inline"
-            ariaLabel={routingLabel}
-            connectedProviders={connectedProviders}
-            provider={step.provider}
-            model={step.model}
-            effort={{ editable: true, value: effort }}
-            disabled={disabled}
-            overridden
-            onChange={onRoute}
-          />
-        )}
+        <StepModelFields
+          step={step}
+          routingLabel={routingLabel}
+          effort={effort}
+          recommendedProvider={recommendedProvider}
+          recommendedModel={recommendedModel}
+          connectedProviders={connectedProviders}
+          isRoutingOverridden={isRoutingOverridden}
+          roleSetLine={roleSetLine}
+          isDisabled={disabled}
+          onRoute={onRoute}
+          onRoutingReset={onRoutingReset}
+          onPin={onPin}
+        />
         <div className="flex min-w-0 items-center justify-between gap-3 px-3">
           <span className="text-meta text-muted-foreground">Reply length</span>
           <SegmentedTabs

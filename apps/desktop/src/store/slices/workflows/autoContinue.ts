@@ -21,13 +21,13 @@ const BLOCKED_COPY = {
     title: 'Step blocked',
     handsFree:
       'The agent stopped twice without finishing this step and without asking you anything. Tell it what to do next in the agent chat, or skip the step.',
-    manual: `${NAMES.whenToAsk} is set to ask before each step, so this step waits for you. Tell the agent what to do next in the agent chat, or change ${NAMES.whenToAsk}.`,
+    manual: `${NAMES.autonomy} is set to ${NAMES.askMe}, so this step waits for you. Tell the agent what to do next in the agent chat, or change ${NAMES.autonomy}.`,
   },
   cluster: {
     title: 'Subagent blocked',
     handsFree:
       "The implementer stopped twice without finishing this subagent's part and without asking you anything. Tell it what to do next in the agent chat.",
-    manual: `${NAMES.whenToAsk} is set to ask before each step, so this subagent waits for you. Tell it what to do next in the agent chat, or change ${NAMES.whenToAsk}.`,
+    manual: `${NAMES.autonomy} is set to ${NAMES.askMe}, so this subagent waits for you. Tell it what to do next in the agent chat, or change ${NAMES.autonomy}.`,
   },
 } as const satisfies Record<ContinueUnit, HaltCopy>;
 

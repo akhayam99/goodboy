@@ -44,8 +44,8 @@ it. From the top:
 - **Mode**, with one line under it that says what the mode does, and the
   mode's own control on the right of the same row.
 - **Plan**: the steps as a tree that reads top down, step 1 first and **Add step** last.
-- **Launch bar**: when it starts, when to ask (**Ask before each step** or
-  **Run on its own**), the spend cap or **Save as preset**, and **Start
+- **Launch bar**: when it starts, when to ask (**Ask me** or
+  **Autopilot**), the spend cap or **Save as preset**, and **Start
   workflow**. The reason Start is off shows under it.
 
 The three modes:
@@ -138,10 +138,10 @@ The **Starts** chip in the launch bar picks one:
 - **Manually**, when you press start
 - **After** another run that is still going, and then it carries on by itself
 
-When to ask comes from the workspace rules, **Ask before each step** until you
+Autonomy comes from the workspace rules, **Ask me** until you
 change them: the run waits for your go after each step so you can review it.
-**Ask after the plan** runs on its own but holds once when the plan is written,
-until you press **Approve plan**. **Run on its own** starts each next step by
+**Balanced** runs on its own but holds once when the plan is written,
+until you press **Approve plan**. **Autopilot** starts each next step by
 itself. The choice is stored as the run's autorun flag plus the run's copy of
 the rules, and can change later from the run's ⋯ menu.
 
@@ -155,7 +155,7 @@ still carry them and list them as Workflow rules in the preview.
 The tab is titled **Run defaults**: three controls and one text field, in this
 order, each with one line of copy at most.
 
-- **When to ask**: Ask before each step, Ask after the plan or Run on its own. The
+- **Autonomy**: Ask me, Balanced or Autopilot. The
   hints are the ones the builder shows (`RUN_AUTONOMY_OPTIONS`)
 - **Spend cap**: a switch, the amount per run and what happens at the limit, pause
   or warn
@@ -298,7 +298,7 @@ view when no agent asked. A spend pause or a failure still speaks before it
 failed step is left to the Next action strip, so the row only says the run is
 paused, on a neutral line: the strip above carries the tone. When the pane is too narrow for the sentence and the controls on one
 line, the controls wrap to a second line on the right instead of cutting the
-sentence. When to ask (**Ask before each step**, **Ask after the plan** or **Run on its
+sentence. Autonomy (**Ask me**, **Balanced** or **Run on its
 own**) is a popover on the header's facts line; **Model per step** (the model
 each step runs on, and why) is **Step routing** in the header overflow, which
 opens its panel under the strip (`requestStepRouting`). A
@@ -361,7 +361,7 @@ pinned header, the strips, the steps in their own scroller, and a composer
 docked under them. Every number on it comes from `useRunView`, so the header
 and the body never compute a count or a cost twice.
 
-- **Header.** One h1, the run's name (rename on hover, `Edit run name`), the state chip beside it, and one cluster of actions: **Stop run** (secondary, only while the run is live, asks first), the one primary from `runPrimaryOf` (a pure table over every phase: held for its plan **Review plan**, a plan question or a question the run waits on **Answer**, paused **Resume**, stopped **Continue the run**, failed or blocked **Retry**, spend cap **Raise spend cap**, ready **Decide next step** or **Start step 2**, queued by hand **Start run**, archived **Restore**, and nothing while a step runs or once the run is finished) and one overflow of 28px. Under the title one facts line: "2 steps · $0.88 · Set a spend cap · Ask after the plan", where the spend cap and the when-to-ask choice (**Ask before each step**, **Ask after the plan**, **Run on its own**) open a popover each. There is no chevron on the page and no second title: the Runs crumb of the trail, or Esc, goes back to the list. **Start another run** stays on the Runs list, and there is no **Make preset** on a run: a preset is made from the launch bar (**Save as preset**) or in the Studio, never from a run that already ran. The header pins only the title and these facts: the write destination ("Starts in ..."), the strips and the steps all scroll under it
+- **Header.** One h1, the run's name (rename on hover, `Edit run name`), the state chip beside it, and one cluster of actions: **Stop run** (secondary, only while the run is live, asks first), the one primary from `runPrimaryOf` (a pure table over every phase: held for its plan **Review plan**, a plan question or a question the run waits on **Answer**, paused **Resume**, stopped **Continue the run**, failed or blocked **Retry**, spend cap **Raise spend cap**, ready **Decide next step** or **Start step 2**, queued by hand **Start run**, archived **Restore**, and nothing while a step runs or once the run is finished) and one overflow of 28px. Under the title one facts line: "2 steps · $0.88 · Set a spend cap · Balanced", where the spend cap and the when-to-ask choice (**Ask me**, **Balanced**, **Autopilot**) open a popover each. There is no chevron on the page and no second title: the Runs crumb of the trail, or Esc, goes back to the list. **Start another run** stays on the Runs list, and there is no **Make preset** on a run: a preset is made from the launch bar (**Save as preset**) or in the Studio, never from a run that already ran. The header pins only the title and these facts: the write destination ("Starts in ..."), the strips and the steps all scroll under it
 - **Overflow.** Exactly these items, in their states: **View diff** (the run's session has a mount), **Copy run summary**, **Pause run** (the run is live and not paused or stopped), **Step routing** (an orchestrated run with steps), **Archive run** (asks first, restorable) and **Delete run** (asks first). They are the actions of the `workflowRun` kind in the registry (`workflowRun.pause` and `workflowRun.routing` are the two the page added, so the palette and the right click get them too); the header leaves out the ones that have a button of their own (`Stop run`, the primary's verbs). The right click on the title lists every action of the registry
 - **Scroll edge.** The steps scroll under the pinned block. `ScrollFade` takes `edge="line"`: its root draws a 1px `border-soft` line (the quietest divider, never the brighter `border`) at its own top edge while `scrollTop` is above 0, shown through `data-scrolled` on the root, set imperatively inside `applyFade`, never through React state, and faded in over 120ms under `motion-safe`. With the line the top mask fade shrinks to 8px, growing with the scroll from 0, so a card clipped under the line fades out instead of leaving a cut edge as a sliver; the bottom fade stays. `PaneShell` with `scroll="body"` and the steps scroller of the run both use it. The default `edge="fade"` is unchanged. The scroller opens at 0; the live-row reveal of the run tree uses `scrollIntoView({ block: 'nearest' })`, so it only moves the scroller when the live row is below the visible area
 - **Composer.** A dynamic run's hint field docks at the bottom of the page as the `dock` of the `PaneShell`, as in Chat, below the scroller and never inside it (`OrchestratorDock`). Steps and cost come first. Queued hints fold into one "2 queued" row above the steps, and the help sentence moved into the tooltips of **Queue** and **Read now**. At rest the field is one text row with the attach button, no Write and Preview tabs, no key hints and no buttons (`data-open` is `false`); it opens to two rows with all of them while it has focus or holds text or an image, and closes again on blur when empty, so a short window keeps most of its height for the steps (the steps scroller is at least 440px tall at a 760px window)
@@ -588,7 +588,7 @@ run and its agents restorable.
 
 ### Hands-free runs
 
-**Run on its own** makes a run hands-free. Each next step starts without you
+**Autopilot** makes a run hands-free. Each next step starts without you
 clicking. You can turn it on for one run or for the whole session. A run
 without its own setting follows the session.
 
@@ -740,7 +740,7 @@ An open question and a failed step both still show with autorun on, because
 autorun stops on both. `maybeAutoAdvanceWorkflow` skips a run with open
 questions and a paused run.
 
-### Ask after the plan
+### Balanced
 
 A run whose copy of the rules says `plan` holds once a plan for that run exists
 (`active` or `consumed`). The hold is a saved stop,

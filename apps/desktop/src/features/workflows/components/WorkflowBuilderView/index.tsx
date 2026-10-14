@@ -1,22 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  EmptyLine,
-  Button,
-  Chip,
-  FormPage,
-  Notice,
-  Switch,
-  formatError,
-  EmptyState,
-} from '@goodboy/ui';
+import { Button, EmptyState, Notice, formatError } from '@goodboy/ui';
 import {
   DEFAULT_SESSION_PROVIDER_PREFERENCE,
   PROVIDER_CAPABILITIES,
-  type PlannerOutput,
   clampEffortForModel,
   isAgentStatusHalted,
   runsForWorkflowRun,
 } from '@goodboy/core';
+import { ORCHESTRATED_WORKFLOW_NAME, uniqueWorkflowName } from '../../uniqueWorkflowName';
 import { useResolution } from '../../../providers/hooks/useResolution';
 import { autoModelOn } from '../../../providers/autoModelOn';
 import { modelOnProvider, roleResolutionOf } from '../../../providers/roleResolution';
@@ -24,7 +15,6 @@ import { resolutionAsTask } from '../../../providers/resolutionAsTask';
 import type {
   EffortLevel,
   ProviderId,
-  RoleModelPreferences,
   Session,
   Workflow,
   WorkflowExecutionMode,
@@ -35,16 +25,13 @@ import type {
   WorkflowRules,
   AgentRole,
 } from '@goodboy/types';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { Docked } from '../../../../shared/components/Docked';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import { deleteWorkflowWithUndo } from '../../deleteWorkflowWithUndo';
-import { createWorkflowPlanner, polishWorkflowGoalText } from '../../workflows';
-import { usePolish } from '../../hooks/usePolish';
-import { useStepDeleteUndo } from '../../hooks/useStepDeleteUndo';
-import { stepPolishFields } from '../../stepPolishFields';
+import { polishWorkflowGoalText } from '../../workflows';
+import { usePolishGuidance } from '../../hooks/usePolishGuidance';
 import { EMPTY_ARRAY, useAppStore, useSessionSlots } from '../../../../store';
-import { buildProfileGuard } from '../../../../store/slices/turn/profileGuard';
-import { buildWorkspaceProjectsBlock } from '../../../../store/slices/workflows/buildWorkspaceProjectsBlock';
 import { workflowStartGate } from './workflowStartGate';
 import { readLastWorkflowMode, writeLastWorkflowMode } from './lastWorkflowMode';
 import { editedStepKeys, stepsMatchPreset } from './presetEdits';
@@ -55,56 +42,39 @@ import type {
   WorkflowDraftKey,
 } from '../../../../store/slices/workflowDrafts/types';
 import { kickoffDraftKey } from '../../../../store/slices/workflowDrafts/kickoffDraftKey';
-import type { StepDraft, WorkflowDraft } from '../../engine';
+import type { StepDraft } from '../../engine';
 import {
-  addStep as addDraftStep,
-  blankStepDraft,
-  draftFromPlannerSteps,
   draftFromWorkflow,
-  duplicateStep as duplicateDraftStep,
-  reorderSteps as reorderDraftSteps,
   updateStep as updateDraftStep,
   upsertArgsFromDraft,
 } from '../../engine';
-import { useWorkflowDraft } from '../../engine/useWorkflowDraft';
-import { ROLE_LABEL, classifyStep } from '../../../session/agent-kind';
+import { classifyStep } from '../../../session/agent-kind';
 import { isWorkflowRunComplete } from '../../isWorkflowRunComplete';
 import { isPresetWorkflow } from '../../isPresetWorkflow';
-import { useWorkflowDrag } from '../../../../shared/hooks/useWorkflowDrag';
-import { useSaveAsStep } from '../../hooks/useSaveAsStep';
-import { useSavedSteps } from '../../hooks/useSavedSteps';
-import { stepDraftFromSavedStep, type SavedStep } from '../../savedSteps';
 import { parseSpendLimit } from '../../../budget/parseSpendLimit';
-import { DragGhost } from '../WorkflowStudio/DragGhost';
 import { useToast } from '../../../../shared/components/Toast';
-import { StudioShell } from '../../../../shared/components/StudioShell';
 import { toAttachmentInputs } from '../../../attachments/pendingAttachment';
 import { usePromptFiles } from '../../../../shared/hooks/usePromptFiles';
 import { runIdentity, runIdentitySeed } from '../../../session/timeline/runIdentity';
 import { BuilderTitleField } from './parts/BuilderTitleField';
 import { GoalField } from './parts/GoalField';
 import { LaunchBar } from './parts/LaunchBar';
-import { ModeSwitch } from './parts/ModeSwitch';
+import { RunModeBar } from './parts/RunModeBar';
 import { ProviderPoolChip } from './parts/ProviderPoolChip';
 import { effectiveProviderPool } from './providerPool';
-import { PlanDraftingBanner } from './parts/PlanDraftingBanner';
 import { PresetPicker } from './parts/PresetPicker';
 import { SpendCapChip } from './parts/SpendCapChip';
 import { AutonomyChip } from './parts/AutonomyChip';
 import { FromRulesRow } from './parts/FromRulesRow';
 import { GuidanceTools } from './parts/GuidanceTools';
 import { RuleDot } from './parts/RuleDot';
-import { RunGuidanceField } from './parts/RunGuidanceField';
+import { RunGuidance } from './parts/RunGuidance';
 import { GuidanceRecipients } from '../WorkflowGuidance/GuidanceRecipients';
-import { usePolishGuidance } from '../../hooks/usePolishGuidance';
 import { guidanceRoleNames, sameRoles } from '../../guidanceRoles';
 import { useWorkflowRules } from '../../hooks/useWorkflowRules';
 import { StartsChip, type ChainRun, type StartChoice } from './parts/StartsChip';
-import { StepTree } from '../StepTree';
-import { StepEditor } from '../StepTree/StepEditor';
-import { StepRow } from '../StepTree/StepRow';
-import { OrchestratorRow } from './parts/OrchestratorRow';
-import { PlannerDraftRow } from './parts/PlannerDraftRow';
+import { OrchestrateLane } from './parts/OrchestrateLane';
+import { PresetLane, type PresetLaneRow } from './parts/PresetLane';
 import { PlanEstimateChip } from './parts/PlanEstimateChip';
 import { usePlanEstimates } from './usePlanEstimates';
 
@@ -118,9 +88,24 @@ export type BuilderKickoff = {
   readonly start: (run: (session: Session) => Promise<void>) => Promise<void>;
 };
 
+export type BuilderSlots = {
+  readonly actionsHost: HTMLElement | null;
+  readonly action: HTMLElement | null;
+};
+
 type Props =
-  | { readonly session: Session; readonly kickoff?: never; readonly onClose: () => void }
-  | { readonly kickoff: BuilderKickoff; readonly session?: never; readonly onClose?: never };
+  | {
+      readonly session: Session;
+      readonly kickoff?: never;
+      readonly slots?: BuilderSlots;
+      readonly onClose: () => void;
+    }
+  | {
+      readonly kickoff: BuilderKickoff;
+      readonly session?: never;
+      readonly slots?: never;
+      readonly onClose?: never;
+    };
 
 type ProviderEntry = { readonly id: ProviderId; readonly connection: string };
 
@@ -129,26 +114,12 @@ type BuilderError = {
   readonly message: string;
 };
 
-type StepsFromPlanParams = {
-  readonly plan: PlannerOutput;
-  readonly roleModels: RoleModelPreferences | null;
-};
-
-const stepsFromPlan = ({ plan, roleModels }: StepsFromPlanParams): ReadonlyArray<StepDraft> =>
-  draftFromPlannerSteps({ steps: plan.steps }).map((step) => ({
-    ...step,
-    effort: roleResolutionOf({ role: step.role, roleModels }).effort ?? 'medium',
-  }));
-
 const isDraftEmpty = (d: WorkflowBuilderDraft, rules: WorkflowRules): boolean =>
   d.goalText.trim() === '' &&
   d.goalHistory.length === 0 &&
   d.selectedPresetId === null &&
   d.basePresetId === null &&
-  d.processText.trim() === '' &&
-  d.plan === null &&
-  d.workflow.steps.length === 0 &&
-  !d.saveAsPreset &&
+  d.steps.length === 0 &&
   (d.autonomy ?? rules.autonomy) === rules.autonomy &&
   (d.guidance ?? rules.standingGuidance) === rules.standingGuidance &&
   sameRoles({ left: d.guidanceRoles ?? rules.guidanceRoles, right: rules.guidanceRoles }) &&
@@ -158,31 +129,21 @@ const isDraftEmpty = (d: WorkflowBuilderDraft, rules: WorkflowRules): boolean =>
   d.orchestratorModel.effortOverride === null &&
   d.providerPool === null;
 
-const PLANNER_EFFORT: EffortLevel = roleResolutionOf({ role: 'planner' }).effort ?? 'medium';
 const ORCHESTRATOR_EFFORT: EffortLevel = 'medium';
 const DYNAMIC_EXECUTION_MODE: WorkflowExecutionMode = 'dynamic';
-const DYNAMIC_WORKFLOW_NAME = 'Orchestrated workflow';
-const CUSTOM_WORKFLOW_NAME = 'Custom workflow';
+const PRESET_FALLBACK_NAME = 'Preset run';
 const IMMEDIATE_START: StartChoice = { triggerMode: 'immediate', chainAfterId: null };
 
-export const uniqueWorkflowName = (
-  requested: string,
-  existing: ReadonlyArray<Workflow>,
-): string => {
-  const names = new Set(existing.filter((t) => !t.deletedAt).map((t) => t.name));
-  if (!names.has(requested)) {
-    return requested;
-  }
-  let suffix = 2;
-  while (names.has(`${requested} ${suffix}`)) {
-    suffix += 1;
-  }
-  return `${requested} ${suffix}`;
+const MODE_DESCRIPTION: Record<Mode, string> = {
+  dynamic:
+    'Goodboy picks each next agent after the previous one finishes. The steps are likely, not fixed.',
+  preset: 'A saved sequence of steps. Change the model of any step before starting.',
 };
 
 export const WorkflowBuilderView = (props: Props) => {
   const session = props.session ?? null;
   const kickoff = props.kickoff ?? null;
+  const slots = props.slots;
   const workspaceId: WorkspaceId =
     props.session !== undefined ? props.session.workspaceId : props.kickoff.workspaceId;
   const draftKey: WorkflowDraftKey =
@@ -243,7 +204,6 @@ export const WorkflowBuilderView = (props: Props) => {
   const [basePresetId, setBasePresetId] = useState<WorkflowId | null>(
     initialDraft?.basePresetId ?? null,
   );
-  const [processText, setProcessText] = useState(initialDraft?.processText ?? '');
   const [guidance, setGuidance] = useState(
     initialDraft?.guidance ?? workflowRules.standingGuidance,
   );
@@ -260,32 +220,7 @@ export const WorkflowBuilderView = (props: Props) => {
   const suggestedGoalRef = useRef<string | null>(null);
   const latestGoalRef = useRef(goalText);
   latestGoalRef.current = goalText;
-  const [plan, setPlan] = useState<PlannerOutput | null>(initialDraft?.plan ?? null);
-  const initialWorkflowDraft: WorkflowDraft = initialDraft?.workflow ?? {
-    name: '',
-    description: '',
-    goal: '',
-    processText: '',
-    steps: [],
-    origin: 'custom',
-    isPreset: false,
-  };
-  const { draft: authoringDraft, setDraft: setAuthoringDraft } = useWorkflowDraft({
-    initial: initialWorkflowDraft,
-  });
-  const steps = authoringDraft.steps;
-  const setSteps = (updater: React.SetStateAction<ReadonlyArray<StepDraft>>) => {
-    setAuthoringDraft((current) => ({
-      ...current,
-      steps: typeof updater === 'function' ? updater(current.steps) : updater,
-    }));
-  };
-  const [isPlannerOpen, setIsPlannerOpen] = useState(
-    () => initialWorkflowDraft.steps.length === 0 || (initialDraft?.processText ?? '') !== '',
-  );
-  const [planning, setPlanning] = useState(false);
-  const [expandedKey, setExpandedKey] = useState<string | null>(null);
-  const [saveAsPreset, setSaveAsPreset] = useState(initialDraft?.saveAsPreset ?? false);
+  const [steps, setSteps] = useState<ReadonlyArray<StepDraft>>(initialDraft?.steps ?? []);
   const [autonomyOverride, setAutonomyOverride] = useState<WorkflowAutonomy | null>(
     initialDraft?.autonomy ?? null,
   );
@@ -317,9 +252,6 @@ export const WorkflowBuilderView = (props: Props) => {
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<BuilderError | null>(null);
-  const [plannerProviderOverride, setPlannerProviderOverride] = useState<ProviderId | ''>('');
-  const [plannerModelOverride, setPlannerModelOverride] = useState('');
-  const [plannerEffortOverride, setPlannerEffortOverride] = useState<EffortLevel | null>(null);
 
   const providerId: ProviderId =
     session === null
@@ -334,33 +266,12 @@ export const WorkflowBuilderView = (props: Props) => {
   );
 
   const resolutionScope = session === null ? { workspaceId } : { sessionId: session.id };
-  const planResolution = useResolution({ task: 'plan_generation', ...resolutionScope });
-  const resolvedPlanTaskModel = useMemo(
-    () => resolutionAsTask({ resolution: planResolution }),
-    [planResolution],
-  );
 
   const prosePolishResolution = useResolution({ task: 'prose_polish', ...resolutionScope });
   const resolvedProsePolishTaskModel = useMemo(
     () => resolutionAsTask({ resolution: prosePolishResolution }),
     [prosePolishResolution],
   );
-
-  const plannerEffectiveProviderId: ProviderId =
-    plannerProviderOverride !== '' ? plannerProviderOverride : resolvedPlanTaskModel.providerId;
-
-  const plannerRecommendedModel = useMemo(
-    () =>
-      plannerProviderOverride !== ''
-        ? autoModelOn({
-            slot: { kind: 'task', id: 'plan_generation' },
-            provider: plannerProviderOverride,
-          }).model
-        : resolvedPlanTaskModel.model,
-    [plannerProviderOverride, providerId, resolvedPlanTaskModel],
-  );
-
-  const plannerEffort = plannerEffortOverride ?? resolvedPlanTaskModel.effort ?? PLANNER_EFFORT;
 
   const orchestratorResolution = useResolution({
     task: 'workflow_orchestrator',
@@ -473,19 +384,9 @@ export const WorkflowBuilderView = (props: Props) => {
     goalHistory,
     selectedPresetId,
     basePresetId,
-    processText,
     guidance,
     guidanceRoles,
-    plan,
-    workflow: {
-      name: plan?.workflowName ?? '',
-      description: plan?.reasoning ?? '',
-      goal: goalText,
-      steps,
-      origin: 'custom',
-      isPreset: saveAsPreset,
-    },
-    saveAsPreset,
+    steps,
     autoRun,
     ...(autonomyOverride !== null && { autonomy: autonomyOverride }),
     title,
@@ -511,12 +412,9 @@ export const WorkflowBuilderView = (props: Props) => {
     goalHistory,
     selectedPresetId,
     basePresetId,
-    processText,
     guidance,
     guidanceRoles,
-    plan,
     steps,
-    saveAsPreset,
     autoRun,
     autonomyOverride,
     title,
@@ -538,14 +436,10 @@ export const WorkflowBuilderView = (props: Props) => {
     setGoalHistory([]);
     setSelectedPresetId(null);
     setBasePresetId(null);
-    setProcessText('');
     setGuidance(workflowRules.standingGuidance);
     setGuidanceRoles(workflowRules.guidanceRoles);
     setGuidanceUndo(null);
-    setPlan(null);
     setSteps([]);
-    setIsPlannerOpen(true);
-    setSaveAsPreset(false);
     setAutonomyOverride(null);
     setTitle('');
     setTitleSuggestion(null);
@@ -557,7 +451,6 @@ export const WorkflowBuilderView = (props: Props) => {
     setSpendLimitDraft(workflowRules.spendLimitUsd?.toString() ?? '');
     setSpendLimitMode(workflowRules.spendLimitMode);
     setError(null);
-    setExpandedKey(null);
     clearWorkflowDraft(draftKey);
   };
 
@@ -565,8 +458,6 @@ export const WorkflowBuilderView = (props: Props) => {
     clearWorkflowDraft(draftKey);
     props.onClose?.();
   };
-
-  const blocked = busy || planning;
 
   const requestTitleSuggestion = (goal: string) => {
     const trimmed = goal.trim();
@@ -593,42 +484,6 @@ export const WorkflowBuilderView = (props: Props) => {
   const patchStep = (key: string, patch: Partial<StepDraft>) =>
     setSteps((previous) => updateDraftStep({ steps: previous, key, patch }));
 
-  const moveStep = (key: string, dir: -1 | 1) =>
-    setSteps((previous) => {
-      const i = previous.findIndex((step) => step.key === key);
-      const j = i + dir;
-      if (i === -1 || j < 0 || j >= previous.length) {
-        return previous;
-      }
-      return reorderDraftSteps({ steps: previous, from: i, to: j + (dir > 0 ? 1 : 0) });
-    });
-
-  const moveStepTo = (from: number, to: number) => {
-    if (to === from || to === from + 1) {
-      return;
-    }
-    setSteps((previous) => reorderDraftSteps({ steps: previous, from, to }));
-  };
-
-  const savedSteps = useSavedSteps({ workspaceId });
-  const addStep = (picked: SavedStep | null) => {
-    const step = picked === null ? blankStepDraft() : stepDraftFromSavedStep({ step: picked });
-    setSteps((previous) => addDraftStep({ steps: previous, step }));
-    setExpandedKey(step.key);
-  };
-  const { savingKey, saveAsStep } = useSaveAsStep({
-    workspaceId,
-    onLinked: (key, libraryStepId) => patchStep(key, { libraryStepId }),
-    onError: (message) => setError({ title: "Couldn't save the step", message }),
-  });
-
-  const { drag, dropIndex, startStepDrag, ghost } = useWorkflowDrag({
-    enabled: steps.length > 0,
-    onReorder: moveStepTo,
-  });
-  const isDraggingStep = drag !== null;
-  const draggingKey = drag?.kind === 'step' ? (steps[drag.fromIndex]?.key ?? null) : null;
-
   const resolvedProvider = (step: StepDraft): ProviderId =>
     step.provider !== '' ? step.provider : providerId;
   const recommendedModel = (step: StepDraft): string =>
@@ -639,20 +494,6 @@ export const WorkflowBuilderView = (props: Props) => {
     });
   const resolvedModel = (step: StepDraft): string =>
     step.model !== '' ? step.model : recommendedModel(step);
-
-  const stepPolish = usePolish({
-    onError: (message) => setError({ title: "Couldn't polish the step", message }),
-  });
-  const stepPolishDeps = {
-    ...resolvedProsePolishTaskModel,
-    ...(sessionWorktree != null && { workingDir: sessionWorktree }),
-  };
-  const deleteStep = useStepDeleteUndo({
-    steps,
-    setSteps,
-    contextKey: selectedPresetId,
-    onDeleted: (key) => setExpandedKey((cur) => (cur === key ? null : cur)),
-  });
 
   const sessionGoal = (sessionSlots.find((s) => s.key === 'goal')?.value ?? '').trim();
   const selectedPreset = presets.find((t) => t.id === selectedPresetId) ?? null;
@@ -714,7 +555,14 @@ export const WorkflowBuilderView = (props: Props) => {
     setSelectedPresetId(t.id);
     setBasePresetId(t.id);
     setSteps(draftFromWorkflow({ workflow: t }).steps);
-    setExpandedKey(null);
+  };
+
+  const onResetPreset = () => {
+    if (basePreset === null) {
+      return;
+    }
+    setSteps(draftFromWorkflow({ workflow: basePreset }).steps);
+    setTitle('');
   };
 
   const onDeletePreset = async (t: Workflow) => {
@@ -731,7 +579,6 @@ export const WorkflowBuilderView = (props: Props) => {
         setSelectedPresetId(null);
         setBasePresetId(null);
         setSteps([]);
-        setExpandedKey(null);
       }
     } catch (err) {
       setError({ title: "Couldn't delete the preset", message: formatError(err) });
@@ -774,71 +621,17 @@ export const WorkflowBuilderView = (props: Props) => {
     };
   };
 
-  const onPlan = async () => {
-    const process = processText.trim();
-    if (process.length === 0 || blocked) {
-      return;
-    }
-    setError(null);
-    setPlanning(true);
-    try {
-      const effectiveModel =
-        plannerModelOverride !== '' ? plannerModelOverride : plannerRecommendedModel;
-      const client = createWorkflowPlanner({
-        deps: {
-          providerId: plannerEffectiveProviderId,
-          model: effectiveModel,
-          effort: plannerEffort,
-          ...(sessionWorktree != null && { workingDir: sessionWorktree }),
-        },
-      });
-      const storeState = useAppStore.getState();
-      const profileBlock = buildProfileGuard({
-        profile: storeState.workspaces.find((candidate) => candidate.id === workspaceId)?.profile,
-        audience: 'planner',
-      });
-      const projectsBlock = buildWorkspaceProjectsBlock({
-        projects: storeState.projects.filter((project) => project.workspaceId === workspaceId),
-      });
-      const repoContext = [profileBlock, projectsBlock].filter((block) => block !== '').join('\n');
-      const result = await client.plan({
-        process,
-        ...(repoContext.length > 0 && { repoContext }),
-      });
-      const planned = stepsFromPlan({ plan: result.output, roleModels });
-      if (planned.length === 0) {
-        setError({
-          title: 'The planner returned no usable steps',
-          message: 'Nothing was replaced. Describe the steps differently and try again.',
-        });
-        return;
-      }
-      setPlan(result.output);
-      setSteps(planned);
-      setBasePresetId(null);
-      setExpandedKey(null);
-    } catch (err) {
-      setError({ title: "Couldn't draft the plan", message: formatError(err) });
-    } finally {
-      setPlanning(false);
-    }
-  };
-
   const presetName = selectedPreset?.name ?? basePreset?.name ?? null;
   const fallbackTitle =
     mode === 'dynamic'
-      ? uniqueWorkflowName(DYNAMIC_WORKFLOW_NAME, phaseTemplates)
-      : mode === 'custom'
-        ? (plan?.workflowName ?? CUSTOM_WORKFLOW_NAME)
-        : (presetName ?? CUSTOM_WORKFLOW_NAME);
-  const activeSuggestion =
-    mode === 'preset' || (mode === 'custom' && plan !== null) ? null : titleSuggestion;
+      ? uniqueWorkflowName(ORCHESTRATED_WORKFLOW_NAME, phaseTemplates)
+      : (presetName ?? PRESET_FALLBACK_NAME);
+  const activeSuggestion = mode === 'preset' ? null : titleSuggestion;
   const defaultTitle = activeSuggestion ?? fallbackTitle;
   const typedTitle = title.trim();
   const resolvedTitle = typedTitle !== '' ? typedTitle : defaultTitle;
   const isPresetRenamed = mode === 'preset' && typedTitle !== '' && typedTitle !== presetName;
   const isPresetEdited = basePreset !== null && (presetDirty || isPresetRenamed);
-  const canSaveAsPreset = mode === 'custom' || presetDirty || isPresetRenamed;
 
   const runOn = async (target: Session): Promise<void> => {
     if (mode === 'preset' && selectedPreset !== null && !presetDirty && !isPresetRenamed) {
@@ -853,14 +646,11 @@ export const WorkflowBuilderView = (props: Props) => {
     const workflowId = `wf_builder_${crypto.randomUUID()}` as WorkflowId;
     const name = uniqueWorkflowName(resolvedTitle, phaseTemplates);
     const description =
-      mode === 'custom'
-        ? (plan?.reasoning ?? '')
-        : mode === 'dynamic'
-          ? 'Steps are decided at runtime from the latest results.'
-          : (selectedPreset?.description ?? basePreset?.description ?? '');
+      mode === 'dynamic'
+        ? 'Steps are decided at runtime from the latest results.'
+        : (selectedPreset?.description ?? basePreset?.description ?? '');
     const goal = goalText.trim();
-    const process =
-      mode === 'custom' ? processText.trim() : mode === 'dynamic' ? guidance.trim() : '';
+    const process = mode === 'dynamic' ? guidance.trim() : '';
     const workflow: Workflow = {
       id: workflowId,
       workspaceId,
@@ -869,7 +659,7 @@ export const WorkflowBuilderView = (props: Props) => {
       ...(goal.length > 0 && { goal }),
       ...(process.length > 0 && { processText: process }),
       steps: [],
-      isPreset: mode === 'dynamic' ? false : saveAsPreset,
+      isPreset: false,
       origin: mode === 'dynamic' ? 'orchestrated' : 'custom',
       createdAt: now,
       updatedAt: now,
@@ -877,21 +667,18 @@ export const WorkflowBuilderView = (props: Props) => {
     const saved = await savePhaseTemplate(
       mode === 'dynamic'
         ? workflow
-        : {
-            ...upsertArgsFromDraft({
-              workspaceId,
-              id: workflowId,
-              draft: {
-                name,
-                description,
-                goal,
-                steps: steps.map((step) => ({ ...step, sourceStepId: null })),
-                origin: 'custom',
-                isPreset: saveAsPreset,
-              },
-            }),
-            ...(process.length > 0 && { processText: process }),
-          },
+        : upsertArgsFromDraft({
+            workspaceId,
+            id: workflowId,
+            draft: {
+              name,
+              description,
+              goal,
+              steps: steps.map((step) => ({ ...step, sourceStepId: null })),
+              origin: 'custom',
+              isPreset: false,
+            },
+          }),
     );
     if (mode === 'dynamic' && typedTitle === '' && activeSuggestion === null) {
       void generateWorkflowTitle(
@@ -911,13 +698,10 @@ export const WorkflowBuilderView = (props: Props) => {
   };
 
   const onStart = async () => {
-    if (blocked) {
+    if (busy) {
       return;
     }
-    if (
-      (mode === 'preset' && selectedPreset === null) ||
-      (mode === 'custom' && steps.length === 0)
-    ) {
+    if (mode === 'preset' && selectedPreset === null) {
       return;
     }
     setError(null);
@@ -933,13 +717,11 @@ export const WorkflowBuilderView = (props: Props) => {
   };
 
   const goalMissing = goalText.trim().length === 0;
-  const stepsMissing = mode === 'preset' ? selectedPreset === null : steps.length === 0;
-  const spendLimitInvalid =
-    mode === 'dynamic' && isSpendLimitEnabled && parseSpendLimit(spendLimitDraft) == null;
+  const stepsMissing = mode === 'preset' && selectedPreset === null;
+  const spendLimitInvalid = isSpendLimitEnabled && parseSpendLimit(spendLimitDraft) == null;
   const startGate = workflowStartGate({
     mode,
     isStarting: busy,
-    isPlanning: planning,
     hasGoal: !goalMissing,
     hasSteps: !stepsMissing,
     isSpendLimitValid: !spendLimitInvalid,
@@ -956,22 +738,11 @@ export const WorkflowBuilderView = (props: Props) => {
           onDelete={onDeletePreset}
         />
       ) : null
-    ) : mode === 'custom' ? (
-      <Button
-        size="sm"
-        variant={isPlannerOpen ? 'primary' : 'secondary'}
-        aria-pressed={isPlannerOpen}
-        disabled={blocked}
-        onClick={() => setIsPlannerOpen((open) => !open)}
-      >
-        <CONCEPT_ICONS.enhance size={ICON_SIZE.control} aria-hidden />
-        Draft with planner
-      </Button>
     ) : orchestratorProviders.length > 0 ? (
       <ProviderPoolChip
         providers={orchestratorProviders}
         pool={effectivePool}
-        disabled={blocked}
+        disabled={busy}
         onChange={setProviderPool}
       />
     ) : null;
@@ -989,96 +760,19 @@ export const WorkflowBuilderView = (props: Props) => {
     isOrchestrated: mode === 'dynamic',
     isReviewed: !autoRun && steps.length > 1,
   });
-  const hasStepEstimates =
-    estimates !== null &&
-    mode !== 'dynamic' &&
-    [...estimates.steps.values()].some((estimate) => estimate.note !== null);
 
-  const renderPlanTree = () => (
-    <StepTree
-      steps={steps}
-      editedCount={editedKeys.size}
-      identityIndex={identityIndex}
-      isPlanning={planning}
-      isDragging={isDraggingStep}
-      dropIndex={dropIndex}
-      disabled={blocked}
-      banner={planning && steps.length > 0 ? <PlanDraftingBanner /> : null}
-      savedSteps={savedSteps}
-      onAddStep={addStep}
-      renderStep={({ step, index, span }) => {
-        const effort = step.effort ?? roleEffort(step.role);
-        return (
-          <StepRow
-            key={step.key}
-            step={step}
-            ordinal={index + 1}
-            kind={classifyStep({ step })}
-            provider={resolvedProvider(step)}
-            model={resolvedModel(step)}
-            effort={effort}
-            estimate={hasStepEstimates ? (estimates?.steps.get(step.key) ?? null) : undefined}
-            span={span}
-            identityIndex={identityIndex}
-            isExpanded={expandedKey === step.key}
-            isEdited={editedKeys.has(step.key)}
-            isPinned={step.provider !== '' || step.model !== ''}
-            isDragging={draggingKey === step.key}
-            disabled={blocked}
-            onToggle={() => setExpandedKey((cur) => (cur === step.key ? null : step.key))}
-            onStartDrag={(event) =>
-              startStepDrag(index, step.name.trim() || ROLE_LABEL[step.role], event)
-            }
-            onMoveUp={() => moveStep(step.key, -1)}
-            onMoveDown={() => moveStep(step.key, 1)}
-            editor={
-              <StepEditor
-                step={step}
-                ordinal={index + 1}
-                stepCount={steps.length}
-                effort={effort}
-                estimateNote={estimates?.steps.get(step.key)?.note ?? null}
-                recommendedProvider={providerId}
-                recommendedModel={recommendedModel(step)}
-                connectedProviders={connectedProviders}
-                isRoutingOverridden={step.provider !== '' || step.model !== ''}
-                disabled={blocked}
-                polish={stepPolishFields({
-                  polish: stepPolish,
-                  deps: stepPolishDeps,
-                  goal: goalText,
-                  step,
-                  patchStep,
-                })}
-                onName={(name) => patchStep(step.key, { name })}
-                onRole={(role) => patchStep(step.key, { role })}
-                onPrompt={(prompt) => patchStep(step.key, { prompt })}
-                onExpectedOutput={(expectedOutput) => patchStep(step.key, { expectedOutput })}
-                onRoute={(route) => patchStep(step.key, route)}
-                onVerbosity={(verbosity) => patchStep(step.key, { verbosity })}
-                onRoutingReset={() => patchStep(step.key, { provider: '', model: '' })}
-                onPin={() =>
-                  patchStep(step.key, {
-                    provider: resolvedProvider(step),
-                    model: resolvedModel(step),
-                  })
-                }
-                onMoveUp={() => moveStep(step.key, -1)}
-                onMoveDown={() => moveStep(step.key, 1)}
-                onDuplicate={() =>
-                  setSteps((previous) => duplicateDraftStep({ steps: previous, key: step.key }))
-                }
-                isSavingAsStep={savingKey === step.key}
-                onSaveAsStep={() => void saveAsStep(step)}
-                onDelete={() => deleteStep(step.key)}
-                onDone={() => setExpandedKey(null)}
-              />
-            }
-          />
-        );
-      }}
-    />
-  );
+  const presetRows: ReadonlyArray<PresetLaneRow> = steps.map((step) => ({
+    step,
+    kind: classifyStep({ step }),
+    provider: resolvedProvider(step),
+    model: resolvedModel(step),
+    effort: step.effort ?? roleEffort(step.role),
+    recommendedProvider: providerId,
+    recommendedModel: recommendedModel(step),
+    isPinned: step.provider !== '' || step.model !== '',
+    isEdited: editedKeys.has(step.key),
+    estimate: estimates?.steps.get(step.key) ?? null,
+  }));
 
   const guidanceDiffers = guidance !== workflowRules.standingGuidance;
   const spendDiffers =
@@ -1114,7 +808,7 @@ export const WorkflowBuilderView = (props: Props) => {
       canUndo={guidanceUndo !== null}
       canPolish={guidance.trim() !== ''}
       isPolishing={isPolishingGuidance}
-      disabled={blocked}
+      disabled={busy}
       onReset={() => {
         setGuidance(workflowRules.standingGuidance);
         setGuidanceUndo(null);
@@ -1135,20 +829,30 @@ export const WorkflowBuilderView = (props: Props) => {
     />
   );
 
-  const renderPlan = () => {
+  const guidanceFooter =
+    mode === 'dynamic' ? (
+      <span className="text-meta text-muted-foreground">
+        Sent to <span className="text-foreground">the orchestrator</span>
+      </span>
+    ) : guidance.trim() === '' ? null : (
+      <GuidanceRecipients
+        roles={guidanceRoles}
+        disabled={busy}
+        marker={
+          sameRoles({ left: guidanceRoles, right: workflowRules.guidanceRoles }) ? null : (
+            <RuleDot ruleValue={guidanceRoleNames({ roles: workflowRules.guidanceRoles })} />
+          )
+        }
+        onRoles={setGuidanceRoles}
+      />
+    );
+
+  const renderLane = () => {
     if (mode === 'dynamic') {
       return (
-        <OrchestratorRow
+        <OrchestrateLane
           identityIndex={identityIndex}
-          guidance={guidance}
-          guidanceFooter={
-            <>
-              {guidanceTools}
-              <span className="text-meta text-muted-foreground">
-                Sent to <span className="text-foreground">the orchestrator</span>
-              </span>
-            </>
-          }
+          autonomy={autonomy}
           providerOverride={orchestratorProviderOverride}
           modelOverride={orchestratorModelOverride}
           effort={orchestratorEffort}
@@ -1156,8 +860,7 @@ export const WorkflowBuilderView = (props: Props) => {
           recommendedModel={recommendedOrchestratorModel}
           allowedProviders={orchestratorProviders}
           isOverridden={isOrchestratorOverridden}
-          disabled={blocked}
-          onGuidance={setGuidance}
+          isDisabled={busy}
           onRoute={(route) => {
             setOrchestratorProviderOverride(route.provider);
             setOrchestratorModelOverride(route.model);
@@ -1169,46 +872,58 @@ export const WorkflowBuilderView = (props: Props) => {
         />
       );
     }
-    if (mode === 'preset' && presets.length === 0) {
+    if (presets.length === 0) {
       return (
         <EmptyState
           size="section"
           tone={CONCEPT_TONE.workflows}
           icon={CONCEPT_ICONS.workflows}
           title="No presets in this workspace yet"
-          description="Save a workflow as a preset when you start it, and it shows up here."
+          description="Save a run as a preset from its page, and it shows up here."
           action={
-            <Chip
-              as="button"
-              tone="primary"
-              kind="reference"
-              shape="badge"
-              label="Describe your own"
-              onClick={() => setMode('custom')}
-            />
+            <Button size="sm" variant="secondary" onClick={() => setMode('dynamic')}>
+              Orchestrate instead
+            </Button>
           }
         />
       );
     }
-    if (mode === 'preset' && steps.length === 0) {
+    if (steps.length === 0) {
       return null;
     }
-    return renderPlanTree();
+    return (
+      <PresetLane
+        rows={presetRows}
+        identityIndex={identityIndex}
+        autonomy={autonomy}
+        connectedProviders={connectedProviders}
+        total={estimates?.total ?? null}
+        isDisabled={busy}
+        onRoute={(key, route) => patchStep(key, route)}
+        onFollowRole={(key) => patchStep(key, { provider: '', model: '' })}
+        onPin={(key) => {
+          const step = steps.find((candidate) => candidate.key === key);
+          if (step !== undefined) {
+            patchStep(key, { provider: resolvedProvider(step), model: resolvedModel(step) });
+          }
+        }}
+      />
+    );
   };
 
   const launchControls = (
     <>
-      <StartsChip
-        choice={startChoice}
-        runs={activeRuns}
-        disabled={blocked}
-        onChange={setStartChoice}
-      />
       <AutonomyChip
         autonomy={autonomy}
         ruleAutonomy={workflowRules.autonomy}
         disabled={busy}
         onChange={chooseAutonomy}
+      />
+      <StartsChip
+        choice={startChoice}
+        runs={activeRuns}
+        disabled={busy}
+        onChange={setStartChoice}
       />
       <SpendCapChip
         isEnabled={isSpendLimitEnabled}
@@ -1220,7 +935,7 @@ export const WorkflowBuilderView = (props: Props) => {
           amount: workflowRules.spendLimitUsd?.toString() ?? '',
           mode: workflowRules.spendLimitMode,
         }}
-        disabled={blocked}
+        disabled={busy}
         onEnabled={setIsSpendLimitEnabled}
         onAmount={setSpendLimitDraft}
         onMode={setSpendLimitMode}
@@ -1230,25 +945,17 @@ export const WorkflowBuilderView = (props: Props) => {
           setSpendLimitMode(workflowRules.spendLimitMode);
         }}
       />
-      {mode !== 'dynamic' && canSaveAsPreset ? (
-        <Switch
-          label="Save as preset"
-          checked={saveAsPreset}
-          onChange={setSaveAsPreset}
-          disabled={busy}
-        />
-      ) : null}
     </>
   );
 
-  const fields = (
-    <>
+  const body = (
+    <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
         <BuilderTitleField
           value={title}
           placeholder={defaultTitle}
           suggestion={activeSuggestion}
-          disabled={blocked}
+          disabled={busy}
           onChange={setTitle}
           onAcceptSuggestion={() => {
             if (activeSuggestion !== null) {
@@ -1257,12 +964,16 @@ export const WorkflowBuilderView = (props: Props) => {
           }}
           origin={
             isPresetEdited && basePreset !== null ? (
-              <span className="shrink-0 rounded-sm bg-muted px-2 py-0.5 text-chip text-muted-foreground">
-                {`Edited from ${basePreset.name}`}
+              <span className="flex shrink-0 items-center gap-2">
+                <span className="rounded-sm bg-muted px-2 py-0.5 text-chip text-muted-foreground">
+                  {`Edited from ${basePreset.name}`}
+                </span>
+                <Button variant="ghost" size="sm" disabled={busy} onClick={onResetPreset}>
+                  Reset
+                </Button>
               </span>
             ) : null
           }
-          estimate={estimates?.total == null ? null : <PlanEstimateChip total={estimates.total} />}
         />
         <GoalField
           value={goalText}
@@ -1282,110 +993,87 @@ export const WorkflowBuilderView = (props: Props) => {
         />
       </div>
       <div className="flex flex-col gap-4">
-        <ModeSwitch mode={mode} disabled={blocked} control={modeControl} onChange={setMode} />
-        {mode === 'custom' && isPlannerOpen ? (
-          <PlannerDraftRow
-            process={processText}
-            hasPlan={plan !== null}
-            isPlanning={planning}
-            disabled={blocked}
-            connectedProviders={connectedProviders}
-            providerOverride={plannerProviderOverride}
-            modelOverride={plannerModelOverride}
-            effort={plannerEffort}
-            recommendedProvider={resolvedPlanTaskModel.providerId}
-            recommendedModel={plannerRecommendedModel}
-            onProcess={setProcessText}
-            onRoute={(route) => {
-              setPlannerProviderOverride(route.provider);
-              setPlannerModelOverride(route.model);
-              if (route.provider !== '' && route.effort !== plannerEffort) {
-                setPlannerEffortOverride(route.effort);
-              }
-            }}
-            onPlan={() => void onPlan()}
-          />
-        ) : null}
-        {renderPlan()}
-        {mode === 'dynamic' ? null : (
-          <RunGuidanceField
-            guidance={guidance}
-            ruleSummary={guidanceRuleSummary}
-            differs={guidanceDiffers}
-            disabled={blocked}
-            tools={guidanceTools}
-            recipients={
-              guidance.trim() === '' ? (
-                <EmptyLine className="text-meta text-faint-foreground">Nothing to send.</EmptyLine>
-              ) : (
-                <>
-                  <GuidanceRecipients
-                    roles={guidanceRoles}
-                    disabled={blocked}
-                    marker={
-                      sameRoles({
-                        left: guidanceRoles,
-                        right: workflowRules.guidanceRoles,
-                      }) ? null : (
-                        <RuleDot
-                          ruleValue={guidanceRoleNames({ roles: workflowRules.guidanceRoles })}
-                        />
-                      )
-                    }
-                    onRoles={setGuidanceRoles}
-                  />
-                </>
-              )
-            }
-            onGuidance={setGuidance}
-          />
-        )}
-      </div>
-      <div className="flex flex-col gap-3">
-        {error === null ? null : (
-          <Notice
-            tone="danger"
-            placement="inline"
-            role="alert"
-            title={error.title}
-            body={error.message}
-          />
-        )}
-        <FromRulesRow
-          changed={[
-            ...(autonomyOverride === null ? [] : ['when to ask']),
-            ...(spendDiffers ? ['spend cap'] : []),
-            ...(guidanceDiffers ? ['guidance'] : []),
-          ]}
+        <RunModeBar
+          mode={mode}
+          isDisabled={busy}
+          control={modeControl}
+          description={
+            mode === 'preset' && selectedPreset !== null && selectedPreset.description !== ''
+              ? selectedPreset.description
+              : MODE_DESCRIPTION[mode]
+          }
+          onChange={setMode}
         />
-        <LaunchBar
-          controls={launchControls}
-          reason={startGate.reason}
-          isStartDisabled={startGate.isDisabled}
-          isStarting={busy}
-          label={kickoff?.primaryLabel ?? null}
-          canDiscard={!draftEmpty}
-          onDiscard={resetDraft}
-          onStart={() => void onStart()}
+        {renderLane()}
+        <RunGuidance
+          guidance={guidance}
+          ruleSummary={guidanceRuleSummary}
+          hasDiff={guidanceDiffers}
+          isDisabled={busy}
+          tools={guidanceTools}
+          footer={guidanceFooter}
+          onGuidance={setGuidance}
         />
       </div>
-      <DragGhost ghost={ghost} />
-    </>
+    </div>
   );
 
-  if (kickoff !== null) {
-    return <div className="flex flex-col gap-8">{fields}</div>;
+  const footer = (
+    <div className="flex flex-col gap-3">
+      {error === null ? null : (
+        <Notice
+          tone="danger"
+          placement="inline"
+          role="alert"
+          title={error.title}
+          body={error.message}
+        />
+      )}
+      <FromRulesRow
+        changed={[
+          ...(autonomyOverride === null ? [] : ['autonomy']),
+          ...(spendDiffers ? ['spend cap'] : []),
+          ...(guidanceDiffers ? ['guidance'] : []),
+        ]}
+      />
+      <LaunchBar
+        controls={launchControls}
+        estimate={
+          mode === 'dynamic' && estimates?.total != null ? (
+            <PlanEstimateChip total={estimates.total} />
+          ) : null
+        }
+        reason={startGate.reason}
+        isStartDisabled={startGate.isDisabled}
+        isStarting={busy}
+        label={kickoff?.primaryLabel ?? null}
+        canDiscard={slots === undefined && !draftEmpty}
+        onDiscard={resetDraft}
+        onStart={() => void onStart()}
+      />
+    </div>
+  );
+
+  if (slots === undefined) {
+    return (
+      <div className="flex flex-col gap-8">
+        {body}
+        {footer}
+      </div>
+    );
   }
 
   return (
-    <StudioShell
-      icon={CONCEPT_ICONS.workflows}
-      title="Start a run"
-      closeLabel="cancel workflow builder"
-      onClose={handleClose}
-      variant="slot"
-    >
-      {() => <FormPage>{fields}</FormPage>}
-    </StudioShell>
+    <>
+      {body}
+      <Docked node={slots.actionsHost}>{footer}</Docked>
+      {draftEmpty ? null : (
+        <Docked node={slots.action}>
+          <Button variant="ghost" size="sm" onClick={resetDraft} disabled={busy}>
+            Discard draft
+          </Button>
+        </Docked>
+      )}
+    </>
   );
 };

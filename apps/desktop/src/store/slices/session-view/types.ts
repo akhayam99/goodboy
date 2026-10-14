@@ -157,11 +157,6 @@ export const PR_GROUP_ORDER: Record<SessionPrGroup, number> = {
   merged: 6,
 };
 
-export type ArtifactCreationTarget = Readonly<{
-  kind: GeneratedArtifactKind;
-  note: string | null;
-}>;
-
 export type OpenArtifactCreationParams = Readonly<{
   sessionId: SessionId;
   kind: GeneratedArtifactKind;
@@ -169,8 +164,9 @@ export type OpenArtifactCreationParams = Readonly<{
   note?: string | null;
 }>;
 
-export type CloseArtifactCreationParams = Readonly<{
+export type AwaitArtifactAgentParams = Readonly<{
   sessionId: SessionId;
+  agentId: AgentId | null;
 }>;
 
 export type SessionCreationKind = 'agent' | 'workflow' | 'branch';
@@ -191,7 +187,7 @@ type SessionViewSliceState = {
   readonly focusedArtifactId: Readonly<Record<SessionId, ArtifactId | null>>;
   readonly artifactFilter: Readonly<Record<SessionId, ArtifactFilter>>;
   readonly artifactConversationAgentId: Readonly<Record<SessionId, AgentId | null>>;
-  readonly artifactCreation: Readonly<Record<SessionId, ArtifactCreationTarget | null>>;
+  readonly awaitedArtifactAgentId: Readonly<Record<SessionId, AgentId | null>>;
   readonly focusedGithubIssueNumber: Readonly<Record<SessionId, number | null>>;
   readonly focusedExternalTask: Readonly<Record<SessionId, FocusedExternalTask | null>>;
   readonly agentPane: Readonly<Record<SessionId, AgentPane | null>>;
@@ -259,7 +255,7 @@ type SessionViewSliceActions = {
     readonly agentId: AgentId;
   }): void;
   openArtifactCreation(params: OpenArtifactCreationParams): void;
-  closeArtifactCreation(params: CloseArtifactCreationParams): void;
+  awaitArtifactAgent(params: AwaitArtifactAgentParams): void;
   setFocusedGithubIssueNumber(sessionId: SessionId, issueNumber: number | null): void;
   openExternalTaskLens(sessionId: SessionId, task: SessionExternalTask): void;
   setSessionStudio(sessionId: SessionId, studio: SessionStudio | null): void;

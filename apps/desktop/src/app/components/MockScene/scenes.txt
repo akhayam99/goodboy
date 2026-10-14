@@ -327,6 +327,14 @@ mount-big-stats
 mount-mismatch
 mounts
 needs-you-card
+new-drawer-agent
+new-drawer-agent-auto
+new-drawer-narrow
+new-drawer-run
+new-drawer-run-guidance
+new-drawer-run-preset
+new-drawer-write
+new-drawer-write-wireframe
 next-step-rebase
 notifications
 notifications-delete-all
@@ -555,7 +563,6 @@ topbar-theme-light
 topbar-theme-system
 trail-agent
 trail-artifact
-trail-artifact-create
 trail-run
 transcript
 transcript-mount

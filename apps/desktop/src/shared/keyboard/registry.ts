@@ -660,6 +660,13 @@ export const SHORTCUTS = {
     group: 'general',
     scope: 'chatPage',
   },
+  'overview.newHere': {
+    combo: 'cmd+KeyN',
+    label: 'New run, agent or write-up',
+    plane: 'app',
+    group: 'session',
+    scope: 'overview',
+  },
   'terminal.newHere': {
     combo: 'cmd+KeyN',
     label: 'New terminal',

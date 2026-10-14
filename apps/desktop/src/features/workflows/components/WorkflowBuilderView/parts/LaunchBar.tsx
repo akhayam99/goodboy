@@ -6,12 +6,13 @@ import { NAMES } from '../../../../../shared/names';
 
 type Props = {
   readonly controls: ReactNode;
+  readonly estimate?: ReactNode;
   readonly reason: string | null;
   readonly isStartDisabled: boolean;
   readonly isStarting: boolean;
   readonly label: string | null;
-  readonly canDiscard: boolean;
-  readonly onDiscard: () => void;
+  readonly canDiscard?: boolean;
+  readonly onDiscard?: () => void;
   readonly onStart: () => void;
 };
 
@@ -19,38 +20,42 @@ const START_REASON_ID = 'workflow-start-reason';
 
 export const LaunchBar = ({
   controls,
+  estimate = null,
   reason,
   isStartDisabled,
   isStarting,
   label,
-  canDiscard,
+  canDiscard = false,
   onDiscard,
   onStart,
 }: Props) => (
-  <FormActions leading={controls} reason={reason} reasonId={START_REASON_ID}>
-    {canDiscard ? (
+  <div className="flex min-w-0 flex-col gap-2">
+    {estimate === null ? null : <div className="flex justify-end">{estimate}</div>}
+    <FormActions leading={controls} reason={reason} reasonId={START_REASON_ID}>
+      {canDiscard && onDiscard !== undefined ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onDiscard}
+          disabled={isStarting}
+          aria-label="Discard workflow draft"
+          className="gap-2 text-muted-foreground"
+        >
+          <RotateCcw size={ICON_SIZE.control} aria-hidden />
+          Discard
+        </Button>
+      ) : null}
       <Button
-        variant="ghost"
-        size="sm"
-        onClick={onDiscard}
-        disabled={isStarting}
-        aria-label="Discard workflow draft"
-        className="gap-2 text-muted-foreground"
+        size="md"
+        onClick={onStart}
+        disabled={isStartDisabled}
+        {...(reason === null ? {} : { 'aria-describedby': START_REASON_ID })}
+        className="shrink-0"
       >
-        <RotateCcw size={ICON_SIZE.control} aria-hidden />
-        Discard
+        <span className={cn(isStarting && 'text-shimmer')}>
+          {isStarting ? NAMES.starting : (label ?? 'Start run')}
+        </span>
       </Button>
-    ) : null}
-    <Button
-      size="md"
-      onClick={onStart}
-      disabled={isStartDisabled}
-      {...(reason === null ? {} : { 'aria-describedby': START_REASON_ID })}
-      className="shrink-0"
-    >
-      <span className={cn(isStarting && 'text-shimmer')}>
-        {isStarting ? NAMES.starting : (label ?? 'Start run')}
-      </span>
-    </Button>
-  </FormActions>
+    </FormActions>
+  </div>
 );

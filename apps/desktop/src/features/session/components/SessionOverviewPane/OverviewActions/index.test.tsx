@@ -10,10 +10,20 @@ vi.mock('@goodboy/db', async () =>
   (await import('../../../../../store/storyHarness')).dbModuleMock(),
 );
 
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Agent, Session, SessionId, WorkflowRun, WorkspaceId } from '@goodboy/types';
-import { aSession } from '@goodboy/types/testing';
+import { brandedId } from '../../../../history/testing/brandedId';
+import type {
+  Agent,
+  IsoDateTime,
+  OpenQuestion,
+  OpenQuestionId,
+  Session,
+  SessionId,
+  WorkspaceId,
+} from '@goodboy/types';
+import { anAgent, aSession } from '@goodboy/types/testing';
+import { pressShortcut } from '../../../../../__tests__/helpers/pressKey';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -29,138 +39,136 @@ beforeAll(async () => {
   ({ OverviewActions } = await import('./index'));
 }, STORE_IMPORT_TIMEOUT_MS);
 
-const SESSION_ID = 'session-1' as SessionId;
+const SESSION_ID = brandedId<SessionId>({ value: 'session-1' });
 
 const SESSION: Session = aSession({
   id: SESSION_ID,
-  workspaceId: 'workspace-1' as WorkspaceId,
+  workspaceId: brandedId<WorkspaceId>({ value: 'workspace-1' }),
   goal: 'Ship the thing',
 });
 
-const RUN = {
-  id: JSON.parse(JSON.stringify('run-1')),
-  workflowId: JSON.parse(JSON.stringify('workflow-1')),
-  ordinal: 0,
-  currentStep: 0,
-  autoRun: false,
-  triggerMode: 'manual',
-  executionMode: 'static',
-} satisfies WorkflowRun;
-
 beforeEach(async () => {
   await resetStoryStore();
-  useAppStore.setState({ sessions: [SESSION] });
+  useAppStore.setState({ sessions: [SESSION], currentSessionId: SESSION_ID });
 });
 
 afterEach(cleanup);
 
-type RenderParams = {
-  readonly session?: Session;
-  readonly onOpenWorkflowBuilder?: () => void;
-  readonly onOpenRun?: () => void;
-};
-
-const renderActions = ({
-  session = SESSION,
-  onOpenWorkflowBuilder = vi.fn(),
-  onOpenRun = vi.fn(),
-}: RenderParams = {}) => {
-  render(
-    <OverviewActions
-      session={session}
-      onOpenWorkflowBuilder={onOpenWorkflowBuilder}
-      onOpenRun={onOpenRun}
-    />,
-  );
-  fireEvent.click(screen.getByRole('button', { name: /New/ }));
-};
-
-const itemLabels = () =>
-  screen
-    .getAllByRole('menuitem')
-    .map((item) => item.querySelector('.font-medium')?.textContent ?? item.textContent);
+const openedKind = () => useAppStore.getState().drawer?.kind ?? null;
 
 describe('OverviewActions', () => {
-  it('keeps one New control that lists workflow, agent, report and wireframe', () => {
-    renderActions();
+  it('is one New button, not a menu', () => {
+    render(<OverviewActions session={SESSION} />);
 
-    expect(itemLabels()).toEqual(['Start a run', 'Start agent', 'Report', 'Wireframe']);
-    expect(screen.queryByRole('button', { name: 'Create' })).toBeNull();
-  });
-
-  it('gives each item one line of description, so every row has the same height', () => {
-    renderActions();
-
-    const items = screen.getAllByRole('menuitem');
-    expect(items).toHaveLength(4);
-    items.forEach((item) => {
-      const lines = item.querySelectorAll('.text-meta');
-      expect(lines).toHaveLength(1);
-      expect(lines[0]?.textContent?.length).toBeGreaterThan(0);
-      expect(lines[0]?.textContent?.length).toBeLessThanOrEqual(34);
-    });
-  });
-
-  it('describes Open run when a run is active', () => {
-    renderActions({ session: { ...SESSION, workflowRuns: [RUN] } });
-
-    expect(screen.getByRole('menuitem', { name: /Open run/ }).textContent).toContain(
-      'Follow the run in progress',
+    expect(screen.getByRole('button', { name: 'New' }).getAttribute('aria-haspopup')).toBe(
+      'dialog',
     );
+    expect(screen.queryByRole('menuitem')).toBeNull();
   });
 
-  it('opens the workflow builder from Start a run', () => {
-    const onOpenWorkflowBuilder = vi.fn();
-    renderActions({ onOpenWorkflowBuilder });
+  it('opens the New drawer on this session from the button and closes it again', () => {
+    render(<OverviewActions session={SESSION} />);
 
-    fireEvent.click(screen.getByRole('menuitem', { name: /Start a run/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'New' }));
 
-    expect(onOpenWorkflowBuilder).toHaveBeenCalledOnce();
-  });
-
-  it('swaps to Open run while a workflow run is active', () => {
-    const onOpenRun = vi.fn();
-    renderActions({ session: { ...SESSION, workflowRuns: [RUN] }, onOpenRun });
-
-    expect(screen.queryByRole('menuitem', { name: /Start a run/ })).toBeNull();
-    fireEvent.click(screen.getByRole('menuitem', { name: /Open run/ }));
-
-    expect(onOpenRun).toHaveBeenCalledOnce();
-  });
-
-  it('treats a run whose agents all concluded as inactive', () => {
-    useAppStore.setState({
-      sessionPhaseRuns: {
-        [SESSION_ID]: [
-          {
-            id: JSON.parse(JSON.stringify('agent-1')),
-            workflowRunId: RUN.id,
-            status: 'completed',
-          } as Agent,
-        ],
-      },
+    expect(useAppStore.getState().drawer).toEqual({
+      kind: 'new',
+      sessionId: SESSION_ID,
+      payload: null,
     });
-    renderActions({ session: { ...SESSION, workflowRuns: [RUN] } });
+    expect(screen.getByRole('button', { name: 'New' }).getAttribute('aria-expanded')).toBe('true');
 
-    screen.getByRole('menuitem', { name: /Start a run/ });
+    fireEvent.click(screen.getByRole('button', { name: 'New' }));
+
+    expect(openedKind()).toBeNull();
   });
 
-  it('opens the agent form from Start agent', () => {
-    renderActions();
+  it('opens and closes the drawer with the contextual new chord', async () => {
+    render(<OverviewActions session={SESSION} />);
 
-    fireEvent.click(screen.getByRole('menuitem', { name: /Start agent/ }));
+    await act(async () => pressShortcut({ id: 'overview.newHere' }));
+    expect(openedKind()).toBe('new');
 
-    screen.getByRole('dialog', { name: 'Start agent' });
+    await act(async () => pressShortcut({ id: 'overview.newHere' }));
+    expect(openedKind()).toBeNull();
   });
 
-  it.each([
-    ['Report', 'report'],
-    ['Wireframe', 'wireframe'],
-  ] as const)('opens the %s creation from its item', (label, kind) => {
-    renderActions();
+  it('leaves the chord to Reset chat while the Ask panel is open', async () => {
+    useAppStore.setState({ drawer: { kind: 'ask', sessionId: SESSION_ID, payload: null } });
+    render(<OverviewActions session={SESSION} />);
 
-    fireEvent.click(screen.getByRole('menuitem', { name: new RegExp(`^${label}`) }));
+    await act(async () => pressShortcut({ id: 'overview.newHere' }));
 
-    expect(useAppStore.getState().artifactCreation[SESSION_ID]).toEqual({ kind, note: null });
+    expect(openedKind()).toBe('ask');
+  });
+
+  it('has no chevron, since it opens a drawer and not a menu', () => {
+    const { container } = render(<OverviewActions session={SESSION} />);
+
+    expect(container.querySelector('.lucide-chevron-down')).toBeNull();
+  });
+});
+
+const variantOf = () => screen.getByRole('button', { name: 'New' }).getAttribute('data-variant');
+
+const agentIn = (status: Agent['status']) => anAgent({ sessionId: SESSION_ID, status });
+
+describe('OverviewActions emphasis', () => {
+  it('is primary on an empty session', () => {
+    render(<OverviewActions session={SESSION} />);
+
+    expect(variantOf()).toBe('primary');
+  });
+
+  it('is primary when every agent and run has finished', () => {
+    useAppStore.setState({
+      sessionPhaseRuns: { [SESSION_ID]: [agentIn('completed'), agentIn('stopped')] },
+    });
+    render(<OverviewActions session={SESSION} />);
+
+    expect(variantOf()).toBe('primary');
+  });
+
+  it('stays neutral while one agent is running', () => {
+    useAppStore.setState({
+      sessionPhaseRuns: { [SESSION_ID]: [agentIn('completed'), agentIn('running')] },
+    });
+    render(<OverviewActions session={SESSION} />);
+
+    expect(variantOf()).toBe('secondary');
+  });
+
+  it('stays neutral while one agent is blocked', () => {
+    useAppStore.setState({ sessionPhaseRuns: { [SESSION_ID]: [agentIn('blocked')] } });
+    render(<OverviewActions session={SESSION} />);
+
+    expect(variantOf()).toBe('secondary');
+  });
+
+  it('stays neutral while a question is open, and turns primary once it is answered', () => {
+    const question: OpenQuestion = {
+      id: brandedId<OpenQuestionId>({ value: 'question-1' }),
+      sessionId: SESSION_ID,
+      text: 'Which ledger?',
+      suggestedAnswers: [],
+      isBlocking: true,
+      userAnswer: null,
+      status: 'open',
+      createdAt: brandedId<IsoDateTime>({ value: '2026-10-14T09:00:00.000Z' }),
+    };
+    useAppStore.setState({
+      sessionPhaseRuns: { [SESSION_ID]: [agentIn('completed')] },
+      sessionOpenQuestions: { [SESSION_ID]: [question] },
+    });
+    render(<OverviewActions session={SESSION} />);
+    expect(variantOf()).toBe('secondary');
+
+    act(() => {
+      useAppStore.setState({
+        sessionOpenQuestions: { [SESSION_ID]: [{ ...question, status: 'answered' }] },
+      });
+    });
+
+    expect(variantOf()).toBe('primary');
   });
 });

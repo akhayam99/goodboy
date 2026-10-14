@@ -21,15 +21,11 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   buildStorySession,
   buildStoryWorkspace,
-  emptyOverrides,
   importStore,
   resetStoryStore,
-  storySpies,
-  stubStoryInvoke,
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
-import { writeLastWorkflowMode } from './lastWorkflowMode';
 import { WorkflowBuilderView } from './index';
 
 const WORKSPACE_ID = 'workspace-harborline' as WorkspaceId;
@@ -59,15 +55,6 @@ const connected = (id: ProviderId): AppStore['providers'][number] => ({
   docsUrl: '',
 });
 
-const PLAN = {
-  workflowName: 'Retry payments',
-  reasoning: 'two steps cover it',
-  steps: [
-    { name: 'Map', role: 'scout', promptPrefix: 'Map the retry flow', expectedOutput: 'a map' },
-    { name: 'Fix', role: 'implementer', promptPrefix: 'Fix the retries', expectedOutput: 'a fix' },
-  ],
-};
-
 let useAppStore: StoryStore;
 const attachWorkflowToSession = vi.fn<AppStore['attachWorkflowToSession']>();
 const savePhaseTemplate = vi.fn<AppStore['savePhaseTemplate']>();
@@ -90,82 +77,11 @@ beforeEach(async () => {
     attachWorkflowToSession,
     savePhaseTemplate,
   });
-  stubStoryInvoke({
-    planner_run: {
-      stdout: JSON.stringify({ result: JSON.stringify(PLAN) }),
-      stderr: '',
-      exitCode: 0,
-    },
-  });
 });
 
 afterEach(() => {
   cleanup();
   localStorage.clear();
-});
-
-const plannerRun = () =>
-  storySpies.tauriInvoke.mock.calls.find(([command]) => command === 'planner_run')?.[1] as
-    { readonly args: Readonly<Record<string, unknown>> } | undefined;
-
-const draftPlan = async () => {
-  fireEvent.change(screen.getByPlaceholderText(/what should this workflow accomplish/i), {
-    target: { value: 'Retry payments through ledger-core' },
-  });
-  fireEvent.change(screen.getByPlaceholderText(/describe the process/i), {
-    target: { value: 'map the flow, then fix it' },
-  });
-  fireEvent.click(screen.getByRole('button', { name: /generate plan/i }));
-  await waitFor(() => expect(plannerRun()).toBeDefined());
-};
-
-describe('WorkflowBuilderView on the real store: planner routing', () => {
-  it('sends the plan to the resolved Auto model when nothing is pinned', async () => {
-    writeLastWorkflowMode({ workspaceId: WORKSPACE_ID, mode: 'custom' });
-    render(
-      <ToastProvider>
-        <WorkflowBuilderView session={session} onClose={vi.fn()} />
-      </ToastProvider>,
-    );
-
-    await draftPlan();
-
-    expect(plannerRun()?.args).toMatchObject({
-      providerId: 'anthropic',
-      model: 'claude-sonnet-5-5',
-    });
-  });
-
-  it('sends the plan to the plan_generation model and effort the workspace configured', async () => {
-    writeLastWorkflowMode({ workspaceId: WORKSPACE_ID, mode: 'custom' });
-    useAppStore.setState({
-      workspaceOverrides: {
-        [WORKSPACE_ID]: {
-          ...emptyOverrides,
-          taskModels: {
-            plan_generation: {
-              providerId: 'anthropic',
-              model: 'claude-sonnet-5',
-              effort: 'medium',
-            },
-          },
-        },
-      },
-    });
-    render(
-      <ToastProvider>
-        <WorkflowBuilderView session={session} onClose={vi.fn()} />
-      </ToastProvider>,
-    );
-
-    await draftPlan();
-
-    expect(plannerRun()?.args).toMatchObject({
-      providerId: 'anthropic',
-      model: 'claude-sonnet-5',
-      effort: 'medium',
-    });
-  });
 });
 
 type KickoffProps = {
@@ -189,17 +105,17 @@ const Kickoff = ({ target }: KickoffProps) => {
   );
 };
 
-describe('WorkflowBuilderView on the real store: when to ask', () => {
-  it('asks before each step by default and starts the run on its own when you choose it', async () => {
+describe('WorkflowBuilderView on the real store: autonomy', () => {
+  it('asks me by default and starts on autopilot when you choose it', async () => {
     render(<Kickoff target={session} />);
     fireEvent.change(screen.getByPlaceholderText('What should get done?'), {
       target: { value: 'Retry payments through ledger-core' },
     });
 
-    screen.getByRole('button', { name: 'When to ask: Ask before each step' });
+    screen.getByRole('button', { name: 'Autonomy: Ask me' });
     expect(screen.queryByRole('switch', { name: 'Autorun' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'When to ask: Ask before each step' }));
-    fireEvent.click(screen.getByRole('radio', { name: /^Run on its own/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Autonomy: Ask me' }));
+    fireEvent.click(screen.getByRole('radio', { name: /^Autopilot/ }));
     fireEvent.click(screen.getByRole('button', { name: /start run/i }));
 
     await waitFor(() => expect(attachWorkflowToSession).toHaveBeenCalledTimes(1));
@@ -207,5 +123,14 @@ describe('WorkflowBuilderView on the real store: when to ask', () => {
       autoRun: true,
       executionMode: 'dynamic',
     });
+  });
+
+  it('offers the three names in the pill', () => {
+    render(<Kickoff target={session} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Autonomy: Ask me' }));
+    expect(
+      screen.getAllByRole('radio').map((option) => option.querySelector('span span')?.textContent),
+    ).toEqual(['Ask me', 'Balanced', 'Autopilot']);
   });
 });

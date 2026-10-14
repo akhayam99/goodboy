@@ -114,8 +114,8 @@ describe('workspace settings plans', () => {
     expect(copy.map((page) => page.page)).toEqual(['workflow-rules']);
     expect(copy[0]?.items.map((item) => [item.from, item.to, item.write])).toEqual([
       [
-        'Ask before each step · No spend cap · No guidance',
-        'Ask after the plan · $25 cap, pause · No guidance',
+        'Ask me · No spend cap · No guidance',
+        'Balanced · $25 cap, pause · No guidance',
         { overrides: { workflowRules: rules } },
       ],
     ]);

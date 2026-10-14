@@ -340,6 +340,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
       'View diff',
       'Pause run',
       'Step routing',
+      'Save as preset',
       'Copy run summary',
       'Archive run',
       'Delete run',

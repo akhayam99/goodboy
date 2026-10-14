@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import type { Session, Workspace } from '@goodboy/types';
 import { openPlanAnywhere } from '../../../features/plans/openPlanAnywhere';
 import { sessionPlace, useAppStore } from '../../../store';
-import type { SessionStudio } from '../../../store/slices/session-view/types';
 import { clearCurrentSessionStudio } from './clearCurrentSessionStudio';
 import { eventSessionId, eventValue, isPlanId } from './eventDetail';
 
@@ -16,11 +15,6 @@ type Params = {
 
 type Listener = readonly [string, (event: Event) => void];
 
-type SessionStudioParams = {
-  readonly event: Event;
-  readonly studio: SessionStudio;
-};
-
 export const useSessionSurfaceEvents = ({
   close,
   currentSession,
@@ -29,16 +23,19 @@ export const useSessionSurfaceEvents = ({
   pinSessionSidebar,
 }: Params) => {
   useEffect(() => {
-    const openSessionStudio = ({ event, studio }: SessionStudioParams) => {
+    const openNewDrawer = (event: Event) => {
       const sessionId = eventSessionId(event);
       if (sessionId === null) {
         return;
       }
       close();
       const state = useAppStore.getState();
-      state.navigate({
-        to: sessionPlace({ sessionId, lens: state.activeLens[sessionId] ?? null, studio }),
-      });
+      if (state.currentSessionId !== sessionId) {
+        state.navigate({
+          to: sessionPlace({ sessionId, lens: state.activeLens[sessionId] ?? null }),
+        });
+      }
+      useAppStore.getState().openDrawer({ kind: 'new', sessionId, payload: { tab: 'run' } });
     };
     const openPlanStudio = (event: Event) => {
       const sessionId = eventSessionId(event);
@@ -64,10 +61,7 @@ export const useSessionSurfaceEvents = ({
           clearCurrentSessionStudio();
         },
       ],
-      [
-        'goodboy:open-workflow-builder',
-        (event) => openSessionStudio({ event, studio: { kind: 'workflow' } }),
-      ],
+      ['goodboy:open-workflow-builder', openNewDrawer],
     ];
     listeners.forEach(([name, listener]) => window.addEventListener(name, listener));
     return () =>

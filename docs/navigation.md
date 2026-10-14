@@ -2294,7 +2294,9 @@ a breakpoint or calls `drawerLayoutOf` outside `DrawerColumn`, so every
 width-dependent drawer (fix run, CI fix, terminal, the rest of `DrawerHost`)
 goes through `DrawerColumn`. A drawer that must never push, such as the New
 drawer, passes `placement="overlay"` (`drawerPlacement` on `AppShell`): it lies
-over the page at its saved width at every column width. Crossing the threshold
+over the page at its saved width at every column width. `selectDrawerPlacement`
+(`store/slices/drawer/`) returns `overlay` for the New drawer and `auto` for every
+other kind; the New drawer uses the `reader` tier, so it keeps the reader's saved width. Crossing the threshold
 with a drawer open swaps the mode in place and keeps focus in the drawer; if
 focus was on the page it moves into the drawer, never to the body.
 

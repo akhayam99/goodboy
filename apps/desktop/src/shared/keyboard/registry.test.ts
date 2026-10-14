@@ -81,6 +81,7 @@ describe('shortcut registry', () => {
     expect(Object.fromEntries(byScope)).toEqual({
       global: 'session.new',
       ask: 'ask.reset',
+      overview: 'overview.newHere',
       chatPage: 'chat.newHere',
       terminalPage: 'terminal.newHere',
     });

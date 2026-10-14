@@ -1,6 +1,8 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { brandedId } from '../../../features/history/testing/brandedId';
 import { act, cleanup, render } from '@testing-library/react';
+import type { SessionId } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 import { useAppStore } from '../../../store';
 import { PLAN_FIXTURE_ID, PLAN_FIXTURE_SESSION, aPlan } from '../../../test/planFixtures';
@@ -49,6 +51,44 @@ beforeEach(() => {
 });
 
 afterEach(cleanup);
+
+const fireBuilder = ({ detail }: { readonly detail: Readonly<Record<string, string>> }) => {
+  act(() => {
+    window.dispatchEvent(new CustomEvent('goodboy:open-workflow-builder', { detail }));
+  });
+};
+
+describe('the open workflow builder event', () => {
+  it('opens the New drawer on the Run tab and leaves the page where it is', () => {
+    fireBuilder({ detail: { sessionId: PLAN_FIXTURE_SESSION } });
+
+    expect(close).toHaveBeenCalledTimes(1);
+    expect(useAppStore.getState().drawer).toEqual({
+      kind: 'new',
+      sessionId: PLAN_FIXTURE_SESSION,
+      payload: { tab: 'run' },
+    });
+    expect(useAppStore.getState().activeLens[PLAN_FIXTURE_SESSION]).toBeNull();
+    expect(useAppStore.getState().sessionStudio[PLAN_FIXTURE_SESSION] ?? null).toBeNull();
+  });
+
+  it('goes to the session the event names before it opens the drawer', () => {
+    const other = aSession({ id: brandedId<SessionId>({ value: 'session-other' }) });
+    useAppStore.setState({ sessions: [aSession({ id: PLAN_FIXTURE_SESSION }), other] });
+
+    fireBuilder({ detail: { sessionId: other.id } });
+
+    expect(useAppStore.getState().currentSessionId).toBe(other.id);
+    expect(useAppStore.getState().drawer).toMatchObject({ kind: 'new', sessionId: other.id });
+  });
+
+  it('ignores an event that names no session', () => {
+    fireBuilder({ detail: {} });
+
+    expect(useAppStore.getState().drawer).toBeNull();
+    expect(close).not.toHaveBeenCalled();
+  });
+});
 
 describe('the open plan event', () => {
   it('opens the plan in the drawer and leaves the page where it is', () => {

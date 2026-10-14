@@ -144,12 +144,12 @@ describe('WorkflowRulesPanel', () => {
     expect(screen.getByRole('textbox', { name: 'Guidance' })).toBeDefined();
   });
 
-  it('orders the bands when to ask, spend cap, providers, guidance', () => {
+  it('orders the bands autonomy, spend cap, providers, guidance', () => {
     panel();
 
     expect(
       screen.getAllByRole('region').map((region) => region.getAttribute('aria-label')),
-    ).toEqual(['When to ask', 'Spend cap', 'Providers', 'Guidance']);
+    ).toEqual(['Autonomy', 'Spend cap', 'Providers', 'Guidance']);
   });
 
   it('shows the same autonomy hints the builder shows', () => {
@@ -163,15 +163,15 @@ describe('WorkflowRulesPanel', () => {
   it('saves the autonomy for new runs as soon as you pick it', async () => {
     panel();
 
-    fireEvent.click(screen.getByRole('radio', { name: /Ask after the plan/ }));
+    fireEvent.click(screen.getByRole('radio', { name: /Balanced/ }));
 
     await waitFor(() => expect(savedRules().map((rules) => rules?.autonomy)).toEqual(['plan']));
     expect(useAppStore.getState().workspaceOverrides[HARBORLINE.id]?.workflowRules?.autonomy).toBe(
       'plan',
     );
-    expect(
-      screen.getByRole('radio', { name: /Ask after the plan/ }).getAttribute('aria-checked'),
-    ).toBe('true');
+    expect(screen.getByRole('radio', { name: /Balanced/ }).getAttribute('aria-checked')).toBe(
+      'true',
+    );
   });
 
   it('turns the spend cap on, keeps a typed amount and the behaviour at the limit', async () => {

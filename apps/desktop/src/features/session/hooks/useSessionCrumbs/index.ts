@@ -18,7 +18,6 @@ import type { BreadcrumbCrumb } from '../../breadcrumbCrumb';
 import { useIsBranchlessSession } from '../useIsBranchlessSession';
 import { workflowKindName } from '../../../workspace/components/WorkspacesSidebar/lib';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
-import { ARTIFACT_CREATION_ADAPTERS } from '../../../artifacts/artifactCreationAdapters';
 import { buildSessionBreadcrumb } from '../../components/SessionWorkspace/sessionBreadcrumb';
 import { lensLabelFor } from '../../lens-labels';
 import { supportedLens } from '../../supportedLens';
@@ -45,10 +44,8 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
   const isBranchless = useIsBranchlessSession({ session });
   const storedActiveLens = useAppStore((s) => s.activeLens[sessionId] ?? null);
   const lens = supportedLens({ lens: storedActiveLens, isBranchless });
-  const studio = useAppStore((s) => s.sessionStudio[sessionId] ?? null);
   const focusedWorkflowRunId = useAppStore((s) => s.focusedWorkflowRunId[sessionId] ?? null);
   const focusedArtifactId = useAppStore((s) => s.focusedArtifactId[sessionId] ?? null);
-  const artifactCreationKind = useAppStore((s) => s.artifactCreation[sessionId]?.kind ?? null);
   const selectedAgentId = useAppStore((s) => s.selectedAgentId[sessionId] ?? null);
   const phaseRuns = useAppStore(
     (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
@@ -59,7 +56,6 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
   const plans = useSessionPlans(sessionId);
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
   const setFocusedArtifactId = useAppStore((s) => s.setFocusedArtifactId);
-  const closeArtifactCreation = useAppStore((s) => s.closeArtifactCreation);
   const navigate = useAppStore((s) => s.navigate);
   const pullRequestMode = useAppStore((s) => s.pullRequestModes?.[sessionId] ?? 'overview');
   const setPullRequestMode = useAppStore((s) => s.setPullRequestMode);
@@ -179,11 +175,6 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
     [plans, artifacts, focusedArtifactId],
   );
 
-  const artifactCreationLabel =
-    artifactCreationKind === null
-      ? null
-      : ARTIFACT_CREATION_ADAPTERS[artifactCreationKind].crumbLabel;
-
   const selectedChildWorkflowName =
     selectedWorkflowRun == null
       ? null
@@ -194,11 +185,9 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
     () =>
       buildSessionBreadcrumb({
         lens,
-        studio,
         focusedWorkflowName,
         selectedChildWorkflowName,
         focusedArtifactTitle,
-        artifactCreationLabel,
         selectedChildLabel,
         selectedChildHome,
         selectedParentLabel,
@@ -230,7 +219,6 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
           },
           toArtifactsList: () => {
             setFocusedArtifactId(sessionId, null);
-            closeArtifactCreation({ sessionId });
             openLens({ sessionId, lens: 'plans' });
           },
           toParentAgent: () => {
@@ -266,12 +254,10 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       }),
     [
       lens,
-      studio,
       focusedWorkflowName,
       selectedChildWorkflowName,
       selectedWorkflowRunId,
       focusedArtifactTitle,
-      artifactCreationLabel,
       selectedChildLabel,
       selectedChildHome,
       selectedParentLabel,
@@ -293,7 +279,6 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       sessionId,
       setFocusedWorkflowRun,
       setFocusedArtifactId,
-      closeArtifactCreation,
       navigate,
       setPullRequestMode,
     ],

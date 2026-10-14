@@ -11,6 +11,8 @@ import { TerminalDrawer } from '../../features/terminal/components/TerminalDrawe
 import { FileDiffDrawer } from '../../features/diff/components/FileDiffDrawer';
 import { FileWholeDrawer } from '../../features/diff/components/FileWholeDrawer';
 import { AskDrawer } from '../../features/session/ask/components/AskDrawer';
+import { WritePanel } from '../../features/artifacts/components/WritePanel';
+import { NewDrawer } from '../../features/session/components/NewDrawer';
 import { HistoryVersionsDrawer } from '../../features/history/components/HistoryVersionsDrawer';
 import { FixCommentsDrawer } from '../../features/resolve/components/FixCommentsDrawer';
 import { FixRunTranscriptDrawer } from './FixRunTranscriptDrawer';
@@ -121,6 +123,16 @@ export const DrawerHost = () => {
       );
     case 'ask':
       return <AskDrawer sessionId={drawer.sessionId} onClose={closeDrawer} />;
+    case 'new':
+      return (
+        <NewDrawer
+          key={drawer.sessionId}
+          sessionId={drawer.sessionId}
+          payload={drawer.payload}
+          writePanel={WritePanel}
+          onClose={closeDrawer}
+        />
+      );
     case 'transcript':
       return (
         <FixRunTranscriptDrawer

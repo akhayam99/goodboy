@@ -22,12 +22,6 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   const isArchived = session.archivedAt != null;
   const [shownQuestionIds, setShownQuestionIds] = useState<ReadonlySet<string>>(NO_SHOWN_QUESTIONS);
 
-  const openWorkflowBuilder = () => {
-    window.dispatchEvent(
-      new CustomEvent('goodboy:open-workflow-builder', { detail: { sessionId } }),
-    );
-  };
-
   return (
     <PaneShell
       header={<HeaderBand session={session} onSelectLens={onSelectLens} />}
@@ -46,11 +40,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
         onShownQuestionsChange={setShownQuestionIds}
         actions={
           <ArchivedGate isArchived={isArchived}>
-            <OverviewActions
-              session={session}
-              onOpenWorkflowBuilder={openWorkflowBuilder}
-              onOpenRun={() => onSelectLens('workflows')}
-            />
+            <OverviewActions session={session} />
           </ArchivedGate>
         }
       />
