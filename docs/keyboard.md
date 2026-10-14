@@ -18,6 +18,8 @@ registry binds a chord once per place, and a contextual handler that declines
 the way to go anywhere: every global new and go-to is a palette entry, and the
 Shortcuts page says so once.
 
+**Not now** on a Next suggestion adds no chord of its own: it is an `undoable` operation, so the global `app.undo` (⌘Z) restores it in stack order, and it yields to text fields like every undo.
+
 On the Commits page, ⌘Z undoes the latest local edit and ⌘⇧Z redoes it.
 The header controls advertise the same registry chords. Leaving the page
 clears the edit stack and releases the handlers; its Git backup refs remain.

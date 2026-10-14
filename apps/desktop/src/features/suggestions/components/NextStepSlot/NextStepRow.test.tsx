@@ -216,12 +216,13 @@ describe('NextStepRow', () => {
     expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
   });
 
-  it('renders each choice next to the primary action as a reachable button', () => {
+  it('keeps the alternatives out of the row and opens them from the more menu', () => {
     const first = vi.fn(async () => undefined);
     const second = vi.fn(async () => undefined);
     const actions: SuggestionActions = {
       primary: {
-        label: 'Rebase',
+        label: 'Open rebase',
+        shortLabel: 'Rebase',
         isDisabled: false,
         failureTitle: 'Failed',
         run: vi.fn(async () => undefined),
@@ -254,48 +255,41 @@ describe('NextStepRow', () => {
       />,
     );
 
-    const relay = screen.getByRole('button', { name: 'notify-relay' });
-    expect(relay.getAttribute('title')).toBe('feature/relay, 3 behind');
-    relay.focus();
-    expect(document.activeElement).toBe(relay);
+    expect(screen.queryByRole('button', { name: 'notify-relay' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'More options for Merge #618' }));
+    const relay = screen.getByRole('menuitem', { name: /notify-relay/ });
+    expect(relay.textContent).toContain('feature/relay, 3 behind');
     fireEvent.click(relay);
 
     expect(second).toHaveBeenCalledTimes(1);
     expect(first).not.toHaveBeenCalled();
   });
 
-  it('marks the extra action that is running as busy', () => {
+  it('leaves the more cell empty when there is nothing to put in the menu', () => {
     const actions: SuggestionActions = {
-      primary: null,
+      primary: { label: 'Push', isDisabled: false, failureTitle: 'Failed', run: vi.fn() },
       onDismiss: null,
-      extras: [
-        {
-          id: 'check-again',
-          label: 'Check again',
-          variant: 'secondary',
-          failureTitle: 'Failed',
-          run: vi.fn(async () => undefined),
-        },
-      ],
     };
     render(
       <NextStepRow
-        suggestion={suggestion({ kind: 'rebase-project' })}
+        suggestion={suggestion({ kind: 'push-branch' })}
         actions={actions}
         compact={false}
         isPending={false}
-        pendingExtraIds={new Set(['check-again'])}
         onNotNow={vi.fn()}
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'Check again' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.queryByRole('button', { name: /More options/ })).toBeNull();
+    expect(
+      screen.getByTestId('next-step-merge-pr:mount-web').querySelector('[data-column="menu"]'),
+    ).not.toBeNull();
   });
 
-  it('names choices that share a label by their description', () => {
+  it('names a shared-label choice by its description', () => {
     const actions: SuggestionActions = {
       primary: {
-        label: 'Rebase',
+        label: 'Open rebase',
         isDisabled: false,
         failureTitle: 'Failed',
         run: vi.fn(async () => undefined),
@@ -328,14 +322,18 @@ describe('NextStepRow', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'feature/one' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'feature/two' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /More options/ }));
+
+    expect(screen.getByRole('menuitem', { name: /feature\/one/ })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: /feature\/two/ })).toBeTruthy();
   });
 
-  it('marks the running choice busy and holds the other controls', () => {
+  it('holds the primary and the more menu while a choice runs', () => {
     const actions: SuggestionActions = {
       primary: {
         label: 'Start reviewer',
+        shortLabel: 'Start',
+        agentKind: 'reviewer',
         isDisabled: false,
         failureTitle: 'Failed',
         run: vi.fn(async () => undefined),
@@ -345,6 +343,15 @@ describe('NextStepRow', () => {
             label: 'Start tester instead',
             description: '',
             detail: '',
+            agentKind: 'tester',
+            run: vi.fn(async () => undefined),
+          },
+          {
+            id: 'start-implementer',
+            label: 'Start implementer instead',
+            description: '',
+            detail: '',
+            agentKind: 'implementer',
             run: vi.fn(async () => undefined),
           },
         ],
@@ -362,11 +369,202 @@ describe('NextStepRow', () => {
       />,
     );
 
-    const choice = screen.getByRole('button', { name: 'Start tester instead' });
-    expect(choice.getAttribute('aria-busy')).toBe('true');
     expect(screen.getByRole('button', { name: 'Start reviewer' }).hasAttribute('disabled')).toBe(
       true,
     );
+    expect(
+      screen.getByRole('button', { name: /More options/, hidden: true }).hasAttribute('disabled'),
+    ).toBe(true);
+  });
+
+  it('shows the role tile of the agent the primary starts, in the role color', () => {
+    const actions: SuggestionActions = {
+      primary: {
+        label: 'Analyze',
+        agentKind: 'debugger',
+        isDisabled: false,
+        failureTitle: 'Failed',
+        run: vi.fn(async () => undefined),
+      },
+      onDismiss: null,
+    };
+    render(
+      <NextStepRow
+        suggestion={suggestion({ kind: 'fix-checks' })}
+        actions={actions}
+        compact={false}
+        isPending={false}
+        onNotNow={vi.fn()}
+      />,
+    );
+
+    const tile = screen
+      .getByTestId('next-step-merge-pr:mount-web')
+      .querySelector('[data-column="tile"]');
+    expect(tile?.getAttribute('data-agent-kind')).toBe('debugger');
+    const tileClasses = (tile?.className ?? '').split(' ');
+    expect(tileClasses).toContain('text-agent-debugger');
+    expect(tileClasses).toContain('bg-current/12');
+  });
+
+  it('keeps the suggestion icon without a role tile when the primary starts no agent', () => {
+    const actions: SuggestionActions = {
+      primary: { label: 'Push', isDisabled: false, failureTitle: 'Failed', run: vi.fn() },
+      onDismiss: null,
+    };
+    render(
+      <NextStepRow
+        suggestion={suggestion({ kind: 'push-branch' })}
+        actions={actions}
+        compact={false}
+        isPending={false}
+        onNotNow={vi.fn()}
+      />,
+    );
+
+    const tile = screen
+      .getByTestId('next-step-merge-pr:mount-web')
+      .querySelector('[data-column="tile"]');
+    expect(tile?.getAttribute('data-agent-kind')).toBeNull();
+    expect((tile?.className ?? '').split(' ')).not.toContain('bg-current/12');
+  });
+
+  it('previews the role of an alternative on the tile while it is hovered or focused', () => {
+    const actions: SuggestionActions = {
+      primary: {
+        label: 'Start reviewer',
+        shortLabel: 'Start',
+        agentKind: 'reviewer',
+        isDisabled: false,
+        failureTitle: 'Failed',
+        run: vi.fn(async () => undefined),
+        choices: [
+          {
+            id: 'start-tester',
+            label: 'Start tester instead',
+            description: '',
+            detail: '',
+            agentKind: 'tester',
+            run: vi.fn(async () => undefined),
+          },
+          {
+            id: 'start-implementer',
+            label: 'Start implementer instead',
+            description: '',
+            detail: '',
+            agentKind: 'implementer',
+            run: vi.fn(async () => undefined),
+          },
+        ],
+      },
+      onDismiss: null,
+    };
+    render(
+      <NextStepRow
+        suggestion={suggestion({ kind: 'check-changes' })}
+        actions={actions}
+        compact={false}
+        isPending={false}
+        onNotNow={vi.fn()}
+      />,
+    );
+    const tileKind = () =>
+      screen
+        .getByTestId('next-step-merge-pr:mount-web')
+        .querySelector('[data-column="tile"]')
+        ?.getAttribute('data-agent-kind');
+    expect(tileKind()).toBe('reviewer');
+
+    fireEvent.click(screen.getByRole('button', { name: /More options/ }));
+    const tester = screen.getByRole('menuitem', { name: /Start tester instead/ });
+    fireEvent.mouseEnter(tester);
+    expect(tileKind()).toBe('tester');
+    fireEvent.mouseLeave(tester);
+    expect(tileKind()).toBe('reviewer');
+
+    const implementer = screen.getByRole('menuitem', { name: /Start implementer instead/ });
+    fireEvent.focus(implementer);
+    expect(tileKind()).toBe('implementer');
+  });
+
+  it('fills no primary and gives every row the same columns', () => {
+    const actions: SuggestionActions = {
+      primary: {
+        label: 'Start reviewer',
+        shortLabel: 'Start',
+        agentKind: 'reviewer',
+        isDisabled: false,
+        failureTitle: 'Failed',
+        run: vi.fn(async () => undefined),
+      },
+      onDismiss: null,
+    };
+    const other: SuggestionActions = {
+      primary: { label: 'Push', isDisabled: false, failureTitle: 'Failed', run: vi.fn() },
+      onDismiss: null,
+    };
+    render(
+      <>
+        <NextStepRow
+          suggestion={suggestion({ id: 'check-changes:a', kind: 'check-changes' })}
+          actions={actions}
+          compact={false}
+          isPending={false}
+          onNotNow={vi.fn()}
+        />
+        <NextStepRow
+          suggestion={suggestion({ id: 'push-branch:b', kind: 'push-branch' })}
+          actions={other}
+          compact
+          isPending={false}
+          onNotNow={vi.fn()}
+        />
+      </>,
+    );
+
+    const lead = screen.getByRole('button', { name: 'Start reviewer' });
+    const second = screen.getByRole('button', { name: 'Push' });
+    expect(lead.getAttribute('data-variant')).toBe('secondary');
+    expect(second.getAttribute('data-variant')).toBe('secondary');
+    expect(lead.textContent).toBe('Start');
+
+    const rows = [
+      screen.getByTestId('next-step-check-changes:a'),
+      screen.getByTestId('next-step-push-branch:b'),
+    ];
+    const gridClasses = rows.map((row) =>
+      row.className.split(' ').filter((name) => name.startsWith('grid')),
+    );
+    expect(gridClasses[0]).toEqual(gridClasses[1]);
+    for (const column of ['text', 'primary', 'not-now', 'menu']) {
+      const classes = rows.map((row) => row.querySelector(`[data-column="${column}"]`)?.className);
+      expect(classes[0]).toBeDefined();
+      expect(classes[0]).toBe(classes[1]);
+    }
+  });
+
+  it('keeps a long action name for screen readers behind a short visible verb', () => {
+    const actions: SuggestionActions = {
+      primary: {
+        label: 'Open rebase',
+        shortLabel: 'Rebase',
+        isDisabled: false,
+        failureTitle: 'Failed',
+        run: vi.fn(async () => undefined),
+      },
+      onDismiss: null,
+    };
+    render(
+      <NextStepRow
+        suggestion={suggestion({ kind: 'rebase-project' })}
+        actions={actions}
+        compact={false}
+        isPending={false}
+        onNotNow={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Open rebase' }).textContent).toBe('Rebase');
   });
 
   it('says where a one click reviewer runs and starts it on the model picked from Change', async () => {

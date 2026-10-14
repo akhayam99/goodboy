@@ -14,6 +14,7 @@ type Props = {
   readonly disabled?: boolean;
   readonly align?: 'left' | 'right';
   readonly size?: MenuTriggerSize;
+  readonly onOpenChange?: (isOpen: boolean) => void;
 };
 
 const MIN_DRAWN_ITEMS = 2;
@@ -26,6 +27,7 @@ export const OverflowMenu = ({
   disabled,
   align = 'right',
   size = 'compact',
+  onOpenChange,
 }: Props) => {
   const dropdown = useDropdown({
     disabled,
@@ -35,6 +37,10 @@ export const OverflowMenu = ({
   });
   const drawn = items.filter((item) => item.kind === 'item').length;
   const isTooShort = drawn < MIN_DRAWN_ITEMS;
+
+  useEffect(() => {
+    onOpenChange?.(dropdown.open);
+  }, [dropdown.open, onOpenChange]);
 
   useEffect(() => {
     if (!isTooShort || isProduction()) {

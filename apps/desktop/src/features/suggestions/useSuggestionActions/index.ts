@@ -44,6 +44,8 @@ type Params = {
 
 type SuggestionAction = {
   readonly label: string;
+  readonly shortLabel?: string;
+  readonly agentKind?: AgentKind;
   readonly isDisabled: boolean;
   readonly isBusy?: boolean;
   readonly failureTitle: string;
@@ -63,21 +65,13 @@ export type SuggestionActionChoice = {
   readonly label: string;
   readonly description: string;
   readonly detail: string;
-  readonly run: () => Promise<void>;
-};
-
-type SuggestionExtraAction = {
-  readonly id: string;
-  readonly label: string;
-  readonly variant: 'secondary' | 'ghost';
-  readonly failureTitle: string;
+  readonly agentKind?: AgentKind;
   readonly run: () => Promise<void>;
 };
 
 export type SuggestionActions = {
   readonly primary: SuggestionAction | null;
   readonly onDismiss: (() => Promise<void>) | null;
-  readonly extras?: ReadonlyArray<SuggestionExtraAction>;
 };
 
 export type SuggestionActionResolver = (params: {
@@ -240,6 +234,7 @@ export const useSuggestionActions = ({
       return {
         primary: {
           label: rebase.isRunning ? 'Rebasing' : 'Open rebase',
+          shortLabel: rebase.isRunning ? 'Rebasing' : 'Rebase',
           isDisabled: firstTarget == null || rebase.isRunning,
           isBusy: rebase.isRunning,
           failureTitle: REBASE_FAILURE_TITLE,
@@ -267,6 +262,8 @@ export const useSuggestionActions = ({
       return {
         primary: {
           label: 'Start implementer',
+          shortLabel: 'Start',
+          agentKind: 'implementer',
           isDisabled: false,
           failureTitle: "Couldn't start the implementer",
           run: async () => {
@@ -301,6 +298,7 @@ export const useSuggestionActions = ({
       return {
         primary: {
           label: 'Add project',
+          shortLabel: 'Add',
           isDisabled: false,
           failureTitle: "Couldn't add the project",
           run: () => proposalActions.mount(proposalTarget({ suggestion })),
@@ -337,6 +335,7 @@ export const useSuggestionActions = ({
       return {
         primary: {
           label: suggestion.payload.agentIds.length === 1 ? 'Resume' : 'Resume all',
+          shortLabel: 'Resume',
           isDisabled: false,
           failureTitle: "Couldn't resume the stopped agents",
           run: async () => {
@@ -350,6 +349,7 @@ export const useSuggestionActions = ({
       return {
         primary: {
           label: 'Retry',
+          agentKind: suggestion.payload.agentKind,
           isDisabled: false,
           failureTitle: "Couldn't retry",
           run: async () => {
@@ -378,6 +378,8 @@ export const useSuggestionActions = ({
       return {
         primary: {
           label: 'Start reviewer',
+          shortLabel: 'Start',
+          agentKind: 'reviewer',
           isDisabled: false,
           failureTitle: "Couldn't start the reviewer",
           run: async () => {
@@ -395,8 +397,19 @@ export const useSuggestionActions = ({
               label: 'Start tester instead',
               description: 'Writes tests for the changes',
               detail: '',
+              agentKind: 'tester',
               run: async () => {
                 await spawnAgent(sessionId, { kindOverride: 'tester', focus: 'none' });
+              },
+            },
+            {
+              id: 'start-implementer',
+              label: 'Start implementer instead',
+              description: 'Makes the changes itself',
+              detail: '',
+              agentKind: 'implementer',
+              run: async () => {
+                await spawnAgent(sessionId, { kindOverride: 'implementer', focus: 'none' });
               },
             },
           ],
@@ -457,6 +470,8 @@ export const useSuggestionActions = ({
         return {
           primary: {
             label: 'Start fix',
+            shortLabel: 'Fix',
+            agentKind: 'implementer',
             isDisabled: false,
             failureTitle: "Couldn't start the Implementer",
             run: async () => {
@@ -541,6 +556,7 @@ export const useSuggestionActions = ({
       return {
         primary: {
           label: 'Analyze',
+          agentKind: 'debugger',
           isDisabled: false,
           failureTitle: "Couldn't start the Debugger",
           run: () => analyze(),
@@ -556,6 +572,7 @@ export const useSuggestionActions = ({
       return {
         primary: {
           label: 'Review history',
+          shortLabel: 'Review',
           isDisabled: false,
           failureTitle: "Couldn't open the history",
           run: async () => openRewriteHistory(sessionId, suggestion.payload.worktreePath),
@@ -591,6 +608,7 @@ export const useSuggestionActions = ({
       return {
         primary: {
           label: scribe === 'ready' ? 'Review text' : 'Open PR',
+          shortLabel: scribe === 'ready' ? 'Review' : 'Open',
           isDisabled: false,
           failureTitle: "Couldn't open the pull request form",
           run: async () => {
@@ -645,6 +663,7 @@ export const useSuggestionActions = ({
       return {
         primary: {
           label: NAMES.closeBranch,
+          shortLabel: 'Close',
           isDisabled: false,
           requiresConfirm: true,
           failureTitle: "Couldn't close the branch",

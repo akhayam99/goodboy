@@ -368,6 +368,35 @@ whether you clicked it on the board or in the session overview.
   grouping: a suggestion is not activity, it is a pointer to what activity
   should happen next. A new session shows the kickoff instead; the two never
   compete for the same moment.
+- Every row has the same five columns (`NEXT_STEP_GRID` and `NEXT_STEP_CELLS`
+  in `features/suggestions/components/NextStepSlot/nextStepGrid.ts`): tile,
+  text, primary, **Not now**, **⋯**. The primary and **Not now** have a fixed
+  width, so they line up across rows; every primary is `secondary`, never
+  filled (filled buttons stay on forms). A busy row fades
+  **Not now** and keeps its column. A short visible verb (`shortLabel`: Start,
+  Fix, Rebase) sits over the full `label`, which stays the accessible name
+  ("Start reviewer").
+- When the primary starts an agent, its `agentKind` picks the tile
+  (`NextStepTile`): the role icon in the role color from `agentKindPalette`
+  (the same source as the role picker), on a `bg-current/12` disc, and the
+  primary carries the same small icon. Suggestions that start no agent keep
+  the `SUGGESTION_ICONS` glyph with the band tone. The alternatives (`choices`,
+  such as Start tester instead, or one rebase target each) are items of the
+  **⋯** menu (`NextStepMenu`, the shared `OverflowMenu`); hovering or focusing
+  one shows its `agentKind` on the tile, and closing the menu puts the
+  primary's role back. With fewer than two alternatives the cell stays empty,
+  because the menu primitive needs two rows.
+- **Not now** registers an `undoable` operation on the app undo stack
+  (`NextStepSlot`), so the toast says Dismissed with **Undo** and the
+  `app.undo` chord, and ⌘Z (Ctrl+Z off macOS) restores dismissals in reverse
+  order. It yields while a text field has focus, like every undo. Undo deletes
+  the `next:<kind>` row written for the dismissal (`revertNextStepOutcome`,
+  `deleteNudgeEvent` in `packages/db`), waits for that write if it is still in
+  flight, and shows the suggestion again only after the delete succeeded; a
+  failed delete reports the error and ⌘Z can retry. The operation drops once
+  the Next slot unmounts (`isCurrent`). A suggestion whose dismissal carries an
+  outside decision (`onDismiss`: a project proposal, **Close branch**) is not
+  undoable and shows no toast.
 - Every suggestion carries a **band** (0 waits on you, 1 unblocks something,
   2 ships something, 3 improves something), a **why** (the second line, the
   concrete reason), a **fingerprint** (kind, object, trigger version) and a

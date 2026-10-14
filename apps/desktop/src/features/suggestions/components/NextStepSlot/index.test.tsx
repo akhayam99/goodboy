@@ -48,6 +48,13 @@ vi.mock('../../useSuggestionActions', () => ({
               detail: '',
               run: () => suggestionState.runChoice('start-tester'),
             },
+            {
+              id: 'start-implementer',
+              label: 'Start implementer instead',
+              description: 'Makes the changes itself',
+              detail: '',
+              run: () => suggestionState.runChoice('start-implementer'),
+            },
           ],
         }),
       },
@@ -246,7 +253,7 @@ describe('NextStepSlot', () => {
     expect(button.hasAttribute('disabled')).toBe(false);
   });
 
-  it('runs a choice through the same runner: busy, one run, one log on failure', async () => {
+  it('runs a menu choice through the same runner: busy, one run, one log on failure', async () => {
     let fail: (error: Error) => void = () => undefined;
     suggestionState.runChoice.mockImplementationOnce(
       () =>
@@ -258,14 +265,14 @@ describe('NextStepSlot', () => {
       suggestion({ id: 'check-changes:agent-1', kind: 'check-changes', band: 3 }),
     ];
     render(<NextStepSlot session={SESSION} onSelectLens={vi.fn()} />);
-    const choice = screen.getByRole('button', { name: 'Start tester instead' });
     const primary = screen.getByRole('button', { name: 'Act on check-changes:agent-1' });
+    const more = screen.getByRole('button', { name: /More options/ });
 
-    fireEvent.click(choice);
-    fireEvent.click(choice);
+    fireEvent.click(more);
+    fireEvent.click(screen.getByRole('menuitem', { name: /Start tester instead/ }));
 
     expect(suggestionState.runChoice).toHaveBeenCalledTimes(1);
-    expect(choice.getAttribute('aria-busy')).toBe('true');
+    expect(more.hasAttribute('disabled')).toBe(true);
     expect(primary.hasAttribute('disabled')).toBe(true);
     expect(recordNextStepOutcome).toHaveBeenCalledWith(
       expect.objectContaining({ kind: 'check-changes', outcome: 'accepted' }),
@@ -279,7 +286,7 @@ describe('NextStepSlot', () => {
       error: new Error('provider unavailable'),
       sessionId: 'session-1',
     });
-    expect(choice.hasAttribute('disabled')).toBe(false);
+    expect(more.hasAttribute('disabled')).toBe(false);
     expect(primary.hasAttribute('disabled')).toBe(false);
   });
 });

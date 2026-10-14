@@ -2,10 +2,15 @@ import { useEffect, useState } from 'react';
 import { Eyebrow } from '@goodboy/ui';
 import type { IsoDateTime, Session, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { useShowToast } from '../../../../shared/components/Toast/useShowToast';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { NextStepRow } from '../../../../features/suggestions/components/NextStepSlot/NextStepRow';
 import type { SessionSuggestion } from '../../../../features/suggestions/types';
-import type { SuggestionActions } from '../../../../features/suggestions/useSuggestionActions';
+import type {
+  SuggestionActionChoice,
+  SuggestionActions,
+} from '../../../../features/suggestions/useSuggestionActions';
 import type { AgentKind } from '../../../../features/session/agent-kind';
 import { RunsOnKickoffLine } from './RunsOnKickoffLine';
 
@@ -34,13 +39,18 @@ const PROVIDERS = [
   { id: 'cursor', connection: 'connected', version: null, error: null },
 ] as unknown as ReadonlyArray<ProviderDisplayInfo>;
 
+const noopRun = async () => undefined;
+
 type CardSeed = {
   readonly id: string;
   readonly kind: SessionSuggestion['kind'];
   readonly title: string;
   readonly detail: string;
   readonly label: string;
-  readonly agentKind: AgentKind;
+  readonly shortLabel?: string;
+  readonly startsKind?: AgentKind;
+  readonly runsOnKind?: AgentKind;
+  readonly choices?: ReadonlyArray<SuggestionActionChoice>;
 };
 
 const CARDS: ReadonlyArray<CardSeed> = [
@@ -50,7 +60,7 @@ const CARDS: ReadonlyArray<CardSeed> = [
     title: '3 review comments to resolve',
     detail: 'Mara Quint left them on #418',
     label: 'Fix 3',
-    agentKind: 'resolver',
+    runsOnKind: 'resolver',
   },
   {
     id: 'check-changes:ledger-core',
@@ -58,19 +68,45 @@ const CARDS: ReadonlyArray<CardSeed> = [
     title: 'Check the changes before you push',
     detail: 'Reviewer is pinned to Claude in this workspace',
     label: 'Start reviewer',
-    agentKind: 'reviewer',
+    shortLabel: 'Start',
+    startsKind: 'reviewer',
+    runsOnKind: 'reviewer',
+    choices: [
+      {
+        id: 'start-tester',
+        label: 'Start tester instead',
+        description: 'Writes tests for the changes',
+        detail: '',
+        agentKind: 'tester',
+        run: noopRun,
+      },
+      {
+        id: 'start-implementer',
+        label: 'Start implementer instead',
+        description: 'Makes the changes itself',
+        detail: '',
+        agentKind: 'implementer',
+        run: noopRun,
+      },
+    ],
   },
   {
     id: 'fix-checks:ledger-core',
     kind: 'fix-checks',
     title: 'Checks failed on ledger-core',
     detail: 'unit, 2 failures',
-    label: 'Start debugger',
-    agentKind: 'debugger',
+    label: 'Analyze',
+    startsKind: 'debugger',
+    runsOnKind: 'debugger',
+  },
+  {
+    id: 'push-branch:ledger-core',
+    kind: 'push-branch',
+    title: '1 commit is ready to push',
+    detail: 'Mara Quint · fix: round half to even · ledger-core',
+    label: 'Push',
   },
 ];
-
-const noopRun = async () => undefined;
 
 type CardParams = {
   readonly card: CardSeed;
@@ -93,16 +129,23 @@ const suggestionOf = ({ card }: CardParams): SessionSuggestion =>
 const actionsOf = ({ card }: CardParams): SuggestionActions => ({
   primary: {
     label: card.label,
+    ...(card.shortLabel !== undefined && { shortLabel: card.shortLabel }),
+    ...(card.startsKind !== undefined && { agentKind: card.startsKind }),
     isDisabled: false,
     failureTitle: 'Failed',
     run: noopRun,
-    runsOn: { kind: card.agentKind, runWith: noopRun },
+    ...(card.runsOnKind !== undefined && {
+      runsOn: { kind: card.runsOnKind, runWith: noopRun },
+    }),
+    ...(card.choices !== undefined && { choices: card.choices }),
   },
   onDismiss: null,
 });
 
 export const RunsOnScene = () => {
   const [isReady, setIsReady] = useState(false);
+  const [dismissedIds, setDismissedIds] = useState<ReadonlySet<string>>(new Set());
+  const showToast = useShowToast();
 
   useEffect(() => {
     useAppStore.setState({
@@ -125,20 +168,36 @@ export const RunsOnScene = () => {
     return null;
   }
 
+  const dismiss = ({ card }: CardParams) => {
+    setDismissedIds((current) => new Set([...current, card.id]));
+    useAppStore.getState().undoable({
+      message: 'Dismissed',
+      actionHint: shortcutGlyphs('app.undo'),
+      showToast,
+      undo: async () => {
+        setDismissedIds((current) => new Set([...current].filter((id) => id !== card.id)));
+      },
+    });
+  };
+
+  const shown = CARDS.filter((card) => !dismissedIds.has(card.id));
+
   return (
     <main className="flex min-h-screen flex-col gap-6 bg-background p-8 text-foreground">
       <section className="flex w-[34rem] flex-col gap-2">
         <Eyebrow label="Next steps, Harborline defaults to Codex" />
-        {CARDS.map((card) => (
-          <NextStepRow
-            key={card.id}
-            suggestion={suggestionOf({ card })}
-            actions={actionsOf({ card })}
-            compact={false}
-            isPending={false}
-            onNotNow={() => undefined}
-          />
-        ))}
+        <div className="flex flex-col gap-1">
+          {shown.map((card) => (
+            <NextStepRow
+              key={card.id}
+              suggestion={suggestionOf({ card })}
+              actions={actionsOf({ card })}
+              compact={false}
+              isPending={false}
+              onNotNow={() => dismiss({ card })}
+            />
+          ))}
+        </div>
       </section>
       <section className="flex w-[34rem] flex-col gap-2">
         <Eyebrow label="New session, Implementer" />

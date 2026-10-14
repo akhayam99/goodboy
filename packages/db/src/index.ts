@@ -414,6 +414,7 @@ export {
   type NotificationSeverity,
 } from './queries/notification';
 export {
+  deleteNudgeEvent,
   insertNudgeEvent,
   listNudgeEvents,
   updateNudgeEventOutcome,

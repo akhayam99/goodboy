@@ -279,7 +279,10 @@ ask you or report trouble stay words and have no icon.
 
 One map, `SUGGESTION_ICONS` in `features/suggestions/suggestionIcons.ts`.
 The suggestion row and the Next steps slot (`NextStepRow`) above Activity
-both use it. They used to disagree on four of six kinds.
+both use it. They used to disagree on four of six kinds. A Next row whose
+primary starts an agent swaps this glyph for the role icon in the role color
+(`NextStepTile`, `agentKindPalette`); the map stays the glyph of every other
+suggestion and of the palette.
 
 | Kind                 | Concept     | Glyph                |
 | -------------------- | ----------- | -------------------- |

@@ -125,6 +125,5 @@ describe('the rebase suggestion with dirty files', () => {
     const actions = result.current({ suggestion });
     expect(actions.primary?.label).toBe('Open rebase');
     expect(actions.primary?.isDisabled).toBe(false);
-    expect(actions.extras).toBeUndefined();
   });
 });

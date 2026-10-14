@@ -5,17 +5,22 @@ import { renderHook, waitFor } from '@testing-library/react';
 import type { IsoDateTime, SessionId } from '@goodboy/types';
 import type { NudgeEvent } from '@goodboy/db';
 
-const { listNudgeEvents, insertNudgeEvent } = vi.hoisted(() => ({
+const { listNudgeEvents, insertNudgeEvent, deleteNudgeEvent } = vi.hoisted(() => ({
   listNudgeEvents: vi.fn(async (): Promise<ReadonlyArray<NudgeEvent>> => []),
   insertNudgeEvent: vi.fn(async (_db: unknown, _event: NudgeEvent): Promise<void> => undefined),
+  deleteNudgeEvent: vi.fn(async (_params: unknown): Promise<void> => undefined),
 }));
 
 vi.mock('@goodboy/db', async () =>
-  (await import('../../../test/dbMock')).createDbMock({ listNudgeEvents, insertNudgeEvent }),
+  (await import('../../../test/dbMock')).createDbMock({
+    listNudgeEvents,
+    insertNudgeEvent,
+    deleteNudgeEvent,
+  }),
 );
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
-import { recordNextStepOutcome, useNextStepOutcomes } from '.';
+import { recordNextStepOutcome, revertNextStepOutcome, useNextStepOutcomes } from '.';
 
 const sessionId = 'session-1' as SessionId;
 
@@ -181,6 +186,20 @@ describe('recordNextStepOutcome', () => {
     insertNudgeEvent.mockRejectedValueOnce(new Error('offline'));
     await expect(
       recordNextStepOutcome({ sessionId, kind: 'push-branch', outcome: 'dismissed' }),
-    ).resolves.toBeUndefined();
+    ).resolves.toBeNull();
+  });
+
+  it('hands back the id of the written event', async () => {
+    const id = await recordNextStepOutcome({ sessionId, kind: 'merge-pr', outcome: 'dismissed' });
+
+    expect(id).toBe(insertNudgeEvent.mock.calls[0]?.[1].id);
+  });
+});
+
+describe('revertNextStepOutcome', () => {
+  it('deletes the named event of that session', async () => {
+    await revertNextStepOutcome({ sessionId, id: 'ev-9' });
+
+    expect(deleteNudgeEvent).toHaveBeenCalledWith({ db: {}, sessionId, id: 'ev-9' });
   });
 });
