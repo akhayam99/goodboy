@@ -1,5 +1,12 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Agent, AgentId, Session, SessionId, WorkspaceId } from '@goodboy/types';
+import {
+  brandId,
+  type Agent,
+  type AgentId,
+  type Session,
+  type SessionId,
+  type WorkspaceId,
+} from '@goodboy/types';
 import {
   buildStoryAgent,
   buildStorySession,
@@ -51,10 +58,10 @@ vi.mock('../features/worktree/worktree', async () =>
 );
 vi.mock('../shared/lib/repo', async () => (await import('./storyHarness')).repoModuleMock());
 
-const SESSION_ID = 'session-1' as SessionId;
-const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
-const AUTO_AGENT_ID = 'agent-auto' as AgentId;
-const PLAIN_AGENT_ID = 'agent-plain' as AgentId;
+const SESSION_ID = brandId<SessionId>({ value: 'session-1' });
+const WORKSPACE_ID = brandId<WorkspaceId>({ value: 'workspace-1' });
+const AUTO_AGENT_ID = brandId<AgentId>({ value: 'agent-auto' });
+const PLAIN_AGENT_ID = brandId<AgentId>({ value: 'agent-plain' });
 
 const autoAgent: Agent = buildStoryAgent({
   id: AUTO_AGENT_ID,
@@ -84,9 +91,8 @@ const systemPromptOfTurn = async ({ agentId, isServing }: TurnParams): Promise<s
     query_bridge_serving: isServing,
   });
   await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, agentId, content: 'go' });
-  return String(
-    (storySpies.runTurn.mock.calls[0]?.[0] as Record<string, unknown>)?.['systemPrompt'] ?? '',
-  );
+  const systemPrompt: unknown = storySpies.runTurn.mock.calls[0]?.[0]?.systemPrompt;
+  return typeof systemPrompt === 'string' ? systemPrompt : '';
 };
 
 describe('the system prompt of an Auto turn', () => {

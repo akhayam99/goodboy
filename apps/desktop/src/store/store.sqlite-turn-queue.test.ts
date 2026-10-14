@@ -5,15 +5,17 @@ import {
   listAgentsForSessions,
   recordAgentStatus,
 } from '@goodboy/db';
-import type {
-  AgentId,
-  ProviderRunId,
-  SessionId,
-  StepId,
-  TurnEvent,
-  Workflow,
-  WorkflowId,
-  WorkspaceId,
+import {
+  brandId,
+  type AgentId,
+  type IsoDateTime,
+  type ProviderRunId,
+  type SessionId,
+  type StepId,
+  type TurnEvent,
+  type Workflow,
+  type WorkflowId,
+  type WorkspaceId,
 } from '@goodboy/types';
 import type { AgentInsertArgs } from '../features/workflows/workflows';
 import { summarizerQueues } from './slices/turn/turnHelpers';
@@ -72,9 +74,11 @@ vi.mock('../features/worktree/worktree', async () =>
 vi.mock('../shared/lib/repo', async () => (await import('./storyHarness')).repoModuleMock());
 vi.mock('../features/plans/plans', async () => (await import('./storyHarness')).plansModuleMock());
 
-const WORKSPACE_ID = 'workspace-harborline' as WorkspaceId;
-const WORKFLOW_ID = 'workflow-queue-delivery' as WorkflowId;
-const AT = '2026-10-05T11:55:00.000Z' as TurnEvent['at'];
+const isSessionId = (value: unknown): value is SessionId => typeof value === 'string';
+
+const WORKSPACE_ID = brandId<WorkspaceId>({ value: 'workspace-harborline' });
+const WORKFLOW_ID = brandId<WorkflowId>({ value: 'workflow-queue-delivery' });
+const AT = brandId<IsoDateTime>({ value: '2026-10-05T11:55:00.000Z' });
 const QUEUED_TEXT = 'Send the Northwind totals';
 
 const harborline = buildStoryWorkspace({
@@ -90,7 +94,7 @@ const template: Workflow = {
   description: '',
   steps: [
     {
-      id: 'step-queue-0' as StepId,
+      id: brandId<StepId>({ value: 'step-queue-0' }),
       workflowId: WORKFLOW_ID,
       ordinal: 0,
       name: 'Plan',
@@ -160,9 +164,12 @@ beforeEach(async () => {
   storySpies.invokeAgentInsert.mockImplementation((run: AgentInsertArgs) =>
     insertAgent(storySqlite(), run),
   );
-  storySpies.invokeAgentList.mockImplementation(async (id: unknown) => [
-    ...((await listAgentsForSessions(storySqlite(), [id as SessionId])).get(id as SessionId) ?? []),
-  ]);
+  storySpies.invokeAgentList.mockImplementation(async (id: unknown) => {
+    if (!isSessionId(id)) {
+      return [];
+    }
+    return [...((await listAgentsForSessions(storySqlite(), [id])).get(id) ?? [])];
+  });
   storySpies.invokeAgentUpdateStatus.mockImplementation((id: AgentId, fields) => {
     if (isResolveFailing && fields.providerRunId !== undefined) {
       return Promise.reject(new Error('agent row is locked'));
@@ -173,7 +180,7 @@ beforeEach(async () => {
     workspaceId: WORKSPACE_ID,
     goal: 'Settle batches through ledger-core',
   });
-  sessionId = session.id as SessionId;
+  sessionId = session.id;
   await useAppStore
     .getState()
     .attachWorkflowToSession(sessionId, WORKFLOW_ID, { autoRun: false, triggerMode: 'manual' });

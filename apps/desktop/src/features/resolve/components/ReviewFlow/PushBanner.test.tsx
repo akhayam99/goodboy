@@ -84,17 +84,26 @@ describe('PushBanner', () => {
     });
     const rows = within(confirm).getAllByRole('listitem');
     expect(rows).toHaveLength(2);
-    expect(rows[0]?.textContent).toContain('Batch ledger lookups');
-    expect(within(rows[0] as HTMLElement).getByText('Not a fix')).toBeDefined();
-    expect(rows[1]?.textContent).toContain('Redact the webhook payload');
-    expect(within(rows[1] as HTMLElement).queryByText('Not a fix')).toBeNull();
+    const [firstRow, secondRow] = rows;
+    if (firstRow === undefined || secondRow === undefined) {
+      throw new Error('the confirm lists two commits');
+    }
+    expect(firstRow.textContent).toContain('Batch ledger lookups');
+    expect(within(firstRow).getByText('Not a fix')).toBeDefined();
+    expect(secondRow.textContent).toContain('Redact the webhook payload');
+    expect(within(secondRow).queryByText('Not a fix')).toBeNull();
     expect(within(confirm).queryByText('Tip')).toBeNull();
     within(confirm).getByText(/1 comment needs you first/);
   });
 
   it('names the commit style setting as a link that opens Replies and commits', () => {
-    const opened = vi.fn();
-    window.addEventListener('goodboy:open-settings', opened);
+    const details: Array<unknown> = [];
+    const onOpenSettings = (event: Event) => {
+      if (event instanceof CustomEvent) {
+        details.push(event.detail);
+      }
+    };
+    window.addEventListener('goodboy:open-settings', onOpenSettings);
     render(
       <PushBanner
         sessionId={SESSION.id}
@@ -107,11 +116,9 @@ describe('PushBanner', () => {
     });
     within(confirm).getByText(/set in/);
     fireEvent.click(within(confirm).getByRole('button', { name: 'Replies and commits' }));
-    window.removeEventListener('goodboy:open-settings', opened);
+    window.removeEventListener('goodboy:open-settings', onOpenSettings);
 
-    expect(opened).toHaveBeenCalledOnce();
-    const detail = (opened.mock.calls[0]?.[0] as CustomEvent).detail;
-    expect(detail).toEqual({ scope: 'workspace', section: 'review-replies' });
+    expect(details).toEqual([{ scope: 'workspace', section: 'review-replies' }]);
   });
 
   it('says what changed above the refreshed confirm', () => {

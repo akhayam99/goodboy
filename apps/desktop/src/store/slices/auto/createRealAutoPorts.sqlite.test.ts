@@ -31,8 +31,8 @@ const VIEW: SessionMountView = {
   isAttached: true,
   diskState: 'present',
   revision: 3,
-  createdAt: new Date(NOW).toISOString() as IsoDateTime,
-  updatedAt: new Date(NOW).toISOString() as IsoDateTime,
+  createdAt: brandId<IsoDateTime>({ value: new Date(NOW).toISOString() }),
+  updatedAt: brandId<IsoDateTime>({ value: new Date(NOW).toISOString() }),
   repoRoot: '/work/harborline/ledger-core',
 };
 

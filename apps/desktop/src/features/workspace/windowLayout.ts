@@ -25,6 +25,21 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const isNullableString = (value: unknown): value is string | null =>
   value === null || typeof value === 'string';
 
+const isWorkspaceId = (value: unknown): value is WorkspaceId => typeof value === 'string';
+
+const isSessionId = (value: unknown): value is SessionId => typeof value === 'string';
+
+const isViewLens = (value: unknown): value is SessionView['lens'] => isNullableString(value);
+
+const isViewAgentId = (value: unknown): value is SessionView['agentId'] => isNullableString(value);
+
+const isViewTarget = (value: unknown): value is SessionView['target'] =>
+  value === null || isRecord(value);
+
+const isDrawer = (value: unknown): value is Focus['drawer'] => isRecord(value);
+
+const isStudio = (value: unknown): value is Location['studio'] => isRecord(value);
+
 type PlaceParams = {
   readonly value: unknown;
 };
@@ -36,27 +51,21 @@ const placeOf = ({ value }: PlaceParams): Location['place'] | null => {
   if (value.at === 'board') {
     return { at: 'board' };
   }
-  if (value.at !== 'session' || typeof value.sessionId !== 'string') {
+  const sessionId = value.sessionId;
+  if (value.at !== 'session' || !isSessionId(sessionId)) {
     return null;
   }
   const view = value.view;
-  if (
-    !isRecord(view) ||
-    !isNullableString(view.lens) ||
-    !isNullableString(view.agentId) ||
-    !(view.target === null || isRecord(view.target))
-  ) {
+  if (!isRecord(view)) {
     return null;
   }
-  return {
-    at: 'session',
-    sessionId: value.sessionId as SessionId,
-    view: {
-      lens: view.lens as SessionView['lens'],
-      agentId: view.agentId as SessionView['agentId'],
-      target: view.target as SessionView['target'],
-    },
-  };
+  const lens = view.lens;
+  const agentId = view.agentId;
+  const target = view.target;
+  if (!isViewLens(lens) || !isViewAgentId(agentId) || !isViewTarget(target)) {
+    return null;
+  }
+  return { at: 'session', sessionId, view: { lens, agentId, target } };
 };
 
 const focusOf = ({ value }: { readonly value: unknown }): Focus => {
@@ -82,7 +91,7 @@ const focusOf = ({ value }: { readonly value: unknown }): Focus => {
     ? value.revealed.filter((item): item is string => typeof item === 'string')
     : [];
   return {
-    drawer: isRecord(value.drawer) ? (value.drawer as unknown as Focus['drawer']) : null,
+    drawer: isDrawer(value.drawer) ? value.drawer : null,
     selection,
     scroll,
     revealed,
@@ -98,9 +107,9 @@ export const parseLocation = ({ value }: { readonly value: unknown }): Location 
     return null;
   }
   return {
-    workspaceId: typeof value.workspaceId === 'string' ? (value.workspaceId as WorkspaceId) : null,
+    workspaceId: isWorkspaceId(value.workspaceId) ? value.workspaceId : null,
     place,
-    studio: isRecord(value.studio) ? (value.studio as unknown as Location['studio']) : null,
+    studio: isStudio(value.studio) ? value.studio : null,
     focus: focusOf({ value: value.focus }),
   };
 };
@@ -114,14 +123,14 @@ const parseLayout = ({
 }): WindowLayout | null => {
   try {
     const value: unknown = JSON.parse(raw);
-    if (!isRecord(value) || typeof value.workspaceId !== 'string' || typeof value.at !== 'number') {
+    if (!isRecord(value) || !isWorkspaceId(value.workspaceId) || typeof value.at !== 'number') {
       return null;
     }
     const location = parseLocation({ value: value.location });
     if (location === null) {
       return null;
     }
-    return { label, workspaceId: value.workspaceId as WorkspaceId, location, at: value.at };
+    return { label, workspaceId: value.workspaceId, location, at: value.at };
   } catch {
     return null;
   }
