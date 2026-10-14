@@ -835,7 +835,10 @@ mod tests {
             rows: 24,
         });
 
-        let message = result.err().map(|error| error.to_string()).unwrap_or_default();
+        let message = result
+            .err()
+            .map(|error| error.to_string())
+            .unwrap_or_default();
         assert!(message.contains("no longer exists"), "got: {message}");
         assert!(registry.0.lock().unwrap().is_empty());
     }
