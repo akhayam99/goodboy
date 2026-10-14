@@ -402,6 +402,26 @@ describe('NewDrawer (Agent, experiment on)', () => {
     ).toBeDefined();
   });
 
+  it('says no provider is connected when only the opencode family is', () => {
+    useAppStore.setState({
+      providers: [
+        { ...connected('anthropic'), connection: 'missing' },
+        connected('opencode'),
+        connected('openrouter'),
+        connected('moonshot'),
+      ],
+    });
+    openDrawer({ payload: { tab: 'agent' } });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Describe the work' }), {
+      target: { value: 'Find why webhooks retry' },
+    });
+
+    expect(buttonOf(screen.getByRole('button', { name: 'Start Auto' })).disabled).toBe(true);
+    expect(
+      screen.getByText('Auto needs a connected provider. Connect one in Providers.'),
+    ).toBeDefined();
+  });
+
   it('keeps the workspace default provider for Auto', async () => {
     useAppStore.setState({
       providers: [connected('anthropic'), connected('codex')],

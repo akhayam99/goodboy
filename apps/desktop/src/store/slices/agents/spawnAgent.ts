@@ -13,6 +13,7 @@ import type {
   StepId,
   WorkflowRunId,
 } from '@goodboy/types';
+import { isAutoOwnProvider } from '@goodboy/core';
 import { updateAgentConfig } from '@goodboy/db';
 import { invokeAgentInsert, invokeAgentList } from '../../../features/workflows/workflows';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -79,6 +80,10 @@ const NO_ALLOWED_MODEL_TITLE = 'No model is allowed for this agent';
 const NO_ALLOWED_MODEL_MESSAGE =
   'Every model this agent could use is hidden. Show a model in Settings, or pick one for this agent by hand.';
 
+const AUTO_PROVIDER_TITLE = "Auto can't run on this provider";
+const AUTO_PROVIDER_MESSAGE =
+  'Auto only reads, and this provider cannot confine a read-only agent yet. Pick Claude, Codex, Cursor or Gemini for Auto.';
+
 type Params = {
   readonly set: SetFn;
   readonly get: GetFn;
@@ -142,6 +147,14 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
         if (routing.noAllowedModel === true && args.provider == null && args.model == null) {
           const error = new ReportedError(NO_ALLOWED_MODEL_MESSAGE);
           await get().reportError({ title: NO_ALLOWED_MODEL_TITLE, error, sessionId });
+          throw error;
+        }
+        if (
+          resolvedKind === 'auto' &&
+          !isAutoOwnProvider({ provider: args.provider ?? routing.provider })
+        ) {
+          const error = new ReportedError(AUTO_PROVIDER_MESSAGE);
+          await get().reportError({ title: AUTO_PROVIDER_TITLE, error, sessionId });
           throw error;
         }
         const sourceThreadId = args.sourceThreadIds?.[0] ?? args.sourceThreadId;

@@ -817,6 +817,30 @@ describe('spawnAgent for an Auto agent', () => {
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
+  it('refuses a provider that cannot confine a read-only agent and starts nothing', async () => {
+    const port = vi.fn<AutoUserTurnPort>(async () => 'queued');
+    registerAutoUserTurnPort({ port });
+    for (const provider of ['opencode', 'openrouter', 'moonshot'] as const) {
+      const { reportError, sendTurn, spawn } = buildHarness([]);
+
+      await expect(
+        spawn(SESSION_ID, {
+          kindOverride: 'auto',
+          provider,
+          model: 'big-pickle',
+          initialPrompt: GOAL,
+        }),
+      ).rejects.toThrow('Auto only reads');
+
+      expect(reportError).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Auto can't run on this provider" }),
+      );
+      expect(sendTurn).not.toHaveBeenCalled();
+    }
+    expect(invokeAgentInsertSpy).not.toHaveBeenCalled();
+    expect(port).not.toHaveBeenCalled();
+  });
+
   it('hands the first message to the Auto runtime and sends no plain turn', async () => {
     const port = vi.fn<AutoUserTurnPort>(async () => 'queued');
     registerAutoUserTurnPort({ port });

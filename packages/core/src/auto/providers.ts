@@ -5,7 +5,15 @@ export const AUTO_CHILD_PROVIDERS = [
   'codex',
 ] as const satisfies ReadonlyArray<ProviderId>;
 
-export const AUTO_OWN_PROVIDERS: ReadonlyArray<ProviderId> = PROVIDER_IDS;
+export const AUTO_UNCONFINED_PROVIDERS = [
+  'opencode',
+  'openrouter',
+  'moonshot',
+] as const satisfies ReadonlyArray<ProviderId>;
+
+export const AUTO_OWN_PROVIDERS: ReadonlyArray<ProviderId> = PROVIDER_IDS.filter(
+  (provider) => !AUTO_UNCONFINED_PROVIDERS.some((candidate) => candidate === provider),
+);
 
 type ProviderParams = {
   readonly provider: string;
@@ -13,3 +21,6 @@ type ProviderParams = {
 
 export const isAutoChildProvider = ({ provider }: ProviderParams): boolean =>
   AUTO_CHILD_PROVIDERS.some((candidate) => candidate === provider);
+
+export const isAutoOwnProvider = ({ provider }: ProviderParams): boolean =>
+  AUTO_OWN_PROVIDERS.some((candidate) => candidate === provider);

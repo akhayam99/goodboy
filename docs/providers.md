@@ -687,6 +687,14 @@ mode a CLI can't honor runs as the next stricter one it has, never a looser one.
 | Edits allowed (`acceptEdits`)     | `acceptEdits`       | `-s workspace-write`: commands run too, inside the projects | `--mode accept-edits --sandbox`  | runs Read only              | runs Read only                             |
 | Full access (`bypassPermissions`) | `bypassPermissions` | `-s workspace-write`                                        | `--dangerously-skip-permissions` | `--force`                   | `--dangerously-skip-permissions`           |
 
+- opencode turns always carry `--dangerously-skip-permissions`, including the read-only roles
+  (scout, planner, investigator, reviewer): the `plan` agent denies edits but asks before a shell
+  command, and the flag approves the ask, so those roles can still run a shell there. Auto is the
+  one role kept off the whole family (opencode, OpenRouter, Moonshot) because of it
+  (`AUTO_UNCONFINED_PROVIDERS`; `ensure_confinement` refuses the role `auto` on an opencode
+  binary). Dropping the flag is not done: no probe proves that `opencode run` then denies the ask
+  instead of waiting for an answer. Side jobs (planner and summarizer runs of the app itself) do
+  not pass the flag
 - Claude 2.1.282 lists `manual` in place of `default` but still accepts `default`
   as a hidden alias, so Goodboy keeps sending `default` for Ask first: `manual`
   is not in older CLIs and would break them

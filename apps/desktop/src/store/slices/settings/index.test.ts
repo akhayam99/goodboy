@@ -202,6 +202,31 @@ describe('store contract', () => {
       expect(store.getState().settings['k']).toBeUndefined();
     });
 
+    it('loadSetting keeps the settings object when the stored value is unchanged', async () => {
+      const store = useAppStore;
+      storySpies.getSetting.mockResolvedValueOnce('val');
+      await store.getState().loadSetting('k');
+      const before = store.getState().settings;
+      const listener = vi.fn();
+      const unsubscribe = store.subscribe(listener);
+      storySpies.getSetting.mockResolvedValueOnce('val');
+      await store.getState().loadSetting('k');
+      unsubscribe();
+      expect(store.getState().settings).toBe(before);
+      expect(listener).not.toHaveBeenCalled();
+    });
+
+    it('loadSetting replaces the settings object when the stored value changed', async () => {
+      const store = useAppStore;
+      storySpies.getSetting.mockResolvedValueOnce('one');
+      await store.getState().loadSetting('k');
+      const before = store.getState().settings;
+      storySpies.getSetting.mockResolvedValueOnce('two');
+      await store.getState().loadSetting('k');
+      expect(store.getState().settings).not.toBe(before);
+      expect(store.getState().settings['k']).toBe('two');
+    });
+
     it('saveSetting persists and caches', async () => {
       const store = useAppStore;
       await store.getState().saveSetting('k', 'v');

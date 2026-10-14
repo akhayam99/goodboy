@@ -42,6 +42,8 @@ const countedRefusal = async ({
     treeId: command.grant.treeId,
     ownerId: ctx.scheduler.ownerId,
     nowMs: ctx.now(),
+    generation: command.grant.generation,
+    runId: command.grant.runId,
   });
   return outcome;
 };

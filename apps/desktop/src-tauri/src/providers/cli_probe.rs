@@ -6,6 +6,7 @@ use crate::proc::probe;
 use crate::providers::cli_args::{role_access, Cli, RoleAccess};
 
 const PROBE_TIMEOUT: Duration = Duration::from_secs(8);
+const AUTO_ROLE: &str = "auto";
 
 type Verdict = Result<(), String>;
 type CacheKey = (String, String, &'static str);
@@ -88,6 +89,12 @@ fn access_label(access: RoleAccess) -> &'static str {
 pub(crate) fn ensure_confinement(binary: &str, role: &str) -> Verdict {
     let access = role_access(role).ok_or_else(|| format!("role {role} is not a confined role"))?;
     let cli = Cli::of_binary(binary);
+    if role == AUTO_ROLE && cli == Cli::Opencode {
+        return Err(
+            "auto does not run on opencode: its plan agent still asks before a shell command and the run flag approves it"
+                .to_string(),
+        );
+    }
     let version = version_of(&run_text(binary, &["--version"])?)
         .ok_or_else(|| format!("{binary} did not report a version"))?;
     let key: CacheKey = (binary.to_string(), version.clone(), access_label(access));
@@ -173,6 +180,25 @@ mod tests {
                 required_flags(cli, role_access("scout").expect("a role"))
             );
         }
+    }
+
+    #[test]
+    fn auto_is_refused_on_every_opencode_binary_before_any_probe_runs() {
+        for binary in [
+            "opencode",
+            "/nonexistent/opencode",
+            "openrouter",
+            "moonshot",
+        ] {
+            let refusal = ensure_confinement(binary, "auto").expect_err("refused");
+            assert!(
+                refusal.contains("auto does not run on opencode"),
+                "{refusal}"
+            );
+            assert!(!refusal.contains("did not start"), "{refusal}");
+        }
+        let scout = ensure_confinement("/nonexistent/opencode", "scout").expect_err("refused");
+        assert!(scout.contains("did not start"));
     }
 
     #[test]

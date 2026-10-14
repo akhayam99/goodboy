@@ -1,4 +1,9 @@
-import { PROVIDER_CAPABILITIES, getModelProvider, clampEffortForModel } from '@goodboy/core';
+import {
+  PROVIDER_CAPABILITIES,
+  getModelProvider,
+  clampEffortForModel,
+  isAutoOwnProvider,
+} from '@goodboy/core';
 import type { AgentEffort, ProviderId, Session } from '@goodboy/types';
 import type { AgentKind, AgentKindRouting } from './agent-kind';
 
@@ -50,6 +55,9 @@ export const resolveSpawnRouting = ({ kind, roleDefault, session }: Params): Spa
   }
   const fromChat = chatRouting({ session, fallbackEffort: roleDefault.effort });
   if (fromChat == null) {
+    return { ...roleDefault, origin };
+  }
+  if (kind === 'auto' && !isAutoOwnProvider({ provider: fromChat.provider })) {
     return { ...roleDefault, origin };
   }
   return { ...fromChat, origin: 'chat' };

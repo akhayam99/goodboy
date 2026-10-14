@@ -697,6 +697,9 @@ of other roles. `AUTO_GATES.isDelegationEnabled` in
 turns on the setting `agents.autoExperiment` (off by default), and Auto decides
 through the `<<auto>>` block, not through a bridge verb. The tables are additive, so an older build
 refuses the file with `DatabaseFromNewerBuildError` instead of reading it.
+m230 also adds the partial index `idx_agents_auto_roots` on `agents(session_id, ordinal)` for
+root Auto agents, which the scan for an Auto agent without a tree (`listAutoAgentsWithoutTree`)
+reads.
 
 - `auto_trees` is one row per Auto agent: phase, `phase_rev`, generation, stop
   state, the budget cap, the lifetime counters and the scheduler lease
@@ -736,7 +739,11 @@ refuses the file with `DatabaseFromNewerBuildError` instead of reading it.
   ok on the current run of a tree that is `deciding` and not stopping, and calls `delegate.ts`,
   `answerQuestion.ts` or `finishTree.ts` through `runAutoCommand.ts`. A refusal, or a block that
   does not parse, becomes a `refusal` outbox row (join key `refusal:<run id>`, so a recovered
-  turn writes it once) that the next delivery shows. `delegate.ts` parses the
+  turn writes it once) that the next delivery shows. The refusal counters count a refusal once
+  per run: `recordAutoRefusal` takes the generation and the run id, stores them in
+  `auto_trees.last_refusal_key` in the same guarded update that adds to `refusals_used` and
+  `turn_delegate_calls`, and does nothing when the key is already there, so two duplicate
+  settles of one turn move the counters once. `delegate.ts` parses the
   spec (`core/auto/delegateSpec.ts`: a closed role list, rejected before any
   normalization), resolves each child (`resolveDelegateChild.ts`: the mount through
   `core/auto/mountPick.ts`, the model through `resolveProposedRouting`, the artifact
@@ -790,7 +797,12 @@ refuses the file with `DatabaseFromNewerBuildError` instead of reading it.
   (`createRealAutoPorts.ts`: the store's `sendTurn` and confirmed cancel, the mount list,
   `worktree_snapshot`, the delivery lookup of Rust, the child agent rows and the run
   ledger of `provider_runs`), claims each tree it recovers, and drives every live tree
-  every fifteen seconds, which also renews the owner lease. Each tick also starts the tree
+  every fifteen seconds, which also renews the owner lease. The interval runs only while
+  the setting `agents.autoExperiment` is on or a tree that is not finished is left, so a
+  person who never turned Auto on pays no timer, no read and no error. It looks once at
+  start, re-arms when the setting changes (the settings cache, `loadSetting`, which keeps
+  the `settings` object when the value is unchanged) and stops itself on the tick that
+  finds no live tree with the setting off. Each tick also starts the tree
   of an Auto agent that has none (`startAutoTrees.ts`), capped at the budget of its session,
   else at the workspace key `auto.treeLimitUsd.<workspaceId>`, else at the default
   (`autoTreeCapUsd`). It hands the screens the ports they call, the answer to a

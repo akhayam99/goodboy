@@ -299,6 +299,8 @@ const countRefusal = async ({ params }: RecordRefusalParams): Promise<void> => {
     treeId: params.treeId,
     ownerId: params.ownerId,
     nowMs: params.nowMs,
+    generation: params.generation,
+    runId: params.runId,
   });
 };
 

@@ -162,7 +162,7 @@ describe('atomic admission', () => {
     expect(outcomes.filter((outcome) => outcome.kind === 'refused')).toHaveLength(3);
     expect(await rowCounts({ world })).toEqual({ delegations: 1, reservations: 1 });
     const tree = await getAutoTree({ db: world.db, treeId: WORLD_TREE });
-    expect(tree?.refusalsUsed).toBe(3);
+    expect(tree?.refusalsUsed).toBe(1);
   });
 
   it('refuses a window that does not own the tree and writes nothing', async () => {

@@ -5,9 +5,12 @@ import type { SetFn } from './types';
 export const loadSetting = (set: SetFn) => {
   return async (key: string): Promise<string | null> => {
     const value = await getSetting(tauriDatabase, key);
-    set((state) => ({
-      settings: value === null ? state.settings : { ...state.settings, [key]: value },
-    }));
+    if (value === null) {
+      return value;
+    }
+    set((state) =>
+      state.settings[key] === value ? state : { settings: { ...state.settings, [key]: value } },
+    );
     return value;
   };
 };

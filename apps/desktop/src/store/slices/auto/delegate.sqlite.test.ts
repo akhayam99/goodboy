@@ -175,9 +175,23 @@ describe('the delegate command', () => {
     const broken = await run(state, {
       verb: 'delegate',
       args: { 'request-id': 'request-2', spec: 'not json' },
-      grant: WORLD_GRANT,
+      grant: { ...WORLD_GRANT, runId: 'run-later' },
     });
     expect(broken).toMatchObject({ isOk: false, code: 'spec_invalid' });
+    expect(await getAutoTree({ db: state.world.db, treeId: WORLD_TREE })).toMatchObject({
+      refusalsUsed: 2,
+    });
+  });
+
+  it('counts the refusals of one run once and those of two runs twice', async () => {
+    const state = await setup();
+    const refused = { children: [{ role: 'generic', task: 'x', reason: 'y' }] };
+    await run(state, delegateCommand(refused));
+    await run(state, delegateCommand(refused));
+    await run(state, {
+      ...delegateCommand(refused),
+      grant: { ...WORLD_GRANT, runId: 'run-later' },
+    });
     expect(await getAutoTree({ db: state.world.db, treeId: WORLD_TREE })).toMatchObject({
       refusalsUsed: 2,
     });

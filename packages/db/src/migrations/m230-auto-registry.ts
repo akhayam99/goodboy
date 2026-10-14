@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS auto_trees (
   delegations_used INTEGER NOT NULL DEFAULT 0 CHECK (delegations_used >= 0),
   attempts_used INTEGER NOT NULL DEFAULT 0 CHECK (attempts_used >= 0),
   refusals_used INTEGER NOT NULL DEFAULT 0 CHECK (refusals_used >= 0),
+  last_refusal_key TEXT,
   turn_delegate_calls INTEGER NOT NULL DEFAULT 0 CHECK (turn_delegate_calls >= 0),
   no_progress_streak INTEGER NOT NULL DEFAULT 0 CHECK (no_progress_streak >= 0),
   question_cycles INTEGER NOT NULL DEFAULT 0 CHECK (question_cycles >= 0),
@@ -32,6 +33,7 @@ CREATE TABLE IF NOT EXISTS auto_trees (
   FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
 );
 
+CREATE INDEX IF NOT EXISTS idx_agents_auto_roots ON agents(session_id, ordinal) WHERE kind = 'auto' AND parent_agent_id IS NULL AND deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_auto_trees_session ON auto_trees(session_id);
 CREATE INDEX IF NOT EXISTS idx_auto_trees_live ON auto_trees(phase) WHERE phase NOT IN ('done', 'stopped');
 

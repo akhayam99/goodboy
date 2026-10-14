@@ -18,7 +18,9 @@ are while it is off.
 The feature is on behind the experiment switch: `AUTO_GATES.isDelegationEnabled` is `true`, the
 Experiments band shows in Settings, and `agents.autoExperiment` is off by default. The runtime
 (`startAutoRuntime`) runs in the main window and drives the trees that exist; with the switch off
-none is ever created, so nothing changes for a person who does not turn it on.
+none is ever created, so nothing changes for a person who does not turn it on. Its 15 second tick
+runs only while the switch is on or a tree that is not finished is left: trees started before a
+switch-off still finish and recover, and a person who never opted in has no timer.
 
 **Live proof before the flip.** The real CLIs were launched with the exact argv and prompt
 Goodboy builds for an Auto turn:
@@ -75,8 +77,10 @@ start is the one of before: role grid, Generalist as default, Routing.
   first turn is a delivery like every later one. A start that loses the message
   says "Auto didn't start" and the chat keeps no half-started turn.
 - The composer is one goal, files, one model chip and **Start Auto**. Auto runs
-  on any connected provider, because it only reads (`AUTO_OWN_PROVIDERS`), with the
-  route the workspace picks for the role. **Start Auto** says why it is off when no provider is connected.
+  on any connected provider that can confine a read-only agent (`AUTO_OWN_PROVIDERS`: not the
+  opencode family, see Providers), with the route the workspace picks for the role.
+  **Start Auto** says why it is off when no such provider is connected, also when only
+  opencode, OpenRouter or Moonshot is.
 - The **Spend cap** chip proposes 5 USD, or shows the budget of the session when
   there is one. The first start stores the cap for the workspace
   (`auto.treeLimitUsd.<workspace id>`, compare and swap), so the next start is
@@ -200,8 +204,8 @@ registers; without a port the click says Auto cannot take the answer yet.
 
 ## How Auto decides
 
-Auto runs read-only on any provider: the same role access scouts and reviewers get (Claude with
-`--tools Read,Grep,Glob` in plan mode, Codex `-s read-only`, Cursor `--mode plan`, and so on). It
+Auto runs read-only on every provider that can confine it: the same role access scouts and reviewers get
+(Claude with `--tools Read,Grep,Glob` in plan mode, Codex `-s read-only`, Cursor `--mode plan`, and so on). It
 has no shell and never calls Goodboy from inside its turn, so there is no bridge command, no
 capability token and no allow rule. It decides by ending its final reply with at most one block:
 
@@ -226,7 +230,8 @@ same text admit once (the admission guards and the request id replay do the rest
 What Auto cannot say comes back as a message, not as a reply inside the turn. A refused spec, a
 budget or limit refusal and a block that does not parse become a `refusal` row in the outbox,
 delivered with the next turn under REFUSED, NOT DONE; such a turn counts as no progress, so
-`noProgressStreak` bounds retries. Every delivery starts with a digest of the tree (open agents
+`noProgressStreak` bounds retries. The refusal counters (`refusals_used`, the limit on refusals)
+move once per generation and run, so a duplicate settle of the same turn cannot spend the limit twice. Every delivery starts with a digest of the tree (open agents
 with role, state and age, questions waiting, the budget) and carries the artifact text of each
 result, cut when long, so a provider that does not resume sessions still has its memory. The
 `<<auto>>` block is hidden in the transcript like the other markers; the delegation cards show
@@ -234,7 +239,16 @@ what it did. See [query-bridge.md](query-bridge.md) for the bridge Auto does not
 
 ## Providers
 
-Auto itself runs on any provider (`AUTO_OWN_PROVIDERS`), because it only reads. Its children run
+Auto itself runs on Claude, Codex, Cursor and Gemini (`AUTO_OWN_PROVIDERS`), because it only reads
+there. It never runs on the opencode family (opencode, OpenRouter, Moonshot,
+`AUTO_UNCONFINED_PROVIDERS`): the `plan` agent of opencode denies edits but asks before a shell
+command, and Goodboy always passes `--dangerously-skip-permissions` to opencode, which approves the
+ask, so a read-only turn there could still run a shell. Whether opencode can run without that flag
+and deny the ask is unproven, so Auto is kept off it instead. Three layers hold the line: the
+composer lists only `AUTO_OWN_PROVIDERS` and shows "Auto needs a connected provider" when nothing
+else is connected; `kindRouting` for Auto never resolves to the family (the role default, a stored
+role pick and the model of the chat are all skipped) and `spawnAgent` refuses an Auto agent on it;
+and `turn_spawn` refuses the role `auto` on an opencode binary (`ensure_confinement`). Its children run
 on Claude and Codex, never on Cursor or Gemini, which cannot confine a role
 (`AUTO_CHILD_PROVIDERS`). The pool of a tree is the run
 pool when there is one, else the workspace pool (the providers the workspace

@@ -3,6 +3,7 @@ import {
   classifyFirstTurn,
   presentationKeyForRole,
   PLAN_KIT_GUIDE,
+  AUTO_OWN_PROVIDERS,
   REPORT_KIT_GUIDE,
   ROLE_REGISTRY,
   SELECTABLE_AGENT_ROLES,
@@ -532,7 +533,12 @@ export const kindRouting = ({
   limitContext,
   policy,
 }: KindRoutingParams): AgentKindRouting => {
-  const auto = kindAutoContext({ defaultProvider, limitContext, policy });
+  const auto = kindAutoContext({
+    defaultProvider,
+    limitContext,
+    policy,
+    ...(kind === 'auto' && { onlyProviders: AUTO_OWN_PROVIDERS }),
+  });
   const role = resolveRoleRouting({
     role: KIND_TO_ROLE[kind],
     prefs: roleModels,

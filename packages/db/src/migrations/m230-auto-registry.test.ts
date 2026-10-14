@@ -79,6 +79,15 @@ describe('m230 auto registry', () => {
     );
   });
 
+  it('indexes the Auto root agents so the scan for agents without a tree does not read every agent', async () => {
+    const db = await makeMigratedTestDatabase();
+    const plan = await db.select<{ detail: string }>(
+      `EXPLAIN QUERY PLAN SELECT a.id FROM live_agents a
+       WHERE a.kind = 'auto' AND a.parent_agent_id IS NULL ORDER BY a.session_id, a.ordinal`,
+    );
+    expect(plan.map((row) => row.detail).join(' ')).toContain('idx_agents_auto_roots');
+  });
+
   it('is idempotent: running its sql again changes nothing', async () => {
     const db = await makeMigratedTestDatabase();
     const read = () =>

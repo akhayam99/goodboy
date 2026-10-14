@@ -186,14 +186,42 @@ describe('auto trees', () => {
       nowMs: AUTO_SEED_NOW,
       leaseMs: LEASE_MS,
     });
-    expect(await recordAutoRefusal({ db, treeId, ownerId: 'window-a', nowMs: AUTO_SEED_NOW })).toBe(
-      true,
-    );
-    expect(await recordAutoRefusal({ db, treeId, ownerId: 'window-b', nowMs: AUTO_SEED_NOW })).toBe(
+    const refusal = { db, treeId, nowMs: AUTO_SEED_NOW, generation: 1, runId: 'run-1' };
+    expect(await recordAutoRefusal({ ...refusal, ownerId: 'window-a' })).toBe(true);
+    expect(await recordAutoRefusal({ ...refusal, ownerId: 'window-b', runId: 'run-2' })).toBe(
       false,
     );
     const tree = await getAutoTree({ db, treeId });
     expect(tree).toMatchObject({ refusalsUsed: 1, turnDelegateCalls: 1 });
+  });
+
+  it('counts the refusal of one run once, however often the same run asks', async () => {
+    const { db } = await world();
+    await claimAutoTree({
+      db,
+      treeId,
+      ownerId: 'window-a',
+      nowMs: AUTO_SEED_NOW,
+      leaseMs: LEASE_MS,
+    });
+    const refusal = { db, treeId, ownerId: 'window-a', nowMs: AUTO_SEED_NOW };
+
+    const first = await Promise.all([
+      recordAutoRefusal({ ...refusal, generation: 1, runId: 'run-1' }),
+      recordAutoRefusal({ ...refusal, generation: 1, runId: 'run-1' }),
+    ]);
+    const again = await recordAutoRefusal({ ...refusal, generation: 1, runId: 'run-1' });
+    const nextRun = await recordAutoRefusal({ ...refusal, generation: 1, runId: 'run-2' });
+    const nextGeneration = await recordAutoRefusal({ ...refusal, generation: 2, runId: 'run-2' });
+
+    expect(first.filter(Boolean)).toHaveLength(1);
+    expect(again).toBe(false);
+    expect(nextRun).toBe(true);
+    expect(nextGeneration).toBe(true);
+    expect(await getAutoTree({ db, treeId })).toMatchObject({
+      refusalsUsed: 3,
+      turnDelegateCalls: 3,
+    });
   });
 
   it('changes the cap and the grants only from the value the caller saw', async () => {

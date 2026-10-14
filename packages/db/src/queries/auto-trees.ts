@@ -474,20 +474,31 @@ type RecordAutoRefusalParams = {
   readonly treeId: AutoTreeId;
   readonly ownerId: string;
   readonly nowMs: number;
+  readonly generation: number;
+  readonly runId: string;
 };
+
+const autoRefusalKey = ({
+  generation,
+  runId,
+}: Pick<RecordAutoRefusalParams, 'generation' | 'runId'>): string => `${generation}:${runId}`;
 
 export const recordAutoRefusal = async ({
   db,
   treeId,
   ownerId,
   nowMs,
+  generation,
+  runId,
 }: RecordAutoRefusalParams): Promise<boolean> => {
+  const key = autoRefusalKey({ generation, runId });
   const result = await db.execute(
     `UPDATE auto_trees
      SET refusals_used = refusals_used + 1, turn_delegate_calls = turn_delegate_calls + 1,
-         updated_at = ?
-     WHERE id = ? AND ${AUTO_OWNER_GUARD_SQL}`,
-    [nowMs, treeId, ...autoOwnerGuardParams({ ownerId, nowMs })],
+         last_refusal_key = ?, updated_at = ?
+     WHERE id = ? AND (last_refusal_key IS NULL OR last_refusal_key <> ?)
+       AND ${AUTO_OWNER_GUARD_SQL}`,
+    [key, nowMs, treeId, key, ...autoOwnerGuardParams({ ownerId, nowMs })],
   );
   return result.rowsAffected === 1;
 };

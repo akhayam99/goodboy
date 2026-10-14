@@ -1,6 +1,12 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
-import { PROVIDER_CAPABILITIES, AUTO_DEFAULTS, PLAN_KIT_GUIDE, ROLE_REGISTRY } from '@goodboy/core';
+import {
+  PROVIDER_CAPABILITIES,
+  AUTO_DEFAULTS,
+  AUTO_OWN_PROVIDERS,
+  PLAN_KIT_GUIDE,
+  ROLE_REGISTRY,
+} from '@goodboy/core';
 import type { Agent, AgentId, AgentRole, SessionId, StepId, WorkflowRunId } from '@goodboy/types';
 import { EFFORT_LEVELS } from '../chat/utils/chat-constants';
 import {
@@ -324,6 +330,22 @@ describe('AGENT_KIND_DEFAULTS', () => {
       model: 'sonnet-5.5',
       effort: 'medium',
     });
+  });
+
+  it('never routes Auto to the opencode family, whatever the default or the stored pick', () => {
+    for (const defaultProvider of ['opencode', 'openrouter', 'moonshot'] as const) {
+      expect(AUTO_OWN_PROVIDERS).toContain(kindRouting({ kind: 'auto', defaultProvider }).provider);
+    }
+    const pinned = kindRouting({
+      kind: 'auto',
+      defaultProvider: 'opencode',
+      roleModels: { auto: { providerId: 'opencode', model: 'big-pickle', effort: 'high' } },
+    });
+    expect(AUTO_OWN_PROVIDERS).toContain(pinned.provider);
+  });
+
+  it('keeps the opencode family for the roles that already used it', () => {
+    expect(kindRouting({ kind: 'scout', defaultProvider: 'opencode' }).provider).toBe('opencode');
   });
 
   it('starts on the workspace default provider when one is given', () => {

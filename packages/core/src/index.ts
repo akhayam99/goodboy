@@ -223,7 +223,13 @@ export {
   type TurnGateParams,
 } from './auto/turnGate';
 export { AUTO_REFUSAL_TEXT, describeAutoRefusal, type RefusalChild } from './auto/refusalText';
-export { AUTO_CHILD_PROVIDERS, AUTO_OWN_PROVIDERS, isAutoChildProvider } from './auto/providers';
+export {
+  AUTO_CHILD_PROVIDERS,
+  AUTO_OWN_PROVIDERS,
+  AUTO_UNCONFINED_PROVIDERS,
+  isAutoChildProvider,
+  isAutoOwnProvider,
+} from './auto/providers';
 export {
   DELEGATE_FIELD_CHARS,
   DELEGATE_LIST_MAX,
