@@ -71,8 +71,15 @@ const selectWorktree = async ({ session, project }: RowParams): Promise<void> =>
   await settle();
 };
 
-const tablist = (project: string): HTMLElement =>
-  screen.getByRole('tablist', { name: `Terminals on ${project}` });
+const tabsOf = (project: string): ReadonlyArray<HTMLElement> => {
+  const owned = screen
+    .getByRole('tablist', { name: `Terminals on ${project}` })
+    .getAttribute('aria-owns');
+  return (owned ?? '')
+    .split(' ')
+    .map((id) => document.getElementById(id))
+    .filter((tab): tab is HTMLElement => tab !== null);
+};
 
 describe('the terminal studio scenes', () => {
   it('lists one group per session, then the workspace folder', async () => {
@@ -108,7 +115,7 @@ describe('the terminal studio scenes', () => {
     renderScene('terminal-studio');
     await settle();
 
-    const tabs = within(tablist('payments-api')).getAllByRole('tab');
+    const tabs = tabsOf('payments-api');
     expect(tabs.map((tab) => tab.textContent)).toEqual(['dev server', 'shell']);
     expect(screen.queryByText(/^Terminal \d+$/)).toBeNull();
   });
@@ -119,7 +126,7 @@ describe('the terminal studio scenes', () => {
 
     await selectWorktree({ session: PAYMENTS_SESSION, project: 'ledger-core' });
 
-    const tabs = within(tablist('ledger-core')).getAllByRole('tab');
+    const tabs = tabsOf('ledger-core');
     expect(tabs.map((tab) => tab.textContent)).toEqual(['shell']);
     expect(screen.getByText('failed')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Restart shell' })).toBeDefined();
@@ -135,7 +142,7 @@ describe('the terminal studio scenes', () => {
     const added = (store.getState().terminalTabs['mock-u24-session-ledger'] ?? []).at(-1);
     expect(added?.cwd).toBe(PAYMENTS_TREE);
     expect(added?.title).toBe('shell 2');
-    const strip = within(tablist('payments-api')).getAllByRole('tab');
+    const strip = tabsOf('payments-api');
     expect(strip).toHaveLength(3);
     expect(strip.at(-1)?.getAttribute('aria-selected')).toBe('true');
   });
@@ -159,7 +166,7 @@ describe('the terminal studio scenes', () => {
     renderScene('terminal-studio');
     await settle();
 
-    fireEvent.click(within(tablist('payments-api')).getByRole('button', { name: 'Close shell' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close shell' }));
     await settle();
 
     expect(screen.queryByRole('dialog')).toBeNull();

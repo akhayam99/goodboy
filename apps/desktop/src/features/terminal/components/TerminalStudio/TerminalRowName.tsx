@@ -2,6 +2,7 @@ import { useState, type KeyboardEvent } from 'react';
 import { cn, useEscapeLayer } from '@goodboy/ui';
 
 type Props = {
+  readonly id?: string;
   readonly name: string;
   readonly isSelected: boolean;
   readonly isTab?: boolean;
@@ -9,7 +10,14 @@ type Props = {
   readonly onRename: (title: string) => Promise<void>;
 };
 
-export const TerminalRowName = ({ name, isSelected, isTab = false, onSelect, onRename }: Props) => {
+export const TerminalRowName = ({
+  id,
+  name,
+  isSelected,
+  isTab = false,
+  onSelect,
+  onRename,
+}: Props) => {
   const [draft, setDraft] = useState<string | null>(null);
   const [hasError, setHasError] = useState(false);
 
@@ -60,6 +68,7 @@ export const TerminalRowName = ({ name, isSelected, isTab = false, onSelect, onR
 
   return (
     <button
+      id={id}
       type="button"
       role={isTab ? 'tab' : undefined}
       aria-selected={isTab ? isSelected : undefined}

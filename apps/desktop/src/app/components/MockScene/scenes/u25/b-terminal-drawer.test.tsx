@@ -80,7 +80,7 @@ describe('the terminal drawer scenes', () => {
     expect(within(drawer).getByRole('button', { name: 'Open on Terminal page' })).toBeDefined();
     expect(within(drawer).getByRole('button', { name: 'Close' })).toBeDefined();
     expect(within(drawer).getByRole('button', { name: 'New tab on payments-api' })).toBeDefined();
-    const tabs = within(within(drawer).getByRole('tablist')).getAllByRole('tab');
+    const tabs = within(drawer).getAllByRole('tab');
     expect(tabs.map((tab) => tab.textContent)).toEqual(['shell', 'dev server']);
     expect(within(drawer).getByTestId('terminal-panel').getAttribute('data-terminal')).toMatch(
       /::t1$/,

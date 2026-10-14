@@ -7,6 +7,7 @@ import { TerminalRowName } from './TerminalRowName';
 
 type Props = {
   readonly tab: TerminalTab;
+  readonly domId: string;
   readonly isSelected: boolean;
   readonly isBusy: boolean;
   readonly command: string | null;
@@ -19,6 +20,7 @@ type Props = {
 
 export const TerminalTabItem = ({
   tab,
+  domId,
   isSelected,
   isBusy,
   command,
@@ -42,6 +44,7 @@ export const TerminalTabItem = ({
         <StatusDot tone="warning" size="sm" pulsing role="status" ariaLabel="Busy" />
       ) : null}
       <TerminalRowName
+        id={domId}
         name={tab.title}
         isSelected={isSelected}
         isTab

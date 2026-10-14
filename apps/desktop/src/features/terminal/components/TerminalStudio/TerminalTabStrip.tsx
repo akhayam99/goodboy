@@ -1,4 +1,4 @@
-import { useRef, type KeyboardEvent } from 'react';
+import { useId, useRef, type KeyboardEvent } from 'react';
 import { Plus } from 'lucide-react';
 import { IconButton, ScrollFade } from '@goodboy/ui';
 import { useTerminalPorts } from '../../../monitoring/useTerminalPorts';
@@ -39,9 +39,14 @@ export const TerminalTabStrip = ({
 }: Props) => {
   const portsByTerminal = useTerminalPorts();
   const listRef = useRef<HTMLDivElement | null>(null);
+  const stripId = useId();
+  const domIdOf = (tab: TerminalTab): string => `${stripId}-${tab.id}`;
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
+      return;
+    }
+    if (!(event.target instanceof HTMLElement) || event.target.getAttribute('role') !== 'tab') {
       return;
     }
     const index = tabs.findIndex((tab) => tab.id === selectedId);
@@ -69,17 +74,18 @@ export const TerminalTabStrip = ({
         className="min-w-0 shrink"
         viewportClassName="flex items-center"
       >
-        <div
-          ref={listRef}
-          role="tablist"
-          aria-label={`Terminals on ${label}`}
-          onKeyDown={handleKeyDown}
-          className="flex items-center gap-0.5"
-        >
+        <div ref={listRef} onKeyDown={handleKeyDown} className="flex items-center gap-0.5">
+          <div
+            role="tablist"
+            aria-label={`Terminals on ${label}`}
+            aria-owns={tabs.map(domIdOf).join(' ')}
+            className="sr-only"
+          />
           {tabs.map((tab) => (
             <TerminalTabItem
               key={tab.id}
               tab={tab}
+              domId={domIdOf(tab)}
               isSelected={tab.id === selectedId}
               isBusy={busyIds.has(tab.id)}
               command={commandOf(tab)}
