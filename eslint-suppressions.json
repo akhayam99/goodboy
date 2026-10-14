@@ -1856,7 +1856,7 @@
   },
   "apps/desktop/src/features/artifacts/components/ArtifactStudio/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 27
+      "count": 26
     }
   },
   "apps/desktop/src/features/artifacts/components/ArtifactStudio/index.tsx": {
@@ -5045,11 +5045,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/resolve/components/ReviewFlow/PushBanner.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/resolve/components/ReviewFlow/ResolveRunStatus.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
@@ -5097,11 +5092,6 @@
   "apps/desktop/src/features/resolve/components/ReviewFlow/useDraftRouting/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
-    }
-  },
-  "apps/desktop/src/features/resolve/components/ReviewFlow/useReviewPush/index.ts": {
-    "react-hooks/exhaustive-deps": {
-      "count": 1
     }
   },
   "apps/desktop/src/features/resolve/draftRouting.test.ts": {
@@ -8418,11 +8408,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/workspace/windowLayout.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 6
-    }
-  },
   "apps/desktop/src/features/workspace/windowView.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 3
@@ -11281,7 +11266,7 @@
   },
   "apps/desktop/src/store/slices/session-view/index.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 17
+      "count": 15
     }
   },
   "apps/desktop/src/store/slices/session-view/isSessionGroupCollapsed.test.ts": {
