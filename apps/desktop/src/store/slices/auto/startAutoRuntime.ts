@@ -3,6 +3,7 @@ import { AUTO_GATES } from '@goodboy/core';
 import { listAutoTreesToRecover, type Database } from '@goodboy/db';
 import { brandId, type AutoDelegationId, type AutoTreeId, type WorkspaceId } from '@goodboy/types';
 import { SETTING_AUTO_PLAN_APPROVAL } from '../../../features/settings/settings';
+import { registerAutoDrivePort } from '../../../features/auto/autoDrivePort';
 import { registerAutoUserTurnPort } from '../../../features/auto/autoUserTurnPort';
 import { readAutoTreeLimit } from '../../../features/auto/autoTreeLimit';
 import { registerDelegationDecisionPort } from '../../../features/auto/delegationDecisionPort';
@@ -72,6 +73,7 @@ export const startAutoRuntime = async ({
   const unregister = (): void => {
     unlisten();
     registerAutoUserTurnPort({ port: null });
+    registerAutoDrivePort({ port: null });
     registerDelegationDecisionPort({ port: null });
     registerTreeStopPort({ port: null });
     holder.runtime = null;
@@ -86,6 +88,7 @@ export const startAutoRuntime = async ({
     workspaceLimitUsd: ({ workspaceId }: WorkspaceLimitParams) =>
       readAutoTreeLimit({ db, workspaceId: brandId<WorkspaceId>({ value: workspaceId }) }),
   };
+  registerAutoDrivePort({ port: ({ treeId }) => runtime.drive(treeId) });
   registerAutoUserTurnPort({
     port: async ({ agentId, sessionId, workspaceId, text }) => {
       const started = await startAutoTree({

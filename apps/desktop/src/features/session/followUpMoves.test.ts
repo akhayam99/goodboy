@@ -50,6 +50,15 @@ describe('agentFollowUpMoves', () => {
     }
   });
 
+  it('offers no follow-up inside an Auto tree, where Auto decides what comes next', () => {
+    for (const kind of ['reviewer', 'planner', 'scout', 'debugger'] as const) {
+      expect(agentFollowUpMoves({ sourceKind: kind, isInAutoTree: true })).toHaveLength(0);
+      expect(agentFollowUpMoves({ sourceKind: kind, isInAutoTree: false }).length).toBeGreaterThan(
+        0,
+      );
+    }
+  });
+
   it('offers no follow-up for resolver and pr-reviewer', () => {
     expect(agentFollowUpMoves({ sourceKind: 'resolver' })).toHaveLength(0);
     expect(agentFollowUpMoves({ sourceKind: 'pr-reviewer' })).toHaveLength(0);

@@ -54,12 +54,16 @@ const FOLLOW_UP_HINTS: Readonly<Record<FollowUpKind, Partial<Record<AgentKind, s
   generic: {},
 };
 
+type MovesParams = {
+  readonly sourceKind: AgentKind;
+  readonly isInAutoTree?: boolean;
+};
+
 export const agentFollowUpMoves = ({
   sourceKind,
-}: {
-  readonly sourceKind: AgentKind;
-}): ReadonlyArray<FollowUpMove> =>
-  (FOLLOW_UP_KINDS[sourceKind] ?? []).map((kind) => ({
+  isInAutoTree = false,
+}: MovesParams): ReadonlyArray<FollowUpMove> =>
+  (isInAutoTree ? [] : (FOLLOW_UP_KINDS[sourceKind] ?? [])).map((kind) => ({
     kind,
     label: AGENT_KIND_META[kind].label,
     hint: FOLLOW_UP_HINTS[kind][sourceKind] ?? AGENT_KIND_META[kind].hint,

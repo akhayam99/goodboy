@@ -67,6 +67,43 @@ start is the one of before: role grid, Generalist as default, Routing.
 - **Generalist** keeps its name, with no mark of being old, and existing
   Generalist agents are not changed. Auto never appears in the manual role list.
 
+## Moving an agent to Auto
+
+**Move to Auto** hands an agent you started yourself to Auto. It is in the menu
+of an Implementer, Tester, Scout, Planner, Reviewer, Debugger or docs agent and
+of an old Generalist (the registry verbs `agent.moveToAuto` and
+`agent.detachFromAuto` in `features/actions/kinds/agent.ts`, so the header menu,
+the right click and the palette agree). It is hidden while the experiment is off
+and blocked with "Wait for the turn to end first." while the agent works.
+
+- The verb opens the chat of the agent and replaces its composer with a panel,
+  **What should Auto do next?** (`MoveToAutoPanel`). The field may stay empty. A
+  handoff marker with `kind=auto` shows the same panel from the chip **Agent
+  suggests: Auto**, which does not start an agent of its own.
+- `moveToAuto` (`features/auto/moveToAuto.ts`) reads the setting from the database
+  at the click, then `adoptAgent` (`store/slices/auto/adoptAgent.ts`) writes the
+  whole transfer in one guarded transaction: a new Auto agent, its tree, one
+  adopted delegation for the source (settled, `adopted = 1`), the plan and report
+  artifacts of the source in `auto_artifacts`, and one `user` outbox row with the
+  kickoff (`composeAdoptionKickoff`: what the user asked, the last reply, the
+  artifacts, the mount and the words of the user). The tree starts in `merging`.
+  Right after the commit `moveToAuto` drives the tree through the drive port
+  (`autoDrivePort`, registered by `startAutoRuntime`), so Auto gets the kickoff and
+  the result of the source at once. A window with no runtime leaves it to the
+  scheduler tick of the main window, which delivers the same rows.
+- One Auto per source: the transaction refuses an agent that has a delegation row
+  or a tree (a second click returns the first Auto), a step of a Run ("Pause or
+  finish the run first."), a running turn, a kind with no role, and any agent
+  whose parent or child chain holds an Auto agent. A failure writes nothing and
+  leaves the source as it was.
+- The source keeps its row and its chat. Its composer is replaced by the notice
+  **Moved to Auto** (`AdoptedNotice`) with **Open Auto** and **Detach from Auto**.
+  Inside a tree the Continue buttons and the handoff chip are hidden.
+- **Detach from Auto** (`detachAdopted`) is the undo, also offered in the toast of
+  the move. It removes the adopted delegation, its artifacts and the words about it
+  Auto has not read yet, and bumps the tree revision. It waits for the turn of the
+  agent to end. The Auto agent stays in the session.
+
 ## Talking to Auto
 
 A message typed in the composer of an Auto agent is not a plain turn either. The

@@ -306,6 +306,20 @@ export {
   type PickableMount,
 } from './auto/mountPick';
 export {
+  ADOPTION_DEFAULT_INSTRUCTION,
+  ADOPTION_REFUSAL_TEXT,
+  adoptionRoleOf,
+  buildAdoptedResult,
+  composeAdoptionKickoff,
+  diagnoseAdoption,
+  isAdoptableKind,
+  type AdoptedResultParams,
+  type AdoptionArtifactRef,
+  type AdoptionKickoffParams,
+  type AdoptionRefusalCode,
+  type AdoptionSnapshot,
+} from './auto/adoption';
+export {
   AUTO_DELEGATION_ROLES,
   AUTO_ROLE_ARTIFACT,
   AUTO_WRITER_ROLES,

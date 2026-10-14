@@ -1,10 +1,12 @@
 // @vitest-environment happy-dom
 
+import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { Agent, AgentId, ProviderId, ProviderName, Session, SessionId } from '@goodboy/types';
 
 const state = vi.hoisted(() => ({
+  autoTreeViews: {},
   agentKindOverride: {},
   agentProviderOverride: {} as Record<string, ProviderId>,
   agentModelOverride: {} as Record<string, string>,
@@ -100,7 +102,19 @@ vi.mock('../../../../shared/hooks/useAgentOutcome', () => ({
 }));
 
 vi.mock('../../../chat/components/ChatView', () => ({
-  ChatView: () => <div>Transcript body</div>,
+  ChatView: ({
+    hasComposer,
+    composerNotice,
+  }: {
+    readonly hasComposer?: boolean;
+    readonly composerNotice?: ReactNode;
+  }) => (
+    <>
+      <div>Transcript body</div>
+      {hasComposer === false ? <div data-testid="composer-notice">{composerNotice}</div> : null}
+      {hasComposer === false ? null : <div>Composer</div>}
+    </>
+  ),
 }));
 vi.mock('./AgentBrief', () => ({ AgentBrief: () => <div>Brief body</div> }));
 vi.mock('./AgentHeaderStatus', () => ({
@@ -118,6 +132,7 @@ vi.mock('./AgentNextAction', () => ({
 import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { AgentDetailPane } from './index';
 import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
+import { MOVE_TO_AUTO_EVENT } from '../../../auto/adopt/moveToAutoEvent';
 
 const sessionId = 'session-1' as SessionId;
 const agentId = 'agent-1' as AgentId;
@@ -144,12 +159,71 @@ beforeEach(() => {
     agentTab: {},
     sessionOpenQuestions: {},
     sessionResolveAttempts: {},
+    autoTreeViews: {},
   });
   briefFacts.sessionPhaseRuns = {};
   briefFacts.sessionPlans = {};
   executedRouting.value = null;
   detailTime.value = undefined;
   outcome.text = 'Shipped the chat page';
+});
+
+describe('AgentDetailPane and Auto', () => {
+  it('keeps the composer of a standalone agent', () => {
+    render(<AgentDetailPane session={session} agent={agent} isChatActive onBack={() => {}} />);
+    fireEvent.click(screen.getByRole('tab', { name: 'Transcript' }));
+
+    expect(screen.getByText('Composer')).toBeDefined();
+    expect(screen.queryByTestId('composer-notice')).toBeNull();
+  });
+
+  it('replaces the composer with the Moved to Auto notice once Auto owns the agent', () => {
+    Object.assign(state, {
+      autoTreeViews: {
+        [sessionId]: [
+          {
+            tree: { rootAgentId: 'agent-auto' },
+            delegations: [{ childAgentId: agentId, isAdopted: true }],
+          },
+        ],
+      },
+    });
+    render(<AgentDetailPane session={session} agent={agent} isChatActive onBack={() => {}} />);
+    fireEvent.click(screen.getByRole('tab', { name: 'Transcript' }));
+
+    expect(screen.queryByText('Composer')).toBeNull();
+    const notice = screen.getByTestId('composer-notice');
+    expect(within(notice).getByText(/Moved to Auto\./)).toBeDefined();
+    expect(within(notice).getByRole('button', { name: 'Detach from Auto' })).toBeDefined();
+    expect(within(notice).getByRole('button', { name: 'Open Auto' })).toBeDefined();
+  });
+
+  it('opens the Move to Auto panel in place of the composer when a verb asks for it', () => {
+    render(<AgentDetailPane session={session} agent={agent} isChatActive onBack={() => {}} />);
+    fireEvent.click(screen.getByRole('tab', { name: 'Transcript' }));
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent(MOVE_TO_AUTO_EVENT, { detail: { agentId } }));
+    });
+
+    const notice = screen.getByTestId('composer-notice');
+    expect(
+      within(notice).getByRole('textbox', { name: 'What should Auto do next?' }),
+    ).toBeDefined();
+    fireEvent.click(within(notice).getByRole('button', { name: 'Cancel' }));
+    expect(screen.getByText('Composer')).toBeDefined();
+  });
+
+  it('ignores a request meant for another agent', () => {
+    render(<AgentDetailPane session={session} agent={agent} isChatActive onBack={() => {}} />);
+    fireEvent.click(screen.getByRole('tab', { name: 'Transcript' }));
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent(MOVE_TO_AUTO_EVENT, { detail: { agentId: 'agent-2' } }));
+    });
+
+    expect(screen.queryByTestId('composer-notice')).toBeNull();
+  });
 });
 
 describe('AgentDetailPane', () => {

@@ -349,6 +349,15 @@ describe('extractHandoff', () => {
     });
   });
 
+  it('accepts Auto as a target, which the chip shows as a move to Auto', () => {
+    const text = '<<handoff kind=auto reason="needs several agents">>';
+    expect(extractHandoff(text)).toEqual({
+      kind: 'auto',
+      reason: 'needs several agents',
+      planId: null,
+    });
+  });
+
   it('rejects unknown kinds', () => {
     const text = '<<handoff kind=hacker reason=yo>>';
     expect(extractHandoff(text)).toBeNull();

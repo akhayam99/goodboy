@@ -455,6 +455,15 @@ fails silently at runtime.
   last turn is still settling and fails on a foreign key. `routeQuestions` and
   `isFanOutRejected` therefore read only when the reply holds a question or a
   split. Keep any new read there behind such a condition.
+- An adopted source (Move to Auto) is a delegation row with `adopted = 1`, so
+  `isAutoChildAgent` is true for it too, but the cards, the Work rail and
+  `autoTreeOfAgent` skip it on purpose: it stays an ordinary agent in the lists.
+  Its role is the delegation role of its kind, and a Generalist takes `implementer`
+  because the role column has no other value for it; the chat never shows that.
+- The registry reads `isAutoOn` from the settings and the compile gate only, because
+  `when` sees facts and not React context. A scene or a test that needs Move to Auto
+  open through the context drives the panel (`MoveToAutoPanel`) or the feature
+  function with `isReleased`.
 - A child of an Auto tree is found by its delegation row (`isAutoChildAgent`),
   never by a flag on the turn input: a reattached turn after a reload has no
   input, and the question and split gates must still hold for it.

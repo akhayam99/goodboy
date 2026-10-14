@@ -43,6 +43,8 @@ auto-chat-done
 auto-chat-plan
 auto-chat-revising
 auto-chat-working
+auto-move-moved
+auto-move-panel
 auto-overview-row
 auto-settings-experiment-off
 auto-settings-experiment-off-running

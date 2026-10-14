@@ -366,7 +366,10 @@ never exists on one surface only.
   Delete with its confirm (Restore once archived). Several sessions: Copy
   titles, Archive N, Restore N, Delete N. An agent: Open agent, Show its
   changes; Message this agent, Interrupt while a turn runs, Close or Reopen,
-  Change model (one submenu); copy the last reply and the name; Delete agent. A
+  Move to Auto on a standalone agent of a standard role while the Auto experiment is on,
+  Detach from Auto on an agent that was moved (always, so the way back never
+  disappears with the switch), Change model (one submenu); copy the last reply
+  and the name; Delete agent. A
   workflow run: Open run, View diff; Answer, Start run, Continue step, Restart
   step, Start the next step, Restore; Copy run summary; Stop run, Archive
   run and Delete run, each confirmed. An artifact: the viewer's verbs by kind and status,

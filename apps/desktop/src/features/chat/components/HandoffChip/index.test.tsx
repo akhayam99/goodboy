@@ -12,6 +12,7 @@ type ToastOptions = { readonly title?: string; readonly action?: ToastAction };
 
 const { extractHandoffMock, showToast, state } = vi.hoisted(() => {
   const sessions: ReturnType<typeof aSession>[] = [];
+  const autoTreeViews: Record<string, ReadonlyArray<unknown>> = {};
   return {
     extractHandoffMock: vi.fn<(text: string) => unknown>(() => null),
     showToast:
@@ -24,6 +25,7 @@ const { extractHandoffMock, showToast, state } = vi.hoisted(() => {
       appStudio: null,
       drawer: null,
       sessionNudges: {} as Record<string, unknown>,
+      autoTreeViews,
       sessionPhaseRuns: {} as Record<string, ReadonlyArray<Agent>>,
       agentTurnState: {} as Record<string, unknown>,
       spawnAgent: vi.fn(async () => 'agent-impl' as AgentId),
@@ -93,6 +95,7 @@ beforeEach(() => {
   showToast.mockClear();
   state.sessions = [aSession({ id: SESSION_ID })];
   state.sessionNudges = {};
+  state.autoTreeViews = {};
   state.sessionPhaseRuns = {};
   state.agentTurnState = {};
   state.spawnAgent = vi.fn(async () => 'agent-impl' as AgentId);
@@ -116,6 +119,24 @@ describe('HandoffChip', () => {
     const { container } = render(
       <HandoffChip assistantText="x" sessionId={SESSION_ID} sourceAgentId={SOURCE_AGENT_ID} />,
     );
+    expect(container.firstChild).toBeNull();
+  });
+
+  it('renders nothing on an agent that Auto owns, whichever way it got there', () => {
+    extractHandoffMock.mockReturnValue({ kind: 'implementer', reason: 'r' });
+    state.autoTreeViews = {
+      'sess-1': [
+        {
+          tree: { rootAgentId: 'agent-auto' },
+          delegations: [{ childAgentId: SOURCE_AGENT_ID, isAdopted: true }],
+        },
+      ],
+    };
+
+    const { container } = render(
+      <HandoffChip assistantText="x" sessionId={SESSION_ID} sourceAgentId={SOURCE_AGENT_ID} />,
+    );
+
     expect(container.firstChild).toBeNull();
   });
 

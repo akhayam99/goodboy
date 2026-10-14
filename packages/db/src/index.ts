@@ -261,6 +261,7 @@ export {
   stringifyRoutingJson,
 } from './queries/workflowRoutingCodec';
 export {
+  agentInsertStatement,
   insertAgent,
   insertAgentBatch,
   markAgentViewed,
@@ -681,6 +682,17 @@ export {
   type AutoAttempt,
   type AutoAttemptState,
 } from './queries/auto-attempts';
+export {
+  AUTO_ADOPT_ABORT,
+  AUTO_DETACH_ABORT,
+  adoptAgentStatements,
+  autoAdoptionJoinKey,
+  detachAdoptionStatements,
+  getAdoptionOfAgent,
+  type AdoptAgentStatementsParams,
+  type AdoptedArtifact,
+  type DetachAdoptionStatementsParams,
+} from './queries/auto-adoption';
 export { readRunCostUsd } from './queries/auto-cost';
 export { readRunLedgerOutcome, type RunLedgerOutcome } from './queries/auto-run-outcome';
 export {

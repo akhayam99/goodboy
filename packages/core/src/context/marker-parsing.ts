@@ -402,6 +402,7 @@ const HANDOFF_KINDS: ReadonlySet<AgentKindLabel> = new Set([
   'docs',
   'reviewer',
   'generic',
+  'auto',
 ]);
 
 export type ExtractedHandoff = {

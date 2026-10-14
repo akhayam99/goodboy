@@ -23,6 +23,8 @@ import { hasActiveWorkflowRun } from '../../../workflows/activeWorkflowRuns';
 import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { autoMembershipOf } from '../../../auto/autoMembershipOf';
+import { AutoHandoffChip } from './AutoHandoffChip';
 
 type Props = {
   readonly assistantText: string;
@@ -75,6 +77,14 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
     () => selectSpawnedChildren({ runs, parentAgentId: sourceAgentId, turnStates }),
     [runs, sourceAgentId, turnStates],
   );
+  const isInAutoTree = useAppStore(
+    (s) =>
+      sourceAgentId != null &&
+      autoMembershipOf({
+        views: s.autoTreeViews[sessionId] ?? EMPTY_ARRAY,
+        agentId: sourceAgentId,
+      }).isMember,
+  );
   const spawnedChild =
     handoff == null
       ? null
@@ -85,6 +95,12 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
   }
   if (hasActiveWorkflowRun({ workflowRuns: session.workflowRuns, agents: runs })) {
     return null;
+  }
+  if (isInAutoTree) {
+    return null;
+  }
+  if (handoff.kind === 'auto') {
+    return <AutoHandoffChip reason={handoff.reason} agentId={sourceAgentId} />;
   }
 
   const meta = AGENT_KIND_META[handoff.kind];

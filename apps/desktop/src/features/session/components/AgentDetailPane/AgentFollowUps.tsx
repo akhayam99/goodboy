@@ -4,6 +4,7 @@ import { agentPlace, useAppStore } from '../../../../store';
 import { useFollowToast } from '../../../../shared/hooks/useFollowToast';
 import type { AgentKind, AgentKindRouting } from '../../agent-kind';
 import { AGENT_KIND_META } from '../../agent-kind';
+import { useAutoMembership } from '../../../auto/useAutoMembership';
 import { agentFollowUpMoves } from '../../followUpMoves';
 import type { FollowUpChild } from './followUpChildren';
 import { AgentFollowUpChild } from './AgentFollowUpChild';
@@ -29,8 +30,9 @@ export const AgentFollowUps = ({
 }: Props) => {
   const startFollowUp = useAppStore((state) => state.startFollowUp);
   const followAgent = useFollowToast();
+  const membership = useAutoMembership({ sessionId, agentId: sourceAgent.id });
 
-  const moves = agentFollowUpMoves({ sourceKind });
+  const moves = agentFollowUpMoves({ sourceKind, isInAutoTree: membership.isMember });
   if (moves.length === 0) {
     return null;
   }

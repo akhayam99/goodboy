@@ -24,8 +24,13 @@ import { AgentStoppedNotice } from './AgentStoppedNotice';
 import { RewriterFinishedNotice } from './RewriterFinishedNotice';
 import { useAgentHasBrief } from '../../hooks/useAgentHasBrief';
 import { useRewriterComposer } from '../../hooks/useRewriterComposer';
+import { AdoptedNotice } from '../../../auto/adopt/AdoptedNotice';
+import { MoveToAutoPanel } from '../../../auto/adopt/MoveToAutoPanel';
+import { MOVE_TO_AUTO_EVENT, isMoveToAutoFor } from '../../../auto/adopt/moveToAutoEvent';
 import { AutoChildNotice } from '../../../auto/chat/AutoChildNotice';
 import { useAutoChat } from '../../../auto/chat/useAutoChat';
+import { useAutoMembership } from '../../../auto/useAutoMembership';
+import { isTurnStateLive } from '../../agent-lifecycle';
 
 type Props = {
   readonly session: Session;
@@ -61,6 +66,9 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
   const autoChat = useAutoChat({ session, agent });
   const isAutoChild = autoChat.tree?.kind === 'child';
   const autoRootAgentId = autoChat.tree?.view.tree.rootAgentId ?? null;
+  const membership = useAutoMembership({ sessionId: session.id, agentId: agent.id });
+  const adoption = membership.adoption;
+  const [isMoveOpen, setIsMoveOpen] = useState(false);
   const navigateTo = useAppStore((state) => state.navigate);
   const requestedPane = useAppStore((state) => state.agentPane?.[session.id] ?? null);
   const rememberedTab = useAppStore((state) => state.agentTab[agent.id] ?? null);
@@ -90,6 +98,20 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
   useEffect(() => {
     setTab(openTabRef.current);
   }, [agent.id, requestedPane]);
+
+  useEffect(() => {
+    setIsMoveOpen(false);
+  }, [agent.id]);
+
+  useEffect(() => {
+    const open = (event: Event) => {
+      if (isMoveToAutoFor({ event, agentId: agent.id })) {
+        setIsMoveOpen(true);
+      }
+    };
+    window.addEventListener(MOVE_TO_AUTO_EVENT, open);
+    return () => window.removeEventListener(MOVE_TO_AUTO_EVENT, open);
+  }, [agent.id]);
 
   useEffect(() => {
     const reveal = (event: Event) =>
@@ -186,13 +208,30 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
           session={session}
           isActive={isChatActive}
           topInset="tight"
-          hasComposer={!isRewriterFinished && !isAutoChild}
+          hasComposer={!isRewriterFinished && !isAutoChild && adoption === null && !isMoveOpen}
           composerPlaceholder={
             rewriter?.isLive === true ? REWRITER_PLACEHOLDER : autoChat.composerPlaceholder
           }
           composerNotice={
             isRewriterFinished ? (
               <RewriterFinishedNotice sessionId={session.id} worktreePath={rewriter.worktreePath} />
+            ) : isMoveOpen && adoption === null ? (
+              <MoveToAutoPanel
+                sessionId={session.id}
+                agent={agent}
+                onClose={() => setIsMoveOpen(false)}
+              />
+            ) : adoption !== null ? (
+              <AdoptedNotice
+                sessionId={session.id}
+                agentId={agent.id}
+                isTurnLive={isTurnStateLive({ turnState })}
+                onOpenAuto={() =>
+                  navigateTo({
+                    to: agentPlace({ sessionId: session.id, agentId: adoption.autoAgentId }),
+                  })
+                }
+              />
             ) : isAutoChild && autoRootAgentId !== null ? (
               <AutoChildNotice
                 onOpenAuto={() =>

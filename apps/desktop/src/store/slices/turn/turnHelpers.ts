@@ -1144,7 +1144,7 @@ export const emitTurnNudges = async (
   let nextNudge: SessionNudge | null = null;
 
   const handoff: ExtractedHandoff | null = extractHandoff(assistantText);
-  if (handoff && !inWorkflow) {
+  if (handoff && handoff.kind !== 'auto' && !inWorkflow) {
     const id = await recordNudgeShown({
       kind: 'handoff-suggested',
       sessionId,
