@@ -100,7 +100,7 @@ describe('the message that delivers stored rows to Auto', () => {
     expect(text).toContain('(delegation delegation-2, question question-1)');
     expect(text).toContain('Which mount?');
     expect(text).toContain('options: a | b');
-    expect(text).toContain('goodboy agent answer');
+    expect(text).toContain('answer command from your instructions');
   });
 
   it('adds the restart notice first when the answer was cut short', () => {

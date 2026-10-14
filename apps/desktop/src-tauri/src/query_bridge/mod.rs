@@ -87,6 +87,22 @@ pub(crate) fn exe_path() -> Option<&'static Path> {
         .as_deref()
 }
 
+pub(crate) fn agent_bridge_prefix(exe: &Path) -> Option<String> {
+    let text = exe.to_str()?;
+    if text.contains('"') {
+        return None;
+    }
+    Some(format!("\"{}\" {} agent", text, protocol::SUBCOMMAND))
+}
+
+#[tauri::command]
+pub fn query_bridge_agent_command() -> Option<String> {
+    if !is_serving() {
+        return None;
+    }
+    agent_bridge_prefix(exe_path()?)
+}
+
 fn serving(is_listening: bool, socket: Option<&Path>) -> bool {
     is_listening && socket.map(Path::exists).unwrap_or(false)
 }
@@ -803,6 +819,17 @@ mod tests {
         assert!(!is_serving());
         assert!(!query_bridge_serving());
         assert!(injected_names(Some("ws-1")).is_empty());
+    }
+
+    #[test]
+    fn the_agent_command_names_the_executable_that_goodboy_bin_names_and_waits_for_the_bridge() {
+        let exe = exe_path().expect("a current executable");
+        let prefix = agent_bridge_prefix(exe).expect("a prefix");
+        assert_eq!(
+            prefix,
+            format!("\"{}\" {} agent", exe.display(), protocol::SUBCOMMAND)
+        );
+        assert!(query_bridge_agent_command().is_none());
     }
 
     #[test]

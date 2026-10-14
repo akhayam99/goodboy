@@ -59,7 +59,7 @@ const questionsBlock = ({ payloads }: QuestionsBlockParams): string | null => {
       `  ${question.text.replace(/\s+/g, ' ').trim()}`,
       ...suggestions,
       ...recommended,
-      '  Answer it with `goodboy agent answer`, or ask the user in this chat.',
+      '  Answer it with the answer command from your instructions, or ask the user in this chat.',
     ];
   });
   return ['QUESTIONS FROM YOUR AGENTS', ...lines].join('\n');

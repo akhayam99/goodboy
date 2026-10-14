@@ -1,8 +1,11 @@
-import { renderHandoff } from '@goodboy/core';
+import { AUTO_GATES, buildAutoSystemPrompt, renderHandoff } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type { AgentTurnSpan } from '@goodboy/types';
 import { AGENT_KIND_DEFAULTS, kindWritesFiles } from '../../../features/session/agent-kind';
-import { isQueryBridgeServing } from '../../../features/integrations/queryBridge';
+import {
+  isQueryBridgeServing,
+  queryBridgeAgentCommand,
+} from '../../../features/integrations/queryBridge';
 import { buildIntegrationsGuard } from './integrationsGuard';
 import { buildProfileGuard, explainMoreTopicsFor } from './profileGuard';
 import { isQuestionDelegate } from '../../../features/context/questionDelegate';
@@ -130,7 +133,13 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
       ? agentRowEarly.providerSessionId
       : undefined;
 
-  const kindSystemPrompt = AGENT_KIND_DEFAULTS[earlyAgentKind].systemPrompt;
+  const kindSystemPrompt =
+    earlyAgentKind === 'auto'
+      ? buildAutoSystemPrompt({
+          isDelegationEnabled: AUTO_GATES.isDelegationEnabled,
+          bridgeCommand: await queryBridgeAgentCommand(),
+        })
+      : AGENT_KIND_DEFAULTS[earlyAgentKind].systemPrompt;
 
   const scopeMounts =
     rewriterCopy !== null || copyPath !== null
@@ -199,7 +208,7 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
       ),
       ...(isGithubConnected ? (['github'] as const) : []),
     ],
-    isBridgeServing,
+    isBridgeServing: isBridgeServing && earlyAgentKind !== 'auto',
   });
   const profile = get().workspaces.find(
     (candidate) => candidate.id === session.workspaceId,

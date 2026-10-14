@@ -176,6 +176,26 @@ Retry-safe credit retries at v2?" with **Confirm** and **Cancel**. The answer
 goes through one port, `registerDelegationDecisionPort`, which the runtime
 registers; without a port the click says Auto cannot take the answer yet.
 
+## How Auto calls the bridge
+
+Auto runs on Claude with a Bash allow list that names one rule,
+`Bash("<exe>" query agent:*)`, where `<exe>` is the absolute path of the running
+Goodboy executable. The Auto system prompt (`buildAutoSystemPrompt`) writes every
+command with that same quoted path and no variable, because Claude refuses a Bash
+command that holds a variable even when the allow list names it. The path and the
+rule come from one Rust function (`query_bridge::agent_bridge_prefix`), so they
+cannot drift, and the prompt reads it from the `query_bridge_agent_command`
+command when the turn is built (`buildTurnSpawn`). While the bridge is not
+serving, or the path cannot be quoted, Auto gets the answer-only prompt. Auto
+cannot write files, so it passes the delegate spec inline, as one JSON object on one
+line in single quotes (`delegate --request-id <id> --spec '{"children":[...]}'`). The
+CLI already reads a `--spec` value that starts with `{` as the spec itself
+(`query_bridge/cli.rs`, `spec_text`). An apostrophe inside the JSON is written
+`\u0027` and a line break `\n`, so the shell quoting never needs an escape and the
+command stays one Bash call that matches the allow rule. See
+[turns.md](turns.md) for the confinement and [query-bridge.md](query-bridge.md)
+for the verbs.
+
 ## Providers
 
 Auto itself runs on Claude. Its children run on Claude and Codex, never on

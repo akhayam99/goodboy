@@ -97,7 +97,7 @@ Each turn Goodboy starts gets these environment variables:
 - `GOODBOY_MOUNT_ID`, `GOODBOY_RUN_ID`: the mount (one checkout of a project in the session) and the run the turn belongs to
 - `GOODBOY_CAP`: a capability token, set only on a turn that holds one. Only the turn of an Auto agent holds one (`turn_spawn` mints it for a spawn that carries `autoTree`), and the app sends `autoTree` only for an Auto turn, which needs delegation switched on, and it is not
 
-The prompt shows the call as `"$GOODBOY_BIN" query <provider> <verb>`. The path is quoted because it may contain a space. Output is plain text, and `--json` returns the raw payload. `"$GOODBOY_BIN" query <provider> --help` prints the exact arguments of each verb.
+The prompt shows the call as `"$GOODBOY_BIN" query <provider> <verb>`. The path is quoted because it may contain a space. Output is plain text, and `--json` returns the raw payload. `"$GOODBOY_BIN" query <provider> --help` prints the exact arguments of each verb. The turn of an Auto agent is the one exception: it is confined to an allow list and Claude refuses a command that holds a variable, so its prompt gives the absolute path instead (see [auto.md](auto.md)).
 
 Three scope flags work on every verb:
 

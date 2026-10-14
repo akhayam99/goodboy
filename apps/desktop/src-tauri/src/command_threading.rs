@@ -12,6 +12,7 @@ const IN_MEMORY_SYNC_COMMANDS: &[&str] = &[
     "qa_preview.rs::qa_deciding_workflow_runs",
     "query_bridge/agent.rs::auto_capability_revoke_generation",
     "query_bridge/agent.rs::auto_capability_revoke_tree",
+    "query_bridge/mod.rs::query_bridge_agent_command",
     "query_bridge/mod.rs::query_bridge_serving",
     "query_bridge/mount.rs::mount_command_result",
     "query_bridge/project.rs::project_materialize_result",

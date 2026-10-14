@@ -297,6 +297,38 @@ mod tests {
     }
 
     #[test]
+    fn the_inline_delegate_form_of_the_auto_prompt_reaches_the_bridge_whole() {
+        let spec = r#"{"children":[{"role":"scout","task":"Find where --retry-limit is set, then say it in one line.","reason":"Reading code is the scout\u0027s job, not Auto\u0027s."}]}"#;
+        let argv = owned(&["agent", "delegate", "--request-id", "req-1", "--spec", spec]);
+
+        let ArgvOutcome::Parsed(parsed) = parse_argv(&argv).expect("a parsed delegate call") else {
+            panic!("the delegate call must parse, not print help");
+        };
+        let args = with_spec_text(&parsed.provider, &parsed.verb, parsed.args).expect("spec text");
+        let text = args
+            .get("spec")
+            .and_then(serde_json::Value::as_str)
+            .expect("a spec string");
+
+        assert_eq!(parsed.provider, "agent");
+        assert_eq!(parsed.verb, "delegate");
+        assert_eq!(text, spec);
+        assert_eq!(
+            args.get("request-id").and_then(serde_json::Value::as_str),
+            Some("req-1")
+        );
+        let value: serde_json::Value = serde_json::from_str(text).expect("valid json");
+        assert_eq!(
+            value["children"][0]["reason"],
+            "Reading code is the scout's job, not Auto's."
+        );
+        assert!(value["children"][0]["task"]
+            .as_str()
+            .expect("task")
+            .contains("--retry-limit"));
+    }
+
+    #[test]
     fn a_missing_spec_file_names_the_path() {
         let error = spec_text("/no/such/spec.json", &mut std::io::empty()).expect_err("missing");
 
