@@ -67,7 +67,7 @@ const planFor = (overrides: Partial<MountPlan> = {}): MountPlan => ({
   branch: 'ak/ship-it',
   adoptedBranch: null,
   baseBranch: 'main',
-  targetPath: '/repos/goodboy/.goodboy/worktrees/ship-it-mount-1',
+  targetPath: '/repos/goodboy/.goodboy/worktrees/gb-7k2q9x',
   takenBranches: [],
   ...overrides,
 });
@@ -93,7 +93,7 @@ describe('resolveMountPreflight', () => {
 
     expect(resolved.branch).toBe('ak/ship-it');
     expect(resolved.renamedFrom).toBeNull();
-    expect(resolved.targetPath).toBe('/repos/goodboy/.goodboy/worktrees/ship-it-mount-1');
+    expect(resolved.targetPath).toBe('/repos/goodboy/.goodboy/worktrees/gb-7k2q9x');
   });
 
   it('proposes an alternative and a matching path when the branch already exists', () => {
@@ -105,7 +105,7 @@ describe('resolveMountPreflight', () => {
     expect(resolved.renamedFrom).toBe('ak/ship-it');
     expect(resolved.branch).toBe('ak/ship-it-2');
     expect(resolved.slug).toBe('ship-it-2');
-    expect(resolved.targetPath).toBe('/repos/goodboy/.goodboy/worktrees/ship-it-2-mount-1');
+    expect(resolved.targetPath).toBe('/repos/goodboy/.goodboy/worktrees/gb-7k2q9x');
   });
 
   it('suffixes from the base slug once when the planned suffix is also taken in the repository', () => {
@@ -114,7 +114,7 @@ describe('resolveMountPreflight', () => {
         naming: { template: '{prefix}/{slug}', values: { prefix: 'ak', slug: 'x' } },
         slug: 'x-2',
         branch: 'ak/x-2',
-        targetPath: '/repos/goodboy/.goodboy/worktrees/x-2-mount-1',
+        targetPath: '/repos/goodboy/.goodboy/worktrees/gb-7k2q9x',
         takenBranches: ['ak/x'],
       }),
       repoBranches: ['main', 'ak/x-2'],
@@ -123,7 +123,7 @@ describe('resolveMountPreflight', () => {
     expect(resolved.slug).toBe('x-3');
     expect(resolved.branch).toBe('ak/x-3');
     expect(resolved.renamedFrom).toBe('ak/x-2');
-    expect(resolved.targetPath).toBe('/repos/goodboy/.goodboy/worktrees/x-3-mount-1');
+    expect(resolved.targetPath).toBe('/repos/goodboy/.goodboy/worktrees/gb-7k2q9x');
   });
 
   it('never renames a branch the session is adopting on purpose', () => {

@@ -878,9 +878,7 @@ describe('store contract', () => {
         expect.objectContaining({
           repoPath: '/tmp/repo',
           parentDir: '/tmp/repo/.goodboy/worktrees',
-          dirName: expect.stringMatching(
-            /^study-plan-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-          ),
+          dirName: expect.stringMatching(/^gb-[0-9a-z]{6}$/),
         }),
       );
       expect(store.getState().sessionProjectMounts[session.id]).toEqual([
@@ -1340,7 +1338,7 @@ describe('store contract', () => {
       const [args] = storySpies.createWorktree.mock.calls[0] ?? [];
 
       expect(args?.dirName).not.toContain('/');
-      expect(args?.dirName).toMatch(/^alice-fix-p-/);
+      expect(args?.dirName).toMatch(/^gb-[0-9a-z]{6}$/);
     });
   });
 

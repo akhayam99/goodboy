@@ -33,7 +33,7 @@ const h = vi.hoisted(() => ({
       slug: 'ship-it',
       branch: 'ak/ship-it',
       baseBranch: 'main',
-      targetPath: '/repos/goodboy/.goodboy/worktrees/ship-it-mount-1',
+      targetPath: '/repos/goodboy/.goodboy/worktrees/gb-7k2q9x',
       renamedFrom: null as string | null,
     },
     branchScanError: null as string | null,
@@ -78,7 +78,7 @@ describe('MountProjectList', () => {
     expect(h.ensureProjectMounted).not.toHaveBeenCalled();
     screen.getByText('main');
     screen.getByText('ak/ship-it');
-    screen.getByText('/repos/goodboy/.goodboy/worktrees/ship-it-mount-1');
+    screen.getByText('/repos/goodboy/.goodboy/worktrees/gb-7k2q9x');
   });
 
   it('creates with exactly the branch and the mount the preview showed', async () => {

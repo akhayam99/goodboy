@@ -23,7 +23,7 @@ const preflight = {
   slug: 'ship-it',
   branch: 'ak/ship-it',
   baseBranch: 'main',
-  targetPath: '/repos/goodboy/.goodboy/worktrees/ship-it-mount-1',
+  targetPath: '/repos/goodboy/.goodboy/worktrees/gb-7k2q9x',
   renamedFrom: null,
 } as unknown as MountPreflight;
 
@@ -38,7 +38,7 @@ describe('mountFailure', () => {
     expect(failure.cause).toBe('cannot find base ref: tried origin/main');
     expect(failure.detail).toContain('branch: ak/ship-it');
     expect(failure.detail).toContain('base: main');
-    expect(failure.detail).toContain('path: /repos/goodboy/.goodboy/worktrees/ship-it-mount-1');
+    expect(failure.detail).toContain('path: /repos/goodboy/.goodboy/worktrees/gb-7k2q9x');
   });
 
   it('leaves the kind out when the wrapper could not tell what it was', () => {

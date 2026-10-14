@@ -5,7 +5,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { createWorktree, listBranchNames } from '../../../features/worktree/worktree';
 import { rememberWorktreeRoot } from '../storage/rememberWorktreeRoot';
 import { mountBranchOrigin } from './mountBranchOrigin';
-import { mountDirName } from './mountDirName';
+import { allocateMountDirName } from './allocateMountDirName';
 import { branchInUseError, mountError, worktreeErrorKind } from './mountErrors';
 import { withMountLock, withRepositoryAndMountLock } from './mountLocks';
 import {
@@ -19,11 +19,7 @@ import {
 } from './mountOperations';
 import { applyMountViews, loadMountViews, requireMountView } from './mountViews';
 import { requireMountContext } from './requireMountContext';
-import {
-  resolveForkBranchName,
-  resolveRequestedBranchName,
-  resolveSessionSlug,
-} from './resolveMountNaming';
+import { resolveForkBranchName, resolveRequestedBranchName } from './resolveMountNaming';
 import type { ForkMountInput, GetFn, SetFn } from './types';
 
 export const forkMount = (set: SetFn, get: GetFn) => {
@@ -102,7 +98,6 @@ export const forkMount = (set: SetFn, get: GetFn) => {
               return landed;
             }
             const mountId = (sameRequest ? planned : generatedMountId) as MountId;
-            const sessionSlug = resolveSessionSlug({ get, session, project });
             const remoteBranches = await listBranchNames({ repoPath: project.rootPath }).catch(
               () => [] as ReadonlyArray<string>,
             );
@@ -129,11 +124,16 @@ export const forkMount = (set: SetFn, get: GetFn) => {
               });
             }
             const baseBranch = input.baseBranch ?? project.baseBranch ?? undefined;
+            const parentDir = `${project.rootPath}/.goodboy/worktrees`;
             const request = {
               repoPath: project.rootPath,
               branchName: newBranchName,
-              parentDir: `${project.rootPath}/.goodboy/worktrees`,
-              dirName: mountDirName({ sessionSlug, mountId }),
+              parentDir,
+              dirName: await allocateMountDirName({
+                mountId,
+                repoPath: project.rootPath,
+                parentDir,
+              }),
               ...(baseBranch !== undefined ? { baseBranch } : {}),
             };
             let created;

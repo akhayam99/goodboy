@@ -10355,7 +10355,7 @@
   },
   "apps/desktop/src/store/slices/project-mounts/index.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 46
+      "count": 23
     },
     "@typescript-eslint/naming-convention": {
       "count": 1
@@ -10394,11 +10394,6 @@
   "apps/desktop/src/store/slices/project-mounts/mountCompletion.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 3
-    }
-  },
-  "apps/desktop/src/store/slices/project-mounts/mountDirName.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
     }
   },
   "apps/desktop/src/store/slices/project-mounts/mountErrors.ts": {

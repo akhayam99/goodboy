@@ -16,9 +16,17 @@ and `apps/desktop/src/store/slices/mount-cleanup/`.
 - Before any mount, a turn runs in `~/.goodboy/scratch/<session-id>`. The
   directory is created by the first turn that needs it and removed when the
   session is deleted.
-- A repository mount is a git worktree at
-  `<repo>/.goodboy/worktrees/<session-slug>-<mount-id>`, truncated to a fixed
-  length. The local branch outlives the worktree.
+- A repository mount is a git worktree at `<repo>/.goodboy/worktrees/gb-<6 chars>`,
+  where the six characters are lowercase base36 (for example `gb-7k2q9x`). The
+  folder name carries no session and no mount id: the session and the branch
+  are shown next to it. `allocateMountDirName` draws the name from a source
+  seeded with the mount id, so a retried request lands in the same folder. If
+  the folder exists and is not a worktree of the repository, it draws again, up
+  to eight times, then takes a 12 character name. Worktrees made before 0.25.2
+  keep their old `<session-slug>-<mount-id>` folder: the path is stored in
+  `session_worktrees.worktree_path` and in the mount row, and nothing
+  recomputes it. Re-attaching a removed mount reuses the folder name of its
+  last stored path. The local branch outlives the worktree.
 - Branch and directory names come from one slug rule: ASCII letters and digits,
   everything else becomes a dash, at most 48 characters, and a short hash when
   nothing is left. `slugify` in `@goodboy/core` and `slugify` in `worktree/slug.rs`

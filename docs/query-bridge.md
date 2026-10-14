@@ -151,7 +151,7 @@ Start by reading the mounts:
   "mountName": "api",
   "branch": "ak/eng-3240-auth",
   "baseBranch": "origin/main",
-  "mountPath": "/path/to/.goodboy/worktrees/<name>-<uuid>",
+  "mountPath": "/path/to/.goodboy/worktrees/gb-7k2q9x",
   "isAttached": true,
   "diskState": "present",
   "revision": 3

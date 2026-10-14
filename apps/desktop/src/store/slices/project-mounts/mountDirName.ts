@@ -1,22 +1,24 @@
-import { MAX_SLUG_LENGTH, slugify } from '@goodboy/core';
-import type { MountId } from '@goodboy/types';
+import { seededRandom } from './seededRandom';
+
+const PREFIX = 'gb-';
+const SHORT_LENGTH = 6;
+const ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyz';
 
 type Params = {
-  readonly sessionSlug: string;
-  readonly mountId: MountId;
+  readonly mountId: string;
+  readonly random?: () => number;
+  readonly length?: number;
 };
 
-const slugifyOrEmpty = (input: string): string => slugify({ input, fallback: '' });
-
-export const mountDirName = ({ sessionSlug, mountId }: Params): string => {
-  const id = slugifyOrEmpty(mountId);
-  const budget = MAX_SLUG_LENGTH - id.length - 1;
-  const head = budget <= 0 ? '' : slugifyOrEmpty(sessionSlug).slice(0, budget).replace(/-+$/g, '');
-  if (head === '') {
-    return id;
+export const mountDirName = ({
+  mountId,
+  random = seededRandom({ seed: mountId }),
+  length = SHORT_LENGTH,
+}: Params): string => {
+  let suffix = '';
+  for (let index = 0; index < length; index += 1) {
+    const slot = Math.min(Math.floor(random() * ALPHABET.length), ALPHABET.length - 1);
+    suffix += ALPHABET.charAt(slot);
   }
-  if (id === '') {
-    return head;
-  }
-  return `${head}-${id}`;
+  return `${PREFIX}${suffix}`;
 };

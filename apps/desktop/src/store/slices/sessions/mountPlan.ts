@@ -54,7 +54,7 @@ const targetPathFor = ({ project, slug, mountId, folderName }: PathParams): stri
   if (project.kind !== 'repo') {
     return `${project.rootPath}/sessions/${folderName ?? slug}`;
   }
-  return `${project.rootPath}/.goodboy/worktrees/${mountDirName({ sessionSlug: slug, mountId })}`;
+  return `${project.rootPath}/.goodboy/worktrees/${mountDirName({ mountId })}`;
 };
 
 export const mountPlan = ({
