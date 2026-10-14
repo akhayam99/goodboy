@@ -419,6 +419,26 @@ fails silently at runtime.
   last child that ends blocked leaves the parent waiting forever. The
   consolidation prompt names the status of each child.
 
+- An Auto artifact is approved only while `auto_artifacts.approved_revision`
+  equals the live `session_artifacts.revision`. A hand edit or a restore writes
+  the artifact row alone, so `approval_state` can still say `approved` for a
+  revision that is gone. Read approval through `effectiveApproval`
+  (`packages/core/src/auto/ledger.ts`), and never compare the stored state.
+- The reservation of a first attempt is owned by `auto_delegations.first_attempt_id`,
+  an id minted at admission. The attempt row does not exist until
+  `startAttempt`, so find that reservation by owner id, never by joining
+  `auto_attempts`.
+- The admission rule is written twice on purpose: as one guarded SQL statement
+  (`autoAdmissionTreeStatement`), which decides, and as `diagnoseAdmission`,
+  which only names the refusal. A new limit goes into both, and
+  `admit.sqlite.test.ts` checks the SQL on its own so a stale snapshot cannot
+  admit what the guard refuses.
+- `auto_*` money columns are REAL dollars. Compare them through
+  `autoRemainingUsdSql` and `AUTO_USD_EPSILON`, not with `===`.
+- The sql of m230 is pinned by hash in `registry.test.ts`. While the release is
+  unshipped, a change to it needs the new hash pasted there; once shipped, it
+  is immutable.
+
 ## Traps in the toolchain
 
 - A new worktree needs `pnpm install`. In this checkout that install exits 1

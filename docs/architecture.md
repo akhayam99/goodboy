@@ -605,6 +605,13 @@ cleanup) and moving those calls behind the commands is not done yet.
 | `artifact_comments`           | ts     |                                                                                                                     |
 | `artifact_provenance`         | ts     |                                                                                                                     |
 | `artifact_revisions`          | ts     |                                                                                                                     |
+| `auto_artifact_versions`      | ts     |                                                                                                                     |
+| `auto_artifacts`              | ts     |                                                                                                                     |
+| `auto_attempts`               | ts     |                                                                                                                     |
+| `auto_delegations`            | ts     |                                                                                                                     |
+| `auto_outbox`                 | ts     |                                                                                                                     |
+| `auto_reservations`           | ts     |                                                                                                                     |
+| `auto_trees`                  | ts     | Auto tree registry (`store/slices/auto/`). Nothing in Rust writes it.                                               |
 | `budget_alerts`               | rust   | `budget.rs`                                                                                                         |
 | `budget_rules`                | rust   | `budget.rs`, and the backup import                                                                                  |
 | `chat_message_attachments`    | ts     | Rows go in with their message through `insertChatMessage`. Rust reads them to build a turn's image root.            |
@@ -681,6 +688,41 @@ cleanup) and moving those calls behind the commands is not done yet.
 | `workspace_starred_issues`    | ts     |                                                                                                                     |
 | `workspaces`                  | ts     | Exceptions: the backup import and the per-workspace settings override (`settings_overrides.rs`).                    |
 | `worktree_roots`              | ts     | Exception: a project move rewrites `repo_root`.                                                                     |
+
+### Auto tree registry
+
+Migration m230 adds seven tables for Auto, the agent that hands work to agents
+of other roles. Nothing reaches a person yet: `AUTO_GATES.isDelegationEnabled`
+in `packages/core/src/auto/limits.ts` is `false`, nothing calls the scheduler,
+and the bridge has no verb for it. The tables are additive, so an older build
+refuses the file with `DatabaseFromNewerBuildError` instead of reading it.
+
+- `auto_trees` is one row per Auto agent: phase, `phase_rev`, generation, stop
+  state, the budget cap, the lifetime counters and the scheduler lease
+  (`scheduler_owner`, `owner_lease_expires_at`). `auto_delegations`,
+  `auto_attempts`, `auto_reservations`, `auto_outbox`, `auto_artifacts` and
+  `auto_artifact_versions` hang off it and go with it.
+- `store/slices/auto/scheduler.ts` is the one writer of tree state. A window
+  writes only while it holds the lease, so a second window reads. Every
+  transition names the phase revision, generation and phase it expects, and a
+  lost race comes back as a typed answer.
+- `admit.ts` takes a whole batch or nothing. The guarded statement in
+  `packages/db/src/queries/auto-admission.ts` is the rule: phase, run, lease,
+  lifetime counters, four open children, remaining budget, plan approval and
+  revision. `core/auto/admission.ts` only names the refusal for the caller.
+- Money has one source, `treeSpend`: settled, reserved and remaining. It feeds
+  admission, the prompt line and the screen through `autoBudgetFacts`. An
+  attempt reserves its ceiling at admission and is reconciled to the actual
+  cost, or to the ceiling, marked estimated, when the provider reports none.
+- `settleAttempt` and `landRevision` apply a result only while the tree
+  generation, the lease, the attempt and the delegation still match. Anything
+  else is dropped and its reservation released.
+- `writeArtifactRevision` (`packages/db/src/queries/artifactRevision.ts`) is
+  the one way to make revision N+1 of an artifact: a compare and swap on the
+  base revision and the history row, in one transaction. The plan hand edit and
+  the Auto landing both call it.
+- A run started for an Auto delivery carries a `deliveryId`, and Rust refuses a
+  second run for it ([turns.md](./turns.md) → Surviving a reload or a restart).
 
 ### On-disk data layout
 

@@ -389,6 +389,14 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   `turn_event` carries its `seq`. `turn_attach(runId, afterSeq)` returns what
   came after a cursor and whether the run is still live; `turn_release` drops
   an ended backlog, which `runTurn` does when its stream closes.
+- **One delivery starts one run.** A spawn may carry a `deliveryId`.
+  `turn_spawn` records it in `turn_delivery.rs` with the run id and refuses a
+  second run for the same id with `delivery_duplicate`, naming the first run.
+  A spawn that fails gives the id back. `turn_delivery_lookup(deliveryId)`
+  (`lookupDeliveryRun`) answers the run and whether it is still live, for as
+  long as the app process lives; the newest 2048 deliveries are remembered and
+  a live run is never forgotten. Nothing sends one yet: Auto delivery
+  (`store/slices/auto`) is switched off.
 - **The window that streams a turn owns it.** `runTurn` and `attachTurn`
   share one stream core (`features/chat/turn.ts`). After every event it hands
   on, it writes a cursor (`seq`, index inside that line, and the turn's owner:

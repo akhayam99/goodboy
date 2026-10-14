@@ -37,3 +37,11 @@ export type ChatId = string & { readonly __brand: 'ChatId' };
 export type ChatMessageId = string & { readonly __brand: 'ChatMessageId' };
 export type ChatSessionLinkId = string & { readonly __brand: 'ChatSessionLinkId' };
 export type ChatAttachmentId = string & { readonly __brand: 'ChatAttachmentId' };
+
+export type AutoTreeId = string & { readonly __brand: 'AutoTreeId' };
+export type AutoDelegationId = string & { readonly __brand: 'AutoDelegationId' };
+export type AutoAttemptId = string & { readonly __brand: 'AutoAttemptId' };
+export type AutoReservationId = string & { readonly __brand: 'AutoReservationId' };
+export type AutoOutboxId = string & { readonly __brand: 'AutoOutboxId' };
+export type AutoRequestId = string & { readonly __brand: 'AutoRequestId' };
+export type AutoBatchId = string & { readonly __brand: 'AutoBatchId' };

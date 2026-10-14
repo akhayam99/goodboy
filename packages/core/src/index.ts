@@ -20,6 +20,7 @@ export {
   type BranchTemplateProblem,
   type BranchValues,
 } from './slug';
+export { sha256Hex } from './slug/sha256';
 export { IllegalTurnTransitionError, turnReducer, type TurnLifecycleEvent } from './turn';
 
 export {
@@ -140,20 +141,59 @@ export {
 
 export {
   AUTO_ATTEMPT_CEILING_USD,
+  AUTO_AUX_RESERVATION_USD,
   AUTO_BATCH_MAX_CHILDREN,
   AUTO_BATCH_MIN_CHILDREN,
   AUTO_DEFAULT_TREE_CAP_USD,
   AUTO_DELEGATION_DEADLINE_MINUTES,
   AUTO_GATES,
   AUTO_GRANT_ALLOWANCE,
+  AUTO_LEDGER_CHAR_BUDGET,
+  AUTO_LEDGER_MAX_ARTIFACTS,
+  AUTO_LEDGER_OUTLINE_CHARS,
   AUTO_MAX_GRANTS_PER_TREE,
+  AUTO_MAX_OPEN_CHILDREN,
+  AUTO_OUTBOX_CLAIM_MS,
+  AUTO_OWNER_LEASE_MS,
+  AUTO_REVISE_ASK_CHARS,
   AUTO_TREE_DEPTH,
   AUTO_TREE_LIMITS,
   AUTO_TURN_CEILING_USD,
   AUTO_YIELD_GRACE_SECONDS,
   attemptCeilingUsd,
+  effectiveTreeLimits,
+  type AutoEffectiveLimits,
   type AutoTreeLimitKey,
 } from './auto/limits';
+export {
+  autoBudgetFacts,
+  autoBudgetLabel,
+  autoBudgetPromptLine,
+  type AutoBudgetFacts,
+} from './auto/budget';
+export {
+  artifactOutline,
+  buildArtifactLedgerBlock,
+  effectiveApproval,
+  type AutoApprovalView,
+  type AutoLedgerEntry,
+} from './auto/ledger';
+export {
+  diagnoseAdmission,
+  type AdmissionArtifactFacts,
+  type AdmissionArtifactRef,
+  type AdmissionChild,
+  type AdmissionChildRefusal,
+  type AdmissionLiveArtifact,
+  type AdmissionSnapshot,
+  type AdmissionVerdict,
+} from './auto/admission';
+export {
+  AUTO_LIMIT_REFUSAL_CODES,
+  AUTO_REFUSAL_CODES,
+  isAutoLimitRefusal,
+  type AutoRefusalCode,
+} from './auto/refusals';
 export { AUTO_SYSTEM_PROMPT, autoRoleCatalog, buildAutoSystemPrompt } from './auto/prompt';
 export {
   AUTO_DELEGATION_ROLES,

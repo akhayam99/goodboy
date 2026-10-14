@@ -55,3 +55,43 @@ type AttemptCeilingParams = {
 
 export const attemptCeilingUsd = ({ role, remainingUsd }: AttemptCeilingParams): number =>
   Math.max(0, Math.min(AUTO_ATTEMPT_CEILING_USD[role], remainingUsd));
+
+export const AUTO_MAX_OPEN_CHILDREN = AUTO_BATCH_MAX_CHILDREN;
+
+export const AUTO_AUX_RESERVATION_USD = 0.05;
+
+export const AUTO_OWNER_LEASE_MS = 30_000;
+
+export const AUTO_OUTBOX_CLAIM_MS = 60_000;
+
+export const AUTO_LEDGER_MAX_ARTIFACTS = 20;
+
+export const AUTO_LEDGER_CHAR_BUDGET = 3_000;
+
+export const AUTO_LEDGER_OUTLINE_CHARS = 400;
+
+export const AUTO_REVISE_ASK_CHARS = 240;
+
+export type AutoEffectiveLimits = {
+  readonly autoTurns: number;
+  readonly delegations: number;
+  readonly attempts: number;
+  readonly delegateCallsPerTurn: number;
+  readonly refusals: number;
+  readonly questionCyclesPerDelegation: number;
+  readonly noProgressStreak: number;
+};
+
+type EffectiveLimitsParams = {
+  readonly grants: number;
+};
+
+export const effectiveTreeLimits = ({ grants }: EffectiveLimitsParams): AutoEffectiveLimits => ({
+  autoTurns: AUTO_TREE_LIMITS.autoTurns + grants * AUTO_GRANT_ALLOWANCE.autoTurns,
+  delegations: AUTO_TREE_LIMITS.delegations + grants * AUTO_GRANT_ALLOWANCE.delegations,
+  attempts: AUTO_TREE_LIMITS.attempts + grants * AUTO_GRANT_ALLOWANCE.attempts,
+  delegateCallsPerTurn: AUTO_TREE_LIMITS.delegateCallsPerTurn,
+  refusals: AUTO_TREE_LIMITS.refusals,
+  questionCyclesPerDelegation: AUTO_TREE_LIMITS.questionCyclesPerDelegation,
+  noProgressStreak: AUTO_TREE_LIMITS.noProgressStreak,
+});

@@ -122,6 +122,7 @@ type SpawnArgs = {
     readonly token: string;
   };
   readonly confinedRole?: string;
+  readonly deliveryId?: string;
   readonly writeSetLease?: {
     readonly holder: string;
     readonly entries: ReadonlyArray<{ readonly path: string; readonly token: string }>;
@@ -486,6 +487,20 @@ export const attachTurn = ({
 export const cancelTurn = async (runId: ProviderRunId): Promise<void> => {
   await invokeCommand('turn_cancel', { runId });
 };
+
+export type DeliveryRun = {
+  readonly runId: string;
+  readonly isLive: boolean;
+};
+
+type LookupDeliveryRunParams = {
+  readonly deliveryId: string;
+};
+
+export const lookupDeliveryRun = ({
+  deliveryId,
+}: LookupDeliveryRunParams): Promise<DeliveryRun | null> =>
+  invokeCommand<DeliveryRun | null>('turn_delivery_lookup', { deliveryId });
 
 export const listLiveRunIds = async (): Promise<ReadonlySet<string>> => {
   try {

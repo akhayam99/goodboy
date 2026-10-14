@@ -41,7 +41,13 @@ vi.mock('@tauri-apps/api/event', () => ({
   }),
 }));
 
-import { RELOAD_GAP_MESSAGE, RUN_GONE_MESSAGE, attachTurn, runTurn } from './turn';
+import {
+  RELOAD_GAP_MESSAGE,
+  RUN_GONE_MESSAGE,
+  attachTurn,
+  lookupDeliveryRun,
+  runTurn,
+} from './turn';
 import { readTurnCursor, type TurnOwner } from './turnCursor';
 
 const OWNER: TurnOwner = {
@@ -473,5 +479,23 @@ describe('attachTurn', () => {
     })[Symbol.asyncIterator]();
 
     await expect(iterator.next()).rejects.toThrow(RUN_GONE_MESSAGE);
+  });
+});
+
+describe('lookupDeliveryRun', () => {
+  it('asks the backend for the run a delivery already started', async () => {
+    invokeMock.mockImplementation(async () => ({ runId: 'run-7', isLive: true }));
+
+    await expect(lookupDeliveryRun({ deliveryId: 'delivery-7' })).resolves.toEqual({
+      runId: 'run-7',
+      isLive: true,
+    });
+    expect(invokeMock).toHaveBeenCalledWith('turn_delivery_lookup', { deliveryId: 'delivery-7' });
+  });
+
+  it('answers null for a delivery no run was started for', async () => {
+    invokeMock.mockImplementation(async () => null);
+
+    await expect(lookupDeliveryRun({ deliveryId: 'delivery-8' })).resolves.toBeNull();
   });
 });

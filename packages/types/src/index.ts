@@ -1,5 +1,12 @@
 export type {
   AgentId,
+  AutoAttemptId,
+  AutoBatchId,
+  AutoDelegationId,
+  AutoOutboxId,
+  AutoRequestId,
+  AutoReservationId,
+  AutoTreeId,
   ChatId,
   ChatMessageId,
   ChatSessionLinkId,
@@ -256,6 +263,7 @@ export type {
   WorkflowTaskProfile,
   WorkflowTaskType,
 } from './workflow-routing';
+export { brandId } from './brandId';
 export { EFFORT_LEVELS, isEffortLevel, PROVIDER_IDS } from './provider-registry';
 export type { OpenCodeRouting, ProviderKind } from './provider-catalog';
 export type { ProviderCredential } from './provider-credential';

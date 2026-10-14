@@ -13,6 +13,7 @@ use crate::live_child::{
 };
 use crate::providers::cli_args::turn_args;
 use crate::turn_backlog::{AttachSnapshot, TurnBacklog};
+use crate::turn_delivery::{DeliveryClaim, DeliveryRegistry, DeliveryRun};
 
 pub(crate) const MAX_TURN_LINE_BYTES: usize = 64 * 1024 * 1024;
 
@@ -28,6 +29,8 @@ pub enum TurnError {
     NotFound(String),
     #[error("role confinement is not proven for this CLI: {0}")]
     ConfinementUnproven(String),
+    #[error("this delivery already started run {0}")]
+    DeliveryDuplicate(String),
 }
 
 crate::util::impl_error_serialize!(TurnError);
@@ -40,6 +43,7 @@ impl TurnError {
             TurnError::WriterLeaseNotOwned => "writer_lease_not_owned",
             TurnError::NotFound(_) => "not_found",
             TurnError::ConfinementUnproven(_) => "confinement_unproven",
+            TurnError::DeliveryDuplicate(_) => "delivery_duplicate",
         }
     }
 }
@@ -47,7 +51,7 @@ impl TurnError {
 type ChildRegistry = LiveChildRegistry;
 
 #[derive(Default)]
-pub struct TurnRegistry(pub ChildRegistry, pub TurnBacklog);
+pub struct TurnRegistry(pub ChildRegistry, pub TurnBacklog, pub DeliveryRegistry);
 
 impl TurnRegistry {
     pub fn new() -> Self {
@@ -133,6 +137,8 @@ pub struct SpawnArgs {
     pub blocks_push: bool,
     #[serde(default)]
     pub excludes_tmp: bool,
+    #[serde(default)]
+    pub delivery_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -406,6 +412,36 @@ fn spawn_one<E: TurnEmitter>(
     Ok(args.run_id.to_string())
 }
 
+fn claim_delivery(state: &TurnRegistry, args: &SpawnArgs) -> Result<(), TurnError> {
+    let Some(delivery_id) = args.delivery_id.as_deref() else {
+        return Ok(());
+    };
+    let live = state.0.lock().map_err(|_| TurnError::Poisoned)?;
+    match state.2.claim(delivery_id, &args.run_id, |run_id| {
+        live.contains_key(run_id)
+    }) {
+        DeliveryClaim::Claimed => Ok(()),
+        DeliveryClaim::Duplicate(run_id) => Err(TurnError::DeliveryDuplicate(run_id)),
+    }
+}
+
+fn release_delivery(state: &TurnRegistry, args: &SpawnArgs) {
+    if let Some(delivery_id) = args.delivery_id.as_deref() {
+        state.2.release(delivery_id, &args.run_id);
+    }
+}
+
+#[tauri::command]
+pub async fn turn_delivery_lookup(
+    state: State<'_, TurnRegistry>,
+    delivery_id: String,
+) -> Result<Option<DeliveryRun>, TurnError> {
+    let live = state.0.lock().map_err(|_| TurnError::Poisoned)?;
+    Ok(state
+        .2
+        .lookup(&delivery_id, |run_id| live.contains_key(run_id)))
+}
+
 #[tauri::command]
 pub async fn turn_spawn(
     app: AppHandle,
@@ -424,7 +460,8 @@ pub async fn turn_spawn(
         .unwrap_or("default")
         .to_string();
 
-    spawn_one(
+    claim_delivery(&state, &args)?;
+    let spawned = spawn_one(
         &app,
         &state.0,
         &state.1,
@@ -459,7 +496,11 @@ pub async fn turn_spawn(
             blocks_push: args.blocks_push,
             excludes_tmp: args.excludes_tmp,
         },
-    )
+    );
+    if spawned.is_err() {
+        release_delivery(&state, &args);
+    }
+    spawned
 }
 
 #[tauri::command]
@@ -611,6 +652,46 @@ mod fake_cli_tests;
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn spawn_args(run_id: &str, delivery_id: Option<&str>) -> SpawnArgs {
+        serde_json::from_value(serde_json::json!({
+            "runId": run_id,
+            "model": "sonnet",
+            "workingDir": "/repo/one",
+            "prompt": "go",
+            "deliveryId": delivery_id,
+        }))
+        .expect("spawn args")
+    }
+
+    #[test]
+    fn a_second_run_of_the_same_delivery_is_refused_with_the_first_run_id() {
+        let registry = TurnRegistry::new();
+        claim_delivery(&registry, &spawn_args("run-1", Some("delivery-1"))).expect("first claim");
+        let second = claim_delivery(&registry, &spawn_args("run-2", Some("delivery-1")));
+        match second {
+            Err(TurnError::DeliveryDuplicate(run_id)) => assert_eq!(run_id, "run-1"),
+            other => panic!("expected a duplicate, got {other:?}"),
+        }
+        let found = registry.2.lookup("delivery-1", |_| false);
+        assert_eq!(found.map(|run| run.run_id), Some("run-1".to_string()));
+    }
+
+    #[test]
+    fn a_spawn_without_a_delivery_id_is_never_refused() {
+        let registry = TurnRegistry::new();
+        claim_delivery(&registry, &spawn_args("run-1", None)).expect("no delivery");
+        claim_delivery(&registry, &spawn_args("run-2", None)).expect("no delivery");
+    }
+
+    #[test]
+    fn a_spawn_that_failed_gives_its_delivery_back() {
+        let registry = TurnRegistry::new();
+        let first = spawn_args("run-1", Some("delivery-1"));
+        claim_delivery(&registry, &first).expect("first claim");
+        release_delivery(&registry, &first);
+        claim_delivery(&registry, &spawn_args("run-2", Some("delivery-1"))).expect("claim again");
+    }
 
     #[test]
     fn spawn_refuses_a_writer_without_an_owned_lease() {

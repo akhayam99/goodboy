@@ -4,13 +4,18 @@ import {
   AUTO_ATTEMPT_CEILING_USD,
   AUTO_BATCH_MAX_CHILDREN,
   AUTO_BATCH_MIN_CHILDREN,
+  AUTO_AUX_RESERVATION_USD,
   AUTO_GATES,
   AUTO_GRANT_ALLOWANCE,
+  AUTO_LEDGER_CHAR_BUDGET,
+  AUTO_LEDGER_MAX_ARTIFACTS,
   AUTO_MAX_GRANTS_PER_TREE,
+  AUTO_MAX_OPEN_CHILDREN,
   AUTO_TREE_DEPTH,
   AUTO_TREE_LIMITS,
   AUTO_TURN_CEILING_USD,
   attemptCeilingUsd,
+  effectiveTreeLimits,
 } from './limits';
 import { AUTO_DELEGATION_ROLES } from './roles';
 
@@ -67,5 +72,38 @@ describe('attemptCeilingUsd', () => {
   it('is zero when nothing remains, never negative', () => {
     expect(attemptCeilingUsd({ role: 'tester', remainingUsd: 0 })).toBe(0);
     expect(attemptCeilingUsd({ role: 'tester', remainingUsd: -2 })).toBe(0);
+  });
+});
+
+describe('effectiveTreeLimits', () => {
+  it('is the base counters before any grant', () => {
+    expect(effectiveTreeLimits({ grants: 0 })).toMatchObject({
+      autoTurns: 30,
+      delegations: 12,
+      attempts: 20,
+      delegateCallsPerTurn: 6,
+      refusals: 10,
+    });
+  });
+
+  it('adds the fixed allowance once per grant and nothing else', () => {
+    expect(effectiveTreeLimits({ grants: 2 })).toMatchObject({
+      autoTurns: 42,
+      delegations: 20,
+      attempts: 28,
+      delegateCallsPerTurn: 6,
+      refusals: 10,
+      questionCyclesPerDelegation: 3,
+    });
+  });
+});
+
+describe('registry constants', () => {
+  it('keeps the open children at the batch cap and the ledger bounded', () => {
+    expect(AUTO_MAX_OPEN_CHILDREN).toBe(AUTO_BATCH_MAX_CHILDREN);
+    expect(AUTO_LEDGER_MAX_ARTIFACTS).toBe(20);
+    expect(AUTO_LEDGER_CHAR_BUDGET).toBe(3000);
+    expect(AUTO_AUX_RESERVATION_USD).toBeGreaterThan(0);
+    expect(AUTO_AUX_RESERVATION_USD).toBeLessThan(AUTO_TURN_CEILING_USD);
   });
 });

@@ -1,5 +1,5 @@
 import type { ArtifactId, IsoDateTime } from '@goodboy/types';
-import type { Database, PlainStatement } from '../client';
+import type { Database, GuardedStatement, PlainStatement, Statement } from '../client';
 
 export const ARTIFACT_REVISION_AUTHORS = ['agent', 'user', 'import', 'restore'] as const;
 
@@ -204,4 +204,103 @@ export const annotateArtifactRevision = async ({
     ],
   );
   return result.rowsAffected > 0;
+};
+
+export const ARTIFACT_REVISION_CONFLICT = 'ARTIFACT_REVISION_CONFLICT';
+
+export type ArtifactRevisionWriteKind = 'plan' | 'report' | 'wireframe';
+
+export type ArtifactRevisionWriteParams = {
+  readonly artifactId: ArtifactId;
+  readonly expectedRevision: number;
+  readonly kind?: ArtifactRevisionWriteKind;
+  readonly isActiveOnly?: boolean;
+  readonly author: ArtifactRevisionAuthor;
+  readonly ask?: string | null;
+  readonly sourceTurnId?: string | null;
+  readonly title: string;
+  readonly sourceText: string;
+  readonly metadata: Readonly<Record<string, unknown>>;
+  readonly nowMs: number;
+};
+
+export const artifactRevisionWriteStatements = ({
+  artifactId,
+  expectedRevision,
+  kind,
+  isActiveOnly = false,
+  author,
+  ask = null,
+  sourceTurnId,
+  title,
+  sourceText,
+  metadata,
+  nowMs,
+}: ArtifactRevisionWriteParams): ReadonlyArray<Statement> => {
+  const metadataJson = JSON.stringify(metadata);
+  const sets = [
+    'title = ?',
+    'source_text = ?',
+    'metadata_json = ?',
+    'revision = revision + 1',
+    'updated_at = ?',
+  ];
+  const setParams: unknown[] = [title, sourceText, metadataJson, nowMs];
+  if (sourceTurnId !== undefined) {
+    sets.push('source_turn_id = ?');
+    setParams.push(sourceTurnId);
+  }
+  const guards = ['id = ?', 'revision = ?'];
+  const guardParams: unknown[] = [artifactId, expectedRevision];
+  if (kind !== undefined) {
+    guards.push('kind = ?');
+    guardParams.push(kind);
+  }
+  if (isActiveOnly) {
+    guards.push("status = 'active'");
+  }
+  const update: GuardedStatement = {
+    sql: `UPDATE session_artifacts SET ${sets.join(', ')} WHERE ${guards.join(' AND ')}`,
+    params: [...setParams, ...guardParams],
+    abortWhen: 'noChanges',
+    abortCode: ARTIFACT_REVISION_CONFLICT,
+  };
+  return [
+    update,
+    artifactRevisionInsert({
+      artifactId,
+      title,
+      sourceText,
+      metadataJson,
+      note: { author, ask },
+      createdAt: nowMs,
+    }),
+  ];
+};
+
+export type ArtifactRevisionWriteOutcome =
+  | Readonly<{ kind: 'saved'; revision: number }>
+  | Readonly<{ kind: 'conflict'; revision: number }>
+  | Readonly<{ kind: 'missing' }>;
+
+type WriteArtifactRevisionParams = ArtifactRevisionWriteParams & {
+  readonly db: Database;
+};
+
+export const writeArtifactRevision = async ({
+  db,
+  ...params
+}: WriteArtifactRevisionParams): Promise<ArtifactRevisionWriteOutcome> => {
+  const outcome = await db.transaction({ statements: artifactRevisionWriteStatements(params) });
+  if (outcome.status === 'committed') {
+    return { kind: 'saved', revision: params.expectedRevision + 1 };
+  }
+  const rows = await db.select<{ readonly revision: number }>(
+    'SELECT revision FROM session_artifacts WHERE id = ?',
+    [params.artifactId],
+  );
+  const current = rows[0];
+  return current === undefined
+    ? { kind: 'missing' }
+    : { kind: 'conflict', revision: current.revision };
 };

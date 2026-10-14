@@ -15,6 +15,10 @@
     "./test-helpers": {
       "types": "./src/test-helpers/test-db.ts",
       "default": "./src/test-helpers/test-db.ts"
+    },
+    "./test-helpers/auto-seeds": {
+      "types": "./src/test-helpers/auto-seeds.ts",
+      "default": "./src/test-helpers/auto-seeds.ts"
     }
   },
   "scripts": {
