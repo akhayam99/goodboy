@@ -121,6 +121,11 @@ type SpawnArgs = {
     readonly holder: string;
     readonly token: string;
   };
+  readonly confinedRole?: string;
+  readonly writeSetLease?: {
+    readonly holder: string;
+    readonly entries: ReadonlyArray<{ readonly path: string; readonly token: string }>;
+  };
 };
 
 type RawTurnEnvelope =

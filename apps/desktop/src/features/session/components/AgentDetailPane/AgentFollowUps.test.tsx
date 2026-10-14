@@ -7,6 +7,7 @@ import type { SpawnedChild } from '../../../../shared/utils/spawnedChildren';
 
 const state = vi.hoisted(() => ({
   agentTurnState: {} as Record<string, unknown>,
+  agentWriterWait: {},
   openQuestions: [] as ReadonlyArray<OpenQuestion>,
   startFollowUp: vi.fn(async (_params: unknown) => 'agent-2' as AgentId),
   navigate: vi.fn(),

@@ -875,6 +875,20 @@ own **Open in Artifacts**.
   question card at the top of the body with **Answer**, and the bar waits
   ("The planner asked a question. Answer it first.").
 
+#### Asking the planner for a change in the chat
+
+A typed change in the planner's chat reaches the planner with its current plan.
+`buildTurnPrompt` adds a `[current-plan id="..." revision="N"]` layer
+(`renderCurrentPlan`, `activePlanOf`) to every turn of a planner that has an
+active plan, between the shared context and your message, so the planner no
+longer depends on provider session memory or on an 8000 token history that can
+cut the plan. The planner prompt says to write the whole updated plan as one
+plan block, never a patch. When your message is an explicit change request
+(`isPlanChangeRequest`: a change verb such as add, drop, replace or split, not a
+question) and the turn ends with the same plan, the chat shows "The planner
+answered without changing the plan" (`unchangedPlanNote`). An ordinary question
+gets no note. A plan that already ran is not active and gets no layer.
+
 #### Editing a plan by hand
 
 A hand edit saves against the revision it started from

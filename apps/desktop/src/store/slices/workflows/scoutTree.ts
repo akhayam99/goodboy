@@ -33,6 +33,7 @@ import {
 import { clampWireframeScoutReport } from '../../../features/wireframes/wireframeScoutReports';
 import { isQuestionDelegate } from '../../../features/context/questionDelegate';
 import { agentEmittingProvider } from '../workflowRouting/agentEmittingProvider';
+import { fanOutChildKind } from '../agents/fanOutChildKind';
 import { openTurnStartWindow } from '../turn/turnStartWindow';
 import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
 import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
@@ -43,7 +44,13 @@ const synthesisStarted = new Set<string>();
 
 const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
-const TERMINAL: ReadonlyArray<Agent['status']> = ['completed', 'failed', 'skipped'];
+const TERMINAL: ReadonlyArray<Agent['status']> = [
+  'completed',
+  'failed',
+  'skipped',
+  'blocked',
+  'stopped',
+];
 
 const childrenOf = (runs: ReadonlyArray<Agent>, parentId: AgentId): ReadonlyArray<Agent> => {
   return runs
@@ -574,6 +581,30 @@ const settleAgent = async ({
   set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
   void get().refreshUnreadWorkspaces();
   await maybeSynthesizeParent({ set, get, sessionId, childId: agentId });
+};
+
+type JoinFanOutParams = Readonly<{
+  sessionId: SessionId;
+  agentId: AgentId;
+}>;
+
+export const joinFanOutParent = (set: SetFn, get: GetFn) => {
+  return async ({ sessionId, agentId }: JoinFanOutParams): Promise<void> => {
+    const runs = get().sessionPhaseRuns[sessionId] ?? [];
+    const agent = runs.find((run) => run.id === agentId);
+    if (agent === undefined) {
+      return;
+    }
+    const kind = fanOutChildKind({
+      agent,
+      runs,
+      agentKindOverride: get().agentKindOverride,
+    });
+    if (kind !== 'scout-tree') {
+      return;
+    }
+    await maybeSynthesizeParent({ set, get, sessionId, childId: agentId });
+  };
 };
 
 export const advanceScoutTree = (set: SetFn, get: GetFn) => {

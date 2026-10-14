@@ -26,6 +26,8 @@ pub enum TurnError {
     WriterLeaseNotOwned,
     #[error("turn not found: {0}")]
     NotFound(String),
+    #[error("role confinement is not proven for this CLI: {0}")]
+    ConfinementUnproven(String),
 }
 
 crate::util::impl_error_serialize!(TurnError);
@@ -37,6 +39,7 @@ impl TurnError {
             TurnError::Poisoned => "poisoned",
             TurnError::WriterLeaseNotOwned => "writer_lease_not_owned",
             TurnError::NotFound(_) => "not_found",
+            TurnError::ConfinementUnproven(_) => "confinement_unproven",
         }
     }
 }
@@ -123,6 +126,10 @@ pub struct SpawnArgs {
     #[serde(default)]
     pub writer_lease: Option<WriterLeaseBinding>,
     #[serde(default)]
+    pub write_set_lease: Option<crate::worktree_writer::WriteSetBinding>,
+    #[serde(default)]
+    pub confined_role: Option<String>,
+    #[serde(default)]
     pub blocks_push: bool,
     #[serde(default)]
     pub excludes_tmp: bool,
@@ -196,6 +203,8 @@ pub(crate) struct SpawnOneArgs<'a> {
     pub mount_id: Option<&'a str>,
     pub cursor_max_mode: bool,
     pub writer_lease: Option<&'a WriterLeaseBinding>,
+    pub write_set_lease: Option<&'a crate::worktree_writer::WriteSetBinding>,
+    pub confined_role: Option<&'a str>,
     pub blocks_push: bool,
     pub excludes_tmp: bool,
 }
@@ -226,27 +235,41 @@ fn spawn_leased_child(
     command: &mut Command,
     leases: &crate::worktree_writer::WriterLeaseRegistry,
     binding: Option<&WriterLeaseBinding>,
+    write_set: Option<&crate::worktree_writer::WriteSetBinding>,
     run_id: &str,
-    on_exit: impl Fn() + Send + 'static,
-) -> Result<(Child, Option<crate::worktree_writer::RunLeaseGuard>), TurnError> {
-    let guard = binding
-        .map(|binding| {
+    on_exit: impl Fn(&str) + Send + Clone + 'static,
+) -> Result<(Child, Vec<crate::worktree_writer::RunLeaseGuard>), TurnError> {
+    let mut guards = Vec::new();
+    if let Some(binding) = binding {
+        guards.push(
             crate::worktree_writer::RunLeaseGuard::bind(
                 leases,
                 &binding.path,
                 &binding.holder,
                 &binding.token,
                 run_id,
+                on_exit.clone(),
+            )
+            .ok_or(TurnError::WriterLeaseNotOwned)?,
+        );
+    }
+    if let Some(set) = write_set {
+        guards.push(
+            crate::worktree_writer::RunLeaseGuard::bind_set(
+                leases,
+                &set.holder,
+                &set.entries,
+                run_id,
                 on_exit,
             )
-            .ok_or(TurnError::WriterLeaseNotOwned)
-        })
-        .transpose()?;
+            .ok_or(TurnError::WriterLeaseNotOwned)?,
+        );
+    }
     let child = command
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()?;
-    Ok((child, guard))
+    Ok((child, guards))
 }
 
 fn spawn_one<E: TurnEmitter>(
@@ -295,19 +318,23 @@ fn spawn_one<E: TurnEmitter>(
     }
 
     let event_app = app.clone();
-    let event_binding = args.writer_lease.cloned();
-    let (mut child, lease_guard) = spawn_leased_child(
+    let event_holder = args
+        .writer_lease
+        .map(|binding| binding.holder.clone())
+        .or_else(|| args.write_set_lease.map(|set| set.holder.clone()));
+    let (mut child, lease_guards) = spawn_leased_child(
         &mut command,
         leases,
         args.writer_lease,
+        args.write_set_lease,
         args.run_id,
-        move || {
-            if let Some(binding) = &event_binding {
+        move |path: &str| {
+            if let Some(holder) = &event_holder {
                 event_app.emit_turn(
                     crate::worktree_writer::EVENT_NAME,
                     crate::worktree_writer::WriterLeaseEvent {
-                        path: binding.path.clone(),
-                        holder: binding.holder.clone(),
+                        path: path.to_string(),
+                        holder: holder.clone(),
                         reason: "exited",
                     },
                 );
@@ -372,7 +399,7 @@ fn spawn_one<E: TurnEmitter>(
             });
             backlog_clone.finish(&run_id_owned);
         }
-        drop(lease_guard);
+        drop(lease_guards);
     });
 
     Ok(args.run_id.to_string())
@@ -386,6 +413,10 @@ pub async fn turn_spawn(
     args: SpawnArgs,
 ) -> Result<String, TurnError> {
     let binary = args.binary.as_deref().unwrap_or("claude");
+    if let Some(role) = args.confined_role.as_deref() {
+        crate::providers::cli_probe::ensure_confinement(binary, role)
+            .map_err(TurnError::ConfinementUnproven)?;
+    }
     let permission_mode = args
         .permission_mode
         .as_deref()
@@ -422,6 +453,8 @@ pub async fn turn_spawn(
             mount_id: args.mount_id.as_deref(),
             cursor_max_mode: args.cursor_max_mode,
             writer_lease: args.writer_lease.as_ref(),
+            write_set_lease: args.write_set_lease.as_ref(),
+            confined_role: args.confined_role.as_deref(),
             blocks_push: args.blocks_push,
             excludes_tmp: args.excludes_tmp,
         },
@@ -587,7 +620,14 @@ mod tests {
             token: "stale-token".to_string(),
         };
         let mut command = Command::new("/bin/echo");
-        let result = spawn_leased_child(&mut command, &leases.0, Some(&binding), "run-1", || {});
+        let result = spawn_leased_child(
+            &mut command,
+            &leases.0,
+            Some(&binding),
+            None,
+            "run-1",
+            |_| {},
+        );
         assert!(matches!(result, Err(TurnError::WriterLeaseNotOwned)));
     }
 
@@ -711,6 +751,8 @@ mod tests {
             mount_id: None,
             cursor_max_mode: false,
             writer_lease: None,
+            write_set_lease: None,
+            confined_role: None,
             blocks_push: false,
             excludes_tmp: false,
         };
@@ -745,6 +787,8 @@ mod tests {
             mount_id: None,
             cursor_max_mode: false,
             writer_lease: None,
+            write_set_lease: None,
+            confined_role: None,
             blocks_push: false,
             excludes_tmp: false,
         }

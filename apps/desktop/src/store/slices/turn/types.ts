@@ -10,6 +10,7 @@ import type {
   TurnProviderOverride,
   UserTurnSentVia,
 } from '@goodboy/types';
+import type { WriteSetEntry } from '../../../features/worktree/worktree';
 export type { SetFn, GetFn } from '../../slice-types';
 
 export type SendTurnResult = Readonly<{
@@ -26,6 +27,7 @@ export type SendTurnInput = Readonly<{
   resolveCopyPath?: string;
   resolveThreadIds?: ReadonlyArray<string>;
   onStarted?: () => void;
+  confinedRole?: string;
   content: string;
   attachments?: ReadonlyArray<AttachmentInput>;
   override?: TurnProviderOverride;
@@ -49,6 +51,8 @@ export type TurnLease = {
   holder: AgentId | null;
   token: string | null;
   attemptId: string | undefined;
+  writeSet: ReadonlyArray<WriteSetEntry>;
+  writeSetHolder: AgentId | null;
 };
 
 export type TurnProgress = {

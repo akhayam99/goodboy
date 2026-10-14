@@ -109,7 +109,14 @@ export const AgentBrief = ({ session, agent, time = null }: Props) => {
   const activeChildren = children.filter(
     (child) => child.status === 'running' || child.status === 'pending',
   ).length;
-  const now = agentNowState({ agent, turnState, transcript, activeChildren });
+  const isWaitingForWriter = useAppStore((state) => state.agentWriterWait[agent.id] !== undefined);
+  const now = agentNowState({
+    agent,
+    turnState,
+    transcript,
+    activeChildren,
+    isWaitingForWriter,
+  });
   const isMuchLonger = time?.isMuchLonger === true;
   const isSplitIntoSubagents = kind === 'implementer' && laneChildren.length > 0;
 

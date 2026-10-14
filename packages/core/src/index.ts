@@ -751,6 +751,7 @@ export {
   composeHandoffBody,
   handoffLine,
   hasSeparateSystemPrompt,
+  renderCurrentPlan,
   renderHandoff,
   type BuildHandoffParams,
   type HandoffBodyLayers,

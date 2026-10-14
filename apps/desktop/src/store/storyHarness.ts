@@ -1,5 +1,10 @@
 import { vi } from 'vitest';
-import type { WorktreeWriterLease } from '../features/worktree/worktree';
+import type {
+  AcquireWriteSetParams,
+  ReleaseWriteSetParams,
+  WorktreeWriterLease,
+  WriteSetLease,
+} from '../features/worktree/worktree';
 import { createDbMock } from '../test/dbMock';
 import { createInvokeMock, createInvokeRouter, type InvokeHandlers } from '../test/invokeMock';
 import { createResolveQueryMocks } from './slices/resolve/testing/createResolveQueryMocks';
@@ -424,12 +429,25 @@ export const storySpies = {
   abandonWorktreeWriter: vi.fn(async ({ path }: { readonly path: string }) =>
     freeWriterLease({ path }),
   ),
+  acquireWriteSet: vi.fn(async ({ paths }: AcquireWriteSetParams) => grantedWriteSet({ paths })),
+  releaseWriteSet: vi.fn(async ({ entries }: ReleaseWriteSetParams) =>
+    entries.map((entry) => entry.path),
+  ),
   listActiveResolveAttempts: vi.fn(async () => [] as ReadonlyArray<never>),
 };
 
 export const storyResolveQueries = createResolveQueryMocks();
 
 const storyInvoke = (command: string) => storySpies.tauriInvoke(command);
+
+type GrantedWriteSetParams = Readonly<{ paths: ReadonlyArray<string> }>;
+
+const grantedWriteSet = ({ paths }: GrantedWriteSetParams): WriteSetLease => ({
+  isGranted: true,
+  entries: paths.map((path) => ({ path, token: `token:${path}` })),
+  blockedPath: null,
+  blockedBy: null,
+});
 
 const freeWriterLease = ({ path }: { readonly path: string }): WorktreeWriterLease => ({
   path,
@@ -468,6 +486,10 @@ export const resetStorySpies = () => {
       freeWriterLease({ path }),
     );
   }
+  storySpies.acquireWriteSet.mockImplementation(async ({ paths }) => grantedWriteSet({ paths }));
+  storySpies.releaseWriteSet.mockImplementation(async ({ entries }) =>
+    entries.map((entry) => entry.path),
+  );
   storySpies.listActiveResolveAttempts.mockImplementation(async () => []);
   storySpies.listBranchCommits.mockImplementation(async () => []);
   storySpies.createWorktree.mockImplementation(async () => ({
@@ -837,6 +859,8 @@ export const worktreeModuleMock = () => ({
   abandonWorktreeWriter: (args: { readonly path: string }) =>
     storySpies.abandonWorktreeWriter(args),
   holdsWorktreeWriter: vi.fn(() => false),
+  acquireWriteSet: (args: AcquireWriteSetParams) => storySpies.acquireWriteSet(args),
+  releaseWriteSet: (args: ReleaseWriteSetParams) => storySpies.releaseWriteSet(args),
   changeWorktreeBranch: storySpies.changeWorktreeBranch,
   listLocalBranches: storySpies.listLocalBranches,
   getCachedLocalBranches: vi.fn(() => undefined),

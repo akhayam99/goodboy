@@ -385,6 +385,14 @@ fails silently at runtime.
   not fall back to `none`, and `checkOutcomeOf` reads the new run by name: the
   old URL still listed is "running", never "still fails".
 
+- A scout fan-out parent consolidates once every child has ended, and an ended
+  child is `completed`, `failed`, `skipped`, `blocked` or `stopped`
+  (`TERMINAL` in `apps/desktop/src/store/slices/workflows/scoutTree.ts`). A
+  child that ends blocked or stopped never reaches `advanceScoutTree`, so the
+  place that blocks or stops it calls `joinFanOutParent`; without that call a
+  last child that ends blocked leaves the parent waiting forever. The
+  consolidation prompt names the status of each child.
+
 ## Traps in the toolchain
 
 - A new worktree needs `pnpm install`. In this checkout that install exits 1

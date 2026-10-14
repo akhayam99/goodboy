@@ -23,6 +23,7 @@ export const haltRunawayWorkflowAgent = async ({ set, get, sessionId, agentId }:
     set((state) => ({ sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshed } }));
   }
   void get().refreshUnreadWorkspaces();
+  void get().joinFanOutParent({ sessionId, agentId });
   void get().emitNotification({
     kind: 'error',
     severity: 'warning',

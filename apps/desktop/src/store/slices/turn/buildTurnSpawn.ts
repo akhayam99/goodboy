@@ -14,13 +14,7 @@ import { fanOutChildKind } from '../agents/fanOutChildKind';
 import { resolveCandidateMode } from '../resolve/resolveCandidateMode';
 import { resumableResolveThreadIds } from '../resolve/resumableResolveThreadIds';
 import { selectWritableMounts } from '../project-mounts/selectors';
-import { rewriterWritableRoots } from '../history/rewriterWritableRoots';
-import {
-  buildTurnWritableRoots,
-  isTurnWritableMount,
-  repoRootsForTurn,
-  resolveGitCommonDirs,
-} from './turnWritableRoots';
+import { isTurnWritableMount } from './turnWritableRoots';
 import { createResolveCandidateWriter } from './createResolveCandidateWriter';
 import { collectTouchedMounts } from './collectTouchedMounts';
 import { composeAgentHandoff } from './composeAgentHandoff';
@@ -226,19 +220,6 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
     roleInstructions: kindSystemPrompt ?? '',
   });
   const fullSystemPrompt = renderedHandoff.system;
-  const gitDirs = await resolveGitCommonDirs({
-    repoRoots: repoRootsForTurn({ mounts: scopeMounts }),
-  });
-  const isolatedCopyPath = rewriterCopy?.copyPath ?? copyPath;
-  const writableRoots =
-    isolatedCopyPath !== null
-      ? await rewriterWritableRoots({ copyPath: isolatedCopyPath })
-      : buildTurnWritableRoots({
-          mounts: scopeMounts,
-          workingDir,
-          gitDirs,
-        });
-
   resolvedPrompt = renderedHandoff.message;
 
   if (isHandoffTurn) {
@@ -326,8 +307,6 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
     notifySnapshotFailure,
     turnFileVersionCapture,
     fullSystemPrompt,
-    writableRoots,
-    isolatedCopyPath,
     turnSpanBase,
     touchedMountsForTurn,
     explainMoreTopics,

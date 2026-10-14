@@ -33,7 +33,8 @@ export const AgentFollowUpChild = ({ entry, sessionId }: Props) => {
   const terminalLabel = TERMINAL_STATUSES.includes(child.status)
     ? agentStatusWord({ status: child.status })
     : null;
-  const live = agentNowState({ agent, turnState, transcript });
+  const isWaitingForWriter = useAppStore((state) => state.agentWriterWait[agent.id] !== undefined);
+  const live = agentNowState({ agent, turnState, transcript, isWaitingForWriter });
   const label = hasQuestion
     ? 'question'
     : (terminalLabel ?? live.label ?? agentStatusWord({ status: child.status }));

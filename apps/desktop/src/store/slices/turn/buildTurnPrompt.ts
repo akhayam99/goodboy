@@ -2,6 +2,7 @@ import {
   buildClaudeFlags,
   resolveModeFor,
   composeHandoffBody,
+  renderCurrentPlan,
   type ClaudeFlagSet,
   type HandoffBodyLayers,
 } from '@goodboy/core';
@@ -26,6 +27,7 @@ import type { RoutedTurn } from './routeTurn';
 import type { LeasedTurn } from './leaseTurnWriter';
 import type { StartedTurn } from './startTurnRun';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { activePlanOf } from './activePlanOf';
 
 type Params = Readonly<{
   get: GetFn;
@@ -151,11 +153,14 @@ export const buildTurnPrompt = async ({ get, ctx }: Params) => {
     'normal';
   const verbosityHint = verbosityDirective(effectiveVerbosity);
   const handoffMessage = resolvedPrompt;
+  const currentPlan =
+    earlyAgentKind === 'planner' ? activePlanOf({ get, sessionId, agentId: activeAgentId }) : null;
   const handoffBodyLayers: HandoffBodyLayers = {
     message: handoffMessage,
     contextPreamble,
     childRouting: childRoutingBlock,
     clusterBoundary,
+    currentPlan: currentPlan === null ? '' : renderCurrentPlan(currentPlan),
     goalAttachments: goalAttachmentsBlock,
     priorTurns,
     verbosity: verbosityHint,

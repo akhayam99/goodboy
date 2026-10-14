@@ -413,6 +413,8 @@ fn build_chat_cli_args(
         mount_id: None,
         cursor_max_mode: false,
         writer_lease: None,
+        write_set_lease: None,
+        confined_role: None,
         blocks_push: true,
         excludes_tmp: true,
     };

@@ -17,6 +17,7 @@ const state = vi.hoisted(() => ({
   sessionPhaseRuns: {} as Record<string, ReadonlyArray<Agent>>,
   sessionWorkflows: {} as Record<string, ReadonlyArray<unknown>>,
   agentTurnState: {} as Record<string, unknown>,
+  agentWriterWait: {},
   agentKindOverride: {} as Record<string, unknown>,
   agentProviderOverride: {} as Record<string, unknown>,
   agentModelOverride: {} as Record<string, unknown>,

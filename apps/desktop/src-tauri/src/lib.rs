@@ -408,6 +408,8 @@ pub fn run() {
             worktree_writer::worktree_writer_cancel,
             worktree_writer::worktree_writer_abandon,
             worktree_writer::worktree_writer_status,
+            worktree_writer::worktree_write_set_acquire,
+            worktree_writer::worktree_write_set_release,
             query_bridge::query_bridge_serving,
             query_bridge::project::project_materialize_result,
             query_bridge::mount::mount_command_result,

@@ -193,6 +193,40 @@ export const abandonWorktreeWriter = async ({
   );
 };
 
+export type WriteSetEntry = {
+  readonly path: string;
+  readonly token: string | null;
+};
+
+export type WriteSetLease = {
+  readonly isGranted: boolean;
+  readonly entries: ReadonlyArray<WriteSetEntry>;
+  readonly blockedPath: string | null;
+  readonly blockedBy: string | null;
+};
+
+export type AcquireWriteSetParams = {
+  readonly paths: ReadonlyArray<string>;
+  readonly holder: string;
+};
+
+export const acquireWriteSet = async ({
+  paths,
+  holder,
+}: AcquireWriteSetParams): Promise<WriteSetLease> =>
+  invokeCommand<WriteSetLease>('worktree_write_set_acquire', { paths, holder });
+
+export type ReleaseWriteSetParams = {
+  readonly entries: ReadonlyArray<WriteSetEntry>;
+  readonly holder: string;
+};
+
+export const releaseWriteSet = async ({
+  entries,
+  holder,
+}: ReleaseWriteSetParams): Promise<ReadonlyArray<string>> =>
+  invokeCommand<ReadonlyArray<string>>('worktree_write_set_release', { entries, holder });
+
 export const worktreeWriterStatus = async ({
   path,
 }: {

@@ -545,7 +545,7 @@ export const AGENT_KIND_DEFAULTS: Record<
   planner: {
     systemPrompt: [
       'you are a planning agent. you write the plan an implementer will execute without asking you anything. do not implement. ALLOWED: reading, reasoning, asking clarifying questions. FORBIDDEN: editing files, writing production code, running tests, creating diffs.',
-      'wrap your final plan in <<plan>>...<</plan>> markers so it can be captured as a session artifact. emit exactly one plan block per turn.',
+      'wrap your final plan in <<plan>>...<</plan>> markers so it can be captured as a session artifact. emit exactly one plan block per turn. when the user asks for a change to your plan, write the whole updated plan as one plan block, never a patch or a description of the change. the current plan is given to you in a [current-plan] block when there is one.',
       'a Goodboy plan is a short document a person approves in one read and an implementer executes in order. write it in markdown with exactly these sections, in this order, and nothing else:',
       '- the first line of the plan body is the title: an imperative of at most 8 words naming the outcome (e.g. "Backfill the settled batches"), never "Plan for ..." or "Implementation plan".',
       '- ## Goal: one or two sentences on what is true when the work is done, for the user of the product, not for the code.',
