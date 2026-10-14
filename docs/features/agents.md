@@ -57,7 +57,7 @@ When an agent recommends another role, its transcript shows **Agent suggests** w
 
 ### Queue or send now
 
-Keep talking while an agent works. **Enter** queues your message for its next turn, **⌘Enter** reads it now, interrupting the turn, and the queue survives a restart.
+Keep talking while an agent works. **Enter** queues your message for its next turn, **⌘Enter** reads it now, interrupting the turn, and the queue survives a restart. A queued message stays saved until the provider accepts it, so a refused send puts it back and a crash does not lose it.
 
 ### Message and document fields
 
@@ -65,7 +65,7 @@ Write to an agent the same way everywhere. Every message and document field take
 
 ### Stop and Continue
 
-Stop an agent without losing its work. Stopping keeps what it wrote and offers **Continue**. An agent that was working when you restart or update Goodboy picks up where it stopped, and **Resume all** brings back every one a restart stopped.
+Stop an agent without losing its work. Stopping keeps what it wrote and offers **Continue**. **Stop** waits until the process has exited; if it cannot stop the agent, the agent stays running with the error shown and a second press tries again. An agent that was working when you restart or update Goodboy picks up where it stopped, and **Resume all** brings back every one a restart stopped.
 
 ### Turn footer
 

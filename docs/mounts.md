@@ -22,7 +22,7 @@ and `apps/desktop/src/store/slices/mount-cleanup/`.
   are shown next to it. `allocateMountDirName` draws the name from a source
   seeded with the mount id, so a retried request lands in the same folder. If
   the folder exists and is not a worktree of the repository, it draws again, up
-  to eight times, then takes a 12 character name. Worktrees made before 0.25.2
+  to eight times, then takes a 12 character name. Worktrees made before 0.26.0
   keep their old `<session-slug>-<mount-id>` folder: the path is stored in
   `session_worktrees.worktree_path` and in the mount row, and nothing
   recomputes it. Re-attaching a removed mount reuses the folder name of its

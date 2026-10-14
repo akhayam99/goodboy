@@ -30,7 +30,7 @@ Point agents at the right repo without naming it. Star a project and give it a o
 
 ### Worktrees
 
-Let agents edit in parallel without touching your checkout. Each branch gets its own worktree, a separate folder with its own changes and pull request. **New branch** adds one, **Close branch** clears a merged one, and **Reopen** brings back one whose files were kept.
+Let agents edit in parallel without touching your checkout. Each branch gets its own worktree, a separate folder with its own changes and pull request, named gb- and six characters such as gb-7k2q9x, with the session and the branch shown next to it. **New branch** adds one, **Close branch** clears a merged one, and **Reopen** brings back one whose files were kept.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-worktrees-dark.webp">
