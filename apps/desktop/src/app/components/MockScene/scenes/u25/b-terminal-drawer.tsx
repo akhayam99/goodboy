@@ -8,9 +8,15 @@ import { sessionTerminalOwner } from '../../../../../store/slices/terminal/termi
 import { SESSION, SESSION_ID, seedActivityRunScene } from '../activityRunSeed';
 import { PageSheet } from '../PageSheet';
 import { mockSceneIpc } from '../mockSceneIpc';
+import {
+  devServerLines,
+  shellPromptLines,
+  terminalIdOf,
+  terminalSnapshotAnswer,
+} from '../terminalSceneOutput';
 import { DrawerStage } from '../u23/drawerChrome/DrawerStage';
 
-const WORKTREE = '~/code/harborline/payments-api-idempotency';
+const WORKTREE = '~/code/harborline/payments-api/.goodboy/worktrees/gb-7k2q9x';
 const SESSION_TERMINAL = brandedId<TerminalTabId>({ value: `${SESSION_ID}::t1` });
 const SECOND_TERMINAL = brandedId<TerminalTabId>({ value: `${SESSION_ID}::t2` });
 const THIRD_TERMINAL = brandedId<TerminalTabId>({ value: `${SESSION_ID}::t3` });
@@ -37,8 +43,18 @@ const tabOf = ({
 
 type SeedParams = Record<never, never>;
 
+const sceneAnswer = (command: string, payload: unknown): unknown => {
+  if (command !== 'terminal_snapshot') {
+    return null;
+  }
+  if (terminalIdOf({ payload }) === THIRD_TERMINAL) {
+    return terminalSnapshotAnswer({ lines: devServerLines });
+  }
+  return terminalSnapshotAnswer({ lines: shellPromptLines({ folder: 'payments-api gb-7k2q9x' }) });
+};
+
 const seedTabs = ({}: SeedParams): void => {
-  mockSceneIpc(() => null);
+  mockSceneIpc(sceneAnswer);
   useAppStore.setState({
     loadSessionMounts: async () => [],
     terminalTabs: {
@@ -47,7 +63,7 @@ const seedTabs = ({}: SeedParams): void => {
         tabOf({
           id: SECOND_TERMINAL,
           title: 'shell',
-          cwd: '~/code/harborline/notify-relay-retry-state',
+          cwd: '~/code/harborline/notify-relay/.goodboy/worktrees/gb-2p6w0z',
           mountId: CONSOLE_MOUNT_ID,
         }),
         tabOf({

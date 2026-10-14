@@ -58,7 +58,7 @@ export const pickerClusters = ({
             path: folder,
           },
           projectId: null,
-          projectName: WORKSPACE_FOLDER_TITLE,
+          projectName: folderName({ path: folder }) ?? WORKSPACE_FOLDER_TITLE,
           branch: null,
           path: folder,
           folder: folderName({ path: folder }),

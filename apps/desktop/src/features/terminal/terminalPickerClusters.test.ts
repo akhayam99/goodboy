@@ -99,6 +99,19 @@ describe('pickerClusters', () => {
     expect(clusters[2]?.rows[0]?.folder).toBe('gb-4m8d1c');
   });
 
+  it('names the workspace row by its folder so the heading is said once', () => {
+    const clusters = pickerClusters({
+      folder: '/mock/harborline',
+      sessions: [],
+      mountsBySession: {},
+      projects: PROJECTS,
+    });
+
+    expect(clusters[0]?.title).toBe('Workspace folder');
+    expect(clusters[0]?.rows[0]?.projectName).toBe('harborline');
+    expect(clusters[0]?.rows[0]?.target.label).toBe('Workspace folder');
+  });
+
   it('keeps only the workspace folder when no session has a worktree', () => {
     const clusters = pickerClusters({
       folder: '/mock/harborline',

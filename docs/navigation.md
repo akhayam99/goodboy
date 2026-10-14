@@ -1535,7 +1535,10 @@ worktree, the chevron opens the picker. The picker (`NewTerminalMenu`, `terminal
 opens to the right of the chevron (`useDropdown`align`after`) in clusters: `Workspace folder`
 first, then one cluster per session with attached worktrees, headed by the session title with
 its linked tasks and diff (`TerminalGroupFacts`); a row is the project, the branch, the short
-worktree chip and the path on one line, and `Open project`opens the project settings.
+worktree chip and the path on one line, and `Open project`opens the project settings. The
+`Workspace folder` row is named by the folder (`harborline`), since the cluster title says the
+rest; a worktree path keeps its project folder and its `gb-` folder whole (`pathTail`), and the
+head of the path truncates first.
 With no terminal at all the page has no rail: the empty state owns the single`New terminal`.
 The rail lists one group per session that has terminals, headed by the session title (a button
 that opens the session) with its tasks and diff, and inside it one row per worktree
@@ -2410,7 +2413,9 @@ composer; `TranscriptReplyDock` only measures it for the toast lift.
 
 **Focus and Esc.** A drawer's first control takes focus when it opens, pushing
 or over the page: the composer when the dock holds a text field (Ask and a
-transcript that can be written to), the `Close` button otherwise, and whatever
+transcript that can be written to), the drawer panel itself (`DrawerFrame`
+section, `tabIndex` -1, no ring) otherwise, never the `Close` button, whose
+tooltip and ring would cover the top bar and the first action, and whatever
 the body focused itself first (an editor, the composer's own focus) is left
 alone. Closing hands focus back to the control that opened it; when a shortcut
 opened the drawer from the page body (`⌘L`, `F`), the target is the last real
@@ -2562,7 +2567,8 @@ When something changed since the previous look (`sessionDecisionsBaseline`,
 the `context_seen_at` captured when the drawer opened), it starts with
 **Changed since you last looked**: one line per row, `+` added, `−` removed
 (`Replaced by 7` or `Withdrawn`), a pencil for reworded, and a click scrolls to
-the row and highlights it. **Mark as read** in its header fades the block, moves
+the row and highlights it. The label never wraps: when label, count and action do not fit
+the drawer width, **Mark as read** drops to its own right-aligned line (`ContextBlock`). **Mark as read** in its header fades the block, moves
 the marker to the moment of the click (`markContextRead`, saved before the state changes) and clears the
 tab dot; a later change brings the block back. Then **Active**, with its count: active decisions
 newest first, each with its number, at most two lines of

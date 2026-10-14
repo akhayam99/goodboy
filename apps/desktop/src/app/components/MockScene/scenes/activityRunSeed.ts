@@ -170,7 +170,7 @@ const PROJECTS: ReadonlyArray<Project> = [
 const PAYMENTS_MOUNT: SessionProjectMount = {
   projectId: PAYMENTS_ID,
   mountName: 'payments-api',
-  worktreePath: '~/code/harborline/payments-api-idempotency',
+  worktreePath: '~/code/harborline/payments-api/.goodboy/worktrees/gb-7k2q9x',
   repoRoot: '~/code/harborline/payments-api',
   branch: 'hl/fix-webhook-idempotency',
   mountId: 'mock-run-mount-payments' as MountId,
@@ -186,7 +186,7 @@ const PAYMENTS_MOUNT: SessionProjectMount = {
 const CONSOLE_MOUNT: SessionProjectMount = {
   projectId: CONSOLE_ID,
   mountName: 'notify-relay',
-  worktreePath: '~/code/harborline/notify-relay-retry-state',
+  worktreePath: '~/code/harborline/notify-relay/.goodboy/worktrees/gb-2p6w0z',
   repoRoot: '~/code/harborline/notify-relay',
   branch: 'hl/surface-retry-state',
   mountId: 'mock-run-mount-console' as MountId,

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, ConfirmPopover, cn, type ConfirmRole } from '@goodboy/ui';
+import { Button, ConfirmPopover, cn, tintClasses, type ConfirmRole } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { SUGGESTION_ICONS } from '../../suggestionIcons';
 import type { NextStepBand, SessionSuggestion } from '../../types';
@@ -83,7 +83,9 @@ export const NextStepRow = ({
 
   const primaryIcon = (() => {
     if (agentKind === null) {
-      return null;
+      return (
+        <Icon size={ICON_SIZE.row} aria-hidden className={cn('shrink-0', tintClasses(tone).icon)} />
+      );
     }
     const palette = agentKindPalette({ kind: agentKind });
     const KindIcon = palette.icon;

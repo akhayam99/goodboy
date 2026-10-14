@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { MonitorSnapshot } from '@goodboy/core';
 import type {
   MountId,
   Project,
@@ -18,6 +19,13 @@ import { sceneClock } from '../../sceneClock';
 import { useSceneClicks } from '../audit/useSceneClicks';
 import { PageSheet } from '../PageSheet';
 import { mockSceneIpc } from '../mockSceneIpc';
+import {
+  DEV_SERVER_PORT,
+  devServerLines,
+  shellPromptLines,
+  terminalIdOf,
+  terminalSnapshotAnswer,
+} from '../terminalSceneOutput';
 import { brandedId } from '../../../../../features/history/testing/brandedId';
 
 const clock = sceneClock({ anchor: '2026-10-10T09:12:00.000Z' });
@@ -203,9 +211,64 @@ const worktreePathOf = ({ payload }: PayloadParams): string => {
   return typeof payload.worktreePath === 'string' ? payload.worktreePath : '';
 };
 
+const DEV_SHELL_PID = 4100;
+const DEV_SERVER_PID = 4188;
+
+const MONITOR_TAKEN_AT = clock.ms({ at: '2026-10-10T09:11:00.000Z' });
+
+const MONITOR_SNAPSHOT: MonitorSnapshot = {
+  listeners: [
+    { port: DEV_SERVER_PORT, address: '127.0.0.1', protocol: 'tcp', pid: DEV_SERVER_PID },
+  ],
+  processes: [
+    {
+      pid: DEV_SHELL_PID,
+      ppid: 1,
+      pgid: DEV_SHELL_PID,
+      name: 'zsh',
+      cwd: PAYMENTS_TREE,
+      startedAt: MONITOR_TAKEN_AT - 480_000,
+      cpuPercent: 0,
+      rssBytes: 9 * 1048576,
+      uid: 501,
+      argsMasked: 'zsh',
+    },
+    {
+      pid: DEV_SERVER_PID,
+      ppid: DEV_SHELL_PID,
+      pgid: DEV_SHELL_PID,
+      name: 'node',
+      cwd: PAYMENTS_TREE,
+      startedAt: MONITOR_TAKEN_AT - 300_000,
+      cpuPercent: 2.1,
+      rssBytes: 142 * 1048576,
+      uid: 501,
+      argsMasked: 'node vite',
+    },
+  ],
+  takenAt: MONITOR_TAKEN_AT,
+  isPlatformSupported: true,
+};
+
+type SnapshotLinesParams = {
+  readonly terminalId: string;
+};
+
+const snapshotLinesOf = ({ terminalId }: SnapshotLinesParams) => {
+  if (terminalId === PAYMENTS_TERMINAL) {
+    return devServerLines;
+  }
+  return shellPromptLines({ folder: 'harborline' });
+};
+
 const sceneAnswer = (command: string, payload: unknown): unknown => {
   if (command === 'terminal_list_live') {
     return BUSY_LEDGER;
+  }
+  if (command === 'terminal_snapshot') {
+    return terminalSnapshotAnswer({
+      lines: snapshotLinesOf({ terminalId: terminalIdOf({ payload }) }),
+    });
   }
   if (command === 'worktree_changed_files') {
     const path = worktreePathOf({ payload });
@@ -388,6 +451,9 @@ const seed = ({ hasTerminals }: SeedParams): void => {
       ? { [`${SESSION_ID}#m:mock-u24-mount-payments`]: PAYMENTS_TERMINAL }
       : {},
     terminalSelection: null,
+    monitorSnapshot: hasTerminals ? MONITOR_SNAPSHOT : null,
+    refreshMonitorSnapshot: async () => undefined,
+    loadWatchedPorts: async () => undefined,
   });
 };
 

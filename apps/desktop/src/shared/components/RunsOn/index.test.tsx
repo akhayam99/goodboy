@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 
 import { useState } from 'react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { PROVIDER_CAPABILITIES } from '@goodboy/core';
 import type { ProviderId } from '@goodboy/types';
 import type { AgentKindRouting } from '../../../features/session/agent-kind';
@@ -71,5 +71,21 @@ describe('RunsOn', () => {
     fireEvent.click(dialog().getByRole('button', { name: /^Suggested/ }));
 
     expect(override).toBeNull();
+  });
+
+  it('shows the whole route in a tooltip when the line is cut', () => {
+    render(<Host onValue={() => undefined} />);
+    const line = screen.getByText(/^Runs on/);
+    Object.defineProperty(line, 'scrollWidth', { configurable: true, value: 300 });
+    Object.defineProperty(line, 'clientWidth', { configurable: true, value: 120 });
+
+    vi.useFakeTimers();
+    fireEvent.mouseEnter(line);
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+    vi.useRealTimers();
+
+    expect(screen.getByRole('tooltip').textContent).toMatch(/^Runs on .+ · /);
   });
 });

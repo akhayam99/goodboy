@@ -29,7 +29,7 @@ type LazyGenericTerminalPanelParams = {
 };
 
 const SESSION_ID = 'mock-run-session-webhooks';
-const WORKTREE_PATH = '~/code/harborline/payments-api-idempotency';
+const WORKTREE_PATH = '~/code/harborline/payments-api/.goodboy/worktrees/gb-7k2q9x';
 
 let store: StoryStore;
 
@@ -74,9 +74,7 @@ describe('the terminal drawer scenes', () => {
     await settle();
 
     const drawer = screen.getByRole('region', { name: 'payments-api' });
-    expect(within(drawer).getByTestId('worktree-chip').textContent).toBe(
-      'payments-api-idempotency',
-    );
+    expect(within(drawer).getByTestId('worktree-chip').textContent).toBe('gb-7k2q9x');
     expect(within(drawer).getByRole('button', { name: 'Open on Terminal page' })).toBeDefined();
     expect(within(drawer).getByRole('button', { name: 'Close' })).toBeDefined();
     expect(within(drawer).getByRole('button', { name: 'New tab on payments-api' })).toBeDefined();
@@ -93,7 +91,7 @@ describe('the terminal drawer scenes', () => {
 
     const drawer = screen.getByRole('region', { name: 'payments-api' });
     const chip = within(drawer).getByTestId('worktree-chip');
-    expect(chip.textContent).toBe('payments-api-idempotency');
+    expect(chip.textContent).toBe('gb-7k2q9x');
     const header = drawer.querySelector('[data-drawer-header-row]');
     expect(
       header?.contains(within(drawer).getByRole('button', { name: 'Open on Terminal page' })),
@@ -125,7 +123,7 @@ describe('the terminal drawer scenes', () => {
 
     const tabs = store.getState().terminalTabs[SESSION_ID] ?? [];
     expect(tabs).toHaveLength(before + 1);
-    expect(tabs.at(-1)?.cwd).toBe('~/code/harborline/payments-api-idempotency');
+    expect(tabs.at(-1)?.cwd).toBe('~/code/harborline/payments-api/.goodboy/worktrees/gb-7k2q9x');
     expect(tabs.at(-1)?.title).toBe('shell 2');
     const drawer = screen.getByRole('region', { name: 'payments-api' });
     expect(within(drawer).getAllByRole('tab')).toHaveLength(3);

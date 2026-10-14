@@ -407,7 +407,7 @@ describe('NextStepRow', () => {
     expect(tileClasses).toContain('bg-current/12');
   });
 
-  it('keeps the suggestion icon without a role tile when the primary starts no agent', () => {
+  it('keeps the suggestion icon in the same disc, tinted by the card tone, when no agent starts', () => {
     const actions: SuggestionActions = {
       primary: { label: 'Push', isDisabled: false, failureTitle: 'Failed', run: vi.fn() },
       onDismiss: null,
@@ -426,7 +426,47 @@ describe('NextStepRow', () => {
       .getByTestId('next-step-merge-pr:mount-web')
       .querySelector('[data-column="tile"]');
     expect(tile?.getAttribute('data-agent-kind')).toBeNull();
-    expect((tile?.className ?? '').split(' ')).not.toContain('bg-current/12');
+    const tileClasses = (tile?.className ?? '').split(' ');
+    expect(tileClasses).toContain('rounded-full');
+    expect(tileClasses).toContain('bg-current/12');
+  });
+
+  it('puts an icon on every primary button, the role icon or the suggestion icon', () => {
+    const withRole: SuggestionActions = {
+      primary: {
+        label: 'Analyze',
+        agentKind: 'debugger',
+        isDisabled: false,
+        failureTitle: 'Failed',
+        run: vi.fn(async () => undefined),
+      },
+      onDismiss: null,
+    };
+    const withoutRole: SuggestionActions = {
+      primary: { label: 'Push', isDisabled: false, failureTitle: 'Failed', run: vi.fn() },
+      onDismiss: null,
+    };
+    const view = render(
+      <NextStepRow
+        suggestion={suggestion({ kind: 'fix-checks' })}
+        actions={withRole}
+        compact={false}
+        isPending={false}
+        onNotNow={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Analyze' }).querySelector('svg')).not.toBeNull();
+
+    view.rerender(
+      <NextStepRow
+        suggestion={suggestion({ kind: 'push-branch' })}
+        actions={withoutRole}
+        compact={false}
+        isPending={false}
+        onNotNow={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Push' }).querySelector('svg')).not.toBeNull();
   });
 
   it('previews the role of an alternative on the tile while it is hovered or focused', () => {

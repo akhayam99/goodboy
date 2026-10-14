@@ -2,7 +2,7 @@ import { createElement, useState, type ComponentProps, type MouseEvent } from 'r
 import { cn } from '../cn';
 import { Tooltip, type TooltipSide } from './Tooltip';
 
-export type TruncatedTextTag = 'span' | 'div' | 'p' | 'h3' | 'code' | 'li' | 'dd' | 'td';
+export type TruncatedTextTag = 'span' | 'div' | 'p' | 'h1' | 'h3' | 'code' | 'li' | 'dd' | 'td';
 
 export type TruncatedTextProps = Omit<ComponentProps<'span'>, 'title'> & {
   as?: TruncatedTextTag;

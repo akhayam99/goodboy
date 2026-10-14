@@ -103,6 +103,22 @@ describe('the terminal studio scenes', () => {
     expect(within(notify).getByLabelText('1 terminal')).toBeDefined();
   });
 
+  it('shows the dev server port as a chip on its worktree row and on its tab', async () => {
+    renderScene('terminal-studio');
+    await settle();
+
+    const payments = worktreeRow({ session: PAYMENTS_SESSION, project: 'payments-api' });
+    expect(within(payments).getByRole('button', { name: 'Open localhost:5173' })).toBeDefined();
+    const ledger = worktreeRow({ session: PAYMENTS_SESSION, project: 'ledger-core' });
+    expect(within(ledger).queryByRole('button', { name: /^Open localhost:/ })).toBeNull();
+    const [devTab, shellTab] = tabsOf('payments-api').map(
+      (tab) => tab.closest<HTMLElement>('[data-terminal-tab]')?.textContent ?? '',
+    );
+    expect(devTab).toContain('dev server');
+    expect(devTab).toContain(':5173');
+    expect(shellTab).not.toMatch(/:\d+/);
+  });
+
   it('shows the linked task of the session in its group head', async () => {
     renderScene('terminal-studio');
     await settle();

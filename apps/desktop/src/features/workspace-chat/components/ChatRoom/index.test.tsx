@@ -616,6 +616,21 @@ describe('ChatRoom', () => {
     expect(within(header).queryByText(/Sonnet/)).toBeNull();
   });
 
+  it('keeps Start work reachable by its full name next to the sessions chip', () => {
+    store.chatMessages = { [CHAT_ID]: ANSWERED };
+    store.sessions = [SESSION_CONSENT];
+    store.stages = { 'session-consent': 'running' };
+    store.chatLinks = { [CHAT_ID]: [LINK_NEW] };
+    renderRoom({ chat: CHAT });
+
+    const header = screen.getByRole('banner');
+    expect(
+      within(header).getByRole('button', { name: '1 session: Linked sessions' }),
+    ).toBeDefined();
+    const action = within(header).getByRole('button', { name: NAMES.startWorkFromChat });
+    expect(action.getAttribute('aria-label')).toBe(NAMES.startWorkFromChat);
+  });
+
   it('puts the read-only hint in the composer and the keys in the Send tooltip', () => {
     store.chatMessages = { [CHAT_ID]: ANSWERED };
     renderRoom({ chat: CHAT });

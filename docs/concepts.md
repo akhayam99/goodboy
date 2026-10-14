@@ -380,7 +380,9 @@ whether you clicked it on the board or in the session overview.
   (`NextStepTile`): the role icon in the role color from `agentKindPalette`
   (the same source as the role picker), on a `bg-current/12` disc, and the
   primary carries the same small icon. Suggestions that start no agent keep
-  the `SUGGESTION_ICONS` glyph with the band tone. The alternatives (`choices`,
+  the `SUGGESTION_ICONS` glyph with the band tone, in the same disc and with the
+  same glyph on the primary, so every row of the grid reads alike. A cut
+  `Runs on` line (`RunsOn`, `TruncatedText`) shows the whole route on hover. The alternatives (`choices`,
   such as Start tester instead, or one rebase target each) are items of the
   **⋯** menu (`NextStepMenu`, the shared `OverflowMenu`); hovering or focusing
   one shows its `agentKind` on the tile, and closing the menu puts the

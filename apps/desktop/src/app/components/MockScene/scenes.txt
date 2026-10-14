@@ -147,6 +147,7 @@ changelog
 chat-empty-noprojects
 chat-empty-stage
 chat-first-run
+chat-image-bubble
 chat-list-idle
 chat-list-loading
 chat-room

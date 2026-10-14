@@ -16,7 +16,7 @@ export const NextStepTile = ({ agentKind, fallbackIcon: FallbackIcon, tone }: Pr
       <span
         aria-hidden
         data-column="tile"
-        className={cn(NEXT_STEP_CELLS.tile, tintClasses(tone).icon)}
+        className={cn(NEXT_STEP_CELLS.tile, 'rounded-full bg-current/12', tintClasses(tone).icon)}
       >
         <FallbackIcon size={ICON_SIZE.control} />
       </span>
