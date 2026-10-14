@@ -13,6 +13,7 @@ const SET_NOUN = {
   docs: 'docs',
   report: 'reports',
   wireframe: 'wireframes',
+  auto: 'auto agents',
   custom: 'generalist agents',
 } as const satisfies Readonly<Record<AgentRole, string>>;
 

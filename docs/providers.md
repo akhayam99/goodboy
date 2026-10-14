@@ -955,7 +955,7 @@ When a provider ships or retires a model, update these together:
   model and carry no automatic effort. Task models never affect chat turns. Given
   `connectedProviders`, a pin on a disconnected provider moves to its fallback, then
   to Auto
-- **Agent roles** are the union `AgentRole` in `@goodboy/types`. They are saved in
+- **Agent roles** are the union `AgentRole` in `@goodboy/types`. `auto` is the newest member: it has a registry entry, a model slot in `AUTO_DEFAULTS` (Sonnet 5.5 at medium, like the Generalist) and a place in `ROLE_SLOTS` and `PROFILE_ACCESS`, but every eligibility flag is off and `DEFAULT_GROUPS` does not list it, so the Models page shows no row for it. They are saved in
   `workspaces.role_models` and read through `resolveRoleRouting`, which takes an
   optional `auto` context (default provider, fallback order, connected providers,
   CLI versions) and an optional step `size`. Without a context it answers for Claude.

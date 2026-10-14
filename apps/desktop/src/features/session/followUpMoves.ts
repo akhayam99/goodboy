@@ -2,7 +2,10 @@ import type { Agent } from '@goodboy/types';
 import { stripControlMarkers } from '@goodboy/core';
 import { AGENT_KIND_META, type AgentKind } from './agent-kind';
 
-export type FollowUpKind = Exclude<AgentKind, 'resolver' | 'rewriter' | 'scribe' | 'pr-reviewer'>;
+export type FollowUpKind = Exclude<
+  AgentKind,
+  'resolver' | 'rewriter' | 'scribe' | 'pr-reviewer' | 'auto'
+>;
 
 type FollowUpMove = {
   readonly kind: FollowUpKind;
@@ -16,6 +19,7 @@ const FOLLOW_UP_KINDS: Readonly<Record<AgentKind, ReadonlyArray<FollowUpKind>>> 
   scout: ['planner', 'implementer'],
   debugger: ['implementer'],
   generic: [],
+  auto: [],
   implementer: [],
   tester: [],
   docs: [],

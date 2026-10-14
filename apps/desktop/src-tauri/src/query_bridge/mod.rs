@@ -1,4 +1,5 @@
 mod args;
+pub(crate) mod capability;
 mod cli;
 mod dispatch;
 mod github;
@@ -13,8 +14,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::OnceLock;
 
 use protocol::{
-    QueryRequest, QueryResponse, BIN_ENV, MOUNT_ENV, RUN_ENV, SESSION_ENV, SOCKET_ENV,
-    SOCKET_PREFIX, SOCKET_SUFFIX, WORKSPACE_ENV,
+    QueryRequest, QueryResponse, BIN_ENV, CAPABILITY_ENV, MOUNT_ENV, RUN_ENV, SESSION_ENV,
+    SOCKET_ENV, SOCKET_PREFIX, SOCKET_SUFFIX, WORKSPACE_ENV,
 };
 
 pub(crate) use cli::dispatch as run_cli;
@@ -103,6 +104,7 @@ pub(crate) struct TurnBinding<'a> {
     pub(crate) session_id: Option<&'a str>,
     pub(crate) mount_id: Option<&'a str>,
     pub(crate) run_id: Option<&'a str>,
+    pub(crate) capability: Option<&'a str>,
 }
 
 pub(crate) fn apply_turn_env(command: &mut Command, binding: TurnBinding<'_>) {
@@ -127,6 +129,13 @@ pub(crate) fn apply_turn_env(command: &mut Command, binding: TurnBinding<'_>) {
     }
     if let Some(exe) = exe_path() {
         command.env(BIN_ENV, exe);
+    }
+    apply_capability_env(command, binding.capability);
+}
+
+fn apply_capability_env(command: &mut Command, capability: Option<&str>) {
+    if let Some(token) = capability {
+        command.env(CAPABILITY_ENV, token);
     }
 }
 
@@ -444,6 +453,35 @@ mod tests {
         std::fs::remove_dir_all(&scratch).unwrap();
     }
 
+    fn env_of(command: &Command, name: &str) -> Option<String> {
+        command
+            .get_envs()
+            .find(|(key, _)| *key == std::ffi::OsStr::new(name))
+            .and_then(|(_, value)| value.map(|value| value.to_string_lossy().into_owned()))
+    }
+
+    #[test]
+    fn a_turn_with_a_capability_carries_it_in_goodboy_cap() {
+        let mut command = Command::new("true");
+
+        apply_capability_env(&mut command, Some("token-harborline"));
+
+        assert_eq!(
+            env_of(&command, CAPABILITY_ENV),
+            Some("token-harborline".to_string())
+        );
+        assert_eq!(CAPABILITY_ENV, "GOODBOY_CAP");
+    }
+
+    #[test]
+    fn a_turn_without_a_capability_carries_no_goodboy_cap() {
+        let mut command = Command::new("true");
+
+        apply_capability_env(&mut command, None);
+
+        assert_eq!(env_of(&command, CAPABILITY_ENV), None);
+    }
+
     #[test]
     fn the_socket_lives_in_its_own_folder_inside_the_state_directory() {
         let path = socket_path().expect("a home directory");
@@ -710,6 +748,7 @@ mod tests {
                 session_id,
                 mount_id: None,
                 run_id: None,
+                capability: None,
             },
         );
     }

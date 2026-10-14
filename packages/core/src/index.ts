@@ -139,6 +139,32 @@ export {
 } from './context';
 
 export {
+  AUTO_ATTEMPT_CEILING_USD,
+  AUTO_BATCH_MAX_CHILDREN,
+  AUTO_BATCH_MIN_CHILDREN,
+  AUTO_DEFAULT_TREE_CAP_USD,
+  AUTO_DELEGATION_DEADLINE_MINUTES,
+  AUTO_GATES,
+  AUTO_GRANT_ALLOWANCE,
+  AUTO_MAX_GRANTS_PER_TREE,
+  AUTO_TREE_DEPTH,
+  AUTO_TREE_LIMITS,
+  AUTO_TURN_CEILING_USD,
+  AUTO_YIELD_GRACE_SECONDS,
+  attemptCeilingUsd,
+  type AutoTreeLimitKey,
+} from './auto/limits';
+export { AUTO_SYSTEM_PROMPT, autoRoleCatalog, buildAutoSystemPrompt } from './auto/prompt';
+export {
+  AUTO_DELEGATION_ROLES,
+  AUTO_WRITER_ROLES,
+  isAutoWriterRole,
+  parseAutoDelegationRole,
+  type AutoDelegationRole,
+  type AutoWriterRole,
+} from './auto/roles';
+
+export {
   ROLE_REGISTRY,
   SELECTABLE_AGENT_ROLES,
   defaultsForRole,

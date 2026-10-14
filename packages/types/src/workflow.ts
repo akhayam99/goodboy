@@ -32,6 +32,7 @@ export type AgentRole =
   | 'docs'
   | 'report'
   | 'wireframe'
+  | 'auto'
   | 'custom';
 
 export type AgentStatus =

@@ -23,6 +23,8 @@ const PROVIDER_IDS: ReadonlyArray<ProviderId> = Object.keys(PROVIDER_CAPABILITIE
   (id): id is ProviderId => id in PROVIDER_CAPABILITIES,
 );
 
+const FOLLOWS_CHAT_KINDS: ReadonlySet<AgentKind> = new Set<AgentKind>(['generic', 'auto']);
+
 const chatRouting = ({ session, fallbackEffort }: ChatParams): AgentKindRouting | null => {
   const model = session.modelOverride;
   if (model == null || model === '') {
@@ -43,7 +45,7 @@ const chatRouting = ({ session, fallbackEffort }: ChatParams): AgentKindRouting 
 
 export const resolveSpawnRouting = ({ kind, roleDefault, session }: Params): SpawnRouting => {
   const origin: SpawnRoutingOrigin = 'role-default';
-  if (kind !== 'generic' || session == null) {
+  if (!FOLLOWS_CHAT_KINDS.has(kind) || session == null) {
     return { ...roleDefault, origin };
   }
   const fromChat = chatRouting({ session, fallbackEffort: roleDefault.effort });

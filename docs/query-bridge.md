@@ -93,6 +93,7 @@ Each turn Goodboy starts gets these environment variables:
 - `GOODBOY_QUERY_SOCKET`: the socket this running copy listens on
 - `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`: the workspace and session of the turn
 - `GOODBOY_MOUNT_ID`, `GOODBOY_RUN_ID`: the mount (one checkout of a project in the session) and the run the turn belongs to
+- `GOODBOY_CAP`: a capability token, set only on a turn that holds one. No turn holds one yet, so no turn gets this variable today
 
 The prompt shows the call as `"$GOODBOY_BIN" query <provider> <verb>`. The path is quoted because it may contain a space. Output is plain text, and `--json` returns the raw payload. `"$GOODBOY_BIN" query <provider> --help` prints the exact arguments of each verb.
 
@@ -118,6 +119,20 @@ Every response has the shape `{ok, data, error}`. When the bridge refuses, it ca
 New codes can be added over time. The response shape stays the same.
 
 The catalog also has one verb outside the integrations, `project materialize`. It adds a workspace project to the session as a mount with its own worktree and branch.
+
+### Capability tokens
+
+A capability is a random 256-bit token the app mints for one turn and keeps in memory in `query_bridge/capability.rs`. The turn carries it in `GOODBOY_CAP`. The record, never the variable, is the authority: it names the agent, the tree, the generation, the workspace, the session and the run, and it expires after an hour.
+
+`CapabilityRegistry::authorize` is the one check, and a call must pass all of it, in this order:
+
+1. A token is present and known, not revoked and not expired.
+2. The verb is one of the closed set `agent delegate`, `agent status`, `agent answer`, `agent finish` and `agent request-status`. Any other verb, `mount fork` included, is refused.
+3. The tree, the generation and the active run the caller reports match the record.
+
+A token is revoked when its turn ends (`revoke_turn`), when its tree stops (`revoke_tree`) and when a newer generation starts (`revoke_before_generation`). A revoked token stays refused until its record expires. A child agent is minted no token, so it cannot call these verbs.
+
+The registry is built and tested, and nothing mints or checks a token yet: no `agent` verb is in the catalog and `dispatch` does not read `GOODBOY_CAP`. The Auto agent's delegation verbs are the slice that connects them.
 
 ### Mounts
 

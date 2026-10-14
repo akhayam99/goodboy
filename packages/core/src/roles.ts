@@ -33,6 +33,7 @@ export type RolePresentationKey =
   | 'docs'
   | 'report'
   | 'wireframe'
+  | 'auto'
   | 'generic';
 
 export type RoleRegistryEntry = RoleDefaults & {
@@ -347,6 +348,30 @@ export const ROLE_REGISTRY = {
       does: 'Draws a wireframe from the product evidence it is given.',
       autoReason: 'Medium effort. The evidence sets the layout, the model draws it.',
       splitNote: 'One wireframe is one run.',
+      launchNote: 'Nothing.',
+    },
+    fanOut: {
+      mode: 'never',
+      partitionKey: null,
+      condition: null,
+    },
+  },
+  auto: {
+    id: 'auto',
+    summary: 'Answers a question, or hands the work to the roles it picks.',
+    aliases: [],
+    presentationKey: 'auto',
+    defaultRoutingTaskType: 'general',
+    outputKind: 'none',
+    workflowEligible: false,
+    classifierEligible: false,
+    selectionEligible: false,
+    pickerEligible: false,
+    description: 'answer directly or delegate to sub-agents of the right role; never edits',
+    explain: {
+      does: 'Answers a question, or hands the work to the roles it picks. Never edits.',
+      autoReason: 'Medium effort. It decides and delegates, the agents it starts do the work.',
+      splitNote: 'Hands work to one level of agents, never deeper.',
       launchNote: 'Nothing.',
     },
     fanOut: {

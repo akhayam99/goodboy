@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { PROVIDER_CAPABILITIES, AUTO_DEFAULTS, PLAN_KIT_GUIDE, ROLE_REGISTRY } from '@goodboy/core';
 import type { Agent, AgentId, AgentRole, SessionId, StepId, WorkflowRunId } from '@goodboy/types';
 import { EFFORT_LEVELS } from '../chat/utils/chat-constants';
@@ -7,6 +7,8 @@ import {
   AGENT_KIND_DEFAULTS,
   AGENT_KIND_META,
   AGENT_KIND_PALETTE,
+  KIND_TO_ROLE,
+  ROLE_LABEL,
   type AgentKind,
   agentHomeLens,
   agentKindPalette,
@@ -21,6 +23,7 @@ import {
   selectNonResolverStandaloneAgents,
   visibleAgentKinds,
   visibleAgentRoles,
+  visibleWorkflowRoles,
 } from './agent-kind';
 
 const agentOf = (over: Partial<Agent> = {}): Agent => ({
@@ -664,6 +667,7 @@ describe('kindForRole', () => {
     resolver: 'resolver',
     rewriter: 'rewriter',
     scribe: 'scribe',
+    auto: 'auto',
     custom: 'generic',
   } satisfies Record<AgentRole, AgentKind>;
 
@@ -817,5 +821,82 @@ describe('agent visibility', () => {
       'docs',
       'custom',
     ]);
+  });
+});
+
+describe('the Auto role, while it is not offered', () => {
+  const STATUSES = ['pending', 'running', 'completed'] as const;
+
+  it('reads an Auto row in every status as an Auto agent', () => {
+    for (const status of STATUSES) {
+      expect(classifyAgent({ agent: agentOf({ kind: 'auto', status }), override: null })).toBe(
+        'auto',
+      );
+    }
+  });
+
+  it('reads a row with no kind or a generic kind exactly as before', () => {
+    for (const status of STATUSES) {
+      expect(classifyAgent({ agent: agentOf({ status }), override: null })).toBe('generic');
+      expect(classifyAgent({ agent: agentOf({ kind: 'generic', status }), override: null })).toBe(
+        'generic',
+      );
+      expect(classifyAgent({ agent: agentOf({ kind: 'custom', status }), override: null })).toBe(
+        'generic',
+      );
+    }
+  });
+
+  it('keeps an unknown kind generic, never an Auto agent', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    for (const kind of ['automatic', 'autopilot']) {
+      expect(classifyAgent({ agent: agentOf({ kind }), override: null })).toBe('generic');
+    }
+
+    expect(warn).toHaveBeenCalledTimes(2);
+    warn.mockRestore();
+  });
+
+  it('does not let a name pick the Auto agent', () => {
+    expect(classifyAgent({ agent: agentOf({ name: 'auto' }), override: null })).toBe('generic');
+  });
+
+  it('maps the Auto kind to the Auto role and back', () => {
+    expect(KIND_TO_ROLE.auto).toBe('auto');
+    expect(kindForRole({ role: 'auto' })).toBe('auto');
+  });
+
+  it('keeps one label across both label sources and the badge', () => {
+    expect(AGENT_KIND_META.auto.label).toBe('Auto agent');
+    expect(ROLE_LABEL.auto).toBe(AGENT_KIND_META.auto.label);
+    expect(AGENT_KIND_PALETTE.auto.label).toBe(AGENT_KIND_META.auto.noun);
+    expect(AGENT_KIND_PALETTE.auto).toMatchObject({ bg: 'bg-agent-auto', fg: 'text-agent-auto' });
+    expect(agentKindPalette({ kind: 'auto' })).toBe(AGENT_KIND_PALETTE.auto);
+  });
+
+  it('still names the Generalist as before', () => {
+    expect(AGENT_KIND_META.generic.label).toBe('Generalist');
+    expect(ROLE_LABEL.custom).toBe('Generalist');
+    expect(AGENT_KIND_PALETTE.generic.label).toBe('Generalist');
+  });
+
+  it('is offered by no picker and no workflow list', () => {
+    expect(visibleAgentKinds()).not.toContain('auto');
+    expect(visibleAgentRoles()).not.toContain('auto');
+    expect(visibleWorkflowRoles()).not.toContain('auto');
+    expect(AGENT_KIND_DEFAULTS.auto.visible).toBe(false);
+  });
+
+  it('starts on the same model and effort as the Generalist', () => {
+    expect(kindRouting({ kind: 'auto' })).toEqual(kindRouting({ kind: 'generic' }));
+    expect(kindRouting({ kind: 'auto' })).toMatchObject({ model: 'sonnet-5.5', effort: 'medium' });
+  });
+
+  it('carries the Auto prompt, which says it never edits', () => {
+    const prompt = AGENT_KIND_DEFAULTS.auto.systemPrompt ?? '';
+
+    expect(prompt).toContain('You are Auto');
+    expect(prompt).toContain('never edit files');
   });
 });

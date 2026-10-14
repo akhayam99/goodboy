@@ -17,6 +17,7 @@ describe('PROFILE_ACCESS', () => {
       scribe: ['roles', 'aboutWork', 'explainMore'],
       report: ['roles', 'aboutWork', 'explainMore'],
       wireframe: ['roles', 'aboutWork', 'explainMore'],
+      auto: ['roles', 'aboutWork', 'workingRules'],
       custom: ['roles', 'aboutWork', 'workingRules', 'explainMore'],
       questionDelegate: ['roles', 'aboutWork', 'workingRules'],
     });

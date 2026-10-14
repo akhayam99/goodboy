@@ -9,6 +9,7 @@ pub const WORKSPACE_ENV: &str = "GOODBOY_WORKSPACE_ID";
 pub const SESSION_ENV: &str = "GOODBOY_SESSION_ID";
 pub const MOUNT_ENV: &str = "GOODBOY_MOUNT_ID";
 pub const RUN_ENV: &str = "GOODBOY_RUN_ID";
+pub const CAPABILITY_ENV: &str = "GOODBOY_CAP";
 pub const LEGACY_SOCKET_FILE: &str = "query.sock";
 pub const SOCKET_PREFIX: &str = "query-";
 pub const SOCKET_SUFFIX: &str = ".sock";

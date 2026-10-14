@@ -303,6 +303,21 @@ fails silently at runtime.
   replaced by the default, and overwritten.
 - `SIMPLE_LENSES` marks the lenses that still work without a branch. A lens
   left out of it is hidden or cleared for sessions with no branch.
+- The `auto` role is in `AgentRole` and in every exhaustive map, and it is left
+  out of every list a person sees on purpose: `SELECTABLE_AGENT_ROLES` (all its
+  flags in `ROLE_REGISTRY` are `false`), `DEFAULT_GROUPS`, `GUIDANCE_ROLES`, and
+  the visibility chips of the Context drawer (`ALL_ROLES` in `roleVisibility.ts`
+  drops it). Do not add it to one of them to make a list complete. Showing Auto
+  is the release that turns the experiment on.
+- `AUTO_DELEGATION_ROLES` (`packages/core/src/auto/roles.ts`) and the
+  `READ_ONLY_ROLES` and `WRITER_ROLES` of `providers/cli_args.rs` name the same
+  seven roles in two languages, and no test ties them. Change one, change the
+  other. A role id outside the TypeScript list is rejected by
+  `parseAutoDelegationRole`, never passed through `normalizeAgentRole`, which
+  would turn it into the Generalist.
+- Auto's glyph is `CONCEPT_ICONS.auto` (`Orbit`), not a sparkle: the AI glyph
+  ratchet bans `Sparkles` everywhere. Its color token `agent-auto` is its own
+  cyan and not `primary`, so it does not move if the primary color changes.
 
 - Impact counts deleted sessions on purpose. Deleting a session is a soft
   delete: `purgeSessionForDelete` frees the transcript, file versions, slots,

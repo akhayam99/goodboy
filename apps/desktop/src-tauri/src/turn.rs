@@ -309,6 +309,7 @@ fn spawn_one<E: TurnEmitter>(
             session_id: args.session_id,
             mount_id: args.mount_id,
             run_id: Some(args.run_id),
+            capability: None,
         },
     );
 

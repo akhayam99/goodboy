@@ -42,6 +42,43 @@ describe('resolveSpawnRouting', () => {
     });
   });
 
+  it('gives an Auto agent the model the chat is on, as it does a generic agent', () => {
+    const session = makeSession({
+      providerOverride: 'anthropic',
+      modelOverride: 'claude-opus-5',
+      effort: 'high',
+    });
+
+    const auto = resolveSpawnRouting({
+      kind: 'auto',
+      roleDefault: kindRouting({ kind: 'auto', roleModels: null }),
+      session,
+    });
+    const generic = resolveSpawnRouting({
+      kind: 'generic',
+      roleDefault: kindRouting({ kind: 'generic', roleModels: null }),
+      session,
+    });
+
+    expect(auto).toEqual(generic);
+    expect(auto.origin).toBe('chat');
+  });
+
+  it('starts an Auto agent on its own role default when the chat has no model pinned', () => {
+    const routing = resolveSpawnRouting({
+      kind: 'auto',
+      roleDefault: kindRouting({ kind: 'auto', roleModels: null }),
+      session: makeSession(),
+    });
+
+    expect(routing).toEqual({
+      provider: 'anthropic',
+      model: 'sonnet-5.5',
+      effort: 'medium',
+      origin: 'role-default',
+    });
+  });
+
   it('routes a chat on gemini-3.1-pro with no pinned provider to Gemini, not Cursor', () => {
     const routing = resolveSpawnRouting({
       kind: 'generic',

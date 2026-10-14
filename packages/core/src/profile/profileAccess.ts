@@ -31,6 +31,7 @@ export const PROFILE_ACCESS: Readonly<Record<ProfileAudience, ReadonlyArray<Prof
   scribe: WRITING,
   report: WRITING,
   wireframe: WRITING,
+  auto: PLANNING,
   custom: EVERYTHING,
   questionDelegate: PLANNING,
 };

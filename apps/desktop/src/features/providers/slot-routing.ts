@@ -15,6 +15,7 @@ export const ROLE_SLOTS: Readonly<Record<AgentRole, ReadonlyArray<SlotKey>>> = {
   docs: ['goal', 'last_output_summary'],
   report: SLOT_KEYS,
   wireframe: SLOT_KEYS,
+  auto: SLOT_KEYS,
   custom: SLOT_KEYS,
 };
 

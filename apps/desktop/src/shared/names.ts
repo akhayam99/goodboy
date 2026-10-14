@@ -90,6 +90,7 @@ export const NAMES = {
     resolver: 'Resolver',
     rewriter: 'History rewriter',
     scribe: 'Scribe',
+    auto: 'Auto agent',
     custom: 'Generalist',
   } satisfies Record<AgentRole, string>,
 } as const;

@@ -32,6 +32,7 @@ describe('ROLE_REGISTRY', () => {
       'docs',
       'report',
       'wireframe',
+      'auto',
       'custom',
     ];
     for (const role of expected) {
@@ -151,6 +152,45 @@ describe('ROLE_REGISTRY contract', () => {
       pickerEligible: false,
     });
     expect(normalizeSelectableAgentRole({ role: 'rewriter' })).toBe('custom');
+  });
+
+  it('keeps the Auto role out of every picker, workflow, classifier and selection', () => {
+    expect(ROLE_REGISTRY.auto).toMatchObject({
+      id: 'auto',
+      presentationKey: 'auto',
+      aliases: [],
+      outputKind: 'none',
+      workflowEligible: false,
+      classifierEligible: false,
+      selectionEligible: false,
+      pickerEligible: false,
+    });
+    expect(SELECTABLE_AGENT_ROLES).not.toContain('auto');
+  });
+
+  it('knows the Auto role by its id and by no other name', () => {
+    expect(isAgentRole('auto')).toBe(true);
+    expect(normalizeAgentRole({ role: 'auto' })).toBe('auto');
+    expect(presentationKeyForRole({ role: 'auto' })).toBe('auto');
+    expect(defaultsForRole('auto')).toBe(ROLE_REGISTRY.auto);
+  });
+
+  it('never selects the Auto role for a workflow step or a manual pick', () => {
+    expect(normalizeSelectableAgentRole({ role: 'auto' })).toBe('custom');
+    expect(normalizeWorkflowRole({ role: 'auto' })).toBe('custom');
+  });
+
+  it('leaves the Generalist exactly as it was', () => {
+    expect(ROLE_REGISTRY.custom).toMatchObject({
+      id: 'custom',
+      aliases: ['generic'],
+      presentationKey: 'generic',
+      workflowEligible: true,
+      classifierEligible: false,
+      selectionEligible: true,
+      pickerEligible: true,
+    });
+    expect(normalizeAgentRole({ role: 'generic' })).toBe('custom');
   });
 
   it('normalizes every selectable role to itself and the rest to custom', () => {

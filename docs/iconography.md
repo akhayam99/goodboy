@@ -131,7 +131,7 @@ Each agent kind has one lucide glyph and one color, both on its entry in
 read through `agentKindPalette({ kind })`. A kind the app does not know falls
 back to `Bot` in the muted tone. Where a kind means the same thing as a concept,
 it reuses the concept glyph: report, wireframe, resolver (`resolve`) and
-rewriter (`history`). The rest are their own: scout `Telescope`, planner
+rewriter (`history`) and Auto (`auto`, `Orbit`, in the `agent-auto` color). The rest are their own: scout `Telescope`, planner
 `MapIcon`, implementer `CodeXml`, debugger `BugPlay`, tester `FlaskConical`,
 reviewer `ScanEye`, PR reviewer `GitPullRequestArrow`, docs `BookOpen`, scribe
 `Feather`, generalist `Bot`. Kinds have no mascot drawing and no bare colored

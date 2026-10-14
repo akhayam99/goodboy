@@ -1,4 +1,5 @@
 import {
+  AUTO_SYSTEM_PROMPT,
   classifyFirstTurn,
   presentationKeyForRole,
   PLAN_KIT_GUIDE,
@@ -94,6 +95,7 @@ export const AGENT_KIND_ORDER: ReadonlyArray<AgentKind> = [
   'resolver',
   'rewriter',
   'scribe',
+  'auto',
   'generic',
 ];
 
@@ -142,6 +144,15 @@ export const AGENT_KIND_META: Record<
     firstMessagePrompt: null,
     pluralLabel: 'generalists',
     hint: 'Plans, investigates, edits, and verifies without a narrow role',
+    persona: 'max',
+    expectedOutput: null,
+  },
+  auto: {
+    label: 'Auto agent',
+    noun: 'Auto agent',
+    firstMessagePrompt: null,
+    pluralLabel: 'auto agents',
+    hint: 'Answers, or hands the work to the roles it picks. Never edits files',
     persona: 'max',
     expectedOutput: null,
   },
@@ -350,6 +361,12 @@ export const AGENT_KIND_PALETTE: Record<AgentKind, AgentKindPaletteEntry> = {
     label: AGENT_KIND_META.scribe.noun,
     icon: Feather,
   },
+  auto: {
+    bg: 'bg-agent-auto',
+    fg: 'text-agent-auto',
+    label: AGENT_KIND_META.auto.noun,
+    icon: CONCEPT_ICONS.auto,
+  },
   generic: {
     bg: 'bg-agent-generic',
     fg: 'text-agent-generic',
@@ -450,6 +467,7 @@ export const KIND_TO_ROLE: Record<AgentKind, AgentRole> = {
   resolver: 'resolver',
   rewriter: 'rewriter',
   scribe: 'scribe',
+  auto: 'auto',
   generic: 'custom',
 };
 
@@ -516,6 +534,10 @@ export const AGENT_KIND_DEFAULTS: Record<
       'when you are asked for a change to an existing wireframe, you receive the current spec, the request, the ids of the nodes the user picked and the scope. return the whole document, never a patch; keep the id of every node you did not change; give new nodes new ids; touch only the picked nodes and the scope asked, and leave every other screen exactly as it is.',
       WIREFRAME_SCHEMA_BRIEF,
     ].join('\n\n'),
+  },
+  auto: {
+    visible: false,
+    systemPrompt: AUTO_SYSTEM_PROMPT,
   },
   generic: {
     systemPrompt:
