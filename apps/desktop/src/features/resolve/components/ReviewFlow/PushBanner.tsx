@@ -115,6 +115,9 @@ export const PushBanner = ({ sessionId, push }: Props) => {
   if (phase.kind !== 'confirm' && phase.kind !== 'pushing') {
     return null;
   }
+  if (phase.kind === 'pushing' && !phase.hasPanel) {
+    return null;
+  }
 
   const { preview } = phase;
   const blocker =
@@ -158,8 +161,9 @@ export const PushBanner = ({ sessionId, push }: Props) => {
   }
 
   const styleNote = pushStyleNote({ commitStyle });
+  const changed = phase.kind === 'confirm' ? phase.changed : undefined;
 
-  return (
+  const confirmBar = (
     <InlineConfirm
       role="primary"
       icon={<ArrowUp size={ICON_SIZE.control} aria-hidden />}
@@ -198,7 +202,7 @@ export const PushBanner = ({ sessionId, push }: Props) => {
             </div>
           )}
           <p className="text-muted-foreground">
-            {[drift, excluded]
+            {[changed === undefined ? drift : null, excluded]
               .flatMap((line) => (line === null ? [] : [line.endsWith('.') ? line : `${line}.`]))
               .join(' ')}{' '}
             {styleNote.text}{' '}
@@ -217,5 +221,25 @@ export const PushBanner = ({ sessionId, push }: Props) => {
         </div>
       }
     />
+  );
+
+  if (changed === undefined) {
+    return confirmBar;
+  }
+  return (
+    <div className="flex min-w-0 flex-col gap-2">
+      <p
+        role="status"
+        className="flex min-w-0 items-center gap-2 px-1 text-meta text-muted-foreground"
+      >
+        <AlertCircle
+          size={ICON_SIZE.control}
+          aria-hidden
+          className={cn('shrink-0', tintClasses('warning').icon)}
+        />
+        {changed.endsWith('.') ? changed : `${changed}.`}
+      </p>
+      {confirmBar}
+    </div>
   );
 };

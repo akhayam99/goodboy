@@ -114,6 +114,7 @@ export const BranchHeader = ({
         data-branch-primary={slot === 'primary' ? action.actionId : undefined}
         data-branch-secondary={slot === 'secondary' ? action.actionId : undefined}
         disabled={action.blockedReason !== null}
+        aria-expanded={action.isExpanded ?? undefined}
         isBusy={state.isBusy}
         busyLabel={state.label}
         onClick={() => controls.press(action)}

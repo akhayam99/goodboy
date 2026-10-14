@@ -60,6 +60,7 @@ const PREVIEW: ResolvePublicationPreview = {
 const push = (overrides: Partial<ReviewPush>): ReviewPush => ({
   phase: { kind: 'idle' },
   arm: vi.fn(async () => undefined),
+  press: vi.fn(async () => undefined),
   confirm: vi.fn(async () => undefined),
   cancel: vi.fn(),
   askSync: vi.fn(),
@@ -108,6 +109,48 @@ describe('PushBanner', () => {
     expect(opened).toHaveBeenCalledOnce();
     const detail = (opened.mock.calls[0]?.[0] as CustomEvent).detail;
     expect(detail).toEqual({ scope: 'workspace', section: 'review-replies' });
+  });
+
+  it('says what changed above the refreshed confirm', () => {
+    render(
+      <PushBanner
+        sessionId={SESSION.id}
+        push={push({
+          phase: {
+            kind: 'confirm',
+            preview: PREVIEW,
+            changed: 'The remote moved from 7d02b11 to c5d9e08',
+          },
+        })}
+      />,
+    );
+
+    const line = screen.getByText('The remote moved from 7d02b11 to c5d9e08.');
+    const confirm = screen.getByRole('group', { name: /^Push 1 commit to/ });
+    expect(line.compareDocumentPosition(confirm) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(confirm).queryByText(/The remote moved/)).toBeNull();
+  });
+
+  it('shows nothing while a push without a panel runs', () => {
+    const { container } = render(
+      <PushBanner
+        sessionId={SESSION.id}
+        push={push({ phase: { kind: 'pushing', preview: PREVIEW, hasPanel: false } })}
+      />,
+    );
+
+    expect(container.textContent).toBe('');
+  });
+
+  it('keeps the panel up, busy, while a push from the panel runs', () => {
+    render(
+      <PushBanner
+        sessionId={SESSION.id}
+        push={push({ phase: { kind: 'pushing', preview: PREVIEW, hasPanel: true } })}
+      />,
+    );
+
+    expect(screen.getByRole('group', { name: /^Push 1 commit to/ })).toBeDefined();
   });
 
   it('offers Sync on a push that failed on a moved remote', () => {

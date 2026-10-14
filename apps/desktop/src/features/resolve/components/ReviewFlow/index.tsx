@@ -714,6 +714,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
                 key={focused.threadId}
                 sessionId={sessionId}
                 entry={focused}
+                push={push}
                 binding={controller.bind(focused.threadId)}
               />
             )}

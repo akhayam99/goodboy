@@ -359,6 +359,14 @@ fails silently at runtime.
   A reply the viewer posted by hand is marked posted with
   `setResolveThreadReplyPosted`, a write that leaves the revision alone: going
   through `updateResolveThread` would bump it and strand an approved reply.
+- A prepared push preview lives as a `previewed` publication row while the
+  panel is open, and `useReviewPush` holds its phase in page state. Every way
+  out of that state must close the row with `cancelPublication`: Cancel, the
+  header toggle, a re-arm, the page unmounting and a `missing` answer. A
+  preview prepared by a request that resolves after the page left is cancelled
+  when it lands (the phase is no longer `preparing`). Leaving one out leaves a
+  `previewed` row nobody can confirm. The header Push never narrows to the
+  selected comment: only `Push only this one` passes `threadIds`.
 
 - Never derive repository state from an agent's transcript. A fix agent that
   commits quietly (`commit -qam ... && log --oneline -1`) prints no

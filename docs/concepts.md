@@ -1080,11 +1080,14 @@ failed`) that opens to their reasons. A failed delivery after the run has no
 Nothing reaches GitHub until you push, with one exception: a reply-only answer
 (no code change) is posted the moment you accept it when no accepted fix is
 waiting to push. With a fix waiting it goes out with the push, and `Post reply
-now` beside its note posts it at once. `Push N` in the Review header is the
-way out for every accepted comment at once. It
+now` beside its note posts it at once. `Push N fixes` in the Review header is the
+way out for every accepted comment at once, whatever comment is selected. A
+clean preview pushes on that one click; otherwise it
 confirms inline under the header with exactly what goes out (`Push 2 to
 hl/fix-duplicate-credit?`, then `1 fix in 1 new commit, 2 replies, 2 threads
-resolved on GitHub.`), naming the commit style set in Replies and commits. A
+resolved on GitHub.`), naming the commit style set in Replies and commits, and
+the header button only opens and closes that panel. `Push only this one` in a
+comment's action bar sends just that fix, with the earlier commits it carries. A
 blocker (uncommitted changes, a commit nobody approved, a fix still running)
 replaces the confirm with its reason and the one move that clears it. The
 result stays on the layer in one line with its commit; a partial push says how
@@ -1567,7 +1570,7 @@ before a change adds a word.
 - **Reply**: answer a thread yourself. **Reply only** drops the code change and
   keeps the reply. **Publish reply** sends a decided reply that did not go out.
   **Resolve** ends a thread without a reply (a note says **Close**).
-- **Push**: sends commits (**Push 2**, **Retry push** after a failure).
+- **Push**: sends commits (**Push 2 fixes**, **Retry push** after a failure).
   **Publish 2 replies** sends replies without a push. **Sync and try again** is
   about the remote branch that moved, not the base.
 - **Rebase on main**: brings the base in, with the base branch's own name.

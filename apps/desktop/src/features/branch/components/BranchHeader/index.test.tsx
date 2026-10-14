@@ -169,7 +169,15 @@ afterEach(() => {
   t.isOffline = false;
 });
 
-const NO_REVIEW: BranchReviewCounts = { accepted: 0, replies: 0, failed: 0, isPushing: false };
+const IDLE_PUSH: BranchReviewCounts['push'] = { state: 'idle', count: 0 };
+
+const NO_REVIEW: BranchReviewCounts = {
+  accepted: 0,
+  replies: 0,
+  failed: 0,
+  isPushing: false,
+  push: IDLE_PUSH,
+};
 
 type HarnessProps = {
   readonly pr: PullRequestState | null;
@@ -606,7 +614,7 @@ describe('BranchHeader actions by state', () => {
     status = statusOf({});
     renderHeader({
       pr: merged,
-      review: { accepted: 2, replies: 0, failed: 0, isPushing: false },
+      review: { accepted: 2, replies: 0, failed: 0, isPushing: false, push: IDLE_PUSH },
     });
 
     expect(primaries()).toHaveLength(0);
@@ -658,12 +666,12 @@ describe('BranchHeader actions by state', () => {
     status = statusOf({});
     renderHeader({
       pr: PR,
-      review: { accepted: 3, replies: 2, failed: 1, isPushing: false },
+      review: { accepted: 3, replies: 2, failed: 1, isPushing: false, push: IDLE_PUSH },
     });
 
-    expect(screen.getByRole('button', { name: /^Push 3$/ }).getAttribute('data-variant')).toBe(
-      'secondary',
-    );
+    expect(
+      screen.getByRole('button', { name: /^Push 3 fixes$/ }).getAttribute('data-variant'),
+    ).toBe('secondary');
     expect(secondaries()).toHaveLength(1);
     expect(screen.queryByRole('button', { name: /Publish/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /Retry/ })).toBeNull();
@@ -672,11 +680,17 @@ describe('BranchHeader actions by state', () => {
   it('publishes replies with no commit to push, then retries a failed push', () => {
     withMountPr();
     status = statusOf({});
-    renderHeader({ pr: PR, review: { accepted: 0, replies: 2, failed: 1, isPushing: false } });
+    renderHeader({
+      pr: PR,
+      review: { accepted: 0, replies: 2, failed: 1, isPushing: false, push: IDLE_PUSH },
+    });
     expect(screen.getByRole('button', { name: /Publish 2 replies/ })).toBeDefined();
     cleanup();
 
-    renderHeader({ pr: PR, review: { accepted: 0, replies: 0, failed: 1, isPushing: false } });
+    renderHeader({
+      pr: PR,
+      review: { accepted: 0, replies: 0, failed: 1, isPushing: false, push: IDLE_PUSH },
+    });
     expect(screen.getByRole('button', { name: 'Retry push' })).toBeDefined();
   });
 
@@ -684,9 +698,12 @@ describe('BranchHeader actions by state', () => {
     const open: PullRequestState = { ...PR, isDraft: false };
     withRequest(open);
     status = statusOf({});
-    renderHeader({ pr: open, review: { accepted: 1, replies: 0, failed: 0, isPushing: false } });
+    renderHeader({
+      pr: open,
+      review: { accepted: 1, replies: 0, failed: 0, isPushing: false, push: IDLE_PUSH },
+    });
 
-    const push = screen.getByRole('button', { name: /^Push 1$/ });
+    const push = screen.getByRole('button', { name: /^Push 1 fix$/ });
     const primary = primaries()[0] as HTMLElement;
     const more = screen.getByRole('button', { name: 'Branch actions' });
     expect(push.compareDocumentPosition(primary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -729,10 +746,10 @@ describe('BranchHeader merge state', () => {
     status = statusOf({});
     renderHeader({
       pr: readyPr,
-      review: { accepted: 1, replies: 0, failed: 0, isPushing: false },
+      review: { accepted: 1, replies: 0, failed: 0, isPushing: false, push: IDLE_PUSH },
     });
 
-    expect(screen.getByRole('button', { name: /^Push 1$/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^Push 1 fix$/ })).toBeDefined();
     const reasons = screen.getAllByText(/still running/);
     expect(reasons).toHaveLength(1);
     expect(metaOf().contains(reasons[0] as HTMLElement)).toBe(true);

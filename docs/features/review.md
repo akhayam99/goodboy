@@ -50,7 +50,7 @@ If a fix commit is no longer on the branch, for example after a squash done else
 
 ### Close on GitHub
 
-Finish a review with the one **Push** in the Branch header. A preview counts the fixes, replies and threads to resolve, then **Push** sends them to GitHub or GitLab. A reply with no code change goes out right away when no fix is waiting.
+Finish a review with **Push N fixes** in the Branch header. It always covers every ready comment. When nothing needs a decision it pushes on that click and says what went out in one line. Otherwise a preview counts the fixes, replies and threads to resolve and the one **Push** in it sends them to GitHub or GitLab. **Push only this one** in a comment's actions sends just that fix. A reply with no code change goes out right away when no fix is waiting.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-push-confirm-dark.webp">

@@ -20,6 +20,7 @@ import { ReviewFlow } from '../../../resolve/components/ReviewFlow';
 import { useReviewEntries } from '../../../resolve/components/ReviewFlow/useReviewEntries';
 import { useBranchNotes } from '../../../resolve/notes/useBranchNotes';
 import { useReviewPush } from '../../../resolve/components/ReviewFlow/useReviewPush';
+import { pushFixCount } from '../../../resolve/reviewPushCopy';
 import { useActiveReviewSource } from '../../../resolve/hooks/useActiveReviewSource';
 import { isPushFailure } from '../../../resolve/reviewCommentState';
 import { REVIEW_REQUEST_EVENT, isReviewRequest } from '../../../review/reviewRequest';
@@ -31,7 +32,7 @@ import { useBranchTab } from '../../hooks/useBranchTab';
 import { usePullRequestView } from '../../hooks/usePullRequestView';
 import { capabilityReasonOf } from '../../pullRequestCapabilityReason';
 import { distanceBehind } from '../../../../shared/lib/gitStatus';
-import type { BranchReviewCounts } from '../../branchPrimary';
+import type { BranchPushState, BranchReviewCounts } from '../../branchPrimary';
 import { branchTabsOf, isBranchReadOnly, resolveBranchTab } from '../../branchTabs';
 import { branchScopeOf } from '../../../../store/slices/session-view/branchScopeOf';
 import { pullRequestKindOf } from '../../../../shared/pullRequestKind';
@@ -63,7 +64,6 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   const storedTab = useBranchTab({ sessionId, mountPath: identity.mountPath });
   const setPullRequestMode = useAppStore((s) => s.setPullRequestMode);
   const navigate = useAppStore((s) => s.navigate);
-  const selectedThreadId = useAppStore((s) => s.branchThreadId[sessionId] ?? null);
   const diffFocus = useAppStore((s) => s.diffFocus[sessionId] ?? null);
   const github = useAppStore((s) => s.sessionGithub[sessionId] ?? null);
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
@@ -138,24 +138,27 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
         .map((entry) => entry.threadId),
     [entries],
   );
-  const selectedPushIds = useMemo<ReadonlyArray<string> | undefined>(
-    () =>
-      tab === 'comments' && selectedThreadId !== null && pushableIds.includes(selectedThreadId)
-        ? [selectedThreadId]
-        : undefined,
-    [pushableIds, selectedThreadId, tab],
-  );
+  const pushState: BranchPushState =
+    push.phase.kind === 'confirm' || push.phase.kind === 'sync_confirm'
+      ? 'open'
+      : isPushBusy
+        ? 'busy'
+        : 'idle';
+  const pushingCount =
+    push.phase.kind === 'pushing' ? pushFixCount({ preview: push.phase.preview }) : 0;
+  const pushCount = pushingCount > 0 ? pushingCount : pushableIds.length;
 
   const review = useMemo<BranchReviewCounts>(
     () => ({
-      accepted: selectedPushIds?.length ?? pushableIds.length,
+      accepted: pushableIds.length,
       replies: entries.filter((entry) => entry.remote === 'on_origin').length,
       failed: entries.filter(
         (entry) => entry.state === 'failed' && isPushFailure({ row: entry.row }),
       ).length,
       isPushing: entries.some((entry) => entry.row.thread.stage === 'publishing'),
+      push: { state: pushState, count: pushCount },
     }),
-    [entries, pushableIds, selectedPushIds],
+    [entries, pushCount, pushState, pushableIds],
   );
 
   const controls = useBranchControls({
@@ -188,16 +191,11 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
         return;
       }
       event.preventDefault();
-      if (!isPushBusy) {
-        void push.arm({
-          isRetry: selectedPushIds === undefined && hasPushFailure,
-          threadIds: selectedPushIds,
-        });
-      }
+      void push.press({ isRetry: hasPushFailure });
     };
     window.addEventListener(REVIEW_REQUEST_EVENT, onRequest);
     return () => window.removeEventListener(REVIEW_REQUEST_EVENT, onRequest);
-  }, [hasPushFailure, isPushBusy, push, selectedPushIds, sessionId]);
+  }, [hasPushFailure, push, sessionId]);
 
   const pullRequestView = usePullRequestView({
     sessionId,

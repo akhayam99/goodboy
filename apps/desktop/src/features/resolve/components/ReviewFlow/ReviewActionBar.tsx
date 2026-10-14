@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from 'react';
-import { ExternalLink } from 'lucide-react';
+import { ArrowUp, ExternalLink } from 'lucide-react';
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import { Button, Kbd, Tooltip } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
@@ -13,11 +13,14 @@ import { BAR_COPY } from '../../commentStateCopy';
 import { reviewBarPlanOf, type BarItem, type BarVariant } from './reviewBarPlan';
 import { StopRunButton } from './StopRunButton';
 import { ThreadOverflowMenu } from './ThreadOverflowMenu';
+import type { ReviewPush } from './useReviewPush';
 import type { ReviewEntry } from './useReviewEntries';
+import { PUSH_ONLY_LABEL } from '../../reviewPushCopy';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly entry: ReviewEntry;
+  readonly push: ReviewPush;
   readonly binding: Pick<
     ReviewCommentBinding,
     'compose' | 'isEditingReply' | 'pendingActionId' | 'isSubmitting' | 'onRun'
@@ -25,6 +28,7 @@ type Props = {
 };
 
 const PUSH_ACTION = 'review.push';
+const PUSH_ONLY_ID = 'review.pushOnly';
 const OPEN_HOST_ACTION = 'reviewComment.openOnGithub';
 const TRANSCRIPT_ACTION = 'reviewComment.transcript';
 const STOP_ACTION = 'reviewComment.stop';
@@ -41,6 +45,8 @@ const idOf = (item: BarItem): string => {
       return item.id;
     case 'retryPush':
       return PUSH_ACTION;
+    case 'pushOnly':
+      return PUSH_ONLY_ID;
     case 'viewOnHost':
       return OPEN_HOST_ACTION;
     case 'transcript':
@@ -54,7 +60,7 @@ const idOf = (item: BarItem): string => {
   }
 };
 
-export const ReviewActionBar = ({ sessionId, entry, binding }: Props) => {
+export const ReviewActionBar = ({ sessionId, entry, push: reviewPush, binding }: Props) => {
   const { threadId, row, state } = entry;
   const target = useMemo(
     () => ({ kind: 'reviewComment' as const, sessionId, threadId }),
@@ -81,12 +87,19 @@ export const ReviewActionBar = ({ sessionId, entry, binding }: Props) => {
   const byId = (id: string): ResolvedAction | undefined =>
     actions.find((candidate) => candidate.id === id);
   const push = reviewActions.find((candidate) => candidate.id === PUSH_ACTION);
+  const isPushInFlight =
+    reviewPush.phase.kind === 'preparing' ||
+    reviewPush.phase.kind === 'pushing' ||
+    reviewPush.phase.kind === 'syncing';
   const { pendingActionId } = binding;
   const isIdle = binding.compose === null && !binding.isEditingReply;
   const isBusy = pendingActionId !== null || binding.isSubmitting;
   const items = plan.filter((item) => {
     if (item.kind === 'retryPush') {
       return push !== undefined;
+    }
+    if (item.kind === 'pushOnly') {
+      return push !== undefined && entry.remote !== 'on_origin';
     }
     if (item.kind === 'viewOnHost') {
       return byId(OPEN_HOST_ACTION) !== undefined;
@@ -172,6 +185,20 @@ export const ReviewActionBar = ({ sessionId, entry, binding }: Props) => {
             onClick={() => void runReview({ actionId: PUSH_ACTION })}
           >
             {BAR_COPY.retryPush}
+          </Button>
+        );
+      case 'pushOnly':
+        return (
+          <Button
+            key="pushOnly"
+            size="sm"
+            variant="ghost"
+            data-review-verb={PUSH_ONLY_ID}
+            disabled={push === undefined || push.blockedReason !== null || isBusy || isPushInFlight}
+            onClick={() => void reviewPush.arm({ isRetry: false, threadIds: [threadId] })}
+          >
+            <ArrowUp size={ICON_SIZE.control} aria-hidden />
+            {PUSH_ONLY_LABEL}
           </Button>
         );
       case 'viewOnHost':

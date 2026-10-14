@@ -142,8 +142,18 @@ describe('the push result line', () => {
   it('names the commit and what landed when everything did', () => {
     expect(pushResultOf({ outcome: outcomeOf({}) })).toEqual({
       tone: 'done',
-      sentence: 'Pushed a41c9e2, 3 replies posted, 3 threads resolved on GitHub.',
+      sentence: 'Pushed a41c9e2 and posted 3 replies on GitHub. 3 threads resolved.',
     });
+  });
+
+  it('counts the commits that went to origin when the preview knew them', () => {
+    expect(pushResultOf({ outcome: outcomeOf({ resolved: 0 }), commits: 6 })).toEqual({
+      tone: 'done',
+      sentence: 'Pushed 6 commits to origin and posted 3 replies on GitHub.',
+    });
+    expect(
+      pushResultOf({ outcome: outcomeOf({ resolved: 0, replied: 1 }), commits: 1 }).sentence,
+    ).toBe('Pushed 1 commit to origin and posted 1 reply on GitHub.');
   });
 
   it('says how many landed and points at the one that did not', () => {
@@ -158,7 +168,7 @@ describe('the push result line', () => {
       pushResultOf({ outcome: outcomeOf({ pushedHead: null, resolved: 1, leftOpen: 2 }) }),
     ).toEqual({
       tone: 'done',
-      sentence: '3 replies posted, 1 thread resolved on GitHub, 2 left open for the reviewer.',
+      sentence: 'Posted 3 replies on GitHub. 1 thread resolved. 2 left open for the reviewer.',
     });
   });
 
@@ -167,7 +177,9 @@ describe('the push result line', () => {
       outcome: outcomeOf({ resolved: 0, leftOpen: 3 }),
       provider: 'Bitbucket',
     });
-    expect(result.sentence).toBe('Pushed a41c9e2, 3 replies posted, 3 left open for the reviewer.');
+    expect(result.sentence).toBe(
+      'Pushed a41c9e2 and posted 3 replies on Bitbucket. 3 left open for the reviewer.',
+    );
     expect(result.sentence).not.toContain('resolved');
   });
 
