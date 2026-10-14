@@ -14,6 +14,11 @@ export const DECISION_DETAIL_LINE_HEIGHT = 20;
 
 export const DECISION_DETAIL_ACTION_HEIGHT = 24;
 
+export type DetailHeightParams = {
+  readonly rowId: string;
+  readonly height: number;
+};
+
 const DETAIL_PADDING = 8;
 
 type ChangeParams = {

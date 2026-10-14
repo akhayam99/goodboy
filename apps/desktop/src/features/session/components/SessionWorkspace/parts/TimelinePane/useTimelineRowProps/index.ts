@@ -302,9 +302,17 @@ export const useTimelineRowProps = ({
       runAction,
       openDecisionInContext,
       toggleExpanded: rows.toggleExpanded,
+      setDetailHeight: rows.setDetailHeight,
       setGroupExpanded: explode.set,
     }),
-    [explode.set, openDecisionInContext, openTargetFor, rows.toggleExpanded, runAction],
+    [
+      explode.set,
+      openDecisionInContext,
+      openTargetFor,
+      rows.setDetailHeight,
+      rows.toggleExpanded,
+      runAction,
+    ],
   );
 
   const openNeedsYou = useCallback(

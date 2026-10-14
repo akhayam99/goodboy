@@ -263,7 +263,7 @@ status` directly. A branch cut from a remote-tracking ref (`worktree add -b
   animate a row with a `transform` that outlives the animation (a keyframe
   with `fill-mode: both` leaves one behind and puts the row on its own layer),
   and never give lines and elbows different `shape-rendering`. Grow rows with
-  `Reveal`, which moves only the grid track.
+  `Reveal`, which moves only the grid track. Its grid element carries `min-w-0`; without it the widest unbreakable child sets the column and a body overflows the rail.
 - The sign-in CLIs speak through their exit code. `claude auth status` and `codex login status`
   exit 1 when you are signed out, with a perfectly good answer on stdout, and
   `cursor-agent status` can say "Logged in (unable to fetch user details)" while every run

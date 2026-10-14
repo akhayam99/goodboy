@@ -32,6 +32,13 @@ describe('Reveal', () => {
     expect(frameOf('Body')?.getAttribute('data-state')).toBe('open');
   });
 
+  it('lets the grid element shrink below its widest child so no body widens the column', () => {
+    render(<Reveal open>Body</Reveal>);
+    const element = frameOf('Body')?.firstElementChild ?? null;
+    expect(element?.classList.contains('min-w-0')).toBe(true);
+    expect(element?.classList.contains('min-h-0')).toBe(true);
+  });
+
   it('unmounts at once when no transition runs, as with reduced motion', () => {
     const onClosed = vi.fn();
     const { rerender } = render(

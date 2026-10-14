@@ -86,7 +86,7 @@ export const Reveal = ({ open, children, id, className, onClosed }: RevealProps)
         isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
       )}
     >
-      <div className={cn('min-h-0', phase !== 'open' && 'overflow-hidden')}>
+      <div className={cn('min-h-0 min-w-0', phase !== 'open' && 'overflow-hidden')}>
         <div className={className}>{children}</div>
       </div>
     </div>

@@ -2484,11 +2484,18 @@ comes in with `Reveal` (200ms), and a reworded text fades in (180ms,
 In Activity, a `decisions_changed` row that carries `decisionChanges` is a
 disclosure: the row toggles (`Show changes` / `Hide changes`, `aria-expanded`)
 a diff under it, `+ D12`, `D3 → D12` with the reason, `− D5` with the
-withdrawal reason, at most six lines, and **Open in Context**, which opens the
+withdrawal reason, at most six lines, and **Open in Context**. Each decision is
+a three-column grid (sign, id, text): the text wraps whole beside the hanging
+id, and the reason or note sits on its own line under it, never truncated.
+**Open in Context** opens the
 drawer on Decisions with those numbers in `payload.highlight` (highlighted for
 2.4s, the closed group opened when one of them is there). The expanded row
-adds the diff's fixed height (`decisionChangeDetail`) to its item before
-`layoutTimelineRail`, so the rail and lanes run through it.
+adds the diff's height to its item before `layoutTimelineRail`, so the rail and
+lanes run through it. `DecisionChangesDetail` measures itself (a layout effect
+and a `ResizeObserver`) and reports `{ rowId, height }` to `useTimelineRows`,
+which keeps it per row id and uses it over `decisionChangeDetail`'s line
+estimate, which stays as the first-frame value. `Reveal`'s grid element is
+`min-w-0`, so no body, of any list, widens its column.
 
 The `artifact` kind carries `{ artifactId, tab }`, with `tab` either `details`
 or `chat`. The artifact shell opens it from its one `Details` button, on the

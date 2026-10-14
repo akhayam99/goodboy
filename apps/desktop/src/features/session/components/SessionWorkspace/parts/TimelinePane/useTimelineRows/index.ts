@@ -39,6 +39,7 @@ import { dayLabel } from '../../../../../timeline/dayLabel';
 import {
   decisionChangeDetail,
   type DecisionChangeDetail,
+  type DetailHeightParams,
 } from '../../../../../timeline/decisionChangeLines';
 import { needsYouOwners, type NeedsYouOwner } from '../../../../../timeline/needsYou';
 import { shownQuestionIds } from '../../../../../timeline/shownQuestionIds';
@@ -82,6 +83,7 @@ export type TimelineRows = {
   readonly decisionDetails: ReadonlyMap<string, DecisionChangeDetail>;
   readonly expandedRows: ReadonlySet<string>;
   readonly toggleExpanded: (rowId: string) => void;
+  readonly setDetailHeight: (params: DetailHeightParams) => void;
 };
 
 export const useTimelineRows = ({ session, view, query, explode }: Params): TimelineRows => {
@@ -124,6 +126,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
     }),
   );
   const [expandedRows, setExpandedRows] = useState<ReadonlySet<string>>(NO_EXPANDED_ROWS);
+  const [measuredHeights, setMeasuredHeights] = useState<ReadonlyMap<string, number>>(new Map());
 
   useEffect(() => {
     void loadSessionEvents({ sessionId });
@@ -317,7 +320,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
     return shown;
   }, [owners, stream.items, view]);
 
-  const decisionDetails = useMemo(() => {
+  const estimatedDetails = useMemo(() => {
     const details = new Map<string, DecisionChangeDetail>();
     for (const item of stream.items) {
       if (item.kind !== 'row' || item.entry.kind !== 'event') {
@@ -333,6 +336,24 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
     }
     return details;
   }, [stream.items]);
+
+  const decisionDetails = useMemo(() => {
+    const details = new Map<string, DecisionChangeDetail>();
+    for (const [id, detail] of estimatedDetails) {
+      const height = measuredHeights.get(id);
+      details.set(id, height === undefined ? detail : { ...detail, height });
+    }
+    return details;
+  }, [estimatedDetails, measuredHeights]);
+
+  const setDetailHeight = useCallback(({ rowId, height }: DetailHeightParams) => {
+    setMeasuredHeights((current) => {
+      if (current.get(rowId) === height) {
+        return current;
+      }
+      return new Map(current).set(rowId, height);
+    });
+  }, []);
 
   const itemCache = useRef<ReadonlyMap<string, TimelineStreamItem>>(new Map());
   const laidOutItems = useMemo(() => {
@@ -390,5 +411,6 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
     decisionDetails,
     expandedRows,
     toggleExpanded,
+    setDetailHeight,
   };
 };

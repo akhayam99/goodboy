@@ -1114,7 +1114,7 @@ const SESSION_EVENTS = [
           kind: 'replaced',
           number: 5,
           by: 7,
-          text: 'Show the stuck-delivery banner after the third failed retry, not the first',
+          text: 'Show the stuck-delivery banner after the third failed retry, not the first, so one provider hiccup never alarms a Harborline operator while the ledger-core queue is still draining on its own schedule overnight',
           reason: 'You answered: three retries, one is normal provider noise',
         },
         {

@@ -8,7 +8,10 @@ import type {
 import type { MountDiffStat } from '../../../../../../store';
 import type { RailRow } from '../../../../../workTreeModel/railGeometry';
 import type { TimelineOpenTarget } from '../../../../hooks/useTimelineOpen';
-import type { DecisionChangeDetail } from '../../../../timeline/decisionChangeLines';
+import type {
+  DecisionChangeDetail,
+  DetailHeightParams,
+} from '../../../../timeline/decisionChangeLines';
 import type {
   TimelineRowItem,
   TimelineStreamEntry,
@@ -28,6 +31,7 @@ export type TimelineEntryRowHandlers = {
   readonly runAction: (params: { readonly item: TimelineRowItem }) => void;
   readonly openDecisionInContext: (params: { readonly numbers: ReadonlyArray<number> }) => void;
   readonly toggleExpanded: (rowId: string) => void;
+  readonly setDetailHeight: (params: DetailHeightParams) => void;
   readonly setGroupExpanded: (params: {
     readonly id: string;
     readonly isExpanded: boolean;
@@ -160,7 +164,9 @@ export const TimelineEntryRow = ({
         decisionDetail !== null && isExpanded ? (
           <DecisionChangesDetail
             id={detailId}
+            rowId={item.id}
             detail={decisionDetail}
+            onMeasured={handlers.setDetailHeight}
             onOpenInContext={() =>
               handlers.openDecisionInContext({ numbers: decisionDetail.numbers })
             }
