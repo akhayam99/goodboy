@@ -25,7 +25,6 @@ type Store = {
   sessionBranches: Record<string, string>;
   sessionProjectMounts: Record<string, ReadonlyArray<never>>;
   sessionActiveProject: Record<string, string>;
-  sessionStudio: Record<string, { readonly kind: 'workflow' } | null>;
   artifactConversationAgentId: Record<string, string | null>;
   sessionPhaseRuns: Record<string, ReadonlyArray<Agent>>;
   sessionPlans: Record<string, ReadonlyArray<unknown>>;
@@ -74,7 +73,6 @@ const { store, hooks } = vi.hoisted(() => ({
     sessionBranches: {},
     sessionProjectMounts: {},
     sessionActiveProject: {},
-    sessionStudio: {},
     artifactConversationAgentId: {},
     sessionPhaseRuns: {},
     sessionPlans: {},
@@ -280,7 +278,6 @@ beforeEach(() => {
   store.sessionBranches = {};
   store.sessionProjectMounts = {};
   store.sessionActiveProject = {};
-  store.sessionStudio = { [SESSION_ID]: null };
   store.sessionPhaseRuns = { [SESSION_ID]: [selectedAgent] };
   store.sessionPlans = { [SESSION_ID]: [] };
   store.focusedWorkflowRunId = {};
@@ -573,7 +570,7 @@ describe('SessionWorkspace breadcrumb visibility', () => {
     expect(width()).toBe('column');
   });
 
-  it('keeps one trail band mounted across lens, agent and studio changes', () => {
+  it('keeps one trail band mounted across lens and agent changes', () => {
     store.activeLens = { [SESSION_ID]: null };
     store.selectedAgentId = {};
     store.sessionPhaseRuns = { [SESSION_ID]: [selectedAgent] };
@@ -591,9 +588,6 @@ describe('SessionWorkspace breadcrumb visibility', () => {
     view.rerender(<SessionWorkspace session={session} isActive />);
     expect(screen.getByTestId('session-crumb-bar')).toBe(trail);
 
-    store.sessionStudio = { [SESSION_ID]: { kind: 'workflow' } };
-    view.rerender(<SessionWorkspace session={session} isActive />);
-    expect(screen.getByTestId('session-crumb-bar')).toBe(trail);
     expect(view.container.querySelectorAll('[data-slot="trail-bar"]')).toHaveLength(1);
   });
 

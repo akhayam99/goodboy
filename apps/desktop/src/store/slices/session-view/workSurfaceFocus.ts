@@ -1,25 +1,13 @@
 import type { AgentId, SessionId } from '@goodboy/types';
-import type { LensKind, SessionStudio } from './types';
+import type { LensKind } from './types';
 
 type Focus =
   | { readonly kind: 'lens'; readonly lens: LensKind | null }
-  | { readonly kind: 'studio'; readonly studio: SessionStudio | null }
   | { readonly kind: 'agent'; readonly agentId: AgentId | null }
-  | {
-      readonly kind: 'session-created';
-      readonly studio: SessionStudio | null;
-      readonly agentId: AgentId | null;
-    }
-  | {
-      readonly kind: 'restore';
-      readonly lens: LensKind | null;
-      readonly studio: SessionStudio | null;
-      readonly agentId: AgentId | null;
-    };
+  | { readonly kind: 'session-created'; readonly agentId: AgentId | null };
 
 type Surface = {
   readonly activeLens: Readonly<Record<SessionId, LensKind | null>>;
-  readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;
   readonly selectedAgentId: Readonly<Record<SessionId, AgentId | null>>;
 };
 
@@ -32,47 +20,23 @@ export const workSurfaceFocus = ({
   sessionId,
   focus,
   activeLens,
-  sessionStudio,
   selectedAgentId,
 }: Params): Surface => {
   switch (focus.kind) {
     case 'lens':
       return {
         activeLens: { ...activeLens, [sessionId]: focus.lens },
-        sessionStudio: { ...sessionStudio, [sessionId]: null },
         selectedAgentId: { ...selectedAgentId, [sessionId]: null },
-      };
-    case 'studio':
-      return {
-        activeLens,
-        sessionStudio: { ...sessionStudio, [sessionId]: focus.studio },
-        selectedAgentId:
-          focus.studio === null ? selectedAgentId : { ...selectedAgentId, [sessionId]: null },
       };
     case 'agent':
       return {
         activeLens,
-        sessionStudio:
-          focus.agentId === null ? sessionStudio : { ...sessionStudio, [sessionId]: null },
         selectedAgentId: { ...selectedAgentId, [sessionId]: focus.agentId },
       };
     case 'session-created':
       return {
         activeLens: { ...activeLens, [sessionId]: null },
-        sessionStudio: { ...sessionStudio, [sessionId]: focus.studio },
-        selectedAgentId: {
-          ...selectedAgentId,
-          [sessionId]: focus.studio === null ? focus.agentId : null,
-        },
-      };
-    case 'restore':
-      return {
-        activeLens: { ...activeLens, [sessionId]: focus.lens },
-        sessionStudio: { ...sessionStudio, [sessionId]: focus.studio },
-        selectedAgentId: {
-          ...selectedAgentId,
-          [sessionId]: focus.studio === null ? focus.agentId : null,
-        },
+        selectedAgentId: { ...selectedAgentId, [sessionId]: focus.agentId },
       };
     default: {
       const unreachable: never = focus;

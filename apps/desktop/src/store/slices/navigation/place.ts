@@ -1,5 +1,5 @@
 import type { AgentId, SessionId } from '@goodboy/types';
-import type { DiffFocus, LensKind, SessionStudio } from '../session-view/types';
+import type { DiffFocus, LensKind } from '../session-view/types';
 import { noteIdOfThread } from '../../../features/resolve/notes/noteThread';
 import type { OpenDrawer } from '../drawer/state';
 import type { AgentPane, BranchTab, Place, PlaceRequest, SessionTarget } from './types';
@@ -8,7 +8,6 @@ type SessionPlaceParams = {
   readonly sessionId: SessionId;
   readonly lens?: LensKind | null;
   readonly agentId?: AgentId | null;
-  readonly studio?: SessionStudio | null;
   readonly target?: SessionTarget | null;
 };
 
@@ -26,12 +25,11 @@ export const sessionPlace = ({
   sessionId,
   lens = null,
   agentId = null,
-  studio = null,
   target = null,
 }: SessionPlaceParams): Place => ({
   at: 'session',
   sessionId,
-  view: { lens, agentId, studio, target },
+  view: { lens, agentId, target },
 });
 
 type BranchPlaceParams = {

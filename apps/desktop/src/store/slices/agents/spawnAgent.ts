@@ -201,7 +201,6 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
               sessionId,
               focus: { kind: 'agent', agentId: inserted.id },
               activeLens: s.activeLens,
-              sessionStudio: s.sessionStudio,
               selectedAgentId: s.selectedAgentId,
             })),
           transcripts: { ...s.transcripts, [inserted.id]: [] },

@@ -27,7 +27,6 @@ const scopeNow = (): PaletteScope | null => {
     artifactConversationAgentId:
       sessionId === null ? null : (state.artifactConversationAgentId[sessionId] ?? null),
     lens: sessionId === null ? null : (state.activeLens[sessionId] ?? null),
-    hasStudio: sessionId !== null && (state.sessionStudio[sessionId] ?? null) !== null,
     hasAppStudio: state.appStudio !== null,
     focusedRunId: runId as WorkflowRunId | null,
     prNumber: sessionId === null ? null : (state.sessionGithub[sessionId]?.pr?.number ?? null),

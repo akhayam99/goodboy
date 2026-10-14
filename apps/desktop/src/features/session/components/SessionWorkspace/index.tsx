@@ -64,7 +64,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const sessionRepo = useAppStore(useShallow((state) => resolveSessionRepo({ state, sessionId })));
   const projectWorktreePath = sessionRepo?.worktreePath ?? null;
   const sessionMounts = useAppStore((s) => s.sessionProjectMounts?.[sessionId] ?? EMPTY_ARRAY);
-  const studio = useAppStore((s) => s.sessionStudio[sessionId] ?? null);
   const artifactConversationAgentId = useAppStore(
     (s) => s.artifactConversationAgentId[sessionId] ?? null,
   );
@@ -94,7 +93,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   };
   const surfaceLayer = resolveSessionSurfaceLayer({
     lens,
-    hasStudio: studio != null,
     selectedAgentId,
     artifactConversationAgentId,
   });

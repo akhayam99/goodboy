@@ -1939,7 +1939,6 @@ describe('store contract', () => {
         .getState()
         .createSession({ workspaceId: WS_ID, goal: 'ship it' });
 
-      expect(store.getState().sessionStudio[session.id]).toBeNull();
       expect(store.getState().activeLens[session.id]).toBeNull();
     });
 

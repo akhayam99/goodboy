@@ -87,9 +87,6 @@ const sessionViewAddress = ({ view }: ViewParams): string => {
   if (view.agentId !== null && view.target?.kind !== 'thread') {
     parts.push('agent', view.agentId);
   }
-  if (view.studio !== null) {
-    parts.push(view.studio.kind === 'workflow' ? 'edit' : view.studio.kind);
-  }
   return parts.join('/');
 };
 

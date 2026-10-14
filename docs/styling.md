@@ -245,7 +245,7 @@ Centring lives in `PageColumn` alone (`mx-auto` on `column` and `measure`, none
 on `full`). No view centres itself. Sub-pages follow the same tiers as their
 parent: Runs > Create, a run, a form, a studio's detail and its loading state
 all sit on a `PageColumn` (`FormPage` is one), and `columnContract.test.ts`
-walks every studio and session studio so a new place cannot sit on the left.
+walks every studio so a new place cannot sit on the left.
 
 Three width tiers, one rule each:
 

@@ -2,7 +2,7 @@
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { join, relative, sep } from 'path';
 import { describe, expect, it } from 'vitest';
-import type { SessionStudio, StudioKind } from '../../store';
+import type { StudioKind } from '../../store';
 import { PAGE_FRAME, frameTierOf } from '@goodboy/ui';
 import { STUDIO_META } from '../../app/components/StudioFrame/studioMeta';
 
@@ -169,10 +169,6 @@ const STUDIO_ROOTS: Readonly<Record<StudioKind, ReadonlyArray<string>>> = {
   monitoring: ['features/monitoring/components/MonitoringStudio/MonitoringPage.tsx'],
 };
 
-const SESSION_STUDIO_ROOTS: Readonly<Record<SessionStudio['kind'], ReadonlyArray<string>>> = {
-  workflow: [],
-};
-
 const FORM_AND_DETAIL_ROOTS: PlaceRoots = {
   'Runs > a run': ['features/session/components/SessionWorkspace/parts/WorkflowRunDetail.tsx'],
   'Questions detail': ['features/session/components/SessionWorkspace/parts/QuestionsPane.tsx'],
@@ -310,30 +306,17 @@ describe('content column contract', () => {
     expect(read('features/workspace-chat/components/ChatComposer/index.tsx')).not.toMatch(/max-w-/);
   });
 
-  it('registers every studio and session studio, so a new place cannot skip the contract', () => {
+  it('registers every studio, so a new place cannot skip the contract', () => {
     const meta = read('app/components/StudioFrame/studioMeta.ts');
     const studios = [...meta.matchAll(/^ {2}(\w+): \{$/gm)].map((match) => match[1] ?? '').sort();
-    const types = read('store/slices/session-view/types.ts');
-    const start = types.indexOf('export type SessionStudio =');
-    const declaration = types.slice(start, types.indexOf('\n\n', start));
-    const sessionStudios = [...declaration.matchAll(/kind: '(\w+)'/g)]
-      .map((match) => match[1] ?? '')
-      .sort();
 
     expect(Object.keys(STUDIO_ROOTS).sort()).toEqual(studios);
-    expect(Object.keys(SESSION_STUDIO_ROOTS).sort()).toEqual(sessionStudios);
   });
 
-  it('roots every studio, session studio, form and sub-page on a PageColumn, never a left pinned wrapper', () => {
+  it('roots every studio, form and sub-page on a PageColumn, never a left pinned wrapper', () => {
     const places: PlaceRoots = {
       ...Object.fromEntries(
         Object.entries(STUDIO_ROOTS).map(([kind, files]) => [`studio ${kind}`, files]),
-      ),
-      ...Object.fromEntries(
-        Object.entries(SESSION_STUDIO_ROOTS).map(([kind, files]) => [
-          `session studio ${kind}`,
-          files,
-        ]),
       ),
       ...FORM_AND_DETAIL_ROOTS,
     };

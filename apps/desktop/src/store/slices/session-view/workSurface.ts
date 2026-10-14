@@ -1,5 +1,5 @@
 import type { ArtifactId, SessionExternalTask, SessionId } from '@goodboy/types';
-import type { DiffFocus, GetFn, LensKind, SessionStudio, SetFn } from './types';
+import type { DiffFocus, GetFn, LensKind, SetFn } from './types';
 import { sentryRecordKey } from '../../../features/inbox/adapters/sentry';
 import { PROVIDER_LENS } from '../../../features/integrations/providerLens';
 import { workSurfaceFocus } from './workSurfaceFocus';
@@ -16,7 +16,6 @@ export const setActiveLens = (set: SetFn) => {
         sessionId,
         focus: { kind: 'lens', lens },
         activeLens: s.activeLens,
-        sessionStudio: s.sessionStudio,
         selectedAgentId: s.selectedAgentId,
       }),
       focusedWorkflowRunId:
@@ -151,19 +150,5 @@ export const openExternalTaskLens = (get: GetFn) => {
         },
       }),
     });
-  };
-};
-
-export const setSessionStudio = (set: SetFn) => {
-  return (sessionId: SessionId, studio: SessionStudio | null): void => {
-    set((s) =>
-      workSurfaceFocus({
-        sessionId,
-        focus: { kind: 'studio', studio },
-        activeLens: s.activeLens,
-        sessionStudio: s.sessionStudio,
-        selectedAgentId: s.selectedAgentId,
-      }),
-    );
   };
 };

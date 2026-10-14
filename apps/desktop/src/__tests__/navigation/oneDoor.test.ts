@@ -7,7 +7,7 @@ const SRC = join(__dirname, '..', '..');
 const SCANNED_ROOTS = ['features', 'app', 'shared'];
 const COLUMN_ROOT = join(SRC, 'app', 'components', 'SideColumn');
 
-const INTERNAL_MOVES = /\b(setActiveLens|setCurrentSession|selectAgent|setSessionStudio)\b/;
+const INTERNAL_MOVES = /\b(setActiveLens|setCurrentSession|selectAgent)\b/;
 
 const isSource = (path: string): boolean =>
   /\.(ts|tsx)$/.test(path) &&

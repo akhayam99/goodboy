@@ -54,7 +54,6 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
       sessions: [] as ReadonlyArray<Record<string, unknown>>,
       workspaces: [] as ReadonlyArray<Record<string, unknown>>,
       selectedAgentId: {} as Record<string, string | null>,
-      sessionStudio: {} as Record<string, unknown>,
       awaitedArtifactAgentId: {} as Record<string, string | null>,
       awaitArtifactAgent: vi.fn(
         ({
@@ -211,7 +210,6 @@ beforeEach(() => {
   state.artifactFilter = {};
   state.sessions = [{ id: 'sess-1', goal: 'fix the rounding drift' }];
   state.selectedAgentId = {};
-  state.sessionStudio = {};
   state.awaitedArtifactAgentId = {};
   vi.clearAllMocks();
 });

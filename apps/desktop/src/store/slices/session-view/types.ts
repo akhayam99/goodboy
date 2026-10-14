@@ -98,8 +98,6 @@ export const EMPTY_RESOLVE_QUEUE_VIEW: ResolveQueueView = {
   lastRouting: null,
 };
 
-export type SessionStudio = { readonly kind: 'workflow' };
-
 export const DEFAULT_PREFS: SessionViewPrefs = {
   sort: 'needsYou',
   group: 'none',
@@ -192,7 +190,6 @@ type SessionViewSliceState = {
   readonly focusedExternalTask: Readonly<Record<SessionId, FocusedExternalTask | null>>;
   readonly agentPane: Readonly<Record<SessionId, AgentPane | null>>;
   readonly agentTab: Readonly<Record<AgentId, AgentPane>>;
-  readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
   readonly diffFocus: Readonly<Record<SessionId, DiffFocus | null>>;
   readonly resolveQueueView: Readonly<Record<SessionId, ResolveQueueView>>;
@@ -258,7 +255,6 @@ type SessionViewSliceActions = {
   awaitArtifactAgent(params: AwaitArtifactAgentParams): void;
   setFocusedGithubIssueNumber(sessionId: SessionId, issueNumber: number | null): void;
   openExternalTaskLens(sessionId: SessionId, task: SessionExternalTask): void;
-  setSessionStudio(sessionId: SessionId, studio: SessionStudio | null): void;
   setDiffFocus(sessionId: SessionId, focus: DiffFocus | null): void;
   setResolveQueueView(params: {
     readonly sessionId: SessionId;

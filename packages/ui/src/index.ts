@@ -37,6 +37,7 @@ export type { DrawerColumnFrame, DrawerColumnProps } from './components/DrawerCo
 export {
   COLUMN_FRAME,
   DRAWER_EXIT_MS,
+  DRAWER_EXIT_MAX_ELEMENTS,
   DRAWER_INSET,
   READER_DRAWER_DEFAULT,
   READER_DRAWER_MAX,

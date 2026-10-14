@@ -279,12 +279,10 @@ describe('store contract', () => {
       expect([...LENS_KINDS].sort()).toEqual(Object.keys(LENS_LABEL).sort());
     });
 
-    it('setFocusedArtifactId and setSessionStudio update per-session state', async () => {
+    it('setFocusedArtifactId updates per-session state', async () => {
       const store = useAppStore;
       store.getState().setFocusedArtifactId(SESSION_ID, PLAN_ID);
-      store.getState().setSessionStudio(SESSION_ID, { kind: 'workflow' });
       expect(store.getState().focusedArtifactId[SESSION_ID]).toBe(PLAN_ID);
-      expect(store.getState().sessionStudio[SESSION_ID]).toEqual({ kind: 'workflow' });
     });
 
     it('focuses a plan and a report through the same artifact focus', async () => {
@@ -315,13 +313,6 @@ describe('store contract', () => {
       store.setState({ selectedAgentId: { [SESSION_ID]: AGENT_ID } } as never);
       store.getState().setActiveLens(SESSION_ID, 'agents');
       expect(store.getState().selectedAgentId[SESSION_ID]).toBeNull();
-    });
-
-    it('setActiveLens clears any open session studio', async () => {
-      const store = useAppStore;
-      store.getState().setSessionStudio(SESSION_ID, { kind: 'workflow' });
-      store.getState().setActiveLens(SESSION_ID, 'agents');
-      expect(store.getState().sessionStudio[SESSION_ID]).toBeNull();
     });
 
     it('setDiffFocus survives the switch to the files lens and dies on any other', async () => {
@@ -505,30 +496,11 @@ describe('store contract', () => {
       expect(tabs.map((tab) => tab.cwd)).toEqual(['/wt/api', '/wt/web']);
     });
 
-    it('setSessionStudio(non-null) clears the selected agent', async () => {
+    it('selectAgent selects the agent (foreground reconciliation)', async () => {
       const store = useAppStore;
-      store.setState({ selectedAgentId: { [SESSION_ID]: AGENT_ID } } as never);
-      store.getState().setSessionStudio(SESSION_ID, { kind: 'workflow' });
-      expect(store.getState().sessionStudio[SESSION_ID]).toEqual({ kind: 'workflow' });
-      expect(store.getState().selectedAgentId[SESSION_ID]).toBeNull();
-    });
-
-    it('setSessionStudio(null) leaves the selected agent untouched', async () => {
-      const store = useAppStore;
-      store.setState({ selectedAgentId: { [SESSION_ID]: AGENT_ID } } as never);
-      store.getState().setSessionStudio(SESSION_ID, null);
-      expect(store.getState().selectedAgentId[SESSION_ID]).toBe(AGENT_ID);
-    });
-
-    it('selectAgent clears any open session studio (foreground reconciliation)', async () => {
-      const store = useAppStore;
-      store.setState({
-        transcripts: { [AGENT_ID]: [] },
-        sessionStudio: { [SESSION_ID]: { kind: 'workflow' } },
-      } as never);
+      store.setState({ transcripts: { [AGENT_ID]: [] } } as never);
       await store.getState().selectAgent(SESSION_ID, AGENT_ID);
       expect(store.getState().selectedAgentId[SESSION_ID]).toBe(AGENT_ID);
-      expect(store.getState().sessionStudio[SESSION_ID]).toBeNull();
     });
   });
 });

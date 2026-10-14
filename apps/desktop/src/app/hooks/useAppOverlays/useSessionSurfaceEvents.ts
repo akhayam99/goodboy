@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import type { Session, Workspace } from '@goodboy/types';
 import { openPlanAnywhere } from '../../../features/plans/openPlanAnywhere';
 import { sessionPlace, useAppStore } from '../../../store';
-import { clearCurrentSessionStudio } from './clearCurrentSessionStudio';
 import { eventSessionId, eventValue, isPlanId } from './eventDetail';
 
 type Params = {
@@ -24,7 +23,7 @@ export const useSessionSurfaceEvents = ({
 }: Params) => {
   useEffect(() => {
     const openNewDrawer = (event: Event) => {
-      const sessionId = eventSessionId(event);
+      const sessionId = eventSessionId(event) ?? useAppStore.getState().currentSessionId;
       if (sessionId === null) {
         return;
       }
@@ -54,13 +53,7 @@ export const useSessionSurfaceEvents = ({
     };
     const listeners: ReadonlyArray<Listener> = [
       ['goodboy:open-plan-studio', openPlanStudio],
-      [
-        'goodboy:reveal-chat',
-        () => {
-          close();
-          clearCurrentSessionStudio();
-        },
-      ],
+      ['goodboy:reveal-chat', () => close()],
       ['goodboy:open-workflow-builder', openNewDrawer],
     ];
     listeners.forEach(([name, listener]) => window.addEventListener(name, listener));
@@ -74,7 +67,6 @@ export const useSessionSurfaceEvents = ({
         return;
       }
       close();
-      clearCurrentSessionStudio();
       if (currentSession !== null && isSessionSidebarCollapsed) {
         pinSessionSidebar();
       }

@@ -8,6 +8,7 @@ export const COLUMN_MIN_PUSH = 560;
 export const COLUMN_GUTTERS = 48;
 export const DRAWER_INSET = 8;
 export const DRAWER_EXIT_MS = 160;
+export const DRAWER_EXIT_MAX_ELEMENTS = 2000;
 
 export type DrawerSizing = 'side' | 'reader';
 

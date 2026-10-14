@@ -13,7 +13,6 @@ export const createInitialSessionViewState = ({}: Params) => ({
   focusedExternalTask: {},
   agentPane: {},
   agentTab: {},
-  sessionStudio: {},
   focusedWorkflowRunId: {},
   diffFocus: {},
   diffMountPath: {},

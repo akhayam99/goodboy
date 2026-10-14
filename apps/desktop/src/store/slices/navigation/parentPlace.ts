@@ -17,9 +17,6 @@ export const parentPlace = ({ state, place }: Params): Place | null => {
     return placeBeforeDraft({ state });
   }
   const { sessionId, view } = place;
-  if (view.studio !== null) {
-    return { ...place, view: { ...view, studio: null } };
-  }
   if (view.target?.kind === 'branch') {
     const { target } = view;
     if (target.threadId !== null) {

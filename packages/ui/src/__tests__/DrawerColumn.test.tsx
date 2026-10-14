@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 
+import { createElement, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_MAX } from '../components/AppShell';
@@ -17,6 +18,7 @@ import {
   RIGHT_DRAWER_DEFAULT,
   RIGHT_DRAWER_MAX,
   RIGHT_DRAWER_MIN,
+  DRAWER_EXIT_MAX_ELEMENTS,
   DRAWER_EXIT_MS,
   canDrawerPush,
   drawerAsideWidthOf,
@@ -953,18 +955,7 @@ describe('DrawerColumn closing', () => {
     expect(panel().getAttribute('data-drawer-exit')).toBeNull();
   });
 
-  it('closes at once, with no exit copy, a drawer whose content holds a canvas', () => {
-    stubColumnWidth(678);
-    const view = render(
-      <DrawerColumn
-        main={<button type="button">page action</button>}
-        drawer={<canvas aria-label="Terminal" />}
-        ariaLabel="Side panel"
-        resizeLabel="Resize side panel"
-      />,
-    );
-    view.rerender(column(null));
-
+  const expectClosedAtOnce = () => {
     expect(card()).toBeNull();
     expect(scrim()).toBeNull();
     expect(panel().getAttribute('data-drawer-exit')).toBeNull();
@@ -972,5 +963,76 @@ describe('DrawerColumn closing', () => {
     expect(panel().className).toContain('absolute');
     expect(panel().style.width).toBe('0px');
     expect(page().hasAttribute('inert')).toBe(false);
+  };
+
+  const closeDrawerHolding = (content: ReactNode) => {
+    stubColumnWidth(678);
+    const view = render(
+      <DrawerColumn
+        main={<button type="button">page action</button>}
+        drawer={content}
+        ariaLabel="Side panel"
+        resizeLabel="Resize side panel"
+      />,
+    );
+    view.rerender(column(null));
+  };
+
+  it.each([
+    ['canvas', <canvas key="c" aria-label="Terminal" />],
+    ['iframe', <iframe key="i" title="Wireframe" />],
+    ['video', <video key="v" />],
+    ['audio', <audio key="a" />],
+    ['webview', createElement('webview', { key: 'w' })],
+  ])('closes at once, with no exit copy, a drawer whose content holds a %s', (_name, element) => {
+    closeDrawerHolding(<div>{element}</div>);
+
+    expectClosedAtOnce();
+  });
+
+  it('closes at once a drawer that holds more elements than the exit copy allows', () => {
+    const rows = Array.from({ length: DRAWER_EXIT_MAX_ELEMENTS + 1 }, (_, index) => (
+      <span key={index} />
+    ));
+    closeDrawerHolding(<div>{rows}</div>);
+
+    expectClosedAtOnce();
+  });
+
+  it('still copies and animates a drawer that sits just under the element cap', () => {
+    const rows = Array.from({ length: DRAWER_EXIT_MAX_ELEMENTS - 10 }, (_, index) => (
+      <span key={index} />
+    ));
+    closeDrawerHolding(<div>{rows}</div>);
+
+    expect(card()).not.toBeNull();
+    expect(scrim()).not.toBeNull();
+    expect(panel().getAttribute('data-drawer-exit')).toBe('');
+    expect(card()?.querySelectorAll('span').length).toBe(DRAWER_EXIT_MAX_ELEMENTS - 10);
+  });
+
+  it('copies the drawer once, as one deep copy of its content, when it closes over the page', () => {
+    const clone = vi.spyOn(Node.prototype, 'cloneNode');
+    stubColumnWidth(678);
+    const view = render(column('drafts'));
+    clone.mockClear();
+    view.rerender(column(null));
+
+    expect(clone.mock.calls[0]).toEqual([true]);
+    expect(clone.mock.contexts[0]).toBeInstanceOf(HTMLDivElement);
+    expect(card()?.textContent).toBe('drafts');
+    expect(panel().getAttribute('data-drawer-exit')).toBe('');
+    clone.mockRestore();
+  });
+
+  it('copies nothing when the drawer closes from pushing', () => {
+    const clone = vi.spyOn(Node.prototype, 'cloneNode');
+    stubColumnWidth(1440);
+    const view = render(column('drafts'));
+    clone.mockClear();
+    view.rerender(column(null));
+
+    expect(clone).not.toHaveBeenCalled();
+    clone.mockRestore();
   });
 });

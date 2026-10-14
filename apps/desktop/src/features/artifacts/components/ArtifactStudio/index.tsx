@@ -54,7 +54,6 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
   const awaitedAgentId = useAppStore((s) => s.awaitedArtifactAgentId[sessionId] ?? null);
   const awaitArtifactAgent = useAppStore((s) => s.awaitArtifactAgent);
   const selectedAgentId = useAppStore((s) => s.selectedAgentId[sessionId] ?? null);
-  const sessionStudio = useAppStore((s) => s.sessionStudio[sessionId] ?? null);
   const verifications = useAppStore((s) => s.wireframeScoutVerification);
   const isArtifactDrawerOpen = useAppStore((s) => {
     const kind = selectOpenDrawer(s)?.kind ?? null;
@@ -96,7 +95,7 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
       return;
     }
     awaitArtifactAgent({ sessionId, agentId: null });
-    if (focusedArtifactId === null && selectedAgentId === null && sessionStudio === null) {
+    if (focusedArtifactId === null && selectedAgentId === null) {
       setFocusedArtifactId(sessionId, arrived.id);
     }
   }, [
@@ -106,7 +105,6 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
     focusedArtifactId,
     selectedAgentId,
     sessionId,
-    sessionStudio,
     setFocusedArtifactId,
   ]);
 

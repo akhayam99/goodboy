@@ -18,7 +18,6 @@ import { terminalStudioPlace } from '../../../features/terminal/terminalStudioPl
 import { selectChatDoor } from '../../../store/slices/chat-last-open/selectChatDoor';
 import { AppOverlayRouter, AppStudio } from '../../components/AppOverlayRouter';
 import type { StudioPlacement } from '../../components/StudioFrame/studioPlacement';
-import { clearCurrentSessionStudio } from './clearCurrentSessionStudio';
 import type { OpenPaletteParams, PaletteRequest } from '../../../features/palette/paletteModeTypes';
 import { useCommitDiff } from './useCommitDiff';
 import { useSessionSurfaceEvents } from './useSessionSurfaceEvents';
@@ -90,7 +89,6 @@ export const useAppOverlays = ({
   const openAddWorkspace = useCallback(() => open({ overlay: { kind: 'addWorkspace' } }), [open]);
 
   const openSettings = useCallback(() => {
-    clearCurrentSessionStudio();
     goTo({
       overlay: { kind: 'settings', focus: { scope: 'home' } },
     });

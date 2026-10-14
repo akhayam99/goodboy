@@ -4,7 +4,6 @@ import type { AgentId, SessionId } from '@goodboy/types';
 import type { AppStore } from '../../store';
 import type { GetFn, SetFn } from './types';
 import { closeArtifactConversation, openArtifactConversation } from './artifactConversation';
-import { setSessionStudio } from './workSurface';
 
 const SESSION_ID = 'sess-1' as SessionId;
 const AGENT_ID = 'agent-report-1' as AgentId;
@@ -15,13 +14,11 @@ const buildStore = () => {
     state = {
       ...state,
       activeLens: { ...state.activeLens, [sessionId]: state.activeLens[sessionId] ?? null },
-      sessionStudio: { ...state.sessionStudio, [sessionId]: null },
       selectedAgentId: { ...state.selectedAgentId, [sessionId]: agentId },
     };
   });
   let state = {
     activeLens: { [SESSION_ID]: 'plans' },
-    sessionStudio: {},
     selectedAgentId: {},
     artifactConversationAgentId: {},
     selectAgent,
@@ -51,15 +48,6 @@ describe('artifact conversation host', () => {
   it('keeps the artifact lens instead of dropping it for the agent overlay', () => {
     const store = buildStore();
     openArtifactConversation(store.set, store.get)({ sessionId: SESSION_ID, agentId: AGENT_ID });
-    expect(store.read().activeLens[SESSION_ID]).toBe('plans');
-  });
-
-  it('survives a reveal-chat, which only closes a session studio', () => {
-    const store = buildStore();
-    openArtifactConversation(store.set, store.get)({ sessionId: SESSION_ID, agentId: AGENT_ID });
-    setSessionStudio(store.set)(SESSION_ID, null);
-    expect(store.read().artifactConversationAgentId[SESSION_ID]).toBe(AGENT_ID);
-    expect(store.read().selectedAgentId[SESSION_ID]).toBe(AGENT_ID);
     expect(store.read().activeLens[SESSION_ID]).toBe('plans');
   });
 

@@ -1,6 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import { locationKey } from './locationKey';
-import { EMPTY_FOCUS, HISTORY_LIMIT, type Location, type NavigationStack } from './types';
+import { HISTORY_LIMIT, type Location, type NavigationStack } from './types';
 
 type SyncParams = {
   readonly stack: NavigationStack | undefined;
@@ -47,40 +47,6 @@ export const replaceTop = ({ stack, next }: PushParams): NavigationStack => ({
   entries: stack.entries.map((entry, index) => (index === stack.index ? next : entry)),
   index: stack.index,
 });
-
-type StudioParams = {
-  readonly stack: NavigationStack;
-  readonly base: Location;
-};
-
-const isSessionStudio = (entry: Location | undefined): boolean =>
-  entry !== undefined &&
-  entry.studio === null &&
-  entry.place.at === 'session' &&
-  entry.place.view.studio !== null;
-
-export const closeSideTrips = ({ stack, base }: StudioParams): NavigationStack => {
-  let floor = stack.index;
-  while (floor >= 0 && isSessionStudio(stack.entries[floor])) {
-    floor -= 1;
-  }
-  return landOn({ stack, floor, base });
-};
-
-type LandParams = {
-  readonly stack: NavigationStack;
-  readonly floor: number;
-  readonly base: Location;
-};
-
-const landOn = ({ stack, floor, base }: LandParams): NavigationStack => {
-  const below = stack.entries[floor];
-  if (below !== undefined && isSameEntry(below, base)) {
-    return { entries: stack.entries.slice(0, floor + 1), index: floor };
-  }
-  const entries = [...stack.entries.slice(0, floor + 1), { ...base, focus: EMPTY_FOCUS }];
-  return { entries, index: entries.length - 1 };
-};
 
 type DropParams = {
   readonly stack: NavigationStack;

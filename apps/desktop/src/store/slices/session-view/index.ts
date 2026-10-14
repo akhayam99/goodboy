@@ -22,7 +22,6 @@ import {
   setFocusedArtifactId,
   setFocusedGithubIssueNumber,
   setFocusedWorkflowRun,
-  setSessionStudio,
 } from './workSurface';
 import { openResolveDiff, setResolveQueueView } from './resolveSurface';
 import { setResolveItemDraft } from './resolveItemDrafts';
@@ -33,13 +32,7 @@ import type { SliceDeps } from '../../slice-types';
 export { isPrReviewSession } from './isPrReviewSession';
 export { EMPTY_RESOLVE_QUEUE_VIEW } from './types';
 export type { SessionViewSlice } from './types';
-export type {
-  SessionStudio,
-  LensKind,
-  DiffFocus,
-  ResolveQueueView,
-  SessionCreationId,
-} from './types';
+export type { LensKind, DiffFocus, ResolveQueueView, SessionCreationId } from './types';
 
 export const createSessionViewSlice = ({ set, get }: SliceDeps): SessionViewSlice => {
   return {
@@ -63,7 +56,6 @@ export const createSessionViewSlice = ({ set, get }: SliceDeps): SessionViewSlic
     openArtifactCreation: openArtifactCreation(set, get),
     awaitArtifactAgent: awaitArtifactAgent(set),
     setFocusedGithubIssueNumber: setFocusedGithubIssueNumber(set),
-    setSessionStudio: setSessionStudio(set),
     setDiffFocus: setDiffFocus(set),
     openDiffLens: openDiffLens(get),
     setResolveQueueView: setResolveQueueView(set),

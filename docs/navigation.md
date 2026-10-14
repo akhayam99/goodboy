@@ -248,7 +248,7 @@ Every view has an address, and one history per window and workspace records
 them. The navigation slice (`store/slices/navigation/`) owns both.
 
 - **A `Location` is where you are plus how the page was.** Its `place` is the
-  board or a session view: lens, open agent, session studio and one target
+  board or a session view: lens, open agent and one target
   (artifact, run, issue, diff focus, Explore project). Its `studio` is the app
   studio open over that place, if any. Its `focus` is the page state: the open
   drawer, selection, scroll and revealed rows. `locationKey` prints the text
@@ -259,11 +259,13 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
 - **One door.** Every move goes through `navigate({ to, mode })`, `back()`,
   `forward()`, `up()` or `amendFocus({ patch })`. `sessionPlace`,
   `agentPlace` and `BOARD_PLACE` build the `to`. The per-session keys the
-  surfaces render from (`activeLens`, `selectedAgentId`, `sessionStudio`, the
+  surfaces render from (`activeLens`, `selectedAgentId`, the
   focused target) are written only by the slice. A contract test
   (`__tests__/navigation/oneDoor.test.ts`) fails when `features/`, `app/` or
-  `shared/` calls `setActiveLens`, `setCurrentSession`, `selectAgent` or
-  `setSessionStudio`.
+  `shared/` calls `setActiveLens`, `setCurrentSession` or `selectAgent`. A session has no
+  studio of its own: the New drawer replaced the session studio, so a place
+  carries a lens, an agent and a target, and only the app studio (`Location.studio`)
+  covers a page.
 - **Aliases live in `canonicalLocation`, and only there.** An agent resolves
   to its home lens (an unknown agent to Agents), before it is recorded, so no
   view redirects after it mounts. The pull request and Comments are two lenses
@@ -291,7 +293,7 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   `__tests__/surfaces/navigation-flows/target-identity.rows.tsx` hold the
   journeys.
 - **Push, amend, replace.** A new place pushes: board and session, session to
-  session, lens, a child, a sibling from a switcher, a session studio. Pushing
+  session, lens, a child, a sibling from a switcher. Pushing
   the place you are on replaces it. Page state amends the current entry and
   never adds one. Canonical rewrites replace. The stack keeps 50 entries and
   lives in memory. Each workspace has its own stack, so switching workspace
@@ -946,14 +948,14 @@ activity yet show the plain overview with its actions.
 
 - **The trail belongs to the page, not to the chrome, and it is mounted
   once.** `TrailBar` sits at the top of `SessionWorkspace`, above every layer
-  (lens, child page, session studio) and outside every animation, in a 40px
+  (lens, child page) and outside every animation, in a 40px
   band (12 above, a 24px row, 4 below) on the same `PageColumn` as the title
   and body. It is never in the top bar and never a full-width strip. Changing
-  lens, opening an agent or opening a session studio keeps the same DOM node;
+  lens or opening an agent keeps the same DOM node;
   only the segments change. The layers under it fade in over 150ms with no
   scale. Panes under the band get one header grammar from `PaneShell`: title,
-  optional tabs, 16 below, no crumb row of their own. A session studio (builder,
-  merge request, Bitbucket) has no second title bar: its title is the crumb,
+  optional tabs, 16 below, no crumb row of their own. A form page (merge request,
+  Bitbucket) has no second title bar: its title is the crumb,
   and Esc or the parent crumb is Up.
 - **The band has one right slot, and Ask holds it.** `TrailBar` takes an `end`
   node outside the `PageColumn`, at the right end of the band.
@@ -2393,7 +2395,7 @@ page keeps its width at every frame, and the card and scrim stay mounted for
 `DRAWER_EXIT_MS` (160ms) while they fade and slide 8px right (`drawer-overlay-out`;
 only the fade, `drawer-fade-out`, under reduced motion). The exit card is a
 frozen copy of the DOM the drawer had, so its escape layers, focus and handlers
-are gone the moment it closes (a drawer that holds a `canvas`, such as the terminal, is not copied and closes at once with no exit): the aside, the card and the scrim are `inert` or
+are gone the moment it closes (a drawer that holds a `canvas`, `iframe`, `video`, `audio` or `webview`, or more than `DRAWER_EXIT_MAX_ELEMENTS` (2000) elements, is not copied and closes at once with no exit; the copy is taken in a layout effect, before paint, never during render): the aside, the card and the scrim are `inert` or
 `pointer-events-none`, the page is not `inert`, and a click on the page behind
 works at once. Reopening during the exit cancels it and shows the drawer as it
 stands, without playing the entry again.

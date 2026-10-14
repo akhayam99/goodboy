@@ -59,7 +59,7 @@ export {
   useWorkspaces,
 } from './slices/workspaces/selectors';
 export { useTranscript } from './slices/transcripts/selectors';
-export type { SessionStudio, LensKind, DiffFocus } from './slices/session-view';
+export type { LensKind, DiffFocus } from './slices/session-view';
 export { NO_PROJECT_FILTER_ID } from './slices/sessionFilters';
 export { BOARD_PLACE, agentPlace, branchPlace, sessionPlace } from './slices/navigation/place';
 export type { Location as NavigationLocation } from './slices/navigation/types';

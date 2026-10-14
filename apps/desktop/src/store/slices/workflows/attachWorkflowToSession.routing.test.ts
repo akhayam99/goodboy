@@ -103,7 +103,6 @@ const baseState = (): StoreState => ({
   agentEffortOverride: {},
   focusedWorkflowRunId: {},
   activeLens: {},
-  sessionStudio: {},
   selectedAgentId: {},
   diffFocus: {},
   lensHistory: {},

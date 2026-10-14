@@ -57,7 +57,7 @@ const sessionView = (lens: string | null) => ({
   place: {
     at: 'session',
     sessionId: SESSION_ID,
-    view: { lens, agentId: null, studio: null, target: null },
+    view: { lens, agentId: null, target: null },
   },
   studio: null,
   focus: { drawer: null, selection: {}, scroll: {}, revealed: [] },

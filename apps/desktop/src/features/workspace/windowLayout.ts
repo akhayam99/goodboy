@@ -1,7 +1,12 @@
-import type { WorkspaceId } from '@goodboy/types';
+import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { deleteSetting, listSettingsWithPrefix, setSetting } from '@goodboy/db';
 import { tauriDatabase } from '../../shared/lib/db';
-import { EMPTY_FOCUS, type Focus, type Location } from '../../store/slices/navigation/types';
+import {
+  EMPTY_FOCUS,
+  type Focus,
+  type Location,
+  type SessionView,
+} from '../../store/slices/navigation/types';
 
 const WINDOW_LAYOUT_PREFIX = 'window.layout.';
 
@@ -20,24 +25,38 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const isNullableString = (value: unknown): value is string | null =>
   value === null || typeof value === 'string';
 
-const isPlace = (value: unknown): value is Location['place'] => {
+type PlaceParams = {
+  readonly value: unknown;
+};
+
+const placeOf = ({ value }: PlaceParams): Location['place'] | null => {
   if (!isRecord(value)) {
-    return false;
+    return null;
   }
   if (value.at === 'board') {
-    return true;
+    return { at: 'board' };
   }
   if (value.at !== 'session' || typeof value.sessionId !== 'string') {
-    return false;
+    return null;
   }
   const view = value.view;
-  return (
-    isRecord(view) &&
-    isNullableString(view.lens) &&
-    isNullableString(view.agentId) &&
-    (view.studio === null || isRecord(view.studio)) &&
-    (view.target === null || isRecord(view.target))
-  );
+  if (
+    !isRecord(view) ||
+    !isNullableString(view.lens) ||
+    !isNullableString(view.agentId) ||
+    !(view.target === null || isRecord(view.target))
+  ) {
+    return null;
+  }
+  return {
+    at: 'session',
+    sessionId: value.sessionId as SessionId,
+    view: {
+      lens: view.lens as SessionView['lens'],
+      agentId: view.agentId as SessionView['agentId'],
+      target: view.target as SessionView['target'],
+    },
+  };
 };
 
 const focusOf = ({ value }: { readonly value: unknown }): Focus => {
@@ -71,12 +90,16 @@ const focusOf = ({ value }: { readonly value: unknown }): Focus => {
 };
 
 export const parseLocation = ({ value }: { readonly value: unknown }): Location | null => {
-  if (!isRecord(value) || !isPlace(value.place)) {
+  if (!isRecord(value)) {
+    return null;
+  }
+  const place = placeOf({ value: value.place });
+  if (place === null) {
     return null;
   }
   return {
     workspaceId: typeof value.workspaceId === 'string' ? (value.workspaceId as WorkspaceId) : null,
-    place: value.place,
+    place,
     studio: isRecord(value.studio) ? (value.studio as unknown as Location['studio']) : null,
     focus: focusOf({ value: value.focus }),
   };

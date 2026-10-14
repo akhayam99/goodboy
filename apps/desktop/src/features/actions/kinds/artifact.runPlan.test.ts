@@ -404,7 +404,6 @@ describe('Approve from the palette, the menu and the Artifacts page', () => {
         view: {
           lens: 'workflows',
           agentId: null,
-          studio: null,
           target: { kind: 'run', runId: RUN_ID },
         },
       },

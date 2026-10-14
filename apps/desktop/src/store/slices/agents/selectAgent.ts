@@ -50,7 +50,6 @@ export const selectAgent = (set: SetFn, get: GetFn) => {
           sessionId,
           focus: { kind: 'agent', agentId },
           activeLens: state.activeLens,
-          sessionStudio: state.sessionStudio,
           selectedAgentId: state.selectedAgentId,
         }),
       );

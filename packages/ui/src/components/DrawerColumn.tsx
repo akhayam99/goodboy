@@ -122,6 +122,15 @@ export const DrawerColumn = ({
   const isOverlayOpen = isOpen && isOverlay;
   const exit = useDrawerExit({ isOpen, layoutMode: layout.mode, cardRef });
   const isExiting = exit.isExiting;
+  const isCapturing = exit.isCapturing;
+  const lastDrawerRef = useRef<ReactNode>(null);
+  if (isOpen) {
+    lastDrawerRef.current = drawer;
+  }
+  const shownDrawer = isOpen ? drawer : lastDrawerRef.current;
+  if (!isOpen && !isCapturing) {
+    lastDrawerRef.current = null;
+  }
   const isFloating = isOverlay || isExiting || (mode === 'closed' && exit.lastMode === 'overlay');
   const asideWidth = drawerAsideWidthOf({
     width: layout.width,
@@ -212,7 +221,7 @@ export const DrawerColumn = ({
           'duration-180 ease-out',
         )}
       >
-        {isOpen || isExiting ? (
+        {isOpen || isCapturing || isExiting ? (
           <div
             className={cn(
               'flex min-h-0 min-w-0 flex-1',
@@ -260,7 +269,7 @@ export const DrawerColumn = ({
                   !isExiting && 'motion-safe:animate-drawer-swap',
                 )}
               >
-                {isOpen ? drawer : null}
+                {isOpen || isCapturing ? shownDrawer : null}
               </div>
             </div>
           </div>

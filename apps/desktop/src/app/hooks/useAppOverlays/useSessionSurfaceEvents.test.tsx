@@ -69,7 +69,6 @@ describe('the open workflow builder event', () => {
       payload: { tab: 'run' },
     });
     expect(useAppStore.getState().activeLens[PLAN_FIXTURE_SESSION]).toBeNull();
-    expect(useAppStore.getState().sessionStudio[PLAN_FIXTURE_SESSION] ?? null).toBeNull();
   });
 
   it('goes to the session the event names before it opens the drawer', () => {
@@ -82,10 +81,25 @@ describe('the open workflow builder event', () => {
     expect(useAppStore.getState().drawer).toMatchObject({ kind: 'new', sessionId: other.id });
   });
 
-  it('ignores an event that names no session', () => {
+  it('opens the New drawer on the current session when the event names none', () => {
+    fireBuilder({ detail: {} });
+
+    expect(close).toHaveBeenCalledTimes(1);
+    expect(useAppStore.getState().drawer).toEqual({
+      kind: 'new',
+      sessionId: PLAN_FIXTURE_SESSION,
+      payload: { tab: 'run' },
+    });
+    expect(useAppStore.getState().currentSessionId).toBe(PLAN_FIXTURE_SESSION);
+  });
+
+  it('does nothing when the event names no session and no session is open', () => {
+    useAppStore.setState({ currentSessionId: null });
+
     fireBuilder({ detail: {} });
 
     expect(useAppStore.getState().drawer).toBeNull();
+    expect(useAppStore.getState().currentSessionId).toBeNull();
     expect(close).not.toHaveBeenCalled();
   });
 });

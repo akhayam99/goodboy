@@ -173,7 +173,7 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
         to: {
           at: 'session',
           sessionId: ctx.sessionId,
-          view: { lens: null, agentId: null, studio: null, target: null },
+          view: { lens: null, agentId: null, target: null },
         },
       });
       await settle();
