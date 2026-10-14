@@ -95,6 +95,12 @@
           "also": "ask an agent"
         },
         {
+          "title": "Start more work in a session",
+          "text": "New in a session opens one drawer with Run, Agent and Write. Run plans the steps from a goal, Agent starts one role and Write drafts a report or a wireframe.",
+          "group": "Start a task",
+          "also": "new in a session"
+        },
+        {
           "title": "Undo an unlink",
           "text": "Link work adds a task. Unlink acts at once and shows an Undo toast for about 10 seconds, and the Log keeps a Re-link. Cmd+Z undoes the last app operation when focus is not in a text field.",
           "group": "Start a task",
@@ -511,10 +517,10 @@
           "shown": true
         },
         {
-          "title": "When to ask",
-          "text": "Choose when a run asks: before each step, once after the plan, or run on its own. A guard stops an agent after four unattended turns in an hour.",
+          "title": "Autonomy",
+          "text": "Choose how often a run stops for you: Ask me, Balanced to approve once and run on, or Autopilot. A guard stops an agent after four unattended turns in an hour.",
           "group": "Workflows",
-          "also": "when to ask",
+          "also": "autonomy",
           "shown": true
         },
         {
@@ -678,6 +684,12 @@
           "text": "Turn review comments into commits without writing the fix yourself. Fix comments opens one drawer beside the page, and one agent works through the comments you check. Each ends in a fix to apply, a question, a reply or a retry.",
           "group": "Review and resolve on the Branch page",
           "main": true
+        },
+        {
+          "title": "Hints when a fix starts",
+          "text": "Add a hint above any button that starts a fix. The agent weighs it below its role and tool limits, and it is never posted to the host.",
+          "group": "Review and resolve on the Branch page",
+          "also": "fix hints"
         },
         {
           "title": "Bulk actions",
@@ -1199,6 +1211,12 @@
           "group": "Agents",
           "also": "subagents",
           "shown": true
+        },
+        {
+          "title": "Auto agent",
+          "text": "Try an agent that picks the roles, models and next steps for you. It is an experiment, off until you turn it on in Settings, and you can stop it or take an agent back.",
+          "group": "Agents",
+          "also": "auto agent"
         },
         {
           "title": "History rewriter and Scribe",
