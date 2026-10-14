@@ -16,6 +16,8 @@ export type SessionDraft = {
   readonly projectId: ProjectId | null;
   readonly agentKind: AgentKind;
   readonly agentRouting: AgentKindRouting | null;
+  readonly autoGoal: string;
+  readonly autoRouting: AgentKindRouting | null;
 };
 
 export const EMPTY_SESSION_DRAFT: SessionDraft = {
@@ -30,6 +32,8 @@ export const EMPTY_SESSION_DRAFT: SessionDraft = {
   projectId: null,
   agentKind: 'scout',
   agentRouting: null,
+  autoGoal: '',
+  autoRouting: null,
 };
 
 export type SessionDraftState = {

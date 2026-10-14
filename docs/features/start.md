@@ -4,7 +4,7 @@ Begin from an issue, a workflow or a question. Everything starts as one draft, a
 
 ### How do you want to start?
 
-The **New session** draft has three tabs: **Pick up a task**, **Run a workflow** and **Ask an agent**. Esc closes the page and takes you back to where you were. If you wrote something, Esc asks whether to keep the draft or discard it, and keeping it leaves **New session** ready with your text. **Discard draft** throws it away and leaves the page.
+The **New session** draft has one compact selector with three choices: **Pick up a task**, **Run a workflow** and **Ask an agent**, and a line under it that says what the selected one does. **Discard draft** (once you wrote something) and **Start blank** sit at the end of the same row. Run a workflow and Ask an agent are the same form as in the **New** drawer, at page width, and a spend cap that is switched on needs an amount with a preset too. Esc closes the page and takes you back to where you were. If you wrote something, Esc asks whether to keep the draft or discard it, and keeping it leaves **New session** ready with your text. **Discard draft** throws it away and leaves the page.
 
 ### Pick up a task, with a drafted brief
 

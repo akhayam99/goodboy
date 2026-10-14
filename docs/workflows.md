@@ -39,7 +39,8 @@ it. From the top:
   "Orchestrated workflow", so the name never blocks the start. If you rename a
   preset, you get a new workflow of your own and the shared preset keeps its
   name.
-- **Goal**: what the run should do. **Add files**, **Use session goal**,
+- **Goal**: what the run should do. **Add files**, **Use session goal**
+  (never on the New session page: a new session has no goal yet),
   **Undo** and **Polish** sit inside the field.
 - **Mode**, with one line under it that says what the mode does, and the
   mode's own control on the right of the same row.

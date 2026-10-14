@@ -12,7 +12,7 @@ type Props = {
 
 const START_BLANK_HINT = 'Create the session now. Set the goal and the rest on its Overview.';
 
-export const SessionDraftHeader = ({ workspaceId }: Props) => {
+export const SessionDraftActions = ({ workspaceId }: Props) => {
   const hasContent = useAppStore((state) =>
     hasSessionDraftContent({ draft: selectSessionDraft({ state, workspaceId }) }),
   );
@@ -35,8 +35,7 @@ export const SessionDraftHeader = ({ workspaceId }: Props) => {
   };
 
   return (
-    <div className="flex min-w-0 items-center gap-2">
-      <h1 className="min-w-0 flex-1 truncate text-title text-faint-foreground">New session</h1>
+    <div className="flex shrink-0 items-center gap-2">
       {hasContent ? (
         <Button variant="ghost" size="sm" onClick={() => discardSessionDraft({ workspaceId })}>
           Discard draft

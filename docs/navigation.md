@@ -786,7 +786,15 @@ the goal, projects and work are added from the usual controls. Nothing is
 required first, and the draft stays for the next New.
 
 The draft asks one question, "How do you want to start?", with three choices
-on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
+on one row as compact tabs (`StartChoiceTabs`, `SegmentedTabs` pill variant) with
+**Discard draft** and **Start blank** (`SessionDraftActions`) at the end of the same
+row. One line under the row describes the selected choice (`startChoiceLine`, the
+copy in `shared/lib/startCopy.ts` that the New drawer reads too): none sits under
+the other options. The page has no `h1` of its own, the trail names it (a screen
+reader heading stays). The Run lane and the Agent block are the New drawer's, at
+page width: the lane is `WorkflowBuilderView` with a `kickoff` target and the
+Auto state is `AutoComposerView`, which `AutoComposer` (drawer, bound to a session)
+and `AutoStart` (page, bound to the draft) both draw.
 
 - **Pick up a task** shows the open issues of the connected trackers with a
   search field. Picking one with **Pick HBL-412** (or a double click, or Enter
@@ -806,7 +814,11 @@ on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
   maps to a project (`launchMountFor`, the Tasks rule: a GitHub or GitLab repo
   path, or a Sentry project linked or code-mapped to a project) a
   `LaunchMountRow` above the choice says which project the session works in
-  and why, and lets you pick another or none. **Start from HBL-412**, on the
+  and why. With one candidate project it is one plain line (`variant="line"`,
+  `In payments-api, from GitHub repo harborline/payments-api.`) with no chip;
+  with several it stays the project chip, which lets you pick another or none
+  (the Launch session panel always draws the chip). The way to start is
+  labelled `Then:`. **Start from HBL-412**, on the
   workflow side and on the agent side, links the issue, mounts that project, creates the session and
   starts the run or agent in one gesture (`startSessionFromDraft`, kind
   `task` with a `mount` and a `then`), and raises one **Follow** toast
@@ -865,8 +877,16 @@ reach NW-230 anymore`. Pick up a task shows only the open starred issues,
   the workflow and attaches the run to it in the same action, and the view
   lands on the run. A failure removes the half-created session and keeps the
   draft. Before a session exists the builder leaves out Use session goal, the
+  Discard button of its launch bar (the row's Discard draft does it), the
   title suggestion (the orchestrated title is generated after start, as in a
   session) and the worktree as the planner's working folder.
+- **Ask an agent** with the Auto experiment on (`useAutoExperiment`) is the
+  Auto composer (`AutoStart`): one goal with files, one model chip, **Start Auto**,
+  no role list, no project field, no guidance. Its goal and model live in the
+  draft (`autoGoal`, `autoRouting`) and count as written for Discard draft. Start
+  runs `startSessionFromDraft` kind `scout` with the generic agent, the goal as
+  its prompt and the chosen routing. With the experiment off the choice is the
+  next one.
 - **Ask an agent** (`AgentStart`) is the real chat composer's field: role,
   model and project sit below it as chips (`AgentStartFields`), opening the
   same role grid and model picker `Start agent` uses. The role defaults to

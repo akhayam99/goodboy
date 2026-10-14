@@ -77,6 +77,7 @@ import { OrchestrateLane } from './parts/OrchestrateLane';
 import { PresetLane, type PresetLaneRow } from './parts/PresetLane';
 import { PlanEstimateChip } from './parts/PlanEstimateChip';
 import { usePlanEstimates } from './usePlanEstimates';
+import { offeredSessionGoal } from './offeredSessionGoal';
 
 export type BuilderKickoff = {
   readonly workspaceId: WorkspaceId;
@@ -495,7 +496,7 @@ export const WorkflowBuilderView = (props: Props) => {
   const resolvedModel = (step: StepDraft): string =>
     step.model !== '' ? step.model : recommendedModel(step);
 
-  const sessionGoal = (sessionSlots.find((s) => s.key === 'goal')?.value ?? '').trim();
+  const sessionGoal = offeredSessionGoal({ slots: sessionSlots, isKickoff: kickoff !== null });
   const selectedPreset = presets.find((t) => t.id === selectedPresetId) ?? null;
 
   const replaceGoal = (next: string) => {
@@ -1047,7 +1048,7 @@ export const WorkflowBuilderView = (props: Props) => {
         isStartDisabled={startGate.isDisabled}
         isStarting={busy}
         label={kickoff?.primaryLabel ?? null}
-        canDiscard={slots === undefined && !draftEmpty}
+        canDiscard={kickoff === null && slots === undefined && !draftEmpty}
         onDiscard={resetDraft}
         onStart={() => void onStart()}
       />

@@ -35,7 +35,7 @@ const AGENT_COMPOSERS: Readonly<Record<string, ReadonlyArray<Kind>>> = {
   'features/wireframes/components/WireframeViewer/ChangeComposer.tsx': ['document'],
   'features/workspace-chat/components/TurnIntoWorkPanel/index.tsx': ['document'],
   'features/session/components/AgentInstructionsField.tsx': ['document'],
-  'features/session/components/AutoComposer.tsx': ['message'],
+  'features/session/components/AutoComposerView.tsx': ['message'],
   'features/chat/components/AgentTranscriptDrawer/index.tsx': ['message'],
   'features/explore/components/ExplorePane/ExploreSpawnPopover.tsx': ['document'],
   'features/permissions/components/PermissionRequestCard/index.tsx': ['document'],

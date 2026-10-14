@@ -10,6 +10,7 @@ import type {
   NewDrawerWriteKind,
 } from '../../../../store/slices/drawer/state';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { AGENT_LINE, AUTO_AGENT_LINE, RUN_LINE } from '../../../../shared/lib/startCopy';
 import { WorkflowBuilderView } from '../../../workflows/components/WorkflowBuilderView';
 import { hasActiveWorkflowRun } from '../../../workflows/activeWorkflowRuns';
 import { useNewDrawerTab } from '../../hooks/useNewDrawerTab';
@@ -30,9 +31,6 @@ const TAB_OPTIONS: ReadonlyArray<SegmentedTabOption<NewDrawerTab>> = [
   { value: 'write', label: 'Write', icon: CONCEPT_ICONS.report },
 ];
 
-const RUN_LINE = 'Several agents work through your goal, step by step.';
-const AGENT_LINE = 'One agent in the role you pick.';
-const AUTO_AGENT_LINE = 'Auto answers, or hands the work to the roles it picks.';
 const WRITE_LINE = 'A report or a wireframe, written from this session.';
 
 type LineParams = {

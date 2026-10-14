@@ -335,6 +335,10 @@ new-drawer-run-guidance
 new-drawer-run-preset
 new-drawer-write
 new-drawer-write-wireframe
+new-session-page-agent
+new-session-page-agent-auto
+new-session-page-run
+new-session-page-run-preset
 next-step-rebase
 notifications
 notifications-delete-all
