@@ -2272,6 +2272,18 @@ The column and measure pages are centred, and the column slides left to
 re-centre in the space left of the drawer (full tier work surfaces keep their
 left edge and give up their right).
 
+**The thresholds are fixed.** The default side drawer (400) pushes from a 1024
+column and the default reader (720) from a 1344 column; below that they lie over
+the page. `drawerGeometry.test.ts` pins both numbers and
+`regressions/drawer-rule.test.ts` fails a drawer that measures the window, reads
+a breakpoint or calls `drawerLayoutOf` outside `DrawerColumn`, so every
+width-dependent drawer (fix run, CI fix, terminal, the rest of `DrawerHost`)
+goes through `DrawerColumn`. A drawer that must never push, such as the New
+drawer, passes `placement="overlay"` (`drawerPlacement` on `AppShell`): it lies
+over the page at its saved width at every column width. Crossing the threshold
+with a drawer open swaps the mode in place and keeps focus in the drawer; if
+focus was on the page it moves into the drawer, never to the body.
+
 **Over the page, the drawer container runs the full height of the sheet.** It
 has no inset: flush with the sheet's top, bottom and right edges, left corners
 rounded (`rounded-l-frame`), a left border only, `shadow-xl`, the same
@@ -2287,6 +2299,19 @@ ease-out (none under reduced motion), and the centred column slides with it
 while the card slides 8px in; over the page it slides in 200ms; a new kind in
 an open drawer fades its content in 120ms. It never touches the sidebar
 preference: the page does not fold the sidebar to keep a drawer pushing.
+
+**Closing never moves the page behind a drawer.** `DrawerColumn` remembers the
+last mode the drawer was open in (`useDrawerExit`). Closed from pushing, the
+aside stays in the flow and its width eases to 0 in 180ms, as above. Closed from
+over the page, the aside stays out of the flow with no width transition, so the
+page keeps its width at every frame, and the card and scrim stay mounted for
+`DRAWER_EXIT_MS` (160ms) while they fade and slide 8px right (`drawer-overlay-out`;
+only the fade, `drawer-fade-out`, under reduced motion). The exit card is a
+frozen copy of the DOM the drawer had, so its escape layers, focus and handlers
+are gone the moment it closes (a drawer that holds a `canvas`, such as the terminal, is not copied and closes at once with no exit): the aside, the card and the scrim are `inert` or
+`pointer-events-none`, the page is not `inert`, and a click on the page behind
+works at once. Reopening during the exit cancels it and shows the drawer as it
+stands, without playing the entry again.
 
 One drawer at a time, per window. The `drawer` store slice holds
 `{ kind, sessionId, payload }`: `openDrawer`, `closeDrawer` and `toggleDrawer`

@@ -160,7 +160,9 @@ column). The drawer pushes only while the page container keeps 560px plus its
 lies over the page, full height, with a scrim and an `inert` page, never
 squeezed. `sizing` on `DrawerColumn` is `side` (400, drag 384 to 560), `reader`
 (720, drag 480 to 1000) or `full` (the whole column, always over the page); each
-tier has its own saved width and a handle. The pure geometry lives in
+tier has its own saved width and a handle. `placement="overlay"` skips the push
+rule for a drawer that always lies over the page; the thresholds (1024 for
+`side`, 1344 for `reader`) are pinned by `drawerGeometry.test.ts`. The pure geometry lives in
 `packages/ui/src/drawerGeometry.ts` (`drawerLayoutOf`, with `drawerWidthOf`,
 `drawerModeOf` and `mainWidthOf` on top of it) and `drawerGeometry.test.ts`
 sweeps every main from 600 to 2400 and runs a width matrix: 1024, 1440 and
@@ -169,7 +171,8 @@ sweeps every main from 600 to 2400 and runs a width matrix: 1024, 1440 and
 checks the pushing card ends 8px inside the aside and the overlay card ends on
 the column edge. `drawer-card-in` and `drawer-overlay-in` slide at most the
 8px inset; the overlay card starts that far outside the sheet and is clipped by
-it. `DrawerColumn.test.tsx` pins the structure that math assumes (the two
+it. `drawer-overlay-out` and `drawer-fade-out` run `DRAWER_EXIT_MS`
+(160ms) while `useDrawerExit` keeps the overlay card mounted after a close. `DrawerColumn.test.tsx` pins the structure that math assumes (the two
 containers as siblings, an 8px `w-2` handle gutter, the track's `pr-2`, the
 overlay container's `rounded-l-frame` and `border-l`, the track's min width).
 [navigation.md](navigation.md#the-right-drawer) owns what goes in it.

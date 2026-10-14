@@ -36,6 +36,7 @@ export {
 export type { DrawerColumnFrame, DrawerColumnProps } from './components/DrawerColumn';
 export {
   COLUMN_FRAME,
+  DRAWER_EXIT_MS,
   DRAWER_INSET,
   READER_DRAWER_DEFAULT,
   READER_DRAWER_MAX,
@@ -48,7 +49,7 @@ export {
   mainWidthOf,
   pageBoxOf,
 } from './drawerGeometry';
-export type { DrawerMode, DrawerSizing, PageTier } from './drawerGeometry';
+export type { DrawerMode, DrawerPlacement, DrawerSizing, PageTier } from './drawerGeometry';
 export { DrawerFrame } from './components/DrawerFrame';
 export { Trail } from './components/Trail';
 export type { TrailSegmentModel } from './components/Trail/types';

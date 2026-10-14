@@ -7,10 +7,13 @@ export const READER_DRAWER_DEFAULT = 720;
 export const COLUMN_MIN_PUSH = 560;
 export const COLUMN_GUTTERS = 48;
 export const DRAWER_INSET = 8;
+export const DRAWER_EXIT_MS = 160;
 
 export type DrawerSizing = 'side' | 'reader';
 
 export type DrawerMode = 'closed' | 'push' | 'overlay';
+
+export type DrawerPlacement = 'auto' | 'overlay';
 
 type TierBounds = {
   readonly min: number;
@@ -46,12 +49,18 @@ type LayoutParams = {
   readonly main: number;
   readonly sizing: DrawerSizing;
   readonly savedWidth: number;
+  readonly placement?: DrawerPlacement;
 };
 
-export const drawerLayoutOf = ({ main, sizing, savedWidth }: LayoutParams): DrawerLayout => {
+export const drawerLayoutOf = ({
+  main,
+  sizing,
+  savedWidth,
+  placement = 'auto',
+}: LayoutParams): DrawerLayout => {
   const tier = DRAWER_TIERS[sizing];
   const room = pushRoomOf(main);
-  if (room >= savedWidth) {
+  if (placement === 'auto' && room >= savedWidth) {
     return {
       mode: 'push',
       width: savedWidth,

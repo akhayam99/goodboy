@@ -41,8 +41,11 @@ export const DRAWER_ROWS: ReadonlyArray<Row> = [
         expect(selectOpenDrawer(useAppStore.getState())).toBeNull();
         expect(sidePanel().getAttribute('data-drawer-mode')).toBe('closed');
       }, WAIT);
-      expect(scrimOf()).toBeNull();
       expect(pageUnderDrawer().hasAttribute('inert')).toBe(false);
+      expect(scrimOf()?.className).toContain('pointer-events-none');
+      await waitFor(() => {
+        expect(scrimOf()).toBeNull();
+      }, WAIT);
       expect(document.activeElement).toBe(await askButton());
     },
   },

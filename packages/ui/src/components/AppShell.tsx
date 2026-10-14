@@ -2,7 +2,7 @@ import { useState, type CSSProperties, type ReactNode } from 'react';
 import { cn } from '../cn';
 import { SHEET_CLASSES, type ResizeActivity } from '../sheet';
 import { DrawerColumn } from './DrawerColumn';
-import type { DrawerSizing } from '../drawerGeometry';
+import type { DrawerPlacement, DrawerSizing } from '../drawerGeometry';
 import { ResizeHandle } from './ResizeHandle';
 import { StudioSlotContext } from '../studioSlotContext';
 import { useResizableWidth } from '../useResizableWidth';
@@ -17,6 +17,7 @@ export type AppShellProps = {
   readonly main: ReactNode;
   readonly drawer?: ReactNode;
   readonly drawerSizing?: DrawerSizing;
+  readonly drawerPlacement?: DrawerPlacement;
   readonly studio?: ReactNode;
   readonly studioCoversLeft?: boolean;
   readonly className?: string;
@@ -95,6 +96,7 @@ export const AppShell = ({
   main,
   drawer,
   drawerSizing,
+  drawerPlacement,
   studio,
   studioCoversLeft = true,
   className,
@@ -167,6 +169,7 @@ export const AppShell = ({
             main={main}
             drawer={drawer ?? null}
             sizing={drawerSizing}
+            placement={drawerPlacement}
             frame="sheet"
             sheetEdge={isSheetWrapped ? 'wrapped' : 'flush'}
             leftResize={isLeftResizeDisabled ? 'idle' : leftResize}

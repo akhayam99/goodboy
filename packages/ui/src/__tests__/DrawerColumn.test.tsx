@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_MAX } from '../components/AppShell';
 import {
   DrawerColumn,
@@ -17,6 +17,7 @@ import {
   RIGHT_DRAWER_DEFAULT,
   RIGHT_DRAWER_MAX,
   RIGHT_DRAWER_MIN,
+  DRAWER_EXIT_MS,
   canDrawerPush,
   drawerAsideWidthOf,
   drawerLayoutOf,
@@ -38,6 +39,26 @@ const stubColumnWidth = (width: number) => {
     disconnect() {}
   }
   vi.stubGlobal('ResizeObserver', StubObserver);
+};
+
+const driveColumnWidth = (initial: number) => {
+  const callbacks: ObserverCallback[] = [];
+  class DrivenObserver {
+    private readonly callback: ObserverCallback;
+    constructor(callback: ObserverCallback) {
+      this.callback = callback;
+      callbacks.push(callback);
+    }
+    observe() {
+      this.callback([{ contentRect: { width: initial } }]);
+    }
+    disconnect() {}
+  }
+  vi.stubGlobal('ResizeObserver', DrivenObserver);
+  return (width: number) =>
+    act(() => {
+      callbacks.forEach((callback) => callback([{ contentRect: { width } }]));
+    });
 };
 
 const renderColumn = (drawer: string | null) =>
@@ -658,5 +679,298 @@ describe('DrawerColumn as two containers', () => {
     stubColumnWidth(900);
     const over = renderSized('reader', 'sheet');
     expect(containers(over.container).drawer?.className).toContain('bg-drawer');
+  });
+});
+
+describe('DrawerColumn one rule for every width', () => {
+  it.each([
+    ['side', 1023, 'overlay'],
+    ['side', 1024, 'push'],
+    ['reader', 1343, 'overlay'],
+    ['reader', 1344, 'push'],
+  ] as const)('lays the %s drawer at a %i column as %s', (sizing, width, mode) => {
+    stubColumnWidth(width);
+    renderSized(sizing);
+
+    expect(panel().getAttribute('data-drawer-mode')).toBe(mode);
+  });
+
+  it.each([1094, 800])('keeps a fixed overlay drawer over a %i column at 720', (width) => {
+    stubColumnWidth(width);
+    render(
+      <DrawerColumn
+        main={<div>main</div>}
+        drawer={<div>New</div>}
+        sizing="reader"
+        placement="overlay"
+        ariaLabel="Side panel"
+        resizeLabel="Resize side panel"
+      />,
+    );
+
+    expect(panel().getAttribute('data-drawer-mode')).toBe('overlay');
+    expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + DRAWER_INSET}px`);
+    expect(scrim()).not.toBeNull();
+  });
+
+  it('keeps a fixed overlay drawer over even a column wide enough to push', () => {
+    stubColumnWidth(2400);
+    render(
+      <DrawerColumn
+        main={<div>main</div>}
+        drawer={<div>New</div>}
+        sizing="reader"
+        placement="overlay"
+        ariaLabel="Side panel"
+        resizeLabel="Resize side panel"
+      />,
+    );
+
+    expect(panel().getAttribute('data-drawer-mode')).toBe('overlay');
+  });
+
+  it('keeps the focus inside the drawer while a resize takes it from pushing to over the page', () => {
+    const resize = driveColumnWidth(1200);
+    render(
+      <DrawerColumn
+        main={<button type="button">page action</button>}
+        drawer={<textarea aria-label="Ask" />}
+        ariaLabel="Side panel"
+        resizeLabel="Resize side panel"
+      />,
+    );
+    const field = screen.getByRole('textbox', { name: 'Ask' });
+    field.focus();
+    expect(panel().getAttribute('data-drawer-mode')).toBe('push');
+
+    resize(900);
+
+    expect(panel().getAttribute('data-drawer-mode')).toBe('overlay');
+    expect(screen.getByRole('textbox', { name: 'Ask' })).toBe(field);
+    expect(document.activeElement).toBe(field);
+
+    resize(1200);
+
+    expect(panel().getAttribute('data-drawer-mode')).toBe('push');
+    expect(screen.getByRole('textbox', { name: 'Ask' })).toBe(field);
+    expect(document.activeElement).toBe(field);
+  });
+
+  it('moves the focus into the drawer when a resize puts it over the focused page', () => {
+    const resize = driveColumnWidth(1200);
+    render(
+      <DrawerColumn
+        main={<button type="button">page action</button>}
+        drawer={<button type="button">Close panel</button>}
+        ariaLabel="Side panel"
+        resizeLabel="Resize side panel"
+      />,
+    );
+    screen.getByRole('button', { name: 'page action' }).focus();
+
+    resize(900);
+
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Close panel' }));
+  });
+});
+
+describe('DrawerColumn closing', () => {
+  const column = (drawer: string | null) => (
+    <DrawerColumn
+      main={<button type="button">page action</button>}
+      drawer={drawer === null ? null : <div>{drawer}</div>}
+      ariaLabel="Side panel"
+      resizeLabel="Resize side panel"
+    />
+  );
+  const required = (node: HTMLElement | null): HTMLElement => {
+    if (node === null) {
+      throw new Error('element is not mounted');
+    }
+    return node;
+  };
+  const page = () => required(document.querySelector<HTMLElement>('[data-drawer-main]'));
+  const advance = (ms: number) =>
+    act(() => {
+      vi.advanceTimersByTime(ms);
+    });
+  const openThenClose = (columnWidth: number) => {
+    stubColumnWidth(columnWidth);
+    const view = render(column('drafts'));
+    view.rerender(column(null));
+    return view;
+  };
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('runs the exit for 160ms, as long as the entry', () => {
+    expect(DRAWER_EXIT_MS).toBe(160);
+  });
+
+  it.each([0, 16, 200])(
+    'never moves the page when it closes from over the page, read at %ims',
+    (elapsed) => {
+      openThenClose(678);
+      const before = page().className;
+      advance(elapsed);
+
+      expect(panel().className).toContain('absolute');
+      expect(panel().className).not.toContain('transition-[width]');
+      expect(panel().className).not.toMatch(/(^|\s)relative(\s|$)/);
+      expect(page().className).toBe(before);
+      expect(page().style.width).toBe('');
+      expect(page().hasAttribute('inert')).toBe(false);
+    },
+  );
+
+  it('keeps the card and the scrim mounted for the exit, then unmounts both', () => {
+    openThenClose(678);
+
+    expect(card()).not.toBeNull();
+    expect(scrim()).not.toBeNull();
+    expect(card()?.textContent).toBe('drafts');
+    expect(panel().getAttribute('data-drawer-exit')).toBe('');
+
+    advance(DRAWER_EXIT_MS - 1);
+    expect(card()).not.toBeNull();
+
+    advance(1);
+
+    expect(card()).toBeNull();
+    expect(scrim()).toBeNull();
+    expect(panel().getAttribute('data-drawer-exit')).toBeNull();
+    expect(panel().style.width).toBe('0px');
+  });
+
+  it('fades the card and the scrim out instead of cutting them', () => {
+    openThenClose(678);
+
+    expect(card()?.className).toContain('animate-drawer-overlay-out');
+    expect(card()?.className).toContain('motion-reduce:animate-drawer-fade-out');
+    expect(scrim()?.className).toContain('animate-drawer-fade-out');
+  });
+
+  it('treats the drawer as closed the moment the exit starts', () => {
+    const under = vi.fn();
+    cleanups.push(registerEscapeLayer(under));
+    openThenClose(678);
+
+    expect(panel().getAttribute('data-drawer-mode')).toBe('closed');
+    expect(panel().hasAttribute('inert')).toBe(true);
+    expect(card()?.hasAttribute('inert')).toBe(true);
+    expect(card()?.className).toContain('pointer-events-none');
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(under).toHaveBeenCalledOnce();
+  });
+
+  it('lets a click on the page behind go through at once: the scrim catches nothing', () => {
+    const over = vi.fn();
+    cleanups.push(registerEscapeLayer(over));
+    openThenClose(678);
+
+    expect(scrim()?.className).toContain('pointer-events-none');
+    fireEvent.click(required(scrim()));
+    const isDefaultAllowed = fireEvent.mouseDown(required(scrim()));
+
+    expect(over).not.toHaveBeenCalled();
+    expect(isDefaultAllowed).toBe(true);
+  });
+
+  it('cancels the exit when the drawer reopens during it, without playing the entry again', () => {
+    const view = openThenClose(678);
+    advance(80);
+
+    view.rerender(column('drafts'));
+    advance(300);
+
+    expect(panel().getAttribute('data-drawer-mode')).toBe('overlay');
+    expect(panel().getAttribute('data-drawer-exit')).toBeNull();
+    expect(card()?.textContent).toBe('drafts');
+    expect(card()?.className).not.toContain('animate-drawer-overlay-out');
+    expect(card()?.className).not.toContain('animate-drawer-overlay-in');
+    expect(card()?.hasAttribute('inert')).toBe(false);
+    expect(scrim()?.className).not.toContain('pointer-events-none');
+    expect(scrim()?.className).not.toContain('animate-fade-in');
+  });
+
+  it('plays the entry again when it reopens after the exit is over', () => {
+    const view = openThenClose(678);
+    advance(300);
+
+    view.rerender(column('drafts'));
+
+    expect(card()?.className).toContain('animate-drawer-overlay-in');
+    expect(scrim()?.className).toContain('animate-fade-in');
+  });
+
+  it('remembers it closed from over the page: the aside stays out of the flow at 0px', () => {
+    openThenClose(678);
+    advance(300);
+
+    expect(panel().getAttribute('data-drawer-mode')).toBe('closed');
+    expect(panel().className).toContain('absolute');
+    expect(panel().className).not.toContain('transition-[width]');
+    expect(panel().style.width).toBe('0px');
+  });
+
+  it('closes from pushing as before: in the flow, the width eases to 0, no scrim, no exit', () => {
+    openThenClose(1094);
+
+    expect(panel().className).toMatch(/(^|\s)relative(\s|$)/);
+    expect(panel().className).toContain('transition-[width]');
+    expect(panel().style.width).toBe('0px');
+    expect(panel().getAttribute('data-drawer-exit')).toBeNull();
+    expect(card()).toBeNull();
+    expect(scrim()).toBeNull();
+  });
+
+  it('opens from a drawer closed from pushing with the push transition intact', () => {
+    stubColumnWidth(1094);
+    const view = render(column('drafts'));
+    view.rerender(column(null));
+    view.rerender(column('drafts'));
+
+    expect(panel().getAttribute('data-drawer-mode')).toBe('push');
+    expect(panel().className).toContain('transition-[width]');
+    expect(card()?.className).toContain('animate-drawer-card-in');
+  });
+
+  it('drops the exit when the column widens into pushing during it', () => {
+    const resize = driveColumnWidth(678);
+    const view = render(column('drafts'));
+    view.rerender(column(null));
+
+    resize(1094);
+    advance(DRAWER_EXIT_MS);
+
+    expect(card()).toBeNull();
+    expect(panel().getAttribute('data-drawer-exit')).toBeNull();
+  });
+
+  it('closes at once, with no exit copy, a drawer whose content holds a canvas', () => {
+    stubColumnWidth(678);
+    const view = render(
+      <DrawerColumn
+        main={<button type="button">page action</button>}
+        drawer={<canvas aria-label="Terminal" />}
+        ariaLabel="Side panel"
+        resizeLabel="Resize side panel"
+      />,
+    );
+    view.rerender(column(null));
+
+    expect(card()).toBeNull();
+    expect(scrim()).toBeNull();
+    expect(panel().getAttribute('data-drawer-exit')).toBeNull();
+    expect(panel().getAttribute('data-drawer-mode')).toBe('closed');
+    expect(panel().className).toContain('absolute');
+    expect(panel().style.width).toBe('0px');
+    expect(page().hasAttribute('inert')).toBe(false);
   });
 });

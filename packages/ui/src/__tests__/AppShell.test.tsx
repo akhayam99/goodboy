@@ -190,4 +190,38 @@ describe('AppShell right drawer', () => {
     expect(setItem).toHaveBeenCalledOnce();
     expect(localStorage.getItem(LEFT_SIDEBAR_STORAGE_KEY)).toBe(String(LEFT_SIDEBAR_DEFAULT + 49));
   });
+
+  it('hands a fixed overlay placement to the drawer column', () => {
+    class WideObserver {
+      private readonly callback: (
+        entries: ReadonlyArray<{ contentRect: { width: number } }>,
+      ) => void;
+      constructor(callback: (entries: ReadonlyArray<{ contentRect: { width: number } }>) => void) {
+        this.callback = callback;
+      }
+      observe() {
+        this.callback([{ contentRect: { width: 2400 } }]);
+      }
+      disconnect() {}
+    }
+    vi.stubGlobal('ResizeObserver', WideObserver);
+    const { rerender } = render(
+      <AppShell main={<div>main</div>} drawer={<div>New</div>} drawerSizing="reader" />,
+    );
+    const panel = () => screen.getByRole('complementary', { name: 'Side panel' });
+
+    expect(panel().getAttribute('data-drawer-mode')).toBe('push');
+
+    rerender(
+      <AppShell
+        main={<div>main</div>}
+        drawer={<div>New</div>}
+        drawerSizing="reader"
+        drawerPlacement="overlay"
+      />,
+    );
+
+    expect(panel().getAttribute('data-drawer-mode')).toBe('overlay');
+    vi.unstubAllGlobals();
+  });
 });
