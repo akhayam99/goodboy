@@ -8552,11 +8552,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/shared/components/ImageLightbox/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/shared/components/Learnings/WorkspaceLearnings.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 5
