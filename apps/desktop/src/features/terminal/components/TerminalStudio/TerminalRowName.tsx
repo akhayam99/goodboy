@@ -4,11 +4,12 @@ import { cn, useEscapeLayer } from '@goodboy/ui';
 type Props = {
   readonly name: string;
   readonly isSelected: boolean;
+  readonly isTab?: boolean;
   readonly onSelect: () => void;
   readonly onRename: (title: string) => Promise<void>;
 };
 
-export const TerminalRowName = ({ name, isSelected, onSelect, onRename }: Props) => {
+export const TerminalRowName = ({ name, isSelected, isTab = false, onSelect, onRename }: Props) => {
   const [draft, setDraft] = useState<string | null>(null);
   const [hasError, setHasError] = useState(false);
 
@@ -60,7 +61,10 @@ export const TerminalRowName = ({ name, isSelected, onSelect, onRename }: Props)
   return (
     <button
       type="button"
-      aria-current={isSelected ? 'true' : undefined}
+      role={isTab ? 'tab' : undefined}
+      aria-selected={isTab ? isSelected : undefined}
+      aria-current={isTab ? undefined : isSelected ? 'true' : undefined}
+      tabIndex={isTab && !isSelected ? -1 : undefined}
       onClick={onSelect}
       onDoubleClick={() => setDraft(name)}
       className="min-w-0 flex-1 truncate text-left text-label focus-visible:outline-none"

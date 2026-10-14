@@ -146,7 +146,7 @@ describe('the terminal page new terminal shortcut', () => {
   it('shows the rows by name, with no Terminal 2 label', () => {
     mountLens();
 
-    expect(screen.getByRole('button', { name: 'payments-api' })).toBeDefined();
+    expect(screen.getByRole('tab', { name: 'payments-api' })).toBeDefined();
     expect(screen.queryByText(/^Terminal \d+$/)).toBeNull();
   });
 });

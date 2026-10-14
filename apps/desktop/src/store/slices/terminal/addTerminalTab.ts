@@ -1,12 +1,9 @@
 import type { MountId, ProjectId } from '@goodboy/types';
 import { selectActiveMount, selectMountForPath } from '../project-mounts/selectors';
 import type { TerminalOwner, TerminalTab, TerminalTabId } from '../../../shared/types/terminal';
-import {
-  DEFAULT_TERMINAL_NAME,
-  folderName,
-  terminalOwnerKey,
-  terminalTabIdOf,
-} from './terminalOwner';
+import { nextTerminalTitle, terminalOwnerKey, terminalTabIdOf } from './terminalOwner';
+import { terminalWorktreeKeyIn } from './terminalWorktree';
+import { saveTerminalTabs } from './saveTerminalTabs';
 import type { GetFn, SetFn } from './types';
 
 type AddParams = {
@@ -59,19 +56,32 @@ export const addTerminalTab = (set: SetFn, get: GetFn) => {
     const key = terminalOwnerKey({ owner });
     const tabs = get().terminalTabs[key] ?? [];
     const id = terminalTabIdOf({ owner, ordinal: nextOrdinal({ tabs }) });
-    const tab: TerminalTab = {
+    const draft: TerminalTab = {
       id,
       owner,
-      title: folderName({ path: cwd }) ?? DEFAULT_TERMINAL_NAME,
+      title: nextTerminalTitle({ titles: [] }),
       cwd,
       ...scopeOf({ state: get(), owner, cwd }),
       status: 'running',
       createdAt: Date.now(),
     };
+    const worktree = terminalWorktreeKeyIn({ state: get(), tab: draft });
+    const tab: TerminalTab = {
+      ...draft,
+      title: nextTerminalTitle({
+        titles: tabs
+          .filter(
+            (candidate) => terminalWorktreeKeyIn({ state: get(), tab: candidate }) === worktree,
+          )
+          .map((candidate) => candidate.title),
+      }),
+    };
     set((s) => ({
       terminalTabs: { ...s.terminalTabs, [key]: [...tabs, tab] },
       activeTerminalTab: { ...s.activeTerminalTab, [key]: id },
+      terminalWorktreeActive: { ...s.terminalWorktreeActive, [worktree]: id },
     }));
+    saveTerminalTabs({ get });
     return id;
   };
 };

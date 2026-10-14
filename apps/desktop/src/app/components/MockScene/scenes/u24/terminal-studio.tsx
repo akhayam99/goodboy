@@ -5,6 +5,7 @@ import type {
   ProjectId,
   Session,
   SessionId,
+  SessionExternalTask,
   SessionProjectMount,
   Workspace,
   WorkspaceId,
@@ -34,15 +35,16 @@ const FOLDER = '/mock/harborline';
 const PAYMENTS_ROOT = `${FOLDER}/payments-api`;
 const LEDGER_ROOT = `${FOLDER}/ledger-core`;
 const NOTIFY_ROOT = `${FOLDER}/notify-relay`;
-const PAYMENTS_TREE = '/mock/worktrees/hl-fix-duplicate-credit/payments-api';
-const LEDGER_TREE = '/mock/worktrees/hl-ledger-rounding/ledger-core';
-const NOTIFY_TREE = '/mock/worktrees/hl-retry-backoff/notify-relay';
+const PAYMENTS_TREE = `${PAYMENTS_ROOT}/.goodboy/worktrees/gb-7k2q9x`;
+const LEDGER_TREE = `${LEDGER_ROOT}/.goodboy/worktrees/gb-4m8d1c`;
+const NOTIFY_TREE = `${NOTIFY_ROOT}/.goodboy/worktrees/gb-2p6w0z`;
 
 const WORKSPACE_TERMINAL = brandedId<TerminalTabId>({
   value: 'ws:mock-u24-workspace-harborline::t1',
 });
 const PAYMENTS_TERMINAL = brandedId<TerminalTabId>({ value: `${SESSION_ID}::t1` });
 const LEDGER_TERMINAL = brandedId<TerminalTabId>({ value: `${SESSION_ID}::t2` });
+const PAYMENTS_SECOND_TERMINAL = brandedId<TerminalTabId>({ value: `${SESSION_ID}::t3` });
 const NOTIFY_TERMINAL = brandedId<TerminalTabId>({ value: `${OTHER_SESSION_ID}::t1` });
 
 const OVERRIDES = {
@@ -153,14 +155,16 @@ type TabParams = {
   readonly owner: TerminalTab['owner'];
   readonly title: string;
   readonly cwd: string;
+  readonly mountId?: string;
   readonly isExited?: boolean;
 };
 
-const tabOf = ({ id, owner, title, cwd, isExited = false }: TabParams): TerminalTab => ({
+const tabOf = ({ id, owner, title, cwd, mountId, isExited = false }: TabParams): TerminalTab => ({
   id,
   owner,
   title,
   cwd,
+  ...(mountId === undefined ? {} : { mountId: brandedId<MountId>({ value: mountId }) }),
   status: isExited ? 'exited' : 'running',
   ...(isExited ? { openError: 'The folder no longer exists' } : {}),
   createdAt: CREATED_AT,
@@ -168,8 +172,84 @@ const tabOf = ({ id, owner, title, cwd, isExited = false }: TabParams): Terminal
 
 const BUSY_LEDGER = [
   { id: PAYMENTS_TERMINAL, cwd: PAYMENTS_TREE, pid: 4100, foregroundPid: 4188 },
+  { id: PAYMENTS_SECOND_TERMINAL, cwd: PAYMENTS_TREE, pid: 4110, foregroundPid: 4110 },
   { id: WORKSPACE_TERMINAL, cwd: FOLDER, pid: 4000, foregroundPid: 4000 },
 ];
+
+const DIFF_BY_TREE: Readonly<
+  Record<string, { readonly additions: number; readonly deletions: number }>
+> = {
+  [PAYMENTS_TREE]: { additions: 47, deletions: 12 },
+  [LEDGER_TREE]: { additions: 18, deletions: 3 },
+  [NOTIFY_TREE]: { additions: 41, deletions: 6 },
+};
+
+const emptyChangedFiles = {
+  paths: [],
+  entries: [],
+  additions: 0,
+  deletions: 0,
+  numstat: '',
+};
+
+type PayloadParams = {
+  readonly payload: unknown;
+};
+
+const worktreePathOf = ({ payload }: PayloadParams): string => {
+  if (typeof payload !== 'object' || payload === null || !('worktreePath' in payload)) {
+    return '';
+  }
+  return typeof payload.worktreePath === 'string' ? payload.worktreePath : '';
+};
+
+const sceneAnswer = (command: string, payload: unknown): unknown => {
+  if (command === 'terminal_list_live') {
+    return BUSY_LEDGER;
+  }
+  if (command === 'worktree_changed_files') {
+    const path = worktreePathOf({ payload });
+    return { ...emptyChangedFiles, ...(DIFF_BY_TREE[path] ?? {}) };
+  }
+  return null;
+};
+
+type TaskParams = {
+  readonly sessionId: SessionId;
+  readonly identifier: string;
+  readonly title: string;
+};
+
+const taskOf = ({ sessionId, identifier, title }: TaskParams): SessionExternalTask => ({
+  sessionId,
+  scope: 'session',
+  provider: 'linear',
+  externalId: `mock-u24-${identifier.toLowerCase()}`,
+  identifier,
+  url: `https://linear.example/harborline/issue/${identifier}`,
+  title,
+  createdAt: NOW,
+});
+
+type RecordParams = {
+  readonly sessionId: SessionId;
+  readonly projectId: ProjectId;
+  readonly name: string;
+  readonly worktreePath: string;
+  readonly branch: string;
+};
+
+const recordOf = ({ sessionId, projectId, name, worktreePath, branch }: RecordParams) => ({
+  id: `mock-u24-worktree-${name}`,
+  sessionId,
+  worktreePath,
+  branch,
+  parallelIndex: 0,
+  projectId,
+  mountName: name,
+  repoSlug: `harborline/${name}`,
+  createdAt: CREATED_AT,
+});
 
 type SeedParams = {
   readonly hasTerminals: boolean;
@@ -223,6 +303,39 @@ const seed = ({ hasTerminals }: SeedParams): void => {
         }),
       ],
     },
+    sessionExternalTasks: {
+      [SESSION_ID]: [
+        taskOf({ sessionId: SESSION_ID, identifier: 'HBL-412', title: 'Round settlement totals' }),
+      ],
+      [OTHER_SESSION_ID]: [],
+    },
+    sessionWorktreeRecords: {
+      [SESSION_ID]: [
+        recordOf({
+          sessionId: SESSION_ID,
+          projectId: PAYMENTS_ID,
+          name: 'payments-api',
+          worktreePath: PAYMENTS_TREE,
+          branch: 'hl/fix-duplicate-credit',
+        }),
+        recordOf({
+          sessionId: SESSION_ID,
+          projectId: LEDGER_ID,
+          name: 'ledger-core',
+          worktreePath: LEDGER_TREE,
+          branch: 'hl/ledger-rounding',
+        }),
+      ],
+      [OTHER_SESSION_ID]: [
+        recordOf({
+          sessionId: OTHER_SESSION_ID,
+          projectId: NOTIFY_ID,
+          name: 'notify-relay',
+          worktreePath: NOTIFY_TREE,
+          branch: 'hl/retry-backoff',
+        }),
+      ],
+    },
     terminalFolderOverrides: {},
     terminalNames: {},
     terminalTabs: hasTerminals
@@ -231,7 +344,7 @@ const seed = ({ hasTerminals }: SeedParams): void => {
             tabOf({
               id: WORKSPACE_TERMINAL,
               owner: { kind: 'workspace', workspaceId: WORKSPACE_ID },
-              title: 'harborline',
+              title: 'shell',
               cwd: FOLDER,
             }),
           ],
@@ -239,28 +352,42 @@ const seed = ({ hasTerminals }: SeedParams): void => {
             tabOf({
               id: PAYMENTS_TERMINAL,
               owner: { kind: 'session', sessionId: SESSION_ID },
-              title: 'payments-api',
+              title: 'dev server',
               cwd: PAYMENTS_TREE,
+              mountId: 'mock-u24-mount-payments',
             }),
             tabOf({
               id: LEDGER_TERMINAL,
               owner: { kind: 'session', sessionId: SESSION_ID },
-              title: 'ledger-core',
+              title: 'shell',
               cwd: LEDGER_TREE,
+              mountId: 'mock-u24-mount-ledger',
               isExited: true,
+            }),
+            tabOf({
+              id: PAYMENTS_SECOND_TERMINAL,
+              owner: { kind: 'session', sessionId: SESSION_ID },
+              title: 'shell',
+              cwd: PAYMENTS_TREE,
+              mountId: 'mock-u24-mount-payments',
             }),
           ],
           [OTHER_SESSION_ID]: [
             tabOf({
               id: NOTIFY_TERMINAL,
               owner: { kind: 'session', sessionId: OTHER_SESSION_ID },
-              title: 'notify-relay',
+              title: 'shell',
               cwd: NOTIFY_TREE,
+              mountId: 'mock-u24-mount-notify',
             }),
           ],
         }
       : {},
     activeTerminalTab: hasTerminals ? { [SESSION_ID]: PAYMENTS_TERMINAL } : {},
+    terminalWorktreeActive: hasTerminals
+      ? { [`${SESSION_ID}#m:mock-u24-mount-payments`]: PAYMENTS_TERMINAL }
+      : {},
+    terminalSelection: null,
   });
 };
 
@@ -279,7 +406,7 @@ const clickLabelOf = ({ variant }: Props): ReadonlyArray<string> => {
     case 'newmenu':
       return ['New terminal in'];
     case 'closeconfirm':
-      return ['Close payments-api'];
+      return ['Close dev server'];
     case 'list':
     case 'empty':
       return [];
@@ -295,13 +422,14 @@ const TerminalStudioScene = ({ variant }: Props) => {
   const studio = useAppStore((state) => state.appStudio);
 
   useEffect(() => {
-    mockSceneIpc((command) => (command === 'terminal_list_live' ? BUSY_LEDGER : null));
+    mockSceneIpc(sceneAnswer);
     seed({ hasTerminals: variant !== 'empty' });
     useAppStore.getState().openStudio({
       studio: {
         kind: 'terminal',
         terminalId: variant === 'empty' ? null : PAYMENTS_TERMINAL,
         sessionId: SESSION_ID,
+        worktree: variant === 'empty' ? null : `${SESSION_ID}#m:mock-u24-mount-payments`,
       },
     });
     setIsReady(true);
@@ -326,6 +454,7 @@ const TerminalStudioScene = ({ variant }: Props) => {
           workspaceId={WORKSPACE_ID}
           terminalId={studio?.kind === 'terminal' ? studio.terminalId : null}
           sessionId={studio?.kind === 'terminal' ? studio.sessionId : SESSION_ID}
+          worktree={studio?.kind === 'terminal' ? (studio.worktree ?? null) : null}
           onClose={NOOP}
         />
       </PageSheet>

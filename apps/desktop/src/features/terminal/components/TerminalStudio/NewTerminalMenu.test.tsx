@@ -9,7 +9,7 @@ afterEach(cleanup);
 describe('the New terminal button', () => {
   it('carries the plus glyph, not the compose pencil, and opens a terminal', () => {
     const onNew = vi.fn();
-    render(<NewTerminalMenu targets={[]} onNew={onNew} onOpenAt={vi.fn()} />);
+    render(<NewTerminalMenu clusters={[]} onNew={onNew} onOpenAt={vi.fn()} />);
 
     const button = screen.getByRole('button', { name: 'New terminal' });
     expect(button.querySelector('svg.lucide-plus')).not.toBeNull();

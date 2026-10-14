@@ -1,48 +1,61 @@
-import { ChevronRight } from 'lucide-react';
-import { ROW_INTERACTIVE, cn } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { middleTruncate } from '../../middleTruncate';
-import type { TerminalGroup } from './terminalGroups';
-import type { ReactNode } from 'react';
+import { Tooltip, cn } from '@goodboy/ui';
+import { useOpenSession } from '../../../../shared/hooks/useOpenSession';
+import type { TerminalGroup } from '../../terminalWorktrees';
+import { worktreePorts } from '../../worktreePorts';
+import { TerminalGroupFacts } from './TerminalGroupFacts';
+import { TerminalWorktreeRow } from './TerminalWorktreeRow';
 
 type Props = {
   readonly group: TerminalGroup;
-  readonly isOpen: boolean;
-  readonly onToggle: () => void;
-  readonly children: ReactNode;
+  readonly selectedKey: string | null;
+  readonly busyIds: ReadonlySet<string>;
+  readonly portsByTerminal: ReadonlyMap<string, ReadonlyArray<number>>;
+  readonly onSelect: (key: string) => void;
 };
 
-const GROUP_TITLE_LIMIT = 28;
-
-export const TerminalGroupSection = ({ group, isOpen, onToggle, children }: Props) => (
-  <section aria-label={group.title} className="flex flex-col gap-1">
-    <button
-      type="button"
-      aria-expanded={isOpen}
-      onClick={onToggle}
-      className={cn(
-        'flex items-center gap-1 rounded-md px-2 py-2 text-left text-label text-muted-foreground',
-        ROW_INTERACTIVE,
-      )}
-    >
-      <ChevronRight
-        size={ICON_SIZE.row}
-        aria-hidden
-        className={cn('shrink-0 motion-safe:transition-transform', isOpen && 'rotate-90')}
-      />
-      <span className="flex min-w-0 flex-1 items-baseline gap-2">
-        <span className="min-w-0 truncate text-foreground">
-          <span className="sr-only">{group.title}</span>
-          <span aria-hidden>{middleTruncate({ text: group.title, limit: GROUP_TITLE_LIMIT })}</span>
-        </span>
-        {group.branch === null ? null : (
-          <span className="min-w-0 truncate text-meta text-faint-foreground">{group.branch}</span>
+export const TerminalGroupSection = ({
+  group,
+  selectedKey,
+  busyIds,
+  portsByTerminal,
+  onSelect,
+}: Props) => {
+  const openSession = useOpenSession();
+  const { sessionId } = group;
+  return (
+    <section aria-label={group.title} className="flex flex-col gap-1">
+      <div className="flex min-w-0 flex-col gap-1 px-2">
+        {sessionId === null ? (
+          <span className="truncate text-label text-muted-foreground">{group.title}</span>
+        ) : (
+          <Tooltip content={group.title} anchorClassName="flex min-w-0">
+            <button
+              type="button"
+              aria-label={`Open session ${group.title}`}
+              onClick={() => openSession({ sessionId })}
+              className={cn(
+                'min-w-0 truncate rounded-sm text-left text-label text-foreground',
+                'hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+              )}
+            >
+              {group.title}
+            </button>
+          </Tooltip>
         )}
-      </span>
-      <span className="shrink-0 text-meta tabular-nums text-faint-foreground">
-        {group.tabs.length}
-      </span>
-    </button>
-    {isOpen ? <ul className="flex flex-col gap-0.5">{children}</ul> : null}
-  </section>
-);
+        {sessionId === null ? null : <TerminalGroupFacts sessionId={sessionId} />}
+      </div>
+      <ul className="flex flex-col gap-0.5">
+        {group.worktrees.map((worktree) => (
+          <TerminalWorktreeRow
+            key={worktree.key}
+            worktree={worktree}
+            isSelected={worktree.key === selectedKey}
+            isBusy={worktree.tabs.some((tab) => busyIds.has(tab.id))}
+            ports={worktreePorts({ tabs: worktree.tabs, portsByTerminal })}
+            onSelect={() => onSelect(worktree.key)}
+          />
+        ))}
+      </ul>
+    </section>
+  );
+};

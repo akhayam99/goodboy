@@ -1487,43 +1487,50 @@ one is open at a time.
   Notifications through `PaneShell`, and the Chat thread's title as the same `h1`
   (`ChatHeader`). Exactly one `h1` per studio scene.
 - **One Terminal studio for every terminal.** The Terminal door (⌃`, `terminal.studio`)
-opens `StudioPlace` `{ kind: 'terminal'; terminalId; sessionId }`in`TerminalStudio`:
+opens `StudioPlace` `{ kind: 'terminal'; terminalId; sessionId; worktree }`in`TerminalStudio`:
 `StudioShell`plus`StudioRailLayout surface="terminal"`. The rail does not fold, and its first
-child is `New terminal`, the same full-width secondary button as Chat's New chat, with a chevron
-beside it when there is more than one target. The menu lists `Workspace folder`, then one group
-per session that has attached worktrees, headed by the session title, with one row per worktree
-(`ledger-core · hl/ledger-rounding`); a row opens a terminal there, under that session, and
-selects it. With no terminal at all the page has no rail: the empty state owns the single
-`New terminal`. The rail lists a `Workspace` group first (terminals that belong to the workspace),
-then one group per session that has terminals, headed by the session title, its branch and a
-count; the open session's group is expanded and the others folded. A row is a state dot (idle,
-busy, failed), the name (the cwd's last folder, renamed by double click, Enter saves, Esc
-cancels) and the command a busy shell runs. When the shell exits, whatever the code, the tab
-closes and the studio selects a neighbour of the same owner: the watch lives in the terminal
-slice (`watchTerminalExits`, started by `reattachTerminalTabs`), so it works with the page closed.
-Only a terminal that failed to start stays, as `failed to open`with Restart, and it is never
-opened again on its own. The close x shows on hover and focus: an idle shell closes at once, a
-busy one asks in a`ConfirmPopover` anchored to the x (`Keep`, danger `Close`). The detail is a
-32px location row, the cwd trimmed to the workspace folder and the `cd`menu (only while the
-shell is idle, it types`cd`into the shell), then the shell. A terminal id is`<sessionId>::t<n>`for a session and`ws:<workspaceId>::t<n>` for the workspace
-(`terminalOwner.ts`); both reattach after a reload with their owners and renamed names (setting
-`terminal.names`). A session has no Terminal page of its own: the session terminal lens is gone, and a
-saved location that still names it lands on the session overview (`withoutRemovedPages`). `⌘T`
-(`terminal.newTab`) adds a terminal while one has focus. ⌘K has `Terminal` (`goto:terminal`),
-`New terminal` (`action:new-terminal`, the workspace folder) and, in a session with worktrees,
-`Open <repo · branch> in terminal` (`session.openWorktreeTerminal`, one choice per worktree).
+child is `New terminal`, a split secondary control: the button opens a tab in the selected
+worktree, the chevron opens the picker. The picker (`NewTerminalMenu`, `terminalPickerClusters`)
+opens to the right of the chevron (`useDropdown`align`after`) in clusters: `Workspace folder`
+first, then one cluster per session with attached worktrees, headed by the session title with
+its linked tasks and diff (`TerminalGroupFacts`); a row is the project, the branch, the short
+worktree chip and the path on one line, and `Open project`opens the project settings.
+With no terminal at all the page has no rail: the empty state owns the single`New terminal`.
+The rail lists one group per session that has terminals, headed by the session title (a button
+that opens the session) with its tasks and diff, and inside it one row per worktree
+(`terminalWorktrees.ts`, key `<sessionId>#m:<mountId>`, or `#p:<cwd>`when no mount matches):
+project, short chip, branch and the number of terminals; the`Workspace folder` group comes last.
+Selecting a row shows its terminals as tabs (`TerminalTabStrip`) with a `+`that adds a tab in
+that worktree; the header carries`Open session`(absent for the workspace). A new terminal is
+always a tab of its worktree, titled`shell`, then `shell 2` (`nextTerminalTitle`); a tab is
+renamed by double click, Enter saves, Esc cancels. When the shell exits, whatever the code, the
+tab closes and the studio selects a neighbour of the same worktree: the watch lives in the
+terminal slice (`watchTerminalExits`, started by `reattachTerminalTabs`), so it works with the
+page closed. Only a terminal that failed to start stays, as a `failed`chip with a restart
+button, and it is never opened again on its own. The close x is 28px, always visible: an idle
+shell closes at once, a busy one asks in a`ConfirmPopover` (`Keep`, danger `Close`). The detail
+is a location row (the cwd trimmed to the workspace folder, middle truncated, and the `cd`menu, only while the shell is idle), the tab strip, then the shell. A terminal id is`<sessionId>::t<n>`for a session and`ws:<workspaceId>::t<n>` for the workspace
+(`terminalOwner.ts`). A session has no Terminal page of its own: the session terminal lens is
+gone, and a saved location that still names it lands on the session overview
+(`withoutRemovedPages`). `⌘T` (`terminal.newTab`) adds a tab to the selected worktree while one
+has focus. ⌘K has `Terminal` (`goto:terminal`), `New terminal` (`action:new-terminal`, the
+workspace folder) and, in a session with worktrees, `Open <repo · branch> in terminal`
+(`session.openWorktreeTerminal`, one choice per worktree).
 - **A session terminal opens in a right drawer.** `openSessionTerminal` adds a session terminal at
   the worktree (or reuses a running one there, never when it carries a `prefill`) and opens the `terminal` drawer over the session
   (`DrawerContent` `{ kind: 'terminal'; payload: { terminalId } }`, `TerminalDrawer` in
   `DrawerHost`, side sizing, resizable like the others). The mount row and diff `Open terminal`,
   the rebase banners (`openMountTerminal`), the session row menu, ⌘K `Open <repo · branch> in
 terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active worktree) all go
-  through it. The header holds the terminal name, a worktree chip, `Open on Terminal page` and
-  `Close`. Closing the drawer never kills the shell: the tab stays in the Terminal list under the
-  session's group, and the drawer closes by itself when its terminal exits. `Open on Terminal page`
-  closes the drawer and selects the same tab on the page; the pane remounts on the same pty and
-  replays its scrollback. The page group title is the session title, cut in the middle past 28
-  characters (`middleTruncate`); the group's `aria-label` keeps the full title.
+  through it. The header holds the project name, the short worktree chip (it truncates before the
+  buttons), two icon buttons (`Open on Terminal page` and `Close`, the text in the tooltip and the
+  `aria-label`) and the same tab strip as the page: drawer and page show the same tabs of the same
+  worktree. Closing the drawer never kills the shell: the tabs stay in the Terminal list under the
+  session's group, and the drawer closes by itself when its worktree has no terminal left.
+  `Open on Terminal page` closes the drawer and selects the same tab on the page; the pane
+  remounts on the same pty and replays its scrollback. The page group title is the session title,
+  cut in the middle past 28 characters (`middleTruncate`); the group's `aria-label` keeps the full
+  title.
 - **One Esc stack.** The frame, a body that holds Esc (Tasks with a record
   open), the agent overlay and the delete confirm all register with
   `useEscapeLayer`, so Esc closes the topmost layer only. So does every

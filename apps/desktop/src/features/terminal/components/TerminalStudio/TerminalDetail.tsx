@@ -3,7 +3,9 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import type { TerminalStudioModel } from '../../hooks/useTerminalStudioModel';
 import { displayCwd } from '../../terminalTargets';
 import { LocationRow } from './LocationRow';
+import { TerminalHeader } from './TerminalHeader';
 import { TerminalPane } from './TerminalPane';
+import { TerminalTabStrip } from './TerminalTabStrip';
 
 type Props = {
   readonly model: TerminalStudioModel;
@@ -11,8 +13,8 @@ type Props = {
 };
 
 export const TerminalDetail = ({ model, isActive }: Props) => {
-  const { selected } = model;
-  if (selected === null) {
+  const { selected, worktree } = model;
+  if (selected === null || worktree === null) {
     return (
       <EmptyState
         size="page"
@@ -30,12 +32,26 @@ export const TerminalDetail = ({ model, isActive }: Props) => {
   }
   const isIdle = selected.status !== 'exited' && !model.busyIds.has(selected.id);
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col">
+    <div className="flex h-full min-h-0 flex-1 flex-col gap-1">
+      <TerminalHeader worktree={worktree} />
       <LocationRow
         cwd={displayCwd({ cwd: selected.cwd, folder: model.folder, home: model.home })}
+        branch={worktree.branch}
         targets={model.targets}
         isIdle={isIdle}
         onChangeDirectory={model.changeDirectory}
+      />
+      <TerminalTabStrip
+        label={worktree.projectName}
+        tabs={model.tabs}
+        selectedId={selected.id}
+        busyIds={model.busyIds}
+        commandOf={model.commandOf}
+        onSelect={model.selectTab}
+        onClose={model.closeTab}
+        onRestart={model.restartTab}
+        onRename={model.renameTab}
+        onNew={model.openDefault}
       />
       <TerminalPane key={selected.id} tab={selected} isActive={isActive} />
     </div>

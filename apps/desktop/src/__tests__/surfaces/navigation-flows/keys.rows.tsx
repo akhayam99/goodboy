@@ -1204,7 +1204,7 @@ const SELECTION_KEY_ROWS: ReadonlyArray<Row> = [
 ];
 
 const terminalRows = (): ReadonlyArray<Element> => [
-  ...document.querySelectorAll('[data-terminal-row]'),
+  ...document.querySelectorAll('[data-terminal-tab]'),
 ];
 
 export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
@@ -1221,7 +1221,7 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       }
       fireEvent.click(newTerminal);
       await waitFor(() => expect(terminalRows().length).toBeGreaterThan(0), WAIT);
-      const first = terminalRows()[0]?.querySelector('button');
+      const first = terminalRows()[0]?.querySelector('[role="tab"]');
       expect(first).toBeDefined();
       (first as HTMLElement).focus();
       terminalTabCount = terminalRows().length;

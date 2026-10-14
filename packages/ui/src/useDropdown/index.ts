@@ -8,7 +8,7 @@ import { useDropdownDirection } from '../useDropdownDirection';
 const FOCUSABLE_TRIGGER =
   'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-type Align = 'start' | 'end' | 'center';
+type Align = 'start' | 'end' | 'center' | 'after';
 
 type Params = {
   readonly disabled?: boolean;

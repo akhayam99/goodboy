@@ -19,9 +19,9 @@ export const CloseTerminal = ({ name, isBusy, command, onClose }: Props) => {
     <IconButton
       icon={X}
       label={label}
-      size="xs"
+      size="sm"
       onClick={onClick}
-      className="opacity-0 focus-visible:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100 aria-expanded:opacity-100"
+      className="shrink-0 text-faint-foreground hover:text-foreground aria-expanded:text-foreground"
     />
   );
 

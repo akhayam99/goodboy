@@ -22,7 +22,7 @@ export const TerminalStudioBody = ({ model, isActive }: Props) => {
       return;
     }
     event.preventDefault();
-    model.openDefault();
+    model.newTab();
   };
   return (
     <div onKeyDown={handleKeyDown} className="flex h-full min-h-0 min-w-0 flex-1">

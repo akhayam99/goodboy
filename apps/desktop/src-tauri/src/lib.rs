@@ -73,6 +73,7 @@ mod slack;
 mod storage;
 mod summarize;
 mod terminal;
+mod terminal_scrollback;
 mod thread_git;
 mod turn;
 mod turn_backlog;
@@ -125,7 +126,7 @@ pub(crate) fn stop_running_work(app: &tauri::AppHandle) {
     summarize::shutdown(&app.state::<summarize::SummarizeRegistry>());
     planner::shutdown(&app.state::<planner::PlannerRegistry>());
     scripts::shutdown(&app.state::<scripts::ScriptRegistry>());
-    terminal::shutdown(&app.state::<terminal::TerminalRegistry>());
+    terminal::shutdown(&app.state::<terminal::TerminalRegistry>(), terminal::scrollback_dir_of(app).as_deref());
 }
 
 pub fn run_query_cli() -> Option<i32> {

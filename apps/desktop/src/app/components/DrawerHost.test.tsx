@@ -311,7 +311,10 @@ describe('every drawer names its close control Close', () => {
 
       const region = screen.getByRole('region', { name: entry.region });
       expect(within(region).getByRole('button', { name: 'Close' })).toBeDefined();
-      expect(within(region).queryByRole('button', { name: /^Close .+/ })).toBeNull();
+      const namedCloses = within(region)
+        .queryAllByRole('button', { name: /^Close .+/ })
+        .filter((button) => button.closest('[role="tablist"]') === null);
+      expect(namedCloses).toHaveLength(0);
     },
   );
 

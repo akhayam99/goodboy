@@ -135,7 +135,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: async () => {
       await band('Terminal');
       await waitFor(
-        () => expect(document.querySelectorAll('[data-terminal-row]')).toHaveLength(1),
+        () => expect(document.querySelectorAll('[data-terminal-tab]')).toHaveLength(1),
         WAIT,
       );
     },

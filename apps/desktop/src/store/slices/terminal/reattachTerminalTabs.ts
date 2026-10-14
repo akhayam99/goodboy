@@ -4,15 +4,21 @@ import { terminalOutputBus } from '../../../features/terminal/outputBus';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { TerminalTab, TerminalTabId } from '../../../shared/types/terminal';
 import { exitCapture } from './exitCapture';
-import { SETTING_TERMINAL_NAMES } from './state';
+import { markTerminalTabsLoaded, saveTerminalTabs } from './saveTerminalTabs';
 import {
-  DEFAULT_TERMINAL_NAME,
-  folderName,
-  parseTerminalId,
-  terminalOwnerKey,
-} from './terminalOwner';
+  SETTING_TERMINAL_TABS,
+  parseSavedTerminalTabs,
+  type SavedTerminalTabs,
+} from './savedTerminalTabs';
+import { SETTING_TERMINAL_NAMES } from './state';
+import { DEFAULT_TERMINAL_NAME, parseTerminalId, terminalOwnerKey } from './terminalOwner';
+import { terminalWorktreeKeyIn } from './terminalWorktree';
 import type { GetFn, SetFn } from './types';
 import { watchTerminalExits } from './watchTerminalExits';
+
+type PushParams = {
+  readonly tab: TerminalTab;
+};
 
 const isNameRecord = (value: unknown): value is Record<string, string> =>
   typeof value === 'object' &&
@@ -33,20 +39,62 @@ const readNames = async (): Promise<Record<string, string>> => {
   }
 };
 
+const readSaved = async (): Promise<SavedTerminalTabs | null> => {
+  try {
+    const raw = await getSetting(tauriDatabase, SETTING_TERMINAL_TABS);
+    if (raw === null || raw === undefined || raw === '') {
+      return null;
+    }
+    return parseSavedTerminalTabs({ raw });
+  } catch {
+    return null;
+  }
+};
+
 export const reattachTerminalTabs = (set: SetFn, get: GetFn) => {
   return async (): Promise<void> => {
     await terminalOutputBus.register();
     let exitedDuringLoad: ReadonlySet<string> = new Set();
     exitCapture.begin();
     watchTerminalExits({ get })();
-    const loaded = await Promise.all([invokeTerminalListLive(), readNames()]).finally(() => {
-      exitedDuringLoad = exitCapture.end();
-    });
-    const [liveTerminals, names] = loaded;
+    const loaded = await Promise.all([invokeTerminalListLive(), readNames(), readSaved()]).finally(
+      () => {
+        exitedDuringLoad = exitCapture.end();
+      },
+    );
+    const [liveTerminals, names, saved] = loaded;
     const state = get();
+    const liveById = new Map(liveTerminals.map((live) => [live.id, live]));
     const rebuilt = new Map<string, TerminalTab[]>();
+    const push = ({ tab }: PushParams): void => {
+      const key = terminalOwnerKey({ owner: tab.owner });
+      const tabs = rebuilt.get(key) ?? [];
+      tabs.push(tab);
+      rebuilt.set(key, tabs);
+    };
+    const savedTabs = saved?.tabs ?? [];
+    for (const entry of savedTabs) {
+      const live = liveById.get(entry.id);
+      const isExited =
+        exitedDuringLoad.has(entry.id) || (live === undefined && entry.status === 'exited');
+      push({
+        tab: {
+          id: entry.id,
+          owner: entry.owner,
+          title: names[entry.id] ?? entry.title,
+          cwd: live?.cwd ?? entry.cwd,
+          ...(entry.projectId === undefined ? {} : { projectId: entry.projectId }),
+          ...(entry.mountId === undefined ? {} : { mountId: entry.mountId }),
+          status: isExited ? 'exited' : 'running',
+          ...(isExited && entry.openError !== undefined ? { openError: entry.openError } : {}),
+          ...(live === undefined && !isExited ? { isRestored: true } : {}),
+          createdAt: Date.now(),
+        },
+      });
+    }
+    const savedIds = new Set<string>(savedTabs.map((entry) => entry.id));
     for (const live of liveTerminals) {
-      if (exitedDuringLoad.has(live.id)) {
+      if (exitedDuringLoad.has(live.id) || savedIds.has(live.id)) {
         continue;
       }
       const parsed = parseTerminalId({ id: live.id });
@@ -60,30 +108,61 @@ export const reattachTerminalTabs = (set: SetFn, get: GetFn) => {
       const mount =
         cwd === '' ? undefined : mounts.find((candidate) => candidate.worktreePath === cwd);
       const projectId = mount?.projectId;
-      const tab: TerminalTab = {
-        id: live.id as TerminalTabId,
-        owner,
-        title: names[live.id] ?? folderName({ path: cwd }) ?? DEFAULT_TERMINAL_NAME,
-        cwd,
-        ...(projectId === undefined ? {} : { projectId }),
-        ...(mount?.mountId === undefined ? {} : { mountId: mount.mountId }),
-        status: 'running',
-        createdAt: Date.now(),
-      };
-      const key = terminalOwnerKey({ owner });
-      const tabs = rebuilt.get(key) ?? [];
-      tabs.push(tab);
-      rebuilt.set(key, tabs);
+      push({
+        tab: {
+          id: live.id as TerminalTabId,
+          owner,
+          title: names[live.id] ?? DEFAULT_TERMINAL_NAME,
+          cwd,
+          ...(projectId === undefined ? {} : { projectId }),
+          ...(mount?.mountId === undefined ? {} : { mountId: mount.mountId }),
+          status: 'running',
+          createdAt: Date.now(),
+        },
+      });
     }
     set((current) => {
       const terminalTabs = { ...current.terminalTabs };
       const activeTerminalTab = { ...current.activeTerminalTab };
+      const terminalWorktreeActive = { ...current.terminalWorktreeActive };
+      const allIds = new Set<string>();
       for (const [key, tabs] of rebuilt) {
-        tabs.sort((left, right) => left.id.localeCompare(right.id, undefined, { numeric: true }));
+        if (savedIds.size === 0) {
+          tabs.sort((left, right) => left.id.localeCompare(right.id, undefined, { numeric: true }));
+        }
+        for (const tab of tabs) {
+          allIds.add(tab.id);
+        }
         terminalTabs[key] = tabs;
-        activeTerminalTab[key] = tabs[0]?.id ?? null;
+        const savedActive = saved?.active[key];
+        activeTerminalTab[key] =
+          savedActive !== undefined && tabs.some((tab) => tab.id === savedActive)
+            ? savedActive
+            : (tabs[0]?.id ?? null);
+        for (const tab of [...tabs].reverse()) {
+          terminalWorktreeActive[terminalWorktreeKeyIn({ state: current, tab })] = tab.id;
+        }
       }
-      return { terminalTabs, activeTerminalTab, terminalNames: names };
+      for (const [worktree, id] of Object.entries(saved?.worktreeActive ?? {})) {
+        if (allIds.has(id)) {
+          terminalWorktreeActive[worktree] = id;
+        }
+      }
+      const savedSelection = saved?.selection ?? null;
+      const isSelectionKept =
+        savedSelection !== null &&
+        (savedSelection.terminalId === null || allIds.has(savedSelection.terminalId));
+      return {
+        terminalTabs,
+        activeTerminalTab,
+        terminalWorktreeActive,
+        terminalNames: names,
+        ...(isSelectionKept && current.terminalSelection === null
+          ? { terminalSelection: savedSelection }
+          : {}),
+      };
     });
+    markTerminalTabsLoaded();
+    saveTerminalTabs({ get });
   };
 };

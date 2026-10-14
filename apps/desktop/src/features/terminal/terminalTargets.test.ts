@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { MountId, ProjectId, SessionId, SessionProjectMount } from '@goodboy/types';
-import { displayCwd, terminalMenuTargets, terminalTargets } from './terminalTargets';
+import { displayCwd, terminalTargets } from './terminalTargets';
 import { brandedId } from '../../features/history/testing/brandedId';
 
 const SESSION_ID = brandedId<SessionId>({ value: 'session-ledger' });
@@ -134,67 +134,5 @@ describe('displayCwd', () => {
 
   it('is empty without a cwd', () => {
     expect(displayCwd({ cwd: null, folder: null, home: null })).toBe('');
-  });
-});
-
-describe('terminalMenuTargets', () => {
-  const OTHER = brandedId<SessionId>({ value: 'session-notify' });
-
-  it('lists the workspace folder, then every attached worktree grouped by session', () => {
-    const targets = terminalMenuTargets({
-      folder: '/mock/harborline',
-      sessions: [
-        { id: SESSION_ID, title: 'Round settlement totals' },
-        { id: OTHER, title: 'Back off failed retries' },
-      ],
-      mountsBySession: {
-        [SESSION_ID]: [
-          mountOf({
-            id: 'm1',
-            project: 'payments-api',
-            path: '/mock/wt/payments-api',
-            branch: 'hl/a',
-          }),
-          mountOf({
-            id: 'm2',
-            project: 'ledger-core',
-            path: '/mock/wt/ledger-core',
-            branch: 'hl/b',
-            isAttached: false,
-          }),
-        ],
-        [OTHER]: [
-          {
-            ...mountOf({
-              id: 'm3',
-              project: 'ledger-core',
-              path: '/mock/wt2/ledger-core',
-              branch: 'hl/c',
-            }),
-            sessionId: OTHER,
-          },
-        ],
-      },
-      projects: PROJECTS,
-    });
-
-    expect(targets.map((target) => [target.label, target.group ?? null, target.path])).toEqual([
-      ['Workspace folder', null, '/mock/harborline'],
-      ['payments-api · hl/a', 'Round settlement totals', '/mock/wt/payments-api'],
-      ['ledger-core · hl/c', 'Back off failed retries', '/mock/wt2/ledger-core'],
-    ]);
-    expect(targets[1]).toMatchObject({ kind: 'session', sessionId: SESSION_ID });
-    expect(targets[2]).toMatchObject({ kind: 'session', sessionId: OTHER });
-  });
-
-  it('keeps only the workspace folder when no session has a worktree', () => {
-    const targets = terminalMenuTargets({
-      folder: '/mock/harborline',
-      sessions: [{ id: SESSION_ID, title: 'Round settlement totals' }],
-      mountsBySession: {},
-      projects: PROJECTS,
-    });
-
-    expect(targets.map((target) => target.label)).toEqual(['Workspace folder']);
   });
 });

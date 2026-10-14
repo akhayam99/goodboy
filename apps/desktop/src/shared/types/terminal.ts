@@ -18,5 +18,12 @@ export type TerminalTab = {
   readonly status: TerminalTabStatus;
   readonly openError?: string;
   readonly prefill?: string;
+  readonly isRestored?: boolean;
   readonly createdAt: number;
+};
+
+export type TerminalSelection = {
+  readonly sessionId: SessionId | null;
+  readonly worktree: string | null;
+  readonly terminalId: TerminalTabId | null;
 };

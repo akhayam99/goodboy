@@ -117,7 +117,7 @@ export const DrawerFrame = ({
           {title}
         </h2>
         {count != null ? (
-          <span className="flex h-5 shrink-0 items-center text-meta tabular-nums text-muted-foreground">
+          <span className="flex h-5 min-w-0 shrink-[4] items-center text-meta tabular-nums text-muted-foreground">
             {count}
           </span>
         ) : null}
