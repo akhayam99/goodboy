@@ -768,6 +768,9 @@ refuses the file with `DatabaseFromNewerBuildError` instead of reading it.
   answer fails as interrupted), a live run is watched until it ends, and a revise whose
   landing was cut short is landed from the version stored on its attempt. Two windows
   recovering at once do not both act: the lease is the owner check.
+- `makeAutoRuntime.ts` builds the real ports and the runtime from a database and the store
+  getter; `store.sqlite-auto-manual-proof.test.ts` runs two of them on the real store for the
+  stop, restart and crash proofs.
 - `startAutoRuntime.ts` is the only place the pieces meet the app. `App.tsx` starts it in
   the main window. While `AUTO_GATES.isDelegationEnabled` is false it only listens and
   answers every agent verb unavailable. When it is true it builds the real ports
@@ -777,9 +780,15 @@ refuses the file with `DatabaseFromNewerBuildError` instead of reading it.
   every fifteen seconds, which also renews the owner lease. Each tick also starts the tree
   of an Auto agent that has none (`startAutoTrees.ts`), capped at the budget of its session,
   else at the workspace key `auto.treeLimitUsd.<workspaceId>`, else at the default
-  (`autoTreeCapUsd`). It hands the screens the two ports they call, the answer to a
+  (`autoTreeCapUsd`). It hands the screens the ports they call, the answer to a
   confirm card (`confirmDelegation`) and the Stop button (`stopTree`); the Stop button
-  reports a tree that did not stop, and one that another window runs.
+  reports a tree that did not stop, and one that another window runs. When delegation is
+  on it also opens the Auto user-turn door (`registerAutoUserTurnPort`): the first message
+  of a new Auto agent (`spawnAgent`, `sendAutoKickoff.ts`) creates the tree on the spot
+  (`startAutoTree`, the same function the tick uses, so a race makes one tree) and queues
+  the message as a `user` outbox row through `runtime.say`, instead of a plain turn. Every later
+  operator message to the root of an Auto tree takes the same door from `sendTurn`
+  (`routeAutoUserTurn.ts`).
 - A child that asks a blocking question ends its attempt `paused` and queues a question row
   for Auto at once. `answerQuestion.ts` (the `answer` verb) resumes it: in one transaction
   it admits a new attempt on the same agent with the question and the answer stored on it,

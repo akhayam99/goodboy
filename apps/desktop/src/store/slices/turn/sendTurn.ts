@@ -18,6 +18,7 @@ import { closeTurnCapture } from './closeTurnCapture';
 import { settleTurn } from './settleTurn';
 import { continueOnRequestedMount } from './continueOnRequestedMount';
 import { haltRunawayWorkflowAgent } from './haltRunawayWorkflowAgent';
+import { routeAutoUserTurn } from '../auto/routeAutoUserTurn';
 
 type RunOnceParams = Readonly<{
   input: SendTurnInput;
@@ -70,6 +71,10 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     }
     if (input.origin === undefined || input.origin === 'operator') {
       void get().flushChatLinks({ sessionId: input.sessionId });
+    }
+    const autoResult = await routeAutoUserTurn({ get, input });
+    if (autoResult !== null) {
+      return autoResult;
     }
     if (input.agentId !== undefined && input.origin === 'workflow') {
       const claim = claimWorkflowTurn({ agentId: input.agentId, nowMs: Date.now() });

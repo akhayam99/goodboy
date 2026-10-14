@@ -45,6 +45,8 @@ import { autoLimitContext } from '../providerLimits/autoLimitContext';
 import { ReportedError, isReportedError } from '../notifications/reportedError';
 import { sessionById } from '../sessions/sessionIndex';
 import { scopedKindRouting } from './scopedKindRouting';
+import { sendAutoKickoff } from './sendAutoKickoff';
+import { currentAutoUserTurnPort } from '../../../features/auto/autoUserTurnPort';
 
 const spawnQueue = createKeyedQueue();
 
@@ -279,6 +281,22 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
   const machineRules =
     humanPrompt === null ? null : rulesOfKickoff({ message: kickoff, human: humanPrompt });
   const isRecheck = args.sourceKind === 'comment_recheck';
+  const autoKickoffPort =
+    effectiveKind === 'auto' && kickoff.length > 0 && args.shouldDeferKickoff !== true
+      ? currentAutoUserTurnPort()
+      : null;
+  if (autoKickoffPort !== null) {
+    sendAutoKickoff({
+      get,
+      port: autoKickoffPort,
+      sessionId,
+      workspaceId: session.workspaceId,
+      agentId: inserted.id,
+      text: kickoff,
+      onKickoffAccepted: args.onKickoffAccepted,
+    });
+    return inserted.id;
+  }
   if (resolvedKind === 'resolver') {
     await get().recordResolveAttempt({
       sessionId,

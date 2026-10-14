@@ -1,7 +1,9 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AUTO_SEED_ROOT, AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
-import { brandId, type WorkspaceId } from '@goodboy/types';
+import { listAutoOutbox } from '@goodboy/db';
+import { brandId, type AutoTreeId, type WorkspaceId } from '@goodboy/types';
 import { writeAutoTreeLimit } from '../features/auto/autoTreeLimit';
+import { currentAutoUserTurnPort } from '../features/auto/autoUserTurnPort';
 import { currentDelegationDecisionPort } from '../features/auto/delegationDecisionPort';
 import { currentTreeStopPort } from '../features/auto/treeStopPort';
 import { createAutoScheduler } from './slices/auto/scheduler';
@@ -12,6 +14,8 @@ import {
   resetStoryStore,
   STORE_IMPORT_TIMEOUT_MS,
   stubStoryInvoke,
+  buildStoryAgent,
+  buildStorySession,
   type StoryStore,
 } from './storyHarness';
 
@@ -207,5 +211,94 @@ describe('the tree an Auto agent starts with', () => {
     stops.push(await startAutoRuntime({ isEnabled: true, tickMs: 10 }));
 
     expect(await capOfTree(db)).toBe(8);
+  });
+});
+
+describe('the first message of an Auto agent', () => {
+  const GOAL = 'Plan the retry-safe credit retries';
+
+  const portParams = {
+    agentId: AUTO_SEED_ROOT,
+    sessionId: AUTO_SEED_SESSION,
+    workspaceId: 'workspace-harborline',
+    text: GOAL,
+  };
+
+  it('has no door while delegation is off, so the plain turn stays', async () => {
+    stops.push(await startAutoRuntime({ isEnabled: false, tickMs: 10_000 }));
+
+    expect(currentAutoUserTurnPort()).toBeNull();
+  });
+
+  it('opens a door while delegation is on and closes it on teardown', async () => {
+    const stop = await startAutoRuntime({ isEnabled: true, tickMs: 10_000 });
+
+    expect(currentAutoUserTurnPort()).not.toBeNull();
+    stop();
+    expect(currentAutoUserTurnPort()).toBeNull();
+  });
+
+  it('creates the tree at once and queues the message in its outbox', async () => {
+    const db = await seedSessionWithAutoAgent({ kind: 'auto' });
+    stops.push(await startAutoRuntime({ isEnabled: true, tickMs: 10_000 }));
+
+    const result = await currentAutoUserTurnPort()?.(portParams);
+
+    expect(result).toBe('queued');
+    const trees = await db.select<{ id: string; root_agent_id: string }>(
+      'SELECT id, root_agent_id FROM auto_trees',
+    );
+    expect(trees).toHaveLength(1);
+    const outbox = await listAutoOutbox({
+      db,
+      treeId: brandId<AutoTreeId>({ value: trees[0]?.id ?? '' }),
+    });
+    expect(outbox).toHaveLength(1);
+    expect(outbox[0]?.kind).toBe('user');
+    expect(JSON.stringify(outbox[0]?.payload)).toContain(GOAL);
+  });
+
+  it('does not make a second tree when the tick races the first message', async () => {
+    const db = await seedSessionWithAutoAgent({ kind: 'auto' });
+    stops.push(await startAutoRuntime({ isEnabled: true, tickMs: 10 }));
+
+    await currentAutoUserTurnPort()?.(portParams);
+    await new Promise((resolve) => setTimeout(resolve, 60));
+
+    const trees = await db.select<{ id: string }>('SELECT id FROM auto_trees');
+    expect(trees).toHaveLength(1);
+  });
+
+  it('takes a message typed in the composer as an outbox row, not a plain turn', async () => {
+    const db = await seedSessionWithAutoAgent({ kind: 'auto' });
+    useAppStore.setState({
+      sessions: [
+        buildStorySession({
+          id: AUTO_SEED_SESSION,
+          workspaceId: brandId<WorkspaceId>({ value: 'workspace-harborline' }),
+        }),
+      ],
+      sessionPhaseRuns: {
+        [AUTO_SEED_SESSION]: [
+          buildStoryAgent({ id: AUTO_SEED_ROOT, sessionId: AUTO_SEED_SESSION, kind: 'auto' }),
+        ],
+      },
+    });
+    stops.push(await startAutoRuntime({ isEnabled: true, tickMs: 10_000 }));
+
+    const result = await useAppStore.getState().sendTurn({
+      sessionId: AUTO_SEED_SESSION,
+      agentId: AUTO_SEED_ROOT,
+      content: 'Also cover the notify-relay retries',
+    });
+
+    expect(result).toEqual({ blockedOverBudget: false });
+    const trees = await db.select<{ id: string }>('SELECT id FROM auto_trees');
+    const outbox = await listAutoOutbox({
+      db,
+      treeId: brandId<AutoTreeId>({ value: trees[0]?.id ?? '' }),
+    });
+    expect(outbox.map((row) => row.kind)).toEqual(['user']);
+    expect(JSON.stringify(outbox[0]?.payload)).toContain('notify-relay');
   });
 });

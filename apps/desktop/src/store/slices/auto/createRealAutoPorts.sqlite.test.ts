@@ -55,6 +55,7 @@ const worldWithPorts = async (patch: Partial<RealAutoPortsDeps> = {}) => {
     worktreeSnapshot: vi.fn(async () => ({ head: 'abc123', entries: [], isPartial: false })),
     revokeTreeCapabilities: vi.fn(async () => 1),
     listLiveRunIds: vi.fn(async () => new Set(['run-live'])),
+    isPlanApprovalRequired: () => true,
     watchYield: vi.fn(),
     sleep: async () => undefined,
     nowMs: () => NOW,

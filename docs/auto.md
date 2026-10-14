@@ -49,6 +49,10 @@ start is the one of before: role grid, Generalist as default, Routing.
   repaints for the stored mode, the text is kept (the Auto goal and the legacy
   instructions move between `autoGoal` and `agentPrompt`) and the person starts
   again. Nothing starts in a mode they did not see.
+- The goal is the first message of the Auto agent. It is not a plain turn: the
+  tree is created at the start and the goal is queued in its outbox, so Auto's
+  first turn is a delivery like every later one. A start that loses the message
+  says "Auto didn't start" and the chat keeps no half-started turn.
 - The composer is one goal, files, one model chip and **Start Auto**. Auto runs
   on Claude: a route on another provider is replaced by the Claude default for
   Auto (`autoOwnRouting`), and **Start Auto** says why it is off when Claude is
@@ -62,6 +66,18 @@ start is the one of before: role grid, Generalist as default, Routing.
   starts nothing.
 - **Generalist** keeps its name, with no mark of being old, and existing
   Generalist agents are not changed. Auto never appears in the manual role list.
+
+## Talking to Auto
+
+A message typed in the composer of an Auto agent is not a plain turn either. The
+store's `sendTurn` hands an operator message for the root of an Auto tree to the
+runtime (`routeAutoUserTurn`), which creates the tree if it is missing and
+queues the text as a `user` outbox row; Auto reads it with the next delivery.
+Approving a plan is the same path ("Approved plan v1."). A message the runtime
+cannot take, or one with files, is refused with "Auto didn't get your message"
+and the composer keeps its text. A turn that is not an operator message, a
+child, or an Auto agent in a window with no runtime (the main window owns it) is
+left to the plain turn.
 
 ## Overview
 
@@ -109,7 +125,11 @@ is a compare and swap on the version the drawer shows, then Auto is told once
 ("Approved plan v1."). A newer version, a revise in progress, a used plan or a
 discarded one refuse it with a sentence and the drawer stays open. A second
 click, or a second window, on an approved version does not tell Auto again.
-**Ask for changes** opens the chat of Auto: a change written there makes Auto
+Auto cannot start a writer role (Implementer, Tester, Docs) on a plan that is not
+approved. The policy is `isAutoPlanApprovalRequired`: the runtime reads the
+stored setting `agents.autoPlanApproval` on every tick, and approval is required
+unless the stored value is exactly `false`. There is no screen for that setting
+yet. **Ask for changes** opens the chat of Auto: a change written there makes Auto
 rework the same plan into the next version.
 
 ## Confirming

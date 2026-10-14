@@ -912,6 +912,22 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "writes the argv of an Auto turn for the capability probe of a release"]
+    fn write_the_argv_of_an_auto_turn_for_the_probe() {
+        let out = std::env::var("GOODBOY_PROBE_ARGV_OUT").expect("GOODBOY_PROBE_ARGV_OUT");
+        let dir = std::env::var("GOODBOY_PROBE_DIR").expect("GOODBOY_PROBE_DIR");
+        let prompt = std::env::var("GOODBOY_PROBE_PROMPT").expect("GOODBOY_PROBE_PROMPT");
+        let model = std::env::var("GOODBOY_PROBE_MODEL").expect("GOODBOY_PROBE_MODEL");
+        let mut args = spawn_args("bypassPermissions", Some("auto"), &[], &[], &[]);
+        args.working_dir = &dir;
+        args.prompt = &prompt;
+        args.model = &model;
+        let argv = turn_args("claude", &args);
+        std::fs::write(out, serde_json::to_string(&argv).expect("argv as json"))
+            .expect("write the argv");
+    }
+
+    #[test]
     fn auto_on_another_cli_never_gets_a_bypass_flag_or_a_write_sandbox() {
         let roots = strings(&["/repo/.meta"]);
         let args = spawn_args("bypassPermissions", Some("auto"), &[], &[], &roots);

@@ -46,6 +46,7 @@ export type RealAutoPortsDeps = Readonly<{
   worktreeSnapshot: (params: ReadMountSnapshotParams) => Promise<WorktreeSnapshot>;
   revokeTreeCapabilities: (params: RevokeCapabilitiesParams) => Promise<number>;
   listLiveRunIds: () => Promise<ReadonlySet<string>>;
+  isPlanApprovalRequired: () => boolean;
   watchYield: (params: WatchYieldParams) => void;
   sleep: (params: SleepParams) => Promise<void>;
   nowMs: () => number;
@@ -126,7 +127,7 @@ export const createRealAutoPorts = (deps: RealAutoPortsDeps): AutoPorts => {
       (await deps.loadSessionMounts({ sessionId })).map((view) => pickableOf({ view })),
     resolveRouting: async (request) =>
       resolveChildRouting({ state: deps.getState(), request, nowMs: deps.nowMs() }),
-    isPlanApprovalRequired: () => true,
+    isPlanApprovalRequired: deps.isPlanApprovalRequired,
     watchYield: deps.watchYield,
     startAutoTurn: makeStartAutoTurn(deliveredDeps),
     lookupDeliveryRun: deps.lookupDeliveryRun,

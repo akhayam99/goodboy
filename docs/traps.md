@@ -434,6 +434,12 @@ fails silently at runtime.
   which only names the refusal. A new limit goes into both, and
   `admit.sqlite.test.ts` checks the SQL on its own so a stale snapshot cannot
   admit what the guard refuses.
+- A message to an Auto agent never goes through the plain turn path while the Auto runtime
+  runs: `spawnAgent` (first message) and `sendTurn` (every later operator message) call
+  the door `currentAutoUserTurnPort`, which queues a `user` outbox row. The door exists
+  only in the main window and only while delegation is on; in another window the plain
+  turn answers without the bridge. Never send an Auto root a turn by hand with
+  `origin: 'operator'` expecting the plain path; a delivery uses `origin: 'delegation'`.
 - `auto_*` money columns are REAL dollars. Compare them through
   `autoRemainingUsdSql` and `AUTO_USD_EPSILON`, not with `===`.
 - The sql of m230 is pinned by hash in `registry.test.ts`. While the release is
