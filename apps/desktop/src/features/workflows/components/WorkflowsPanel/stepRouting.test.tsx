@@ -57,6 +57,7 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
+import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import type { StepDefUpsertArgs, WorkflowUpsertArgs } from '../../workflows';
 import { WorkflowsPanel } from './index';
 
@@ -245,6 +246,49 @@ describe('model picked on a preset step in the Workflows studio', () => {
     pickProvider(/^Claude/);
     expect(pressed()[0]).toMatch(/^Claude/);
     await expectSavedStep({ providerOverride: 'anthropic' });
+  });
+});
+
+const providerRowNames = (group: HTMLElement): ReadonlyArray<string> =>
+  Array.from(group.querySelectorAll('button'))
+    .map((button) => button.getAttribute('aria-label') ?? '')
+    .filter((name) => ['Claude', 'Codex', 'Cursor', 'Add provider'].includes(name));
+
+describe('provider row of the Pin a model block', () => {
+  it('is the compact provider row of the routing picker, with the same names', () => {
+    startPreset();
+    const stepRow = providerRowNames(routingGroup());
+    expect(stepRow).toEqual(['Claude', 'Cursor', 'Codex', 'Add provider']);
+    expect(
+      within(routingGroup()).queryByRole('button', { name: /Usable|Not connected/ }),
+    ).toBeNull();
+    cleanup();
+
+    render(
+      <RoutingPicker
+        presentation="inline"
+        ariaLabel="Routing for a standalone picker"
+        connectedProviders={['anthropic', 'codex', 'cursor']}
+        provider="anthropic"
+        model=""
+        effort={{ editable: true, value: 'medium' }}
+        disabled={false}
+        overridden
+        onChange={() => undefined}
+      />,
+    );
+    const pickerGroup = screen.getByRole('group', { name: 'Routing for a standalone picker' });
+    expect(providerRowNames(pickerGroup)).toEqual(stepRow);
+  });
+
+  it('presses the picked provider and leaves the others unpressed', () => {
+    startPreset();
+    pickProvider(/^Codex/);
+
+    expect(pressed()[0]).toBe('Codex');
+    expect(
+      within(routingGroup()).getByRole('button', { name: 'Claude' }).getAttribute('aria-pressed'),
+    ).toBe('false');
   });
 });
 

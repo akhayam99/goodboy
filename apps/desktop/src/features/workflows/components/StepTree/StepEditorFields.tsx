@@ -204,7 +204,6 @@ export const StepEditorFields = ({
         {source === 'follow' ? null : (
           <RoutingPicker
             presentation="inline"
-            providerLayout="named"
             ariaLabel={routingLabel}
             connectedProviders={connectedProviders}
             provider={step.provider}

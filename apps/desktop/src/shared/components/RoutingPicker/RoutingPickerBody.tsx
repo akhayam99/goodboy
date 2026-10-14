@@ -84,7 +84,6 @@ type Props = {
   readonly availability?: 'run' | 'setup';
   readonly isInline?: boolean;
   readonly isEffortHidden?: boolean;
-  readonly providerLayout?: 'glyphs' | 'named';
   readonly focusRoot?: RefObject<HTMLElement | null>;
   readonly onConnectionInFlightChange?: (isInFlight: boolean) => void;
 };
@@ -109,7 +108,6 @@ export const RoutingPickerBody = ({
   availability = 'run',
   isInline = true,
   isEffortHidden = false,
-  providerLayout = 'glyphs',
   focusRoot,
   onConnectionInFlightChange,
 }: Props) => {
@@ -314,10 +312,9 @@ export const RoutingPickerBody = ({
       )}
       <PickerSection
         label="Provider"
-        {...(!isApiProvider({ id: viewProvider }) &&
-          providerLayout !== 'named' && {
-            action: <ModelVisibilityLink provider={viewProvider} onNavigate={onClose} />,
-          })}
+        {...(!isApiProvider({ id: viewProvider }) && {
+          action: <ModelVisibilityLink provider={viewProvider} onNavigate={onClose} />,
+        })}
       >
         {connectedProviders.length === 0 && availability === 'run' ? (
           <NoConnectedProviders onNavigate={onClose} />
@@ -327,7 +324,6 @@ export const RoutingPickerBody = ({
             activeProvider={isViewingAuto ? null : viewProvider}
             secondaryProvider={isViewingAuto ? (recommendedProvider ?? null) : null}
             showDisconnected={availability === 'setup'}
-            isNamed={providerLayout === 'named'}
             onNavigateProviders={onClose}
             onSelect={(id) => {
               const isConnected = connectedProviders.includes(id);

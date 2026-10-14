@@ -60,8 +60,8 @@ are document fields (markdown with **Write** and **Preview**, Cmd+Enter
 closes the editor), each with **Polish** and, after a polish, **Undo
 polish**. The model block has two choices: **Follow role** (the default,
 which says what Auto picks for the role from the providers you can use now)
-or **Pin a model** (providers as named chips with their state, then model and
-effort), and **Reply verbosity** under both. A pinned step carries a dot on
+or **Pin a model** (the same compact provider row as the model picker, then
+model, version and effort), and **Reply verbosity** under both. A pinned step carries a dot on
 its row, like an edited one. The footer has one primary, **Done**, and a ⋯
 menu with **Duplicate**, **Save as step**, **Move up**, **Move down** and
 **Delete step**. Delete acts at once and the toast offers **Undo**. Escape
