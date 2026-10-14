@@ -1,5 +1,6 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import { deliverQueuedTurn } from './deliverQueuedTurn';
+import { isAgentStopping } from '../turn/stoppingAgents';
 import { isHandoffPending } from './handoff';
 import { readAgentQueue, writeAgentQueue } from './queueStore';
 import type { GetFn, SetFn } from './types';
@@ -13,7 +14,7 @@ const BUSY_TURN_KINDS: ReadonlySet<string> = new Set(['starting', 'running']);
 
 export const drainAgentQueue = (set: SetFn, get: GetFn) => {
   return async ({ sessionId, agentId }: Params): Promise<void> => {
-    if (isHandoffPending({ agentId })) {
+    if (isHandoffPending({ agentId }) || isAgentStopping({ agentId })) {
       return;
     }
     const state = get();

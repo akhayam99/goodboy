@@ -325,10 +325,15 @@ continuation never resumes, because it runs in another directory.
   group, so cancelling a turn stops everything it started.
 - **Stop is confirmed.** A user Stop goes through `cancelTurnConfirmed`
   (`store/slices/turn/`), which answers `exited`, `still_running` or `failed`.
-  The turn goes idle only on `exited`, after the run left `turn_list_live`. When
-  the kill is refused and the process lives, the turn and the agent stay
-  running, the error shows, and pressing Stop again retries. A refused cancel
-  for a run that is already gone counts as `exited`. `cancelCurrentTurn` with
+  The turn goes idle only on `exited`, after the run left `turn_list_live`, and
+  only then is the agent marked `stopped` (`markStoppedByUser`), so a fan-out
+  parent never joins while a stopped child is still alive. Until the exit is
+  confirmed the agent reads running, and `drainAgentQueue` skips it
+  (`stoppingAgents.ts`). When the kill is refused and the process lives, or the
+  live list cannot be read, the turn and the agent stay running with nothing
+  marked stopped, the error shows, the queue drains again when the turn ends,
+  and pressing Stop again retries. A refused cancel for a run that is already
+  gone counts as `exited`. `cancelCurrentTurn` with
   reason `user` calls it; `handoff` and `teardown` keep the old fire-and-idle
   path.
 - **Write scope is explicit.** The writable mounts and their git common

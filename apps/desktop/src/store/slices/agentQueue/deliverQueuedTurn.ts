@@ -60,8 +60,12 @@ export const deliverQueuedTurn = async ({
       await hold();
       return 'held';
     }
-    await accept();
-    return 'delivered';
+    if (isAccepted || result.isLaneQueued === true) {
+      await accept();
+      return 'delivered';
+    }
+    await hold();
+    return 'held';
   } catch (error) {
     if (isTranscriptOwnedTurnError({ error })) {
       await accept();

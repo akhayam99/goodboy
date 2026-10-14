@@ -418,7 +418,10 @@ fails silently at runtime.
   child that ends blocked or stopped never reaches `advanceScoutTree`, so the
   place that blocks or stops it calls `joinFanOutParent`; without that call a
   last child that ends blocked leaves the parent waiting forever. The
-  consolidation prompt names the status of each child.
+  consolidation prompt names the status of each child. `stopped` is published
+  only after the exit is confirmed (`cancelTurnConfirmed`), and the join also
+  waits while a child's turn is `running` or `blocked`, so the parent never
+  consolidates over a child that is still alive.
 
 - An Auto artifact is approved only while `auto_artifacts.approved_revision`
   equals the live `session_artifacts.revision`. A hand edit or a restore writes

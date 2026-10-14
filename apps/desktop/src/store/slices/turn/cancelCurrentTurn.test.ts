@@ -44,6 +44,7 @@ const harness = (): Harness => {
   const state: Record<string, unknown> = {
     reportError,
     joinFanOutParent: vi.fn(async () => undefined),
+    drainAgentQueue: vi.fn(async () => undefined),
     selectedAgentId: {},
     agentTurnState: { [AGENT_ID]: { kind: 'running', runId: 'run-1' } },
     sessionPhaseRuns: { [SESSION_ID]: [{ id: AGENT_ID, status: 'running' }] },
@@ -64,7 +65,7 @@ describe('cancelCurrentTurn', () => {
     }));
   });
 
-  it('marks the agent stopped by you before the process dies when you stop it', async () => {
+  it('marks the agent stopped by you only after the process is gone when you stop it', async () => {
     const { state, cancel } = harness();
 
     await cancel(SESSION_ID, AGENT_ID, 'user');
@@ -74,8 +75,8 @@ describe('cancelCurrentTurn', () => {
       stoppedAt: expect.any(String),
       stoppedBy: 'you',
     });
-    expect(invokeAgentUpdateStatus.mock.invocationCallOrder[0]).toBeLessThan(
-      cancelTurn.mock.invocationCallOrder[0] ?? 0,
+    expect(cancelTurn.mock.invocationCallOrder[0]).toBeLessThan(
+      invokeAgentUpdateStatus.mock.invocationCallOrder[0] ?? 0,
     );
     const runs = (state.sessionPhaseRuns as Record<string, ReadonlyArray<Agent>>)[SESSION_ID];
     expect(runs?.[0]?.status).toBe('stopped');

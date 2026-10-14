@@ -7,7 +7,7 @@ import { awaitRunStopped } from '../agents/awaitRunStopped';
 import type { CancelTurnReason } from './cancelCurrentTurn';
 import { nowIso } from '../project-mounts/nowIso';
 import { markStoppedByUser } from './markStoppedByUser';
-import { restoreAgentStatus } from './restoreAgentStatus';
+import { clearAgentStopping, markAgentStopping } from './stoppingAgents';
 import { cancelTurnStartWindow } from './turnStartWindow';
 import type { GetFn, SetFn } from './types';
 
@@ -24,38 +24,45 @@ type Params = Readonly<{
 
 const now = (): IsoDateTime => nowIso({});
 
+const FAILED: CancelOutcome = { outcome: 'failed', exitedAt: null };
+
 export const cancelTurnConfirmed = (set: SetFn, get: GetFn) => {
-  return async ({ sessionId, agentId, reason }: Params): Promise<CancelOutcome> => {
+  const stop = async ({ sessionId, agentId, reason }: Params): Promise<CancelOutcome> => {
     const agentState = get().agentTurnState[agentId];
     if (agentState?.kind !== 'running') {
       cancelTurnStartWindow({ agentId });
       return { outcome: 'exited', exitedAt: now() };
     }
     const { runId } = agentState;
-    const previousStatus = (get().sessionPhaseRuns[sessionId] ?? []).find(
-      (agent) => agent.id === agentId,
-    )?.status;
     cancelledRunIds.add(runId);
-    const stopMark =
-      reason === 'user'
-        ? await markStoppedByUser({ set, get, sessionId, agentId, at: now() })
-        : null;
     try {
       await cancelTurn(runId);
     } catch (error) {
-      const live = await listLiveRunIds();
-      if (live.has(runId)) {
+      let isAlive = true;
+      let cause: unknown = error;
+      try {
+        isAlive = (await listLiveRunIds()).has(runId);
+      } catch (probeError) {
+        cause = probeError;
+      }
+      if (isAlive) {
         cancelledRunIds.delete(runId);
-        if (stopMark !== null && previousStatus !== undefined) {
-          await restoreAgentStatus({ set, get, sessionId, agentId, status: previousStatus });
-        }
         if (reason === 'user') {
-          void get().reportError({ title: "Couldn't stop the agent", error, sessionId });
+          void get().reportError({ title: "Couldn't stop the agent", error: cause, sessionId });
         }
-        return { outcome: 'failed', exitedAt: null };
+        return FAILED;
       }
     }
-    const hasStopped = await awaitRunStopped({ runId });
+    let hasStopped = false;
+    try {
+      hasStopped = await awaitRunStopped({ runId });
+    } catch (waitError) {
+      cancelledRunIds.delete(runId);
+      if (reason === 'user') {
+        void get().reportError({ title: "Couldn't stop the agent", error: waitError, sessionId });
+      }
+      return FAILED;
+    }
     if (!hasStopped) {
       if (reason === 'user') {
         void get().reportError({
@@ -81,8 +88,24 @@ export const cancelTurnConfirmed = (set: SetFn, get: GetFn) => {
       });
     }
     if (reason === 'user') {
+      await markStoppedByUser({ set, get, sessionId, agentId, at: exitedAt });
       void get().joinFanOutParent({ sessionId, agentId });
     }
     return { outcome: 'exited', exitedAt };
+  };
+
+  return async (params: Params): Promise<CancelOutcome> => {
+    const { sessionId, agentId } = params;
+    markAgentStopping({ agentId });
+    let outcome: CancelOutcome = FAILED;
+    try {
+      outcome = await stop(params);
+      return outcome;
+    } finally {
+      clearAgentStopping({ agentId });
+      if (outcome.outcome !== 'exited') {
+        void get().drainAgentQueue({ sessionId, agentId });
+      }
+    }
   };
 };

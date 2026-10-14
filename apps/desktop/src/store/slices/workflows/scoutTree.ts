@@ -58,6 +58,16 @@ const childrenOf = (runs: ReadonlyArray<Agent>, parentId: AgentId): ReadonlyArra
     .sort((a, b) => a.ordinal - b.ordinal);
 };
 
+type ChildLiveParams = Readonly<{
+  get: GetFn;
+  childId: AgentId;
+}>;
+
+const hasLiveRun = ({ get, childId }: ChildLiveParams): boolean => {
+  const kind = get().agentTurnState[childId]?.kind;
+  return kind === 'running' || kind === 'blocked';
+};
+
 export const scoutDepth = (runs: ReadonlyArray<Agent>, agentId: AgentId): number => {
   const seen = new Set<AgentId>();
   let depth = 0;
@@ -528,7 +538,7 @@ const maybeSynthesizeParent = async ({
   }
 
   const siblings = childrenOf(runs, parentId);
-  if (siblings.some((s) => !TERMINAL.includes(s.status))) {
+  if (siblings.some((s) => !TERMINAL.includes(s.status) || hasLiveRun({ get, childId: s.id }))) {
     return;
   }
   if (synthesisStarted.has(parentId)) {

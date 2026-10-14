@@ -72,8 +72,9 @@ const harness = ({ running = true }: { readonly running?: boolean } = {}): Harne
   Object.assign(state, slice, {
     cancelCurrentTurn,
     reportError,
-    sendTurn: vi.fn(async (params: SentTurn) => {
+    sendTurn: vi.fn(async (params: SentTurn & { onStarted?: () => void }) => {
       sent.push({ content: params.content, sentVia: params.sentVia });
+      params.onStarted?.();
       return { blockedOverBudget: false };
     }),
   });
@@ -380,6 +381,44 @@ describe('agent queue', () => {
       expect(reportError).toHaveBeenCalledWith(
         expect.objectContaining({ title: "Couldn't send the queued message" }),
       );
+    });
+
+    it('keeps the message queued when the send returns before any provider turn starts', async () => {
+      const { state, slice, queue } = harness();
+      await slice.enqueueAgentMessage({ turn: input('a') });
+      state.agentTurnState = { [AGENT_ID]: { kind: 'idle' } };
+      state.sendTurn = vi.fn(async () => ({ blockedOverBudget: false }));
+      replaceAgentQueuedMessages.mockClear();
+
+      await slice.drainAgentQueue({ sessionId: SESSION_ID, agentId: AGENT_ID });
+
+      expect(queue().map((item) => [item.id, item.status])).toEqual([['a', 'queued']]);
+      expect(savedIds().every((ids) => ids.includes('a'))).toBe(true);
+    });
+
+    it('removes a message the resolve lane took over, once', async () => {
+      const { state, slice, queue } = harness();
+      await slice.enqueueAgentMessage({ turn: input('a') });
+      state.agentTurnState = { [AGENT_ID]: { kind: 'idle' } };
+      state.sendTurn = vi.fn(async () => ({ blockedOverBudget: false, isLaneQueued: true }));
+      replaceAgentQueuedMessages.mockClear();
+
+      await slice.drainAgentQueue({ sessionId: SESSION_ID, agentId: AGENT_ID });
+
+      expect(queue()).toEqual([]);
+      expect(savedIds()).toEqual([[]]);
+    });
+
+    it('removes a delivered message exactly once', async () => {
+      const { state, slice, queue } = harness();
+      await slice.enqueueAgentMessage({ turn: input('a') });
+      state.agentTurnState = { [AGENT_ID]: { kind: 'idle' } };
+      replaceAgentQueuedMessages.mockClear();
+
+      await slice.drainAgentQueue({ sessionId: SESSION_ID, agentId: AGENT_ID });
+
+      expect(queue()).toEqual([]);
+      expect(savedIds()).toEqual([[]]);
     });
 
     it('treats a turn that failed after it started as delivered and does not queue it again', async () => {

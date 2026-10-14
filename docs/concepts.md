@@ -516,9 +516,10 @@ turn** or **Sending now**, and each one can be edited, removed or sent now.
 They are saved in the database (`agent_queued_messages`), so they survive a
 restart, and they go out one per turn in order. An agent you stopped keeps its
 queue until you continue it or send one now. A message leaves the queue, and
-the saved copy, only once the provider has accepted it. Until then it reads
-**Sending now**, and a send that fails before it starts puts it back at the
-head. When the queue cannot be saved, an error says so and the messages stay
+the saved copy, only once the provider has accepted it (the turn started, or
+the Resolve lane took it over). Until then it reads **Sending now**, and a send
+that ends before a provider turn starts, by an error, a cancelled start, an
+unresolved step agent or a refused lease, puts it back at the head. When the queue cannot be saved, an error says so and the messages stay
 in the queue for this session. Once sent, the bubble in the chat says "Queued ·
 sent after the turn" or "Sent now · interrupted the turn".
 
