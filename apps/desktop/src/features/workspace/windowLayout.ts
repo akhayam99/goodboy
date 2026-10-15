@@ -1,7 +1,12 @@
-import type { WorkspaceId } from '@goodboy/types';
+import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { deleteSetting, listSettingsWithPrefix, setSetting } from '@goodboy/db';
 import { tauriDatabase } from '../../shared/lib/db';
-import { EMPTY_FOCUS, type Focus, type Location } from '../../store/slices/navigation/types';
+import {
+  EMPTY_FOCUS,
+  type Focus,
+  type Location,
+  type SessionView,
+} from '../../store/slices/navigation/types';
 
 const WINDOW_LAYOUT_PREFIX = 'window.layout.';
 
@@ -20,24 +25,47 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const isNullableString = (value: unknown): value is string | null =>
   value === null || typeof value === 'string';
 
-const isPlace = (value: unknown): value is Location['place'] => {
+const isWorkspaceId = (value: unknown): value is WorkspaceId => typeof value === 'string';
+
+const isSessionId = (value: unknown): value is SessionId => typeof value === 'string';
+
+const isViewLens = (value: unknown): value is SessionView['lens'] => isNullableString(value);
+
+const isViewAgentId = (value: unknown): value is SessionView['agentId'] => isNullableString(value);
+
+const isViewTarget = (value: unknown): value is SessionView['target'] =>
+  value === null || isRecord(value);
+
+const isDrawer = (value: unknown): value is Focus['drawer'] => isRecord(value);
+
+const isStudio = (value: unknown): value is Location['studio'] => isRecord(value);
+
+type PlaceParams = {
+  readonly value: unknown;
+};
+
+const placeOf = ({ value }: PlaceParams): Location['place'] | null => {
   if (!isRecord(value)) {
-    return false;
+    return null;
   }
   if (value.at === 'board') {
-    return true;
+    return { at: 'board' };
   }
-  if (value.at !== 'session' || typeof value.sessionId !== 'string') {
-    return false;
+  const sessionId = value.sessionId;
+  if (value.at !== 'session' || !isSessionId(sessionId)) {
+    return null;
   }
   const view = value.view;
-  return (
-    isRecord(view) &&
-    isNullableString(view.lens) &&
-    isNullableString(view.agentId) &&
-    (view.studio === null || isRecord(view.studio)) &&
-    (view.target === null || isRecord(view.target))
-  );
+  if (!isRecord(view)) {
+    return null;
+  }
+  const lens = view.lens;
+  const agentId = view.agentId;
+  const target = view.target;
+  if (!isViewLens(lens) || !isViewAgentId(agentId) || !isViewTarget(target)) {
+    return null;
+  }
+  return { at: 'session', sessionId, view: { lens, agentId, target } };
 };
 
 const focusOf = ({ value }: { readonly value: unknown }): Focus => {
@@ -63,7 +91,7 @@ const focusOf = ({ value }: { readonly value: unknown }): Focus => {
     ? value.revealed.filter((item): item is string => typeof item === 'string')
     : [];
   return {
-    drawer: isRecord(value.drawer) ? (value.drawer as unknown as Focus['drawer']) : null,
+    drawer: isDrawer(value.drawer) ? value.drawer : null,
     selection,
     scroll,
     revealed,
@@ -71,13 +99,17 @@ const focusOf = ({ value }: { readonly value: unknown }): Focus => {
 };
 
 export const parseLocation = ({ value }: { readonly value: unknown }): Location | null => {
-  if (!isRecord(value) || !isPlace(value.place)) {
+  if (!isRecord(value)) {
+    return null;
+  }
+  const place = placeOf({ value: value.place });
+  if (place === null) {
     return null;
   }
   return {
-    workspaceId: typeof value.workspaceId === 'string' ? (value.workspaceId as WorkspaceId) : null,
-    place: value.place,
-    studio: isRecord(value.studio) ? (value.studio as unknown as Location['studio']) : null,
+    workspaceId: isWorkspaceId(value.workspaceId) ? value.workspaceId : null,
+    place,
+    studio: isStudio(value.studio) ? value.studio : null,
     focus: focusOf({ value: value.focus }),
   };
 };
@@ -91,14 +123,14 @@ const parseLayout = ({
 }): WindowLayout | null => {
   try {
     const value: unknown = JSON.parse(raw);
-    if (!isRecord(value) || typeof value.workspaceId !== 'string' || typeof value.at !== 'number') {
+    if (!isRecord(value) || !isWorkspaceId(value.workspaceId) || typeof value.at !== 'number') {
       return null;
     }
     const location = parseLocation({ value: value.location });
     if (location === null) {
       return null;
     }
-    return { label, workspaceId: value.workspaceId as WorkspaceId, location, at: value.at };
+    return { label, workspaceId: value.workspaceId, location, at: value.at };
   } catch {
     return null;
   }

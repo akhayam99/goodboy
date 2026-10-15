@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { LocalImage } from '@goodboy/ui';
-import { ImageLightbox } from '../ImageLightbox';
+import { ImageLightbox } from '../../../../shared/components/ImageLightbox';
 
 type Props = {
   readonly path: string;

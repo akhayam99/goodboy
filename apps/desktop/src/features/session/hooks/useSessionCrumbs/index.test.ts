@@ -134,11 +134,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   store.state = {
     activeLens: {},
-    sessionStudio: {},
     focusedWorkflowRunId: {},
     focusedArtifactId: {},
     sessionArtifacts: {},
-    artifactCreation: {},
     selectedAgentId: {},
     sessionPhaseRuns: {
       [SESSION_ID]: [stepAgent, adHocAgent, resolverAgent, clusterChild, delegateAgent],

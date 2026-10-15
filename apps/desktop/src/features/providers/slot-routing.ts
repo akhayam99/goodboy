@@ -12,9 +12,12 @@ export const ROLE_SLOTS: Readonly<Record<AgentRole, ReadonlyArray<SlotKey>>> = {
   resolver: ['goal', 'decisions', 'files_touched'],
   rewriter: SLOT_KEYS,
   scribe: SLOT_KEYS,
+  'ci-debugger': ['goal', 'decisions', 'files_touched', 'last_output_summary'],
+  'ci-fixer': ['goal', 'decisions', 'files_touched', 'last_output_summary'],
   docs: ['goal', 'last_output_summary'],
   report: SLOT_KEYS,
   wireframe: SLOT_KEYS,
+  auto: SLOT_KEYS,
   custom: SLOT_KEYS,
 };
 
@@ -26,6 +29,8 @@ export const LEGACY_KIND_SLOTS: Partial<Record<AgentKind, ReadonlyArray<SlotKey>
   scout: ['goal', 'last_output_summary'],
   docs: ['goal', 'last_output_summary'],
   resolver: ['goal', 'files_touched'],
+  'ci-debugger': ['goal', 'decisions', 'files_touched', 'last_output_summary'],
+  'ci-fixer': ['goal', 'decisions', 'files_touched', 'last_output_summary'],
 };
 
 type SlotsForTurnParams = {

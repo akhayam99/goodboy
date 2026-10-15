@@ -2,7 +2,7 @@
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { join, relative, sep } from 'path';
 import { describe, expect, it } from 'vitest';
-import type { SessionStudio, StudioKind } from '../../store';
+import type { StudioKind } from '../../store';
 import { PAGE_FRAME, frameTierOf } from '@goodboy/ui';
 import { STUDIO_META } from '../../app/components/StudioFrame/studioMeta';
 
@@ -10,10 +10,10 @@ const SRC = join(__dirname, '..', '..');
 const FEATURES = join(SRC, 'features');
 const WORKSPACE = 'features/session/components/SessionWorkspace/index.tsx';
 
-const WIDTH_ALLOWLIST = new Set(['features/chat/components/ImageLightbox/index.tsx']);
+const WIDTH_ALLOWLIST = new Set(['shared/components/ImageLightbox/index.tsx']);
 
 const NARROW_ALLOWLIST = new Set([
-  'features/chat/components/HandoffChip/index.tsx',
+  'features/chat/components/HandoffChip/HandoffCardShell.tsx',
   'features/workspace/components/StageBoard/index.tsx',
   'features/workspace/components/WorkspaceLauncher/index.tsx',
 ]);
@@ -98,7 +98,6 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
     kind: 'dispatch',
     files: [
       'features/artifacts/components/ArtifactList/index.tsx',
-      'features/artifacts/components/ArtifactCreationPane/index.tsx',
       'features/artifacts/components/ArtifactShell/ArtifactDocumentShell.tsx',
       'features/artifacts/components/ArtifactShell/ArtifactGenerationShell.tsx',
     ],
@@ -119,10 +118,6 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
     files: [
       'features/session/components/SessionWorkspace/parts/IntegrationPane/GithubTaskDetail.tsx',
     ],
-  },
-  SessionStudioLayer: {
-    kind: 'bare',
-    files: ['features/session/components/SessionWorkspace/parts/SessionStudioLayer.tsx'],
   },
   PaneShell: { kind: 'helper', files: [] },
   StudioBandContext: { kind: 'helper', files: [] },
@@ -174,17 +169,11 @@ const STUDIO_ROOTS: Readonly<Record<StudioKind, ReadonlyArray<string>>> = {
   monitoring: ['features/monitoring/components/MonitoringStudio/MonitoringPage.tsx'],
 };
 
-const SESSION_STUDIO_ROOTS: Readonly<Record<SessionStudio['kind'], ReadonlyArray<string>>> = {
-  workflow: ['features/workflows/components/WorkflowBuilderView/index.tsx'],
-};
-
 const FORM_AND_DETAIL_ROOTS: PlaceRoots = {
-  'Runs > Create': ['features/workflows/components/WorkflowBuilderView/index.tsx'],
   'Runs > a run': ['features/session/components/SessionWorkspace/parts/WorkflowRunDetail.tsx'],
   'Questions detail': ['features/session/components/SessionWorkspace/parts/QuestionsPane.tsx'],
   'Branch > create pull request': ['features/branch/components/BranchPage/index.tsx'],
   'Create merge request': ['features/integrations/gitlab/MergeRequest/MrDetailPanel/index.tsx'],
-  'Artifacts > create': ['features/artifacts/components/ArtifactCreationPane/index.tsx'],
   'Session overview loading': [
     'features/session/components/SessionWorkspace/parts/SessionOverviewSkeleton.tsx',
   ],
@@ -209,7 +198,6 @@ const H1_ALLOWLIST: ReadonlySet<string> = new Set([
   'features/artifacts/components/ArtifactShell/ArtifactShellHeader.tsx',
   'features/artifacts/components/ArtifactList/index.tsx',
   'features/workspace/components/WorkspaceLauncher/index.tsx',
-  'features/session/components/SessionDraftPane/SessionDraftHeader.tsx',
   'shared/components/StudioDetail/RecordHeader/index.tsx',
 ]);
 
@@ -318,30 +306,17 @@ describe('content column contract', () => {
     expect(read('features/workspace-chat/components/ChatComposer/index.tsx')).not.toMatch(/max-w-/);
   });
 
-  it('registers every studio and session studio, so a new place cannot skip the contract', () => {
+  it('registers every studio, so a new place cannot skip the contract', () => {
     const meta = read('app/components/StudioFrame/studioMeta.ts');
     const studios = [...meta.matchAll(/^ {2}(\w+): \{$/gm)].map((match) => match[1] ?? '').sort();
-    const types = read('store/slices/session-view/types.ts');
-    const start = types.indexOf('export type SessionStudio =');
-    const declaration = types.slice(start, types.indexOf('\n\n', start));
-    const sessionStudios = [...declaration.matchAll(/kind: '(\w+)'/g)]
-      .map((match) => match[1] ?? '')
-      .sort();
 
     expect(Object.keys(STUDIO_ROOTS).sort()).toEqual(studios);
-    expect(Object.keys(SESSION_STUDIO_ROOTS).sort()).toEqual(sessionStudios);
   });
 
-  it('roots every studio, session studio, form and sub-page on a PageColumn, never a left pinned wrapper', () => {
+  it('roots every studio, form and sub-page on a PageColumn, never a left pinned wrapper', () => {
     const places: PlaceRoots = {
       ...Object.fromEntries(
         Object.entries(STUDIO_ROOTS).map(([kind, files]) => [`studio ${kind}`, files]),
-      ),
-      ...Object.fromEntries(
-        Object.entries(SESSION_STUDIO_ROOTS).map(([kind, files]) => [
-          `session studio ${kind}`,
-          files,
-        ]),
       ),
       ...FORM_AND_DETAIL_ROOTS,
     };

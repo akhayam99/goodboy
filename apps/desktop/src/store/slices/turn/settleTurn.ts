@@ -22,6 +22,8 @@ import {
 import { NOT_BLOCKED } from './notBlocked';
 import type { TurnContext } from './turnContext';
 import { enqueueLearnings } from './learningQueue';
+import { activePlanOf } from './activePlanOf';
+import { unchangedPlanNote } from './unchangedPlanNote';
 
 type Params = Readonly<{
   set: SetFn;
@@ -132,6 +134,10 @@ export const settleTurn = async ({ set, get, ctx }: Params) => {
         workingDir,
       },
     });
+    const planBefore =
+      earlyAgentKind === 'planner'
+        ? activePlanOf({ get, sessionId, agentId: activeAgentId })
+        : null;
     const captured = await captureArtifactsFromTurn({
       set,
       sessionId,
@@ -141,8 +147,23 @@ export const settleTurn = async ({ set, get, ctx }: Params) => {
       emittingProvider: provider,
       sourceTurnId: runId,
       workflowRunId: phaseWorkflowRunId ?? undefined,
+      captureMode: ctx.input.captureMode,
     });
     const capturedPlan = captured.plan;
+    const unchangedNote = unchangedPlanNote({
+      before: planBefore,
+      after: activePlanOf({ get, sessionId, agentId: activeAgentId }),
+      userText: ctx.userTurnText,
+      hasCaptureError: captured.error !== null,
+    });
+    if (unchangedNote !== null) {
+      get().appendTurnEvent(activeAgentId, sessionId, {
+        kind: 'decision_note',
+        runId,
+        message: unchangedNote,
+        at: now(),
+      });
+    }
     if (captured.error !== null) {
       get().appendTurnEvent(activeAgentId, sessionId, {
         kind: 'artifact_capture_failed',
@@ -240,6 +261,13 @@ export const settleTurn = async ({ set, get, ctx }: Params) => {
       failureCause: 'provider_error',
     });
   }
+  ctx.input.onSettled?.({
+    runId,
+    assistantText,
+    hasFailed: lastError !== null,
+    wasCancelled: turnWasCancelled,
+    filesTouched: Array.from(filesTouchedThisTurn),
+  });
   if (lastError) {
     throw lastError;
   }

@@ -4,7 +4,7 @@ Begin from an issue, a workflow or a question. Everything starts as one draft, a
 
 ### How do you want to start?
 
-The **New session** draft has three tabs: **Pick up a task**, **Run a workflow** and **Ask an agent**. **Discard draft** throws it away.
+The **New session** draft has one compact selector with three choices: **Pick up a task**, **Run a workflow** and **Ask an agent**, and a line under it that says what the selected one does. **Discard draft** (once you wrote something) and **Start blank** sit at the end of the same row. Run a workflow and Ask an agent are the same form as in the **New** drawer, at page width, and a spend cap that is switched on needs an amount with a preset too. Esc closes the page and takes you back to where you were. If you wrote something, Esc asks whether to keep the draft or discard it, and keeping it leaves **New session** ready with your text. **Discard draft** throws it away and leaves the page.
 
 ### Pick up a task, with a drafted brief
 
@@ -46,6 +46,10 @@ Map an unfamiliar repo before you plan. **Scout** is the default role and only r
 </picture>
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
+
+### Start more work in a session
+
+**New** in a session opens one drawer with three tabs: **Run**, **Agent** and **Write**. **Run** takes a goal and plans the steps (Orchestrated, or a saved preset) with Autonomy (**Ask me**, **Balanced** or **Autopilot**), Starts and Spend cap at the end. **Agent** starts one role. **Write** drafts a report or a wireframe. The button is filled when nothing is running, blocked or waiting on a question, and neutral otherwise. A run you like can be kept from its page with **Save as preset**.
 
 ### Start blank
 

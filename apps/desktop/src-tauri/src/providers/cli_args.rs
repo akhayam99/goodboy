@@ -285,8 +285,51 @@ pub(crate) fn side_job_args(side: &SideJob<'_>) -> Result<Vec<String>, ArgsError
     Ok(argv)
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum RoleAccess {
+    ReadOnly,
+    Writer,
+}
+
+const READ_ONLY_ROLES: &[&str] = &["scout", "planner", "investigator", "reviewer", "auto"];
+const WRITER_ROLES: &[&str] = &["implementer", "tester", "docs"];
+const READ_ONLY_CLAUDE_TOOLS: &str = "Read,Grep,Glob";
+const NATIVE_SUBAGENT_TOOLS: &[&str] = &["Task", "Agent"];
+const READ_ONLY_DENIED_TOOLS: &[&str] = &["Bash", "Edit", "Write", "MultiEdit", "NotebookEdit"];
+
+pub(crate) fn role_access(role: &str) -> Option<RoleAccess> {
+    if READ_ONLY_ROLES.contains(&role) {
+        return Some(RoleAccess::ReadOnly);
+    }
+    if WRITER_ROLES.contains(&role) {
+        return Some(RoleAccess::Writer);
+    }
+    None
+}
+
+fn claude_allowed_tools(args: &SpawnOneArgs<'_>, access: Option<RoleAccess>) -> Vec<String> {
+    if access == Some(RoleAccess::ReadOnly) {
+        return Vec::new();
+    }
+    args.allowed_tools.to_vec()
+}
+
+fn confinement_of(args: &SpawnOneArgs<'_>) -> Option<RoleAccess> {
+    args.confined_role
+        .map(|role| role_access(role).unwrap_or(RoleAccess::ReadOnly))
+}
+
+fn effective_permission_mode<'a>(args: &SpawnOneArgs<'a>, access: Option<RoleAccess>) -> &'a str {
+    if access == Some(RoleAccess::ReadOnly) {
+        return "plan";
+    }
+    args.permission_mode
+}
+
 pub(crate) fn turn_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String> {
     let cli = Cli::of_binary(binary);
+    let access = confinement_of(args);
+    let permission_mode = effective_permission_mode(args, access);
     match cli {
         Cli::Cursor => {
             let mut v = vec![
@@ -299,7 +342,7 @@ pub(crate) fn turn_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String> {
                 "--model".to_string(),
                 args.model.to_string(),
             ];
-            if args.permission_mode == "bypassPermissions" {
+            if permission_mode == "bypassPermissions" {
                 v.push("--force".to_string());
             } else {
                 v.push("--mode".to_string());
@@ -328,7 +371,7 @@ pub(crate) fn turn_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String> {
                 args.model.to_string(),
             ];
             v.extend(effort_args(cli, args.effort));
-            match args.permission_mode {
+            match permission_mode {
                 "bypassPermissions" => v.push("--dangerously-skip-permissions".to_string()),
                 "acceptEdits" => v.extend([
                     "--mode".to_string(),
@@ -355,7 +398,7 @@ pub(crate) fn turn_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String> {
                 "--cd".to_string(),
                 args.working_dir.to_string(),
             ];
-            let sandbox = match args.permission_mode {
+            let sandbox = match permission_mode {
                 "acceptEdits" | "bypassPermissions" => "workspace-write",
                 _ => "read-only",
             };
@@ -403,7 +446,7 @@ pub(crate) fn turn_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String> {
                 args.working_dir.to_string(),
                 "--dangerously-skip-permissions".to_string(),
             ];
-            if args.permission_mode != "bypassPermissions" {
+            if permission_mode != "bypassPermissions" {
                 v.push("--agent".to_string());
                 v.push("plan".to_string());
             }
@@ -431,7 +474,7 @@ pub(crate) fn turn_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String> {
                 "--model".to_string(),
                 args.model.to_string(),
                 "--permission-mode".to_string(),
-                args.permission_mode.to_string(),
+                permission_mode.to_string(),
                 "--setting-sources".to_string(),
                 CLAUDE_SETTING_SOURCES.to_string(),
             ]);
@@ -448,9 +491,14 @@ pub(crate) fn turn_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String> {
                 v.push(sp.to_string());
             }
             v.extend(effort_args(cli, args.effort));
-            if !args.allowed_tools.is_empty() {
+            if access == Some(RoleAccess::ReadOnly) {
+                v.push("--tools".to_string());
+                v.push(READ_ONLY_CLAUDE_TOOLS.to_string());
+            }
+            let allowed_tools = claude_allowed_tools(args, access);
+            if !allowed_tools.is_empty() {
                 v.push("--allowedTools".to_string());
-                v.push(args.allowed_tools.join(","));
+                v.push(allowed_tools.join(","));
             }
             let mut disallowed_tools: Vec<String> = args
                 .disallowed_tools
@@ -458,6 +506,12 @@ pub(crate) fn turn_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String> {
                 .filter(|tool| tool.as_str() != "mcp__*")
                 .cloned()
                 .collect();
+            if access.is_some() {
+                disallowed_tools.extend(NATIVE_SUBAGENT_TOOLS.iter().map(|tool| tool.to_string()));
+            }
+            if access == Some(RoleAccess::ReadOnly) {
+                disallowed_tools.extend(READ_ONLY_DENIED_TOOLS.iter().map(|tool| tool.to_string()));
+            }
             disallowed_tools.push("mcp__*".to_string());
             v.push("--disallowedTools".to_string());
             v.push(disallowed_tools.join(","));
@@ -618,5 +672,245 @@ mod tests {
         assert!(!with_tools.contains(&"--tools".to_string()));
         assert!(without_tools.contains(&"--tools".to_string()));
         assert!(summarizer.contains(&"--tools".to_string()));
+    }
+
+    fn spawn_args<'a>(
+        permission_mode: &'a str,
+        confined_role: Option<&'a str>,
+        allowed: &'a [String],
+        disallowed: &'a [String],
+        roots: &'a [String],
+    ) -> SpawnOneArgs<'a> {
+        SpawnOneArgs {
+            run_id: "run-1",
+            binary: "claude",
+            model: "model",
+            working_dir: "/repo/wt",
+            writable_roots: roots,
+            query_socket_directory: None,
+            prompt: "do it",
+            permission_mode,
+            allowed_tools: allowed,
+            disallowed_tools: disallowed,
+            resume_session_id: None,
+            system_prompt: None,
+            effort: None,
+            api_key_env: None,
+            credential_id: None,
+            workspace_id: None,
+            session_id: None,
+            mount_id: None,
+            cursor_max_mode: false,
+            writer_lease: None,
+            write_set_lease: None,
+            confined_role,
+            blocks_push: false,
+            excludes_tmp: false,
+        }
+    }
+
+    fn value_after(argv: &[String], flag: &str) -> Option<String> {
+        argv.windows(2)
+            .find(|pair| pair[0] == flag)
+            .map(|pair| pair[1].clone())
+    }
+
+    #[test]
+    fn a_read_only_claude_role_gets_a_built_in_tool_list_whatever_the_session_mode() {
+        let allowed = strings(&["Bash(ls:*)"]);
+        let disallowed = strings(&["Read(.env)"]);
+        for mode in ["default", "acceptEdits", "bypassPermissions", "plan"] {
+            for role in ["scout", "planner", "investigator", "reviewer"] {
+                let args = spawn_args(mode, Some(role), &allowed, &disallowed, &[]);
+                let argv = turn_args("claude", &args);
+                assert_eq!(
+                    value_after(&argv, "--tools").as_deref(),
+                    Some("Read,Grep,Glob")
+                );
+                assert_eq!(
+                    value_after(&argv, "--permission-mode").as_deref(),
+                    Some("plan")
+                );
+                assert!(!argv.contains(&"--allowedTools".to_string()));
+                let denied = value_after(&argv, "--disallowedTools").expect("deny list");
+                for tool in [
+                    "Read(.env)",
+                    "Task",
+                    "Agent",
+                    "Bash",
+                    "Edit",
+                    "Write",
+                    "mcp__*",
+                ] {
+                    assert!(
+                        denied.split(',').any(|entry| entry == tool),
+                        "{tool} in {denied}"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn a_writer_role_keeps_the_session_mode_and_loses_native_subagents() {
+        let roots = strings(&["/repo/.meta"]);
+        let args = spawn_args("acceptEdits", Some("implementer"), &[], &[], &roots);
+        let argv = turn_args("claude", &args);
+        assert_eq!(
+            value_after(&argv, "--permission-mode").as_deref(),
+            Some("acceptEdits")
+        );
+        assert!(!argv.contains(&"--tools".to_string()));
+        assert_eq!(
+            value_after(&argv, "--add-dir").as_deref(),
+            Some("/repo/.meta")
+        );
+        let denied = value_after(&argv, "--disallowedTools").expect("deny list");
+        assert!(denied.split(',').any(|entry| entry == "Task"));
+        assert!(!denied.split(',').any(|entry| entry == "Bash"));
+    }
+
+    #[test]
+    fn a_turn_with_no_confined_role_builds_the_arguments_it_always_did() {
+        let allowed = strings(&["Bash(ls:*)"]);
+        let args = spawn_args("bypassPermissions", None, &allowed, &[], &[]);
+        let argv = turn_args("claude", &args);
+        assert!(!argv.contains(&"--tools".to_string()));
+        assert_eq!(
+            value_after(&argv, "--permission-mode").as_deref(),
+            Some("bypassPermissions")
+        );
+        assert_eq!(
+            value_after(&argv, "--allowedTools").as_deref(),
+            Some("Bash(ls:*)")
+        );
+        assert_eq!(
+            value_after(&argv, "--disallowedTools").as_deref(),
+            Some("mcp__*")
+        );
+    }
+
+    #[test]
+    fn a_read_only_role_runs_codex_in_the_read_only_sandbox_even_when_bypassing() {
+        let roots = strings(&["/repo/.meta"]);
+        let args = spawn_args("bypassPermissions", Some("reviewer"), &[], &[], &roots);
+        let argv = turn_args("codex", &args);
+        assert_eq!(value_after(&argv, "-s").as_deref(), Some("read-only"));
+        assert!(!argv.contains(&"--add-dir".to_string()));
+        let writer = spawn_args("acceptEdits", Some("tester"), &[], &[], &roots);
+        let writer_argv = turn_args("codex", &writer);
+        assert_eq!(
+            value_after(&writer_argv, "-s").as_deref(),
+            Some("workspace-write")
+        );
+        assert_eq!(
+            value_after(&writer_argv, "--add-dir").as_deref(),
+            Some("/repo/.meta")
+        );
+    }
+
+    #[test]
+    fn a_read_only_role_never_gets_the_bypass_flags_of_cursor_gemini_or_opencode() {
+        let args = spawn_args("bypassPermissions", Some("scout"), &[], &[], &[]);
+        let cursor = turn_args("cursor-agent", &args);
+        assert!(!cursor.contains(&"--force".to_string()));
+        assert_eq!(value_after(&cursor, "--mode").as_deref(), Some("plan"));
+        let agy = turn_args("agy", &args);
+        assert!(!agy.contains(&"--dangerously-skip-permissions".to_string()));
+        assert_eq!(value_after(&agy, "--mode").as_deref(), Some("plan"));
+        assert!(agy.contains(&"--sandbox".to_string()));
+        let opencode = turn_args("opencode", &args);
+        assert_eq!(value_after(&opencode, "--agent").as_deref(), Some("plan"));
+    }
+
+    #[test]
+    fn auto_is_a_read_only_role_like_a_scout() {
+        assert_eq!(role_access("auto"), Some(RoleAccess::ReadOnly));
+        assert_eq!(role_access("auto"), role_access("scout"));
+    }
+
+    #[test]
+    fn auto_gets_the_argv_of_a_scout_on_every_provider() {
+        let roots = strings(&["/repo/.meta"]);
+        let allowed = strings(&["Bash(rm:*)"]);
+        let disallowed = strings(&["Read(.env)"]);
+        for mode in ["default", "acceptEdits", "bypassPermissions", "plan"] {
+            for binary in ["claude", "codex", "cursor-agent", "agy", "opencode"] {
+                let auto = spawn_args(mode, Some("auto"), &allowed, &disallowed, &roots);
+                let scout = spawn_args(mode, Some("scout"), &allowed, &disallowed, &roots);
+                assert_eq!(
+                    turn_args(binary, &auto),
+                    turn_args(binary, &scout),
+                    "{binary} in {mode}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn auto_on_claude_reads_only_and_holds_no_bash_rule() {
+        let allowed = strings(&["Bash(rm:*)"]);
+        let disallowed = strings(&["Read(.env)"]);
+        for mode in ["default", "acceptEdits", "bypassPermissions", "plan"] {
+            let args = spawn_args(mode, Some("auto"), &allowed, &disallowed, &[]);
+            let argv = turn_args("claude", &args);
+            assert_eq!(
+                value_after(&argv, "--tools").as_deref(),
+                Some("Read,Grep,Glob")
+            );
+            assert_eq!(
+                value_after(&argv, "--permission-mode").as_deref(),
+                Some("plan")
+            );
+            assert!(!argv.contains(&"--allowedTools".to_string()));
+            assert!(argv.iter().all(|arg| !arg.contains("Bash(")));
+            assert!(argv.iter().all(|arg| !arg.contains("query agent")));
+            let denied = value_after(&argv, "--disallowedTools").expect("deny list");
+            for tool in [
+                "Read(.env)",
+                "Task",
+                "Agent",
+                "Bash",
+                "Edit",
+                "Write",
+                "MultiEdit",
+                "NotebookEdit",
+                "mcp__*",
+            ] {
+                assert!(
+                    denied.split(',').any(|entry| entry == tool),
+                    "{tool} in {denied}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn auto_on_another_cli_never_gets_a_bypass_flag_or_a_write_sandbox() {
+        let roots = strings(&["/repo/.meta"]);
+        let args = spawn_args("bypassPermissions", Some("auto"), &[], &[], &roots);
+        let codex = turn_args("codex", &args);
+        assert_eq!(value_after(&codex, "-s").as_deref(), Some("read-only"));
+        assert!(!codex.contains(&"--add-dir".to_string()));
+        let cursor = turn_args("cursor-agent", &args);
+        assert!(!cursor.contains(&"--force".to_string()));
+        assert_eq!(value_after(&cursor, "--mode").as_deref(), Some("plan"));
+        let agy = turn_args("agy", &args);
+        assert!(!agy.contains(&"--dangerously-skip-permissions".to_string()));
+        assert_eq!(value_after(&agy, "--mode").as_deref(), Some("plan"));
+        assert!(agy.contains(&"--sandbox".to_string()));
+        let opencode = turn_args("opencode", &args);
+        assert_eq!(value_after(&opencode, "--agent").as_deref(), Some("plan"));
+    }
+
+    #[test]
+    fn an_unknown_confined_role_is_treated_as_read_only() {
+        assert_eq!(role_access("custom"), None);
+        let args = spawn_args("bypassPermissions", Some("custom"), &[], &[], &[]);
+        let argv = turn_args("claude", &args);
+        assert_eq!(
+            value_after(&argv, "--tools").as_deref(),
+            Some("Read,Grep,Glob")
+        );
     }
 }

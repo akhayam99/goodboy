@@ -25,9 +25,11 @@ import { REVIEW_KIND } from './kinds/review';
 import { REVIEW_COMMENT_KIND } from './kinds/reviewComment';
 import { WRITE_REVIEW_KIND } from './kinds/writeReview';
 import { TASK_KIND } from './kinds/task';
+import { SUGGESTION_KIND } from './kinds/suggestion';
 import type {
   ActionDefinition,
   ActionEnv,
+  ActionRunOutcome,
   ActionViewing,
   ObjectKindDefinition,
   ObjectTarget,
@@ -46,7 +48,7 @@ export type BoundObject = {
   readonly resolve: (params?: {
     readonly viewing?: ActionViewing | null;
   }) => ReadonlyArray<ResolvedAction>;
-  readonly run: (params: RunActionParams) => Promise<void>;
+  readonly run: (params: RunActionParams) => Promise<ActionRunOutcome>;
 };
 
 type BindParams<T, F> = {
@@ -83,12 +85,13 @@ const bind = <T, F extends object>({
     run: async ({ actionId, env, choice = null }) => {
       const found = definitions.find((candidate) => candidate.id === actionId);
       if (found === undefined || !found.when({ facts, viewing: env.viewing })) {
-        return;
+        return 'unchanged';
       }
       if ((found.blockedReason?.({ facts }) ?? null) !== null) {
-        return;
+        return 'unchanged';
       }
-      await found.run({ facts, env, choice });
+      const result = await found.run({ facts, env, choice });
+      return result === 'unchanged' ? 'unchanged' : 'done';
     },
   };
 };
@@ -150,6 +153,8 @@ export const bindTarget = ({ state, target }: TargetParams): BoundObject | null 
       return bind({ definition: WRITE_REVIEW_KIND, state, target });
     case 'task':
       return bind({ definition: TASK_KIND, state, target });
+    case 'suggestion':
+      return bind({ definition: SUGGESTION_KIND, state, target });
     default: {
       const exhaustive: never = target;
       return exhaustive;
@@ -161,6 +166,15 @@ type RunParams = RunActionParams & {
   readonly target: ObjectTarget;
 };
 
-export const runObjectAction = async ({ target, actionId, env, choice = null }: RunParams) => {
-  await bindTarget({ state: env.getState(), target })?.run({ actionId, env, choice });
+export const runObjectActionWithOutcome = async ({
+  target,
+  actionId,
+  env,
+  choice = null,
+}: RunParams): Promise<ActionRunOutcome> =>
+  (await bindTarget({ state: env.getState(), target })?.run({ actionId, env, choice })) ??
+  'unchanged';
+
+export const runObjectAction = async (params: RunParams): Promise<void> => {
+  await runObjectActionWithOutcome(params);
 };

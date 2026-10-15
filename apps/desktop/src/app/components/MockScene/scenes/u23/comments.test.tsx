@@ -119,10 +119,16 @@ describe('the u23 comments scenes', () => {
 
     const ready = within(list()).getByRole('region', { name: 'Ready to push' });
     expect(within(ready).getByText('Ready to push 3')).toBeDefined();
-    const pushes = screen.getAllByRole('button', { name: /^Push 3/ });
+    const pushes = screen.getAllByRole('button', { name: /^Push 3 fixes$/ });
     expect(pushes).toHaveLength(2);
-    expect(within(ready).getByRole('button', { name: 'Push 3' })).toBeDefined();
+    expect(within(ready).getByRole('button', { name: 'Push 3 fixes' })).toBeDefined();
     expect(within(ready).getAllByText('Applied')).toHaveLength(3);
+    const first = ready.querySelector<HTMLElement>('button[data-thread-id]');
+    expect(first).not.toBeNull();
+    if (first !== null) {
+      fireEvent.click(first);
+    }
+    expect(await within(bar()).findByRole('button', { name: 'Push only this one' })).toBeDefined();
   });
 
   it('draws a failed push as Push failed in Needs you, with a red mark on the session', async () => {

@@ -2,7 +2,13 @@
 import { describe, expect, it } from 'vitest';
 import type { ResolvePublicationPreview } from '@goodboy/types';
 import type { PublicationOutcome } from '../../store/slices/resolve/publicationOutcome';
-import { pushConfirmBody, pushConfirmTitle, pushResultOf, pushStyleNote } from './reviewPushCopy';
+import {
+  pushCommitCount,
+  pushConfirmBody,
+  pushConfirmTitle,
+  pushResultOf,
+  pushStyleNote,
+} from './reviewPushCopy';
 
 const previewOf = (patch: Partial<ResolvePublicationPreview>): ResolvePublicationPreview => ({
   publicationId: 'pub-1',
@@ -65,6 +71,25 @@ describe('the push confirm', () => {
     expect(pushStyleNote({ commitStyle: 'fixup' }).text).toContain('fixups');
     expect(pushStyleNote({ commitStyle: 'new' }).text).toContain('its own new commit');
     expect(pushStyleNote({ commitStyle: 'new' }).linkLabel).toBe('Replies and commits');
+  });
+
+  it('counts the earlier commits that go along in the title, once, from one function', () => {
+    const preview = previewOf({
+      earlierCommits: [
+        {
+          sha: '9e4f1c2bbbb',
+          shortSha: '9e4f1c2',
+          subject: 'Batch ledger lookups',
+          author: 'resolver',
+          timestamp: 1,
+          pushed: false,
+          parentSha: null,
+        },
+      ],
+    });
+
+    expect(pushCommitCount({ preview })).toBe(2);
+    expect(pushConfirmTitle({ preview })).toBe('Push 2 commits to hl/fix-duplicate-credit?');
   });
 
   it('says when no commit goes out and points at the pull request instead of a branch', () => {
@@ -142,8 +167,18 @@ describe('the push result line', () => {
   it('names the commit and what landed when everything did', () => {
     expect(pushResultOf({ outcome: outcomeOf({}) })).toEqual({
       tone: 'done',
-      sentence: 'Pushed a41c9e2, 3 replies posted, 3 threads resolved on GitHub.',
+      sentence: 'Pushed a41c9e2 and posted 3 replies on GitHub. 3 threads resolved.',
     });
+  });
+
+  it('counts the commits that went to origin when the preview knew them', () => {
+    expect(pushResultOf({ outcome: outcomeOf({ resolved: 0 }), commits: 6 })).toEqual({
+      tone: 'done',
+      sentence: 'Pushed 6 commits to origin and posted 3 replies on GitHub.',
+    });
+    expect(
+      pushResultOf({ outcome: outcomeOf({ resolved: 0, replied: 1 }), commits: 1 }).sentence,
+    ).toBe('Pushed 1 commit to origin and posted 1 reply on GitHub.');
   });
 
   it('says how many landed and points at the one that did not', () => {
@@ -158,7 +193,7 @@ describe('the push result line', () => {
       pushResultOf({ outcome: outcomeOf({ pushedHead: null, resolved: 1, leftOpen: 2 }) }),
     ).toEqual({
       tone: 'done',
-      sentence: '3 replies posted, 1 thread resolved on GitHub, 2 left open for the reviewer.',
+      sentence: 'Posted 3 replies on GitHub. 1 thread resolved. 2 left open for the reviewer.',
     });
   });
 
@@ -167,7 +202,9 @@ describe('the push result line', () => {
       outcome: outcomeOf({ resolved: 0, leftOpen: 3 }),
       provider: 'Bitbucket',
     });
-    expect(result.sentence).toBe('Pushed a41c9e2, 3 replies posted, 3 left open for the reviewer.');
+    expect(result.sentence).toBe(
+      'Pushed a41c9e2 and posted 3 replies on Bitbucket. 3 left open for the reviewer.',
+    );
     expect(result.sentence).not.toContain('resolved');
   });
 

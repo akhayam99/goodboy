@@ -2,7 +2,7 @@ import { getSessionViewPrefs } from './getSessionViewPrefs';
 import { createInitialSessionViewState } from './createInitialSessionViewState';
 import { setArtifactFilter } from './artifactFilter';
 import { closeArtifactConversation, openArtifactConversation } from './artifactConversation';
-import { closeArtifactCreation, openArtifactCreation } from './artifactCreation';
+import { awaitArtifactAgent, openArtifactCreation } from './artifactCreation';
 import { markSessionOpened } from './markSessionOpened';
 import { setSessionViewPrefs } from './setSessionViewPrefs';
 import { setAgentTab } from './setAgentTab';
@@ -22,7 +22,6 @@ import {
   setFocusedArtifactId,
   setFocusedGithubIssueNumber,
   setFocusedWorkflowRun,
-  setSessionStudio,
 } from './workSurface';
 import { openResolveDiff, setResolveQueueView } from './resolveSurface';
 import { setResolveItemDraft } from './resolveItemDrafts';
@@ -33,13 +32,7 @@ import type { SliceDeps } from '../../slice-types';
 export { isPrReviewSession } from './isPrReviewSession';
 export { EMPTY_RESOLVE_QUEUE_VIEW } from './types';
 export type { SessionViewSlice } from './types';
-export type {
-  SessionStudio,
-  LensKind,
-  DiffFocus,
-  ResolveQueueView,
-  SessionCreationId,
-} from './types';
+export type { LensKind, DiffFocus, ResolveQueueView, SessionCreationId } from './types';
 
 export const createSessionViewSlice = ({ set, get }: SliceDeps): SessionViewSlice => {
   return {
@@ -61,9 +54,8 @@ export const createSessionViewSlice = ({ set, get }: SliceDeps): SessionViewSlic
     openArtifactConversation: openArtifactConversation(set, get),
     closeArtifactConversation: closeArtifactConversation(set),
     openArtifactCreation: openArtifactCreation(set, get),
-    closeArtifactCreation: closeArtifactCreation(set),
+    awaitArtifactAgent: awaitArtifactAgent(set),
     setFocusedGithubIssueNumber: setFocusedGithubIssueNumber(set),
-    setSessionStudio: setSessionStudio(set),
     setDiffFocus: setDiffFocus(set),
     openDiffLens: openDiffLens(get),
     setResolveQueueView: setResolveQueueView(set),

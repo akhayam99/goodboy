@@ -2,7 +2,7 @@ import type { SessionId } from '@goodboy/types';
 import { waitTurnSettled } from '../turn/turnSettled';
 import { deliverQueuedTurn } from './deliverQueuedTurn';
 import { beginHandoff, endHandoff } from './handoff';
-import { persistAgentQueue, readAgentQueue, writeAgentQueue } from './queueStore';
+import { readAgentQueue, writeAgentQueue } from './queueStore';
 import type { AgentQueueItemParams, GetFn, SetFn } from './types';
 
 type SendQueuedParams = AgentQueueItemParams &
@@ -31,24 +31,8 @@ export const sendQueuedNow = (set: SetFn, get: GetFn) => {
         .catch(() => undefined);
       await waitTurnSettled({ agentId });
     } finally {
-      writeAgentQueue({
-        set,
-        agentId,
-        queue: readAgentQueue({ get, agentId }).filter((item) => item.id !== itemId),
-      });
-      void persistAgentQueue({ get, agentId });
       endHandoff({ agentId });
     }
-    const delivery = await deliverQueuedTurn({
-      get,
-      sessionId,
-      turn: target,
-      sentVia: 'interrupt',
-    });
-    if (delivery === 'delivered') {
-      return;
-    }
-    writeAgentQueue({ set, agentId, queue: [target, ...readAgentQueue({ get, agentId })] });
-    await persistAgentQueue({ get, agentId });
+    await deliverQueuedTurn({ set, get, sessionId, turn: target, sentVia: 'interrupt' });
   };
 };

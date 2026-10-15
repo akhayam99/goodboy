@@ -8,6 +8,7 @@ type Params = {
   readonly sessionId: SessionId;
   readonly sourceAgentId: AgentId;
   readonly kind: AgentKind;
+  readonly name?: string;
   readonly routing: AgentKindRouting;
   readonly seed?: string;
   readonly summary?: string;
@@ -15,6 +16,7 @@ type Params = {
   readonly mountId?: MountId;
   readonly origin?: { readonly sourceKind: AgentSourceKind; readonly sourceCommentUrl: string };
   readonly focus?: SpawnFocus;
+  readonly onKickoffAccepted?: () => void;
 };
 
 const pending = new Map<string, Promise<AgentId>>();
@@ -24,6 +26,7 @@ export const startFollowUp = (get: GetFn) => {
     sessionId,
     sourceAgentId,
     kind,
+    name,
     routing,
     seed,
     summary,
@@ -31,6 +34,7 @@ export const startFollowUp = (get: GetFn) => {
     mountId,
     origin,
     focus = 'agent',
+    onKickoffAccepted,
   }: Params): Promise<AgentId> => {
     const key = JSON.stringify([sessionId, sourceAgentId, kind, origin?.sourceCommentUrl ?? null]);
     const inFlight = pending.get(key);
@@ -67,11 +71,13 @@ export const startFollowUp = (get: GetFn) => {
     const result = state
       .spawnAgent(sessionId, {
         kindOverride: kind,
+        ...(name !== undefined && { name }),
         ...routing,
         ...(triggeredPlanId !== undefined && { triggeredPlanId }),
         ...(prompt !== undefined && { initialPrompt: prompt }),
         ...(mountId !== undefined && { mountId }),
         ...(origin !== undefined && origin),
+        ...(onKickoffAccepted !== undefined && { onKickoffAccepted }),
         parentAgentId: sourceAgentId,
         focus,
       })

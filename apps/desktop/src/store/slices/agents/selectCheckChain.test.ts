@@ -3,6 +3,7 @@ import type { Agent, AgentId, IsoDateTime, ProviderRunId, TurnEvent } from '@goo
 import { aSession, anAgent, TEST_NOW } from '@goodboy/types/testing';
 import { selectCheckChain } from './selectCheckChain';
 import { selectFixOffers } from './selectFixOffers';
+import type { CheckFixCommit } from '../check-fix-commits/types';
 
 const sessionId = aSession().id;
 const url = 'https://github.com/harborline/payments-api/actions/runs/31/job/42';
@@ -58,6 +59,7 @@ type Params = {
   readonly debuggerTurn?: 'ended' | 'running';
   readonly fixEvents?: ReadonlyArray<TurnEvent>;
   readonly dismissed?: ReadonlyArray<AgentId>;
+  readonly fact?: CheckFixCommit;
 };
 
 const stateOf = ({
@@ -66,6 +68,7 @@ const stateOf = ({
   debuggerTurn = 'ended',
   fixEvents,
   dismissed = [],
+  fact,
 }: Params) => ({
   sessionPhaseRuns: { [sessionId]: agents },
   transcripts: {
@@ -79,7 +82,37 @@ const stateOf = ({
         : { kind: 'ended' as const, endedAt: at },
   },
   dismissedCheckProposals: { [sessionId]: dismissed },
+  checkFixCommits: fact === undefined ? {} : { [agents[agents.length - 1]!.id]: fact },
 });
+
+const LOCAL: CheckFixCommit = {
+  kind: 'found',
+  sha: '9e4c1a7',
+  subject: 'Guard the retry',
+  count: 1,
+  unpushed: 1,
+};
+const PUSHED: CheckFixCommit = { ...LOCAL, unpushed: 0 };
+const NONE: CheckFixCommit = { kind: 'none' };
+const UNREADABLE: CheckFixCommit = { kind: 'unreadable' };
+const QUIET_COMMIT: ReadonlyArray<TurnEvent> = [
+  {
+    kind: 'tool_call_start',
+    runId,
+    toolUseId: 't2',
+    toolName: 'Bash',
+    input: { command: 'git commit -qam "fix retry" && git log --oneline -1' },
+    at,
+  },
+  {
+    kind: 'tool_call_end',
+    runId,
+    toolUseId: 't2',
+    output: '9e4c1a7 fix retry\n',
+    isError: false,
+    at,
+  },
+];
 
 describe('check chain states', () => {
   it.each([
@@ -94,12 +127,25 @@ describe('check chain states', () => {
     { name: 'proposal', params: { agents: [debuggerAgent] }, state: 'proposal' },
     { name: 'fixing', params: { agents: [debuggerAgent, fixAgent()] }, state: 'fixing' },
     {
-      name: 'fixed',
+      name: 'fixed-local when the commit is not pushed',
       params: {
         agents: [debuggerAgent, fixAgent({ status: 'completed' })],
-        fixEvents: commitEvents,
+        fact: LOCAL,
       },
-      state: 'fixed',
+      state: 'fixed-local',
+    },
+    {
+      name: 'fixed-pushed when the commit is on the remote',
+      params: {
+        agents: [debuggerAgent, fixAgent({ status: 'completed' })],
+        fact: PUSHED,
+      },
+      state: 'fixed-pushed',
+    },
+    {
+      name: 'fixing while the git answer is pending',
+      params: { agents: [debuggerAgent, fixAgent({ status: 'completed' })] },
+      state: 'fixing',
     },
     {
       name: 'fix-failed when the child failed',
@@ -107,8 +153,21 @@ describe('check chain states', () => {
       state: 'fix-failed',
     },
     {
-      name: 'fix-failed when it ended without a commit',
-      params: { agents: [debuggerAgent, fixAgent({ status: 'completed' })], fixEvents: [] },
+      name: 'fix-failed when git finds no new commit',
+      params: {
+        agents: [debuggerAgent, fixAgent({ status: 'completed' })],
+        fixEvents: commitEvents,
+        fact: NONE,
+      },
+      state: 'fix-failed',
+    },
+    {
+      name: 'fix-failed when git is unreadable and the transcript has no commit',
+      params: {
+        agents: [debuggerAgent, fixAgent({ status: 'completed' })],
+        fixEvents: [],
+        fact: UNREADABLE,
+      },
       state: 'fix-failed',
     },
     {
@@ -124,18 +183,46 @@ describe('check chain states', () => {
   ])('reads $name', ({ params, state }) => {
     expect(selectCheckChain({ state: stateOf(params), sessionId, url }).state).toBe(state);
   });
-  it('reads the commit and treats an unloaded transcript as fixed', () => {
+  it('reads the commit and count from git, not from the transcript', () => {
     const done = fixAgent({ status: 'completed' });
-    expect(
-      selectCheckChain({
-        state: stateOf({ agents: [debuggerAgent, done], fixEvents: commitEvents }),
-        sessionId,
-        url,
-      }).commit,
-    ).toBe('9e4c1a7');
-    expect(
-      selectCheckChain({ state: stateOf({ agents: [debuggerAgent, done] }), sessionId, url }).state,
-    ).toBe('fixed');
+    const chain = selectCheckChain({
+      state: stateOf({
+        agents: [debuggerAgent, done],
+        fixEvents: [],
+        fact: { ...LOCAL, count: 2, unpushed: 2 },
+      }),
+      sessionId,
+      url,
+    });
+    expect(chain.commit).toBe('9e4c1a7');
+    expect(chain.commitCount).toBe(2);
+  });
+  it('detects a quiet commit from git log --oneline when git cannot be read', () => {
+    const done = fixAgent({ status: 'completed' });
+    const chain = selectCheckChain({
+      state: stateOf({
+        agents: [debuggerAgent, done],
+        fixEvents: QUIET_COMMIT,
+        fact: UNREADABLE,
+      }),
+      sessionId,
+      url,
+    });
+    expect(chain.state).toBe('fixed-local');
+    expect(chain.commit).toBe('9e4c1a7');
+  });
+  it('trusts git over a bracketed commit in the transcript', () => {
+    const done = fixAgent({ status: 'completed' });
+    const chain = selectCheckChain({
+      state: stateOf({
+        agents: [debuggerAgent, done],
+        fixEvents: commitEvents,
+        fact: NONE,
+      }),
+      sessionId,
+      url,
+    });
+    expect(chain.state).toBe('fix-failed');
   });
   it('is none without a Debugger and ignores the Implementer as the analysis', () => {
     expect(selectCheckChain({ state: stateOf({ agents: [] }), sessionId, url }).state).toBe('none');

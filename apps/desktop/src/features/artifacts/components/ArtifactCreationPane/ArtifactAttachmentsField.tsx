@@ -50,6 +50,7 @@ export const ArtifactAttachmentsField = ({
         accept={ATTACHMENT_ACCEPT}
         multiple
         hidden
+        aria-label="Attach files"
         data-testid="artifact-attachments-input"
         onChange={onFileInputChange}
       />

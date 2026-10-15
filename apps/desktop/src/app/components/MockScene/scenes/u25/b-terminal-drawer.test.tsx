@@ -28,6 +28,9 @@ type LazyGenericTerminalPanelParams = {
   readonly terminalId: string;
 };
 
+const SESSION_ID = 'mock-run-session-webhooks';
+const WORKTREE_PATH = '~/code/harborline/payments-api/.goodboy/worktrees/gb-7k2q9x';
+
 let store: StoryStore;
 
 beforeAll(async () => {
@@ -66,19 +69,76 @@ describe('the terminal drawer scenes', () => {
     }
   });
 
-  it('opens the session terminal in a right drawer with its worktree and the page link', async () => {
+  it('opens the session terminal in a right drawer with a tab strip and icon buttons', async () => {
     renderScene({ name: 'terminal-drawer-session' });
     await settle();
 
-    const drawer = screen.getByRole('region', { name: 'payments-api-idempotency' });
-    expect(
-      within(drawer).getByText('payments-api-idempotency', { selector: 'span' }),
-    ).toBeDefined();
+    const drawer = screen.getByRole('region', { name: 'payments-api' });
+    expect(within(drawer).getByTestId('worktree-chip').textContent).toBe('gb-7k2q9x');
     expect(within(drawer).getByRole('button', { name: 'Open on Terminal page' })).toBeDefined();
     expect(within(drawer).getByRole('button', { name: 'Close' })).toBeDefined();
+    expect(within(drawer).getByRole('button', { name: 'New tab on payments-api' })).toBeDefined();
+    const tabs = within(drawer).getAllByRole('tab');
+    expect(tabs.map((tab) => tab.textContent)).toEqual(['shell', 'dev server']);
     expect(within(drawer).getByTestId('terminal-panel').getAttribute('data-terminal')).toMatch(
       /::t1$/,
     );
+  });
+
+  it('lets the folder chip shrink before the title and keeps the buttons apart', async () => {
+    renderScene({ name: 'terminal-drawer-session' });
+    await settle();
+
+    const drawer = screen.getByRole('region', { name: 'payments-api' });
+    const chip = within(drawer).getByTestId('worktree-chip');
+    expect(chip.textContent).toBe('gb-7k2q9x');
+    const header = drawer.querySelector('[data-drawer-header-row]');
+    expect(
+      header?.contains(within(drawer).getByRole('button', { name: 'Open on Terminal page' })),
+    ).toBe(true);
+    expect(within(drawer).queryByText('Open on Terminal page')).toBeNull();
+  });
+
+  it('switches tabs inside the drawer without leaving the worktree', async () => {
+    renderScene({ name: 'terminal-drawer-session' });
+    await settle();
+    const drawer = screen.getByRole('region', { name: 'payments-api' });
+
+    fireEvent.click(within(drawer).getByRole('tab', { name: 'dev server' }));
+    await settle();
+
+    expect(within(drawer).getByTestId('terminal-panel').getAttribute('data-terminal')).toMatch(
+      /::t3$/,
+    );
+    expect(store.getState().drawer?.kind).toBe('terminal');
+  });
+
+  it('adds a tab on the same worktree from the drawer plus button', async () => {
+    renderScene({ name: 'terminal-drawer-session' });
+    await settle();
+    const before = (store.getState().terminalTabs[SESSION_ID] ?? []).length;
+
+    fireEvent.click(screen.getByRole('button', { name: 'New tab on payments-api' }));
+    await settle();
+
+    const tabs = store.getState().terminalTabs[SESSION_ID] ?? [];
+    expect(tabs).toHaveLength(before + 1);
+    expect(tabs.at(-1)?.cwd).toBe('~/code/harborline/payments-api/.goodboy/worktrees/gb-7k2q9x');
+    expect(tabs.at(-1)?.title).toBe('shell 2');
+    const drawer = screen.getByRole('region', { name: 'payments-api' });
+    expect(within(drawer).getAllByRole('tab')).toHaveLength(3);
+  });
+
+  it('keeps the drawer open while another tab of the worktree remains', async () => {
+    renderScene({ name: 'terminal-drawer-session' });
+    await settle();
+    const drawer = screen.getByRole('region', { name: 'payments-api' });
+
+    fireEvent.click(within(drawer).getByRole('button', { name: 'Close dev server' }));
+    await settle();
+
+    expect(store.getState().drawer?.kind).toBe('terminal');
+    expect(within(drawer).getAllByRole('tab')).toHaveLength(1);
   });
 
   it('keeps the tab in the list when the drawer closes', async () => {
@@ -87,7 +147,7 @@ describe('the terminal drawer scenes', () => {
     const before = Object.values(store.getState().terminalTabs).flat().length;
 
     fireEvent.click(
-      within(screen.getByRole('region', { name: 'payments-api-idempotency' })).getByRole('button', {
+      within(screen.getByRole('region', { name: 'payments-api' })).getByRole('button', {
         name: 'Close',
       }),
     );
@@ -96,46 +156,53 @@ describe('the terminal drawer scenes', () => {
     expect(Object.values(store.getState().terminalTabs).flat()).toHaveLength(before);
   });
 
-  it('moves the same tab to the Terminal page from the drawer', async () => {
+  it('moves the same worktree and tab to the Terminal page from the drawer', async () => {
     renderScene({ name: 'terminal-drawer-session' });
     await settle();
-    const tabId = store.getState().drawer?.kind === 'terminal' ? store.getState().drawer : null;
+    const drawer = screen.getByRole('region', { name: 'payments-api' });
+    fireEvent.click(within(drawer).getByRole('tab', { name: 'dev server' }));
+    await settle();
 
     fireEvent.click(screen.getByRole('button', { name: 'Open on Terminal page' }));
 
     expect(store.getState().drawer).toBeNull();
     const studio = store.getState().appStudio;
     expect(studio?.kind).toBe('terminal');
-    expect(studio?.kind === 'terminal' ? studio.terminalId : null).toBe(
-      tabId?.kind === 'terminal' ? tabId.payload.terminalId : undefined,
+    expect(studio?.kind === 'terminal' ? studio.terminalId : null).toBe(`${SESSION_ID}::t3`);
+    expect(studio?.kind === 'terminal' ? studio.worktree : null).toBe(
+      `${SESSION_ID}#m:mock-run-mount-payments`,
     );
+    expect(studio?.kind === 'terminal' ? studio.sessionId : null).toBe(SESSION_ID);
   });
 
-  it('closes the drawer when its terminal exits and leaves the tab list', async () => {
+  it('closes the drawer only when the last terminal of its worktree is gone', async () => {
     renderScene({ name: 'terminal-drawer-session' });
     await settle();
-    const [first] =
-      store.getState().terminalTabs[Object.keys(store.getState().terminalTabs)[0] ?? ''] ?? [];
+    const tabs = store.getState().terminalTabs[SESSION_ID] ?? [];
+    const onWorktree = tabs.filter((tab) => tab.cwd === WORKTREE_PATH);
 
     act(() => {
-      if (first !== undefined) {
-        store.getState().closeTerminalTab({ owner: first.owner, tabId: first.id });
+      for (const tab of onWorktree) {
+        store.getState().closeTerminalTab({ owner: tab.owner, tabId: tab.id });
       }
     });
 
     expect(store.getState().drawer).toBeNull();
+    expect(store.getState().terminalTabs[SESSION_ID]).toHaveLength(1);
   });
 
-  it('lists session terminals on the Terminal page under a group named after the session', async () => {
+  it('lists the session worktrees on the Terminal page under a group named after the session', async () => {
     renderScene({ name: 'terminal-drawer-page' });
     await settle();
 
     const groups = screen.getAllByRole('region').map((group) => group.getAttribute('aria-label'));
-    expect(groups).toEqual(['Workspace', 'Stop retried webhooks posting a second credit']);
-    expect(
-      within(
-        screen.getByRole('region', { name: 'Stop retried webhooks posting a second credit' }),
-      ).getAllByRole('listitem'),
-    ).toHaveLength(2);
+    expect(groups).toEqual(['Stop retried webhooks posting a second credit', 'Workspace folder']);
+    const session = screen.getByRole('region', {
+      name: 'Stop retried webhooks posting a second credit',
+    });
+    const rows = within(session).getAllByRole('listitem');
+    expect(rows).toHaveLength(2);
+    expect(within(rows[0] ?? document.body).getByLabelText('2 terminals')).toBeDefined();
+    expect(within(rows[1] ?? document.body).getByLabelText('1 terminal')).toBeDefined();
   });
 });

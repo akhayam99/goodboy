@@ -14,12 +14,18 @@ const pushedCount = ({ preview }: { readonly preview: ResolvePublicationPreview 
     ...preview.notes.map((note) => note.threadId),
   ]).size;
 
+export const pushCommitCount = ({
+  preview,
+}: {
+  readonly preview: ResolvePublicationPreview;
+}): number => preview.commits.length + (preview.earlierCommits ?? []).length;
+
 export const pushConfirmTitle = ({
   preview,
 }: {
   readonly preview: ResolvePublicationPreview;
 }): string => {
-  const commits = preview.commits.length;
+  const commits = pushCommitCount({ preview });
   if (commits > 0 && preview.requiresPush && preview.branch !== '') {
     return `Push ${plural(commits, 'commit', 'commits')} to ${preview.branch}?`;
   }
@@ -76,11 +82,6 @@ export const pushConfirmBody = ({
   return `${parts.join(', ')}.`;
 };
 
-export const PUSH_TIP_LABEL = 'Tip';
-
-export const earlierCommitsLine = ({ count }: { readonly count: number }): string =>
-  `This also pushes ${count} earlier ${count === 1 ? 'commit' : 'commits'}`;
-
 export type PushStyleNote = {
   readonly text: string;
   readonly linkLabel: string;
@@ -110,12 +111,16 @@ export type PushResult = {
 
 const shortSha = (sha: string): string => sha.slice(0, 7);
 
+const capitalized = (text: string): string => `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
+
 export const pushResultOf = ({
   outcome,
   provider = REVIEW_SOURCE_LABEL.github,
+  commits,
 }: {
   readonly outcome: PublicationOutcome;
   readonly provider?: string;
+  readonly commits?: number;
 }): PushResult => {
   const landed = outcome.total - outcome.failed;
   const where = outcome.pushedHead === null ? '' : ` in ${shortSha(outcome.pushedHead)}`;
@@ -125,19 +130,40 @@ export const pushResultOf = ({
       sentence: `${landed} of ${outcome.total} landed${where}. ${outcome.failed} did not: see ${outcome.failed === 1 ? 'the comment' : 'the comments'}.`,
     };
   }
-  const parts = [
-    outcome.pushedHead === null ? null : `Pushed ${shortSha(outcome.pushedHead)}`,
-    outcome.replied === 0 ? null : `${plural(outcome.replied, 'reply', 'replies')} posted`,
-    outcome.resolved === 0
+  const lead = [
+    outcome.pushedHead === null
       ? null
-      : `${plural(outcome.resolved, 'thread', 'threads')} resolved on ${provider}`,
-    outcome.leftOpen === 0 ? null : `${outcome.leftOpen} left open for the reviewer`,
+      : commits === undefined || commits === 0
+        ? `pushed ${shortSha(outcome.pushedHead)}`
+        : `pushed ${plural(commits, 'commit', 'commits')} to origin`,
+    outcome.replied === 0
+      ? null
+      : `posted ${plural(outcome.replied, 'reply', 'replies')} on ${provider}`,
   ].flatMap((part) => (part === null ? [] : [part]));
+  const tail = [
+    outcome.resolved === 0 ? null : `${plural(outcome.resolved, 'thread', 'threads')} resolved.`,
+    outcome.leftOpen === 0 ? null : `${outcome.leftOpen} left open for the reviewer.`,
+  ].flatMap((part) => (part === null ? [] : [part]));
+  const sentence = [lead.length === 0 ? null : `${capitalized(lead.join(' and '))}.`, ...tail]
+    .flatMap((part) => (part === null ? [] : [part]))
+    .join(' ');
   return {
     tone: 'done',
-    sentence: parts.length === 0 ? 'Nothing needed to go out.' : `${parts.join(', ')}.`,
+    sentence: sentence === '' ? 'Nothing needed to go out.' : sentence,
   };
 };
+
+export const PUSH_ONLY_LABEL = 'Push only this one';
+
+export const PUSH_MISSING = 'The push was already handled or cancelled. Nothing changed.';
+
+export const PUSH_STALE_FALLBACK = 'Something changed since the preview';
+
+export const pushFixCount = ({
+  preview,
+}: {
+  readonly preview: ResolvePublicationPreview;
+}): number => pushedCount({ preview });
 
 export const PUSH_BUSY = 'Another push is already running for this pull request.';
 

@@ -111,6 +111,12 @@ const ENTRIES: ReadonlyArray<Entry> = [
     drawer: { kind: 'ask', sessionId: SESSION, payload: null },
   },
   {
+    kind: 'new',
+    region: 'New',
+    seed: seedSession,
+    drawer: { kind: 'new', sessionId: SESSION, payload: null },
+  },
+  {
     kind: 'context',
     region: 'Context',
     seed: seedSession,
@@ -311,7 +317,10 @@ describe('every drawer names its close control Close', () => {
 
       const region = screen.getByRole('region', { name: entry.region });
       expect(within(region).getByRole('button', { name: 'Close' })).toBeDefined();
-      expect(within(region).queryByRole('button', { name: /^Close .+/ })).toBeNull();
+      const namedCloses = within(region)
+        .queryAllByRole('button', { name: /^Close .+/ })
+        .filter((button) => button.closest('[data-terminal-tab]') === null);
+      expect(namedCloses).toHaveLength(0);
     },
   );
 

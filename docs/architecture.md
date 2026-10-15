@@ -596,91 +596,248 @@ commands; TypeScript still reaches some of them (`integration_credentials`,
 `integration_bindings`, `permission_rules`, the `permission_audit_log`
 cleanup) and moving those calls behind the commands is not done yet.
 
-| Table                         | Writer | Notes                                                                                                               |
-| ----------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------- |
-| `agent_handoffs`              | ts     |                                                                                                                     |
-| `agent_queued_messages`       | ts     |                                                                                                                     |
-| `agent_turn_spans`            | ts     |                                                                                                                     |
-| `agents`                      | ts     | Inserts, status, routing, viewed and done through `agent-write.ts`. Rust reads only.                                |
-| `artifact_comments`           | ts     |                                                                                                                     |
-| `artifact_provenance`         | ts     |                                                                                                                     |
-| `artifact_revisions`          | ts     |                                                                                                                     |
-| `budget_alerts`               | rust   | `budget.rs`                                                                                                         |
-| `budget_rules`                | rust   | `budget.rs`, and the backup import                                                                                  |
-| `chat_message_attachments`    | ts     | Rows go in with their message through `insertChatMessage`. Rust reads them to build a turn's image root.            |
-| `chat_messages`               | ts     |                                                                                                                     |
-| `chat_session_links`          | ts     |                                                                                                                     |
-| `chats`                       | ts     |                                                                                                                     |
-| `context_slot_history`        | ts     |                                                                                                                     |
-| `context_slots`               | ts     |                                                                                                                     |
-| `deleted_branches`            | ts     |                                                                                                                     |
-| `diff_comments`               | ts     |                                                                                                                     |
-| `file_versions`               | ts     |                                                                                                                     |
-| `github_pr_cache`             | ts     |                                                                                                                     |
-| `goal_attachments`            | ts     |                                                                                                                     |
-| `history_plans`               | ts     |                                                                                                                     |
-| `integration_bindings`        | rust   | `integration_credentials.rs`, and the backup import                                                                 |
-| `integration_credentials`     | rust   | `integration_credentials.rs`, and the backup import                                                                 |
-| `integration_drafts`          | ts     | Exception: the query bridge saves a draft an agent proposes (`query_bridge/dispatch.rs`).                           |
-| `messages`                    | ts     |                                                                                                                     |
-| `mount_operations`            | ts     | Exceptions: a project move rewrites the paths in the log, and the query bridge writes it (`query_bridge/mount.rs`). |
-| `mount_pr_links`              | ts     |                                                                                                                     |
-| `notifications`               | ts     |                                                                                                                     |
-| `nudge_events`                | ts     |                                                                                                                     |
-| `open_questions`              | ts     |                                                                                                                     |
-| `permission_audit_log`        | rust   | `permissions.rs`, at hook time                                                                                      |
-| `permission_audit_retry`      | rust   | `permissions.rs`                                                                                                    |
-| `permission_rules`            | rust   | `permissions.rs`, and the backup import                                                                             |
-| `plan_consumptions`           | ts     |                                                                                                                     |
-| `pr_review_drafts`            | ts     |                                                                                                                     |
-| `pr_series`                   | ts     |                                                                                                                     |
-| `pr_series_members`           | ts     |                                                                                                                     |
-| `project_relocations`         | rust   | `project_relocation.rs`                                                                                             |
-| `project_scripts`             | ts     | Exception: the backup import.                                                                                       |
-| `project_sentry_links`        | ts     |                                                                                                                     |
-| `projects`                    | ts     | Exceptions: the backup import and a project move.                                                                   |
-| `provider_credentials`        | ts     |                                                                                                                     |
-| `provider_limits`             | ts     |                                                                                                                     |
-| `provider_runs`               | ts     |                                                                                                                     |
-| `resolve_attempts`            | ts     | Exception: a project move rewrites `worktree_path`.                                                                 |
-| `resolve_batches`             | ts     |                                                                                                                     |
-| `resolve_candidate_items`     | ts     |                                                                                                                     |
-| `resolve_candidates`          | ts     | Exception: a project move rewrites `worktree_path`.                                                                 |
-| `resolve_check_runs`          | ts     |                                                                                                                     |
-| `resolve_imports`             | ts     |                                                                                                                     |
-| `resolve_publication_threads` | ts     |                                                                                                                     |
-| `resolve_publications`        | ts     | Exception: a project move rewrites `worktree_path`.                                                                 |
-| `resolve_queue_items`         | ts     |                                                                                                                     |
-| `resolve_session_settings`    | ts     |                                                                                                                     |
-| `resolve_threads`             | ts     |                                                                                                                     |
-| `retained_worktree_paths`     | ts     | Exception: a project move rewrites the paths.                                                                       |
-| `schema_migration_segment`    | ts     |                                                                                                                     |
-| `schema_version`              | ts     |                                                                                                                     |
-| `search_docs`                 | ts     |                                                                                                                     |
-| `search_excluded_projects`    | ts     |                                                                                                                     |
-| `search_index`                | ts     |                                                                                                                     |
-| `search_index_state`          | ts     |                                                                                                                     |
-| `security_findings`           | ts     |                                                                                                                     |
-| `session_artifacts`           | ts     |                                                                                                                     |
-| `session_budgets`             | rust   | `budget.rs`                                                                                                         |
-| `session_context_items`       | ts     | Learnings and role notes. They outlive the session; only a workspace delete removes them.                           |
-| `session_decisions`           | ts     |                                                                                                                     |
-| `session_events`              | ts     |                                                                                                                     |
-| `session_external_tasks`      | ts     |                                                                                                                     |
-| `session_workflows`           | ts     |                                                                                                                     |
-| `session_worktrees`           | ts     | Exception: a project move rewrites the paths.                                                                       |
-| `sessions`                    | ts     |                                                                                                                     |
-| `settings`                    | ts     | Exceptions: the backup import and the restart marker (`restart_marker.rs`).                                         |
-| `skills`                      | rust   | `skills.rs`, next to the skill files on disk, and the backup import                                                 |
-| `step_library`                | rust   | `workflows.rs`. Only Rust writes it today; a candidate to move.                                                     |
-| `steps`                       | ts     | `saveWorkflow`. Exception: the backup import.                                                                       |
-| `telemetry_records`           | ts     |                                                                                                                     |
-| `turn_events`                 | ts     |                                                                                                                     |
-| `workflows`                   | ts     | `saveWorkflow` and `removeWorkflow`. Exception: the backup import.                                                  |
-| `workspace_profiles`          | ts     | Exception: the backup import.                                                                                       |
-| `workspace_starred_issues`    | ts     |                                                                                                                     |
-| `workspaces`                  | ts     | Exceptions: the backup import and the per-workspace settings override (`settings_overrides.rs`).                    |
-| `worktree_roots`              | ts     | Exception: a project move rewrites `repo_root`.                                                                     |
+| Table                         | Writer | Notes                                                                                                                                     |
+| ----------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `agent_handoffs`              | ts     |                                                                                                                                           |
+| `agent_queued_messages`       | ts     |                                                                                                                                           |
+| `agent_turn_spans`            | ts     |                                                                                                                                           |
+| `agents`                      | ts     | Inserts, status, routing, viewed and done through `agent-write.ts`; Move to Auto inserts the Auto agent in its transfer. Rust reads only. |
+| `artifact_comments`           | ts     |                                                                                                                                           |
+| `artifact_provenance`         | ts     |                                                                                                                                           |
+| `artifact_revisions`          | ts     |                                                                                                                                           |
+| `auto_artifact_versions`      | ts     |                                                                                                                                           |
+| `auto_artifacts`              | ts     |                                                                                                                                           |
+| `auto_attempts`               | ts     |                                                                                                                                           |
+| `auto_delegations`            | ts     |                                                                                                                                           |
+| `auto_outbox`                 | ts     |                                                                                                                                           |
+| `auto_reservations`           | ts     |                                                                                                                                           |
+| `auto_trees`                  | ts     | Auto tree registry (`store/slices/auto/`). Nothing in Rust writes it.                                                                     |
+| `budget_alerts`               | rust   | `budget.rs`                                                                                                                               |
+| `budget_rules`                | rust   | `budget.rs`, and the backup import                                                                                                        |
+| `chat_message_attachments`    | ts     | Rows go in with their message through `insertChatMessage`. Rust reads them to build a turn's image root.                                  |
+| `chat_messages`               | ts     |                                                                                                                                           |
+| `chat_session_links`          | ts     |                                                                                                                                           |
+| `chats`                       | ts     |                                                                                                                                           |
+| `context_slot_history`        | ts     |                                                                                                                                           |
+| `context_slots`               | ts     |                                                                                                                                           |
+| `deleted_branches`            | ts     |                                                                                                                                           |
+| `diff_comments`               | ts     |                                                                                                                                           |
+| `file_versions`               | ts     |                                                                                                                                           |
+| `github_pr_cache`             | ts     |                                                                                                                                           |
+| `goal_attachments`            | ts     |                                                                                                                                           |
+| `history_plans`               | ts     |                                                                                                                                           |
+| `integration_bindings`        | rust   | `integration_credentials.rs`, and the backup import                                                                                       |
+| `integration_credentials`     | rust   | `integration_credentials.rs`, and the backup import                                                                                       |
+| `integration_drafts`          | ts     | Exception: the query bridge saves a draft an agent proposes (`query_bridge/dispatch.rs`).                                                 |
+| `messages`                    | ts     |                                                                                                                                           |
+| `mount_operations`            | ts     | Exceptions: a project move rewrites the paths in the log, and the query bridge writes it (`query_bridge/mount.rs`).                       |
+| `mount_pr_links`              | ts     |                                                                                                                                           |
+| `notifications`               | ts     |                                                                                                                                           |
+| `nudge_events`                | ts     |                                                                                                                                           |
+| `open_questions`              | ts     |                                                                                                                                           |
+| `permission_audit_log`        | rust   | `permissions.rs`, at hook time                                                                                                            |
+| `permission_audit_retry`      | rust   | `permissions.rs`                                                                                                                          |
+| `permission_rules`            | rust   | `permissions.rs`, and the backup import                                                                                                   |
+| `plan_consumptions`           | ts     |                                                                                                                                           |
+| `pr_review_drafts`            | ts     |                                                                                                                                           |
+| `pr_series`                   | ts     |                                                                                                                                           |
+| `pr_series_members`           | ts     |                                                                                                                                           |
+| `project_relocations`         | rust   | `project_relocation.rs`                                                                                                                   |
+| `project_scripts`             | ts     | Exception: the backup import.                                                                                                             |
+| `project_sentry_links`        | ts     |                                                                                                                                           |
+| `projects`                    | ts     | Exceptions: the backup import and a project move.                                                                                         |
+| `provider_credentials`        | ts     |                                                                                                                                           |
+| `provider_limits`             | ts     |                                                                                                                                           |
+| `provider_runs`               | ts     |                                                                                                                                           |
+| `resolve_attempts`            | ts     | Exception: a project move rewrites `worktree_path`.                                                                                       |
+| `resolve_batches`             | ts     |                                                                                                                                           |
+| `resolve_candidate_items`     | ts     |                                                                                                                                           |
+| `resolve_candidates`          | ts     | Exception: a project move rewrites `worktree_path`.                                                                                       |
+| `resolve_check_runs`          | ts     |                                                                                                                                           |
+| `resolve_imports`             | ts     |                                                                                                                                           |
+| `resolve_publication_threads` | ts     |                                                                                                                                           |
+| `resolve_publications`        | ts     | Exception: a project move rewrites `worktree_path`.                                                                                       |
+| `resolve_queue_items`         | ts     |                                                                                                                                           |
+| `resolve_session_settings`    | ts     |                                                                                                                                           |
+| `resolve_threads`             | ts     |                                                                                                                                           |
+| `retained_worktree_paths`     | ts     | Exception: a project move rewrites the paths.                                                                                             |
+| `schema_migration_segment`    | ts     |                                                                                                                                           |
+| `schema_version`              | ts     |                                                                                                                                           |
+| `search_docs`                 | ts     |                                                                                                                                           |
+| `search_excluded_projects`    | ts     |                                                                                                                                           |
+| `search_index`                | ts     |                                                                                                                                           |
+| `search_index_state`          | ts     |                                                                                                                                           |
+| `security_findings`           | ts     |                                                                                                                                           |
+| `session_artifacts`           | ts     |                                                                                                                                           |
+| `session_budgets`             | rust   | `budget.rs`                                                                                                                               |
+| `session_context_items`       | ts     | Learnings and role notes. They outlive the session; only a workspace delete removes them.                                                 |
+| `session_decisions`           | ts     |                                                                                                                                           |
+| `session_events`              | ts     |                                                                                                                                           |
+| `session_external_tasks`      | ts     |                                                                                                                                           |
+| `session_workflows`           | ts     |                                                                                                                                           |
+| `session_worktrees`           | ts     | Exception: a project move rewrites the paths.                                                                                             |
+| `sessions`                    | ts     |                                                                                                                                           |
+| `settings`                    | ts     | Exceptions: the backup import and the restart marker (`restart_marker.rs`).                                                               |
+| `skills`                      | rust   | `skills.rs`, next to the skill files on disk, and the backup import                                                                       |
+| `step_library`                | rust   | `workflows.rs`. Only Rust writes it today; a candidate to move.                                                                           |
+| `steps`                       | ts     | `saveWorkflow`. Exception: the backup import.                                                                                             |
+| `telemetry_records`           | ts     |                                                                                                                                           |
+| `turn_events`                 | ts     |                                                                                                                                           |
+| `workflows`                   | ts     | `saveWorkflow` and `removeWorkflow`. Exception: the backup import.                                                                        |
+| `workspace_profiles`          | ts     | Exception: the backup import.                                                                                                             |
+| `workspace_starred_issues`    | ts     |                                                                                                                                           |
+| `workspaces`                  | ts     | Exceptions: the backup import and the per-workspace settings override (`settings_overrides.rs`).                                          |
+| `worktree_roots`              | ts     | Exception: a project move rewrites `repo_root`.                                                                                           |
+
+### Auto tree registry
+
+Migration m230 adds seven tables for Auto, the agent that hands work to agents
+of other roles. `AUTO_GATES.isDelegationEnabled` in
+`packages/core/src/auto/limits.ts` is `true`; no tree exists until a person
+turns on the setting `agents.autoExperiment` (off by default), and Auto decides
+through the `<<auto>>` block, not through a bridge verb. The tables are additive, so an older build
+refuses the file with `DatabaseFromNewerBuildError` instead of reading it.
+m230 also adds the partial index `idx_agents_auto_roots` on `agents(session_id, ordinal)` for
+root Auto agents, which the scan for an Auto agent without a tree (`listAutoAgentsWithoutTree`)
+reads.
+
+- `auto_trees` is one row per Auto agent: phase, `phase_rev`, generation, stop
+  state, the budget cap, the lifetime counters and the scheduler lease
+  (`scheduler_owner`, `owner_lease_expires_at`). `auto_delegations`,
+  `auto_attempts`, `auto_reservations`, `auto_outbox`, `auto_artifacts` and
+  `auto_artifact_versions` hang off it and go with it.
+- `store/slices/auto/scheduler.ts` is the one writer of tree state. A window
+  writes only while it holds the lease, so a second window reads. Every
+  transition names the phase revision, generation and phase it expects, and a
+  lost race comes back as a typed answer.
+- `admit.ts` takes a whole batch or nothing. The guarded statement in
+  `packages/db/src/queries/auto-admission.ts` is the rule: phase, run, lease,
+  lifetime counters, four open children, remaining budget, plan approval and
+  revision. `core/auto/admission.ts` only names the refusal for the caller.
+- Money has one source, `treeSpend`: settled, reserved and remaining. It feeds
+  admission, the prompt line and the screen through `autoBudgetFacts`. An
+  attempt reserves its ceiling at admission and is reconciled to the actual
+  cost, or to the ceiling, marked estimated, when the provider reports none.
+- `settleAttempt` and `landRevision` apply a result only while the tree
+  generation, the lease, the attempt and the delegation still match. Anything
+  else is dropped and its reservation released.
+- `writeArtifactRevision` (`packages/db/src/queries/artifactRevision.ts`) is
+  the one way to make revision N+1 of an artifact: a compare and swap on the
+  base revision and the history row, in one transaction. The plan hand edit and
+  the Auto landing both call it.
+- Move to Auto is one transaction, `adoptAgentStatements`
+  (`packages/db/src/queries/auto-adoption.ts`): guards for a vanished source, a Run
+  step, a running status, an existing delegation or tree, and a lineage that holds
+  an Auto agent, then the Auto agent, the tree in `merging`, the adopted delegation,
+  its artifacts and the kickoff row. The unique key of the source is the guard
+  itself, because writers serialize. A crash leaves all of it or none of it.
+  `detachAdoptionStatements` is the inverse.
+- A run started for an Auto delivery carries a `deliveryId`, and Rust refuses a
+  second run for it ([turns.md](./turns.md) → Surviving a reload or a restart).
+- Auto decides with one `<<auto>>` block at the end of its turn ([auto.md](./auto.md) → How Auto
+  decides). `applyAutoBlock.ts` reads it when `settleAutoTurn.ts` runs, for a turn that ended
+  ok on the current run of a tree that is `deciding` and not stopping, and calls `delegate.ts`,
+  `answerQuestion.ts` or `finishTree.ts` through `runAutoCommand.ts`. A refusal, or a block that
+  does not parse, becomes a `refusal` outbox row (join key `refusal:<run id>`, so a recovered
+  turn writes it once) that the next delivery shows. The refusal counters count a refusal once
+  per run: `recordAutoRefusal` takes the generation and the run id, stores them in
+  `auto_trees.last_refusal_key` in the same guarded update that adds to `refusals_used` and
+  `turn_delegate_calls`, and does nothing when the key is already there, so two duplicate
+  settles of one turn move the counters once. `delegate.ts` parses the
+  spec (`core/auto/delegateSpec.ts`: a closed role list, rejected before any
+  normalization), resolves each child (`resolveDelegateChild.ts`: the mount through
+  `core/auto/mountPick.ts`, the model through `resolveProposedRouting`, the artifact
+  bodies and the kickoff text from `core/auto/kickoff.ts`) and admits the batch in one
+  transaction. A writer must name its mount; a reader without one gets the primary
+  mount, captured at admission. Nothing runs for a person until the experiment switch is on, because no tree exists before.
+- Delivery to Auto is `deliver.ts`. One transaction claims the pending rows, stores the
+  built text on the first row, reserves the turn ceiling and makes the tree `deciding`
+  on a planned run id; then the turn starts under the first row id as its delivery id,
+  and a second transaction accepts the rows. A refused start gives the rows, the
+  reservation and the turn count back and blocks the tree with the reason. A claim that
+  dies in between is found again by the delivery id. `settleAutoTurn.ts` picks the next
+  phase when the turn ends (delegating, waiting, merging, done or answering), puts the
+  batch back when the turn failed, and counts a turn with no answer and no work, or whose
+  block was refused. The text it delivers (`buildDeliveryMessage.ts`) starts with a digest of the
+  tree (open agents with role, state and age, questions waiting, the budget) and carries each
+  result's artifact text, cut when long, because a provider may not resume the session.
+- Children start in `launchChildren.ts` only once the Auto turn is over. Each child
+  gets its agent row with the preallocated id (`createAutoChild.ts`), a baseline
+  snapshot of its mount (`worktree_snapshot`) and a turn with `origin: 'delegation'`,
+  its `confinedRole`, the frozen mount target and its attempt id as delivery id.
+  `finishAttempt.ts` reads the closing line (`core/auto/closing.ts`: the `step-done` line
+  of its own agent id, and a blocking question), registers the artifacts the child
+  wrote, attributes the changed files by comparing snapshots, and settles the attempt
+  with a `DelegationResultV1`. A revise turn captures nothing in the old slot: the new
+  version is parsed (`core/auto/revisionParse.ts`) and lands through `landRevision`.
+  `join.ts` settles a batch only when every member ended, writes one results row under a
+  unique key and `advancePhase.ts` moves the tree on. `createAutoRuntime.ts` runs these
+  in order, one tree at a time.
+- `stopTree.ts` writes the stop first: the generation goes up, the phase is `stopping`,
+  the rows of the old generation are dropped. Then
+  it cancels the run of Auto and of every live attempt with the confirmed cancel. Only
+  when every process is confirmed gone does it close the attempts, settle the
+  delegations as stopped, reconcile or release the reservations and set `stopped`; one
+  cancel that fails leaves the tree `stopping`, and a restart resumes it. A late result of
+  the old generation is dropped by the fences. A new user message reopens a stopped tree.
+- `enforceDeadlines.ts` cancels a child past its deadline and settles it timed out only
+  after the exit is confirmed; a waiting child needs no process to expire. `recover.ts`
+  rebuilds a tree after a restart in the order of the recovery table: claimed rows are
+  accepted when the registry holds the run and given back when it does not, a turn or a
+  child whose run is gone is closed from what the run left behind (a child with no
+  answer fails as interrupted), a live run is watched until it ends, and a revise whose
+  landing was cut short is landed from the version stored on its attempt. Two windows
+  recovering at once do not both act: the lease is the owner check.
+- `makeAutoRuntime.ts` builds the real ports and the runtime from a database and the store
+  getter; `store.sqlite-auto-manual-proof.test.ts` runs two of them on the real store for the
+  stop, restart and crash proofs.
+- `startAutoRuntime.ts` is the only place the pieces meet the app. `App.tsx` starts it in
+  the main window. When `AUTO_GATES.isDelegationEnabled` is false it only registers the ports of the
+  screens and starts nothing. When it is true (the shipped value) it builds the real ports
+  (`createRealAutoPorts.ts`: the store's `sendTurn` and confirmed cancel, the mount list,
+  `worktree_snapshot`, the delivery lookup of Rust, the child agent rows and the run
+  ledger of `provider_runs`), claims each tree it recovers, and drives every live tree
+  every fifteen seconds, which also renews the owner lease. The interval runs only while
+  the setting `agents.autoExperiment` is on or a tree that is not finished is left, so a
+  person who never turned Auto on pays no timer, no read and no error. It looks once at
+  start, re-arms when the setting changes (the settings cache, `loadSetting`, which keeps
+  the `settings` object when the value is unchanged) and stops itself on the tick that
+  finds no live tree with the setting off. Each tick also starts the tree
+  of an Auto agent that has none (`startAutoTrees.ts`), capped at the budget of its session,
+  else at the workspace key `auto.treeLimitUsd.<workspaceId>`, else at the default
+  (`autoTreeCapUsd`). It hands the screens the ports they call, the answer to a
+  confirm card (`confirmDelegation`) and the Stop button (`stopTree`); the Stop button
+  reports a tree that did not stop, and one that another window runs. When delegation is
+  on it also opens the Auto user-turn door (`registerAutoUserTurnPort`): the first message
+  of a new Auto agent (`spawnAgent`, `sendAutoKickoff.ts`) creates the tree on the spot
+  (`startAutoTree`, the same function the tick uses, so a race makes one tree) and queues
+  the message as a `user` outbox row through `runtime.say`, instead of a plain turn. Every later
+  operator message to the root of an Auto tree takes the same door from `sendTurn`
+  (`routeAutoUserTurn.ts`).
+- A child that asks a blocking question ends its attempt `paused` and queues a question row
+  for Auto at once. `answerQuestion.ts` (the `answer` action) resumes it: in one transaction
+  it admits a new attempt on the same agent with the question and the answer stored on it,
+  reserves a new ceiling, counts it against the attempt limit
+  (`core/auto/resumeAdmission.ts`) and moves the delegation from `paused` to `starting`.
+  The same question answered twice is one resume; a different text is refused. The question
+  of a child never reaches the open questions of the session
+  (`routeQuestions.ts`, read by `finalizeTurnStream.ts`), so the user never answers a
+  hidden child. Inside the tree no agent splits its work either: the kickoff forbids
+  `<<fan-out>>`, and a split that still comes from the child of a delegation is turned
+  down with a note on its turn (`isFanOutRejected.ts`, read by `completeResolvedAgent.ts`),
+  so every process of the tree has a delegation. A retry is a delegate entry with `retryOf` and a reason only
+  (`prepareRetry.ts`): it repeats the work of a settled delegation as a new delegation on
+  the same agent and mount, with the model of the earlier attempt unless one is given,
+  and the settled result stays as it was. A revise whose version already landed is not
+  repeated: the retry answers with the landed version.
+- The screens read the registry through one slice, `store/slices/auto-view/`:
+  `loadAutoTrees({ sessionId })` reads the trees of a session with their
+  delegations, artifact ledger and `treeSpend` budget (`readAutoTreeViews`),
+  keeps only the latest answer and writes the store only when something
+  changed (`sameAutoTreeViews`). `features/auto/useAutoTrees` loads on mount
+  and polls every 2 seconds while the session has an Auto agent or a tree that
+  is not finished; nothing pushes tree changes to a window yet. The Settings
+  row counts the working trees with `countLiveAutoTrees`.
 
 ### On-disk data layout
 

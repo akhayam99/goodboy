@@ -2,7 +2,10 @@ import type { Agent } from '@goodboy/types';
 import { stripControlMarkers } from '@goodboy/core';
 import { AGENT_KIND_META, type AgentKind } from './agent-kind';
 
-export type FollowUpKind = Exclude<AgentKind, 'resolver' | 'rewriter' | 'scribe' | 'pr-reviewer'>;
+export type FollowUpKind = Exclude<
+  AgentKind,
+  'resolver' | 'rewriter' | 'scribe' | 'pr-reviewer' | 'ci-debugger' | 'ci-fixer' | 'auto'
+>;
 
 type FollowUpMove = {
   readonly kind: FollowUpKind;
@@ -16,6 +19,7 @@ const FOLLOW_UP_KINDS: Readonly<Record<AgentKind, ReadonlyArray<FollowUpKind>>> 
   scout: ['planner', 'implementer'],
   debugger: ['implementer'],
   generic: [],
+  auto: [],
   implementer: [],
   tester: [],
   docs: [],
@@ -24,6 +28,8 @@ const FOLLOW_UP_KINDS: Readonly<Record<AgentKind, ReadonlyArray<FollowUpKind>>> 
   resolver: [],
   rewriter: [],
   scribe: [],
+  'ci-debugger': [],
+  'ci-fixer': [],
   'pr-reviewer': [],
 };
 
@@ -48,12 +54,16 @@ const FOLLOW_UP_HINTS: Readonly<Record<FollowUpKind, Partial<Record<AgentKind, s
   generic: {},
 };
 
+type MovesParams = {
+  readonly sourceKind: AgentKind;
+  readonly isInAutoTree?: boolean;
+};
+
 export const agentFollowUpMoves = ({
   sourceKind,
-}: {
-  readonly sourceKind: AgentKind;
-}): ReadonlyArray<FollowUpMove> =>
-  (FOLLOW_UP_KINDS[sourceKind] ?? []).map((kind) => ({
+  isInAutoTree = false,
+}: MovesParams): ReadonlyArray<FollowUpMove> =>
+  (isInAutoTree ? [] : (FOLLOW_UP_KINDS[sourceKind] ?? [])).map((kind) => ({
     kind,
     label: AGENT_KIND_META[kind].label,
     hint: FOLLOW_UP_HINTS[kind][sourceKind] ?? AGENT_KIND_META[kind].hint,

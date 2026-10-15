@@ -1,4 +1,4 @@
-import { renderHandoff } from '@goodboy/core';
+import { AUTO_GATES, buildAutoSystemPrompt, renderHandoff } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type { AgentTurnSpan } from '@goodboy/types';
 import { AGENT_KIND_DEFAULTS, kindWritesFiles } from '../../../features/session/agent-kind';
@@ -14,13 +14,7 @@ import { fanOutChildKind } from '../agents/fanOutChildKind';
 import { resolveCandidateMode } from '../resolve/resolveCandidateMode';
 import { resumableResolveThreadIds } from '../resolve/resumableResolveThreadIds';
 import { selectWritableMounts } from '../project-mounts/selectors';
-import { rewriterWritableRoots } from '../history/rewriterWritableRoots';
-import {
-  buildTurnWritableRoots,
-  isTurnWritableMount,
-  repoRootsForTurn,
-  resolveGitCommonDirs,
-} from './turnWritableRoots';
+import { isTurnWritableMount } from './turnWritableRoots';
 import { createResolveCandidateWriter } from './createResolveCandidateWriter';
 import { collectTouchedMounts } from './collectTouchedMounts';
 import { composeAgentHandoff } from './composeAgentHandoff';
@@ -136,7 +130,10 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
       ? agentRowEarly.providerSessionId
       : undefined;
 
-  const kindSystemPrompt = AGENT_KIND_DEFAULTS[earlyAgentKind].systemPrompt;
+  const kindSystemPrompt =
+    earlyAgentKind === 'auto'
+      ? buildAutoSystemPrompt({ isDelegationEnabled: AUTO_GATES.isDelegationEnabled })
+      : AGENT_KIND_DEFAULTS[earlyAgentKind].systemPrompt;
 
   const scopeMounts =
     rewriterCopy !== null || copyPath !== null
@@ -205,7 +202,7 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
       ),
       ...(isGithubConnected ? (['github'] as const) : []),
     ],
-    isBridgeServing,
+    isBridgeServing: isBridgeServing && earlyAgentKind !== 'auto',
   });
   const profile = get().workspaces.find(
     (candidate) => candidate.id === session.workspaceId,
@@ -226,19 +223,6 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
     roleInstructions: kindSystemPrompt ?? '',
   });
   const fullSystemPrompt = renderedHandoff.system;
-  const gitDirs = await resolveGitCommonDirs({
-    repoRoots: repoRootsForTurn({ mounts: scopeMounts }),
-  });
-  const isolatedCopyPath = rewriterCopy?.copyPath ?? copyPath;
-  const writableRoots =
-    isolatedCopyPath !== null
-      ? await rewriterWritableRoots({ copyPath: isolatedCopyPath })
-      : buildTurnWritableRoots({
-          mounts: scopeMounts,
-          workingDir,
-          gitDirs,
-        });
-
   resolvedPrompt = renderedHandoff.message;
 
   if (isHandoffTurn) {
@@ -326,8 +310,6 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
     notifySnapshotFailure,
     turnFileVersionCapture,
     fullSystemPrompt,
-    writableRoots,
-    isolatedCopyPath,
     turnSpanBase,
     touchedMountsForTurn,
     explainMoreTopics,

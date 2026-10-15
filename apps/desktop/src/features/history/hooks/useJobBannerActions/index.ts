@@ -2,6 +2,8 @@ import { useCopyText } from '../../../../shared/hooks/useCopyText';
 import { useShallow } from 'zustand/react/shallow';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { captureStartHint } from '../../../../store/slices/startHints/captureStartHint';
+import { START_HINT_SCOPES } from '../../../../store/slices/startHints/startHintScopes';
 import { rebasePlanArgs } from '../../../../store/slices/history/rebaseBranch';
 import {
   selectMountBaseBranch,
@@ -102,7 +104,20 @@ export const useJobBannerActions = ({ sessionId, worktreePath, agentId }: Params
       attempt({
         key: 'fix-push',
         failureTitle: "Couldn't start the agent.",
-        task: () => useAppStore.getState().fixPushWithAgent({ sessionId, mountId }),
+        task: () => {
+          const state = useAppStore.getState();
+          const capture = captureStartHint({
+            state,
+            sessionId,
+            scope: START_HINT_SCOPES.pushFix({ mountId }),
+          });
+          return state.fixPushWithAgent({
+            sessionId,
+            mountId,
+            hint: capture.text,
+            onAccepted: () => state.settleStartHint({ capture }),
+          });
+        },
       });
     },
     retryPush: () => {

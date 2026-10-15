@@ -15,7 +15,6 @@ const base = {
   currentWorkspaceId: WORKSPACE,
   currentSessionId: SESSION,
   selectedAgentId: null,
-  hasStudio: false,
   heldScope: null,
 };
 
@@ -57,13 +56,6 @@ describe('resolvePaletteScope', () => {
         lens: 'plans',
       }),
     ).toEqual({ kind: 'session', sessionId: SESSION });
-  });
-
-  it('is the session, not the agent, while a session studio covers the page', () => {
-    expect(resolvePaletteScope({ ...base, selectedAgentId: AGENT, hasStudio: true })).toEqual({
-      kind: 'session',
-      sessionId: SESSION,
-    });
   });
 
   it('is the workspace while an app studio is open over a session', () => {

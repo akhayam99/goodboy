@@ -10,4 +10,5 @@ export const hasSessionDraftContent = ({ draft }: Params): boolean =>
   draft.focusedIssueKey !== null ||
   draft.workflowGoal.trim() !== '' ||
   draft.workflowId !== null ||
-  draft.agentPrompt.trim() !== '';
+  draft.agentPrompt.trim() !== '' ||
+  draft.autoGoal.trim() !== '';

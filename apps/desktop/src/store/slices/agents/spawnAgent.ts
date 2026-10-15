@@ -13,6 +13,7 @@ import type {
   StepId,
   WorkflowRunId,
 } from '@goodboy/types';
+import { isAutoOwnProvider } from '@goodboy/core';
 import { updateAgentConfig } from '@goodboy/db';
 import { invokeAgentInsert, invokeAgentList } from '../../../features/workflows/workflows';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -26,6 +27,7 @@ import {
 import {
   kindConsumesPlan,
   resolveAgentKind,
+  storedAgentKind,
   type AgentKind,
 } from '../../../features/session/agent-kind';
 import { buildPlanKickoffSection, composeKickoff, composePlanSection } from '../turn/kickoff';
@@ -44,6 +46,8 @@ import { autoLimitContext } from '../providerLimits/autoLimitContext';
 import { ReportedError, isReportedError } from '../notifications/reportedError';
 import { sessionById } from '../sessions/sessionIndex';
 import { scopedKindRouting } from './scopedKindRouting';
+import { sendAutoKickoff } from './sendAutoKickoff';
+import { currentAutoUserTurnPort } from '../../../features/auto/autoUserTurnPort';
 
 const spawnQueue = createKeyedQueue();
 
@@ -69,11 +73,16 @@ type SpawnArgs = {
   parentAgentId?: AgentId;
   resolveBatch?: ResolveAttemptBatch;
   resolveLaunch?: ResolveAttemptLaunch;
+  onKickoffAccepted?: () => void;
 };
 
 const NO_ALLOWED_MODEL_TITLE = 'No model is allowed for this agent';
 const NO_ALLOWED_MODEL_MESSAGE =
   'Every model this agent could use is hidden. Show a model in Settings, or pick one for this agent by hand.';
+
+const AUTO_PROVIDER_TITLE = "Auto can't run on this provider";
+const AUTO_PROVIDER_MESSAGE =
+  'Auto only reads, and this provider cannot confine a read-only agent yet. Pick Claude, Codex, Cursor or Gemini for Auto.';
 
 type Params = {
   readonly set: SetFn;
@@ -140,6 +149,14 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
           await get().reportError({ title: NO_ALLOWED_MODEL_TITLE, error, sessionId });
           throw error;
         }
+        if (
+          resolvedKind === 'auto' &&
+          !isAutoOwnProvider({ provider: args.provider ?? routing.provider })
+        ) {
+          const error = new ReportedError(AUTO_PROVIDER_MESSAGE);
+          await get().reportError({ title: AUTO_PROVIDER_TITLE, error, sessionId });
+          throw error;
+        }
         const sourceThreadId = args.sourceThreadIds?.[0] ?? args.sourceThreadId;
         const inserted = await invokeAgentInsert({
           sessionId,
@@ -184,7 +201,6 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
               sessionId,
               focus: { kind: 'agent', agentId: inserted.id },
               activeLens: s.activeLens,
-              sessionStudio: s.sessionStudio,
               selectedAgentId: s.selectedAgentId,
             })),
           transcripts: { ...s.transcripts, [inserted.id]: [] },
@@ -219,7 +235,8 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
     stepPromptPrefix.length > 0 ? stepPromptPrefix : (args.initialPrompt ?? '');
   const baseKickoff = explicitPrompt.length > 0 ? explicitPrompt : (args.seedPrompt ?? '');
   const effectiveKind: AgentKind =
-    args.kindOverride ?? (inserted.kind as AgentKind | undefined) ?? resolvedKind;
+    args.kindOverride ??
+    (inserted.kind === undefined ? resolvedKind : storedAgentKind({ kind: inserted.kind }));
   const isImplementer = effectiveKind === 'implementer';
   const hasExplicitPlanContext = args.triggeredPlanId !== undefined || args.stepId !== undefined;
   const engagePlan =
@@ -276,6 +293,22 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
   const machineRules =
     humanPrompt === null ? null : rulesOfKickoff({ message: kickoff, human: humanPrompt });
   const isRecheck = args.sourceKind === 'comment_recheck';
+  const autoKickoffPort =
+    effectiveKind === 'auto' && kickoff.length > 0 && args.shouldDeferKickoff !== true
+      ? currentAutoUserTurnPort()
+      : null;
+  if (autoKickoffPort !== null) {
+    sendAutoKickoff({
+      get,
+      port: autoKickoffPort,
+      sessionId,
+      workspaceId: session.workspaceId,
+      agentId: inserted.id,
+      text: kickoff,
+      onKickoffAccepted: args.onKickoffAccepted,
+    });
+    return inserted.id;
+  }
   if (resolvedKind === 'resolver') {
     await get().recordResolveAttempt({
       sessionId,
@@ -301,6 +334,7 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
         agentId: inserted.id,
         content: kickoff,
         ...(args.mountId !== undefined && { mountId: args.mountId }),
+        ...(args.onKickoffAccepted !== undefined && { onStarted: args.onKickoffAccepted }),
         handoff:
           isRecheck && humanPrompt !== null && machineRules !== null
             ? {
@@ -317,6 +351,11 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
                 instruction: baseKickoff,
                 plan: handedPlan === null ? null : { id: handedPlan.id, title: handedPlan.title },
               },
+      })
+      .then((result) => {
+        if (result?.isLaneQueued === true) {
+          args.onKickoffAccepted?.();
+        }
       })
       .catch((error: unknown) => {
         if (isReportedError(error)) {

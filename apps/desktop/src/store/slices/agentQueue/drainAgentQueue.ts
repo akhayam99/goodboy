@@ -1,7 +1,8 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import { deliverQueuedTurn } from './deliverQueuedTurn';
+import { isAgentStopping } from '../turn/stoppingAgents';
 import { isHandoffPending } from './handoff';
-import { persistAgentQueue, readAgentQueue, writeAgentQueue } from './queueStore';
+import { readAgentQueue, writeAgentQueue } from './queueStore';
 import type { GetFn, SetFn } from './types';
 
 type Params = Readonly<{
@@ -13,7 +14,7 @@ const BUSY_TURN_KINDS: ReadonlySet<string> = new Set(['starting', 'running']);
 
 export const drainAgentQueue = (set: SetFn, get: GetFn) => {
   return async ({ sessionId, agentId }: Params): Promise<void> => {
-    if (isHandoffPending({ agentId })) {
+    if (isHandoffPending({ agentId }) || isAgentStopping({ agentId })) {
       return;
     }
     const state = get();
@@ -24,17 +25,16 @@ export const drainAgentQueue = (set: SetFn, get: GetFn) => {
     if (agent?.status === 'stopped') {
       return;
     }
-    const [head, ...rest] = readAgentQueue({ get, agentId });
+    const queue = readAgentQueue({ get, agentId });
+    const head = queue[0];
     if (head === undefined || head.status === 'sending') {
       return;
     }
-    writeAgentQueue({ set, agentId, queue: rest });
-    void persistAgentQueue({ get, agentId });
-    const delivery = await deliverQueuedTurn({ get, sessionId, turn: head, sentVia: 'queued' });
-    if (delivery === 'delivered') {
-      return;
-    }
-    writeAgentQueue({ set, agentId, queue: [head, ...readAgentQueue({ get, agentId })] });
-    await persistAgentQueue({ get, agentId });
+    writeAgentQueue({
+      set,
+      agentId,
+      queue: queue.map((item) => (item.id === head.id ? { ...item, status: 'sending' } : item)),
+    });
+    await deliverQueuedTurn({ set, get, sessionId, turn: head, sentVia: 'queued' });
   };
 };

@@ -1000,18 +1000,9 @@ export const BUILDER_DRAFT: WorkflowBuilderDraft = {
   goalHistory: ['Fix the duplicate credit bug'],
   selectedPresetId: null,
   basePresetId: null,
-  processText:
+  guidance:
     'Find where a redelivered event posts a credit, decide on one place to dedupe, fix it there, then record every retry in notify-relay. Stop and ask before any change to ledger-core.',
-  plan: null,
-  workflow: {
-    name: '',
-    description: '',
-    goal: '',
-    steps: [],
-    origin: 'custom',
-    isPreset: false,
-  },
-  saveAsPreset: false,
+  steps: [],
   autoRun: true,
   title: 'Duplicate credit fix',
   orchestratorModel: {

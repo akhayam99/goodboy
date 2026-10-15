@@ -10,6 +10,7 @@ export type HandoffBodyLayers = Readonly<{
   contextPreamble: string;
   childRouting: string;
   clusterBoundary: HandoffClusterBoundary | null;
+  currentPlan: string;
   goalAttachments: string;
   priorTurns: string;
   verbosity: string;
@@ -37,7 +38,8 @@ const prepend = ({ block, text }: PrependParams): string =>
   block.length > 0 ? `${block}\n\n${text}` : text;
 
 export const composeHandoffBody = (layers: HandoffBodyLayers): string => {
-  const withPreamble = prepend({ block: layers.contextPreamble, text: layers.message });
+  const withPlan = prepend({ block: layers.currentPlan, text: layers.message });
+  const withPreamble = prepend({ block: layers.contextPreamble, text: withPlan });
   const withRouting = prepend({ block: layers.childRouting, text: withPreamble });
   const boundary = layers.clusterBoundary;
   const withBoundary =

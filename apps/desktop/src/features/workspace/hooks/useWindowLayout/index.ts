@@ -12,7 +12,6 @@ const layoutInputs = (state: AppStore): ReadonlyArray<unknown> => [
   state.currentSessionId,
   state.activeLens,
   state.selectedAgentId,
-  state.sessionStudio,
   state.drawer,
   state.appStudio,
   state.navigation,

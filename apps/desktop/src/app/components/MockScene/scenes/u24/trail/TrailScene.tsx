@@ -19,11 +19,9 @@ const HANDLERS = {
 
 const BASE: SessionBreadcrumbInput = {
   lens: null,
-  studio: null,
   focusedWorkflowName: null,
   selectedChildWorkflowName: null,
   focusedArtifactTitle: null,
-  artifactCreationLabel: null,
   selectedChildLabel: null,
   selectedChildHome: null,
   selectedParentLabel: null,

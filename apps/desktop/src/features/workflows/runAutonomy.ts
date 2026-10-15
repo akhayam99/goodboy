@@ -8,34 +8,30 @@ export type RunAutonomyOption = {
   readonly autoRun: boolean;
 };
 
-export const RUN_AUTONOMY_HEADER = NAMES.whenToAsk;
+export const RUN_AUTONOMY_HEADER = NAMES.autonomy;
 
-const ASK_BEFORE_EACH_STEP: RunAutonomyOption = {
+const ASK_ME: RunAutonomyOption = {
   key: 'step',
-  label: 'Ask before each step',
+  label: NAMES.askMe,
   hint: 'Pauses after every step.',
   autoRun: false,
 };
 
-const ASK_AFTER_THE_PLAN: RunAutonomyOption = {
+const BALANCED: RunAutonomyOption = {
   key: 'plan',
-  label: 'Ask after the plan',
+  label: NAMES.balanced,
   hint: 'Pauses once, after the plan.',
   autoRun: true,
 };
 
-const RUN_ON_ITS_OWN: RunAutonomyOption = {
+const AUTOPILOT: RunAutonomyOption = {
   key: 'run',
-  label: 'Run on its own',
+  label: NAMES.autopilot,
   hint: 'Never pauses.',
   autoRun: true,
 };
 
-export const RUN_AUTONOMY_OPTIONS: ReadonlyArray<RunAutonomyOption> = [
-  ASK_BEFORE_EACH_STEP,
-  ASK_AFTER_THE_PLAN,
-  RUN_ON_ITS_OWN,
-];
+export const RUN_AUTONOMY_OPTIONS: ReadonlyArray<RunAutonomyOption> = [ASK_ME, BALANCED, AUTOPILOT];
 
 type Params = {
   readonly autoRun: boolean;
@@ -43,5 +39,4 @@ type Params = {
 };
 
 export const runAutonomyOf = ({ autoRun, autonomy }: Params): RunAutonomyOption =>
-  RUN_AUTONOMY_OPTIONS.find((option) => option.key === autonomy) ??
-  (autoRun ? RUN_ON_ITS_OWN : ASK_BEFORE_EACH_STEP);
+  RUN_AUTONOMY_OPTIONS.find((option) => option.key === autonomy) ?? (autoRun ? AUTOPILOT : ASK_ME);

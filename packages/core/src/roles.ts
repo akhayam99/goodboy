@@ -30,9 +30,12 @@ export type RolePresentationKey =
   | 'resolver'
   | 'rewriter'
   | 'scribe'
+  | 'ci-debugger'
+  | 'ci-fixer'
   | 'docs'
   | 'report'
   | 'wireframe'
+  | 'auto'
   | 'generic';
 
 export type RoleRegistryEntry = RoleDefaults & {
@@ -281,6 +284,55 @@ export const ROLE_REGISTRY = {
       condition: null,
     },
   },
+  'ci-debugger': {
+    id: 'ci-debugger',
+    summary: 'Reads a failed check and proposes the fix. Started from a failing check.',
+    aliases: [],
+    presentationKey: 'ci-debugger',
+    defaultRoutingTaskType: 'debugging',
+    outputKind: 'none',
+    workflowEligible: false,
+    classifierEligible: false,
+    selectionEligible: false,
+    pickerEligible: false,
+    description: 'read a failed check log, find the cause and propose one fix or a few options',
+    explain: {
+      does: 'Reads the log of a failed check, finds the cause and proposes the fix.',
+      autoReason:
+        'High effort. A root cause needs long, careful reasoning more than a bigger model.',
+      splitNote: 'One failing check is one run.',
+      launchNote: 'Nothing. You start the fix you pick.',
+    },
+    fanOut: {
+      mode: 'never',
+      partitionKey: null,
+      condition: null,
+    },
+  },
+  'ci-fixer': {
+    id: 'ci-fixer',
+    summary: 'Applies the fix you picked for a failed check and commits it. Never pushes.',
+    aliases: [],
+    presentationKey: 'ci-fixer',
+    defaultRoutingTaskType: 'implementation',
+    outputKind: 'none',
+    workflowEligible: false,
+    classifierEligible: false,
+    selectionEligible: false,
+    pickerEligible: false,
+    description: 'apply the chosen check fix on the branch and commit it locally',
+    explain: {
+      does: 'Applies the fix you picked for a failed check and commits it on the branch.',
+      autoReason: 'Medium effort. The analysis already says what to change.',
+      splitNote: 'One fix is one run.',
+      launchNote: 'Nothing. You push the commit.',
+    },
+    fanOut: {
+      mode: 'never',
+      partitionKey: null,
+      condition: null,
+    },
+  },
   docs: {
     id: 'docs',
     summary: 'Updates repository documentation.',
@@ -347,6 +399,30 @@ export const ROLE_REGISTRY = {
       does: 'Draws a wireframe from the product evidence it is given.',
       autoReason: 'Medium effort. The evidence sets the layout, the model draws it.',
       splitNote: 'One wireframe is one run.',
+      launchNote: 'Nothing.',
+    },
+    fanOut: {
+      mode: 'never',
+      partitionKey: null,
+      condition: null,
+    },
+  },
+  auto: {
+    id: 'auto',
+    summary: 'Answers a question, or hands the work to the roles it picks.',
+    aliases: [],
+    presentationKey: 'auto',
+    defaultRoutingTaskType: 'general',
+    outputKind: 'none',
+    workflowEligible: false,
+    classifierEligible: false,
+    selectionEligible: false,
+    pickerEligible: false,
+    description: 'answer directly or delegate to sub-agents of the right role; never edits',
+    explain: {
+      does: 'Answers a question, or hands the work to the roles it picks. Never edits.',
+      autoReason: 'Medium effort. It decides and delegates, the agents it starts do the work.',
+      splitNote: 'Hands work to one level of agents, never deeper.',
       launchNote: 'Nothing.',
     },
     fanOut: {

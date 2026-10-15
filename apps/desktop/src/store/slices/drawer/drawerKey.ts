@@ -20,6 +20,8 @@ export const drawerKey = (content: DrawerContent): string => {
       return `conversation:${content.payload.threadId}`;
     case 'ask':
       return 'ask';
+    case 'new':
+      return 'new';
     case 'transcript':
       return `transcript:${content.payload.agentId}`;
     case 'fix-comments':

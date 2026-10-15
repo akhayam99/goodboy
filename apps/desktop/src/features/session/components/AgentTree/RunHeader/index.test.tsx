@@ -524,7 +524,7 @@ describe('the run header Stop run', () => {
 });
 
 describe('the run header overflow', () => {
-  it('lists the six items of a live run, in the order of the groups', () => {
+  it('lists the seven items of a live run, in the order of the groups', () => {
     seed({ run: { executionMode: 'dynamic', autoRun: true }, agents: LIVE });
     renderHeader();
 
@@ -532,6 +532,7 @@ describe('the run header overflow', () => {
       'View diff',
       'Pause run',
       'Step routing',
+      'Save as preset',
       'Copy run summary',
       'Archive run',
       'Delete run',
@@ -548,6 +549,7 @@ describe('the run header overflow', () => {
 
     expect(overflowItems()).toEqual([
       'Step routing',
+      'Save as preset',
       'Copy run summary',
       'Archive run',
       'Delete run',
@@ -558,14 +560,25 @@ describe('the run header overflow', () => {
     seed({ run: {}, agents: WAITING });
     renderHeader();
 
-    expect(overflowItems()).toEqual(['View diff', 'Copy run summary', 'Archive run', 'Delete run']);
+    expect(overflowItems()).toEqual([
+      'View diff',
+      'Save as preset',
+      'Copy run summary',
+      'Archive run',
+      'Delete run',
+    ]);
   });
 
   it('leaves an archived run with View diff, Copy run summary and Delete run', () => {
     seed({ run: { executionMode: 'dynamic', discardedAt: TEST_NOW }, agents: LIVE });
     renderHeader();
 
-    expect(overflowItems()).toEqual(['View diff', 'Copy run summary', 'Delete run']);
+    expect(overflowItems()).toEqual([
+      'View diff',
+      'Save as preset',
+      'Copy run summary',
+      'Delete run',
+    ]);
   });
 
   it('draws one menu trigger in the header, whatever the run state', () => {
@@ -647,16 +660,16 @@ describe('the run header overflow', () => {
 });
 
 describe('the run header meta line', () => {
-  it('reads steps, cost, spend cap and when to ask on one line', () => {
+  it('reads steps, cost, spend cap and autonomy on one line', () => {
     seed({ run: { executionMode: 'dynamic', autoRun: true }, agents: LIVE });
     renderHeader();
 
     expect(screen.getByText('2 steps')).toBeDefined();
     expect(screen.getByRole('button', { name: /Set a spend cap/ })).toBeDefined();
-    expect(screen.getByTestId('run-autonomy-fact').textContent).toBe('Run on its own');
+    expect(screen.getByTestId('run-autonomy-fact').textContent).toBe('Autopilot');
   });
 
-  it('changes when to ask from a popover, and keeps the choices out of the overflow', async () => {
+  it('changes autonomy from a popover, and keeps the choices out of the overflow', async () => {
     seed({ run: { executionMode: 'dynamic', autoRun: true }, agents: LIVE });
     renderHeader();
 
@@ -665,7 +678,7 @@ describe('the run header meta line', () => {
       screen.getAllByRole('menuitemradio').map((item) => item.getAttribute('aria-checked')),
     ).toEqual(['false', 'false', 'true']);
     await act(async () => {
-      fireEvent.click(screen.getByRole('menuitemradio', { name: 'Ask after the plan' }));
+      fireEvent.click(screen.getByRole('menuitemradio', { name: 'Balanced' }));
     });
 
     expect(actionStubs.setWorkflowRunAutonomy).toHaveBeenCalledWith(SESSION, RUN, 'plan');
@@ -678,13 +691,13 @@ describe('the run header meta line', () => {
 
     fireEvent.click(screen.getByTestId('run-autonomy-fact'));
     await act(async () => {
-      fireEvent.click(screen.getByRole('menuitemradio', { name: 'Run on its own' }));
+      fireEvent.click(screen.getByRole('menuitemradio', { name: 'Autopilot' }));
     });
 
     expect(actionStubs.setWorkflowRunAutonomy).not.toHaveBeenCalled();
   });
 
-  it('drops when to ask and the spend cap from an archived run', () => {
+  it('drops autonomy and the spend cap from an archived run', () => {
     seed({ run: { executionMode: 'dynamic', discardedAt: TEST_NOW }, agents: LIVE });
     renderHeader();
 

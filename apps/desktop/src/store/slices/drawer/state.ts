@@ -8,6 +8,16 @@ export type ContextDrawerTab = 'goal' | 'decisions' | 'summary' | 'learned';
 
 export type ContextDrawerView = 'current' | 'versions';
 
+export type NewDrawerTab = 'run' | 'agent' | 'write';
+
+export type NewDrawerWriteKind = 'report' | 'wireframe';
+
+export type NewDrawerPayload = {
+  readonly tab: NewDrawerTab;
+  readonly writeKind?: NewDrawerWriteKind;
+  readonly note?: string;
+};
+
 export type DrawerContent =
   | {
       readonly kind: 'check-analysis';
@@ -56,6 +66,10 @@ export type DrawerContent =
   | {
       readonly kind: 'ask';
       readonly payload: null;
+    }
+  | {
+      readonly kind: 'new';
+      readonly payload: NewDrawerPayload | null;
     }
   | {
       readonly kind: 'transcript';

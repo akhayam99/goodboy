@@ -64,7 +64,7 @@ export const MenuList = ({ label, entries, onClose, isAutoFocus = true }: Props)
   };
 
   const activate = (entry: MenuItemEntry) => {
-    if (entry.blockedReason != null) {
+    if (entry.blockedReason != null || entry.isDisabled === true) {
       return;
     }
     if (entry.choices != null && entry.choices.length > 0) {

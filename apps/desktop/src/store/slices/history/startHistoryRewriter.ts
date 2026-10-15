@@ -28,6 +28,7 @@ export const startHistoryRewriter = (set: SetFn, get: GetFn) => {
     origin,
     planId,
     note,
+    onAccepted,
   }: StartHistoryRewriterInput): Promise<StartHistoryRewriterOutcome> => {
     const target = historyTargetOf({ get, sessionId, mountId });
     const identity = identityOf({ target });
@@ -164,7 +165,13 @@ export const startHistoryRewriter = (set: SetFn, get: GetFn) => {
         sessionId,
         agentId,
         content: kickoff,
+        ...(onAccepted !== undefined && { onStarted: onAccepted }),
         handoff: { sender: { kind: 'historyRewrite' }, instruction: kickoff, plan: null },
+      })
+      .then((result) => {
+        if (result?.isLaneQueued === true) {
+          onAccepted?.();
+        }
       })
       .catch(async (error: unknown) => {
         set((state) => {

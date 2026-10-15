@@ -24,6 +24,7 @@ import { AgentBriefPullRequestText } from './AgentBriefPullRequestText';
 import { AgentBriefQuestions } from './AgentBriefQuestions';
 import { AgentBriefHandoffLine } from './AgentBriefHandoffLine';
 import { AgentFollowUps } from './AgentFollowUps';
+import { useAutoMembership } from '../../../auto/useAutoMembership';
 import { agentFollowUpMoves } from '../../followUpMoves';
 import { selectFollowUpChildren } from './followUpChildren';
 import { agentNowState } from './agentNowState';
@@ -65,13 +66,15 @@ export const AgentBrief = ({ session, agent, time = null }: Props) => {
     [agent.id, runs, turnStates],
   );
   const kind = classifyAgent({ agent, override: kindOverride });
+  const membership = useAutoMembership({ sessionId: session.id, agentId: agent.id });
+  const isInAutoTree = membership.isMember;
   const followUps = useMemo(
     () =>
       selectFollowUpChildren({
         spawned: children,
-        kinds: agentFollowUpMoves({ sourceKind: kind }).map((move) => move.kind),
+        kinds: agentFollowUpMoves({ sourceKind: kind, isInAutoTree }).map((move) => move.kind),
       }),
-    [children, kind],
+    [children, kind, isInAutoTree],
   );
   const delegates = useMemo(
     () => children.map((child) => child.agent).filter((agent) => isQuestionDelegate({ agent })),
@@ -109,7 +112,14 @@ export const AgentBrief = ({ session, agent, time = null }: Props) => {
   const activeChildren = children.filter(
     (child) => child.status === 'running' || child.status === 'pending',
   ).length;
-  const now = agentNowState({ agent, turnState, transcript, activeChildren });
+  const isWaitingForWriter = useAppStore((state) => state.agentWriterWait[agent.id] !== undefined);
+  const now = agentNowState({
+    agent,
+    turnState,
+    transcript,
+    activeChildren,
+    isWaitingForWriter,
+  });
   const isMuchLonger = time?.isMuchLonger === true;
   const isSplitIntoSubagents = kind === 'implementer' && laneChildren.length > 0;
 

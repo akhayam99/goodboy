@@ -74,9 +74,14 @@ const settle = async (): Promise<void> => {
 type MountParams = {
   readonly threadIds: ReadonlyArray<string> | null;
   readonly phase?: 'list' | 'running';
+  readonly onClose?: () => void;
 };
 
-const mount = async ({ threadIds, phase = 'list' }: MountParams): Promise<void> => {
+const mount = async ({
+  threadIds,
+  phase = 'list',
+  onClose = vi.fn(),
+}: MountParams): Promise<void> => {
   seedBulkScene({ stage: 'launch' });
   if (phase === 'running') {
     fixCommentsSeed({ phase });
@@ -87,7 +92,7 @@ const mount = async ({ threadIds, phase = 'list' }: MountParams): Promise<void> 
         sessionId={SESSION.id}
         focusThreadId={null}
         threadIds={threadIds}
-        onClose={vi.fn()}
+        onClose={onClose}
       />
     </ToastProvider>,
   );
@@ -163,6 +168,137 @@ describe('the Fix comments drawer', () => {
     const { model } = draftRoutingOf({ state: useAppStore.getState(), sessionId: SESSION.id });
     const chip = within(drawer()).getByRole('button', { name: /^Model / });
     expect(chip.textContent ?? '').toContain(modelLabel(model ?? ''));
+  });
+});
+
+const HINT_LABEL = 'Hint for the agent';
+
+const draftOf = (): string | undefined =>
+  useAppStore.getState().startHints[SESSION.id]?.['fix-comments']?.text;
+
+const writeHint = (text: string): void => {
+  fireEvent.change(within(drawer()).getByRole('textbox', { name: HINT_LABEL }), {
+    target: { value: text },
+  });
+};
+
+describe('the Fix comments hint', () => {
+  it('shows one quiet line above the buttons and opens the field on click', async () => {
+    await mount({ threadIds: BULK_LAUNCH_THREAD_IDS.slice(0, 2) });
+
+    expect(within(drawer()).queryByRole('textbox', { name: HINT_LABEL })).toBeNull();
+    fireEvent.click(within(drawer()).getByRole('button', { name: 'Add a hint' }));
+
+    const field = within(drawer()).getByRole('textbox', { name: HINT_LABEL });
+    expect(field.getAttribute('placeholder')).toBe('What to weigh or leave alone. Optional.');
+  });
+
+  it('passes the hint verbatim, trimmed, and clears the draft once the launch is accepted', async () => {
+    const { createResolveBatch } = stubLaunch();
+    await mount({ threadIds: BULK_LAUNCH_THREAD_IDS.slice(0, 2) });
+    fireEvent.click(within(drawer()).getByRole('button', { name: 'Add a hint' }));
+    writeHint('  Skip the naming nit.\nOperator notes\n```\n  ');
+
+    fireEvent.click(within(drawer()).getByRole('button', { name: 'Start fix for 2' }));
+
+    await waitFor(() => expect(createResolveBatch).toHaveBeenCalledOnce());
+    expect(createResolveBatch.mock.calls[0]?.[0].launchChoice.hint).toBe(
+      'Skip the naming nit.\nOperator notes\n```',
+    );
+    await waitFor(() => expect(draftOf()).toBeUndefined());
+  });
+
+  it('starts with no hint field content when the user wrote nothing', async () => {
+    const { createResolveBatch } = stubLaunch();
+    await mount({ threadIds: BULK_LAUNCH_THREAD_IDS.slice(0, 2) });
+
+    fireEvent.click(within(drawer()).getByRole('button', { name: 'Start fix for 2' }));
+
+    await waitFor(() => expect(createResolveBatch).toHaveBeenCalledOnce());
+    expect(createResolveBatch.mock.calls[0]?.[0].launchChoice.hint).toBeNull();
+  });
+
+  it('keeps the draft and shows the error when the start fails, then retries with the edited hint', async () => {
+    const { createResolveBatch } = stubLaunch();
+    createResolveBatch.mockRejectedValueOnce(new Error('No provider is connected'));
+    await mount({ threadIds: BULK_LAUNCH_THREAD_IDS.slice(0, 2) });
+    fireEvent.click(within(drawer()).getByRole('button', { name: 'Add a hint' }));
+    writeHint('Keep the metrics.');
+
+    fireEvent.click(within(drawer()).getByRole('button', { name: 'Start fix for 2' }));
+
+    await waitFor(() =>
+      expect(within(drawer()).getByRole('alert').textContent).toContain('No provider'),
+    );
+    expect(draftOf()).toBe('Keep the metrics.');
+    writeHint('Keep the metrics and the retry test.');
+    fireEvent.click(within(drawer()).getByRole('button', { name: 'Start fix for 2' }));
+
+    await waitFor(() => expect(createResolveBatch).toHaveBeenCalledTimes(2));
+    expect(createResolveBatch.mock.calls[1]?.[0].launchChoice.hint).toBe(
+      'Keep the metrics and the retry test.',
+    );
+    await waitFor(() => expect(draftOf()).toBeUndefined());
+  });
+
+  it('never erases text typed while the launch is pending', async () => {
+    const { createResolveBatch } = stubLaunch();
+    let release: (batch: ResolveBatch) => void = () => undefined;
+    createResolveBatch.mockImplementationOnce(
+      () =>
+        new Promise<ResolveBatch>((resolve) => {
+          release = resolve;
+        }),
+    );
+    await mount({ threadIds: BULK_LAUNCH_THREAD_IDS.slice(0, 2) });
+    fireEvent.click(within(drawer()).getByRole('button', { name: 'Add a hint' }));
+    writeHint('First thought.');
+    fireEvent.click(within(drawer()).getByRole('button', { name: 'Start fix for 2' }));
+    await waitFor(() => expect(createResolveBatch).toHaveBeenCalledOnce());
+
+    writeHint('First thought. And a second one.');
+    await act(async () => {
+      release(BATCH);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+
+    expect(createResolveBatch.mock.calls[0]?.[0].launchChoice.hint).toBe('First thought.');
+    expect(draftOf()).toBe('First thought. And a second one.');
+  });
+
+  it('closes the hint field first on Escape, keeps its text, then closes the drawer', async () => {
+    const onClose = vi.fn();
+    await mount({ threadIds: BULK_LAUNCH_THREAD_IDS.slice(0, 2), onClose });
+    fireEvent.click(within(drawer()).getByRole('button', { name: 'Add a hint' }));
+    writeHint('Keep the metrics.');
+
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+
+    expect(within(drawer()).queryByRole('textbox', { name: HINT_LABEL })).toBeNull();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(draftOf()).toBe('Keep the metrics.');
+    expect(within(drawer()).getByRole('button', { name: 'Edit hint' })).toBeDefined();
+
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it('reopens filled when the drawer is opened again in the same session', async () => {
+    await mount({ threadIds: BULK_LAUNCH_THREAD_IDS.slice(0, 2) });
+    fireEvent.click(within(drawer()).getByRole('button', { name: 'Add a hint' }));
+    writeHint('Keep the metrics.');
+    cleanup();
+
+    const onClose = vi.fn();
+    await mount({ threadIds: BULK_LAUNCH_THREAD_IDS.slice(0, 2), onClose });
+
+    const field = within(drawer()).getByRole('textbox', { name: HINT_LABEL });
+    expect(field).toHaveProperty('value', 'Keep the metrics.');
+    await settle();
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+    expect(within(drawer()).queryByRole('textbox', { name: HINT_LABEL })).toBeNull();
+    expect(onClose).not.toHaveBeenCalled();
   });
 });
 

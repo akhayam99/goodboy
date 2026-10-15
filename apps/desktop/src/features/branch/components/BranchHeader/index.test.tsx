@@ -1,7 +1,11 @@
 // @vitest-environment happy-dom
 
+const t = vi.hoisted(() => ({ isOffline: false }));
+
 vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(() => new Promise<never>(() => undefined)),
+  invoke: vi.fn(() =>
+    t.isOffline ? Promise.reject(new Error('offline')) : new Promise<never>(() => undefined),
+  ),
 }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
@@ -162,9 +166,18 @@ beforeEach(async () => {
 
 afterEach(() => {
   cleanup();
+  t.isOffline = false;
 });
 
-const NO_REVIEW: BranchReviewCounts = { accepted: 0, replies: 0, failed: 0, isPushing: false };
+const IDLE_PUSH: BranchReviewCounts['push'] = { state: 'idle', count: 0 };
+
+const NO_REVIEW: BranchReviewCounts = {
+  accepted: 0,
+  replies: 0,
+  failed: 0,
+  isPushing: false,
+  push: IDLE_PUSH,
+};
 
 type HarnessProps = {
   readonly pr: PullRequestState | null;
@@ -601,7 +614,7 @@ describe('BranchHeader actions by state', () => {
     status = statusOf({});
     renderHeader({
       pr: merged,
-      review: { accepted: 2, replies: 0, failed: 0, isPushing: false },
+      review: { accepted: 2, replies: 0, failed: 0, isPushing: false, push: IDLE_PUSH },
     });
 
     expect(primaries()).toHaveLength(0);
@@ -653,12 +666,12 @@ describe('BranchHeader actions by state', () => {
     status = statusOf({});
     renderHeader({
       pr: PR,
-      review: { accepted: 3, replies: 2, failed: 1, isPushing: false },
+      review: { accepted: 3, replies: 2, failed: 1, isPushing: false, push: IDLE_PUSH },
     });
 
-    expect(screen.getByRole('button', { name: /^Push 3$/ }).getAttribute('data-variant')).toBe(
-      'secondary',
-    );
+    expect(
+      screen.getByRole('button', { name: /^Push 3 fixes$/ }).getAttribute('data-variant'),
+    ).toBe('secondary');
     expect(secondaries()).toHaveLength(1);
     expect(screen.queryByRole('button', { name: /Publish/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /Retry/ })).toBeNull();
@@ -667,11 +680,17 @@ describe('BranchHeader actions by state', () => {
   it('publishes replies with no commit to push, then retries a failed push', () => {
     withMountPr();
     status = statusOf({});
-    renderHeader({ pr: PR, review: { accepted: 0, replies: 2, failed: 1, isPushing: false } });
+    renderHeader({
+      pr: PR,
+      review: { accepted: 0, replies: 2, failed: 1, isPushing: false, push: IDLE_PUSH },
+    });
     expect(screen.getByRole('button', { name: /Publish 2 replies/ })).toBeDefined();
     cleanup();
 
-    renderHeader({ pr: PR, review: { accepted: 0, replies: 0, failed: 1, isPushing: false } });
+    renderHeader({
+      pr: PR,
+      review: { accepted: 0, replies: 0, failed: 1, isPushing: false, push: IDLE_PUSH },
+    });
     expect(screen.getByRole('button', { name: 'Retry push' })).toBeDefined();
   });
 
@@ -679,9 +698,12 @@ describe('BranchHeader actions by state', () => {
     const open: PullRequestState = { ...PR, isDraft: false };
     withRequest(open);
     status = statusOf({});
-    renderHeader({ pr: open, review: { accepted: 1, replies: 0, failed: 0, isPushing: false } });
+    renderHeader({
+      pr: open,
+      review: { accepted: 1, replies: 0, failed: 0, isPushing: false, push: IDLE_PUSH },
+    });
 
-    const push = screen.getByRole('button', { name: /^Push 1$/ });
+    const push = screen.getByRole('button', { name: /^Push 1 fix$/ });
     const primary = primaries()[0] as HTMLElement;
     const more = screen.getByRole('button', { name: 'Branch actions' });
     expect(push.compareDocumentPosition(primary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -724,10 +746,10 @@ describe('BranchHeader merge state', () => {
     status = statusOf({});
     renderHeader({
       pr: readyPr,
-      review: { accepted: 1, replies: 0, failed: 0, isPushing: false },
+      review: { accepted: 1, replies: 0, failed: 0, isPushing: false, push: IDLE_PUSH },
     });
 
-    expect(screen.getByRole('button', { name: /^Push 1$/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^Push 1 fix$/ })).toBeDefined();
     const reasons = screen.getAllByText(/still running/);
     expect(reasons).toHaveLength(1);
     expect(metaOf().contains(reasons[0] as HTMLElement)).toBe(true);
@@ -958,6 +980,8 @@ describe('BranchHeader push failure', () => {
       confirmedOnlyOnline: null,
       confirmedRemoteSha: null,
       message: 'pre-push hook declined',
+      hint: '',
+      onAccepted: expect.any(Function),
     });
 
     fireEvent.click(within(alert).getByRole('button', { name: 'Open terminal here' }));
@@ -967,6 +991,27 @@ describe('BranchHeader push failure', () => {
       ),
     );
     expect(within(alert).getByRole('button', { name: 'Retry' })).toBeDefined();
+  });
+
+  it('sends the hint typed under a failed push to the agent', async () => {
+    withRequest(open);
+    status = upstreamAt({ ahead: 2, behind: 0 });
+    const { fixBranchPushWithAgent } = failPushWith({ error: 'pre-push hook declined' });
+    renderHeader({ pr: open });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Push 2 commits' }));
+    const alert = await screen.findByRole('alert');
+    fireEvent.click(screen.getByRole('button', { name: 'Add a hint' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Hint for the Implementer' }), {
+      target: { value: 'Keep the pre-push hook as it is.' },
+    });
+    fireEvent.click(within(alert).getByRole('button', { name: 'Fix with agent' }));
+
+    await waitFor(() =>
+      expect(fixBranchPushWithAgent).toHaveBeenCalledWith(
+        expect.objectContaining({ hint: 'Keep the pre-push hook as it is.' }),
+      ),
+    );
   });
 
   it('offers the same two actions on a failed force push and keeps the force lease', async () => {
@@ -1010,5 +1055,108 @@ describe('BranchHeader push failure', () => {
 
     await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
     expect(screen.queryByRole('button', { name: 'Open terminal here' })).toBeNull();
+  });
+});
+
+describe('BranchHeader push feedback', () => {
+  const open: PullRequestState = { ...PR, isDraft: false };
+  const pushStatus = (): WorktreeStatus => ({
+    ...statusOf({ ahead: 1 }),
+    upstreamDistance: { kind: 'known', ahead: 1, behind: 0 },
+  });
+
+  type PushResult = Awaited<ReturnType<StoreState['pushSessionBranch']>>;
+  type Deferred = {
+    readonly promise: Promise<PushResult>;
+    readonly resolve: () => void;
+  };
+
+  const deferredPush = (): Deferred => {
+    let resolve: () => void = () => undefined;
+    const promise = new Promise<PushResult>((done) => {
+      resolve = () => done({ ok: true });
+    });
+    return { promise, resolve };
+  };
+
+  const setup = () => {
+    t.isOffline = true;
+    withRequest(open);
+    status = pushStatus();
+    const gate = deferredPush();
+    const pushSessionBranch = vi.fn<StoreState['pushSessionBranch']>(() => gate.promise);
+    useAppStore.setState({ pushSessionBranch });
+    renderHeader({ pr: open });
+    return { gate, pushSessionBranch };
+  };
+
+  it('shows the busy word on the button while the push runs and ignores a second click', async () => {
+    const { gate, pushSessionBranch } = setup();
+
+    const button = screen.getByRole('button', { name: 'Push 1 commit' });
+    fireEvent.click(button);
+    fireEvent.click(button);
+
+    const busy = await screen.findByRole('button', { name: 'Pushing…' });
+    expect(busy.getAttribute('aria-busy')).toBe('true');
+    expect(busy.hasAttribute('disabled')).toBe(true);
+    fireEvent.click(busy);
+    expect(pushSessionBranch).toHaveBeenCalledTimes(1);
+
+    await act(async () => gate.resolve());
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Pushing…' })).toBeNull());
+  });
+
+  it('says what happened after the push, even while the count has not refreshed', async () => {
+    const { gate } = setup();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Push 1 commit' }));
+    await act(async () => gate.resolve());
+
+    const line = await screen.findByRole('status');
+    expect(line.textContent).toContain('Pushed 1 commit to origin.');
+    expect(screen.getByRole('button', { name: 'Push 1 commit' })).toBeDefined();
+    expect(screen.queryByRole('alert')).toBeNull();
+
+    fireEvent.click(within(line).getByRole('button', { name: 'Dismiss' }));
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('clears the outcome line when the next action starts', async () => {
+    const { gate, pushSessionBranch } = setup();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Push 1 commit' }));
+    await act(async () => gate.resolve());
+    await screen.findByRole('status');
+
+    const second = deferredPush();
+    pushSessionBranch.mockImplementationOnce(() => second.promise);
+    fireEvent.click(screen.getByRole('button', { name: 'Push 1 commit' }));
+
+    await screen.findByRole('button', { name: 'Pushing…' });
+    expect(screen.queryByRole('status')).toBeNull();
+    await act(async () => second.resolve());
+    await waitFor(() => expect(screen.getByRole('status')).toBeDefined());
+  });
+
+  it('shows the failure line with Retry and no outcome when the push fails', async () => {
+    t.isOffline = true;
+    withRequest(open);
+    status = pushStatus();
+    useAppStore.setState({
+      pushSessionBranch: vi.fn<StoreState['pushSessionBranch']>(async () => ({
+        ok: false,
+        error: 'pre-push hook declined',
+      })),
+    });
+    renderHeader({ pr: open });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Push 1 commit' }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('pre-push hook declined');
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeDefined();
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Pushing…' })).toBeNull();
   });
 });

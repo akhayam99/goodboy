@@ -38,11 +38,15 @@ export const ChatSessionsChip = ({ entries, stage, onOpen }: Props) => {
           aria-expanded={dropdown.open}
           aria-label={`${label}: ${CHAT_SESSIONS_LABEL}`}
           className={cn(
-            'flex h-6 shrink-0 items-center gap-1 rounded-md border border-border-soft bg-subtle px-2 text-chip text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+            'flex h-6 shrink-0 items-center gap-1 whitespace-nowrap rounded-md border border-border-soft bg-subtle px-2 text-chip text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             dropdown.open && 'bg-hover text-foreground',
           )}
         >
-          <Layers size={ICON_SIZE.row} aria-hidden className="text-faint-foreground" />
+          <Layers
+            size={ICON_SIZE.row}
+            aria-hidden
+            className="text-faint-foreground @max-xl/chat:hidden"
+          />
           {label}
           <StatusDot tone={STAGE_TONE[stage]} size="sm" pulsing={stage === 'running'} />
         </button>

@@ -113,7 +113,10 @@ vi.mock('../features/workspace/window', () => ({
 }));
 vi.mock('../features/workflows/components/WorkflowStudio', () => ({ WorkflowStudio: () => null }));
 vi.mock('../features/integrations/github/github', () => ({ ghCommitDiff: vi.fn() }));
-vi.mock('../features/worktree/worktree', () => ({ worktreeDiffCommit: vi.fn() }));
+vi.mock('../features/worktree/worktree', () => ({
+  worktreeDiffCommit: vi.fn(),
+  worktreeSnapshot: vi.fn(),
+}));
 vi.mock('../features/onboarding/OnboardingWizard', () => ({ OnboardingWizard: () => null }));
 vi.mock('../features/companion/components/CompanionStudio', () => ({
   CompanionStudio: () => null,

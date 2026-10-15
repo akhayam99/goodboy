@@ -50,7 +50,6 @@ const harness = (): Harness => {
     activeLens: { [SESSION_ID]: 'explore' },
     lensHistory: {},
     selectedAgentId: {},
-    sessionStudio: {},
     focusedWorkflowRunId: {},
     diffFocus: {},
     diffMountPath: {},

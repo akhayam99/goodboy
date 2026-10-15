@@ -26,6 +26,7 @@ const facts = (
   hasChanges: false,
   canPause: false,
   hasStepRouting: false,
+  canSaveAsPreset: false,
   summary: '',
   ...overrides,
 });

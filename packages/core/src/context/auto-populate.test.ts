@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { type Database as DbInterface } from '@goodboy/db';
+import { brandId } from '@goodboy/types';
 import { migrate } from '@goodboy/db/migrations';
 import type {
   AgentId,
@@ -85,6 +86,31 @@ describe('autoPopulateContext', () => {
     expect(slots.find((s) => s.key === 'open_questions')?.value).toBe(
       'do we still support legacy session cookies?',
     );
+  });
+
+  it('keeps the question of an Auto child out of the open questions, files and decisions still land', async () => {
+    const db = makeDb();
+    await migrate(db);
+    const sessionId = brandId<SessionId>({ value: 'task_ap_auto_child' });
+    await seedSession(db, sessionId);
+
+    const result = await autoPopulateContext({
+      db,
+      sessionId,
+      filesEdited: ['src/export.ts'],
+      assistantText: `
+        <<ctx-decision>>write json lines<</ctx-decision>>
+        <<ctx-question blocking="true">>which export format?<</ctx-question>>
+      `,
+      isQuestionIntakeSkipped: true,
+    });
+
+    expect(result.openQuestionsChanged).toBe(false);
+    expect(result.updatedSlots).toEqual(['files_touched', 'decisions']);
+    const rows = await db.select<{ readonly text: string }>('SELECT text FROM open_questions');
+    expect(rows).toEqual([]);
+    const slots = await new ContextEngine({ db }).load(sessionId);
+    expect(slots.find((s) => s.key === 'open_questions')).toBeUndefined();
   });
 
   it('merges into existing slots without duplicating', async () => {

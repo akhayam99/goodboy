@@ -29,9 +29,12 @@ describe('ROLE_REGISTRY', () => {
       'resolver',
       'rewriter',
       'scribe',
+      'ci-debugger',
+      'ci-fixer',
       'docs',
       'report',
       'wireframe',
+      'auto',
       'custom',
     ];
     for (const role of expected) {
@@ -151,6 +154,63 @@ describe('ROLE_REGISTRY contract', () => {
       pickerEligible: false,
     });
     expect(normalizeSelectableAgentRole({ role: 'rewriter' })).toBe('custom');
+  });
+
+  it('keeps the CI debugger and the CI fixer out of every picker, workflow and classifier', () => {
+    for (const role of ['ci-debugger', 'ci-fixer'] as const) {
+      expect(ROLE_REGISTRY[role]).toMatchObject({
+        presentationKey: role,
+        workflowEligible: false,
+        classifierEligible: false,
+        selectionEligible: false,
+        pickerEligible: false,
+      });
+      expect(ROLE_REGISTRY[role].fanOut.mode).toBe('never');
+      expect(normalizeSelectableAgentRole({ role })).toBe('custom');
+      expect(normalizeWorkflowRole({ role })).toBe('custom');
+      expect(presentationKeyForRole({ role })).toBe(role);
+    }
+    expect(SELECTABLE_AGENT_ROLES).not.toContain('ci-debugger');
+    expect(SELECTABLE_AGENT_ROLES).not.toContain('ci-fixer');
+  });
+
+  it('keeps the Auto role out of every picker, workflow, classifier and selection', () => {
+    expect(ROLE_REGISTRY.auto).toMatchObject({
+      id: 'auto',
+      presentationKey: 'auto',
+      aliases: [],
+      outputKind: 'none',
+      workflowEligible: false,
+      classifierEligible: false,
+      selectionEligible: false,
+      pickerEligible: false,
+    });
+    expect(SELECTABLE_AGENT_ROLES).not.toContain('auto');
+  });
+
+  it('knows the Auto role by its id and by no other name', () => {
+    expect(isAgentRole('auto')).toBe(true);
+    expect(normalizeAgentRole({ role: 'auto' })).toBe('auto');
+    expect(presentationKeyForRole({ role: 'auto' })).toBe('auto');
+    expect(defaultsForRole('auto')).toBe(ROLE_REGISTRY.auto);
+  });
+
+  it('never selects the Auto role for a workflow step or a manual pick', () => {
+    expect(normalizeSelectableAgentRole({ role: 'auto' })).toBe('custom');
+    expect(normalizeWorkflowRole({ role: 'auto' })).toBe('custom');
+  });
+
+  it('leaves the Generalist exactly as it was', () => {
+    expect(ROLE_REGISTRY.custom).toMatchObject({
+      id: 'custom',
+      aliases: ['generic'],
+      presentationKey: 'generic',
+      workflowEligible: true,
+      classifierEligible: false,
+      selectionEligible: true,
+      pickerEligible: true,
+    });
+    expect(normalizeAgentRole({ role: 'generic' })).toBe('custom');
   });
 
   it('normalizes every selectable role to itself and the rest to custom', () => {

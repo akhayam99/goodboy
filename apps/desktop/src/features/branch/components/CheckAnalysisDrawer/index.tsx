@@ -1,20 +1,28 @@
 import { useState } from 'react';
 import { Bug } from 'lucide-react';
-import { DrawerFrame, Markdown } from '@goodboy/ui';
+import { Button, DrawerFrame, HeaderActions, Markdown } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { isReportedError } from '../../../../store/slices/notifications/reportedError';
-import { AgentChain } from '../../../../shared/components/AgentChain';
+import { captureStartHint } from '../../../../store/slices/startHints/captureStartHint';
+import { START_HINT_SCOPES } from '../../../../store/slices/startHints/startHintScopes';
 import { useKindRouting } from '../../../../shared/hooks/useKindRouting';
 import { routingShortText } from '../../../../shared/components/RoutingPicker/routingSummary';
 import { checkAnalysisOf } from '../../checks/checkAnalysisOf';
+import { analyzedCheckNameOf } from '../../checks/analyzedCheckNameOf';
+import { checkNameOf } from '../../checks/checkNameOf';
+import { checkOutcomeOf } from '../../checks/checkOutcomeOf';
+import { ciFixOutcomeOf } from '../../checks/ciFixOutcomeOf';
+import { ciFixStepsOf } from '../../checks/ciFixStepsOf';
 import { sectionOf } from '../../checks/sectionOf';
 import { startCheckFix } from '../../checks/startCheckFix';
 import { useCheckChain } from '../../hooks/useCheckChain';
+import { useCheckFixPush } from '../../hooks/useCheckFixPush';
 import { AnalysisHeader } from './AnalysisHeader';
-import { DrawerBox } from './DrawerBox';
-import { FailedLogBox } from './FailedLogBox';
-import { GivenBox } from './GivenBox';
+import { CiFixSteps } from './CiFixSteps';
+import { DrawerSection } from './DrawerSection';
+import { FailedLogs } from './FailedLogs';
+import { GivenFacts } from './GivenFacts';
 import { ProposedFix, type StartParams } from './ProposedFix';
 
 type Props = {
@@ -25,22 +33,28 @@ type Props = {
 };
 
 export const CheckAnalysisDrawer = ({ sessionId, mountId, checkUrl, onClose }: Props) => {
-  const { chain, events, turnState } = useCheckChain({ sessionId, url: checkUrl });
+  const { chain, events, turnState } = useCheckChain({ sessionId, mountId, url: checkUrl });
   const agent = chain.debugger;
   const fixRouting = useKindRouting({ sessionId, kind: 'implementer' });
   const dismissCheckProposal = useAppStore((state) => state.dismissCheckProposal);
   const reportError = useAppStore((state) => state.reportError);
+  const checkFixPush = useCheckFixPush({ sessionId, mountId, fixAgentId: chain.fix?.id });
   const [isStarting, setIsStarting] = useState(false);
+  const hintScope = START_HINT_SCOPES.checkFix({ mountId, url: checkUrl });
   const startFix = async ({ optionKey }: StartParams) => {
     if (isStarting) {
       return;
     }
+    const state = useAppStore.getState();
+    const capture = captureStartHint({ state, sessionId, scope: hintScope });
     setIsStarting(true);
     try {
       await startCheckFix({
         sessionId,
         url: checkUrl,
         mountId,
+        hint: capture.text,
+        onAccepted: () => state.settleStartHint({ capture }),
         ...(optionKey !== undefined && { optionKey }),
       });
     } catch (error: unknown) {
@@ -56,94 +70,93 @@ export const CheckAnalysisDrawer = ({ sessionId, mountId, checkUrl, onClose }: P
   const kickoff = analysis?.kickoff ?? '';
   const given = sectionOf({ text: kickoff, heading: 'What it was given' })?.body ?? null;
   const log = sectionOf({ text: kickoff, heading: 'Failed log tail' })?.body ?? null;
-  const outcome =
-    chain.state === 'fixing'
-      ? 'Implementer is applying it on the branch.'
-      : chain.state === 'fixed'
-        ? chain.commit === null
-          ? 'Applied on the branch. The check runs again.'
-          : `Applied and committed ${chain.commit} on the branch. The check runs again.`
-        : chain.state === 'fix-failed'
-          ? 'The fix stopped. Open the Implementer to see why.'
-          : chain.isDismissed
-            ? 'Dismissed. Analyze again for another proposal.'
-            : null;
+  const urlName = useAppStore((state) => checkNameOf({ state, mountId, url: checkUrl }));
+  const checkName = analyzedCheckNameOf({ events: events ?? [] }) ?? urlName;
+  const checkOutcome = useAppStore((state) =>
+    checkOutcomeOf({
+      checks: state.mountGithub[mountId]?.detail?.checks ?? [],
+      name: checkName,
+      analyzedUrl: checkUrl,
+    }),
+  );
+  const hasFixLanded = chain.state === 'fixed-local' || chain.state === 'fixed-pushed';
+  const outcome = ciFixOutcomeOf({
+    state: chain.state,
+    commit: chain.commit,
+    checkName,
+    checkOutcome,
+    isDismissed: chain.isDismissed,
+  });
+  const pushAction =
+    chain.state === 'fixed-local' ? (
+      <HeaderActions
+        primary={
+          <Button
+            variant="primary"
+            size="sm"
+            isBusy={checkFixPush.isPushing}
+            busyLabel="Pushing"
+            onClick={() => void checkFixPush.push()}
+          >
+            Push
+          </Button>
+        }
+      />
+    ) : undefined;
   return (
-    <DrawerFrame title="Debugger" icon={Bug} onClose={onClose}>
+    <DrawerFrame title="Debugger" icon={Bug} action={pushAction} onClose={onClose}>
       {agent === null || analysis === null ? (
         <p className="text-body text-muted-foreground">This analysis is no longer available.</p>
       ) : (
-        <div className="flex min-w-0 flex-col gap-4">
+        <div className="flex min-w-0 flex-col gap-6">
           <AnalysisHeader
-            sessionId={sessionId}
             agent={agent}
             isRunning={analysis.isRunning}
             activity={analysis.activity}
+            outcome={outcome}
           />
-          <DrawerBox label="Finding">
+          <CiFixSteps
+            sessionId={sessionId}
+            steps={ciFixStepsOf({ chain, checkName, checkOutcome })}
+          />
+          <DrawerSection label="Finding" isCollapsible={hasFixLanded}>
             {analysis.finding.length > 0 ? (
               <Markdown text={analysis.finding} />
             ) : (
               <p className="text-body text-muted-foreground">Waiting for the Debugger's finding.</p>
             )}
-          </DrawerBox>
-          {analysis.proposal === null ? (
-            <DrawerBox label="Proposed fix">
+          </DrawerSection>
+          <DrawerSection label="Proposed fix" isCollapsible={hasFixLanded}>
+            {analysis.proposal === null ? (
               <p className="text-body text-muted-foreground">
                 {analysis.isRunning
                   ? 'The Debugger is still investigating.'
                   : 'No fix was proposed.'}
               </p>
-            </DrawerBox>
-          ) : (
-            <>
+            ) : (
               <ProposedFix
+                sessionId={sessionId}
+                hintScope={hintScope}
                 proposal={analysis.proposal}
                 options={analysis.options}
                 isActionable={chain.state === 'proposal'}
                 isStarting={isStarting}
                 routing={routingShortText(fixRouting)}
-                outcome={outcome}
                 onStart={(params) => void startFix(params)}
                 onDismiss={() => dismissCheckProposal({ sessionId, agentId: agent.id })}
               />
-              <DrawerBox label="Activity">
-                <AgentChain
-                  sessionId={sessionId}
-                  steps={[
-                    {
-                      name: 'Proposal',
-                      agent: null,
-                      isRunning: false,
-                      detail: chain.isDismissed
-                        ? 'Dismissed'
-                        : chain.fix === null
-                          ? 'Waiting for you'
-                          : 'Accepted',
-                      tone: chain.fix === null && !chain.isDismissed ? 'warning' : 'neutral',
-                    },
-                    {
-                      name: 'Fix',
-                      agent: chain.fix,
-                      isRunning: chain.state === 'fixing',
-                      ...(chain.fix === null && { detail: 'Not started' }),
-                      ...(chain.state === 'fixed' &&
-                        chain.commit !== null && { detail: `Committed ${chain.commit}` }),
-                      ...(chain.fix === null && { tone: 'neutral' as const }),
-                    },
-                  ]}
-                />
-              </DrawerBox>
-            </>
-          )}
-          {given === null ? (
-            <DrawerBox label="What it was given">
+            )}
+          </DrawerSection>
+          <DrawerSection label="What it was given" isCollapsible>
+            {given === null ? (
               <p className="text-body text-muted-foreground">The kickoff is not available.</p>
-            </DrawerBox>
-          ) : (
-            <GivenBox text={given} />
-          )}
-          <FailedLogBox text={log} />
+            ) : (
+              <GivenFacts text={given} />
+            )}
+          </DrawerSection>
+          <DrawerSection label="Failed log tail" isCollapsible>
+            <FailedLogs text={log} />
+          </DrawerSection>
         </div>
       )}
     </DrawerFrame>

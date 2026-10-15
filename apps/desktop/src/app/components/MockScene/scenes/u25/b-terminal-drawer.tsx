@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { MountId } from '@goodboy/types';
 import { brandedId } from '../../../../../features/history/testing/brandedId';
 import { TerminalStudio } from '../../../../../features/terminal/components/TerminalStudio';
 import type { TerminalTab, TerminalTabId } from '../../../../../shared/types/terminal';
@@ -7,40 +8,74 @@ import { sessionTerminalOwner } from '../../../../../store/slices/terminal/termi
 import { SESSION, SESSION_ID, seedActivityRunScene } from '../activityRunSeed';
 import { PageSheet } from '../PageSheet';
 import { mockSceneIpc } from '../mockSceneIpc';
+import {
+  devServerLines,
+  shellPromptLines,
+  terminalIdOf,
+  terminalSnapshotAnswer,
+} from '../terminalSceneOutput';
 import { DrawerStage } from '../u23/drawerChrome/DrawerStage';
 
-const WORKTREE = '~/code/harborline/payments-api-idempotency';
+const WORKTREE = '~/code/harborline/payments-api/.goodboy/worktrees/gb-7k2q9x';
 const SESSION_TERMINAL = brandedId<TerminalTabId>({ value: `${SESSION_ID}::t1` });
 const SECOND_TERMINAL = brandedId<TerminalTabId>({ value: `${SESSION_ID}::t2` });
+const THIRD_TERMINAL = brandedId<TerminalTabId>({ value: `${SESSION_ID}::t3` });
 const FOLDER = '~/code/harborline';
 const STAGE_WIDTH = 1280;
 const NOOP = () => undefined;
+const PAYMENTS_MOUNT_ID = brandedId<MountId>({ value: 'mock-run-mount-payments' });
+const CONSOLE_MOUNT_ID = brandedId<MountId>({ value: 'mock-run-mount-console' });
 
-const tabOf = ({ id, title, cwd }: Pick<TerminalTab, 'id' | 'title' | 'cwd'>): TerminalTab => ({
+const tabOf = ({
+  id,
+  title,
+  cwd,
+  mountId,
+}: Pick<TerminalTab, 'id' | 'title' | 'cwd' | 'mountId'>): TerminalTab => ({
   id,
   owner: sessionTerminalOwner({ sessionId: SESSION_ID }),
   title,
   cwd,
+  ...(mountId === undefined ? {} : { mountId }),
   status: 'running',
   createdAt: 0,
 });
 
 type SeedParams = Record<never, never>;
 
+const sceneAnswer = (command: string, payload: unknown): unknown => {
+  if (command !== 'terminal_snapshot') {
+    return null;
+  }
+  if (terminalIdOf({ payload }) === THIRD_TERMINAL) {
+    return terminalSnapshotAnswer({ lines: devServerLines });
+  }
+  return terminalSnapshotAnswer({ lines: shellPromptLines({ folder: 'payments-api gb-7k2q9x' }) });
+};
+
 const seedTabs = ({}: SeedParams): void => {
-  mockSceneIpc(() => null);
+  mockSceneIpc(sceneAnswer);
   useAppStore.setState({
+    loadSessionMounts: async () => [],
     terminalTabs: {
       [SESSION_ID]: [
-        tabOf({ id: SESSION_TERMINAL, title: 'payments-api-idempotency', cwd: WORKTREE }),
+        tabOf({ id: SESSION_TERMINAL, title: 'shell', cwd: WORKTREE, mountId: PAYMENTS_MOUNT_ID }),
         tabOf({
           id: SECOND_TERMINAL,
-          title: 'notify-relay-retry-state',
-          cwd: '~/code/harborline/notify-relay-retry-state',
+          title: 'shell',
+          cwd: '~/code/harborline/notify-relay/.goodboy/worktrees/gb-2p6w0z',
+          mountId: CONSOLE_MOUNT_ID,
+        }),
+        tabOf({
+          id: THIRD_TERMINAL,
+          title: 'dev server',
+          cwd: WORKTREE,
+          mountId: PAYMENTS_MOUNT_ID,
         }),
       ],
     },
     activeTerminalTab: { [SESSION_ID]: SESSION_TERMINAL },
+    terminalWorktreeActive: { [`${SESSION_ID}#m:${PAYMENTS_MOUNT_ID}`]: SESSION_TERMINAL },
   });
 };
 
@@ -77,7 +112,12 @@ const TerminalPageScene = ({}: SeedParams) => {
         },
       });
       useAppStore.getState().openStudio({
-        studio: { kind: 'terminal', terminalId: SESSION_TERMINAL, sessionId: SESSION_ID },
+        studio: {
+          kind: 'terminal',
+          terminalId: SESSION_TERMINAL,
+          sessionId: SESSION_ID,
+          worktree: `${SESSION_ID}#m:${PAYMENTS_MOUNT_ID}`,
+        },
       });
     }
     setIsReady(true);
@@ -95,6 +135,7 @@ const TerminalPageScene = ({}: SeedParams) => {
           workspaceId={workspaceId}
           terminalId={SESSION_TERMINAL}
           sessionId={SESSION.id}
+          worktree={`${SESSION_ID}#m:${PAYMENTS_MOUNT_ID}`}
           onClose={NOOP}
         />
       </PageSheet>

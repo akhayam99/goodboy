@@ -14,9 +14,11 @@ import {
   drawerAsideWidthOf,
   drawerLayoutOf,
   mainWidthOf,
+  type DrawerPlacement,
   type DrawerSizing,
 } from '@goodboy/ui';
 import type { AppState } from '../../types';
+import { selectDrawerPlacement } from './selectDrawerPlacement';
 import { selectDrawerSizing } from './selectDrawerSizing';
 import type { DrawerRequest } from './state';
 
@@ -72,6 +74,7 @@ const EVERY_KIND: ReadonlyArray<DrawerRequest> = [
   { kind: 'scriptRun', sessionId: SESSION_ID, payload: { scriptKey: 'test', mountId: null } },
   { kind: 'conversation', sessionId: SESSION_ID, payload: { threadId: 'thread-1' } },
   { kind: 'ask', sessionId: SESSION_ID, payload: null },
+  { kind: 'new', sessionId: SESSION_ID, payload: null },
   { kind: 'transcript', sessionId: SESSION_ID, payload: { agentId: 'agent-1' as AgentId } },
   {
     kind: 'file-diff',
@@ -86,6 +89,12 @@ const sizingOf = (drawer: DrawerRequest): DrawerSizing =>
     currentSessionId: SESSION_ID,
   } satisfies Pick<AppState, 'drawer' | 'currentSessionId'>);
 
+const placementOf = (drawer: DrawerRequest): DrawerPlacement =>
+  selectDrawerPlacement({
+    drawer,
+    currentSessionId: SESSION_ID,
+  } satisfies Pick<AppState, 'drawer' | 'currentSessionId'>);
+
 const CASES = EVERY_KIND.flatMap((drawer) =>
   [sizingOf(drawer)].flatMap((sizing) =>
     WINDOWS.flatMap((windowPx) =>
@@ -93,6 +102,7 @@ const CASES = EVERY_KIND.flatMap((drawer) =>
         SAVED_WIDTHS[sizing].map((savedPx) => ({
           kind: drawer.kind,
           sizing,
+          placement: placementOf(drawer),
           windowPx,
           savedPx,
           columnWidth: windowPx - sidebarPx,
@@ -124,6 +134,7 @@ const SIZING_BY_KIND: ReadonlyArray<readonly [DrawerRequest['kind'], DrawerSizin
   ['scriptRun', 'side'],
   ['conversation', 'side'],
   ['ask', 'side'],
+  ['new', 'reader'],
   ['transcript', 'side'],
   ['file-diff', 'reader'],
 ];
@@ -149,6 +160,12 @@ describe('the tier of every drawer', () => {
       throw new Error('the plan request is listed');
     }
     expect(sizingOf(plan)).toBe('reader');
+  });
+
+  it('lays only the New drawer over the page at every width', () => {
+    const placed = EVERY_KIND.filter((drawer) => placementOf(drawer) === 'overlay');
+
+    expect(placed.map((drawer) => drawer.kind)).toEqual(['new']);
   });
 
   it('keeps a closed drawer in the side tier', () => {
@@ -178,12 +195,13 @@ describe('every drawer fits inside its aside at 1280 and 1440', () => {
   });
 
   it.each(CASES)(
-    '$kind ($sizing) at $windowPx with a $savedPx saved width over a $columnWidth column',
-    ({ sizing, columnWidth, savedPx }) => {
+    '$kind ($sizing, $placement) at $windowPx with a $savedPx saved width over a $columnWidth column',
+    ({ sizing, placement, columnWidth, savedPx }) => {
       const { mode, width: drawerWidthPx } = drawerLayoutOf({
         main: columnWidth,
         sizing,
         savedWidth: savedPx,
+        placement,
       });
       const asidePx = drawerAsideWidthOf({ width: drawerWidthPx, mode });
       const cardRight = columnWidth - asidePx + DRAWER_INSET + drawerWidthPx;

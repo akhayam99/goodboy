@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Button, ChoiceCards, Markdown, StateBadge } from '@goodboy/ui';
+import type { SessionId } from '@goodboy/types';
+import { StartHint } from '../../../../shared/components/StartHint';
+import { START_HINT_COPY } from '../../../../shared/components/startHintCopy';
 import { optionSummary } from '../../checks/optionSummary';
 import type { ProposalOptions } from '../../checks/proposalOptionsOf';
-import { DrawerBox } from './DrawerBox';
 import { Proposal } from './Proposal';
 
 export type StartParams = {
@@ -10,23 +12,25 @@ export type StartParams = {
 };
 
 type Props = {
+  readonly sessionId: SessionId;
+  readonly hintScope: string;
   readonly proposal: string;
   readonly options: ProposalOptions | null;
   readonly isActionable: boolean;
   readonly isStarting: boolean;
   readonly routing: string;
-  readonly outcome: string | null;
   readonly onStart: (params: StartParams) => void;
   readonly onDismiss: () => void;
 };
 
 export const ProposedFix = ({
+  sessionId,
+  hintScope,
   proposal,
   options,
   isActionable,
   isStarting,
   routing,
-  outcome,
   onStart,
   onDismiss,
 }: Props) => {
@@ -38,7 +42,7 @@ export const ProposedFix = ({
         options.options.find((option) => option.key === options.recommendedKey) ??
         options.options[0]);
   return (
-    <DrawerBox label="Proposed fix">
+    <>
       {options === null || selected === undefined ? (
         <Proposal text={proposal} />
       ) : (
@@ -73,6 +77,14 @@ export const ProposedFix = ({
         </>
       )}
       {isActionable ? (
+        <StartHint
+          sessionId={sessionId}
+          scope={hintScope}
+          label={START_HINT_COPY.implementerLabel}
+          placeholder={START_HINT_COPY.checkFix}
+        />
+      ) : null}
+      {isActionable ? (
         <div className="flex items-center gap-2">
           <Button
             variant="primary"
@@ -88,11 +100,6 @@ export const ProposedFix = ({
           <span className="text-meta text-faint-foreground">Implementer · {routing}</span>
         </div>
       ) : null}
-      {outcome === null ? null : (
-        <p role="status" className="text-body text-muted-foreground">
-          {outcome}
-        </p>
-      )}
-    </DrawerBox>
+    </>
   );
 };

@@ -1,16 +1,23 @@
 import { CircleCheck, CircleDot, Copy, MessageSquare, OctagonX, Cpu, Tag } from 'lucide-react';
-import { parseHiddenModels, visibleCatalog } from '@goodboy/core';
-import type { Agent, AgentStatus, ProviderId, SessionId, TurnEvent } from '@goodboy/types';
+import { isAdoptableKind, parseHiddenModels, visibleCatalog } from '@goodboy/core';
+import type { Agent, AgentStatus, ProviderId, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
 import { agentPlace } from '../../../store/slices/navigation/place';
 import type { AgentPane } from '../../../store/slices/navigation/types';
-import { SETTING_HIDDEN_MODELS } from '../../settings/settings';
+import { SETTING_AUTO_EXPERIMENT, SETTING_HIDDEN_MODELS } from '../../settings/settings';
+import { MOVE_TO_AUTO_EVENT, moveToAutoDetail } from '../../auto/adopt/moveToAutoEvent';
+import { autoExperimentSettings } from '../../auto/autoExperimentSettings';
+import { autoMembershipOf } from '../../auto/autoMembershipOf';
+import { detachFromAuto } from '../../auto/detachFromAuto';
+import { isAutoStartEnabled } from '../../auto/isAutoStartEnabled';
+import { classifyAgent } from '../../session/agent-kind';
 import {
   isAgentClosable,
   isAgentClosedByUser,
   isTurnStateLive,
 } from '../../session/agent-lifecycle';
+import { lastReplyOf } from '../../session/lastReplyOf';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import { OPEN_AGENT_INTENT } from '../../../shared/utils/openAgentReveal';
 import type { ActionEnv, AgentActionTarget, ObjectKindDefinition } from '../types';
@@ -32,9 +39,13 @@ export type AgentFacts = {
   readonly provider: ProviderId;
   readonly modelKey: string | null;
   readonly hiddenModels: string | null;
+  readonly isAutoOn: boolean;
+  readonly canMoveToAuto: boolean;
+  readonly isAdopted: boolean;
 };
 
 const NO_MOUNT_REASON = 'This session has no project yet';
+const WAIT_FOR_TURN_REASON = 'Wait for the turn to end first.';
 
 type OpenAgentParams = {
   readonly env: ActionEnv;
@@ -46,16 +57,6 @@ const openAgent = ({ env, facts, pane = null }: OpenAgentParams) => {
   env
     .getState()
     .navigate({ to: agentPlace({ sessionId: facts.sessionId, agentId: facts.agent.id, pane }) });
-};
-
-const lastReplyOf = ({ events }: { readonly events: ReadonlyArray<TurnEvent> }): string | null => {
-  const lastUser = events.map((event) => event.kind).lastIndexOf('user_text');
-  const reply = events
-    .slice(lastUser + 1)
-    .flatMap((event) => (event.kind === 'assistant_text' ? [event.delta] : []))
-    .join('')
-    .trim();
-  return reply === '' ? null : reply;
 };
 
 export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
@@ -70,6 +71,11 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
     }
     const session = sessionById(state.sessions, target.sessionId) ?? null;
     const turnState = state.agentTurnState[agent.id];
+    const membership = autoMembershipOf({
+      views: state.autoTreeViews[target.sessionId] ?? [],
+      agentId: agent.id,
+    });
+    const kind = classifyAgent({ agent, override: state.agentKindOverride[agent.id] ?? null });
     const isTurnLive = isTurnStateLive({ turnState });
     const hasOpenQuestion = (state.sessionOpenQuestions[target.sessionId] ?? []).some(
       (question) => question.status === 'open' && question.createdByAgentId === agent.id,
@@ -94,6 +100,15 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
         'anthropic',
       modelKey: state.agentModelOverride[agent.id] ?? agent.modelOverride ?? null,
       hiddenModels: state.settings?.[SETTING_HIDDEN_MODELS] ?? null,
+      isAutoOn: isAutoStartEnabled({
+        settings: autoExperimentSettings({ raw: state.settings?.[SETTING_AUTO_EXPERIMENT] }),
+      }),
+      canMoveToAuto:
+        isAdoptableKind({ kind }) &&
+        agent.workflowRunId == null &&
+        agent.stepId == null &&
+        !membership.isMember,
+      isAdopted: membership.adoption !== null,
     };
   },
   actions: [
@@ -122,7 +137,7 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
       label: 'Message this agent',
       icon: MessageSquare,
       group: 'act',
-      when: ({ facts }) => !facts.isClosedByUser,
+      when: ({ facts }) => !facts.isClosedByUser && !facts.isAdopted,
       run: ({ facts, env }) => {
         openAgent({ env, facts, pane: 'transcript' });
         dispatchAfterNavigation({
@@ -166,6 +181,48 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
       group: 'act',
       when: ({ facts }) => facts.isClosedByUser,
       run: ({ facts, env }) => env.getState().clearAgentDone(facts.sessionId, facts.agent.id),
+    },
+    {
+      id: 'agent.moveToAuto',
+      label: 'Move to Auto',
+      icon: CONCEPT_ICONS.auto,
+      group: 'act',
+      description: () => 'Auto takes over this work and decides what comes next',
+      when: ({ facts }) => facts.isAutoOn && facts.canMoveToAuto,
+      blockedReason: ({ facts }) => (facts.isTurnLive ? WAIT_FOR_TURN_REASON : null),
+      run: ({ facts, env }) => {
+        openAgent({ env, facts, pane: 'transcript' });
+        dispatchAfterNavigation({
+          name: MOVE_TO_AUTO_EVENT,
+          detail: moveToAutoDetail({ agentId: facts.agent.id }),
+        });
+      },
+    },
+    {
+      id: 'agent.detachFromAuto',
+      label: 'Detach from Auto',
+      icon: CONCEPT_ICONS.auto,
+      group: 'act',
+      description: () => 'Takes this agent back from Auto',
+      when: ({ facts }) => facts.isAdopted,
+      blockedReason: ({ facts }) => (facts.isTurnLive ? WAIT_FOR_TURN_REASON : null),
+      run: async ({ facts, env }) => {
+        const outcome = await detachFromAuto({
+          getState: env.getState,
+          sessionId: facts.sessionId,
+          agentId: facts.agent.id,
+        });
+        if (outcome.kind === 'detached') {
+          env.showToast({ kind: 'success', message: `${facts.name} is back in your hands.` });
+          return 'done';
+        }
+        await env.getState().reportError({
+          title: "Couldn't detach from Auto",
+          error: new Error(outcome.message),
+          sessionId: facts.sessionId,
+        });
+        return 'unchanged';
+      },
     },
     {
       id: 'agent.model',

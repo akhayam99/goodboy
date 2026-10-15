@@ -2,6 +2,7 @@ export type ToastKind = 'info' | 'warning' | 'error' | 'success';
 
 export type ToastAction = {
   readonly label: string;
+  readonly hint?: string;
   readonly onClick: () => void;
 };
 

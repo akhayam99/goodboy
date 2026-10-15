@@ -351,7 +351,7 @@ describe('useSuggestionActions', () => {
     expect(actions.primary?.isBusy).toBe(true);
   });
 
-  it('opens the Commits page of the second rebase choice', async () => {
+  it('opens the Commits page of the first rebase target from the primary', async () => {
     const actions = actionsFor({
       suggestion: {
         ...suggestionBase,
@@ -386,11 +386,10 @@ describe('useSuggestionActions', () => {
       },
     });
 
-    expect(actions.primary?.choices?.[1]?.description).toBe('feature/web-second');
-    actions.primary?.choices?.[1]?.run();
+    actions.primary?.run();
 
     await vi.waitFor(() =>
-      expect(spies.openRewriteHistory).toHaveBeenCalledWith(SESSION_ID, '/tmp/web-second'),
+      expect(spies.openRewriteHistory).toHaveBeenCalledWith(SESSION_ID, '/tmp/web-first'),
     );
     expect(spies.rebaseRun).not.toHaveBeenCalled();
     expect(spies.setSessionActiveProject).not.toHaveBeenCalled();
@@ -691,7 +690,7 @@ describe('useSuggestionActions', () => {
     });
   });
 
-  it('starts a reviewer, with a tester as the alternative', () => {
+  it('starts a reviewer', () => {
     const actions = actionsFor({
       suggestion: {
         ...suggestionBase,
@@ -706,12 +705,6 @@ describe('useSuggestionActions', () => {
     actions.primary?.run();
     expect(spies.spawnAgent).toHaveBeenCalledWith(SESSION_ID, {
       kindOverride: 'reviewer',
-      focus: 'none',
-    });
-
-    actions.primary?.choices?.[0]?.run();
-    expect(spies.spawnAgent).toHaveBeenCalledWith(SESSION_ID, {
-      kindOverride: 'tester',
       focus: 'none',
     });
   });
@@ -1082,9 +1075,6 @@ describe('every suggestion kind', () => {
       const pending = primary?.run();
       expect(pending).toBeInstanceOf(Promise);
       await pending;
-      for (const choice of primary?.choices ?? []) {
-        await expect(choice.run()).resolves.toBeUndefined();
-      }
     },
   );
 

@@ -32,17 +32,6 @@ const firstSessionBranch = ({ get, session }: Omit<NamingParams, 'project'>): st
     .map((mount) => mount.branch)
     .find((branch) => branch !== '') ?? null;
 
-export const resolveSessionSlug = ({ get, session, project }: NamingParams): string => {
-  const existing = firstSessionBranch({ get, session });
-  const fromBranch =
-    existing === null ? '' : slugify({ input: branchLeaf({ branch: existing }), fallback: '' });
-  if (fromBranch !== '') {
-    return fromBranch;
-  }
-  const named = sessionNaming({ get, session, project }).values.slug ?? '';
-  return slugify({ input: named, fallback: `session-${session.id.slice(0, 8)}` });
-};
-
 type PrefixedParams = {
   readonly requested: string;
   readonly prefix: string;

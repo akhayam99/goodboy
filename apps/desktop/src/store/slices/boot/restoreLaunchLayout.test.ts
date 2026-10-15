@@ -51,7 +51,7 @@ const locationIn = (workspaceId: WorkspaceId, sessionId: string): Location => ({
   place: {
     at: 'session',
     sessionId: sessionId as SessionId,
-    view: { lens: 'review', agentId: null, studio: null, target: null },
+    view: { lens: 'review', agentId: null, target: null },
   },
   studio: null,
   focus: {

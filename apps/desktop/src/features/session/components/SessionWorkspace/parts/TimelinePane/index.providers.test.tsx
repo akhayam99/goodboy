@@ -63,6 +63,7 @@ vi.mock('../../../../../../shared/hooks/useSessionRoleModels', () => ({
 vi.mock('../../../CreateAgentPopover', () => ({
   CreateAgentPopover: () => <button type="button">Start agent</button>,
 }));
+vi.mock('../../../../../auto/useAutoTrees', () => ({ useAutoTrees: () => [] }));
 vi.mock('../../../../hooks/useResolveActivity', () => {
   const activity = { batchByAgentId: new Map(), factsByAgentId: new Map() };
   return { useResolveActivity: () => activity };

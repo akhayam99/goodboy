@@ -17,7 +17,6 @@ export const ResolverCommitLine = ({ sessionId, mountId, sha, isFolded }: Props)
   }
   return (
     <p className="flex min-w-0 items-center gap-2 text-meta text-muted-foreground">
-      <span className="shrink-0">{FIX_RUN_COPY.commit}</span>
       <ThreadGitSha sha={commit.sha} />
       {commit.subject !== null && (
         <span className="min-w-0 truncate text-foreground">{commit.subject}</span>

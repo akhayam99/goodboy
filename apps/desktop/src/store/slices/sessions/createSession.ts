@@ -444,11 +444,9 @@ export const createSession = (set: SetFn, get: GetFn) => {
         sessionId: session.id,
         focus: {
           kind: 'session-created',
-          studio: null,
           agentId: firstAgent?.id ?? null,
         },
         activeLens: state.activeLens,
-        sessionStudio: state.sessionStudio,
         selectedAgentId: state.selectedAgentId,
       }),
       transcripts: { ...state.transcripts, ...transcriptEntries },

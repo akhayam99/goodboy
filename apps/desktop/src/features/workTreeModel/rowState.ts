@@ -32,6 +32,7 @@ export type RowStateReason =
   | { readonly kind: 'chained'; readonly afterTitle: string }
   | { readonly kind: 'awaitingFirstMessage' }
   | { readonly kind: 'discarded' }
+  | { readonly kind: 'auto'; readonly word: string; readonly short: string }
   | {
       readonly kind: 'job';
       readonly title: string;

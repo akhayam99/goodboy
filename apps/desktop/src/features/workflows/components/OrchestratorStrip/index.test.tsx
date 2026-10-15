@@ -726,7 +726,7 @@ describe('OrchestratorStrip layout', () => {
     expect(screen.queryByRole('button', { name: 'Orchestrator actions' })).toBeNull();
     expect(screen.queryByTestId('orchestrator-hint-input')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Pause' })).toBeNull();
-    expect(screen.queryByRole('switch', { name: 'Run on its own' })).toBeNull();
+    expect(screen.queryByRole('switch', { name: 'Autopilot' })).toBeNull();
   });
 
   it('opens the model per step panel when the run is asked to show its routing', () => {

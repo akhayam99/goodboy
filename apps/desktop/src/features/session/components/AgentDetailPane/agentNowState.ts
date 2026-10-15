@@ -31,6 +31,7 @@ type NowStateParams = {
   readonly turnState: TurnState | null;
   readonly transcript: ReadonlyArray<TurnEvent>;
   readonly activeChildren?: number;
+  readonly isWaitingForWriter?: boolean;
 };
 
 type StatusParams = {
@@ -46,7 +47,11 @@ export const agentNowState = ({
   turnState,
   transcript,
   activeChildren = 0,
+  isWaitingForWriter = false,
 }: NowStateParams): AgentNowState => {
+  if (isWaitingForWriter) {
+    return { label: 'waiting for the writer' };
+  }
   if (turnState?.kind === 'running' || (turnState === null && agent.status === 'running')) {
     return { label: runningLabel({ transcript }) };
   }

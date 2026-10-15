@@ -9,6 +9,8 @@ import { lensPlace } from '../../../../store/slices/navigation/canonicalLocation
 import type { LensKind } from '../../../../store/slices/session-view/types';
 import type { TimelineStreamEntry } from '../../timeline/buildTimelineStream';
 import { jobMountPathOf } from '../../timeline/jobMountPathOf';
+import { ciFixRoleOf } from '../../../branch/checks/ciFixRole';
+import { selectCheckMount } from '../../../../store/slices/agents/selectCheckMount';
 
 type EventTarget = {
   readonly lens: LensKind | null;
@@ -107,6 +109,25 @@ export const useTimelineOpen = ({
           label: 'Open overview',
           open: () => store.navigate({ to: branchPlace({ sessionId, mountPath, tab: 'pr' }) }),
         };
+      }
+      if (entry.kind === 'agent') {
+        const checkUrl = entry.agent.sourceCommentUrl;
+        const ciMountId =
+          checkUrl === undefined ||
+          ciFixRoleOf({ agent: entry.agent, kind: entry.agentKind }) === null
+            ? null
+            : selectCheckMount({ state: store, url: checkUrl });
+        if (checkUrl !== undefined && ciMountId !== null) {
+          return {
+            label: 'Open CI fix',
+            open: () =>
+              store.openDrawer({
+                kind: 'check-analysis',
+                sessionId,
+                payload: { sessionId, mountId: ciMountId, checkUrl },
+              }),
+          };
+        }
       }
       if (entry.kind === 'agent') {
         const isResolver = entry.agentKind === 'resolver';

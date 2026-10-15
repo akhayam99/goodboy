@@ -2,7 +2,7 @@ import type { BreadcrumbCrumb } from '../../breadcrumbCrumb';
 import { tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { NAMES } from '../../../../shared/names';
-import type { LensKind, SessionStudio } from '../../../../store';
+import type { LensKind } from '../../../../store';
 import type { AgentHomeLens } from '../../agent-kind';
 import { LENS_ICON, LENS_LABEL, lensIconClass } from '../../lens-labels';
 
@@ -24,11 +24,9 @@ type BranchCrumbs = {
 
 export type SessionBreadcrumbInput = {
   lens: LensKind | null;
-  studio: SessionStudio | null;
   focusedWorkflowName: string | null;
   selectedChildWorkflowName: string | null;
   focusedArtifactTitle: string | null;
-  artifactCreationLabel: string | null;
   selectedChildLabel: string | null;
   selectedChildHome: AgentHomeLens | null;
   selectedParentLabel: string | null;
@@ -71,11 +69,9 @@ const sealLast = (crumbs: BreadcrumbCrumb[]): BreadcrumbCrumb[] => {
 export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): BreadcrumbCrumb[] => {
   const {
     lens,
-    studio,
     focusedWorkflowName,
     selectedChildWorkflowName,
     focusedArtifactTitle,
-    artifactCreationLabel,
     selectedChildLabel,
     selectedChildHome,
     selectedParentLabel,
@@ -113,14 +109,6 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     ...lensIcon({ lens: 'plans' }),
     onClick: handlers.toArtifactsList,
   };
-
-  if (studio != null) {
-    return sealLast([
-      overview,
-      workflowsList,
-      { id: 'create', label: 'Create', icon: CONCEPT_ICONS.workflows },
-    ]);
-  }
 
   if (selectedChildLabel != null && selectedChildHome != null) {
     const question: BreadcrumbCrumb[] =
@@ -200,14 +188,6 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
       overview,
       workflowsList,
       { id: 'workflow-run', label: 'Run', icon: CONCEPT_ICONS.sessions },
-    ]);
-  }
-
-  if (lens === 'plans' && artifactCreationLabel != null) {
-    return sealLast([
-      overview,
-      plansList,
-      { id: 'artifact-create', label: 'New artifact', icon: CONCEPT_ICONS.artifacts },
     ]);
   }
 

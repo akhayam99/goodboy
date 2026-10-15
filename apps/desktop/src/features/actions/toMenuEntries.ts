@@ -1,6 +1,6 @@
 import { formatError, type MenuEntry } from '@goodboy/ui';
 import { shortcutGlyphs } from '../../shared/keyboard/registry';
-import type { ActionEnv, ResolvedAction } from './types';
+import type { ActionEnv, ActionPreviewParams, ResolvedAction } from './types';
 
 type Params = {
   readonly actions: ReadonlyArray<ResolvedAction>;
@@ -9,6 +9,7 @@ type Params = {
     readonly actionId: string;
     readonly choice?: string | null;
   }) => Promise<void>;
+  readonly onPreview?: (params: ActionPreviewParams) => void;
 };
 
 const guarded = async ({
@@ -25,7 +26,7 @@ const guarded = async ({
   }
 };
 
-export const toMenuEntries = ({ actions, env, run }: Params): ReadonlyArray<MenuEntry> =>
+export const toMenuEntries = ({ actions, env, run, onPreview }: Params): ReadonlyArray<MenuEntry> =>
   actions.flatMap((action, index): ReadonlyArray<MenuEntry> => {
     const previous = actions[index - 1];
     const separator: ReadonlyArray<MenuEntry> =
@@ -43,11 +44,17 @@ export const toMenuEntries = ({ actions, env, run }: Params): ReadonlyArray<Menu
         key: action.id,
         label: action.label,
         icon: action.icon,
+        iconClassName: action.iconClassName,
         hint: action.shortcut === null ? null : shortcutGlyphs(action.shortcut),
         description: action.description,
         blockedReason: action.blockedReason,
         isDestructive: action.confirm?.role === 'danger',
         choices: action.choices,
+        ...(onPreview !== undefined &&
+          action.preview !== null && {
+            onActive: () => onPreview({ preview: action.preview }),
+            onInactive: () => onPreview({ preview: null }),
+          }),
         confirm:
           action.confirm === null
             ? null

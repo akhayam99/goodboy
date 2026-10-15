@@ -69,3 +69,10 @@ fn leaves_a_mount_directory_name_untouched() {
     assert_eq!(name.len(), MAX_SLUG_LEN);
     assert_eq!(sanitize_slug(name), name);
 }
+
+#[test]
+fn leaves_a_short_mount_directory_name_untouched() {
+    for name in ["gb-7k2q9x", "gb-000000", "gb-zzzzzz", "gb-7k2q9xa1b2c3"] {
+        assert_eq!(sanitize_slug(name), name);
+    }
+}

@@ -4,6 +4,7 @@ export { aWorkflowRun } from './aWorkflowRun';
 export { aWorkspace } from './aWorkspace';
 export { anAgent } from './anAgent';
 export { EMPTY_OVERRIDES } from './emptyOverrides';
+export { nextProviderRunId } from './nextProviderRunId';
 export { TEST_NOW } from './testClock';
 export {
   nextAgentId,

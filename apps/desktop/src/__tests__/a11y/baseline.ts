@@ -25,8 +25,6 @@ export const A11Y_BASELINE = {
   'scene artifact-wireframe-low': ['nested-interactive'],
   'scene artifact-wireframe-high': ['nested-interactive'],
   'scene wireframe-failed': ['nested-interactive'],
-  'scene artifact-create-report': ['label'],
-  'scene artifact-create-wireframe': ['label'],
   'scene activity': [],
   'scene activity-run': [],
   'scene workflow-builder': [],

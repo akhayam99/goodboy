@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { captureStartHint } from '../../../../store/slices/startHints/captureStartHint';
+import { START_HINT_SCOPES } from '../../../../store/slices/startHints/startHintScopes';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -33,15 +35,23 @@ export const PushFailureActions = ({
     }
   }, [settledCount, onResolved]);
   const fixWithAgent = async () => {
+    const state = useAppStore.getState();
+    const capture = captureStartHint({
+      state,
+      sessionId,
+      scope: START_HINT_SCOPES.pushFix({ mountId }),
+    });
     setIsFixing(true);
     try {
-      await useAppStore.getState().fixBranchPushWithAgent({
+      await state.fixBranchPushWithAgent({
         sessionId,
         mountId,
         isForce,
         confirmedOnlyOnline,
         confirmedRemoteSha,
         message,
+        hint: capture.text,
+        onAccepted: () => state.settleStartHint({ capture }),
       });
     } catch (error) {
       await reportError({ title: "Couldn't start the agent.", error, sessionId });

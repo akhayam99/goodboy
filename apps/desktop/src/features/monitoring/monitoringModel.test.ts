@@ -98,6 +98,33 @@ describe('portsOfProcessTree', () => {
     expect(portsOfProcessTree({ snapshot, rootPid: 10 })).toEqual([5005]);
   });
 
+  it('finds a port held by a nested job: shell, npm, sh, node', () => {
+    const chain = [
+      { pid: 200, ppid: 1, name: 'zsh' },
+      { pid: 201, ppid: 200, name: 'npm' },
+      { pid: 202, ppid: 201, name: 'sh' },
+      { pid: 203, ppid: 202, name: 'node' },
+    ];
+    const nested: MonitorSnapshot = {
+      ...snapshot,
+      listeners: [{ port: 3000, address: '127.0.0.1', protocol: 'tcp', pid: 203 }],
+      processes: chain.map((entry) => ({
+        ...entry,
+        pgid: entry.pid,
+        cwd: null,
+        startedAt: 0,
+        cpuPercent: 0,
+        rssBytes: 0,
+        uid: 501,
+        argsMasked: '',
+      })),
+    };
+
+    expect(portsOfProcessTree({ snapshot: nested, rootPid: 200 })).toEqual([3000]);
+    expect(portsOfProcessTree({ snapshot: nested, rootPid: 202 })).toEqual([3000]);
+    expect(portsOfProcessTree({ snapshot: nested, rootPid: 203 })).toEqual([3000]);
+  });
+
   it('returns nothing without a snapshot or for an unrelated root', () => {
     expect(portsOfProcessTree({ snapshot: null, rootPid: 10 })).toEqual([]);
     expect(portsOfProcessTree({ snapshot, rootPid: 500 })).toEqual([]);

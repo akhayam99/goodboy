@@ -52,6 +52,16 @@ export const updateNudgeEventOutcome = async (
   ]);
 };
 
+type DeleteParams = {
+  readonly db: Database;
+  readonly sessionId: SessionId;
+  readonly id: string;
+};
+
+export const deleteNudgeEvent = async ({ db, sessionId, id }: DeleteParams): Promise<void> => {
+  await db.execute(`DELETE FROM nudge_events WHERE id = ? AND session_id = ?`, [id, sessionId]);
+};
+
 export type ListNudgeEventsOptions = {
   readonly sinceTs?: IsoDateTime;
   readonly kind?: NudgeEventKind;

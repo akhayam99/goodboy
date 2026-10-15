@@ -3,8 +3,9 @@ import type {
   TerminalTabId,
   TerminalTabStatus,
 } from '../../../shared/types/terminal';
+import { saveTerminalTabs } from './saveTerminalTabs';
 import { terminalOwnerKey } from './terminalOwner';
-import type { SetFn } from './types';
+import type { GetFn, SetFn } from './types';
 
 type StatusParams = {
   readonly owner: TerminalOwner;
@@ -13,7 +14,7 @@ type StatusParams = {
   readonly openError?: string;
 };
 
-export const setTerminalTabStatus = (set: SetFn) => {
+export const setTerminalTabStatus = (set: SetFn, get: GetFn) => {
   return ({ owner, tabId, status, openError }: StatusParams): void => {
     const key = terminalOwnerKey({ owner });
     set((s) => ({
@@ -30,5 +31,6 @@ export const setTerminalTabStatus = (set: SetFn) => {
         ),
       },
     }));
+    saveTerminalTabs({ get });
   };
 };

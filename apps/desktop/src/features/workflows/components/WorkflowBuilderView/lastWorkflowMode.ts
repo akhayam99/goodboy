@@ -12,7 +12,7 @@ type WriteParams = Params & {
 
 const FIRST_WORKFLOW_MODE: Mode = 'dynamic';
 
-const WORKFLOW_MODES: ReadonlyArray<Mode> = ['dynamic', 'custom', 'preset'];
+const WORKFLOW_MODES: ReadonlyArray<Mode> = ['dynamic', 'preset'];
 
 const storageKey = ({ workspaceId }: Params): string =>
   `${STORAGE_PREFIXES.workflowBuilderMode}${workspaceId}`;

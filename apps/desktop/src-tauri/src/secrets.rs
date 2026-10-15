@@ -117,6 +117,6 @@ mod tests {
 
     #[test]
     fn img_src_stays_local_only() {
-        assert_eq!(directive("img-src"), "img-src 'self' data:");
+        assert_eq!(directive("img-src"), "img-src 'self' data: blob:");
     }
 }

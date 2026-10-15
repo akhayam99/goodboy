@@ -23,6 +23,7 @@ import {
 } from '../../../../store/storyHarness';
 import { useAppStore } from '../../../../store';
 
+import { OPERATOR_NOTES_GUIDANCE } from '../../utils/operatorNotesGuidance';
 import { HandoffBlock } from '.';
 import { requestHandoffOpen } from './handoffOpenRequest';
 
@@ -126,6 +127,33 @@ describe('HandoffBlock', () => {
     screen.getByText('Why: Rounding now lands once per batch.');
     expect(screen.queryByTestId('handoff-chips')).toBeNull();
     expect(screen.queryByTestId('handoff-section-ask')).toBeNull();
+  });
+
+  it('shows one Your hint block with the hint when the message carries operator notes', () => {
+    const hint = 'Keep the guard inside ledger.ts.\nOperator notes\n```';
+    useAppStore.setState({
+      agentHandoffs: {
+        [AGENT]: handoff({
+          sentMessage: `Fix the push.\n\n${OPERATOR_NOTES_GUIDANCE}\n\n## Operator notes\n${hint}`,
+        }),
+      },
+    });
+
+    renderBlock();
+
+    expect(screen.getAllByTestId('handoff-your-hint')).toHaveLength(1);
+    expect(screen.getByText('Your hint')).toBeDefined();
+    expect(screen.getByTestId('handoff-your-hint').textContent).toContain(
+      'Keep the guard inside ledger.ts.',
+    );
+    expect(screen.queryByText(/Includes your hint/)).toBeNull();
+  });
+
+  it('shows no Your hint block without operator notes', () => {
+    renderBlock();
+
+    expect(screen.queryByTestId('handoff-your-hint')).toBeNull();
+    expect(screen.queryByText('Your hint')).toBeNull();
   });
 
   it('shows one chip per section once the block opens', () => {

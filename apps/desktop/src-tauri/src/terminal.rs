@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::io::{Read, Write};
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
@@ -7,12 +8,13 @@ use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use serde::Serialize;
-use tauri::{AppHandle, Emitter, Runtime, State};
+use tauri::{AppHandle, Emitter, Manager, Runtime, State};
 
 use crate::pty_ring::{
     empty_snapshot, new_shared_ring, push_shared, snapshot_of, ExitedStore, OutputSnapshot,
     SharedRing,
 };
+use crate::terminal_scrollback;
 
 struct TerminalSession {
     spawn_id: String,
@@ -96,9 +98,24 @@ pub struct LiveTerminal {
 
 /// Drains every live terminal, killing the whole pty session behind each
 /// leader. Killing the leader alone leaves grandchildren holding ports.
-pub fn shutdown(registry: &TerminalRegistry) {
+pub fn shutdown(registry: &TerminalRegistry, scrollback_dir: Option<&Path>) {
     let slots: Vec<SessionSlot> = match registry.0.lock() {
-        Ok(mut map) => map.drain().map(|(_, entry)| entry.slot).collect(),
+        Ok(mut map) => map
+            .drain()
+            .map(|(id, entry)| {
+                if let Some(dir) = scrollback_dir {
+                    let (bytes, _) = entry
+                        .ring
+                        .lock()
+                        .unwrap_or_else(|error| error.into_inner())
+                        .snapshot();
+                    if let Err(error) = terminal_scrollback::save(dir, &id, &bytes) {
+                        log::warn!("[teardown] terminal scrollback save failed: {error}");
+                    }
+                }
+                entry.slot
+            })
+            .collect(),
         Err(_) => return,
     };
     for slot in slots {
@@ -222,6 +239,7 @@ pub async fn terminal_open(
     }
 
     let request = TerminalSpawnRequest {
+        scrollback_dir: scrollback_dir_of(&app),
         app,
         registry: Arc::clone(&registry.0),
         exited: Arc::clone(&registry.1),
@@ -235,7 +253,15 @@ pub async fn terminal_open(
         .map_err(|e| TerminalError::Io(e.to_string()))?
 }
 
+pub(crate) fn scrollback_dir_of<R: Runtime>(app: &AppHandle<R>) -> Option<PathBuf> {
+    app.path()
+        .app_data_dir()
+        .ok()
+        .map(|dir| terminal_scrollback::dir_in(&dir))
+}
+
 struct TerminalSpawnRequest<R: Runtime> {
+    scrollback_dir: Option<PathBuf>,
     app: AppHandle<R>,
     registry: Arc<Mutex<HashMap<String, TerminalEntry>>>,
     exited: Arc<ExitedStore>,
@@ -247,6 +273,7 @@ struct TerminalSpawnRequest<R: Runtime> {
 
 fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), TerminalError> {
     let TerminalSpawnRequest {
+        scrollback_dir,
         app,
         registry: registry_arc,
         exited,
@@ -255,6 +282,13 @@ fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), Te
         cols,
         rows,
     } = request;
+    if let Some(folder) = cwd.as_deref() {
+        if !Path::new(folder).is_dir() {
+            return Err(TerminalError::Io(format!(
+                "The folder {folder} no longer exists"
+            )));
+        }
+    }
     let pty_system = native_pty_system();
     let pair = pty_system
         .openpty(PtySize {
@@ -322,6 +356,12 @@ fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), Te
     })));
 
     let ring = new_shared_ring();
+    if let Some(saved) = scrollback_dir
+        .as_deref()
+        .and_then(|dir| terminal_scrollback::take(dir, &session_id_clone))
+    {
+        push_shared(&ring, &saved);
+    }
     exited.forget(&session_id_clone);
     registry_arc
         .lock()
@@ -483,9 +523,14 @@ pub fn terminal_resize(
 
 #[tauri::command]
 pub async fn terminal_close(
+    app: AppHandle,
     registry: State<'_, TerminalRegistry>,
     session_id: String,
 ) -> Result<(), TerminalError> {
+    if let Some(dir) = scrollback_dir_of(&app) {
+        terminal_scrollback::forget(&dir, &session_id)
+            .map_err(|e| TerminalError::Io(e.to_string()))?;
+    }
     close_session(&registry.0, &session_id)
 }
 
@@ -644,7 +689,7 @@ mod tests {
             },
         );
 
-        shutdown(&registry);
+        shutdown(&registry, None);
 
         assert!(registry.0.lock().unwrap().is_empty());
         let mut still_alive = true;
@@ -670,6 +715,7 @@ mod tests {
         let registry = TerminalRegistry::new();
 
         spawn_terminal(TerminalSpawnRequest {
+            scrollback_dir: None,
             app: app.handle().clone(),
             registry: Arc::clone(&registry.0),
             exited: Arc::clone(&registry.1),
@@ -704,6 +750,7 @@ mod tests {
         let app = tauri::test::mock_app();
         let registry = TerminalRegistry::new();
         spawn_terminal(TerminalSpawnRequest {
+            scrollback_dir: None,
             app: app.handle().clone(),
             registry: Arc::clone(&registry.0),
             exited: Arc::clone(&registry.1),
@@ -739,6 +786,61 @@ mod tests {
         assert!(snapshot.offset > 0);
         assert_eq!(snapshot.exit_code, Some(7));
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_reopened_terminal_starts_with_its_saved_scrollback_and_the_file_is_taken() {
+        let dir = crate::proc::ledger::test_support::scratch_dir("terminal-restore");
+        let cwd = dir.to_string_lossy().into_owned();
+        let saved = dir.join("saved");
+        terminal_scrollback::save(&saved, "session-11::t1", b"yesterday's build\r\n").unwrap();
+        let app = tauri::test::mock_app();
+        let registry = TerminalRegistry::new();
+
+        spawn_terminal(TerminalSpawnRequest {
+            scrollback_dir: Some(saved.clone()),
+            app: app.handle().clone(),
+            registry: Arc::clone(&registry.0),
+            exited: Arc::clone(&registry.1),
+            session_id: "session-11::t1".to_string(),
+            cwd: Some(cwd),
+            cols: 80,
+            rows: 24,
+        })
+        .expect("open the terminal");
+
+        let snapshot = snapshot_session(&registry, "session-11::t1").unwrap();
+        let text = String::from_utf8_lossy(&STANDARD.decode(&snapshot.data).unwrap()).into_owned();
+        assert!(text.starts_with("yesterday's build"));
+        assert!(terminal_scrollback::take(&saved, "session-11::t1").is_none());
+        close_session(&registry.0, "session-11::t1").expect("close");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn opening_a_terminal_in_a_missing_folder_says_the_folder_is_gone() {
+        let app = tauri::test::mock_app();
+        let registry = TerminalRegistry::new();
+
+        let result = spawn_terminal(TerminalSpawnRequest {
+            scrollback_dir: None,
+            app: app.handle().clone(),
+            registry: Arc::clone(&registry.0),
+            exited: Arc::clone(&registry.1),
+            session_id: "session-12::t1".to_string(),
+            cwd: Some("/mock/harborline/payments-api/gone".to_string()),
+            cols: 80,
+            rows: 24,
+        });
+
+        let message = result
+            .err()
+            .map(|error| error.to_string())
+            .unwrap_or_default();
+        assert!(message.contains("no longer exists"), "got: {message}");
+        assert!(registry.0.lock().unwrap().is_empty());
     }
 
     #[test]

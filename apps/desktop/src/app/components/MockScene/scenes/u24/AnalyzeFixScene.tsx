@@ -7,7 +7,7 @@ import { BranchChecks } from '../../../../../features/branch/components/BranchCh
 import { DrawerHost } from '../../../DrawerHost';
 import { shellArrangement } from '../../../../shellArrangement';
 import { SESSION, SESSION_ID } from '../activityRunSeed';
-import { analyzeFixSeed } from './analyzeFixSeed';
+import { analyzeFixSeed, type AnalyzeFixPhase } from './analyzeFixSeed';
 
 const arrangement = shellArrangement({
   hasWorkspace: true,
@@ -15,7 +15,7 @@ const arrangement = shellArrangement({
 });
 
 type Props = {
-  readonly phase: 'proposal' | 'fixing';
+  readonly phase: AnalyzeFixPhase;
   readonly surface: 'checks' | 'activity';
   readonly shouldOpenDrawer?: boolean;
 };
@@ -30,27 +30,24 @@ export const AnalyzeFixScene = ({ phase, surface, shouldOpenDrawer = false }: Pr
   if (!isReady) {
     return null;
   }
-  if (surface === 'activity') {
-    return (
-      <main className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
-        <ScrollFade className="min-h-0 flex-1">
-          <div className="px-6 py-4">
-            <SessionOverviewPane session={SESSION} onSelectLens={() => undefined} />
-          </div>
-        </ScrollFade>
-      </main>
+  const main =
+    surface === 'activity' ? (
+      <ScrollFade className="min-h-0 flex-1">
+        <div className="px-6 py-4">
+          <SessionOverviewPane session={SESSION} onSelectLens={() => undefined} />
+        </div>
+      </ScrollFade>
+    ) : (
+      <div className="flex h-full min-w-0 flex-col gap-4 py-4">
+        <BranchChecks sessionId={SESSION_ID} />
+      </div>
     );
-  }
   return (
     <div className="[&>div]:w-full" style={{ width: 1440 }}>
       <AppShell
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={<div aria-hidden />}
-        main={
-          <div className="flex h-full min-w-0 flex-col gap-4 py-4">
-            <BranchChecks sessionId={SESSION_ID} />
-          </div>
-        }
+        main={main}
         drawer={isDrawerOpen ? <DrawerHost /> : null}
         drawerSizing="side"
       />

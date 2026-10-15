@@ -6,14 +6,7 @@ import type {
   SessionViewPrefs,
   ArtifactId,
 } from '@goodboy/types';
-import type {
-  LensKind,
-  DiffFocus,
-  SessionCreation,
-  SessionStudio,
-  ArtifactCreationTarget,
-  FocusedExternalTask,
-} from './types';
+import type { LensKind, DiffFocus, SessionCreation, FocusedExternalTask } from './types';
 import type { AgentPane, BranchTab } from '../navigation/types';
 import type { ArtifactFilter } from '../../../features/artifacts/artifactCollection';
 
@@ -31,11 +24,10 @@ export type SessionViewState = {
   readonly branchThreadId: Readonly<Record<SessionId, string | null>>;
   readonly sessionCreations: Readonly<Record<SessionId, ReadonlyArray<SessionCreation>>>;
   readonly sessionGroupExpanded: Readonly<Record<string, boolean>>;
-  readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;
   readonly focusedArtifactId: Readonly<Record<SessionId, ArtifactId | null>>;
   readonly artifactFilter: Readonly<Record<SessionId, ArtifactFilter>>;
   readonly artifactConversationAgentId: Readonly<Record<SessionId, AgentId | null>>;
-  readonly artifactCreation: Readonly<Record<SessionId, ArtifactCreationTarget | null>>;
+  readonly awaitedArtifactAgentId: Readonly<Record<SessionId, AgentId | null>>;
   readonly focusedGithubIssueNumber: Readonly<Record<SessionId, number | null>>;
   readonly focusedExternalTask: Readonly<Record<SessionId, FocusedExternalTask | null>>;
   readonly agentPane: Readonly<Record<SessionId, AgentPane | null>>;

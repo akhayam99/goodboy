@@ -3,7 +3,7 @@ import type { CSSProperties, RefObject } from 'react';
 
 type Direction = 'up' | 'down';
 
-type Align = 'start' | 'end' | 'center';
+type Align = 'start' | 'end' | 'center' | 'after';
 
 type Params = {
   readonly triggerRef: RefObject<HTMLElement | null>;
@@ -26,6 +26,7 @@ type ResolveDesiredLeftParams = {
 
 const DEFAULT_VIEWPORT_MARGIN = 8;
 const DROPDOWN_GAP = 4;
+const AFTER_GAP = 8;
 const MIN_DROPDOWN_HEIGHT = 160;
 const MIN_TRIGGER_MATCH_WIDTH = 160;
 const BOTTOM_INSET_PROPERTY = '--dropdown-bottom-inset';
@@ -38,6 +39,9 @@ const readBottomInset = (): number => {
 };
 
 const resolveDesiredLeft = ({ rect, popupWidth, align }: ResolveDesiredLeftParams): number => {
+  if (align === 'after') {
+    return rect.right + AFTER_GAP;
+  }
   if (align === 'end') {
     return rect.right - popupWidth;
   }

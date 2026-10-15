@@ -55,6 +55,28 @@ describe('windowLayout', () => {
     expect(parseLocation({ value: { place: { at: 'session' } } })).toBeNull();
   });
 
+  it('restores a saved session place without the session studio older builds stored', () => {
+    const location = parseLocation({
+      value: {
+        place: {
+          at: 'session',
+          sessionId: 'session-payout',
+          view: { lens: 'workflows', agentId: null, studio: { kind: 'workflow' }, target: null },
+        },
+        studio: null,
+      },
+    });
+
+    expect(location?.place).toEqual({
+      at: 'session',
+      sessionId: 'session-payout',
+      view: { lens: 'workflows', agentId: null, target: null },
+    });
+    expect(
+      parseLocation({ value: { place: { at: 'session', sessionId: 's', view: 4 } } }),
+    ).toBeNull();
+  });
+
   it('lists the windows saved in the last month', async () => {
     const nowMs = Date.now();
     await saveWindowLayout({ label: 'main', workspaceId: WS, location: BOARD, at: nowMs });

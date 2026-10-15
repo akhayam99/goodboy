@@ -1,4 +1,8 @@
 import { analyzeFailingChecks } from '../../branch/checks/analyzeFailingChecks';
+import { checkOutcomeOf } from '../../branch/checks/checkOutcomeOf';
+import { checkTargetOf } from '../../branch/checks/checkTargetOf';
+import { failingChecksOf } from '../../branch/checks/failingChecksOf';
+import { pushCheckFix } from '../../branch/checks/pushCheckFix';
 import { startCheckFix } from '../../branch/checks/startCheckFix';
 import { selectCheckChain } from '../../../store/slices/agents/selectCheckChain';
 import { NAMES } from '../../../shared/names';
@@ -8,8 +12,7 @@ import type { Agent, Session, SessionProjectMount } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, agentPlace, sessionPlace } from '../../../store';
 import { branchPlace } from '../../../store/slices/navigation/place';
 import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
-import { dispatchAfterNavigation } from '../../actions/dispatchAfterNavigation';
-import { HISTORY_FOCUS_BASE_EVENT, diffEventName } from '../../actions/kinds/diff';
+import { startRebaseTarget } from '../startRebaseTarget';
 import { distanceBehind } from '../../../shared/lib/gitStatus';
 import { usePlanRunToast } from '../../plans/usePlanRun';
 import type { AgentKind, AgentKindRouting } from '../../session/agent-kind';
@@ -41,11 +44,12 @@ type Params = {
 
 type SuggestionAction = {
   readonly label: string;
+  readonly shortLabel?: string;
+  readonly agentKind?: AgentKind;
   readonly isDisabled: boolean;
   readonly isBusy?: boolean;
   readonly failureTitle: string;
   readonly run: () => Promise<void>;
-  readonly choices?: ReadonlyArray<SuggestionActionChoice>;
   readonly requiresConfirm?: boolean;
   readonly runsOn?: SuggestionRunsOn;
 };
@@ -55,26 +59,9 @@ type SuggestionRunsOn = {
   readonly runWith: (routing: AgentKindRouting) => Promise<void>;
 };
 
-export type SuggestionActionChoice = {
-  readonly id: string;
-  readonly label: string;
-  readonly description: string;
-  readonly detail: string;
-  readonly run: () => Promise<void>;
-};
-
-type SuggestionExtraAction = {
-  readonly id: string;
-  readonly label: string;
-  readonly variant: 'secondary' | 'ghost';
-  readonly failureTitle: string;
-  readonly run: () => Promise<void>;
-};
-
 export type SuggestionActions = {
   readonly primary: SuggestionAction | null;
   readonly onDismiss: (() => Promise<void>) | null;
-  readonly extras?: ReadonlyArray<SuggestionExtraAction>;
 };
 
 export type SuggestionActionResolver = (params: {
@@ -179,8 +166,7 @@ export const useSuggestionActions = ({
   };
 
   const startRebase = async ({ target }: StartRebaseParams): Promise<void> => {
-    openRewriteHistory(sessionId, target.worktreePath);
-    dispatchAfterNavigation({ name: diffEventName({ name: HISTORY_FOCUS_BASE_EVENT, sessionId }) });
+    startRebaseTarget({ openRewriteHistory, sessionId, target });
   };
 
   const startWorkflowStep = ({
@@ -236,6 +222,7 @@ export const useSuggestionActions = ({
       return {
         primary: {
           label: rebase.isRunning ? 'Rebasing' : 'Open rebase',
+          shortLabel: rebase.isRunning ? 'Rebasing' : 'Rebase',
           isDisabled: firstTarget == null || rebase.isRunning,
           isBusy: rebase.isRunning,
           failureTitle: REBASE_FAILURE_TITLE,
@@ -245,16 +232,6 @@ export const useSuggestionActions = ({
             }
             await startRebase({ target: firstTarget });
           },
-          choices:
-            suggestion.payload.targets.length > 1
-              ? suggestion.payload.targets.map((target) => ({
-                  id: target.id,
-                  label: target.projectName,
-                  description: target.branch,
-                  detail: `${target.behind} behind`,
-                  run: () => startRebase({ target }),
-                }))
-              : undefined,
         },
         onDismiss: null,
       };
@@ -263,6 +240,8 @@ export const useSuggestionActions = ({
       return {
         primary: {
           label: 'Start implementer',
+          shortLabel: 'Start',
+          agentKind: 'implementer',
           isDisabled: false,
           failureTitle: "Couldn't start the implementer",
           run: async () => {
@@ -297,6 +276,7 @@ export const useSuggestionActions = ({
       return {
         primary: {
           label: 'Add project',
+          shortLabel: 'Add',
           isDisabled: false,
           failureTitle: "Couldn't add the project",
           run: () => proposalActions.mount(proposalTarget({ suggestion })),
@@ -333,6 +313,7 @@ export const useSuggestionActions = ({
       return {
         primary: {
           label: suggestion.payload.agentIds.length === 1 ? 'Resume' : 'Resume all',
+          shortLabel: 'Resume',
           isDisabled: false,
           failureTitle: "Couldn't resume the stopped agents",
           run: async () => {
@@ -346,6 +327,7 @@ export const useSuggestionActions = ({
       return {
         primary: {
           label: 'Retry',
+          agentKind: suggestion.payload.agentKind,
           isDisabled: false,
           failureTitle: "Couldn't retry",
           run: async () => {
@@ -374,6 +356,8 @@ export const useSuggestionActions = ({
       return {
         primary: {
           label: 'Start reviewer',
+          shortLabel: 'Start',
+          agentKind: 'reviewer',
           isDisabled: false,
           failureTitle: "Couldn't start the reviewer",
           run: async () => {
@@ -385,50 +369,18 @@ export const useSuggestionActions = ({
               await spawnAgent(sessionId, { kindOverride: 'reviewer', focus: 'none', ...routing });
             },
           },
-          choices: [
-            {
-              id: 'start-tester',
-              label: 'Start tester instead',
-              description: 'Writes tests for the changes',
-              detail: '',
-              run: async () => {
-                await spawnAgent(sessionId, { kindOverride: 'tester', focus: 'none' });
-              },
-            },
-          ],
         },
         onDismiss: null,
       };
     }
     if (suggestion.kind === 'fix-checks') {
-      const readFailing = () => {
-        const state = useAppStore.getState();
-        const github = state.mountGithub[suggestion.payload.mountId];
-        const port = state.pullRequestViews[sessionId];
-        const portView = port?.mountId === suggestion.payload.mountId ? port.view : null;
-        const pullRequest = github?.pr ?? portView;
-        const detail = github?.detail;
-        const checks =
-          detail?.prNumber === pullRequest?.number
-            ? detail?.checks
-            : portView?.number === pullRequest?.number
-              ? portView?.checks.runs
-              : undefined;
-        if (
-          pullRequest === undefined ||
-          pullRequest === null ||
-          pullRequest.number !== suggestion.payload.prNumber ||
-          checks === undefined
-        ) {
-          return null;
-        }
-        return {
-          pullRequest,
-          checks: checks.filter((check) =>
-            ['failure', 'timed_out', 'cancelled'].includes(check.conclusion),
-          ),
-        };
-      };
+      const readFailing = () =>
+        failingChecksOf({
+          state: useAppStore.getState(),
+          sessionId,
+          mountId: suggestion.payload.mountId,
+          prNumber: suggestion.payload.prNumber,
+        });
       const analyze = async ({ routing }: AnalyzeParams = {}) => {
         const state = useAppStore.getState();
         const github = state.mountGithub[suggestion.payload.mountId];
@@ -454,7 +406,18 @@ export const useSuggestionActions = ({
         });
       };
       const failing = readFailing();
-      const url = failing?.checks[0]?.detailsUrl ?? failing?.pullRequest.url;
+      const firstFailing = failing?.checks[0];
+      const target = checkTargetOf({
+        state: useAppStore.getState(),
+        sessionId,
+        mountId: suggestion.payload.mountId,
+        failingUrl:
+          firstFailing === undefined
+            ? null
+            : (firstFailing.detailsUrl ?? failing?.pullRequest.url ?? null),
+        failingName: firstFailing?.name ?? null,
+      });
+      const url = target?.url;
       const chain =
         url === undefined
           ? null
@@ -463,10 +426,47 @@ export const useSuggestionActions = ({
         return {
           primary: {
             label: 'Start fix',
+            shortLabel: 'Fix',
+            agentKind: 'implementer',
             isDisabled: false,
             failureTitle: "Couldn't start the Implementer",
             run: async () => {
               await startCheckFix({ sessionId, url, mountId: suggestion.payload.mountId });
+            },
+          },
+          onDismiss: null,
+        };
+      }
+      if (url !== undefined && chain !== null && chain.state === 'fixed-local') {
+        const fixAgentId = chain.fix?.id;
+        return {
+          primary: {
+            label: 'Push',
+            isDisabled: false,
+            failureTitle: "Couldn't push the branch",
+            run: () => pushCheckFix({ sessionId, mountId: suggestion.payload.mountId, fixAgentId }),
+          },
+          onDismiss: null,
+        };
+      }
+      if (url !== undefined && chain !== null && chain.state === 'fixed-pushed') {
+        const outcome = checkOutcomeOf({
+          checks: failing?.allChecks ?? [],
+          name: target?.name ?? null,
+          analyzedUrl: url,
+        });
+        if (outcome !== 'failed') {
+          return NO_ACTIONS;
+        }
+        return {
+          primary: {
+            label: 'Analyze again',
+            isDisabled: false,
+            failureTitle: "Couldn't start the Debugger",
+            run: () => analyze(),
+            runsOn: {
+              kind: 'debugger',
+              runWith: (routing) => analyze({ routing }),
             },
           },
           onDismiss: null,
@@ -497,6 +497,7 @@ export const useSuggestionActions = ({
       return {
         primary: {
           label: 'Analyze',
+          agentKind: 'debugger',
           isDisabled: false,
           failureTitle: "Couldn't start the Debugger",
           run: () => analyze(),
@@ -512,6 +513,7 @@ export const useSuggestionActions = ({
       return {
         primary: {
           label: 'Review history',
+          shortLabel: 'Review',
           isDisabled: false,
           failureTitle: "Couldn't open the history",
           run: async () => openRewriteHistory(sessionId, suggestion.payload.worktreePath),
@@ -547,6 +549,7 @@ export const useSuggestionActions = ({
       return {
         primary: {
           label: scribe === 'ready' ? 'Review text' : 'Open PR',
+          shortLabel: scribe === 'ready' ? 'Review' : 'Open',
           isDisabled: false,
           failureTitle: "Couldn't open the pull request form",
           run: async () => {
@@ -601,6 +604,7 @@ export const useSuggestionActions = ({
       return {
         primary: {
           label: NAMES.closeBranch,
+          shortLabel: 'Close',
           isDisabled: false,
           requiresConfirm: true,
           failureTitle: "Couldn't close the branch",

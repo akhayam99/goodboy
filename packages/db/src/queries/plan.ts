@@ -23,10 +23,9 @@ import {
   setArtifactStatus,
   updateArtifactSource,
 } from './artifact';
-import { artifactRevisionInsert } from './artifactRevision';
+import { artifactRevisionInsert, writeArtifactRevision } from './artifactRevision';
 
 const PLAN_SCHEMA_VERSION = 1;
-const PLAN_REVISION_CONFLICT = 'PLAN_REVISION_CONFLICT';
 
 const isPlanArtifact = (artifact: SessionArtifact): artifact is PlanArtifact =>
   artifact.kind === 'plan';
@@ -240,37 +239,24 @@ export const updatePlanBodyIfRevision = async (
   if (existing === null) {
     throw new Error(`Plan not found: ${id}`);
   }
-  const now = Date.now();
-  const metadataJson = JSON.stringify(existing.metadata);
-  const outcome = await db.transaction({
-    statements: [
-      {
-        sql: `UPDATE session_artifacts
-         SET title = ?, source_format = 'markdown', source_text = ?, metadata_json = ?,
-             revision = revision + 1, updated_at = ?
-         WHERE id = ? AND kind = 'plan' AND revision = ?`,
-        params: [title, bodyMd, metadataJson, now, id, expectedRevision],
-        abortWhen: 'noChanges',
-        abortCode: PLAN_REVISION_CONFLICT,
-      },
-      artifactRevisionInsert({
-        artifactId: id,
-        title,
-        sourceText: bodyMd,
-        metadataJson,
-        note: { author: 'user' },
-        createdAt: now,
-      }),
-    ],
+  const outcome = await writeArtifactRevision({
+    db,
+    artifactId: id,
+    expectedRevision,
+    kind: 'plan',
+    author: 'user',
+    title,
+    sourceText: bodyMd,
+    metadata: existing.metadata,
+    nowMs: Date.now(),
   });
-  if (outcome.status === 'committed') {
-    return { kind: 'saved', revision: expectedRevision + 1 };
+  if (outcome.kind === 'saved') {
+    return { kind: 'saved', revision: outcome.revision };
   }
-  const current = await loadPlan(db, id);
-  if (current === null) {
+  if (outcome.kind === 'missing') {
     throw new Error(`Plan not found: ${id}`);
   }
-  return { kind: 'conflict', revision: current.revision };
+  return { kind: 'conflict', revision: outcome.revision };
 };
 
 export const deletePlan = async (db: Database, id: PlanId): Promise<void> => {

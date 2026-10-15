@@ -110,7 +110,6 @@ describe('Open on a plan', () => {
         view: {
           lens: 'plans',
           agentId: null,
-          studio: null,
           target: { kind: 'artifact', artifactId: PLAN_FIXTURE_ID },
         },
       },
@@ -132,7 +131,6 @@ describe('Open on a report', () => {
         view: {
           lens: 'plans',
           agentId: null,
-          studio: null,
           target: { kind: 'artifact', artifactId: REPORT_ID },
         },
       },

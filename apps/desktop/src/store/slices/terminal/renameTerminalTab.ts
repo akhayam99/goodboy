@@ -1,6 +1,7 @@
 import type { TerminalOwner, TerminalTabId } from '../../../shared/types/terminal';
 import { persistTerminalNames } from './persistTerminalNames';
-import { folderName, terminalOwnerKey } from './terminalOwner';
+import { isDefaultTerminalTitle, terminalOwnerKey } from './terminalOwner';
+import { saveTerminalTabs } from './saveTerminalTabs';
 import type { GetFn, SetFn } from './types';
 
 type RenameParams = {
@@ -17,11 +18,12 @@ export const renameTerminalTab = (set: SetFn, get: GetFn) => {
     if (tab === undefined || next === '' || next === tab.title) {
       return;
     }
-    const fallback = folderName({ path: tab.cwd });
     const names = Object.fromEntries(
       Object.entries(get().terminalNames).filter(([id]) => id !== tabId),
     );
-    const nextNames = next === fallback ? names : { ...names, [tabId]: next };
+    const nextNames = isDefaultTerminalTitle({ title: next, cwd: tab.cwd })
+      ? names
+      : { ...names, [tabId]: next };
     await persistTerminalNames({ names: nextNames });
     set((s) => ({
       terminalNames: nextNames,
@@ -30,5 +32,6 @@ export const renameTerminalTab = (set: SetFn, get: GetFn) => {
         [key]: (s.terminalTabs[key] ?? []).map((t) => (t.id === tabId ? { ...t, title: next } : t)),
       },
     }));
+    saveTerminalTabs({ get });
   };
 };

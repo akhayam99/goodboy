@@ -1143,7 +1143,7 @@ describe('advanceClusterImplementation', () => {
         kind: 'error',
         severity: 'warning',
         title: expect.stringContaining('Subagent blocked'),
-        body: expect.stringContaining('is set to ask before each step'),
+        body: expect.stringContaining('is set to Ask me'),
         sessionId: SID,
       }),
     );

@@ -1,5 +1,5 @@
 import type { SessionId, WorkspaceId } from '@goodboy/types';
-import type { TerminalTab, TerminalTabId } from '../../../shared/types/terminal';
+import type { TerminalSelection, TerminalTab, TerminalTabId } from '../../../shared/types/terminal';
 
 export const SETTING_TERMINAL_NAMES = 'terminal.names';
 
@@ -14,6 +14,8 @@ export type TerminalState = {
   readonly terminalSessions: Readonly<Record<SessionId, 'open' | 'closed'>>;
   readonly terminalTabs: Readonly<Record<string, readonly TerminalTab[]>>;
   readonly activeTerminalTab: Readonly<Record<string, TerminalTabId | null>>;
+  readonly terminalWorktreeActive: Readonly<Record<string, TerminalTabId>>;
+  readonly terminalSelection: TerminalSelection | null;
   readonly terminalNames: Readonly<Record<string, string>>;
   readonly terminalFolderOverrides: Readonly<Record<WorkspaceId, string | null>>;
 };
@@ -22,6 +24,8 @@ export const terminalInitialState: TerminalState = {
   terminalSessions: {},
   terminalTabs: {},
   activeTerminalTab: {},
+  terminalWorktreeActive: {},
+  terminalSelection: null,
   terminalNames: {},
   terminalFolderOverrides: {},
 };

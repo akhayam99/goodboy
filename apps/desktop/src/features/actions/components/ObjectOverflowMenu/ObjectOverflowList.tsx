@@ -1,12 +1,17 @@
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { MenuList, type MenuEntry } from '@goodboy/ui';
 import { useActionEnv } from '../../useActionEnv';
 import { useObjectActions } from '../../useObjectActions';
 import { toMenuEntries } from '../../toMenuEntries';
-import type { ActionViewing, ObjectTarget } from '../../types';
+import type { ActionMenuBehavior, ActionViewing, ObjectTarget } from '../../types';
 import type { OnArm } from '../../../../shared/components/HeaderConfirm/armedAction';
 
-type Props = {
+type RunParams = {
+  readonly actionId: string;
+  readonly choice?: string | null;
+};
+
+type Props = ActionMenuBehavior & {
   readonly target: ObjectTarget;
   readonly label: string;
   readonly anchorKey: string | null;
@@ -24,12 +29,39 @@ export const ObjectOverflowList = ({
   onClose,
   viewing = null,
   onArm,
+  onPreview,
+  track,
+  isHeld,
 }: Props) => {
   const env = useActionEnv({ origin: 'overflow', anchorKey, viewing });
-  const { actions, run } = useObjectActions({ target, env });
+  const { actions, run: runAction } = useObjectActions({ target, env });
+  const run = useCallback(
+    async (params: RunParams) => {
+      if (track === undefined) {
+        await runAction(params);
+        return;
+      }
+      await track({ actionId: params.actionId, task: () => runAction(params) });
+    },
+    [runAction, track],
+  );
+  useEffect(
+    () => () => {
+      onPreview?.({ preview: null });
+    },
+    [onPreview],
+  );
   const entries = useMemo((): ReadonlyArray<MenuEntry> => {
     const visible = actions.filter((action) => !omit.includes(action.id));
-    const base = toMenuEntries({ actions: visible, env, run });
+    const drawn = toMenuEntries({ actions: visible, env, run, onPreview });
+    const base =
+      isHeld === undefined
+        ? drawn
+        : drawn.map((entry): MenuEntry =>
+            entry.kind === 'item'
+              ? { ...entry, isDisabled: isHeld({ actionId: entry.key }) }
+              : entry,
+          );
     if (onArm === undefined) {
       return base;
     }
@@ -47,6 +79,6 @@ export const ObjectOverflowList = ({
         onSelect: () => onArm({ action, run: () => run({ actionId: action.id }) }),
       };
     });
-  }, [actions, env, omit, onArm, run]);
+  }, [actions, env, isHeld, omit, onArm, onPreview, run]);
   return <MenuList label={label} entries={entries} onClose={onClose} />;
 };

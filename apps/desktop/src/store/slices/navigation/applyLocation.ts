@@ -43,11 +43,7 @@ const surfaceChanges = ({
     isKept && !isRestore && (target === null || target.kind === 'agent') ? current : next;
   return {
     activeLens: { ...state.activeLens, [sessionId]: lens },
-    sessionStudio: { ...state.sessionStudio, [sessionId]: view.studio },
-    selectedAgentId: {
-      ...state.selectedAgentId,
-      [sessionId]: view.studio === null ? view.agentId : null,
-    },
+    selectedAgentId: { ...state.selectedAgentId, [sessionId]: view.agentId },
     focusedWorkflowRunId: {
       ...state.focusedWorkflowRunId,
       [sessionId]: keep(
@@ -110,7 +106,7 @@ const surfaceChanges = ({
     },
     agentPane: {
       ...state.agentPane,
-      [sessionId]: view.studio === null ? (paneOf({ target }) ?? null) : null,
+      [sessionId]: paneOf({ target }) ?? null,
     },
   };
 };
@@ -176,7 +172,7 @@ export const applyLocation = ({ set, get, location, isRestore }: Params): void =
   if (isRestore) {
     syncActiveMount({ get, sessionId, view: resolved });
   }
-  if (resolved.agentId !== null && resolved.studio === null) {
+  if (resolved.agentId !== null) {
     void get()
       .selectAgent(sessionId, resolved.agentId)
       .catch(() => undefined);

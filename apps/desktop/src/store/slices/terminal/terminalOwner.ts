@@ -106,3 +106,29 @@ export const folderName = ({ path }: NullablePathParams): string | null => {
 };
 
 export const DEFAULT_TERMINAL_NAME = 'shell';
+
+type TitlesParams = {
+  readonly titles: ReadonlyArray<string>;
+};
+
+type DefaultTitleParams = {
+  readonly title: string;
+  readonly cwd: string | null;
+};
+
+const DEFAULT_TITLE_PATTERN = /^shell( \d{1,4})?$/;
+
+export const nextTerminalTitle = ({ titles }: TitlesParams): string => {
+  const taken = new Set(titles);
+  if (!taken.has(DEFAULT_TERMINAL_NAME)) {
+    return DEFAULT_TERMINAL_NAME;
+  }
+  let number = 2;
+  while (taken.has(`${DEFAULT_TERMINAL_NAME} ${number}`)) {
+    number += 1;
+  }
+  return `${DEFAULT_TERMINAL_NAME} ${number}`;
+};
+
+export const isDefaultTerminalTitle = ({ title, cwd }: DefaultTitleParams): boolean =>
+  DEFAULT_TITLE_PATTERN.test(title) || title === folderName({ path: cwd });

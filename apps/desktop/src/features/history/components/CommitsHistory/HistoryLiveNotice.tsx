@@ -2,6 +2,10 @@ import { Button, Notice } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { HistoryLiveSession } from '../../../../store/slices/history/types';
+import { StartHint } from '../../../../shared/components/StartHint';
+import { START_HINT_COPY } from '../../../../shared/components/startHintCopy';
+import { captureStartHint } from '../../../../store/slices/startHints/captureStartHint';
+import { START_HINT_SCOPES } from '../../../../store/slices/startHints/startHintScopes';
 import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
 import { isHistoryRunActive } from '../../../../store/slices/history/isHistoryRunActive';
 
@@ -47,6 +51,11 @@ export const HistoryLiveNotice = ({ sessionId, mountId, live }: Props) => {
               variant="secondary"
               disabled={isBusy}
               onClick={() => {
+                const capture = captureStartHint({
+                  state: useAppStore.getState(),
+                  sessionId,
+                  scope: START_HINT_SCOPES.rebase({ mountId }),
+                });
                 void pending.run({
                   key: 'rewriter',
                   failureTitle: 'Could not start the Rewriter',
@@ -57,6 +66,8 @@ export const HistoryLiveNotice = ({ sessionId, mountId, live }: Props) => {
                       plan,
                       origin: 'plan',
                       planId: null,
+                      note: capture.text,
+                      onAccepted: () => useAppStore.getState().settleStartHint({ capture }),
                     }),
                 });
               }}
@@ -101,6 +112,15 @@ export const HistoryLiveNotice = ({ sessionId, mountId, live }: Props) => {
           </Button>
         </div>
       }
-    />
+    >
+      {live.hasConflict && plan !== null ? (
+        <StartHint
+          sessionId={sessionId}
+          scope={START_HINT_SCOPES.rebase({ mountId })}
+          label={START_HINT_COPY.agentLabel}
+          placeholder={START_HINT_COPY.rebase}
+        />
+      ) : null}
+    </Notice>
   );
 };

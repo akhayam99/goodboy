@@ -32,6 +32,13 @@ const { holder, hooks, spies } = vi.hoisted(() => ({
   },
 }));
 
+vi.mock('../../../auto/useConfirmStartMode', () => ({
+  useConfirmStartMode:
+    () =>
+    async ({ isShown }: { readonly isShown: boolean }) =>
+      !isShown,
+}));
+
 vi.mock('../../../../store', async () => {
   const { create } = await vi.importActual<typeof import('zustand')>('zustand');
   const store = create<TestState>(() => ({}));
@@ -210,7 +217,13 @@ const draftOf = (): SessionDraft => {
   return isSessionDraft(entry) ? entry : EMPTY_SESSION_DRAFT;
 };
 
-const tab = (name: string) => screen.getByRole('tab', { name: new RegExp(name) });
+const tab = (name: string) =>
+  within(screen.getByRole('tablist', { name: 'How do you want to start?' })).getByRole('tab', {
+    name: new RegExp(name),
+  });
+
+const howTab = (name: string) =>
+  within(screen.getByRole('tablist', { name: 'How to work on it' })).getByRole('tab', { name });
 
 beforeEach(() => {
   localStorage.clear();
@@ -238,11 +251,7 @@ describe('SessionKickoff', () => {
       within(kinds)
         .getAllByRole('tab')
         .map((node) => node.textContent),
-    ).toEqual([
-      'Pick up a taskAn issue from your tracker.',
-      'Run a workflowOrchestrated, steps you describe, or a saved workflow.',
-      'Ask an agentScout or any other role.',
-    ]);
+    ).toEqual(['Pick up a task', 'Run a workflow', 'Ask an agent']);
     expect(screen.queryByRole('button', { name: 'More ways to start' })).toBeNull();
   });
 
@@ -499,9 +508,7 @@ describe('SessionKickoff', () => {
       'value',
       'Fix the login redirect',
     );
-    expect(screen.getByRole('tab', { name: 'Run a workflow' }).getAttribute('aria-selected')).toBe(
-      'true',
-    );
+    expect(howTab('Run a workflow').getAttribute('aria-selected')).toBe('true');
     const builder = screen.getByTestId('workflow-builder');
     const goalField = within(builder).getByRole('textbox', { name: 'Goal' });
     expect((goalField as HTMLTextAreaElement).value).toBe(
@@ -604,6 +611,7 @@ describe('SessionKickoff', () => {
 
       await user.tab();
       await user.tab();
+      await user.tab();
       expect(document.activeElement).toBe(screen.getByRole('checkbox', { name: /ENG-1/ }));
       await user.keyboard(' ');
       await user.tab();
@@ -678,7 +686,7 @@ describe('SessionKickoff', () => {
     });
   });
 
-  it('mounts the project of a github issue and lets you pick none before starting', async () => {
+  it('mounts the project of a github issue and says so in one line', async () => {
     hooks.isGithubAuthenticated.current = true;
     store().setState({
       projects: [project({ remoteUrl: 'git@github.com:acme/ledger-core.git' })],
@@ -697,7 +705,7 @@ describe('SessionKickoff', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: /#7/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Pick #7' }));
 
-    expect(screen.getByText('from GitHub repo acme/ledger-core')).toBeDefined();
+    expect(screen.getByText('In ledger-core, from GitHub repo acme/ledger-core.')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Start from #7' }));
 
     await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
@@ -734,7 +742,7 @@ describe('SessionKickoff', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: /LEDGER-API-4/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Pick LEDGER-API-4' }));
 
-    expect(screen.getByText('from Sentry project ledger-api')).toBeDefined();
+    expect(screen.getByText('In ledger-core, from Sentry project ledger-api.')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Start from LEDGER-API-4' }));
 
     await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
@@ -755,7 +763,7 @@ describe('SessionKickoff', () => {
 
     fireEvent.click(screen.getByRole('checkbox', { name: /ENG-1/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Pick ENG-1' }));
-    fireEvent.click(screen.getByRole('tab', { name: 'Ask an agent' }));
+    fireEvent.click(howTab('Ask an agent'));
     fireEvent.click(screen.getByRole('button', { name: 'Start from ENG-1' }));
 
     await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());

@@ -47,10 +47,21 @@ const input = {
   dataBase64: 'QUJD',
 };
 
-const run = (attachmentDir?: string) =>
+type RunParams = {
+  readonly workingDir?: string;
+  readonly attachmentDir?: string;
+  readonly isScratchSession?: boolean;
+};
+
+const run = ({
+  workingDir = PROJECT_ROOT,
+  attachmentDir,
+  isScratchSession = false,
+}: RunParams = {}) =>
   persistAttachments(useAppStore.getState, {
     attachmentInputs: [input],
-    workingDir: PROJECT_ROOT,
+    workingDir,
+    isScratchSession,
     ...(attachmentDir !== undefined && { attachmentDir }),
     activeAgentId: 'agent-1' as AgentId,
     sessionId: 'session-1' as SessionId,
@@ -71,7 +82,7 @@ describe('persistAttachments', () => {
 
   it('keeps a first lap file out of the project folder and gives the agent its full path', async () => {
     written.length = 0;
-    const result = await run(SCRATCH);
+    const result = await run({ attachmentDir: SCRATCH });
     expect(written).toEqual([{ worktreeDir: SCRATCH, fileName: 'checkout-502.png' }]);
     expect(result.ok && result.resolvedPrompt).toContain(
       `${SCRATCH}/.goodboy/attachments/att-1-checkout-502.png`,
@@ -79,5 +90,17 @@ describe('persistAttachments', () => {
     expect(result.ok && result.attachmentRefs.map((ref) => ref.relPath)).toEqual([
       '.goodboy/attachments/att-1-checkout-502.png',
     ]);
+    expect(result.ok && result.attachmentRefs.map((ref) => ref.dir)).toEqual([SCRATCH]);
+  });
+
+  it('remembers the scratch folder of a session without a project', async () => {
+    const result = await run({ workingDir: SCRATCH, isScratchSession: true });
+    expect(result.ok && result.attachmentRefs.map((ref) => ref.dir)).toEqual([SCRATCH]);
+    expect(result.ok && result.resolvedPrompt).not.toContain(`${SCRATCH}/`);
+  });
+
+  it('leaves dir off when the file went into the working folder', async () => {
+    const result = await run();
+    expect(result.ok && result.attachmentRefs.map((ref) => ref.dir)).toEqual([undefined]);
   });
 });

@@ -68,7 +68,6 @@ export const DrawerFrame = ({
   const [trigger] = useState(focusableTrigger);
   const sectionRef = useRef<HTMLElement | null>(null);
   const dockRef = useRef<HTMLDivElement | null>(null);
-  const closeRef = useRef<HTMLButtonElement | null>(null);
   const hasToolbar = toolbar != null;
 
   useEscapeLayer(() => {
@@ -90,7 +89,7 @@ export const DrawerFrame = ({
     const section = sectionRef.current;
     if (section !== null && !section.contains(document.activeElement)) {
       const field = dockRef.current?.querySelector<HTMLElement>(FIELD_SELECTOR);
-      (field ?? closeRef.current)?.focus({ preventScroll: true });
+      (field ?? section).focus({ preventScroll: true });
     }
     return () => {
       if (trigger === null || !trigger.isConnected) {
@@ -117,14 +116,14 @@ export const DrawerFrame = ({
           {title}
         </h2>
         {count != null ? (
-          <span className="flex h-5 shrink-0 items-center text-meta tabular-nums text-muted-foreground">
+          <span className="flex h-5 min-w-0 shrink-[4] items-center text-meta tabular-nums text-muted-foreground">
             {count}
           </span>
         ) : null}
       </div>
       <div className={cn('flex shrink-0 items-center gap-1', hasToolbar && 'h-5')}>
         {action}
-        <IconButton ref={closeRef} icon={X} label={closeLabel} variant="ghost" onClick={onClose} />
+        <IconButton icon={X} label={closeLabel} variant="ghost" onClick={onClose} />
       </div>
     </>
   );
@@ -133,7 +132,8 @@ export const DrawerFrame = ({
     <section
       ref={sectionRef}
       aria-label={title}
-      className="flex h-full min-h-0 min-w-0 flex-col bg-subtle motion-safe:animate-nav-step-in"
+      tabIndex={-1}
+      className="flex h-full min-h-0 min-w-0 flex-col bg-subtle outline-none motion-safe:animate-nav-step-in"
     >
       <header
         data-drawer-header=""

@@ -317,7 +317,7 @@
   },
   "apps/desktop/src/__tests__/surfaces/navigation-flows/cross-place.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 19
+      "count": 16
     },
     "@typescript-eslint/naming-convention": {
       "count": 1
@@ -1856,7 +1856,7 @@
   },
   "apps/desktop/src/features/artifacts/components/ArtifactStudio/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 27
+      "count": 26
     }
   },
   "apps/desktop/src/features/artifacts/components/ArtifactStudio/index.tsx": {
@@ -2579,11 +2579,6 @@
   },
   "apps/desktop/src/features/chat/components/HandoffChip/index.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/chat/components/ImageLightbox/index.tsx": {
-    "@typescript-eslint/naming-convention": {
       "count": 1
     }
   },
@@ -5050,11 +5045,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/resolve/components/ReviewFlow/PushBanner.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/resolve/components/ReviewFlow/ResolveRunStatus.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
@@ -5102,11 +5092,6 @@
   "apps/desktop/src/features/resolve/components/ReviewFlow/useDraftRouting/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
-    }
-  },
-  "apps/desktop/src/features/resolve/components/ReviewFlow/useReviewPush/index.ts": {
-    "react-hooks/exhaustive-deps": {
-      "count": 1
     }
   },
   "apps/desktop/src/features/resolve/draftRouting.test.ts": {
@@ -5801,7 +5786,7 @@
   },
   "apps/desktop/src/features/session/components/CreateAgentPopover/index.tsx": {
     "@typescript-eslint/naming-convention": {
-      "count": 2
+      "count": 1
     }
   },
   "apps/desktop/src/features/session/components/RoleSelect/index.test.tsx": {
@@ -5890,11 +5875,6 @@
     },
     "react-hooks/exhaustive-deps": {
       "count": 1
-    }
-  },
-  "apps/desktop/src/features/session/components/SessionOverviewPane/OverviewActions/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
     }
   },
   "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/AlsoInChip.test.tsx": {
@@ -6058,7 +6038,7 @@
       "count": 3
     },
     "@typescript-eslint/naming-convention": {
-      "count": 5
+      "count": 4
     }
   },
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/AgentOverlay.test.tsx": {
@@ -6169,16 +6149,6 @@
     },
     "@typescript-eslint/naming-convention": {
       "count": 3
-    }
-  },
-  "apps/desktop/src/features/session/components/SessionWorkspace/parts/SessionStudioLayer.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/features/session/components/SessionWorkspace/parts/SessionStudioLayer.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
     }
   },
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/SlotHistoryPanel.tsx": {
@@ -7081,7 +7051,7 @@
       "count": 36
     },
     "@typescript-eslint/no-floating-promises": {
-      "count": 22
+      "count": 21
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
@@ -7451,7 +7421,7 @@
   },
   "apps/desktop/src/features/workflows/components/WorkflowBuilderView/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 30
+      "count": 20
     },
     "@typescript-eslint/naming-convention": {
       "count": 2
@@ -7462,18 +7432,18 @@
       "count": 6
     },
     "@typescript-eslint/naming-convention": {
-      "count": 16
+      "count": 12
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 2
     },
     "react-hooks/exhaustive-deps": {
-      "count": 2
+      "count": 1
     }
   },
   "apps/desktop/src/features/workflows/components/WorkflowBuilderView/launch.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
+      "count": 2
     }
   },
   "apps/desktop/src/features/workflows/components/WorkflowBuilderView/parts/AutonomyChip.tsx": {
@@ -7496,29 +7466,9 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/workflows/components/WorkflowBuilderView/parts/GuidanceDisclosure.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/workflows/components/WorkflowBuilderView/parts/GuidanceTools.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 4
-    }
-  },
-  "apps/desktop/src/features/workflows/components/WorkflowBuilderView/parts/ModeSwitch.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/features/workflows/components/WorkflowBuilderView/parts/OrchestratorRow.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/features/workflows/components/WorkflowBuilderView/parts/PlannerDraftRow.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
     }
   },
   "apps/desktop/src/features/workflows/components/WorkflowBuilderView/parts/PresetPicker.tsx": {
@@ -7532,11 +7482,6 @@
   "apps/desktop/src/features/workflows/components/WorkflowBuilderView/parts/ProviderPoolChip.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 3
-    }
-  },
-  "apps/desktop/src/features/workflows/components/WorkflowBuilderView/parts/RunGuidanceField.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 4
     }
   },
   "apps/desktop/src/features/workflows/components/WorkflowBuilderView/parts/SpendCapChip.tsx": {
@@ -8463,11 +8408,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/workspace/windowLayout.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 6
-    }
-  },
   "apps/desktop/src/features/workspace/windowView.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 3
@@ -9279,7 +9219,7 @@
   },
   "apps/desktop/src/store/slices/agents/spawnAgent.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
+      "count": 1
     },
     "@typescript-eslint/naming-convention": {
       "count": 3
@@ -10355,7 +10295,7 @@
   },
   "apps/desktop/src/store/slices/project-mounts/index.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 46
+      "count": 23
     },
     "@typescript-eslint/naming-convention": {
       "count": 1
@@ -10394,11 +10334,6 @@
   "apps/desktop/src/store/slices/project-mounts/mountCompletion.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 3
-    }
-  },
-  "apps/desktop/src/store/slices/project-mounts/mountDirName.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
     }
   },
   "apps/desktop/src/store/slices/project-mounts/mountErrors.ts": {
@@ -11331,7 +11266,7 @@
   },
   "apps/desktop/src/store/slices/session-view/index.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 17
+      "count": 15
     }
   },
   "apps/desktop/src/store/slices/session-view/isSessionGroupCollapsed.test.ts": {
@@ -11547,7 +11482,7 @@
   },
   "apps/desktop/src/store/slices/sessions/setCurrentSession.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 6
+      "count": 5
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 5
@@ -12136,7 +12071,7 @@
   },
   "apps/desktop/src/store/slices/workflowDrafts/types.ts": {
     "@typescript-eslint/naming-convention": {
-      "count": 2
+      "count": 1
     }
   },
   "apps/desktop/src/store/slices/workflowRouting/agentEmittingProvider.ts": {
@@ -12717,7 +12652,7 @@
   },
   "apps/desktop/src/store/slices/workspaces/setCurrentWorkspace.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
+      "count": 2
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1

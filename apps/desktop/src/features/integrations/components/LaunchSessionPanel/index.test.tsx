@@ -152,7 +152,7 @@ describe('LaunchSessionPanel', () => {
       to: {
         at: 'session',
         sessionId: 'session-9',
-        view: { lens: null, agentId: null, studio: null, target: null },
+        view: { lens: null, agentId: null, target: null },
       },
     });
   });

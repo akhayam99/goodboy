@@ -105,8 +105,8 @@ describe('a terminal that fails to open', () => {
     const tab = store.getState().terminalTabs[SESSION_ID]?.[0];
     expect(tab?.status).toBe('exited');
     expect(tab?.openError).toBe('spawn /bin/zsh ENOENT');
-    expect(await screen.findByText('failed to open')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Restart' })).toBeDefined();
+    expect(await screen.findByText('failed')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Restart payments-api' })).toBeDefined();
   });
 
   it('never opens a failed tab again when its pane mounts a second time', async () => {
@@ -144,7 +144,7 @@ describe('a terminal that fails to open', () => {
         onClose={() => undefined}
       />,
     );
-    fireEvent.click(await screen.findByRole('button', { name: 'Restart' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Restart payments-api' }));
 
     await waitFor(() => expect(openCalls).toBe(2));
     const tabs = store.getState().terminalTabs[SESSION_ID] ?? [];

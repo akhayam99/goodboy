@@ -30,7 +30,7 @@ Follow what happened in a session in two views. **Activity** has one row per age
 
 ### Next
 
-Know the one move that unblocks the task, such as answering a question, fixing a failing check or opening a pull request. **Next** offers it as one button, and **Not now** puts a suggestion away until the situation changes.
+Know the one move that unblocks the task, such as answering a question, fixing a failing check or opening a pull request. **Next** offers it as one short button such as **Start**, **Analyze** or **Push**, and **Not now** puts a suggestion away until the situation changes. When the button starts an agent, the icon on the left is that agent's role in its color, and the button carries the same icon. Other ways to do it, such as starting a tester instead, sit in the **⋯** menu, where pointing at one shows its role on the icon. **Not now** says Dismissed with **Undo**, and ⌘Z brings the last dismissed suggestion back, several times in reverse order.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-next-dark.webp">

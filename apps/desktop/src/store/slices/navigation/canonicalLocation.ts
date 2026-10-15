@@ -67,7 +67,7 @@ const formerFixRunPage = ({ state, request }: PlaceParams): CanonicalPlace | nul
     return null;
   }
   const { view, sessionId } = request;
-  if (view.lens !== 'review' || view.agentId === null || view.studio !== null) {
+  if (view.lens !== 'review' || view.agentId === null) {
     return null;
   }
   return fixRunLocation({
@@ -136,7 +136,7 @@ const formerBranchTarget = ({
   readonly request: SessionPlace;
 }): Place | null => {
   const { view, sessionId } = request;
-  if (view.studio !== null || view.agentId !== null) {
+  if (view.agentId !== null) {
     return null;
   }
   const explicit = view.target?.kind === 'diff' ? view.target.mountPath : null;
@@ -195,9 +195,6 @@ const canonicalPlace = ({ state, request: asked }: PlaceParams): Place => {
   const branch = formerBranchPlace({ state, request });
   if (branch !== null) {
     return branch;
-  }
-  if (view.studio !== null && view.agentId !== null) {
-    return { ...request, view: { ...view, agentId: null } };
   }
   return request;
 };

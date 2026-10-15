@@ -2,6 +2,9 @@ import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type {
   Agent,
+  AgentId,
+  AgentStatus,
+  MountId,
   PlanId,
   Session,
   SessionEvent,
@@ -18,6 +21,17 @@ import {
   isWorkingTreeClean,
 } from '../../../shared/lib/gitStatus';
 import { branchPushStateOf } from '../../../shared/lib/branchPushState';
+import {
+  selectCheckChain,
+  type CheckChainState,
+} from '../../../store/slices/agents/selectCheckChain';
+import { checkOutcomeOf, type CheckOutcome } from '../../branch/checks/checkOutcomeOf';
+import { checkTargetOf } from '../../branch/checks/checkTargetOf';
+import { failingChecksOf } from '../../branch/checks/failingChecksOf';
+import {
+  useCheckFixCommitSync,
+  type CheckFixTarget,
+} from '../../../shared/hooks/useCheckFixCommitSync';
 import { workflowHasOpenQuestions } from '../../context/openQuestionsGate';
 import { planOwnerOf } from '../../plans/planOwnerOf';
 import { splitWorkflowRuns } from '../../workflows/activeWorkflowRuns';
@@ -28,6 +42,7 @@ import { AGENT_KIND_META, classifyAgent } from '../../session/agent-kind';
 import {
   deriveNextSteps,
   type SuggestionAgent,
+  type SuggestionCheckChain,
   type SuggestionRebaseRequest,
 } from '../deriveNextSteps';
 import { useReviewTally } from '../../resolve/useReviewTally';
@@ -64,6 +79,18 @@ type RebaseTargetIdParams = {
 
 const NO_TARGETS: ReadonlyArray<{ readonly worktreePath: string; readonly baseBranch?: string }> =
   [];
+const NO_FIX_TARGETS: ReadonlyArray<CheckFixTarget> = [];
+
+type ChainRow = {
+  readonly mountId: MountId;
+  readonly checkName: string;
+  readonly chain: CheckChainState;
+  readonly commit: string | null;
+  readonly commitCount: number;
+  readonly outcome: CheckOutcome | null;
+  readonly fixAgentId: AgentId | null;
+  readonly fixStatus: AgentStatus | null;
+};
 
 const rebaseRequestKey = ({ mountId, projectId }: RebaseRequestKeyParams): string =>
   mountId == null ? `project:${projectId}` : `mount:${mountId}`;
@@ -172,6 +199,85 @@ export const useSessionSuggestions = ({
     () => mounts.filter((mount) => !completedMountIds.includes(mount.mountId)),
     [completedMountIds, mounts],
   );
+  const chainRowsJson = useAppStore((state) =>
+    JSON.stringify(
+      rebaseMounts.flatMap((mount): ReadonlyArray<ChainRow> => {
+        const pr = state.mountGithub[mount.mountId]?.pr;
+        const failing =
+          pr == null
+            ? null
+            : failingChecksOf({
+                state,
+                sessionId,
+                mountId: mount.mountId,
+                prNumber: pr.number,
+              });
+        const check = failing?.checks[0];
+        const target = checkTargetOf({
+          state,
+          sessionId,
+          mountId: mount.mountId,
+          failingUrl:
+            check === undefined ? null : (check.detailsUrl ?? failing?.pullRequest.url ?? null),
+          failingName: check?.name ?? null,
+        });
+        if (target === null) {
+          return [];
+        }
+        const chain = selectCheckChain({ state, sessionId, url: target.url });
+        if (chain.state === 'none') {
+          return [];
+        }
+        const outcome =
+          chain.state === 'fixed-pushed'
+            ? checkOutcomeOf({
+                checks: failing?.allChecks ?? [],
+                name: target.name,
+                analyzedUrl: target.url,
+              })
+            : null;
+        return [
+          {
+            mountId: mount.mountId,
+            checkName: target.name ?? 'The check',
+            chain: chain.state,
+            commit: chain.commit,
+            commitCount: chain.commitCount,
+            outcome,
+            fixAgentId: chain.fix?.id ?? null,
+            fixStatus: chain.fix?.status ?? null,
+          },
+        ];
+      }),
+    ),
+  );
+  const chainRows = useMemo(
+    (): ReadonlyArray<ChainRow> => JSON.parse(chainRowsJson),
+    [chainRowsJson],
+  );
+  const checkChains = useMemo(
+    (): ReadonlyArray<SuggestionCheckChain> =>
+      chainRows.map(({ mountId, checkName, chain, commit, commitCount, outcome }) => ({
+        mountId,
+        checkName,
+        chain,
+        commit,
+        commitCount,
+        outcome,
+      })),
+    [chainRows],
+  );
+  const fixTargets = useMemo(
+    (): ReadonlyArray<CheckFixTarget> =>
+      chainRows.flatMap(({ mountId, fixAgentId, fixStatus }) =>
+        fixAgentId === null || fixStatus !== 'completed' ? [] : [{ mountId, fixAgentId }],
+      ),
+    [chainRows],
+  );
+  useCheckFixCommitSync({
+    sessionId,
+    targets: fixTargets.length === 0 ? NO_FIX_TARGETS : fixTargets,
+  });
   const projects = useAppStore(
     useShallow((state) =>
       state.projects.filter((project) => mounts.some((mount) => mount.projectId === project.id)),
@@ -315,6 +421,7 @@ export const useSessionSuggestions = ({
           roleKind: kind,
           status: agent.status,
           workflowRunId: agent.workflowRunId ?? null,
+          ...(agent.sourceKind !== undefined && { sourceKind: agent.sourceKind }),
           ordinal: agent.ordinal,
           pendingSignal: pendingAgentSignal({
             events: blockedTranscripts[agent.id] ?? EMPTY_ARRAY,
@@ -343,6 +450,7 @@ export const useSessionSuggestions = ({
             };
           })
         : [],
+      checkChains,
       cleanupProposals: cleanupProposals.flatMap((proposal) => {
         if (proposal.request === null) {
           return [];
@@ -373,6 +481,7 @@ export const useSessionSuggestions = ({
     agentsByRunId,
     attachedRuns,
     blockedTranscripts,
+    checkChains,
     cleanupProposals,
     demotedKinds,
     effectiveAgents,

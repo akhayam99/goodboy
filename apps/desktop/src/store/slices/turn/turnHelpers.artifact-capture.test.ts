@@ -549,3 +549,66 @@ describe('captureArtifactsFromTurn revisions', () => {
     expect(createArtifact).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('captureArtifactsFromTurn for an Auto child', () => {
+  const runWith = async (captureMode: 'new' | 'revise', assistantText: string) => {
+    const { patches, set } = harness();
+    const result = await captureArtifactsFromTurn({
+      set,
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      agentName: null,
+      assistantText,
+      emittingProvider: null,
+      sourceTurnId: RUN_ID,
+      captureMode,
+    });
+    return { patches, result };
+  };
+
+  const planTurn = (title: string): string =>
+    `<<artifact v=1 kind=plan>>\n${JSON.stringify({
+      title,
+      format: 'markdown',
+      content: 'step one',
+    })}\n<</artifact>>`;
+
+  it('creates a new plan beside the active one instead of overwriting the session slot', async () => {
+    listPlansForSession.mockResolvedValue([{ id: 'plan-active' }]);
+
+    const { patches, result } = await runWith('new', planTurn('A second plan'));
+
+    expect(upsertPlan).not.toHaveBeenCalled();
+    expect(createArtifact).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'plan', title: 'A second plan', sourceTurnId: RUN_ID }),
+    );
+    expect(result.artifact).not.toBeNull();
+    expect(patches.some((patch) => 'sessionPlans' in patch)).toBe(true);
+  });
+
+  it('creates a new report even when the agent has a run of its own to revise', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    listArtifactsForSession.mockResolvedValue([priorReport({})]);
+
+    await runWith('new', REPORT_TURN('## Outcome, now with the answer'));
+
+    expect(updateArtifactSource).not.toHaveBeenCalled();
+    expect(createArtifact).toHaveBeenCalledTimes(1);
+  });
+
+  it('captures nothing on a revise turn: the landing belongs to the Auto writer', async () => {
+    const { result } = await runWith('revise', planTurn('A rewritten plan'));
+
+    expect(result).toEqual({ plan: null, artifact: null, error: null });
+    expect(upsertPlan).not.toHaveBeenCalled();
+    expect(createArtifact).not.toHaveBeenCalled();
+    expect(updateArtifactSource).not.toHaveBeenCalled();
+  });
+
+  it('leaves the legacy path untouched when no mode is given', async () => {
+    await run(planTurn('A legacy plan'));
+
+    expect(upsertPlan).toHaveBeenCalledTimes(1);
+    expect(createArtifact).not.toHaveBeenCalled();
+  });
+});

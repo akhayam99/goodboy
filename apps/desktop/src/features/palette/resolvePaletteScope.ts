@@ -9,7 +9,6 @@ type Params = {
   readonly selectedAgentId: AgentId | null;
   readonly artifactConversationAgentId?: AgentId | null;
   readonly lens?: LensKind | null;
-  readonly hasStudio: boolean;
   readonly hasAppStudio?: boolean;
   readonly focusedRunId?: WorkflowRunId | null;
   readonly prNumber?: number | null;
@@ -22,7 +21,6 @@ export const resolvePaletteScope = ({
   selectedAgentId,
   artifactConversationAgentId = null,
   lens = null,
-  hasStudio,
   hasAppStudio = false,
   focusedRunId = null,
   prNumber = null,
@@ -37,7 +35,6 @@ export const resolvePaletteScope = ({
   if (currentSessionId !== null) {
     const layer = resolveSessionSurfaceLayer({
       lens,
-      hasStudio,
       selectedAgentId,
       artifactConversationAgentId,
     });

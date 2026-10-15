@@ -75,7 +75,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Worktree and branch',
-        desc: 'A separate copy of a project on its own branch, so a session never touches your main checkout. Goodboy makes one when the work needs it.',
+        desc: 'A separate copy of a project on its own branch, so a session never touches your main checkout. Goodboy makes one when the work needs it, in a folder named gb- and six characters.',
       },
       {
         term: 'Plan',
@@ -188,11 +188,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     group: 'task',
     title: 'New session and kickoff',
     concept: 'sessions',
-    lead: 'A session is one task: a goal, the agents working on it, and a branch for each project they edit. It starts as a draft and becomes a session only when you press Start or Start blank.',
+    lead: 'A session is one task: a goal, the agents working on it, and a branch for each project they edit. It starts as a draft and becomes a session only when you press Start or Start blank. Esc closes the draft page, and with text in it asks whether to keep the draft or discard it.',
     points: [
       {
         term: 'Pick up a task',
-        desc: 'Choose an issue from your tools or Tasks. Goodboy drafts a short title and goal linked back to it, and you edit them in the same block. Then run it through the same workflow builder, or ask an agent, and press Start from the issue. A Sentry error or a GitHub or GitLab item opens in its project and says why. A GitHub pull request link gives Review pull request.',
+        desc: 'One selector at the top of the page holds Pick up a task, Run a workflow and Ask an agent, and a line under it says what the choice does. Choose an issue from your tools or Tasks. Goodboy drafts a short title and goal linked back to it, and you edit them in the same block. Then run it through the same workflow builder, or ask an agent, and press Start from the issue. A Sentry error or a GitHub or GitLab item opens in its project and says why. A GitHub pull request link gives Review pull request.',
       },
       {
         term: 'Several issues',
@@ -200,7 +200,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Run a workflow',
-        desc: 'The same workflow builder as in a session: pick Orchestrated, Describe steps or Pick a workflow, see and edit the plan, then Start run creates the session and starts the run.',
+        desc: 'The same form as the Run tab of the New drawer: pick Orchestrate or a Preset, see and edit the plan, set Autonomy, Starts and Spend cap, then Start run creates the session and starts the run.',
       },
       {
         term: 'Ask an agent',
@@ -289,11 +289,19 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Talking to an agent',
-        desc: 'Enter queues your message for its next turn, and ⌘Enter interrupts and sends it now. Stop keeps what it wrote and offers Continue. After a restart or an update, agents that were working stay Stopped. Use Resume on one agent, Resume all in overview Next steps, or Resume all above a run.',
+        desc: 'Enter queues your message for its next turn, and ⌘Enter interrupts and sends it now. Stop waits until the process has exited and keeps what it wrote, then offers Continue; if the agent cannot be stopped it stays running with the error shown, and a second press tries again. A queued message stays saved until the provider accepts it. After a restart or an update, agents that were working stay Stopped. Use Resume on one agent, Resume all in overview Next steps, or Resume all above a run.',
       },
       {
         term: 'Activity',
         desc: 'Activity has two views, Activity and Log. Activity shows one row per launch: a run, an agent, or a fix run with its comments. It reads newest first, and a run has a lane in its own colour. Each row starts with its role as an icon, never a word, and ends with the model that ran and its effort (N models on a run past two), the duration and the cost. Runs shows its steps the same way. Rest the pointer on an icon or a model to see its card in either place, or press I on a row. A finished run or step folds into a count row such as 4 subagents; click it or press Right to open it. Needs you sits on top with what waits for you. Log holds the facts, such as links, branches and decisions. The Runs tab lists the runs of a session.',
+      },
+      {
+        term: 'New drawer',
+        desc: 'New on a session Overview opens one drawer with three tabs. Run takes a goal and plans the steps, with Autonomy, Starts and Spend cap. Agent starts one role. Write drafts a report or a wireframe. The button is filled when nothing is running, blocked or waiting on a question.',
+      },
+      {
+        term: 'Next steps',
+        desc: 'Next offers the one move that unblocks the task as a short button such as Start, Analyze or Push. When it starts an agent, the icon is that role in its color. Other ways to do it sit in the more menu. Not now says Dismissed with Undo, and ⌘Z brings the last one back.',
       },
       {
         term: 'Run page',
@@ -309,7 +317,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Run defaults',
-        desc: 'The Run defaults tab in Workflows sets what new runs start with: when to ask, a spend cap, which providers get the next step and guidance. Use providers with room left sends steps to the provider with room. A run keeps the copy of the rules it started with.',
+        desc: 'The Run defaults tab in Workflows sets what new runs start with: autonomy, a spend cap, which providers get the next step and guidance. Use providers with room left sends steps to the provider with room. A run keeps the copy of the rules it started with.',
       },
       {
         term: 'Orchestrated',
@@ -320,8 +328,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Pause lets the step in flight finish and starts nothing new. Resume picks up where the run was, Skip step cancels the step that is running, and Stop run ends it now. A step quiet for 15 minutes offers Ask it to continue.',
       },
       {
-        term: 'When to ask',
-        desc: 'Ask before each step, Ask after the plan or Run on its own. Ask after the plan waits once, on the plan: Review plan opens it in a drawer, and Approve runs the rest without you. A guard stops an agent after 4 unattended turns in an hour.',
+        term: 'Autonomy',
+        desc: 'Ask me, Balanced or Autopilot. Balanced waits once, on the plan: Review plan opens it in a drawer, and Approve runs the rest without you. A guard stops an agent after 4 unattended turns in an hour.',
       },
       {
         term: 'Open questions',
@@ -424,7 +432,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Fix run',
-        desc: "A fix run is one agent in one copy of the branch. A line under the tabs says what it is doing and counts the comments by word, each a filter. The agent asks only when a comment reads two ways, and the question shows in the comment's thread and in its transcript. Open fix run shows the transcript in a drawer beside Comments, with the commits it made.",
+        desc: "A fix run is one agent in one copy of the branch. A line under the tabs says what it is doing and counts the comments by word, each a filter. The agent asks only when a comment reads two ways, and the question shows in the comment's thread and in its transcript. Open fix run opens a drawer beside Comments with two tabs: Fix, with the comments the run covers and its commits, and Transcript, the whole conversation. It opens on Transcript while the run works, and on Fix once it ended or asks a question.",
       },
       {
         term: 'Files',
@@ -444,11 +452,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Checks',
-        desc: 'The CI runs of a pull request, or the jobs of the latest GitLab pipeline, grouped as Failing, Running, Passed and Skipped, with the failing step. Checks, reviewers and review requests are read apart, so a check that cannot be read says why and names the fix, and Merge says Checks unknown. Analyze on a failing check starts the Debugger, which reads the log and proposes a fix, and Start fix hands that proposal to an Implementer. Whether it can merge reads in plain words, a blocked Merge says why beside it, and Merge and Close confirm under the header.',
+        desc: 'The CI runs of a pull request, or the jobs of the latest GitLab pipeline, grouped as Failing, Running, Passed and Skipped, with the failing step. Checks, reviewers and review requests are read apart, so a check that cannot be read says why and names the fix, and Merge says Checks unknown. Analyze on a failing check starts the Debugger, which reads the log and proposes a fix, and Start fix hands that proposal to an Implementer. A committed fix reads Fixed, not pushed, and the row, the Debugger drawer and Next each offer Push; after it the check runs again and the card says if it passed or still fails. Whether it can merge reads in plain words, a blocked Merge says why beside it, and Merge and Close confirm under the header.',
       },
       {
         term: 'Push',
-        desc: 'One Push in the Branch header. Select the commits, then Push N shows an inline preview before it pushes the fixes, posts the replies and resolves the threads where the provider allows it.',
+        desc: 'One Push in the Branch header, always for every ready comment. When nothing needs a decision it pushes on that click. Otherwise an inline preview lists the commits and one Push sends the fixes, posts the replies and resolves the threads where the provider allows it. Add a hint, on every start of a fix, passes your words to the agent.',
       },
       {
         term: 'Refresh',
@@ -692,7 +700,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Terminal',
-        desc: 'Control and the backtick key open Terminal, with every terminal of the workspace and its sessions in one list. A new terminal opens in the workspace folder, chips open one in a worktree or the main checkout, and the shells and their output are still there after a reload. ⌘T adds a terminal while one has focus. From a session, a terminal opens in a drawer on the right and stays in the list.',
+        desc: 'Control and the backtick key open Terminal, with every terminal of the workspace and its sessions in one list. A new terminal opens in the workspace folder, chips open one in a worktree or the main checkout, and the shells and their output are still there after a reload. ⌘T adds a terminal while one has focus. From a session, a terminal opens in a drawer on the right and stays in the list. Terminals are grouped by session, one row per worktree, each with its terminals as tabs and a port chip for a port it listens on. The tabs come back after a restart.',
       },
       {
         term: 'Search',

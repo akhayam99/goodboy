@@ -106,7 +106,6 @@ const buildState = (activeLens: Record<SessionId, string | null>): StoreState =>
   agentEffortOverride: {},
   focusedWorkflowRunId: {},
   activeLens,
-  sessionStudio: {},
   selectedAgentId: { [SESSION_ID]: 'agent-elsewhere' },
   diffFocus: {},
   workspaceOverrides: {},

@@ -80,6 +80,12 @@ const attemptOf = ({ isDone }: { readonly isDone: boolean }): ResolveAttempt => 
   launchChoice: null,
 });
 
+const WORKING_STEPS = [
+  'Reading the retry loop in payments-api.',
+  'Capping the loop at the configured limit and adding the exhaustion metric.',
+  'Running the typecheck, then renaming the files the comments point at.',
+].join('\n\n');
+
 const transcriptOf = ({ isDone }: { readonly isDone: boolean }): ReadonlyArray<TurnEvent> => [
   {
     kind: 'user_text',
@@ -90,9 +96,7 @@ const transcriptOf = ({ isDone }: { readonly isDone: boolean }): ReadonlyArray<T
   {
     kind: 'assistant_text',
     runId: RUN_ID,
-    delta: isDone
-      ? SUMMARY
-      : 'Running the typecheck, then renaming the files the comments point at.',
+    delta: isDone ? `${WORKING_STEPS}\n\n${SUMMARY}` : WORKING_STEPS,
     at: isoAgo({ minutes: isDone ? 1 : 0.5 }),
   },
 ];

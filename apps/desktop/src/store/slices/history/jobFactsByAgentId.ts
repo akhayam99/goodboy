@@ -1,4 +1,5 @@
 import type { MountId, SessionEvent, SessionId } from '@goodboy/types';
+import type { CiFixStage } from '../../../features/branch/checks/ciFixStages';
 import { historyStopCause } from '../../../features/history/historyStopCause';
 import { rebaseJobOf, type RebaseJobTone } from '../../../features/history/rebaseJob';
 import type { ScribeWork } from '../scribe/types';
@@ -7,12 +8,13 @@ import type { HistoryRun } from './types';
 type JobActivityPhase = 'running' | 'waiting' | 'failed' | 'done';
 
 export type JobActivityFacts = {
-  readonly kind: 'rebase' | 'pull-request-text';
+  readonly kind: 'rebase' | 'pull-request-text' | 'ci-fix';
   readonly title: string;
   readonly word: string;
   readonly phase: JobActivityPhase;
   readonly isAutomatic: boolean;
   readonly mountId: string | null;
+  readonly stages?: ReadonlyArray<CiFixStage>;
 };
 
 type JobMountContext = {

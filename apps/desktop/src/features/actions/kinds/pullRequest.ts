@@ -270,6 +270,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
     blockedReason: writeBlock,
     slot: () => 'primary',
     pendingLabel: () => 'Marking ready…',
+    doneLabel: ({ facts }) => `Marked ${numberLabel({ facts })} ready for review.`,
     run: async ({ facts, env }) => {
       await write({
         env,
@@ -295,6 +296,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
     },
     slot: ({ facts }) => (isMergeClear({ facts }) ? 'primary' : 'secondary'),
     pendingLabel: () => 'Merging…',
+    doneLabel: ({ facts }) => `Merged ${numberLabel({ facts })} into ${baseOf({ facts })}.`,
     confirm: ({ facts }) => {
       const readiness = readinessOf({ facts });
       return {
@@ -353,6 +355,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
     blockedReason: writeBlock,
     slot: () => 'secondary',
     pendingLabel: () => 'Reopening…',
+    doneLabel: ({ facts }) => `Reopened ${numberLabel({ facts })}.`,
     run: ({ facts, env }) =>
       write({
         env,
@@ -401,6 +404,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
       facts.phase === 'open' && facts.isOwn && can({ facts, capability: 'canSetDraft' }),
     blockedReason: writeBlock,
     pendingLabel: () => 'Converting…',
+    doneLabel: ({ facts }) => `Converted ${numberLabel({ facts })} to draft.`,
     run: ({ facts, env }) =>
       write({
         env,
@@ -442,6 +446,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
     when: ({ facts }) => isLive({ facts }) && facts.isOwn && can({ facts, capability: 'canClose' }),
     blockedReason: writeBlock,
     pendingLabel: () => 'Closing…',
+    doneLabel: ({ facts }) => `Closed ${numberLabel({ facts })}.`,
     confirm: ({ facts }) => ({
       title: `Close ${numberLabel({ facts })} without merging?`,
       description: can({ facts, capability: 'canReopen' })
@@ -467,6 +472,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
     blockedReason: writeBlock,
     slot: () => 'menu',
     pendingLabel: () => 'Cancelling auto-merge…',
+    doneLabel: ({ facts }) => `Cancelled auto-merge on ${numberLabel({ facts })}.`,
     run: async ({ facts, env }) => {
       if (facts.number === null) {
         return;

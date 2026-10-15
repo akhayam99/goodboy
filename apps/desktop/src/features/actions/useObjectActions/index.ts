@@ -1,21 +1,24 @@
 import { useCallback, useMemo, useRef, useSyncExternalStore } from 'react';
 import { useAppStore } from '../../../store';
-import { bindTarget, runObjectAction, type BoundObject } from '../registry';
+import { bindTarget, runObjectActionWithOutcome, type BoundObject } from '../registry';
 import { isSameFacts } from '../isSameFacts';
-import type { ActionEnv, ObjectTarget, ResolvedAction } from '../types';
+import type { ActionEnv, ActionRunOutcome, ObjectTarget, ResolvedAction } from '../types';
 
 type Params = {
   readonly target: ObjectTarget | null;
   readonly env: ActionEnv;
 };
 
+type RunParams = {
+  readonly actionId: string;
+  readonly choice?: string | null;
+};
+
 export type ObjectActions = {
   readonly noun: string | null;
   readonly actions: ReadonlyArray<ResolvedAction>;
-  readonly run: (params: {
-    readonly actionId: string;
-    readonly choice?: string | null;
-  }) => Promise<void>;
+  readonly run: (params: RunParams) => Promise<void>;
+  readonly runWithOutcome: (params: RunParams) => Promise<ActionRunOutcome>;
 };
 
 type Snapshot = {
@@ -46,21 +49,22 @@ export const useObjectActions = ({ target, env }: Params): ObjectActions => {
   const viewing = env.viewing;
   const actions = useMemo(() => bound?.resolve({ viewing }) ?? [], [bound, viewing]);
 
-  const run = useCallback(
-    async ({
-      actionId,
-      choice = null,
-    }: {
-      readonly actionId: string;
-      readonly choice?: string | null;
-    }) => {
+  const runWithOutcome = useCallback(
+    async ({ actionId, choice = null }: RunParams): Promise<ActionRunOutcome> => {
       if (target === null) {
-        return;
+        return 'unchanged';
       }
-      await runObjectAction({ target, actionId, env, choice });
+      return runObjectActionWithOutcome({ target, actionId, env, choice });
     },
     [env, target],
   );
 
-  return { noun: bound?.noun ?? null, actions, run };
+  const run = useCallback(
+    async (params: RunParams) => {
+      await runWithOutcome(params);
+    },
+    [runWithOutcome],
+  );
+
+  return { noun: bound?.noun ?? null, actions, run, runWithOutcome };
 };

@@ -29,9 +29,12 @@ export type AgentRole =
   | 'resolver'
   | 'rewriter'
   | 'scribe'
+  | 'ci-debugger'
+  | 'ci-fixer'
   | 'docs'
   | 'report'
   | 'wireframe'
+  | 'auto'
   | 'custom';
 
 export type AgentStatus =

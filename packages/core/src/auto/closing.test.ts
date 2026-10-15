@@ -1,0 +1,91 @@
+import { describe, expect, it } from 'vitest';
+import { parseChildClosing } from './closing';
+
+const ID = 'agent-scout-1';
+
+describe('reading how a child closed its work', () => {
+  it('reads the closing line addressed to this exact agent', () => {
+    const closing = parseChildClosing({
+      text: `Found three callers.\n<<step-done id="${ID}">>`,
+      childAgentId: ID,
+    });
+    expect(closing).toMatchObject({ completion: 'done', question: null });
+    expect(closing.summary).toContain('Found three callers.');
+    expect(closing.summary).not.toContain('step-done');
+  });
+
+  it('reads a declared block', () => {
+    const closing = parseChildClosing({
+      text: `Cannot build.\n<<step-done id="${ID}" status="blocked">>`,
+      childAgentId: ID,
+    });
+    expect(closing.completion).toBe('blocked');
+  });
+
+  it('ignores a closing line addressed to another agent', () => {
+    const closing = parseChildClosing({
+      text: '<<step-done id="agent-other">>',
+      childAgentId: ID,
+    });
+    expect(closing.completion).toBe('none');
+  });
+
+  it('reads no closing line as none, never as done', () => {
+    expect(parseChildClosing({ text: 'All finished.', childAgentId: ID }).completion).toBe('none');
+  });
+
+  it('reads a blocking question with its options', () => {
+    const closing = parseChildClosing({
+      text: 'I need a choice.\n<<ctx-question blocking="true" suggestions="main|release" recommended="main">>Which branch?<</ctx-question>>',
+      childAgentId: ID,
+    });
+    expect(closing.question).toEqual({
+      text: 'Which branch?',
+      suggestedAnswers: ['main', 'release'],
+      recommendedAnswer: 'main',
+    });
+  });
+
+  it('does not treat a question that does not block as a question to answer', () => {
+    const closing = parseChildClosing({
+      text: '<<ctx-question>>Optional thought?<</ctx-question>>',
+      childAgentId: ID,
+    });
+    expect(closing.question).toBeNull();
+  });
+
+  it('keeps only the tail of a long reply as the summary', () => {
+    const closing = parseChildClosing({ text: `${'a'.repeat(5_000)}END`, childAgentId: ID });
+    expect(closing.summary.length).toBe(2_000);
+    expect(closing.summary.endsWith('END')).toBe(true);
+  });
+
+  it('reads a long run of dashes in a closing line in linear time', () => {
+    const dashes = '-'.repeat(50_000);
+    const startedAt = performance.now();
+    const unmatched = parseChildClosing({
+      text: `<<step-done ${dashes}>>`,
+      childAgentId: ID,
+    });
+    const unterminated = parseChildClosing({
+      text: `<<step-done ${dashes} id="${ID}>>`,
+      childAgentId: ID,
+    });
+    const matched = parseChildClosing({
+      text: `<<step-done ${dashes} id="${ID}" ${dashes}>>`,
+      childAgentId: ID,
+    });
+    expect(performance.now() - startedAt).toBeLessThan(500);
+    expect(unmatched.completion).toBe('none');
+    expect(unterminated.completion).toBe('none');
+    expect(matched.completion).toBe('done');
+  });
+
+  it('reads attributes written with spaces around the equals sign', () => {
+    const closing = parseChildClosing({
+      text: `<<step-done status = "blocked" id = "${ID}">>`,
+      childAgentId: ID,
+    });
+    expect(closing.completion).toBe('blocked');
+  });
+});

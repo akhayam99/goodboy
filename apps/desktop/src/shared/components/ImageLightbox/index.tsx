@@ -1,0 +1,97 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { X } from 'lucide-react';
+import { IconButton, useEscapeLayer } from '@goodboy/ui';
+
+type Props = {
+  readonly src: string;
+  readonly alt: string;
+  readonly onClose: () => void;
+  readonly media?: 'image' | 'pdf';
+};
+
+const EXIT_MS = 180;
+
+export const ImageLightbox = ({ src, alt, onClose, media = 'image' }: Props) => {
+  const [phase, setPhase] = useState<'enter' | 'open' | 'leave'>('enter');
+  const exitTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      requestAnimationFrame(() => setPhase('open'));
+    });
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  const requestClose = useCallback(() => {
+    setPhase((prev) => (prev === 'leave' ? prev : 'leave'));
+  }, []);
+
+  useEffect(() => {
+    if (phase !== 'leave') {
+      return;
+    }
+    exitTimerRef.current = window.setTimeout(onClose, EXIT_MS);
+    return () => {
+      if (exitTimerRef.current !== null) {
+        clearTimeout(exitTimerRef.current);
+        exitTimerRef.current = null;
+      }
+    };
+  }, [phase, onClose]);
+
+  useEscapeLayer(requestClose);
+
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, []);
+
+  const isVisible = phase === 'open';
+
+  return createPortal(
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Preview ${alt}`}
+      onClick={requestClose}
+      className={`fixed inset-0 z-lightbox flex items-center justify-center bg-scrim p-8 backdrop-blur-sm transition-opacity duration-180 ease-out ${
+        isVisible ? 'opacity-100' : 'opacity-0'
+      }`}
+    >
+      <IconButton
+        icon={X}
+        label="Close image preview"
+        tooltip="Close image preview (esc)"
+        iconSize={18}
+        onClick={requestClose}
+        className={`absolute right-4 top-4 h-9 w-9 rounded-full bg-background p-0 text-foreground shadow-lg ring-1 ring-border-soft transition-all duration-180 ease-out hover:bg-background hover:text-foreground ${
+          isVisible ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'
+        }`}
+      />
+      {media === 'pdf' ? (
+        <iframe
+          src={src}
+          title={alt}
+          onClick={(event) => event.stopPropagation()}
+          className={`h-full w-full max-w-3xl rounded-lg bg-white shadow-xl transition-all duration-180 ease-out ${
+            isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+          }`}
+        />
+      ) : (
+        <img
+          src={src}
+          alt={alt}
+          onClick={(event) => event.stopPropagation()}
+          className={`max-h-full max-w-full rounded-lg object-contain shadow-xl transition-all duration-180 ease-out ${
+            isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+          }`}
+        />
+      )}
+    </div>,
+    document.body,
+  );
+};

@@ -1,10 +1,5 @@
 import type { AgentId, ArtifactId, SessionId, WorkspaceId } from '@goodboy/types';
-import type {
-  DiffFocus,
-  FocusedExternalTask,
-  LensKind,
-  SessionStudio,
-} from '../session-view/types';
+import type { DiffFocus, FocusedExternalTask, LensKind } from '../session-view/types';
 import type { OpenDrawer } from '../drawer/state';
 import type { StudioPlace } from './studio';
 
@@ -39,7 +34,6 @@ export type SessionTarget =
 export type SessionView = {
   readonly lens: LensKind | null;
   readonly agentId: AgentId | null;
-  readonly studio: SessionStudio | null;
   readonly target: SessionTarget | null;
 };
 

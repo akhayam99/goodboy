@@ -10,7 +10,6 @@ const { suggestionState, transcriptState, recordNextStepOutcome, reportError } =
   suggestionState: {
     list: [] as ReadonlyArray<SessionSuggestion>,
     run: vi.fn(async (_id: string): Promise<void> => undefined),
-    runChoice: vi.fn(async (_id: string): Promise<void> => undefined),
     onDismiss: vi.fn(async (_id: string): Promise<void> => undefined),
   },
   recordNextStepOutcome: vi.fn(async () => undefined),
@@ -24,6 +23,8 @@ vi.mock('../../../../store', async () => ({
   useAppStore: <T,>(selector: (state: Record<string, unknown>) => T) =>
     selector({ sessionPhaseRuns: {}, reportError }),
 }));
+vi.mock('../../../auto/useIsAutoOn', () => ({ useIsAutoOn: () => false }));
+vi.mock('./NextStepMenu', () => ({ NextStepMenu: () => null }));
 vi.mock('../../useSessionSuggestions', () => ({
   useSessionSuggestions: () => suggestionState.list,
 }));
@@ -39,17 +40,6 @@ vi.mock('../../useSuggestionActions', () => ({
         isDisabled: false,
         failureTitle: `Couldn't act on ${suggestion.id}`,
         run: () => suggestionState.run(suggestion.id),
-        ...(suggestion.kind === 'check-changes' && {
-          choices: [
-            {
-              id: 'start-tester',
-              label: 'Start tester instead',
-              description: 'Writes tests for the changes',
-              detail: '',
-              run: () => suggestionState.runChoice('start-tester'),
-            },
-          ],
-        }),
       },
       onDismiss:
         suggestion.kind === 'mount-project' ? () => suggestionState.onDismiss(suggestion.id) : null,
@@ -65,8 +55,6 @@ afterEach(() => {
   transcriptState.proposals = [];
   suggestionState.run.mockReset();
   suggestionState.run.mockResolvedValue(undefined);
-  suggestionState.runChoice.mockReset();
-  suggestionState.runChoice.mockResolvedValue(undefined);
   suggestionState.onDismiss.mockReset();
   suggestionState.onDismiss.mockResolvedValue(undefined);
   recordNextStepOutcome.mockReset();
@@ -155,7 +143,6 @@ describe('NextStepSlot', () => {
       suggestion({ id: 'mount-project:1', kind: 'mount-project', title: 'Add web' }),
     ];
     render(<NextStepSlot session={SESSION} onSelectLens={vi.fn()} />);
-    expect(screen.queryByRole('button', { name: /More actions/ })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
     expect(suggestionState.onDismiss).toHaveBeenCalledWith('mount-project:1');
     expect(screen.queryByText('Add web')).toBeNull();
@@ -244,42 +231,5 @@ describe('NextStepSlot', () => {
       sessionId: 'session-1',
     });
     expect(button.hasAttribute('disabled')).toBe(false);
-  });
-
-  it('runs a choice through the same runner: busy, one run, one log on failure', async () => {
-    let fail: (error: Error) => void = () => undefined;
-    suggestionState.runChoice.mockImplementationOnce(
-      () =>
-        new Promise<void>((_resolve, reject) => {
-          fail = reject;
-        }),
-    );
-    suggestionState.list = [
-      suggestion({ id: 'check-changes:agent-1', kind: 'check-changes', band: 3 }),
-    ];
-    render(<NextStepSlot session={SESSION} onSelectLens={vi.fn()} />);
-    const choice = screen.getByRole('button', { name: 'Start tester instead' });
-    const primary = screen.getByRole('button', { name: 'Act on check-changes:agent-1' });
-
-    fireEvent.click(choice);
-    fireEvent.click(choice);
-
-    expect(suggestionState.runChoice).toHaveBeenCalledTimes(1);
-    expect(choice.getAttribute('aria-busy')).toBe('true');
-    expect(primary.hasAttribute('disabled')).toBe(true);
-    expect(recordNextStepOutcome).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: 'check-changes', outcome: 'accepted' }),
-    );
-    await act(async () => {
-      fail(new Error('provider unavailable'));
-    });
-    expect(reportError).toHaveBeenCalledTimes(1);
-    expect(reportError).toHaveBeenCalledWith({
-      title: "Couldn't act on check-changes:agent-1",
-      error: new Error('provider unavailable'),
-      sessionId: 'session-1',
-    });
-    expect(choice.hasAttribute('disabled')).toBe(false);
-    expect(primary.hasAttribute('disabled')).toBe(false);
   });
 });

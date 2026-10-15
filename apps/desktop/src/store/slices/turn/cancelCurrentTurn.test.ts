@@ -2,20 +2,25 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
 
-const { cancelTurn, invokeAgentUpdateStatus, applyAgentTurnState, updateSessionState } = vi.hoisted(
-  () => ({
-    cancelTurn: vi.fn(async (_runId: string): Promise<void> => undefined),
-    invokeAgentUpdateStatus: vi.fn(),
-    applyAgentTurnState: vi.fn(() => 'idle'),
-    updateSessionState: vi.fn(async () => undefined),
-  }),
-);
+const {
+  cancelTurn,
+  listLiveRunIds,
+  invokeAgentUpdateStatus,
+  applyAgentTurnState,
+  updateSessionState,
+} = vi.hoisted(() => ({
+  cancelTurn: vi.fn(async (_runId: string): Promise<void> => undefined),
+  listLiveRunIds: vi.fn(async (): Promise<ReadonlySet<string>> => new Set<string>()),
+  invokeAgentUpdateStatus: vi.fn(),
+  applyAgentTurnState: vi.fn(() => 'idle'),
+  updateSessionState: vi.fn(async () => undefined),
+}));
 
 vi.mock('@goodboy/db', async () =>
   (await import('../../../test/dbMock')).createDbMock({ updateSessionState }),
 );
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
-vi.mock('../../../features/chat/turn', () => ({ cancelTurn }));
+vi.mock('../../../features/chat/turn', () => ({ cancelTurn, listLiveRunIds }));
 vi.mock('../../../features/workflows/workflows', () => ({ invokeAgentUpdateStatus }));
 vi.mock('../sessions/sessionMutators', () => ({
   applyAgentTurnState,
@@ -38,6 +43,8 @@ const reportError = vi.fn(async (_params: unknown) => undefined);
 const harness = (): Harness => {
   const state: Record<string, unknown> = {
     reportError,
+    joinFanOutParent: vi.fn(async () => undefined),
+    drainAgentQueue: vi.fn(async () => undefined),
     selectedAgentId: {},
     agentTurnState: { [AGENT_ID]: { kind: 'running', runId: 'run-1' } },
     sessionPhaseRuns: { [SESSION_ID]: [{ id: AGENT_ID, status: 'running' }] },
@@ -58,7 +65,7 @@ describe('cancelCurrentTurn', () => {
     }));
   });
 
-  it('marks the agent stopped by you before the process dies when you stop it', async () => {
+  it('marks the agent stopped by you only after the process is gone when you stop it', async () => {
     const { state, cancel } = harness();
 
     await cancel(SESSION_ID, AGENT_ID, 'user');
@@ -68,8 +75,8 @@ describe('cancelCurrentTurn', () => {
       stoppedAt: expect.any(String),
       stoppedBy: 'you',
     });
-    expect(invokeAgentUpdateStatus.mock.invocationCallOrder[0]).toBeLessThan(
-      cancelTurn.mock.invocationCallOrder[0] ?? 0,
+    expect(cancelTurn.mock.invocationCallOrder[0]).toBeLessThan(
+      invokeAgentUpdateStatus.mock.invocationCallOrder[0] ?? 0,
     );
     const runs = (state.sessionPhaseRuns as Record<string, ReadonlyArray<Agent>>)[SESSION_ID];
     expect(runs?.[0]?.status).toBe('stopped');
@@ -77,6 +84,7 @@ describe('cancelCurrentTurn', () => {
 
   it('logs a stop the process refused', async () => {
     cancelTurn.mockRejectedValueOnce(new Error('the process did not exit'));
+    listLiveRunIds.mockResolvedValue(new Set(['run-1']));
     const { cancel } = harness();
 
     await cancel(SESSION_ID, AGENT_ID, 'user');

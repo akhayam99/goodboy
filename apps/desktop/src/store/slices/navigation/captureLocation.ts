@@ -99,7 +99,6 @@ export const captureLocation = ({ state, focus: base = EMPTY_FOCUS }: Params): L
     };
   }
   const lens = state.activeLens[sessionId] ?? null;
-  const studio = state.sessionStudio[sessionId] ?? null;
   return {
     workspaceId,
     place: {
@@ -107,8 +106,7 @@ export const captureLocation = ({ state, focus: base = EMPTY_FOCUS }: Params): L
       sessionId,
       view: {
         lens,
-        agentId: studio === null ? (state.selectedAgentId[sessionId] ?? null) : null,
-        studio,
+        agentId: state.selectedAgentId[sessionId] ?? null,
         target: captureTarget({ state, sessionId, lens }),
       },
     },

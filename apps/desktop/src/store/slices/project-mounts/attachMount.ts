@@ -9,7 +9,7 @@ import {
   sessionDirExists,
 } from '../../../features/worktree/worktree';
 import { rememberWorktreeRoot } from '../storage/rememberWorktreeRoot';
-import { mountDirName } from './mountDirName';
+import { allocateMountDirName } from './allocateMountDirName';
 import { branchInUseError, mountError } from './mountErrors';
 import { withRepositoryAndMountLock } from './mountLocks';
 import {
@@ -20,7 +20,7 @@ import {
 } from './mountOperations';
 import { applyMountViews, loadMountViews, requireMountView } from './mountViews';
 import { requireMountContext } from './requireMountContext';
-import { resolveSessionSlug } from './resolveMountNaming';
+import { retainedDirName } from './retainedDirName';
 import type { AttachMountInput, GetFn, SetFn } from './types';
 
 type ReuseParams = {
@@ -111,14 +111,16 @@ export const attachMount = (set: SetFn, get: GetFn) => {
               mountId,
             });
           }
-          const sessionSlug = resolveSessionSlug({ get, session, project });
+          const parentDir = `${view.repoRoot}/.goodboy/worktrees`;
           await rememberWorktreeRoot({ repoRoot: view.repoRoot, addedBy: 'mount' });
           try {
             const created = await createWorktree({
               repoPath: view.repoRoot,
               branchName: view.branch,
-              parentDir: `${view.repoRoot}/.goodboy/worktrees`,
-              dirName: mountDirName({ sessionSlug, mountId }),
+              parentDir,
+              dirName:
+                retainedDirName({ path: retained }) ??
+                (await allocateMountDirName({ mountId, repoPath: view.repoRoot, parentDir })),
               existingBranch: view.branch,
             });
             return created.worktreePath;

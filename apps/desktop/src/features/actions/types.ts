@@ -24,6 +24,8 @@ import type { AppStore } from '../../store/store';
 import type { ShowToast } from '../../shared/components/Toast';
 import type { ShortcutId } from '../../shared/keyboard/registry';
 import type { RemoteHostKind } from '../../shared/lib/remoteHost';
+import type { AgentKind } from '../session/agent-kind';
+import type { SessionSuggestion } from '../suggestions/types';
 
 export const ACTION_GROUPS = ['open', 'act', 'copy', 'danger'] as const;
 
@@ -83,6 +85,32 @@ export type ActionChoice = {
 
 export const ALL_CHOICES_ID = 'choice.all';
 
+type ActionPreview = {
+  readonly kind: 'role';
+  readonly agentKind: AgentKind;
+};
+
+type ActionTrackParams = {
+  readonly actionId: string;
+  readonly task: () => Promise<void>;
+};
+
+export type ActionTrack = (params: ActionTrackParams) => Promise<void>;
+
+export type ActionPreviewParams = {
+  readonly preview: ActionPreview | null;
+};
+
+export type ActionHeldParams = {
+  readonly actionId: string;
+};
+
+export type ActionMenuBehavior = {
+  readonly onPreview?: (params: ActionPreviewParams) => void;
+  readonly track?: ActionTrack;
+  readonly isHeld?: (params: ActionHeldParams) => boolean;
+};
+
 export type ActionOrigin = 'menu' | 'overflow' | 'palette' | 'button';
 
 export type ActionViewing = {
@@ -110,13 +138,17 @@ type ActionRunParams<F> = {
   readonly choice: string | null;
 };
 
+export type ActionRunOutcome = 'done' | 'unchanged';
+
 export type ActionDefinition<F> = {
   readonly id: string;
   readonly label: string | ((params: FactsParams<F>) => string);
   readonly shortLabel?: (params: FactsParams<F>) => string;
   readonly icon: LucideIcon;
+  readonly iconClassName?: string;
   readonly group: ActionGroup;
   readonly shortcut?: ShortcutId;
+  readonly preview?: (params: FactsParams<F>) => ActionPreview | null;
   readonly description?: (params: FactsParams<F>) => string | null;
   readonly when: (params: FactsParams<F>) => boolean;
   readonly blockedReason?: (params: FactsParams<F>) => string | null;
@@ -126,8 +158,11 @@ export type ActionDefinition<F> = {
   readonly choices?: (params: FactsParams<F>) => ReadonlyArray<ActionChoice>;
   readonly slot?: (params: FactsParams<F>) => ActionSlot;
   readonly pendingLabel?: (params: FactsParams<F>) => string;
+  readonly doneLabel?: (params: FactsParams<F>) => string;
   readonly isBusy?: (params: FactsParams<F>) => boolean;
-  readonly run: (params: ActionRunParams<F>) => void | Promise<void>;
+  readonly run: (
+    params: ActionRunParams<F>,
+  ) => void | ActionRunOutcome | Promise<void | ActionRunOutcome>;
 };
 
 type FactsSourceParams<T> = {
@@ -147,10 +182,13 @@ export type ResolvedAction = {
   readonly label: string;
   readonly shortLabel: string;
   readonly icon: LucideIcon;
+  readonly iconClassName: string | null;
   readonly group: ActionGroup;
   readonly slot: ActionSlot;
   readonly pendingLabel: string | null;
+  readonly doneLabel: string | null;
   readonly shortcut: ShortcutId | null;
+  readonly preview: ActionPreview | null;
   readonly description: string | null;
   readonly blockedReason: string | null;
   readonly confirm: ActionConfirm | null;
@@ -343,6 +381,14 @@ export type TaskActionTarget = {
   readonly branch: string | null;
 };
 
+export type SuggestionActionTarget = {
+  readonly kind: 'suggestion';
+  readonly sessionId: SessionId;
+  readonly suggestion: SessionSuggestion;
+  readonly startsRole: AgentKind | null;
+  readonly isAutoOn: boolean;
+};
+
 export type ObjectTarget =
   | SessionActionTarget
   | SessionsActionTarget
@@ -368,4 +414,5 @@ export type ObjectTarget =
   | ReviewActionTarget
   | ReviewCommentActionTarget
   | WriteReviewActionTarget
-  | TaskActionTarget;
+  | TaskActionTarget
+  | SuggestionActionTarget;

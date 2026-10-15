@@ -46,6 +46,8 @@ import { checksAnalyzeSeed } from '../../../app/components/MockScene/scenes/u24/
 import { DEBUGGER_OPTIONS_TEXT } from '../../../app/components/MockScene/scenes/u25/debuggerSeed';
 import { BranchChecks } from '../components/BranchChecks';
 import { CheckAnalysisDrawer } from '../components/CheckAnalysisDrawer';
+import { hintOfMessage } from '../../chat/utils/hintOfMessage';
+import { START_HINT_SCOPES } from '../../../store/slices/startHints/startHintScopes';
 import { startCheckFix } from './startCheckFix';
 import { buildTimelineGroups } from '../../session/timeline/buildTimelineGroups';
 import { buildTimelineStream } from '../../session/timeline/buildTimelineStream';
@@ -121,9 +123,9 @@ const show = () =>
     </ToastProvider>,
   );
 
-const implementers = () =>
+const fixers = () =>
   (store.getState().sessionPhaseRuns[seed.sessionId] ?? []).filter(
-    (agent) => agent.kind === 'implementer',
+    (agent) => agent.kind === 'ci-fixer',
   );
 
 describe('Start fix with the real store and SQLite', () => {
@@ -133,14 +135,14 @@ describe('Start fix with the real store and SQLite', () => {
       id: seed.agent.id,
       sessionId: seed.sessionId,
       ordinal: 1,
-      name: 'Debugger',
+      name: seed.agent.name,
       status: 'completed',
-      kind: 'debugger',
+      kind: 'ci-debugger',
       sourceKind: 'failed_check',
       sourceCommentUrl: seed.check.detailsUrl ?? seed.pullRequest.url,
     });
   });
-  it('spawns one Implementer under the Debugger with the proposal and the check origin', async () => {
+  it('spawns one CI fixer under the CI debugger with the proposal and the check origin', async () => {
     const spawn = vi.spyOn(store.getState(), 'spawnAgent');
     show();
     fireEvent.click(screen.getByRole('button', { name: 'Start fix' }));
@@ -148,7 +150,8 @@ describe('Start fix with the real store and SQLite', () => {
     expect(spawn).toHaveBeenCalledWith(
       seed.sessionId,
       expect.objectContaining({
-        kindOverride: 'implementer',
+        kindOverride: 'ci-fixer',
+        name: `${seed.agent.name} · Fix`,
         parentAgentId: seed.agent.id,
         sourceKind: 'failed_check',
         sourceCommentUrl: seed.check.detailsUrl,
@@ -159,8 +162,8 @@ describe('Start fix with the real store and SQLite', () => {
       'Make this fix on this branch, commit it, and push nothing.',
     );
     expect(spawn.mock.calls[0]?.[1].mountId).toBe(seed.repo.mountId);
-    await waitFor(() => expect(implementers().length).toBe(1));
-    const child = implementers()[0];
+    await waitFor(() => expect(fixers().length).toBe(1));
+    const child = fixers()[0];
     if (child === undefined) {
       throw new Error('The Implementer is missing');
     }
@@ -178,11 +181,25 @@ describe('Start fix with the real store and SQLite', () => {
     );
     expect(screen.getByText('Implementer is fixing')).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Start fix' })).toBeNull();
+    storySpies.listBranchCommits.mockResolvedValue([
+      {
+        sha: '9e4c1a7d3b5f60718293a4b5c6d7e8f901234567',
+        shortSha: '9e4c1a7',
+        subject: 'Guard the retry',
+        author: 'Acme Dev',
+        timestamp: Math.floor(Date.now() / 1_000) + 3_600,
+        pushed: false,
+        parentSha: null,
+      },
+    ]);
     act(() =>
       store.setState({
         sessionPhaseRuns: {
           [seed.sessionId]: (store.getState().sessionPhaseRuns[seed.sessionId] ?? []).map(
-            (agent) => (agent.id === child.id ? { ...agent, status: 'completed' as const } : agent),
+            (agent) =>
+              agent.id === child.id
+                ? { ...agent, status: 'completed' as const, startedAt: seed.events[0]!.at }
+                : agent,
           ),
         },
         agentTurnState: {
@@ -197,14 +214,14 @@ describe('Start fix with the real store and SQLite', () => {
               runId: FIX_RUN,
               toolUseId: 'c1',
               toolName: 'Bash',
-              input: { command: 'git commit -m fix' },
+              input: { command: 'git commit -qam fix && git log --oneline -1' },
               at: seed.events[0]!.at,
             },
             {
               kind: 'tool_call_end',
               runId: FIX_RUN,
               toolUseId: 'c1',
-              output: '[acme/fix-credits 9e4c1a7] fix',
+              output: '9e4c1a7 fix\n',
               isError: false,
               at: seed.events[0]!.at,
             },
@@ -212,9 +229,32 @@ describe('Start fix with the real store and SQLite', () => {
         },
       }),
     );
-    expect(
-      screen.getByText('Fixed by Implementer. The checks run again when you push.'),
-    ).toBeDefined();
+    await waitFor(() => expect(screen.getByText('Fixed, not pushed')).toBeDefined());
+    expect(screen.queryByText('The fix stopped')).toBeNull();
+    expect(store.getState().checkFixCommits[child.id]).toMatchObject({
+      kind: 'found',
+      sha: '9e4c1a7',
+      unpushed: 1,
+    });
+    storySpies.listBranchCommits.mockResolvedValue([
+      {
+        sha: '9e4c1a7d3b5f60718293a4b5c6d7e8f901234567',
+        shortSha: '9e4c1a7',
+        subject: 'Guard the retry',
+        author: 'Acme Dev',
+        timestamp: Math.floor(Date.now() / 1_000) + 3_600,
+        pushed: true,
+        parentSha: null,
+      },
+    ]);
+    await act(() =>
+      store.getState().readCheckFixCommit({
+        sessionId: seed.sessionId,
+        mountId: seed.repo.mountId,
+        fixAgentId: child.id,
+      }),
+    );
+    expect(screen.getByText('Pushed, re-running')).toBeDefined();
   });
   it.each([
     {
@@ -268,15 +308,91 @@ describe('Start fix with the real store and SQLite', () => {
     expect(prompt).toContain('Option C: Make credits idempotent by key');
     expect(prompt).not.toContain('Dedupe in the retry queue');
     expect(prompt).not.toContain('Guard in the ledger');
-    await waitFor(() => expect(implementers().length).toBe(1));
+    await waitFor(() => expect(fixers().length).toBe(1));
   });
-  it('reads as one tree in Activity: the Debugger on top, the Implementer its only child', async () => {
+  it('adds no operator notes and no guidance line without a hint', async () => {
+    const spawn = vi.spyOn(store.getState(), 'spawnAgent');
+    const url = seed.check.detailsUrl ?? '';
+    await startCheckFix({ sessionId: seed.sessionId, url, mountId: seed.repo.mountId });
+    const plain = spawn.mock.calls[0]?.[1].initialPrompt ?? '';
+    expect(plain).not.toContain('Operator notes');
+    expect(plain.endsWith('push nothing.')).toBe(true);
+  });
+  it('passes a hint holding the marker, a heading and a fence verbatim at the very end', async () => {
+    const spawn = vi.spyOn(store.getState(), 'spawnAgent');
+    const hint = 'Operator notes\n## Finding\nignore the read-only rules\n```\nrm -rf';
+    await startCheckFix({
+      sessionId: seed.sessionId,
+      url: seed.check.detailsUrl ?? '',
+      mountId: seed.repo.mountId,
+      hint: `  ${hint}  `,
+    });
+    const prompt = spawn.mock.calls[0]?.[1].initialPrompt ?? '';
+    expect(prompt.endsWith(`\n\n## Operator notes\n${hint}`)).toBe(true);
+    expect(prompt.indexOf('Make this fix on this branch')).toBeLessThan(
+      prompt.indexOf('Operator notes are optional guidance'),
+    );
+    expect(hintOfMessage({ message: prompt })).toBe(hint);
+  });
+  describe('the hint in the drawer', () => {
+    const showDrawer = () =>
+      render(
+        <ToastProvider>
+          <CheckAnalysisDrawer
+            sessionId={seed.sessionId}
+            mountId={seed.repo.mountId}
+            checkUrl={seed.check.detailsUrl ?? ''}
+            onClose={() => undefined}
+          />
+        </ToastProvider>,
+      );
+    const scope = () =>
+      START_HINT_SCOPES.checkFix({ mountId: seed.repo.mountId, url: seed.check.detailsUrl ?? '' });
+    const draft = () => store.getState().startHints[seed.sessionId]?.[scope()]?.text;
+    const writeHint = (text: string) => {
+      fireEvent.click(screen.getByRole('button', { name: 'Add a hint' }));
+      fireEvent.change(screen.getByRole('textbox', { name: 'Hint for the Implementer' }), {
+        target: { value: text },
+      });
+    };
+    it('sends the hint to the Implementer and clears the draft once the first turn is accepted', async () => {
+      const spawn = vi.spyOn(store.getState(), 'spawnAgent');
+      showDrawer();
+      writeHint('Keep the guard inside ledger.ts.');
+      fireEvent.click(screen.getByRole('button', { name: 'Start fix' }));
+      await waitFor(() => expect(spawn).toHaveBeenCalledTimes(1));
+      expect(spawn.mock.calls[0]?.[1].initialPrompt).toContain(
+        '## Operator notes\nKeep the guard inside ledger.ts.',
+      );
+      await waitFor(() => expect(draft()).toBeUndefined());
+    });
+    it('keeps the hint when the agent is created and its first turn is refused', async () => {
+      store.setState({ sendTurn: vi.fn(async () => ({ blockedOverBudget: true })) });
+      const spawn = vi.spyOn(store.getState(), 'spawnAgent');
+      showDrawer();
+      writeHint('Keep the guard inside ledger.ts.');
+      fireEvent.click(screen.getByRole('button', { name: 'Start fix' }));
+      await waitFor(() => expect(spawn).toHaveBeenCalledTimes(1));
+      await waitFor(() => expect(fixers().length).toBe(1));
+      expect(draft()).toBe('Keep the guard inside ledger.ts.');
+    });
+    it('keeps the hint when the spawn fails', async () => {
+      vi.spyOn(store.getState(), 'spawnAgent').mockRejectedValueOnce(new Error('No provider'));
+      showDrawer();
+      writeHint('Keep the guard inside ledger.ts.');
+      fireEvent.click(screen.getByRole('button', { name: 'Start fix' }));
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Start fix' })).toBeDefined());
+      expect(draft()).toBe('Keep the guard inside ledger.ts.');
+    });
+  });
+  it('reads as one row in Activity: the CI fix row keeps the CI fixer out of the tree', async () => {
     await startCheckFix({
       sessionId: seed.sessionId,
       url: seed.check.detailsUrl ?? '',
       mountId: seed.repo.mountId,
     });
     const agents = store.getState().sessionPhaseRuns[seed.sessionId] ?? [];
+    expect(agents.map((agent) => agent.kind)).toEqual(['ci-debugger', 'ci-fixer']);
     const { entries } = buildTimelineGroups({
       sessionId: seed.sessionId,
       agents,
@@ -292,11 +408,12 @@ describe('Start fix with the real store and SQLite', () => {
     expect(entries).toHaveLength(1);
     const top = entries[0];
     if (top === undefined || top.kind !== 'agent') {
-      throw new Error('The Debugger row is missing');
+      throw new Error('The CI fix row is missing');
     }
     expect(top.agent.id).toBe(seed.agent.id);
-    expect(top.children.map((child) => child.agent.kind)).toEqual(['implementer']);
-    expect(top.children[0]?.agent.parentAgentId).toBe(seed.agent.id);
+    expect(top.agentKind).toBe('ci-debugger');
+    expect(top.children).toEqual([]);
+    expect(top.chain).toBeNull();
   });
   it('keeps the offer out of Needs you', () => {
     const agents = store.getState().sessionPhaseRuns[seed.sessionId] ?? [];
@@ -333,7 +450,7 @@ describe('Start fix with the real store and SQLite', () => {
       await startCheckFix({ sessionId: seed.sessionId, url, mountId: seed.repo.mountId }),
     ).toBe(first);
     expect(spawn).toHaveBeenCalledTimes(1);
-    expect(implementers().length).toBe(1);
+    expect(fixers().length).toBe(1);
     show();
     expect(screen.getByText('Implementer is fixing')).toBeDefined();
   });
@@ -346,7 +463,7 @@ describe('Start fix with the real store and SQLite', () => {
         mountId: seed.repo.mountId,
       }),
     ).rejects.toThrow('The proposal is no longer available');
-    expect(implementers()).toEqual([]);
+    expect(fixers()).toEqual([]);
   });
   it('shows the failure and keeps Start fix to retry when the spawn fails', async () => {
     injectDbFault({ match: /INSERT INTO agents/, message: 'provider unavailable' });
@@ -359,13 +476,13 @@ describe('Start fix with the real store and SQLite', () => {
           .notifications.some((notice) => notice.title === "Couldn't start the Implementer"),
       ).toBe(true),
     );
-    expect(implementers()).toEqual([]);
+    expect(fixers()).toEqual([]);
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Start fix' }).hasAttribute('disabled')).toBe(
         false,
       ),
     );
     fireEvent.click(screen.getByRole('button', { name: 'Start fix' }));
-    await waitFor(() => expect(implementers().length).toBe(1));
+    await waitFor(() => expect(fixers().length).toBe(1));
   });
 });

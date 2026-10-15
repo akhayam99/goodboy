@@ -16,6 +16,19 @@ describe('agentNowState', () => {
     expect(effectiveAgentStatus({ agent, turnState: null })).toBe('running');
   });
 
+  it('reads an agent that waits for another writer as waiting for the writer', () => {
+    const waiting = anAgent({ status: 'pending' });
+
+    const now = agentNowState({
+      agent: waiting,
+      turnState: { kind: 'starting', startedAt: TEST_NOW },
+      transcript: [],
+      isWaitingForWriter: true,
+    });
+
+    expect(now.label).toBe('waiting for the writer');
+  });
+
   it('lets a live turn win over a finished agent row', () => {
     const finished = { ...agent, status: 'completed' } as Agent;
 

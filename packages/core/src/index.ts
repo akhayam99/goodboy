@@ -20,6 +20,7 @@ export {
   type BranchTemplateProblem,
   type BranchValues,
 } from './slug';
+export { sha256Hex } from './slug/sha256';
 export { IllegalTurnTransitionError, turnReducer, type TurnLifecycleEvent } from './turn';
 
 export {
@@ -137,6 +138,217 @@ export {
   type SummaryDocument,
   type SummarySectionKey,
 } from './context';
+
+export {
+  AUTO_ATTEMPT_CEILING_USD,
+  AUTO_AUX_RESERVATION_USD,
+  AUTO_BATCH_MAX_CHILDREN,
+  AUTO_BATCH_MIN_CHILDREN,
+  AUTO_DEFAULT_TREE_CAP_USD,
+  AUTO_DELEGATION_DEADLINE_MINUTES,
+  AUTO_GATES,
+  AUTO_GRANT_ALLOWANCE,
+  AUTO_LEDGER_CHAR_BUDGET,
+  AUTO_LEDGER_MAX_ARTIFACTS,
+  AUTO_LEDGER_OUTLINE_CHARS,
+  AUTO_MAX_GRANTS_PER_TREE,
+  AUTO_MAX_OPEN_CHILDREN,
+  AUTO_OUTBOX_CLAIM_MS,
+  AUTO_OWNER_LEASE_MS,
+  AUTO_REVISE_ASK_CHARS,
+  AUTO_TREE_DEPTH,
+  AUTO_TREE_LIMITS,
+  AUTO_TURN_CEILING_USD,
+  attemptCeilingUsd,
+  effectiveTreeLimits,
+  type AutoEffectiveLimits,
+  type AutoTreeLimitKey,
+} from './auto/limits';
+export {
+  autoBudgetFacts,
+  autoBudgetLabel,
+  autoBudgetPromptLine,
+  type AutoBudgetFacts,
+} from './auto/budget';
+export {
+  artifactOutline,
+  buildArtifactLedgerBlock,
+  effectiveApproval,
+  type AutoApprovalView,
+  type AutoLedgerEntry,
+} from './auto/ledger';
+export { autoTreeCapUsd, type AutoTreeCapParams } from './auto/treeCap';
+export {
+  diagnoseResume,
+  type DiagnoseResumeParams,
+  type ResumeVerdict,
+} from './auto/resumeAdmission';
+export {
+  diagnoseAdmission,
+  type AdmissionArtifactFacts,
+  type AdmissionArtifactRef,
+  type AdmissionChild,
+  type AdmissionChildRefusal,
+  type AdmissionLiveArtifact,
+  type AdmissionSnapshot,
+  type AdmissionVerdict,
+} from './auto/admission';
+export {
+  AUTO_LIMIT_REFUSAL_CODES,
+  AUTO_REFUSAL_CODES,
+  isAutoLimitRefusal,
+  type AutoRefusalCode,
+} from './auto/refusals';
+export { AUTO_SYSTEM_PROMPT, autoRoleCatalog, buildAutoSystemPrompt } from './auto/prompt';
+export {
+  parseRevisionFromTurn,
+  type ParseRevisionParams,
+  type RevisionFailure,
+  type RevisionParseOutcome,
+} from './auto/revisionParse';
+export {
+  ATTRIBUTION_CLEAN,
+  ATTRIBUTION_LIST_CAP,
+  attributeChanges,
+  type AttributeChangesParams,
+  type AttributedChanges,
+  type MountSnapshot,
+  type SnapshotEntry,
+} from './auto/attribution';
+export {
+  AUTO_BLOCK_REASONS,
+  AUTO_BLOCK_TEXT,
+  turnGate,
+  type AutoBlockReason,
+  type TurnGateParams,
+} from './auto/turnGate';
+export { AUTO_REFUSAL_TEXT, describeAutoRefusal, type RefusalChild } from './auto/refusalText';
+export {
+  AUTO_CHILD_PROVIDERS,
+  AUTO_OWN_PROVIDERS,
+  AUTO_UNCONFINED_PROVIDERS,
+  isAutoChildProvider,
+  isAutoOwnProvider,
+} from './auto/providers';
+export {
+  DELEGATE_FIELD_CHARS,
+  DELEGATE_LIST_MAX,
+  DELEGATE_REASON_CHARS,
+  DELEGATE_TASK_CHARS,
+  hashDelegateChildren,
+  parseDelegateSpec,
+  type DelegateChildRefusal,
+  type DelegateChildSpec,
+  type DelegateRevise,
+  type DelegateSpecOutcome,
+} from './auto/delegateSpec';
+export {
+  AUTO_DEFAULT_DONE_WHEN,
+  AUTO_DEFAULT_EXPECTED,
+  AUTO_KICKOFF_HEADER,
+  composeAnswerKickoff,
+  composeDelegationKickoff,
+  type AnswerKickoffParams,
+  type DelegationKickoffParams,
+  type KickoffArtifactInput,
+  type KickoffHistoryEntry,
+  type KickoffRevise,
+} from './auto/kickoff';
+export {
+  parseChildClosing,
+  type ChildClosing,
+  type ChildCompletion,
+  type ChildQuestion,
+} from './auto/closing';
+export {
+  DELEGATION_RESULT_SCHEMA_VERSION,
+  DELEGATION_SUMMARY_CHARS,
+  buildDelegationResult,
+  renderDelegationResult,
+  resolveDelegationOutcome,
+  type BuildResultParams,
+  type DelegationOutcome,
+  type DelegationResultV1,
+  type FileOwnership,
+  type ProcessExit,
+  type ResolveOutcomeParams,
+  type ResolvedOutcome,
+  type ResultArtifact,
+  type ResultChangedFile,
+  type ResultCheck,
+  type ResultQuestion,
+} from './auto/result';
+export {
+  EMPTY_USER_FACTS,
+  isQuestionPayload,
+  isResultsPayload,
+  isRefusalPayload,
+  isUserPayload,
+  storedDeliveryOf,
+  type QuestionPayload,
+  type ResultsPayload,
+  type StoredDelivery,
+  type UserFacts,
+  type RefusalPayload,
+  type UserPayload,
+} from './auto/outboxPayload';
+export {
+  buildArtifactBodiesBlock,
+  buildStateDigest,
+  type ArtifactBodiesParams,
+  type DeliveryArtifactBody,
+  type DigestDelegation,
+  type DigestQuestion,
+  type StateDigestParams,
+} from './auto/digest';
+export {
+  AUTO_BLOCK_ACTIONS,
+  AUTO_BLOCK_CLOSE,
+  AUTO_BLOCK_OPEN,
+  parseAutoBlock,
+  type AutoBlock,
+  type AutoBlockOutcome,
+  type ParseAutoBlockParams,
+} from './auto/autoBlock';
+export {
+  AUTO_RESTART_NOTICE,
+  buildDeliveryText,
+  type BuildDeliveryParams,
+  type DeliveryRow,
+} from './auto/delivery';
+export {
+  describeMounts,
+  isUsableMount,
+  pickAutoMount,
+  type MountPickOutcome,
+  type MountPickRefusalCode,
+  type PickMountParams,
+  type PickableMount,
+} from './auto/mountPick';
+export {
+  ADOPTION_DEFAULT_INSTRUCTION,
+  ADOPTION_REFUSAL_TEXT,
+  adoptionRoleOf,
+  buildAdoptedResult,
+  composeAdoptionKickoff,
+  diagnoseAdoption,
+  isAdoptableKind,
+  type AdoptedResultParams,
+  type AdoptionArtifactRef,
+  type AdoptionKickoffParams,
+  type AdoptionRefusalCode,
+  type AdoptionSnapshot,
+} from './auto/adoption';
+export {
+  AUTO_DELEGATION_ROLES,
+  AUTO_ROLE_ARTIFACT,
+  AUTO_WRITER_ROLES,
+  isAutoWriterRole,
+  parseAutoDelegationRole,
+  type AutoArtifactKind as AutoRoleArtifactKind,
+  type AutoDelegationRole,
+  type AutoWriterRole,
+} from './auto/roles';
 
 export {
   ROLE_REGISTRY,
@@ -751,6 +963,7 @@ export {
   composeHandoffBody,
   handoffLine,
   hasSeparateSystemPrompt,
+  renderCurrentPlan,
   renderHandoff,
   type BuildHandoffParams,
   type HandoffBodyLayers,

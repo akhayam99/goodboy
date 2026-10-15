@@ -42,7 +42,6 @@ export type Props = {
   readonly availability?: 'run' | 'setup';
   readonly presentation?: 'popover' | 'inline';
   readonly isEffortHidden?: boolean;
-  readonly providerLayout?: 'glyphs' | 'named';
   readonly budget?: ReactNode;
   readonly autoTrigger?: 'word' | 'resolved';
   readonly triggerPrefix?: string;
@@ -76,7 +75,6 @@ export const RoutingPicker = ({
   availability = 'run',
   presentation = 'popover',
   isEffortHidden = false,
-  providerLayout = 'glyphs',
   budget,
   autoTrigger = 'word',
   triggerPrefix,
@@ -152,7 +150,6 @@ export const RoutingPicker = ({
       availability={availability}
       isInline={isInline}
       isEffortHidden={isEffortHidden}
-      providerLayout={providerLayout}
       onConnectionInFlightChange={setIsProviderConnectionInFlight}
       {...(!isInline && { focusRoot: dropdown.popupRef })}
       {...(commit != null && { commit })}

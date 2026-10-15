@@ -15,7 +15,7 @@ import { NAMES, formerNamesOf } from './names';
 
 describe('names', () => {
   it('feeds the lens, role, handoff, stage, autonomy and reply length labels', () => {
-    expect(RUN_AUTONOMY_HEADER).toBe(NAMES.whenToAsk);
+    expect(RUN_AUTONOMY_HEADER).toBe(NAMES.autonomy);
     expect(ROLE_LABEL).toEqual(NAMES.role);
     expect(LENS_LABEL.questions).toBe(NAMES.questions);
     expect(LENS_LABEL.agents).toBe(NAMES.agents);
@@ -118,6 +118,18 @@ describe('names', () => {
     expect(formerNamesOf(NAMES.tasks)).toContain('Inbox');
   });
 
+  it('names the three autonomy levels Ask me, Balanced and Autopilot', () => {
+    expect([NAMES.askMe, NAMES.balanced, NAMES.autopilot]).toEqual([
+      'Ask me',
+      'Balanced',
+      'Autopilot',
+    ]);
+    expect(formerNamesOf(NAMES.askMe)).toEqual(['Ask before each step']);
+    expect(formerNamesOf(NAMES.balanced)).toEqual(['Ask after the plan']);
+    expect(formerNamesOf(NAMES.autopilot)).toEqual(['Autorun', 'Run on its own']);
+    expect(formerNamesOf(NAMES.autonomy)).toEqual(['When to ask']);
+  });
+
   it.each([
     ['Resolve 3 comments', 'resolve-n-comments'],
     ['Fix 9 open comments', 'fix-n-comments'],
@@ -142,6 +154,13 @@ describe('names', () => {
     ['Turn into work', 'turn-into-work'],
     ['Start work', 'turn-into-work'],
     ['Start work from here', 'turn-into-work'],
+    ['Run on its own', 'run-on-its-own'],
+    ['Ask before each step', 'ask-before-each-step'],
+    ['Ask after the plan', 'ask-after-the-plan'],
+    ['When to ask', 'when-to-ask'],
+    ['Autopilot agent', 'autopilot-agent'],
+    ['Autopilot mode', 'autopilot-agent'],
+    ['Auto mode', 'autopilot-agent'],
   ])('fails the old phrase %s', (phrase, id) => {
     const retired = RETIRED_NAMES.find((entry) => entry.id === id);
 

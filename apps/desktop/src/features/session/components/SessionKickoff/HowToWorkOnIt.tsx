@@ -149,6 +149,7 @@ export const HowToWorkOnIt = ({ workspaceId, candidates, title, goal, onGoalChan
             mount={mount}
             selectedId={projectId}
             disabled={isStarting}
+            variant="line"
             onChange={setPickedProjectId}
           />
         )}
@@ -160,13 +161,16 @@ export const HowToWorkOnIt = ({ workspaceId, candidates, title, goal, onGoalChan
             projectId={projectId}
           />
         ))}
-        <SegmentedTabs
-          size="sm"
-          ariaLabel="How to work on it"
-          options={HOW_OPTIONS}
-          value={how}
-          onChange={setHow}
-        />
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="text-label text-muted-foreground">Then:</span>
+          <SegmentedTabs
+            size="sm"
+            ariaLabel="How to work on it"
+            options={HOW_OPTIONS}
+            value={how}
+            onChange={setHow}
+          />
+        </div>
       </div>
       {how === 'workflow' ? (
         <WorkflowBuilderView kickoff={kickoff} />

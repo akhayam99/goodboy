@@ -368,6 +368,44 @@ whether you clicked it on the board or in the session overview.
   grouping: a suggestion is not activity, it is a pointer to what activity
   should happen next. A new session shows the kickoff instead; the two never
   compete for the same moment.
+- Every row has the same five columns (`NEXT_STEP_GRID` and `NEXT_STEP_CELLS`
+  in `features/suggestions/components/NextStepSlot/nextStepGrid.ts`): tile,
+  text, primary, **Not now**, **⋯**. The primary and **Not now** have a fixed
+  width, so they line up across rows; every primary is `secondary`, never
+  filled (filled buttons stay on forms). A busy row fades
+  **Not now** and keeps its column. A short visible verb (`shortLabel`: Start,
+  Fix, Rebase) sits over the full `label`, which stays the accessible name
+  ("Start reviewer").
+- When the primary starts an agent, its `agentKind` picks the tile
+  (`NextStepTile`): the role icon in the role color from `agentKindPalette`
+  (the same source as the role picker), on a `bg-current/12` disc, and the
+  primary carries the same small icon. Suggestions that start no agent keep
+  the `SUGGESTION_ICONS` glyph with the band tone, in the same disc and with the
+  same glyph on the primary, so every row of the grid reads alike. A cut
+  `Runs on` line (`RunsOn`, `TruncatedText`) shows the whole route on hover. The alternatives (such as Start
+  tester instead, or one rebase target each) are items of the **⋯** menu. The
+  menu is the `suggestion` kind of the action registry
+  (`features/actions/kinds/suggestion.ts`), drawn by `SuggestionOverflowMenu`
+  from `NextStepMenu`; `NextStepRow` builds its target from the suggestion, the
+  role the primary starts (`agentKind`) and `useIsAutoOn`, so the alternatives
+  come from the card and not from closures of `useSuggestionActions`. Hovering
+  or focusing one shows its `preview` role on the tile, and closing the menu
+  puts the primary's role back. `NextStepSlot` wraps each alternative with
+  `track` (the accepted outcome, a pending key per action id, the failure title
+  of the primary), so the primary and the menu are held while one runs. With
+  fewer than two entries the cell stays empty, because the menu needs two
+  rows.
+- **Not now** registers an `undoable` operation on the app undo stack
+  (`NextStepSlot`), so the toast says Dismissed with **Undo** and the
+  `app.undo` chord, and ⌘Z (Ctrl+Z off macOS) restores dismissals in reverse
+  order. It yields while a text field has focus, like every undo. Undo deletes
+  the `next:<kind>` row written for the dismissal (`revertNextStepOutcome`,
+  `deleteNudgeEvent` in `packages/db`), waits for that write if it is still in
+  flight, and shows the suggestion again only after the delete succeeded; a
+  failed delete reports the error and ⌘Z can retry. The operation drops once
+  the Next slot unmounts (`isCurrent`). A suggestion whose dismissal carries an
+  outside decision (`onDismiss`: a project proposal, **Close branch**) is not
+  undoable and shows no toast.
 - Every suggestion carries a **band** (0 waits on you, 1 unblocks something,
   2 ships something, 3 improves something), a **why** (the second line, the
   concrete reason), a **fingerprint** (kind, object, trigger version) and a
@@ -477,9 +515,13 @@ message. Queued messages sit above the composer, reading **Waits for this
 turn** or **Sending now**, and each one can be edited, removed or sent now.
 They are saved in the database (`agent_queued_messages`), so they survive a
 restart, and they go out one per turn in order. An agent you stopped keeps its
-queue until you continue it or send one now. Once sent, a message leaves the
-queue and its bubble in the chat says "Queued · sent after the turn" or "Sent
-now · interrupted the turn".
+queue until you continue it or send one now. A message leaves the queue, and
+the saved copy, only once the provider has accepted it (the turn started, or
+the Resolve lane took it over). Until then it reads **Sending now**, and a send
+that ends before a provider turn starts, by an error, a cancelled start, an
+unresolved step agent or a refused lease, puts it back at the head. When the queue cannot be saved, an error says so and the messages stay
+in the queue for this session. Once sent, the bubble in the chat says "Queued ·
+sent after the turn" or "Sent now · interrupted the turn".
 
 **Close** is only for an agent outside a workflow that is stuck on a failed
 turn or on its own question. It means "stop waiting on this agent": the agent
@@ -488,6 +530,18 @@ it back. A workflow step never has Close. A stuck step is unblocked with Skip
 step in its next action, because closing it would leave the run blocked with
 no instruction. `isAgentFinished` and `isAgentClosable` in
 `apps/desktop/src/features/session/agent-lifecycle.ts` hold both rules.
+
+### Auto
+
+**Auto** is an agent that answers questions itself and hands the work it cannot
+do alone to agents of the right role, with a model it picks for each, then
+reads their results and goes on. Its children are agents of the roles Scout,
+Plan, Investigate, Review, Implement, Test and Docs, never more than four at a
+time and one level deep. It is an experiment: off by default, switched on in
+Settings, General, **Experiments**, and while it is off the roles you pick
+today are the only start. A person sees an Auto tree as one row in the
+Overview and as one chat with a Work rail and a card for each delegation
+([auto.md](auto.md)).
 
 ### Agent kinds
 
@@ -724,7 +778,10 @@ kept**: a warning says why, the request stays, and **Ask again** resends it.
 The version pill opens every version (who, when, what was asked and what
 changed) with **View**, **Compare** and **Restore**. Viewing an older one says
 so above the stage, and Restore writes it back as a new version, `Restored vN`,
-so the history is never rewritten.
+so the history is never rewritten. Restore brings back that version's own title,
+text and metadata, and only on top of the version you were looking at: when a
+newer one arrived meanwhile, nothing is written and the message says "A newer
+version arrived. Review it before restoring."
 
 **Compare** lays two versions side by side on the same screen. The diff is
 computed from the two specs by node id, never from the HTML: the rail marks
@@ -1051,11 +1108,16 @@ failed`) that opens to their reasons. A failed delivery after the run has no
 Nothing reaches GitHub until you push, with one exception: a reply-only answer
 (no code change) is posted the moment you accept it when no accepted fix is
 waiting to push. With a fix waiting it goes out with the push, and `Post reply
-now` beside its note posts it at once. `Push N` in the Review header is the
-way out for every accepted comment at once. It
-confirms inline under the header with exactly what goes out (`Push 2 to
+now` beside its note posts it at once. `Push N fixes` in the Review header is the
+way out for every accepted comment at once, whatever comment is selected. A
+clean preview pushes on that one click; otherwise it
+confirms inline under the header with exactly what goes out (`Push 2 commits to
 hl/fix-duplicate-credit?`, then `1 fix in 1 new commit, 2 replies, 2 threads
-resolved on GitHub.`), naming the commit style set in Replies and commits. A
+resolved on GitHub.`), naming the commit style set in Replies and commits, and
+the header button only opens and closes that panel (it shows a chevron while
+open), and `Push only this one` hides while the panel is open. `Push only this
+one` in a comment's action bar sends just that fix, with the earlier commits it
+carries. A
 blocker (uncommitted changes, a commit nobody approved, a fix still running)
 replaces the confirm with its reason and the one move that clears it. The
 result stays on the layer in one line with its commit; a partial push says how
@@ -1487,8 +1549,8 @@ task up again in Goodboy.
 - **Add a plain folder** and **Add existing** put a folder or a repository
   under a project. **Link** stays for tying a ticket to a session or a pull
   request. Tools connect from Settings > Integrations.
-- **When to ask** is the setting that decides how often a run stops for you.
-  Its top choice is **Run on its own** (it was Autorun and Autonomy).
+- **Autonomy** is the setting that decides how often a run stops for you.
+  Its top choice is **Autopilot** (it was Autorun, Run on its own and When to ask).
 - **Needs you** is the one name for anything that waits on you: the top bar
   group, the board column, the questions list and an agent in a mount row.
   The reason follows it ("Needs your answer in step 2"). "Waiting on you" is
@@ -1538,7 +1600,7 @@ before a change adds a word.
 - **Reply**: answer a thread yourself. **Reply only** drops the code change and
   keeps the reply. **Publish reply** sends a decided reply that did not go out.
   **Resolve** ends a thread without a reply (a note says **Close**).
-- **Push**: sends commits (**Push 2**, **Retry push** after a failure).
+- **Push**: sends commits (**Push 2 fixes**, **Retry push** after a failure).
   **Publish 2 replies** sends replies without a push. **Sync and try again** is
   about the remote branch that moved, not the base.
 - **Rebase on main**: brings the base in, with the base branch's own name.
@@ -1677,3 +1739,5 @@ Task-link removal uses **Unlink**, with **Unlinked** in its Undo toast and
 is on the session again**, **HL-204 is on payments-api / hl/ledger-rounding**). **Link work** is the single linking entry.
 
 A check analysis agent has `sourceKind` `failed_check` and keeps the originating check URL in `sourceCommentUrl`. The latest non-deleted agent for that session and URL owns the check row status; its transcript owns the finding and **Proposed fix**. The source type is in `packages/types/src/workflow.ts`, and the selector is `apps/desktop/src/store/slices/agents/selectCheckAnalysis.ts`.
+
+The fix's commit comes from the repository, not from the fix agent's transcript. `readCheckFixCommit` in `apps/desktop/src/store/slices/check-fix-commits/readCheckFixCommit.ts` lists the mount branch and takes the newest commit made after the fix started. `selectCheckChain` turns that fact into `fixed-local` (committed, not pushed), `fixed-pushed` (on the remote) or `fix-failed` (the fix ended with no new commit). The transcript's `commitOf` stands in only when the repository cannot be read. The Next card for failing checks follows that state (`apps/desktop/src/features/suggestions/fixChecksSuggestionOf.ts`): **Analyzing**, **Fixing**, a success card with **Push**, then **is running again**. The generic **Review the changes** card never fires for an agent whose `sourceKind` is `failed_check`.

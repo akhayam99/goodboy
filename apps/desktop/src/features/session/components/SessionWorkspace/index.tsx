@@ -14,7 +14,6 @@ import { AskTrailButton } from '../../ask/components/AskTrailButton';
 import { AgentOverlay } from './parts/AgentOverlay';
 import { AgentsPane } from './parts/AgentsPane';
 import { Pane } from './parts/Pane';
-import { SessionStudioLayer } from './parts/SessionStudioLayer';
 import { QuestionsPane } from './parts/QuestionsPane';
 import { FilesPane } from './parts/FilesPane';
 import { useSessionBranchSync } from '../../hooks/useSessionBranchSync';
@@ -65,7 +64,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const sessionRepo = useAppStore(useShallow((state) => resolveSessionRepo({ state, sessionId })));
   const projectWorktreePath = sessionRepo?.worktreePath ?? null;
   const sessionMounts = useAppStore((s) => s.sessionProjectMounts?.[sessionId] ?? EMPTY_ARRAY);
-  const studio = useAppStore((s) => s.sessionStudio[sessionId] ?? null);
   const artifactConversationAgentId = useAppStore(
     (s) => s.artifactConversationAgentId[sessionId] ?? null,
   );
@@ -95,11 +93,9 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   };
   const surfaceLayer = resolveSessionSurfaceLayer({
     lens,
-    hasStudio: studio != null,
     selectedAgentId,
     artifactConversationAgentId,
   });
-  const showStudio = surfaceLayer === 'studio';
   const showAgentOverlay = surfaceLayer === 'agent';
   const showLens = surfaceLayer === 'lens';
   const resolverAgentIds = useMemo(
@@ -250,12 +246,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                 onBack={leaveAgentOverlay}
               />
             </PaneBannerContext.Provider>
-          ) : null}
-
-          {studio != null ? (
-            <div className="absolute inset-0 z-30">
-              <SessionStudioLayer session={session} studio={studio} onClose={up} />
-            </div>
           ) : null}
         </div>
       </UnderTrailContext.Provider>

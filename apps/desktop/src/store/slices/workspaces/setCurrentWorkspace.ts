@@ -31,7 +31,7 @@ import {
   invokeWorkflowsForSession,
   invokeStepDefList,
 } from '../../../features/workflows/workflows';
-import type { AgentKind } from '../../../features/session/agent-kind';
+import { storedAgentKind, type AgentKind } from '../../../features/session/agent-kind';
 import {
   SETTING_LAST_SESSION_ID,
   SETTING_LAST_WORKSPACE_ID,
@@ -195,7 +195,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         sessionPhaseRuns[s.id] = runs;
         for (const run of runs) {
           if (run.kind) {
-            kindOverridesFromDb[run.id] = run.kind as AgentKind;
+            kindOverridesFromDb[run.id] = storedAgentKind({ kind: run.kind });
           }
         }
       }

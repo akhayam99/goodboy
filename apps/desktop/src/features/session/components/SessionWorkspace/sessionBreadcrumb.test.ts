@@ -23,11 +23,9 @@ const base = (
   handlers: SessionBreadcrumbHandlers,
 ): SessionBreadcrumbInput => ({
   lens: null,
-  studio: null,
   focusedWorkflowName: null,
   selectedChildWorkflowName: null,
   focusedArtifactTitle: null,
-  artifactCreationLabel: null,
   selectedChildLabel: null,
   selectedChildHome: null,
   selectedParentLabel: null,
@@ -391,15 +389,6 @@ describe('buildSessionBreadcrumb', () => {
     expect(labels(crumbs)).toEqual(['Session', 'agents', 'Agent']);
   });
 
-  it('renders Overview > Workflows > Create for the workflow builder studio', () => {
-    const h = makeHandlers();
-    const crumbs = buildSessionBreadcrumb(base({ studio: { kind: 'workflow' } }, h));
-    expect(labels(crumbs)).toEqual(['Session', 'Runs', 'Create']);
-    crumbs[1]!.onClick!();
-    expect(h.toWorkflowsList).toHaveBeenCalledOnce();
-    expect(last(crumbs)?.onClick).toBeUndefined();
-  });
-
   it('degrades a workflows lens with no focused run to a two-crumb leaf trail', () => {
     const h = makeHandlers();
     const crumbs = buildSessionBreadcrumb(
@@ -441,21 +430,6 @@ describe('buildSessionBreadcrumb', () => {
     expect(labels(crumbs)).toEqual(['Session', 'Artifacts', 'Artifact']);
     crumbs[1]!.onClick!();
     expect(h.toArtifactsList).toHaveBeenCalledOnce();
-  });
-
-  it('lets the studio trail win over the active workflow detail', () => {
-    const h = makeHandlers();
-    const crumbs = buildSessionBreadcrumb(
-      base(
-        {
-          studio: { kind: 'workflow' },
-          lens: 'workflows',
-          focusedWorkflowName: 'refactor',
-        },
-        h,
-      ),
-    );
-    expect(labels(crumbs)).toEqual(['Session', 'Runs', 'Create']);
   });
 
   it('names the delegate step Answers instead of repeating the question', () => {
@@ -519,21 +493,5 @@ describe('buildSessionBreadcrumb', () => {
     );
 
     expect(last(crumbs)?.id).toBe('selected-child');
-  });
-
-  it('renders Overview > Artifacts > Create report while creation is open', () => {
-    const handlers = makeHandlers();
-    const crumbs = buildSessionBreadcrumb(
-      base(
-        {
-          lens: 'plans',
-          artifactCreationLabel: 'Create report',
-          focusedArtifactTitle: 'Round once',
-        },
-        handlers,
-      ),
-    );
-    expect(labels(crumbs)).toEqual(['Session', 'Artifacts', 'New artifact']);
-    expect(last(crumbs)?.onClick).toBeUndefined();
   });
 });

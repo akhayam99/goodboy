@@ -236,6 +236,101 @@ describe('store contract', () => {
       expect(store.getState().activeTerminalTab[SESSION_ID]).toBe(`${SESSION_ID}::t1`);
     });
 
+    describe('saved tab list', () => {
+      const FIRST = `${SESSION_ID}::t1`;
+      const SECOND = `${SESSION_ID}::t2`;
+      const savedList = JSON.stringify({
+        version: 1,
+        tabs: [
+          {
+            id: SECOND,
+            owner: SESSION_OWNER,
+            title: 'Tests',
+            cwd: '/worktrees/api',
+            status: 'running',
+          },
+          {
+            id: FIRST,
+            owner: SESSION_OWNER,
+            title: 'Build',
+            cwd: '/worktrees/gone',
+            status: 'exited',
+            openError: 'The folder /worktrees/gone no longer exists',
+          },
+        ],
+        active: { [SESSION_ID]: SECOND },
+        worktreeActive: {},
+        selection: { sessionId: SESSION_ID, worktree: null, terminalId: SECOND },
+      });
+
+      const answerWith = (saved: string | null) => {
+        storySpies.getSetting.mockImplementation(async (_db: unknown, key: string) =>
+          key === 'terminal.tabs' ? saved : null,
+        );
+      };
+
+      afterEach(() => {
+        storySpies.getSetting.mockReset();
+        storySpies.getSetting.mockResolvedValue(null);
+      });
+
+      it('restores order, active tab, selection and exited results after a restart', async () => {
+        answerWith(savedList);
+        storySpies.invokeTerminalListLive.mockResolvedValueOnce([]);
+
+        await useAppStore.getState().reattachTerminalTabs();
+
+        const tabs = useAppStore.getState().terminalTabs[SESSION_ID] ?? [];
+        expect(tabs.map((tab) => [tab.id, tab.status, tab.isRestored])).toEqual([
+          [SECOND, 'running', true],
+          [FIRST, 'exited', undefined],
+        ]);
+        expect(tabs[1]?.openError).toBe('The folder /worktrees/gone no longer exists');
+        expect(useAppStore.getState().activeTerminalTab[SESSION_ID]).toBe(SECOND);
+        expect(useAppStore.getState().terminalSelection?.terminalId).toBe(SECOND);
+      });
+
+      it('keeps a live terminal live and not restored after a reload', async () => {
+        answerWith(savedList);
+        storySpies.invokeTerminalListLive.mockResolvedValueOnce([
+          { id: SECOND, cwd: '/worktrees/api' },
+        ]);
+
+        await useAppStore.getState().reattachTerminalTabs();
+
+        const tabs = useAppStore.getState().terminalTabs[SESSION_ID] ?? [];
+        expect(tabs[0]?.isRestored).toBeUndefined();
+        expect(tabs[0]?.status).toBe('running');
+      });
+
+      it('ignores a corrupt saved list and falls back to the live terminals', async () => {
+        answerWith('{not json');
+        storySpies.invokeTerminalListLive.mockResolvedValueOnce([{ id: FIRST, cwd: '/w' }]);
+
+        await useAppStore.getState().reattachTerminalTabs();
+
+        expect(
+          (useAppStore.getState().terminalTabs[SESSION_ID] ?? []).map((tab) => tab.id),
+        ).toEqual([FIRST]);
+      });
+
+      it('saves the list after a change once the saved list was loaded', async () => {
+        answerWith(null);
+        storySpies.invokeTerminalListLive.mockResolvedValueOnce([]);
+        await useAppStore.getState().reattachTerminalTabs();
+        storySpies.setSetting.mockClear();
+
+        useAppStore.getState().addTerminalTab({ owner: SESSION_OWNER, cwd: '/worktrees/api' });
+        await vi.waitFor(() => {
+          expect(storySpies.setSetting).toHaveBeenCalledWith(
+            expect.anything(),
+            'terminal.tabs',
+            expect.stringContaining('"cwd":"/worktrees/api"'),
+          );
+        });
+      });
+    });
+
     it('addTerminalTab tags the tab with the mount that owns the cwd', async () => {
       const store = useAppStore;
       store.setState({
@@ -452,7 +547,7 @@ describe('store contract', () => {
       });
     });
 
-    it('names a new terminal after the last folder of its cwd, never Terminal N', async () => {
+    it('names a new terminal shell, then shell 2, within its worktree', async () => {
       const store = useAppStore;
       const first = store
         .getState()
@@ -460,11 +555,13 @@ describe('store contract', () => {
       const second = store
         .getState()
         .addTerminalTab({ owner: SESSION_OWNER, cwd: '/mock/harborline/ledger-core/' });
-      const third = store.getState().addTerminalTab({ owner: SESSION_OWNER, cwd: null });
+      const third = store
+        .getState()
+        .addTerminalTab({ owner: SESSION_OWNER, cwd: '/mock/harborline/ledger-core/' });
 
       const titles = (store.getState().terminalTabs[SESSION_ID] ?? []).map((tab) => tab.title);
 
-      expect(titles).toEqual(['payments-api', 'ledger-core', 'shell']);
+      expect(titles).toEqual(['shell', 'shell', 'shell 2']);
       expect([first, second, third]).toEqual([
         `${SESSION_ID}::t1`,
         `${SESSION_ID}::t2`,
@@ -520,10 +617,10 @@ describe('store contract', () => {
       const workspaceTabs = store.getState().terminalTabs[`ws:${WS_ID}`] ?? [];
       const sessionTabs = store.getState().terminalTabs[SESSION_ID] ?? [];
       expect(workspaceTabs.map((tab) => [tab.owner, tab.title])).toEqual([
-        [WORKSPACE_OWNER, 'harborline'],
+        [WORKSPACE_OWNER, 'shell'],
       ]);
       expect(sessionTabs.map((tab) => [tab.owner, tab.title])).toEqual([
-        [SESSION_OWNER, 'payments-api'],
+        [SESSION_OWNER, 'shell'],
         [SESSION_OWNER, 'tests'],
       ]);
     });
@@ -539,7 +636,7 @@ describe('store contract', () => {
         store.getState().renameTerminalTab({ owner: SESSION_OWNER, tabId: id, title: 'api' }),
       ).rejects.toThrow('disk full');
 
-      expect(store.getState().terminalTabs[SESSION_ID]?.[0]?.title).toBe('payments-api');
+      expect(store.getState().terminalTabs[SESSION_ID]?.[0]?.title).toBe('shell');
       expect(store.getState().terminalNames[id]).toBeUndefined();
     });
 

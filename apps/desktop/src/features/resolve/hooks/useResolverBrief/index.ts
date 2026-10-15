@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { AgentId, ResolveAttempt, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { fixRunThreadIdsOf } from '../../fixRun';
 
 export type ResolverBrief = {
   readonly attempt: ResolveAttempt;
@@ -31,13 +32,7 @@ export const resolverBriefOf = ({
     attempt.batchId === null
       ? [attempt]
       : attempts.filter((candidate) => candidate.batchId === attempt.batchId);
-  const ownThreadIds = [
-    ...new Set(
-      attempts
-        .filter((candidate) => candidate.agentId === agentId)
-        .flatMap((candidate) => candidate.threadIds),
-    ),
-  ];
+  const ownThreadIds = fixRunThreadIdsOf({ attempts, agentId });
   const batchThreadIds = [
     ...new Set([...ownThreadIds, ...siblings.flatMap((sibling) => sibling.threadIds)]),
   ];

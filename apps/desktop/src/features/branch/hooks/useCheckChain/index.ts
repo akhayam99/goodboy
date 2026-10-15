@@ -1,16 +1,23 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { SessionId } from '@goodboy/types';
+import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectCheckChain } from '../../../../store/slices/agents/selectCheckChain';
 import { isReportedError } from '../../../../store/slices/notifications/reportedError';
+import {
+  useCheckFixCommitSync,
+  type CheckFixTarget,
+} from '../../../../shared/hooks/useCheckFixCommitSync';
+
+const NO_TARGETS: ReadonlyArray<CheckFixTarget> = [];
 
 type Params = {
   readonly sessionId: SessionId;
+  readonly mountId: MountId;
   readonly url: string;
 };
 
-export const useCheckChain = ({ sessionId, url }: Params) => {
+export const useCheckChain = ({ sessionId, mountId, url }: Params) => {
   const chain = useAppStore(useShallow((state) => selectCheckChain({ state, sessionId, url })));
   const loadAgentTranscript = useAppStore((state) => state.loadAgentTranscript);
   const reportError = useAppStore((state) => state.reportError);
@@ -47,6 +54,14 @@ export const useCheckChain = ({ sessionId, url }: Params) => {
     reportError,
     sessionId,
   ]);
+  const syncTargets = useMemo(
+    () =>
+      fixId === undefined || fixStatus !== 'completed'
+        ? NO_TARGETS
+        : [{ mountId, fixAgentId: fixId }],
+    [fixId, fixStatus, mountId],
+  );
+  useCheckFixCommitSync({ sessionId, targets: syncTargets });
   const events = useAppStore((state) =>
     chain.debugger === null ? undefined : state.transcripts[chain.debugger.id],
   );

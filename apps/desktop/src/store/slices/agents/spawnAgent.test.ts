@@ -17,6 +17,10 @@ import type {
 import { MODEL_CATALOGS } from '@goodboy/core';
 import { PROVIDER_IDS } from '@goodboy/types';
 import { buildResolverAgentArgs } from '../../../features/chat/spawn-from-comment';
+import {
+  registerAutoUserTurnPort,
+  type AutoUserTurnPort,
+} from '../../../features/auto/autoUserTurnPort';
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
@@ -189,7 +193,6 @@ function buildHarness(
     sessionPlans: { [SESSION_ID]: plans },
     planConsumptions: {},
     activeLens: { [SESSION_ID]: 'agents' },
-    sessionStudio: { [SESSION_ID]: { kind: 'workflow' } },
     selectedAgentId: {},
     agentTurnState: {},
     workspaceOverrides: {
@@ -256,16 +259,14 @@ describe('spawnAgent focus', () => {
     await spawn(SESSION_ID, { name: 'quiet spawn' });
 
     expect(getState().selectedAgentId[SESSION_ID]).toBeUndefined();
-    expect(getState().sessionStudio[SESSION_ID]).toEqual({ kind: 'workflow' });
   });
 
-  it('routes an explicit focus through the work surface, closing the studio', async () => {
+  it('routes an explicit focus through the work surface', async () => {
     const { getState, spawn } = buildHarness([]);
 
     await spawn(SESSION_ID, { name: 'loud spawn', focus: 'agent' });
 
     expect(getState().selectedAgentId[SESSION_ID]).toBe(INSERTED_ID);
-    expect(getState().sessionStudio[SESSION_ID]).toBeNull();
   });
 
   it('clears the creation signal once the spawn settles', async () => {
@@ -799,5 +800,129 @@ describe('spawnAgent runs what every launch point shows', () => {
       expect.objectContaining({ title: 'No model is allowed for this agent' }),
     );
     expect(invokeAgentInsertSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('spawnAgent for an Auto agent', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    listConsumptionsForPlanSpy.mockResolvedValue([]);
+    registerAutoUserTurnPort({ port: null });
+  });
+
+  const GOAL = 'Plan the retry-safe credit retries for Harborline';
+
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+  it('refuses a provider that cannot confine a read-only agent and starts nothing', async () => {
+    const port = vi.fn<AutoUserTurnPort>(async () => 'queued');
+    registerAutoUserTurnPort({ port });
+    for (const provider of ['opencode', 'openrouter', 'moonshot'] as const) {
+      const { reportError, sendTurn, spawn } = buildHarness([]);
+
+      await expect(
+        spawn(SESSION_ID, {
+          kindOverride: 'auto',
+          provider,
+          model: 'big-pickle',
+          initialPrompt: GOAL,
+        }),
+      ).rejects.toThrow('Auto only reads');
+
+      expect(reportError).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Auto can't run on this provider" }),
+      );
+      expect(sendTurn).not.toHaveBeenCalled();
+    }
+    expect(invokeAgentInsertSpy).not.toHaveBeenCalled();
+    expect(port).not.toHaveBeenCalled();
+  });
+
+  it('hands the first message to the Auto runtime and sends no plain turn', async () => {
+    const port = vi.fn<AutoUserTurnPort>(async () => 'queued');
+    registerAutoUserTurnPort({ port });
+    const { sendTurn, spawn } = buildHarness([]);
+    const onKickoffAccepted = vi.fn();
+
+    const agentId = await spawn(SESSION_ID, {
+      kindOverride: 'auto',
+      initialPrompt: GOAL,
+      onKickoffAccepted,
+    });
+    await settle();
+
+    expect(port).toHaveBeenCalledWith({
+      agentId,
+      sessionId: SESSION_ID,
+      workspaceId: WS_ID,
+      text: GOAL,
+    });
+    expect(sendTurn).not.toHaveBeenCalled();
+    expect(onKickoffAccepted).toHaveBeenCalledTimes(1);
+  });
+
+  it('says so when the runtime lost the message, and does not call it accepted', async () => {
+    registerAutoUserTurnPort({ port: vi.fn<AutoUserTurnPort>(async () => 'lost') });
+    const { reportError, sendTurn, spawn } = buildHarness([]);
+    const onKickoffAccepted = vi.fn();
+
+    await spawn(SESSION_ID, { kindOverride: 'auto', initialPrompt: GOAL, onKickoffAccepted });
+    await settle();
+
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Auto didn't start", sessionId: SESSION_ID }),
+    );
+    expect(onKickoffAccepted).not.toHaveBeenCalled();
+    expect(sendTurn).not.toHaveBeenCalled();
+  });
+
+  it('reports a runtime that throws', async () => {
+    registerAutoUserTurnPort({
+      port: vi.fn<AutoUserTurnPort>(async () => {
+        throw new Error('database is locked');
+      }),
+    });
+    const { reportError, spawn } = buildHarness([]);
+
+    await spawn(SESSION_ID, { kindOverride: 'auto', initialPrompt: GOAL });
+    await settle();
+
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Auto didn't start" }),
+    );
+  });
+
+  it('keeps the plain turn when there is no runtime to take it', async () => {
+    const { sendTurn, spawn } = buildHarness([]);
+
+    await spawn(SESSION_ID, { kindOverride: 'auto', initialPrompt: GOAL });
+
+    expect(sendTurn).toHaveBeenCalledWith(expect.objectContaining({ content: GOAL }));
+  });
+
+  it('leaves every other kind on the plain turn even with a runtime', async () => {
+    const port = vi.fn<AutoUserTurnPort>(async () => 'queued');
+    registerAutoUserTurnPort({ port });
+    const { sendTurn, spawn } = buildHarness([]);
+
+    await spawn(SESSION_ID, { kindOverride: 'implementer', initialPrompt: GOAL });
+
+    expect(port).not.toHaveBeenCalled();
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+  });
+
+  it('sends nothing for an Auto agent whose start is deferred', async () => {
+    const port = vi.fn<AutoUserTurnPort>(async () => 'queued');
+    registerAutoUserTurnPort({ port });
+    const { sendTurn, spawn } = buildHarness([]);
+
+    await spawn(SESSION_ID, {
+      kindOverride: 'auto',
+      initialPrompt: GOAL,
+      shouldDeferKickoff: true,
+    });
+
+    expect(port).not.toHaveBeenCalled();
+    expect(sendTurn).not.toHaveBeenCalled();
   });
 });

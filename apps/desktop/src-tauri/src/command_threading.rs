@@ -22,6 +22,8 @@ const IN_MEMORY_SYNC_COMMANDS: &[&str] = &[
     "worktree_writer.rs::worktree_writer_acquire",
     "worktree_writer.rs::worktree_writer_cancel",
     "worktree_writer.rs::worktree_writer_release",
+    "worktree_writer.rs::worktree_write_set_acquire",
+    "worktree_writer.rs::worktree_write_set_release",
     "worktree_writer.rs::worktree_writer_status",
 ];
 

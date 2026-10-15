@@ -1,6 +1,5 @@
 import { availableBranchName, slugify } from '@goodboy/core';
 import type { MountId } from '@goodboy/types';
-import { mountDirName } from '../../../../../../store/slices/project-mounts/mountDirName';
 import { branchLeaf } from '../../../../../../store/slices/sessions/branchLeaf';
 import type { MountPlan } from '../../../../../../store/slices/sessions/mountPlan';
 
@@ -41,10 +40,7 @@ export const resolveMountPreflight = ({ plan, repoBranches }: Params): MountPref
     slug,
     branch,
     baseBranch: plan.baseBranch,
-    targetPath: `${plan.project.rootPath}/.goodboy/worktrees/${mountDirName({
-      sessionSlug: slug,
-      mountId: plan.mountId,
-    })}`,
+    targetPath: plan.targetPath,
     renamedFrom: plan.branch,
   };
 };

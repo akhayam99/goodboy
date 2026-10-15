@@ -6,6 +6,7 @@ export type BarVariant = 'primary' | 'secondary' | 'ghost';
 export type BarItem =
   | { readonly kind: 'action'; readonly id: string; readonly variant: BarVariant }
   | { readonly kind: 'retryPush' }
+  | { readonly kind: 'pushOnly' }
   | { readonly kind: 'viewOnHost' }
   | { readonly kind: 'transcript' }
   | { readonly kind: 'stop' };
@@ -24,7 +25,7 @@ const PLANS: Partial<Record<ResolveWord, ReadonlyArray<BarItem>>> = {
   question: [action('reviewComment.answer', 'primary'), SKIP],
   push_failed: [{ kind: 'retryPush' }, SKIP],
   working: [{ kind: 'transcript' }, { kind: 'stop' }],
-  ready: [action('reviewComment.undo', 'secondary')],
+  ready: [action('reviewComment.undo', 'secondary'), { kind: 'pushOnly' }],
   left_open: [action('reviewComment.undo', 'secondary')],
   done: [{ kind: 'viewOnHost' }],
 };

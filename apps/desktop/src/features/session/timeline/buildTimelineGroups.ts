@@ -16,6 +16,7 @@ import type {
   WorkflowRun,
 } from '@goodboy/types';
 import { classifyAgent, type AgentKind } from '../agent-kind';
+import { ciFixRoleOf } from '../../branch/checks/ciFixRole';
 import { isAgentMissingArtifact } from '../../artifacts/turnArtifactOutcome';
 import { attachedQuestionsFor } from './attachedQuestions';
 import { earliestEvidence, resolveAgentCreation, type AgentCreation } from './agentCreation';
@@ -302,6 +303,10 @@ export const buildTimelineGroups = ({
   const childrenByParentId = new Map<string, ReadonlyArray<Agent>>();
   for (const agent of byOrdinal) {
     if (agent.parentAgentId == null) {
+      continue;
+    }
+    const kind = classifyAgent({ agent, override: agentKindOverride[agent.id] ?? null });
+    if (ciFixRoleOf({ agent, kind }) === 'fix') {
       continue;
     }
     const siblings = childrenByParentId.get(agent.parentAgentId) ?? [];

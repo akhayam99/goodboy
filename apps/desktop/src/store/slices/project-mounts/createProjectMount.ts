@@ -18,7 +18,7 @@ import { mountPlan } from '../sessions/mountPlan';
 import { branchInUseError } from './mountErrors';
 import { rememberWorktreeRoot } from '../storage/rememberWorktreeRoot';
 import { mountBranchOrigin } from './mountBranchOrigin';
-import { mountDirName } from './mountDirName';
+import { allocateMountDirName } from './allocateMountDirName';
 import { mountViewPatch } from './mountViewPatch';
 import { withRepositoryAndMountLock } from './mountLocks';
 import type { GetFn, SetFn } from './types';
@@ -129,6 +129,7 @@ export const createProjectMount = async ({
       const adoptedBranch = hasRepoMount ? undefined : seed?.existingBranch;
       const adoptedFallbackRef = adoptedBranch === undefined ? undefined : seed?.fallbackRef;
       const sessionSlug = plannedSlug ?? plan.slug;
+      const parentDir = `${project.rootPath}/.goodboy/worktrees`;
       let created;
       if (project.kind === 'repo') {
         await rememberWorktreeRoot({ repoRoot: project.rootPath, addedBy: 'mount' });
@@ -139,8 +140,12 @@ export const createProjectMount = async ({
             ? await createWorktree({
                 repoPath: project.rootPath,
                 branchName: adoptedBranch ?? plannedBranch ?? plan.branch ?? '',
-                parentDir: `${project.rootPath}/.goodboy/worktrees`,
-                dirName: mountDirName({ sessionSlug, mountId }),
+                parentDir,
+                dirName: await allocateMountDirName({
+                  mountId,
+                  repoPath: project.rootPath,
+                  parentDir,
+                }),
                 baseBranch: project.baseBranch ?? undefined,
                 ...(adoptedBranch !== undefined ? { existingBranch: adoptedBranch } : {}),
                 ...(adoptedFallbackRef !== undefined ? { fallbackRef: adoptedFallbackRef } : {}),

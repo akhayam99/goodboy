@@ -26,13 +26,8 @@ import {
   OrchestratorProviderError,
   ROLE_REGISTRY,
   SELECTABLE_AGENT_ROLES,
-  hintedRoutingOutcome,
-  keepProposalInRoleSet,
   orchestratorModelPool,
-  roleModelSetMenu,
-  parseWorkflowRoutingProposal,
   resolveStoredModelSelection,
-  resolveWorkflowRouting,
   devWarn,
   isAgentStatusSettled,
   runsForWorkflowRun,
@@ -57,7 +52,7 @@ import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
 import { uniqueStepName } from '../../../features/workflows/uniqueStepName';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import { roleDefaultsFor } from './roleDefaultsFor';
-import { rolePicks } from '../workflowRouting/rolePicks';
+import { resolveProposedRouting } from './resolveProposedRouting';
 import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAvailability';
 import { tauriDatabase } from '../../../shared/lib/db';
 import {
@@ -829,48 +824,19 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       }
       if (decision.action === 'next') {
         const proposed = decision.step;
-        const parsedProposal = parseWorkflowRoutingProposal({
-          fields: proposed,
-          emittingProvider: routing.providerId,
-        });
-        const routingProposal = keepProposalInRoleSet({
-          outcome: hintedRoutingOutcome({
-            outcome: parsedProposal,
-            promptText: proposed.promptPrefix,
-          }),
-          setMenu: roleModelSetMenu({
-            menu: modelMenu,
-            role: proposed.role,
-            prefs: workspaceRoleModels,
-          }),
-        });
-        const picks = rolePicks({
+        const { routingProposal, resolution } = resolveProposedRouting({
           state: get(),
           sessionId,
+          session,
           role: proposed.role,
-          profile:
-            parsedProposal.kind === 'valid'
-              ? parsedProposal.proposal.profile
-              : parsedProposal.profile,
+          fields: proposed,
+          promptText: proposed.promptPrefix,
+          emittingProvider: routing.providerId,
+          defaultProvider,
+          modelMenu,
+          roleModels: workspaceRoleModels,
           providerPool: run.providerPool ?? null,
-        });
-        const resolution = resolveWorkflowRouting({
-          agentLock: null,
-          stepLock: null,
-          proposal: routingProposal,
-          roleDefault: picks.roleDefault,
-          sessionDefault:
-            session.modelOverride == null
-              ? null
-              : {
-                  provider: defaultProvider,
-                  model: session.modelOverride,
-                  effort: session.effort ?? null,
-                },
-          kindDefault: picks.kindDefault,
           availability,
-          contextEstimate: null,
-          missingProposal: 'configured_default',
         });
         if (resolution.kind === 'blocked') {
           await persistOrchestrationStop({

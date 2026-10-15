@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FocusEvent } from 'react';
 import { X } from 'lucide-react';
-import { Button, IconButton, Notice, cn, type NoticeTone } from '@goodboy/ui';
+import { Button, IconButton, KeyHint, Notice, cn, type NoticeTone } from '@goodboy/ui';
 import { ICON_SIZE } from '../conceptIcons';
 import { toastDuration } from './toastTiming';
 import type { ToastItem, ToastKind } from './types';
@@ -114,6 +114,7 @@ export const ToastCard = ({ toast, onDismiss }: ToastCardProps) => {
               }}
             >
               {action.label}
+              {action.hint !== undefined && <KeyHint keys={action.hint} />}
             </Button>
           )
         }

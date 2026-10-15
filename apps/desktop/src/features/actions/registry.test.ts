@@ -24,6 +24,7 @@ import { WORKFLOW_RUN_KIND } from './kinds/workflowRun';
 import { REVIEW_KIND } from './kinds/review';
 import { REVIEW_COMMENT_KIND } from './kinds/reviewComment';
 import { WRITE_REVIEW_KIND } from './kinds/writeReview';
+import { SUGGESTION_KIND } from './kinds/suggestion';
 import { resolveActions } from './resolveActions';
 import { ACTION_GROUPS, type ActionDefinition } from './types';
 
@@ -54,6 +55,7 @@ const KINDS: ReadonlyArray<readonly [string, ReadonlyArray<AnyDefinition>]> = [
   ['review', REVIEW_KIND.actions],
   ['reviewComment', REVIEW_COMMENT_KIND.actions],
   ['writeReview', WRITE_REVIEW_KIND.actions],
+  ['suggestion', SUGGESTION_KIND.actions],
 ];
 
 describe('action registry', () => {

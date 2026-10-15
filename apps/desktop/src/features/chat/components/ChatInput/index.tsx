@@ -44,6 +44,9 @@ export const ChatInput = ({
   const cancelCurrentTurn = useAppStore((s) => s.cancelCurrentTurn);
   const { selectedAgentId, activeAgentKind, sessionWorktree, isFirstTurnForAgent, isRunning } =
     useAgentSelection({ session });
+  const isWaitingForWriter = useAppStore(
+    (s) => selectedAgentId !== null && s.agentWriterWait[selectedAgentId] !== undefined,
+  );
 
   const { showToast } = useToast();
 
@@ -278,6 +281,12 @@ export const ChatInput = ({
             />
           </div>
         </div>
+        {isWaitingForWriter ? (
+          <p className="px-1 text-meta text-faint-foreground">
+            Waiting for the writer. Another agent is writing in this folder, and this turn starts
+            when it is done. Stop cancels the wait.
+          </p>
+        ) : null}
         {showsDeliveryChoice ? (
           <p className="px-1 text-meta text-faint-foreground">
             Queue waits for this turn to end. Read now stops the turn, keeps what it wrote, and

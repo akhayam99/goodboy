@@ -687,6 +687,14 @@ mode a CLI can't honor runs as the next stricter one it has, never a looser one.
 | Edits allowed (`acceptEdits`)     | `acceptEdits`       | `-s workspace-write`: commands run too, inside the projects | `--mode accept-edits --sandbox`  | runs Read only              | runs Read only                             |
 | Full access (`bypassPermissions`) | `bypassPermissions` | `-s workspace-write`                                        | `--dangerously-skip-permissions` | `--force`                   | `--dangerously-skip-permissions`           |
 
+- opencode turns always carry `--dangerously-skip-permissions`, including the read-only roles
+  (scout, planner, investigator, reviewer): the `plan` agent denies edits but asks before a shell
+  command, and the flag approves the ask, so those roles can still run a shell there. Auto is the
+  one role kept off the whole family (opencode, OpenRouter, Moonshot) because of it
+  (`AUTO_UNCONFINED_PROVIDERS`; `ensure_confinement` refuses the role `auto` on an opencode
+  binary). Dropping the flag is not done: no probe proves that `opencode run` then denies the ask
+  instead of waiting for an answer. Side jobs (planner and summarizer runs of the app itself) do
+  not pass the flag
 - Claude 2.1.282 lists `manual` in place of `default` but still accepts `default`
   as a hidden alias, so Goodboy keeps sending `default` for Ask first: `manual`
   is not in older CLIs and would break them
@@ -860,7 +868,12 @@ When a provider ships or retires a model, update these together:
   for a pin that cannot run), the fallback model of a turn that changed provider
   (`selectModelOnProvider`), the report and wireframe spawns, the History rewriter
   (`historyRewriterConfig`), Scribe (`scribeModelConfig`) and every helper task
-  (`selectTaskModel`). A session's own layer reaches all of them.
+  (`selectTaskModel`). A session's own layer reaches all of them. A model a step or
+  an Auto child proposes goes through one function, `resolveProposedRouting`
+  (`store/slices/workflows/`): parse the proposal, keep it inside the role's set,
+  `rolePicks`, `resolveWorkflowRouting`. The orchestrator and the Auto delegation
+  verb both call it, and `resolveProposedRouting.test.ts` pins it against the chain
+  it was lifted from.
   `resolution.runtime.parity.test.ts` pins that they agree with the Models row on a
   Codex-only workspace with Anthropic pins and a session made before the change. The
   `resolver-entrypoints` ratchet counts the files that still import `resolveRoleRouting`,
@@ -955,7 +968,7 @@ When a provider ships or retires a model, update these together:
   model and carry no automatic effort. Task models never affect chat turns. Given
   `connectedProviders`, a pin on a disconnected provider moves to its fallback, then
   to Auto
-- **Agent roles** are the union `AgentRole` in `@goodboy/types`. They are saved in
+- **Agent roles** are the union `AgentRole` in `@goodboy/types`. `auto` is the newest member: it has a registry entry, a model slot in `AUTO_DEFAULTS` (Sonnet 5.5 at medium, like the Generalist) and a place in `ROLE_SLOTS` and `PROFILE_ACCESS`, but every eligibility flag is off and `DEFAULT_GROUPS` does not list it, so the Models page shows no row for it. They are saved in
   `workspaces.role_models` and read through `resolveRoleRouting`, which takes an
   optional `auto` context (default provider, fallback order, connected providers,
   CLI versions) and an optional step `size`. Without a context it answers for Claude.

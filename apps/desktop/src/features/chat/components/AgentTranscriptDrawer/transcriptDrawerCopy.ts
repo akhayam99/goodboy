@@ -4,6 +4,11 @@ import { agentDisplayName } from '../../../../shared/utils/agentDisplayName';
 export const TRANSCRIPT_DRAWER_COPY = {
   title: 'Transcript',
   fixRun: 'Fix run',
+  tabsLabel: 'Fix run views',
+  leadTab: 'Fix',
+  transcriptTab: 'Transcript',
+  leadDot: 'Question waiting',
+  transcriptDot: 'New activity',
   gone: 'This agent is no longer in the session.',
   send: 'Send',
   sendFailed: "Couldn't send the message",

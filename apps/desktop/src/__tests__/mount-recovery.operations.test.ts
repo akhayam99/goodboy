@@ -11,6 +11,7 @@ const h = vi.hoisted(() => ({
 vi.mock('../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../features/worktree/worktree', () => ({
   inspectWorktree: vi.fn(async () => h.inspection),
+  sessionDirExists: vi.fn(async () => false),
   worktreeStatus: vi.fn(async () => ({
     workingTree: {
       kind: 'known',

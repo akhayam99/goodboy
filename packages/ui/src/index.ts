@@ -4,7 +4,7 @@ export { SHEET_CLASSES } from './sheet';
 export { StudioSlotContext } from './studioSlotContext';
 export type { ResizeActivity, SheetEdge } from './sheet';
 export { FOCUS_RING } from './focusRing';
-export { registerEscapeLayer } from './escape';
+export { dismissTopEscapeLayer, registerEscapeLayer } from './escape';
 export { useEscapeLayer } from './useEscapeLayer';
 export { copyToClipboard } from './copyToClipboard';
 export { useCopyLink } from './useCopyLink';
@@ -36,6 +36,8 @@ export {
 export type { DrawerColumnFrame, DrawerColumnProps } from './components/DrawerColumn';
 export {
   COLUMN_FRAME,
+  DRAWER_EXIT_MS,
+  DRAWER_EXIT_MAX_ELEMENTS,
   DRAWER_INSET,
   READER_DRAWER_DEFAULT,
   READER_DRAWER_MAX,
@@ -48,7 +50,7 @@ export {
   mainWidthOf,
   pageBoxOf,
 } from './drawerGeometry';
-export type { DrawerMode, DrawerSizing, PageTier } from './drawerGeometry';
+export type { DrawerMode, DrawerPlacement, DrawerSizing, PageTier } from './drawerGeometry';
 export { DrawerFrame } from './components/DrawerFrame';
 export { Trail } from './components/Trail';
 export type { TrailSegmentModel } from './components/Trail/types';
@@ -229,6 +231,7 @@ export { Reveal } from './components/Reveal';
 export type { RevealProps } from './components/Reveal';
 export type { ResizeHandleProps } from './components/ResizeHandle';
 export { PaneShell } from './components/PaneShell';
+export { PaneTitleRow } from './components/PaneShell/PaneTitleRow';
 export {
   PaneActionsContext,
   useInheritedPaneActions,

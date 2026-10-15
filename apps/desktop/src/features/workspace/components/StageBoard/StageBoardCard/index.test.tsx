@@ -528,7 +528,7 @@ describe('StageBoardCard footer', () => {
     const agents = screen.getByLabelText('2 agents');
     const task = screen.getByLabelText('GB-123 from Linear');
     const cost = costBadge();
-    const auto = screen.getByLabelText('Run on its own');
+    const auto = screen.getByLabelText('Autopilot');
     const metaRow = agents.closest('[data-tooltip]')?.parentElement?.parentElement;
     const left = metaRow?.firstElementChild;
     const right = metaRow?.lastElementChild;
@@ -539,8 +539,8 @@ describe('StageBoardCard footer', () => {
     expect(auto.className).toContain('text-primary');
     expect(auto.className).not.toContain('text-danger');
     expect(auto.className).not.toContain('ring-1');
-    expect(screen.queryByText('Run on its own')).toBeNull();
-    expect(auto.closest('[data-tooltip]')?.getAttribute('data-tooltip')).toBe('Run on its own');
+    expect(screen.queryByText('Autopilot')).toBeNull();
+    expect(auto.closest('[data-tooltip]')?.getAttribute('data-tooltip')).toBe('Autopilot');
     expect(Array.from(left?.children ?? [])).toEqual([
       agents.closest('[data-tooltip]'),
       auto.closest('[data-tooltip]'),

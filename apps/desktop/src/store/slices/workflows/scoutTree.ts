@@ -33,6 +33,7 @@ import {
 import { clampWireframeScoutReport } from '../../../features/wireframes/wireframeScoutReports';
 import { isQuestionDelegate } from '../../../features/context/questionDelegate';
 import { agentEmittingProvider } from '../workflowRouting/agentEmittingProvider';
+import { fanOutChildKind } from '../agents/fanOutChildKind';
 import { openTurnStartWindow } from '../turn/turnStartWindow';
 import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
 import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
@@ -43,12 +44,28 @@ const synthesisStarted = new Set<string>();
 
 const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
-const TERMINAL: ReadonlyArray<Agent['status']> = ['completed', 'failed', 'skipped'];
+const TERMINAL: ReadonlyArray<Agent['status']> = [
+  'completed',
+  'failed',
+  'skipped',
+  'blocked',
+  'stopped',
+];
 
 const childrenOf = (runs: ReadonlyArray<Agent>, parentId: AgentId): ReadonlyArray<Agent> => {
   return runs
     .filter((r) => r.parentAgentId === parentId && !isQuestionDelegate({ agent: r }))
     .sort((a, b) => a.ordinal - b.ordinal);
+};
+
+type ChildLiveParams = Readonly<{
+  get: GetFn;
+  childId: AgentId;
+}>;
+
+const hasLiveRun = ({ get, childId }: ChildLiveParams): boolean => {
+  const kind = get().agentTurnState[childId]?.kind;
+  return kind === 'running' || kind === 'blocked';
 };
 
 export const scoutDepth = (runs: ReadonlyArray<Agent>, agentId: AgentId): number => {
@@ -521,7 +538,7 @@ const maybeSynthesizeParent = async ({
   }
 
   const siblings = childrenOf(runs, parentId);
-  if (siblings.some((s) => !TERMINAL.includes(s.status))) {
+  if (siblings.some((s) => !TERMINAL.includes(s.status) || hasLiveRun({ get, childId: s.id }))) {
     return;
   }
   if (synthesisStarted.has(parentId)) {
@@ -574,6 +591,30 @@ const settleAgent = async ({
   set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
   void get().refreshUnreadWorkspaces();
   await maybeSynthesizeParent({ set, get, sessionId, childId: agentId });
+};
+
+type JoinFanOutParams = Readonly<{
+  sessionId: SessionId;
+  agentId: AgentId;
+}>;
+
+export const joinFanOutParent = (set: SetFn, get: GetFn) => {
+  return async ({ sessionId, agentId }: JoinFanOutParams): Promise<void> => {
+    const runs = get().sessionPhaseRuns[sessionId] ?? [];
+    const agent = runs.find((run) => run.id === agentId);
+    if (agent === undefined) {
+      return;
+    }
+    const kind = fanOutChildKind({
+      agent,
+      runs,
+      agentKindOverride: get().agentKindOverride,
+    });
+    if (kind !== 'scout-tree') {
+      return;
+    }
+    await maybeSynthesizeParent({ set, get, sessionId, childId: agentId });
+  };
 };
 
 export const advanceScoutTree = (set: SetFn, get: GetFn) => {

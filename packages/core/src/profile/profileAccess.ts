@@ -29,8 +29,11 @@ export const PROFILE_ACCESS: Readonly<Record<ProfileAudience, ReadonlyArray<Prof
   resolver: FIXING,
   rewriter: BUILDING,
   scribe: WRITING,
+  'ci-debugger': SEARCHING,
+  'ci-fixer': BUILDING,
   report: WRITING,
   wireframe: WRITING,
+  auto: PLANNING,
   custom: EVERYTHING,
   questionDelegate: PLANNING,
 };

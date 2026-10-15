@@ -432,3 +432,79 @@ describe('page box: the centred column against the drawer', () => {
     ).toBe(1000);
   });
 });
+
+describe('the one drawer rule: fixed thresholds', () => {
+  const SIDE_THRESHOLD = 1024;
+  const READER_THRESHOLD = 1344;
+
+  it('pushes a default side drawer from a 1024 column and lays it over below', () => {
+    const at = (main: number) =>
+      drawerLayoutOf({ main, sizing: 'side', savedWidth: RIGHT_DRAWER_DEFAULT }).mode;
+
+    expect(at(SIDE_THRESHOLD)).toBe('push');
+    expect(at(SIDE_THRESHOLD - 1)).toBe('overlay');
+  });
+
+  it('pushes a default reader drawer from a 1344 column and lays it over below', () => {
+    const at = (main: number) =>
+      drawerLayoutOf({ main, sizing: 'reader', savedWidth: READER_DRAWER_DEFAULT }).mode;
+
+    expect(at(READER_THRESHOLD)).toBe('push');
+    expect(at(READER_THRESHOLD - 1)).toBe('overlay');
+  });
+
+  it('derives both thresholds from the one room formula, never from a second number', () => {
+    const fixed = DRAWER_INSET * 2 + COLUMN_GUTTERS + COLUMN_MIN_PUSH;
+
+    expect(SIDE_THRESHOLD).toBe(RIGHT_DRAWER_DEFAULT + fixed);
+    expect(READER_THRESHOLD).toBe(READER_DRAWER_DEFAULT + fixed);
+  });
+
+  it('never goes under the narrowest widths of today to fit a small window', () => {
+    expect(
+      drawerLayoutOf({ main: 700, sizing: 'side', savedWidth: RIGHT_DRAWER_MIN }).width,
+    ).toBeGreaterThanOrEqual(RIGHT_DRAWER_MIN);
+    expect(
+      drawerLayoutOf({ main: 900, sizing: 'reader', savedWidth: READER_DRAWER_MIN }).width,
+    ).toBeGreaterThanOrEqual(READER_DRAWER_MIN);
+  });
+
+  it.each([1100, 1440, 1920, 2400])(
+    'lays an overlay-placed reader at 720 over a %i column, whatever the room',
+    (main) => {
+      const layout = drawerLayoutOf({
+        main,
+        sizing: 'reader',
+        savedWidth: READER_DRAWER_DEFAULT,
+        placement: 'overlay',
+      });
+
+      expect(layout.mode).toBe('overlay');
+      expect(layout.width).toBe(READER_DRAWER_DEFAULT);
+    },
+  );
+
+  it('keeps an overlay-placed drawer inside a column narrower than its saved width', () => {
+    const layout = drawerLayoutOf({
+      main: 600,
+      sizing: 'reader',
+      savedWidth: READER_DRAWER_DEFAULT,
+      placement: 'overlay',
+    });
+
+    expect(layout.width).toBe(600 - DRAWER_INSET * 2);
+  });
+
+  it('reads auto placement as the plain rule', () => {
+    for (const main of MAINS) {
+      expect(
+        drawerLayoutOf({
+          main,
+          sizing: 'side',
+          savedWidth: RIGHT_DRAWER_DEFAULT,
+          placement: 'auto',
+        }),
+      ).toEqual(drawerLayoutOf({ main, sizing: 'side', savedWidth: RIGHT_DRAWER_DEFAULT }));
+    }
+  });
+});

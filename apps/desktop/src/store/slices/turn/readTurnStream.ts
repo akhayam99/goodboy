@@ -15,6 +15,7 @@ import { feedAuthRefusal } from '../providers/feedAuthRefusal';
 import { recordUsageTelemetry } from './recordUsageTelemetry';
 import { codexMeasuredUsage } from './codexMeasuredUsage';
 import type { GetFn, SetFn } from './types';
+import { confinedRoleOf } from './confinedRoleOf';
 import type { TurnContext } from './turnContext';
 
 type Params = Readonly<{
@@ -41,6 +42,7 @@ export const readTurnStream = async ({ set, get, ctx }: Params) => {
     apiKeyBinding,
     isScribeTurn,
     writerLease,
+    writeSetLease,
     runId,
     providerInfo,
     claudeFlags,
@@ -53,8 +55,10 @@ export const readTurnStream = async ({ set, get, ctx }: Params) => {
     isolatedCopyPath,
     turnSpanBase,
     resolvedPrompt,
+    agentRowEarly,
   } = ctx;
   const { filesTouchedThisTurn, editedPathsThisTurn } = progress;
+  const confinedRole = confinedRoleOf({ input: ctx.input, agent: agentRowEarly });
   for await (const rawEvent of runTurn(
     {
       runId,
@@ -72,6 +76,9 @@ export const readTurnStream = async ({ set, get, ctx }: Params) => {
       ...(effortFlag !== undefined && { effort: effortFlag }),
       ...(resolvedModel.maxMode === true && { cursorMaxMode: true }),
       ...(writerLease !== undefined && { writerLease }),
+      ...(writeSetLease !== undefined && { writeSetLease }),
+      ...(confinedRole !== undefined && { confinedRole }),
+      ...(ctx.input.deliveryId !== undefined && { deliveryId: ctx.input.deliveryId }),
       ...((isolatedCopyPath !== null || isScribeTurn) && { blocksPush: true }),
       ...(rewriterCopy !== null && { excludesTmp: true }),
       ...(apiKeyBinding ?? {}),

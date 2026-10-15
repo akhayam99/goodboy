@@ -111,7 +111,6 @@ const baseState = (): StoreState => ({
   workspaces: [],
   loadWorkspaceOverrides: vi.fn(async () => undefined),
   activeLens: {},
-  sessionStudio: {},
   selectedAgentId: {},
   transcripts: {},
   messages: {},

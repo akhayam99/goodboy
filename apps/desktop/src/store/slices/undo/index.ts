@@ -8,6 +8,7 @@ type UndoableParams = {
   readonly title?: string;
   readonly undo: UndoOperation['undo'];
   readonly conflictMessage?: string;
+  readonly actionHint?: string;
   readonly isCurrent?: () => boolean;
   readonly showToast?: ShowToast;
 };
@@ -38,6 +39,7 @@ export const createUndoSlice = ({ set, get }: SliceDeps) => {
       title,
       undo,
       conflictMessage,
+      actionHint,
       isCurrent,
       showToast,
     }: UndoableParams): string => {
@@ -58,7 +60,11 @@ export const createUndoSlice = ({ set, get }: SliceDeps) => {
         kind: 'info',
         message,
         ...(title === undefined ? {} : { title }),
-        action: { label: 'Undo', onClick: () => void get().undoLastOperation({ id }) },
+        action: {
+          label: 'Undo',
+          ...(actionHint === undefined ? {} : { hint: actionHint }),
+          onClick: () => void get().undoLastOperation({ id }),
+        },
       };
       if (showToast !== undefined) {
         showToast(toast);

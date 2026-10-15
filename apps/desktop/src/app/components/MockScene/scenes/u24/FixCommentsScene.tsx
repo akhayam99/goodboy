@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AppShell } from '@goodboy/ui';
+import { useAppStore } from '../../../../../store';
+import { START_HINT_SCOPES } from '../../../../../store/slices/startHints/startHintScopes';
 import { DrawerHost } from '../../../DrawerHost';
 import { BranchPage } from '../../../../../features/branch/components/BranchPage';
 import { shellArrangement } from '../../../../shellArrangement';
@@ -13,14 +15,20 @@ const arrangement = shellArrangement({
 
 type Props = {
   readonly phase: FixCommentsPhase;
+  readonly hint?: string;
 };
 
-export const FixCommentsScene = ({ phase }: Props) => {
+export const FixCommentsScene = ({ phase, hint }: Props) => {
   const [isReady, setIsReady] = useState(false);
   useEffect(() => {
     fixCommentsSeed({ phase });
+    if (hint !== undefined) {
+      useAppStore
+        .getState()
+        .setStartHint({ sessionId: SESSION.id, scope: START_HINT_SCOPES.fixComments, text: hint });
+    }
     setIsReady(true);
-  }, [phase]);
+  }, [phase, hint]);
   if (!isReady) {
     return null;
   }

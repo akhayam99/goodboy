@@ -189,6 +189,7 @@ const renderStudio = ({
           workspaceId={currentWorkspace.id}
           terminalId={overlay.terminalId}
           sessionId={overlay.sessionId}
+          worktree={overlay.worktree ?? null}
           onClose={close}
         />
       );

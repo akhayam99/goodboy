@@ -186,6 +186,7 @@ describe('the advertised verbs', () => {
       'operation',
     ]);
     expect(rust['series']).toEqual(['create', 'set-member', 'list']);
+    expect(rust['agent']).toBeUndefined();
     const now = '2026-08-22T00:00:00.000Z' as IsoDateTime;
     const project: Project = {
       id: 'project-guard' as ProjectId,

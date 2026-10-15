@@ -1,7 +1,9 @@
 import {
+  AUTO_SYSTEM_PROMPT,
   classifyFirstTurn,
   presentationKeyForRole,
   PLAN_KIT_GUIDE,
+  AUTO_OWN_PROVIDERS,
   REPORT_KIT_GUIDE,
   ROLE_REGISTRY,
   SELECTABLE_AGENT_ROLES,
@@ -19,7 +21,9 @@ import {
   GitPullRequestArrow,
   MapIcon,
   ScanEye,
+  ScanSearch,
   Telescope,
+  Wrench,
   type LucideIcon,
 } from 'lucide-react';
 import type { AutoLimitContext } from '../../store/slices/providerLimits/autoLimitContext';
@@ -94,6 +98,9 @@ export const AGENT_KIND_ORDER: ReadonlyArray<AgentKind> = [
   'resolver',
   'rewriter',
   'scribe',
+  'ci-debugger',
+  'ci-fixer',
+  'auto',
   'generic',
 ];
 
@@ -114,6 +121,7 @@ export const kindConsumesPlan = ({ kind }: KindParams): boolean => {
 const WRITE_CAPABLE_KINDS: ReadonlySet<AgentKind> = new Set<AgentKind>([
   'implementer',
   'debugger',
+  'ci-fixer',
   'tester',
   'docs',
   'resolver',
@@ -142,6 +150,15 @@ export const AGENT_KIND_META: Record<
     firstMessagePrompt: null,
     pluralLabel: 'generalists',
     hint: 'Plans, investigates, edits, and verifies without a narrow role',
+    persona: 'max',
+    expectedOutput: null,
+  },
+  auto: {
+    label: 'Auto agent',
+    noun: 'Auto agent',
+    firstMessagePrompt: null,
+    pluralLabel: 'auto agents',
+    hint: 'Answers, or hands the work to the roles it picks. Never edits files',
     persona: 'max',
     expectedOutput: null,
   },
@@ -240,9 +257,9 @@ export const AGENT_KIND_META: Record<
     noun: 'Resolver',
     firstMessagePrompt: 'What should Resolver address?',
     pluralLabel: 'resolvers',
-    hint: 'Addresses one comment with a local commit. Started from a review comment',
+    hint: 'Addresses review comments with local commits. Started from review comments',
     persona: 'patches',
-    expectedOutput: 'one local commit answering the comment',
+    expectedOutput: 'a local commit for each comment it fixes',
   },
   rewriter: {
     label: 'History rewriter',
@@ -261,6 +278,24 @@ export const AGENT_KIND_META: Record<
     hint: 'Writes pull request text, commit messages and changelog entries. Never code',
     persona: 'scribble',
     expectedOutput: 'text for the engine to use, never a file',
+  },
+  'ci-debugger': {
+    label: 'CI debugger',
+    noun: 'CI debugger',
+    firstMessagePrompt: null,
+    pluralLabel: 'CI debuggers',
+    hint: 'Reads a failed check and proposes the fix. Started from a failing check',
+    persona: 'patches',
+    expectedOutput: 'a finding and one proposed fix, or a few options',
+  },
+  'ci-fixer': {
+    label: 'CI fixer',
+    noun: 'CI fixer',
+    firstMessagePrompt: null,
+    pluralLabel: 'CI fixers',
+    hint: 'Applies the chosen fix for a failed check and commits it. Never pushes',
+    persona: 'patches',
+    expectedOutput: 'one local commit with the fix',
   },
 };
 
@@ -349,6 +384,24 @@ export const AGENT_KIND_PALETTE: Record<AgentKind, AgentKindPaletteEntry> = {
     fg: 'text-agent-scribe',
     label: AGENT_KIND_META.scribe.noun,
     icon: Feather,
+  },
+  'ci-debugger': {
+    bg: 'bg-agent-ci-debugger',
+    fg: 'text-agent-ci-debugger',
+    label: AGENT_KIND_META['ci-debugger'].noun,
+    icon: ScanSearch,
+  },
+  'ci-fixer': {
+    bg: 'bg-agent-ci-fixer',
+    fg: 'text-agent-ci-fixer',
+    label: AGENT_KIND_META['ci-fixer'].noun,
+    icon: Wrench,
+  },
+  auto: {
+    bg: 'bg-agent-auto',
+    fg: 'text-agent-auto',
+    label: AGENT_KIND_META.auto.noun,
+    icon: CONCEPT_ICONS.auto,
   },
   generic: {
     bg: 'bg-agent-generic',
@@ -450,6 +503,9 @@ export const KIND_TO_ROLE: Record<AgentKind, AgentRole> = {
   resolver: 'resolver',
   rewriter: 'rewriter',
   scribe: 'scribe',
+  'ci-debugger': 'ci-debugger',
+  'ci-fixer': 'ci-fixer',
+  auto: 'auto',
   generic: 'custom',
 };
 
@@ -477,7 +533,12 @@ export const kindRouting = ({
   limitContext,
   policy,
 }: KindRoutingParams): AgentKindRouting => {
-  const auto = kindAutoContext({ defaultProvider, limitContext, policy });
+  const auto = kindAutoContext({
+    defaultProvider,
+    limitContext,
+    policy,
+    ...(kind === 'auto' && { onlyProviders: AUTO_OWN_PROVIDERS }),
+  });
   const role = resolveRoleRouting({
     role: KIND_TO_ROLE[kind],
     prefs: roleModels,
@@ -491,13 +552,14 @@ export const kindRouting = ({
   };
 };
 
-export const AGENT_KIND_DEFAULTS: Record<
-  AgentKind,
-  {
-    readonly systemPrompt?: string;
-    readonly visible?: boolean;
-  }
-> = {
+type KindDefaults = {
+  readonly systemPrompt?: string;
+  readonly visible?: boolean;
+};
+
+type CiKind = 'ci-debugger' | 'ci-fixer';
+
+const BASE_KIND_DEFAULTS: Record<Exclude<AgentKind, CiKind>, KindDefaults> = {
   scout: {
     systemPrompt:
       'you are a scout agent. explore the codebase, answer questions, locate files and symbols. ALLOWED: read files, search, summarize findings, report structure. FORBIDDEN: editing files, writing code, creating plans, running tests. for a focused or single-area question, answer directly: do NOT split. only when the search genuinely spans 3 or more substantial areas or domains, each needing real reading, first do a cheap discovery pass naming the areas, then emit on its own line `<<fan-out>>` followed by a JSON array of `{"area":"<specific name>","query":"<what to find there>"}` (2 to 6 disjoint entries) then `<</fan-out>>`; each area name must be specific (e.g. "auth domain", never "area 1"). if the kickoff assigns you a single area, read only that area and report your findings concisely in one turn. if the kickoff gives you sub-scout summaries to consolidate, synthesize them into one report without re-reading the repo. if you catch yourself editing or planning, stop that action, name the action you stopped, and recommend spawning an implementer or planner agent. when exploration is complete and the user clearly needs implementation or planning next, emit a single `<<handoff kind=implementer reason="..." >>` or `<<handoff kind=planner reason="..." >>` marker on its own line.',
@@ -516,6 +578,10 @@ export const AGENT_KIND_DEFAULTS: Record<
       'when you are asked for a change to an existing wireframe, you receive the current spec, the request, the ids of the nodes the user picked and the scope. return the whole document, never a patch; keep the id of every node you did not change; give new nodes new ids; touch only the picked nodes and the scope asked, and leave every other screen exactly as it is.',
       WIREFRAME_SCHEMA_BRIEF,
     ].join('\n\n'),
+  },
+  auto: {
+    visible: false,
+    systemPrompt: AUTO_SYSTEM_PROMPT,
   },
   generic: {
     systemPrompt:
@@ -545,7 +611,7 @@ export const AGENT_KIND_DEFAULTS: Record<
   planner: {
     systemPrompt: [
       'you are a planning agent. you write the plan an implementer will execute without asking you anything. do not implement. ALLOWED: reading, reasoning, asking clarifying questions. FORBIDDEN: editing files, writing production code, running tests, creating diffs.',
-      'wrap your final plan in <<plan>>...<</plan>> markers so it can be captured as a session artifact. emit exactly one plan block per turn.',
+      'wrap your final plan in <<plan>>...<</plan>> markers so it can be captured as a session artifact. emit exactly one plan block per turn. when the user asks for a change to your plan, write the whole updated plan as one plan block, never a patch or a description of the change. the current plan is given to you in a [current-plan] block when there is one.',
       'a Goodboy plan is a short document a person approves in one read and an implementer executes in order. write it in markdown with exactly these sections, in this order, and nothing else:',
       '- the first line of the plan body is the title: an imperative of at most 8 words naming the outcome (e.g. "Backfill the settled batches"), never "Plan for ..." or "Implementation plan".',
       '- ## Goal: one or two sentences on what is true when the work is done, for the user of the product, not for the code.',
@@ -588,6 +654,20 @@ export const AGENT_KIND_DEFAULTS: Record<
       'deliver only the markers the kickoff asks for, each opening and closing tag on its own line: `<<pr-title>>`, one line, `<</pr-title>>`; `<<pr-body>>`, markdown, `<</pr-body>>`; `<<commit-message for="<sha>">>`, a subject line, a blank line, an optional body, `<</commit-message>>`; `<<changelog-entry>>`, one entry in the format of the repository CHANGELOG.md, `<</changelog-entry>>`.',
       'titles and subjects are imperative, sentence case, at most 72 characters, no trailing period. a body says what changed and why in a few short lines a reviewer reads in one pass, follows the project template when there is one, and never lists files one by one.',
     ].join('\n\n'),
+  },
+};
+
+export const AGENT_KIND_DEFAULTS: Record<AgentKind, KindDefaults> = {
+  ...BASE_KIND_DEFAULTS,
+  'ci-debugger': {
+    visible: false,
+    systemPrompt:
+      'you are the CI debugger. a check failed on a pull request and the kickoff holds the evidence: the facts, the failed log tail and the changed paths. reproduce the failure, find the root cause and propose the fix. ALLOWED: reading code and logs, running the failing command locally to reproduce. FORBIDDEN: editing files, committing, pushing, splitting the work into sub-agents, creating plans, writing documentation. finish with the sections the kickoff asks for, with its exact headings.',
+  },
+  'ci-fixer': {
+    visible: false,
+    systemPrompt:
+      'you are the CI fixer. a check failed on a pull request, the CI debugger proposed a fix and the kickoff holds it. apply that fix on this branch and commit it. ALLOWED: reading and editing the files the fix names, running the failing command and the related tests, staging and committing on this branch. FORBIDDEN: pushing, creating or switching branches, refactoring beyond the fix, creating plans, writing documentation. when the fix does not work, say why and stop instead of widening it. nobody answers while you work, so never ask for permission to edit or to commit. the owner pushes the commit.',
   },
 };
 
@@ -640,18 +720,19 @@ type ClassifyAgentParams = {
   readonly override: AgentKind | null;
 };
 
+type StoredAgentKindParams = {
+  readonly kind: string;
+};
+
+export const storedAgentKind = ({ kind }: StoredAgentKindParams): AgentKind =>
+  kind === 'pr-reviewer' ? kind : presentationKeyForRole({ role: kind });
+
 const classifyAgentRow = ({ agent, override }: ClassifyAgentParams): AgentKind => {
   if (override != null) {
-    if (override === 'pr-reviewer') {
-      return override;
-    }
-    return presentationKeyForRole({ role: override });
+    return storedAgentKind({ kind: override });
   }
   if (agent.kind != null) {
-    if (agent.kind === 'pr-reviewer') {
-      return agent.kind;
-    }
-    return presentationKeyForRole({ role: agent.kind });
+    return storedAgentKind({ kind: agent.kind });
   }
   return inferAgentKindFromName({ name: agent.name });
 };
@@ -696,10 +777,7 @@ export const resolveAgentKind = ({
   override,
 }: ResolveAgentKindParams): AgentKind => {
   if (override != null) {
-    if (override === 'pr-reviewer') {
-      return override;
-    }
-    return presentationKeyForRole({ role: override });
+    return storedAgentKind({ kind: override });
   }
   const fromName = inferAgentKindFromName({ name });
   if (fromName !== 'generic') {

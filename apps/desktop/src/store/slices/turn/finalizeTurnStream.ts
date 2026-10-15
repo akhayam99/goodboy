@@ -11,6 +11,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList } from '../../../features/workflows/workflows';
 import { worktreeChangedFiles } from '../../../features/worktree/worktree';
 import { recordProviderRun } from '../providers/recordProviderRun';
+import { routeQuestions } from '../auto/routeQuestions';
 import { cursorMaxModeAdvisory } from '../../../shared/lib/cursorMaxModeAdvisory';
 import { applyAgentTurnState, cancelledRunIds } from '../sessions/sessionMutators';
 import { captureMaterializeRequestsFromTurn } from './turnHelpers';
@@ -122,6 +123,7 @@ export const finalizeTurnStream = async ({ set, get, ctx }: Params) => {
       assistantText,
       didAgentDie: receivedStreamError || assistantText.trim().length === 0,
       resolveAttemptId,
+      runId,
       now,
     });
     if (shouldAutoAdvance !== null) {
@@ -168,11 +170,17 @@ export const finalizeTurnStream = async ({ set, get, ctx }: Params) => {
     } catch {
       turnOrdinal = transcriptTurnOrdinal;
     }
+    const questionRoute = await routeQuestions({
+      db: tauriDatabase,
+      agentId: activeAgentId,
+      assistantText,
+    });
     const result = await autoPopulateContext({
       db: tauriDatabase,
       sessionId,
       filesEdited: Array.from(filesTouchedThisTurn),
       assistantText,
+      isQuestionIntakeSkipped: questionRoute === 'tree',
       agentContext: {
         agentId: activeAgentId,
         workflowId: stepLookup?.workflowId,

@@ -311,13 +311,13 @@ export const StageBoardCard = memo(function StageBoardCard({
             />
           )}
           {isAutoMode && (
-            <Tooltip content={NAMES.runOnItsOwn} side="top">
+            <Tooltip content={NAMES.autopilot} side="top">
               <span className="inline-flex shrink-0">
                 <Chip
                   tone={CONCEPT_TONE.autorun}
                   size="xs"
                   bordered={false}
-                  ariaLabel={NAMES.runOnItsOwn}
+                  ariaLabel={NAMES.autopilot}
                   icon={<CONCEPT_ICONS.autorun size={ICON_SIZE.row} aria-hidden />}
                 />
               </span>

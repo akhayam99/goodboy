@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Play } from 'lucide-react';
 import { parseHiddenModels } from '@goodboy/core';
 import { useShallow } from 'zustand/react/shallow';
-import { Button, DrawerColumn, PageColumn } from '@goodboy/ui';
+import { Button, DrawerColumn, PageColumn, Tooltip } from '@goodboy/ui';
 import type {
   ChatId,
   ChatMessage,
@@ -212,16 +212,20 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => 
         action={
           chat === null ? null : (
             <>
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={!canStartWork}
-                aria-expanded={work !== null}
-                onClick={() => openWork(null)}
-              >
-                <Play size={ICON_SIZE.row} aria-hidden />
-                {NAMES.startWorkFromChat}
-              </Button>
+              <Tooltip content={NAMES.startWorkFromChat} side="bottom">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={!canStartWork}
+                  aria-label={NAMES.startWorkFromChat}
+                  aria-expanded={work !== null}
+                  className="shrink-0 whitespace-nowrap"
+                  onClick={() => openWork(null)}
+                >
+                  <Play size={ICON_SIZE.row} aria-hidden />
+                  <span className="@max-xl/chat:hidden">{NAMES.startWorkFromChat}</span>
+                </Button>
+              </Tooltip>
               <ChatHeaderDelete chat={chat} onRemoved={onRemoved} />
             </>
           )

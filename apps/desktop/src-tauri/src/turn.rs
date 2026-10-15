@@ -13,6 +13,7 @@ use crate::live_child::{
 };
 use crate::providers::cli_args::turn_args;
 use crate::turn_backlog::{AttachSnapshot, TurnBacklog};
+use crate::turn_delivery::{DeliveryClaim, DeliveryRegistry, DeliveryRun};
 
 pub(crate) const MAX_TURN_LINE_BYTES: usize = 64 * 1024 * 1024;
 
@@ -26,6 +27,10 @@ pub enum TurnError {
     WriterLeaseNotOwned,
     #[error("turn not found: {0}")]
     NotFound(String),
+    #[error("role confinement is not proven for this CLI: {0}")]
+    ConfinementUnproven(String),
+    #[error("this delivery already started run {0}")]
+    DeliveryDuplicate(String),
 }
 
 crate::util::impl_error_serialize!(TurnError);
@@ -37,6 +42,8 @@ impl TurnError {
             TurnError::Poisoned => "poisoned",
             TurnError::WriterLeaseNotOwned => "writer_lease_not_owned",
             TurnError::NotFound(_) => "not_found",
+            TurnError::ConfinementUnproven(_) => "confinement_unproven",
+            TurnError::DeliveryDuplicate(_) => "delivery_duplicate",
         }
     }
 }
@@ -44,7 +51,7 @@ impl TurnError {
 type ChildRegistry = LiveChildRegistry;
 
 #[derive(Default)]
-pub struct TurnRegistry(pub ChildRegistry, pub TurnBacklog);
+pub struct TurnRegistry(pub ChildRegistry, pub TurnBacklog, pub DeliveryRegistry);
 
 impl TurnRegistry {
     pub fn new() -> Self {
@@ -123,9 +130,15 @@ pub struct SpawnArgs {
     #[serde(default)]
     pub writer_lease: Option<WriterLeaseBinding>,
     #[serde(default)]
+    pub write_set_lease: Option<crate::worktree_writer::WriteSetBinding>,
+    #[serde(default)]
+    pub confined_role: Option<String>,
+    #[serde(default)]
     pub blocks_push: bool,
     #[serde(default)]
     pub excludes_tmp: bool,
+    #[serde(default)]
+    pub delivery_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -196,6 +209,8 @@ pub(crate) struct SpawnOneArgs<'a> {
     pub mount_id: Option<&'a str>,
     pub cursor_max_mode: bool,
     pub writer_lease: Option<&'a WriterLeaseBinding>,
+    pub write_set_lease: Option<&'a crate::worktree_writer::WriteSetBinding>,
+    pub confined_role: Option<&'a str>,
     pub blocks_push: bool,
     pub excludes_tmp: bool,
 }
@@ -226,27 +241,41 @@ fn spawn_leased_child(
     command: &mut Command,
     leases: &crate::worktree_writer::WriterLeaseRegistry,
     binding: Option<&WriterLeaseBinding>,
+    write_set: Option<&crate::worktree_writer::WriteSetBinding>,
     run_id: &str,
-    on_exit: impl Fn() + Send + 'static,
-) -> Result<(Child, Option<crate::worktree_writer::RunLeaseGuard>), TurnError> {
-    let guard = binding
-        .map(|binding| {
+    on_exit: impl Fn(&str) + Send + Clone + 'static,
+) -> Result<(Child, Vec<crate::worktree_writer::RunLeaseGuard>), TurnError> {
+    let mut guards = Vec::new();
+    if let Some(binding) = binding {
+        guards.push(
             crate::worktree_writer::RunLeaseGuard::bind(
                 leases,
                 &binding.path,
                 &binding.holder,
                 &binding.token,
                 run_id,
+                on_exit.clone(),
+            )
+            .ok_or(TurnError::WriterLeaseNotOwned)?,
+        );
+    }
+    if let Some(set) = write_set {
+        guards.push(
+            crate::worktree_writer::RunLeaseGuard::bind_set(
+                leases,
+                &set.holder,
+                &set.entries,
+                run_id,
                 on_exit,
             )
-            .ok_or(TurnError::WriterLeaseNotOwned)
-        })
-        .transpose()?;
+            .ok_or(TurnError::WriterLeaseNotOwned)?,
+        );
+    }
     let child = command
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()?;
-    Ok((child, guard))
+    Ok((child, guards))
 }
 
 fn spawn_one<E: TurnEmitter>(
@@ -295,19 +324,23 @@ fn spawn_one<E: TurnEmitter>(
     }
 
     let event_app = app.clone();
-    let event_binding = args.writer_lease.cloned();
-    let (mut child, lease_guard) = spawn_leased_child(
+    let event_holder = args
+        .writer_lease
+        .map(|binding| binding.holder.clone())
+        .or_else(|| args.write_set_lease.map(|set| set.holder.clone()));
+    let (mut child, lease_guards) = spawn_leased_child(
         &mut command,
         leases,
         args.writer_lease,
+        args.write_set_lease,
         args.run_id,
-        move || {
-            if let Some(binding) = &event_binding {
+        move |path: &str| {
+            if let Some(holder) = &event_holder {
                 event_app.emit_turn(
                     crate::worktree_writer::EVENT_NAME,
                     crate::worktree_writer::WriterLeaseEvent {
-                        path: binding.path.clone(),
-                        holder: binding.holder.clone(),
+                        path: path.to_string(),
+                        holder: holder.clone(),
                         reason: "exited",
                     },
                 );
@@ -372,10 +405,40 @@ fn spawn_one<E: TurnEmitter>(
             });
             backlog_clone.finish(&run_id_owned);
         }
-        drop(lease_guard);
+        drop(lease_guards);
     });
 
     Ok(args.run_id.to_string())
+}
+
+fn claim_delivery(state: &TurnRegistry, args: &SpawnArgs) -> Result<(), TurnError> {
+    let Some(delivery_id) = args.delivery_id.as_deref() else {
+        return Ok(());
+    };
+    let live = state.0.lock().map_err(|_| TurnError::Poisoned)?;
+    match state.2.claim(delivery_id, &args.run_id, |run_id| {
+        live.contains_key(run_id)
+    }) {
+        DeliveryClaim::Claimed => Ok(()),
+        DeliveryClaim::Duplicate(run_id) => Err(TurnError::DeliveryDuplicate(run_id)),
+    }
+}
+
+fn release_delivery(state: &TurnRegistry, args: &SpawnArgs) {
+    if let Some(delivery_id) = args.delivery_id.as_deref() {
+        state.2.release(delivery_id, &args.run_id);
+    }
+}
+
+#[tauri::command]
+pub async fn turn_delivery_lookup(
+    state: State<'_, TurnRegistry>,
+    delivery_id: String,
+) -> Result<Option<DeliveryRun>, TurnError> {
+    let live = state.0.lock().map_err(|_| TurnError::Poisoned)?;
+    Ok(state
+        .2
+        .lookup(&delivery_id, |run_id| live.contains_key(run_id)))
 }
 
 #[tauri::command]
@@ -386,13 +449,18 @@ pub async fn turn_spawn(
     args: SpawnArgs,
 ) -> Result<String, TurnError> {
     let binary = args.binary.as_deref().unwrap_or("claude");
+    if let Some(role) = args.confined_role.as_deref() {
+        crate::providers::cli_probe::ensure_confinement(binary, role)
+            .map_err(TurnError::ConfinementUnproven)?;
+    }
     let permission_mode = args
         .permission_mode
         .as_deref()
         .unwrap_or("default")
         .to_string();
 
-    spawn_one(
+    claim_delivery(&state, &args)?;
+    let spawned = spawn_one(
         &app,
         &state.0,
         &state.1,
@@ -422,10 +490,16 @@ pub async fn turn_spawn(
             mount_id: args.mount_id.as_deref(),
             cursor_max_mode: args.cursor_max_mode,
             writer_lease: args.writer_lease.as_ref(),
+            write_set_lease: args.write_set_lease.as_ref(),
+            confined_role: args.confined_role.as_deref(),
             blocks_push: args.blocks_push,
             excludes_tmp: args.excludes_tmp,
         },
-    )
+    );
+    if spawned.is_err() {
+        release_delivery(&state, &args);
+    }
+    spawned
 }
 
 #[tauri::command]
@@ -578,6 +652,46 @@ mod fake_cli_tests;
 mod tests {
     use super::*;
 
+    fn spawn_args(run_id: &str, delivery_id: Option<&str>) -> SpawnArgs {
+        serde_json::from_value(serde_json::json!({
+            "runId": run_id,
+            "model": "sonnet",
+            "workingDir": "/repo/one",
+            "prompt": "go",
+            "deliveryId": delivery_id,
+        }))
+        .expect("spawn args")
+    }
+
+    #[test]
+    fn a_second_run_of_the_same_delivery_is_refused_with_the_first_run_id() {
+        let registry = TurnRegistry::new();
+        claim_delivery(&registry, &spawn_args("run-1", Some("delivery-1"))).expect("first claim");
+        let second = claim_delivery(&registry, &spawn_args("run-2", Some("delivery-1")));
+        match second {
+            Err(TurnError::DeliveryDuplicate(run_id)) => assert_eq!(run_id, "run-1"),
+            other => panic!("expected a duplicate, got {other:?}"),
+        }
+        let found = registry.2.lookup("delivery-1", |_| false);
+        assert_eq!(found.map(|run| run.run_id), Some("run-1".to_string()));
+    }
+
+    #[test]
+    fn a_spawn_without_a_delivery_id_is_never_refused() {
+        let registry = TurnRegistry::new();
+        claim_delivery(&registry, &spawn_args("run-1", None)).expect("no delivery");
+        claim_delivery(&registry, &spawn_args("run-2", None)).expect("no delivery");
+    }
+
+    #[test]
+    fn a_spawn_that_failed_gives_its_delivery_back() {
+        let registry = TurnRegistry::new();
+        let first = spawn_args("run-1", Some("delivery-1"));
+        claim_delivery(&registry, &first).expect("first claim");
+        release_delivery(&registry, &first);
+        claim_delivery(&registry, &spawn_args("run-2", Some("delivery-1"))).expect("claim again");
+    }
+
     #[test]
     fn spawn_refuses_a_writer_without_an_owned_lease() {
         let leases = crate::worktree_writer::WriterLeases::new();
@@ -587,7 +701,14 @@ mod tests {
             token: "stale-token".to_string(),
         };
         let mut command = Command::new("/bin/echo");
-        let result = spawn_leased_child(&mut command, &leases.0, Some(&binding), "run-1", || {});
+        let result = spawn_leased_child(
+            &mut command,
+            &leases.0,
+            Some(&binding),
+            None,
+            "run-1",
+            |_| {},
+        );
         assert!(matches!(result, Err(TurnError::WriterLeaseNotOwned)));
     }
 
@@ -711,6 +832,8 @@ mod tests {
             mount_id: None,
             cursor_max_mode: false,
             writer_lease: None,
+            write_set_lease: None,
+            confined_role: None,
             blocks_push: false,
             excludes_tmp: false,
         };
@@ -745,6 +868,8 @@ mod tests {
             mount_id: None,
             cursor_max_mode: false,
             writer_lease: None,
+            write_set_lease: None,
+            confined_role: None,
             blocks_push: false,
             excludes_tmp: false,
         }

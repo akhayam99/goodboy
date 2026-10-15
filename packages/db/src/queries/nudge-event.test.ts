@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, SessionId, WorkspaceId } from '@goodboy/types';
+import { TEST_NOW } from '@goodboy/types/testing';
 import type { Database } from '../client';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
-import { insertNudgeEvent, listNudgeEvents, updateNudgeEventOutcome } from './nudge-event';
+import {
+  deleteNudgeEvent,
+  insertNudgeEvent,
+  listNudgeEvents,
+  updateNudgeEventOutcome,
+} from './nudge-event';
 
 const workspaceId = 'w1' as WorkspaceId;
 const sessionId = 's1' as SessionId;
@@ -112,5 +118,35 @@ describe('listNudgeEvents', () => {
     });
 
     expect(events[0]?.outcome).toBe('accepted');
+  });
+});
+
+describe('deleteNudgeEvent', () => {
+  it('removes the named event of that session and leaves the others', async () => {
+    const db = await seed();
+    const rows: ReadonlyArray<{ readonly id: string; readonly owner: SessionId }> = [
+      { id: 'ev-1', owner: sessionId },
+      { id: 'ev-2', owner: sessionId },
+      { id: 'ev-3', owner: otherSessionId },
+    ];
+    for (const { id, owner } of rows) {
+      await insertNudgeEvent(db, {
+        id,
+        sessionId: owner,
+        ts: TEST_NOW,
+        kind: 'next:push-branch',
+        contextJson: null,
+        outcome: 'dismissed',
+        outcomeTs: TEST_NOW,
+      });
+    }
+
+    await deleteNudgeEvent({ db, sessionId, id: 'ev-1' });
+    await deleteNudgeEvent({ db, sessionId, id: 'ev-3' });
+
+    const mine = await listNudgeEvents({ db, sessionId, sinceTs: TEST_NOW });
+    const theirs = await listNudgeEvents({ db, sessionId: otherSessionId, sinceTs: TEST_NOW });
+    expect(mine.map((event) => event.id)).toEqual(['ev-2']);
+    expect(theirs.map((event) => event.id)).toEqual(['ev-3']);
   });
 });

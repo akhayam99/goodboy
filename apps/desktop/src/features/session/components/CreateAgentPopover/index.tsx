@@ -1,48 +1,10 @@
-import { useRef, useState, type ReactNode } from 'react';
-import { ChevronDown } from 'lucide-react';
-import { useShallow } from 'zustand/react/shallow';
-import {
-  ROW_INTERACTIVE,
-  AnchoredPopover,
-  Button,
-  cn,
-  FormActions,
-  PopoverBody,
-  formatError,
-  useDropdown,
-} from '@goodboy/ui';
+import type { ReactNode } from 'react';
+import { AnchoredPopover, PopoverBody, useDropdown } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import { PickerSection } from '../../../../shared/components/RoutingPicker/PickerSection';
-import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
-import { selectResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
-import {
-  AGENT_KIND_META,
-  KIND_TO_ROLE,
-  visibleAgentKinds,
-  type AgentKind,
-  type AgentKindRouting,
-} from '../../agent-kind';
-import { AGENT_FORM_GRAMMAR } from '../../agent-form-grammar';
-import { resolveSpawnRouting } from '../../spawn-routing';
-import { useSuggestedRouting } from '../../hooks/useSuggestedRouting';
-import { isSameRouting } from '../../isSameRouting';
-import { SUGGESTED_LABEL } from '../../../../shared/components/RoutingPicker/autoRecommendationCopy';
-import { AgentRoleField } from '../AgentRoleField';
-import { AgentKindGrid } from './AgentKindGrid';
-import { LaunchEstimateNote } from './LaunchEstimateNote';
-import { RoutingPickerBody } from '../../../../shared/components/RoutingPicker/RoutingPickerBody';
+import { useIsAutoOn } from '../../../auto/useIsAutoOn';
+import { AgentStartBlock } from '../AgentStartBlock';
+import { AutoComposer } from '../AutoComposer';
 import { CreateAgentTrigger } from './CreateAgentTrigger';
-import { recommendationSummary } from '../../../../shared/components/RoutingPicker/recommendationSummary';
-import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
-import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
-import { useKindRouting } from '../../../../shared/hooks/useKindRouting';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
-
-const ROUTING_PANEL_ID = 'create-agent-routing';
-
-const CHAT_ROUTING_REASON = 'Same model as this chat.';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -67,105 +29,7 @@ export const CreateAgentPopover = ({
     ...(openEvent !== undefined && { openEvent }),
   });
   const { open, close, toggle } = dropdown;
-  const [kind, setKind] = useState<AgentKind>('generic');
-  const [routing, setRouting] = useState<AgentKindRouting | null>(null);
-  const [isRoutingOpen, setIsRoutingOpen] = useState(false);
-  const [isSpawning, setIsSpawning] = useState(false);
-  const [spawnError, setSpawnError] = useState<string | null>(null);
-  const isSpawningRef = useRef(false);
-  const spawnAgent = useAppStore((state) => state.spawnAgent);
-  const agentKinds = visibleAgentKinds();
-  const selectedKind = agentKinds.includes(kind) ? kind : (agentKinds[0] ?? 'generic');
-  const connectedProviders = useAppStore(
-    useShallow((state) =>
-      state.providers
-        .filter((provider) => provider.connection === 'connected')
-        .map((provider) => provider.id),
-    ),
-  );
-  const roleModels = useSessionRoleModels({ sessionId });
-  const session = useAppStore((state) => sessionById(state.sessions, sessionId) ?? null);
-  const roleDefault = useKindRouting({ sessionId, kind: selectedKind });
-  const spawnDefault = resolveSpawnRouting({ kind: selectedKind, roleDefault, session });
-  const activePlan = useAppStore((state) => {
-    const plans = state.sessionPlans[sessionId] ?? [];
-    const latest = plans[plans.length - 1] ?? null;
-    return latest?.status === 'active' ? latest : null;
-  });
-  const kindLabel = AGENT_KIND_META[selectedKind].noun;
-  const planToStart = selectedKind === 'implementer' ? activePlan : null;
-  const actionLabel = planToStart == null ? `Open ${kindLabel}` : `Start ${kindLabel} on the plan`;
-  const actionNote =
-    planToStart == null
-      ? 'You write the first message in its chat.'
-      : `Starts now from plan: ${planToStart.title}`;
-  const suggested = useSuggestedRouting({ sessionId, role: KIND_TO_ROLE[selectedKind] });
-  const suggestion: AgentKindRouting = {
-    provider: spawnDefault.provider,
-    model: spawnDefault.model,
-    effort: spawnDefault.effort,
-  };
-  const suggestionReason = spawnDefault.origin === 'chat' ? CHAT_ROUTING_REASON : suggested.reason;
-  const lastAgent = useAppStore(
-    (state) =>
-      [...(state.sessionPhaseRuns[sessionId] ?? [])]
-        .reverse()
-        .find(
-          (agent) =>
-            agent.kind === selectedKind &&
-            agent.providerOverride != null &&
-            agent.modelOverride != null,
-        ) ?? null,
-  );
-  const lastRouting: AgentKindRouting | null =
-    lastAgent?.providerOverride == null || lastAgent.modelOverride == null
-      ? null
-      : {
-          provider: lastAgent.providerOverride,
-          model: lastAgent.modelOverride,
-          effort: lastAgent.effort ?? suggestion.effort,
-        };
-  const lastUsed =
-    lastRouting != null && !isSameRouting({ left: lastRouting, right: suggestion })
-      ? lastRouting
-      : null;
-  const effective: AgentKindRouting = routing ?? suggestion;
-  const routingSummary = recommendationSummary({
-    provider: effective.provider,
-    model: effective.model,
-    effort: effective.effort,
-  });
-
-  const onCreate = async () => {
-    if (isSpawningRef.current) {
-      return;
-    }
-    isSpawningRef.current = true;
-    setIsSpawning(true);
-    setSpawnError(null);
-    try {
-      await spawnAgent(sessionId, {
-        kindOverride: selectedKind,
-        provider: effective.provider,
-        model: effective.model,
-        effort: effective.effort,
-        focus: 'agent',
-      });
-      setKind('generic');
-      setRouting(null);
-      setIsRoutingOpen(false);
-      close();
-      if (onSpawned != null) {
-        onSpawned();
-      }
-      window.dispatchEvent(openAgentRevealEvent());
-    } catch (err) {
-      setSpawnError(formatError(err));
-    } finally {
-      isSpawningRef.current = false;
-      setIsSpawning(false);
-    }
-  };
+  const isAuto = useIsAutoOn();
 
   return (
     <AnchoredPopover
@@ -179,116 +43,18 @@ export const CreateAgentPopover = ({
       }
     >
       <PopoverBody>
-        {agentKinds.length > 1 ? (
-          <PickerSection label={AGENT_FORM_GRAMMAR.role.label}>
-            <AgentKindGrid kinds={agentKinds} value={selectedKind} onChange={setKind} />
-          </PickerSection>
+        {isAuto ? (
+          <div className="px-3 py-3">
+            <AutoComposer sessionId={sessionId} footerClassName="pt-3" onDone={close} />
+          </div>
         ) : (
-          <AgentRoleField
-            role={{
-              label: AGENT_KIND_META[selectedKind].label,
-              hint: AGENT_KIND_META[selectedKind].hint,
-            }}
-            className="px-3 py-2"
+          <AgentStartBlock
+            sessionId={sessionId}
+            isShown={open}
+            onDone={close}
+            {...(onSpawned !== undefined && { onSpawned })}
           />
         )}
-        <PickerSection label={AGENT_FORM_GRAMMAR.routing.label}>
-          <div className="px-3">
-            <button
-              type="button"
-              onClick={() => setIsRoutingOpen((current) => !current)}
-              aria-expanded={isRoutingOpen}
-              aria-controls={ROUTING_PANEL_ID}
-              aria-label={`${AGENT_FORM_GRAMMAR.routing.ariaLabel}: ${routingSummary}`}
-              className={cn(
-                'flex w-full items-center gap-2 rounded-md border border-border-soft bg-subtle px-2 py-2 text-left text-label text-foreground hover:border-border',
-                ROW_INTERACTIVE,
-              )}
-            >
-              <span className="flex min-w-0 flex-1">
-                {effective.model == null ? (
-                  <span className="truncate">{routingSummary}</span>
-                ) : (
-                  <RoutingLabel
-                    provider={effective.provider}
-                    model={effective.model}
-                    effort={effective.effort ?? null}
-                  />
-                )}
-              </span>
-              <ChevronDown
-                size={ICON_SIZE.row}
-                aria-hidden
-                className={cn(
-                  'shrink-0 text-muted-foreground motion-safe:transition-transform',
-                  isRoutingOpen && 'rotate-180',
-                )}
-              />
-            </button>
-          </div>
-        </PickerSection>
-        {isRoutingOpen && (
-          <div id={ROUTING_PANEL_ID} className="flex flex-col pt-2">
-            <RoutingPickerBody
-              connectedProviders={connectedProviders}
-              provider={effective.provider}
-              model={effective.model}
-              effort={{ editable: true, value: effective.effort }}
-              onClose={close}
-              recommendation={{ ...suggestion, label: SUGGESTED_LABEL, reason: suggestionReason }}
-              overridden={routing !== null}
-              {...(lastUsed != null && {
-                lastUsed: {
-                  routing: lastUsed,
-                  active: routing !== null && isSameRouting({ left: routing, right: lastUsed }),
-                  onSelect: () => setRouting(lastUsed),
-                },
-              })}
-              onChange={({ provider, model, effort }) => {
-                if (provider === '') {
-                  setRouting(null);
-                  return;
-                }
-                setRouting((current) => ({
-                  ...(current ?? spawnDefault),
-                  provider,
-                  model,
-                  effort,
-                }));
-              }}
-            />
-          </div>
-        )}
-        <FormActions
-          className="px-3 pb-2 pt-3"
-          leading={
-            spawnError === null ? (
-              <span className="flex min-w-0 flex-col gap-0.5">
-                <span className="text-meta text-faint-foreground">{actionNote}</span>
-                <LaunchEstimateNote
-                  workspaceId={session?.workspaceId ?? null}
-                  kind={selectedKind}
-                  routing={effective}
-                  isShown={open && planToStart != null}
-                />
-              </span>
-            ) : (
-              <span role="alert" className="min-w-0 text-meta text-danger">
-                {spawnError}
-              </span>
-            )
-          }
-        >
-          <Button
-            size="sm"
-            onClick={() => void onCreate()}
-            disabled={isSpawning}
-            isBusy={isSpawning}
-            busyLabel={`Starting ${kindLabel}`}
-          >
-            {actionLabel}
-          </Button>
-        </FormActions>
       </PopoverBody>
     </AnchoredPopover>
   );

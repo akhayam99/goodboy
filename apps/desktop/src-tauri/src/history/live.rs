@@ -99,7 +99,7 @@ fn edit_with_lease(
         LEASE_HOLDER,
         token,
         &format!("history-live-{}", now_nanos()),
-        || {},
+        |_| {},
     );
     if guard.is_none() {
         return Ok(LiveOutcome::Blocked {

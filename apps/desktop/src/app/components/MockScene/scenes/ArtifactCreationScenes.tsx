@@ -8,7 +8,11 @@ import type {
   WorkflowId,
   WorkflowRunId,
 } from '@goodboy/types';
+import { DrawerColumn } from '@goodboy/ui';
 import { ArtifactStudio } from '../../../../features/artifacts/components/ArtifactStudio';
+import { selectDrawerPlacement } from '../../../../store/slices/drawer/selectDrawerPlacement';
+import { selectDrawerSizing } from '../../../../store/slices/drawer/selectDrawerSizing';
+import { DrawerHost } from '../../DrawerHost';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import type { GeneratedArtifactKind } from '../../../../features/artifacts/artifactCollection';
 import type { ArtifactCreationDraft } from '../../../../store/slices/artifactDrafts/types';
@@ -62,6 +66,8 @@ const ArtifactCreationScene = ({
   readonly brief: string;
 }) => {
   const [isReady, setIsReady] = useState(false);
+  const sizing = useAppStore(selectDrawerSizing);
+  const placement = useAppStore(selectDrawerPlacement);
 
   useEffect(() => {
     seedArtifactScene({ focusedArtifactId: null });
@@ -109,13 +115,16 @@ const ArtifactCreationScene = ({
       sessionActiveMount: { [SESSION_ID]: (mount as SessionProjectMount).mountId },
       providers: [ANTHROPIC],
       phaseTemplates: { [seeded.workspaceId]: [workflow] },
-      artifactCreation: { [SESSION_ID]: { kind, note: null } },
       artifactDrafts: { [SESSION_ID]: { [kind]: draftFor({ kind, brief }) } },
       setArtifactDraft: () => undefined,
       clearArtifactDraft: () => undefined,
       hydrateArtifactDrafts: () => undefined,
       openArtifactCreation: () => undefined,
-      closeArtifactCreation: () => undefined,
+    });
+    useAppStore.getState().openDrawer({
+      kind: 'new',
+      sessionId: SESSION_ID,
+      payload: { tab: 'write', writeKind: kind },
     });
     setIsReady(true);
   }, [kind, brief]);
@@ -142,10 +151,19 @@ const ArtifactCreationScene = ({
   }
 
   return (
-    <main className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
-      <div className="min-h-0 flex-1">
-        <ArtifactStudio sessionId={SESSION_ID} />
-      </div>
+    <main className="flex h-screen overflow-hidden bg-background text-foreground">
+      <DrawerColumn
+        main={
+          <div className="min-h-0 flex-1">
+            <ArtifactStudio sessionId={SESSION_ID} />
+          </div>
+        }
+        drawer={<DrawerHost />}
+        sizing={sizing}
+        placement={placement}
+        ariaLabel="Side panel"
+        resizeLabel="Resize side panel"
+      />
     </main>
   );
 };

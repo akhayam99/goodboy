@@ -183,28 +183,28 @@ export const CREATE_AND_SEARCH_ROWS: ReadonlyArray<Row> = [
     lands: branchTab('files'),
   },
   ...(['Report', 'Wireframe'] as const).map((kind): Row => ({
-    name: `overview new menu: ${kind.toLowerCase()}`,
+    name: `new drawer: write ${kind.toLowerCase()}`,
     covers: ['openArtifactCreation'],
-    open: async () => {
-      await clickButton(/^New$/);
-      await click(await screen.findByRole('menuitem', { name: new RegExp(`^${kind}`) }));
-    },
-    lands: () => heading(`Create ${kind.toLowerCase()}`),
-  })),
-  {
-    name: 'artifact creation: the Artifacts crumb goes back and no All artifacts button exists',
-    covers: ['openArtifactCreation'],
-    open: async () => {
-      await clickButton(/^New$/);
-      await click(await screen.findByRole('menuitem', { name: /^Report/ }));
-      await heading('Create report');
-      expect(screen.queryByRole('button', { name: 'All artifacts' })).toBeNull();
-      const trail = await screen.findByRole('navigation', { name: 'Breadcrumb' });
-      await click(within(trail).getByRole('button', { name: /^Artifacts/ }));
+    open: async (ctx) => {
+      useAppStore.getState().openArtifactCreation({
+        sessionId: ctx.sessionId,
+        kind: kind === 'Report' ? 'report' : 'wireframe',
+        workflowRunId: null,
+      });
+      await settle();
     },
     lands: async () => {
-      await heading('Artifacts');
-      expect(screen.queryByRole('heading', { name: 'Create report' })).toBeNull();
+      const drawer = await screen.findByRole('region', { name: 'New' });
+      expect(within(drawer).getByRole('tab', { name: kind, selected: true })).toBeDefined();
+    },
+  })),
+  {
+    name: 'overview: New opens the drawer on its Run tab',
+    covers: ['overview.new'],
+    open: () => clickButton(/^New$/),
+    lands: async () => {
+      const drawer = await screen.findByRole('region', { name: 'New' });
+      expect(within(drawer).getByRole('tab', { name: 'Run', selected: true })).toBeDefined();
     },
   },
   {

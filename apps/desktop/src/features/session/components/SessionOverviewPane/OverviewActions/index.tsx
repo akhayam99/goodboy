@@ -1,104 +1,53 @@
-import { ChevronDown, LayoutTemplate, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
-import {
-  AnchoredPopover,
-  Button,
-  MenuItems,
-  useDropdown,
-  type OverflowMenuItem,
-} from '@goodboy/ui';
-import type { Session, SessionId } from '@goodboy/types';
+import { Button, Tooltip } from '@goodboy/ui';
+import type { Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { hasActiveWorkflowRun } from '../../../../workflows/activeWorkflowRuns';
-import { CreateAgentPopover } from '../../CreateAgentPopover';
+import { selectOpenDrawer } from '../../../../../store/slices/drawer/selectOpenDrawer';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { useShortcut } from '../../../../../shared/keyboard/useShortcut';
+import { isSessionIdle } from '../../../isSessionIdle';
 
 type Props = {
   readonly session: Session;
-  readonly onOpenWorkflowBuilder: () => void;
-  readonly onOpenRun: () => void;
 };
 
-type EventParams = {
-  readonly sessionId: SessionId;
-};
-
-const startAgentEventOf = ({ sessionId }: EventParams): string =>
-  `goodboy:overview-start-agent:${sessionId}`;
-
-export const OverviewActions = ({ session, onOpenWorkflowBuilder, onOpenRun }: Props) => {
+export const OverviewActions = ({ session }: Props) => {
   const sessionId = session.id;
-  const openArtifactCreation = useAppStore((state) => state.openArtifactCreation);
+  const toggleDrawer = useAppStore((state) => state.toggleDrawer);
+  const isOpen = useAppStore((state) => selectOpenDrawer(state)?.kind === 'new');
+  const isAskOpen = useAppStore((state) => selectOpenDrawer(state)?.kind === 'ask');
+  const isStudioOpen = useAppStore((state) => state.appStudio !== null);
   const agents = useAppStore(
     useShallow((state) => state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY),
   );
-  const isRunActive = hasActiveWorkflowRun({ workflowRuns: session.workflowRuns, agents });
-  const dropdown = useDropdown({
-    align: 'end',
-    width: 'min-w-60',
-    expectedHeight: 200,
-  });
-  const startAgentEvent = startAgentEventOf({ sessionId });
-
-  const items: ReadonlyArray<OverflowMenuItem> = [
-    {
-      kind: 'item',
-      key: 'workflow',
-      label: isRunActive ? 'Open run' : 'Start a run',
-      description: isRunActive ? 'Follow the run in progress' : 'Run a workflow on this session',
-      icon: CONCEPT_ICONS.workflows,
-      onClick: isRunActive ? onOpenRun : onOpenWorkflowBuilder,
-    },
-    {
-      kind: 'item',
-      key: 'agent',
-      label: 'Start agent',
-      description: 'Hand one task to an agent',
-      icon: CONCEPT_ICONS.agents,
-      onClick: () => window.dispatchEvent(new CustomEvent(startAgentEvent)),
-    },
-    { kind: 'separator', key: 'artifacts' },
-    {
-      kind: 'item',
-      key: 'report',
-      label: 'Report',
-      description: 'Write up what this session did',
-      icon: CONCEPT_ICONS.changelog,
-      onClick: () => openArtifactCreation({ sessionId, kind: 'report', workflowRunId: null }),
-    },
-    {
-      kind: 'item',
-      key: 'wireframe',
-      label: 'Wireframe',
-      description: 'Draw a screen or flow',
-      icon: LayoutTemplate,
-      onClick: () => openArtifactCreation({ sessionId, kind: 'wireframe', workflowRunId: null }),
-    },
-  ];
-
-  const menu = (
-    <AnchoredPopover
-      dropdown={dropdown}
-      role="menu"
-      ariaLabel="New"
-      className="py-1"
-      trigger={
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={dropdown.toggle}
-          aria-haspopup="menu"
-          aria-expanded={dropdown.open}
-        >
-          <Plus size={ICON_SIZE.control} aria-hidden className="shrink-0" />
-          New
-          <ChevronDown size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-        </Button>
-      }
-    >
-      <MenuItems items={items} onClose={dropdown.close} />
-    </AnchoredPopover>
+  const openQuestionCount = useAppStore(
+    (state) =>
+      (state.sessionOpenQuestions[sessionId] ?? EMPTY_ARRAY).filter(
+        (question) => question.status === 'open',
+      ).length,
   );
+  const isIdle = isSessionIdle({
+    agents,
+    workflowRuns: session.workflowRuns,
+    openQuestionCount,
+  });
+  const toggle = () => toggleDrawer({ kind: 'new', sessionId, payload: null });
 
-  return <CreateAgentPopover sessionId={sessionId} openEvent={startAgentEvent} anchor={menu} />;
+  useShortcut('overview.newHere', toggle, !isAskOpen && !isStudioOpen);
+
+  return (
+    <Tooltip content="New" shortcut="overview.newHere">
+      <Button
+        variant={isIdle ? 'primary' : 'secondary'}
+        size="sm"
+        onClick={toggle}
+        aria-haspopup="dialog"
+        aria-expanded={isOpen}
+      >
+        <Plus size={ICON_SIZE.control} aria-hidden className="shrink-0" />
+        New
+      </Button>
+    </Tooltip>
+  );
 };

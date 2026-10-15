@@ -41,24 +41,6 @@ export const draftFromWorkflow = ({ workflow }: DraftFromWorkflowParams): Workfl
     })),
 });
 
-type DraftFromPlannerStepsParams = { readonly steps: PlannerOutput['steps'] };
-
-export const draftFromPlannerSteps = ({ steps }: DraftFromPlannerStepsParams): StepDraft[] =>
-  steps.map((step) => ({
-    key: nextKey(),
-    sourceStepId: null,
-    libraryStepId: null,
-    role: normalizeWorkflowRole({ role: step.role }),
-    name: step.name,
-    prompt: step.promptPrefix,
-    expectedOutput: step.expectedOutput,
-    provider: '',
-    model: '',
-    effort: DEFAULT_EFFORT,
-    verbosity: 'normal',
-    size: step.size,
-  }));
-
 type UpsertArgsFromDraftParams = {
   readonly draft: WorkflowDraft;
   readonly workspaceId: WorkspaceId;

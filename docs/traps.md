@@ -263,7 +263,7 @@ status` directly. A branch cut from a remote-tracking ref (`worktree add -b
   animate a row with a `transform` that outlives the animation (a keyframe
   with `fill-mode: both` leaves one behind and puts the row on its own layer),
   and never give lines and elbows different `shape-rendering`. Grow rows with
-  `Reveal`, which moves only the grid track.
+  `Reveal`, which moves only the grid track. Its grid element carries `min-w-0`; without it the widest unbreakable child sets the column and a body overflows the rail.
 - The sign-in CLIs speak through their exit code. `claude auth status` and `codex login status`
   exit 1 when you are signed out, with a perfectly good answer on stdout, and
   `cursor-agent status` can say "Logged in (unable to fetch user details)" while every run
@@ -303,6 +303,22 @@ fails silently at runtime.
   replaced by the default, and overwritten.
 - `SIMPLE_LENSES` marks the lenses that still work without a branch. A lens
   left out of it is hidden or cleared for sessions with no branch.
+- The `auto` role is in `AgentRole` and in every exhaustive map, and it is left
+  out of every list a person sees on purpose: `SELECTABLE_AGENT_ROLES` (all its
+  flags in `ROLE_REGISTRY` are `false`), `DEFAULT_GROUPS`, `GUIDANCE_ROLES`, and
+  the visibility chips of the Context drawer (`ALL_ROLES` in `roleVisibility.ts`
+  drops it). Do not add it to one of them to make a list complete. Showing Auto
+  is the release that turns the experiment on.
+- `AUTO_DELEGATION_ROLES` (`packages/core/src/auto/roles.ts`) and the
+  `READ_ONLY_ROLES` and `WRITER_ROLES` of `providers/cli_args.rs` name the same
+  seven roles in two languages, and no test ties them. `READ_ONLY_ROLES` also
+  holds `auto`, which is not a delegation role. Change one, change the other.
+  A role id outside the TypeScript list is rejected by
+  `parseAutoDelegationRole`, never passed through `normalizeAgentRole`, which
+  would turn it into the Generalist.
+- Auto's glyph is `CONCEPT_ICONS.auto` (`Orbit`), not a sparkle: the AI glyph
+  ratchet bans `Sparkles` everywhere. Its color token `agent-auto` is its own
+  cyan and not `primary`, so it does not move if the primary color changes.
 
 - Impact counts deleted sessions on purpose. Deleting a session is a soft
   delete: `purgeSessionForDelete` frees the transcript, file versions, slots,
@@ -359,6 +375,102 @@ fails silently at runtime.
   A reply the viewer posted by hand is marked posted with
   `setResolveThreadReplyPosted`, a write that leaves the revision alone: going
   through `updateResolveThread` would bump it and strand an approved reply.
+- A prepared push preview lives as a `previewed` publication row while the
+  panel is open, and `useReviewPush` holds its phase in page state. Every way
+  out of that state must close the row with `cancelPublication`: Cancel, the
+  header toggle, a re-arm, the page unmounting and a `missing` answer. A
+  preview prepared by a request that resolves after the page left is cancelled
+  when it lands (the phase is no longer `preparing`). Leaving one out leaves a
+  `previewed` row nobody can confirm. The header Push never narrows to the
+  selected comment: only `Push only this one` passes `threadIds`.
+
+- Never derive repository state from an agent's transcript. A fix agent that
+  commits quietly (`commit -qam ... && log --oneline -1`) prints no
+  `[branch sha]` line, and a regex over tool output reads "no commit" for a
+  commit that exists. Whether a CI fix committed, and whether that commit is
+  pushed, come from `readCheckFixCommit` (`listBranchCommits`: the newest
+  commit made after the fix started, and its `pushed` flag). A check chain
+  reads that fact through `selectCheckChain`; `commitOf` is only the fallback
+  when the repository is unreadable. Re-read after a push
+  (`useCheckFixCommitSync` does it when the mount's head or upstream distance
+  changes) or the card keeps saying "not pushed".
+
+- A CI fix chain is keyed by the check URL it analyzed, and a push makes
+  GitHub start a run with a new URL. After the push, `checkTargetOf` keeps the
+  latest analysis of the mount (same URL, or same check name) so the chain does
+  not fall back to `none`, and `checkOutcomeOf` reads the new run by name: the
+  old URL still listed is "running", never "still fails". An agent carries no
+  mount id: `checkTargetOf` ties an analyst to its mount through
+  `selectCheckMount`, which matches the analyzed URL against the pull requests
+  and check runs of each mount.
+
+- The CI fix roles are `ci-debugger` and `ci-fixer`, stored as their own kind.
+  An older version stored `debugger` and `implementer` on the same agents, and
+  `ciFixRoleOf` still reads those as CI roles when the agent has a failed-check
+  source. A stored role nobody knows reads as the generalist and warns once in
+  development, so a downgrade or a newer build never breaks the Activity list.
+  The generic Next card "Review the changes" must not fire on a `ci-fixer`: the
+  CI fix card owns that step.
+
+- A scout fan-out parent consolidates once every child has ended, and an ended
+  child is `completed`, `failed`, `skipped`, `blocked` or `stopped`
+  (`TERMINAL` in `apps/desktop/src/store/slices/workflows/scoutTree.ts`). A
+  child that ends blocked or stopped never reaches `advanceScoutTree`, so the
+  place that blocks or stops it calls `joinFanOutParent`; without that call a
+  last child that ends blocked leaves the parent waiting forever. The
+  consolidation prompt names the status of each child. `stopped` is published
+  only after the exit is confirmed (`cancelTurnConfirmed`), and the join also
+  waits while a child's turn is `running` or `blocked`, so the parent never
+  consolidates over a child that is still alive.
+
+- An Auto artifact is approved only while `auto_artifacts.approved_revision`
+  equals the live `session_artifacts.revision`. A hand edit or a restore writes
+  the artifact row alone, so `approval_state` can still say `approved` for a
+  revision that is gone. Read approval through `effectiveApproval`
+  (`packages/core/src/auto/ledger.ts`), and never compare the stored state.
+- The reservation of a first attempt is owned by `auto_delegations.first_attempt_id`,
+  an id minted at admission. The attempt row does not exist until
+  `startAttempt`, so find that reservation by owner id, never by joining
+  `auto_attempts`.
+- The admission rule is written twice on purpose: as one guarded SQL statement
+  (`autoAdmissionTreeStatement`), which decides, and as `diagnoseAdmission`,
+  which only names the refusal. A new limit goes into both, and
+  `admit.sqlite.test.ts` checks the SQL on its own so a stale snapshot cannot
+  admit what the guard refuses.
+- A message to an Auto agent never goes through the plain turn path while the Auto runtime
+  runs: `spawnAgent` (first message) and `sendTurn` (every later operator message) call
+  the door `currentAutoUserTurnPort`, which queues a `user` outbox row. The door exists
+  only in the main window and only while delegation is on; in another window the plain
+  turn answers, and an `<<auto>>` block in its reply is never applied: only `settleAutoTurn`
+  applies a block. Never send an Auto root a turn by hand with
+  `origin: 'operator'` expecting the plain path; a delivery uses `origin: 'delegation'`.
+- `auto_*` money columns are REAL dollars. Compare them through
+  `autoRemainingUsdSql` and `AUTO_USD_EPSILON`, not with `===`.
+- The sql of m230 is pinned by hash in `registry.test.ts`. While the release is
+  unshipped, a change to it needs the new hash pasted there; once shipped, it
+  is immutable.
+- The Auto resume is admitted twice on purpose too: `autoResumeTreeStatement`
+  (phase, run, attempt limit and money in one guarded update) decides, and
+  `diagnoseResume` only names the refusal. It accepts `deciding` and
+  `delegating`, because one turn may answer several questions after it already
+  handed work over; `delegate` accepts `deciding` only.
+- A `finalizeTurnStream` step that reads the database on every turn shifts the
+  timing of the orchestrated-run story tests: the next test starts while the
+  last turn is still settling and fails on a foreign key. `routeQuestions` and
+  `isFanOutRejected` therefore read only when the reply holds a question or a
+  split. Keep any new read there behind such a condition.
+- An adopted source (Move to Auto) is a delegation row with `adopted = 1`, so
+  `isAutoChildAgent` is true for it too, but the cards, the Work rail and
+  `autoTreeOfAgent` skip it on purpose: it stays an ordinary agent in the lists.
+  Its role is the delegation role of its kind, and a Generalist takes `implementer`
+  because the role column has no other value for it; the chat never shows that.
+- The registry reads `isAutoOn` from the settings and the compile gate only, because
+  `when` sees facts and not React context. A scene or a test that needs Move to Auto
+  open through the context drives the panel (`MoveToAutoPanel`) or the feature
+  function with `isReleased`.
+- A child of an Auto tree is found by its delegation row (`isAutoChildAgent`),
+  never by a flag on the turn input: a reattached turn after a reload has no
+  input, and the question and split gates must still hold for it.
 
 ## Traps in the toolchain
 
@@ -448,6 +560,12 @@ fails silently at runtime.
   the two reads. The monitor reads exit 0 and 1 as success and anything else,
   or a timeout, as a failed snapshot; treating 1 as an error would show a
   broken monitor on a quiet machine.
+- The webview content security policy lives in `apps/desktop/src-tauri/tauri.conf.json`
+  and the dev server has none, so a scene never shows what it blocks. `img-src`
+  admits `'self'`, `data:` and `blob:` and nothing remote: a preview built with
+  `URL.createObjectURL` (the composer chip, the workspace chat bubble) is a
+  broken box without `blob:`, with only a console error. `csp-img-src.test.ts`
+  pins the rule; widen no other directive for an image.
 
 ## History stashes are shared across worktrees
 
@@ -492,3 +610,27 @@ stash whose object is gone is clearable, never an error.
 lease covers cooperating Goodboy writers; an external editor writing during
 Git's capture and reset is outside that lease. Do not treat the lease as a
 filesystem write lock. Cleanup failure retains the stash instead of repeating restoration.
+
+## New drawer actions host
+
+The New drawer keeps the Start button in a sticky host at the end of its body (`actionsHost` in `NewDrawerBody`), not in the `DrawerFrame` `dock` slot: a dock is a footer bar and `forbidden-patterns` fails the build on it. The Run, Agent and Write panels portal their actions into that host through `Docked`, so each panel must render nothing until the host node exists. `WritePanel` lives in `features/artifacts` and reaches the drawer as the `writePanel` prop from `DrawerHost`, because `features/session` must not import artifacts components.
+
+## Hints when a fix starts
+
+The hint a person types before a fix is plain text carried as a field, never re-parsed out of a prompt to rebuild it. Four rules keep it safe.
+
+- `rulesOfKickoff` (`apps/desktop/src/features/chat/utils/resolverKickoffParts.ts`) tries every `Operator notes` marker from the last to the first and keeps the first split that matches the message, so a hint that holds the marker, a heading or a code fence still splits, and so does a comment that holds it. Do not go back to splitting on the last marker only.
+- The echo **Your hint** reads the hint back from the sent message with `hintOfMessage` (`apps/desktop/src/features/chat/utils/hintOfMessage.ts`), which anchors on the fixed guidance line (`OPERATOR_NOTES_GUIDANCE`) written just before the notes. Change that sentence in one place; the golden prompt files under `__prompts__` and the echo follow it. The rewriter keeps its own `note` line and has no echo.
+- A draft is cleared by `settleStartHint` only when its captured revision is still current, and only from a callback that fires when the agent's first turn started (`onKickoffAccepted` in `spawnAgent`, `onAccepted` in `spawnPushFixer` and `startHistoryRewriter`). A resolver launch counts as accepted when its batch and attempt are recorded: its kickoff drains afterwards, and a refused drain shows **Failed** with the batch hint, which **Retry** reuses.
+- `analyzeFailingChecks` rejects a second call that carries a hint while the same check is being analyzed, instead of returning the running agent and dropping the hint.
+
+## Auto switch and screens
+
+Auto is gated twice and the legacy role grid never lists it. `AUTO_GATES.isDelegationEnabled` (compile time, read through `AutoReleaseContext`) decides whether any Auto control exists; the setting `agents.autoExperiment` decides, per person, whether the start is Auto. `isAutoStartEnabled` is the only place that combines them, and `visibleAgentKinds()` stays static, so do not add `auto` to a role list to make a menu complete.
+
+- An Auto start reads the stored setting at the click (`useConfirmStartMode`), never the cached one. A form that shows the other mode repaints and waits for a new click, so a test that clicks Start must wait for the spawn: the call happens after one database read.
+- Delegation cards are inserted into the transcript by time: before the first user or handoff row at or after the last settle of their batch. Do not anchor them on a run id; the delegation row does not keep the run that created it.
+- The approval of a plan tells Auto once. `approveAutoPlan` reads the artifact before the swap and does not send "Approved plan vN." when that version was already approved, which is what a second window sees. The swap itself is idempotent, so the read is the guard.
+- `useAutoTreeActions.stop` stops the live children and the root agent turn by turn. The tree phase is written by the scheduler, not by this button; once the tree stop of the runtime exists, replace the body and keep the name.
+- A mock scene that shows an Auto chat must give every agent a `lastViewedAt` after its `lastFinishedAt`; otherwise the chat marks it viewed on every render of the real store.
+- History: Claude refuses a Bash command holding a variable, even if the allow list names it ("A variable in this command can't be checked before it runs"). That is why the old Auto bridge confinement used an absolute path and not `$GOODBOY_BIN`. Auto no longer holds any Bash rule, but the lesson stands for any future allow rule: a read-only command such as `ls` proves nothing about confinement, because Claude allows it without a rule, so probe with a command that writes.

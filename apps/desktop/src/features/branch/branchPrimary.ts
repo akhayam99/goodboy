@@ -12,16 +12,21 @@ export type BranchPrimary = {
   readonly label: string;
   readonly icon: LucideIcon;
   readonly blockedReason: string | null;
+  readonly pendingLabel: string | null;
   readonly isBusy: boolean;
   readonly isSecondary: boolean;
   readonly note: string | null;
+  readonly isExpanded: boolean | null;
 };
+
+export type BranchPushState = 'idle' | 'busy' | 'open';
 
 export type BranchReviewCounts = {
   readonly accepted: number;
   readonly replies: number;
   readonly failed: number;
   readonly isPushing: boolean;
+  readonly push: { readonly state: BranchPushState; readonly count: number };
 };
 
 type Params = {
@@ -60,9 +65,11 @@ const fromAction = ({
   label: label ?? action.shortLabel,
   icon: icon ?? action.icon,
   blockedReason: action.blockedReason,
+  pendingLabel: action.pendingLabel,
   isBusy: action.isBusy,
   isSecondary,
   note: action.description,
+  isExpanded: null,
 });
 
 const plural = ({ count, one, many }: { count: number; one: string; many: string }): string =>
@@ -73,32 +80,45 @@ const reviewAction = ({
   icon,
   blockedReason = null,
   isBusy = false,
+  isExpanded = null,
 }: {
   readonly label: string;
   readonly icon: LucideIcon;
   readonly blockedReason?: string | null;
   readonly isBusy?: boolean;
+  readonly isExpanded?: boolean | null;
 }): BranchPrimary => ({
   source: 'review',
   actionId: REVIEW_PUSH_ID,
   label,
   icon,
   blockedReason,
+  pendingLabel: null,
   isBusy,
   isSecondary: false,
   note: null,
+  isExpanded,
 });
+
+type FixesParams = {
+  readonly count: number;
+};
+
+const fixes = ({ count }: FixesParams): string => plural({ count, one: 'fix', many: 'fixes' });
 
 const secondaryOf = ({ diff, review, hasPullRequest, state }: Params): BranchPrimary | null => {
   if (state === 'merged' || state === 'closed') {
     return null;
   }
-  if (hasPullRequest && (review.accepted > 0 || review.isPushing)) {
+  if (hasPullRequest && (review.accepted > 0 || review.isPushing || review.push.state !== 'idle')) {
+    const isBusy = review.isPushing || review.push.state === 'busy';
+    const count = review.push.state === 'busy' ? review.push.count : review.accepted;
     return reviewAction({
-      label: `Push ${review.accepted}`,
+      label: `${isBusy ? 'Pushing' : 'Push'} ${fixes({ count })}`,
       icon: ArrowUp,
-      blockedReason: review.isPushing ? 'Pushing now.' : null,
-      isBusy: review.isPushing,
+      blockedReason: isBusy ? 'Pushing now.' : null,
+      isBusy,
+      isExpanded: review.push.state === 'open',
     });
   }
   const rebase = find(diff, 'diff.rebase');

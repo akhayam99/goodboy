@@ -8,6 +8,7 @@ export {
   type HandoffRule,
   type HandoffThread,
 } from './buildHandoff';
+export { renderCurrentPlan } from './renderCurrentPlan';
 export {
   composeHandoffBody,
   hasSeparateSystemPrompt,

@@ -236,6 +236,7 @@ export const reattachLiveTurn = async ({ set, get, runId, cursor }: Params): Pro
       resolvedAgentId: agentId,
       assistantText,
       didAgentDie: receivedProviderError || assistantText.trim().length === 0,
+      runId,
       now,
     });
     if (assistantText.length > 0 && !purgedAgentIds.has(agentId)) {

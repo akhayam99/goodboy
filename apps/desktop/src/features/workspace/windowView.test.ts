@@ -34,7 +34,6 @@ describe('windowView reload intent', () => {
         view: {
           lens: 'workflows' as const,
           agentId: null,
-          studio: null,
           target: { kind: 'run' as const, runId: 'wfrun-1' },
         },
       },

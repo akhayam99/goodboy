@@ -16,13 +16,15 @@ import { selectKindRouting } from '../../../../store/slices/agents/selectKindRou
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { composeHandoffSeed } from '../../utils/composeHandoffSeed';
 import { AgentStatusIcon } from '../../../session/components/AgentCard/AgentStatusIcon';
-import { TranscriptShell } from '../TranscriptShell';
+import { HandoffCardShell } from './HandoffCardShell';
 import { useFollowToast } from '../../../../shared/hooks/useFollowToast';
 import { selectSpawnedChildren } from '../../../../shared/utils/spawnedChildren';
 import { hasActiveWorkflowRun } from '../../../workflows/activeWorkflowRuns';
 import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { autoMembershipOf } from '../../../auto/autoMembershipOf';
+import { AutoHandoffChip } from './AutoHandoffChip';
 
 type Props = {
   readonly assistantText: string;
@@ -75,6 +77,14 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
     () => selectSpawnedChildren({ runs, parentAgentId: sourceAgentId, turnStates }),
     [runs, sourceAgentId, turnStates],
   );
+  const isInAutoTree = useAppStore(
+    (s) =>
+      sourceAgentId != null &&
+      autoMembershipOf({
+        views: s.autoTreeViews[sessionId] ?? EMPTY_ARRAY,
+        agentId: sourceAgentId,
+      }).isMember,
+  );
   const spawnedChild =
     handoff == null
       ? null
@@ -85,6 +95,12 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
   }
   if (hasActiveWorkflowRun({ workflowRuns: session.workflowRuns, agents: runs })) {
     return null;
+  }
+  if (isInAutoTree) {
+    return null;
+  }
+  if (handoff.kind === 'auto') {
+    return <AutoHandoffChip reason={handoff.reason} agentId={sourceAgentId} />;
   }
 
   const meta = AGENT_KIND_META[handoff.kind];
@@ -149,12 +165,7 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
     spawnedChild == null ? null : agentStatusWord({ status: spawnedChild.status });
 
   return (
-    <TranscriptShell
-      data-testid="handoff-card"
-      tone="neutral"
-      variant="leftBorder"
-      className="flex w-full max-w-xl flex-col gap-2 text-label"
-    >
+    <HandoffCardShell>
       <span className="font-medium text-foreground">{`Agent suggests: ${roleLabel}`}</span>
       {handoff.reason != null && handoff.reason.length > 0 ? (
         <span className="text-muted-foreground">{handoff.reason}</span>
@@ -212,6 +223,6 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
           </>
         )}
       </div>
-    </TranscriptShell>
+    </HandoffCardShell>
   );
 };

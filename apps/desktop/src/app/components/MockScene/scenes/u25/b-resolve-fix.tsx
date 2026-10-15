@@ -21,6 +21,7 @@ import {
   QUEUE_ITEMS,
   SESSION,
   SESSION_ID,
+  FIX_RUN_MOUNT,
   seedResolveScene,
 } from '../resolveSeed';
 
@@ -202,6 +203,7 @@ const ResolveFixScene = ({ variant }: Props) => {
       sessionPhaseRuns: { [SESSION_ID]: [agentOf({ variant })] },
       agentTurnState: { [AGENT_ID]: turn },
       transcripts: { [AGENT_ID]: transcriptOf({ variant }) },
+      sessionProjectMounts: { [SESSION_ID]: [FIX_RUN_MOUNT] },
       agentRunHistory: { [AGENT_ID]: [RUN_ID] },
     });
     navigate(fixRunTranscript({ sessionId: SESSION_ID, agentId: AGENT_ID }));

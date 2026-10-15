@@ -2,6 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { FormPage } from '@goodboy/ui';
 
 const {
   state,
@@ -130,15 +131,16 @@ const renderPane = ({
   readonly note?: string | null;
 } = {}) =>
   render(
-    <ArtifactCreationPane
-      sessionId={SESSION_ID}
-      session={session(runs)}
-      kind={kind}
-      note={note}
-      count={3}
-      onClose={onClose}
-      onStarted={onStarted}
-    />,
+    <FormPage>
+      <ArtifactCreationPane
+        sessionId={SESSION_ID}
+        session={session(runs)}
+        kind={kind}
+        note={note}
+        onClose={onClose}
+        onStarted={onStarted}
+      />
+    </FormPage>,
   );
 
 const settle = async () => {
@@ -235,15 +237,16 @@ describe('ArtifactCreationPane', () => {
       release();
     });
     view.rerender(
-      <ArtifactCreationPane
-        sessionId={SESSION_ID}
-        session={session()}
-        kind="report"
-        note={null}
-        count={3}
-        onClose={onClose}
-        onStarted={onStarted}
-      />,
+      <FormPage>
+        <ArtifactCreationPane
+          sessionId={SESSION_ID}
+          session={session()}
+          kind="report"
+          note={null}
+          onClose={onClose}
+          onStarted={onStarted}
+        />
+      </FormPage>,
     );
 
     const ready = screen.getByRole('button', { name: 'Use the session goal' });
@@ -457,13 +460,13 @@ describe('ArtifactCreationPane', () => {
     expect(generate.closest('footer')).toBeNull();
   });
 
-  it('keeps the draft on Escape, draws no back button and clears on a confirmed cancel', () => {
+  it('leaves Escape to the drawer, draws no back button and clears on a confirmed cancel', () => {
     renderPane();
     fireEvent.change(screen.getByTestId('artifact-brief'), { target: { value: 'keep me' } });
     state.clearArtifactDraft.mockClear();
     expect(screen.queryByRole('button', { name: 'All artifacts' })).toBeNull();
     fireEvent.keyDown(document.body, { key: 'Escape' });
-    expect(onClose).toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
     expect(state.clearArtifactDraft).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));

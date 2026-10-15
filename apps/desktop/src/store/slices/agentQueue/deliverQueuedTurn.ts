@@ -1,9 +1,11 @@
 import type { SessionId, UserTurnSentVia } from '@goodboy/types';
 import { storedToAttachmentInput } from '../../../features/attachments/pendingAttachment';
 import { isTranscriptOwnedTurnError } from '../../../features/chat/turn-errors';
-import type { AgentQueuedTurn, GetFn } from './types';
+import { persistAgentQueue, readAgentQueue, writeAgentQueue } from './queueStore';
+import type { AgentQueuedTurn, GetFn, SetFn } from './types';
 
 type Params = Readonly<{
+  set: SetFn;
   get: GetFn;
   sessionId: SessionId;
   turn: AgentQueuedTurn;
@@ -13,15 +15,35 @@ type Params = Readonly<{
 type QueuedTurnDelivery = 'delivered' | 'held';
 
 export const deliverQueuedTurn = async ({
+  set,
   get,
   sessionId,
   turn,
   sentVia,
 }: Params): Promise<QueuedTurnDelivery> => {
+  const { agentId } = turn;
+  let removal: Promise<boolean> | undefined;
+  const accept = (): Promise<boolean> => {
+    removal ??= (async () => {
+      const current = readAgentQueue({ get, agentId });
+      if (!current.some((item) => item.id === turn.id)) {
+        return true;
+      }
+      writeAgentQueue({ set, agentId, queue: current.filter((item) => item.id !== turn.id) });
+      return persistAgentQueue({ get, agentId });
+    })();
+    return removal;
+  };
+  const hold = async (): Promise<void> => {
+    const rest = readAgentQueue({ get, agentId }).filter((item) => item.id !== turn.id);
+    writeAgentQueue({ set, agentId, queue: [{ ...turn, status: 'queued' }, ...rest] });
+    await persistAgentQueue({ get, agentId });
+  };
+  let isAccepted = false;
   try {
     const result = await get().sendTurn({
       sessionId,
-      agentId: turn.agentId,
+      agentId,
       content: turn.content,
       origin: 'operator',
       ...(turn.attachments.length > 0 && {
@@ -29,10 +51,24 @@ export const deliverQueuedTurn = async ({
       }),
       ...(turn.override !== undefined && { override: turn.override }),
       sentVia,
+      onStarted: () => {
+        isAccepted = true;
+        void accept();
+      },
     });
-    return result.blockedOverBudget || result.isWriterLeaseDenied === true ? 'held' : 'delivered';
+    if (result.blockedOverBudget || result.isWriterLeaseDenied === true) {
+      await hold();
+      return 'held';
+    }
+    if (isAccepted || result.isLaneQueued === true) {
+      await accept();
+      return 'delivered';
+    }
+    await hold();
+    return 'held';
   } catch (error) {
     if (isTranscriptOwnedTurnError({ error })) {
+      await accept();
       return 'delivered';
     }
     void get().reportError({
@@ -40,6 +76,11 @@ export const deliverQueuedTurn = async ({
       error,
       sessionId,
     });
+    if (isAccepted) {
+      await accept();
+      return 'delivered';
+    }
+    await hold();
     return 'held';
   }
 };

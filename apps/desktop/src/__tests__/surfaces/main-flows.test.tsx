@@ -5,6 +5,13 @@ vi.mock('@tauri-apps/api/core', () => ({
 }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
+vi.mock('../../shared/lib/db', () => ({
+  tauriDatabase: {
+    exec: async () => undefined,
+    execute: async () => ({ rowsAffected: 0 }),
+    select: async () => [],
+  },
+}));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';

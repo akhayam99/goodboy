@@ -1,11 +1,14 @@
 import { Band } from '@goodboy/ui';
+import { useIsAutoReleased } from '../../../auto/useIsAutoReleased';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { UpdatesSection } from './UpdatesSection';
 import { ThemePreferenceField } from './ThemePreferenceField';
 import { OpenWithBand } from './OpenWithBand';
 import { SearchIndexBand } from './SearchIndexBand';
+import { ExperimentsBand } from './ExperimentsBand';
 
 export const AppGeneralSection = () => {
+  const isAutoReleased = useIsAutoReleased();
   return (
     <div className="flex flex-col gap-4">
       <UpdatesSection />
@@ -25,6 +28,8 @@ export const AppGeneralSection = () => {
       <OpenWithBand />
 
       <SearchIndexBand />
+
+      {isAutoReleased ? <ExperimentsBand /> : null}
     </div>
   );
 };

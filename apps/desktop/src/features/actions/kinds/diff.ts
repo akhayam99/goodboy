@@ -21,6 +21,7 @@ import {
   abortRebase,
   plural,
   pushDescription,
+  pushDoneLabel,
   pushLabel,
   pushMount,
   rebaseMount,
@@ -113,6 +114,7 @@ const DIFF_ACTIONS: ReadonlyArray<ActionDefinition<DiffFacts>> = [
     blockedReason: dirtyReason,
     slot: () => 'primary',
     pendingLabel: ({ facts }) => `Rebasing on ${facts.baseBranch}…`,
+    doneLabel: ({ facts }) => `Rebased on ${facts.baseBranch}.`,
     run: ({ facts, env }) =>
       rebaseMount({
         env,
@@ -133,6 +135,7 @@ const DIFF_ACTIONS: ReadonlyArray<ActionDefinition<DiffFacts>> = [
     confirm: pushConfirm,
     slot: ({ facts }) => (facts.behind === 0 && !facts.isDiverged ? 'primary' : 'menu'),
     pendingLabel: () => 'Pushing…',
+    doneLabel: pushDoneLabel,
     run: ({ facts, env }) =>
       pushMount({
         env,
@@ -174,6 +177,7 @@ const DIFF_ACTIONS: ReadonlyArray<ActionDefinition<DiffFacts>> = [
     when: ({ facts }) => facts.isRebasing,
     slot: () => 'secondary',
     pendingLabel: () => 'Aborting…',
+    doneLabel: () => 'Rebase aborted.',
     confirm: () => ({
       title: 'Abort the rebase?',
       description:

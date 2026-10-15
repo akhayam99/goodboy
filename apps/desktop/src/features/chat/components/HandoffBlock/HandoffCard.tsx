@@ -8,6 +8,7 @@ import { HANDOFF_SENDER_ICON } from './handoffSenderIcon';
 import { HandoffChips } from './HandoffChips';
 import { HandoffPanel } from './HandoffPanel';
 import { HandoffSections } from './HandoffSections';
+import { HandoffYourHint } from './HandoffYourHint';
 import { useHandoffDisclosure } from './useHandoffDisclosure';
 import { useHandoffNames } from './useHandoffNames';
 
@@ -54,6 +55,7 @@ export const HandoffCard = ({ handoff, sessionId, at }: Props) => {
             {handoff.why === null ? null : (
               <span className="truncate text-label text-muted-foreground">Why: {handoff.why}</span>
             )}
+            <HandoffYourHint handoff={handoff} />
             {disclosure.open ? (
               <HandoffChips
                 sections={handoff.sections}

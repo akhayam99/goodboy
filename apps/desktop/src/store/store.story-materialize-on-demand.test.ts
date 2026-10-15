@@ -505,7 +505,7 @@ describe('story: an agent asks for write access with the materialize marker', ()
       expect.objectContaining({
         repoPath: '/tmp/web',
         parentDir: '/tmp/web/.goodboy/worktrees',
-        dirName: expect.stringContaining('ship-the-th'),
+        dirName: expect.stringMatching(/^gb-[0-9a-z]{6}$/),
       }),
     );
     const mounts = useAppStore.getState().sessionProjectMounts[SESSION_ID] ?? [];

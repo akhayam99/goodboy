@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AppShell } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
+import { START_HINT_SCOPES } from '../../../../../store/slices/startHints/startHintScopes';
 import { selectDrawerPanel } from '../../../../../store/slices/drawer/selectDrawerPanel';
 import { DrawerHost } from '../../../DrawerHost';
 import { BranchChecks } from '../../../../../features/branch/components/BranchChecks';
@@ -18,6 +19,7 @@ type Props = {
   readonly shouldOpenDrawer?: boolean;
   readonly analysisText?: string;
   readonly log?: string;
+  readonly hint?: string;
 };
 
 export const ChecksAnalyzeScene = ({
@@ -25,18 +27,29 @@ export const ChecksAnalyzeScene = ({
   shouldOpenDrawer = false,
   analysisText,
   log,
+  hint,
 }: Props) => {
   const [isReady, setIsReady] = useState(false);
   const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
   useEffect(() => {
-    checksAnalyzeSeed({
+    const seeded = checksAnalyzeSeed({
       phase,
       shouldOpenDrawer,
       ...(analysisText !== undefined && { analysisText }),
       ...(log !== undefined && { log }),
     });
+    if (hint !== undefined) {
+      useAppStore.getState().setStartHint({
+        sessionId: seeded.sessionId,
+        scope: START_HINT_SCOPES.checkFix({
+          mountId: seeded.repo.mountId,
+          url: seeded.check.detailsUrl ?? '',
+        }),
+        text: hint,
+      });
+    }
     setIsReady(true);
-  }, [phase, shouldOpenDrawer, analysisText, log]);
+  }, [phase, shouldOpenDrawer, analysisText, log, hint]);
   if (!isReady) {
     return null;
   }

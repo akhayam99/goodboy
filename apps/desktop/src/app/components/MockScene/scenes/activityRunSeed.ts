@@ -170,7 +170,7 @@ const PROJECTS: ReadonlyArray<Project> = [
 const PAYMENTS_MOUNT: SessionProjectMount = {
   projectId: PAYMENTS_ID,
   mountName: 'payments-api',
-  worktreePath: '~/code/harborline/payments-api-idempotency',
+  worktreePath: '~/code/harborline/payments-api/.goodboy/worktrees/gb-7k2q9x',
   repoRoot: '~/code/harborline/payments-api',
   branch: 'hl/fix-webhook-idempotency',
   mountId: 'mock-run-mount-payments' as MountId,
@@ -186,7 +186,7 @@ const PAYMENTS_MOUNT: SessionProjectMount = {
 const CONSOLE_MOUNT: SessionProjectMount = {
   projectId: CONSOLE_ID,
   mountName: 'notify-relay',
-  worktreePath: '~/code/harborline/notify-relay-retry-state',
+  worktreePath: '~/code/harborline/notify-relay/.goodboy/worktrees/gb-2p6w0z',
   repoRoot: '~/code/harborline/notify-relay',
   branch: 'hl/surface-retry-state',
   mountId: 'mock-run-mount-console' as MountId,
@@ -1114,7 +1114,7 @@ const SESSION_EVENTS = [
           kind: 'replaced',
           number: 5,
           by: 7,
-          text: 'Show the stuck-delivery banner after the third failed retry, not the first',
+          text: 'Show the stuck-delivery banner after the third failed retry, not the first, so one provider hiccup never alarms a Harborline operator while the ledger-core queue is still draining on its own schedule overnight',
           reason: 'You answered: three retries, one is normal provider noise',
         },
         {
@@ -1316,7 +1316,7 @@ const historySamples = ({ nowMs }: { readonly nowMs: number }): ReadonlyArray<Du
     })),
   );
 
-const durationHistory = ({ nowMs }: { readonly nowMs: number }): DurationHistory => {
+export const durationHistory = ({ nowMs }: { readonly nowMs: number }): DurationHistory => {
   const samples = historySamples({ nowMs });
   return {
     steps: samples,

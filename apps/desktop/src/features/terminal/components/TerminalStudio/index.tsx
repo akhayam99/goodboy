@@ -4,31 +4,49 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import type { TerminalTabId } from '../../../../shared/types/terminal';
 import { useAppStore } from '../../../../store';
-import { useTerminalStudioModel } from '../../hooks/useTerminalStudioModel';
+import {
+  useTerminalStudioModel,
+  type TerminalSelectParams,
+} from '../../hooks/useTerminalStudioModel';
 import { TerminalStudioBody } from './TerminalStudioBody';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly terminalId: TerminalTabId | null;
   readonly sessionId: SessionId | null;
+  readonly worktree?: string | null;
   readonly onClose: () => void;
 };
 
-type SelectParams = {
-  readonly id: TerminalTabId | null;
-  readonly sessionId: SessionId | null;
-};
-
-export const TerminalStudio = ({ workspaceId, terminalId, sessionId, onClose }: Props) => {
+export const TerminalStudio = ({
+  workspaceId,
+  terminalId,
+  sessionId,
+  worktree = null,
+  onClose,
+}: Props) => {
   const amendStudio = useAppStore((state) => state.amendStudio);
+  const setTerminalSelection = useAppStore((state) => state.setTerminalSelection);
   const onSelect = useCallback(
-    ({ id, sessionId: nextSessionId }: SelectParams) =>
-      amendStudio({ studio: { kind: 'terminal', terminalId: id, sessionId: nextSessionId } }),
-    [amendStudio],
+    ({ id, sessionId: nextSessionId, worktree: nextWorktree }: TerminalSelectParams) => {
+      setTerminalSelection({
+        selection: { sessionId: nextSessionId, worktree: nextWorktree, terminalId: id },
+      });
+      amendStudio({
+        studio: {
+          kind: 'terminal',
+          terminalId: id,
+          sessionId: nextSessionId,
+          worktree: nextWorktree,
+        },
+      });
+    },
+    [amendStudio, setTerminalSelection],
   );
   const model = useTerminalStudioModel({
     workspaceId,
     selectedId: terminalId,
+    selectedWorktreeKey: worktree,
     focusSessionId: sessionId,
     onSelect,
   });

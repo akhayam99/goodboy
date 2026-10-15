@@ -35,6 +35,7 @@ export type AutoPopulateInput = {
   readonly filesEdited: ReadonlyArray<string>;
   readonly assistantText: string;
   readonly agentContext?: AgentContext;
+  readonly isQuestionIntakeSkipped?: boolean;
 };
 
 export type AutoPopulateResult = {
@@ -53,7 +54,10 @@ export const autoPopulateContext = async (
   const decisionOps = extractDecisionOps(input.assistantText);
 
   const resolvedTexts = await listResolvedQuestionTextsForSession(input.db, input.sessionId);
-  const freshQuestions = questions.filter((q) => !matchesAny(q.text, resolvedTexts));
+  const freshQuestions =
+    input.isQuestionIntakeSkipped === true
+      ? []
+      : questions.filter((q) => !matchesAny(q.text, resolvedTexts));
 
   const updates: Array<{ key: SlotKey; value: string }> = [];
 

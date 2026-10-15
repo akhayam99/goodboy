@@ -13,6 +13,7 @@ import type { TimelineOpenTarget } from '../../../../hooks/useTimelineOpen';
 import type { TimelineAgentEntry } from '../../../../timeline/buildTimelineGroups';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
 import { AgentRowMeta } from './AgentRowMeta';
+import { CiFixStrip } from './CiFixStrip';
 import { agentRowIdentity } from './AgentRowIdentity';
 import { useAgentRowModels } from './useAgentRowModels';
 import { TimelineRowStateLine } from './TimelineRowStateLine';
@@ -42,6 +43,13 @@ type Props = {
   readonly lanes: TimelineLaneControl | null;
   readonly onBranchKey: TimelineBranchKey | null;
 };
+
+type CiWordParams = {
+  readonly item: TimelineRowItem;
+};
+
+const ciWordOf = ({ item }: CiWordParams): string =>
+  item.rowState.reason?.kind === 'job' ? item.rowState.reason.word : '';
 
 export const TimelineAgentStreamRow = ({
   item,
@@ -107,7 +115,13 @@ export const TimelineAgentStreamRow = ({
           isRunning={item.rowState.phase === 'running'}
         />
       }
-      state={<TimelineRowStateLine state={item.rowState} />}
+      state={
+        item.ciStages === undefined ? (
+          <TimelineRowStateLine state={item.rowState} />
+        ) : (
+          <CiFixStrip stages={item.ciStages} word={ciWordOf({ item })} />
+        )
+      }
       progress={work.time?.progress ?? null}
       runLane={runLane}
       lanes={lanes}

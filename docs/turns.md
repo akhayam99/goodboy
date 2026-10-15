@@ -28,8 +28,8 @@ return `turnReady` with their values. Side effects run in the order below.
    the attachments and the workflow step the agent belongs to.
 2. `routeTurn`: provider, model, effort and credential, the over-budget gate and
    the disconnected-provider gate.
-3. `leaseTurnWriter`: the captured-mount check and the resolver's worktree
-   writer lease.
+3. `leaseTurnWriter`: the captured-mount check, the resolver's worktree writer
+   lease and, for the turns of an Auto tree only, the write set lease.
 4. `startTurnRun`: run id, user message, provider run row, the cancel-before-spawn
    claim (`claimTurnStart`), the agent row moving to `running`, session state.
 5. `buildTurnPrompt`: permission flags, context preamble, handoff layers, the
@@ -75,6 +75,26 @@ database.
   lease queues it as a resolve attempt rather than running two writers in one
   worktree. The lease is bound to the child process in Rust and released when
   that process exits.
+- **Auto writers hold their write set; today's agents do not.** A turn sent
+  with a writer `confinedRole` (implementer, tester, docs: the turns of an Auto
+  tree, set by the Auto units) takes one lease over its write set before it
+  spawns: its working folder, the sibling mounts of the session and the common
+  metadata folder of each repo, the same list `turnWriteSet` hands to the CLI as
+  `--add-dir` roots, so the roots and the lease keys cannot drift. Rust
+  `acquire_write_set` (`worktree_writer.rs`) grants every key or none, in sorted
+  canonical order, and leaves nothing behind when a key is busy. The lease is
+  bound to the child process and freed by its exit in Rust, whatever the window
+  does, and it is released again when the turn ends. A second Auto writer on a
+  shared key does not fail: its turn waits in `acquireTurnWriteSet`. The agent
+  reads "starting" with the note **Waiting for the writer** (`agentWriterWait`),
+  Stop and Read now cancel the wait, the poll is one second and wakes at once
+  when this window releases, and after 30 minutes the turn answers
+  `isWriterLeaseDenied` like a resolver does. Two Auto writers on different
+  worktrees of one repo serialize on the metadata folder on purpose. A turn with
+  no `confinedRole` (every agent started by hand, in a Run or by the experiment
+  off) takes no write set lease: only the resolver lease above exists, the roots
+  it gets are the ones it always got, and two generalists in two worktrees of
+  one repo run together.
 - A resolver turn proposes only while another agent in the session is running.
   Its work is then parked as a candidate: committed to a candidate ref, the
   branch reset to where the turn started, and offered for acceptance on the
@@ -303,10 +323,43 @@ continuation never resumes, because it runs in another directory.
   ([architecture.md](architecture.md#subprocess-environment)), the variables a
   parent Claude session would leak are removed, and it runs in its own process
   group, so cancelling a turn stops everything it started.
+- **Stop is confirmed.** A user Stop goes through `cancelTurnConfirmed`
+  (`store/slices/turn/`), which answers `exited`, `still_running` or `failed`.
+  The turn goes idle only on `exited`, after the run left `turn_list_live`, and
+  only then is the agent marked `stopped` (`markStoppedByUser`), so a fan-out
+  parent never joins while a stopped child is still alive. Until the exit is
+  confirmed the agent reads running, and `drainAgentQueue` skips it
+  (`stoppingAgents.ts`). When the kill is refused and the process lives, or the
+  live list cannot be read, the turn and the agent stay running with nothing
+  marked stopped, the error shows, the queue drains again when the turn ends,
+  and pressing Stop again retries. A refused cancel for a run that is already
+  gone counts as `exited`. `cancelCurrentTurn` with
+  reason `user` calls it; `handoff` and `teardown` keep the old fire-and-idle
+  path.
 - **Write scope is explicit.** The writable mounts and their git common
   directories are handed to the CLIs that accept extra directories, plus the
   bridge socket directory only while the bridge is serving. Claude loads only
   project and local settings, and MCP tools are always disallowed.
+- **A confined role is built in Rust.** `turn_spawn` takes an optional
+  `confinedRole`. For `scout`, `planner`, `investigator` and `reviewer`
+  (`providers/cli_args.rs`, `role_access`) the argument builder forces the
+  plan posture whatever the session permission mode says, so
+  `bypassPermissions` never widens it: Claude gets `--tools Read,Grep,Glob`,
+  no `--allowedTools`, and a deny list with Bash, the edit tools and the native
+  subagent tools; Codex runs `-s read-only` with no extra roots; Cursor,
+  Gemini and opencode lose their bypass flags. For `implementer`, `tester` and
+  `docs` the session mode stays and Claude loses `Task` and `Agent`. An unknown
+  role is read-only. Before the spawn, `providers/cli_probe.rs` reads
+  `--version` and `--help` of the binary once per version and role access, and
+  a CLI whose help does not list the flags the role depends on is refused with
+  `confinement_unproven`. Nothing sends `confinedRole` for today's agents; the
+  Auto children do, and so does every turn of an Auto agent
+  (`confinedRoleOf.ts`: the role `auto`). `auto` is in the same read-only list
+  as `scout`, `planner`, `investigator` and `reviewer`: Auto runs read-only like
+  a scout on every provider, with the argv a scout gets (Claude `--tools
+Read,Grep,Glob` in plan mode, Codex `-s read-only`, Cursor and Agy `--mode
+plan`, opencode `--agent plan`) and no Bash allow rule. It never calls Goodboy
+  from inside its turn; its decision is the block it ends its reply with.
 - **stderr drains on its own thread.** A CLI that fills the stderr pipe
   mid-stream would otherwise block stdout and hang the turn.
 - Each stdout line is emitted as a `turn_event`, capped per line, followed by
@@ -347,6 +400,19 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   `turn_event` carries its `seq`. `turn_attach(runId, afterSeq)` returns what
   came after a cursor and whether the run is still live; `turn_release` drops
   an ended backlog, which `runTurn` does when its stream closes.
+- **One delivery starts one run.** A spawn may carry a `deliveryId`.
+  `turn_spawn` records it in `turn_delivery.rs` with the run id and refuses a
+  second run for the same id with `delivery_duplicate`, naming the first run.
+  A spawn that fails gives the id back. `turn_delivery_lookup(deliveryId)`
+  (`lookupDeliveryRun`) answers the run and whether it is still live, for as
+  long as the app process lives; the newest 2048 deliveries are remembered and
+  a live run is never forgotten. Only Auto sends one, and Auto is switched off.
+  A turn started for Auto passes `SendTurnInput.origin: 'delegation'` with the
+  planned `runId`, the `deliveryId` (the outbox row id of an Auto turn, the
+  attempt id of a child), and `onSettled`, which
+  `settleTurn` calls once with the text, the failure or cancel flag and the files
+  the turn touched. `store/slices/auto/startAutoTurn.ts` waits for the delivery
+  to appear in `turn_delivery_lookup` before it calls the turn accepted.
 - **The window that streams a turn owns it.** `runTurn` and `attachTurn`
   share one stream core (`features/chat/turn.ts`). After every event it hands
   on, it writes a cursor (`seq`, index inside that line, and the turn's owner:

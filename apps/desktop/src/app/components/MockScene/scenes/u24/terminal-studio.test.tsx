@@ -45,108 +45,130 @@ const renderScene = (name: keyof typeof U24_TERMINAL_STUDIO_SCENES) => {
 const settle = (): Promise<void> =>
   act(() => new Promise<void>((resolve) => window.setTimeout(resolve, 150)));
 
-const rowOf = (name: string): HTMLElement => {
-  const row = screen.getByRole('button', { name, current: undefined }).closest('li');
+const PAYMENTS_SESSION = 'Round settlement totals to minor units';
+const NOTIFY_SESSION = 'Back off failed notification retries';
+const PAYMENTS_TREE = '/mock/harborline/payments-api/.goodboy/worktrees/gb-7k2q9x';
+const LEDGER_TREE = '/mock/harborline/ledger-core/.goodboy/worktrees/gb-4m8d1c';
+const NOTIFY_TREE = '/mock/harborline/notify-relay/.goodboy/worktrees/gb-2p6w0z';
+
+const groupNamed = (name: string): HTMLElement => screen.getByRole('region', { name });
+
+type RowParams = {
+  readonly session: string;
+  readonly project: string;
+};
+
+const worktreeRow = ({ session, project }: RowParams): HTMLElement => {
+  const row = within(groupNamed(session)).getByText(project).closest('li');
   if (row === null) {
-    throw new Error(`no row for ${name}`);
+    throw new Error(`no row for ${project}`);
   }
   return row;
 };
 
-const groupNamed = (name: string): HTMLElement => screen.getByRole('region', { name });
+const selectWorktree = async ({ session, project }: RowParams): Promise<void> => {
+  fireEvent.click(within(worktreeRow({ session, project })).getByRole('button'));
+  await settle();
+};
+
+const tabsOf = (project: string): ReadonlyArray<HTMLElement> => {
+  const owned = screen
+    .getByRole('tablist', { name: `Terminals on ${project}` })
+    .getAttribute('aria-owns');
+  return (owned ?? '')
+    .split(' ')
+    .map((id) => document.getElementById(id))
+    .filter((tab): tab is HTMLElement => tab !== null);
+};
 
 describe('the terminal studio scenes', () => {
-  it('groups the workspace terminal first, then one group per session with its count', async () => {
+  it('lists one group per session, then the workspace folder', async () => {
     renderScene('terminal-studio');
     await settle();
 
     const groups = screen.getAllByRole('region').map((group) => group.getAttribute('aria-label'));
-    expect(groups).toEqual([
-      'Workspace',
-      'Round settlement totals to minor units',
-      'Back off failed notification retries',
-    ]);
-    expect(
-      within(groupNamed('Round settlement totals to minor units')).getByText('2'),
-    ).toBeDefined();
-    expect(
-      within(groupNamed('Workspace')).getByRole('button', { name: 'harborline' }),
-    ).toBeDefined();
+    expect(groups).toEqual([PAYMENTS_SESSION, NOTIFY_SESSION, 'Workspace folder']);
   });
 
-  it('expands only the open session and folds the others', async () => {
+  it('draws one row per worktree with its terminal count', async () => {
     renderScene('terminal-studio');
     await settle();
 
-    expect(
-      within(groupNamed('Round settlement totals to minor units')).getByRole('button', {
-        name: 'payments-api',
-      }),
-    ).toBeDefined();
-    expect(
-      within(groupNamed('Back off failed notification retries')).queryByRole('button', {
-        name: 'notify-relay',
-      }),
-    ).toBeNull();
+    expect(within(groupNamed(PAYMENTS_SESSION)).getAllByRole('listitem')).toHaveLength(2);
+    const payments = worktreeRow({ session: PAYMENTS_SESSION, project: 'payments-api' });
+    expect(within(payments).getByLabelText('2 terminals')).toBeDefined();
+    const ledger = worktreeRow({ session: PAYMENTS_SESSION, project: 'ledger-core' });
+    expect(within(ledger).getByLabelText('1 terminal')).toBeDefined();
+    const notify = worktreeRow({ session: NOTIFY_SESSION, project: 'notify-relay' });
+    expect(within(notify).getByLabelText('1 terminal')).toBeDefined();
+  });
 
-    fireEvent.click(
-      within(groupNamed('Back off failed notification retries')).getByRole('button', {
-        expanded: false,
-      }),
+  it('shows the dev server port as a chip on its worktree row and on its tab', async () => {
+    renderScene('terminal-studio');
+    await settle();
+
+    const payments = worktreeRow({ session: PAYMENTS_SESSION, project: 'payments-api' });
+    expect(within(payments).getByRole('button', { name: 'Open localhost:5173' })).toBeDefined();
+    const ledger = worktreeRow({ session: PAYMENTS_SESSION, project: 'ledger-core' });
+    expect(within(ledger).queryByRole('button', { name: /^Open localhost:/ })).toBeNull();
+    const [devTab, shellTab] = tabsOf('payments-api').map(
+      (tab) => tab.closest<HTMLElement>('[data-terminal-tab]')?.textContent ?? '',
     );
-    expect(
-      within(groupNamed('Back off failed notification retries')).getByRole('button', {
-        name: 'notify-relay',
-      }),
-    ).toBeDefined();
+    expect(devTab).toContain('dev server');
+    expect(devTab).toContain(':5173');
+    expect(shellTab).not.toMatch(/:\d+/);
   });
 
-  it('shows the running command on a busy row and a failed start with Restart on a dead one', async () => {
+  it('shows the linked task of the session in its group head', async () => {
     renderScene('terminal-studio');
     await settle();
 
-    expect(within(rowOf('payments-api')).getByText('pnpm dev')).toBeDefined();
-    expect(within(rowOf('ledger-core')).getByText('failed to open')).toBeDefined();
-    expect(screen.queryByText(/^exited \d+$/)).toBeNull();
-    expect(within(rowOf('ledger-core')).getByRole('button', { name: 'Restart' })).toBeDefined();
+    const facts = within(groupNamed(PAYMENTS_SESSION)).getByLabelText('Linked work and changes');
+    expect(facts.textContent).toContain('HBL-412');
   });
 
-  it('never names a terminal Terminal 2', async () => {
+  it('shows the terminals of the selected worktree as tabs, never as rail rows', async () => {
     renderScene('terminal-studio');
     await settle();
 
+    const tabs = tabsOf('payments-api');
+    expect(tabs.map((tab) => tab.textContent)).toEqual(['dev server', 'shell']);
     expect(screen.queryByText(/^Terminal \d+$/)).toBeNull();
   });
 
-  it('opens a terminal in a linked worktree from the New terminal menu and selects it', async () => {
+  it('switches the tab strip and shows the failure when an exited worktree is selected', async () => {
     renderScene('terminal-studio');
     await settle();
-    const group = groupNamed('Round settlement totals to minor units');
-    const before = within(group).getAllByRole('listitem').length;
 
-    fireEvent.click(screen.getByRole('combobox', { name: 'New terminal in' }));
-    fireEvent.click(
-      await screen.findByRole('option', { name: /^ledger-core · hl\/ledger-rounding/ }),
-    );
-    await settle();
+    await selectWorktree({ session: PAYMENTS_SESSION, project: 'ledger-core' });
 
-    const rows = within(groupNamed('Round settlement totals to minor units')).getAllByRole(
-      'listitem',
-    );
-    expect(rows).toHaveLength(before + 1);
-    const added = (store.getState().terminalTabs['mock-u24-session-ledger'] ?? []).at(-1);
-    expect(added?.cwd).toBe('/mock/worktrees/hl-ledger-rounding/ledger-core');
-    expect(store.getState().appStudio).toMatchObject({
-      kind: 'terminal',
-      terminalId: added?.id,
-      sessionId: 'mock-u24-session-ledger',
-    });
+    const tabs = tabsOf('ledger-core');
+    expect(tabs.map((tab) => tab.textContent)).toEqual(['shell']);
+    expect(screen.getByText('failed')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Restart shell' })).toBeDefined();
   });
 
-  it('opens a workspace terminal from the New terminal button at the top of the rail', async () => {
+  it('adds a tab to the selected worktree from the plus and selects it', async () => {
     renderScene('terminal-studio');
     await settle();
 
+    fireEvent.click(screen.getByRole('button', { name: 'New tab on payments-api' }));
+    await settle();
+
+    const added = (store.getState().terminalTabs['mock-u24-session-ledger'] ?? []).at(-1);
+    expect(added?.cwd).toBe(PAYMENTS_TREE);
+    expect(added?.title).toBe('shell 2');
+    const strip = tabsOf('payments-api');
+    expect(strip).toHaveLength(3);
+    expect(strip.at(-1)?.getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('opens a workspace terminal from the New terminal button when the workspace is selected', async () => {
+    renderScene('terminal-studio');
+    await settle();
+
+    fireEvent.click(within(groupNamed('Workspace folder')).getByRole('button'));
+    await settle();
     const rail = screen.getByRole('complementary', { name: 'Terminals' });
     fireEvent.click(within(rail).getByRole('button', { name: 'New terminal' }));
     await settle();
@@ -156,129 +178,123 @@ describe('the terminal studio scenes', () => {
     expect(tabs.at(-1)?.cwd).toBe('/mock/harborline');
   });
 
-  it('keeps the rail open and draws no chip row for the same targets', async () => {
+  it('closes an idle tab at once, without a confirm', async () => {
     renderScene('terminal-studio');
     await settle();
 
-    expect(screen.queryByRole('button', { name: 'Fold the rail' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Show the terminal list' })).toBeNull();
-    expect(screen.queryByRole('group', { name: 'Open a terminal in' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Workspace folder' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Main checkout' })).toBeNull();
-  });
-
-  it('closes an idle row at once, without a confirm', async () => {
-    renderScene('terminal-studio');
-    await settle();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Close harborline' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close shell' }));
     await settle();
 
     expect(screen.queryByRole('dialog')).toBeNull();
-    expect(store.getState().terminalTabs['ws:mock-u24-workspace-harborline']).toEqual([]);
+    const titles = (store.getState().terminalTabs['mock-u24-session-ledger'] ?? []).map(
+      (tab) => tab.title,
+    );
+    expect(titles).toEqual(['dev server', 'shell']);
   });
 
-  it('asks before closing a busy row and Keep leaves it running', async () => {
+  it('asks before closing a busy tab and Keep leaves it running', async () => {
     renderScene('terminal-studio');
     await settle();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close payments-api' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close dev server' }));
 
     expect(await screen.findByText('pnpm dev is running. Close it?')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Keep' }));
     await settle();
     expect(screen.queryByText('pnpm dev is running. Close it?')).toBeNull();
-    expect(store.getState().terminalTabs['mock-u24-session-ledger']).toHaveLength(2);
+    expect(store.getState().terminalTabs['mock-u24-session-ledger']).toHaveLength(3);
   });
 
-  it('closes the busy row once Close is confirmed', async () => {
+  it('closes the busy tab once Close is confirmed', async () => {
     renderScene('terminal-studio');
     await settle();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close payments-api' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close dev server' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Close' }));
     await settle();
 
     const titles = (store.getState().terminalTabs['mock-u24-session-ledger'] ?? []).map(
       (tab) => tab.title,
     );
-    expect(titles).toEqual(['ledger-core']);
+    expect(titles).toEqual(['shell', 'shell']);
   });
 
-  it('renames a row by double click and Enter, and Escape cancels', async () => {
+  it('renames a tab by double click and Enter, and Escape cancels', async () => {
     renderScene('terminal-studio');
     await settle();
 
-    fireEvent.doubleClick(screen.getByRole('button', { name: 'payments-api' }));
-    const input = screen.getByRole('textbox', { name: 'Rename payments-api' });
+    fireEvent.doubleClick(screen.getByRole('tab', { name: 'dev server' }));
+    const input = screen.getByRole('textbox', { name: 'Rename dev server' });
     fireEvent.change(input, { target: { value: 'api server' } });
     fireEvent.keyDown(input, { key: 'Enter' });
     await settle();
 
-    expect(screen.getByRole('button', { name: 'api server' })).toBeDefined();
+    expect(screen.getByRole('tab', { name: 'api server' })).toBeDefined();
 
-    fireEvent.doubleClick(screen.getByRole('button', { name: 'api server' }));
+    fireEvent.doubleClick(screen.getByRole('tab', { name: 'api server' }));
     const again = screen.getByRole('textbox', { name: 'Rename api server' });
     fireEvent.change(again, { target: { value: 'discarded' } });
     fireEvent.keyDown(again, { key: 'Escape' });
 
-    expect(screen.getByRole('button', { name: 'api server' })).toBeDefined();
+    expect(screen.getByRole('tab', { name: 'api server' })).toBeDefined();
     expect(screen.queryByText('discarded')).toBeNull();
   });
 
-  it('restarts an exited row into a fresh terminal at the same folder', async () => {
+  it('restarts an exited tab into a fresh terminal at the same folder', async () => {
     renderScene('terminal-studio');
     await settle();
+    await selectWorktree({ session: PAYMENTS_SESSION, project: 'ledger-core' });
 
-    fireEvent.click(within(rowOf('ledger-core')).getByRole('button', { name: 'Restart' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Restart shell' }));
     await settle();
 
-    const tabs = store.getState().terminalTabs['mock-u24-session-ledger'] ?? [];
-    expect(tabs.map((tab) => tab.status)).toEqual(['running', 'running']);
-    expect(tabs.at(-1)?.cwd).toBe('/mock/worktrees/hl-ledger-rounding/ledger-core');
+    const ledger = (store.getState().terminalTabs['mock-u24-session-ledger'] ?? []).filter(
+      (tab) => tab.cwd === LEDGER_TREE,
+    );
+    expect(ledger.map((tab) => tab.status)).toEqual(['running']);
   });
 
   it('shows the cwd of the selected terminal in the location row', async () => {
     renderScene('terminal-studio');
     await settle();
 
-    expect(screen.getByText('/mock/worktrees/hl-fix-duplicate-credit/payments-api')).toBeDefined();
+    expect(screen.getAllByText(/gb-7k2q9x/).length).toBeGreaterThan(0);
   });
 
-  it('lists the workspace folder and every linked worktree, grouped by session', async () => {
-    renderScene('terminal-studio-newmenu');
+  it('offers Open session in the header of a session worktree', async () => {
+    renderScene('terminal-studio');
     await settle();
-    fireEvent.click(screen.getByRole('combobox', { name: 'New terminal in' }));
 
-    const list = await screen.findByRole('listbox');
-    const names = within(list)
-      .getAllByRole('option')
-      .map((option) => option.textContent ?? '');
-    expect(names).toHaveLength(4);
-    expect(names[0]?.startsWith('Workspace folder')).toBe(true);
-    expect(names.some((name) => name.startsWith('payments-api · hl/fix-duplicate-credit'))).toBe(
-      true,
-    );
-    expect(names.some((name) => name.startsWith('ledger-core · hl/ledger-rounding'))).toBe(true);
-    expect(names.some((name) => name.startsWith('notify-relay · hl/retry-backoff'))).toBe(true);
-    expect(names.some((name) => name.startsWith('Main checkout'))).toBe(false);
-    expect(within(list).getByText('Round settlement totals to minor units')).toBeDefined();
-    expect(within(list).getByText('Back off failed notification retries')).toBeDefined();
+    expect(screen.getAllByRole('button', { name: /^Open session/ }).length).toBeGreaterThan(0);
   });
 
-  it('opens a terminal in a worktree of another session and focuses it', async () => {
+  it('groups the picker by session, with the workspace folder first', async () => {
     renderScene('terminal-studio-newmenu');
     await settle();
-    fireEvent.click(screen.getByRole('combobox', { name: 'New terminal in' }));
+    fireEvent.click(screen.getByRole('button', { name: 'New terminal in' }));
 
-    fireEvent.click(
-      await screen.findByRole('option', { name: /^notify-relay · hl\/retry-backoff/ }),
-    );
+    const menu = await screen.findByRole('menu', { name: 'New terminal in' });
+    const clusters = within(menu)
+      .getAllByRole('group')
+      .map((group) => group.getAttribute('aria-label'));
+    expect(clusters).toEqual(['Workspace folder', PAYMENTS_SESSION, NOTIFY_SESSION]);
+    expect(within(menu).getAllByRole('menuitem', { name: /^Open project/ })).toHaveLength(3);
+    expect(within(menu).queryByText('Main checkout')).toBeNull();
+  });
+
+  it('opens a terminal in a worktree of another session as a tab and focuses it', async () => {
+    renderScene('terminal-studio-newmenu');
+    await settle();
+    fireEvent.click(screen.getByRole('button', { name: 'New terminal in' }));
+    const menu = await screen.findByRole('menu', { name: 'New terminal in' });
+    const notify = within(menu).getByRole('group', { name: NOTIFY_SESSION });
+
+    fireEvent.click(within(notify).getAllByRole('menuitem')[0] ?? document.body);
     await settle();
 
     const tabs = store.getState().terminalTabs['mock-u24-session-notify'] ?? [];
     expect(tabs).toHaveLength(2);
-    expect(tabs.at(-1)?.cwd).toBe('/mock/worktrees/hl-retry-backoff/notify-relay');
+    expect(tabs.at(-1)?.cwd).toBe(NOTIFY_TREE);
     expect(store.getState().appStudio).toMatchObject({
       kind: 'terminal',
       terminalId: tabs.at(-1)?.id,
@@ -293,7 +309,7 @@ describe('the terminal studio scenes', () => {
       screen.queryByRole('combobox', { name: 'Change directory in this terminal' }),
     ).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'harborline' }));
+    fireEvent.click(within(groupNamed('Workspace folder')).getByRole('button'));
     await settle();
 
     expect(

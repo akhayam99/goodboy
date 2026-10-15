@@ -12,6 +12,8 @@ import { planPartsProgress, planSplitSentence } from '../../../plans/planSurface
 import { plannerQuestionsOf } from '../../../plans/plannerQuestions';
 import type { PlanModel } from '../../../plans/usePlanModel';
 import { usePlanPrimaryAction } from '../../../plans/usePlanPrimaryAction';
+import { AutoPlanToolbar } from '../../../auto/plan/AutoPlanToolbar';
+import { useAutoPlanApproval } from '../../../auto/plan/useAutoPlanApproval';
 import { ArtifactPlanBody } from '../ArtifactShell/ArtifactPlanBody';
 import { PlanEditor } from '../PlanEditor';
 import { usePlanEditor } from '../PlanEditor/usePlanEditor';
@@ -59,6 +61,7 @@ export const PlanDrawerFrame = ({ sessionId, model, revision, onClose }: Props) 
   );
   const editor = usePlanEditor({ sessionId, plan, revision: version, onSaved });
   const action = usePlanPrimaryAction({ sessionId, plan, revising, isRunning });
+  const autoApproval = useAutoPlanApproval({ sessionId, artifactId: plan.id });
 
   const target = useMemo<ArtifactActionTarget>(
     () => ({
@@ -97,17 +100,20 @@ export const PlanDrawerFrame = ({ sessionId, model, revision, onClose }: Props) 
       note={note === null || pastVersion !== null ? null : planVersionNoteLabel({ note })}
     />
   );
-  const toolbar = (
-    <PlanDrawerToolbar
-      version={pastVersion ?? version}
-      state={state}
-      isPast={pastVersion !== null}
-      action={action}
-      editor={editor}
-      editAction={editAction}
-      onEdit={() => void run({ actionId: EDIT_ACTION_ID })}
-    />
-  );
+  const toolbar =
+    autoApproval !== null && pastVersion === null && !editor.isEditing ? (
+      <AutoPlanToolbar model={autoApproval} />
+    ) : (
+      <PlanDrawerToolbar
+        version={pastVersion ?? version}
+        state={state}
+        isPast={pastVersion !== null}
+        action={action}
+        editor={editor}
+        editAction={editAction}
+        onEdit={() => void run({ actionId: EDIT_ACTION_ID })}
+      />
+    );
   const isRevising = revising.kind === 'revising';
   const isUnchangedShown =
     unchanged !== null && unchanged.version === version && !isRevising && pastVersion === null;

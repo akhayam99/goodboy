@@ -11,7 +11,9 @@ import type {
 import {
   type ArtifactRevision,
   type ArtifactRevisionNote,
+  type RestoreArtifactToRevisionOutcome,
   annotateArtifactRevision as dbAnnotateArtifactRevision,
+  restoreArtifactToRevision as dbRestoreArtifactToRevision,
   listArtifactRevisions as dbListArtifactRevisions,
   loadArtifactRevision as dbLoadArtifactRevision,
   getArtifactBySourceTurn as dbGetArtifactBySourceTurn,
@@ -98,6 +100,17 @@ export const updateArtifactSource = async (
       ...(args.note === undefined ? {} : { note: args.note }),
     },
   });
+
+export type RestoreArtifactToRevisionArgs = {
+  readonly artifactId: ArtifactId;
+  readonly expectedRevision: number;
+  readonly revision: number;
+};
+
+export const restoreArtifactToRevision = async (
+  args: RestoreArtifactToRevisionArgs,
+): Promise<RestoreArtifactToRevisionOutcome> =>
+  dbRestoreArtifactToRevision({ db: tauriDatabase, nowMs: Date.now(), ...args });
 
 export const setArtifactStatus = async (
   artifactId: ArtifactId,

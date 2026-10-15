@@ -16,7 +16,7 @@ Get from install to a first agent. Connect a provider, check what it can do, lin
 
 [More on set up](docs/features/setup.md)
 
-<a id="how-do-you-want-to-start"></a><a id="pick-up-a-task-with-a-drafted-brief"></a><a id="review-a-pull-request"></a><a id="run-a-workflow"></a><a id="ask-an-agent"></a><a id="start-blank"></a><a id="named-by-goodboy"></a><a id="undo-an-unlink"></a><a id="move-an-issue-between-the-session-and-a-branch"></a><a id="start-one-session-from-several-issues"></a><a id="star-an-issue-from-link-work"></a>
+<a id="how-do-you-want-to-start"></a><a id="pick-up-a-task-with-a-drafted-brief"></a><a id="review-a-pull-request"></a><a id="run-a-workflow"></a><a id="ask-an-agent"></a><a id="start-more-work-in-a-session"></a><a id="start-blank"></a><a id="named-by-goodboy"></a><a id="undo-an-unlink"></a><a id="move-an-issue-between-the-session-and-a-branch"></a><a id="start-one-session-from-several-issues"></a><a id="star-an-issue-from-link-work"></a>
 
 ## Start a task
 
@@ -93,7 +93,7 @@ The Commits section of the Branch page lets you clean up a branch before it goes
 
 [More on commits and history](docs/features/branch-history.md)
 
-<a id="resolve"></a><a id="bulk-actions"></a><a id="review-sources"></a><a id="comment-states"></a><a id="failed-drafts"></a><a id="see-what-a-resolve-did"></a><a id="fixes-already-on-the-branch"></a><a id="a-fix-that-went-missing"></a><a id="close-on-github"></a><a id="review-replies-in-your-voice"></a><a id="fixes-on-a-branch-that-moved"></a><a id="squash-and-fold-the-resolve-commits"></a><a id="notes-before-a-pull-request"></a><a id="github-pull-request-page"></a><a id="pull-request-diff-and-review-as-layers"></a><a id="write-it-for-me"></a><a id="write-it"></a><a id="pr-description-follows-the-push"></a><a id="diff"></a><a id="write-review"></a><a id="read-the-code"></a><a id="pull-request-on-the-branch-page"></a><a id="one-trail-to-the-branch-page"></a>
+<a id="resolve"></a><a id="hints-when-a-fix-starts"></a><a id="bulk-actions"></a><a id="review-sources"></a><a id="comment-states"></a><a id="failed-drafts"></a><a id="see-what-a-resolve-did"></a><a id="fixes-already-on-the-branch"></a><a id="a-fix-that-went-missing"></a><a id="close-on-github"></a><a id="review-replies-in-your-voice"></a><a id="fixes-on-a-branch-that-moved"></a><a id="squash-and-fold-the-resolve-commits"></a><a id="notes-before-a-pull-request"></a><a id="github-pull-request-page"></a><a id="pull-request-diff-and-review-as-layers"></a><a id="write-it-for-me"></a><a id="write-it"></a><a id="pr-description-follows-the-push"></a><a id="diff"></a><a id="write-review"></a><a id="read-the-code"></a><a id="pull-request-on-the-branch-page"></a><a id="one-trail-to-the-branch-page"></a>
 
 ## Review and resolve on the Branch page
 
@@ -117,7 +117,7 @@ The board shows every session of a workspace in lanes by stage, so you see where
 
 [More on the board](docs/features/board.md)
 
-<a id="workflow-builder"></a><a id="orchestrated"></a><a id="preset-and-custom"></a><a id="built-in-workflows"></a><a id="saved-steps"></a><a id="model-per-step"></a><a id="when-to-ask"></a><a id="pause-resume-and-skip"></a><a id="run-defaults"></a><a id="workflow-rules"></a><a id="spend-cap"></a><a id="chained-starts"></a><a id="workflow-run"></a><a id="hints-to-the-orchestrator"></a><a id="why-each-step-and-the-run-recap"></a><a id="step-handoff-summary"></a><a id="open-questions"></a><a id="let-an-agent-decide"></a><a id="import-workflows"></a>
+<a id="workflow-builder"></a><a id="orchestrated"></a><a id="preset-and-custom"></a><a id="built-in-workflows"></a><a id="saved-steps"></a><a id="model-per-step"></a><a id="when-to-ask"></a><a id="autonomy"></a><a id="pause-resume-and-skip"></a><a id="run-defaults"></a><a id="workflow-rules"></a><a id="spend-cap"></a><a id="chained-starts"></a><a id="workflow-run"></a><a id="hints-to-the-orchestrator"></a><a id="why-each-step-and-the-run-recap"></a><a id="step-handoff-summary"></a><a id="open-questions"></a><a id="let-an-agent-decide"></a><a id="import-workflows"></a>
 
 ## Workflows
 
@@ -209,7 +209,7 @@ Keep tokens out of what you save, move your setup between machines, and update w
 
 [More on security, backup and updates](docs/features/security.md)
 
-<a id="workspace-chat"></a><a id="ask-in-a-session"></a><a id="images-in-chat"></a><a id="roles"></a><a id="agent-header"></a><a id="what-the-agent-received"></a><a id="agent-transcript"></a><a id="agent-suggests"></a><a id="queue-or-send-now"></a><a id="message-and-document-fields"></a><a id="stop-and-continue"></a><a id="turn-footer"></a><a id="tool-call-states"></a><a id="composer-plus-menu"></a><a id="attach-files"></a><a id="drift-warning"></a><a id="subagents-from-plan-parts"></a><a id="history-rewriter-and-scribe"></a><a id="one-language-per-session"></a>
+<a id="workspace-chat"></a><a id="ask-in-a-session"></a><a id="images-in-chat"></a><a id="roles"></a><a id="agent-header"></a><a id="what-the-agent-received"></a><a id="agent-transcript"></a><a id="agent-suggests"></a><a id="queue-or-send-now"></a><a id="message-and-document-fields"></a><a id="stop-and-continue"></a><a id="turn-footer"></a><a id="tool-call-states"></a><a id="composer-plus-menu"></a><a id="attach-files"></a><a id="drift-warning"></a><a id="subagents-from-plan-parts"></a><a id="auto-agent"></a><a id="history-rewriter-and-scribe"></a><a id="one-language-per-session"></a>
 
 ## Agents
 

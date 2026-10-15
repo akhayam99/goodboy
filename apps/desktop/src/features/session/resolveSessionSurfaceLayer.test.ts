@@ -11,7 +11,6 @@ describe('resolveSessionSurfaceLayer', () => {
     expect(
       resolveSessionSurfaceLayer({
         lens: 'agents',
-        hasStudio: false,
         selectedAgentId: AGENT,
         artifactConversationAgentId: null,
       }),
@@ -22,7 +21,6 @@ describe('resolveSessionSurfaceLayer', () => {
     expect(
       resolveSessionSurfaceLayer({
         lens: 'plans',
-        hasStudio: false,
         selectedAgentId: AGENT,
         artifactConversationAgentId: AGENT,
       }),
@@ -33,7 +31,6 @@ describe('resolveSessionSurfaceLayer', () => {
     expect(
       resolveSessionSurfaceLayer({
         lens: 'plans',
-        hasStudio: false,
         selectedAgentId: OTHER,
         artifactConversationAgentId: AGENT,
       }),
@@ -44,29 +41,16 @@ describe('resolveSessionSurfaceLayer', () => {
     expect(
       resolveSessionSurfaceLayer({
         lens: 'agents',
-        hasStudio: false,
         selectedAgentId: AGENT,
         artifactConversationAgentId: AGENT,
       }),
     ).toBe('agent');
   });
 
-  it('keeps a studio above everything, hosted conversation included', () => {
-    expect(
-      resolveSessionSurfaceLayer({
-        lens: 'plans',
-        hasStudio: true,
-        selectedAgentId: AGENT,
-        artifactConversationAgentId: AGENT,
-      }),
-    ).toBe('studio');
-  });
-
   it('shows the lens when nothing is selected', () => {
     expect(
       resolveSessionSurfaceLayer({
         lens: 'plans',
-        hasStudio: false,
         selectedAgentId: null,
         artifactConversationAgentId: null,
       }),

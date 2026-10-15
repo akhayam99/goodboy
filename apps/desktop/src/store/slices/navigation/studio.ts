@@ -27,6 +27,7 @@ export type StudioPlace =
       readonly kind: 'terminal';
       readonly terminalId: TerminalTabId | null;
       readonly sessionId: SessionId | null;
+      readonly worktree?: string | null;
     };
 
 export type StudioKind = StudioPlace['kind'];

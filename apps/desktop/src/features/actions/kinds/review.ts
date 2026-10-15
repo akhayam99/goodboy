@@ -53,7 +53,8 @@ const pushLabel = ({
 }: {
   readonly accepted: number;
   readonly failed: number;
-}): string => (failed > 0 ? `Retry push for ${failed}` : `Push ${accepted}`);
+}): string =>
+  failed > 0 ? `Retry push for ${failed}` : `Push ${accepted} ${accepted === 1 ? 'fix' : 'fixes'}`;
 
 const reviewTargetOf = ({
   state,

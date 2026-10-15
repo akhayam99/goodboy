@@ -12,6 +12,124 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.26.0
+
+One New drawer starts a run, an agent or a document, a failed check goes from Analyze to Push, and terminals follow your worktrees.
+
+This version updates your data in one direction. To go back to 0.25, restore the backup Goodboy made before updating.
+
+### New
+
+#### The New drawer
+<!-- gb area=sessions image=new-drawer -->
+
+New in a session opens one drawer with three tabs. Run takes a goal and plans the steps, as Orchestrate or from a saved preset. Agent starts one role. Write drafts a report or a wireframe.
+
+The button is filled when nothing in the session is running, blocked or waiting on a question, and neutral otherwise. Autonomy, Starts and Spend cap sit at the end of Run, and Save as preset keeps a run you like.
+
+#### Fix a failed check from Analyze to Push
+<!-- gb area=review image=ci-fix -->
+
+Analyze asks an agent why a check failed, Start fix commits a fix on the branch, and Push sends it. A committed fix reads Fixed, not pushed, and both the Checks row and the Next card offer Push.
+
+The Debugger drawer opens with the outcome in one line, Push as its one primary action, and Analyze, Fix and Push as one-line steps. After the push it shows the check result: it passed, or it still fails with Analyze again. Nothing restarts on its own.
+
+#### Terminals grouped by worktree
+<!-- gb area=app image=terminal-tabs -->
+
+The Terminal page groups terminals by session with one row per worktree. Each worktree shows its terminals as tabs with a plus to add one, and Open session on a group goes to that session. A port a terminal listens on shows as a chip on the tab and summed on the worktree, and a click opens it on localhost.
+
+Tabs come back after a reload or a restart in the same order with the same active tab. A restart reopens each on its folder with its saved scrollback and the line "Session restored. The previous process ended."
+
+#### Hints when a fix starts
+<!-- gb area=review -->
+
+Every start that launches a fix has one quiet line, Add a hint. It opens a field for what the agent should weigh, and your words go with the start. Fix comments, Start fix in the Debugger drawer, Analyze again, Fix with agent after a failed push and Rewrite with an agent have it.
+
+A failed start keeps what you typed. The hint is never posted to GitHub, GitLab or Bitbucket.
+
+#### Auto agent, an experiment in Settings
+<!-- gb area=agents screen=settings/app -->
+
+Auto answers a question itself and, when there is something to make, hands it to a Planner, Implementer, Tester, Reviewer or another role, chooses a model for each and reads what comes back. It is off until you turn on Auto agent in Settings, under Experiments.
+
+Auto shows as one row in the Overview. Its chat has a Work list, a card for each agent it starts and Approve plan, and a Spend cap is set once per workspace. Move to Auto in an agent's menu hands it an agent you started, and Detach from Auto takes it back.
+
+### Improved
+
+#### One selector on the New session page
+<!-- gb area=sessions image=new-session-page -->
+
+The New session page has one compact selector with Pick up a task, Run a workflow and Ask an agent, and a line under it that says what the choice does. Discard draft and Start blank sit on the same row.
+
+Run a workflow and Ask an agent are the same form as in the New drawer, at page width.
+
+#### Esc closes New session and keeps your draft
+<!-- gb area=sessions -->
+
+Esc closes the New session page and takes you back to where you were. If you wrote something, Esc asks whether to keep the draft or discard it, and keeping it leaves New session ready with your text.
+
+#### Fix and Transcript tabs in the fix run drawer
+<!-- gb area=review image=fix-run-tabs -->
+
+The fix run drawer has two tabs. Fix shows the status, the comments the run covers, what it did and its commits, each fact once. Transcript shows the whole conversation.
+
+It opens on Transcript while the run works, and on Fix once it ended or asks a question. A dot on the other tab says when something new happens there.
+
+#### One Push at a time
+<!-- gb area=review image=one-push -->
+
+Push in the Branch header always covers every ready comment. When nothing needs a decision it pushes on that click and says what went out in one line.
+
+Otherwise a preview lists every commit that goes out, and its one Push sends them all. Push only this one in a comment's actions sends just that fix, and hides while the preview is open.
+
+#### Buttons say working, done or failed
+<!-- gb area=review -->
+
+While Push, Rebase, Merge or another Branch header action runs, its button shows the pending word, such as Pushing, and ignores more clicks. When it finishes, a line under the header says what happened until you dismiss it or start the next action.
+
+#### Next shows the role on its button
+<!-- gb area=sessions image=next-grid -->
+
+Next offers one short button such as Start, Analyze or Push. When the button starts an agent, its icon is that agent's role in its color. Other ways to do it, such as starting a tester, sit in the more menu, where pointing at one shows its role.
+
+Not now says Dismissed with Undo, and Cmd+Z brings back the last dismissed suggestion, several times in reverse order.
+
+#### Short worktree names
+<!-- gb area=sessions -->
+
+A new worktree gets a short folder name such as gb-7k2q9x. The session and the branch show next to it. Worktrees you already have keep their folder.
+
+#### Images show in the message box and in chat
+<!-- gb area=agents image=chat-image -->
+
+An image you attach shows as a thumbnail in the message box and in your message, and a click opens it large.
+
+#### One rule for drawers
+<!-- gb area=app -->
+
+A side drawer pushes the page from a 1024 px column and a reader drawer from a 1344 px column. Below that they lie over it, and the New drawer always does. Closing a drawer over the page leaves the page where it is, and the drawer fades out.
+
+Drawers open with focus on the panel instead of on the close button.
+
+#### The provider row in the step picker
+<!-- gb area=workflows -->
+
+Pin a model in a workflow step shows the compact provider row of the model picker, then Model, Version and Effort, instead of large named cards.
+
+#### Autonomy reads Ask me, Balanced and Autopilot
+<!-- gb area=workflows -->
+
+The three autonomy levels have one name each in the run drawer, the run menu and Run defaults. Your saved choice carries over.
+
+### Fixed
+
+- Stop waits until the process has exited. If the agent cannot be stopped it stays running with the error shown, and a second press tries again. <!-- gb area=agents -->
+- A queued message stays saved until the provider accepts it, so a refused send puts it back and a crash no longer loses it. <!-- gb area=agents -->
+- An opened Activity row keeps a long decision inside the column, and the row grows with it. <!-- gb area=sessions -->
+- A scout fan-out whose child ended blocked or stopped no longer waits for good, and consolidates once. <!-- gb area=agents -->
+- A change typed in the planner's chat reaches the planner with its current plan, and the chat says when the plan did not change. <!-- gb area=workflows -->
+
 ## Goodboy v0.25.1
 
 Decisions can be marked as read, Ask has a Reset chat, the chat transcript fills its column, and question blocks and diff stats show right.

@@ -5,12 +5,23 @@ import type { AppState } from '../../types';
 import { selectCheckAnalysis } from './selectCheckAnalysis';
 
 export type CheckChainState =
-  'none' | 'analyzing' | 'proposal' | 'fixing' | 'fixed' | 'fix-failed' | 'no-fix';
+  | 'none'
+  | 'analyzing'
+  | 'proposal'
+  | 'fixing'
+  | 'fixed-local'
+  | 'fixed-pushed'
+  | 'fix-failed'
+  | 'no-fix';
 
 type Params = {
   readonly state: Pick<
     AppState,
-    'sessionPhaseRuns' | 'transcripts' | 'agentTurnState' | 'dismissedCheckProposals'
+    | 'sessionPhaseRuns'
+    | 'transcripts'
+    | 'agentTurnState'
+    | 'dismissedCheckProposals'
+    | 'checkFixCommits'
   >;
   readonly sessionId: SessionId;
   readonly url: string;
@@ -22,6 +33,7 @@ export type CheckChain = {
   readonly fix: Agent | null;
   readonly proposal: string | null;
   readonly commit: string | null;
+  readonly commitCount: number;
   readonly isDismissed: boolean;
 };
 
@@ -43,6 +55,7 @@ export const selectCheckChain = ({ state, sessionId, url }: Params): CheckChain 
       fix: null,
       proposal: null,
       commit: null,
+      commitCount: 0,
       isDismissed: false,
     };
   }
@@ -66,21 +79,37 @@ export const selectCheckChain = ({ state, sessionId, url }: Params): CheckChain 
   const base = { debugger: analyst, fix, proposal: analysis.proposal, isDismissed };
   if (fix !== null) {
     const events = state.transcripts[fix.id];
-    const commit = events === undefined ? null : commitOf({ events });
+    const fact = state.checkFixCommits[fix.id];
     if (isLive(fix, state.agentTurnState[fix.id])) {
-      return { ...base, state: 'fixing', commit: null };
+      return { ...base, state: 'fixing', commit: null, commitCount: 0 };
     }
-    if (fix.status === 'completed' && (events === undefined || commit !== null)) {
-      return { ...base, state: 'fixed', commit };
+    if (fix.status !== 'completed') {
+      return { ...base, state: 'fix-failed', commit: null, commitCount: 0 };
     }
-    return { ...base, state: 'fix-failed', commit: null };
+    if (fact === undefined) {
+      return { ...base, state: 'fixing', commit: null, commitCount: 0 };
+    }
+    if (fact.kind === 'found') {
+      return {
+        ...base,
+        state: fact.unpushed === 0 ? 'fixed-pushed' : 'fixed-local',
+        commit: fact.sha,
+        commitCount: fact.unpushed === 0 ? fact.count : fact.unpushed,
+      };
+    }
+    const quiet = fact.kind === 'unreadable' && events !== undefined ? commitOf({ events }) : null;
+    if (quiet !== null) {
+      return { ...base, state: 'fixed-local', commit: quiet, commitCount: 1 };
+    }
+    return { ...base, state: 'fix-failed', commit: null, commitCount: 0 };
   }
   if (analysis.isRunning) {
-    return { ...base, state: 'analyzing', commit: null };
+    return { ...base, state: 'analyzing', commit: null, commitCount: 0 };
   }
   return {
     ...base,
     state: analysis.proposal === null || isDismissed ? 'no-fix' : 'proposal',
     commit: null,
+    commitCount: 0,
   };
 };

@@ -10,10 +10,13 @@ const MERGE: ResolvedAction = {
   label: 'Merge',
   shortLabel: 'Merge',
   icon: GitMerge,
+  iconClassName: null,
   group: 'act',
   slot: 'primary',
   pendingLabel: null,
+  doneLabel: null,
   shortcut: null,
+  preview: null,
   description: null,
   blockedReason: null,
   isUndoable: false,
@@ -55,6 +58,7 @@ export const ActionPanelScene = () => {
     pendingId: null,
     confirming: isConfirming ? MERGE : null,
     failure: null,
+    outcome: null,
     trigger: () => setIsConfirming(true),
     confirm: async () => {
       await Promise.resolve();
@@ -64,6 +68,7 @@ export const ActionPanelScene = () => {
     cancel: () => setIsConfirming(false),
     retry: () => undefined,
     dismissFailure: () => undefined,
+    dismissOutcome: () => undefined,
   };
   return (
     <main

@@ -3,7 +3,12 @@ import {
   replaceAgentQueuedMessages,
   type AgentQueuedMessageRecord,
 } from '@goodboy/db';
-import { PROVIDER_IDS, type AgentId, type TurnProviderOverride } from '@goodboy/types';
+import {
+  PROVIDER_IDS,
+  type AgentId,
+  type SessionId,
+  type TurnProviderOverride,
+} from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
 import type { AgentQueuedTurn, GetFn, QueuedAttachment, SetFn } from './types';
@@ -49,17 +54,38 @@ const toRecord = (turn: AgentQueuedTurn): AgentQueuedMessageRecord => ({
 
 const persistQueue = createKeyedQueue();
 
-export const persistAgentQueue = ({ get, agentId }: AgentParams): Promise<void> =>
-  persistQueue
-    .run({
+const sessionOfAgent = ({ get, agentId }: AgentParams): SessionId | undefined => {
+  for (const runs of Object.values(get().sessionPhaseRuns)) {
+    const found = runs.find((agent) => agent.id === agentId);
+    if (found !== undefined) {
+      return found.sessionId;
+    }
+  }
+  return undefined;
+};
+
+export const persistAgentQueue = async ({ get, agentId }: AgentParams): Promise<boolean> => {
+  try {
+    await persistQueue.run({
       key: agentId,
       task: () =>
         replaceAgentQueuedMessages(tauriDatabase, {
           agentId,
           messages: readAgentQueue({ get, agentId }).map(toRecord),
         }),
-    })
-    .catch(() => undefined);
+    });
+    return true;
+  } catch (error) {
+    const sessionId = sessionOfAgent({ get, agentId });
+    void get().reportError({
+      title: "Couldn't save the message queue",
+      error,
+      ...(sessionId !== undefined && { sessionId }),
+      coalesceKey: `agent-queue-save:${agentId}`,
+    });
+    return false;
+  }
+};
 
 const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);

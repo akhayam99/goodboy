@@ -118,6 +118,8 @@ impl Run {
             mount_id: None,
             cursor_max_mode: false,
             writer_lease,
+            write_set_lease: None,
+            confined_role: None,
             blocks_push: true,
             excludes_tmp: false,
         };
@@ -242,6 +244,8 @@ fn expected_argv(binary: &str, run: &Run) -> Vec<String> {
         mount_id: None,
         cursor_max_mode: false,
         writer_lease: None,
+        write_set_lease: None,
+        confined_role: None,
         blocks_push: true,
         excludes_tmp: false,
     };

@@ -73,8 +73,9 @@ vi.mock('./summarizeWorkflowAgentOutput', () => ({
   summarizeWorkflowAgentOutput: hoisted.summarizeWorkflowAgentOutput,
 }));
 
+import { nextAgentId } from '@goodboy/types/testing';
 import { FAN_OUT_MAX_CHILDREN } from '@goodboy/core';
-import { advanceScoutTree, fanOutAgents } from './scoutTree';
+import { advanceScoutTree, fanOutAgents, joinFanOutParent } from './scoutTree';
 
 const SID = 'sess-1' as SessionId;
 
@@ -354,6 +355,8 @@ const scoutAgent = (over: Partial<Agent> = {}): Agent => ({
   ...over,
 });
 
+const freshScout = (over: Partial<Agent> = {}): Agent => scoutAgent({ id: nextAgentId(), ...over });
+
 const splitText = (n: number) =>
   [
     '<<fan-out>>',
@@ -519,6 +522,81 @@ describe('advanceScoutTree split decision', () => {
     const content = sendTurn.mock.calls[0]?.[0]?.content ?? '';
     expect(content).toContain('the model summary');
     expect(content).not.toContain('answer: pick a database');
+  });
+
+  it.each(['blocked', 'stopped'] as const)(
+    'consolidates the parent when a sibling ended %s and the last scout completes',
+    async (status) => {
+      const parent = freshScout({ name: 'parent' });
+      const finished = freshScout({
+        name: 'finished',
+        parentAgentId: parent.id,
+      });
+      const ended = freshScout({
+        name: 'ended',
+        ordinal: 1,
+        status,
+        parentAgentId: parent.id,
+      });
+      const { get, set, sendTurn } = makeAdvanceStore([parent, finished, ended], true);
+      hoisted.invokeAgentList.mockResolvedValue([
+        parent,
+        { ...finished, status: 'completed', outputSummary: 'the model summary' },
+        ended,
+      ]);
+
+      await advanceScoutTree(set, get)(SID, finished.id, 'the raw finding');
+
+      expect(sendTurn).toHaveBeenCalledTimes(1);
+      const content = sendTurn.mock.calls[0]?.[0]?.content ?? '';
+      expect(content).toContain('the model summary');
+      expect(content).toContain(`[ended] (${status})`);
+    },
+  );
+
+  it('consolidates the parent when the last scout to end is the blocked one, and only once', async () => {
+    const parent = freshScout({ name: 'parent' });
+    const done = freshScout({
+      name: 'done',
+      status: 'completed',
+      outputSummary: 'the model summary',
+      parentAgentId: parent.id,
+    });
+    const blocked = freshScout({
+      name: 'blocked',
+      ordinal: 1,
+      status: 'blocked',
+      parentAgentId: parent.id,
+    });
+    const { get, set, sendTurn } = makeAdvanceStore([parent, done, blocked], true);
+
+    await joinFanOutParent(set, get)({ sessionId: SID, agentId: blocked.id });
+    await joinFanOutParent(set, get)({ sessionId: SID, agentId: blocked.id });
+
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+    expect(sendTurn.mock.calls[0]?.[0]?.content).toContain('[blocked] (blocked)');
+  });
+
+  it('waits while a sibling still runs and ignores an agent that is not a fan-out child', async () => {
+    const parent = freshScout({ name: 'parent' });
+    const running = freshScout({
+      name: 'running',
+      status: 'running',
+      parentAgentId: parent.id,
+    });
+    const blocked = freshScout({
+      name: 'blocked',
+      ordinal: 1,
+      status: 'blocked',
+      parentAgentId: parent.id,
+    });
+    const lone = freshScout({ name: 'lone', status: 'blocked' });
+    const { get, set, sendTurn } = makeAdvanceStore([parent, running, blocked, lone], true);
+
+    await joinFanOutParent(set, get)({ sessionId: SID, agentId: blocked.id });
+    await joinFanOutParent(set, get)({ sessionId: SID, agentId: lone.id });
+
+    expect(sendTurn).not.toHaveBeenCalled();
   });
 
   it('keeps a wireframe scout on its own report path, away from the generic summarizer', async () => {

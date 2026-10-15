@@ -175,6 +175,14 @@ const requireAgent = async (db: Database, id: AgentId): Promise<Agent> => {
   return agent;
 };
 
+type AgentInsertStatementParams = {
+  readonly input: AgentInsertInput;
+  readonly id: AgentId;
+};
+
+export const agentInsertStatement = ({ input, id }: AgentInsertStatementParams): PlainStatement =>
+  insertStatement({ input, id });
+
 export const insertAgent = async (db: Database, input: AgentInsertInput): Promise<Agent> => {
   const id = input.id ?? (crypto.randomUUID() as AgentId);
   const { sql, params } = insertStatement({ input, id });

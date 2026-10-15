@@ -78,37 +78,28 @@ const mount = async (): Promise<void> => {
       [AGENT_ID]: { kind: 'running', runId: RUN_ID, startedAt: AT },
     },
   });
-  render(
-    <div>
-      <FixRunLead sessionId={SESSION.id} agentId={AGENT_ID} />
-      <section aria-label="Transcript">
-        <p>Reading the retry loop in payments-api.</p>
-      </section>
-    </div>,
-  );
+  render(<FixRunLead sessionId={SESSION.id} agentId={AGENT_ID} />);
   await act(async () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
   });
 };
 
 describe('the fix run lead', () => {
-  it('shows the status and every comment the run covers, above the transcript', async () => {
+  it('shows the status and every comment the run covers', async () => {
     await mount();
 
     const lead = await screen.findByTestId('fix-run-lead');
-    const transcript = screen.getByRole('region', { name: 'Transcript' });
 
     expect(within(lead).getByTestId('fix-run-status')).toBeDefined();
     expect(within(lead).getByRole('heading', { name: 'Covers 3 comments' })).toBeDefined();
     expect(within(within(lead).getByRole('list')).getAllByRole('button')).toHaveLength(3);
-    expect(lead.compareDocumentPosition(transcript) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
   });
 
-  it('keeps the transcript reachable beside the lead', async () => {
-    await mount();
+  it('renders nothing for an agent without a fix run', async () => {
+    seedResolveScene({ expandedThreadId: null });
+    useAppStore.setState({ sessionPhaseRuns: { [SESSION.id]: [AGENT] } });
+    render(<FixRunLead sessionId={SESSION.id} agentId={AGENT_ID} />);
 
-    await screen.findByTestId('fix-run-lead');
-
-    expect(screen.getByText('Reading the retry loop in payments-api.')).toBeDefined();
+    expect(screen.queryByTestId('fix-run-lead')).toBeNull();
   });
 });

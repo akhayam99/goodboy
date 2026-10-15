@@ -133,7 +133,7 @@ export const ReviewList = ({
               )}
               {group === 'ready_to_push' && onPush !== null && (
                 <Button size="xs" variant="ghost" onClick={onPush}>
-                  {`Push ${tally.readyToPush}`}
+                  {`Push ${tally.readyToPush} ${tally.readyToPush === 1 ? 'fix' : 'fixes'}`}
                 </Button>
               )}
             </div>

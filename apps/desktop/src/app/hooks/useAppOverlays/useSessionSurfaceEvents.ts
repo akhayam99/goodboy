@@ -2,8 +2,6 @@ import { useEffect } from 'react';
 import type { Session, Workspace } from '@goodboy/types';
 import { openPlanAnywhere } from '../../../features/plans/openPlanAnywhere';
 import { sessionPlace, useAppStore } from '../../../store';
-import type { SessionStudio } from '../../../store/slices/session-view/types';
-import { clearCurrentSessionStudio } from './clearCurrentSessionStudio';
 import { eventSessionId, eventValue, isPlanId } from './eventDetail';
 
 type Params = {
@@ -16,11 +14,6 @@ type Params = {
 
 type Listener = readonly [string, (event: Event) => void];
 
-type SessionStudioParams = {
-  readonly event: Event;
-  readonly studio: SessionStudio;
-};
-
 export const useSessionSurfaceEvents = ({
   close,
   currentSession,
@@ -29,16 +22,19 @@ export const useSessionSurfaceEvents = ({
   pinSessionSidebar,
 }: Params) => {
   useEffect(() => {
-    const openSessionStudio = ({ event, studio }: SessionStudioParams) => {
-      const sessionId = eventSessionId(event);
+    const openNewDrawer = (event: Event) => {
+      const sessionId = eventSessionId(event) ?? useAppStore.getState().currentSessionId;
       if (sessionId === null) {
         return;
       }
       close();
       const state = useAppStore.getState();
-      state.navigate({
-        to: sessionPlace({ sessionId, lens: state.activeLens[sessionId] ?? null, studio }),
-      });
+      if (state.currentSessionId !== sessionId) {
+        state.navigate({
+          to: sessionPlace({ sessionId, lens: state.activeLens[sessionId] ?? null }),
+        });
+      }
+      useAppStore.getState().openDrawer({ kind: 'new', sessionId, payload: { tab: 'run' } });
     };
     const openPlanStudio = (event: Event) => {
       const sessionId = eventSessionId(event);
@@ -57,17 +53,8 @@ export const useSessionSurfaceEvents = ({
     };
     const listeners: ReadonlyArray<Listener> = [
       ['goodboy:open-plan-studio', openPlanStudio],
-      [
-        'goodboy:reveal-chat',
-        () => {
-          close();
-          clearCurrentSessionStudio();
-        },
-      ],
-      [
-        'goodboy:open-workflow-builder',
-        (event) => openSessionStudio({ event, studio: { kind: 'workflow' } }),
-      ],
+      ['goodboy:reveal-chat', () => close()],
+      ['goodboy:open-workflow-builder', openNewDrawer],
     ];
     listeners.forEach(([name, listener]) => window.addEventListener(name, listener));
     return () =>
@@ -80,7 +67,6 @@ export const useSessionSurfaceEvents = ({
         return;
       }
       close();
-      clearCurrentSessionStudio();
       if (currentSession !== null && isSessionSidebarCollapsed) {
         pinSessionSidebar();
       }

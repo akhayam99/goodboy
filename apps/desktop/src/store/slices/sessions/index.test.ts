@@ -312,6 +312,32 @@ describe('store contract', () => {
       });
     });
 
+    it('setCurrentSession reads the CI roles as they are and an unknown stored kind as the generalist', async () => {
+      const store = useAppStore;
+      const second: AgentId = JSON.parse(JSON.stringify('agent-ci-fixer'));
+      const third: AgentId = JSON.parse(JSON.stringify('agent-from-the-future'));
+      const fourth: AgentId = JSON.parse(JSON.stringify('agent-old-debugger'));
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      storySpies.invokeAgentList.mockResolvedValue([
+        buildAgent({ id: AGENT_ID, kind: 'ci-debugger', status: 'completed' }),
+        buildAgent({ id: second, kind: 'ci-fixer', status: 'completed' }),
+        buildAgent({ id: third, kind: 'ci-pilot', status: 'completed' }),
+        buildAgent({ id: fourth, kind: 'investigator', status: 'completed' }),
+      ]);
+
+      await store.getState().setCurrentSession(SESSION_ID);
+
+      await vi.waitFor(() => {
+        expect(store.getState().agentKindOverride).toMatchObject({
+          [AGENT_ID]: 'ci-debugger',
+          [second]: 'ci-fixer',
+          [third]: 'generic',
+          [fourth]: 'debugger',
+        });
+      });
+      warn.mockRestore();
+    });
+
     it('setCurrentSession rebuilds resolver verdicts from the persisted transcript', async () => {
       const store = useAppStore;
       storySpies.invokeAgentList.mockResolvedValue([
@@ -878,9 +904,7 @@ describe('store contract', () => {
         expect.objectContaining({
           repoPath: '/tmp/repo',
           parentDir: '/tmp/repo/.goodboy/worktrees',
-          dirName: expect.stringMatching(
-            /^study-plan-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-          ),
+          dirName: expect.stringMatching(/^gb-[0-9a-z]{6}$/),
         }),
       );
       expect(store.getState().sessionProjectMounts[session.id]).toEqual([
@@ -1340,7 +1364,7 @@ describe('store contract', () => {
       const [args] = storySpies.createWorktree.mock.calls[0] ?? [];
 
       expect(args?.dirName).not.toContain('/');
-      expect(args?.dirName).toMatch(/^alice-fix-p-/);
+      expect(args?.dirName).toMatch(/^gb-[0-9a-z]{6}$/);
     });
   });
 
@@ -1915,7 +1939,6 @@ describe('store contract', () => {
         .getState()
         .createSession({ workspaceId: WS_ID, goal: 'ship it' });
 
-      expect(store.getState().sessionStudio[session.id]).toBeNull();
       expect(store.getState().activeLens[session.id]).toBeNull();
     });
 

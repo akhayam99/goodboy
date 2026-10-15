@@ -6,16 +6,26 @@ import type {
   MountId,
   MountTargetSnapshot,
   ProviderId,
+  ProviderRunId,
   SessionId,
   TurnProviderOverride,
   UserTurnSentVia,
 } from '@goodboy/types';
+import type { WriteSetEntry } from '../../../features/worktree/worktree';
 export type { SetFn, GetFn } from '../../slice-types';
 
 export type SendTurnResult = Readonly<{
   blockedOverBudget: boolean;
   isWriterLeaseDenied?: boolean;
   isLaneQueued?: boolean;
+}>;
+
+type TurnSettledInfo = Readonly<{
+  runId: ProviderRunId;
+  assistantText: string;
+  hasFailed: boolean;
+  wasCancelled: boolean;
+  filesTouched: ReadonlyArray<string>;
 }>;
 
 export type SendTurnInput = Readonly<{
@@ -26,11 +36,16 @@ export type SendTurnInput = Readonly<{
   resolveCopyPath?: string;
   resolveThreadIds?: ReadonlyArray<string>;
   onStarted?: () => void;
+  confinedRole?: string;
+  runId?: ProviderRunId;
+  deliveryId?: string;
+  onSettled?: (settled: TurnSettledInfo) => void;
+  captureMode?: 'new' | 'revise';
   content: string;
   attachments?: ReadonlyArray<AttachmentInput>;
   override?: TurnProviderOverride;
   force?: boolean;
-  origin?: 'operator' | 'workflow' | 'mount-continuation';
+  origin?: 'operator' | 'workflow' | 'mount-continuation' | 'delegation';
   handoff?: HandoffDraft;
   sentVia?: UserTurnSentVia;
   permissionOnceAllow?: string;
@@ -49,6 +64,8 @@ export type TurnLease = {
   holder: AgentId | null;
   token: string | null;
   attemptId: string | undefined;
+  writeSet: ReadonlyArray<WriteSetEntry>;
+  writeSetHolder: AgentId | null;
 };
 
 export type TurnProgress = {

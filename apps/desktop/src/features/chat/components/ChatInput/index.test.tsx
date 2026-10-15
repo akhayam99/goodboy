@@ -52,6 +52,7 @@ const {
     providerBudgetStatus: Record<string, never>;
     selectedAgentId: Record<string, string>;
     agentTurnState: Record<string, never>;
+    agentWriterWait: Record<string, never>;
     agentModelOverride: Record<string, string>;
     agentProviderOverride: Record<string, string>;
     agentEffortOverride: Record<string, string>;
@@ -111,6 +112,7 @@ const {
     workspaces: [],
     selectedAgentId: { 'session-1': 'agent-1' },
     agentTurnState: {},
+    agentWriterWait: {},
     agentModelOverride: {},
     agentProviderOverride: {},
     agentEffortOverride: {},

@@ -2,7 +2,7 @@ import { WorkflowBuilderScene } from '../flow-audit/WorkflowBuilderScene';
 import { sceneParam } from './sceneParams';
 import { useSceneClicks } from './useSceneClicks';
 
-const MODES: ReadonlyArray<string> = (sceneParam({ key: 'click' }) ?? 'Custom').split(',');
+const MODES: ReadonlyArray<string> = (sceneParam({ key: 'click' }) ?? 'Preset').split(',');
 
 export const WorkflowBuilderModesScene = () => {
   useSceneClicks({

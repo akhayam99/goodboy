@@ -4,7 +4,12 @@ import type { AgentId, SessionId } from '@goodboy/types';
 
 const { listAgentQueuedMessages, replaceAgentQueuedMessages } = vi.hoisted(() => ({
   listAgentQueuedMessages: vi.fn(async () => [] as ReadonlyArray<unknown>),
-  replaceAgentQueuedMessages: vi.fn(async () => undefined),
+  replaceAgentQueuedMessages: vi.fn(
+    async (
+      _database: unknown,
+      _params: { readonly messages: ReadonlyArray<{ readonly id: string }> },
+    ) => undefined,
+  ),
 }));
 
 vi.mock('@goodboy/db', async () =>
@@ -31,6 +36,7 @@ type SentTurn = { readonly content: string; readonly sentVia?: string };
 
 type Harness = {
   readonly state: Record<string, unknown>;
+  readonly reportError: ReturnType<typeof vi.fn>;
   readonly slice: ReturnType<QueueModule['createAgentQueueSlice']>;
   readonly sent: Array<SentTurn>;
   readonly cancelCurrentTurn: ReturnType<typeof vi.fn>;
@@ -62,16 +68,19 @@ const harness = ({ running = true }: { readonly running?: boolean } = {}): Harne
   const cancelCurrentTurn = vi.fn(async () => {
     state.agentTurnState = { [AGENT_ID]: { kind: 'idle' } };
   });
+  const reportError = vi.fn(async () => undefined);
   Object.assign(state, slice, {
     cancelCurrentTurn,
-    reportError: vi.fn(async () => undefined),
-    sendTurn: vi.fn(async (params: SentTurn) => {
+    reportError,
+    sendTurn: vi.fn(async (params: SentTurn & { onStarted?: () => void }) => {
       sent.push({ content: params.content, sentVia: params.sentVia });
+      params.onStarted?.();
       return { blockedOverBudget: false };
     }),
   });
   return {
     state,
+    reportError,
     slice,
     sent,
     cancelCurrentTurn,
@@ -299,5 +308,186 @@ describe('agent queue', () => {
         createdAt: '2026-09-25T10:00:00.000Z',
       },
     ]);
+  });
+
+  describe('delivery acceptance', () => {
+    const savedIds = (): ReadonlyArray<ReadonlyArray<string>> =>
+      replaceAgentQueuedMessages.mock.calls.map(([, params]) =>
+        params.messages.map((message) => message.id),
+      );
+
+    it('keeps the head queued and saved until the provider accepts it', async () => {
+      const { state, slice, queue } = harness();
+      await slice.enqueueAgentMessage({ turn: input('a') });
+      await slice.enqueueAgentMessage({ turn: input('b') });
+      state.agentTurnState = { [AGENT_ID]: { kind: 'idle' } };
+      replaceAgentQueuedMessages.mockClear();
+      let release: () => void = () => undefined;
+      const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const seenBeforeAccept: Array<ReadonlyArray<[string, string]>> = [];
+      const seenAfterAccept: Array<ReadonlyArray<string>> = [];
+      state.sendTurn = vi.fn(async (params: { onStarted?: () => void }) => {
+        seenBeforeAccept.push(queue().map((item) => [item.id, item.status]));
+        params.onStarted?.();
+        seenAfterAccept.push(queue().map((item) => item.id));
+        await gate;
+        return { blockedOverBudget: false };
+      });
+
+      const draining = slice.drainAgentQueue({ sessionId: SESSION_ID, agentId: AGENT_ID });
+      await vi.waitFor(() => expect(seenAfterAccept).toHaveLength(1));
+
+      expect(seenBeforeAccept).toEqual([
+        [
+          ['a', 'sending'],
+          ['b', 'queued'],
+        ],
+      ]);
+      expect(seenAfterAccept).toEqual([['b']]);
+      expect(savedIds()).toEqual([['b']]);
+      release();
+      await draining;
+      expect(queue().map((item) => item.id)).toEqual(['b']);
+    });
+
+    it('never sends the same head twice from two drains', async () => {
+      const { state, slice, sent } = harness();
+      await slice.enqueueAgentMessage({ turn: input('a') });
+      state.agentTurnState = { [AGENT_ID]: { kind: 'idle' } };
+
+      await Promise.all([
+        slice.drainAgentQueue({ sessionId: SESSION_ID, agentId: AGENT_ID }),
+        slice.drainAgentQueue({ sessionId: SESSION_ID, agentId: AGENT_ID }),
+      ]);
+
+      expect(sent).toEqual([{ content: 'message a', sentVia: 'queued' }]);
+    });
+
+    it('does not save an empty queue when the send is refused before it starts', async () => {
+      const { state, slice, queue, reportError } = harness();
+      await slice.enqueueAgentMessage({ turn: input('a') });
+      state.agentTurnState = { [AGENT_ID]: { kind: 'idle' } };
+      state.sendTurn = vi.fn(async () => {
+        throw new Error('spawn failed');
+      });
+      replaceAgentQueuedMessages.mockClear();
+
+      await slice.drainAgentQueue({ sessionId: SESSION_ID, agentId: AGENT_ID });
+
+      expect(queue().map((item) => [item.id, item.status])).toEqual([['a', 'queued']]);
+      expect(savedIds().every((ids) => ids.includes('a'))).toBe(true);
+      expect(reportError).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Couldn't send the queued message" }),
+      );
+    });
+
+    it('keeps the message queued when the send returns before any provider turn starts', async () => {
+      const { state, slice, queue } = harness();
+      await slice.enqueueAgentMessage({ turn: input('a') });
+      state.agentTurnState = { [AGENT_ID]: { kind: 'idle' } };
+      state.sendTurn = vi.fn(async () => ({ blockedOverBudget: false }));
+      replaceAgentQueuedMessages.mockClear();
+
+      await slice.drainAgentQueue({ sessionId: SESSION_ID, agentId: AGENT_ID });
+
+      expect(queue().map((item) => [item.id, item.status])).toEqual([['a', 'queued']]);
+      expect(savedIds().every((ids) => ids.includes('a'))).toBe(true);
+    });
+
+    it('removes a message the resolve lane took over, once', async () => {
+      const { state, slice, queue } = harness();
+      await slice.enqueueAgentMessage({ turn: input('a') });
+      state.agentTurnState = { [AGENT_ID]: { kind: 'idle' } };
+      state.sendTurn = vi.fn(async () => ({ blockedOverBudget: false, isLaneQueued: true }));
+      replaceAgentQueuedMessages.mockClear();
+
+      await slice.drainAgentQueue({ sessionId: SESSION_ID, agentId: AGENT_ID });
+
+      expect(queue()).toEqual([]);
+      expect(savedIds()).toEqual([[]]);
+    });
+
+    it('removes a delivered message exactly once', async () => {
+      const { state, slice, queue } = harness();
+      await slice.enqueueAgentMessage({ turn: input('a') });
+      state.agentTurnState = { [AGENT_ID]: { kind: 'idle' } };
+      replaceAgentQueuedMessages.mockClear();
+
+      await slice.drainAgentQueue({ sessionId: SESSION_ID, agentId: AGENT_ID });
+
+      expect(queue()).toEqual([]);
+      expect(savedIds()).toEqual([[]]);
+    });
+
+    it('treats a turn that failed after it started as delivered and does not queue it again', async () => {
+      const { state, slice, queue, reportError } = harness();
+      await slice.enqueueAgentMessage({ turn: input('a') });
+      state.agentTurnState = { [AGENT_ID]: { kind: 'idle' } };
+      state.sendTurn = vi.fn(async (params: { onStarted?: () => void }) => {
+        params.onStarted?.();
+        throw new Error('stream broke');
+      });
+
+      await slice.drainAgentQueue({ sessionId: SESSION_ID, agentId: AGENT_ID });
+
+      expect(queue()).toEqual([]);
+      expect(reportError).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows the error and keeps the message when saving the queue fails', async () => {
+      const { slice, queue, reportError } = harness();
+      replaceAgentQueuedMessages.mockRejectedValueOnce(new Error('disk full'));
+
+      await slice.enqueueAgentMessage({ turn: input('a') });
+
+      expect(queue().map((item) => item.id)).toEqual(['a']);
+      expect(reportError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Couldn't save the message queue",
+          error: new Error('disk full'),
+        }),
+      );
+    });
+
+    it('shows the error and does not send again when saving the removal fails after the send', async () => {
+      const { state, slice, sent, queue, reportError } = harness();
+      await slice.enqueueAgentMessage({ turn: input('a') });
+      await slice.enqueueAgentMessage({ turn: input('b') });
+      state.agentTurnState = { [AGENT_ID]: { kind: 'idle' } };
+      replaceAgentQueuedMessages.mockRejectedValueOnce(new Error('disk full'));
+
+      await slice.drainAgentQueue({ sessionId: SESSION_ID, agentId: AGENT_ID });
+      await slice.drainAgentQueue({ sessionId: SESSION_ID, agentId: AGENT_ID });
+
+      expect(sent.map((turn) => turn.content)).toEqual(['message a', 'message b']);
+      expect(queue()).toEqual([]);
+      expect(reportError).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Couldn't save the message queue" }),
+      );
+    });
+
+    it('keeps a Send now message queued until the provider accepts it', async () => {
+      const { state, slice, queue } = harness();
+      await slice.enqueueAgentMessage({ turn: input('a') });
+      await slice.enqueueAgentMessage({ turn: input('b') });
+      const seen: Array<ReadonlyArray<[string, string]>> = [];
+      state.sendTurn = vi.fn(async (params: { onStarted?: () => void }) => {
+        seen.push(queue().map((item) => [item.id, item.status]));
+        params.onStarted?.();
+        return { blockedOverBudget: false };
+      });
+
+      await slice.sendQueuedNow({ sessionId: SESSION_ID, agentId: AGENT_ID, itemId: 'b' });
+
+      expect(seen).toEqual([
+        [
+          ['a', 'queued'],
+          ['b', 'sending'],
+        ],
+      ]);
+      expect(queue().map((item) => item.id)).toEqual(['a']);
+    });
   });
 });

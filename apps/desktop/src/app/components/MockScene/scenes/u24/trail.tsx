@@ -24,10 +24,4 @@ export const U24_TRAIL_SCENES = {
       }}
     />
   ),
-  'trail-artifact-create': () => (
-    <TrailScene
-      title="Create report"
-      input={{ lens: 'plans', artifactCreationLabel: 'Create report' }}
-    />
-  ),
 };

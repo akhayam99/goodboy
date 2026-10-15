@@ -40,7 +40,11 @@ const GROUP_SHOWN = 3;
 const readsEverything = ({ role }: { readonly role: AgentRole }): boolean =>
   SLOT_KEYS.every((slot) => ROLE_SLOTS[role].includes(slot));
 
-const ALL_ROLES = Object.keys(ROLE_SLOTS) as ReadonlyArray<AgentRole>;
+const HIDDEN_ROLES: ReadonlyArray<AgentRole> = ['ci-debugger', 'ci-fixer', 'auto'];
+
+const ALL_ROLES = (Object.keys(ROLE_SLOTS) as ReadonlyArray<AgentRole>).filter(
+  (role) => !HIDDEN_ROLES.includes(role),
+);
 
 const GROUPED: ReadonlyArray<AgentRole> = [
   ...GROUP_ORDER.filter((role) => readsEverything({ role })),

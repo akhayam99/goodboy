@@ -19,7 +19,7 @@ Ask what is happening in a session without leaving it. **Ask**, or **⌘L**, ope
 
 ### Images in chat
 
-Paste, drop or attach images in the chat message box, up to 10 per message, in PNG, JPEG, GIF or WebP. The model reads them with your question, on Claude and on Codex.
+Paste, drop or attach images in the chat message box, up to 10 per message, in PNG, JPEG, GIF or WebP. The model reads them with your question, on Claude and on Codex. The image shows as a thumbnail in the message box and in your message, and a click on it opens it large.
 
 ### Roles
 
@@ -57,7 +57,7 @@ When an agent recommends another role, its transcript shows **Agent suggests** w
 
 ### Queue or send now
 
-Keep talking while an agent works. **Enter** queues your message for its next turn, **⌘Enter** reads it now, interrupting the turn, and the queue survives a restart.
+Keep talking while an agent works. **Enter** queues your message for its next turn, **⌘Enter** reads it now, interrupting the turn, and the queue survives a restart. A queued message stays saved until the provider accepts it, so a refused send puts it back and a crash does not lose it.
 
 ### Message and document fields
 
@@ -65,7 +65,7 @@ Write to an agent the same way everywhere. Every message and document field take
 
 ### Stop and Continue
 
-Stop an agent without losing its work. Stopping keeps what it wrote and offers **Continue**. An agent that was working when you restart or update Goodboy picks up where it stopped, and **Resume all** brings back every one a restart stopped.
+Stop an agent without losing its work. Stopping keeps what it wrote and offers **Continue**. **Stop** waits until the process has exited; if it cannot stop the agent, the agent stays running with the error shown and a second press tries again. An agent that was working when you restart or update Goodboy picks up where it stopped, and **Resume all** brings back every one a restart stopped.
 
 ### Turn footer
 
@@ -97,6 +97,10 @@ Hear about it when an agent steps outside its role, like a planner editing files
 ### Subagents from plan parts
 
 Run a plan part by part. An implementer given a plan splits into one sub-agent per part, shown as 3.1 and 3.2, and a plan can give each part done-when checks and the files it expects to touch.
+
+### Auto agent
+
+Try an agent that picks the roles for you. **Auto** answers a question itself and, when there is something to make, hands it to a Planner, Implementer, Tester, Reviewer or another role, chooses a model for each and reads what comes back. It is an experiment and is off until you turn on **Auto agent** in Settings, General, **Experiments**; off, you pick the role as before. Auto shows up as one row in the Overview, and its chat has a **Work** list on the left, a card for each agent it starts and **Approve plan** when a Planner finished. Set a **Spend cap** once per workspace, and **Stop** or **Change approach** while it waits. An agent you started yourself, an Implementer, Tester, analysis agent or a Generalist that is not part of a Run, can be handed over with **Move to Auto** in its menu: say what Auto should do next, or leave the field empty and Auto decides from the chat. The agent keeps its chat and its files but you can only read it from then on, and **Detach from Auto** takes it back. Inside an Auto conversation the other next-step buttons stay out of the way.
 
 ### History rewriter and Scribe
 

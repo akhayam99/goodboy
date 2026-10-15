@@ -1,4 +1,4 @@
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ChevronUp } from 'lucide-react';
 import { Button, HeaderActions, HeaderBand, Notice, Tooltip } from '@goodboy/ui';
 import { PULL_REQUEST_NOUNS } from '@goodboy/core';
 import type { PullRequestHost, PullRequestState, SessionId } from '@goodboy/types';
@@ -8,6 +8,7 @@ import type { BranchTab } from '../../../../store/slices/navigation/types';
 import { usePullRequestTitleEdit } from '../../hooks/usePullRequestTitleEdit';
 import { PullRequestTitle } from '../PullRequestTab/PullRequestTitle';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { actionButtonStateOf } from '../../../actions/actionButtonStateOf';
 import { ActionConfirmPanel } from '../../../actions/components/ActionControls/ActionConfirmPanel';
 import { ActionStatusLine } from '../../../actions/components/ActionControls/ActionStatusLine';
 import type { BranchControls } from '../../hooks/useBranchControls';
@@ -17,6 +18,9 @@ import { pullRequestKindOf } from '../../../../shared/pullRequestKind';
 import type { PullRequestPresentationState } from '../../../../shared/pullRequestPresentation';
 import { pushFailureOf } from '../../../actions/kinds/pushFailureOf';
 import { PushFailureActions } from './PushFailureActions';
+import { StartHint } from '../../../../shared/components/StartHint';
+import { START_HINT_COPY } from '../../../../shared/components/startHintCopy';
+import { START_HINT_SCOPES } from '../../../../store/slices/startHints/startHintScopes';
 import { BranchStateChip } from './BranchStateChip';
 import { BranchOverflow } from './BranchOverflow';
 import { BranchSwitcher } from './BranchSwitcher';
@@ -99,6 +103,13 @@ export const BranchHeader = ({
   const failedError = controls.diffControls.failure?.error;
   const pushFailure = pushFailureOf({ error: failedError });
   const buttonOf = ({ action, slot, variant }: ButtonParams) => {
+    const state = actionButtonStateOf({
+      controls: controls.controlsOf(action),
+      actionId: action.actionId,
+      label: action.label,
+      pendingLabel: action.pendingLabel,
+      isBusy: action.isBusy || isPushBusy,
+    });
     const button = (
       <Button
         size="sm"
@@ -106,11 +117,14 @@ export const BranchHeader = ({
         data-branch-primary={slot === 'primary' ? action.actionId : undefined}
         data-branch-secondary={slot === 'secondary' ? action.actionId : undefined}
         disabled={action.blockedReason !== null}
-        isBusy={action.isBusy || isPushBusy}
+        aria-expanded={action.isExpanded ?? undefined}
+        isBusy={state.isBusy}
+        busyLabel={state.label}
         onClick={() => controls.press(action)}
       >
         <action.icon size={ICON_SIZE.control} aria-hidden />
         {action.label}
+        {action.isExpanded === true && <ChevronUp size={ICON_SIZE.control} aria-hidden />}
       </Button>
     );
     return action.blockedReason === null ? (
@@ -264,6 +278,18 @@ export const BranchHeader = ({
       <ActionStatusLine
         controls={controls.diffControls}
         showReasons={false}
+        failureHint={
+          pushFailure === null ? null : (
+            <div className="w-full max-w-md">
+              <StartHint
+                sessionId={sessionId}
+                scope={START_HINT_SCOPES.pushFix({ mountId: pushFailure.mountId })}
+                label={START_HINT_COPY.implementerLabel}
+                placeholder={START_HINT_COPY.pushFix}
+              />
+            </div>
+          )
+        }
         failureActions={
           pushFailure === null ? null : (
             <PushFailureActions

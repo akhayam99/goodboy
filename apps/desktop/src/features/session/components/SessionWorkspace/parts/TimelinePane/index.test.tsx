@@ -20,6 +20,7 @@ import type {
 import { aSession } from '@goodboy/types/testing';
 import { WORK_META_COLUMN } from '@goodboy/ui';
 import { carriesSpec } from '../../../../../../test/classTokens';
+import { installFakeResizeObserver } from '../../../../../../test/fakeResizeObserver';
 import { tooltipTextOf } from '../../../../../../__tests__/helpers/tooltip';
 
 type Worktree = {
@@ -50,6 +51,7 @@ const { storeState, diffStats, unread, questions, agentsLoaded, attachedRuns, re
     },
     storeState: {
       sessionPhaseRuns: {},
+      sessionOpenQuestions: {},
       sessionPlans: {},
       sessionArtifacts: {} as Record<string, ReadonlyArray<unknown>>,
       sessionExternalTasks: {},
@@ -118,6 +120,7 @@ vi.mock('../../../SessionOverviewPane/SessionCostChip', () => ({
 vi.mock('../../../CreateAgentPopover', () => ({
   CreateAgentPopover: () => <button type="button">Start agent</button>,
 }));
+vi.mock('../../../../../auto/useAutoTrees', () => ({ useAutoTrees: () => [] }));
 vi.mock('../../../../hooks/useResolveActivity', () => ({
   useResolveActivity: () => resolveActivity.current,
 }));
@@ -438,23 +441,14 @@ describe('TimelinePane on an empty session', () => {
   const renderEmptySession = () => {
     storeState.sessionEvents = { 'session-1': [] };
     return render(
-      <TimelinePane
-        session={SESSION}
-        actions={
-          <OverviewActions
-            session={SESSION}
-            onOpenWorkflowBuilder={() => undefined}
-            onOpenRun={() => undefined}
-          />
-        }
-      />,
+      <TimelinePane session={SESSION} actions={<OverviewActions session={SESSION} />} />,
     );
   };
 
   it('keeps the actions and the empty hint, with no kickoff', () => {
     renderEmptySession();
 
-    expect(screen.getByRole('button', { name: 'Start agent' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'New' })).toBeDefined();
     expect(screen.getByText('No runs or agents yet')).toBeDefined();
     expect(screen.queryByText(/Nothing yet/)).toBeNull();
     expect(screen.queryByRole('region', { name: 'Kickoff' })).toBeNull();
@@ -2127,5 +2121,60 @@ describe('TimelinePane finished run', () => {
     expect(countRow().getAttribute('aria-expanded')).toBe('true');
     fireEvent.keyDown(button, { key: 'ArrowLeft' });
     expect(countRow().getAttribute('aria-expanded')).toBe('false');
+  });
+});
+
+describe('TimelinePane an opened Context row', () => {
+  const LONG =
+    'Show the stuck-delivery banner after the third failed retry, not the first, so one provider hiccup never alarms a Harborline operator while the ledger-core queue is still draining on its own schedule overnight';
+
+  const seed = () => {
+    storeState.sessionEvents = {
+      'session-1': [
+        {
+          id: 'event-context',
+          sessionId: 'session-1',
+          kind: 'decisions_changed',
+          payload: {
+            added: 0,
+            replaced: 1,
+            decisionChanges: [{ kind: 'replaced', number: 5, by: 7, text: LONG, reason: 'noted' }],
+          },
+          createdAt: '2026-08-20T10:06:00.000Z',
+        },
+      ],
+    };
+  };
+
+  const contextRow = () =>
+    Array.from(document.querySelectorAll<HTMLElement>('[data-row-id]')).find(
+      (element) => element.dataset.rowId === 'event:event-context',
+    );
+
+  const rowHeight = () => contextRow()?.style.height;
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('grows the row by the measured body and follows a resize', () => {
+    seed();
+    const observers = installFakeResizeObserver();
+    let measured = 90;
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(
+      () => new DOMRect(0, 0, 300, measured),
+    );
+    render(<TimelinePane session={SESSION} actions={null} />);
+    openLog();
+    const closed = Number.parseFloat(rowHeight() ?? '0');
+
+    fireEvent.click(contextRow()?.querySelector('button') ?? document.body);
+    expect(screen.getByText(LONG)).toBeDefined();
+    expect(Number.parseFloat(rowHeight() ?? '0')).toBe(closed + 90);
+
+    measured = 218;
+    act(() => observers.resizeAll());
+    expect(Number.parseFloat(rowHeight() ?? '0')).toBe(closed + 218);
   });
 });

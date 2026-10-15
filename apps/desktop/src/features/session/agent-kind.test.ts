@@ -1,12 +1,20 @@
 // @vitest-environment node
-import { describe, expect, it } from 'vitest';
-import { PROVIDER_CAPABILITIES, AUTO_DEFAULTS, PLAN_KIT_GUIDE, ROLE_REGISTRY } from '@goodboy/core';
+import { describe, expect, it, vi } from 'vitest';
+import {
+  PROVIDER_CAPABILITIES,
+  AUTO_DEFAULTS,
+  AUTO_OWN_PROVIDERS,
+  PLAN_KIT_GUIDE,
+  ROLE_REGISTRY,
+} from '@goodboy/core';
 import type { Agent, AgentId, AgentRole, SessionId, StepId, WorkflowRunId } from '@goodboy/types';
 import { EFFORT_LEVELS } from '../chat/utils/chat-constants';
 import {
   AGENT_KIND_DEFAULTS,
   AGENT_KIND_META,
   AGENT_KIND_PALETTE,
+  KIND_TO_ROLE,
+  ROLE_LABEL,
   type AgentKind,
   agentHomeLens,
   agentKindPalette,
@@ -16,11 +24,14 @@ import {
   kindConsumesPlan,
   kindForRole,
   kindRouting,
+  kindWritesFiles,
   resolveAgentKind,
   resolveRootAgent,
   selectNonResolverStandaloneAgents,
+  storedAgentKind,
   visibleAgentKinds,
   visibleAgentRoles,
+  visibleWorkflowRoles,
 } from './agent-kind';
 
 const agentOf = (over: Partial<Agent> = {}): Agent => ({
@@ -319,6 +330,22 @@ describe('AGENT_KIND_DEFAULTS', () => {
       model: 'sonnet-5.5',
       effort: 'medium',
     });
+  });
+
+  it('never routes Auto to the opencode family, whatever the default or the stored pick', () => {
+    for (const defaultProvider of ['opencode', 'openrouter', 'moonshot'] as const) {
+      expect(AUTO_OWN_PROVIDERS).toContain(kindRouting({ kind: 'auto', defaultProvider }).provider);
+    }
+    const pinned = kindRouting({
+      kind: 'auto',
+      defaultProvider: 'opencode',
+      roleModels: { auto: { providerId: 'opencode', model: 'big-pickle', effort: 'high' } },
+    });
+    expect(AUTO_OWN_PROVIDERS).toContain(pinned.provider);
+  });
+
+  it('keeps the opencode family for the roles that already used it', () => {
+    expect(kindRouting({ kind: 'scout', defaultProvider: 'opencode' }).provider).toBe('opencode');
   });
 
   it('starts on the workspace default provider when one is given', () => {
@@ -664,6 +691,9 @@ describe('kindForRole', () => {
     resolver: 'resolver',
     rewriter: 'rewriter',
     scribe: 'scribe',
+    'ci-debugger': 'ci-debugger',
+    'ci-fixer': 'ci-fixer',
+    auto: 'auto',
     custom: 'generic',
   } satisfies Record<AgentRole, AgentKind>;
 
@@ -727,6 +757,10 @@ describe('AGENT_KIND_META', () => {
       expect(typeof AGENT_KIND_META[kind].hint).toBe('string');
       expect(AGENT_KIND_META[kind].hint.length).toBeGreaterThan(0);
     }
+  });
+
+  it('describes a Resolve run without counting its comments, since it covers several', () => {
+    expect(AGENT_KIND_META.resolver.hint).not.toMatch(/\bone comment\b/);
   });
 
   it('labels the do-everything role Generalist, resolved from its unchanged id', () => {
@@ -817,5 +851,125 @@ describe('agent visibility', () => {
       'docs',
       'custom',
     ]);
+  });
+});
+
+describe('the CI debugger and the CI fixer', () => {
+  const CI_KINDS = ['ci-debugger', 'ci-fixer'] as const;
+
+  it('stay out of the spawn menu, the role pickers and the workflow builder', () => {
+    for (const kind of CI_KINDS) {
+      expect(visibleAgentKinds()).not.toContain(kind);
+      expect(visibleAgentRoles()).not.toContain(kind);
+      expect(visibleWorkflowRoles()).not.toContain(kind);
+      expect(AGENT_KIND_DEFAULTS[kind].visible).toBe(false);
+    }
+  });
+
+  it('read back from the stored kind as themselves and carry their own prompt', () => {
+    for (const kind of CI_KINDS) {
+      expect(classifyAgent({ agent: agentOf({ kind }), override: null })).toBe(kind);
+      expect(classifyAgent({ agent: agentOf({ name: 'Debugger' }), override: kind })).toBe(kind);
+      expect(AGENT_KIND_DEFAULTS[kind].systemPrompt).toContain('CI');
+    }
+    expect(AGENT_KIND_DEFAULTS['ci-debugger'].systemPrompt).toContain('FORBIDDEN: editing files');
+    expect(AGENT_KIND_DEFAULTS['ci-fixer'].systemPrompt).toContain('pushing');
+  });
+
+  it('do not take a plan and the analysis cannot write', () => {
+    expect(kindConsumesPlan({ kind: 'ci-debugger' })).toBe(false);
+    expect(kindConsumesPlan({ kind: 'ci-fixer' })).toBe(false);
+    expect(kindWritesFiles({ kind: 'ci-debugger' })).toBe(false);
+    expect(kindWritesFiles({ kind: 'ci-fixer' })).toBe(true);
+  });
+});
+
+describe('storedAgentKind', () => {
+  it('keeps a known kind, maps an old role name to its kind and reads the rest as generic', () => {
+    expect(storedAgentKind({ kind: 'ci-fixer' })).toBe('ci-fixer');
+    expect(storedAgentKind({ kind: 'pr-reviewer' })).toBe('pr-reviewer');
+    expect(storedAgentKind({ kind: 'investigator' })).toBe('debugger');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    expect(storedAgentKind({ kind: 'ci-pilot' })).toBe('generic');
+    expect(storedAgentKind({ kind: '' })).toBe('generic');
+    expect(warn).toHaveBeenCalledTimes(2);
+    warn.mockRestore();
+  });
+});
+
+describe('the Auto role, while it is not offered', () => {
+  const STATUSES = ['pending', 'running', 'completed'] as const;
+
+  it('reads an Auto row in every status as an Auto agent', () => {
+    for (const status of STATUSES) {
+      expect(classifyAgent({ agent: agentOf({ kind: 'auto', status }), override: null })).toBe(
+        'auto',
+      );
+    }
+  });
+
+  it('reads a row with no kind or a generic kind exactly as before', () => {
+    for (const status of STATUSES) {
+      expect(classifyAgent({ agent: agentOf({ status }), override: null })).toBe('generic');
+      expect(classifyAgent({ agent: agentOf({ kind: 'generic', status }), override: null })).toBe(
+        'generic',
+      );
+      expect(classifyAgent({ agent: agentOf({ kind: 'custom', status }), override: null })).toBe(
+        'generic',
+      );
+    }
+  });
+
+  it('keeps an unknown kind generic, never an Auto agent', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    for (const kind of ['automatic', 'autopilot']) {
+      expect(classifyAgent({ agent: agentOf({ kind }), override: null })).toBe('generic');
+    }
+
+    expect(warn).toHaveBeenCalledTimes(2);
+    warn.mockRestore();
+  });
+
+  it('does not let a name pick the Auto agent', () => {
+    expect(classifyAgent({ agent: agentOf({ name: 'auto' }), override: null })).toBe('generic');
+  });
+
+  it('maps the Auto kind to the Auto role and back', () => {
+    expect(KIND_TO_ROLE.auto).toBe('auto');
+    expect(kindForRole({ role: 'auto' })).toBe('auto');
+  });
+
+  it('keeps one label across both label sources and the badge', () => {
+    expect(AGENT_KIND_META.auto.label).toBe('Auto agent');
+    expect(ROLE_LABEL.auto).toBe(AGENT_KIND_META.auto.label);
+    expect(AGENT_KIND_PALETTE.auto.label).toBe(AGENT_KIND_META.auto.noun);
+    expect(AGENT_KIND_PALETTE.auto).toMatchObject({ bg: 'bg-agent-auto', fg: 'text-agent-auto' });
+    expect(agentKindPalette({ kind: 'auto' })).toBe(AGENT_KIND_PALETTE.auto);
+  });
+
+  it('still names the Generalist as before', () => {
+    expect(AGENT_KIND_META.generic.label).toBe('Generalist');
+    expect(ROLE_LABEL.custom).toBe('Generalist');
+    expect(AGENT_KIND_PALETTE.generic.label).toBe('Generalist');
+  });
+
+  it('is offered by no picker and no workflow list', () => {
+    expect(visibleAgentKinds()).not.toContain('auto');
+    expect(visibleAgentRoles()).not.toContain('auto');
+    expect(visibleWorkflowRoles()).not.toContain('auto');
+    expect(AGENT_KIND_DEFAULTS.auto.visible).toBe(false);
+  });
+
+  it('starts on the same model and effort as the Generalist', () => {
+    expect(kindRouting({ kind: 'auto' })).toEqual(kindRouting({ kind: 'generic' }));
+    expect(kindRouting({ kind: 'auto' })).toMatchObject({ model: 'sonnet-5.5', effort: 'medium' });
+  });
+
+  it('carries the Auto prompt, which says it never edits', () => {
+    const prompt = AGENT_KIND_DEFAULTS.auto.systemPrompt ?? '';
+
+    expect(prompt).toContain('You are Auto');
+    expect(prompt).toContain('never edit files');
   });
 });

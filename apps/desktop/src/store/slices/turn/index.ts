@@ -1,4 +1,5 @@
 import { cancelCurrentTurn } from './cancelCurrentTurn';
+import { cancelTurnConfirmed } from './cancelTurnConfirmed';
 import { continueStoppedAgent } from './continueStoppedAgent';
 import { resumeStoppedAgents } from './resumeStoppedAgents';
 import { requestContextUpdate } from './requestContextUpdate';
@@ -10,6 +11,7 @@ export const createTurnSlice = ({ set, get }: SliceDeps) => {
   return {
     sendTurn: sendTurn(set, get),
     cancelCurrentTurn: cancelCurrentTurn(set, get),
+    cancelTurnConfirmed: cancelTurnConfirmed(set, get),
     continueStoppedAgent: continueStoppedAgent(get),
     resumeStoppedAgents: resumeStoppedAgents(get),
     retrySummarizer: retrySummarizer(set, get),

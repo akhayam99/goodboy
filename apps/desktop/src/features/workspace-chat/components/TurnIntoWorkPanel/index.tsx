@@ -334,7 +334,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
         <IconButton icon={X} label="Close" variant="ghost" onClick={onClose} />
       </div>
       <ScrollFade className="flex-1">
-        <div className="flex flex-col gap-4 px-4 pb-4 pt-3">
+        <div className="flex flex-col gap-3 px-4 pb-3 pt-3">
           <div className="flex flex-col gap-2">
             <span className="text-label text-muted-foreground">Start as</span>
             <SegmentedTabs
@@ -377,7 +377,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
                   kind="document"
                   label="Goal"
                   hasPreview
-                  minRows={4}
+                  minRows={3}
                   maxRows={10}
                   value={brief.goal}
                   onChange={(goal) => patch({ goal })}

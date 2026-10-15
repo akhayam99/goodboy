@@ -1,3 +1,4 @@
+import { closeSessionDraft } from './closeSessionDraft';
 import { discardSessionDraft } from './discardSessionDraft';
 import { openSessionDraft } from './openSessionDraft';
 import { patchSessionDraft } from './patchSessionDraft';
@@ -9,7 +10,8 @@ export const createSessionDraftSlice = ({ set, get }: SliceDeps) => {
   return {
     openSessionDraft: openSessionDraft(get),
     patchSessionDraft: patchSessionDraft(set),
-    discardSessionDraft: discardSessionDraft(set),
+    closeSessionDraft: closeSessionDraft(get),
+    discardSessionDraft: discardSessionDraft(set, get),
     startSessionFromDraft: startSessionFromDraft(set, get),
     startBlankSession: startBlankSession(set, get),
   };

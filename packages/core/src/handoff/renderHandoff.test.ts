@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ProviderId } from '@goodboy/types';
 import { composeHandoffBody, hasSeparateSystemPrompt, renderHandoff } from './renderHandoff';
+import { renderCurrentPlan } from './renderCurrentPlan';
 
 const layers = ({ provider }: { readonly provider: ProviderId }) => ({
   provider,
@@ -8,6 +9,7 @@ const layers = ({ provider }: { readonly provider: ProviderId }) => ({
   contextPreamble: '## shared context',
   childRouting: '',
   clusterBoundary: null,
+  currentPlan: '',
   goalAttachments: '',
   priorTurns: '',
   verbosity: 'Output verbosity: NORMAL.',
@@ -16,6 +18,17 @@ const layers = ({ provider }: { readonly provider: ProviderId }) => ({
 });
 
 describe('renderHandoff', () => {
+  it('puts the current plan between the shared context and the message', () => {
+    const body = composeHandoffBody({
+      ...layers({ provider: 'anthropic' }),
+      currentPlan: '[current-plan id="p1"]\nbody\n[/current-plan]',
+    });
+
+    expect(body).toBe(
+      'Output verbosity: NORMAL.\n\n## shared context\n\n[current-plan id="p1"]\nbody\n[/current-plan]\n\nMove rounding from post_line to settle_batch.',
+    );
+  });
+
   it('puts scope, profile and role in the system prompt for Claude', () => {
     const rendered = renderHandoff(layers({ provider: 'anthropic' }));
 
@@ -78,5 +91,25 @@ describe('renderHandoff', () => {
     });
 
     expect(body).not.toContain('cluster boundary');
+  });
+});
+
+describe('renderCurrentPlan', () => {
+  it('names the plan and its revision, carries the whole body and says to rewrite it whole', () => {
+    const text = renderCurrentPlan({
+      id: 'plan-1',
+      revision: 3,
+      bodyMd: '# Backfill the batches\n\n## Goal\nDone.\n',
+    });
+
+    expect(text.startsWith('[current-plan id="plan-1" revision="3"]')).toBe(true);
+    expect(text).toContain('# Backfill the batches\n\n## Goal\nDone.\n[/current-plan]');
+    expect(text).toContain('write the whole updated plan as one plan block, never a patch');
+  });
+
+  it('leaves the revision out when it is not known', () => {
+    expect(renderCurrentPlan({ id: 'plan-1', revision: null, bodyMd: 'body' })).toContain(
+      '[current-plan id="plan-1"]',
+    );
   });
 });

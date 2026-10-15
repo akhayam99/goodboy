@@ -1,6 +1,6 @@
 import { useShallow } from 'zustand/react/shallow';
 import { ChevronDown } from 'lucide-react';
-import { AnchoredPopover, PopoverBody, cn, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, PopoverBody, TruncatedText, cn, useDropdown } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
 import type { AgentKindRouting } from '../../../features/session/agent-kind';
 import { RoutingPickerBody } from '../RoutingPicker/RoutingPickerBody';
@@ -34,6 +34,7 @@ export const RunsOn = ({ suggested, override, onChange, disabled = false, classN
   const routing = override ?? suggested;
   const label = routingLabelParts(routing);
   const name = routingNameText(label);
+  const detail = label.detail.map((part) => ` · ${part}`).join('');
 
   return (
     <div
@@ -43,10 +44,10 @@ export const RunsOn = ({ suggested, override, onChange, disabled = false, classN
         className,
       )}
     >
-      <span className="min-w-0 truncate">
+      <TruncatedText className="min-w-0" tooltip={`${RUNS_ON_LABEL} ${name}${detail}`}>
         {RUNS_ON_LABEL} <span className="text-foreground">{name}</span>
-        {label.detail.map((part) => ` · ${part}`).join('')} ·
-      </span>
+        {detail} ·
+      </TruncatedText>
       <AnchoredPopover
         dropdown={dropdown}
         role="dialog"

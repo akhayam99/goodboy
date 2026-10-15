@@ -109,7 +109,6 @@ const makeStore = () =>
     navigation: {},
     appStudio: null,
     activeLens: {},
-    sessionStudio: {},
     selectedAgentId: {},
     focusedWorkflowRunId: {},
     diffFocus: {},
@@ -191,7 +190,7 @@ describe('restoring a saved window location', () => {
         place: {
           at: 'session',
           sessionId: 'session-deleted' as SessionId,
-          view: { lens: 'review', agentId: null, studio: null, target: null },
+          view: { lens: 'review', agentId: null, target: null },
         },
         studio: null,
         focus: { drawer: null, selection: {}, scroll: {}, revealed: [] },
@@ -213,7 +212,6 @@ describe('restoring a saved window location', () => {
             view: {
               lens: 'terminal',
               agentId: null,
-              studio: null,
               target: { kind: 'terminal', mountPath: '/wt/ledger-core' },
             },
           },
@@ -575,29 +573,6 @@ describe('navigation slice', () => {
     store.getState().up();
     expect(keyOf(store)).toBe(`s/${S1}/agents`);
     expect(store.getState().navigation[WS]?.entries).toHaveLength(4);
-  });
-
-  it('closes a studio by folding the side trips into the base', () => {
-    const store = makeStore();
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
-    store.getState().navigate({
-      to: sessionPlace({ sessionId: S1, lens: 'workflows', studio: { kind: 'workflow' } }),
-    });
-    store.getState().navigate({
-      to: sessionPlace({
-        sessionId: S1,
-        lens: 'workflows',
-        studio: { kind: 'workflow' },
-        target: null,
-      }),
-    });
-    store.getState().up();
-    const stack = store.getState().navigation[WS];
-    expect(store.getState().sessionStudio[S1]).toBeNull();
-    expect(stack?.entries.map((entry) => locationKey(entry))).toEqual([
-      'board',
-      `s/${S1}/workflows`,
-    ]);
   });
 
   it('pushes an app studio over the place and walks back to it with its focus', () => {

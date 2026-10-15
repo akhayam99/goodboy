@@ -5,17 +5,22 @@ import { cleanup, render, screen } from '@testing-library/react';
 import type { Agent, AgentId, OpenQuestion, PlanId, SessionId } from '@goodboy/types';
 import type { SpawnedChild } from '../../../../shared/utils/spawnedChildren';
 
-const state = vi.hoisted(() => ({
-  agentTurnState: {} as Record<string, unknown>,
-  openQuestions: [] as ReadonlyArray<OpenQuestion>,
-  startFollowUp: vi.fn(async (_params: unknown) => 'agent-2' as AgentId),
-  navigate: vi.fn(),
-  loadAgentTranscript: vi.fn(async () => undefined),
-  providers: [],
-  sessions: [],
-  settings: {},
-  providerLimits: {},
-}));
+const state = vi.hoisted(() => {
+  const autoTreeViews: Record<string, ReadonlyArray<unknown>> = {};
+  return {
+    agentTurnState: {} as Record<string, unknown>,
+    agentWriterWait: {},
+    autoTreeViews,
+    openQuestions: [] as ReadonlyArray<OpenQuestion>,
+    startFollowUp: vi.fn(async (_params: unknown) => 'agent-2' as AgentId),
+    navigate: vi.fn(),
+    loadAgentTranscript: vi.fn(async () => undefined),
+    providers: [],
+    sessions: [],
+    settings: {},
+    providerLimits: {},
+  };
+});
 
 const announce = vi.hoisted(() => vi.fn());
 
@@ -70,10 +75,61 @@ afterEach(cleanup);
 
 beforeEach(() => {
   state.agentTurnState = {};
+  state.autoTreeViews = {};
   state.openQuestions = [];
   state.startFollowUp.mockClear();
   state.navigate.mockClear();
   announce.mockClear();
+});
+
+describe('AgentFollowUps inside an Auto tree', () => {
+  it('offers nothing when Auto owns the agent, because Auto decides what comes next', () => {
+    state.autoTreeViews = {
+      [sessionId]: [
+        {
+          tree: { rootAgentId: 'agent-auto' },
+          delegations: [{ childAgentId: sourceId, isAdopted: false }],
+        },
+      ],
+    };
+
+    const { container } = render(
+      <AgentFollowUps
+        sourceAgent={source}
+        sourceKind="reviewer"
+        summary="two findings"
+        sessionId={sessionId}
+        followUps={[]}
+        activePlanId={null}
+      />,
+    );
+
+    expect(container.firstChild).toBeNull();
+  });
+
+  it('offers nothing on an agent that was moved to Auto either', () => {
+    state.autoTreeViews = {
+      [sessionId]: [
+        {
+          tree: { rootAgentId: 'agent-auto' },
+          delegations: [{ childAgentId: sourceId, isAdopted: true }],
+        },
+      ],
+    };
+
+    const { container } = render(
+      <AgentFollowUps
+        sourceAgent={source}
+        sourceKind="reviewer"
+        summary="two findings"
+        sessionId={sessionId}
+        followUps={[]}
+        activePlanId={null}
+      />,
+    );
+
+    expect(container.firstChild).toBeNull();
+  });
 });
 
 describe('AgentFollowUps suggestions', () => {

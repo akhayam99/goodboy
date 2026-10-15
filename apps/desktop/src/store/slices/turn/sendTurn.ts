@@ -7,6 +7,7 @@ import type { GetFn, SendTurnResult, SetFn, SendTurnInput, TurnLease } from './t
 import { prepareTurn } from './prepareTurn';
 import { routeTurn } from './routeTurn';
 import { leaseTurnWriter } from './leaseTurnWriter';
+import { releaseTurnWriteSet } from './releaseTurnWriteSet';
 import { startTurnRun } from './startTurnRun';
 import { buildTurnPrompt } from './buildTurnPrompt';
 import { buildTurnSpawn } from './buildTurnSpawn';
@@ -17,6 +18,7 @@ import { closeTurnCapture } from './closeTurnCapture';
 import { settleTurn } from './settleTurn';
 import { continueOnRequestedMount } from './continueOnRequestedMount';
 import { haltRunawayWorkflowAgent } from './haltRunawayWorkflowAgent';
+import { routeAutoUserTurn } from '../auto/routeAutoUserTurn';
 
 type RunOnceParams = Readonly<{
   input: SendTurnInput;
@@ -35,7 +37,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       return routed.result;
     }
     const leaseCtx = { ...routeCtx, ...routed.value };
-    const leased = await leaseTurnWriter({ get, lease, ctx: leaseCtx });
+    const leased = await leaseTurnWriter({ set, get, lease, ctx: leaseCtx });
     if (leased.isDone) {
       return leased.result;
     }
@@ -70,6 +72,10 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     if (input.origin === undefined || input.origin === 'operator') {
       void get().flushChatLinks({ sessionId: input.sessionId });
     }
+    const autoResult = await routeAutoUserTurn({ get, input });
+    if (autoResult !== null) {
+      return autoResult;
+    }
     if (input.agentId !== undefined && input.origin === 'workflow') {
       const claim = claimWorkflowTurn({ agentId: input.agentId, nowMs: Date.now() });
       if (claim === 'tripped') {
@@ -81,7 +87,14 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         });
       }
     }
-    const lease: TurnLease = { path: null, holder: null, token: null, attemptId: undefined };
+    const lease: TurnLease = {
+      path: null,
+      holder: null,
+      token: null,
+      attemptId: undefined,
+      writeSet: [],
+      writeSetHolder: null,
+    };
     const settledAgentId = input.agentId ?? get().selectedAgentId[input.sessionId] ?? null;
     if (settledAgentId !== null) {
       markTurnActive({ agentId: settledAgentId });
@@ -97,6 +110,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       if (heldWriter) {
         await releaseWorktreeWriter({ path, holder });
       }
+      await releaseTurnWriteSet({ get, sessionId: input.sessionId, lease });
       if (heldWriter || attemptId !== undefined) {
         void get().drainResolveQueue({
           sessionId: input.sessionId,

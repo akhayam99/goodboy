@@ -7,18 +7,25 @@ import {
 } from '../../../features/worktree/worktree';
 import { resolveWorktreePath } from '../resolve/resolveWorktreePath';
 import { selectMountById } from '../project-mounts/selectors';
-import type { GetFn, TurnLease, WithInput, TurnPhaseValue } from './types';
+import type { GetFn, SetFn, TurnLease, WithInput, TurnPhaseValue } from './types';
 import { turnDone, turnReady } from './turnPhase';
+import { NOT_BLOCKED } from './notBlocked';
+import { acquireTurnWriteSet } from './acquireTurnWriteSet';
+import { releaseTurnWriteSet } from './releaseTurnWriteSet';
+import { resolveTurnWritableRoots } from './resolveTurnWritableRoots';
+import { turnWriteSet } from './turnWriteSet';
+import { isConfinedWriterRole } from './isConfinedWriterRole';
 import type { PreparedTurn } from './prepareTurn';
 import type { RoutedTurn } from './routeTurn';
 
 type Params = Readonly<{
+  set: SetFn;
   get: GetFn;
   lease: TurnLease;
   ctx: WithInput & PreparedTurn & RoutedTurn;
 }>;
 
-export const leaseTurnWriter = async ({ get, lease, ctx }: Params) => {
+export const leaseTurnWriter = async ({ set, get, lease, ctx }: Params) => {
   const { sessionId, override } = ctx.input;
   const {
     session,
@@ -102,11 +109,59 @@ export const leaseTurnWriter = async ({ get, lease, ctx }: Params) => {
       lease.holder = activeAgentId;
     }
   }
+  const { writableRoots, isolatedCopyPath } = await resolveTurnWritableRoots({
+    get,
+    sessionId,
+    workingDir: ctx.workingDir,
+    rewriterCopyPath: rewriterCopy?.copyPath ?? null,
+    copyPath,
+  });
+  const isWriteSetTurn =
+    isConfinedWriterRole({ role: ctx.input.confinedRole }) &&
+    !isResolverTurn &&
+    rewriterCopy === null &&
+    copyPath === null;
+  if (isWriteSetTurn) {
+    await releaseTurnWriteSet({ get, sessionId, lease });
+    const acquisition = await acquireTurnWriteSet({
+      set,
+      get,
+      sessionId,
+      agentId: activeAgentId,
+      paths: turnWriteSet({ workingDir: ctx.workingDir, writableRoots }),
+      lease,
+    });
+    if (acquisition === 'cancelled') {
+      return turnDone({ result: NOT_BLOCKED });
+    }
+    if (acquisition === 'timed_out') {
+      return turnDone({ result: { blockedOverBudget: false, isWriterLeaseDenied: true } });
+    }
+  }
+  const writeSetLease =
+    lease.writeSetHolder === null || lease.writeSet.length === 0
+      ? undefined
+      : {
+          holder: lease.writeSetHolder,
+          entries: lease.writeSet.flatMap((entry) =>
+            entry.token === null ? [] : [{ path: entry.path, token: entry.token }],
+          ),
+        };
   const writerLease =
     writerLeasePath === null || lease.token === null
       ? undefined
       : { path: writerLeasePath, holder: activeAgentId, token: lease.token };
-  return turnReady({ value: { resolvedOverride, isScribeTurn, isCopyTurn, writerLease } });
+  return turnReady({
+    value: {
+      resolvedOverride,
+      isScribeTurn,
+      isCopyTurn,
+      writerLease,
+      writeSetLease,
+      writableRoots,
+      isolatedCopyPath,
+    },
+  });
 };
 
 export type LeasedTurn = TurnPhaseValue<typeof leaseTurnWriter>;

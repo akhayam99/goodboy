@@ -59,6 +59,8 @@ const stateWith = (overrides: Partial<MountPlanState> = {}): MountPlanState =>
     ...overrides,
   }) as MountPlanState;
 
+const SHORT_WORKTREE_PATH = /^\/repos\/goodboy\/\.goodboy\/worktrees\/gb-[0-9a-z]{6}$/;
+
 describe('mountPlan', () => {
   afterEach(() => {
     forgetMaterializationSeed({ sessionId: SID });
@@ -70,7 +72,7 @@ describe('mountPlan', () => {
     expect(plan?.baseBranch).toBe('main');
     expect(plan?.branch).toBe(`${DEFAULT_BRANCH_PREFIX}/ship-the-rebase-row`);
     expect(plan?.slug).toBe('ship-the-rebase-row');
-    expect(plan?.targetPath).toBe('/repos/goodboy/.goodboy/worktrees/ship-the-rebase-row-mount-1');
+    expect(plan?.targetPath).toMatch(SHORT_WORKTREE_PATH);
   });
 
   it('leaves branch and base empty for a folder project and targets the sessions dir', () => {
@@ -113,7 +115,7 @@ describe('mountPlan', () => {
     const plan = mountPlan({ state: stateWith(), sessionId: SID, projectId: PID, mountId: MID });
 
     expect(plan?.slug).toBe('alice-fix-parser');
-    expect(plan?.targetPath).toBe('/repos/goodboy/.goodboy/worktrees/alice-fix-parser-mount-1');
+    expect(plan?.targetPath).toMatch(SHORT_WORKTREE_PATH);
   });
 
   it('truncates a folder path at the backend budget, not at forty characters', () => {
@@ -137,7 +139,7 @@ describe('mountPlan', () => {
 
     expect(plan?.slug).toBe('session-ab12cd34');
     expect(plan?.branch).toBe(`${DEFAULT_BRANCH_PREFIX}/session-ab12cd34`);
-    expect(plan?.targetPath).toBe('/repos/goodboy/.goodboy/worktrees/session-ab12cd34-mount-1');
+    expect(plan?.targetPath).toMatch(SHORT_WORKTREE_PATH);
   });
 
   it('takes the next ordinal when another live session already owns the branch', () => {
@@ -157,9 +159,7 @@ describe('mountPlan', () => {
 
     expect(plan?.slug).toBe('812-fix-the-login-flow-2');
     expect(plan?.branch).toBe(`${DEFAULT_BRANCH_PREFIX}/812-fix-the-login-flow-2`);
-    expect(plan?.targetPath).toBe(
-      '/repos/goodboy/.goodboy/worktrees/812-fix-the-login-flow-2-mount-1',
-    );
+    expect(plan?.targetPath).toMatch(SHORT_WORKTREE_PATH);
   });
 
   it('keeps the slug when the taken branch belongs to the session itself', () => {
@@ -228,9 +228,7 @@ describe('mountPlan', () => {
     });
 
     expect(plan?.branch).toBe('team/hl/mara-quint/har-212-ship-the-rebase-row');
-    expect(plan?.targetPath).toBe(
-      '/repos/goodboy/.goodboy/worktrees/har-212-ship-the-rebase-row-mount-1',
-    );
+    expect(plan?.targetPath).toMatch(SHORT_WORKTREE_PATH);
   });
 
   it('drops the task id and the user when the session has neither', () => {

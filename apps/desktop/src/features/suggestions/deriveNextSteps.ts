@@ -1,5 +1,6 @@
 import type {
   AgentId,
+  AgentSourceKind,
   MountId,
   PlanId,
   PrMergeMethod,
@@ -20,7 +21,9 @@ import type { PendingAgentSignal } from './pendingAgentSignal';
 import { isFresh, applyDismissals, dedupeByTargetKey, sortNextSteps } from './nextStepGates';
 import { PROVIDER_LABEL } from '../providers/providerLabel';
 import type { AgentKind } from '../session/agent-kind';
+import { fixChecksSuggestionOf, isFixInProgress } from './fixChecksSuggestionOf';
 import type {
+  FixChecksProgress,
   RebaseSuggestionTarget,
   ScribeRequestState,
   SessionSuggestion,
@@ -41,6 +44,7 @@ export type SuggestionAgent = {
   readonly roleKind: AgentKind;
   readonly status: string;
   readonly workflowRunId: WorkflowRunId | null;
+  readonly sourceKind?: AgentSourceKind;
   readonly ordinal: number;
   readonly pendingSignal: PendingAgentSignal | null;
   readonly isStoppedByRestart: boolean;
@@ -58,6 +62,10 @@ export type SuggestionMount = {
   readonly pr: PullRequestState | null;
   readonly fetchedAt: string | null;
   readonly scribe?: ScribeRequestState | null;
+};
+
+export type SuggestionCheckChain = FixChecksProgress & {
+  readonly mountId: MountId;
 };
 
 type SuggestionRecommendedWorkflow = {
@@ -99,6 +107,10 @@ type SuggestionProject = {
   readonly isClean?: boolean | null;
   readonly changedCount?: number | null;
   readonly rebaseRequest?: SuggestionRebaseRequest | null;
+};
+
+type MountParams = {
+  readonly mountId: MountId;
 };
 
 type ProjectParams = {
@@ -214,6 +226,7 @@ type Params = {
   readonly agents?: ReadonlyArray<SuggestionAgent>;
   readonly mounts?: ReadonlyArray<SuggestionMount>;
   readonly cleanupProposals?: ReadonlyArray<SuggestionCleanupProposal>;
+  readonly checkChains?: ReadonlyArray<SuggestionCheckChain>;
   readonly hasRunningAgent?: boolean;
   readonly hasGoal?: boolean;
   readonly hasEverAttachedWorkflow?: boolean;
@@ -237,6 +250,7 @@ export const deriveNextSteps = ({
   agents = [],
   mounts = [],
   cleanupProposals = [],
+  checkChains = [],
   hasRunningAgent = false,
   hasGoal = false,
   hasEverAttachedWorkflow = workflowRuns.length > 0,
@@ -360,7 +374,8 @@ export const deriveNextSteps = ({
   }
   if (
     lastStandaloneAgent?.status === 'completed' &&
-    lastStandaloneAgent.roleKind === 'implementer'
+    lastStandaloneAgent.roleKind === 'implementer' &&
+    lastStandaloneAgent.sourceKind !== 'failed_check'
   ) {
     suggestions.push({
       id: `check-changes:${lastStandaloneAgent.id}`,
@@ -448,6 +463,35 @@ export const deriveNextSteps = ({
       payload: { eligibleThreadCount },
     });
   }
+  const progressOf = ({ mountId }: MountParams): FixChecksProgress | null =>
+    checkChains.find((chain) => chain.mountId === mountId) ?? null;
+  for (const mount of mounts) {
+    const pr = mount.pr;
+    if (
+      pr == null ||
+      pr.state === 'merged' ||
+      pr.state === 'closed' ||
+      !isFresh({ fetchedAt: mount.fetchedAt, now })
+    ) {
+      continue;
+    }
+    const progress = progressOf({ mountId: mount.mountId });
+    if (pr.checks !== 'failure' && progress?.chain !== 'fixed-pushed') {
+      continue;
+    }
+    if (hasRunningAgent && !isFixInProgress({ progress })) {
+      continue;
+    }
+    suggestions.push(
+      fixChecksSuggestionOf({
+        sessionId,
+        mountId: mount.mountId,
+        projectName: mount.projectName,
+        pr,
+        progress,
+      }),
+    );
+  }
   if (!hasRunningAgent) {
     for (const mount of mounts) {
       if (!isFresh({ fetchedAt: mount.fetchedAt, now })) {
@@ -455,24 +499,6 @@ export const deriveNextSteps = ({
       }
       const pr = mount.pr;
       if (pr != null && pr.state !== 'merged' && pr.state !== 'closed') {
-        if (pr.checks === 'failure') {
-          suggestions.push({
-            id: `fix-checks:${mount.mountId}`,
-            kind: 'fix-checks',
-            priority: 12,
-            band: 1,
-            title: `Fix failing checks on #${pr.number}`,
-            detail: `${mount.projectName} · checks failed`,
-            sessionId,
-            targetKey: `pr:${mount.mountId}`,
-            fingerprint: `fix-checks:${mount.mountId}:${pr.number}`,
-            payload: {
-              mountId: mount.mountId,
-              projectName: mount.projectName,
-              prNumber: pr.number,
-            },
-          });
-        }
         if (pr.isDraft && pr.checks === 'success') {
           suggestions.push({
             id: `mark-ready:${mount.mountId}`,
@@ -536,7 +562,10 @@ export const deriveNextSteps = ({
           },
         });
       }
-      const push = pushSuggestionOf({ mount, sessionId });
+      const push =
+        progressOf({ mountId: mount.mountId })?.chain === 'fixed-local'
+          ? null
+          : pushSuggestionOf({ mount, sessionId });
       if (push !== null) {
         suggestions.push(push);
       }

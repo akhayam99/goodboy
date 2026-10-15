@@ -16,6 +16,7 @@ import { worktreeChangedFiles } from '../../worktree/worktree';
 import { buildAnalyzeChecksPrompt } from './buildAnalyzeChecksPrompt';
 import { checkAnalysisOf } from './checkAnalysisOf';
 import { checkRoutingOf } from './checkRoutingOf';
+import { ciFixName } from './ciFixName';
 import { fetchFailedCheckLog } from './fetchFailedCheckLog';
 
 type Params = {
@@ -24,7 +25,11 @@ type Params = {
   readonly pullRequest: PullRequestState | PullRequestView;
   readonly checks: ReadonlyArray<PrCheckRun>;
   readonly routing?: AgentKindRouting;
+  readonly hint?: string;
+  readonly onAccepted?: () => void;
 };
+
+const ALREADY_ANALYZING = 'A Debugger is already analyzing this check. Your hint was not applied.';
 
 const pending = new Map<string, Promise<AgentId>>();
 
@@ -34,6 +39,8 @@ const start = async ({
   pullRequest,
   checks,
   routing,
+  hint = '',
+  onAccepted,
 }: Params): Promise<AgentId> => {
   const state = useAppStore.getState();
   const session = sessionById(state.sessions, sessionId);
@@ -51,6 +58,9 @@ const start = async ({
       turnState: state.agentTurnState[previous.id],
     }).isRunning
   ) {
+    if (hint.trim().length > 0) {
+      throw new Error(ALREADY_ANALYZING);
+    }
     return previous.id;
   }
   const resolved = checkRoutingOf({ state, sessionId, mountId });
@@ -85,12 +95,13 @@ const start = async ({
     ).paths;
   }
   return state.spawnAgent(sessionId, {
-    kindOverride: 'debugger',
-    name: 'Debugger',
+    kindOverride: 'ci-debugger',
+    name: ciFixName({ check: checks[0], pullRequest }),
     initialPrompt: buildAnalyzeChecksPrompt({
       pullRequest,
       checks: logs.map(({ check, log }) => ({ ...check, log })),
       paths,
+      hint,
     }),
     sourceKind: 'failed_check',
     sourceCommentUrl: firstUrl,
@@ -99,6 +110,7 @@ const start = async ({
     provider: routing?.provider ?? resolved.provider,
     model: routing?.model ?? resolved.model,
     effort: routing?.effort ?? resolved.effort,
+    ...(onAccepted !== undefined && { onKickoffAccepted: onAccepted }),
   });
 };
 
@@ -108,10 +120,15 @@ export const analyzeFailingChecks = ({
   pullRequest,
   checks,
   routing,
+  hint = '',
+  onAccepted,
 }: Params): Promise<AgentId> => {
   const key = JSON.stringify([sessionId, mountId, checks[0]?.detailsUrl ?? pullRequest.url]);
   const existing = pending.get(key);
   if (existing !== undefined) {
+    if (hint.trim().length > 0) {
+      return Promise.reject(new Error(ALREADY_ANALYZING));
+    }
     return existing;
   }
   const result = start({
@@ -120,6 +137,8 @@ export const analyzeFailingChecks = ({
     pullRequest,
     checks,
     ...(routing !== undefined && { routing }),
+    hint,
+    ...(onAccepted !== undefined && { onAccepted }),
   }).finally(() => pending.delete(key));
   pending.set(key, result);
   return result;

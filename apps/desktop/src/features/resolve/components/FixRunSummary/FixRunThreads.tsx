@@ -1,4 +1,4 @@
-import { Band, Button, Chip, inlineMarkdownText } from '@goodboy/ui';
+import { Band, Button, Chip, cn, inlineMarkdownText } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { openReview } from '../../../review/openReview';
 import { noteIdOfThread } from '../../notes/noteThread';
@@ -19,11 +19,12 @@ type Props = {
   readonly mountId: MountId | null;
   readonly threads: ReadonlyArray<FixRunThread>;
   readonly batchThreadIds: ReadonlyArray<string>;
+  readonly hasStateColumn: boolean;
   readonly onOpen: (threadId: string) => void;
 };
 
 const ROW_CLASS =
-  'flex w-full min-w-0 items-center gap-2 rounded-sm py-1 text-left text-body hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
+  'grid w-full min-w-0 grid-cols-subgrid items-center rounded-sm py-1 text-left text-body hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
 
 const titleOf = ({ entry }: { readonly entry: ReviewEntry }): string => {
   const note = entry.row.reviewerNote;
@@ -37,26 +38,52 @@ const whereOf = ({ entry }: { readonly entry: ReviewEntry }): string =>
     .filter((part): part is string => part !== null)
     .join(' · ');
 
-export const FixRunThreads = ({ sessionId, mountId, threads, batchThreadIds, onOpen }: Props) => (
+export const FixRunThreads = ({
+  sessionId,
+  mountId,
+  threads,
+  batchThreadIds,
+  hasStateColumn,
+  onOpen,
+}: Props) => (
   <Band
     inset="content"
     label={FIX_RUN_COPY.threadsHeading({ count: threads.length })}
     headingLevel={2}
   >
-    <ul className="flex min-w-0 flex-col">
+    <ul
+      className={cn(
+        'grid min-w-0 gap-x-2',
+        hasStateColumn ? 'grid-cols-[max-content_minmax(0,1fr)]' : 'grid-cols-[minmax(0,1fr)]',
+      )}
+    >
       {threads.map(({ threadId, entry }) => (
-        <li key={threadId} className="list-none">
+        <li
+          key={threadId}
+          className={cn(
+            'grid min-w-0 list-none grid-cols-subgrid',
+            hasStateColumn ? 'col-span-2' : 'col-span-1',
+          )}
+        >
           {entry === null ? (
-            <p className="py-1 text-body text-muted-foreground">{FIX_RUN_COPY.gone}</p>
+            <p className="col-span-full py-1 text-body text-muted-foreground">
+              {FIX_RUN_COPY.gone}
+            </p>
           ) : (
-            <button type="button" className={ROW_CLASS} onClick={() => onOpen(threadId)}>
-              <Chip
-                tone={STATE_CHIP_TONE[entry.state]}
-                kind="state"
-                bordered={false}
-                label={entry.word}
-                className="shrink-0"
-              />
+            <button
+              type="button"
+              className={cn(ROW_CLASS, hasStateColumn ? 'col-span-2' : 'col-span-1')}
+              onClick={() => onOpen(threadId)}
+            >
+              {hasStateColumn && (
+                <Chip
+                  tone={STATE_CHIP_TONE[entry.state]}
+                  kind="state"
+                  bordered={false}
+                  label={entry.word}
+                  className="justify-self-start"
+                />
+              )}
               <span className="flex min-w-0 flex-col">
                 <span className="min-w-0 truncate text-foreground">{titleOf({ entry })}</span>
                 <span className="min-w-0 truncate text-meta text-muted-foreground">

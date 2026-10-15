@@ -73,9 +73,11 @@ mod slack;
 mod storage;
 mod summarize;
 mod terminal;
+mod terminal_scrollback;
 mod thread_git;
 mod turn;
 mod turn_backlog;
+mod turn_delivery;
 mod usage_probe;
 mod util;
 mod workflows;
@@ -125,7 +127,10 @@ pub(crate) fn stop_running_work(app: &tauri::AppHandle) {
     summarize::shutdown(&app.state::<summarize::SummarizeRegistry>());
     planner::shutdown(&app.state::<planner::PlannerRegistry>());
     scripts::shutdown(&app.state::<scripts::ScriptRegistry>());
-    terminal::shutdown(&app.state::<terminal::TerminalRegistry>());
+    terminal::shutdown(
+        &app.state::<terminal::TerminalRegistry>(),
+        terminal::scrollback_dir_of(app).as_deref(),
+    );
 }
 
 pub fn run_query_cli() -> Option<i32> {
@@ -318,6 +323,7 @@ pub fn run() {
             worktree::worktree_file_sides,
             worktree::worktree_grep_word,
             worktree::worktree_changed_files,
+            worktree::worktree_snapshot,
             worktree::worktree_commits,
             worktree::worktree_is_ancestor,
             worktree::worktree_abort_rebase,
@@ -395,6 +401,7 @@ pub fn run() {
             restart_marker::restart_prepare,
             restart_marker::restart_abort,
             turn::turn_list_live,
+            turn::turn_delivery_lookup,
             chat::chat_turn,
             chat::chat_cancel,
             chat::ask_turn,
@@ -407,6 +414,8 @@ pub fn run() {
             worktree_writer::worktree_writer_cancel,
             worktree_writer::worktree_writer_abandon,
             worktree_writer::worktree_writer_status,
+            worktree_writer::worktree_write_set_acquire,
+            worktree_writer::worktree_write_set_release,
             query_bridge::query_bridge_serving,
             query_bridge::project::project_materialize_result,
             query_bridge::mount::mount_command_result,

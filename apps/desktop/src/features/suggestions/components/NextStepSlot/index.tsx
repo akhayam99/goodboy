@@ -1,16 +1,21 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { SectionHeader } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, type LensKind } from '../../../../store';
 import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
+import { useShowToast } from '../../../../shared/components/Toast/useShowToast';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { useSessionSuggestions } from '../../useSessionSuggestions';
 import { useSuggestionActions, type SuggestionActions } from '../../useSuggestionActions';
 import { useTranscriptMountProposals } from '../../useTranscriptMountProposals';
 import { transcriptOwnedProjectIds } from '../../transcriptMountProposals';
-import { recordNextStepOutcome } from '../../useNextStepOutcomes';
+import { recordNextStepOutcome, revertNextStepOutcome } from '../../useNextStepOutcomes';
 import type { SessionSuggestion } from '../../types';
 import type { AgentKindRouting } from '../../../session/agent-kind';
+import type { ActionTrack } from '../../../actions/types';
 import { NextStepRow } from './NextStepRow';
+
+const CHOICE_FAILURE_TITLE = "Couldn't start that";
 
 const choiceKey = ({
   suggestion,
@@ -20,14 +25,6 @@ const choiceKey = ({
   readonly choiceId: string;
 }) => `${suggestion.id}:choice:${choiceId}`;
 
-const extraKey = ({
-  suggestion,
-  extraId,
-}: {
-  readonly suggestion: SessionSuggestion;
-  readonly extraId: string;
-}) => `${suggestion.id}:extra:${extraId}`;
-
 const pendingChoiceIds = ({
   suggestion,
   pendingKeys,
@@ -36,19 +33,6 @@ const pendingChoiceIds = ({
   readonly pendingKeys: ReadonlySet<string>;
 }): ReadonlySet<string> => {
   const prefix = choiceKey({ suggestion, choiceId: '' });
-  return new Set(
-    [...pendingKeys].flatMap((key) => (key.startsWith(prefix) ? [key.slice(prefix.length)] : [])),
-  );
-};
-
-const pendingExtraIds = ({
-  suggestion,
-  pendingKeys,
-}: {
-  readonly suggestion: SessionSuggestion;
-  readonly pendingKeys: ReadonlySet<string>;
-}): ReadonlySet<string> => {
-  const prefix = extraKey({ suggestion, extraId: '' });
   return new Set(
     [...pendingKeys].flatMap((key) => (key.startsWith(prefix) ? [key.slice(prefix.length)] : [])),
   );
@@ -93,6 +77,16 @@ export const NextStepSlot = ({
   const pending = usePendingAction({ sessionId });
   const [expanded, setExpanded] = useState(false);
   const [notNowIds, setNotNowIds] = useState<ReadonlySet<string>>(new Set());
+  const showToast = useShowToast();
+  const undoable = useAppStore((state) => state.undoable);
+  const isMountedRef = useRef(false);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const visible = suggestions.filter(
     (suggestion) =>
@@ -107,36 +101,39 @@ export const NextStepSlot = ({
 
   const onNotNow = (suggestion: SessionSuggestion, actions: SuggestionActions) => {
     setNotNowIds((current) => new Set([...current, suggestion.id]));
-    void recordNextStepOutcome({
+    const recorded = recordNextStepOutcome({
       sessionId,
       kind: suggestion.kind,
       outcome: 'dismissed',
       fingerprint: suggestion.fingerprint,
     });
     const dismiss = actions.onDismiss;
-    if (dismiss === null) {
+    if (dismiss !== null) {
+      void pending.run({
+        key: `${suggestion.id}:dismiss`,
+        failureTitle: "Couldn't dismiss the suggestion",
+        task: dismiss,
+      });
       return;
     }
-    void pending.run({
-      key: `${suggestion.id}:dismiss`,
-      failureTitle: "Couldn't dismiss the suggestion",
-      task: dismiss,
+    undoable({
+      message: 'Dismissed',
+      actionHint: shortcutGlyphs('app.undo'),
+      conflictMessage: 'The suggestion is already back.',
+      isCurrent: () => isMountedRef.current,
+      showToast,
+      undo: async () => {
+        const eventId = await recorded;
+        if (eventId !== null) {
+          await revertNextStepOutcome({ sessionId, id: eventId });
+        }
+        setNotNowIds((current) => new Set([...current].filter((id) => id !== suggestion.id)));
+      },
     });
   };
 
   const trackedActions = (suggestion: SessionSuggestion): SuggestionActions => {
-    const source = actionsFor({ suggestion });
-    const extras = source.extras?.map((extra) => ({
-      ...extra,
-      run: async () => {
-        await pending.run({
-          key: extraKey({ suggestion, extraId: extra.id }),
-          failureTitle: extra.failureTitle,
-          task: extra.run,
-        });
-      },
-    }));
-    const actions = extras === undefined ? source : { ...source, extras };
+    const actions = actionsFor({ suggestion });
     const primary = actions.primary;
     if (primary === null) {
       return actions;
@@ -165,15 +162,31 @@ export const NextStepSlot = ({
               tracked({ key: suggestion.id, task: () => runsOn.runWith(routing) })(),
           },
         }),
-        ...(primary.choices !== undefined && {
-          choices: primary.choices.map((choice) => ({
-            ...choice,
-            run: tracked({ key: choiceKey({ suggestion, choiceId: choice.id }), task: choice.run }),
-          })),
-        }),
       },
     };
   };
+
+  const trackChoiceFor =
+    ({
+      suggestion,
+      actions,
+    }: {
+      readonly suggestion: SessionSuggestion;
+      readonly actions: SuggestionActions;
+    }): ActionTrack =>
+    async ({ actionId, task }) => {
+      void recordNextStepOutcome({
+        sessionId,
+        kind: suggestion.kind,
+        outcome: 'accepted',
+        fingerprint: suggestion.fingerprint,
+      });
+      await pending.run({
+        key: choiceKey({ suggestion, choiceId: actionId }),
+        failureTitle: actions.primary?.failureTitle ?? CHOICE_FAILURE_TITLE,
+        task,
+      });
+    };
 
   const rowFor = ({
     suggestion,
@@ -191,7 +204,7 @@ export const NextStepSlot = ({
         compact={isCompact}
         isPending={pending.pendingKeys.has(suggestion.id)}
         pendingChoiceIds={pendingChoiceIds({ suggestion, pendingKeys: pending.pendingKeys })}
-        pendingExtraIds={pendingExtraIds({ suggestion, pendingKeys: pending.pendingKeys })}
+        trackChoice={trackChoiceFor({ suggestion, actions })}
         onNotNow={() => onNotNow(suggestion, actions)}
       />
     );

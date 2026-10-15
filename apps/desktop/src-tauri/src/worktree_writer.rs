@@ -3,7 +3,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::{Duration, Instant};
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, State};
 
 pub const UNBOUND_LEASE_STEAL_AFTER: Duration = Duration::from_secs(120);
@@ -68,6 +68,36 @@ pub struct WriterLeaseEvent {
 }
 
 pub const EVENT_NAME: &str = "worktree_writer_event";
+
+#[derive(Debug, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct WriteSetBindingEntry {
+    pub path: String,
+    pub token: String,
+}
+
+#[derive(Debug, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct WriteSetBinding {
+    pub holder: String,
+    pub entries: Vec<WriteSetBindingEntry>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct WriteSetEntry {
+    pub path: String,
+    pub token: Option<String>,
+}
+
+#[derive(Debug, Serialize, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct WriteSetStatus {
+    pub is_granted: bool,
+    pub entries: Vec<WriteSetEntry>,
+    pub blocked_path: Option<String>,
+    pub blocked_by: Option<String>,
+}
 
 fn status_of(path: &str, slot: Option<&LeaseSlot>, is_granted: bool) -> WriterLeaseStatus {
     let holder = slot.and_then(|entry| entry.holder.as_ref());
@@ -275,6 +305,103 @@ fn abandon_in(map: &mut LeaseMap, path: &str, holder: &str) -> (WriterLeaseStatu
     (status_of(path, map.get(path), false), owns)
 }
 
+fn canonical_keys(paths: &[String]) -> Vec<String> {
+    let mut keys: Vec<String> = paths.iter().map(|path| lease_key(path)).collect();
+    keys.sort();
+    keys.dedup();
+    keys
+}
+
+fn blocker_at(map: &LeaseMap, key: &str, holder: &str, now: Instant) -> Option<String> {
+    let slot = map.get(key)?;
+    if let Some(current) = slot.holder.as_ref() {
+        let is_free = current.has_exited || is_abandoned_before_spawn(current, now);
+        if !is_free {
+            return Some(current.id.clone());
+        }
+    }
+    match slot.waiters.first() {
+        Some(waiting) if waiting != holder => Some(waiting.clone()),
+        _ => None,
+    }
+}
+
+fn release_all(map: &mut LeaseMap, entries: &[WriteSetEntry], holder: &str) -> Vec<String> {
+    let mut released = Vec::new();
+    for entry in entries {
+        let (_, owns) = release_in(map, &entry.path, holder, entry.token.as_deref());
+        if owns {
+            released.push(entry.path.clone());
+        }
+    }
+    released
+}
+
+fn acquire_write_set_at(
+    map: &mut LeaseMap,
+    paths: &[String],
+    holder: &str,
+    now: Instant,
+) -> WriteSetStatus {
+    let keys = canonical_keys(paths);
+    for key in &keys {
+        if let Some(blocker) = blocker_at(map, key, holder, now) {
+            return WriteSetStatus {
+                is_granted: false,
+                entries: Vec::new(),
+                blocked_path: Some(key.clone()),
+                blocked_by: Some(blocker),
+            };
+        }
+    }
+    let mut granted: Vec<WriteSetEntry> = Vec::new();
+    for key in &keys {
+        let status = acquire_at(map, key, holder, None, now);
+        if !status.is_granted {
+            release_all(map, &granted, holder);
+            return WriteSetStatus {
+                is_granted: false,
+                entries: Vec::new(),
+                blocked_path: Some(key.clone()),
+                blocked_by: status.holder,
+            };
+        }
+        granted.push(WriteSetEntry {
+            path: key.clone(),
+            token: status.token,
+        });
+    }
+    WriteSetStatus {
+        is_granted: true,
+        entries: granted,
+        blocked_path: None,
+        blocked_by: None,
+    }
+}
+
+pub fn acquire_write_set(
+    registry: &WriterLeaseRegistry,
+    paths: &[String],
+    holder: &str,
+) -> WriteSetStatus {
+    acquire_write_set_at(&mut lock(registry), paths, holder, Instant::now())
+}
+
+pub fn release_write_set(
+    registry: &WriterLeaseRegistry,
+    entries: &[WriteSetEntry],
+    holder: &str,
+) -> Vec<String> {
+    let keyed: Vec<WriteSetEntry> = entries
+        .iter()
+        .map(|entry| WriteSetEntry {
+            path: lease_key(&entry.path),
+            token: entry.token.clone(),
+        })
+        .collect();
+    release_all(&mut lock(registry), &keyed, holder)
+}
+
 fn bind_run_in(map: &mut LeaseMap, path: &str, holder: &str, token: &str, run_id: &str) -> bool {
     let Some(current) = map.get_mut(path).and_then(|slot| slot.holder.as_mut()) else {
         return false;
@@ -314,10 +441,9 @@ fn emit_lease_event(app: &AppHandle, path: &str, holder: &str, reason: &'static 
 
 pub struct RunLeaseGuard {
     registry: WriterLeaseRegistry,
-    path: String,
     holder: String,
-    token: String,
-    on_exit: Box<dyn Fn() + Send>,
+    entries: Vec<(String, String)>,
+    on_exit: Box<dyn Fn(&str) + Send>,
 }
 
 impl RunLeaseGuard {
@@ -327,32 +453,49 @@ impl RunLeaseGuard {
         holder: &str,
         token: &str,
         run_id: &str,
-        on_exit: impl Fn() + Send + 'static,
+        on_exit: impl Fn(&str) + Send + 'static,
     ) -> Option<Self> {
-        let key = lease_key(path);
-        if !bind_run_in(&mut lock(registry), &key, holder, token, run_id) {
-            return None;
-        }
-        Some(Self {
-            registry: Arc::clone(registry),
-            path: key,
-            holder: holder.to_string(),
+        let entry = WriteSetBindingEntry {
+            path: path.to_string(),
             token: token.to_string(),
+        };
+        Self::bind_set(registry, holder, &[entry], run_id, on_exit)
+    }
+
+    pub fn bind_set(
+        registry: &WriterLeaseRegistry,
+        holder: &str,
+        entries: &[WriteSetBindingEntry],
+        run_id: &str,
+        on_exit: impl Fn(&str) + Send + 'static,
+    ) -> Option<Self> {
+        let mut bound: Vec<(String, String)> = Vec::new();
+        let mut guard = Self {
+            registry: Arc::clone(registry),
+            holder: holder.to_string(),
+            entries: Vec::new(),
             on_exit: Box::new(on_exit),
-        })
+        };
+        for entry in entries {
+            let key = lease_key(&entry.path);
+            if !bind_run_in(&mut lock(registry), &key, holder, &entry.token, run_id) {
+                guard.entries = bound;
+                return None;
+            }
+            bound.push((key, entry.token.clone()));
+        }
+        guard.entries = bound;
+        Some(guard)
     }
 }
 
 impl Drop for RunLeaseGuard {
     fn drop(&mut self) {
-        let marked = mark_exited_in(
-            &mut lock(&self.registry),
-            &self.path,
-            &self.holder,
-            &self.token,
-        );
-        if marked {
-            (self.on_exit)();
+        for (path, token) in &self.entries {
+            let marked = mark_exited_in(&mut lock(&self.registry), path, &self.holder, token);
+            if marked {
+                (self.on_exit)(path);
+            }
         }
     }
 }
@@ -403,6 +546,29 @@ pub fn worktree_writer_abandon(
         emit_lease_event(&app, &path, &holder, "abandoned");
     }
     status
+}
+
+#[tauri::command]
+pub fn worktree_write_set_acquire(
+    state: State<'_, WriterLeases>,
+    paths: Vec<String>,
+    holder: String,
+) -> WriteSetStatus {
+    acquire_write_set(&state.0, &paths, &holder)
+}
+
+#[tauri::command]
+pub fn worktree_write_set_release(
+    app: AppHandle,
+    state: State<'_, WriterLeases>,
+    entries: Vec<WriteSetEntry>,
+    holder: String,
+) -> Vec<String> {
+    let released = release_write_set(&state.0, &entries, &holder);
+    for path in &released {
+        emit_lease_event(&app, path, &holder, "released");
+    }
+    released
 }
 
 #[tauri::command]
@@ -687,7 +853,7 @@ mod tests {
             "agent-1",
             &granted_token(&first),
             "old-run",
-            || {},
+            |_| {},
         )
         .unwrap();
         abandon_in(&mut lock(&registry), "/repo/one", "agent-1");
@@ -698,7 +864,7 @@ mod tests {
             "agent-1",
             &granted_token(&reclaimed),
             "new-run",
-            || {},
+            |_| {},
         )
         .unwrap();
         drop(old_guard);
@@ -841,5 +1007,245 @@ mod tests {
         assert!(status.is_granted);
         let denied = acquire_in(&mut lock(&registry), "/repo/one", "agent-2", None);
         assert!(!denied.is_granted);
+    }
+
+    fn paths(values: &[&str]) -> Vec<String> {
+        values.iter().map(|value| value.to_string()).collect()
+    }
+
+    fn token_of(status: &WriteSetStatus, path: &str) -> String {
+        status
+            .entries
+            .iter()
+            .find(|entry| entry.path == path)
+            .and_then(|entry| entry.token.clone())
+            .expect("entry carries a token")
+    }
+
+    #[test]
+    fn a_write_set_grants_every_key_or_none() {
+        let mut map = LeaseMap::new();
+        let status = acquire_write_set_at(
+            &mut map,
+            &paths(&["/repo/one", "/repo/.git"]),
+            "agent-1",
+            Instant::now(),
+        );
+        assert!(status.is_granted);
+        assert_eq!(status.blocked_path, None);
+        assert_eq!(
+            status
+                .entries
+                .iter()
+                .map(|entry| entry.path.as_str())
+                .collect::<Vec<_>>(),
+            vec!["/repo/.git", "/repo/one"]
+        );
+        assert!(status.entries.iter().all(|entry| entry.token.is_some()));
+    }
+
+    #[test]
+    fn a_busy_key_denies_the_whole_set_and_leaves_the_free_keys_free() {
+        let mut map = LeaseMap::new();
+        acquire_in(&mut map, "/repo/two", "agent-1", None);
+        let denied = acquire_write_set_at(
+            &mut map,
+            &paths(&["/repo/one", "/repo/two", "/repo/three"]),
+            "agent-2",
+            Instant::now(),
+        );
+        assert!(!denied.is_granted);
+        assert!(denied.entries.is_empty());
+        assert_eq!(denied.blocked_path.as_deref(), Some("/repo/two"));
+        assert_eq!(denied.blocked_by.as_deref(), Some("agent-1"));
+        assert!(acquire_in(&mut map, "/repo/one", "agent-3", None).is_granted);
+        assert!(acquire_in(&mut map, "/repo/three", "agent-4", None).is_granted);
+        assert!(map["/repo/two"].waiters.is_empty());
+    }
+
+    #[test]
+    fn a_failed_grant_rolls_back_the_keys_it_already_took() {
+        let mut map = LeaseMap::new();
+        let first = acquire_write_set_at(
+            &mut map,
+            &paths(&["/repo/one", "/repo/two"]),
+            "agent-1",
+            Instant::now(),
+        );
+        let released = release_all(&mut map, &first.entries[..1], "agent-1");
+        assert_eq!(released, vec!["/repo/one".to_string()]);
+        assert!(acquire_in(&mut map, "/repo/one", "agent-2", None).is_granted);
+        assert_eq!(
+            map["/repo/two"]
+                .holder
+                .as_ref()
+                .map(|holder| holder.id.as_str()),
+            Some("agent-1")
+        );
+    }
+
+    #[test]
+    fn two_writers_on_different_worktrees_of_one_repo_serialize_on_the_git_directory() {
+        let mut map = LeaseMap::new();
+        let first = acquire_write_set_at(
+            &mut map,
+            &paths(&["/repo/wt-a", "/repo/.git"]),
+            "agent-1",
+            Instant::now(),
+        );
+        assert!(first.is_granted);
+        let second = acquire_write_set_at(
+            &mut map,
+            &paths(&["/repo/wt-b", "/repo/.git"]),
+            "agent-2",
+            Instant::now(),
+        );
+        assert!(!second.is_granted);
+        assert_eq!(second.blocked_path.as_deref(), Some("/repo/.git"));
+        assert!(acquire_in(&mut map, "/repo/wt-b", "agent-3", None).is_granted);
+    }
+
+    #[test]
+    fn a_writer_on_another_repo_is_not_held_up() {
+        let mut map = LeaseMap::new();
+        acquire_write_set_at(
+            &mut map,
+            &paths(&["/repo/wt-a", "/repo/.git"]),
+            "agent-1",
+            Instant::now(),
+        );
+        let other = acquire_write_set_at(
+            &mut map,
+            &paths(&["/other/wt", "/other/.git"]),
+            "agent-2",
+            Instant::now(),
+        );
+        assert!(other.is_granted);
+    }
+
+    #[test]
+    fn the_order_and_duplicates_of_the_keys_do_not_change_the_set() {
+        let mut map = LeaseMap::new();
+        let status = acquire_write_set_at(
+            &mut map,
+            &paths(&["/repo/two", "/repo/one", "/repo/two"]),
+            "agent-1",
+            Instant::now(),
+        );
+        assert_eq!(status.entries.len(), 2);
+        assert_eq!(status.entries[0].path, "/repo/one");
+        assert_eq!(status.entries[1].path, "/repo/two");
+    }
+
+    #[test]
+    fn a_resolver_waiting_on_a_key_keeps_its_place_ahead_of_a_write_set() {
+        let mut map = LeaseMap::new();
+        acquire_in(&mut map, "/repo/one", "resolver-a", None);
+        acquire_in(&mut map, "/repo/one", "resolver-b", None);
+        let holder_token = map["/repo/one"].holder.as_ref().map(|h| h.token.clone());
+        let (_, released) =
+            release_in(&mut map, "/repo/one", "resolver-a", holder_token.as_deref());
+        assert!(released);
+        let denied = acquire_write_set_at(
+            &mut map,
+            &paths(&["/repo/one", "/repo/.git"]),
+            "agent-1",
+            Instant::now(),
+        );
+        assert!(!denied.is_granted);
+        assert_eq!(denied.blocked_by.as_deref(), Some("resolver-b"));
+        assert!(acquire_in(&mut map, "/repo/one", "resolver-b", None).is_granted);
+    }
+
+    #[test]
+    fn an_exited_run_frees_every_key_of_its_set() {
+        let registry = WriterLeases::new().0;
+        let granted = acquire_write_set(&registry, &paths(&["/repo/one", "/repo/.git"]), "agent-1");
+        let entries: Vec<WriteSetBindingEntry> = granted
+            .entries
+            .iter()
+            .map(|entry| WriteSetBindingEntry {
+                path: entry.path.clone(),
+                token: entry.token.clone().expect("token"),
+            })
+            .collect();
+        let exited = Arc::new(Mutex::new(Vec::<String>::new()));
+        let seen = Arc::clone(&exited);
+        let guard = RunLeaseGuard::bind_set(&registry, "agent-1", &entries, "run-1", move |path| {
+            seen.lock().expect("lock").push(path.to_string());
+        })
+        .expect("bound");
+        let blocked = acquire_write_set(&registry, &paths(&["/repo/.git"]), "agent-2");
+        assert!(!blocked.is_granted);
+        drop(guard);
+        let mut freed = exited.lock().expect("lock").clone();
+        freed.sort();
+        assert_eq!(
+            freed,
+            vec!["/repo/.git".to_string(), "/repo/one".to_string()]
+        );
+        assert!(
+            acquire_write_set(&registry, &paths(&["/repo/one", "/repo/.git"]), "agent-2")
+                .is_granted
+        );
+    }
+
+    #[test]
+    fn a_set_with_a_foreign_token_is_not_bound_and_frees_what_it_bound() {
+        let registry = WriterLeases::new().0;
+        let granted = acquire_write_set(&registry, &paths(&["/repo/one", "/repo/two"]), "agent-1");
+        let entries = vec![
+            WriteSetBindingEntry {
+                path: "/repo/one".to_string(),
+                token: token_of(&granted, "/repo/one"),
+            },
+            WriteSetBindingEntry {
+                path: "/repo/two".to_string(),
+                token: "not-the-token".to_string(),
+            },
+        ];
+        let bound = RunLeaseGuard::bind_set(&registry, "agent-1", &entries, "run-1", |_| {});
+        assert!(bound.is_none());
+        assert!(acquire_write_set(&registry, &paths(&["/repo/one"]), "agent-2").is_granted);
+    }
+
+    #[test]
+    fn releasing_a_set_releases_only_what_the_holder_owns() {
+        let registry = WriterLeases::new().0;
+        let granted = acquire_write_set(&registry, &paths(&["/repo/one", "/repo/two"]), "agent-1");
+        let mut entries = granted.entries.clone();
+        entries[1].token = Some("stale".to_string());
+        let released = release_write_set(&registry, &entries, "agent-1");
+        assert_eq!(released, vec!["/repo/one".to_string()]);
+        assert!(acquire_write_set(&registry, &paths(&["/repo/one"]), "agent-2").is_granted);
+        assert!(!acquire_write_set(&registry, &paths(&["/repo/two"]), "agent-2").is_granted);
+        let again = release_write_set(&registry, &granted.entries, "agent-1");
+        assert_eq!(again, vec!["/repo/two".to_string()]);
+    }
+
+    #[test]
+    fn a_holder_that_never_bound_a_run_is_stolen_from_once_the_grace_runs_out() {
+        let mut map = LeaseMap::new();
+        let start = Instant::now();
+        acquire_write_set_at(
+            &mut map,
+            &paths(&["/repo/one", "/repo/.git"]),
+            "agent-1",
+            start,
+        );
+        let early = acquire_write_set_at(
+            &mut map,
+            &paths(&["/repo/.git"]),
+            "agent-2",
+            start + UNBOUND_LEASE_STEAL_AFTER - Duration::from_secs(1),
+        );
+        assert!(!early.is_granted);
+        let stolen = acquire_write_set_at(
+            &mut map,
+            &paths(&["/repo/.git"]),
+            "agent-2",
+            start + UNBOUND_LEASE_STEAL_AFTER,
+        );
+        assert!(stolen.is_granted);
     }
 }

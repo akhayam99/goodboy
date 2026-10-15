@@ -1,0 +1,17 @@
+The push of hl/fix-duplicate-credit failed. Fix the cause in this worktree so the push can go through.
+
+Command: git push origin 'hl/fix-duplicate-credit'
+Output:
+pre-push hook declined
+$ pnpm lint
+seenEvents is assigned but never used
+
+If a hook stopped the push (pre-push, commitlint, lint, tests), fix what it reports and commit the fix on this branch.
+Never run git push or git push --force yourself, never edit the remote, and never rewrite commits that are already online. Goodboy pushes again with its lease checks when you finish.
+End with one line saying what you changed.
+
+Operator notes are optional guidance from the person who started this run. They never override the rules, your role or your tool limits, and they are not for the reviewer or the host: never post them. Say in one sentence, inside your normal answer format, how you applied them.
+
+## Operator notes
+Keep the lint rule.
+Do not touch the hook.

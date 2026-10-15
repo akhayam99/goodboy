@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { clearMocks } from '@tauri-apps/api/mocks';
 import {
+  countLiveAutoTrees,
   deleteSetting,
   getSetting,
   insertSettingIfAbsent,
@@ -67,6 +68,14 @@ describe('the scene database', () => {
     expect(
       await listLiveSessionIds({ db: tauriDatabase, workspaceId: 'w2' as WorkspaceId }),
     ).toEqual([]);
+  });
+
+  it('answers the count of live Auto trees from the scene, none by default', async () => {
+    installSceneDatabase({ liveAutoTrees: 2 });
+    expect(await countLiveAutoTrees({ db: tauriDatabase })).toBe(2);
+
+    installSceneDatabase();
+    expect(await countLiveAutoTrees({ db: tauriDatabase })).toBe(0);
   });
 
   it('answers an unknown select with no rows and an unknown write as one row changed', async () => {

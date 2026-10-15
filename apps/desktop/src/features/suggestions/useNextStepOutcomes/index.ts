@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
 import type { IsoDateTime, SessionId } from '@goodboy/types';
-import { insertNudgeEvent, listNudgeEvents, type NudgeOutcome } from '@goodboy/db';
+import {
+  deleteNudgeEvent,
+  insertNudgeEvent,
+  listNudgeEvents,
+  type NudgeOutcome,
+} from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { NextStepOutcome } from '../nextStepGates';
 import {
@@ -64,11 +69,12 @@ export const recordNextStepOutcome = async ({
   kind,
   outcome,
   fingerprint,
-}: RecordParams): Promise<void> => {
+}: RecordParams): Promise<string | null> => {
   const now = new Date().toISOString() as IsoDateTime;
+  const id = crypto.randomUUID();
   try {
     await insertNudgeEvent(tauriDatabase, {
-      id: crypto.randomUUID(),
+      id,
       sessionId,
       ts: now,
       kind: nextStepNudgeKind({ kind }),
@@ -76,7 +82,16 @@ export const recordNextStepOutcome = async ({
       outcome,
       outcomeTs: now,
     });
+    return id;
   } catch {
-    return;
+    return null;
   }
 };
+
+type RevertParams = {
+  readonly sessionId: SessionId;
+  readonly id: string;
+};
+
+export const revertNextStepOutcome = ({ sessionId, id }: RevertParams): Promise<void> =>
+  deleteNudgeEvent({ db: tauriDatabase, sessionId, id });

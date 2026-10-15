@@ -53,31 +53,39 @@ const showDrawer = ({ name }: Params) => {
 };
 
 describe('the Debugger drawer', () => {
-  it('boxes each part under its own heading', () => {
+  it('reads as steps and prose, with the references behind rows', () => {
     const drawer = showDrawer({ name: 'debugger-drawer-proposal' });
-    for (const name of [
-      'Finding',
-      'Proposed fix',
-      'Activity',
-      'What it was given',
-      'Failed log tail',
-    ]) {
+    for (const name of ['Finding', 'Proposed fix']) {
       expect(within(drawer).getByRole('heading', { level: 3, name })).toBeDefined();
     }
+    for (const name of ['Activity', 'What it was given', 'Failed log tail']) {
+      expect(within(drawer).queryByRole('heading', { level: 3, name })).toBeNull();
+    }
+    for (const name of ['What it was given', 'Failed log tail']) {
+      expect(within(drawer).getByRole('button', { name }).getAttribute('aria-expanded')).toBe(
+        'false',
+      );
+    }
+    const chain = within(drawer).getByRole('list', { name: 'Agent chain' });
+    expect(within(chain).getAllByRole('listitem')).toHaveLength(2);
+    expect(within(chain).getByText('Proposal')).toBeDefined();
+    expect(within(chain).getByText('Waiting for you')).toBeDefined();
     expect(within(drawer).getByText('Sonnet 5.5')).toBeDefined();
-    expect(within(drawer).getByText('Done')).toBeDefined();
-    expect(within(drawer).getByRole('button', { name: 'Open agent Debugger' })).toBeDefined();
+    expect(within(drawer).getByRole('button', { name: /^Transcript of / })).toBeDefined();
   });
   it('says Running with the live step while the analysis works', () => {
     const drawer = showDrawer({ name: 'debugger-drawer-running' });
     expect(
       within(drawer).getByText('Running · Running the retry reproduction in ledger-core.'),
     ).toBeDefined();
-    expect(within(drawer).queryByRole('heading', { level: 3, name: 'Activity' })).toBeNull();
+    const chain = within(drawer).getByRole('list', { name: 'Agent chain' });
+    expect(within(chain).getAllByRole('listitem')).toHaveLength(1);
+    expect(within(chain).getByText('Analyze')).toBeDefined();
     expect(within(drawer).queryByRole('button', { name: /^Start/ })).toBeNull();
   });
   it('reads what it was given as facts and hides the paths behind a file count', () => {
     const drawer = showDrawer({ name: 'debugger-drawer-proposal' });
+    fireEvent.click(within(drawer).getByRole('button', { name: 'What it was given' }));
     expect(within(drawer).getByText('Pull request').nextElementSibling?.textContent).toBe('#318');
     expect(within(drawer).getByText('Head').nextElementSibling?.textContent).toBe('a13bc4d');
     expect(within(drawer).getByText('Check').nextElementSibling?.textContent).toBe(
@@ -145,6 +153,7 @@ describe('the Debugger drawer', () => {
   });
   it('keeps the failed log collapsed and shows it without escape codes or CI prefixes', () => {
     const drawer = showDrawer({ name: 'debugger-drawer-ci-log' });
+    fireEvent.click(within(drawer).getByRole('button', { name: 'Failed log tail' }));
     const toggle = within(drawer).getByRole('button', { name: /payments-api \/ test\s*\d+ lines/ });
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     expect(within(drawer).queryByLabelText('Log of payments-api / test')).toBeNull();

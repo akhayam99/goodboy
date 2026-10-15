@@ -75,6 +75,7 @@ vi.mock('../../store', () => {
     reconcileOrphanWorktrees: vi.fn(async () => undefined),
     loadDetectedEditors: vi.fn(async () => undefined),
     loadDetectedBrowsers: vi.fn(async () => undefined),
+    reportError: vi.fn(),
     ...storeSeed.current,
   });
   return {

@@ -6,6 +6,7 @@ import {
   type JobActivityFacts,
 } from '../../../../store/slices/history/jobFactsByAgentId';
 import { resolveMountBaseBranch } from '../../../../store/slices/project-mounts/selectors';
+import { useCiFixActivity } from '../useCiFixActivity';
 
 export type JobActivity = {
   readonly factsByAgentId: ReadonlyMap<string, JobActivityFacts>;
@@ -21,22 +22,26 @@ export const useJobActivity = ({ sessionId }: UseJobActivityParams): JobActivity
   const events = useAppStore((s) => s.sessionEvents?.[sessionId] ?? EMPTY_ARRAY);
   const mounts = useAppStore((s) => s.sessionProjectMounts[sessionId] ?? EMPTY_ARRAY);
   const projects = useAppStore((s) => s.projects);
+  const ciFixFacts = useCiFixActivity({ sessionId });
   return useMemo(
     () => ({
-      factsByAgentId: jobFactsByAgentId({
-        sessionId,
-        historyRuns,
-        scribeWork,
-        events,
-        contextOf: ({ mountId }) => {
-          const mount = mounts.find((candidate) => candidate.mountId === mountId) ?? null;
-          return {
-            projectName: mount?.mountName ?? 'this branch',
-            baseBranch: resolveMountBaseBranch({ mount, projects }) ?? 'main',
-          };
-        },
-      }),
+      factsByAgentId: new Map([
+        ...jobFactsByAgentId({
+          sessionId,
+          historyRuns,
+          scribeWork,
+          events,
+          contextOf: ({ mountId }) => {
+            const mount = mounts.find((candidate) => candidate.mountId === mountId) ?? null;
+            return {
+              projectName: mount?.mountName ?? 'this branch',
+              baseBranch: resolveMountBaseBranch({ mount, projects }) ?? 'main',
+            };
+          },
+        }),
+        ...ciFixFacts,
+      ]),
     }),
-    [events, historyRuns, mounts, projects, scribeWork, sessionId],
+    [ciFixFacts, events, historyRuns, mounts, projects, scribeWork, sessionId],
   );
 };

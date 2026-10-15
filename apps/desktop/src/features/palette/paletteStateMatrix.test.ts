@@ -52,6 +52,9 @@ const AGENT: AgentFacts = {
   provider: 'anthropic',
   modelKey: null,
   hiddenModels: null,
+  isAutoOn: false,
+  canMoveToAuto: true,
+  isAdopted: false,
 };
 
 type ViewParams<F> = {

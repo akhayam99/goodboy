@@ -37,18 +37,20 @@ fn run(argv: &[String]) -> Result<String, String> {
             WORKSPACE_ENV
         ));
     }
+    let project = project_scope(&parsed.args, argv);
+    let args = parsed.args;
     let request = QueryRequest {
         workspace_id: workspace_id.trim().to_string(),
         session_id: std::env::var(SESSION_ENV)
             .unwrap_or_default()
             .trim()
             .to_string(),
-        project: project_scope(&parsed.args, argv),
+        project,
         mount: bound_value(argv, "mount", MOUNT_ENV),
         run_id: optional_bound_value(argv, "run", RUN_ENV),
         provider: parsed.provider,
         verb: parsed.verb,
-        args: parsed.args,
+        args,
     };
     let response = ask(&request)?;
     if !response.ok {

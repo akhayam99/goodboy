@@ -20,8 +20,8 @@ export const ContextBlock = ({ title, icon: Icon, count, action, className, chil
       className,
     )}
   >
-    <div className="flex min-h-6 items-center justify-between gap-2">
-      <h3 className="flex min-w-0 items-center gap-2">
+    <div className="flex min-h-6 flex-wrap items-center justify-between gap-x-2 gap-y-1">
+      <h3 className="flex max-w-full shrink-0 items-center gap-2 whitespace-nowrap">
         <Eyebrow
           label={title}
           icon={Icon != null ? <Icon size={ICON_SIZE.row} aria-hidden /> : undefined}
@@ -30,7 +30,7 @@ export const ContextBlock = ({ title, icon: Icon, count, action, className, chil
           <span className="text-meta tabular-nums text-faint-foreground">{count}</span>
         )}
       </h3>
-      {action ?? null}
+      {action == null ? null : <span className="flex grow items-center justify-end">{action}</span>}
     </div>
     {children}
   </section>

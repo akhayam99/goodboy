@@ -10,6 +10,8 @@ The query bridge lets an agent working in a Goodboy session use the tools your w
 
 Your tokens and keys stay inside Goodboy the whole time. The agent never sees them.
 
+Auto hands work to other agents with a block at the end of its turn, not through the bridge; [auto.md](auto.md) says how and what a person sees of it.
+
 ## What agents can do
 
 While they work, agents can read from your tools:
@@ -151,7 +153,7 @@ Start by reading the mounts:
   "mountName": "api",
   "branch": "ak/eng-3240-auth",
   "baseBranch": "origin/main",
-  "mountPath": "/path/to/.goodboy/worktrees/<name>-<uuid>",
+  "mountPath": "/path/to/.goodboy/worktrees/gb-7k2q9x",
   "isAttached": true,
   "diskState": "present",
   "revision": 3

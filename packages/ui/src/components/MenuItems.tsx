@@ -18,6 +18,9 @@ export type OverflowMenuItem =
       readonly description?: string;
       readonly icon?: ComponentType<IconProps>;
       readonly tone?: Tone;
+      readonly iconClassName?: string;
+      readonly onActive?: () => void;
+      readonly onInactive?: () => void;
       readonly onClick: () => void;
       readonly destructive?: boolean;
       readonly disabled?: boolean;
@@ -60,6 +63,10 @@ export const MenuItems = ({ items, onClose }: Props) => (
           type="button"
           role="menuitem"
           disabled={item.disabled}
+          onMouseEnter={item.onActive}
+          onFocus={item.onActive}
+          onMouseLeave={item.onInactive}
+          onBlur={item.onInactive}
           onClick={() => {
             if (item.disabled === true) {
               return;
@@ -84,7 +91,8 @@ export const MenuItems = ({ items, onClose }: Props) => (
               className={cn(
                 'shrink-0',
                 hasDescription && 'mt-px',
-                item.tone == null ? 'text-faint-foreground' : tintClasses(item.tone).icon,
+                item.iconClassName ??
+                  (item.tone == null ? 'text-faint-foreground' : tintClasses(item.tone).icon),
               )}
             />
           ) : null}

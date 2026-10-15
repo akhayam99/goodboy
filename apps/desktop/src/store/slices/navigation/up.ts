@@ -1,11 +1,9 @@
-import { applyLocation } from './applyLocation';
 import { captureLocation } from './captureLocation';
-import { currentStack, stackKey } from './currentStack';
+import { currentStack } from './currentStack';
 import { goHistory } from './goHistory';
-import { closeSideTrips } from './history';
 import { locationKey } from './locationKey';
 import { parentPlace } from './parentPlace';
-import { EMPTY_FOCUS, type GetFn, type SetFn } from './types';
+import type { GetFn, SetFn } from './types';
 
 export const up = (set: SetFn, get: GetFn) => {
   return (): void => {
@@ -20,27 +18,6 @@ export const up = (set: SetFn, get: GetFn) => {
       return;
     }
     const stack = currentStack(state);
-    const isStudio = live.place.at === 'session' && live.place.view.studio !== null;
-    if (isStudio) {
-      const updated = closeSideTrips({
-        stack,
-        base: {
-          workspaceId: state.currentWorkspaceId,
-          place: parent,
-          studio: null,
-          focus: EMPTY_FOCUS,
-        },
-      });
-      const landing = updated.entries[updated.index];
-      set((current) => ({ navigation: { ...current.navigation, [stackKey(current)]: updated } }));
-      applyLocation({
-        set,
-        get,
-        location: landing ?? { place: parent, studio: null, focus: EMPTY_FOCUS },
-        isRestore: true,
-      });
-      return;
-    }
     const previous = stack.entries[stack.index - 1];
     if (previous !== undefined && locationKey(previous) === locationKey({ place: parent })) {
       goHistory({ set, get, delta: -1 });

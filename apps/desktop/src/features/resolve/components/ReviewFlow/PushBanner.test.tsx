@@ -60,6 +60,7 @@ const PREVIEW: ResolvePublicationPreview = {
 const push = (overrides: Partial<ReviewPush>): ReviewPush => ({
   phase: { kind: 'idle' },
   arm: vi.fn(async () => undefined),
+  press: vi.fn(async () => undefined),
   confirm: vi.fn(async () => undefined),
   cancel: vi.fn(),
   askSync: vi.fn(),
@@ -70,7 +71,7 @@ const push = (overrides: Partial<ReviewPush>): ReviewPush => ({
 });
 
 describe('PushBanner', () => {
-  it('names the tip, the earlier commits that go along and what is left out', () => {
+  it('lists every commit that goes out, marks the ones that are not fixes and says what is left out', () => {
     render(
       <PushBanner
         sessionId={SESSION.id}
@@ -79,18 +80,30 @@ describe('PushBanner', () => {
     );
 
     const confirm = screen.getByRole('group', {
-      name: 'Push 1 commit to hl/fix-duplicate-credit?',
+      name: 'Push 2 commits to hl/fix-duplicate-credit?',
     });
-    within(confirm).getByText('Tip');
-    within(confirm).getByText('Redact the webhook payload');
-    within(confirm).getByText('This also pushes 1 earlier commit');
-    within(confirm).getByText('Batch ledger lookups');
+    const rows = within(confirm).getAllByRole('listitem');
+    expect(rows).toHaveLength(2);
+    const [firstRow, secondRow] = rows;
+    if (firstRow === undefined || secondRow === undefined) {
+      throw new Error('the confirm lists two commits');
+    }
+    expect(firstRow.textContent).toContain('Batch ledger lookups');
+    expect(within(firstRow).getByText('Not a fix')).toBeDefined();
+    expect(secondRow.textContent).toContain('Redact the webhook payload');
+    expect(within(secondRow).queryByText('Not a fix')).toBeNull();
+    expect(within(confirm).queryByText('Tip')).toBeNull();
     within(confirm).getByText(/1 comment needs you first/);
   });
 
   it('names the commit style setting as a link that opens Replies and commits', () => {
-    const opened = vi.fn();
-    window.addEventListener('goodboy:open-settings', opened);
+    const details: Array<unknown> = [];
+    const onOpenSettings = (event: Event) => {
+      if (event instanceof CustomEvent) {
+        details.push(event.detail);
+      }
+    };
+    window.addEventListener('goodboy:open-settings', onOpenSettings);
     render(
       <PushBanner
         sessionId={SESSION.id}
@@ -99,15 +112,55 @@ describe('PushBanner', () => {
     );
 
     const confirm = screen.getByRole('group', {
-      name: 'Push 1 commit to hl/fix-duplicate-credit?',
+      name: 'Push 2 commits to hl/fix-duplicate-credit?',
     });
     within(confirm).getByText(/set in/);
     fireEvent.click(within(confirm).getByRole('button', { name: 'Replies and commits' }));
-    window.removeEventListener('goodboy:open-settings', opened);
+    window.removeEventListener('goodboy:open-settings', onOpenSettings);
 
-    expect(opened).toHaveBeenCalledOnce();
-    const detail = (opened.mock.calls[0]?.[0] as CustomEvent).detail;
-    expect(detail).toEqual({ scope: 'workspace', section: 'review-replies' });
+    expect(details).toEqual([{ scope: 'workspace', section: 'review-replies' }]);
+  });
+
+  it('says what changed above the refreshed confirm', () => {
+    render(
+      <PushBanner
+        sessionId={SESSION.id}
+        push={push({
+          phase: {
+            kind: 'confirm',
+            preview: PREVIEW,
+            changed: 'The remote moved from 7d02b11 to c5d9e08',
+          },
+        })}
+      />,
+    );
+
+    const line = screen.getByText('The remote moved from 7d02b11 to c5d9e08.');
+    const confirm = screen.getByRole('group', { name: /^Push 2 commits to/ });
+    expect(line.compareDocumentPosition(confirm) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(confirm).queryByText(/The remote moved/)).toBeNull();
+  });
+
+  it('shows nothing while a push without a panel runs', () => {
+    const { container } = render(
+      <PushBanner
+        sessionId={SESSION.id}
+        push={push({ phase: { kind: 'pushing', preview: PREVIEW, hasPanel: false } })}
+      />,
+    );
+
+    expect(container.textContent).toBe('');
+  });
+
+  it('keeps the panel up, busy, while a push from the panel runs', () => {
+    render(
+      <PushBanner
+        sessionId={SESSION.id}
+        push={push({ phase: { kind: 'pushing', preview: PREVIEW, hasPanel: true } })}
+      />,
+    );
+
+    expect(screen.getByRole('group', { name: /^Push 2 commits to/ })).toBeDefined();
   });
 
   it('offers Sync on a push that failed on a moved remote', () => {

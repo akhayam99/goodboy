@@ -30,8 +30,9 @@ import { retryWorkflowOrchestration } from './retryWorkflowOrchestration';
 import { reprocessGoalForWorkflow } from './reprocessGoalForWorkflow';
 import { resetWorkflows } from './resetWorkflows';
 import { savePhaseTemplate } from './savePhaseTemplate';
+import { saveRunAsPreset } from './saveRunAsPreset';
 import { saveStepDef } from './saveStepDef';
-import { advanceScoutTree } from './scoutTree';
+import { advanceScoutTree, joinFanOutParent } from './scoutTree';
 import { skipStuckStepAndAdvance } from './skipStuckStepAndAdvance';
 import { setWorkflowRunAutoRun } from './setWorkflowRunAutoRun';
 import { setWorkflowRunSpendLimit } from './setWorkflowRunSpendLimit';
@@ -49,6 +50,7 @@ export const createWorkflowsSlice = ({ set, get }: SliceDeps) => {
     loadPhaseTemplates: loadPhaseTemplates(set),
     copyWorkflowsFromWorkspaces: copyWorkflowsFromWorkspaces({ set }),
     savePhaseTemplate: savePhaseTemplate(set),
+    saveRunAsPreset: saveRunAsPreset(get),
     deleteWorkflow: deleteWorkflow(set, get),
     generateWorkflowTitle: generateWorkflowTitle(set, get),
     suggestWorkflowTitle: suggestWorkflowTitle(set, get),
@@ -78,6 +80,7 @@ export const createWorkflowsSlice = ({ set, get }: SliceDeps) => {
     finalizeWorkflowStep: finalizeWorkflowStep(set, get),
     skipStuckStepAndAdvance: skipStuckStepAndAdvance(set, get),
     advanceScoutTree: advanceScoutTree(set, get),
+    joinFanOutParent: joinFanOutParent(set, get),
     maybeAutoAdvanceWorkflow: maybeAutoAdvanceWorkflow(set, get),
     orchestrateNextStep: orchestrateNextStep(set, get),
     retryWorkflowOrchestration: retryWorkflowOrchestration(set, get),

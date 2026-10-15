@@ -21,6 +21,7 @@ mod orphans;
 mod remove;
 mod scratch;
 mod slug;
+mod snapshot;
 mod status;
 mod types;
 
@@ -47,5 +48,6 @@ pub(crate) use orphans::*;
 pub(crate) use remove::*;
 pub(crate) use scratch::*;
 pub(crate) use slug::*;
+pub(crate) use snapshot::*;
 pub(crate) use status::*;
 pub(crate) use types::*;

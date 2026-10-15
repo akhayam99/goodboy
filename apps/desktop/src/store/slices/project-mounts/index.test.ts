@@ -39,7 +39,7 @@ const h = vi.hoisted(() => {
           reasons?: ReadonlyArray<string>;
         },
     ),
-    sessionDirExists: vi.fn(async () => true),
+    sessionDirExists: vi.fn(async (_args: { path: string }) => true),
     updateSessionWriteDestination: vi.fn(async () => true),
     worktreeBranchHolder: vi.fn(async () => null as string | null),
     worktreeStatus: vi.fn(
@@ -183,6 +183,7 @@ import { selectActiveMount, selectWritableMounts } from './selectors';
 
 const SESSION_ID = 'session-1' as SessionId;
 const PROJECT_ID = 'project-1' as ProjectId;
+const MOUNT_ONE = 'mount-1' as MountId;
 const REPO_ROOT = '/repos/goodboy';
 const OTHER_PROJECT_ID = 'project-2' as ProjectId;
 const OTHER_REPO_ROOT = '/repos/atlas';
@@ -337,12 +338,27 @@ describe('project mount lifecycle', () => {
     });
   });
 
-  it('names every forked directory after the full mount id', async () => {
+  it('gives every forked directory a short gb- name that does not carry the mount id', async () => {
     const { slice } = makeSlice();
 
     const mount = await slice.forkMount({ sessionId: SESSION_ID, projectId: PROJECT_ID });
 
-    expect(mount.worktreePath).toContain(mount.id);
+    expect(mount.worktreePath).toMatch(/\/\.goodboy\/worktrees\/gb-[0-9a-z]{6}$/);
+    expect(mount.worktreePath).not.toContain(mount.id);
+  });
+
+  it('draws a new directory name when the first one is taken by a foreign folder', async () => {
+    const { slice } = makeSlice();
+    h.sessionDirExists.mockResolvedValueOnce(true).mockResolvedValue(false);
+    h.inspectWorktree.mockResolvedValue({ kind: 'foreign-directory' });
+
+    await slice.forkMount({ sessionId: SESSION_ID, projectId: PROJECT_ID });
+
+    const probed = h.sessionDirExists.mock.calls.map(([args]) => args.path.split('/').pop());
+    const [created] = h.createWorktree.mock.calls[0] ?? [];
+    expect(probed).toHaveLength(2);
+    expect(created.dirName).toBe(probed[1]);
+    expect(created.dirName).not.toBe(probed[0]);
   });
 
   it('returns the recorded mount when the same request id is retried', async () => {
@@ -551,7 +567,7 @@ describe('project mount lifecycle', () => {
 
     const switched = await slice.switchMount({
       sessionId: SESSION_ID,
-      mountId: 'mount-1' as MountId,
+      mountId: MOUNT_ONE,
       branch: 'ak/second',
     });
 
@@ -567,7 +583,7 @@ describe('project mount lifecycle', () => {
 
     await slice.switchMount({
       sessionId: SESSION_ID,
-      mountId: 'mount-1' as MountId,
+      mountId: MOUNT_ONE,
       branch: 'ak/second',
     });
 
@@ -583,7 +599,7 @@ describe('project mount lifecycle', () => {
     state.mountBranchObservations = {
       [SESSION_ID]: [
         {
-          mountId: 'mount-1' as MountId,
+          mountId: MOUNT_ONE,
           sessionId: SESSION_ID,
           state: 'detached',
           recordedBranch: 'ak/first',
@@ -597,7 +613,7 @@ describe('project mount lifecycle', () => {
     await expect(
       slice.switchMount({
         sessionId: SESSION_ID,
-        mountId: 'mount-1' as MountId,
+        mountId: MOUNT_ONE,
         branch: 'ak/second',
       }),
     ).rejects.toMatchObject({ code: 'branch-mismatch' });
@@ -615,7 +631,7 @@ describe('project mount lifecycle', () => {
 
     const result = await slice.unmountMount({
       sessionId: SESSION_ID,
-      mountId: 'mount-1' as MountId,
+      mountId: MOUNT_ONE,
     });
 
     expect(result.kept).toBe(true);
@@ -630,7 +646,7 @@ describe('project mount lifecycle', () => {
     const { slice, state } = makeSlice();
     seedMount({ id: 'mount-1', branch: 'ak/first', worktreePath: `${REPO_ROOT}/wt/first` });
 
-    await slice.unmountMount({ sessionId: SESSION_ID, mountId: 'mount-1' as MountId });
+    await slice.unmountMount({ sessionId: SESSION_ID, mountId: MOUNT_ONE });
 
     expect(h.rows.get('mount-1')).toMatchObject({
       worktreePath: null,
@@ -658,7 +674,7 @@ describe('project mount lifecycle', () => {
     state['sessionActiveMount'] = { [SESSION_ID]: 'mount-1' };
     state['sessionActiveProject'] = { [SESSION_ID]: PROJECT_ID };
 
-    await slice.unmountMount({ sessionId: SESSION_ID, mountId: 'mount-1' as MountId });
+    await slice.unmountMount({ sessionId: SESSION_ID, mountId: MOUNT_ONE });
 
     expect(h.updateSessionWriteDestination).toHaveBeenCalledWith(
       expect.objectContaining({ sessionId: SESSION_ID, mountId: null }),
@@ -679,7 +695,7 @@ describe('project mount lifecycle', () => {
     state['sessionActiveMount'] = { [SESSION_ID]: 'mount-1' };
     state['sessionActiveProject'] = { [SESSION_ID]: PROJECT_ID };
 
-    await slice.unmountMount({ sessionId: SESSION_ID, mountId: 'mount-1' as MountId });
+    await slice.unmountMount({ sessionId: SESSION_ID, mountId: MOUNT_ONE });
 
     expect(h.updateSessionWriteDestination).toHaveBeenCalledWith(
       expect.objectContaining({ sessionId: SESSION_ID, mountId: 'mount-2' }),
@@ -703,7 +719,7 @@ describe('project mount lifecycle', () => {
     state['sessionActiveProject'] = { [SESSION_ID]: PROJECT_ID };
     h.updateSessionWriteDestination.mockResolvedValue(false);
 
-    await slice.unmountMount({ sessionId: SESSION_ID, mountId: 'mount-1' as MountId });
+    await slice.unmountMount({ sessionId: SESSION_ID, mountId: MOUNT_ONE });
 
     expect((state['sessionActiveMount'] as Record<string, unknown>)[SESSION_ID]).toBe('mount-1');
     expect((state['sessionActiveProject'] as Record<string, unknown>)[SESSION_ID]).toBe(PROJECT_ID);
@@ -722,17 +738,51 @@ describe('project mount lifecycle', () => {
     seedMount({ id: 'mount-1', branch: 'ak/first', worktreePath: null, revision: 2 });
     h.branchNames = ['ak/base', 'ak/first'];
     h.inspectWorktree.mockResolvedValue({ kind: 'missing' });
+    h.sessionDirExists.mockResolvedValue(false);
 
     const attached = await slice.attachMount({
       sessionId: SESSION_ID,
-      mountId: 'mount-1' as MountId,
+      mountId: MOUNT_ONE,
     });
 
-    expect(attached.worktreePath).toContain('mount-1');
+    expect(attached.worktreePath).toMatch(/\/\.goodboy\/worktrees\/gb-[0-9a-z]{6}$/);
     expect(attached.isAttached).toBe(true);
     expect(h.createWorktree).toHaveBeenCalledWith(
       expect.objectContaining({ existingBranch: 'ak/first' }),
     );
+  });
+
+  it('recreates a removed worktree under the folder name it already had', async () => {
+    const { slice } = makeSlice();
+    const legacy = `${REPO_ROOT}/.goodboy/worktrees/split-the-big-pull-request-mount-1`;
+    seedMount({ id: 'mount-1', branch: 'ak/first', worktreePath: legacy, revision: 2 });
+    h.branchNames = ['ak/base', 'ak/first'];
+    h.inspectWorktree.mockResolvedValue({ kind: 'missing' });
+
+    const attached = await slice.attachMount({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ONE,
+    });
+
+    expect(h.createWorktree).toHaveBeenCalledWith(
+      expect.objectContaining({ dirName: 'split-the-big-pull-request-mount-1' }),
+    );
+    expect(attached.worktreePath).toBe(legacy);
+  });
+
+  it('keeps the stored path of a mount that is still on disk', async () => {
+    const { slice } = makeSlice();
+    const legacy = `${REPO_ROOT}/.goodboy/worktrees/split-the-big-pull-request-mount-1`;
+    seedMount({ id: 'mount-1', branch: 'ak/first', worktreePath: legacy, revision: 2 });
+    h.inspectWorktree.mockResolvedValue({ kind: 'registered' });
+
+    const attached = await slice.attachMount({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ONE,
+    });
+
+    expect(h.createWorktree).not.toHaveBeenCalled();
+    expect(attached.worktreePath).toBe(legacy);
   });
 
   it('names the holding worktree when attaching hits a branch checked out elsewhere', async () => {
@@ -743,7 +793,7 @@ describe('project mount lifecycle', () => {
     h.createWorktree.mockRejectedValue(BRANCH_IN_USE);
 
     const failure = await slice
-      .attachMount({ sessionId: SESSION_ID, mountId: 'mount-1' as MountId })
+      .attachMount({ sessionId: SESSION_ID, mountId: MOUNT_ONE })
       .catch((error: unknown) => error);
 
     expect(failure).toMatchObject({ code: 'branch-taken', mountId: 'mount-1' });
@@ -757,7 +807,7 @@ describe('project mount lifecycle', () => {
     h.inspectWorktree.mockResolvedValue({ kind: 'missing' });
 
     await expect(
-      slice.attachMount({ sessionId: SESSION_ID, mountId: 'mount-1' as MountId }),
+      slice.attachMount({ sessionId: SESSION_ID, mountId: MOUNT_ONE }),
     ).rejects.toMatchObject({ code: 'branch-missing' });
     expect(h.createWorktree).not.toHaveBeenCalled();
   });
@@ -768,7 +818,7 @@ describe('branch mismatch recovery', () => {
     state['mountBranchObservations'] = {
       [SESSION_ID]: [
         {
-          mountId: 'mount-1' as MountId,
+          mountId: MOUNT_ONE,
           sessionId: SESSION_ID,
           state: 'mismatch',
           recordedBranch: 'ak/first',
@@ -787,7 +837,7 @@ describe('branch mismatch recovery', () => {
 
     const resolved = await slice.resolveMountBranchMismatch({
       sessionId: SESSION_ID,
-      mountId: 'mount-1' as MountId,
+      mountId: MOUNT_ONE,
       resolution: 'adopt-observed',
     });
 
@@ -803,7 +853,7 @@ describe('branch mismatch recovery', () => {
 
     await slice.resolveMountBranchMismatch({
       sessionId: SESSION_ID,
-      mountId: 'mount-1' as MountId,
+      mountId: MOUNT_ONE,
       resolution: 'keep-both',
     });
 
@@ -826,7 +876,7 @@ describe('branch mismatch recovery', () => {
     await expect(
       slice.resolveMountBranchMismatch({
         sessionId: SESSION_ID,
-        mountId: 'mount-1' as MountId,
+        mountId: MOUNT_ONE,
         resolution: 'keep-both',
       }),
     ).rejects.toMatchObject({ code: 'directory-busy' });
@@ -843,7 +893,7 @@ describe('branch mismatch recovery', () => {
     const failure = await slice
       .resolveMountBranchMismatch({
         sessionId: SESSION_ID,
-        mountId: 'mount-1' as MountId,
+        mountId: MOUNT_ONE,
         resolution: 'adopt-observed',
       })
       .catch((error: unknown) => error);
@@ -868,7 +918,7 @@ describe('branch mismatch recovery', () => {
 
     await slice.resolveMountBranchMismatch({
       sessionId: SESSION_ID,
-      mountId: 'mount-1' as MountId,
+      mountId: MOUNT_ONE,
       resolution: 'recheck',
     });
 
@@ -895,7 +945,7 @@ describe('branch mismatch recovery', () => {
 
       await slice.resolveMountBranchMismatch({
         sessionId: SESSION_ID,
-        mountId: 'mount-1' as MountId,
+        mountId: MOUNT_ONE,
         resolution,
       });
 
@@ -914,7 +964,7 @@ describe('branch mismatch recovery', () => {
 
     await slice.resolveMountBranchMismatch({
       sessionId: SESSION_ID,
-      mountId: 'mount-1' as MountId,
+      mountId: MOUNT_ONE,
       resolution: 'recheck',
     });
 
@@ -930,7 +980,7 @@ describe('branch mismatch recovery', () => {
 
     await slice.resolveMountBranchMismatch({
       sessionId: SESSION_ID,
-      mountId: 'mount-1' as MountId,
+      mountId: MOUNT_ONE,
       resolution: 'recheck',
     });
 
@@ -946,7 +996,7 @@ describe('branch mismatch recovery', () => {
     state['mountBranchObservations'] = {
       [SESSION_ID]: [
         {
-          mountId: 'mount-1' as MountId,
+          mountId: MOUNT_ONE,
           sessionId: SESSION_ID,
           state: 'detached',
           recordedBranch: 'ak/first',
@@ -959,7 +1009,7 @@ describe('branch mismatch recovery', () => {
 
     await slice.resolveMountBranchMismatch({
       sessionId: SESSION_ID,
-      mountId: 'mount-1' as MountId,
+      mountId: MOUNT_ONE,
       resolution: 'restore-recorded',
     });
 
@@ -978,7 +1028,7 @@ describe('branch mismatch recovery', () => {
     await expect(
       slice.resolveMountBranchMismatch({
         sessionId: SESSION_ID,
-        mountId: 'mount-1' as MountId,
+        mountId: MOUNT_ONE,
         resolution: 'adopt-observed',
       }),
     ).rejects.toThrow();

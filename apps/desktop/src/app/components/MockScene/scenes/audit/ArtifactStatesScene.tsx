@@ -61,7 +61,7 @@ export const ArtifactStatesScene = () => {
       lens: 'plans',
     });
     const agents = useAppStore.getState().sessionPhaseRuns[SESSION_ID] ?? [];
-    if (VARIANT === 'empty' || VARIANT === 'create-empty') {
+    if (VARIANT === 'empty') {
       useAppStore.setState({
         sessionArtifacts: { [SESSION_ID]: [] },
         sessionPhaseRuns: { [SESSION_ID]: [] },
@@ -72,14 +72,6 @@ export const ArtifactStatesScene = () => {
     if (VARIANT === 'failed' || VARIANT === 'detail-failed') {
       useAppStore.setState({
         sessionPhaseRuns: { [SESSION_ID]: [...agents, ...failedClones({ agents })] },
-      });
-    }
-    if (VARIANT === 'create-empty') {
-      useAppStore.getState().openArtifactCreation({
-        sessionId: SESSION_ID,
-        kind: 'report',
-        workflowRunId: null,
-        note: null,
       });
     }
     setIsReady(true);

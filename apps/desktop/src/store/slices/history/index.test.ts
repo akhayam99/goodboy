@@ -484,6 +484,70 @@ describe('rebase on main', () => {
     expect(read().historyRewriters[AGENT_ID]).toBeUndefined();
   });
 
+  it('reports acceptance only when the rewriter turn started, and keeps the note line verbatim', async () => {
+    const { slice, sendTurn } = harness();
+    engine.prepareHistoryRewrite.mockResolvedValue({
+      head: null,
+      map: [],
+      isTreeEqual: false,
+      changedFiles: [],
+      stop: { sha: 'a1', index: 0, kind: 'merge', files: ['ledger.ts'], message: '' },
+      copyPath: '/tmp/goodboy-history-copy',
+      order: [],
+      check: null,
+    });
+    const plan = { worktreePath: '/w/ledger', base: 'base-sha', head: 'head-sha', steps: [] };
+    const onAccepted = vi.fn();
+    sendTurn.mockImplementationOnce(async (turn: { readonly onStarted?: () => void }) => {
+      turn.onStarted?.();
+      return { blockedOverBudget: false };
+    });
+
+    await slice.startHistoryRewriter({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      plan,
+      origin: 'plan',
+      planId: 'plan-1',
+      note: 'Operator notes\nKeep the retries.',
+      onAccepted,
+    });
+
+    await vi.waitFor(() => expect(onAccepted).toHaveBeenCalledTimes(1));
+    expect(sendTurn.mock.calls[0]?.[0].content).toContain(
+      'A note from the person who asked for this rewrite: Operator notes\nKeep the retries.',
+    );
+  });
+
+  it('never reports acceptance when the rewriter turn is rejected', async () => {
+    const { slice, sendTurn } = harness();
+    engine.prepareHistoryRewrite.mockResolvedValue({
+      head: null,
+      map: [],
+      isTreeEqual: false,
+      changedFiles: [],
+      stop: { sha: 'a1', index: 0, kind: 'merge', files: ['ledger.ts'], message: '' },
+      copyPath: '/tmp/goodboy-history-copy',
+      order: [],
+      check: null,
+    });
+    const onAccepted = vi.fn();
+    sendTurn.mockRejectedValueOnce(new Error('the provider is offline'));
+
+    await slice.startHistoryRewriter({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      plan: { worktreePath: '/w/ledger', base: 'base-sha', head: 'head-sha', steps: [] },
+      origin: 'plan',
+      planId: 'plan-1',
+      note: 'Keep the retries.',
+      onAccepted,
+    });
+    await vi.waitFor(() => expect(engine.discardHistoryCopy).toHaveBeenCalled());
+
+    expect(onAccepted).not.toHaveBeenCalled();
+  });
+
   it('hands a predicted conflict to the hidden history rewriter working in a copy', async () => {
     const { slice, read } = harness();
     engine.predictHistoryPlan.mockResolvedValue({

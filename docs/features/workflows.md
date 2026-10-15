@@ -52,7 +52,7 @@ Reuse steps across workflows. The built-in steps are read-only, and **Save a cop
 
 ### Model per step
 
-Put a light model on a scout and a strong one on the planner. A step follows its role by default, and **Pin a model** gives it its own provider, model and effort. Goodboy records what actually ran.
+Put a light model on a scout and a strong one on the planner. A step follows its role by default, and **Pin a model** gives it its own provider, model and effort, with the same compact provider row as the model picker. Goodboy records what actually ran.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-model-dark.webp">
@@ -61,9 +61,9 @@ Put a light model on a scout and a strong one on the planner. A step follows its
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
-### When to ask
+### Autonomy
 
-Choose how often a run stops for you: **Ask before each step**, **Ask after the plan** to approve once and then run on, or **Run on its own**. A guard stops an unattended agent after 4 turns in an hour, and anything you write to it resets the count.
+Choose how often a run stops for you: **Ask me**, **Balanced** to approve once and then run on, or **Autopilot**. A guard stops an unattended agent after 4 turns in an hour, and anything you write to it resets the count.
 
 ### Pause, resume and skip
 

@@ -75,7 +75,7 @@ const sessionFacts: SessionFacts = {
 
 type Surface = {
   readonly name: string;
-  readonly run: (params: { readonly env: ActionEnv }) => void | Promise<void>;
+  readonly run: (params: { readonly env: ActionEnv }) => unknown;
 };
 
 const runOf = <F>({

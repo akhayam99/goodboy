@@ -51,9 +51,15 @@ import { createIntegrationsSlice } from './slices/integrations';
 import { createSidebarSlice } from './slices/sidebar';
 import { createSettingsLastPageSlice } from './slices/settings-last-page';
 import { createChatLastOpenSlice } from './slices/chat-last-open';
+import {
+  checkFixCommitsInitialState,
+  createCheckFixCommitsSlice,
+} from './slices/check-fix-commits';
 import { createSessionViewSlice } from './slices/session-view';
 import { createSavedProjectModelsSlice } from './slices/saved-project-models';
 import { savedProjectModelsInitialState } from './slices/saved-project-models/state';
+import { createAutoViewSlice } from './slices/auto-view';
+import { autoViewInitialState } from './slices/auto-view/state';
 import { createSessionPinsSlice } from './slices/session-pins';
 import { sessionPinsInitialState } from './slices/session-pins/state';
 import { createSessionFiltersSlice } from './slices/sessionFilters';
@@ -67,6 +73,8 @@ import { createAgentsSlice } from './slices/agents';
 import { createAgentQueueSlice } from './slices/agentQueue';
 import { createArtifactDraftsSlice } from './slices/artifactDrafts';
 import { createWorkflowDraftsSlice } from './slices/workflowDrafts';
+import { createNewDrawerDraftsSlice } from './slices/newDrawerDrafts';
+import { createStartHintsSlice } from './slices/startHints';
 import { createWorkflowStudioSlice } from './slices/workflowStudio';
 import { initialWorkflowStudioState } from './slices/workflowStudio/state';
 import { createWorkflowRoutingSlice } from './slices/workflowRouting';
@@ -168,6 +176,8 @@ import { openQuestionsInitialState } from './slices/open-questions/state';
 import { nudgesInitialState } from './slices/nudges/state';
 import { slackDraftsInitialState } from './slices/slack-drafts/state';
 import { workflowDraftsInitialState } from './slices/workflowDrafts/state';
+import { newDrawerDraftsInitialState } from './slices/newDrawerDrafts/state';
+import { startHintsInitialState } from './slices/startHints/state';
 import { artifactDraftsInitialState } from './slices/artifactDrafts/state';
 import { permissionsInitialState } from './slices/permissions/state';
 import { attachmentsInitialState } from './slices/attachments/state';
@@ -241,6 +251,7 @@ export type AppStore = AppState &
   ReturnType<typeof createSidebarSlice> &
   ReturnType<typeof createSettingsLastPageSlice> &
   ReturnType<typeof createChatLastOpenSlice> &
+  ReturnType<typeof createCheckFixCommitsSlice> &
   ReturnType<typeof createSessionFiltersSlice> &
   ReturnType<typeof createSettingsSlice> &
   ReturnType<typeof createBootSlice> &
@@ -253,6 +264,7 @@ export type AppStore = AppState &
   ReturnType<typeof createSessionViewSlice> &
   ReturnType<typeof createSavedProjectModelsSlice> &
   ReturnType<typeof createSessionPinsSlice> &
+  ReturnType<typeof createAutoViewSlice> &
   ReturnType<typeof createSessionsSlice> &
   ReturnType<typeof createTranscriptsSlice> &
   ReturnType<typeof createSummariesSlice> &
@@ -269,6 +281,8 @@ export type AppStore = AppState &
   ReturnType<typeof createMountCleanupSlice> &
   ReturnType<typeof createWorkflowsSlice> &
   ReturnType<typeof createWorkflowDraftsSlice> &
+  ReturnType<typeof createNewDrawerDraftsSlice> &
+  ReturnType<typeof createStartHintsSlice> &
   ReturnType<typeof createWorkflowStudioSlice> &
   ReturnType<typeof createWorkflowRoutingSlice> &
   ReturnType<typeof createSlotsSlice> &
@@ -313,6 +327,7 @@ export const initialState: AppState = {
   ...createInitialSessionViewState({}),
   ...savedProjectModelsInitialState,
   ...sessionPinsInitialState,
+  ...autoViewInitialState,
   ...sessionFiltersInitialState,
   ...workspacesInitialState,
   ...projectsInitialState,
@@ -351,6 +366,7 @@ export const initialState: AppState = {
   ...sidebarInitialState,
   ...settingsLastPageInitialState,
   ...chatLastOpenInitialState,
+  ...checkFixCommitsInitialState,
   ...githubInitialState,
   ...initialGitlabMrState,
   ...initialBitbucketPrState,
@@ -368,6 +384,8 @@ export const initialState: AppState = {
   ...artifactsInitialState,
   ...artifactCommentsInitialState,
   ...workflowDraftsInitialState,
+  ...newDrawerDraftsInitialState,
+  ...startHintsInitialState,
   ...artifactDraftsInitialState,
   ...initialWorkflowStudioState,
   ...initialWorkflowRoutingState,
@@ -411,9 +429,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createSidebarSlice({ set, get }),
   ...createSettingsLastPageSlice({ set, get }),
   ...createChatLastOpenSlice({ set, get }),
+  ...createCheckFixCommitsSlice({ set, get }),
   ...createSessionViewSlice({ set, get }),
   ...createSavedProjectModelsSlice({ set, get }),
   ...createSessionPinsSlice({ set, get }),
+  ...createAutoViewSlice({ set, get }),
   ...createSessionFiltersSlice({ set, get }),
   ...createTerminalSlice({ set, get }),
   ...createScriptsSlice({ set, get }),
@@ -429,6 +449,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createReviewSelectionSlice({ set, get }),
   ...createReviewSourceSlice({ set, get }),
   ...createWorkflowDraftsSlice({ set, get }),
+  ...createNewDrawerDraftsSlice({ set, get }),
+  ...createStartHintsSlice({ set, get }),
   ...createArtifactDraftsSlice({ set, get }),
   ...createWorkflowStudioSlice({ set, get }),
   ...createWorkflowRoutingSlice({ set, get }),

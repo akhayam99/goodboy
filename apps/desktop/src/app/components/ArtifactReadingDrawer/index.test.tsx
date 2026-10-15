@@ -144,7 +144,6 @@ describe('a report or wireframe opened from its work', () => {
         view: {
           lens: 'plans',
           agentId: null,
-          studio: null,
           target: { kind: 'artifact', artifactId: REPORT },
         },
       },

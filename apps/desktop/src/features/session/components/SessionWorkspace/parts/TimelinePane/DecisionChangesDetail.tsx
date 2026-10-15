@@ -1,46 +1,74 @@
+import { useLayoutEffect, useRef } from 'react';
 import { Button } from '@goodboy/ui';
-import {
-  DECISION_DETAIL_ACTION_HEIGHT,
-  DECISION_DETAIL_LINE_HEIGHT,
-  type DecisionChangeDetail,
+import type {
+  DecisionChangeDetail,
+  DetailHeightParams,
 } from '../../../../timeline/decisionChangeLines';
 
 type Props = {
   readonly id: string;
+  readonly rowId: string;
   readonly detail: DecisionChangeDetail;
   readonly onOpenInContext: () => void;
+  readonly onMeasured: (params: DetailHeightParams) => void;
 };
 
-export const DecisionChangesDetail = ({ id, detail, onOpenInContext }: Props) => (
-  <div id={id} className="flex min-w-0 flex-col py-1 pl-2 pr-2" style={{ height: detail.height }}>
-    {detail.lines.map((line) => (
-      <p
-        key={line.key}
-        className="flex min-w-0 items-center gap-2 text-label text-muted-foreground"
-        style={{ height: DECISION_DETAIL_LINE_HEIGHT }}
-      >
-        <span aria-hidden className="w-2 shrink-0 text-center text-faint-foreground">
-          {line.sign ?? ''}
-        </span>
-        <span className="shrink-0 text-meta text-foreground">{line.label}</span>
-        <span className="min-w-0 truncate">{line.text}</span>
-        {line.note === null ? null : (
-          <span className="min-w-0 shrink truncate text-faint-foreground">{`· ${line.note}`}</span>
-        )}
-      </p>
-    ))}
-    {detail.hiddenCount > 0 ? (
-      <p
-        className="flex items-center pl-4 text-label text-faint-foreground"
-        style={{ height: DECISION_DETAIL_LINE_HEIGHT }}
-      >
-        {`and ${detail.hiddenCount} more`}
-      </p>
-    ) : null}
-    <span className="flex items-center" style={{ height: DECISION_DETAIL_ACTION_HEIGHT }}>
-      <Button variant="ghost" size="xs" onClick={onOpenInContext}>
-        Open in Context
-      </Button>
-    </span>
-  </div>
-);
+export const DecisionChangesDetail = ({
+  id,
+  rowId,
+  detail,
+  onOpenInContext,
+  onMeasured,
+}: Props) => {
+  const body = useRef<HTMLDivElement | null>(null);
+  const measuredRef = useRef(onMeasured);
+  measuredRef.current = onMeasured;
+
+  useLayoutEffect(() => {
+    const element = body.current;
+    if (element === null) {
+      return;
+    }
+    const measure = () => {
+      const height = Math.ceil(element.getBoundingClientRect().height);
+      if (height > 0) {
+        measuredRef.current({ rowId, height });
+      }
+    };
+    measure();
+    if (typeof ResizeObserver === 'undefined') {
+      return;
+    }
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [rowId]);
+
+  return (
+    <div ref={body} id={id} className="flex min-w-0 flex-col gap-1 py-1 pl-2 pr-2">
+      {detail.lines.map((line) => (
+        <div
+          key={line.key}
+          className="grid min-w-0 grid-cols-[8px_auto_minmax(0,1fr)] items-baseline gap-x-2 text-label text-muted-foreground"
+        >
+          <span aria-hidden className="text-center text-faint-foreground">
+            {line.sign ?? ''}
+          </span>
+          <span className="text-meta text-foreground">{line.label}</span>
+          <p className="min-w-0 break-words">{line.text}</p>
+          {line.note === null ? null : (
+            <p className="col-start-3 min-w-0 break-words text-faint-foreground">{line.note}</p>
+          )}
+        </div>
+      ))}
+      {detail.hiddenCount > 0 ? (
+        <p className="pl-4 text-label text-faint-foreground">{`and ${detail.hiddenCount} more`}</p>
+      ) : null}
+      <span className="flex items-center">
+        <Button variant="ghost" size="xs" onClick={onOpenInContext}>
+          Open in Context
+        </Button>
+      </span>
+    </div>
+  );
+};

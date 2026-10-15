@@ -135,14 +135,38 @@ describe('DrawerFrame', () => {
     expect(screen.getByRole('banner').querySelector('[data-drawer-toolbar]')).toBeNull();
   });
 
-  it('focuses the close button when it opens and holds no field', () => {
+  it('focuses the drawer itself, not Close, when it opens and holds no field', () => {
     render(
       <DrawerFrame title="Drafts" onClose={vi.fn()}>
         <p>body</p>
       </DrawerFrame>,
     );
 
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Close' }));
+    expect(document.activeElement).toBe(screen.getByRole('region', { name: 'Drafts' }));
+    expect(document.activeElement).not.toBe(screen.getByRole('button', { name: 'Close' }));
+  });
+
+  it('shows no Close tooltip when it opens', () => {
+    render(
+      <DrawerFrame title="Drafts" onClose={vi.fn()}>
+        <p>body</p>
+      </DrawerFrame>,
+    );
+
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+
+  it('still closes on Esc from the focused drawer', () => {
+    const onClose = vi.fn();
+    render(
+      <DrawerFrame title="Drafts" onClose={onClose}>
+        <p>body</p>
+      </DrawerFrame>,
+    );
+
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('focuses the composer in its dock when it has one', () => {
@@ -185,7 +209,7 @@ describe('DrawerFrame', () => {
         </DrawerFrame>
       </div>,
     );
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Close' }));
+    expect(document.activeElement).toBe(screen.getByRole('region', { name: 'Drafts' }));
 
     view.rerender(
       <div>
