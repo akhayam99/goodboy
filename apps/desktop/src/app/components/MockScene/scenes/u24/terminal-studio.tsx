@@ -467,12 +467,13 @@ type Props = {
 
 const CLICK_MS = 300;
 
+const NEW_MENU_TRIGGER = 'button[aria-label="New terminal in"][aria-haspopup="menu"]';
+
 const clickLabelOf = ({ variant }: Props): ReadonlyArray<string> => {
   switch (variant) {
-    case 'newmenu':
-      return ['New terminal in'];
     case 'closeconfirm':
       return ['Close dev server'];
+    case 'newmenu':
     case 'list':
     case 'empty':
       return [];
@@ -500,6 +501,23 @@ const TerminalStudioScene = ({ variant }: Props) => {
     });
     setIsReady(true);
   }, [variant]);
+
+  useEffect(() => {
+    if (!isReady || variant !== 'newmenu') {
+      return;
+    }
+    const interval = window.setInterval(() => {
+      const trigger = window.document.querySelector<HTMLButtonElement>(NEW_MENU_TRIGGER);
+      if (trigger === null) {
+        return;
+      }
+      if (trigger.getAttribute('aria-expanded') !== 'true') {
+        trigger.click();
+      }
+      window.clearInterval(interval);
+    }, CLICK_MS);
+    return () => window.clearInterval(interval);
+  }, [isReady, variant]);
 
   useSceneClicks({
     isReady,
