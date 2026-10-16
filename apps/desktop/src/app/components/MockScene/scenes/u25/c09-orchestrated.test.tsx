@@ -8,7 +8,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -103,7 +103,7 @@ describe('the c09 orchestrated scenes', () => {
     expect(screen.getByText(/times out over 10k rows/)).toBeDefined();
     const facts = nodeOf('[data-orchestrated-facts]');
     const autonomy = within(facts).getByRole('button', { name: 'Autonomy: Balanced' });
-    expect(autonomy.textContent).toBe('Balanced');
+    expect(autonomy.textContent).toBe('AutonomyBalanced');
     act(() => {
       autonomy.click();
     });
@@ -150,16 +150,19 @@ describe('the c09 orchestrated scenes', () => {
     expect(screen.queryByTestId('orchestrator-strip')).toBeNull();
   });
 
-  it('c09-orch-step opens the step in the pane with its reason, the page keeps the one composer', async () => {
+  it('c09-orch-step opens the step in the pane, the latest reason stays under the tail only', async () => {
     await mount('c09-orch-step');
 
     expect(screen.getByText('Step 3 · Tester')).toBeDefined();
+    expect(document.querySelector('[data-step-reason]')).toBeNull();
     expect(
       screen.getByText('Why: The batching must be proven on 12,000 rows before any CSV work.', {
-        selector: '[data-step-reason]',
+        selector: '[data-orchestrated-reason]',
       }),
     ).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Open full' })).toBeDefined();
+    const pane = nodeOf('[data-run-step-pane]');
+    fireEvent.click(within(pane).getByRole('button', { name: 'More actions' }));
+    expect(screen.getByRole('menuitem', { name: 'Open full' })).toBeDefined();
     expect(screen.queryByPlaceholderText(/^Message/)).toBeNull();
     expect(screen.getByPlaceholderText('Hint the orchestrator')).toBeDefined();
     expect(tail().getAttribute('data-orchestrated-tail')).toBe('waiting');
@@ -199,7 +202,8 @@ describe('the c09 orchestrated scenes', () => {
   it('c09-orch-done shows the result with Done, Left and the next moves', async () => {
     await mount('c09-orch-done');
 
-    expect(within(tail()).getByText(/^Run complete · 4 steps/)).toBeDefined();
+    expect(within(tail()).getByText('Run complete')).toBeDefined();
+    expect(screen.queryByPlaceholderText('Hint the orchestrator')).toBeNull();
     const result = nodeOf('[data-orchestrated-result]');
     expect(within(result).getByText(/export takes 4.1s on 12,000 rows/)).toBeDefined();
     expect(within(result).getByRole('list', { name: 'Done' })).toBeDefined();
@@ -215,7 +219,7 @@ describe('the c09 orchestrated scenes', () => {
     await mount('c09-orch-archived');
 
     expect(screen.getByRole('button', { name: 'Restore' })).toBeDefined();
-    expect(within(tail()).getByText('Archived run')).toBeDefined();
+    expect(document.querySelector('[data-orchestrated-tail]')).toBeNull();
     expect(screen.queryByPlaceholderText('Hint the orchestrator')).toBeNull();
   });
 
@@ -223,7 +227,7 @@ describe('the c09 orchestrated scenes', () => {
     await mount('c09-orch-menu');
 
     const menu = screen.getByRole('menu');
-    expect(within(menu).getByText('Autonomy')).toBeDefined();
+    expect(within(menu).queryByText('Autonomy')).toBeNull();
     expect(within(menu).getByText('Step routing')).toBeDefined();
     expect(within(menu).getByText('Skip step 3')).toBeDefined();
     expect(within(menu).getByText('Copy run summary')).toBeDefined();

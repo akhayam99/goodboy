@@ -11,6 +11,8 @@ import {
 } from '../../../workTreeModel/railGeometry';
 import type { TimelineRowItem } from '../../../session/timeline/buildTimelineStream';
 import { RunTreeRow } from './RunTreeRow';
+import { RUN_TREE_SLOT_WIDTH } from './runTreeSlotWidth';
+import type { RunTreeDensity } from './runTreeDensity';
 import { baseAgents, child, streamOf } from './testing/runTreeFixtures';
 
 afterEach(cleanup);
@@ -40,7 +42,13 @@ const laidOut = ({ agents }: { readonly agents: ReadonlyArray<Agent> }): Laid =>
   };
 };
 
-const slotOf = ({ laid, id }: { readonly laid: Laid; readonly id: string }): number => {
+type SlotParams = {
+  readonly laid: Laid;
+  readonly id: string;
+  readonly density?: RunTreeDensity;
+};
+
+const slotOf = ({ laid, id, density = 'rail' }: SlotParams): number => {
   const item = laid.items.find((candidate) => candidate.id === `agent:${id}`);
   const rail = laid.layout.rows.find((candidate) => candidate.id === `agent:${id}`);
   if (item === undefined || rail === undefined || item.entry.kind !== 'agent') {
@@ -48,6 +56,7 @@ const slotOf = ({ laid, id }: { readonly laid: Laid; readonly id: string }): num
   }
   render(
     <RunTreeRow
+      density={density}
       item={item}
       entry={item.entry}
       rail={rail}
@@ -70,7 +79,28 @@ const slotOf = ({ laid, id }: { readonly laid: Laid; readonly id: string }): num
   return Number.parseFloat(slot.style.width);
 };
 
-describe('RunTreeRow indent', () => {
+describe('RunTreeRow columns on a page or a checklist', () => {
+  it.each(['page', 'checklist'] as const)(
+    'keeps every %s row on one glyph slot, so role and title sit at one x at any depth',
+    (density) => {
+      const laid = laidOut({ agents: [...baseAgents, ...NESTED] });
+
+      expect(slotOf({ laid, id: 'implement', density })).toBe(RUN_TREE_SLOT_WIDTH);
+      expect(slotOf({ laid, id: 'lead', density })).toBe(RUN_TREE_SLOT_WIDTH);
+      expect(slotOf({ laid, id: 'grand', density })).toBe(RUN_TREE_SLOT_WIDTH);
+    },
+  );
+
+  it('leaves the slot the same whether the run has sub-agents or not', () => {
+    const plain = laidOut({ agents: baseAgents });
+
+    expect(slotOf({ laid: plain, id: 'implement', density: 'checklist' })).toBe(
+      RUN_TREE_SLOT_WIDTH,
+    );
+  });
+});
+
+describe('RunTreeRow indent in the rail', () => {
   it('leaves a top row where it was, with or without sub-agents in the run', () => {
     const plain = laidOut({ agents: baseAgents });
     const nested = laidOut({ agents: [...baseAgents, ...NESTED] });

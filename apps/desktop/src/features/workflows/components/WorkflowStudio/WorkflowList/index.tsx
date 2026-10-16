@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { Plus, RotateCcw } from 'lucide-react';
+import { Download, Plus, RotateCcw } from 'lucide-react';
 import type { WorkflowRunHistoryRow } from '@goodboy/db';
-import { Button, ConfirmPopover, EmptyState, ListGrid } from '@goodboy/ui';
+import { Button, ConfirmPopover, EmptyState, ListGrid, OverflowMenu } from '@goodboy/ui';
 import type { Workflow } from '@goodboy/types';
 import {
   CONCEPT_ICONS,
@@ -14,6 +14,7 @@ import {
   type RestorableBuiltin,
 } from '../../../builtinWorkflowState';
 import { workflowRunsOf } from '../../../workflowRunsOf';
+import type { ImportTriggerParams } from '../ImportPopover';
 import { WorkflowListRow } from './WorkflowListRow';
 import { WORKFLOW_LIST_COLUMNS } from './workflowListColumns';
 
@@ -23,12 +24,17 @@ type Props = {
   readonly workspaceName: string | null;
   readonly isRestoring: boolean;
   readonly runs: ReadonlyArray<WorkflowRunHistoryRow> | null;
+  readonly isHistoryFailed?: boolean;
   readonly tabs: ReactNode;
-  readonly importControl: ReactNode;
+  readonly renderImport: (params: ImportParams) => ReactNode;
   readonly onOpen: (workflow: Workflow) => void;
   readonly onShowRuns: (workflow: Workflow) => void;
   readonly onNew: () => void;
   readonly onRestore: (slugs: ReadonlyArray<string>) => Promise<void>;
+};
+
+type ImportParams = {
+  readonly renderTrigger: ((params: ImportTriggerParams) => ReactNode) | null;
 };
 
 const restoreDescription = (restorable: ReadonlyArray<RestorableBuiltin>): string => {
@@ -45,8 +51,9 @@ export const WorkflowList = ({
   workspaceName,
   isRestoring,
   runs,
+  isHistoryFailed = false,
   tabs,
-  importControl,
+  renderImport,
   onOpen,
   onShowRuns,
   onNew,
@@ -63,7 +70,6 @@ export const WorkflowList = ({
     <div className="flex min-w-0 flex-col gap-4">
       <div className="flex min-w-0 items-center gap-2">
         <div className="flex min-w-0 flex-1 items-center">{tabs}</div>
-        {importControl}
         <Button size="sm" onClick={onNew}>
           <Plus size={ICON_SIZE.row} aria-hidden />
           New workflow
@@ -82,14 +88,35 @@ export const WorkflowList = ({
               setIsConfirmingRestore(false);
             }}
             onCancel={() => setIsConfirmingRestore(false)}
-            trigger={() => (
-              <Button size="sm" variant="ghost" onClick={() => setIsConfirmingRestore(true)}>
-                <RotateCcw size={ICON_SIZE.row} aria-hidden />
-                Restore built-in workflows
-              </Button>
-            )}
+            trigger={() =>
+              renderImport({
+                renderTrigger: ({ onToggle }) => (
+                  <OverflowMenu
+                    label="More workflow actions"
+                    items={[
+                      {
+                        kind: 'item',
+                        key: 'import',
+                        label: 'Import workflows\u2026',
+                        icon: Download,
+                        onClick: onToggle,
+                      },
+                      {
+                        kind: 'item',
+                        key: 'restore',
+                        label: 'Restore built-in workflows\u2026',
+                        icon: RotateCcw,
+                        onClick: () => setIsConfirmingRestore(true),
+                      },
+                    ]}
+                  />
+                ),
+              })
+            }
           />
-        ) : null}
+        ) : (
+          renderImport({ renderTrigger: null })
+        )}
       </div>
       {workflows.length === 0 ? (
         <EmptyState
@@ -107,6 +134,7 @@ export const WorkflowList = ({
               workflow={workflow}
               builtin={builtinWorkflowState({ workflow })}
               runs={runs === null ? null : workflowRunsOf({ runs, workflowId: workflow.id })}
+              isHistoryFailed={isHistoryFailed}
               onOpen={() => onOpen(workflow)}
               onShowRuns={() => onShowRuns(workflow)}
             />

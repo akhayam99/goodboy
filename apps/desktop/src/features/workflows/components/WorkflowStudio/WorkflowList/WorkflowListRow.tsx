@@ -1,15 +1,16 @@
 import type { WorkflowRunHistoryRow } from '@goodboy/db';
 import type { Workflow } from '@goodboy/types';
-import { ROW_INTERACTIVE, StatusDot, TEXT_ROLE, cn } from '@goodboy/ui';
+import { ROW_INTERACTIVE, TEXT_ROLE, cn } from '@goodboy/ui';
 import { formatAge } from '../../../../../shared/utils/time/formatAge';
 import { useNow } from '../../../../../shared/hooks/useNow';
 import type { BuiltinWorkflowState } from '../../../builtinWorkflowState';
-import { WorkflowRoleGlyphs } from './WorkflowRoleGlyphs';
+import { WorkflowRoleNames } from './WorkflowRoleNames';
 
 type Props = {
   readonly workflow: Workflow;
   readonly builtin: BuiltinWorkflowState;
   readonly runs: ReadonlyArray<WorkflowRunHistoryRow> | null;
+  readonly isHistoryFailed: boolean;
   readonly onOpen: () => void;
   readonly onShowRuns: () => void;
 };
@@ -45,11 +46,26 @@ const ROW_BUTTON = cn(
 
 const END_CELL = 'min-w-0 truncate justify-self-end text-right tabular-nums';
 
-export const WorkflowListRow = ({ workflow, builtin, runs, onOpen, onShowRuns }: Props) => {
+export const WorkflowListRow = ({
+  workflow,
+  builtin,
+  runs,
+  isHistoryFailed,
+  onOpen,
+  onShowRuns,
+}: Props) => {
   const now = useNow(30_000);
   const steps = workflow.steps.filter((step) => step.deletedAt == null).length;
   const latest = runs?.[0];
   const lastRun = latest === undefined ? '' : formatAge({ from: latest.createdAt, now });
+  const runsWord =
+    runs === null
+      ? isHistoryFailed
+        ? 'Runs'
+        : null
+      : runs.length === 0
+        ? 'No runs'
+        : countOf({ count: runs.length, noun: 'run' });
   return (
     <li className="col-span-full grid grid-cols-subgrid">
       <button
@@ -57,40 +73,36 @@ export const WorkflowListRow = ({ workflow, builtin, runs, onOpen, onShowRuns }:
         data-list-grid-row=""
         onClick={onOpen}
         aria-label={`Open ${workflow.name}`}
-        className={cn('col-start-1 col-end-[-4]', ROW_BUTTON)}
+        className={cn('col-start-1 col-end-[-3]', ROW_BUTTON)}
       >
         <span className={cn('col-start-2 min-w-0 truncate text-row', TEXT_ROLE.label)}>
           {workflow.name}
         </span>
-        <span className={cn('flex min-w-0 items-center gap-2', TEXT_ROLE.secondary)}>
-          {builtin === 'custom' ? null : (
-            <>
-              {builtin === 'edited' ? <StatusDot tone="warning" size="sm" /> : null}
-              <span className={cn('truncate', builtin === 'edited' ? '' : TEXT_ROLE.hint)}>
-                {builtin === 'edited' ? 'Edited' : 'Built in'}
-              </span>
-            </>
-          )}
+        <span className={cn('min-w-0 truncate', TEXT_ROLE.hint)}>
+          {builtin === 'custom' ? '' : builtin === 'edited' ? 'Edited' : 'Built in'}
         </span>
-        <WorkflowRoleGlyphs workflow={workflow} />
+        <WorkflowRoleNames workflow={workflow} />
         <span className={cn(END_CELL, TEXT_ROLE.secondary)}>
           {countOf({ count: steps, noun: 'step' })}
         </span>
+        <span className={cn(END_CELL, TEXT_ROLE.hint)}>{lastRun}</span>
       </button>
-      <button
-        type="button"
-        data-list-grid-row=""
-        onClick={onShowRuns}
-        aria-label={runsLabelOf({ name: workflow.name, runs, lastRun })}
-        className={cn('col-start-[-4] col-end-[-1]', ROW_BUTTON)}
-      >
-        <span className={cn(END_CELL, TEXT_ROLE.hint)}>
-          {runs !== null && runs.length === 0 ? 'No runs' : lastRun}
-        </span>
-        <span className={cn(END_CELL, TEXT_ROLE.secondary)}>
-          {runs === null || runs.length === 0 ? '' : countOf({ count: runs.length, noun: 'run' })}
-        </span>
-      </button>
+      <span className="col-start-[-3] col-end-[-1] flex h-8 min-w-0 items-center justify-end">
+        {runsWord === null ? null : (
+          <button
+            type="button"
+            onClick={onShowRuns}
+            aria-label={runsLabelOf({ name: workflow.name, runs, lastRun })}
+            className={cn(
+              'min-w-0 truncate rounded-md px-1 text-right tabular-nums underline decoration-border underline-offset-2',
+              ROW_INTERACTIVE,
+              TEXT_ROLE.secondary,
+            )}
+          >
+            {runsWord}
+          </button>
+        )}
+      </span>
     </li>
   );
 };

@@ -1,9 +1,10 @@
-import { SquareArrowOutUpRight, X } from 'lucide-react';
-import { GhostActionButton, IconButton, PANE_RHYTHM, cn } from '@goodboy/ui';
+import { ScrollText, SquareArrowOutUpRight, X } from 'lucide-react';
+import { IconButton, OverflowMenu, PANE_RHYTHM, cn } from '@goodboy/ui';
 import type { AgentId, SessionId, WorkflowRunId } from '@goodboy/types';
 import { agentPlace, EMPTY_ARRAY, useAppStore } from '../../../store';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { decisionEntries } from '../../workflows/decisionEntries';
 import { ORCHESTRATED_COPY } from '../../workflows/orchestratedCopy';
 import { agentKindPalette, classifyAgent, resolveRootAgent } from '../agent-kind';
 import { stepHeadingOf } from './PresetRun/stepHeadingOf';
@@ -24,6 +25,7 @@ export const RunStepDrawer = ({ sessionId, runId, agentId, onClose }: Props) => 
   const kindOverride = useAppStore((state) => state.agentKindOverride);
   const isActive = useAppStore((state) => state.currentSessionId === sessionId);
   const navigate = useAppStore((state) => state.navigate);
+  const openDrawer = useAppStore((state) => state.openDrawer);
   const agent = agents.find((candidate) => candidate.id === agentId) ?? null;
   const run = session?.workflowRuns.find((candidate) => candidate.id === runId) ?? null;
   const workflow = workflows.find((candidate) => candidate.id === run?.workflowId) ?? null;
@@ -37,7 +39,7 @@ export const RunStepDrawer = ({ sessionId, runId, agentId, onClose }: Props) => 
     />
   );
 
-  if (session === null || agent === null || workflow === null) {
+  if (session === null || agent === null || run === null || workflow === null) {
     return (
       <section
         aria-label={ORCHESTRATED_COPY.stepPane}
@@ -51,8 +53,10 @@ export const RunStepDrawer = ({ sessionId, runId, agentId, onClose }: Props) => 
   }
 
   const stepAgent = resolveRootAgent({ agents, agentId: agent.id });
-  const reason =
+  const latest = decisionEntries({ run, steps: workflow.steps }).decisions[0] ?? null;
+  const ownReason =
     workflow.steps.find((step) => step.id === stepAgent?.stepId)?.orchestratorReason?.trim() ?? '';
+  const reason = latest !== null && latest.stepId === stepAgent?.stepId ? '' : ownReason;
   const role = agentKindPalette({
     kind: classifyAgent({ agent, override: kindOverride[agent.id] ?? null }),
   }).label;
@@ -80,13 +84,27 @@ export const RunStepDrawer = ({ sessionId, runId, agentId, onClose }: Props) => 
           heading: <RunStepHeading agent={agent} stepAgent={stepAgent} workflow={workflow} />,
           actions: (
             <>
-              <GhostActionButton
-                icon={SquareArrowOutUpRight}
-                label="Open full"
-                onClick={() => {
-                  onClose();
-                  navigate({ to: agentPlace({ sessionId, agentId }) });
-                }}
+              <OverflowMenu
+                items={[
+                  {
+                    kind: 'item',
+                    key: 'transcript',
+                    label: 'View transcript',
+                    icon: ScrollText,
+                    onClick: () =>
+                      openDrawer({ kind: 'transcript', sessionId, payload: { agentId } }),
+                  },
+                  {
+                    kind: 'item',
+                    key: 'open-full',
+                    label: 'Open full',
+                    icon: SquareArrowOutUpRight,
+                    onClick: () => {
+                      onClose();
+                      navigate({ to: agentPlace({ sessionId, agentId }) });
+                    },
+                  },
+                ]}
               />
               {close}
             </>

@@ -145,19 +145,19 @@ describe('runTailOf', () => {
     });
   });
 
-  it('ends a finished or a stopped run on Add step', () => {
+  it('ends a finished or a stopped run without a verb, the rail Add step is its home', () => {
     expect(tailOf({ isCompleted: true })).toMatchObject({
       phrase: 'Run finished',
-      verb: { kind: 'addStep' },
+      verb: null,
     });
     expect(
       tailOf({ run: aWorkflowRun({ orchestrationStop: { kind: 'closed', message: 'Closed' } }) }),
-    ).toMatchObject({ phrase: 'Stopped by you', verb: { kind: 'addStep' } });
+    ).toMatchObject({ phrase: 'Stopped by you', verb: null });
   });
 
-  it('carries no verb on an archived run, whose Restore is in the header', () => {
+  it('draws no tail on an archived run, whose Restore is in the header', () => {
     expect(
       tailOf({ run: aWorkflowRun({ discardedAt: JSON.parse('"2026-10-16T10:00:00.000Z"') }) }),
-    ).toMatchObject({ phrase: 'Archived run', verb: null });
+    ).toBeNull();
   });
 });

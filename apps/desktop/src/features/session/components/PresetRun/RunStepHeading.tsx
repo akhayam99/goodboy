@@ -15,7 +15,7 @@ export const RunStepHeading = ({ agent, stepAgent, workflow }: Props) => {
   const kind = classifyAgent({ agent, override: kindOverride });
   const role = agentKindPalette({ kind }).label;
   return (
-    <span data-run-step-heading="" className="flex min-w-0 items-center gap-2">
+    <span data-run-step-heading="" className="flex min-w-32 items-center gap-2">
       <AgentKindChip kind={kind} density="glyph" isDecorative />
       <span className="min-w-0 truncate">
         {stepHeadingOf({ agent, stepAgent, workflow, role })}

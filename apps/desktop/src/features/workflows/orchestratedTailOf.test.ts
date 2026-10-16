@@ -5,7 +5,7 @@ import type {
   OrchestratorPhase,
   OrchestratorState,
 } from './components/OrchestratorStrip/orchestratorState';
-import { orchestratedTailOf } from './orchestratedTailOf';
+import { orchestratedTailOf, type OrchestratedTail } from './orchestratedTailOf';
 import type { RunPrimary } from './runPrimaryOf';
 
 const STARTED: IsoDateTime = JSON.parse('"2026-10-16T15:09:30.000Z"');
@@ -63,15 +63,28 @@ type TailParams = {
   readonly queuedCount?: number;
 };
 
+type DrawnParams = {
+  readonly tail: OrchestratedTail | null;
+};
+
+const drawn = ({ tail }: DrawnParams): OrchestratedTail => {
+  if (tail === null) {
+    throw new Error('expected a tail');
+  }
+  return tail;
+};
+
 const tailOf = ({ orchestrator, agents = [DONE], primary = null, queuedCount = 0 }: TailParams) =>
-  orchestratedTailOf({
-    orchestrator,
-    agents,
-    primary,
-    queuedCount,
-    isDiscarded: false,
-    quiet: null,
-    restartStoppedCount: 0,
+  drawn({
+    tail: orchestratedTailOf({
+      orchestrator,
+      agents,
+      primary,
+      queuedCount,
+      isDiscarded: false,
+      quiet: null,
+      restartStoppedCount: 0,
+    }),
   });
 
 describe('orchestratedTailOf', () => {
@@ -80,8 +93,8 @@ describe('orchestratedTailOf', () => {
       orchestrator: stateOf({ phase: 'paused', sentence: 'Paused by you' }),
       primary: { kind: 'resume', label: 'Resume' },
     });
-    expect(tail.phrase).toBe('Paused by you');
-    expect(tail.verbs).toEqual([]);
+    expect(tail?.phrase).toBe('Paused by you');
+    expect(tail?.verbs).toEqual([]);
   });
 
   it('waits on the running step with Stop step N and its clock', () => {
@@ -95,7 +108,7 @@ describe('orchestratedTailOf', () => {
     });
     expect(tail.state).toBe('waiting');
     expect(tail.startedAt).toBe(STARTED);
-    expect(tail.verbs).toEqual([{ kind: 'stopStep', agent: RUNNING, number: 2 }]);
+    expect(tail?.verbs).toEqual([{ kind: 'stopStep', agent: RUNNING, number: 2 }]);
   });
 
   it('continues a step that was stopped', () => {
@@ -105,7 +118,7 @@ describe('orchestratedTailOf', () => {
       agents: [DONE, stopped],
     });
     expect(tail.state).toBe('stopped');
-    expect(tail.verbs).toEqual([{ kind: 'continueStep', agentId: stopped.id }]);
+    expect(tail?.verbs).toEqual([{ kind: 'continueStep', agentId: stopped.id }]);
   });
 
   it('is working with no verb while the orchestrator decides', () => {
@@ -121,7 +134,7 @@ describe('orchestratedTailOf', () => {
       primary: DECIDE,
     });
     expect(tail.state).toBe('idle');
-    expect(tail.verbs).toEqual([{ kind: 'primary', primary: DECIDE }]);
+    expect(tail?.verbs).toEqual([{ kind: 'primary', primary: DECIDE }]);
   });
 
   it('says why the last decision failed and offers Retry and View transcript', () => {
@@ -134,8 +147,8 @@ describe('orchestratedTailOf', () => {
       primary: RETRY,
     });
     expect(tail.state).toBe('failed');
-    expect(tail.phrase).toBe('Last decision failed: the orchestrator returned no step.');
-    expect(tail.verbs).toEqual([
+    expect(tail?.phrase).toBe('Last decision failed: the orchestrator returned no step.');
+    expect(tail?.verbs).toEqual([
       { kind: 'primary', primary: RETRY },
       { kind: 'viewTranscript', agentId: DONE.id },
     ]);
@@ -145,7 +158,7 @@ describe('orchestratedTailOf', () => {
     const tail = tailOf({
       orchestrator: stateOf({ phase: 'step-failed', sentence: 'Paused on failed step 1' }),
     });
-    expect(tail.verbs).toEqual([{ kind: 'restartStep' }]);
+    expect(tail?.verbs).toEqual([{ kind: 'restartStep' }]);
   });
 
   it('reads the queued hints on a finished run, and resumes with them after Stop step', () => {
@@ -179,8 +192,8 @@ describe('orchestratedTailOf', () => {
       quiet: { agentId: RUNNING.id, minutes: 6 },
       restartStoppedCount: 0,
     });
-    expect(tail.phrase).toBe('No output for 6 min');
-    expect(tail.verbs).toEqual([{ kind: 'quiet', agentId: RUNNING.id }]);
+    expect(tail?.phrase).toBe('No output for 6 min');
+    expect(tail?.verbs).toEqual([{ kind: 'quiet', agentId: RUNNING.id }]);
   });
 
   it('resumes the agents a restart stopped', () => {
@@ -193,11 +206,29 @@ describe('orchestratedTailOf', () => {
       quiet: null,
       restartStoppedCount: 2,
     });
-    expect(tail.phrase).toBe('2 agents stopped when Goodboy closed');
-    expect(tail.verbs).toEqual([{ kind: 'resumeAll', count: 2 }]);
+    expect(tail?.phrase).toBe('2 agents stopped when Goodboy closed');
+    expect(tail?.verbs).toEqual([{ kind: 'resumeAll', count: 2 }]);
   });
 
-  it('reads Archived run with no verb', () => {
+  it('names the model in a failed decision, never its raw id', () => {
+    const tail = orchestratedTailOf({
+      orchestrator: stateOf({
+        phase: 'failed',
+        sentence: 'Last decision failed',
+        detail: 'usage limit reached (anthropic/haiku-4.5)',
+      }),
+      agents: [DONE],
+      primary: null,
+      queuedCount: 0,
+      isDiscarded: false,
+      quiet: null,
+      restartStoppedCount: 0,
+    });
+    expect(tail?.phrase).not.toContain('anthropic/');
+    expect(tail?.phrase.startsWith('Last decision failed: usage limit reached (')).toBe(true);
+  });
+
+  it('draws no tail on an archived run', () => {
     const tail = orchestratedTailOf({
       orchestrator: stateOf({ phase: 'waiting', sentence: 'Waiting' }),
       agents: [DONE],
@@ -207,6 +238,6 @@ describe('orchestratedTailOf', () => {
       quiet: null,
       restartStoppedCount: 0,
     });
-    expect(tail).toEqual({ state: 'idle', phrase: 'Archived run', startedAt: null, verbs: [] });
+    expect(tail).toBeNull();
   });
 });

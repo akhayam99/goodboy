@@ -46,7 +46,7 @@ describe('the u21 run tree scenes', () => {
     renderScene('workflow-run-finished-sets');
 
     const folds = await screen.findAllByRole('button', {
-      name: /^3 scouts · done · \d+m · \$0\.09, expand$/,
+      name: /^3 scouts · done, expand$/,
     });
     const fold = folds[1]!;
 

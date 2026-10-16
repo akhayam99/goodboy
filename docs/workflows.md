@@ -102,8 +102,11 @@ later generated title never replaces it, and the preset keeps its own name.
 
 A workflow you are still building stays there when you switch sessions. It
 goes away once you create it or discard it. **Workflow Studio** is where you
-keep presets. Its home is one list: **New workflow**, **Import**, and a menu to
-restore the built-in workflows. **Import** lists the custom presets of every
+keep presets. Its home is one list: **New workflow**, then a page `⋯` with
+**Import workflows…** and **Restore built-in workflows…** (with nothing to
+restore, **Import** stays a plain button). Each row opens its workflow; its
+last cell is a link, "3 runs" or "No runs", that opens the runs pane. The role
+column names the roles in gray ("Scout, Implementer +1"). **Import** lists the custom presets of every
 other workspace, grouped by workspace, and copies all the checked ones at once.
 A copy whose name is taken here gets its workspace name added, for example
 `Settlement replay (Northwind)`. Built-in rows say **Built in**, and **Edited** once you change them.
@@ -269,11 +272,13 @@ with **Orchestrated** selected and the center is one document
 (`OrchestratedRunPage`, in `features/session/components/OrchestratedRun`),
 read top to bottom at the conversation measure:
 
-- **Header.** The run title and the run `⋯`, nothing else while the run lives.
-  The right click on the title lists the same items. An archived run shows
+- **Header.** The run title, **Pause run** (or **Resume run**) and **Stop run**
+  while the run lives, then the run `⋯`. The header stays fixed above the
+  scroll, the composer docks below it. The right click on the title lists the
+  same items. Autonomy is not in this menu: the facts line holds it. An archived run shows
   **Restore** and reads dimmed, with no composer.
 - **Goal** (`OrchestratedGoal`). The goal as prose, then one gray facts line
-  (`OrchestratedFacts`): "Balanced · Can use Claude, Codex · Limit
+  (`OrchestratedFacts`): "Autonomy Balanced · Can use Claude, Codex · Limit
   $3.00 · $1.12 spent", and the time left while the run lives
   (`useRunTimeLeft`). The autonomy word is today's run autonomy menu
   (`OrchestratedAutonomyMenu`: Ask me, Balanced, Autopilot, each hint in its
@@ -286,7 +291,9 @@ read top to bottom at the conversation measure:
 - **Plan and progress** (`OrchestratedChecklist`). One checklist: the decided
   steps in execution order on the run step tree (`RunTree` with density
   `checklist`: state glyph on the tracks, "Step 3", role glyph and word, title,
-  duration), sub agents under their step on today's tracks, a gray row "Your
+  duration). The glyph slot is fixed at two levels (`RUN_TREE_SLOT_WIDTH`), so
+  sub agents keep their role and title at their step's x and nesting shows only
+  on the tracks and in the "3.1" label; a gray row "Your
   hint, read at step 4" before the step whose decision read it, a dashed row
   "Next step, not decided yet" while the orchestrator chooses, then the recap's
   **Left** items as dashed rows, so the plan and the progress are one list
@@ -296,28 +303,33 @@ read top to bottom at the conversation measure:
   the same role column as the decided steps; a plain string entry leaves the
   column empty. A row opens the step in the pane (drawer kind
   `run-step`, `RunStepDrawer`): the step conversation (`AgentDetailPane`,
-  pinned to that agent) under the reason the orchestrator gave for it, with
-  **View transcript** and **Open full**. The page keeps the one composer; you
+  pinned to that agent) under the reason the orchestrator gave for it when that
+  reason is not the latest decision (the latest sits under the tail), with
+  **View transcript** and **Open full** in its `⋯`. The page keeps the one composer; you
   talk to the step from **Open full**.
 - **Tail** (`OrchestratedTail`, phrases and verbs in `orchestratedTailOf`).
   The thinking line speaks the phase of `resolveOrchestratorState` once, at the
-  end of the content: "Waiting on step 3 · ..." with its clock and **Stop step
+  end of the content, after the result: "Waiting on step 3 · Tester" with its clock and **Stop step
   3** (asks first, `stopWorkflowRunNow`), "Choosing the next step", "Waiting
-  for your go" with **Decide next step**, "Paused at the spend cap" with
-  **Raise spend cap**, "Last decision failed: ..." with **Retry** and **View
+  for your go" with **Decide next step**, "Waiting for your answer on step 4"
+  with **Answer**, "Paused at the limit" with
+  **Raise limit**, "Last decision failed: ..." (model ids read as display
+  names, `modelNamesIn`) with **Retry** and **View
   transcript**, a failed step with **Restart step**, a stopped step with
   **Continue step**, "No output for 15 min" with **Ask it to continue**, agents
-  a restart stopped with **Resume**, "Run complete · 4 steps · $1.21" on a
-  finished run. Queued hints on a finished run add **Read 2 queued**; after
+  a restart stopped with **Resume**, "Run complete" on a
+  finished run. An archived run has no tail. Queued hints on a finished run add **Read 2 queued**; after
   **Stop step** the verb is **Resume and read 2 queued**. Under the line, one
-  gray line gives the latest decision's reason ("Why: ..."); older reasons sit
-  at the top of each step's pane. The verbs of `runPrimaryOf` go through
+  gray line gives the latest decision's reason ("Why: ..."), hidden while the
+  run is failed; older reasons sit at the top of each step's pane. While the
+  plan pane is open, **Review plan** on the tail goes quiet. The verbs of `runPrimaryOf` go through
   today's `RunPrimaryAction`, so their gates and confirms are the same.
 - **Result** (`OrchestratedResult`), on a finished run: the closing reason,
   the recap's **Done** and **Left** lists, **Create report**, **Create
   wireframe** and **Add step**. A live run offers **Add step** under the tail
   (not while the orchestrator decides).
-- **Composer** (`OrchestratedComposer`), docked: "Hint the orchestrator".
+- **Composer** (`OrchestratedComposer`), docked: "Hint the orchestrator", gone
+  once the run is complete. A queued hint shows its first line and "+2 lines".
   Waiting hints sit above it under one line, **Waits for the next decision**,
   each row with **Remove**; a row being read says **Reading now** with
   **Remove** disabled. Enter queues,
@@ -380,8 +392,10 @@ agents are never stopped by it.
 The Runs page (`WorkflowsPane`) lists the session's preset runs on one
 `ListGrid` (`RunsGrid`, columns in `runsGridColumns.ts`): state dot, title,
 state word, progress ("Step 2 of 3", "3 steps" once all ran), cost and age, every row
-the same columns. Groups: **In progress**, **Finished** (the first 30, then
-**Show 12 earlier**), **Archived** folded behind **Show**. A row is the button
+the same columns. The state word shows only when it needs reading ("Plan ready",
+"Paused at the limit", "Failed", "After ..."); Running, Done, Archived and
+Waits to start are the dot alone, named in its tooltip (`isWordRead`). Groups:
+**In progress**, **Finished** (the first 30, then **Show all**), **Archived** folded behind **Show**. A row is the button
 and carries no action; an archived run is restored from its page. The state
 word and the dot come from `runRowFactsOf`, the same function the run level's
 identity row reads. The header holds **Start run**; a session with no run shows
@@ -389,7 +403,8 @@ today's start card. Opening a preset run drills into its run level.
 
 The Orchestrated page (`OrchestratedPane`, lens `orchestrated`, ⌘⌥W pressed
 again) lists the orchestrated runs on the same `RunsGrid`, its counts on the
-group rows (In progress, Finished, Archived) and none under the title. With none it says
+group rows (In progress, Finished, Archived) and none under the title. With
+rows, the header holds **Orchestrate**. With none it says
 "No orchestrated runs yet. The orchestrator picks each next step from your
 goal." with **Orchestrate**, which opens the launch form on its orchestrated
 mode (`OrchestrateStart`). Opening a row shows
@@ -419,11 +434,12 @@ and the center shows the selected entry (`PresetRunPage`, in
   own thinking line speaks), else "Step 2 · Implementer is working" with **Open
   step 2**, "No output for 15 min" with **Ask it to continue**, the open
   question with **Answer**, a failed or stuck step with **Restart step**, "Paused
-  at the spend cap" with **Raise spend cap**, then the `runPrimaryOf` verb with
+  at the limit" with **Raise limit** (a step that never started also reads "Not
+  started, the run paused at the limit."), then the `runPrimaryOf` verb with
   today's gates (`StartStepPrimary` and its Start anyway confirm,
   `WorkflowRunStartButton`, **Review plan**, **Approve plan**, **Resume**),
   a stopped step with **Continue step**, "Run finished" or "Stopped by you"
-  with **Add step**. While the run lives the header holds only **Pause run**
+  with no verb (the rail **Add step** is its home). An archived run has no tail. While the run lives the header holds only **Pause run**
   (or **Resume run** once paused, in the same place) and **Stop run** (asks
   first, `RunLiveVerbs`) as words; every other verb
   is on the tail or in the menu.
@@ -502,9 +518,9 @@ room. Clicking a row opens that agent.
 A set of sub-agents, the children of one agent, folds into one row under its
 parent when every one of them is settled and none has an open question,
 whatever the state of the parent. The row says what the set holds, for example
-`3 scouts · done · 2m · $0.09`: the role when all of them share one,
-`subagents` otherwise, the work time of the set (time spent waiting on you is
-not counted) and what it spent. A set with a running, queued, waiting, failed
+`3 scouts · done`: the role when all of them share one, `subagents`
+otherwise, and the state; the chevron sits right after the text. Time and
+cost stay on the rows and in the step pane. A set with a running, queued, waiting, failed
 or asking agent stays open and has no fold row, and a new or restarted
 sub-agent opens a folded set again. The fold follows the activity feed: a set
 already settled when the page opens starts folded, a set you watched settle

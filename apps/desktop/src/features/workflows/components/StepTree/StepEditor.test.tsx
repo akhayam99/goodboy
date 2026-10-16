@@ -170,7 +170,7 @@ describe('StepEditor', () => {
     const handlers = callbacks();
     renderHost(handlers);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Step actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More options' }));
     expect(screen.getByRole('menuitem', { name: 'Move up' }).hasAttribute('disabled')).toBe(true);
     fireEvent.click(screen.getByRole('menuitem', { name: 'Move down' }));
 
@@ -180,7 +180,7 @@ describe('StepEditor', () => {
   it('deletes the step at once and puts it back in place with Undo', async () => {
     renderHost(callbacks());
 
-    fireEvent.click(screen.getByRole('button', { name: 'Step actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More options' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Delete step' }));
     expect(names()).toEqual(['Plan the retries']);
 

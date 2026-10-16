@@ -22,7 +22,7 @@ export const RunLevelFoot = ({ sessionId, run }: Props) => {
   return (
     <div
       data-run-level-foot=""
-      className="flex h-8 shrink-0 items-center gap-1 px-3 text-ui text-muted-foreground"
+      className="flex h-8 shrink-0 items-center gap-2 px-4 text-ui text-muted-foreground"
     >
       {isArchived ? null : <RunSpendLimitPopover sessionId={sessionId} run={run} variant="foot" />}
       {isArchived || !hasSpent ? null : (

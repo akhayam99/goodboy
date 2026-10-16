@@ -37,12 +37,13 @@ export const OrchestratedAutonomyMenu = ({ sessionId, run }: Props) => {
           aria-label={`${RUN_AUTONOMY_HEADER}: ${current.label}`}
           onClick={dropdown.toggle}
           className={cn(
-            'inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-muted-foreground',
+            'inline-flex items-center gap-1 rounded-md py-0.5 text-muted-foreground',
             ROW_INTERACTIVE,
             dropdown.open && 'bg-selected text-foreground',
           )}
         >
-          {current.label}
+          <span className="text-faint-foreground">{RUN_AUTONOMY_HEADER}</span>
+          <span className="text-foreground">{current.label}</span>
           <ChevronDown size={ICON_SIZE.row} aria-hidden className="shrink-0" />
         </button>
       }

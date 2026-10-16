@@ -1,5 +1,4 @@
 import { isAgentStatusHalted, isAgentStatusSettled } from '@goodboy/core';
-import { formatUsd } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
 import type {
   Agent,
@@ -11,7 +10,14 @@ import type {
 import { isRunHeldForPlan } from '../../../../store/slices/workflows/workflowPlanApproval';
 import { ORCHESTRATOR_DECIDING_SENTENCE } from '../../orchestratorCopy';
 import { isRunPaused } from '../../isRunPaused';
-import { resolveRootAgent } from '../../../session/agent-kind';
+import { AGENT_KIND_META, classifyAgent, resolveRootAgent } from '../../../session/agent-kind';
+
+type RoleParams = {
+  readonly agent: Agent;
+};
+
+const roleOf = ({ agent }: RoleParams): string =>
+  AGENT_KIND_META[classifyAgent({ agent, override: null })].noun;
 
 export type OrchestratorPhase =
   | 'deciding'
@@ -54,7 +60,7 @@ type Params = {
   readonly isOrchestrating: boolean;
   readonly hasOpenQuestions: boolean;
   readonly question?: Pick<OpenQuestion, 'createdByAgentId'> | null;
-  readonly costUsd: number;
+  readonly costUsd?: number;
   readonly plan?: PlanSignal;
 };
 
@@ -65,13 +71,13 @@ type StopPresentation = {
   readonly showsMessage: boolean;
 };
 
-const PAUSED_FOR_ANSWER = 'Paused for your answer';
+const PAUSED_FOR_ANSWER = 'Waiting for your answer';
 
 const STOP_PRESENTATION: Record<WorkflowOrchestrationStopKind, StopPresentation> = {
   budget: {
     phase: 'paused-budget',
     tone: 'warning',
-    sentence: 'Paused at the spend cap',
+    sentence: 'Paused at the limit',
     showsMessage: false,
   },
   failure: {
@@ -182,7 +188,6 @@ export const resolveOrchestratorState = ({
   isOrchestrating,
   hasOpenQuestions,
   question = null,
-  costUsd,
   plan = NO_PLAN_SIGNAL,
 }: Params): OrchestratorState => {
   const ordered = [...agents].sort((left, right) => left.ordinal - right.ordinal);
@@ -217,22 +222,15 @@ export const resolveOrchestratorState = ({
     };
   }
   if (run.orchestrationStop?.kind === 'closed') {
-    const steps = `${ordered.length} ${ordered.length === 1 ? 'step' : 'steps'}`;
     return {
       ...base,
       phase: STOP_PRESENTATION.closed.phase,
       tone: STOP_PRESENTATION.closed.tone,
-      sentence: `${STOP_PRESENTATION.closed.sentence} · ${steps} · ${formatUsd(costUsd)}`,
+      sentence: STOP_PRESENTATION.closed.sentence,
     };
   }
   if (run.orchestrationOutcome === 'done') {
-    const steps = `${ordered.length} ${ordered.length === 1 ? 'step' : 'steps'}`;
-    return {
-      ...base,
-      phase: 'done',
-      tone: 'success',
-      sentence: `Run complete · ${steps} · ${formatUsd(costUsd)}`,
-    };
+    return { ...base, phase: 'done', tone: 'success', sentence: 'Run complete' };
   }
   if (run.orchestrationOutcome === 'blocked') {
     return {
@@ -266,9 +264,7 @@ export const resolveOrchestratorState = ({
       phase: 'needs-answer',
       tone: 'warning',
       sentence:
-        asker === null
-          ? PAUSED_FOR_ANSWER
-          : `${PAUSED_FOR_ANSWER} · step ${asker.stepNumber} · ${asker.agent.name}`,
+        asker === null ? PAUSED_FOR_ANSWER : `Waiting for your answer on step ${asker.stepNumber}`,
       waitingOnAgentId: asker?.agent.status === 'running' ? asker.agent.id : null,
     };
   }
@@ -292,7 +288,7 @@ export const resolveOrchestratorState = ({
       ...base,
       phase: 'waiting',
       tone: 'neutral',
-      sentence: `Waiting on step ${runningIndex + 1} · ${agent.name}`,
+      sentence: `Waiting on step ${runningIndex + 1} · ${roleOf({ agent })}`,
       waitingOnAgentId: agent.id,
     };
   }
@@ -314,7 +310,7 @@ export const resolveOrchestratorState = ({
       ...base,
       phase: 'waiting',
       tone: 'neutral',
-      sentence: `Step ${stoppedIndex + 1} stopped ${by} · ${agent.name}`,
+      sentence: `Step ${stoppedIndex + 1} stopped ${by} · ${roleOf({ agent })}`,
     };
   }
   const pendingIndex = ordered.findIndex((agent) => agent.status === 'pending');
@@ -324,7 +320,7 @@ export const resolveOrchestratorState = ({
       ...base,
       phase: 'waiting',
       tone: 'neutral',
-      sentence: `Waiting on step ${pendingIndex + 1} · ${agent.name}`,
+      sentence: `Waiting on step ${pendingIndex + 1} · ${roleOf({ agent })}`,
     };
   }
   if (run.autoRun) {

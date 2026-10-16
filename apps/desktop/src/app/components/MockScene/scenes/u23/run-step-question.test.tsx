@@ -56,9 +56,7 @@ describe('the run step question scene', () => {
     if (tail === null) {
       throw new Error('no orchestrated tail');
     }
-    expect(tail.textContent).toContain(
-      'Paused for your answer · step 4 · Record the attempts on each delivery in notify-relay',
-    );
+    expect(tail.textContent).toContain('Waiting for your answer on step 4');
     expect(tail.textContent).not.toContain('Waiting on step');
     expect(within(tail).getByRole('button', { name: 'Answer' })).toBeDefined();
     expect(screen.getAllByRole('button', { name: 'Answer' })).toHaveLength(1);

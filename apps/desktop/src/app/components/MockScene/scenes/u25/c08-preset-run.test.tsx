@@ -150,19 +150,20 @@ describe('the c08 preset run scenes', () => {
     expect(within(tail()).getByRole('button', { name: 'Approve plan' })).toBeDefined();
   });
 
-  it('c08-run-capped offers to raise the cap on the tail and shows the foot', async () => {
+  it('c08-run-capped offers to raise the limit on the tail and shows the foot', async () => {
     await mount('c08-run-capped');
 
-    expect(within(tail()).getByText('Paused at the spend cap')).toBeDefined();
-    expect(within(tail()).getByRole('button', { name: 'Raise spend cap' })).toBeDefined();
+    expect(within(tail()).getByText('Paused at the limit')).toBeDefined();
+    expect(within(tail()).getByRole('button', { name: 'Raise limit' })).toBeDefined();
     expect(within(runLevel()).getByText('$3.00 spent')).toBeDefined();
   });
 
-  it('c08-run-done offers report, wireframe and Add step', async () => {
+  it('c08-run-done offers report and wireframe, and leaves Add step to the rail', async () => {
     await mount('c08-run-done');
 
     expect(within(tail()).getByText('Run finished')).toBeDefined();
-    expect(within(tail()).getByRole('button', { name: 'Add step' })).toBeDefined();
+    expect(within(tail()).queryByRole('button')).toBeNull();
+    expect(within(runLevel()).getByText('Add step')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Create report' })).toBeDefined();
     expect(screen.getByRole('button', { name: /^Create wireframe/ })).toBeDefined();
   });
@@ -172,7 +173,7 @@ describe('the c08 preset run scenes', () => {
 
     expect(screen.getByRole('button', { name: 'Restore' })).toBeDefined();
     expect(within(runLevel()).queryByText('Add step')).toBeNull();
-    expect(within(tail()).getByText('Archived run')).toBeDefined();
+    expect(document.querySelector('[data-run-tail]')).toBeNull();
   });
 
   it('c08-run-menu opens the run actions with Autonomy and Skip step 2, Pause and Stop in the header', async () => {
@@ -200,7 +201,7 @@ describe('the c08 preset run scenes', () => {
     }
     expect(within(rail).getByRole('button', { name: 'Back to Runs' })).toBeDefined();
     expect(within(rail).getByRole('button', { name: 'Overview' })).toBeDefined();
-    expect(within(rail).getByRole('button', { name: 'Step 2, Implementer' })).toBeDefined();
+    expect(within(rail).getByRole('button', { name: /^Step 2, Implementer, / })).toBeDefined();
   });
 
   it('c08-run-add-step opens the step draft in the center', async () => {

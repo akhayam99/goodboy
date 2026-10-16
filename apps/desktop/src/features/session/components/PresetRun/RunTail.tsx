@@ -67,8 +67,25 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
   if (tail === null) {
     return null;
   }
+  const selectedRoot =
+    selectedRootId === null
+      ? null
+      : (advance.runAgents.find((agent) => agent.id === selectedRootId) ?? null);
+  const isNotStarted =
+    selectedRoot !== null &&
+    selectedRoot.status === 'pending' &&
+    run.orchestrationStop?.kind === 'budget';
   return (
-    <section aria-label="Run state" data-run-tail={tail.verb?.kind ?? 'none'}>
+    <section
+      aria-label="Run state"
+      data-run-tail={tail.verb?.kind ?? 'none'}
+      className="flex min-w-0 flex-col gap-2"
+    >
+      {isNotStarted ? (
+        <p data-run-step-not-started="" className="text-ui text-muted-foreground">
+          Not started, the run paused at the limit.
+        </p>
+      ) : null}
       <TailLine
         facts={{ state: tail.state, phrase: tail.phrase, startedAt: tail.startedAt, actions: [] }}
         onAction={() => undefined}

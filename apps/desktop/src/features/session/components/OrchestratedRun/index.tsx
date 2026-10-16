@@ -31,9 +31,10 @@ export const OrchestratedRunPage = ({ session, run, workflow }: Props) => {
     anchorKey: `workflow-run-title:${run.id}`,
     viewing: { kind: 'workflowRun', id: run.id },
   });
-  const composer = view.isDiscarded ? null : (
-    <OrchestratedComposer sessionId={sessionId} run={run} agents={view.agents} />
-  );
+  const composer =
+    view.isDiscarded || isDone ? null : (
+      <OrchestratedComposer sessionId={sessionId} run={run} agents={view.agents} />
+    );
 
   return (
     <RunWorkTime sessionId={sessionId} workspaceId={session.workspaceId}>
@@ -50,11 +51,17 @@ export const OrchestratedRunPage = ({ session, run, workflow }: Props) => {
               </span>
             }
             actions={
-              <RunPageActions session={session} view={view} stepAgentId={runningStep?.id ?? null} />
+              <RunPageActions
+                session={session}
+                view={view}
+                stepAgentId={runningStep?.id ?? null}
+                isOrchestrated
+              />
             }
           />
         }
         headerRhythm="section"
+        scroll="body"
         animationClassName="motion-safe:animate-fade-in"
         dock={composer}
         dockEdge="space"
@@ -67,12 +74,12 @@ export const OrchestratedRunPage = ({ session, run, workflow }: Props) => {
           <OrchestratedGoal session={session} view={view} />
           {view.isDiscarded ? null : <RunWriteDestination sessionId={sessionId} />}
           <OrchestratedChecklist session={session} view={view} />
-          <OrchestratedTail session={session} view={view} />
           {isDone ? (
             <OrchestratedResult session={session} view={view} />
           ) : (
             <OrchestratedAddStep sessionId={sessionId} view={view} />
           )}
+          <OrchestratedTail session={session} view={view} />
           <OrchestratedRouting sessionId={sessionId} run={run} workflow={workflow} />
         </article>
       </PaneShell>

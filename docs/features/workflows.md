@@ -41,7 +41,7 @@ Start from **Refactor**, **Plan and ship** or **Fix a bug**. A built-in you dele
 
 ### Runs of a workflow
 
-The Workflows list is one grid: name, **Built in** or **Edited**, the role of each step, the step count, then when it last ran and how many runs it has. The row opens the workflow. The last run cell opens the runs of that workflow beside the list, newest first, each named by its session with its state, age and spend; a row opens that run in its session. A workflow that never ran offers **Start a run with this workflow**. Past ten runs, **All**, **Running** and **Failed** narrow the list. If the runs cannot load, the pane says so with **Retry**.
+The Workflows list is one grid: name, **Built in** or **Edited** in gray, the roles of its steps in gray ("Scout, Implementer +1"), the step count, when it last ran, and a link with its run count ("3 runs", "No runs"). The row opens the workflow. The run count link opens the runs of that workflow beside the list, newest first, each a state dot, its session, its spend and its age; a row opens that run in its session. **Import workflows…** and **Restore built-in workflows…** sit in the page menu. A workflow that never ran offers **Start a run with this workflow**. Past ten runs, **All**, **Running** and **Failed** narrow the list. If the runs cannot load, the pane says so with **Retry**.
 
 ### Saved steps
 

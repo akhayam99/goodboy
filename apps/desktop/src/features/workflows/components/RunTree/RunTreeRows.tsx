@@ -11,6 +11,7 @@ import type { RunTreeFolds } from './useFoldedRunTree';
 import type { RunTreeModel } from './useRunTree';
 import type { RunTreeDensity } from './runTreeDensity';
 import type { RunTreeInsert } from '../../runTreeInsert';
+import { RUN_TREE_SLOT_WIDTH } from './runTreeSlotWidth';
 
 type Props = {
   readonly density?: RunTreeDensity;
@@ -35,8 +36,6 @@ type Props = {
 const LIVE_PHASES: ReadonlySet<RowPhase> = new Set<RowPhase>(['queued', 'running', 'waiting']);
 
 const NO_PLANS: ReadonlyMap<string, PlanWithCount> = new Map();
-
-const NO_CHILD_IDS: ReadonlyArray<AgentId> = [];
 
 type AgentRowItem = TimelineRowItem & { readonly entry: TimelineAgentEntry };
 
@@ -85,6 +84,8 @@ export const RunTreeRows = ({
     }
   }, [activeRowId, scrollKey]);
 
+  const isFixed = density !== 'rail';
+  const insertSlot = isFixed ? RUN_TREE_SLOT_WIDTH : rail.width;
   const hasActionColumn =
     density === 'page' &&
     stream.items.some(
@@ -123,15 +124,13 @@ export const RunTreeRows = ({
           if (folds === undefined) {
             return null;
           }
-          const childIds = folds.childIdsBySetId.get(item.expandId) ?? NO_CHILD_IDS;
           return (
             <RunTreeFoldRow
               key={item.id}
               item={item}
               rail={railRow}
               railWidth={rail.width}
-              childIds={childIds}
-              costUsd={childIds.reduce((total, id) => total + (spendByAgentId.get(id) ?? 0), 0)}
+              isFixed={isFixed}
               onSet={folds.onSet}
             />
           );
@@ -145,7 +144,7 @@ export const RunTreeRows = ({
           <div key={item.id} ref={item.id === activeRowId ? activeRowRef : undefined}>
             {isNested || beforeRow === undefined
               ? null
-              : beforeRow({ agentId: item.entry.agent.id, slotWidth: rail.width })}
+              : beforeRow({ agentId: item.entry.agent.id, slotWidth: insertSlot })}
             <RunTreeRow
               density={density}
               item={item}
@@ -172,7 +171,7 @@ export const RunTreeRows = ({
           </div>
         );
       })}
-      {trailing === undefined ? null : trailing({ agentId: null, slotWidth: rail.width })}
+      {trailing === undefined ? null : trailing({ agentId: null, slotWidth: insertSlot })}
     </div>
   );
 };

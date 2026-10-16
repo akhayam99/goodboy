@@ -87,7 +87,7 @@ describe('c13 workflows scenes', () => {
   it('opens the runs of a workflow newest first, each named by its session', async () => {
     await renderScene('c13-workflows-history');
 
-    expect(within(pane()).getByText('3 runs')).toBeDefined();
+    expect(within(pane()).queryByText('3 runs')).toBeNull();
     const runs = within(pane()).getByRole('list', { name: 'Runs of Fix flaky tests' });
     const rows = within(runs).getAllByRole('button');
     expect(rows.map((row) => row.getAttribute('aria-label'))).toEqual([
@@ -95,7 +95,7 @@ describe('c13 workflows scenes', () => {
       'Open the run in Nightly reconciliation before cutoff',
       'Open the run in Acme refund idempotency',
     ]);
-    expect(rows[0]?.textContent).toContain('Running');
+    expect(rows[0]?.textContent).not.toContain('Running');
     expect(rows[0]?.textContent).toContain('$0.71');
     expect(within(rows[0] ?? pane()).getByRole('img', { name: 'Running' })).toBeDefined();
     expect(within(rows[2] ?? pane()).getByRole('img', { name: 'Failed' })).toBeDefined();
@@ -145,7 +145,7 @@ describe('c13 workflows scenes', () => {
     await renderScene('c13-workflows-history-empty');
 
     const empty = screen.getByRole('region', { name: 'Lint and type check' });
-    expect(within(empty).getByText('No runs yet.')).toBeDefined();
+    expect(within(empty).getByText('No runs yet')).toBeDefined();
     fireEvent.click(within(empty).getByRole('button', { name: 'Start a run with this workflow' }));
 
     expect(patchSessionDraft).toHaveBeenCalledWith({
@@ -160,7 +160,7 @@ describe('c13 workflows scenes', () => {
     const loadWorkflowRunHistory = vi.fn(async () => undefined);
     act(() => store.setState({ loadWorkflowRunHistory }));
 
-    expect(within(pane()).getByText('Could not load runs.')).toBeDefined();
+    expect(within(pane()).getByRole('alert').textContent).toContain("Couldn't load runs");
     expect(within(pane()).queryByRole('list')).toBeNull();
     fireEvent.click(within(pane()).getByRole('button', { name: 'Retry' }));
 

@@ -43,7 +43,7 @@ export const RunsGridRow = ({
       cells={[
         <StateDot state={facts.dot} label={facts.word} />,
         name,
-        facts.word,
+        facts.isWordRead ? facts.word : '',
         facts.progress,
         costUsd === null ? '' : formatUsd(costUsd),
         run.createdAt == null ? '' : formatAge({ from: run.createdAt, now }),

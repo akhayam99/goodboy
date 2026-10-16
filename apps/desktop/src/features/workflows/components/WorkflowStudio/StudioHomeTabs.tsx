@@ -20,9 +20,13 @@ export const StudioHomeTabs = ({ value, workflowCount, stepCount, onChange }: Pr
       {
         value: 'workflows',
         label: 'Workflows',
-        ...(workflowCount > 0 && { badge: workflowCount }),
+        ...(workflowCount > 0 && value !== 'workflows' && { badge: workflowCount }),
       },
-      { value: 'steps', label: 'Saved steps', ...(stepCount > 0 && { badge: stepCount }) },
+      {
+        value: 'steps',
+        label: 'Saved steps',
+        ...(stepCount > 0 && value !== 'steps' && { badge: stepCount }),
+      },
       { value: 'rules', label: NAMES.runDefaults },
     ]}
   />

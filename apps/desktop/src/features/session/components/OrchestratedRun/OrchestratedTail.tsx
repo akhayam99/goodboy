@@ -38,9 +38,13 @@ export const OrchestratedTail = ({ session, view }: Props) => {
     restartStoppedCount: agents.filter((agent) => isStoppedByRestart({ agent, runs: agents }))
       .length,
   });
+  if (tail === null) {
+    return null;
+  }
+  const phase = view.orchestrator.state.phase;
   const latest = decisionEntries({ run, steps: workflow.steps }).decisions[0] ?? null;
   const isReasonShown =
-    latest !== null && view.orchestrator.state.phase !== 'done' && !view.isDiscarded;
+    latest !== null && phase !== 'done' && phase !== 'failed' && phase !== 'step-failed';
 
   return (
     <section

@@ -19,7 +19,12 @@ import {
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { U25_C09_ORCHESTRATED_SCENES } from './c09-orchestrated';
-import { C09_RUN_ID, C09_SESSION_ID, C09_TESTER_ID } from './c09OrchestratedSeed';
+import {
+  C09_IMPLEMENTER_ID,
+  C09_RUN_ID,
+  C09_SESSION_ID,
+  C09_TESTER_ID,
+} from './c09OrchestratedSeed';
 
 const SETTLE_MS = 2_000;
 
@@ -232,7 +237,18 @@ describe('SPEC3 9.4 orchestrated rows stay reachable from the orchestrated docum
     expect(
       tail().getByText('Why: The batching must be proven on 12,000 rows before any CSV work.'),
     ).toBeDefined();
-    expect(nodeOf('[data-step-reason]').textContent).toContain('proven on 12,000 rows');
+    expect(document.querySelector('[data-step-reason]')).toBeNull();
+    act(() => {
+      useAppStore.setState({
+        drawer: {
+          kind: 'run-step',
+          sessionId: C09_SESSION_ID,
+          payload: { runId: C09_RUN_ID, agentId: C09_IMPLEMENTER_ID },
+        },
+      });
+    });
+    await settle();
+    expect(nodeOf('[data-step-reason]').textContent).toMatch(/^Why: /);
   });
 
   it('The closing decision and the Recap with Done and Left sit in the result', async () => {
@@ -316,6 +332,6 @@ describe('SPEC3 9.4 orchestrated rows stay reachable from the orchestrated docum
     await mount('c09-orch-running');
     const facts = within(nodeOf('[data-orchestrated-facts]'));
     await press(facts.getByTestId('run-spend-limit-trigger'));
-    expect(screen.getByRole('dialog', { name: 'Spend cap for this run' })).toBeDefined();
+    expect(screen.getByRole('dialog', { name: 'Limit for this run' })).toBeDefined();
   });
 });

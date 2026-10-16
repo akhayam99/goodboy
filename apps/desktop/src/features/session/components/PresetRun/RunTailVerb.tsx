@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Button } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { requestRunAddStep } from '../../../workflows/requestRunAddStep';
 import { runPlace } from '../../../workflows/runPlace';
 import { useAnswerQuestion } from '../../../workflows/useAnswerQuestion';
 import { RaiseCapPrimary } from '../AgentTree/RunHeader/RaiseCapPrimary';
@@ -120,19 +119,6 @@ export const RunTailVerb = ({ session, view, verb }: Props) => {
         >
           Continue step
         </Button>
-      );
-    case 'addStep':
-      return (
-        <button
-          type="button"
-          className={QUIET_VERB}
-          onClick={() => {
-            navigate({ to: runPlace({ sessionId, runId }) });
-            requestRunAddStep({ runId });
-          }}
-        >
-          Add step
-        </button>
       );
     case 'resumeAll':
       return (

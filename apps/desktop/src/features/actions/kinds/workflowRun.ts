@@ -1,6 +1,4 @@
 import {
-  Ban,
-  CircleCheck,
   Copy,
   ListChecks,
   MessageCircleQuestion,
@@ -9,6 +7,7 @@ import {
   RotateCcw,
   SkipForward,
   SlidersHorizontal,
+  Square,
   StepForward,
   Undo2,
 } from 'lucide-react';
@@ -447,7 +446,7 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
     {
       id: 'workflowRun.close',
       label: CLOSE_WORKFLOW_COPY.label,
-      icon: CircleCheck,
+      icon: Square,
       group: 'danger',
       when: ({ facts }) => facts.isClosable && isLive({ facts }),
       confirm: () => ({
@@ -461,7 +460,7 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
     {
       id: 'workflowRun.discard',
       label: NAMES.archiveRun,
-      icon: Ban,
+      icon: CONCEPT_ICONS.archive,
       group: 'danger',
       when: ({ facts }) => facts.state !== 'discarded',
       confirm: () => ({
