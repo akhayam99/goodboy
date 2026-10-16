@@ -58,6 +58,7 @@ const renderTree = (overrides: Partial<Parameters<typeof ChangeTree>[0]> = {}) =
       onToggleViewed={vi.fn()}
       onNextUnviewed={vi.fn()}
       onLeave={vi.fn()}
+      onFold={vi.fn()}
       {...overrides}
     />,
   );
@@ -144,7 +145,7 @@ describe('ChangeTree', () => {
     expect(screen.getByRole('button', { name: 'Keyboard shortcuts' })).toBeDefined();
   });
 
-  it('shows no count or +/- on an expanded folder, and the +/- on a file only at 340 or more', () => {
+  it('shows no count or +/- on an expanded folder, and the +/- on a file only at 300 or more', () => {
     const observers = installFakeResizeObserver();
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
       new DOMRect(0, 0, 360, 600),
@@ -163,7 +164,7 @@ describe('ChangeTree', () => {
     ).toBe('diff');
 
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
-      new DOMRect(0, 0, 300, 600),
+      new DOMRect(0, 0, 280, 600),
     );
     act(() => observers.resizeAll());
 
@@ -178,6 +179,37 @@ describe('ChangeTree', () => {
       within(folder).getByText(text).closest('[data-tone]')?.getAttribute('data-tone'),
     );
     expect(tones).toEqual(['muted', 'muted', 'muted']);
+  });
+
+  it('puts +N and -M as two cells next to the right edge of files and closed folders', () => {
+    const observers = installFakeResizeObserver();
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(0, 0, 360, 600),
+    );
+    renderTree({ collapsed: new Set(['dir:src/ledger/export']) });
+    act(() => observers.resizeAll());
+
+    const deltas = [itemOf(/\bexport\b/), itemOf(/package\.json/)].map((row) =>
+      row.querySelector('[data-slot="tree-delta"]'),
+    );
+    for (const delta of deltas) {
+      expect(delta?.children).toHaveLength(2);
+      expect(delta?.nextElementSibling?.nextElementSibling).toBeNull();
+    }
+    expect(deltas.map((delta) => delta?.textContent)).toEqual(['+6−2', '+3−1']);
+  });
+
+  it('heads the list with Next unviewed, the keys and Fold, and Fold asks to fold', () => {
+    const onFold = vi.fn();
+    renderTree({ onFold });
+
+    const head = screen
+      .getAllByRole('button')
+      .slice(0, 3)
+      .map((button) => button.getAttribute('aria-label') ?? button.textContent);
+    expect(head).toEqual(['Next unviewed4', 'Keyboard shortcuts', 'Fold the file list']);
+    fireEvent.click(screen.getByRole('button', { name: 'Fold the file list' }));
+    expect(onFold).toHaveBeenCalledTimes(1);
   });
 
   it('shows files with their status letter and rename source', () => {
@@ -242,6 +274,7 @@ describe('ChangeTree', () => {
         onToggleViewed={vi.fn()}
         onNextUnviewed={vi.fn()}
         onLeave={vi.fn()}
+        onFold={vi.fn()}
       />,
     );
     expect(screen.queryByRole('treeitem', { name: /page\.tsx/ })).toBeNull();
@@ -440,7 +473,7 @@ describe('ChangeTree', () => {
     expect(within(row).getByText('StatementBalanceCard.test.tsx')).toBeDefined();
   });
 
-  it('jumps to the next unviewed file from its footer button and says how many are left', () => {
+  it('jumps to the next unviewed file from its head button and says how many are left', () => {
     const onNextUnviewed = vi.fn();
     renderTree({
       stateOf: (file) => (file.path === 'package.json' ? 'viewed' : 'none'),

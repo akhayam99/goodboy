@@ -48,10 +48,17 @@ const escape = async (): Promise<void> => {
 
 const railNav = (): HTMLElement | null => screen.queryByRole('navigation', { name: 'Worktree' });
 
+const fileRail = (): HTMLElement | null => screen.queryByRole('complementary', { name: 'Files' });
+
 const treeNav = (): HTMLElement =>
-  within(screen.getByRole('navigation', { name: 'Worktree' })).getByRole('navigation', {
+  within(screen.getByRole('complementary', { name: 'Files' })).getByRole('navigation', {
     name: 'Changed files',
   });
+
+const toolbarFiles = (): HTMLElement | null => {
+  const toolbar = document.querySelector<HTMLElement>('[data-slot="diff-toolbar"]');
+  return toolbar === null ? null : within(toolbar).queryByRole('button', { name: /^Files/ });
+};
 
 const treeOf = (): HTMLElement => within(treeNav()).getByRole('tree', { name: 'Changed files' });
 
@@ -64,8 +71,6 @@ const expectCursorOnThirdRow = (): void => {
   expect(document.activeElement).toBe(treeOf());
   expect(treeOf().getAttribute('aria-activedescendant')).toBe(thirdRow().id);
 };
-
-const sectionsButton = (): HTMLElement => screen.getByRole('button', { name: 'Sections' });
 
 const visit = async ({ ctx, tab }: { readonly ctx: Ctx; readonly tab: 'comments' | 'files' }) => {
   await click(await findSection(tab === 'files' ? /^Files/ : /^Comments/));
@@ -137,6 +142,8 @@ export const FILES_RAIL_ROWS: ReadonlyArray<Row> = [
       await screen.findByRole('navigation', { name: 'Changed files' }, WAIT);
       expect(screen.queryByRole('button', { name: 'Sections' })).toBeNull();
 
+      expect(fileRail()?.getAttribute('data-file-rail')).toBe('docked');
+      expect(railNav()?.querySelector('[role="tree"]')).toBeNull();
       await downToThirdFile();
       expect(thirdRow().getAttribute('aria-current')).toBe('true');
       await press('diff.focusTree');
@@ -177,6 +184,29 @@ export const FILES_RAIL_ROWS: ReadonlyArray<Row> = [
     lands: async (ctx) => {
       await branchTab('files')(ctx);
       expect(await screen.findByRole('navigation', { name: 'Changed files' }, WAIT)).toBeDefined();
+    },
+  },
+  {
+    name: 'files rail: on a narrow page J walks with the rail away, F opens it over the diff, a pick closes it',
+    covers: ['navigate', 'files-rail:overlay'],
+    open: async (ctx) => {
+      stubPane({ width: OVERLAY_PANE });
+      await openBranchOnComments(ctx);
+      await visit({ ctx, tab: 'files' });
+      await waitFor(() => expect(toolbarFiles()).not.toBeNull(), WAIT);
+      expect(fileRail()).toBeNull();
+
+      await downToThirdFile();
+      await press('diff.focusTree');
+      expect(fileRail()?.getAttribute('data-file-rail')).toBe('overlay');
+      expectCursorOnThirdRow();
+      await click(within(thirdRow()).getByRole('button', { name: THIRD_FILE }));
+      expect(fileRail()).toBeNull();
+      expect(toolbarFiles()).not.toBeNull();
+    },
+    lands: async (ctx) => {
+      await branchTab('files')(ctx);
+      expect(fileRail()).toBeNull();
     },
   },
 ];

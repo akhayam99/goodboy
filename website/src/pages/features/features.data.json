@@ -800,7 +800,7 @@
         },
         {
           "title": "Read the code",
-          "text": "Files has a file tree in the rail with a progress ring per folder, filters, and the changes with syntax colors, word-level highlights and a unified or split view. Comment on a line or on a whole file, and quote a line into a note or a question for an agent. Show more lines opens the context around a change, and a double click on a name shows where it is defined and used.",
+          "text": "Files has a file tree in a rail on the right of the diff with a progress ring per folder, filters, and the changes with syntax colors, word-level highlights and a unified or split view. Comment on a line or on a whole file, and quote a line into a note or a question for an agent. Show more lines opens the context around a change, and a double click on a name shows where it is defined and used.",
           "group": "Review and resolve on the Branch page",
           "also": "diff"
         },

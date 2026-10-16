@@ -39,27 +39,29 @@ const renderScene = () => {
   );
 };
 
+const fileRail = (): HTMLElement => screen.getByRole('complementary', { name: 'Files' });
+
 describe('the u24 diff folds scene', () => {
   it('registers under the name the plan uses', () => {
     expect(Object.keys(U24_P_DIFF_FOLDS_SCENES)).toEqual(['branch-files-deep']);
     expect(Object.keys(MOCK_SCENES)).toContain('branch-files-deep');
   });
 
-  it('draws 39 files in a deep tree under the Files entry', async () => {
+  it('draws 39 files in a deep tree in the file rail of the Files entry', async () => {
     renderScene();
 
     const rail = await screen.findByRole('navigation', { name: 'Worktree' }, WAIT);
     const files = within(rail).getByRole('button', { name: /^Files/ });
     expect(files.textContent).toBe('Files39');
     expect(
-      within(rail).getAllByRole('treeitem', { name: /roundHalfEven\.ts/ }).length,
+      within(fileRail()).getAllByRole('treeitem', { name: /roundHalfEven\.ts/ }).length,
     ).toBeGreaterThan(0);
   });
 
   it('remembers a closed folder when the scene mounts again', async () => {
     const first = renderScene();
-    const rail = await screen.findByRole('navigation', { name: 'Worktree' }, WAIT);
-    const tree = within(rail).getByRole('tree');
+    await screen.findByRole('navigation', { name: 'Worktree' }, WAIT);
+    const tree = within(fileRail()).getByRole('tree');
     const folder = within(tree).getAllByRole('treeitem', { expanded: true })[0] as HTMLElement;
     expect(within(tree).queryAllByRole('treeitem', { expanded: false })).toHaveLength(0);
 
@@ -68,9 +70,9 @@ describe('the u24 diff folds scene', () => {
     first.unmount();
 
     renderScene();
-    const again = await screen.findByRole('navigation', { name: 'Worktree' }, WAIT);
+    await screen.findByRole('navigation', { name: 'Worktree' }, WAIT);
     expect(
-      within(within(again).getByRole('tree')).getAllByRole('treeitem', { expanded: false }),
+      within(within(fileRail()).getByRole('tree')).getAllByRole('treeitem', { expanded: false }),
     ).toHaveLength(1);
   });
 });

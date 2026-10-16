@@ -79,6 +79,7 @@ export const FolderRow = ({
               {row.fileCount}
             </span>
             <Delta additions={row.additions} deletions={row.deletions} isMuted />
+            <span aria-hidden className="w-3 shrink-0" />
           </>
         )}
       </button>

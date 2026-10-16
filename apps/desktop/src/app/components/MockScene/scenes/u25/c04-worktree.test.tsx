@@ -22,6 +22,23 @@ import { MOCK_SCENES } from '../..';
 import { U25_C04_WORKTREE_SCENES } from './c04-worktree';
 
 const SETTLE_MS = 2_000;
+const NARROW_PANE_PX = 820;
+
+type ObserverCallback = (entries: ReadonlyArray<{ contentRect: { width: number } }>) => void;
+
+class NarrowBranchPane {
+  private readonly callback: ObserverCallback;
+  constructor(callback: ObserverCallback) {
+    this.callback = callback;
+  }
+  observe(target: Element) {
+    if (target.hasAttribute('data-branch-pane')) {
+      this.callback([{ contentRect: { width: NARROW_PANE_PX } }]);
+    }
+  }
+  unobserve() {}
+  disconnect() {}
+}
 
 type SceneName = keyof typeof U25_C04_WORKTREE_SCENES;
 
@@ -36,6 +53,7 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
+  vi.unstubAllGlobals();
   vi.useRealTimers();
   cleanup();
   clearSceneInvoke();
@@ -110,14 +128,37 @@ describe('the c04 worktree level scenes', () => {
     expect(screen.getByRole('button', { name: 'Create pull request' })).toBeDefined();
   });
 
-  it('c04-worktree-files opens the tree under Files', async () => {
+  it('c04-worktree-files selects Files and docks the file list on the right of the diff', async () => {
     await mount('c04-worktree-files');
 
     const files = within(worktreeLayer()).getByRole('button', { name: /^Files/ });
-    expect(files.getAttribute('aria-expanded')).toBe('true');
-    expect(
-      within(worktreeLayer()).getByRole('navigation', { name: 'Changed files' }),
-    ).toBeDefined();
+    expect(files.getAttribute('aria-current')).toBe('page');
+    expect(files.hasAttribute('aria-expanded')).toBe(false);
+    expect(within(worktreeLayer()).queryByRole('navigation', { name: 'Changed files' })).toBeNull();
+    const rail = screen.getByRole('complementary', { name: 'Files' });
+    expect(rail.getAttribute('data-file-rail')).toBe('docked');
+    expect(within(rail).getByRole('navigation', { name: 'Changed files' })).toBeDefined();
+  });
+
+  it('c04-worktree-files-folded folds the file list and offers Files N in the diff toolbar', async () => {
+    await mount('c04-worktree-files-folded');
+
+    expect(screen.queryByRole('complementary', { name: 'Files' })).toBeNull();
+    const toolbar = document.querySelector<HTMLElement>('[data-slot="diff-toolbar"]');
+    if (toolbar === null) {
+      throw new Error('the folded scene draws no diff toolbar');
+    }
+    expect(within(toolbar).getByRole('button', { name: /^Files\s?\d+$/ })).toBeDefined();
+  });
+
+  it('c04-worktree-files-narrow opens the file list over the diff of a narrow page', async () => {
+    vi.stubGlobal('ResizeObserver', NarrowBranchPane);
+    await mount('c04-worktree-files-narrow');
+
+    const rail = screen.getByRole('complementary', { name: 'Files' });
+    expect(rail.getAttribute('data-file-rail')).toBe('overlay');
+    expect(within(rail).getByRole('navigation', { name: 'Changed files' })).toBeDefined();
+    vi.unstubAllGlobals();
   });
 
   it('c04-worktree-comments and c04-worktree-checks select their entry', async () => {

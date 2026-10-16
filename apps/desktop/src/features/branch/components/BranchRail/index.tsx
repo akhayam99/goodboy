@@ -1,5 +1,5 @@
 import { useRef, type KeyboardEvent } from 'react';
-import { ChevronDown, ChevronRight, type LucideIcon } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { SelectableRow, StatusDot, Tooltip } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
@@ -11,7 +11,6 @@ type Props = {
   readonly tabs: ReadonlyArray<BranchTabEntry>;
   readonly current: BranchTab;
   readonly facts: WorktreeEntryFacts;
-  readonly hostRef: (node: HTMLDivElement | null) => void;
   readonly onSelect: (tab: BranchTab) => void;
 };
 
@@ -25,7 +24,7 @@ const SECTION_ICON: Readonly<Record<BranchTab, LucideIcon>> = {
   checks: CONCEPT_ICONS.checks,
 };
 
-export const BranchRail = ({ tabs, current, facts, hostRef, onSelect }: Props) => {
+export const BranchRail = ({ tabs, current, facts, onSelect }: Props) => {
   const listRef = useRef<HTMLDivElement | null>(null);
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
@@ -56,8 +55,6 @@ export const BranchRail = ({ tabs, current, facts, hostRef, onSelect }: Props) =
           const Icon = SECTION_ICON[entry.id];
           const isCurrent = entry.id === current;
           const fact = facts[entry.id];
-          const isFiles = entry.id === 'files';
-          const Chevron = isCurrent ? ChevronDown : ChevronRight;
           const row = (
             <SelectableRow
               selected={isCurrent}
@@ -67,7 +64,6 @@ export const BranchRail = ({ tabs, current, facts, hostRef, onSelect }: Props) =
                   ? entry.label
                   : `${entry.label}, ${fact.text}`
               }
-              {...(isFiles && { isExpanded: isCurrent })}
               id={`${ENTRY_ID_PREFIX}${entry.id}`}
               onClick={() => onSelect(entry.id)}
               className="h-7 items-center gap-2 px-2 text-label"
@@ -85,11 +81,6 @@ export const BranchRail = ({ tabs, current, facts, hostRef, onSelect }: Props) =
                 ) : (
                   <span className="truncate">{fact.text}</span>
                 )}
-              </span>
-              <span className="flex w-3.5 shrink-0 items-center justify-center">
-                {isFiles ? (
-                  <Chevron size={ICON_SIZE.row} aria-hidden className="text-faint-foreground" />
-                ) : null}
               </span>
             </SelectableRow>
           );
@@ -112,13 +103,6 @@ export const BranchRail = ({ tabs, current, facts, hostRef, onSelect }: Props) =
                   {row}
                 </Tooltip>
               )}
-              {isFiles && isCurrent ? (
-                <div
-                  ref={hostRef}
-                  data-slot="branch-rail-files"
-                  className="flex min-h-0 flex-col empty:hidden"
-                />
-              ) : null}
             </div>
           );
         })}

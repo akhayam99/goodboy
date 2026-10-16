@@ -184,6 +184,8 @@ c04-session-worktrees
 c04-worktree-checks
 c04-worktree-comments
 c04-worktree-files
+c04-worktree-files-folded
+c04-worktree-files-narrow
 c04-worktree-folded
 c04-worktree-menu
 c04-worktree-no-pr

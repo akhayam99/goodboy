@@ -51,8 +51,6 @@ import type { ReviewerRequest } from '../PullRequestTab/ReviewersProperty';
 import { BranchDetail } from './BranchDetail';
 import { TabActionsSlotContext } from '../../../../shared/components/TabActions/tabActionsSlotContext';
 
-const noop = (): void => undefined;
-
 const WAITING_STATES: ReadonlySet<ReviewCommentState> = new Set<ReviewCommentState>([
   'needs',
   'ready',
@@ -75,7 +73,8 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   const github = useAppStore((s) => s.sessionGithub[sessionId] ?? null);
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
   const [tabActionsSlot, setTabActionsSlot] = useState<HTMLElement | null>(null);
-  const [railHost, setRailHost] = useState<HTMLElement | null>(null);
+  const [page, setPage] = useState<HTMLElement | null>(null);
+  const [fileSlot, setFileSlot] = useState<HTMLElement | null>(null);
   const levelHost = useWorktreeLevelSlot();
   const historyMountId = identity.mount?.mountId ?? null;
   const commitCount = useAppStore((s) =>
@@ -373,24 +372,8 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     checks: checksCount,
     checksFailed: checksFailing,
   });
-  const railNode = (
-    <BranchRail
-      tabs={tabs}
-      current={tab}
-      facts={entryFacts}
-      hostRef={setRailHost}
-      onSelect={selectTab}
-    />
-  );
-  const railSlot = useMemo<DiffRailHost>(
-    () => ({
-      host: tab === 'files' && levelHost !== null ? railHost : null,
-      isOverlay: false,
-      open: noop,
-      dismiss: noop,
-    }),
-    [levelHost, railHost, tab],
-  );
+  const railNode = <BranchRail tabs={tabs} current={tab} facts={entryFacts} onSelect={selectTab} />;
+  const railSlot = useMemo<DiffRailHost>(() => ({ slot: fileSlot, page }), [fileSlot, page]);
 
   const detail = (
     <BranchDetail>
@@ -432,8 +415,19 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     <BranchDiffContext.Provider value={identity.mountPath === null ? null : diff}>
       <TabActionsSlotContext.Provider value={tabActionsSlot}>
         <DiffRailContext.Provider value={railSlot}>
-          <div data-branch-pane="" className="relative flex h-full min-h-0 min-w-0 flex-1">
+          <div
+            ref={setPage}
+            data-branch-pane=""
+            className="relative flex h-full min-h-0 min-w-0 flex-1"
+          >
             {detail}
+            {tab === 'files' ? (
+              <div
+                ref={setFileSlot}
+                data-slot="diff-file-rail"
+                className="flex h-full min-h-0 shrink-0 empty:hidden"
+              />
+            ) : null}
             {levelHost === null || !isActive ? null : createPortal(railNode, levelHost)}
           </div>
         </DiffRailContext.Provider>

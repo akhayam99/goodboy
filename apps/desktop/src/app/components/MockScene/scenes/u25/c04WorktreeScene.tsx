@@ -8,6 +8,7 @@ import { BranchPage } from '../../../../../features/branch/components/BranchPage
 import { SideColumn } from '../../../SideColumn';
 import { SessionFrame } from '../../../SessionRail/SessionFrame';
 import { useSceneRailFold } from '../useSceneRailFold';
+import { useSceneFileRailFold } from '../useSceneFileRailFold';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
 import { CTX_STATUS } from '../brand/contextBranch';
 import { handlersFor } from '../brand/DiffStage';
@@ -77,7 +78,10 @@ export type WorktreeSceneConfig = {
   readonly hasMoreProjects?: boolean;
   readonly isMenuOpen?: boolean;
   readonly isFolded?: boolean;
+  readonly fileRail?: 'docked' | 'folded' | 'overlay';
 };
+
+const NARROW_PAGE_PX = 820;
 
 type StatusParams = {
   readonly gitState: NonNullable<WorktreeSceneConfig['gitState']>;
@@ -165,6 +169,16 @@ const openMenu = (): void => {
   }, 600);
 };
 
+const openFiles = (): void => {
+  window.setTimeout(() => {
+    const toolbar = document.querySelector<HTMLElement>('[data-slot="diff-toolbar"]');
+    const files = [...(toolbar?.querySelectorAll<HTMLElement>('button') ?? [])].find((button) =>
+      (button.textContent ?? '').startsWith('Files'),
+    );
+    files?.click();
+  }, 900);
+};
+
 type Props = {
   readonly config: WorktreeSceneConfig;
 };
@@ -173,6 +187,7 @@ export const WorktreeScene = ({ config }: Props) => {
   const [isReady, setIsReady] = useState(false);
   const session = useCurrentSession();
   useSceneRailFold({ isFolded: config.isFolded === true });
+  useSceneFileRailFold({ isFolded: config.fileRail === 'folded' });
   useEffect(() => {
     applyPrPageSeed({ variant: config.variant });
     installIpc({ gitState: config.gitState ?? 'level' });
@@ -194,6 +209,9 @@ export const WorktreeScene = ({ config }: Props) => {
     if (config.isMenuOpen === true) {
       openMenu();
     }
+    if (config.fileRail === 'overlay') {
+      openFiles();
+    }
   }, [config]);
 
   if (!isReady) {
@@ -213,7 +231,10 @@ export const WorktreeScene = ({ config }: Props) => {
           onToggle={noop}
         />
       </div>
-      <main className="flex min-w-0 flex-1 flex-col">
+      <main
+        className="flex min-w-0 flex-1 flex-col"
+        style={config.fileRail === 'overlay' ? { maxWidth: NARROW_PAGE_PX } : undefined}
+      >
         <SessionFrame session={session ?? SESSION}>
           {config.level === 'worktree' ? (
             <BranchPage session={session ?? SESSION} workingDir={PR_PAGE_WORKTREE} />

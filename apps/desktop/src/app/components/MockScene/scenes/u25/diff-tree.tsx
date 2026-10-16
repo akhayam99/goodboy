@@ -64,6 +64,7 @@ const DiffTreeScene = () => {
         onToggleViewed={() => undefined}
         onNextUnviewed={() => undefined}
         onLeave={() => undefined}
+        onFold={() => undefined}
       />
     </div>
   );

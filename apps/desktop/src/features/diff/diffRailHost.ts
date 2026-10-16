@@ -1,17 +1,8 @@
 import { createContext } from 'react';
 
 export type DiffRailHost = {
-  readonly host: HTMLElement | null;
-  readonly isOverlay: boolean;
-  readonly open: () => void;
-  readonly dismiss: () => void;
+  readonly slot: HTMLElement | null;
+  readonly page: HTMLElement | null;
 };
 
-const noop = (): void => undefined;
-
-export const DiffRailContext = createContext<DiffRailHost>({
-  host: null,
-  isOverlay: false,
-  open: noop,
-  dismiss: noop,
-});
+export const DiffRailContext = createContext<DiffRailHost>({ slot: null, page: null });

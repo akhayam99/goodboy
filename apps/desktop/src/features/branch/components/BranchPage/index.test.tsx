@@ -720,8 +720,8 @@ describe('Branch page entries in the sidebar', () => {
     await settle();
   };
 
-  const filesGroup = (): HTMLElement | null =>
-    document.querySelector<HTMLElement>('[data-slot="branch-rail-files"]');
+  const fileRail = (): HTMLElement | null =>
+    document.querySelector<HTMLElement>('[data-slot="diff-file-rail"] aside[aria-label="Files"]');
 
   it('draws the entries in the sidebar slot and never beside the page', async () => {
     await mountFiles();
@@ -732,25 +732,31 @@ describe('Branch page entries in the sidebar', () => {
     expect(screen.queryByRole('button', { name: 'Sections' })).toBeNull();
   });
 
-  it('opens the changed file tree under Files only, and collapses it when another entry is picked', async () => {
+  it('keeps Files a plain entry with its count and puts the file list on the right of the page', async () => {
     await mountFiles();
-    expect(filesGroup()).toBeNull();
-    expect(railRow(/^Files/).getAttribute('aria-expanded')).toBe('false');
+    expect(fileRail()).toBeNull();
+    expect(railRow(/^Files/).hasAttribute('aria-expanded')).toBe(false);
+    expect(railRow(/^Files/).getAttribute('aria-label')).toMatch(/^Files, \d+$/);
 
     await visit(/^Files/);
-    const group = filesGroup();
-    if (group === null) {
-      throw new Error('the Files entry has no tree');
+    const rail = fileRail();
+    if (rail === null) {
+      throw new Error('the Files entry opens no file rail');
     }
-    expect(railRow(/^Files/).getAttribute('aria-expanded')).toBe('true');
-    expect(group.previousElementSibling?.contains(railRow(/^Files/))).toBe(true);
-    const tree = within(group).getByRole('navigation', { name: 'Changed files' });
+    expect(railRow(/^Files/).getAttribute('aria-current')).toBe('page');
+    expect(railRow(/^Files/).hasAttribute('aria-expanded')).toBe(false);
+    expect(railOf().contains(rail)).toBe(false);
+    expect(document.querySelector('[data-branch-pane]')?.lastElementChild?.contains(rail)).toBe(
+      true,
+    );
+    const tree = within(rail).getByRole('navigation', { name: 'Changed files' });
     expect(headerColumnElement().contains(tree)).toBe(false);
-    expect(within(group).getByRole('searchbox', { name: 'Filter files' })).toBeDefined();
+    expect(within(rail).getByRole('searchbox', { name: 'Filter files' })).toBeDefined();
+    expect(within(rail).getByRole('button', { name: /^Next unviewed/ })).toBeDefined();
 
     for (const name of [/^Comments/, /^Commits/, /^Checks/]) {
       await visit(name);
-      expect(filesGroup()).toBeNull();
+      expect(fileRail()).toBeNull();
       expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
     }
   });
