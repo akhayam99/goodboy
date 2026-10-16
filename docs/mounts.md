@@ -499,7 +499,7 @@ navigation rules live in [navigation.md](navigation.md#session-rail).
 
 What a worktree asks the user to decide shows once, in the Overview notices
 slot (`OverviewNotices`, one `MountNotices` per open mount, the first lap
-`LapProjectRow` with Publish before any mount exists):
+`LapPublishNotice` with Publish before any mount exists):
 
 - **A closed worktree** (`ClosedWorktreeNotice`) says the branch and project,
   then `Its files are still on disk.`, `Its files were removed.` or, when its
@@ -513,8 +513,10 @@ slot (`OverviewNotices`, one `MountNotices` per open mount, the first lap
   (`danger`, `Couldn't <verb> <project>`, `Details`, `Retry`); a failure whose
   cause cannot change shows no Retry and can be dismissed.
 - **A stopped rebase**, **foreign commits** on origin (`ForeignCommitsNotice`),
-  **a branch drift decision** (`MountBranchDecision`) and the **Also in** chip
-  of a branch another session holds (`AlsoInChip`).
+  **a branch drift decision** (`MountBranchDecision`: `<project> is on another
+branch`, one gray line `Expected <branch>, found <branch>` with each branch in
+  truncating mono, `BranchExpectedLine`; the buttons carry the choice) and the
+  **Also in** chip of a branch another session holds (`AlsoInChip`).
 
 The slot draws nothing when nothing is present.
 

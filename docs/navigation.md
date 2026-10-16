@@ -62,8 +62,9 @@
   board with facts only (no buttons). Restoring an archived card uses the
   `restore` glyph. The Sessions door works from every place, the New session
   draft included.
-- **An archived session is read-only until Restore.** Its overview shows an
-  Archived chip with an inline Restore. The composer, new agents, workflows and
+- **An archived session is read-only until Restore.** Its Overview header holds
+  Restore alone (no Archived chip, no New), and the notices, unassigned notes and
+  Next are not drawn. The composer, new agents, workflows and
   project mounts stay disabled with "Restore this session to continue". Nothing
   restores on its own, so a shelved session never spends by itself.
 - **Three surfaces, three jobs, no competition.** The top bar is now ("what is
@@ -1209,9 +1210,8 @@ activity yet show the plain overview with its actions.
   `SessionWorkspace`), not by the row, so two mounted pages never bind it
   twice.
 - **The Overview header** reads `Overview`. The session title, its rename and
-  its lifecycle menu live on the session rail identity row. The header keeps the
-  Overview actions as visible words (`OverviewPageActions`: Write title and
-  goal from linked work, and Scripts in a branchless session), **New**
+  its lifecycle menu live on the session rail identity row. The header holds
+  **New**
   (`OverviewActions`, ⌘N on the Overview, a menu from the `newForm` kind of
   the action registry whose pick opens its form in the New drawer; filled only
   while nothing runs and Next holds no row) and, on an archived session,
@@ -2310,16 +2310,19 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   above its title). The row is fixed (`h-8`, centred, never wraps, a long title
   truncates), no glyph ever indents the title, and the crumb names the structure while
   the `h1` names the object. `frameGeometryOf` (`packages/ui`) is that table.
-- **A first-lap session says where it works in one notice.** `FirstLapBanner`
-  (and the move card and the move report) render as a `Notice` with the tone as its
-  inner line and no fill, as the first block of the page body under the title row, on
-  the column: `SessionWorkspace` hands the element down with `PaneBannerContext` and the
-  page's `PaneShell` draws it, so the title never moves down when it shows. It reads
-  `Your work is in the project folder. Nothing is published yet.`; Publish lives only
-  in the Projects row.
+- **A first-lap session says where it works in one notice.** Before main is on the
+  remote the Overview notices slot holds one row, `Not published yet` with Publish
+  (`LapPublishNotice`; Retry when the remote did not answer, `Checking the remote`
+  while it is read). `FirstLapBanner` keeps only the move card, the move in progress
+  and the move report, as a `Notice` in the page banner slot (`PaneBannerContext`).
 - **Questions is one tier.** The 288px queue and the question beside it sit inside the
-  same 1008px column under the title; the detail no longer narrows to a measure column
-  of its own beside a full-bleed rail.
+  same 1008px column under the title, apart by a gap (no divider); the detail no longer
+  narrows to a measure column of its own beside a full-bleed rail. The title carries no
+  meta line. A queue row wraps the question to two lines over its role glyph and age,
+  with a blocking ask as one warning dot in a fixed cell; the asker shows only in the
+  detail, which has no pager (the queue is the pager). Answered is always open and last;
+  group labels show only with two groups. Inside the asker's own conversation a question
+  card shows only the question (and Blocking as a dot and a word).
 - **A lens shows one level. A studio is a rail plus a detail.** Inside a lens,
   selecting a card swaps the list for the detail, and the trail or Back is the
   way back. No lens keeps a rail beside its detail. Review is the one
@@ -2332,8 +2335,8 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
 - **The Overview is one column: goal, notices, Needs you, Next, Activity.**
   The goal reads as prose (`GoalTeaser`, it opens the Context drawer on its
   Goal), with one gray provenance line under it only when it came from chat
-  (`From chat: <title>`, `Fed by chat` only with no `From chat`, the others
-  behind `+N more`). The notices slot (`OverviewNotices`) holds what a worktree
+  (`From chat: <title>`, one label whether the chat started or fed the
+  session, the others behind `+N more`). The notices slot (`OverviewNotices`) holds what a worktree
   asks the user to decide ([mounts.md](mounts.md#worktree-rows-and-the-overview-notices)):
   a closed worktree with Reopen, Restore branch or Remove, a failed action with
   `Retry`, a stopped rebase, foreign commits, a branch drift decision (a mount
@@ -2344,8 +2347,16 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   three rows, the first one's verb the only filled button on the page), then
   Activity. Projects, Linked work, Artifacts and Add project live on the
   session rail's session level. Next and Unassigned notes open with `SectionHeader`
-  at level 2, and Needs you opens with the same eyebrow. The cost chip sits at
-  the right of the Activity header.
+  at level 2, and Needs you opens with the same eyebrow on the quiet notice
+  surface (no tone bar). Needs you is the one home of a waiting ask on the page:
+  its row reads the question with the run or agent in gray after it, no totals
+  or repeat counts, and the Activity row keeps only its `?` marker (no amber
+  tint, no Needs you word). The page sits on the 720 measure. Activity rows carry
+  no cost (it is in the duration tooltip and the spend popover), the model line
+  holds the effort (`Sonnet 5.5 · Medium`), the day label has no rule and an
+  empty Activity reads `Nothing ran yet`. A Next button carries its label only
+  and the menu column leaves when no row has a menu. The cost chip sits at
+  the right of the Activity header and reads `Limit` before anything is spent.
   `Mark all seen` is a ghost button in the Activity header and shows only
   while an agent is unseen; a waiting question is answered from its Needs you row, never from a
   second `Answer` on the timeline row.
@@ -2566,13 +2577,16 @@ hl/ledger-rounding`, and with two or more mounts opens a menu grouped by
   live tail phrase is present tense in sentence case (`Collecting the output`).
   The transcript pane's usage footer drops the turn count when the agent has no
   turn of its own to count, instead of reading `0 turns`.
-- **An Artifacts row has one visible action.** The state-driven primary
-  (`Run plan`, `Approve`, `Stop`, from the plan rule) and the open control
-  lead the row. Edit, Open in browser and Copy source sit beside them, visible
-  at rest (`data-row-secondary`), and Delete, Rename and the rest live in the
-  row overflow. Kind has its own fixed column (Plan, Report,
-  Wireframe), and progress (`part 2 of 4`) sits under the status. A report's
-  document title is an `h2` under the page's single `h1`.
+- **An Artifacts row is the button, with one verb at most.** A row keeps a
+  visible verb only where it is its own: the state-driven primary (`Run plan`,
+  `Approve`) on a Needs you row, `Stop` on a running generation, `Restore` in
+  Recently deleted; the column leaves when no row has one. Every other verb
+  (Edit, Open in browser, Copy source, Delete, Delete permanently) lives on
+  right click and in the opened artifact. No kind column (the glyph says it);
+  the state cell shows only what the group does not say, as one glyph and word
+  with the progress (`part 2 of 4`) in its tooltip. An artifact page header
+  draws no state chip: the state leads the gray meta line. A report shows its
+  title only in the document, the header keeps a hidden `h1`.
 
 ## Starting a project from nothing
 
@@ -2588,8 +2602,8 @@ offers **Open it instead**. Create project makes the folder, a repository on
 `main` with a first commit that holds `.gitignore` and nothing else, one
 workspace and project named after it, and opens the first lap session.
 
-The first lap session shows one banner under the crumb bar: where it works
-(project folder, `main`), that nothing is published, and **Publish**. Publish
+The first lap session shows one notice under the goal of its Overview,
+`Not published yet`, with **Publish**. Publish
 opens an inline panel: create a repository on your own GitHub account
 (visibility is always an explicit pick) or use any HTTPS or SSH address. When
 the project folder has changed files the primary action reads **Publish and
@@ -2882,12 +2896,13 @@ links to the tabs, every value on the same column), **Change model** (Settings, 
 Step summaries) and **Update now**. Update now queues a consolidation pass
 through `requestContextUpdate`, behind any pass in flight and never beside it;
 `summarizerPending` holds the turns waiting and whether a requested update is
-queued, and the row reads only that queue state. The tabs are a
-`SegmentedTabs` strip at its own width; the Decisions tab carries the count and
-the change dot. The engine has one name, **Context**, in Activity, in the
+queued, and the row reads only that queue state, as the pane's first gray line
+(no label). The pane is one scroll with Goal, Decisions, Summary and Learned as
+sections (`ContextSection`, no tabs); opening it on a section scrolls there. The
+count lives on the Active group and the change signal on its own group. The engine has one name, **Context**, in Activity, in the
 drawer and in these docs.
 
-Every tab reads as labelled blocks (`ContextBlock`: a `fill` band with an
+Every section reads as labelled blocks (`ContextBlock`: a flat group with an
 eyebrow title, an icon and a count). A block shows its key line first and
 folds the rest behind **Show N more** (`KeyLineList`); `summaryItems` splits a
 body into items, one per top-level bullet with its sub-bullets, or one per
