@@ -1,11 +1,11 @@
 import { expect } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
-import { frameGeometryOf, type FramePage } from '@goodboy/ui';
+import { FRAME_BAND_PX, frameGeometryOf, type FramePage } from '@goodboy/ui';
 import {
   CRUMB_ROWS,
   type Row,
   WAIT,
-  band,
+  studio,
   branchTab,
   click,
   clickButton,
@@ -38,7 +38,7 @@ type GridParams = {
 const expectOnGrid = ({ page, isStudio }: GridParams): void => {
   const geometry = frameGeometryOf({ page });
   expect(geometry.titleCentreY).toBe(geometry.bandHeight + geometry.titleRowHeight / 2);
-  expect(geometry.titleCentreY).toBe(isStudio ? 56 : 28);
+  expect(geometry.titleCentreY).toBe(geometry.bandHeight === FRAME_BAND_PX ? 56 : 28);
   const title = onlyH1({
     scope: isStudio ? (document.querySelector('[data-studio-frame]') ?? document) : document,
   });
@@ -52,6 +52,14 @@ const expectOnGrid = ({ page, isStudio }: GridParams): void => {
     ).toBe(false);
     return;
   }
+  const frame = title.closest('[data-studio-frame]');
+  expect(frame).not.toBeNull();
+  const header = title.closest<HTMLElement>('[data-slot="pane-header"]');
+  if (geometry.bandHeight !== FRAME_BAND_PX) {
+    expect(frame?.querySelector('[data-studio-band]')).toBeNull();
+    expect(header?.hasAttribute('data-under-trail') ?? false).toBe(false);
+    return;
+  }
   if (geometry.titleLeft === 'detail') {
     const detail = title.closest('[data-studio-detail]');
     expect(detail).not.toBeNull();
@@ -61,12 +69,9 @@ const expectOnGrid = ({ page, isStudio }: GridParams): void => {
         first?.querySelector('[data-slot="trail-bar"]') !== null,
     ).toBe(true);
   }
-  const header = title.closest<HTMLElement>('[data-slot="pane-header"]');
   if (header !== null) {
     expect(header.hasAttribute('data-under-trail')).toBe(true);
   }
-  const frame = title.closest('[data-studio-frame]');
-  expect(frame).not.toBeNull();
   expect(frame?.querySelector('[data-studio-band] [data-page-column]')).not.toBeNull();
 };
 
@@ -149,25 +154,25 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
     lands: landsOnSessionPage({ page: 'questions', title: 'Questions' }),
   },
   {
-    name: 'frame: the Tasks studio draws its band and its title on the column',
+    name: 'frame: the Tasks page draws no band, its title alone on the column',
     covers: ['openInbox', 'studio:inbox'],
     door: 'visible',
     open: async () => {
       await clickButton('Tasks');
     },
     lands: async () => {
-      await band('Tasks');
+      await studio('Tasks');
       await settle();
       expectOnGrid({ page: 'inbox', isStudio: true });
     },
   },
   {
-    name: 'frame: the Workflows studio draws its band and its title on the column',
+    name: 'frame: the Workflows page draws no band, its title alone on the column',
     covers: ['openStudio', 'studio:workflow', 'palette:Workflows'],
     door: 'palette',
     open: () => openPalette(/^Workflows$/),
     lands: async () => {
-      await band('Workflows');
+      await studio('Workflows');
       await heading('Workflows');
       await waitFor(() => expectOnGrid({ page: 'workflows', isStudio: true }), WAIT);
     },

@@ -7,7 +7,7 @@ type Props = {
 
 export const TailGlyph = ({ state }: Props) => {
   if (state === 'working' || state === 'queued') {
-    return <span className="size-1.5 rounded-full bg-info motion-safe:animate-soft-pulse" />;
+    return <WorkNode size="sm" state="running" mark={{ kind: 'dot' }} label="Working" />;
   }
   if (state === 'waiting') {
     return <span className="size-3.5 rounded-full ring-2 ring-info ring-inset" />;

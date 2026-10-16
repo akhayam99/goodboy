@@ -19,7 +19,7 @@ describe('Notice', () => {
   afterEach(cleanup);
 
   it.each(TONES.flatMap((tone) => PLACEMENTS.map((placement) => [tone, placement] as const)))(
-    'keeps the %s tone on the rail and icon only in the %s placement',
+    'keeps the %s tone on the icon only in the %s placement',
     (tone, placement) => {
       const { container } = render(
         <Notice
@@ -39,36 +39,36 @@ describe('Notice', () => {
       expect(screen.getByText("GitHub didn't answer.").className).toContain(
         'text-muted-foreground',
       );
-      expect(
-        container.querySelector('[data-notice-rail], [data-testid="tone-bar"]')?.className,
-      ).toContain(`bg-${tone}`);
       expect(screen.getByTestId('notice-icon').getAttribute('class')).toContain(`text-${tone}`);
+      expect(screen.getByTestId('notice-icon').getAttribute('width')).toBe('16');
+      expect(screen.queryByTestId('tone-bar')).toBeNull();
     },
   );
 
-  it.each(['inline', 'banner', 'floating'] as const)(
-    'draws the %s tone as an inner line inside the padding, never an edge',
+  it.each(['inline', 'banner'] as const)(
+    'sits the %s notice on a neutral subtle surface with no border and no tone line',
     (placement) => {
       const { container } = render(
         <Notice tone="warning" placement={placement} title="Spend is at 92%" />,
       );
       const root = container.firstElementChild;
-      const bar = screen.getByTestId('tone-bar');
-
-      expect(root?.contains(bar)).toBe(true);
-      expect(bar.className).toContain('left-1.5');
-      expect(bar.className).toContain('top-3');
-      expect(bar.className).toContain('bottom-3');
-      expect(bar.className).toContain('min-h-4');
-      expect(root?.className).toContain('pl-4');
-      expect(root?.className).toContain('py-3');
-      const edges = Array.from(root?.children ?? []).filter(
-        (child) => child.className.includes('left-0') && child.className.includes('inset-y-0'),
-      );
-      expect(edges).toEqual([]);
+      expect(root?.className).toContain('bg-subtle');
+      expect(root?.className).toContain('rounded-md');
+      expect(root?.className).not.toMatch(/\bborder\b/);
+      expect(screen.queryByTestId('tone-bar')).toBeNull();
       expect(container.querySelector('[data-notice-rail]')).toBeNull();
     },
   );
+
+  it('lifts a floating notice on the one floating surface, with no tone line', () => {
+    const { container } = render(
+      <Notice tone="success" placement="floating" title="Merged #418" />,
+    );
+    const root = container.firstElementChild;
+    expect(root?.className).toContain('bg-floating');
+    expect(root?.className).toContain('shadow-lg');
+    expect(screen.queryByTestId('tone-bar')).toBeNull();
+  });
 
   it('keeps the transcript tone as an edge, because a transcript notice is a quote rail', () => {
     const { container } = render(

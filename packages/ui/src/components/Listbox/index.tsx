@@ -331,11 +331,6 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
               onKeyDown={keyboard.onKeyDown}
               className="min-w-0 flex-1 bg-transparent text-body text-foreground outline-none focus-visible:outline-none! placeholder:text-faint-foreground"
             />
-            {hasQuery ? (
-              <span className="shrink-0 text-meta text-faint-foreground">
-                {entries.length} of {options.length}
-              </span>
-            ) : null}
           </div>
         ) : null}
         {status !== undefined ? (
@@ -371,8 +366,8 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
         ) : null}
         {isMultiple ? (
           <div className="flex shrink-0 items-center justify-between gap-2 px-3 py-1">
-            <span className="text-meta text-faint-foreground">
-              {selectedValues.length} of {options.length}
+            <span className="text-meta tabular-nums text-faint-foreground">
+              {selectedValues.length > 0 ? `${selectedValues.length} selected` : null}
             </span>
             <Button
               variant="ghost"

@@ -70,7 +70,7 @@ describe('the Chat drawer split scene', () => {
     expect(slot?.querySelector('[data-studio-sheet-owner]')).not.toBeNull();
     expect(panel.getAttribute('data-drawer-mode')).toBe('closed');
     expect(page?.getAttribute('data-sheet')).toBe('wrapped');
-    expect(page?.querySelector('[data-studio-band]')).not.toBeNull();
+    expect(page?.querySelector('[data-studio-band]')).toBeNull();
     expect(page?.contains(panel)).toBe(false);
   });
 });

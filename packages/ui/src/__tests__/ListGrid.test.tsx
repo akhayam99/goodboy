@@ -35,7 +35,7 @@ const renderGrid = ({ onSelect }: RenderParams) =>
           isSelected={row.id === 'a'}
           onSelect={() => onSelect(row.id)}
           cells={[
-            <StateDot key="dot" state="running" label="Working" />,
+            <StateDot key="dot" state="running" label="Working" isLive />,
             row.role,
             row.title,
             row.time,
@@ -168,6 +168,26 @@ describe('ListGrid', () => {
     expect(count.previousElementSibling?.textContent).toBe('In progress');
   });
 
+  it('shows the count from two rows and puts the fold word right after it', () => {
+    const onToggle = vi.fn();
+    const { container } = render(
+      <ListGrid label="Tasks" columns={COLUMNS} isGrouped>
+        <ListGridGroup label="Starred" count={1}>
+          <ListGridRow cells={['', 'HBL-412', 'Ledger export times out', '2h']} />
+        </ListGridGroup>
+        <ListGridGroup label="Linear" count={411} fold={{ label: 'Show all', onToggle }}>
+          <ListGridRow cells={['', 'HBL-398', 'Settlement dates', '5d']} />
+        </ListGridGroup>
+      </ListGrid>,
+    );
+    const counts = Array.from(container.querySelectorAll('[data-list-grid-count]'));
+    expect(counts.map((count) => count.textContent)).toEqual(['411']);
+    const fold = screen.getByRole('button', { name: 'Show all' });
+    expect(counts[0]?.nextElementSibling).toBe(fold);
+    fireEvent.click(fold);
+    expect(onToggle).toHaveBeenCalledOnce();
+  });
+
   it('draws a group with no name as rows alone, with no heading and no count', () => {
     const { container } = render(
       <ListGrid label="Sessions" columns={COLUMNS} isGrouped>
@@ -188,16 +208,36 @@ describe('ListGrid', () => {
 });
 
 describe('StateDot', () => {
-  it('names its state and pulses only while running', () => {
+  it('names its state and pulses only on the item the caller marks live', () => {
     render(
       <>
-        <StateDot state="running" label="Working" />
-        <StateDot state="needsYou" label="Needs you" />
+        <StateDot state="running" label="Working" isLive />
+        <StateDot state="running" label="2 running" />
+        <StateDot state="needsYou" label="Needs you" isLive />
       </>,
     );
     expect(screen.getByRole('img', { name: 'Working' }).className).toContain('animate-soft-pulse');
+    expect(screen.getByRole('img', { name: '2 running' }).className).not.toContain(
+      'animate-soft-pulse',
+    );
     expect(screen.getByRole('img', { name: 'Needs you' }).className).not.toContain(
       'animate-soft-pulse',
     );
+  });
+
+  it('draws idle and stopped as a ring with a transparent fill', () => {
+    render(
+      <>
+        <StateDot state="idle" label="Idle" />
+        <StateDot state="stopped" label="Stopped" />
+        <StateDot state="done" label="Done" />
+      </>,
+    );
+    for (const name of ['Idle', 'Stopped']) {
+      const dot = screen.getByRole('img', { name });
+      expect(dot.className).toContain('bg-transparent');
+      expect(dot.className).toContain('ring-1');
+    }
+    expect(screen.getByRole('img', { name: 'Done' }).className).toContain('bg-success');
   });
 });

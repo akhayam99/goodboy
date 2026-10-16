@@ -343,7 +343,7 @@ describe('RoutingPicker', () => {
     });
   });
 
-  it('shows the pinned model with an x that goes back to Auto', () => {
+  it('says a pinned model in the trigger and resets it from the popover, with no bare x', () => {
     const onReset = vi.fn();
     render(
       <RoutingPicker
@@ -358,7 +358,12 @@ describe('RoutingPicker', () => {
         recommendation={{ provider: 'anthropic', model: 'claude-sonnet-4-6' }}
       />,
     );
-    expect(screen.getByRole('button', { name: /^Scout routing:/ }).textContent).toContain('Haiku');
+    const trigger = screen.getByRole('button', { name: /^Scout routing:/ });
+    expect(trigger.textContent).toContain('Haiku');
+    expect(trigger.textContent).toContain('· pinned');
+    expect(trigger.className).not.toContain('warning');
+    expect(screen.queryByRole('button', { name: 'Back to Auto' })).toBeNull();
+    fireEvent.click(trigger);
     fireEvent.click(screen.getByRole('button', { name: 'Back to Auto' }));
     expect(onReset).toHaveBeenCalled();
   });

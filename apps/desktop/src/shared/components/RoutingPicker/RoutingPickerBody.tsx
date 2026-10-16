@@ -78,6 +78,7 @@ type Props = {
   readonly verbosity?: VerbosityLevel;
   readonly onVerbosity?: (verbosity: VerbosityLevel) => void;
   readonly onReset?: () => void;
+  readonly resetLabel?: string;
   readonly overridden?: boolean;
   readonly defaultSummary?: string;
   readonly summary?: string;
@@ -102,6 +103,7 @@ export const RoutingPickerBody = ({
   verbosity,
   onVerbosity,
   onReset,
+  resetLabel = 'reset',
   overridden,
   defaultSummary,
   summary,
@@ -251,11 +253,13 @@ export const RoutingPickerBody = ({
 
   return (
     <>
-      {defaultSummary != null && (
+      {(defaultSummary != null || (onReset != null && isOverridden)) && (
         <div className="flex items-start gap-1 px-3 py-2 text-meta">
           <span className={cn('flex-1', isOverridden ? 'text-warning' : 'text-muted-foreground')}>
-            {isOverridden ? 'Overriding default' : 'Using default'} ·{' '}
-            {isOverridden ? (summary ?? defaultSummary) : defaultSummary}
+            {isOverridden ? 'Overriding default' : 'Using default'}
+            {defaultSummary == null
+              ? null
+              : ` · ${isOverridden ? (summary ?? defaultSummary) : defaultSummary}`}
           </span>
           {onReset != null && isOverridden && (
             <button
@@ -266,7 +270,7 @@ export const RoutingPickerBody = ({
               }}
               className="font-medium text-warning underline-offset-2 hover:underline"
             >
-              reset
+              {resetLabel}
             </button>
           )}
         </div>

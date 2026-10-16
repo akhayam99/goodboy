@@ -109,8 +109,8 @@ describe('the u23 frame scenes', () => {
     await waitFor(() => expect(visibleH1s()).toHaveLength(1));
   });
 
-  it.each(STUDIO_SCENES)('draws the band and the title of %s on the same column', async (id) => {
-    const { container } = await renderScene(id);
+  it('draws the Impact band with its Close on the column of its title', async () => {
+    const { container } = await renderScene('frame-studio-impact');
 
     const band = container.querySelector('[data-studio-band]') as HTMLElement;
     expect(band).not.toBeNull();
@@ -121,6 +121,27 @@ describe('the u23 frame scenes', () => {
     const title = visibleH1s()[0] as HTMLElement;
     expect(title.closest('[data-page-column]')?.getAttribute('data-width')).toBe('column');
     expect(title.closest('[data-slot="pane-header"]')?.hasAttribute('data-under-trail')).toBe(true);
+  });
+
+  it.each([
+    ['frame-studio-inbox', false],
+    ['frame-studio-workflows', false],
+    ['frame-studio-guide', true],
+  ] as const)('draws no band around %s, its title alone on the column', async (id, hasClose) => {
+    const { container } = await renderScene(id);
+
+    await waitFor(() => expect(visibleH1s()).toHaveLength(1));
+    expect(container.querySelector('[data-studio-band]')).toBeNull();
+    const header = visibleH1s()[0]?.closest('[data-slot="pane-header"]');
+    expect(visibleH1s()[0]?.closest('[data-page-column]')?.getAttribute('data-width')).toBe(
+      'column',
+    );
+    expect(header?.hasAttribute('data-under-trail')).toBe(false);
+    expect(
+      screen
+        .queryAllByRole('button', { name: /^Close/ })
+        .filter((button) => header?.contains(button) === true),
+    ).toHaveLength(hasClose ? 1 : 0);
   });
 
   it('gives Workflows its title and the tab strip with its one primary under it', async () => {
