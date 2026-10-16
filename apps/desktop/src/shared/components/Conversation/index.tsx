@@ -21,6 +21,13 @@ const isFlat = ({ thread }: FlatParams): boolean =>
   thread.anchor == null &&
   thread.isResolved !== true;
 
+type SentenceParams = {
+  readonly text: string;
+};
+
+const sentenceOf = ({ text }: SentenceParams): string =>
+  text.length === 0 ? text : `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
+
 export const Conversation = ({ source, model }: Props) => {
   if (source.isLoading && model.threads.length === 0) {
     return <ConversationSkeleton />;
@@ -30,7 +37,7 @@ export const Conversation = ({ source, model }: Props) => {
     return (
       <ErrorStrip
         label="the conversation"
-        error={new Error(source.error)}
+        error={new Error(sentenceOf({ text: source.error }))}
         onRetry={source.onRetry}
       />
     );

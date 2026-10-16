@@ -25,7 +25,7 @@ export const TasksGroupByMenu = ({ groupBy, onGroupBy }: Props) => {
           onClick={dropdown.toggle}
           className={cn(dropdown.open && 'bg-selected')}
         >
-          Group by
+          {`Group: ${TASK_GROUP_BY_LABEL[groupBy]}`}
         </Button>
       }
     >

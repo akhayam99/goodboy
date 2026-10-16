@@ -19,6 +19,7 @@ export const ConversationComposer = ({ source, model }: Props) => {
   const placeholder = composerPlaceholder({
     capabilities: source.capabilities,
     target: model.target,
+    toolLabel: source.toolLabel,
   });
   const isEmpty = draft.trim() === '';
 

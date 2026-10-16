@@ -238,7 +238,7 @@ describe('PrDetailPanel', () => {
   it('posts a top level comment without a parent', async () => {
     renderPanel();
     await openConversation();
-    fireEvent.change(screen.getByLabelText('Start a new thread'), {
+    fireEvent.change(screen.getByLabelText('Reply on Bitbucket'), {
       target: { value: 'Shipping this' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));

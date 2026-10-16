@@ -167,7 +167,7 @@ const openTasksAndStart = async (ctx: Ctx): Promise<void> => {
   await visible('listbox', 'Starred');
   counted(inboxRowButton('HBL-415'));
   await settle();
-  counted(await screen.findByRole('button', { name: /^Start from HBL-415/ }, WAIT));
+  counted(await screen.findByRole('button', { name: 'Start session' }, WAIT));
   await settle(6);
 };
 

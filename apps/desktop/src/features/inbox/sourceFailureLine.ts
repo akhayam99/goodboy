@@ -9,9 +9,9 @@ const RATE_LIMITED = /\b429\b|rate.?limit/i;
 
 export const sourceFailureLine = ({ name, message }: Params): string => {
   if (RATE_LIMITED.test(message)) {
-    return `${name} is rate limited. Retry`;
+    return `${name} is rate limited.`;
   }
   const { summary } = splitErrorMessage({ message });
   const reason = (summary ?? 'it answered with an error').replace(/\.$/, '');
-  return `${name} didn't load: ${reason}. Retry`;
+  return `${name} didn't load: ${reason}.`;
 };

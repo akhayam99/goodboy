@@ -43,7 +43,7 @@ describe('InboxList', () => {
     renderList();
 
     const list = screen.getByRole('list', { name: 'Task items' });
-    expect(list.style.gridTemplateColumns).toBe('0px 16px 88px minmax(0,1fr) 16px 16px 48px 0px');
+    expect(list.style.gridTemplateColumns).toBe('0px 16px 72px minmax(0,1fr) 16px 16px 48px 0px');
   });
 
   it('shows skeleton rows only until the first row arrives', () => {

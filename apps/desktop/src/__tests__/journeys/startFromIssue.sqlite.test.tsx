@@ -265,7 +265,7 @@ describe('journey: start a session from an issue', () => {
     expect(screen.queryByText('Session started')).toBeNull();
 
     storySpies.createWorktree.mockResolvedValue(WORKTREE);
-    fireEvent.click(screen.getByRole('button', { name: 'Start from HBL-412' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
 
     await waitFor(() => expect(useAppStore.getState().sessions).toHaveLength(1));
     expect(await sessionRows()).toHaveLength(1);

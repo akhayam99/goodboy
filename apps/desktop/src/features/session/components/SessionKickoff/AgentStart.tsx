@@ -16,6 +16,7 @@ import { PromptField } from '../../../../shared/components/PromptField';
 import { usePromptFiles } from '../../../../shared/hooks/usePromptFiles';
 import { toAttachmentInputs } from '../../../attachments/pendingAttachment';
 import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
+import { NAMES } from '../../../../shared/names';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -150,7 +151,7 @@ export const AgentStart = ({ workspaceId }: Props) => {
           onClick={() => void startAgent()}
           title={!canStart ? `Write what ${kindLabel} should do` : undefined}
         >
-          {startLabel}
+          {error === null ? startLabel : NAMES.retry}
         </Button>
       </StartFooter>
     </div>

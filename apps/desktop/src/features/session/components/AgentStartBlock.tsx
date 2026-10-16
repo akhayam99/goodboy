@@ -13,6 +13,7 @@ import { AgentStartFields } from './AgentStartFields';
 import { LaunchEstimateNote } from './CreateAgentPopover/LaunchEstimateNote';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import { openAgentRevealEvent } from '../../../shared/utils/openAgentReveal';
+import { NAMES } from '../../../shared/names';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -151,7 +152,7 @@ export const AgentStartBlock = ({
             isBusy={isSpawning}
             busyLabel={`Starting ${kindLabel}`}
           >
-            {actionLabel}
+            {spawnError === null ? actionLabel : NAMES.retry}
           </Button>
         </FormActions>
         <LaunchEstimateNote

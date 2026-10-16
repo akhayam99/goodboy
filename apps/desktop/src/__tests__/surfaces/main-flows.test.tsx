@@ -210,7 +210,7 @@ describe('main flows on the real store', () => {
         launchFocusRequest={0}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: /^Start from #412/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start session' }));
 
     await waitFor(() =>
       expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]).toMatchObject({

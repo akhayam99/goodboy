@@ -232,7 +232,7 @@ export const HowToWorkOnIt = ({ workspaceId, candidates, title, goal, onGoalChan
               busyLabel={NAMES.starting}
               onClick={() => void startAgentRun()}
             >
-              {startLabel}
+              {error === null ? startLabel : NAMES.retry}
             </Button>
           </StartFooter>
         </div>

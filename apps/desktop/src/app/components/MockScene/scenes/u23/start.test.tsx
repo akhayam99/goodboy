@@ -65,10 +65,10 @@ describe('the start scenes', () => {
     expect(screen.queryByRole('textbox', { name: 'Search issues' })).toBeNull();
   });
 
-  it('starts an Inbox issue with the identifier in the verb', async () => {
+  it('starts an Inbox issue with Start session, the key at the left', async () => {
     draw({ name: 'start-from-inbox' });
 
-    expect(await screen.findByRole('button', { name: /Start from HBL-412/ })).toBeDefined();
+    expect(await screen.findByRole('button', { name: 'Start session' })).toBeDefined();
     expect(screen.queryByRole('button', { name: /Launch session/ })).toBeNull();
   });
 

@@ -39,7 +39,8 @@ type SceneId = keyof typeof U24_NEW_DRAWER_SCENES;
 type Params = { readonly id: SceneId };
 
 const SCENE_FORM: Readonly<Record<SceneId, string>> = {
-  'new-drawer-run': 'Orchestrate',
+  'new-drawer-run': 'Run a workflow',
+  'new-drawer-orchestrate': 'Orchestrate',
   'new-drawer-run-guidance': 'Orchestrate',
   'new-drawer-run-preset': 'Run a workflow',
   'new-drawer-run-preset-pin': 'Run a workflow',
@@ -52,6 +53,7 @@ const SCENE_FORM: Readonly<Record<SceneId, string>> = {
 
 const SCENE_IDS: ReadonlyArray<SceneId> = [
   'new-drawer-run',
+  'new-drawer-orchestrate',
   'new-drawer-run-guidance',
   'new-drawer-run-preset',
   'new-drawer-run-preset-pin',
@@ -82,9 +84,9 @@ describe('the New drawer scenes', () => {
   });
 
   it('opens Orchestrate with the goal, the orchestrator, the three pills and no likely steps', async () => {
-    show({ id: 'new-drawer-run' });
+    show({ id: 'new-drawer-orchestrate' });
 
-    const inDrawer = await drawer({ id: 'new-drawer-run' });
+    const inDrawer = await drawer({ id: 'new-drawer-orchestrate' });
     await waitFor(
       () =>
         expect(inDrawer.getByRole('textbox', { name: 'Goal' })).toHaveProperty(

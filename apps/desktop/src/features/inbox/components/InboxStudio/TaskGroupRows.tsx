@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
-import { ListGridGroup, ListGridLine } from '@goodboy/ui';
+import { Button, ListGridGroup, ListGridLine } from '@goodboy/ui';
 import { useVirtualRows } from '../../../../shared/hooks/useVirtualRows';
 import { TASK_GROUP_CAP, TASK_VIRTUAL_MIN, shownTaskRecords } from '../../shownTaskRecords';
 import type { InboxRecord } from '../../types';
@@ -9,12 +9,13 @@ import { TASK_ROW_HEIGHT } from './taskColumns';
 export type TaskLine = {
   readonly key: string;
   readonly text: string;
-  readonly onClick?: () => void;
+  readonly onRetry?: () => void;
 };
 
 type Props = {
   readonly label: string;
   readonly records: ReadonlyArray<InboxRecord>;
+  readonly total?: number;
   readonly isExpanded: boolean;
   readonly canCollapse: boolean;
   readonly lines?: ReadonlyArray<TaskLine>;
@@ -41,6 +42,7 @@ const positionOf = ({ cursorIndex, firstVisible, total }: PositionParams): strin
 export const TaskGroupRows = ({
   label,
   records,
+  total = records.length,
   isExpanded,
   canCollapse,
   lines = [],
@@ -80,7 +82,7 @@ export const TaskGroupRows = ({
   const cursorRow = rendered.find((record) => record.key === cursorKey);
   const foot = (() => {
     if (isCapped) {
-      return <ListGridLine onClick={onExpand}>{`Show all ${records.length}`}</ListGridLine>;
+      return <ListGridLine onClick={onExpand}>Show all</ListGridLine>;
     }
     if (isExpanded && canCollapse && records.length > TASK_GROUP_CAP) {
       return <ListGridLine onClick={onCollapse}>Show fewer</ListGridLine>;
@@ -95,11 +97,9 @@ export const TaskGroupRows = ({
       headingLevel={2}
       isSticky={isVirtual}
       action={
-        isVirtual
-          ? positionOf({ cursorIndex, firstVisible: range.firstVisible, total: records.length })
-          : action
+        isVirtual ? positionOf({ cursorIndex, firstVisible: range.firstVisible, total }) : action
       }
-      {...(isVirtual ? {} : { count: records.length })}
+      {...(isVirtual ? {} : { count: total })}
       {...(cursorRow === undefined
         ? {}
         : { activeDescendant: inboxOptionId({ key: cursorRow.key }) })}
@@ -107,11 +107,15 @@ export const TaskGroupRows = ({
         lines.length === 0
           ? null
           : lines.map((line) => (
-              <ListGridLine
-                key={line.key}
-                {...(line.onClick === undefined ? {} : { onClick: line.onClick })}
-              >
-                {line.text}
+              <ListGridLine key={line.key}>
+                <span className="flex min-w-0 items-center gap-2">
+                  <span className="min-w-0 truncate">{line.text}</span>
+                  {line.onRetry === undefined ? null : (
+                    <Button variant="ghost" size="xs" onClick={line.onRetry}>
+                      Retry
+                    </Button>
+                  )}
+                </span>
               </ListGridLine>
             ))
       }

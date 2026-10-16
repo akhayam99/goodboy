@@ -172,7 +172,9 @@ describe('The pane follows the cursor', () => {
   it('opens a record in the pane and moves it with j while the list stays beside it', async () => {
     await openRecord({ key: 'github:issue:payments-api#57', fetchedBy: 'gh_run' });
 
-    expect(screen.getByRole('complementary', { name: 'Task' }).textContent).toContain('#57');
+    expect(screen.getByRole('complementary', { name: 'Task' }).textContent).toContain(
+      'Start session',
+    );
     expect(screen.getByRole('list', { name: 'Task items' })).toBeDefined();
 
     await act(async () => {

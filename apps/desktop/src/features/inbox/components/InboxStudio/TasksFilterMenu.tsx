@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { AnchoredPopover, Button, Chip, cn, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Button, cn, useDropdown } from '@goodboy/ui';
 
 type Props = {
   readonly activeCount: number;
@@ -7,7 +7,7 @@ type Props = {
 };
 
 export const TasksFilterMenu = ({ activeCount, facets }: Props) => {
-  const dropdown = useDropdown({ align: 'end', width: 'w-80', expectedHeight: 420 });
+  const dropdown = useDropdown({ align: 'end', width: 'w-80', expectedHeight: 520 });
   const hasActive = activeCount > 0;
   return (
     <AnchoredPopover
@@ -27,7 +27,9 @@ export const TasksFilterMenu = ({ activeCount, facets }: Props) => {
           className={cn(dropdown.open && 'bg-selected')}
         >
           Filter
-          {hasActive ? <Chip kind="count" tone="neutral" label={activeCount} /> : null}
+          {hasActive ? (
+            <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-muted-foreground" />
+          ) : null}
         </Button>
       }
     >

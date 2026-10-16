@@ -5,14 +5,15 @@ import { fixtureMessage } from './testing/conversationFixtures';
 
 describe('composerPlaceholder', () => {
   it.each([
-    [{ reply: 'thread', startThread: true }, 'Start a new thread'],
-    [{ reply: 'quote', startThread: true }, 'Write a comment'],
-    [{ reply: 'none', startThread: false }, 'Reply in thread'],
-  ] as const)('names what the composer does for %o', (shape, expected) => {
+    [{ reply: 'thread', startThread: true }, 'Linear', 'Reply on Linear'],
+    [{ reply: 'quote', startThread: true }, 'GitHub issues', 'Reply on GitHub'],
+    [{ reply: 'none', startThread: false }, 'Slack', 'Reply in thread'],
+  ] as const)('names where the reply goes for %o', (shape, toolLabel, expected) => {
     expect(
       composerPlaceholder({
         capabilities: { ...shape, resolve: false, react: false },
         target: null,
+        toolLabel,
       }),
     ).toBe(expected);
   });
@@ -24,6 +25,7 @@ describe('composerPlaceholder', () => {
       composerPlaceholder({
         capabilities: { reply: 'thread', startThread: true, resolve: false, react: false },
         target: { threadId: 't', message, mode: 'thread' },
+        toolLabel: 'Linear',
       }),
     ).toBe('Write a reply');
   });

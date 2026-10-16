@@ -257,7 +257,7 @@ describe('useRecordFrame', () => {
     window.addEventListener('goodboy:new-session', onNewSession);
     render(<Harness record={GITHUB_RECORD} onLaunched={onLaunched} />);
 
-    const primary = screen.getByRole('button', { name: /Start from #42/ });
+    const primary = screen.getByRole('button', { name: 'Start session' });
     const identityLine = primary.closest('[data-slot="record-header"]')?.firstElementChild;
     expect(identityLine?.contains(primary)).toBe(true);
     expect(screen.queryByRole('dialog', { name: 'Start a session' })).toBeNull();

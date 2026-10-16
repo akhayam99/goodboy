@@ -345,9 +345,7 @@ describe('CreateAgentPopover', () => {
 
     expect((await screen.findByRole('alert')).textContent).toContain('provider is unavailable');
     await waitFor(() =>
-      expect(
-        screen.getByRole('button', { name: 'Start Generalist' }).hasAttribute('disabled'),
-      ).toBe(false),
+      expect(screen.getByRole('button', { name: 'Retry' }).hasAttribute('disabled')).toBe(false),
     );
     expect(screen.getByRole('dialog', { name: 'Start agent' })).toBeDefined();
   });

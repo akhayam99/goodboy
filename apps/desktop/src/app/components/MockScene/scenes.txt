@@ -492,6 +492,7 @@ needs-you-card
 new-drawer-agent
 new-drawer-agent-auto
 new-drawer-narrow
+new-drawer-orchestrate
 new-drawer-run
 new-drawer-run-guidance
 new-drawer-run-preset

@@ -89,8 +89,8 @@ describe('c12 task scenes', () => {
 
     expect(groupNames()).toEqual(['Starred', 'GitHub', 'Linear', 'Jira']);
     expect(screen.getByRole('tab', { name: 'For me' }).getAttribute('aria-selected')).toBe('true');
-    expect(screen.getByRole('button', { name: 'Show all 11' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Show all 411' })).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Show all' }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole('button', { name: /^Show all \d/ })).toBeNull();
     expect(within(list()).getAllByRole('option').length).toBeLessThanOrEqual(16);
   });
 
@@ -118,7 +118,8 @@ describe('c12 task scenes', () => {
   it('puts the rate limited source as one gray line in its group', async () => {
     await mount('c12-tasks-ratelimited');
 
-    expect(screen.getByRole('button', { name: 'Linear is rate limited. Retry' })).toBeDefined();
+    expect(screen.getByText('Linear is rate limited.')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeDefined();
   });
 
   it('opens the Filter menu with sources first', async () => {

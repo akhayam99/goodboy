@@ -2,6 +2,7 @@ import { Trash2 } from 'lucide-react';
 import { Button, ConfirmPopover, FormActions, cn } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/names';
 import type { ArtifactCreationRouting } from '../../../../store/slices/artifactDrafts/types';
 import type { ArtifactCreationGate } from '../../artifactCreationGate';
 import { ArtifactRoutingControl } from './ArtifactRoutingControl';
@@ -86,7 +87,7 @@ export const ArtifactCreationActions = ({
       className="shrink-0"
     >
       <span className={cn(isStarting && 'text-shimmer')}>
-        {isStarting ? 'Starting…' : generateLabel}
+        {isStarting ? 'Starting…' : error === null ? generateLabel : NAMES.retry}
       </span>
     </Button>
   </FormActions>

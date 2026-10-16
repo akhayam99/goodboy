@@ -110,10 +110,10 @@ describe('SPEC3 9.7 issues and Tasks rows reachable from the new issue pane', ()
     expect(screen.getByRole('textbox', { name: 'Edit description' })).toBeDefined();
   });
 
-  it('keeps Start from on an issue nobody linked', async () => {
+  it('keeps Start session on an issue nobody linked', async () => {
     await mount({ name: 'c12-issue-github' });
 
-    expect(within(pane()).getByRole('button', { name: /^Start from #500/ })).toBeDefined();
+    expect(within(pane()).getByRole('button', { name: 'Start session' })).toBeDefined();
   });
 
   it('hosts a Sentry error unchanged in the same pane frame', async () => {

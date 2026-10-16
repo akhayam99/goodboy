@@ -124,7 +124,7 @@ const StateScene = ({
 const INBOX_FAILURE = {
   key: 'failure:sentry',
   text: sourceFailureLine({ name: 'Sentry', message: 'The token was refused (401).' }),
-  onClick: noop,
+  onRetry: noop,
 };
 
 const NO_GROUP_HANDLERS = {

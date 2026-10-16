@@ -10,6 +10,7 @@ import { AutoLimitChip } from '../../auto/AutoLimitChip';
 import type { AutoTreeLimitModel } from '../../auto/useAutoTreeLimit';
 import { ModelControlChip } from '../../../shared/components/ModelControlChip';
 import { START_AUTO_CHOICE } from '../../../shared/lib/startCopy';
+import { NAMES } from '../../../shared/names';
 
 type PromptFiles = ReturnType<typeof usePromptFiles>;
 
@@ -116,7 +117,7 @@ export const AutoComposerView = ({
               isBusy={isStarting}
               busyLabel="Starting Auto"
             >
-              {START_AUTO_CHOICE}
+              {error === null ? START_AUTO_CHOICE : NAMES.retry}
             </Button>
           </FormActions>
           {hasProvider ? null : (

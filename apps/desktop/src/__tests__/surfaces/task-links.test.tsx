@@ -482,7 +482,7 @@ describe('tasks and sessions on the real store', () => {
 
       await mount(surfaces(session, entry));
       const inboxRegion = screen.getByRole('region', { name: 'Task' });
-      fireEvent.click(within(inboxRegion).getByRole('button', { name: /^Start from / }));
+      fireEvent.click(within(inboxRegion).getByRole('button', { name: 'Start session' }));
 
       const draft = useAppStore.getState().sessionDrafts[WORKSPACE_ID];
       expect(draft).toMatchObject({ choice: 'task' });

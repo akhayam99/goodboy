@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { PageColumn } from '@goodboy/ui';
 import { WorkflowBuilderView } from '../../../../../features/workflows/components/WorkflowBuilderView';
 import { FLOW_SESSION, noop } from './fixtures';
 import { seedWorkflowBuilder } from './seeds';
@@ -16,8 +17,10 @@ export const WorkflowBuilderScene = () => {
   }
 
   return (
-    <main className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
-      <WorkflowBuilderView mode="preset" session={FLOW_SESSION} onClose={noop} />
+    <main className="@container flex min-h-screen flex-col bg-background py-6 text-foreground">
+      <PageColumn width="measure">
+        <WorkflowBuilderView mode="preset" session={FLOW_SESSION} onClose={noop} />
+      </PageColumn>
     </main>
   );
 };

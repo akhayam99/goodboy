@@ -107,12 +107,12 @@ describe('TaskGroupRows', () => {
     expect(screen.queryByRole('button', { name: /Show all/ })).toBeNull();
   });
 
-  it('caps a group at five rows and offers Show all with the full count', () => {
+  it('caps a group at five rows and offers Show all, the count on the label', () => {
     const onExpand = vi.fn();
     render(group({ records: many(38), onExpand }));
 
     expect(screen.getAllByRole('option')).toHaveLength(5);
-    fireEvent.click(screen.getByRole('button', { name: 'Show all 38' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show all' }));
     expect(onExpand).toHaveBeenCalledOnce();
   });
 
@@ -136,12 +136,13 @@ describe('TaskGroupRows', () => {
     ).toBe('inbox-option-github_issue_40');
   });
 
-  it('puts a source that did not load as one gray line that retries on click', () => {
-    const onClick = vi.fn();
-    render(group({ lines: [{ key: 'linear', text: 'Linear is rate limited. Retry', onClick }] }));
+  it('puts a source that did not load as one gray line with a Retry button', () => {
+    const onRetry = vi.fn();
+    render(group({ lines: [{ key: 'linear', text: 'Linear is rate limited.', onRetry }] }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Linear is rate limited. Retry' }));
-    expect(onClick).toHaveBeenCalledOnce();
+    expect(screen.getByText('Linear is rate limited.')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(onRetry).toHaveBeenCalledOnce();
   });
 
   it('re-renders only the rows that gain or lose the selection', () => {

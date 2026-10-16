@@ -107,6 +107,6 @@ describe('InboxStarredGroup', () => {
     renderGroup({ rows: [], records });
 
     expect(screen.getAllByRole('option')).toHaveLength(5);
-    expect(screen.getByRole('button', { name: 'Show all 7' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Show all' })).toBeDefined();
   });
 });

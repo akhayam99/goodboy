@@ -13,6 +13,7 @@ import type { InboxRecord } from '../../types';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { TaskPriorityMark } from './TaskPriorityMark';
+import { taskKeyOf } from '../../taskKeyOf';
 
 type Props = {
   readonly record: InboxRecord;
@@ -84,7 +85,7 @@ const InboxRowView = ({
       cells={[
         <IntegrationGlyph key="source" provider={record.provider} size="xs" useBrandColor />,
         <span key="key" className="truncate font-mono">
-          {record.identifier}
+          {taskKeyOf({ record })}
         </span>,
         <span
           key="title"
@@ -92,12 +93,14 @@ const InboxRowView = ({
         >
           {record.title}
         </span>,
-        <StateIcon
-          key="status"
-          size={ICON_SIZE.row}
-          aria-label={record.stateLabel}
-          className={tintClasses(state.tone).icon}
-        />,
+        record.provider === 'slack' ? null : (
+          <StateIcon
+            key="status"
+            size={ICON_SIZE.row}
+            aria-label={record.stateLabel}
+            className={tintClasses(state.tone).icon}
+          />
+        ),
         <TaskPriorityMark key="priority" record={record} />,
         formatAge({ from: record.updatedAt, now }),
       ]}

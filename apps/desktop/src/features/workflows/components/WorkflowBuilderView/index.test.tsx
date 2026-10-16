@@ -244,7 +244,7 @@ const goalField = () =>
   screen.getByPlaceholderText(/What should this run get done/i) as HTMLTextAreaElement;
 
 const startBtn = () =>
-  screen.getByRole('button', { name: /start (run|orchestration)/i }) as HTMLButtonElement;
+  screen.getByRole('button', { name: /^(start (run|orchestration)|retry)$/i }) as HTMLButtonElement;
 
 const setGoal = () => {
   if (goalField().value.trim().length === 0) {

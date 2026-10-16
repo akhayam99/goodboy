@@ -168,10 +168,7 @@ describe('the c10 New session scenes', () => {
       'value',
       'Make ledger posts in payments-api safe to retry end to end, and keep ledger-core balances unchanged',
     );
-    expect(screen.getByRole('button', { name: 'Start orchestration' })).toHaveProperty(
-      'disabled',
-      false,
-    );
+    expect(screen.getByRole('button', { name: 'Retry' })).toHaveProperty('disabled', false);
     expect(useAppStore.getState().openSessionDraftWorkspaceId).toBe(WORKSPACE_ID);
   });
 

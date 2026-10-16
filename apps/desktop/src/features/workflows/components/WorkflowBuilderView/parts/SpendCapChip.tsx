@@ -1,6 +1,7 @@
 import { RotateCcw } from 'lucide-react';
 import { AnchoredPopover, Switch, cn, formatUsd, useDropdown } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../../shared/names';
 import type { WorkflowSpendLimitMode } from '@goodboy/types';
 import { SpendLimitFields } from '../../../../budget/components/SpendLimitFields';
 import { parseSpendLimit } from '../../../../budget/parseSpendLimit';
@@ -26,8 +27,6 @@ type Props = {
 };
 
 const AMOUNT_ID = 'builder-spend-limit-amount';
-
-const LIMIT_LABEL = 'Limit';
 
 type ValueParams = {
   readonly isEnabled: boolean;
@@ -72,11 +71,11 @@ export const SpendCapChip = ({
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
-      ariaLabel={LIMIT_LABEL}
+      ariaLabel={NAMES.spendCap}
       className="flex flex-col gap-2 p-3"
       trigger={
         <ControlChip
-          label={LIMIT_LABEL}
+          label={NAMES.spendCap}
           value={chipValueOf({ isEnabled, amount, mode })}
           marker={differs ? <RuleDot ruleValue={ruleValue} /> : null}
           isOpen={open}
@@ -89,7 +88,7 @@ export const SpendCapChip = ({
       <div className="flex items-center justify-between gap-3">
         <span className="text-meta text-muted-foreground">Set a limit for this run.</span>
         <Switch
-          ariaLabel={LIMIT_LABEL}
+          ariaLabel={NAMES.spendCap}
           checked={isEnabled}
           disabled={disabled}
           onChange={onEnabled}

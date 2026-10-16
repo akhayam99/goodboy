@@ -1984,9 +1984,9 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   (`shared/hooks/useListKeys`) and the day grouping (`shared/utils/groupByDay`)
   are shared primitives. Tasks uses the rows and the list keys but not the day
   grouping or a rail: its facets (source, show, type, project) sit in one Filter
-  menu of the header, next to the For me and All switch, the search, Group by and
+  menu of the header, next to the For me and All switch, the search, the grouping button (`Group: Source`) and
   `⋯` (Refresh, Manage tools: the `taskList` kind of the action registry), and its rows are one `ListGrid` with a group per
-  source, status or project (`taskGroupsOf`), five rows each until Show all, and
+  source, status or project (`taskGroupsOf`), the total on the label (`taskGroupTotalsOf`, starred rows included), five rows each until Show all, and
   each group is its own listbox of options. J and K move a cursor through the
   rows on screen, and the record follows in the pane only once one is open.
   Tasks opens with a quiet cursor on its first row (`data-cursor`,
@@ -2273,11 +2273,11 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
 - **Every record header has the same four places.** `RecordHeader` puts the
   tool glyph, the identifier and the state on the identity line, with Open in
   the tool, the `⋯` menu and, in Tasks, close at its end. Under the title
-  sits one action row: one primary (Start from HBL-412, Review pull request, or
+  sits one action row: one primary (Start session, Review pull request, or
   Open session once one is linked) and at most two tool verbs picked by state.
-  Before a session is linked, Tasks adds Link to a session beside Start: a searchable
-  list of the workspace's sessions, inline, that links the record to the one
-  you pick. Everything else lives in
+  Before a session is linked, Tasks adds Link to a session under the properties
+  (`RecordFrame.link`): a searchable list of the workspace's sessions that links
+  the record to the one you pick. Everything else lives in
   `⋯` in a fixed order: rare tool verbs, Refresh, Copy link, Remove link to session,
   then destructive verbs after a separator. Editable properties change from the
   control that shows them (the Jira state opens its transitions). Start has

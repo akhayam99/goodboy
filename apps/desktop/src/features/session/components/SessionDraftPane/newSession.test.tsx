@@ -372,7 +372,7 @@ describe('New session page, Ask an agent drawn as the Auto composer', () => {
     expect(spawnAgent).not.toHaveBeenCalled();
     expect(textBox('Describe the work').value).toBe(GOAL);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start Auto' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
   });
 

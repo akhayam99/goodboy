@@ -90,7 +90,7 @@ describe('LinearIssueDetail', () => {
 
   it('starts a new thread on Linear when no message is targeted', async () => {
     render(<LinearIssueDetail issue={ISSUE} workspaceId={'workspace-1' as WorkspaceId} />);
-    fireEvent.change(screen.getByRole('textbox', { name: 'Start a new thread' }), {
+    fireEvent.change(screen.getByRole('textbox', { name: 'Reply on Linear' }), {
       target: { value: 'Merging this' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
