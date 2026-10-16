@@ -375,14 +375,15 @@ never exists on one surface only.
 
 - **Visible actions.** The primary action is a visible, labeled button.
   Frequent alternatives stay visible beside it or on the row they affect.
-  `⋯` holds copy and rare actions. A task chip opens the task; its unlink
-  control appears on pointer hover and keyboard focus, with no kebab.
+  `⋯` holds copy and rare actions. A linked task is one row of the session
+  level's Linked group (`LinkedTaskRow`): a click opens the task, a drag moves
+  it, and Unlink, Move to and Take off this branch sit in its right click
+  menu (Shift+F10), with no kebab and no hover control.
   Putting work on a branch is `Link work to this branch` (`mount.putTaskOnBranch`), on the
   Overview branch row and in the worktree level's `⋯`. Link work is the single entry
   for linking work to a session or workspace. Moving a task is one verb,
-  `Move to`: in the chip's menu (Shift+F10), in the focused issue's
-  `Linked to` row and in the palette; the x on a branch chip says what it
-  does (`Move to session`, or `Take off project / branch`).
+  `Move to`: in the linked row's menu (Shift+F10), in the focused issue's
+  `Linked to` row and in the palette.
 - **One order.** The registry and right click list Open, Act, Copy, then
   lifecycle and destructive verbs, with a rule between groups. Menus and
   visible controls use the same definitions and availability rules.
@@ -2211,7 +2212,7 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   All issues; `Unlink from session` sits in the record's `⋯`, asks first and
   leaves an Undo toast. A `Placed on` property in the Links group shows
   `This session` or the branches; its value (`TaskPlacementMenu`) opens the
-  same `Move to` menu as the task chip, `This session` and one entry per open
+  same `Move to` menu as the linked task row, `This session` and one entry per open
   branch of the issue's project (`project · branch`, middle cut), the current
   placement checked. `IntegrationPane` hands both to every tracker through
   `RecordFrameContext` (`sessionVerbs`, `linkFacts`), so the loading and error
