@@ -25,6 +25,7 @@ type Props = {
   readonly progress?: number | null;
   readonly size?: WorkNodeSize;
   readonly parts?: ReadonlyArray<WorkNodeMixedPart>;
+  readonly isTransparent?: boolean;
 };
 
 const NO_PARTS: ReadonlyArray<WorkNodeMixedPart> = [];
@@ -92,6 +93,7 @@ export const WorkNode = ({
   progress = null,
   size = 'md',
   parts = NO_PARTS,
+  isTransparent = false,
 }: Props) => {
   const nodeSize = WORK_NODE_SIZE_FOR[size];
   const glyphSize = WORK_NODE_GLYPH_SIZE_FOR[size];
@@ -102,7 +104,8 @@ export const WorkNode = ({
       data-node-state={state}
       data-node-size={size}
       className={cn(
-        'relative inline-flex shrink-0 items-center justify-center rounded-full bg-background',
+        'relative inline-flex shrink-0 items-center justify-center rounded-full',
+        isTransparent ? 'bg-transparent' : 'bg-background',
         (isSpinning || (state === 'running' && progress === null)) &&
           cn('spin-border', spinClassName),
         state === 'marker' && cn('ring-1', tintClasses(tone).ring),

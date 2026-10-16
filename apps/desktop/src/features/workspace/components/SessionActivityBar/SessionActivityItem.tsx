@@ -148,6 +148,7 @@ const SessionActivityItemView = ({
       >
         <SessionStateNode
           node={node}
+          isOnSelectedRow={isSelected || isCurrent}
           className="group-focus-within/select-row:invisible group-hover/select-row:invisible group-data-[selecting=true]/select-list:invisible"
         />
         <SessionRowTitle keys={keys} title={title} className="flex-1" titleClassName="truncate" />

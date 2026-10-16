@@ -4,9 +4,10 @@ import type { SessionNode } from '../../../session/sessionNode';
 type Props = {
   readonly node: SessionNode;
   readonly className?: string;
+  readonly isOnSelectedRow?: boolean;
 };
 
-export const SessionStateNode = ({ node, className }: Props) => (
+export const SessionStateNode = ({ node, className, isOnSelectedRow = false }: Props) => (
   <span
     aria-hidden
     className={cn('inline-flex shrink-0', className)}
@@ -20,6 +21,7 @@ export const SessionStateNode = ({ node, className }: Props) => (
       label={node.label}
       isSpinning={node.isSpinning}
       hasUnread={node.hasUnread}
+      isTransparent={isOnSelectedRow}
       size="sm"
     />
   </span>

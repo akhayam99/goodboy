@@ -955,7 +955,11 @@ while it is still on the row.
 
 A session in the left column is one 28px line: a 14px `WorkNode` (`size="sm"`)
 and the title, with a `gap-2` between them and `px-2` inside the pill. It has
-no second line, no `ToneBar`, no marks, no age and no cost. `sessionNodeOf`
+no second line, no `ToneBar`, no marks, no age and no cost. A `WorkNode`
+fills its disc with `bg-background` to mask a rail line behind it; on a
+selected or current row it takes `isTransparent` (`SessionStateNode`
+`isOnSelectedRow`), so an idle node stays a ring on `bg-selected` and never
+reads as a solid dot. `sessionNodeOf`
 picks the node from the stage and, under needs you, from the winning reason,
 and every surface that says why a session waits reads the same table,
 `ATTENTION_REASON_META` in `features/session/session-stage.ts`: one mark, one

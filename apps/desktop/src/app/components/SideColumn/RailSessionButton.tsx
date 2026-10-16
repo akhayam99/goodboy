@@ -59,7 +59,7 @@ export const RailSessionButton = ({
         sign === 'remembered' && 'text-foreground',
       )}
     >
-      <SessionStateNode node={node} />
+      <SessionStateNode node={node} isOnSelectedRow={isCurrent} />
     </button>
   );
   return hasFlyout ? (
