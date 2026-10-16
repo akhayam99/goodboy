@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { AlertTriangle, Ellipsis } from 'lucide-react';
-import { OverflowMenu, type OverflowMenuItem } from '@goodboy/ui';
+import { OverflowMenu, StatusDot, type OverflowMenuItem } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore, useSummarizerStatus } from '../../../../store';
 import { selectHasContextChange } from '../../../../store/slices/contextDrawer/selectHasContextChange';
@@ -72,12 +72,15 @@ export const PaneMoreMenu = ({ sessionId, openPane }: Props) => {
             <span
               aria-hidden
               data-testid="pane-more-signal"
-              className={
-                status === 'error'
-                  ? 'absolute -top-1 -right-1 size-1.5 rounded-full bg-danger'
-                  : 'absolute -top-1 -right-1 size-1.5 rounded-full bg-primary'
-              }
-            />
+              data-signal={status === 'idle' ? 'changed' : status}
+              className="absolute -top-1 -right-1 flex"
+            >
+              <StatusDot
+                tone={status === 'error' ? 'danger' : 'info'}
+                size="sm"
+                pulsing={status === 'running'}
+              />
+            </span>
           ) : null}
         </span>
       }

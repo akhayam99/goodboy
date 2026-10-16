@@ -1016,6 +1016,15 @@ the tooltip only. `PaneCluster` lives in `features/session/components/`.
   its session folder (`scratch_dir_prepare`, dropped when the user left the
   session before it answered). The remembered scope lives in memory and is
   evicted with the session.
+- **The terminal pane header** reads `Terminal`, then the scope picker
+  (`TerminalScopePicker`, a combobox named `Terminal folder`): the project in
+  gray and the branch in mono, never the worktree folder hash. It lists this
+  session's worktrees (an info dot when a shell there runs a process), the
+  main checkout, the workspace folder and, in a session without a branch,
+  the session folder. Picking one opens or reuses a shell there
+  (`openSessionTerminal`, a workspace-owned tab for the workspace folder);
+  each scope keeps its own tabs, nothing is killed. Then **Open on Terminal
+  page** and Close.
 - **Studios use the same `Trail`.** The `StudioFrame` band renders the studio
   name through the `Trail` primitive from `@goodboy/ui`. A studio body that
   goes deeper claims the band with `StudioTrail` (the workflow editor shows

@@ -268,7 +268,7 @@ const ENTRIES: ReadonlyArray<Entry> = [
   },
   {
     kind: 'terminal',
-    region: 'payments-api',
+    region: 'Terminal',
     seed: () => {
       seedSession();
       useAppStore.setState({

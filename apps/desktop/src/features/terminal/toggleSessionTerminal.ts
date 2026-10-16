@@ -2,25 +2,12 @@ import type { SessionId } from '@goodboy/types';
 import { isBranchlessSession } from '../../shared/utils/isBranchlessSession';
 import { useAppStore } from '../../store';
 import { resolveActiveMountPath } from '../../store/slices/worktrees/resolveActiveMountPath';
-import { scratchDirPrepare } from '../worktree/worktree';
+import { openSessionFolderTerminal } from './openSessionFolderTerminal';
 import { openSessionTerminal } from './openSessionTerminal';
 import { sessionTerminalCwd } from './sessionTerminalCwd';
 
 type Params = {
   readonly sessionId?: SessionId;
-};
-
-type FolderParams = {
-  readonly sessionId: SessionId;
-};
-
-const openOnSessionFolder = async ({ sessionId }: FolderParams) => {
-  const cwd = await scratchDirPrepare({ sessionId });
-  const state = useAppStore.getState();
-  if (state.currentSessionId !== sessionId) {
-    return;
-  }
-  openSessionTerminal({ state, sessionId, cwd });
 };
 
 export const toggleSessionTerminal = ({ sessionId: requested }: Params): void => {
@@ -34,7 +21,7 @@ export const toggleSessionTerminal = ({ sessionId: requested }: Params): void =>
     return;
   }
   if (isBranchlessSession({ branch: state.sessionBranches[sessionId] })) {
-    void openOnSessionFolder({ sessionId }).catch((error: unknown) =>
+    void openSessionFolderTerminal({ sessionId }).catch((error: unknown) =>
       state.reportError({ title: "Couldn't open the terminal", error, sessionId }),
     );
     return;
