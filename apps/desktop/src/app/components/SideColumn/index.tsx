@@ -13,6 +13,10 @@ import { COLUMN_DOORS, openColumnDoor, type ColumnActions } from './columnDoors'
 import { LevelBackRow } from './LevelBackRow';
 import { LevelStack } from './LevelStack';
 import { SessionLevel } from './SessionLevel';
+import { WorktreeLevel } from './WorktreeLevel';
+import { openLens } from '../../../features/session/openLens';
+import { sessionTitle } from '../../../features/session/sessionTitle';
+import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { useDoorSignals } from './useDoorSignals';
 import { useSidebarLevel } from './useSidebarLevel';
 import { isStudioOverSession, type ColumnPlace } from './columnPlace';
@@ -57,13 +61,37 @@ export const SideColumn = ({
     open();
     onNavigate?.();
   };
+  const levelSession =
+    currentSession === null || currentSession.id !== currentSessionId ? null : currentSession;
+  const levelBranch = useAppStore((state) =>
+    currentSessionId === null ? undefined : state.sessionBranches[currentSessionId],
+  );
+  const leaveWorktreeLevel = () => {
+    if (levelSession === null) {
+      return;
+    }
+    openLens({ sessionId: levelSession.id, lens: null });
+  };
   const sessionLevel =
-    currentSession === null || currentSession.id !== currentSessionId ? null : (
+    levelSession === null ? null : (
       <>
         <div className="shrink-0 px-2">
           <LevelBackRow label="Sessions" onBack={leaveSessionLevel} />
         </div>
-        <SessionLevel session={currentSession} isActive={level === 'session'} />
+        <SessionLevel session={levelSession} isActive={level === 'session'} />
+      </>
+    );
+  const worktreeLevel =
+    levelSession === null || isBranchlessSession({ branch: levelBranch }) ? null : (
+      <>
+        <div className="shrink-0 px-2">
+          <LevelBackRow
+            label={sessionTitle({ session: levelSession })}
+            spokenLabel={`session ${sessionTitle({ session: levelSession })}`}
+            onBack={leaveWorktreeLevel}
+          />
+        </div>
+        {level === 'worktree' ? <WorktreeLevel session={levelSession} /> : null}
       </>
     );
 
@@ -75,11 +103,15 @@ export const SideColumn = ({
         data-sidebar-level={level}
         inert={isSettingsShown}
         onKeyDown={(event) => {
-          if (level !== 'session' || !isBackKey(event)) {
+          if (level === 'workspace' || !isBackKey(event)) {
             return;
           }
           event.preventDefault();
           event.stopPropagation();
+          if (level === 'worktree') {
+            leaveWorktreeLevel();
+            return;
+          }
           leaveSessionLevel();
         }}
         className={cn(
@@ -94,6 +126,7 @@ export const SideColumn = ({
           <LevelStack
             level={level}
             session={sessionLevel}
+            worktree={worktreeLevel}
             workspace={
               <>
                 <div className={cn('flex shrink-0 flex-col px-2', PANE_RHYTHM.navRail.doorGap)}>
@@ -131,7 +164,7 @@ export const SideColumn = ({
                     currentSessionId={
                       place === null || isStudioOverSession({ place }) ? currentSessionId : null
                     }
-                    isStudioOver={isStudioOverSession({ place }) || level === 'session'}
+                    isStudioOver={isStudioOverSession({ place }) || level !== 'workspace'}
                     {...(onNavigate !== undefined && { onNavigate })}
                   />
                 </div>

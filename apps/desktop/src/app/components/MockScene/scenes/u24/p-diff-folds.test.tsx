@@ -45,13 +45,12 @@ describe('the u24 diff folds scene', () => {
     expect(Object.keys(MOCK_SCENES)).toContain('branch-files-deep');
   });
 
-  it('draws 39 files with 12 viewed in a deep tree', async () => {
+  it('draws 39 files in a deep tree under the Files entry', async () => {
     renderScene();
 
-    const rail = await screen.findByRole('navigation', { name: 'Sections' }, WAIT);
+    const rail = await screen.findByRole('navigation', { name: 'Worktree' }, WAIT);
     const files = within(rail).getByRole('button', { name: /^Files/ });
-    expect(files.textContent).toBe('Files12/39');
-    expect(within(files).getByRole('img', { name: '12 of 39 viewed' })).toBeDefined();
+    expect(files.textContent).toBe('Files39');
     expect(
       within(rail).getAllByRole('treeitem', { name: /roundHalfEven\.ts/ }).length,
     ).toBeGreaterThan(0);
@@ -59,7 +58,7 @@ describe('the u24 diff folds scene', () => {
 
   it('remembers a closed folder when the scene mounts again', async () => {
     const first = renderScene();
-    const rail = await screen.findByRole('navigation', { name: 'Sections' }, WAIT);
+    const rail = await screen.findByRole('navigation', { name: 'Worktree' }, WAIT);
     const tree = within(rail).getByRole('tree');
     const folder = within(tree).getAllByRole('treeitem', { expanded: true })[0] as HTMLElement;
     expect(within(tree).queryAllByRole('treeitem', { expanded: false })).toHaveLength(0);
@@ -69,7 +68,7 @@ describe('the u24 diff folds scene', () => {
     first.unmount();
 
     renderScene();
-    const again = await screen.findByRole('navigation', { name: 'Sections' }, WAIT);
+    const again = await screen.findByRole('navigation', { name: 'Worktree' }, WAIT);
     expect(
       within(within(again).getByRole('tree')).getAllByRole('treeitem', { expanded: false }),
     ).toHaveLength(1);

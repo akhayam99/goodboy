@@ -59,8 +59,8 @@ const rowsAppear = async (): Promise<void> => {
 };
 
 const reviewersStayListed = async (): Promise<void> => {
-  await click(await findSection(/^Overview/));
-  const properties = await screen.findByRole('complementary', { name: 'Properties' }, WAIT);
+  await click(await findSection(/^Pull request/));
+  const properties = await screen.findByRole('group', { name: 'Properties' }, WAIT);
   expect(within(properties).getByText('Reviewers')).toBeDefined();
   expect(within(properties).getByText('mara-l')).toBeDefined();
   expect(within(properties).getByText('kenji-w')).toBeDefined();

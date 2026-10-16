@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BranchPage } from '../../../../features/branch/components/BranchPage';
+import { WorktreeSceneColumn } from './WorktreeSceneColumn';
 import { SESSION, seedResolveScene } from './resolveSeed';
 
 export const ResolveRunQuestionScene = () => {
@@ -16,7 +17,9 @@ export const ResolveRunQuestionScene = () => {
 
   return (
     <main className="h-screen overflow-hidden bg-background text-foreground">
-      <BranchPage session={SESSION} workingDir={null} />
+      <WorktreeSceneColumn>
+        <BranchPage session={SESSION} workingDir={null} />
+      </WorktreeSceneColumn>
     </main>
   );
 };

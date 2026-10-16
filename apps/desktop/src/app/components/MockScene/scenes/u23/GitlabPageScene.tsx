@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BranchPage } from '../../../../../features/branch/components/BranchPage';
+import { WorktreeSceneColumn } from '../WorktreeSceneColumn';
 import { SESSION } from '../resolveSeed';
 import { GITLAB_PAGE_WORKTREE, applyGitlabSeed, type GitlabPageVariant } from './gitlabSeed';
 
@@ -40,7 +41,9 @@ export const GitlabPageScene = ({ variant }: Props) => {
 
   return (
     <main className="h-screen overflow-hidden bg-background text-foreground">
-      <BranchPage session={SESSION} workingDir={GITLAB_PAGE_WORKTREE} />
+      <WorktreeSceneColumn>
+        <BranchPage session={SESSION} workingDir={GITLAB_PAGE_WORKTREE} />
+      </WorktreeSceneColumn>
     </main>
   );
 };

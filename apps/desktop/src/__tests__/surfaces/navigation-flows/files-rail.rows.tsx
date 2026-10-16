@@ -46,10 +46,10 @@ const escape = async (): Promise<void> => {
   await settle();
 };
 
-const railNav = (): HTMLElement | null => screen.queryByRole('navigation', { name: 'Sections' });
+const railNav = (): HTMLElement | null => screen.queryByRole('navigation', { name: 'Worktree' });
 
 const treeNav = (): HTMLElement =>
-  within(screen.getByRole('navigation', { name: 'Sections' })).getByRole('navigation', {
+  within(screen.getByRole('navigation', { name: 'Worktree' })).getByRole('navigation', {
     name: 'Changed files',
   });
 
@@ -150,42 +150,6 @@ export const FILES_RAIL_ROWS: ReadonlyArray<Row> = [
       await branchTab('files')(ctx);
       expect(await screen.findByRole('navigation', { name: 'Changed files' }, WAIT)).toBeDefined();
       expectSameFrame();
-    },
-  },
-  {
-    name: 'files rail: hidden under 780, Sections opens it over the page, F opens it with focus in the tree, Esc closes it',
-    covers: ['navigate', 'files-rail:overlay'],
-    open: async (ctx) => {
-      stubPane({ width: OVERLAY_PANE });
-      await clickFirstButton(/^Open PR #\d+ of /);
-      await lens('branch')(ctx);
-      expect(railNav()).toBeNull();
-      await click(await screen.findByRole('button', { name: 'Sections' }, WAIT));
-      await click(await findSection(/^Files/));
-      await waitFor(
-        () => expect(useAppStore.getState().branchTab[ctx.sessionId]).toBe('files'),
-        WAIT,
-      );
-      expect(railNav()).toBeNull();
-      expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
-
-      await click(sectionsButton());
-      expect(await screen.findByRole('navigation', { name: 'Changed files' }, WAIT)).toBeDefined();
-      await escape();
-      expect(railNav()).toBeNull();
-
-      await downToThirdFile();
-      await press('diff.focusTree');
-      expect(thirdRow().getAttribute('aria-current')).toBe('true');
-      expectCursorOnThirdRow();
-      await escape();
-      expect(railNav()).toBeNull();
-    },
-    lands: async (ctx) => {
-      await lens('branch')(ctx);
-      expect(useAppStore.getState().branchTab[ctx.sessionId]).toBe('files');
-      expect(railNav()).toBeNull();
-      expect(sectionsButton()).toBeDefined();
     },
   },
   {

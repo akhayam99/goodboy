@@ -50,7 +50,7 @@ const answerWith = ({ behind }: { readonly behind: number }): void => {
   });
 };
 
-const properties = (): HTMLElement => screen.getByRole('complementary', { name: 'Properties' });
+const properties = (): HTMLElement => screen.getByRole('group', { name: 'Properties' });
 
 describe('the pull request page scenes', () => {
   it('registers the eight scenes of the plan', () => {
@@ -69,19 +69,19 @@ describe('the pull request page scenes', () => {
   it('branch-pr-github leads with the Pull request tab and its title as the one heading', async () => {
     draw({ name: 'branch-pr-github' });
 
-    expect((await findSectionRow(/^Overview/)).getAttribute('aria-current')).toBe('page');
-    expect(sectionNames()[0]).toBe('Overview');
+    expect((await findSectionRow(/^Pull request/)).getAttribute('aria-current')).toBe('page');
+    expect(sectionNames()[0]).toBe('Pull request');
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
       'Stop retried webhooks posting a second credit',
     );
   });
 
-  it('branch-pr-github reads reviewers, checks, linked issues and base in the properties', async () => {
+  it('branch-pr-github reads readiness, reviewers, checks, linked issues and base in the property block, with no Rebase', async () => {
     draw({ name: 'branch-pr-github' });
-    await screen.findByRole('complementary', { name: 'Properties' });
+    await screen.findByRole('group', { name: 'Properties' });
     const side = within(properties());
 
-    expect(screen.getByTestId('branch-blocked-reason').textContent).toBe('1 check failing: lint.');
+    expect(screen.getByTestId('pr-readiness').textContent).toContain('lint');
     expect(side.getByText('#412')).toBeDefined();
     expect(side.getByText('Closes')).toBeDefined();
     expect(side.getByText('kenji-w')).toBeDefined();
@@ -90,8 +90,7 @@ describe('the pull request page scenes', () => {
     expect(side.getByText('Pending')).toBeDefined();
     expect(side.getByText('5 passed · 1 failing · 1 running')).toBeDefined();
     expect(side.getByRole('region', { name: 'Base' }).textContent).toContain('main');
-    expect(await side.findByText('3 behind main')).toBeDefined();
-    expect(side.getByRole('button', { name: 'Rebase on main' })).toBeDefined();
+    expect(side.queryByRole('button', { name: /Rebase/ })).toBeNull();
     expect(side.queryByRole('region', { name: 'Status' })).toBeNull();
     expect(side.queryByRole('region', { name: 'Files changed' })).toBeNull();
   });
@@ -118,7 +117,7 @@ describe('the pull request page scenes', () => {
   it('branch-pr-draft says the draft is not open for review yet', async () => {
     draw({ name: 'branch-pr-draft' });
 
-    const side = within(await screen.findByRole('complementary', { name: 'Properties' }));
+    const side = within(await screen.findByRole('group', { name: 'Properties' }));
     expect(document.querySelector('[data-slot="branch-state"]')?.textContent).toBe('Draft');
     expect(side.getByText('None requested')).toBeDefined();
   });
@@ -151,12 +150,12 @@ describe('the pull request page scenes', () => {
     expect(base.textContent).not.toContain('[]');
   });
 
-  it('branch-pr-merge-blocked prints why Merge cannot run', async () => {
+  it('branch-pr-merge-blocked says in Readiness why Merge cannot run', async () => {
     answerWith({ behind: 0 });
     draw({ name: 'branch-pr-merge-blocked' });
 
-    expect((await screen.findByTestId('branch-blocked-reason')).textContent).toBe(
-      '2 checks failing: lint, contract tests.',
+    expect((await screen.findByTestId('pr-readiness')).textContent).toContain(
+      'lint, contract tests',
     );
     expect((screen.getByRole('button', { name: /^Merge/ }) as HTMLButtonElement).disabled).toBe(
       true,
@@ -185,14 +184,14 @@ describe('the pull request page scenes', () => {
   it('branch-pr-narrow keeps the properties in the page for a narrow pane', async () => {
     draw({ name: 'branch-pr-narrow' });
 
-    expect(await screen.findByRole('complementary', { name: 'Properties' })).toBeDefined();
+    expect(await screen.findByRole('group', { name: 'Properties' })).toBeDefined();
     expect(screen.getByRole('region', { name: 'Description' })).toBeDefined();
   });
 
   it('branch-pr-merged says it merged into main and offers no merge', async () => {
     draw({ name: 'branch-pr-merged' });
 
-    await screen.findByRole('complementary', { name: 'Properties' });
+    await screen.findByRole('group', { name: 'Properties' });
     expect(document.querySelector('[data-slot="branch-state"]')?.getAttribute('data-tone')).toBe(
       'merged',
     );

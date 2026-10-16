@@ -15,6 +15,7 @@ import {
   resetStoryStore,
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
+import { sectionNames } from '../../../../../test/branchRail';
 import { MOCK_SCENES } from '../..';
 import { U24_PRPAGE_FILES_SCENES } from './prpage-files';
 
@@ -51,12 +52,6 @@ const settle = async (): Promise<void> => {
     await new Promise((resolve) => setTimeout(resolve, 60));
   });
 };
-
-const sectionNames = (): ReadonlyArray<string> =>
-  within(screen.getByRole('navigation', { name: 'Sections' }))
-    .getAllByRole('button')
-    .filter((button) => button.closest('[data-slot="branch-rail-files"]') === null)
-    .map((button) => (button.textContent ?? '').replace(/[\d/-]+$/, '').trim());
 
 describe('the u24 prpage files scenes', () => {
   it('registers the four scenes under the names the plan uses', () => {
@@ -139,7 +134,7 @@ describe('the u24 prpage files scenes', () => {
     await screen.findAllByRole('article', { name: /^Note from You/ }, WAIT);
     await settle();
 
-    expect(sectionNames()).toEqual(['Overview', 'Comments', 'Files', 'Commits']);
+    expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Files', 'Commits']);
     expect(screen.queryAllByRole('article', { name: /^On GitHub/ })).toHaveLength(0);
     expect(screen.getByRole('button', { name: /^Fix comments \d/ })).toBeDefined();
   });

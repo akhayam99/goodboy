@@ -28,10 +28,7 @@ type Props = {
   readonly mountPath: string | null;
   readonly canEdit: boolean;
   readonly request: ReviewerRequest;
-  readonly behind: number | null;
-  readonly distanceBase?: string | null;
   readonly isConnected: boolean;
-  readonly onRebase: (() => void) | null;
   readonly onMutated: () => void;
   readonly onCreated: () => void;
   readonly onConnected: () => void;
@@ -54,10 +51,7 @@ export const PullRequestTab = ({
   mountPath,
   canEdit,
   request,
-  behind,
-  distanceBase = null,
   isConnected,
-  onRebase,
   onMutated,
   onCreated,
   onConnected,
@@ -91,9 +85,6 @@ export const PullRequestTab = ({
       viewErrorKind={viewErrorKind}
       canEdit={canEdit}
       request={request}
-      behind={behind}
-      distanceBase={distanceBase}
-      onRebase={onRebase}
       onMutated={onMutated}
       onReload={onReload}
       onSelectTab={onSelectTab}

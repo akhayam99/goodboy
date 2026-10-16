@@ -313,11 +313,11 @@ export const openComments = async (ctx: Ctx): Promise<void> => {
 };
 
 const sidebarNamesTheBranches = (): void => {
-  const projects = document.querySelector<HTMLElement>(
-    '[data-level-layer="session"]:not([inert]) [aria-labelledby="level-projects-label"]',
+  const identity = document.querySelector<HTMLElement>(
+    '[data-level-layer="worktree"]:not([inert]) [data-worktree-identity]',
   );
-  expect(projects).not.toBeNull();
-  expect(projects?.querySelectorAll('li button')).toHaveLength(2);
+  expect(identity).not.toBeNull();
+  expect(identity?.textContent ?? '').not.toBe('');
 };
 
 export const COMMENTS_WORDS_ROWS: ReadonlyArray<Row> = [

@@ -21,17 +21,17 @@ import {
 
 const worktreeMarked = async (): Promise<void> => {
   await waitFor(() => {
-    const projects = document.querySelector(
-      '[data-level-layer="session"]:not([inert]) [aria-labelledby="level-projects-label"]',
+    const identity = document.querySelector(
+      '[data-level-layer="worktree"]:not([inert]) [data-worktree-identity]',
     );
-    expect(projects?.querySelectorAll('[aria-current="page"]')).toHaveLength(1);
+    expect(identity).not.toBeNull();
   }, WAIT);
 };
 
-const sessionLevelShown = async (): Promise<void> => {
+const worktreeLevelShown = async (): Promise<void> => {
   await waitFor(
     () =>
-      expect(document.querySelector('[data-level-layer="session"]:not([inert])')).not.toBeNull(),
+      expect(document.querySelector('[data-level-layer="worktree"]:not([inert])')).not.toBeNull(),
     WAIT,
   );
 };
@@ -101,10 +101,10 @@ export const BRANCH_PAGE_ROWS: ReadonlyArray<Row> = [
     lands: both(branchTab('files'), worktreeMarked),
   },
   {
-    name: 'door: Comments lands on the Branch Comments tab with the session level on screen',
+    name: 'door: Comments lands on the Branch Comments tab with the worktree level on screen',
     covers: ['navigate', 'sidebar:comments-door'],
     open: () => openPalette(/^Open Comments/),
-    lands: both(branchTab('comments'), sessionLevelShown),
+    lands: both(branchTab('comments'), worktreeLevelShown),
   },
   {
     name: 'tabs: switching a tab edits the address in place, and Back leaves the Branch',
@@ -116,7 +116,7 @@ export const BRANCH_PAGE_ROWS: ReadonlyArray<Row> = [
       await click(await findSection(/^Checks/));
       await click(await findSection(/^Comments/));
       expect(stackDepth()).toBe(depth);
-      await clickButton(/^Back(?! to Sessions$)/);
+      await clickButton(/^Back(?! to Sessions$| to session )/);
     },
     lands: lens(null),
   },

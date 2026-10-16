@@ -121,10 +121,6 @@ const secondaryOf = ({ diff, review, hasPullRequest, state }: Params): BranchPri
       isExpanded: review.push.state === 'open',
     });
   }
-  const rebase = find(diff, 'diff.rebase');
-  if (rebase !== null) {
-    return fromAction({ source: 'diff', action: rebase, icon: GitBranch });
-  }
   const push = find(diff, 'diff.push');
   if (push !== null) {
     return fromAction({ source: 'diff', action: push, icon: ArrowUp });

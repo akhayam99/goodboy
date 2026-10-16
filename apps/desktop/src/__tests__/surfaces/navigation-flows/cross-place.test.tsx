@@ -349,8 +349,18 @@ const pageRow = (label: string): HTMLElement => {
   return found as HTMLElement;
 };
 
+const WORKTREE_LEVEL = '[data-level-layer="worktree"]:not([inert])';
+
+const openPage = async (label: string): Promise<void> => {
+  const back = document.querySelector<HTMLElement>(`${WORKTREE_LEVEL} [data-level-back] button`);
+  if (back !== null) {
+    await click(back);
+  }
+  await click(pageRow(label));
+};
+
 const currentPage = (): string | null => {
-  if (document.querySelector(`${PROJECTS} [aria-current="page"]`) !== null) {
+  if (document.querySelector(`${WORKTREE_LEVEL} [data-worktree-identity]`) !== null) {
     return 'Branch';
   }
   const pages = document.querySelector(`${SESSION_LEVEL} [data-testid="session-pages"]`);
@@ -728,7 +738,7 @@ describe('moving across every place keeps one frame', () => {
       const walk = async (withDrawer: boolean): Promise<ReadonlyArray<string>> => {
         const trails: Array<string> = [];
         for (const page of PAGES) {
-          await click(pageRow(page));
+          await openPage(page);
           expect(currentPage()).toBe(page);
           if (withDrawer) {
             act(() =>
@@ -877,7 +887,7 @@ describe('moving across every place keeps one frame', () => {
       expect(currentPage()).toBe('Overview');
 
       for (const [page, lens] of SESSION_PAGES) {
-        await click(pageRow(page));
+        await openPage(page);
         expectPlace({ session: sessionId, lens, studio: null, doors: [] });
         expect(currentPage()).toBe(page);
         expectCentredColumns();
@@ -887,7 +897,7 @@ describe('moving across every place keeps one frame', () => {
         }
       }
 
-      await click(pageRow('Branch'));
+      await openPage('Branch');
       for (const tab of ['Files', 'Comments'] as const) {
         await click(getSection(new RegExp(`^${tab}`)));
         expect(useAppStore.getState().branchTab[sessionId]).toBe(tab.toLowerCase());
@@ -946,10 +956,13 @@ describe('moving across every place keeps one frame', () => {
       fireEvent.pointerEnter(screen.getByTestId('sidebar-peek-edge'));
       await settle(16);
       const peek = screen.getByRole('region', { name: 'Sessions' });
-      expect(peek.querySelector('[data-sidebar-level="session"]')).not.toBeNull();
+      expect(peek.querySelector('[data-sidebar-level="worktree"]')).not.toBeNull();
+      await click(within(peek).getByRole('button', { name: /^Back to session / }));
       await click(within(peek).getByRole('button', { name: 'Back to Sessions' }));
       await click(peek.querySelector<HTMLElement>(`[data-select-id="${other}"]`) as HTMLElement);
       expectPlace({ session: other, lens: null, studio: null, doors: [] });
+      await click(historyButton('Back'));
+      expectPlace({ session: sessionId, lens: null, studio: null, doors: [] });
       await click(historyButton('Back'));
       await press('column.toggle');
       expectColumn('column');
@@ -993,18 +1006,18 @@ describe('moving across every place keeps one frame', () => {
       expect(startedRun).not.toBeNull();
       act(() => useAppStore.getState().setFocusedWorkflowRun(sessionId, startedRun));
       await settle();
-      await click(pageRow('Agents'));
+      await openPage('Agents');
       expectPlace({ session: sessionId, lens: 'agents', studio: null, doors: [] });
       expect(useAppStore.getState().focusedWorkflowRunId[sessionId] ?? null).toBeNull();
       await click(historyButton('Back'));
       expectPlace({ session: sessionId, lens: 'workflows', studio: null, doors: [] });
       expect(useAppStore.getState().focusedWorkflowRunId[sessionId]).toBe(startedRun);
 
-      await click(pageRow('Artifacts'));
+      await openPage('Artifacts');
       expect(useAppStore.getState().focusedWorkflowRunId[sessionId] ?? null).toBeNull();
       act(() => useAppStore.getState().setFocusedArtifactId(sessionId, JOURNEY_ARTIFACT));
       await settle();
-      await click(pageRow('Agents'));
+      await openPage('Agents');
       expect(useAppStore.getState().focusedArtifactId[sessionId] ?? null).toBeNull();
       await click(historyButton('Back'));
       expectPlace({ session: sessionId, lens: 'plans', studio: null, doors: [] });

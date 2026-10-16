@@ -37,6 +37,8 @@ import {
   SESSION,
   seedResolveScene,
 } from '../../../../app/components/MockScene/scenes/resolveSeed';
+import { WorktreeEntriesSlot } from '../../../../app/components/MockScene/scenes/WorktreeEntriesSlot';
+import { railOf, sectionNames } from '../../../../test/branchRail';
 import { BranchPage } from './index';
 
 let useAppStore: StoryStore;
@@ -65,6 +67,7 @@ const mount = async ({
   seedResolveScene({ expandedThreadId: threadId });
   render(
     <ToastProvider>
+      <WorktreeEntriesSlot />
       <BranchPage session={SESSION} workingDir={null} />
     </ToastProvider>,
   );
@@ -178,15 +181,7 @@ const headerColumnElement = (): HTMLElement => {
   return column;
 };
 
-const railOf = (): HTMLElement => screen.getByRole('navigation', { name: 'Sections' });
-
 const railRow = (name: RegExp): HTMLElement => within(railOf()).getByRole('button', { name });
-
-const sectionNames = (): ReadonlyArray<string> =>
-  within(railOf())
-    .getAllByRole('button')
-    .filter((button) => button.closest('[data-slot="branch-rail-files"]') === null)
-    .map((button) => (button.textContent ?? '').replace(/[\d/-]+$/, '').trim());
 
 const visit = async (name: RegExp): Promise<void> => {
   fireEvent.click(railRow(name));
@@ -241,7 +236,7 @@ describe('Branch page header and sections', () => {
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
       useAppStore.getState().sessionGithub[SESSION.id]?.pr?.title,
     );
-    expect(sectionNames()).toEqual(['Overview', 'Comments', 'Files', 'Commits', 'Checks']);
+    expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Files', 'Commits', 'Checks']);
     expect(railRow(/^Comments/).getAttribute('aria-current')).toBe('page');
     expect(screen.queryByRole('tablist', { name: /^Branch/ })).toBeNull();
   });
@@ -289,7 +284,7 @@ describe('Branch page header and sections', () => {
     fireEvent.keyDown(railRow(/^Comments/), { key: 'ArrowUp' });
     await settle();
     expect(useAppStore.getState().branchTab[SESSION.id]).toBe('pr');
-    fireEvent.keyDown(railRow(/^Overview/), { key: 'ArrowUp' });
+    fireEvent.keyDown(railRow(/^Pull request/), { key: 'ArrowUp' });
     await settle();
     expect(useAppStore.getState().branchTab[SESSION.id]).toBe('pr');
   });
@@ -301,7 +296,7 @@ describe('Branch page sections by state', () => {
     dropRequest();
     await settle();
 
-    expect(sectionNames()).toEqual(['Overview', 'Files', 'Commits']);
+    expect(sectionNames()).toEqual(['Pull request', 'Files', 'Commits']);
   });
 
   it('adds Comments to a branch with no pull request once one local note exists', async () => {
@@ -312,7 +307,7 @@ describe('Branch page sections by state', () => {
     });
     await settle();
 
-    expect(sectionNames()).toEqual(['Overview', 'Comments', 'Files', 'Commits']);
+    expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Files', 'Commits']);
     expect(railRow(/^Comments/).textContent).toBe('Comments1');
   });
 
@@ -323,7 +318,7 @@ describe('Branch page sections by state', () => {
       patchRequest({ state, isDraft: state === 'draft' });
       await settle();
 
-      expect(sectionNames()).toEqual(['Overview', 'Comments', 'Files', 'Commits', 'Checks']);
+      expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Files', 'Commits', 'Checks']);
     },
   );
 
@@ -338,21 +333,23 @@ describe('Branch page sections by state', () => {
     expect(railRow(/^Files/).getAttribute('aria-current')).toBe('page');
   });
 
-  it('puts no primary in the header of a merged pull request and draws the chip in the merged tone', async () => {
+  it('puts no primary in the header of a merged pull request and draws its state in the property block', async () => {
     await mount();
     patchRequest({ state: 'merged', isDraft: false });
-    await settle();
+    await visit(/^Pull request/);
 
     expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(0);
+    const header = document.querySelector('[data-slot="pane-header"]');
+    expect(header?.querySelector('[data-slot="branch-state"]') ?? null).toBeNull();
     expect(document.querySelector('[data-slot="branch-state"]')?.getAttribute('data-tone')).toBe(
       'merged',
     );
   });
 
-  it('shows the queue in the meta line of a queued pull request and no primary', async () => {
+  it('shows the queue in the Readiness property of a queued pull request and no primary', async () => {
     await mount();
     patchRequest({ state: 'queued', isDraft: false, mergeQueue: { position: 3 } });
-    await settle();
+    await visit(/^Pull request/);
 
     expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(0);
     expect(screen.getByTestId('branch-queue-line').textContent).toBe(
@@ -366,6 +363,7 @@ describe('Branch page sections by state', () => {
     withCommits();
     render(
       <ToastProvider>
+        <WorktreeEntriesSlot />
         <BranchPage session={SESSION} workingDir={WORKTREE} />
       </ToastProvider>,
     );
@@ -434,6 +432,7 @@ describe('Branch page column', () => {
     withCommits();
     render(
       <ToastProvider>
+        <WorktreeEntriesSlot />
         <BranchPage session={SESSION} workingDir={WORKTREE} />
       </ToastProvider>,
     );
@@ -454,13 +453,13 @@ describe('Branch page column', () => {
     const title = screen.getByRole('heading', { level: 1 });
 
     for (const name of [
-      /^Overview/,
+      /^Pull request/,
       /^Comments/,
       /^Files/,
       /^Commits/,
       /^Checks/,
       /^Files/,
-      /^Overview/,
+      /^Pull request/,
     ]) {
       await visit(name);
 
@@ -491,6 +490,7 @@ describe('Branch page counts', () => {
     });
     render(
       <ToastProvider>
+        <WorktreeEntriesSlot />
         <BranchPage session={SESSION} workingDir={WORKTREE} />
       </ToastProvider>,
     );
@@ -504,20 +504,20 @@ describe('Branch page counts', () => {
     expect(within(railRow(/^Checks/)).queryByRole('img', { name: 'Not loaded' })).toBeNull();
   });
 
-  it('turns each dash into its number as the data arrives, Files with its viewed ring', async () => {
+  it('turns each dash into its number as the data arrives', async () => {
     seedResolveScene({ expandedThreadId: null });
     seedWorktree({ isDiffLoaded: true });
     withCommits();
     render(
       <ToastProvider>
+        <WorktreeEntriesSlot />
         <BranchPage session={SESSION} workingDir={WORKTREE} />
       </ToastProvider>,
     );
     await settle();
 
     expect(screen.queryAllByRole('img', { name: 'Not loaded' })).toHaveLength(0);
-    expect(countOf(/^Files/)).toBe('0/2');
-    expect(within(railRow(/^Files/)).getByRole('img', { name: '0 of 2 viewed' })).toBeDefined();
+    expect(countOf(/^Files/)).toBe('2');
     expect(countOf(/^Commits/)).toBe('3');
     expect(Number(countOf(/^Comments/))).toBeGreaterThan(0);
   });
@@ -536,6 +536,7 @@ describe('Branch page counts before any visit', () => {
     useAppStore.setState({ loadHistoryDraft });
     render(
       <ToastProvider>
+        <WorktreeEntriesSlot />
         <BranchPage session={SESSION} workingDir={WORKTREE} />
       </ToastProvider>,
     );
@@ -545,7 +546,7 @@ describe('Branch page counts before any visit', () => {
     expect(loadHistoryDraft).toHaveBeenCalledWith({ sessionId: SESSION.id, mountId: MOUNT_ID });
     expect(railRow(/^Comments/).getAttribute('aria-current')).toBe('page');
     expect(screen.queryAllByRole('img', { name: 'Not loaded' })).toHaveLength(0);
-    expect(countOf(/^Files/)).toBe('0/2');
+    expect(countOf(/^Files/)).toBe('2');
     expect(countOf(/^Commits/)).toBe('3');
     expect(Number(countOf(/^Comments/))).toBeGreaterThan(0);
   });
@@ -558,6 +559,7 @@ describe('Branch page counts before any visit', () => {
     useAppStore.setState({ loadHistoryDraft });
     render(
       <ToastProvider>
+        <WorktreeEntriesSlot />
         <BranchPage session={SESSION} workingDir={WORKTREE} />
       </ToastProvider>,
     );
@@ -683,9 +685,9 @@ describe('Branch page Checks and Files', () => {
   it('offers the new pull request form on Overview and lets the other sections render', async () => {
     await mount();
     dropRequest();
-    await visit(/^Overview/);
+    await visit(/^Pull request/);
     expect(screen.queryByRole('heading', { name: 'No pull request yet' })).toBeNull();
-    expect(screen.getByText('No pull request')).toBeDefined();
+    expect(railRow(/^Pull request/).textContent).toContain('None');
     expect(screen.getByRole('textbox', { name: 'Pull request title' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Create pull request' })).toBeDefined();
 
@@ -704,143 +706,70 @@ describe('Branch page Checks and Files', () => {
   });
 });
 
-describe('Branch page rail', () => {
-  const mountFiles = async ({ width }: { readonly width: number }): Promise<void> => {
-    observers = installFakeResizeObserver();
+describe('Branch page entries in the sidebar', () => {
+  const mountFiles = async (): Promise<void> => {
     seedResolveScene({ expandedThreadId: null });
     seedWorktree({ isDiffLoaded: true });
     withCommits();
+    render(
+      <ToastProvider>
+        <WorktreeEntriesSlot />
+        <BranchPage session={SESSION} workingDir={WORKTREE} />
+      </ToastProvider>,
+    );
+    await settle();
+  };
+
+  const filesGroup = (): HTMLElement | null =>
+    document.querySelector<HTMLElement>('[data-slot="branch-rail-files"]');
+
+  it('draws the entries in the sidebar slot and never beside the page', async () => {
+    await mountFiles();
+
+    const slot = document.querySelector('[data-slot="worktree-level-entries"]');
+    expect(slot?.contains(railOf())).toBe(true);
+    expect(document.querySelector('[data-branch-pane]')?.contains(railOf())).toBe(false);
+    expect(screen.queryByRole('button', { name: 'Sections' })).toBeNull();
+  });
+
+  it('opens the changed file tree under Files only, and collapses it when another entry is picked', async () => {
+    await mountFiles();
+    expect(filesGroup()).toBeNull();
+    expect(railRow(/^Files/).getAttribute('aria-expanded')).toBe('false');
+
+    await visit(/^Files/);
+    const group = filesGroup();
+    if (group === null) {
+      throw new Error('the Files entry has no tree');
+    }
+    expect(railRow(/^Files/).getAttribute('aria-expanded')).toBe('true');
+    expect(group.previousElementSibling?.contains(railRow(/^Files/))).toBe(true);
+    const tree = within(group).getByRole('navigation', { name: 'Changed files' });
+    expect(headerColumnElement().contains(tree)).toBe(false);
+    expect(within(group).getByRole('searchbox', { name: 'Filter files' })).toBeDefined();
+
+    for (const name of [/^Comments/, /^Commits/, /^Checks/]) {
+      await visit(name);
+      expect(filesGroup()).toBeNull();
+      expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
+    }
+  });
+
+  it('keeps the diff in the page when no sidebar hosts the entries', async () => {
+    seedResolveScene({ expandedThreadId: null });
+    seedWorktree({ isDiffLoaded: true });
     render(
       <ToastProvider>
         <BranchPage session={SESSION} workingDir={WORKTREE} />
       </ToastProvider>,
     );
     await settle();
-    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
-      new DOMRect(0, 0, width, 600),
-    );
-    act(() => observers?.resizeAll());
-    await settle();
-  };
-
-  const dockedRail = (): HTMLElement | null =>
-    screen.queryByRole('complementary', { name: 'Branch sections' });
-
-  const sectionsButton = (): HTMLElement | null =>
-    screen.queryByRole('button', { name: 'Sections' });
-
-  const filesGroup = (): HTMLElement | null =>
-    document.querySelector<HTMLElement>('[data-slot="branch-rail-files"]');
-
-  const pressSections = (): void => {
-    const button = sectionsButton();
-    if (button === null) {
-      throw new Error('the page has no Sections button');
-    }
-    fireEvent.click(button);
-  };
-
-  const pressScrim = (): void => {
-    const scrim = document.querySelector<HTMLElement>('[data-branch-rail-scrim]');
-    if (scrim === null) {
-      throw new Error('the page has no scrim');
-    }
-    fireEvent.click(scrim);
-  };
-
-  it('docks the rail at a sheet of 780 and hides it behind a Sections button at 760', async () => {
-    await mountFiles({ width: 780 });
-    expect(dockedRail()).not.toBeNull();
-    expect(sectionsButton()).toBeNull();
-    cleanup();
-    vi.restoreAllMocks();
-
-    await mountFiles({ width: 760 });
-    expect(dockedRail()).toBeNull();
-    expect(sectionsButton()).not.toBeNull();
-    expect(screen.queryByRole('navigation', { name: 'Sections' })).toBeNull();
-  });
-
-  it('opens the hidden rail over the detail with a scrim, and closes it on Esc, a scrim click or a pick', async () => {
-    await mountFiles({ width: 700 });
-
-    pressSections();
-    await settle();
-    expect(screen.getByRole('navigation', { name: 'Sections' })).toBeDefined();
-    expect(document.querySelector('[data-branch-rail-scrim]')).not.toBeNull();
-    expect(sectionsButton()?.getAttribute('aria-expanded')).toBe('true');
-
-    await userEvent.keyboard('{Escape}');
-    await settle();
-    expect(screen.queryByRole('navigation', { name: 'Sections' })).toBeNull();
-
-    pressSections();
-    await settle();
-    pressScrim();
-    await settle();
-    expect(screen.queryByRole('navigation', { name: 'Sections' })).toBeNull();
-
-    pressSections();
-    await settle();
-    await visit(/^Commits/);
-    expect(screen.queryByRole('navigation', { name: 'Sections' })).toBeNull();
-    expect(useAppStore.getState().branchTab[SESSION.id]).toBe('commits');
-  });
-
-  it('docks the rail again as soon as the window allows', async () => {
-    await mountFiles({ width: 700 });
-    expect(dockedRail()).toBeNull();
-
-    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
-      new DOMRect(0, 0, 1200, 600),
-    );
-    act(() => observers?.resizeAll());
+    act(() => {
+      useAppStore.getState().navigate({ to: branchPlace({ sessionId: SESSION.id, tab: 'files' }) });
+    });
     await settle();
 
-    expect(dockedRail()).not.toBeNull();
-    expect(sectionsButton()).toBeNull();
-  });
-
-  it('draws the Files group in the rail on Files only, beside the column and never inside it', async () => {
-    await mountFiles({ width: 1920 });
-    expect(filesGroup()?.childElementCount ?? 0).toBe(0);
-
-    await visit(/^Files/);
-    const group = filesGroup();
-    if (group === null) {
-      throw new Error('the rail has no Files group');
-    }
-    const tree = within(group).getByRole('navigation', { name: 'Changed files' });
-    expect(railOf().contains(tree)).toBe(true);
-    const column = headerColumnElement();
-    expect(column.contains(tree)).toBe(false);
-    expect(within(group).getByRole('searchbox', { name: 'Filter files' })).toBeDefined();
-    expect(within(group).getByRole('tablist', { name: 'Show files' })).toBeDefined();
-    expect(within(group).getByRole('button', { name: /^Next unviewed/ })).toBeDefined();
-
-    for (const name of [/^Comments/, /^Commits/, /^Checks/]) {
-      await visit(name);
-      expect(filesGroup()?.childElementCount ?? 0).toBe(0);
-      expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
-    }
-  });
-
-  it('keeps the Files group in the overlay rail and closes the overlay after a pick', async () => {
-    await mountFiles({ width: 700 });
-    useAppStore.getState().navigate({ to: branchPlace({ sessionId: SESSION.id, tab: 'files' }) });
-    await settle();
-    expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
-
-    pressSections();
-    await settle();
-    const tree = screen.getByRole('navigation', { name: 'Changed files' });
-    const first = within(tree).getAllByRole('button', { name: /credit\.ts|webhook\.ts/ })[0];
-    if (first === undefined) {
-      throw new Error('the tree has no file row');
-    }
-    fireEvent.click(first);
-    await settle();
-
-    expect(screen.queryByRole('navigation', { name: 'Sections' })).toBeNull();
+    expect(screen.queryByRole('navigation', { name: 'Worktree' })).toBeNull();
+    expect(screen.getAllByText(/credit\.ts/).length).toBeGreaterThan(0);
   });
 });

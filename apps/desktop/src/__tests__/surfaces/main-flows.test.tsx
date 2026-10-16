@@ -33,6 +33,7 @@ import {
   seedResolveScene,
 } from '../../app/components/MockScene/scenes/resolveSeed';
 import { BranchPage } from '../../features/branch/components/BranchPage';
+import { WorktreeEntriesSlot } from '../../app/components/MockScene/scenes/WorktreeEntriesSlot';
 import { seedSessionWithMounts } from '../helpers/seedSessionWithMounts';
 import { WORKSPACE_ID, seedBoardScene } from '../../app/components/MockScene/scenes/BoardScene';
 import {
@@ -245,13 +246,18 @@ describe('main flows on the real store', () => {
   it('opens the diff from the Branch page', async () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
 
-    await mountFlow(<KeepAliveWorkSurface sessionId={sessionId} isActive />);
-    expect(screen.queryByRole('navigation', { name: 'Sections' })).toBeNull();
+    await mountFlow(
+      <>
+        <WorktreeEntriesSlot />
+        <KeepAliveWorkSurface sessionId={sessionId} isActive />
+      </>,
+    );
+    expect(screen.queryByRole('navigation', { name: 'Worktree' })).toBeNull();
     act(() => {
       useAppStore.getState().navigate({ to: branchPlace({ sessionId }) });
     });
     await settle();
-    const rail = within(await screen.findByRole('navigation', { name: 'Sections' }));
+    const rail = within(await screen.findByRole('navigation', { name: 'Worktree' }));
     fireEvent.click(rail.getByRole('button', { name: /^Files/ }));
     await settle();
 

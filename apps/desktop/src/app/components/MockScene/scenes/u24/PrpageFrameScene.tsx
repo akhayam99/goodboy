@@ -3,14 +3,13 @@ import { UnderTrailContext } from '@goodboy/ui';
 import type { DiffComment } from '@goodboy/types';
 import type { BranchTab } from '../../../../../store/slices/navigation/types';
 import { BranchPage } from '../../../../../features/branch/components/BranchPage';
+import { WorktreeSceneColumn } from '../WorktreeSceneColumn';
 import { StudioBandContext } from '../../../../../shared/components/StudioShell/studioBandContext';
 import { useAppStore } from '../../../../../store';
 import { sceneClock } from '../../sceneClock';
 import { PageSheet } from '../PageSheet';
 import { SESSION, SESSION_ID } from '../resolveSeed';
 import { PR_PAGE_WORKTREE, applyPrPageSeed, type PrPageVariant } from '../u23/prPageSeed';
-
-const OPEN_DELAY_MS = 400;
 
 const clock = sceneClock({ anchor: '2026-10-10T09:12:00.000Z' });
 
@@ -31,7 +30,6 @@ type Props = {
   readonly isQueued?: boolean;
   readonly hasNote?: boolean;
   readonly stageWidth?: number;
-  readonly isRailOpen?: boolean;
 };
 
 const queue = (): void => {
@@ -58,7 +56,6 @@ export const PrpageFrameScene = ({
   isQueued = false,
   hasNote = false,
   stageWidth,
-  isRailOpen = false,
 }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
@@ -74,18 +71,6 @@ export const PrpageFrameScene = ({
     setIsReady(true);
   }, [hasNote, isQueued, tab, variant]);
 
-  useEffect(() => {
-    if (!isReady || !isRailOpen) {
-      return;
-    }
-    const timer = window.setTimeout(() => {
-      [...document.querySelectorAll<HTMLElement>('button')]
-        .find((button) => button.textContent?.trim() === 'Sections')
-        ?.click();
-    }, OPEN_DELAY_MS);
-    return () => window.clearTimeout(timer);
-  }, [isReady, isRailOpen]);
-
   if (!isReady) {
     return null;
   }
@@ -98,7 +83,9 @@ export const PrpageFrameScene = ({
       <PageSheet>
         <UnderTrailContext.Provider value>
           <StudioBandContext.Provider value={null}>
-            <BranchPage session={SESSION} workingDir={PR_PAGE_WORKTREE} />
+            <WorktreeSceneColumn>
+              <BranchPage session={SESSION} workingDir={PR_PAGE_WORKTREE} />
+            </WorktreeSceneColumn>
           </StudioBandContext.Provider>
         </UnderTrailContext.Provider>
       </PageSheet>

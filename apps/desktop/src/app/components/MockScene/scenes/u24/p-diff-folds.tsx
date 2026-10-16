@@ -13,6 +13,7 @@ import {
   seedContextBase,
 } from '../brand/contextBase';
 import { DiffStage, handlersFor } from '../brand/DiffStage';
+import { WorktreeSceneColumn } from '../WorktreeSceneColumn';
 
 const DOCKED_PANE_PX = 1920 - 244;
 const ROOT = 'apps/web/src/domains/ledger';
@@ -122,7 +123,9 @@ const DeepFilesScene = () => {
       <UnderTrailContext.Provider value>
         <div className="relative min-h-0 flex-1">
           <div className="absolute inset-0 z-0">
-            <DiffStage handlers={HANDLERS} centerNote={false} />
+            <WorktreeSceneColumn>
+              <DiffStage handlers={HANDLERS} centerNote={false} />
+            </WorktreeSceneColumn>
           </div>
         </div>
       </UnderTrailContext.Provider>

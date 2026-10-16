@@ -4,6 +4,7 @@ import { DrawerHost } from '../../DrawerHost';
 import { shellArrangement } from '../../../shellArrangement';
 import { openFixComments } from '../../../../store/slices/resolve/openFixComments';
 import { BranchPage } from '../../../../features/branch/components/BranchPage';
+import { WorktreeSceneColumn } from './WorktreeSceneColumn';
 import { useAppStore } from '../../../../store';
 import { SESSION } from './resolveSeed';
 import { BULK_LAUNCH_THREAD_IDS, seedBulkScene, type BulkStage } from './bulkSeed';
@@ -68,7 +69,9 @@ export const ResolveBulkScene = ({ stage }: { readonly stage: BulkStage }) => {
 
   return (
     <main className="h-screen overflow-hidden bg-background text-foreground">
-      <BranchPage session={SESSION} workingDir={null} />
+      <WorktreeSceneColumn>
+        <BranchPage session={SESSION} workingDir={null} />
+      </WorktreeSceneColumn>
     </main>
   );
 };

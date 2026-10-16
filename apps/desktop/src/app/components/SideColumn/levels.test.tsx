@@ -19,8 +19,10 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  stubStoryInvoke,
   type StoryStore,
 } from '../../../store/storyHarness';
+import { worktreeStatusOf } from '../../../test/worktreeStatusOf';
 import { sessionPlace } from '../../../store/slices/navigation/place';
 import { ToastProvider } from '../../../shared/components/Toast';
 import {
@@ -282,6 +284,10 @@ describe('the session level projects and linked work', () => {
       sessionProjectMounts: { [openId]: [payments, ledger] },
       mountGithub: { [payments.mountId]: mountGithubOf({ mount: payments, number: 418 }) },
       setSessionActiveMount: vi.fn(async () => undefined),
+    });
+    stubStoryInvoke({
+      worktree_status: () => worktreeStatusOf({}),
+      worktree_remote_url: () => 'git@github.com:harborline/payments-api.git',
     });
     mountColumn();
 

@@ -343,7 +343,7 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
   {
     id: 'mount.putTaskOnBranch',
     slot: () => 'chip',
-    label: 'Put on a branch',
+    label: 'Link work to this branch',
     icon: ListPlus,
     group: 'act',
     when: ({ facts }) => facts.branch !== '' && !facts.isClosed,

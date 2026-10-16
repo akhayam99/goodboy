@@ -349,7 +349,8 @@ never exists on one surface only.
   Frequent alternatives stay visible beside it or on the row they affect.
   `⋯` holds copy and rare actions. A task chip opens the task; its unlink
   control appears on pointer hover and keyboard focus, with no kebab.
-  Put on a branch lives on the branch row. Link work is the single entry
+  Putting work on a branch is `Link work to this branch` (`mount.putTaskOnBranch`), on the
+  Overview branch row and in the worktree level's `⋯`. Link work is the single entry
   for linking work to a session or workspace. Moving a task is one verb,
   `Move to`: in the chip's menu (Shift+F10), in the focused issue's
   `Linked to` row and in the palette; the x on a branch chip says what it
@@ -618,9 +619,31 @@ and the hidden one is `inert`.
   its flyout read the same function.
 - **Projects** lists each mounted project as a label row and its worktrees
   under it at the same left edge: branch icon, mono branch, pull request
-  number in a fixed 48px column. A worktree row opens today's Branch page on
-  that worktree. The label carries Add project. The worktree level (level 2)
-  replaces this click later; the row is the seam.
+  number in a fixed 48px column. A worktree row drills into the worktree
+  level (level 2) on its landing entry. The label carries Add project.
+- **Level 2, the worktree.** Showing the Branch lens is being on level 2
+  (`useSidebarLevel` reads `activeLens === 'branch'`, so history, links and
+  keys drill the sidebar without extra state). It reads: the back row
+  `‹ <session title>` (named `Back to session <title>`), which opens the
+  session's Overview; the identity row (`WorktreeLevel/WorktreeIdentityRow`:
+  the project name in gray, then the mono branch with the chevron of today's
+  branch switcher, `BranchSwitcher`, and a visible `⋯` holding the mount
+  registry for that worktree: Open in editor, Copy branch name, Copy path,
+  Link work to this branch, Start new turns here, Switch branch…, Close
+  branch, Remove from session; the entries, the status line and the pull
+  request header own the rest); the status line, only while a git act is due
+  (`6 behind main · 1 conflict` with `Rebase`, or `Rebasing on main` with
+  `Abort`), the one home of Rebase; then the entries Pull request (`Merge
+request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
+  fixed right-aligned slot from `worktreeEntryFactsOf`: `#418 Draft` or
+  `None`, the comment count with a warning dot while one waits on you, the
+  file count, `2 not pushed` or the commit count, `1 failed` with a danger dot
+  or the check count. Files is an accordion: picking it opens the changed file
+  tree (`ChangeTree`, the tree pane of `SessionDiffPane`) right under the row
+  and the diff fills the center; any other entry closes it. The entries are
+  the Branch page's own rail, portalled into the level (`worktreeLevelSlot`),
+  so the page keeps one source for every number. ⌘[ in the sidebar and the
+  back row go up one level each.
 - **Linked** lists the session's linked work, one row per item: provider
   mark, key in mono, title. The row opens the item; its right-click menu holds
   Unlink and Move. The label carries Link work (L).
@@ -634,8 +657,11 @@ and the hidden one is `inert`.
   Workflows, Terminal, Monitoring, Impact) shows level 0 with its door
   selected and the session row unselected (`useSidebarLevel`).
 - **Folded (⌘B, 44px).** The rail shows the current level as icons with right
-  tooltips: on level 1 the back icon first, then one icon per page with its
-  dot; on level 0 New, the doors and the pinned session nodes.
+  tooltips: on level 2 the back icon, then one icon per worktree entry
+  (`RailWorktreeLevel`); on level 1 the back icon first, then one icon per
+  page with its dot; on level 0 New, the doors and the pinned session nodes.
+  The changed file tree needs the open sidebar (or its peek); the diff and its
+  keys work without it.
 
 The tools (Scripts, Terminal, Explore) and the linked records keep their
 lenses for now and stay in the palette.
@@ -2695,32 +2721,23 @@ Files tab, Write review, the Bitbucket pull request changes and the
 Rust side runs git with `core.quotepath=false` and `parseUnifiedDiff` reads
 quoted headers, so a name with accents is its own file.
 
-**Frame.** The Branch page is a `split` page (`PAGE_FRAME.branch`): a rail of
-sections, always docked, and one detail beside it. The crumb band
-(`Session › Branch ▾`, Ask at its end) moves into the detail, so the rail starts at the top
-of the sheet: `SessionWorkspace` hands the band to `BranchPage` through
-`StudioBandContext` while the Branch lens is on screen, and `BranchDetail` draws it
-first. The rail is `StudioRailLayout` (surface `branch`, 288 wide, drag 220 to 420, a double click
-resets it, no fold control). Its first row sits on the crumb band's line and reads the eyebrow
-`Sections`. When the detail would fall under 560 (the page under 780, measured by
-`useBranchRailDock`) the rail leaves and a ghost `Sections` button at the left of the crumb band
-opens it over the detail, with a scrim: `Esc`, a click outside or a pick closes it, and it docks again as
-soon as the window allows. The header, the banners and every section body sit on the 960px
-column of the detail; nothing moves from one section to the next.
+**Frame.** The Branch page is the center of the worktree level (Sidebar
+levels, level 2): one detail with no rail of its own. Its sections are the
+level's entries; `BranchPage` renders them (`BranchRail`) through a portal
+into the slot the level registers (`worktreeLevelSlot`,
+`useWorktreeLevelSlot`), so the counts stay computed once by the page. A host
+with no sidebar (a scene, a test with no slot) shows the page alone. The
+header, the banners and every section body sit on the 960px column of the
+detail; nothing moves from one section to the next.
 
-**Header.** Title, the one h1 (the pull request's title, or the branch name
+**Header.** One row: the title, the one h1 (the pull request's title, or the branch name
 without a pull request; on a pull request you can edit, click it or press `E` on
-the Overview and it becomes an input in the same 32px row, `Enter` saves
-to the host, `Esc` cancels, a failure is an inline notice with Retry), then the state
-chip right after it, read from `PULL_REQUEST_PRESENTATION` (`Draft` neutral, `In review` and
-`Approved` success, `Queued` primary, `Merged` in the merged purple, `Closed` danger, `No pull
-request` when there is none), and the line
-`payments-api · hl/fix-credit ▾ → main · #318 by nadia-p · 7 commits · 11d ago`
-(the switcher chip, the base, the number and author, the commit count and the age;
-a queued request ends it with `Queued to merge, 3rd in line` or `Merges when checks pass`), one
-primary and `⋯`. The checks never print in that line: the Overview and the rail say them. The branch name prints once in that line, in `text-code`: the
-trail reads `Branch` and the title is the pull request's. **The switcher chip** (`BranchSwitcher`)
-is the repo and the branch of the page. It opens a menu of the session's
+the Pull request entry and it becomes an input in the same 32px row, `Enter` saves
+to the host, `Esc` cancels, a failure is an inline notice with Retry), one primary and `⋯`. No
+state chip and no meta line: the state, the number, the author, the base and the readiness are
+the Pull request property block, the commit count is the Commits entry, and a blocked primary
+says its reason in its tooltip. **The switcher** (`BranchSwitcher`) is the branch line of the
+worktree level's identity row. It opens a menu of the session's
 branches (`branchMenuGroups`, the rows of the trail's `Branch ▾` menu: repo
 glyph, branch cut in the middle, `#318 Open`, a check on the current one,
 grouped by repo when there are several) and `New branch`. Choosing a branch
@@ -2739,11 +2756,13 @@ replies` (the fix is already on origin), `Retry N`; a merged or closed request h
 primary follows the state: `Mark ready for review` on a draft, `Merge` on an open or approved
 request, `Reopen` on a closed one (where the host allows it), none on a merged or queued one and none
 without a pull request, where the create form owns `Create pull request`. A stopped rebase
-shows `Continue rebase` as the primary (`Open terminal` with `Abort rebase` beside it);
-`Rebase on main` lives in Commits and in the Overview's Base block, not in the header. `Merge` is a filled primary only when the pull request is
+shows `Continue rebase` as the primary, with `Abort rebase` in `⋯`, in the rebase banner and on
+the worktree status line; `Rebase` lives on the worktree status line only, never in the header
+or a property. `Merge` is a filled primary only when the pull request is
 ready; while comments need you or a fix run is live it turns secondary and counts
 (`Merge · 3 open`), never disabled, and while a check fails, a review is
-missing or the branch conflicts it is disabled with the reason in the meta line.
+missing or the branch conflicts it is disabled with the reason in its tooltip and in the
+Readiness property.
 One rule decides all three (`evaluatePrMergeReadiness`, `features/review`): its
 blockers are a merged, closed, queued or draft pull request, conflicts, checks
 unknown, failing or running, changes requested, a review required and a write
@@ -2800,20 +2819,21 @@ review, Convert to draft, Close or Reopen, Open on GitHub, Copy link) and the
 branch actions (Change base branch…, Open terminal, Open in editor, Copy
 branch name, Copy patch); a queued request with auto-merge adds `Cancel auto-merge`.
 
-**Sections and landing.** The rail lists the sections the state has, in this order
+**Sections and landing.** The worktree level lists the entries the state has, in this order
 (`branchTabsOf({ state, hasComments })`, `features/branch/branchTabs.ts`): with no
-pull request and no comment `Overview`, `Files N`, `Commits N`; with a local note or a thread
-and still no pull request `Comments N` joins them; Draft, Open, Approved, Queued, Merged and
-Closed show all five, `Overview`, `Comments N`, `Files N`, `Commits N`, `Checks`. The first is
-always labelled `Overview` (its key is ⌥⌘1, Comments ⌥⌘R, Files ⌥⌘F, shown in the
-row's tooltip) and Checks never appears without a pull request. A row is 32px with an icon, the label and a
-right-aligned count (a muted `-` named `Not loaded` until it is known); Files shows its viewed
-ring and `12/39`; Checks adds a dot while one fails. The current row carries `aria-current="page"`,
-Up and Down move between rows while the rail has focus, and a pick replaces the address. Merged and
+pull request and no comment `Pull request`, `Files`, `Commits`; with a local note or a thread
+and still no pull request `Comments` joins them; Draft, Open, Approved, Queued, Merged and
+Closed show all five, `Pull request`, `Comments`, `Files`, `Commits`, `Checks`. The first is
+labelled with the host's noun (`Pull request`, `Merge request` on GitLab; its key is ⌥⌘1,
+Comments ⌥⌘R, Files ⌥⌘F, shown in the row's tooltip) and Checks never appears without a pull
+request. A row is 28px with an icon, the label and one fixed right-aligned slot
+(`worktreeEntryFactsOf`; a muted `-` named `Not loaded` until a count is known), then a chevron
+column that only Files fills. The current row carries `aria-current="page"`,
+Up and Down move between rows while the list has focus, and a pick replaces the address. Merged and
 Closed make the page read only (`isBranchReadOnly`): Commits shows its list without editing or Rebase. Every door that means "go to the
 branch" lands through one pure rule (`branchLandingTabOf`,
 `features/branch/branchLandingTab.ts`): an explicit section in the place wins, else
-`Overview` when the active mount has a pull request, else `Files`; then the door resolver
+`Pull request` when the active mount has a pull request, else `Files`; then the door resolver
 above drops a section the state lacks. The
 sidebar's Branch row, the Branch crumb, `⌥⌘1`, a mount's `Open PR`, the Board's
 pull request chip, an approved or changes-requested mark and a mount's
@@ -2827,25 +2847,26 @@ component), never from `branchTab[sessionId]` directly, so a section is only
 remembered once the person has chosen one; the page shows the section the state has
 when the stored one is gone, without writing history.
 
-**Overview.** The pull request itself, on the 960px column
-(`features/branch/components/PullRequestTab`). On the 960 content it is one grid in every state,
-`grid-cols-[minmax(0,640px)_296px]` with a 24px gap, that starts at the h1's x and ends at the column's right
-edge, from 800px of pane (below it the properties follow the main column). With a pull request, the main
-column holds the description rendered as markdown with `Edit` beside its heading
+**Pull request.** The pull request itself, on the 960px column
+(`features/branch/components/PullRequestTab`), one column in every state: the property block
+first, then the description and the Activity. The property block (`PullRequestProperties`) is a
+grid, label 96 and value, in three groups 12px apart with no labels in caps: State (`State`
+with the state chip from `PULL_REQUEST_PRESENTATION` and the number, `#318` or `MR !42`, from
+`pullRequestNumberLabel`; `Base` as `→ main`; `Checks`, one line that opens the Checks entry;
+`Readiness`, the word and reason of `evaluatePrMergeReadiness`, plus the queue line of a queued
+request), People (`Author`, `Reviewers` with `Request review`) and Links (`Linked issues`).
+There is no Rebase in it: the worktree status line owns it. The description renders as markdown with `Edit` beside its heading
 (a click on the text also opens it; the editor is a textarea with Write and
 Preview, `Save` and `Cancel` at its end, a failure keeps the draft and offers
 Retry; an empty description reads `No description yet` with `Add description`)
 and the Activity, oldest first: who opened it, the pushes grouped by day, the
 reviews, one line `4 comments on files, 2 need you` that opens Comments, one line
 for the checks that opens Checks, your edits of this session and the merge. Rows
-that open something carry `ROW_INTERACTIVE`. The properties column is 296px on
-the right and holds four blocks: Reviewers (a glyph and a word each; `+`
-opens the picker that searches the host's collaborators), Checks (one line, `4 passed ·
-1 failing`, that opens the Checks section; `Checks unknown` when the read failed), Linked issues
-(each with its relation, `Closes #412`; `Link issue` opens the popover) and Base (`main`, `3 behind main`
-with `Rebase on main`). The state is the chip and the readiness word is the blocked reason in the
-header's meta line; the file count is the rail's. Without a pull request the section is the create
-form alone, with no block above it (the state reads `No pull request` in the header chip), and it
+that open something carry `ROW_INTERACTIVE`. Reviewers draw a glyph and a word each (`+`
+opens the picker that searches the host's collaborators), Checks reads `4 passed · 1 failing`
+(`Checks unknown` when the read failed), Linked issues carry their relation (`Closes #412`;
+`Link issue` opens the popover). Without a pull request the section is the create
+form alone, with no block above it (the Pull request entry reads `None`), and it
 fills the same grid: one input card (the title from the session goal as a large
 borderless field, the description growing from 6 to 16 lines, and in the card's
 bottom row `Write with Scribe` with its routing and a faint `Markdown`), then
@@ -2902,24 +2923,22 @@ moves from one section to the next. The Comments section reads the width of its 
 300px list beside a wide thread; under 900px the list, then the thread, with no back link: the
 `Branch` crumb, with the thread's own crumb after it, is the way back to the list. The selected row stays selected on the way back.
 `branchLayout.test.ts` pins the widths a 1024px window gets with a wide sidebar
-and an open drawer. The rail counts (Comments, Files, Commits) read a muted `-`
+and an open drawer. The entry counts (Comments, Files, Commits) read a muted `-`
 named `Not loaded` until the data arrives, then the number, never 0 for an
-unknown (`RailCount`). All three arrive without a visit: `BranchPage` loads
+unknown (`worktreeEntryFactsOf`). All three arrive without a visit: `BranchPage` loads
 the mount's history draft (`loadHistoryDraft`) once when the page opens and the
 draft is not there yet, so the Commits count is a number on the Comments section too. `Fix comments N`, in the section header and in the Files toolbar, is the one fix launch.
 
 **Files.** The branch against its base, on the column like every other section, with
-the change tree in the rail, under the sections, outside the column.
-`BranchPage` renders the rail's Files group host (`data-slot="branch-rail-files"`) only while
-Files is the section and hands it to `SessionDiffPane` through `DiffRailContext`
+the change tree in the sidebar, right under the Files entry (the accordion of the worktree level).
+`BranchRail` renders the Files group host (`data-slot="branch-rail-files"`) under the Files row
+only while Files is the entry, and `BranchPage` hands it to `SessionDiffPane` through `DiffRailContext`
 (`features/diff/diffRailHost.ts`); `SessionDiffPane` portals `ChangeTree` into it, so the
-tree and the diff still share one `useReviewState` and the keys stay in `useDiffKeys`. The rail
-never moves the column: no section and no resize change the title, Ask or the diff's left
-edge. The rail is docked from a page of 780 and up; under it the tree lives in the same rail
-behind the `Sections` button, `F` and `/` open it on the tree or the filter (`useTreeFocus`), and
-picking a file closes it. The group reads the filter field (`/`) with the sort of the tree
+tree and the diff still share one `useReviewState` and the keys stay in `useDiffKeys`. The tree
+never moves the column: no entry and no resize change the title, Ask or the diff's left
+edge. `F` and `/` focus the tree or the filter (`useTreeFocus`). The group reads the filter field (`/`) with the sort of the tree
 beside it, `All | Unviewed N | Commented N` (one at a time), the tree and `Next unviewed N`;
-the viewed ring and `12/39` are the Files row's, so the head no longer prints them. A pane that has not been measured yet reads as docked.
+each file row keeps its viewed mark.
 The toolbar on the column (36 high, the diff scrolls under it) reads `Compared with main · All 5 commits ⌄`,
 then `Display ⌄` and `Fix comments N` (every open note and host thread, in every
 state; hidden at 0). Folders first, then files, alphabetical,

@@ -95,7 +95,6 @@ branch-narrow
 branch-nopr
 branch-nopr-notes
 branch-open
-branch-overlay-rail
 branch-pr-bitbucket
 branch-pr-bitbucket-denied
 branch-pr-bitbucket-merge

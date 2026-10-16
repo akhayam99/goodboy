@@ -389,7 +389,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Task links',
-        desc: 'A task chip opens the task. Move to, Unlink, Stop tracking and Take off this branch act at once and show an Undo toast, and ⌘Z undoes the last one when focus is not in a text field. The Log keeps the event with Re-link. Put on a branch sits on the branch row.',
+        desc: 'A task chip opens the task. Move to, Unlink, Stop tracking and Take off this branch act at once and show an Undo toast, and ⌘Z undoes the last one when focus is not in a text field. The Log keeps the event with Re-link. Put on a branch sits on the branch row, and Link work to this branch in the worktree menu.',
       },
       {
         term: 'Slack',
@@ -420,11 +420,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Branch page',
-        desc: 'One page per branch, with a rail on its left that lists Overview, Comments, Files, Commits and Checks, and only the ones that make sense: with no pull request it shows Overview, Files and Commits, and Comments once a note exists. Every section sits on one centred column. A branch chip in the header switches branches or starts a new one. It opens the same way from the palette, a notification, a chat card or the board. Up is the crumb on the left, there is no back link, and Back walks your history.',
+        desc: 'One page per branch. Click a worktree under Projects and the sidebar steps into it: the project, the branch with a chevron that switches branches or starts a new one, a menu of the worktree actions, a status line with Rebase while the branch is behind, then Pull request, Comments, Files, Commits and Checks with their counts, only the ones that make sense: with no pull request it shows Pull request, Files and Commits, and Comments once a note exists. Every section sits on one centred column. It opens the same way from the palette, a notification, a chat card or the board. The back row at the top of the sidebar returns to the session, and Back walks your history.',
       },
       {
         term: 'Pull request',
-        desc: 'The pull request on Overview, on GitHub, GitLab (Merge request) and Bitbucket. Rename it with E and edit the description in place, read its activity, reviewers and checks, add reviewers, mark it ready, close it or merge it with the methods the host allows. A pull request held for a merge reads Queued, with Cancel auto-merge in its menu. A branch with no pull request offers a create form here, with Write with Scribe, the base branch, Draft or Ready, reviewers and the issues it closes.',
+        desc: 'The pull request on its own entry, on GitHub, GitLab (Merge request) and Bitbucket. Its properties come first, grouped as state (state, base, checks and whether it can merge, in words), people (author, reviewers) and links (the issues it closes). Rename it with E and edit the description in place, read its activity, add reviewers, mark it ready, close it or merge it with the methods the host allows. A pull request held for a merge reads Queued, with Cancel auto-merge in its menu. A branch with no pull request offers a create form here, with Write with Scribe, the base branch, Draft or Ready, reviewers and the issues it closes.',
       },
       {
         term: 'Comments',
@@ -436,7 +436,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Files',
-        desc: 'The changed files as a tree in a rail at the left edge, which never moves the page, beside the code, which reads as one diff in the order of the tree, with a ring on each folder that fills as you mark files Viewed, a filter, Unviewed and With notes. Display holds Unified, Split and Wrap long lines. Show more lines opens the context around a change, up to the whole file, and a double click on a name shows where it is defined and used. Comment on a line or on a whole file with Comment on file, or quote a line into a note or a question for an agent. J and K move between files, V marks one viewed, / filters, and ⌘⇧B hides the tree. Write review, in the header of the pull request, takes line comments, the verdict and a summary, sent with Approve, Request changes or Submit comments.',
+        desc: 'The changed files as a tree that opens in the sidebar right under Files and folds away when you pick another entry, beside the code, which reads as one diff in the order of the tree, with a ring on each folder that fills as you mark files Viewed, a filter, Unviewed and With notes. Display holds Unified, Split and Wrap long lines. Show more lines opens the context around a change, up to the whole file, and a double click on a name shows where it is defined and used. Comment on a line or on a whole file with Comment on file, or quote a line into a note or a question for an agent. J and K move between files, V marks one viewed, / filters, and ⌘⇧B hides the tree. Write review, in the header of the pull request, takes line comments, the verdict and a summary, sent with Approve, Request changes or Submit comments.',
       },
       {
         term: 'Notes',

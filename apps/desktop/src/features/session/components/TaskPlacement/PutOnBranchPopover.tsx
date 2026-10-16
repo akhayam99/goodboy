@@ -1,6 +1,6 @@
 import { NAMES } from '../../../../shared/names';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Link2, ListPlus, Plus } from 'lucide-react';
 import {
@@ -26,9 +26,10 @@ type Props = {
   readonly mountId: MountId;
   readonly projectId: ProjectId;
   readonly branch: string;
+  readonly anchor?: ReactNode;
 };
 
-export const PutOnBranchPopover = ({ sessionId, mountId, projectId, branch }: Props) => {
+export const PutOnBranchPopover = ({ sessionId, mountId, projectId, branch, anchor }: Props) => {
   const dropdown = useDropdown({
     align: 'start',
     width: 'w-80',
@@ -109,7 +110,7 @@ export const PutOnBranchPopover = ({ sessionId, mountId, projectId, branch }: Pr
       },
     ];
   }, [assignSessionExternalTask, available, branch, groups, projectId, reportError, sessionId]);
-  if (available.length === 0 && !isOpen) {
+  if (available.length === 0 && !isOpen && anchor === undefined) {
     return null;
   }
   return (
@@ -119,23 +120,25 @@ export const PutOnBranchPopover = ({ sessionId, mountId, projectId, branch }: Pr
       ariaLabel="Put on a branch"
       anchorClassName="flex shrink-0"
       trigger={
-        <Chip
-          as="button"
-          tone="neutral"
-          bordered={false}
-          shape="badge"
-          kind="reference"
-          ariaLabel={`Put on a branch ${branch}`}
-          expanded={isOpen}
-          hasPopup="dialog"
-          onClick={dropdown.toggle}
-          title="Put on a branch"
-          icon={<Plus size={ICON_SIZE.row} aria-hidden />}
-          className={cn(
-            'w-6 justify-center px-0 opacity-0 focus-visible:opacity-100 group-hover/mount-row:opacity-100 group-focus-within/mount-row:opacity-100',
-            isOpen && 'opacity-100',
-          )}
-        />
+        anchor ?? (
+          <Chip
+            as="button"
+            tone="neutral"
+            bordered={false}
+            shape="badge"
+            kind="reference"
+            ariaLabel={`Put on a branch ${branch}`}
+            expanded={isOpen}
+            hasPopup="dialog"
+            onClick={dropdown.toggle}
+            title="Put on a branch"
+            icon={<Plus size={ICON_SIZE.row} aria-hidden />}
+            className={cn(
+              'w-6 justify-center px-0 opacity-0 focus-visible:opacity-100 group-hover/mount-row:opacity-100 group-focus-within/mount-row:opacity-100',
+              isOpen && 'opacity-100',
+            )}
+          />
+        )
       }
     >
       {worktreeTask === null ? (
