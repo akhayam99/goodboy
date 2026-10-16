@@ -42,6 +42,13 @@ describe('c01 tail scenes', () => {
     screen.getByText('Pressed raiseLimit');
   });
 
+  it('offers Retry through Auto, never Continue, for a stopped Auto child', () => {
+    const Scene = U25_C01_TAIL_SCENES['c01-tail-childstopped'];
+    render(<Scene />);
+    screen.getByRole('button', { name: 'Retry through Auto' });
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
+  });
+
   it('keeps the reason and Retry in the pressed row after a failed close', () => {
     const Scene = U25_C01_TAIL_SCENES['c01-tail-cleanup'];
     render(<Scene />);

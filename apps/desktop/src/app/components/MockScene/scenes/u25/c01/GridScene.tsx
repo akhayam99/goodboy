@@ -4,7 +4,7 @@ import { DotsGridSpecimen } from './DotsGridSpecimen';
 import { TasksGridSpecimen } from './TasksGridSpecimen';
 import { TypeSpecimen } from './TypeSpecimen';
 
-export type GridSceneState = 'list' | 'groups' | 'dots' | 'type';
+type GridSceneState = 'list' | 'groups' | 'dots' | 'type';
 
 type Props = {
   readonly state: GridSceneState;
