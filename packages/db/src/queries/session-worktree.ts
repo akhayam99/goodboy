@@ -84,8 +84,14 @@ type PathOwnerParams = {
 
 const PATH_OWNED = 'PATH_OWNED';
 
+type MountIdOfParams = {
+  readonly value: string;
+};
+
+export const mountIdOf = ({ value }: MountIdOfParams): MountId => value as MountId;
+
 const toMount = (row: SessionWorktreeRow): SessionMount => ({
-  id: row.id as MountId,
+  id: mountIdOf({ value: row.id }),
   sessionId: row.session_id as SessionId,
   projectId: row.project_id as ProjectId | null,
   worktreePath: row.worktree_path,

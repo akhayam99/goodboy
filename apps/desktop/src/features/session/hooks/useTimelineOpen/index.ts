@@ -116,7 +116,12 @@ export const useTimelineOpen = ({
           checkUrl === undefined ||
           ciFixRoleOf({ agent: entry.agent, kind: entry.agentKind }) === null
             ? null
-            : ciFixMountOf({ state: store, sessionId, checkUrl });
+            : ciFixMountOf({
+                state: store,
+                sessionId,
+                checkUrl,
+                storedMountId: entry.agent.mountId,
+              });
         if (checkUrl !== undefined && ciMountId !== null) {
           return {
             label: 'Open CI fix',

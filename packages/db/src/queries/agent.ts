@@ -19,6 +19,7 @@ import { isAgentStoppedBy } from '@goodboy/types';
 import type { Database, PlainStatement } from '../client';
 import { legacyAgentRoutingDecision, parseWorkflowRouting } from './workflowRoutingCodec';
 import { isJsonArray, parseJsonColumn } from '../shared/parseJsonColumn';
+import { mountIdOf } from './session-worktree';
 
 type AgentRow = {
   id: string;
@@ -49,6 +50,7 @@ type AgentRow = {
   source_thread_ids: string | null;
   source_comment_url: string | null;
   source_kind: string | null;
+  mount_id: string | null;
   domains_json: string | null;
   routing_lock: string | null;
   routing_decision: string | null;
@@ -137,6 +139,7 @@ const toAgent = ({ row }: ToAgentParams): Agent => {
     ...(sourceThreadIds.length > 0 && { sourceThreadIds }),
     ...(row.source_comment_url != null && { sourceCommentUrl: row.source_comment_url }),
     ...(row.source_kind != null && { sourceKind: row.source_kind as AgentSourceKind }),
+    ...(row.mount_id != null && { mountId: mountIdOf({ value: row.mount_id }) }),
     ...(domains.length > 0 && { domains }),
     routingLock: routing.routingLock,
     routingDecision,

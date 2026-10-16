@@ -12,6 +12,7 @@ type Params = {
   readonly state: CiFixMountState;
   readonly sessionId: SessionId;
   readonly checkUrl: string;
+  readonly storedMountId?: MountId | undefined;
 };
 
 type JobUrlParams = {
@@ -29,12 +30,20 @@ const repoSlugOfJobUrl = ({ url }: JobUrlParams): string | null => {
   return `${owner}/${repo}`.toLowerCase();
 };
 
-export const ciFixMountOf = ({ state, sessionId, checkUrl }: Params): MountId | null => {
+export const ciFixMountOf = ({
+  state,
+  sessionId,
+  checkUrl,
+  storedMountId,
+}: Params): MountId | null => {
+  const attached = (state.sessionMounts[sessionId] ?? []).filter((mount) => mount.isAttached);
+  if (storedMountId !== undefined && attached.some((mount) => mount.id === storedMountId)) {
+    return storedMountId;
+  }
   const loaded = selectCheckMount({ state, url: checkUrl });
   if (loaded !== null) {
     return loaded;
   }
-  const attached = (state.sessionMounts[sessionId] ?? []).filter((mount) => mount.isAttached);
   const slug = repoSlugOfJobUrl({ url: checkUrl });
   if (slug !== null) {
     const sameRepo = attached.filter((mount) => mount.repoSlug?.toLowerCase() === slug);

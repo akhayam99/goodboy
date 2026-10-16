@@ -1,6 +1,7 @@
 activity
 activity-check-chain
 activity-check-fixed-local
+activity-ci-fix-unloaded
 activity-empty
 activity-groups
 activity-jobs

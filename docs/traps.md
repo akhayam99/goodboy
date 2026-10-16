@@ -402,11 +402,14 @@ fails silently at runtime.
   old URL still listed is "running", never "still fails". An agent carries no
   mount id: `checkTargetOf` ties an analyst to its mount through
   `selectCheckMount`, which matches the analyzed URL against the pull requests
-  and check runs of each mount. The Activity row of a CI fix agent resolves its
-  mount through `ciFixMountOf`: `selectCheckMount` first, then the one attached
-  mount whose `repoSlug` is the repo in the job URL, then the session's only
-  attached mount, else it opens the chat. Two mounts of one repo cannot be told
-  apart by the URL, so that row opens the chat.
+  and check runs of each mount. Agents started since m233 also store
+  `agents.mount_id`, set to NULL when the worktree row is removed. The Activity
+  row of a CI fix agent resolves its mount through `ciFixMountOf`: the stored
+  mount while it is still attached, then `selectCheckMount`, then the one
+  attached mount whose `repoSlug` is the repo in the job URL, then the session's
+  only attached mount, else it opens the chat. Older agents have no stored
+  mount, and two mounts of one repo cannot be told apart by the URL, so that row
+  opens the chat.
 
 - The CI fix roles are `ci-debugger` and `ci-fixer`, stored as their own kind.
   An older version stored `debugger` and `implementer` on the same agents, and

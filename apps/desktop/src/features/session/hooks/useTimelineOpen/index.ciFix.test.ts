@@ -259,6 +259,61 @@ describe('the CI fix row when the pull request detail is not loaded', () => {
     expect(navigate).not.toHaveBeenCalled();
   });
 
+  const twoMounts = [
+    mountOf({ id: 'mount-a', repoSlug: 'harborline/payments-api' }),
+    mountOf({ id: 'mount-b', repoSlug: 'harborline/payments-api' }),
+  ];
+
+  it('opens the drawer on the stored mount even when two mounts hold the repo', () => {
+    const openDrawer = vi.fn();
+    useAppStore.setState({ openDrawer, sessionMounts: { [SESSION.id]: twoMounts } });
+    const agent = {
+      ...checkAgent({ id: 'agent-ci', kind: 'ci-fixer' }),
+      sourceCommentUrl: JOB_URL,
+      mountId: brandedId<MountId>({ value: 'mount-b' }),
+    };
+    const { result } = renderHook(() => useTimelineOpen({ sessionId: SESSION.id }));
+
+    const target = result.current({ entry: entryOf({ agents: [agent] }) });
+    target?.open();
+
+    expect(target?.label).toBe('Open CI fix');
+    expect(openDrawer).toHaveBeenCalledWith({
+      kind: 'check-analysis',
+      sessionId: SESSION.id,
+      payload: {
+        sessionId: SESSION.id,
+        mountId: brandedId<MountId>({ value: 'mount-b' }),
+        checkUrl: JOB_URL,
+      },
+    });
+  });
+
+  it('falls back to the R6 chain when the stored mount is no longer attached', () => {
+    const openDrawer = vi.fn();
+    const mounts = [
+      mountOf({ id: 'mount-a', repoSlug: 'harborline/payments-api' }),
+      mountOf({ id: 'mount-b', repoSlug: 'harborline/ledger-core' }),
+    ];
+    useAppStore.setState({ openDrawer, sessionMounts: { [SESSION.id]: mounts } });
+    const agent = {
+      ...checkAgent({ id: 'agent-ci', kind: 'ci-fixer' }),
+      sourceCommentUrl: JOB_URL,
+      mountId: brandedId<MountId>({ value: 'mount-removed' }),
+    };
+    const { result } = renderHook(() => useTimelineOpen({ sessionId: SESSION.id }));
+
+    result.current({ entry: entryOf({ agents: [agent] }) })?.open();
+
+    expect(openDrawer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payload: expect.objectContaining({
+          mountId: brandedId<MountId>({ value: 'mount-a' }),
+        }),
+      }),
+    );
+  });
+
   it.each([
     {
       name: 'two mounts hold the repo of the job URL',
