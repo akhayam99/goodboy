@@ -56,7 +56,7 @@ export const AutoComposerView = ({
   const hasProvider = connected.length > 0;
   const canStart = hasGoal && hasProvider;
   return (
-    <>
+    <div className="flex min-w-0 flex-col gap-6">
       <section aria-label="Auto" className="flex min-w-0 flex-col gap-6">
         <PromptField
           kind="document"
@@ -134,6 +134,6 @@ export const AutoComposerView = ({
           )}
         </div>
       </Docked>
-    </>
+    </div>
   );
 };
