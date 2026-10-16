@@ -89,6 +89,15 @@ describe('analyze fix scenes', () => {
     expect(within(next).queryByRole('button', { name: 'Push' })).toBeNull();
     expect(screen.queryByText('Review the changes')).toBeNull();
   });
+  it('opens the CI fix drawer from the Activity row while the pull request detail is unloaded', () => {
+    show({ name: 'activity-ci-fix-unloaded' });
+    const row = screen
+      .getAllByRole('button')
+      .find((button) => button.getAttribute('aria-description') === 'Open CI fix, Enter');
+    expect(row).toBeDefined();
+    fireEvent.click(row!);
+    expect(screen.getByRole('region', { name: 'Debugger' })).toBeDefined();
+  });
   it.each(Object.keys(U24_ANALYZE_FIX_SCENES))(
     '%s has no accessibility violations',
     async (name) => {

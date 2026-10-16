@@ -88,6 +88,7 @@ import { m229OngoingToStars } from './m229-ongoing-to-stars';
 import { m230AutoRegistry } from './m230-auto-registry';
 import { m231AutoTreeFinished } from './m231-auto-tree-finished';
 import { m232AutoDelegationRoles } from './m232-auto-delegation-roles';
+import { m233AgentMount } from './m233-agent-mount';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -469,4 +470,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 230, sql: m230AutoRegistry },
   { version: 231, sql: m231AutoTreeFinished },
   { version: 232, sql: m232AutoDelegationRoles },
+  { version: 233, sql: m233AgentMount },
 ];
