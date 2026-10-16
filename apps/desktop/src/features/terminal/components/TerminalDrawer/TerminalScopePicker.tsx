@@ -61,6 +61,7 @@ export const TerminalScopePicker = ({
         </span>
       }
       align="start"
+      anchorClassName="min-w-0"
       popupWidth="content"
       onChange={(key) => {
         if (key === SESSION_FOLDER_KEY) {

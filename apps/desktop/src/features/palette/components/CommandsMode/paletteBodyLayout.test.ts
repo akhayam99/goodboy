@@ -46,7 +46,8 @@ describe('hasOwnPreviewOf', () => {
   it('shows the pane for an entry with facts of its own', () => {
     const target = { kind: 'session', sessionId: 's-1' as SessionId } as const;
 
-    expect(hasOwnPreviewOf({ entry: entry({ target }) })).toBe(true);
+    expect(hasOwnPreviewOf({ entry: entry({ kind: 'session', target }) })).toBe(true);
+    expect(hasOwnPreviewOf({ entry: entry({ kind: 'verb', target }) })).toBe(false);
     expect(hasOwnPreviewOf({ entry: entry({ kind: 'artifact' }) })).toBe(true);
   });
 });

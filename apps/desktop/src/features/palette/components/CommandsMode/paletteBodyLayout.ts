@@ -20,10 +20,9 @@ type PreviewParams = {
   readonly entry: PaletteEntry;
 };
 
-const OWN_FACT_TARGETS: ReadonlySet<string> = new Set(['session', 'agent']);
+const OWN_FACT_KINDS: ReadonlySet<string> = new Set(['session', 'agent', 'artifact']);
 
 export const hasOwnPreviewOf = ({ entry }: PreviewParams): boolean =>
-  (entry.target !== undefined && OWN_FACT_TARGETS.has(entry.target.kind)) ||
-  entry.kind === 'artifact' ||
+  OWN_FACT_KINDS.has(entry.kind) ||
   entry.action?.blockedReason != null ||
   entry.action?.confirm != null;

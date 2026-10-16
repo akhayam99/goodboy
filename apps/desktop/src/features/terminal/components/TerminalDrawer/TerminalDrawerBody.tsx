@@ -109,7 +109,7 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
       icon={CONCEPT_ICONS.terminal}
       iconClassName="text-faint-foreground"
       titleContent={
-        <span className="flex min-w-0 items-center gap-2">
+        <span className="flex w-full min-w-0 items-center gap-2 overflow-hidden">
           <h2 className="shrink-0 text-heading text-foreground">Terminal</h2>
           <TerminalScopePicker
             worktree={worktree}

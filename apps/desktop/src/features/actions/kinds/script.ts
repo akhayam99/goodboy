@@ -12,6 +12,11 @@ import {
 } from 'lucide-react';
 import type { ObjectKindDefinition, ScriptActionTarget } from '../types';
 
+type ScriptPinFacts = {
+  readonly isPinned: boolean;
+  readonly onToggle: () => void;
+};
+
 export type ScriptFacts = {
   readonly name: string;
   readonly command: string;
@@ -26,11 +31,6 @@ export type ScriptFacts = {
   readonly onDelete: (() => Promise<void>) | null;
   readonly onRestart?: () => void;
   readonly pin?: ScriptPinFacts;
-};
-
-export type ScriptPinFacts = {
-  readonly isPinned: boolean;
-  readonly onToggle: () => void;
 };
 
 export const SCRIPT_KIND: ObjectKindDefinition<ScriptActionTarget, ScriptFacts> = {

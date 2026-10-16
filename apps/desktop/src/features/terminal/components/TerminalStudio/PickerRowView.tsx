@@ -12,13 +12,13 @@ type Props = {
 export const PickerRowView = ({ row, isActive, onPick }: Props) => {
   const Icon = row.kind === 'workspace' ? Folder : GitBranch;
   return (
-    <Tooltip content={row.path} anchorClassName="flex min-w-0">
+    <Tooltip content={row.path} anchorClassName="flex w-full min-w-0">
       <button
         type="button"
         role="menuitem"
         onClick={onPick}
         className={cn(
-          'flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-2 text-left hover:bg-hover focus-visible:bg-hover focus-visible:outline-none',
+          'flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1 text-left hover:bg-hover focus-visible:bg-hover focus-visible:outline-none',
           isActive && 'bg-hover',
         )}
       >

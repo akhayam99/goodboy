@@ -7,6 +7,7 @@ import type { TerminalStudioModel } from '../../hooks/useTerminalStudioModel';
 import { pickerRowCount } from '../../pickerRowCount';
 import { TERMINAL_PICKER_EVENTS } from '../../terminalPickerEvents';
 import { TerminalDetail } from './TerminalDetail';
+import { TerminalPageHeader } from './TerminalPageHeader';
 import { TerminalRail } from './TerminalRail';
 
 type Props = {
@@ -40,9 +41,7 @@ export const TerminalStudioBody = ({ model, isActive }: Props) => {
   };
   return (
     <div onKeyDown={handleKeyDown} className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
-      <div data-slot="pane-title-row" className="flex h-10 shrink-0 items-center px-4">
-        <h1 className="min-w-0 truncate text-title text-foreground">Terminal</h1>
-      </div>
+      <TerminalPageHeader />
       <StudioRailLayout
         railLabel="Terminals"
         railWidth="standard"

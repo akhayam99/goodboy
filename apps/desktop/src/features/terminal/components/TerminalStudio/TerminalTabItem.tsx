@@ -49,7 +49,7 @@ export const TerminalTabItem = ({
         isSelected && 'bg-selected text-foreground',
       )}
     >
-      {isBusyNow ? <StateDot state="running" label="Running a process" /> : null}
+      {isBusyNow ? <StateDot state="running" label="Running a process" isLive /> : null}
       <TerminalRowName
         id={domId}
         name={tab.title}
