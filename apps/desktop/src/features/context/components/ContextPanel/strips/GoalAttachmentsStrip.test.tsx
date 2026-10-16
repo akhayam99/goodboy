@@ -27,7 +27,17 @@ const { state } = vi.hoisted<{ state: MockState }>(() => ({
         { id: 'att-1', fileName: 'notes.txt', mimeType: 'text/plain', kind: 'file', relPath: '' },
       ],
     },
-    workflowRunAttachments: {},
+    workflowRunAttachments: {
+      'run-1': [
+        {
+          id: 'att-2',
+          fileName: 'brief.pdf',
+          mimeType: 'application/pdf',
+          kind: 'file',
+          relPath: '',
+        },
+      ],
+    },
     sessionWorktrees: {},
     currentSessionId: 'sess-1',
     loadGoalAttachments: vi.fn(async () => undefined),
@@ -62,5 +72,12 @@ describe('GoalAttachmentsStrip', () => {
     const remove = screen.getByRole('button', { name: 'Remove notes.txt' });
 
     expect(remove.className).not.toContain('opacity-0');
+  });
+
+  it('reads as a plain chip on a run, with no remove control', () => {
+    render(<GoalAttachmentsStrip owner={{ type: 'workflow_run', id: 'run-1' as never }} />);
+
+    expect(screen.getByText('brief.pdf')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Remove brief.pdf' })).toBeNull();
   });
 });
