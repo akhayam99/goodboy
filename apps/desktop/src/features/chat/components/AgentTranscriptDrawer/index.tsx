@@ -1,8 +1,10 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button, DrawerFrame, cn, PANE_RHYTHM } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { useAppStore, useTranscript } from '../../../../store';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
+import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
+import { AGENT_KIND_META, classifyAgent } from '../../../session/agent-kind';
 import { isReportedError } from '../../../../store/slices/notifications/reportedError';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { PromptField } from '../../../../shared/components/PromptField';
@@ -38,6 +40,21 @@ export const AgentTranscriptDrawer = ({
     (s) => (s.sessionPhaseRuns[sessionId] ?? []).find((run) => run.id === agentId) ?? null,
   );
   const isActive = useAppStore((s) => s.currentSessionId === sessionId);
+  const isConversationCenter = useAppStore((s) => {
+    const lens = s.activeLens[sessionId] ?? null;
+    return (
+      s.currentSessionId === sessionId &&
+      s.selectedAgentId[sessionId] === agentId &&
+      (lens === 'agents' || lens === 'auto' || lens === 'workflows')
+    );
+  });
+  const turn = useAppStore((s) => {
+    const drawer = selectOpenDrawer(s);
+    return drawer?.kind === 'transcript' && drawer.payload.agentId === agentId
+      ? (drawer.payload.turn ?? null)
+      : null;
+  });
+  const bodyRef = useRef<HTMLDivElement>(null);
   const draft = useAppStore((s) => s.agentDraft?.[agentId] ?? '');
   const isEnded = useAppStore(
     (s) =>
@@ -78,9 +95,24 @@ export const AgentTranscriptDrawer = ({
     }
   };
 
-  const name = agent === null ? null : agentTranscriptTitle({ agent });
+  useEffect(() => {
+    if (turn === null) {
+      return;
+    }
+    bodyRef.current
+      ?.querySelector(`[data-turn-heading="${turn}"]`)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [turn]);
+
+  const title = agent === null ? null : agentTranscriptTitle({ agent });
+  const kind = agent === null ? null : classifyAgent({ agent, override: null });
+  const name = kind === null || kind === 'resolver' ? title : AGENT_KIND_META[kind].noun;
   const reply =
-    session === null || agent === null || name === null || isEnded ? null : (
+    session === null ||
+    agent === null ||
+    name === null ||
+    isEnded ||
+    isConversationCenter ? null : (
       <PromptField
         kind="message"
         label={TRANSCRIPT_DRAWER_COPY.replyLabel({ name })}
@@ -134,6 +166,7 @@ export const AgentTranscriptDrawer = ({
           isActive={isActive}
           topInset="tight"
           hasComposer={false}
+          mode="steps"
           briefLabel={briefLabel}
         />
       )}
@@ -142,7 +175,7 @@ export const AgentTranscriptDrawer = ({
 
   return (
     <DrawerFrame
-      title={name ?? TRANSCRIPT_DRAWER_COPY.title}
+      title={title ?? TRANSCRIPT_DRAWER_COPY.title}
       icon={CONCEPT_ICONS.agents}
       onClose={onClose}
       scroll="self"
@@ -155,6 +188,7 @@ export const AgentTranscriptDrawer = ({
         </p>
       ) : (
         <div
+          ref={bodyRef}
           role={hasTabs ? 'tabpanel' : undefined}
           aria-label={tabPanelLabel}
           className="flex min-h-0 min-w-0 flex-1 flex-col"

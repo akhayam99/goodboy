@@ -6,7 +6,7 @@ export const U25_C06_CONVERSATION_SCENES = {
   'c06-agent-working': () => <C06AgentScene state="working" />,
   'c06-agent-finished': () => <C06AgentScene state="finished" />,
   'c06-agent-failed': () => <C06AgentScene state="failed" />,
-  'c06-agent-steps': () => <C06AgentScene state="failed" isStepsOpen />,
+  'c06-agent-steps': () => <C06AgentScene state="failed" isStepsOpen isTranscriptOpen />,
   'c06-agent-permission': () => <C06AgentScene state="permission" />,
   'c06-agent-delegating': () => <C06AgentScene state="delegating" />,
   'c06-agent-transcript': () => <C06AgentScene state="finished" isTranscriptOpen />,

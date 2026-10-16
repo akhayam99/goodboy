@@ -11,9 +11,11 @@ import { TranscriptCard } from '../TranscriptCards';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { NAMES } from '../../../../shared/names';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
+import { turnSummary } from '../../utils/turnSummary';
 
 type Props = {
   readonly items: ReadonlyArray<TranscriptItem>;
+  readonly isInitiallyOpen?: boolean;
   readonly sessionId?: SessionId | null;
   readonly agentId?: AgentId | null;
   readonly workingDir?: string | null;
@@ -52,7 +54,6 @@ const CLUSTER_LABEL: Record<ClusterState, string> = {
   done: 'Done',
 };
 
-const operationsTint = tintClasses('neutral');
 const dangerTint = tintClasses('danger');
 const successTint = tintClasses('success');
 
@@ -137,6 +138,7 @@ const summarize = ({ items, activeRunId }: SummarizeParams): ClusterSummary => {
 
 const OperationsClusterView = ({
   items,
+  isInitiallyOpen = false,
   sessionId = null,
   agentId = null,
   workingDir = null,
@@ -146,7 +148,7 @@ const OperationsClusterView = ({
   retryingRunId = null,
   activeRunId,
 }: Props) => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(isInitiallyOpen);
   const summary = useMemo(() => summarize({ items, activeRunId }), [items, activeRunId]);
   const { state, runningTool, approvalTool, stoppedCount, failedCount, successCount } = summary;
   const elapsedMs = useElapsedMs({
@@ -156,15 +158,7 @@ const OperationsClusterView = ({
   });
   const duration = elapsedMs != null ? formatDuration({ durationMs: elapsedMs }) : null;
 
-  const summaryLine = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const item of items) {
-      const name =
-        item.kind === 'tool_call' ? item.toolName : item.kind === 'file_edit' ? 'edit' : item.kind;
-      counts.set(name, (counts.get(name) ?? 0) + 1);
-    }
-    return [...counts.entries()].map(([name, count]) => `${count} ${name}`).join(' · ');
-  }, [items]);
+  const summaryLine = useMemo(() => turnSummary({ steps: items })?.text ?? '', [items]);
 
   const ariaLabel = `Operations, ${items.length} ${items.length === 1 ? 'item' : 'items'}${
     state === 'approval'
@@ -197,20 +191,9 @@ const OperationsClusterView = ({
               />
             </span>
           }
-          eyebrow="operations"
           open={open}
           onToggle={() => setOpen((value) => !value)}
           aria-label={ariaLabel}
-          badge={
-            <span
-              className={cn(
-                'shrink-0 rounded-full px-2 text-chip tabular-nums text-muted-foreground',
-                operationsTint.bg,
-              )}
-            >
-              {items.length}
-            </span>
-          }
           preview={
             state === 'approval' ? (
               <span className="flex min-w-0 items-center gap-2 text-warning">
@@ -277,6 +260,7 @@ const OperationsClusterView = ({
 
 const propsEqual = (previous: Props, next: Props): boolean =>
   transcriptItemsEqual({ previous: previous.items, next: next.items }) &&
+  previous.isInitiallyOpen === next.isInitiallyOpen &&
   previous.sessionId === next.sessionId &&
   previous.agentId === next.agentId &&
   previous.workingDir === next.workingDir &&

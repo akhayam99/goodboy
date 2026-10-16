@@ -84,12 +84,13 @@ describe('SPEC3 9.4 agent rows stay reachable from the one conversation', () => 
     expect(within(menu).getByRole('menuitem', { name: /^Interrupt/ })).toBeDefined();
   });
 
-  it('Brief outcome: the recorded outcome closes the conversation', async () => {
+  it('Brief outcome: the closing reply carries the outcome, with no band restating it', async () => {
     await mount({ name: 'c06-agent-finished' });
 
-    const outcome = screen.getByRole('heading', { name: 'Outcome' });
-    expect(outcome).toBeDefined();
-    expect(screen.getByText(/the export tests pass on 12,000 rows/)).toBeDefined();
+    expect(screen.queryByRole('heading', { name: 'Outcome' })).toBeNull();
+    expect(
+      screen.getByText('Dependencies are installed with pnpm and the 24 export tests pass.'),
+    ).toBeDefined();
   });
 
   it('Brief subagents: each child is a delegation line that opens it in the pane', async () => {
@@ -98,14 +99,15 @@ describe('SPEC3 9.4 agent rows stay reachable from the one conversation', () => 
     expect(screen.getAllByRole('button', { name: /^See more about / })).toHaveLength(2);
   });
 
-  it('Every tool call payload: the steps open inline under the summary line and in the transcript pane', async () => {
+  it('Every tool call payload: the summary line opens the transcript pane, where the steps show', async () => {
     await mount({ name: 'c06-agent-steps' });
 
-    expect(screen.getAllByText('Bash').length).toBeGreaterThan(0);
+    const stepsPane = screen.getByRole('complementary', { name: 'Transcript pane' });
+    expect(within(stepsPane).getAllByText(/^Ran /).length).toBeGreaterThan(0);
     cleanup();
     await mount({ name: 'c06-agent-transcript' });
     const pane = screen.getByRole('complementary', { name: 'Transcript pane' });
-    expect(within(pane).getAllByText(/Bash|Read/).length).toBeGreaterThan(0);
+    expect(within(pane).getAllByText(/^(Ran|Read) /).length).toBeGreaterThan(0);
   });
 
   it('Links into the transcript: View transcript opens the transcript pane on this agent', async () => {

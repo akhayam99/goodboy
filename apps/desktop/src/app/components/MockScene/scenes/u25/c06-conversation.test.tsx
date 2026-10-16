@@ -124,7 +124,8 @@ describe('the c06 conversation scenes', () => {
     await mount({ name: 'c06-agent-failed' });
 
     const line = screen.getByRole('button', { name: 'Read 4 files, ran 8 commands (2 errors)' });
-    expect(within(line).getByText('(2 errors)')).toBeDefined();
+    expect(within(line).getByText('2 errors')).toBeDefined();
+    expect(within(line).queryByText('(2 errors)')).toBeNull();
     const send = vi.fn(async () => ({ blockedOverBudget: false }));
     act(() => useAppStore.setState({ sendTurn: send }));
     await act(async () => {
@@ -139,14 +140,17 @@ describe('the c06 conversation scenes', () => {
     );
   });
 
-  it('c06-agent-steps expands the steps inline and hands the turn to the transcript pane', async () => {
+  it('c06-agent-steps opens the transcript pane at that turn, with no inline step list', async () => {
     await mount({ name: 'c06-agent-steps' });
 
     const line = screen.getByRole('button', { name: 'Read 4 files, ran 8 commands (2 errors)' });
-    expect(line.getAttribute('aria-expanded')).toBe('true');
-    fireEvent.click(screen.getByRole('button', { name: 'Open in transcript' }));
+    expect(line.getAttribute('aria-expanded')).toBeNull();
+    fireEvent.click(line);
     const drawer = useAppStore.getState().drawer;
     expect(drawer?.kind === 'transcript' ? drawer.payload.agentId : null).toBe(C06_AGENT_ID);
+    expect(drawer?.kind === 'transcript' ? drawer.payload.turn : null).toBe(1);
+    const pane = screen.getByRole('complementary', { name: 'Transcript pane' });
+    expect(pane.querySelector('[data-turn-heading="1"]')).not.toBeNull();
   });
 
   it('c06-agent-permission shows the waiting permission inline and no tail', async () => {
@@ -170,11 +174,15 @@ describe('the c06 conversation scenes', () => {
     expect(drawer?.kind === 'transcript' ? drawer.payload.agentId : null).toBe('mock-c06-tester');
   });
 
-  it('c06-agent-transcript keeps every tool call and the narration in the pane', async () => {
+  it('c06-agent-transcript shows the steps per turn only, titled Transcript, with no second composer', async () => {
     await mount({ name: 'c06-agent-transcript' });
 
     const pane = screen.getByRole('complementary', { name: 'Transcript pane' });
-    expect(within(pane).getByText('Checking the lockfiles first.')).toBeDefined();
+    expect(within(pane).getByRole('heading', { name: 'Transcript' })).toBeDefined();
+    expect(within(pane).queryByText('Checking the lockfiles first.')).toBeNull();
+    expect(pane.querySelectorAll('[data-turn-heading]').length).toBeGreaterThan(0);
+    expect(within(pane).queryByRole('button', { name: 'Turn detail' })).toBeNull();
+    expect(within(pane).queryByRole('textbox')).toBeNull();
     expect(within(pane).queryByRole('button', { name: 'Ran 2 commands' })).toBeNull();
   });
 

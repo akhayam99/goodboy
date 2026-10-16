@@ -31,9 +31,7 @@ export const C06AgentScene = ({ state, isTranscriptOpen = false, isStepsOpen = f
       return;
     }
     const timer = window.setTimeout(() => {
-      const lines = document.querySelectorAll<HTMLButtonElement>(
-        '[data-turn-steps] button[aria-expanded]',
-      );
+      const lines = document.querySelectorAll<HTMLButtonElement>('[data-turn-steps] button');
       lines[lines.length - 1]?.click();
     }, EXPAND_DELAY_MS);
     return () => window.clearTimeout(timer);

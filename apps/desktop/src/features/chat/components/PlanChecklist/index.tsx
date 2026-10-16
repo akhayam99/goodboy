@@ -22,7 +22,7 @@ const nodeState = ({ state, isLive }: NodeStateParams): WorkNodeState => {
     return 'done';
   }
   if (state === 'running') {
-    return isLive ? 'running' : 'ready';
+    return isLive ? 'running' : 'stopped';
   }
   return 'queued';
 };

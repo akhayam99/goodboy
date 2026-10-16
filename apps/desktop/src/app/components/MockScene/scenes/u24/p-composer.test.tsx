@@ -51,7 +51,7 @@ describe('the u24 composer scene', () => {
     ['stopped', true, false, false],
     ['next', false, true, false],
     ['firstlap', false, false, true],
-    ['all', true, true, true],
+    ['all', false, true, true],
   ])(
     'keeps the lead above the transcript and the message box inside the fill slot for lead=%s',
     async (lead, hasStopped, hasNext, hasFirstLap) => {
@@ -71,11 +71,11 @@ describe('the u24 composer scene', () => {
     },
   );
 
-  it('opens with every lead block when the address names none', async () => {
+  it('opens with the run next action winning over the stopped notice when the address names none', async () => {
     const { container } = renderScene(null);
 
     await screen.findByRole('textbox', undefined, WAIT);
-    expect(container.querySelector('[data-agent-stopped]')).not.toBeNull();
+    expect(container.querySelector('[data-agent-stopped]')).toBeNull();
     expect(screen.getByTestId('next-action-strip')).toBeDefined();
     expect(screen.getByText('First lap')).toBeDefined();
   });

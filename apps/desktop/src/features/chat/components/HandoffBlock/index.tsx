@@ -24,8 +24,6 @@ export const HandoffBlock = ({ item, sessionId, agentId, workingDir }: Props) =>
         text={item.text}
         at={item.at}
         attachments={item.attachments}
-        provider={item.provider}
-        model={item.model}
         workingDir={workingDir}
       />
     );
@@ -39,8 +37,6 @@ export const HandoffBlock = ({ item, sessionId, agentId, workingDir }: Props) =>
           text={askBody ?? item.text}
           at={item.at}
           attachments={item.attachments}
-          provider={item.provider}
-          model={item.model}
           workingDir={workingDir}
         />
       </div>

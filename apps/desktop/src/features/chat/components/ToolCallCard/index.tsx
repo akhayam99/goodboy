@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { cn, tintClasses, WorkNode, type WorkNodeState, Eyebrow } from '@goodboy/ui';
+import { cn, tintClasses, Tooltip, WorkNode, type WorkNodeState, Eyebrow } from '@goodboy/ui';
+import { toolActOf } from '../../utils/toolActOf';
 import type { ProviderRunId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { formatDuration } from '../../../../shared/utils/time/formatDuration';
@@ -71,12 +72,13 @@ export const ToolCallCard = ({ item, activeRunId, permission }: Props) => {
               />
             </span>
           }
-          eyebrow="tool"
           open={open}
           onToggle={() => setOpen((value) => !value)}
           preview={
             <span className="flex min-w-0 items-center gap-2">
-              <span className="truncate font-mono text-muted-foreground">{item.toolName}</span>
+              <Tooltip content={item.toolName}>
+                <span className="truncate text-muted-foreground">{toolActOf({ item })}</span>
+              </Tooltip>
               {status === 'failed' && (
                 <Eyebrow label="error" className={cn('shrink-0', dangerTint.text)} />
               )}

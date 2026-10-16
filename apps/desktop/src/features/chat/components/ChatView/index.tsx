@@ -59,6 +59,9 @@ import { useToast } from '../../../../shared/components/Toast';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { isReportedError } from '../../../../store/slices/notifications/reportedError';
 import { isTurnThinking } from '../../utils/isTurnThinking';
+import { turnStateOf } from './turnStateOf';
+import { waitingForOf } from './waitingForOf';
+import type { OpenTranscriptAt } from '../../openTranscriptAt';
 
 type Props = {
   readonly session: Session;
@@ -72,11 +75,11 @@ type Props = {
   readonly insertions?: ReadonlyArray<TranscriptInsertion>;
   readonly composerLead?: ReactNode;
   readonly mode?: ChatViewMode;
-  readonly onOpenTranscript?: () => void;
+  readonly onOpenTranscript?: OpenTranscriptAt;
   readonly hasAdvanceRow?: boolean;
 };
 
-type ChatViewMode = 'conversation' | 'record';
+type ChatViewMode = 'conversation' | 'record' | 'steps';
 
 type RetrySource = {
   readonly content: string;
@@ -238,9 +241,9 @@ export const ChatView = ({
   const agentState = useAppStore((s) => {
     return selectedAgentId ? (s.agentTurnState[selectedAgentId] ?? null) : null;
   });
-  const agentKind = agentState?.kind ?? session.state.kind;
+  const turnStateForRun = turnStateOf({ agentState, selectedAgentId, session });
+  const agentKind = turnStateForRun.kind;
   const isEnded = agentKind === 'ended';
-  const turnStateForRun = agentState ?? session.state;
   const activeRunId =
     turnStateForRun.kind === 'running' || turnStateForRun.kind === 'blocked'
       ? turnStateForRun.runId
@@ -283,6 +286,10 @@ export const ChatView = ({
   const thinkingContext = useMemo(() => classifyThinkingContext({ lastItem }), [lastItem]);
 
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
+  const waitingFor = useMemo(
+    () => waitingForOf({ agents: phaseRuns, parentId: selectedAgentId }),
+    [phaseRuns, selectedAgentId],
+  );
 
   useLayoutEffect(() => {
     const viewport = fadeHostRef.current?.querySelector<HTMLDivElement>('.overflow-y-auto');
@@ -597,6 +604,8 @@ export const ChatView = ({
                     briefLabel={briefLabel}
                     {...(insertions !== undefined && { insertions })}
                     {...(onOpenTranscript !== undefined && { onOpenTranscript })}
+                    isStepsOnly={mode === 'steps'}
+                    waitingFor={waitingFor}
                     {...(canStop && {
                       onStop: () =>
                         void cancelCurrentTurn(session.id, selectedAgentId ?? undefined, 'user'),
@@ -660,12 +669,11 @@ export const ChatView = ({
           <PageColumn className="py-3">{composerNotice}</PageColumn>
         )
       ) : isEnded ? (
-        <>
-          <Divider />
+        agentQuestionCount > 0 ? null : (
           <PageColumn className="py-3 text-label text-muted-foreground">
             Session ended. No more turns run here, and the branch is kept.
           </PageColumn>
-        </>
+        )
       ) : selectedAgentId ? (
         <ChatInput
           key={session.id}

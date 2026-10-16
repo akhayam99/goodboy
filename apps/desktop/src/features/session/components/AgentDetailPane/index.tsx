@@ -17,6 +17,7 @@ import { AGENT_KIND_META, classifyAgent } from '../../agent-kind';
 import { executedRoutingOf } from '../../../auto/executedRoutingOf';
 import { agentHeadingOf } from './agentHeadingOf';
 import { briefLineOf } from './briefLineOf';
+import type { OpenTranscriptAt } from '../../../chat/openTranscriptAt';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { AgentProviderMark } from './AgentProviderMark';
 import { AgentHeaderActions } from '../AgentHeaderActions';
@@ -85,6 +86,7 @@ export const AgentDetailPane = ({
   const membership = useAutoMembership({ sessionId: session.id, agentId: agent.id });
   const adoption = membership.adoption;
   const [isMoveOpen, setIsMoveOpen] = useState(false);
+  const [hasNextAction, setHasNextAction] = useState(false);
   const navigateTo = useAppStore((state) => state.navigate);
   const openDrawer = useAppStore((state) => state.openDrawer);
   const toggleDrawer = useAppStore((state) => state.toggleDrawer);
@@ -165,8 +167,8 @@ export const AgentDetailPane = ({
     return [...leading, ...(autoChat.insertions ?? []), ...end, ...tail];
   }, [agent, answeredQuestion, asker, autoChat.insertions, isAutoRoot, runs, session, runStep]);
 
-  const openTranscript = () =>
-    openDrawer({ kind: 'transcript', sessionId: session.id, payload: { agentId: agent.id } });
+  const openTranscript: OpenTranscriptAt = ({ turn }) =>
+    openDrawer({ kind: 'transcript', sessionId: session.id, payload: { agentId: agent.id, turn } });
   const toggleTranscript = () =>
     toggleDrawer({ kind: 'transcript', sessionId: session.id, payload: { agentId: agent.id } });
   const heading = agentHeadingOf({ name: agent.name, kind, brief });
@@ -176,17 +178,22 @@ export const AgentDetailPane = ({
     target: { kind: 'agent', sessionId: session.id, agentId: agent.id },
     anchorKey: `agent-header:${agent.id}`,
   });
+  const isInWorkflowRun = runStep !== undefined || hasNextAction;
   const lead = (
     <>
       {context}
-      <AgentStoppedNotice
-        session={session}
-        agent={agent}
-        executedProvider={executed?.provider ?? null}
-        providerOverride={providerOverride}
-        isAutoChild={isAutoChild}
-      />
-      {runStep === undefined ? <AgentNextAction session={session} agent={agent} /> : null}
+      {isInWorkflowRun ? null : (
+        <AgentStoppedNotice
+          session={session}
+          agent={agent}
+          executedProvider={executed?.provider ?? null}
+          providerOverride={providerOverride}
+          isAutoChild={isAutoChild}
+        />
+      )}
+      {runStep === undefined ? (
+        <AgentNextAction session={session} agent={agent} onShownChange={setHasNextAction} />
+      ) : null}
     </>
   );
 

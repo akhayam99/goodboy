@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
 import { WorkNode } from '@goodboy/ui';
 import type { IsoDateTime } from '@goodboy/types';
 import type { ThinkingContext } from '../../utils/thinking-context';
 import { useElapsedMs } from '../../hooks/useElapsedMs';
+import { useThinkingPhrase } from '../../hooks/useThinkingPhrase';
 import { formatDuration } from '../../../../shared/utils/time/formatDuration';
 
 type Props = {
@@ -10,38 +10,9 @@ type Props = {
   readonly startedAt?: IsoDateTime | null;
 };
 
-const PHRASES: Record<ThinkingContext, readonly string[]> = {
-  think: ['Thinking it through', 'Planning the next step', 'Weighing the options'],
-  search: ['Searching the code', 'Reading the files', 'Tracing the references'],
-  edit: ['Writing the changes', 'Editing the files', 'Applying the changes'],
-  run: ['Running the command', 'Collecting the output'],
-};
-
-const ROTATE_MS = 2600;
-const SETTLE_AFTER_TICKS = 8;
-const SETTLED_PHRASE = 'Still working';
-
-const prefersReducedMotion = () =>
-  typeof window !== 'undefined' &&
-  typeof window.matchMedia === 'function' &&
-  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
 export const ThinkingIndicator = ({ context, startedAt = null }: Props) => {
-  const [reduced] = useState(prefersReducedMotion);
-  const [tick, setTick] = useState(0);
   const elapsedMs = useElapsedMs({ running: true, startedAt });
-
-  useEffect(() => {
-    if (reduced) {
-      return;
-    }
-    const id = window.setInterval(() => setTick((t) => t + 1), ROTATE_MS);
-    return () => window.clearInterval(id);
-  }, [reduced]);
-
-  const phrases = PHRASES[context];
-  const phrase =
-    !reduced && tick >= SETTLE_AFTER_TICKS ? SETTLED_PHRASE : phrases[tick % phrases.length];
+  const phrase = useThinkingPhrase({ context });
   const duration = elapsedMs != null ? formatDuration({ durationMs: elapsedMs }) : null;
 
   return (
