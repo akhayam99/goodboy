@@ -25,7 +25,6 @@ import { WORK_META_COLUMN } from '@goodboy/ui';
 import { carriesSpec } from '../../../../test/classTokens';
 import { brandColor } from '../../../providers/components/provider-brand';
 import { useAppStore } from '../../../../store';
-import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { RunTree } from './index';
 import { useRunTree } from './useRunTree';
 
@@ -352,7 +351,7 @@ describe('RunTree', () => {
     renderTree();
 
     expect(metaOf('agent-1', 'model')).not.toBe('Sonnet 4.5');
-    expect(metaOf('agent-1', 'cost')).toBe('$0.10');
+    expect(metaOf('agent-1', 'cost')).toBeNull();
     expect(cardAfterRest({ element: glyphOf('agent-1') })).toContain('Planned');
   });
 
@@ -377,9 +376,7 @@ describe('RunTree', () => {
     renderTree({ questions: [asked], onAnswer });
 
     expect(within(rowOf('agent-2')).getByRole('img', { name: 'Needs you' })).toBeDefined();
-    expect(
-      tooltipTextOf({ element: within(rowOf('agent-2')).getByTestId('timeline-row-state') }),
-    ).toBe('Needs your answer');
+    expect(within(rowOf('agent-2')).queryByTestId('timeline-row-state')).toBeNull();
     const answers = screen.getAllByRole('button', { name: 'Answer' });
     expect(answers).toHaveLength(1);
 
@@ -462,12 +459,6 @@ describe('RunTree step row grammar', () => {
     ].map((column) => column.getAttribute('data-meta-column'));
 
     expect(columns).toEqual(['model', 'stack']);
-    expect(
-      carriesSpec({
-        element: rowOf('agent-2').querySelector('[data-meta-column="model"]'),
-        spec: WORK_META_COLUMN.model,
-      }),
-    ).toBe(true);
     expect(
       carriesSpec({
         element: rowOf('agent-2').querySelector('[data-meta-column="stack"]'),
