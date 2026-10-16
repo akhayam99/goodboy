@@ -12,6 +12,80 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.27.0
+
+A session gets its own rail beside the page, panes open next to it, and every list keeps its actions in sight.
+
+This version updates your data in one direction. To go back to 0.26, restore the backup Goodboy made before updating.
+
+### New
+
+#### A session rail beside the page
+<!-- gb area=sessions -->
+
+The sidebar always shows the workspace: New session, the doors, Pinned and Sessions. An open session has its own rail inside the page with its pages, projects and links, and it steps into a worktree, a run or Auto, with a back row to return.
+
+The rail folds to icons with its own toggle, and ⌘B folds only the sidebar. In a narrow window the sidebar folds first, then the rail.
+
+#### Panes next to the session page
+<!-- gb area=sessions -->
+
+Ask, Terminal and Explore open as panes beside the session page, and More panes holds Context and Scripts. ⌘⌥X opens Explore and ⌘⌥S opens Scripts. The terminal pane chooses its folder: a worktree, the main checkout, the workspace or the session folder.
+
+#### Orchestrated runs on their own page
+<!-- gb area=workflows -->
+
+Orchestrated runs have their own page after Runs. A run reads as a checklist of steps, each with why it was chosen, and the line under it says what the orchestrator does next. The composer sends a hint for the next decision, or Send now to read it at once, and a step opens in a pane.
+
+#### Four ways to start a session
+<!-- gb area=sessions -->
+
+New session asks how you want to start: Pick up a task, Run a workflow, Orchestrate or Ask an agent. Projects is a search field with chips that opens on Suggested, then All projects. The New menu on the Overview opens the same forms beside the page.
+
+#### Auto agents page
+<!-- gb area=agents -->
+
+Auto has its own page beside Agents, marked Experimental. Each hand off shows its role and result, an agent Auto started opens in a pane with its brief and conversation, and Auto asks which project to use when it cannot open one. Images you attach reach the agents it starts.
+
+### Improved
+
+#### Agent pages read as a conversation
+<!-- gb area=agents -->
+
+An agent page shows each turn as your message, one line for its steps, the final answer and a footer with model, time and cost. View transcript opens the full record in a pane. The Agents page is one grid with fixed columns.
+
+#### Board and List on the Sessions page
+<!-- gb area=sessions -->
+
+The Sessions page switches between Board and List. A Board card shows the title, the project and one signal, with its menu in sight. List puts each session on one row that follows your sort and grouping.
+
+#### Tasks grouped and filtered
+<!-- gb area=inbox -->
+
+Tasks shows For me or All, with a filter menu and Group by, in groups of five. Enter opens an issue in a pane, Enter again starts work on it, and Open full gives it the whole page.
+
+#### Preset runs step by step
+<!-- gb area=workflows -->
+
+A preset run opens in the session rail with its steps, Add step and its spend limit, and the line under the page names the next thing to do. The Runs list is one grid grouped In progress, Finished and Archived.
+
+#### Workflow history and one terminal list
+<!-- gb area=workflows -->
+
+A workflow row shows its last run and opens the history of its runs in a drawer. The Terminal page lists every terminal in one grid, grouped by session.
+
+#### Row actions in sight
+<!-- gb area=app -->
+
+Actions no longer wait for the pointer. Chat rows, notifications, files in Explore, scripts, artifacts, review comments and line comments show their actions or a menu at rest.
+
+### Fixed
+
+- A fix for a failed check stays on the worktree it started on after another worktree is added. <!-- gb area=review -->
+- A long chat keeps its place while new turns arrive. <!-- gb area=sessions -->
+- Retry on an agent that Auto started goes through Auto. <!-- gb area=agents -->
+- A worktree that git refuses to remove from Next keeps its card and its folder, shows the error, and Remove worktree tries again. <!-- gb area=sessions -->
+
 ## Goodboy v0.26.0
 
 One New drawer starts a run, an agent or a document, a failed check goes from Analyze to Push, and terminals follow your worktrees.
