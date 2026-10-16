@@ -10,7 +10,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 import type { ReactNode } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import { aSession, aWorkspace } from '@goodboy/types/testing';
+import { aProject, aSession, aWorkspace } from '@goodboy/types/testing';
 import type {
   ChatId,
   ChatMessageId,
@@ -131,6 +131,24 @@ describe('the palette entries for new things', () => {
     window.removeEventListener(ASK_RESET_EVENT, listener);
 
     expect(listener).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('the palette pull entries', () => {
+  it('lists a pull row per linked repo and one for all of them', () => {
+    useAppStore.setState({
+      projects: [
+        aProject({ workspaceId: WORKSPACE_ID, name: 'ledger-core', baseBranch: 'main' }),
+        aProject({ workspaceId: WORKSPACE_ID, name: 'notify-relay', baseBranch: 'main' }),
+      ],
+    });
+    const { result } = renderHook(() => useCommandEntries(), { wrapper });
+
+    const labels = result.current.map((entry) => entry.label);
+
+    expect(labels).toContain('Pull main in all linked repos');
+    expect(labels).toContain('Pull main in ledger-core');
+    expect(labels).toContain('Pull main in notify-relay');
   });
 });
 

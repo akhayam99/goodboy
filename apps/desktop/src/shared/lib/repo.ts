@@ -1,5 +1,6 @@
 import { invokeCommand } from './invokeCommand';
 import type {
+  BaseUpdateResult,
   BootstrapAlignOutcome,
   BootstrapClearReport,
   BootstrapPrepared,
@@ -107,6 +108,27 @@ export const checkoutFastForward = async ({
 }: CheckoutFastForwardParams): Promise<FastForwardResult> => {
   return invokeCommand<FastForwardResult>('checkout_fast_forward', {
     checkoutPath,
+    workspaceId,
+    projectId,
+  });
+};
+
+type CheckoutUpdateBaseParams = {
+  readonly checkoutPath: string;
+  readonly baseBranch: string | null;
+  readonly workspaceId?: string;
+  readonly projectId?: string;
+};
+
+export const checkoutUpdateBase = async ({
+  checkoutPath,
+  baseBranch,
+  workspaceId,
+  projectId,
+}: CheckoutUpdateBaseParams): Promise<BaseUpdateResult> => {
+  return invokeCommand<BaseUpdateResult>('checkout_update_base', {
+    checkoutPath,
+    baseBranch,
     workspaceId,
     projectId,
   });

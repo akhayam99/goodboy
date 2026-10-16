@@ -63,7 +63,7 @@ fn fetch_remote_authenticated(
     Ok(())
 }
 
-fn checkout_fast_forward_blocking(
+pub(super) fn checkout_fast_forward_blocking(
     checkout_path: String,
     token: Option<&str>,
 ) -> Result<FastForwardResult, WorktreeError> {

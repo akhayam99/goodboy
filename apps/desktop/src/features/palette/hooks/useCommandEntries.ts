@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Plus, RotateCcw, Smartphone } from 'lucide-react';
-import type { AgentId, ProjectScript, SessionId } from '@goodboy/types';
+import type { AgentId, Project, ProjectScript, SessionId } from '@goodboy/types';
 import {
   BOARD_PLACE,
   EMPTY_ARRAY,
@@ -48,6 +48,9 @@ import { workflowEntries } from '../sources/workflowEntries';
 import { scriptPinEntries, type PinnedScriptTarget } from '../sources/scriptPinEntries';
 import { useScriptPins } from '../../scripts';
 import { runPinnedScript } from '../../scripts/runPinnedScript';
+import { pullBaseInRepos } from '../../workspace/pullBase/pullBaseInRepos';
+import { pullBaseSummary } from '../../workspace/pullBase/pullBaseSummary';
+import { repoEntries } from '../sources/repoEntries';
 import { openSessionAnywhere } from '../openSessionAnywhere';
 import type { PaletteEntry } from '../types';
 import { useSessionsEverywhere } from './useSessionsEverywhere';
@@ -129,6 +132,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         : projects.filter((project) => project.workspaceId === currentWorkspace.id),
     [projects, currentWorkspace],
   );
+  const projectGitStatus = useAppStore((s) => s.projectGitStatus);
   const scriptPins = useScriptPins({ projectIds: workspaceProjects.map((project) => project.id) });
   const reportError = useAppStore((s) => s.reportError);
   const refreshSession = useSessionRefresh();
@@ -447,6 +451,34 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
       }),
     );
 
+    const pullRepos = (repos: ReadonlyArray<Project>): void => {
+      showToast({
+        kind: 'info',
+        title: `Pulling in ${repos.length} ${repos.length === 1 ? 'repo' : 'repos'}...`,
+        message: repos.map((repo) => repo.name).join(', '),
+        dedupeKey: 'pull-base',
+      });
+      void pullBaseInRepos({ projects: repos })
+        .then((outcomes) => {
+          const summary = pullBaseSummary({ outcomes });
+          showToast({
+            kind: summary.kind,
+            title: summary.title,
+            message: summary.lines.join('\n'),
+            dedupeKey: 'pull-base',
+          });
+          for (const outcome of outcomes) {
+            if (outcome.kind === 'updated') {
+              void useAppStore.getState().loadProjectGitStatus({ projectId: outcome.projectId });
+            }
+          }
+        })
+        .catch((error: unknown) => reportError({ title: 'Could not pull the base branch', error }));
+    };
+    out.push(
+      ...repoEntries({ projects: workspaceProjects, statuses: projectGitStatus, pull: pullRepos }),
+    );
+
     for (const script of scripts) {
       out.push({
         key: `script:${script.id}`,
@@ -565,6 +597,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     scripts,
     scriptPins,
     workspaceProjects,
+    projectGitStatus,
     agentKindOverride,
     isAskOpen,
     isAskReplying,
