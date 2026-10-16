@@ -84,7 +84,9 @@ describe('HowToWorkOnIt, where the work happens', () => {
     show();
 
     expect(await screen.findByRole('button', { name: 'Remove payments-api' })).toBeDefined();
-    expect(screen.getByText('from GitHub repo harborline/payments-api')).toBeDefined();
+    expect(
+      screen.getByText('In payments-api, from GitHub repo harborline/payments-api.'),
+    ).toBeDefined();
   });
 
   it('keeps the project picker when more than one project fits', async () => {

@@ -3,7 +3,6 @@ import { useShallow } from 'zustand/react/shallow';
 import { Button, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import type { ProjectId, Session, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 import type {
   SessionDraftMount,
   SessionDraftStart,
@@ -84,9 +83,6 @@ export const HowToWorkOnIt = ({ workspaceId, candidates, title, goal, onGoalChan
 
   const kinds = visibleAgentKinds();
   const kind = kinds.includes(agentKind) ? agentKind : (kinds[0] ?? 'implementer');
-  const defaultProvider = useAppStore(
-    (state) => selectWorkspaceResolvedSettings({ state, workspaceId }).defaultProviderId,
-  );
   const connectedProviders = useAppStore(
     useShallow((state) =>
       state.providers.filter((provider) => provider.connection === 'connected').map((p) => p.id),
@@ -170,7 +166,7 @@ export const HowToWorkOnIt = ({ workspaceId, candidates, title, goal, onGoalChan
         <KickoffProjects
           workspaceId={workspaceId}
           suggestedIds={suggestedId === null ? [] : [suggestedId]}
-          reason={draftMount === null ? null : draftMount.reason}
+          launch={draftMount}
           isDisabled={isStarting}
         />
         {candidates.slice(1).map((candidate) => (

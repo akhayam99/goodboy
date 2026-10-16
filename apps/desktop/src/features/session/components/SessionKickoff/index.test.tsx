@@ -706,7 +706,9 @@ describe('SessionKickoff', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: /#7/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Pick #7' }));
 
-    expect(await screen.findByText('from GitHub repo acme/ledger-core')).toBeDefined();
+    expect(
+      await screen.findByText('In ledger-core, from GitHub repo acme/ledger-core.'),
+    ).toBeDefined();
     expect(screen.getByRole('button', { name: 'Remove ledger-core' })).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Start from #7' }));
 
@@ -744,7 +746,9 @@ describe('SessionKickoff', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: /LEDGER-API-4/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Pick LEDGER-API-4' }));
 
-    expect(await screen.findByText('from Sentry project ledger-api')).toBeDefined();
+    expect(
+      await screen.findByText('In ledger-core, from Sentry project ledger-api.'),
+    ).toBeDefined();
     expect(screen.getByRole('button', { name: 'Remove ledger-core' })).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Start from LEDGER-API-4' }));
 

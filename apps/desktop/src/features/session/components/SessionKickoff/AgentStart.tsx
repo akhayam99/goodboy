@@ -4,7 +4,6 @@ import { Button } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
-import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 import { useWorkspaceRepoProjects } from '../../hooks/useWorkspaceRepoProjects';
 import { resolveSpawnRouting } from '../../spawn-routing';
 import { AGENT_KIND_META, visibleAgentKinds } from '../../agent-kind';
@@ -41,15 +40,17 @@ export const AgentStart = ({ workspaceId }: Props) => {
   const kinds = visibleAgentKinds();
   const kind = kinds.includes(draft.agentKind) ? draft.agentKind : (kinds[0] ?? 'scout');
   const kindLabel = AGENT_KIND_META[kind].noun;
-  const defaultProvider = useAppStore(
-    (state) => selectWorkspaceResolvedSettings({ state, workspaceId }).defaultProviderId,
-  );
   const connectedProviders = useAppStore(
     useShallow((state) =>
       state.providers.filter((provider) => provider.connection === 'connected').map((p) => p.id),
     ),
   );
   const projects = useWorkspaceRepoProjects({ workspaceId });
+  const pickedProjects = useAppStore(
+    useShallow((state) =>
+      draft.projectIds.flatMap((id) => state.projects.filter((project) => project.id === id)),
+    ),
+  );
   useEffect(() => {
     const firstProjectId = projects[0]?.id ?? null;
     if (draft.projectIds.length === 0 && firstProjectId !== null) {
@@ -142,9 +143,14 @@ export const AgentStart = ({ workspaceId }: Props) => {
           onRoutingChange={(next) =>
             patchSessionDraft({ workspaceId, patch: { agentRouting: next } })
           }
-          projects={[]}
-          projectId={null}
-          onProjectChange={() => undefined}
+          projects={pickedProjects}
+          projectId={draft.projectIds[0] ?? null}
+          onProjectChange={(next) =>
+            patchSessionDraft({
+              workspaceId,
+              patch: { projectIds: [next, ...draft.projectIds.filter((id) => id !== next)] },
+            })
+          }
         />
       </div>
       <StartFooter
