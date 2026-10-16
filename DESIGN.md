@@ -106,10 +106,16 @@ Six rules, written so you can check a diff against them directly.
   If an item needs a fourth stacked block, it needs a focused view.
 - **Terminal state hides behind a count.** Items that are completed, answered,
   resolved, dismissed or discarded never show inline by default. Use a header
-  toggle with a count, or a collapsed disclosure row.
-- **One primary action per row**, plus the chevron. Every other action sits in
-  the row's visible `⋯` menu or in the focused view; nothing appears only on
-  hover (G17, guarded by `no-hover-only-actions.test.ts`).
+  toggle with a count, or a collapsed disclosure row. On a session page the
+  finished group is the exception: it sits last and is always open, with no
+  chevron (Questions "Answered" like Artifacts "Consumed").
+- **The row is the button.** A list row opens its object; it carries no
+  visible `⋯`, icon wall or bordered button. Its verbs live in the right click
+  menu (the action registry) and in the opened object's header or pane. At most
+  one trailing control stays on the row, only when it is the row's own toggle
+  and differs from opening it (Run or Stop on a script, Viewed on a diff file,
+  the selection box), in a fixed cell at the same x on every row. Nothing
+  appears only on hover (G17, guarded by `no-hover-only-actions.test.ts`).
 - **Empty sections collapse.** When a surface is the whole body of where the
   user navigated (a pane, or a wizard step), it shows an `EmptyState`. A
   section inside a composite page shows its header at most, never a

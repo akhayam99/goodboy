@@ -116,8 +116,13 @@ Composed contrast.
 
 `SegmentedTabs` has three sizes: `xs` (28px strip, for a header row that also holds the title and
 actions), `sm` (36px) and `md`; the tablist carries `data-size` so a test can
-check it against its neighbours. No ring and no primary tint mark a
-selection; the focus ring stays the only ring, so focus and selection read
+check it against its neighbours. The track hugs its tabs (`w-fit`) unless it
+`fill`s the row. A count badge (a string or a number) never reads 0 and never sits on the
+selected tab, where the list under it already shows the rows; a node badge (a
+changed dot) stays; a
+caller shows the switch only when two or more options have content (one option
+is a disabled select, not a switch), and never inside a pane. No ring and no
+primary tint mark a selection; the focus ring stays the only ring, so focus and selection read
 apart, as in VS Code and Linear lists.
 
 A row that holds its own links or buttons is `InteractiveRow`: one overlay
@@ -160,7 +165,11 @@ state is a `StateDot` or a glyph in a 16px column.
   never "0 B", "-" or "no port".
 - `ListGridGroup` names a group in sentence case with its count right after
   the name, like a Board lane and a sidebar group (a count alone in the last
-  column read as a value of the row below); an `action` (one visible control,
+  column read as a value of the row below). The count shows from 2 rows (a
+  group of one says nothing a row does not), and a capped group passes `fold`
+  (`{ label: 'Show all', onToggle }`), the quiet fold word right after the
+  count, so the total is said once on the label and the foot carries no number;
+  an `action` (one visible control,
   such as the `Open session` arrow on a Terminal page group) sits at the end of
   the heading row; a
   grouped grid (`isGrouped`) spaces its groups 16px apart, never with a divider.
@@ -179,9 +188,12 @@ state is a `StateDot` or a glyph in a 16px column.
 
 `StateDot` is the one state mark of a list or a sidebar slot: a 6px
 `StatusDot` named by its state word (the tooltip and the accessible name),
-`running` (info, pulses under `motion-safe`), `needsYou` (warning), `failed`
-(danger), `unread` (primary), `done` (success) and `idle` (neutral). A count
-next to a door lives in the dot's tooltip, never as colored text.
+`running` (info), `needsYou` (warning), `failed` (danger), `unread` (primary),
+`done` (success), and `idle` and `stopped`, a neutral ring with a transparent
+fill on every background. A running dot pulses (under `motion-safe`) only when
+the caller passes `isLive`, on the item that runs (a list row, a tail glyph);
+chrome (top bar chips, doors, rail slots) stays static. A count next to a door
+lives in the dot's tooltip, never as colored text.
 
 Scenes `c01-grid-list`, `c01-grid-groups`, `c01-grid-dots` and `c01-grid-type`
 show the grid, its groups, every dot and the two size specimen.
@@ -268,7 +280,11 @@ outside `ArtifactDocument`.
 ### Two sizes per region
 
 A surface rebuilt for 0.27.0 reads in two sizes and two weights. The sidebar
-is 13 throughout. The page is 15 for its title (`text-lead`) and its prose
+is 13 throughout: a door, a session row and a rail entry are one 28px row in
+`text-ui` (13, 400) whatever the glyph, with `ICON_SIZE.row` icons in hint gray
+(no colored nav icons), `bg-selected` plus foreground for the selected row, and
+a trailing slot drawn by `countSlotText`. Nothing appears on hover; a shortcut
+lives in the tooltip. The page is 15 for its title (`text-lead`) and its prose
 (`text-read`) and 13 for everything else: list cells, labels, times, counts,
 state words (`text-ui`, or `text-row` for a row's name and a group label).
 Weight is 400 or 500 and comes with the role, never a `font-*` utility. Hierarchy comes from the three grays of the text hierarchy, never
@@ -1170,7 +1186,10 @@ its one tooltip names the plan ("Planned Opus 5 High, routing picked Sonnet 5
 Medium", "Planned High, ran Medium"). Nothing is struck through. The activity
 feed, the workflow run tree and the Subagents tree of a Brief all end their
 rows with this meta, so a step and its sub-agents read the same wherever they
-appear. Headers, cards, tables and the queue use the inline `RoutingLabel`.
+appear. Headers, cards, tables and the queue use the inline `RoutingLabel`. `RoutingLabel` says
+the effort only when it is not the default Medium ("Sonnet 5.5 · High", plain
+"Sonnet 5.5" at Medium), unless the effort diverged from the plan; its
+tooltip always reads the whole route.
 
 ### The plan in the workflow builder
 
@@ -1338,10 +1357,12 @@ native `<select>`: the WebKit menu ignores theme, density and keyboard.
   (`branchPickerOption`).
 - **Search** appears on its own above 8 options (or with `searchable`): a flush
   row (search icon, no box, a hairline divider below, no focus ring of its own),
-  a fuzzy filter, the match underlined, a count ("3 of 41"), and an empty state in one
+  a fuzzy filter, the match underlined (the list itself shows the matches, so no
+  "3 of 41" count), and an empty state in one
   sentence plus the `create` row when the caller can make the value.
 - **Multiple**: a checkbox in the leading slot with the row icon beside it,
-  Enter toggles and stays open, a footer with the count and Clear.
+  Enter toggles and stays open, a footer reading "2 selected" (nothing at 0)
+  and Clear.
 - **Empty copy**: `emptyLabel` and `noMatchLabel` replace the default "No
   {noun}s yet" and "No {noun} matches" sentences when the list has its own
   words ("No sessions match").
@@ -1747,6 +1768,14 @@ Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action
 
 **Header actions.** Every page header and drawer header draws its actions through `HeaderActions` (`packages/ui/src/components/HeaderActions.tsx`), one slot in one order, left to right: secondary controls (a segmented control, a filter, the Details toggle), at most one secondary button, at most one filled primary, the overflow. An empty slot draws nothing, and an overflow with fewer than two drawn items draws nothing and, outside production, logs `OverflowMenu needs two items`, so a page with no actions shows no lone `...` and a lone action is a visible quiet control (`GuardedObjectOverflowMenu` and `BranchOverflow` count what is left after `omit`; `handBuiltMenus.test.ts` bans a literal `items={[` with one item). Every child is 28 tall (`Button` `sm`, `MenuTriggerButton size="control"`), and the last child ends on the column edge. The overflow glyph is `Ellipsis` (`CONCEPT_ICONS.more`) everywhere and the vertical dots glyph is imported nowhere (`moreVertical-banned.test.ts`). The trigger is one `size` prop: `control` is a 28 square in a page header or a drawer header, `compact` is a 24 square in a list row, and a trigger never takes padding classes to find its size. Delete and Archive are never icons at rest in a header: they are overflow items, and Delete asks in a `ConfirmPopover` anchored to the overflow trigger (focus lands on Cancel, Escape and Cancel close it and give focus back to the trigger). A header button keeps its word at every width; below 560px the one secondary button folds into the overflow instead of turning into an icon with no word.
 
+**Run headers and Close.** A run page (a preset step, the preset overview, the
+orchestrated document) shows Pause run or Resume run and Stop run (which
+confirms) as visible header buttons while the run lives, and Restore alone once
+it is archived. The tail never repeats them: it carries a step verb ("Stop step
+2", "Start step 3", "Approve plan", "Raise limit") or none ("Paused by you"). An
+overlay page (Monitoring, Notifications, the guide) ends its header with Close,
+which `StudioFrame` hands it; a sidebar door page has no Close.
+
 **One filled primary per surface.** A page header region, a drawer, a card and an `InlineConfirm` each hold at most one `Button variant="primary"` (the `data-variant` attribute is how the ratchet counts them, `scene-primaries.test.tsx`). While a header's own confirm is open the header primary turns `secondary` (`BranchHeader` `isPrimaryYielding`, also while an action confirm of the page is armed) and the confirm's button is the one primary. `InlineConfirm` has no card of its own: a host that wants a surface (the push banner) gives it `bg-subtle`, never a tinted fill or border. A card that opens a drawer keeps a ghost Open, and the drawer takes its action in its header. A retry says what it retries, and only one Retry is filled.
 
 **Record actions.** A record from a connected tool (issue, merge or pull request, thread, error) has four fixed places, whatever the tool:
@@ -2035,7 +2064,11 @@ it:
   `text-muted-foreground`), alternates as `secondary`, and the one primary
   last. `reason` puts the disabled primary's explanation under the buttons and
   pairs with the primary's `aria-describedby` through `reasonId`; `error` does
-  the same for a failure.
+  the same for a failure: the cause in default text after a 14px danger glyph
+  (never a red sentence), and the caller relabels the primary "Retry" while the
+  draft stays. Leading holds the options (Model, Limit, Autonomy, Starts);
+  trailing is "Discard" (ghost) then the primary, and an empty estimate slot
+  collapses so Discard always touches the primary.
 
 Buttons are `md` on a page and `sm` inside a popover, a drawer or a card. The
 row sits right after the last block: inside a popover it is the end of
@@ -2123,7 +2156,10 @@ drawn as an empty list.
 
 `EmptyState` takes `size: 'page' | 'section'`. Retired sizes are removed. A
 `bordered` state with no size still maps to `page` without a border. The glyph
-is muted, without a tinted circle. A `page` state is an `h2` unless
+is muted, without a tinted circle. A `page` state sits at the top left of the
+content column (18px glyph, title, one sentence, then its one action), never
+centred in the pane; the empty chat stage (`ChatEmpty`) is the one centred
+stage. A `page` state is an `h2` unless
 `headingLevel` chooses another level; a `section` state has no heading.
 `FilledEmptyState` remains a thin section wrapper only for host callers awaiting
 integration. Owned callers name the section size directly. A caller passes only

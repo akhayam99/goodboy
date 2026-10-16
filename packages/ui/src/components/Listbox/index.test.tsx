@@ -166,7 +166,7 @@ describe('Listbox', () => {
     expect(onChange).toHaveBeenCalledWith('tester');
   });
 
-  it('shows a search field above eight options, with a count and an empty sentence', () => {
+  it('shows a search field above eight options, the matches alone and an empty sentence', () => {
     const { rerender } = render(<SingleHarness options={THEMES} initial="system" />);
     fireEvent.click(trigger());
     expect(screen.queryByRole('combobox', { name: 'Search' })).toBeNull();
@@ -179,7 +179,7 @@ describe('Listbox', () => {
 
     fireEvent.change(search, { target: { value: 'fix/re' } });
     expect(screen.getAllByRole('option')).toHaveLength(3);
-    expect(screen.getByText('3 of 9')).toBeDefined();
+    expect(screen.queryByText(/\d+ of \d+/)).toBeNull();
     expect(screen.getAllByRole('option')[0]?.querySelector('[data-match]')?.textContent).toBe(
       'fix/re',
     );
@@ -393,10 +393,11 @@ describe('Listbox', () => {
 
     fireEvent.click(within(list).getByRole('option', { name: 'notify-relay' }));
     expect(screen.getByRole('listbox')).toBeDefined();
-    expect(screen.getByText('2 of 3')).toBeDefined();
+    const foot = () => screen.getByRole('button', { name: 'Clear' }).previousElementSibling;
+    expect(foot()?.textContent).toBe('2 selected');
 
     fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
-    expect(screen.getByText('0 of 3')).toBeDefined();
+    expect(foot()?.textContent).toBe('');
     expect(
       within(list)
         .getAllByRole('option')

@@ -89,6 +89,23 @@ describe('FormActions', () => {
 
     expect(screen.getByRole('alert').textContent).toBe('The provider refused');
   });
+
+  it('says a failed start in default text after a danger glyph, the primary reads Retry', () => {
+    render(
+      <FormActions error="Claude stopped before the first turn.">
+        <button type="button">Discard</button>
+        <button type="button">Retry</button>
+      </FormActions>,
+    );
+
+    const alert = screen.getByRole('alert');
+    expect(alert.className).toContain('text-foreground');
+    expect(alert.className).not.toContain('text-danger');
+    expect(screen.getByTestId('form-actions-error-glyph').getAttribute('class')).toContain(
+      'text-danger',
+    );
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeDefined();
+  });
 });
 
 describe('FormPage', () => {

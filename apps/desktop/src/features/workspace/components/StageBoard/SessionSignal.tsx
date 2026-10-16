@@ -52,7 +52,7 @@ export const SessionSignal = ({ signal, onOpenRequest }: Props) => {
       return (
         <SignalWord
           label={runningLabel({ count: signal.count })}
-          glyph={<StateDot state="running" label={runningLabel({ count: signal.count })} />}
+          glyph={<StateDot state="running" label={runningLabel({ count: signal.count })} isLive />}
           word={countWord({ count: signal.count })}
         />
       );
