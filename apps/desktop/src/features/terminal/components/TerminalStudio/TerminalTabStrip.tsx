@@ -5,6 +5,7 @@ import { useTerminalPorts } from '../../../monitoring/useTerminalPorts';
 import type { TerminalTab } from '../../../../shared/types/terminal';
 import { isOverlayOpen } from '../../../../shared/keyboard/isOverlayOpen';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
+import { PortChip } from '../PortChip';
 import { TerminalTabItem } from './TerminalTabItem';
 
 type RenameParams = {
@@ -45,6 +46,8 @@ export const TerminalTabStrip = ({
   const listRef = useRef<HTMLDivElement | null>(null);
   const stripId = useId();
   const [armedId, setArmedId] = useState<string | null>(null);
+  const selectedPorts =
+    (selectedId === null ? undefined : portsByTerminal.get(selectedId)) ?? NO_PORTS;
   const domIdOf = (tab: TerminalTab): string => `${stripId}-${tab.id}`;
 
   useShortcut(
@@ -114,7 +117,6 @@ export const TerminalTabStrip = ({
               isSelected={tab.id === selectedId}
               isBusy={busyIds.has(tab.id)}
               command={commandOf(tab)}
-              ports={portsByTerminal.get(tab.id) ?? NO_PORTS}
               isArmed={armedId === tab.id}
               onSelect={() => onSelect(tab)}
               onArm={() => setArmedId(tab.id)}
@@ -133,6 +135,12 @@ export const TerminalTabStrip = ({
         size="sm"
         onClick={onNew}
       />
+      <span className="flex-1" />
+      <div className="flex shrink-0 items-center gap-1">
+        {selectedPorts.map((port) => (
+          <PortChip key={port} port={port} />
+        ))}
+      </div>
     </div>
   );
 };

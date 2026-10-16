@@ -1,7 +1,6 @@
 import { RotateCcw } from 'lucide-react';
 import { Chip, IconButton, StatusDot, cn } from '@goodboy/ui';
 import type { TerminalTab } from '../../../../shared/types/terminal';
-import { PortChip } from '../PortChip';
 import { CloseTerminal } from './CloseTerminal';
 import { TerminalRowName } from './TerminalRowName';
 
@@ -11,7 +10,6 @@ type Props = {
   readonly isSelected: boolean;
   readonly isBusy: boolean;
   readonly command: string | null;
-  readonly ports: ReadonlyArray<number>;
   readonly isArmed: boolean;
   readonly onSelect: () => void;
   readonly onArm: () => void;
@@ -27,7 +25,6 @@ export const TerminalTabItem = ({
   isSelected,
   isBusy,
   command,
-  ports,
   isArmed,
   onSelect,
   onArm,
@@ -41,6 +38,12 @@ export const TerminalTabItem = ({
   return (
     <div
       data-terminal-tab={tab.id}
+      onClick={(event) => {
+        if (event.target instanceof Element && event.target.closest('button, input') !== null) {
+          return;
+        }
+        onSelect();
+      }}
       className={cn(
         'group flex h-7 max-w-48 shrink-0 items-center gap-2 rounded-md pl-3 pr-1 text-muted-foreground hover:bg-hover',
         isSelected && 'bg-selected text-foreground',
@@ -65,9 +68,6 @@ export const TerminalTabItem = ({
           label={tab.openError === undefined ? 'exited' : 'failed'}
         />
       ) : null}
-      {ports.map((port) => (
-        <PortChip key={port} port={port} />
-      ))}
       {isExited ? (
         <IconButton icon={RotateCcw} label={`Restart ${tab.title}`} size="xs" onClick={onRestart} />
       ) : null}

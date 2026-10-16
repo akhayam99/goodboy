@@ -103,7 +103,7 @@ describe('the terminal studio scenes', () => {
     expect(within(notify).getByLabelText('1 terminal')).toBeDefined();
   });
 
-  it('shows the dev server port as a chip on its worktree row and on its tab', async () => {
+  it('shows the dev server port on its worktree row and at the right of the tab strip, never on a tab', async () => {
     renderScene('terminal-studio');
     await settle();
 
@@ -115,8 +115,11 @@ describe('the terminal studio scenes', () => {
       (tab) => tab.closest<HTMLElement>('[data-terminal-tab]')?.textContent ?? '',
     );
     expect(devTab).toContain('dev server');
-    expect(devTab).toContain(':5173');
+    expect(devTab).not.toMatch(/:\d+/);
     expect(shellTab).not.toMatch(/:\d+/);
+    expect(
+      screen.getAllByRole('button', { name: 'Open localhost:5173' }).length,
+    ).toBeGreaterThanOrEqual(2);
   });
 
   it('shows the linked task of the session in its group head', async () => {
