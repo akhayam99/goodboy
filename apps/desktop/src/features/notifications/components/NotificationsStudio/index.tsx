@@ -26,21 +26,11 @@ import {
 import { NotificationRow } from '../NotificationRow';
 import { NotificationFacetRail } from './NotificationFacetRail';
 import { NotificationsSkeleton } from './NotificationsSkeleton';
-import { NotificationsToolbar } from './NotificationsToolbar';
+import { NotificationsPageMenu } from './NotificationsPageMenu';
 
 type Props = {
   readonly onClose: () => void;
 };
-
-type SubtitleParams = {
-  readonly total: number;
-  readonly unread: number;
-};
-
-const subtitle = ({ total, unread }: SubtitleParams): string =>
-  total === 0
-    ? 'Nothing reported yet'
-    : `${total} ${total === 1 ? 'notification' : 'notifications'}, ${unread} unread`;
 
 export const NotificationsStudio = ({ onClose }: Props) => {
   const notifications = useAppStore((state) => state.notifications);
@@ -179,7 +169,6 @@ export const NotificationsStudio = ({ onClose }: Props) => {
                 <PaneShell
                   scroll="body"
                   title="Notifications"
-                  meta={subtitle({ total: counts.total, unread: counts.unread })}
                   actions={
                     <HeaderActions
                       secondary={
@@ -192,13 +181,13 @@ export const NotificationsStudio = ({ onClose }: Props) => {
                           />
                         ) : null
                       }
-                      button={
+                      overflow={
                         notifications.length > 0 ? (
-                          <NotificationsToolbar
+                          <NotificationsPageMenu
                             unreadCount={counts.unread}
+                            onMarkAllRead={() => void markNotificationsRead()}
                             totalCount={counts.total}
                             workspaceName={scope === 'workspace' ? workspaceName : null}
-                            onMarkAllRead={() => void markNotificationsRead()}
                             onDeleteAll={async () => {
                               await clearNotifications();
                               setSelectedKey(null);
@@ -252,11 +241,8 @@ export const NotificationsStudio = ({ onClose }: Props) => {
                           aria-label={entry.label}
                           className="flex flex-col gap-0.5"
                         >
-                          <div className="flex items-baseline gap-2 px-3 pb-1">
+                          <div className="flex items-baseline gap-2 px-3">
                             <Eyebrow label={entry.label} />
-                            <span className="text-meta tabular-nums text-faint-foreground">
-                              {entry.items.length}
-                            </span>
                           </div>
                           <ul className="flex flex-col gap-0.5">
                             {entry.items.map((group) => {
