@@ -444,7 +444,9 @@ describe('the block of an Auto turn, on the real store', () => {
       text: block({
         action: 'delegate',
         requestId: 'r1',
-        children: [{ role: 'implementer', task: 'change it', reason: 'a code change' }],
+        children: [
+          { role: 'implementer', task: 'change it', reason: 'a code change', mount: 'mount-gone' },
+        ],
       }),
     });
 
