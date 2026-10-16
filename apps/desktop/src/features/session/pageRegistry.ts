@@ -11,6 +11,7 @@ type PageId =
   | 'overview'
   | 'files'
   | 'runs'
+  | 'orchestrated'
   | 'agents'
   | 'artifacts'
   | 'questions'
@@ -87,6 +88,13 @@ const WORK_AFTER_BRANCH: ReadonlyArray<Page> = [
     shortcut: 'lens.workflows',
     group: 'work',
     count: 'runs',
+  }),
+  lensPage({
+    id: 'orchestrated',
+    lens: 'orchestrated',
+    shortcut: 'lens.workflows',
+    group: 'work',
+    count: 'orchestrated',
   }),
   lensPage({
     id: 'agents',

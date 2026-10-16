@@ -47,6 +47,7 @@ type Props = {
   readonly onBack: () => void;
   readonly context?: ReactNode;
   readonly runStep?: RunStepFrame;
+  readonly isPinned?: boolean;
 };
 
 const REWRITER_PLACEHOLDER = 'Tell History rewriter what to do next';
@@ -58,6 +59,7 @@ export const AgentDetailPane = ({
   onBack,
   context,
   runStep,
+  isPinned = false,
 }: Props) => {
   const turnState = useAppStore((state) => state.agentTurnState[agent.id] ?? null);
   const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
@@ -214,12 +216,15 @@ export const AgentDetailPane = ({
     >
       <ChatView
         session={session}
+        {...(isPinned && { agentId: agent.id })}
         isActive={isChatActive}
         topInset="tight"
         mode="conversation"
         onOpenTranscript={openTranscript}
         hasAdvanceRow={runStep === undefined}
-        hasComposer={!isRewriterFinished && !isAutoChild && adoption === null && !isMoveOpen}
+        hasComposer={
+          !isPinned && !isRewriterFinished && !isAutoChild && adoption === null && !isMoveOpen
+        }
         composerPlaceholder={
           rewriter?.isLive === true ? REWRITER_PLACEHOLDER : autoChat.composerPlaceholder
         }

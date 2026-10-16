@@ -31,10 +31,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'chip',
   },
-  'apps/desktop/src/features/session/components/AgentTree/WorkflowRunStatus.tsx': {
-    count: 5,
-    reason: 'chip',
-  },
   'apps/desktop/src/features/history/historyActionClasses.ts': {
     count: 1,
     reason: 'chip',

@@ -29,7 +29,7 @@ import { RecordHeader } from '../../shared/components/StudioDetail/RecordHeader'
 import { ArtifactShellHeader } from '../../features/artifacts/components/ArtifactShell/ArtifactShellHeader';
 import { ArtifactShellActions } from '../../features/artifacts/components/ArtifactShell/ArtifactShellActions';
 import { bindTarget } from '../../features/actions/registry';
-import { WorkflowRunDetail } from '../../features/session/components/SessionWorkspace/parts/WorkflowRunDetail';
+import { OrchestratedRunPage } from '../../features/session/components/OrchestratedRun';
 import { AgentHeaderActions } from '../../features/session/components/AgentHeaderActions';
 import type {
   ArtifactActionTarget,
@@ -327,7 +327,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
       },
     });
     withMenus(
-      <WorkflowRunDetail
+      <OrchestratedRunPage
         session={session}
         run={session.workflowRuns[0]!}
         workflow={workflowFixture()}
@@ -336,12 +336,19 @@ describe('every ⋯ menu and its right click list the same actions in the same o
     const registry = (
       bindTarget({
         state: useAppStore.getState(),
-        target: { kind: 'workflowRun', sessionId: SESSION, runId: RUN },
+        target: {
+          kind: 'workflowRun',
+          sessionId: SESSION,
+          runId: RUN,
+          stepAgentId: JSON.parse('"agent-plan"'),
+        },
       })?.resolve({ viewing: { kind: 'workflowRun', id: RUN } }) ?? []
     ).map((action) => action.label);
     const { fromOverflow, fromContext } = await overflowThenContext({
       overflow: screen.getByRole('button', { name: /run actions$/ }),
-      context: screen.getByRole('heading', { name: 'Settlement export' }),
+      context: within(screen.getByRole('heading', { name: 'Settlement export' })).getByText(
+        'Settlement export',
+      ),
     });
 
     expect(fromContext).toEqual(registry);
@@ -350,8 +357,11 @@ describe('every ⋯ menu and its right click list the same actions in the same o
       'View diff',
       'Pause run',
       'Step routing',
+      'Autonomy',
+      'Skip step 1',
       'Save as preset',
       'Copy run summary',
+      'Stop run',
       'Archive run',
       'Delete run',
     ]);

@@ -56,83 +56,64 @@ const renderScene = (id: (typeof SCENE_IDS)[number]) => {
   );
 };
 
-const stepsEdge = (): HTMLElement => {
-  const edge = document.querySelector('[data-slot="scroll-edge"]');
-  if (!(edge instanceof HTMLElement)) {
-    throw new Error('the steps scroller has no edge line');
+const nodeOf = (selector: string): HTMLElement => {
+  const node = document.querySelector<HTMLElement>(selector);
+  if (node === null) {
+    throw new Error(`nothing matches ${selector}`);
   }
-  return edge;
+  return node;
 };
 
-const scrollerOf = (edge: HTMLElement): HTMLElement => {
-  const scroller = edge.previousElementSibling;
-  if (!(scroller instanceof HTMLElement)) {
-    throw new Error('the edge line has no scroller before it');
-  }
-  return scroller;
-};
+const tail = (): HTMLElement => nodeOf('[data-orchestrated-tail]');
 
-const stripPhase = (): string | null =>
-  screen.getByTestId('orchestrator-strip').getAttribute('data-phase');
+const runDocument = (): HTMLElement => nodeOf('[data-orchestrated-run]');
 
-const header = () => screen.getByTestId('run-header');
+const header = (): HTMLElement => nodeOf('[data-slot="pane-header"]');
 
-describe('the u21 run page scenes', () => {
+describe('the u21 run page scenes on the orchestrated document', () => {
   it('registers exactly the three scenes the plan names', () => {
     expect(Object.keys(U21_RUN_PAGE_SCENES).sort()).toEqual([...SCENE_IDS].sort());
   });
 
-  it('scrolls the steps 40px and lights the edge line under the pinned block', async () => {
+  it('reads the run as one document under its title', async () => {
     renderScene('workflow-run-scrolled');
 
-    await waitFor(() => {
-      const scroller = scrollerOf(stepsEdge());
-      expect(scroller.scrollTop).toBe(40);
-      expect(scroller.parentElement?.getAttribute('data-scrolled')).toBe('true');
-    });
-    expect(screen.getAllByRole('heading', { name: 'Duplicate credit fix' }).length).toBeGreaterThan(
-      0,
-    );
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Duplicate credit fix' }),
+    ).toBeDefined();
+    expect(within(runDocument()).getByTestId('run-tree')).toBeDefined();
   });
 
-  it('keeps the composer docked under the scroller, after the steps', async () => {
+  it('keeps the composer docked under the document, after the steps', async () => {
     renderScene('workflow-run-scrolled');
 
     const steps = await screen.findByTestId('run-tree');
     const composer = await screen.findByTestId('orchestrator-hint-input');
-    const scroller = scrollerOf(stepsEdge());
 
-    expect(scroller.contains(steps)).toBe(true);
-    expect(scroller.contains(composer)).toBe(false);
+    expect(runDocument().contains(composer)).toBe(false);
     expect(steps.compareDocumentPosition(composer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it('folds the two queued hints into one row above the steps', async () => {
+  it('lists the two queued hints above the composer, each with Remove', async () => {
     renderScene('workflow-run-scrolled');
 
-    const row = await screen.findByRole('button', { name: /2 queued/ });
-    const steps = screen.getByTestId('run-tree');
-
-    expect(row.getAttribute('aria-expanded')).toBe('false');
-    expect(row.compareDocumentPosition(steps) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const queued = await screen.findByRole('list', { name: 'Queued hints' });
+    expect(within(queued).getAllByRole('button', { name: 'Remove' })).toHaveLength(2);
     expect(screen.queryByText('Queue waits for the next decision.')).toBeNull();
   });
 
-  it('names its two Stop buttons Stop run in the header and Stop step in the strip', async () => {
+  it('names its two Stops: Stop step on the tail, Stop run in the run menu', async () => {
     renderScene('workflow-run-scrolled');
 
-    await screen.findByTestId('orchestrator-strip');
-    const names = screen
-      .getAllByRole('button')
-      .filter((button) => !button.hasAttribute('data-rail-session'))
-      .map((button) => button.getAttribute('aria-label') ?? button.textContent ?? '')
-      .filter((name) => /^Stop\b/.test(name));
-
-    expect(names).toEqual(['Stop run', 'Stop step']);
+    await screen.findByTestId('run-tree');
+    expect(within(tail()).getByRole('button', { name: /^Stop step \d+$/ })).toBeDefined();
+    expect(within(header()).queryByRole('button', { name: 'Stop run' })).toBeNull();
+    fireEvent.click(within(header()).getByRole('button', { name: /run actions$/ }));
+    expect(within(screen.getByRole('menu')).getByText('Stop run')).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Show run summary' })).toBeNull();
   });
 
-  it('opens at the top and reveals the live row without ever scrolling past the header', async () => {
+  it('reveals the live row without ever scrolling past the header', async () => {
     const reveal = vi.fn();
     Element.prototype.scrollIntoView = reveal;
     window.history.replaceState(null, '', '/?run=live');
@@ -142,12 +123,7 @@ describe('the u21 run page scenes', () => {
       </ToastProvider>,
     );
 
-    const steps = await screen.findByTestId('run-tree');
-    const scroller = scrollerOf(stepsEdge());
-
-    expect(scroller.contains(steps)).toBe(true);
-    expect(scroller.scrollTop).toBe(0);
-    expect(scroller.parentElement?.hasAttribute('data-scrolled')).toBe(false);
+    await screen.findByTestId('run-tree');
     for (const call of reveal.mock.calls) {
       expect(call[0]).toEqual({ block: 'nearest' });
     }
@@ -162,10 +138,10 @@ describe('the u21 run page scenes', () => {
         payload: { artifactId: PLAN_HOLD_PLAN.id },
       }),
     );
-    expect(stripPhase()).toBe('plan-approval');
-    expect(within(header()).getByRole('button', { name: 'Review plan' })).toBeDefined();
+    expect(tail().getAttribute('data-orchestrated-tail')).toBe('plan-approval');
+    expect(within(tail()).getByRole('button', { name: 'Review plan' })).toBeDefined();
+    expect(within(header()).queryByRole('button', { name: 'Review plan' })).toBeNull();
     expect(within(header()).queryByRole('button', { name: 'Approve plan' })).toBeNull();
-    expect(within(header()).queryByRole('button', { name: 'Plan actions' })).toBeNull();
     expect((await screen.findByTestId('plan-primary')).textContent).toBe('Approve');
   });
 
@@ -205,17 +181,16 @@ describe('the u21 run page scenes', () => {
     expect(screen.getByRole('button', { name: 'Send to planner' })).toBeDefined();
   });
 
-  it('says what the planner asked in the strip and offers Answer once, in the header', async () => {
+  it('says what the planner asked on the tail and offers Answer once, there', async () => {
     renderScene('workflow-run-plan-question');
 
-    const strip = await screen.findByTestId('orchestrator-strip');
-
-    expect(stripPhase()).toBe('plan-question');
-    expect(within(strip).getByTestId('orchestrator-state').textContent).toContain(
+    await screen.findByTestId('run-tree');
+    expect(tail().getAttribute('data-orchestrated-tail')).toBe('plan-question');
+    expect(tail().textContent).toContain(
       'The planner asked: Should the plan keep the retry window',
     );
-    expect(within(header()).getByRole('button', { name: 'Answer' })).toBeDefined();
-    expect(within(strip).queryByRole('button', { name: 'Answer' })).toBeNull();
+    expect(within(tail()).getByRole('button', { name: 'Answer' })).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'Answer' })).toHaveLength(1);
     expect(screen.queryByRole('button', { name: 'Review plan' })).toBeNull();
   });
 
@@ -227,8 +202,8 @@ describe('the u21 run page scenes', () => {
       </ToastProvider>,
     );
 
-    const tail = await screen.findByRole('region', { name: 'Run state' });
-    expect(within(tail).getByRole('button', { name: 'Review plan' })).toBeDefined();
+    const runTail = await screen.findByRole('region', { name: 'Run state' });
+    expect(within(runTail).getByRole('button', { name: 'Review plan' })).toBeDefined();
     expect(screen.queryByTestId('run-header')).toBeNull();
     expect(screen.queryByTestId('orchestrator-strip')).toBeNull();
     expect(screen.queryByTestId('orchestrator-hint-input')).toBeNull();

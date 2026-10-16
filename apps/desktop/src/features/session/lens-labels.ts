@@ -7,6 +7,7 @@ export const LENS_LABEL: Record<LensKind, string> = {
   questions: NAMES.questions,
   agents: NAMES.agents,
   workflows: NAMES.runs,
+  orchestrated: NAMES.orchestrated,
   review: NAMES.comments,
   plans: NAMES.artifacts,
   scripts: NAMES.scripts,
@@ -29,6 +30,7 @@ export const LENS_ICON = {
   questions: CONCEPT_ICONS.questions,
   agents: CONCEPT_ICONS.agents,
   workflows: CONCEPT_ICONS.workflows,
+  orchestrated: CONCEPT_ICONS.orchestrator,
   review: CONCEPT_ICONS.review,
   plans: CONCEPT_ICONS.plans,
   scripts: CONCEPT_ICONS.scripts,
@@ -49,6 +51,7 @@ export const LENS_ICON = {
 
 export const SIMPLE_LENSES = new Set<LensKind>([
   'workflows',
+  'orchestrated',
   'agents',
   'questions',
   'plans',

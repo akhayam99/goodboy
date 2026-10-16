@@ -6,6 +6,8 @@ import { pageSlotOf } from './pageSlot';
 const QUIET: PageCountFacts = {
   runs: 0,
   runningRuns: 0,
+  orchestratedRuns: 0,
+  runningOrchestratedRuns: 0,
   agents: 0,
   runningAgents: 0,
   artifacts: 0,
@@ -36,6 +38,17 @@ describe('pageSlotOf', () => {
       isWarning: false,
       fact: '2 agents',
     });
+  });
+
+  it('counts orchestrated runs apart from preset runs', () => {
+    const facts = { ...QUIET, runs: 2, orchestratedRuns: 1, runningOrchestratedRuns: 1 };
+    expect(pageSlotOf({ page: 'orchestrated', facts })).toEqual({
+      count: 1,
+      isRunning: true,
+      isWarning: false,
+      fact: '1 running',
+    });
+    expect(pageSlotOf({ page: 'runs', facts }).isRunning).toBe(false);
   });
 
   it('marks open questions with the warning dot', () => {

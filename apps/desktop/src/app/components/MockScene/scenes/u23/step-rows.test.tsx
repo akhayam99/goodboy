@@ -7,8 +7,6 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
-import { WORK_META_COLUMN } from '@goodboy/ui';
-import { carriesSpec } from '../../../../../test/classTokens';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import { asCutText, tooltipTextOf } from '../../../../../__tests__/helpers/tooltip';
 import {
@@ -59,22 +57,19 @@ describe('the u23 step row scenes', () => {
     ]);
   });
 
-  it('draws the Runs steps as role icon, title, model with effort, then time and cost', async () => {
-    const { container } = renderScene('step-rows-runs');
+  it('draws the orchestrated steps as a checklist: step, role glyph and word, title, time', async () => {
+    renderScene('step-rows-runs');
 
     const tree = await screen.findByTestId('run-tree', undefined, WAIT);
 
-    expect(within(tree).queryByText('Implementer')).toBeNull();
+    expect(within(tree).getAllByText('Implementer').length).toBeGreaterThan(0);
     expect(within(tree).getAllByRole('img', { name: 'Implementer' }).length).toBeGreaterThan(0);
-    expect(namesIn({ root: tree })).toContain('Opus 5.5');
-    expect(effortsIn({ root: tree })).toContain('High');
-    for (const cell of tree.querySelectorAll(MODEL_COLUMN)) {
-      expect(carriesSpec({ element: cell, spec: WORK_META_COLUMN.model })).toBe(true);
-    }
-    expect(container.querySelector('[data-meta-column="stack"]')).not.toBeNull();
+    expect(tree.querySelectorAll('[data-checklist-cell="step"]').length).toBeGreaterThan(0);
+    expect(tree.querySelectorAll('[data-checklist-cell="duration"]').length).toBeGreaterThan(0);
+    expect(tree.querySelector(MODEL_COLUMN)).toBeNull();
   });
 
-  it('keeps a long title on one line and names where a handoff chain started', async () => {
+  it('keeps a long title on one line with the whole title in its tooltip', async () => {
     renderScene('step-rows-runs');
 
     const tree = await screen.findByTestId('run-tree', undefined, WAIT);
@@ -83,7 +78,6 @@ describe('the u23 step row scenes', () => {
     expect(tooltipTextOf({ element: asCutText({ element: title }) })).toBe(
       'Agree where the dedupe belongs between the webhook handler, the credit writer and the ledger posting in payments-api',
     );
-    expect(effortsIn({ root: tree }).some((text) => text?.startsWith('from '))).toBe(true);
   });
 
   it('turns the time warm on a slow running step without a note word in the row', async () => {

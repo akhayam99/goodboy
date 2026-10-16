@@ -42,9 +42,13 @@ export const usePageCountFacts = ({ session }: Params): PageCountFacts => {
       (run) => run.discardedAt == null && (activeRunIds.has(run.id) || isRunHeldForPlan({ run })),
     );
     const runs = session.workflowRuns.filter((run) => run.discardedAt == null);
+    const orchestrated = runs.filter((run) => run.executionMode === 'dynamic');
+    const runningOrchestrated = activeRuns.filter((run) => run.executionMode === 'dynamic');
     return {
-      runs: runs.length,
-      runningRuns: activeRuns.length,
+      runs: runs.length - orchestrated.length,
+      runningRuns: activeRuns.length - runningOrchestrated.length,
+      orchestratedRuns: orchestrated.length,
+      runningOrchestratedRuns: runningOrchestrated.length,
       agents: standalone.length,
       runningAgents: standalone.filter((agent) => agent.status === 'running').length,
       artifacts: Math.max(artifacts.length, plans.length),

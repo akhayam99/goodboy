@@ -63,17 +63,16 @@ describe('the u21 run tree scenes', () => {
   });
 
   it.each(['workflow-run-finished-sets', 'workflow-run-nested'] as const)(
-    '%s sits inside the real run page, the composer docked under the scrolling tree',
+    '%s sits inside the orchestrated document, the composer docked under it',
     async (id) => {
       renderScene(id);
 
       const tree = await screen.findByTestId('run-tree');
       const composer = await screen.findByTestId('orchestrator-hint-input');
-      const edge = document.querySelector('[data-slot="scroll-edge"]');
-      const scroller = edge?.previousElementSibling ?? null;
+      const runDocument = document.querySelector('[data-orchestrated-run]');
 
-      expect(scroller?.contains(tree)).toBe(true);
-      expect(scroller?.contains(composer)).toBe(false);
+      expect(runDocument?.contains(tree)).toBe(true);
+      expect(runDocument?.contains(composer)).toBe(false);
       expect(
         tree.compareDocumentPosition(composer) & Node.DOCUMENT_POSITION_FOLLOWING,
       ).toBeTruthy();

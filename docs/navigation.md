@@ -547,13 +547,14 @@ the confirm holds the one filled button. A plan drawer reads
 `[Edit] [Approve] [...]`; Approve reads Approving until the approval resolves,
 then closes the drawer on any page and raises one toast, and a plan whose run
 was approved reads Approved with no primary until the run starts the step. The
-run page reads `[Stop run] [one primary] [...]` (`RunHeader`): **Stop run**
-only while the run is live (it asks first), the one primary from `runPrimaryOf`
+run pages (the preset run level and the orchestrated document) hold only the
+run `⋯` in their header while the run lives; the verbs of `runPrimaryOf`
 (**Review plan**, **Answer**, **Resume**, **Continue the run**, **Retry**,
-**Raise spend cap**, **Decide next step**, **Start step 2**, **Start run** or
-**Restore**, and nothing while a step runs or once the run is finished), and an
-overflow that holds View diff, Copy run summary, Pause run (live runs only),
-Step routing, Archive run and Delete run, never **Stop run** or **Approve plan**.
+**Raise spend cap**, **Decide next step**, **Start step 2**, **Start run**)
+sit on the run tail, and an archived run shows **Restore** as its one header
+primary. The `⋯` holds View diff, Pause run, Step routing (orchestrated),
+Autonomy, Skip step N, Save as preset, Copy run summary, **Stop run** (asks
+first), Archive run and Delete run, never **Approve plan**.
 The title is the only h1 of the page; the trail says `Session > Runs > Run`, the
 Runs crumb or Esc goes back to the list, and no chevron on the page does.
 Scripts reads `[search] [New script]`. A page with no actions draws no `...`.
@@ -656,7 +657,17 @@ and the hidden one is `inert`.
   or the Runs page has a preset run focused. Back (the back row, or ⌘[ in the
   sidebar) calls `leaveRunLevel`: the Runs list, session level, a new history
   entry. Esc on the run Overview does the same. An orchestrated run does not
-  drill: it keeps today's run page under the session level.
+  drill: the sidebar stays on the session level with **Orchestrated** selected
+  and the center shows its document
+  ([The orchestrated document](workflows.md#the-orchestrated-document)).
+- **Orchestrated** is its own session page (lens `orchestrated`, after Runs,
+  ⌘⌥W pressed again; Runs counts preset runs only). It lists the orchestrated
+  runs on the Runs grid, or offers **Orchestrate** when there are none. The
+  entry stays selected while an orchestrated run is open (`pageLensOf`, read by
+  `useSessionPageLens` in the open, folded and flyout session levels). Back, Esc
+  and `parentPlace` from an orchestrated run land on this list. A step row of
+  the document opens the step in the pane (drawer kind `run-step`), never the
+  center.
 
 The tools (Scripts, Terminal, Explore) and the linked records keep their
 lenses for now and stay in the palette.

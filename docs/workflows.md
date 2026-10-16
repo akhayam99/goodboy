@@ -261,88 +261,96 @@ blocked.
 You choose the model the orchestrator runs on in the launch form, and the
 providers it may pick from with **Can use**.
 
-### The orchestrator strip
+### The orchestrated document
 
-In the workflow detail, an orchestrated run shows the orchestrator as one row
-(`OrchestratorStrip`), a status line: what it is doing ("Choosing the next
-step", "Waiting on step 3 · Implement"), how long the running step has taken,
-the model it runs on (the orchestrator pill) and, while a step is in flight,
-**Stop step**. The row says its state with a `ToneBar` inside its padding,
-never with an outer edge or a filled background. It has no menu and no other
-action: **Pause**, **Resume**, **Stop run** and the one primary of the run
-(**Decide next step**, **Continue the run**, **Retry**, **Review plan**,
-**Answer**, **Raise spend cap**) live in the header of
-[the run page](#the-run-page), where `runPrimaryOf` picks the one that fits the
-state. **Stop step** asks first, then cancels the step in flight, marks it
-skipped and holds the run (`stopWorkflowRunNow`); **Continue the run** in the
-header takes it from there. The strip reads its sentence from the same
-`resolveOrchestratorState` as the header primary (`useOrchestratorState`), so
-the two never disagree.
+An orchestrated run is a goal carried to its end, so its steps are the
+progress you watch, not places you go: the sidebar stays on the session level
+with **Orchestrated** selected and the center is one document
+(`OrchestratedRunPage`, in `features/session/components/OrchestratedRun`),
+read top to bottom at the conversation measure:
 
-The row has phases of its own for a run held for its plan. A held run reads
-"Plan ready · waiting for you" (`plan-approval`). While the planner revises the
-plan after your comments it reads "The planner is revising the plan"
-(`plan-revising`, pulsing, no action). When the planner asked you something it
-reads "The planner asked: ..." (`plan-question`); the header offers **Answer**,
-which opens the planner at its question. Both phases are checked before the stop presentation,
-and `resolveOrchestratorState` takes them as a `plan` signal the strip reads
-from the plan the run waits on, so a pause or a decision in flight still speaks
-first.
+- **Header.** The run title and the run `⋯`, nothing else while the run lives.
+  The right click on the title lists the same items. An archived run shows
+  **Restore** and reads dimmed, with no composer.
+- **Goal** (`OrchestratedGoal`). The goal as prose, then one gray facts line
+  (`OrchestratedFacts`): "Autonomy Balanced · Can use Claude, Codex · Limit
+  $3.00 · $1.12 spent", and the time left while the run lives
+  (`useRunTimeLeft`). **Limit** opens `RunSpendLimitPopover`. The workflow's
+  process text and the run's standing guidance sit behind **Show guidance**;
+  the goal attachments follow. The write destination shows under it while 2 or
+  more worktrees can be written.
+- **Plan and progress** (`OrchestratedChecklist`). One checklist: the decided
+  steps in execution order on the run step tree (`RunTree` with density
+  `checklist`: state glyph on the tracks, "Step 3", role glyph and word, title,
+  duration), sub agents under their step on today's tracks, a gray row "Your
+  hint, read at step 4" before the step whose decision read it, a dashed row
+  "Next step, not decided yet" while the orchestrator chooses, then the recap's
+  **Left** items as dashed rows, so the plan and the progress are one list
+  (`orchestratedChecklistOf`). A row opens the step in the pane (drawer kind
+  `run-step`, `RunStepDrawer`): the step conversation (`AgentDetailPane`,
+  pinned to that agent) under the reason the orchestrator gave for it, with
+  **View transcript** and **Open full**. The page keeps the one composer; you
+  talk to the step from **Open full**.
+- **Tail** (`OrchestratedTail`, phrases and verbs in `orchestratedTailOf`).
+  The thinking line speaks the phase of `resolveOrchestratorState` once, at the
+  end of the content: "Waiting on step 3 · ..." with its clock and **Stop step
+  3** (asks first, `stopWorkflowRunNow`), "Choosing the next step", "Waiting
+  for your go" with **Decide next step**, "Paused at the spend cap" with
+  **Raise spend cap**, "Last decision failed: ..." with **Retry** and **View
+  transcript**, a failed step with **Restart step**, a stopped step with
+  **Continue step**, "No output for 15 min" with **Ask it to continue**, agents
+  a restart stopped with **Resume**, "Run complete · 4 steps · $1.21" on a
+  finished run. Queued hints on a finished run add **Read 2 queued**; after
+  **Stop step** the verb is **Resume and read 2 queued**. Under the line, one
+  gray line gives the latest decision's reason ("Why: ..."); older reasons sit
+  at the top of each step's pane. The verbs of `runPrimaryOf` go through
+  today's `RunPrimaryAction`, so their gates and confirms are the same.
+- **Result** (`OrchestratedResult`), on a finished run: the closing reason,
+  the recap's **Done** and **Left** lists, **Create report**, **Create
+  wireframe** and **Add step**. A live run offers **Add step** under the tail
+  (not while the orchestrator decides).
+- **Composer** (`OrchestratedComposer`), docked: "Hint the orchestrator".
+  Waiting hints sit above it as rows that say **Waits for the next decision**
+  with **Remove**, or **Reading now** with **Remove** disabled. Enter queues,
+  **Send now** (⌘Enter) reads it now, with today's `readNowCopy` tooltips. The
+  routing pill for the orchestrator's model and effort sits in the composer's
+  footer, its only place (`OrchestratorRoutingRow`).
+- **The run `⋯`** is the `workflowRun` registry minus the verbs the tail
+  carries: View diff, Pause run, Step routing (opens the model per step panel,
+  `OrchestratedRouting`), Autonomy, **Skip step N** for the step in flight,
+  Save as preset, Copy run summary, **Stop run** (asks first), Archive run,
+  Delete run.
 
-An open question the run waits on never reads as "Waiting on step 3": the row
-says "Paused for your answer", names the step that asked when one did ("Paused
-for your answer · step 1 · Ricognizione clinical tests", a sub-scout counts as
-the step it belongs to), counts the time that step has been running, and offers
-**Answer**, which opens the agent that asked at its question, or the questions
-view when no agent asked. A spend pause or a failure still speaks before it
-(`resolveOrchestratorState` takes the first open question as `question`). A
-failed step is left to the Next action strip, so the row only says the run is
-paused, on a neutral line: the strip above carries the tone. When the pane is too narrow for the sentence and the controls on one
-line, the controls wrap to a second line on the right instead of cutting the
-sentence. Autonomy (**Ask me**, **Balanced** or **Run on its
-own**) is a popover on the header's facts line; **Model per step** (the model
-each step runs on, and why) is **Step routing** in the header overflow, which
-opens its panel under the strip (`requestStepRouting`). A
-model picked for the orchestrator turns its chip amber, and the picker itself
-says "Overriding default" with **reset**; the row draws no separate cross
-beside the chip (`hasTriggerReset={false}`). The hint field is not in the row:
-it docks at the bottom of the page.
-
-### Why each step
-
-Under the goal, **Why each step** gives the orchestrator's reason for each step
-it chose, newest first (`WorkflowDecisions`). Each line opens with the same
-node the run tree draws for that step, with the same number or check. Hovering
-a line lights its row in the tree, and hovering or selecting a step row lights
-its line. When the run has ended, its closing reason sits on top. The five
-newest lines show, and the rest sit behind a count. The tree rows carry no
-reasons of their own. An agent's own step reason is the why of the handoff
-block at the top of its transcript, which is also where the step's expected
-output sits, as Done when. The Brief keeps only the state: one line naming who
-sent the agent (it opens that block), then Now, questions, the outcome, what
-it produced and the meta line.
+A plan the run is held for is offered once, as **Review plan** on the tail,
+which opens the plan drawer (`openPlanDrawer`); a plan question or a step
+question makes **Answer** the verb. The `plan-revising` phase reads "The
+planner is revising the plan" with no verb. **Approve** (`useApproveRunPlan`,
+from the drawer or the no-plan primary) calls `approveWorkflowRunPlan` and
+reads its answer: `approved` marks the run as a start of yours
+(`markUserStart`) and raises one **Plan approved** toast, `noop` raises
+nothing and `failed` goes to the log as "Couldn't approve the plan".
 
 ### Hints
 
 A hint is a note you send the orchestrator while the run is going. Every hint
-stays with the orchestrator for the rest of the run. It is marked as new, or
-with the step where the orchestrator first read it.
+stays with the orchestrator for the rest of the run. It waits for the next
+decision until it is read; then it shows as a gray row in the checklist at
+the step where the orchestrator first read it.
 
-- **Queue** is the primary button and waits until the next decision. You may queue several messages, edit or remove them until they are read, and they survive a reload. On a finished run, nothing starts by itself: the orchestrator card shows **Read 2 queued** (**Read queued message** for one), and one click starts one new turn with all of them in order. On a run you stopped the same button reads **Resume and read 2 queued**
-- **Read now** is the quiet button, and every composer with both uses the same pair, the quiet word then Queue (the agent composer says **Send now** and keeps it in view, disabled, while a turn runs with nothing to send). It restarts a decision that is in progress. If a step is running, it stops that step, keeps what it wrote, and decides again
-- The help sits in each button's tooltip, not in a sentence under the field. Read now says what it does in the state the run is in
-- The field is a message box: Enter queues, Shift+Enter adds a line, ⌘Enter reads now. **Preview** shows it as markdown, and the hint log reads it as markdown too
+- **Queue** is the primary button and waits until the next decision. You may queue several messages and remove them until they are read, and they survive a reload. On a finished run, nothing starts by itself: the tail shows **Read 2 queued**, and one click starts one new decision with all of them in order. On a run you stopped the same verb reads **Resume and read 2 queued**
+- **Send now** is the quiet button. It restarts a decision that is in progress. If a step is running, it stops that step, keeps what it wrote, and decides again
+- The help sits in each button's tooltip, not in a sentence under the field. Send now says what it does in the state the run is in
+- The field is a message box: Enter queues, Shift+Enter adds a line, ⌘Enter sends now. **Preview** shows it as markdown
 - Paste, drop or attach images. They are saved as files of the run, so the next agent gets them, and the hint keeps their ids
 - The field stays open while the orchestrator decides, and it empties as soon as you send. If the hint can't be saved, your text and your images come back
-- Queued hints fold into one row, "2 queued", with a chevron that opens them in place. A hint a decision is reading shows by itself, and each says where it stands: **Waits for the next decision**, **Reading now**, or **Read at step N**. Read hints sit behind a count
 - You can remove a hint, except while a decision is reading it
 
 Asking for a certain provider or model on a step is a hint too.
 
 ### Spend cap
 
-Each run can have a spend cap in dollars. You set it on the run, in the
-orchestrator strip or in the creation form. You also choose what happens when
+Each run can have a spend cap in dollars. You set it on the run (the limit
+in the run level foot or the orchestrated facts line) or in the creation form. You also choose what happens when
 the run reaches it: **Pause workflows** or **Warn only**, the same editor
 and words as the session's spend cap. The cap starts at unlimited. The
 orchestrator decides how many steps to plan based on the goal.
@@ -354,18 +362,25 @@ with **Raise spend cap**, which opens the chip on the editor. With **Warn only**
 nothing stops: one notification says the session passed its cap. Single
 agents are never stopped by it.
 
-## The Runs list
+## The Runs and Orchestrated lists
 
-The Runs page (`WorkflowsPane`) lists the session's runs on one `ListGrid`
-(`RunsGrid`, columns in `runsGridColumns.ts`): state dot, title, state word,
-progress ("Step 2 of 3", "3 of 3 steps"), cost and age, every row the same
-columns. Groups: **In progress**, **Finished** (the first 30, then
+The Runs page (`WorkflowsPane`) lists the session's preset runs on one
+`ListGrid` (`RunsGrid`, columns in `runsGridColumns.ts`): state dot, title,
+state word, progress ("Step 2 of 3", "3 of 3 steps"), cost and age, every row
+the same columns. Groups: **In progress**, **Finished** (the first 30, then
 **Show 12 earlier**), **Archived** folded behind **Show**. A row is the button
 and carries no action; an archived run is restored from its page. The state
 word and the dot come from `runRowFactsOf`, the same function the run level's
 identity row reads. The header holds **Start run**; a session with no run shows
-today's start card. Opening a preset run drills into its run level; opening an
-orchestrated run shows the run page below.
+today's start card. Opening a preset run drills into its run level.
+
+The Orchestrated page (`OrchestratedPane`, lens `orchestrated`, ⌘⌥W pressed
+again) lists the orchestrated runs on the same `RunsGrid`. With none it says
+"No orchestrated runs yet. The orchestrator picks each next step from your
+goal." with **Orchestrate**, which opens the launch form on its orchestrated
+mode (`OrchestrateStart`). Opening a row shows
+[the orchestrated document](#the-orchestrated-document); Esc or Back returns
+to the list (`parentPlace`).
 
 ## The preset run level
 
@@ -402,24 +417,6 @@ and the center shows the selected entry (`PresetRunPage`, in
   preset, **Stop run** (asks first), Archive run, Delete run.
 - **Add step** in the sidebar opens the Overview and asks `WorkflowAddStep`
   to open its draft there (`requestRunAddStep`, after the navigation settles).
-
-## The run page
-
-Orchestrated runs keep this page until their document lands; preset runs use
-[the preset run level](#the-preset-run-level). The run page (`WorkflowsPane` over `WorkflowRunDetail`, which draws `RunHeader`
-and `RunBody` on a `PaneShell` with `scroll="self"`) reads top to bottom: a
-pinned header, the strips, the steps in their own scroller, and a composer
-docked under them. Every number on it comes from `useRunView`, so the header
-and the body never compute a count or a cost twice.
-
-- **Header.** One h1, the run's name (rename on hover, `Edit run name`), the state chip beside it, and one cluster of actions: **Stop run** (secondary, only while the run is live, asks first), the one primary from `runPrimaryOf` (a pure table over every phase: held for its plan **Review plan**, a plan question or a question the run waits on **Answer**, paused **Resume**, stopped **Continue the run**, failed or blocked **Retry**, spend cap **Raise spend cap**, ready **Decide next step** or **Start step 2**, queued by hand **Start run**, archived **Restore**, and nothing while a step runs or once the run is finished) and one overflow of 28px. Under the title one facts line: "2 steps · $0.88 · Set a spend cap · Balanced", where the spend cap and the when-to-ask choice (**Ask me**, **Balanced**, **Autopilot**) open a popover each. There is no chevron on the page and no second title: the Runs crumb of the trail, or Esc, goes back to the list. **Start another run** stays on the Runs list, and there is no **Make preset** on a run: a preset is made from the launch bar (**Save as preset**) or in the Studio, never from a run that already ran. The header pins only the title and these facts: the write destination ("Starts in ..."), the strips and the steps all scroll under it
-- **Overflow.** Exactly these items, in their states: **View diff** (the run's session has a mount), **Copy run summary**, **Pause run** (the run is live and not paused or stopped), **Step routing** (an orchestrated run with steps), **Archive run** (asks first, restorable) and **Delete run** (asks first). They are the actions of the `workflowRun` kind in the registry (`workflowRun.pause` and `workflowRun.routing` are the two the page added, so the palette and the right click get them too); the header leaves out the ones that have a button of their own (`Stop run`, the primary's verbs) and **Autonomy**, which its facts line already picks. The registry also holds **Autonomy** (`workflowRun.autonomy`) and **Skip step N** (`workflowRun.skipStep`, given a `stepAgentId` on the target) for the preset run level. The right click on the title lists every action of the registry
-- **Scroll edge.** The steps scroll under the pinned block. `ScrollFade` takes `edge="line"`: its root draws a 1px `border-soft` line (the quietest divider, never the brighter `border`) at its own top edge while `scrollTop` is above 0, shown through `data-scrolled` on the root, set imperatively inside `applyFade`, never through React state, and faded in over 120ms under `motion-safe`. With the line the top mask fade shrinks to 8px, growing with the scroll from 0, so a card clipped under the line fades out instead of leaving a cut edge as a sliver; the bottom fade stays. `PaneShell` with `scroll="body"` and the steps scroller of the run both use it. The default `edge="fade"` is unchanged. The scroller opens at 0; the live-row reveal of the run tree uses `scrollIntoView({ block: 'nearest' })`, so it only moves the scroller when the live row is below the visible area
-- **Composer.** A dynamic run's hint field docks at the bottom of the page as the `dock` of the `PaneShell`, as in Chat, below the scroller and never inside it (`OrchestratorDock`). Steps and cost come first. Queued hints fold into one "2 queued" row above the steps, and the help sentence moved into the tooltips of **Queue** and **Read now**. At rest the field is one text row with the attach button, no Write and Preview tabs, no key hints and no buttons (`data-open` is `false`); it opens to two rows with all of them while it has focus or holds text or an image, and closes again on blur when empty, so a short window keeps most of its height for the steps (the steps scroller is at least 440px tall at a 760px window)
-- **Two Stops, two names.** **Stop run** is in the header: it ends the run and asks first ("Steps that have not run are skipped..."). **Stop step** is in the strip while a step is in flight: it cancels that step, holds the run and leaves **Continue the run** on offer in the header. A static run has no strip, so it has the one Stop run. Never two buttons with one name
-- **Plan entry points.** The plan is offered once. While the run is held for its plan, the header's primary is **Review plan**: it opens the drawer for the plan the run waits on with `openPlanDrawer`, over the page, and the drawer's **Approve** finishes the job; the plan comes from `runPlanOf` (the newest active plan the run's planner wrote, `useRunPlan`). **Approve plan** is not an item of any menu. A run with no plan to open keeps **Approve plan** as its primary. The state chip says **Plan ready** as a status, never as a button. The strip says "Plan ready · waiting for you" and the planner row stays without a button while the run is held, then offers a quiet **Open plan**. The `plan-revising` and `plan-question` phases are in [The orchestrator strip](#the-orchestrator-strip); a plan question makes **Answer** the primary. `__tests__/surfaces/scene-primaries.test.tsx` counts the buttons named Review plan, Open plan or Approve plan on the run scenes: at most one
-- **Approve** (`useApproveRunPlan`, from the drawer or the no-plan primary) calls `approveWorkflowRunPlan` and reads its answer: `approved` marks the run as a start of yours (`markUserStart`) and raises one `useFollowToast` toast, **Plan approved**, saying "The run goes on" or "Implement started" with the step's name, with the action **Follow the run** left out because the run page is on screen. `noop` raises nothing and `failed` goes to the log as "Couldn't approve the plan"
-- **Tone and empty states.** The strips draw their tone as a `ToneBar` inside their padding. A run with no agents says "No agents yet" and "The run starts its first step here." (`EmptyState size="section"`)
 
 ## How a run advances
 
@@ -565,14 +562,14 @@ header, and the conversation does not repeat it at the bottom. Every door
 conversation (`AgentDetailPane`, `ChatView` `mode="conversation"`); there is no
 Brief and no Transcript tab, and **View transcript** opens the full record in
 the `transcript` drawer. The conversation stays pinned to the latest line. A resolver that is still
-working shows its live line at the top of its Fix run. Orchestrated runs get the same strip, and the
-orchestrator strip carries no skip button of its own. It carries **Answer** when the run waits on a question
-([The orchestrator strip](#the-orchestrator-strip)).
+working shows its live line at the top of its Fix run. Orchestrated runs say the same states on
+their tail ([The orchestrated document](#the-orchestrated-document)), with **Skip step N** in the
+run `⋯` and **Answer** when the run waits on a question.
 
 - A failed step: "Implement stopped before finishing." with the steps that wait on it. **Ask it to continue** asks the same agent to verify its work and finish, **Skip** skips it after an inline confirmation. The error the turn ended with sits behind **Show details**
 - A blocked step: "Implement stopped without finishing and without asking you anything. Tell it what to do next." with the same **Ask it to continue** and **Skip**, on the warning rail instead of the danger one. Writing to the agent in its chat also resumes it
 - A quiet step: "No output for 20 min" with the last event the turn sent ("Last event: read_file src/retry/backoff.ts") once a running step has said nothing for 15 minutes. **Ask it to continue** stops the silent turn and sends the agent a message to check where it stands and finish; **Skip** skips it. The clock is the shared `useNow` tick, no timer per agent, and it holds while a tool call or a permission request is still open, because a build or a test suite can print nothing for minutes (`quietSignal.ts`, `useQuietStep`). Goodboy never skips on its own
-- A stopped step: no strip. The agent header already offers Continue, and a step you stopped is never an alarm. The orchestrator strip says "Step 2 stopped by you" in a neutral tone
+- A stopped step: no strip. The agent header already offers Continue, and a step you stopped is never an alarm. The orchestrated tail says "Step 2 stopped by you" with **Continue step**
 - An open question that no row of the run tree shows, such as one the orchestrator holds or one a question delegate asked: "Answer for Implement asks: ...", or "An agent asks: ..." when no agent asked, with the step that waits on it, and **Answer**, which opens the agent that asked at its question, or the questions view when no agent asked. A question a run tree agent asked stays on that agent's row, which already carries the question mark and **Answer**, so the strip never repeats it. This shows in the workflow detail only, because the agent detail already shows its own questions
 - The summarizer holding the run: "Writing the handoff from Plan." with nothing to click
 
@@ -641,7 +638,7 @@ without its own setting follows the session.
 - The session's autorun also covers agents running outside a workflow
 - A workflow you add to a session with autorun on starts with autorun on
 - **Pause** lets the step in flight finish its turn and starts nothing new: no next step, no orchestrator decision, no read-now hint, no step button, not even turning autorun back on. The pause survives a restart. **Resume** starts where the run left off, static or orchestrated, and never changes when to ask
-- **Stop step**, in the orchestrator strip, cancels the step that is running and holds the run. Goodboy asks you to confirm first. The step is marked skipped and everything it already wrote is kept. **Stop run** in the header ends the run ([Closing a workflow](#closing-a-workflow))
+- **Stop step N**, on the orchestrated tail, cancels the step that is running and holds the run. Goodboy asks you to confirm first. The step is marked skipped and everything it already wrote is kept. **Stop run** in the run `⋯` ends the run ([Closing a workflow](#closing-a-workflow))
 - **Continue the run** starts a stopped run again. It turns autorun back on and asks for the next step
 
 A hands-free run still stops and waits for you when:
@@ -819,10 +816,10 @@ and it answers with what happened so the caller can say it:
 
 A write that fails leaves no half approval: the snapshot write comes first, and
 if clearing the stop fails after it, the snapshot is put back. The in-store run
-changes only after both writes went through. The run header's Approve plan
+changes only after both writes went through. The run tail's Approve plan
 (for a run with no plan to read) reads it through `useApproveRunPlan`; the plan drawer, its comment bar and the plan row
 read it through `usePlanPrimaryAction`; the Artifacts page, the palette and the
-object menu read it through `artifact.runPlan` ([The run page](#the-run-page)).
+object menu read it through `artifact.runPlan` ([The orchestrated document](#the-orchestrated-document)).
 
 #### One primary for a plan
 

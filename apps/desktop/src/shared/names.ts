@@ -15,6 +15,7 @@ export const NAMES = {
   questions: 'Questions',
   agents: 'Agents',
   runs: 'Runs',
+  orchestrated: 'Orchestrated',
   overview: 'Overview',
   branch: 'Branch',
   comments: 'Comments',

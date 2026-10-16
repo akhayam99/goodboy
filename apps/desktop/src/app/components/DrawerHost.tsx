@@ -16,6 +16,7 @@ import { NewDrawer } from '../../features/session/components/NewDrawer';
 import { HistoryVersionsDrawer } from '../../features/history/components/HistoryVersionsDrawer';
 import { FixCommentsDrawer } from '../../features/resolve/components/FixCommentsDrawer';
 import { FixRunTranscriptDrawer } from './FixRunTranscriptDrawer';
+import { RunStepDrawer } from '../../features/session/components/RunStepDrawer';
 import { ExploreFileChanges } from './ExploreFileChanges';
 import { ArtifactReadingDrawer } from './ArtifactReadingDrawer';
 import { readingArtifactOf } from './ArtifactReadingDrawer/readingArtifact';
@@ -138,6 +139,16 @@ export const DrawerHost = () => {
         <FixRunTranscriptDrawer
           key={drawerKey(drawer)}
           sessionId={drawer.sessionId}
+          agentId={drawer.payload.agentId}
+          onClose={closeDrawer}
+        />
+      );
+    case 'run-step':
+      return (
+        <RunStepDrawer
+          key={drawerKey(drawer)}
+          sessionId={drawer.sessionId}
+          runId={drawer.payload.runId}
           agentId={drawer.payload.agentId}
           onClose={closeDrawer}
         />

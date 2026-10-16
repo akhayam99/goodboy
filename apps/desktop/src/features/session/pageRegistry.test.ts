@@ -8,10 +8,11 @@ import { columnPagesOf, pagesOf } from './pageRegistry';
 const ALL_TOOLS: ConnectedLensTools = { linear: true, gitlab: true, jira: true, slack: true };
 
 describe('the session level pages', () => {
-  it('read Overview, Runs, Agents, Artifacts in a session with a worktree', () => {
+  it('read Overview, Runs, Orchestrated, Agents, Artifacts in a session with a worktree', () => {
     expect(columnPagesOf({ isBranchless: false }).map((page) => page.label)).toEqual([
       'Overview',
       'Runs',
+      'Orchestrated',
       'Agents',
       'Artifacts',
     ]);
@@ -22,6 +23,7 @@ describe('the session level pages', () => {
       'Overview',
       'File versions',
       'Runs',
+      'Orchestrated',
       'Agents',
       'Artifacts',
     ]);
@@ -40,9 +42,10 @@ describe('the session level pages', () => {
     const open = pagesOf({ isBranchless: false, destinations, hasOpenQuestions: true });
 
     expect(closed.map((page) => page.id)).not.toContain('questions');
-    expect(open.map((page) => page.id).slice(0, 5)).toEqual([
+    expect(open.map((page) => page.id).slice(0, 6)).toEqual([
       'overview',
       'runs',
+      'orchestrated',
       'agents',
       'artifacts',
       'questions',
@@ -58,9 +61,16 @@ describe('the page registry', () => {
   });
 
   it('names every page after its shortcut except the linked records', () => {
-    for (const page of every.filter((candidate) => candidate.group !== 'linked')) {
+    for (const page of every.filter(
+      (candidate) => candidate.group !== 'linked' && candidate.id !== 'orchestrated',
+    )) {
       expect(SHORTCUTS[page.shortcut].label, page.id).toBe(page.label);
     }
+  });
+
+  it('reaches Orchestrated with the Runs chord pressed again', () => {
+    const orchestrated = every.find((page) => page.id === 'orchestrated');
+    expect(orchestrated?.shortcut).toBe('lens.workflows');
   });
 
   it('binds every page to a chord the registry owns', () => {
@@ -80,6 +90,7 @@ describe('the page registry', () => {
   it('counts exactly the pages that the count grammar names', () => {
     expect(every.filter((page) => page.count !== null).map((page) => page.id)).toEqual([
       'runs',
+      'orchestrated',
       'agents',
       'artifacts',
       'questions',

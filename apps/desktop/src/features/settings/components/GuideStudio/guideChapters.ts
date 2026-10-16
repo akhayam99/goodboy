@@ -305,7 +305,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Run page',
-        desc: 'Opening a run with a fixed list of steps moves the sidebar into it: back to Runs, the run title, Overview, every step in order with its sub-agents, Add step, and the limit with what it spent at the foot. The center shows the step you pick as its conversation, and the line at its end says what the run waits for with the one button that moves it on, such as Start step 3, Review plan or Raise spend cap. Pause run, Autonomy, Skip step and Stop run sit in the run menu. An orchestrated run keeps one page with its steps and the composer at the bottom.',
+        desc: 'Opening a run with a fixed list of steps moves the sidebar into it: back to Runs, the run title, Overview, every step in order with its sub-agents, Add step, and the limit with what it spent at the foot. The center shows the step you pick as its conversation, and the line at its end says what the run waits for with the one button that moves it on, such as Start step 3, Review plan or Raise spend cap. Pause run, Autonomy, Skip step and Stop run sit in the run menu. An orchestrated run stays under Orchestrated as one page: the goal, one checklist of its steps and what is left, the line that says what the orchestrator does now and why, and the hint box at the bottom.',
       },
       {
         term: 'Agent suggests',

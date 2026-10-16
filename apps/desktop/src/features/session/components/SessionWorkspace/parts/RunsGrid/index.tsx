@@ -13,6 +13,7 @@ import { RUNS_GRID_COLUMNS } from './runsGridColumns';
 type Props = {
   readonly session: Session;
   readonly attachedRuns: ReadonlyArray<AttachedRun>;
+  readonly label?: string;
 };
 
 const VISIBLE_FINISHED_COUNT = 30;
@@ -22,7 +23,7 @@ const NO_AGENTS: ReadonlyArray<Agent> = [];
 const FOLD_BUTTON =
   'inline-flex h-6 shrink-0 items-center rounded-md px-2 text-ui text-muted-foreground hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
 
-export const RunsGrid = ({ session, attachedRuns }: Props) => {
+export const RunsGrid = ({ session, attachedRuns, label = 'Runs' }: Props) => {
   const sessionId = session.id;
   const now = useNow(30_000);
   const navigate = useAppStore((state) => state.navigate);
@@ -70,7 +71,7 @@ export const RunsGrid = ({ session, attachedRuns }: Props) => {
   };
 
   return (
-    <ListGrid label="Runs" columns={RUNS_GRID_COLUMNS} isGrouped>
+    <ListGrid label={label} columns={RUNS_GRID_COLUMNS} isGrouped>
       {active.length > 0 ? (
         <ListGridGroup label="In progress" count={active.length}>
           {active.map(renderRow)}

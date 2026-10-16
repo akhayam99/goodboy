@@ -2,10 +2,9 @@ import { ChevronLeft } from 'lucide-react';
 import { StatusDot } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../store';
-import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { openSessionPage } from '../../../features/session/openSessionPage';
 import { pageSlotOf } from '../../../features/session/pageSlot';
-import { supportedLens } from '../../../features/session/supportedLens';
+import { useSessionPageLens } from '../../../features/session/hooks/useSessionPageLens';
 import { currentSignOf } from '../../../features/workspace/components/SessionActivityBar/currentSign';
 import { useCardPages } from '../../../features/workspace/hooks/useCardPages';
 import { RailButton } from './RailButton';
@@ -18,12 +17,9 @@ export const RailSessionLevel = ({ session }: Props) => {
   const sessionId = session.id;
   const { pages, facts } = useCardPages({ session });
   const leaveSessionLevel = useAppStore((state) => state.leaveSessionLevel);
-  const storedLens = useAppStore((state) => state.activeLens[sessionId] ?? null);
-  const isBranchless = useAppStore((state) =>
-    isBranchlessSession({ branch: state.sessionBranches[sessionId] }),
-  );
+  const pageLens = useSessionPageLens({ session });
   const sign = currentSignOf({
-    activeLens: supportedLens({ lens: storedLens, isBranchless }),
+    activeLens: pageLens,
     pages,
     hasStudioOver: false,
   });

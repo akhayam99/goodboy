@@ -4,6 +4,7 @@ import { pageCountWordOf, type CountedPageId, type PageCountFacts } from './page
 
 const COUNTED_PAGE_IDS = [
   'runs',
+  'orchestrated',
   'agents',
   'artifacts',
   'questions',
@@ -12,6 +13,8 @@ const COUNTED_PAGE_IDS = [
 const QUIET: PageCountFacts = {
   runs: 0,
   runningRuns: 0,
+  orchestratedRuns: 0,
+  runningOrchestratedRuns: 0,
   agents: 0,
   runningAgents: 0,
   artifacts: 0,
@@ -37,6 +40,14 @@ describe('pageCountWordOf', () => {
   });
 
   it.each([
+    [{ orchestratedRuns: 2 }, '2 runs'],
+    [{ orchestratedRuns: 2, runningOrchestratedRuns: 1 }, '1 running'],
+    [{ runs: 3 }, null],
+  ])('reads Orchestrated for %j as %s', (facts, expected) => {
+    expect(wordOf('orchestrated', facts)).toBe(expected);
+  });
+
+  it.each([
     [{ agents: 3 }, '3 agents'],
     [{ agents: 1 }, '1 agent'],
     [{ agents: 3, runningAgents: 1 }, '1 running'],
@@ -59,6 +70,8 @@ describe('pageCountWordOf', () => {
     const everything: PageCountFacts = {
       runs: 4,
       runningRuns: 0,
+      orchestratedRuns: 1,
+      runningOrchestratedRuns: 0,
       agents: 3,
       runningAgents: 0,
       artifacts: 4,

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import type { Agent, AgentId, OpenQuestion, PlanWithCount, SessionId } from '@goodboy/types';
 import type { TimelineAgentEntry } from '../../../session/timeline/buildTimelineGroups';
 import type { TimelineRowItem } from '../../../session/timeline/buildTimelineStream';
@@ -10,6 +10,7 @@ import type { RunStepSkipAction } from './RunStepSkip';
 import type { RunTreeFolds } from './useFoldedRunTree';
 import type { RunTreeModel } from './useRunTree';
 import type { RunTreeDensity } from './runTreeDensity';
+import type { RunTreeInsert } from '../../runTreeInsert';
 
 type Props = {
   readonly density?: RunTreeDensity;
@@ -24,6 +25,8 @@ type Props = {
   readonly skip?: RunStepSkipAction | null;
   readonly folds?: RunTreeFolds;
   readonly plans?: ReadonlyMap<string, PlanWithCount>;
+  readonly beforeRow?: (insert: RunTreeInsert) => ReactNode;
+  readonly trailing?: (insert: RunTreeInsert) => ReactNode;
   readonly onHighlight?: (stepId: string | null) => void;
   readonly onSelect: (id: AgentId) => void;
   readonly onAnswer: (question: OpenQuestion | null) => void;
@@ -57,6 +60,8 @@ export const RunTreeRows = ({
   skip = null,
   folds,
   plans = NO_PLANS,
+  beforeRow,
+  trailing,
   onHighlight,
   onSelect,
   onAnswer,
@@ -138,6 +143,9 @@ export const RunTreeRows = ({
         const stepId = isNested ? null : (item.entry.agent.stepId ?? null);
         return (
           <div key={item.id} ref={item.id === activeRowId ? activeRowRef : undefined}>
+            {isNested || beforeRow === undefined
+              ? null
+              : beforeRow({ agentId: item.entry.agent.id, slotWidth: rail.width })}
             <RunTreeRow
               density={density}
               item={item}
@@ -164,6 +172,7 @@ export const RunTreeRows = ({
           </div>
         );
       })}
+      {trailing === undefined ? null : trailing({ agentId: null, slotWidth: rail.width })}
     </div>
   );
 };

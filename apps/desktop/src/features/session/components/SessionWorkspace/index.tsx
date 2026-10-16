@@ -21,6 +21,7 @@ import { openLens } from '../../openLens';
 import { resolveSessionSurfaceLayer } from '../../resolveSessionSurfaceLayer';
 import { resolveDiffMount } from './parts/resolveDiffMount';
 import { WorkflowsPane } from './parts/WorkflowsPane';
+import { OrchestratedPane } from './parts/OrchestratedPane';
 import { PresetRunPage } from '../PresetRun';
 import { usePresetRunFocus } from '../../hooks/usePresetRunFocus';
 import { IntegrationPane } from './parts/IntegrationPane';
@@ -163,6 +164,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               {lens === 'workflows' ? (
                 <WorkflowsPane session={session} isActive={isActive && showLens} />
               ) : null}
+              {lens === 'orchestrated' ? <OrchestratedPane session={session} /> : null}
               {lens === 'scripts' ? (
                 <ScriptsPanel workspaceId={session.workspaceId} sessionId={sessionId} />
               ) : null}

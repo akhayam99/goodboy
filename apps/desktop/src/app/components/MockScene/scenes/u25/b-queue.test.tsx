@@ -65,13 +65,13 @@ describe('the queue scenes', () => {
     }
   });
 
-  it('queue-composer-primary makes Queue the primary and Read now the quiet button', async () => {
+  it('queue-composer-primary makes Queue the primary and Send now the quiet button', async () => {
     await mount({ name: 'queue-composer-primary' });
 
     expect(screen.getByRole('button', { name: 'Queue' }).getAttribute('data-variant')).toBe(
       'primary',
     );
-    expect(screen.getByRole('button', { name: 'Read now' }).getAttribute('data-variant')).toBe(
+    expect(screen.getByRole('button', { name: 'Send now' }).getAttribute('data-variant')).toBe(
       'quiet',
     );
   });

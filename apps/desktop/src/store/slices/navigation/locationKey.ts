@@ -6,6 +6,7 @@ const LENS_ADDRESS: Record<LensKind, string> = {
   questions: 'questions',
   agents: 'agents',
   workflows: 'workflows',
+  orchestrated: 'orchestrated',
   review: 'review',
   plans: 'artifacts',
   scripts: 'scripts',

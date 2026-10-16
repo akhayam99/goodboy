@@ -1,0 +1,69 @@
+import type { Session } from '@goodboy/types';
+import { useAppStore } from '../../../../store';
+import { isStoppedByRestart } from '../../../../store/slices/turn/isStoppedByRestart';
+import { useQuietStep } from '../../../workflows/hooks/useQuietStep';
+import { TailLine } from '../../../live-state/TailLine';
+import { decisionEntries } from '../../../workflows/decisionEntries';
+import { orchestratedTailOf } from '../../../workflows/orchestratedTailOf';
+import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
+import type { RunView } from '../AgentTree/useRunView';
+import { OrchestratedTailVerb } from './OrchestratedTailVerb';
+
+type Props = {
+  readonly session: Session;
+  readonly view: RunView;
+};
+
+const NO_READING: ReadonlyArray<string> = [];
+
+const MINUTE_MS = 60_000;
+
+export const OrchestratedTail = ({ session, view }: Props) => {
+  const { run, workflow, agents } = view;
+  const readingIds = useAppStore((state) => state.orchestratorReadingHints[run.id] ?? NO_READING);
+  const queuedCount = (run.orchestratorHints ?? []).filter(
+    (hint) => hint.consumedAt == null && !readingIds.includes(hint.id),
+  ).length;
+  const quiet = useQuietStep({ agents });
+  const tail = orchestratedTailOf({
+    orchestrator: view.orchestrator.state,
+    agents,
+    primary: view.primary,
+    queuedCount,
+    isDiscarded: view.isDiscarded,
+    quiet:
+      quiet === null
+        ? null
+        : { agentId: quiet.agent.id, minutes: Math.floor(quiet.quietMs / MINUTE_MS) },
+    restartStoppedCount: agents.filter((agent) => isStoppedByRestart({ agent, runs: agents }))
+      .length,
+  });
+  const latest = decisionEntries({ run, steps: workflow.steps }).decisions[0] ?? null;
+  const isReasonShown =
+    latest !== null && view.orchestrator.state.phase !== 'done' && !view.isDiscarded;
+
+  return (
+    <section
+      aria-label="Run state"
+      data-orchestrated-tail={view.orchestrator.state.phase}
+      className="flex min-w-0 flex-col"
+    >
+      <TailLine
+        facts={{ state: tail.state, phrase: tail.phrase, startedAt: tail.startedAt, actions: [] }}
+        onAction={() => undefined}
+        verbs={
+          tail.verbs.length === 0
+            ? null
+            : tail.verbs.map((verb) => (
+                <OrchestratedTailVerb key={verb.kind} session={session} view={view} verb={verb} />
+              ))
+        }
+      />
+      {isReasonShown ? (
+        <p data-orchestrated-reason="" className="min-w-0 text-ui text-muted-foreground">
+          {ORCHESTRATED_COPY.why({ reason: latest.reason })}
+        </p>
+      ) : null}
+    </section>
+  );
+};
