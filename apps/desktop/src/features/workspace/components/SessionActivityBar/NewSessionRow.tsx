@@ -33,7 +33,7 @@ export const NewSessionRow = ({ workspaceId, onNavigate }: Props) => {
         }}
         className={cn(
           PANE_RHYTHM.navRail.door,
-          'flex w-full shrink-0 items-center gap-2 rounded-md text-left text-row text-faint-foreground',
+          'flex w-full shrink-0 items-center gap-2 rounded-md text-left text-ui text-faint-foreground',
           ROW_INTERACTIVE,
           isCurrent && 'bg-selected text-foreground',
         )}

@@ -79,14 +79,14 @@ describe('the pinned sessions scene', () => {
     const headers = Array.from(sessionList().querySelectorAll('button[aria-expanded]'))
       .map((button) => button.textContent)
       .filter((text) => text !== '');
-    expect(headers).toEqual(['Pinned2', 'ledger-core2', 'notify-relay2', 'payments-api2']);
+    expect(headers).toEqual(['Pinned', 'ledger-core3', 'notify-relay2', 'payments-api3']);
     expect(rowTitles(groupOf(/^Pinned/))).toEqual([
       'Reconcile the ledger export',
       'Paginate the payments list',
     ]);
   });
 
-  it('shows each pinned session once and leaves it out of its project group and its count', async () => {
+  it('shows each pinned session once, out of its project group rows but in its count', async () => {
     await mount();
 
     const all = rowTitles(sessionList());
@@ -96,8 +96,8 @@ describe('the pinned sessions scene', () => {
       'Backfill the settlement dates',
       'Move the ledger export to a queue',
     ]);
-    expect(within(groupOf(/^ledger-core/)).getByText('2')).toBeDefined();
-    expect(within(groupOf(/^payments-api/)).getByText('2')).toBeDefined();
+    expect(within(groupOf(/^ledger-core/)).getByText('3')).toBeDefined();
+    expect(within(groupOf(/^payments-api/)).getByText('3')).toBeDefined();
   });
 
   const rowOf = (title: string): HTMLElement => {
@@ -123,7 +123,7 @@ describe('the pinned sessions scene', () => {
         'Backfill the settlement dates',
       ]),
     );
-    expect(within(groupOf(/^Pinned/)).getByText('3')).toBeDefined();
+    expect(rowTitles(groupOf(/^Pinned/))).toHaveLength(3);
     expect(rowTitles(groupOf(/^ledger-core/))).toEqual(['Move the ledger export to a queue']);
     expect(screen.queryByText("Couldn't pin the session")).toBeNull();
 
@@ -148,7 +148,7 @@ describe('the pinned sessions scene', () => {
     fireEvent.contextMenu(rowOf('Tune the payments rate limiter'));
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Pin session' }));
 
-    await waitFor(() => expect(within(groupOf(/^Pinned/)).getByText('3')).toBeDefined());
+    await waitFor(() => expect(rowTitles(groupOf(/^Pinned/))).toHaveLength(3));
     expect(rowTitles(groupOf(/^Pinned/)).slice(0, 2)).toEqual([
       'Reconcile the ledger export',
       'Paginate the payments list',

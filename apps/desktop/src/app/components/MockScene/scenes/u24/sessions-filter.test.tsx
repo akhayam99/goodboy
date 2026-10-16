@@ -68,11 +68,11 @@ describe('the sessions filter scenes', () => {
     }
   });
 
-  it('sessions-funnel names the trigger Filter sessions and shows the active count', async () => {
+  it('sessions-funnel names the trigger Filter sessions and marks an active filter with a dot', async () => {
     await mount('sessions-funnel');
     expect(screen.getByRole('button', { name: 'Filter sessions' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Options for sessions' })).toBeNull();
-    expect(screen.getByText('2')).toBeDefined();
+    expect(document.querySelector('[data-filter-dot="active"]')).not.toBeNull();
   });
 
   it('sessions-funnel-open lists the stages and a Clear filters action', async () => {
@@ -84,7 +84,7 @@ describe('the sessions filter scenes', () => {
 
   it('sessions-hidden says how many sessions the filters hide', async () => {
     await mount('sessions-hidden');
-    expect(screen.getByText(/hidden by filters/)).toBeDefined();
+    expect(screen.getByText(/^\d+ hidden$/)).toBeDefined();
     expect(screen.getByRole('button', { name: 'Clear' })).toBeDefined();
   });
 

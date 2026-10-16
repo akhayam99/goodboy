@@ -290,7 +290,9 @@ describe('the Pinned group', () => {
       return;
     }
     expect(result.hiddenCount).toBe(0);
-    expect(result.groups.slice(1).reduce((sum, column) => sum + column.total, 0)).toBe(rest.length);
+    expect(result.groups.slice(1).reduce((sum, column) => sum + column.sessions.length, 0)).toBe(
+      rest.length,
+    );
   });
 
   it('shows pinned sessions that the fold would hide and counts only the rest as hidden', () => {
@@ -321,7 +323,7 @@ describe('the Pinned group', () => {
     expect(result.groups[1]?.sessions.map((session) => session.id)).not.toContain(open);
   });
 
-  it('drops a group whose every session is pinned and takes pinned sessions out of group totals', () => {
+  it('drops a group whose every session is pinned and still counts pinned members in their stage', () => {
     const groups = [
       { key: 'attention', sessions: sessions(1) },
       { key: 'running', sessions: sessions(4).slice(1) },
@@ -335,7 +337,7 @@ describe('the Pinned group', () => {
       pinnedIds: ['session-1' as SessionId, 'session-2' as SessionId],
     });
     expect(result.groups.map((group) => group.key)).toEqual([PINNED_GROUP_KEY, 'running']);
-    expect(result.groups.map((group) => group.total)).toEqual([2, 2]);
+    expect(result.groups.map((group) => group.total)).toEqual([2, 3]);
   });
 
   it('ignores a pin for a session that is not listed and a pin that repeats', () => {
@@ -386,7 +388,7 @@ describe('the Pinned group', () => {
     expect(layout({ all }).groups.map((group) => group.label)).toEqual([null]);
     expect(
       layout({ all, pinnedIds: ['session-2' as SessionId] }).groups.map((group) => group.label),
-    ).toEqual(['Pinned', 'Other sessions']);
+    ).toEqual(['Pinned', 'Sessions']);
   });
 });
 

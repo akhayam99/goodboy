@@ -10,6 +10,7 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
+import { ObjectMenuProvider } from '../../../../../features/actions/components/ObjectMenuProvider';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -48,7 +49,9 @@ const mount = async (name: SceneName): Promise<void> => {
   const Scene = U25_C11_SESSIONS_SCENES[name];
   render(
     <ToastProvider>
-      <Scene />
+      <ObjectMenuProvider>
+        <Scene />
+      </ObjectMenuProvider>
     </ToastProvider>,
   );
   await act(async () => {
@@ -91,7 +94,7 @@ describe('the c11 Sessions scenes', () => {
 
   it('c11-sessions-board-filtered says how many cards the project filter hides', async () => {
     await mount('c11-sessions-board-filtered');
-    expect(screen.getByText(/^\d+ hidden by filters$/)).toBeDefined();
+    expect(screen.getByText(/^\d+ hidden$/)).toBeDefined();
     expect(screen.getByRole('button', { name: 'Clear' })).toBeDefined();
   });
 
@@ -114,14 +117,15 @@ describe('the c11 Sessions scenes', () => {
 
   it('c11-sessions-list-filtered keeps the hidden line under the list', async () => {
     await mount('c11-sessions-list-filtered');
-    expect(screen.getByText(/^\d+ hidden by filters$/)).toBeDefined();
+    expect(screen.getByText(/^\d+ hidden$/)).toBeDefined();
   });
 
-  it('c11-sessions-repos-attention shows the one repo pill in the header', async () => {
+  it('c11-sessions-repos-attention marks the filter with a warning dot and no header sentence', async () => {
     await mount('c11-sessions-repos-attention');
-    const title = screen.getByRole('heading', { level: 1, name: 'Sessions' });
-    const pill = screen.getByText('1 repo needs attention');
-    expect(title.parentElement?.contains(pill)).toBe(true);
+    expect(screen.queryByText('1 repo needs attention')).toBeNull();
+    expect(document.querySelector('[data-filter-dot]')?.getAttribute('data-filter-dot')).toBe(
+      'warning',
+    );
   });
 
   it('c11-sessions-empty offers New session under No sessions yet', async () => {
@@ -155,14 +159,22 @@ describe('SPEC3 9.9: every Sessions page capability is reachable from its new ho
     expect(within(archived).getAllByRole('button', { name: 'Restore' }).length).toBeGreaterThan(0);
   });
 
-  it('the card PR token, quick action and a visible menu stay on the card', async () => {
+  it('the card PR token and quick action stay on the card, the menu on its right click', async () => {
     await mount('c11-sessions-board');
     expect(screen.getAllByRole('button', { name: /^Open pull request/ }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole('group', { name: 'Session quick actions' }).length).toBeGreaterThan(
       0,
     );
-    const menus = screen.getAllByRole('button', { name: 'Session actions' });
-    expect(menus.every((menu) => !menu.className.includes('opacity-0'))).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Session actions' })).toBeNull();
+    const [card] = screen.getAllByRole('article');
+    if (card === undefined) {
+      throw new Error('no board card');
+    }
+    fireEvent.contextMenu(card);
+    await settle();
+    const items = screen.getAllByRole('menuitem').map((item) => item.textContent ?? '');
+    expect(items[0]).toBe('Open');
+    expect(items.some((item) => item.startsWith('Archive'))).toBe(true);
   });
 
   it('bulk select: the card tick and Select all reach the selection bar', async () => {
@@ -200,6 +212,8 @@ describe('SPEC3 9.9: every Sessions page capability is reachable from its new ho
 
   it('repo status pill opens the whole repository popover with Update and the detail', async () => {
     await mount('c11-sessions-repos-attention');
+    fireEvent.click(screen.getByRole('button', { name: 'Filter sessions' }));
+    await settle();
     fireEvent.click(screen.getByRole('button', { name: /repository git statuses/ }));
     await settle();
     const popover = screen.getByRole('dialog', { name: 'Repository git statuses' });

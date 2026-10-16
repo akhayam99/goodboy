@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { ListFilter } from 'lucide-react';
-import { AnchoredPopover, IconButton, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, IconButton, StatusDot, useDropdown } from '@goodboy/ui';
 import type {
   Session,
   SessionGroupKey,
@@ -69,6 +69,7 @@ type Props = {
   readonly onArchivedShownChange: (isShown: boolean) => void;
   readonly isBoard?: boolean;
   readonly footer?: ReactNode;
+  readonly hasAttention?: boolean;
 };
 
 export const SessionFilterPopover = ({
@@ -78,6 +79,7 @@ export const SessionFilterPopover = ({
   onArchivedShownChange,
   isBoard = false,
   footer,
+  hasAttention = false,
 }: Props) => {
   const prefs = useSessionViewPrefs(workspaceId);
   const setSessionViewPrefs = useAppStore((state) => state.setSessionViewPrefs);
@@ -146,9 +148,12 @@ export const SessionFilterPopover = ({
             onClick={toggle}
             className={isOpen ? 'bg-selected text-foreground' : undefined}
           />
-          {activeCount > 0 ? (
-            <span className="pointer-events-none absolute -right-0.5 -top-0.5 flex min-w-3.5 items-center justify-center rounded-full bg-primary px-1 text-meta tabular-nums text-on-tone">
-              {activeCount}
+          {activeCount > 0 || hasAttention ? (
+            <span
+              data-filter-dot={hasAttention ? 'warning' : 'active'}
+              className="pointer-events-none absolute right-0.5 top-0.5 flex"
+            >
+              <StatusDot tone={hasAttention ? 'warning' : 'neutral'} size="sm" />
             </span>
           ) : null}
         </>

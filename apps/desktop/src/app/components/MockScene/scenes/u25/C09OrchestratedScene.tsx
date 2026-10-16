@@ -91,9 +91,7 @@ export const C09OrchestratedScene = ({
           workspaceId={C09_WORKSPACE_ID}
           currentSessionId={session.id}
           place={null}
-          isCollapsed={false}
           actions={ACTIONS}
-          onToggle={noop}
         />
       </div>
       <main className="relative flex min-w-0 flex-1">

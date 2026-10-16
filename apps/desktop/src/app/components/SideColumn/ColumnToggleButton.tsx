@@ -14,7 +14,7 @@ export const ColumnToggleButton = ({ isCollapsed, onToggle }: Props) => {
       icon={Icon}
       label={label}
       shortcut="column.toggle"
-      tooltipSide="right"
+      tooltipSide="bottom"
       size="md"
       onClick={onToggle}
       aria-pressed={!isCollapsed}

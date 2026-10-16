@@ -51,7 +51,7 @@ describe('the list scenes', () => {
     expect(MOCK_SCENES['tasks-cursor']).toBe(U24_P_LISTS_SCENES['tasks-cursor']);
   });
 
-  it('notifications-delete-all arms the popover beside the button', async () => {
+  it('notifications-delete-all arms the popover from the page menu', async () => {
     mount({ name: 'notifications-delete-all' });
 
     const dialog = await screen.findByRole(

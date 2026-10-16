@@ -131,9 +131,7 @@ const Shell = ({ place = null }: MountParams) => {
         workspaceId={harborline.id}
         currentSessionId={currentSessionId}
         place={place}
-        isCollapsed={false}
         actions={actions()}
-        onToggle={vi.fn()}
       />
       {current === null ? null : (
         <SessionFrame session={current}>

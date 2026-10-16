@@ -362,7 +362,7 @@ describe('pinned sessions', () => {
       'Write the notify-relay digest',
     ]);
     expect(screen.getByText('Pinned')).toBeDefined();
-    expect(screen.getByText('Other sessions')).toBeDefined();
+    expect(screen.getByText('Sessions')).toBeDefined();
     expect(screen.queryByRole('button', { name: /^Pinned/ })).toBeNull();
   });
 
@@ -371,7 +371,7 @@ describe('pinned sessions', () => {
     renderBar();
 
     expect(screen.queryByText('Pinned')).toBeNull();
-    expect(screen.queryByText('Other sessions')).toBeNull();
+    expect(screen.queryByText('Sessions')).toBeNull();
   });
 
   it('shows a pinned session once, ahead of a fold that would hide it, and counts the fold without it', () => {

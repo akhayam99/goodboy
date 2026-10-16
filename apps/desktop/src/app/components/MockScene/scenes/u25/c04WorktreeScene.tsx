@@ -226,9 +226,7 @@ export const WorktreeScene = ({ config }: Props) => {
           workspaceId={SESSION.workspaceId}
           currentSessionId={SESSION_ID}
           place={null}
-          isCollapsed={false}
           actions={ACTIONS}
-          onToggle={noop}
         />
       </div>
       <main

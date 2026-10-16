@@ -64,7 +64,6 @@ export const SidebarNavRailScene = ({ config, isHovered = false }: Props) => {
           workspaceId={seed.workspaceId}
           currentSessionId={seed.session.id}
           place={null}
-          onToggle={noop}
           actions={ACTIONS}
         />
       </div>

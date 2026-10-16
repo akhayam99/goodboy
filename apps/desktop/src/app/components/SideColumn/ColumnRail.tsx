@@ -1,5 +1,5 @@
 import { Plus } from 'lucide-react';
-import { COLLAPSED_RAIL_WIDTH, PANE_RHYTHM, StatusDot, cn, tintClasses } from '@goodboy/ui';
+import { COLLAPSED_RAIL_WIDTH, PANE_RHYTHM, StatusDot, cn } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { selectSessionDraft } from '../../../store/slices/sessionDraft/selectSessionDraft';
@@ -8,7 +8,6 @@ import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcon
 import { requestNewSession } from '../../../features/session/requestNewSession';
 import type { ShellColumnScope } from '../../shellArrangement';
 import { GoodboyChip } from '../GoodboyChip';
-import { ColumnToggleButton } from './ColumnToggleButton';
 import { RailButton } from './RailButton';
 import { RailSessions } from './RailSessions';
 import { ReportBugButton } from './ReportBugButton';
@@ -21,11 +20,8 @@ type Props = {
   readonly workspaceId?: WorkspaceId | null;
   readonly currentSessionId?: SessionId | null;
   readonly place: ColumnPlace;
-  readonly onToggle: () => void;
   readonly actions: ColumnActions;
 };
-
-const PRIMARY = tintClasses('primary');
 
 const DRAFT_LABEL = 'New session, draft in progress';
 
@@ -34,7 +30,6 @@ export const ColumnRail = ({
   workspaceId = null,
   currentSessionId = null,
   place,
-  onToggle,
   actions,
 }: Props) => {
   const hasDraft = useAppStore((state) =>
@@ -51,9 +46,6 @@ export const ColumnRail = ({
       className="flex h-full min-w-0 shrink-0 flex-col gap-1 pb-2 pt-1"
       style={{ width: COLLAPSED_RAIL_WIDTH }}
     >
-      <div className="flex w-11 shrink-0 items-center justify-center">
-        <ColumnToggleButton isCollapsed onToggle={onToggle} />
-      </div>
       {scope === 'workspace' ? (
         <>
           <div className={cn('flex shrink-0 flex-col px-2', PANE_RHYTHM.navRail.doorGap)}>
@@ -65,9 +57,6 @@ export const ColumnRail = ({
               label={isDraftWaiting ? DRAFT_LABEL : 'New session'}
               shortcut="session.new"
               isCurrent={place === 'new'}
-              className={
-                place === 'new' ? undefined : cn(PRIMARY.bg, PRIMARY.icon, PRIMARY.hoverBg)
-              }
               {...(isDraftWaiting && {
                 badge: (
                   <span
@@ -91,22 +80,18 @@ export const ColumnRail = ({
                     shortcut: door.shortcutId,
                   })}
                   isCurrent={place === door.id}
-                  {...(signal !== undefined && {
-                    badge: (
-                      <span
-                        aria-hidden
-                        data-door-signal={
-                          signal.isWarning ? 'warning' : signal.isUnread ? 'unread' : 'dot'
-                        }
-                        className="absolute right-0.5 top-0.5 flex"
-                      >
-                        <StatusDot
-                          tone={signal.isWarning ? 'warning' : signal.isUnread ? 'primary' : 'info'}
-                          size="sm"
-                        />
-                      </span>
-                    ),
-                  })}
+                  {...(signal !== undefined &&
+                    (signal.isWarning || signal.isUnread) && {
+                      badge: (
+                        <span
+                          aria-hidden
+                          data-door-signal={signal.isWarning ? 'warning' : 'unread'}
+                          className="absolute right-0.5 top-0.5 flex"
+                        >
+                          <StatusDot tone={signal.isWarning ? 'warning' : 'primary'} size="sm" />
+                        </span>
+                      ),
+                    })}
                   onSelect={() => openColumnDoor({ id: door.id, actions })}
                 />
               );

@@ -78,9 +78,7 @@ export const C08RunScene = ({ state, selection, click = 'none', isFolded = false
           workspaceId={C08_WORKSPACE_ID}
           currentSessionId={session.id}
           place={null}
-          isCollapsed={false}
           actions={ACTIONS}
-          onToggle={noop}
         />
       </div>
       <main className="relative flex min-w-0 flex-1 flex-col">

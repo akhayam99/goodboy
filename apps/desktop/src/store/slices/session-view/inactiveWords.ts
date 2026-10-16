@@ -1,4 +1,4 @@
-import { formatSpan } from '../../../shared/utils/time/formatSpan';
+import { formatAge } from '../../../shared/utils/time/formatAge';
 
 type Params = {
   readonly lastActivityAt: number;
@@ -6,4 +6,4 @@ type Params = {
 };
 
 export const inactiveWords = ({ lastActivityAt, now }: Params): string =>
-  `inactive ${formatSpan({ from: lastActivityAt, to: now })}`;
+  formatAge({ from: lastActivityAt, now });

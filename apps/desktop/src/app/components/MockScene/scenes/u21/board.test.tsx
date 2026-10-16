@@ -78,7 +78,7 @@ describe('the u21 board scenes', () => {
     expect(within(lane('done')).getByText('Nothing done yet')).toBeDefined();
     expect(within(lane('archived')).getByText('Nothing archived')).toBeDefined();
     expect(within(lane('building')).queryByText('Nothing in progress')).toBeNull();
-    expect(within(lane('running')).queryByText('No agent running')).toBeNull();
+    expect(within(lane('running')).queryByText('Nothing running')).toBeNull();
   });
 
   it('stacks Done over Archived at a board width of 1200, both holding cards', () => {

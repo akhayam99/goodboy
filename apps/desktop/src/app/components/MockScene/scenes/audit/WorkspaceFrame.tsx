@@ -4,7 +4,6 @@ import type { Session } from '@goodboy/types';
 import { AppTopBar } from '../../../AppTopBar';
 import { ShellLeft } from '../../../SideColumn/ShellLeft';
 import { SessionFrame } from '../../../SessionRail/SessionFrame';
-import { useShellFolds } from '../../../../hooks/useShellFolds';
 import { SessionWorkspace } from '../../../../../features/session/components/SessionWorkspace';
 import { useAppStore } from '../../../../../store';
 import { selectDrawerPanel } from '../../../../../store/slices/drawer/selectDrawerPanel';
@@ -23,12 +22,11 @@ type Props = {
 };
 
 export const WorkspaceFrame = ({ session, main, hasRail = true }: Props) => {
-  const folds = useShellFolds();
   const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
   const drawerSizing = useAppStore(selectDrawerSizing);
   const arrangement = shellArrangement({
     hasWorkspace: true,
-    isSidebarCollapsed: sceneParam({ key: 'rail' }) === '1' || (hasRail && folds.isMainNarrow),
+    isSidebarCollapsed: sceneParam({ key: 'rail' }) === '1',
   });
   const shell = useSceneShell({ arrangement });
   return (
@@ -38,16 +36,22 @@ export const WorkspaceFrame = ({ session, main, hasRail = true }: Props) => {
         drawerSizing={drawerSizing}
         studio={shell.studio}
         studioCoversLeft={arrangement.studioCoversLeft}
-        topBar={<AppTopBar onOpenSpend={noop} onOpenScript={noop} />}
+        topBar={
+          <AppTopBar
+            sidebar={{ isCollapsed: arrangement.isLeftRail, onToggle: noop }}
+            onOpenSpend={noop}
+            onOpenScript={noop}
+          />
+        }
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={
           <ShellLeft
             arrangement={arrangement}
             workspaceId={session.workspaceId}
-            currentSessionId={session.id}
+            currentSessionId={hasRail ? session.id : null}
             isDraftShown={false}
+            {...(!hasRail && { placeOverride: 'board' })}
             actions={shell.actions}
-            onToggle={noop}
             settingsSlotRef={shell.settingsSlotRef}
           />
         }

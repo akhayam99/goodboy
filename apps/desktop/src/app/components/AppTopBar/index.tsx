@@ -2,6 +2,7 @@ import type { ProviderId } from '@goodboy/types';
 import { NotificationCenter } from '../../../features/notifications/components/NotificationCenter';
 import { WorkspaceIdentityRow } from '../../../features/workspace/components/WorkspaceIdentityRow';
 import type { RunningScript } from '../../../features/scripts/hooks/useRunningScripts';
+import { ColumnToggleButton } from '../SideColumn/ColumnToggleButton';
 import { CommandCenter } from './CommandCenter';
 import { LimitsStrip } from './LimitsStrip';
 import { MonitoringSignal } from './MonitoringSignal';
@@ -10,13 +11,19 @@ import { NavCluster } from './NavCluster';
 import { SpendButton } from './SpendButton';
 import { ThemeToggle } from './ThemeToggle';
 
+type SidebarToggle = {
+  readonly isCollapsed: boolean;
+  readonly onToggle: () => void;
+};
+
 type Props = {
   readonly onOpenSpend: () => void;
   readonly onOpenScript: (run: RunningScript) => void;
   readonly openProviderId?: ProviderId | null;
+  readonly sidebar?: SidebarToggle;
 };
 
-export const AppTopBar = ({ onOpenSpend, onOpenScript, openProviderId = null }: Props) => (
+export const AppTopBar = ({ onOpenSpend, onOpenScript, openProviderId = null, sidebar }: Props) => (
   <>
     <div
       data-tauri-drag-region="deep"
@@ -30,6 +37,9 @@ export const AppTopBar = ({ onOpenSpend, onOpenScript, openProviderId = null }: 
       </div>
 
       <div className="col-start-2 flex min-w-0 items-center justify-center gap-2">
+        {sidebar === undefined ? null : (
+          <ColumnToggleButton isCollapsed={sidebar.isCollapsed} onToggle={sidebar.onToggle} />
+        )}
         <NavCluster />
         <CommandCenter />
       </div>

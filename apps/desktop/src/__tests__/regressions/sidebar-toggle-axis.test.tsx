@@ -19,6 +19,10 @@ const TOGGLE = readFileSync(
   join(__dirname, '..', '..', 'app', 'components', 'SideColumn', 'ColumnToggleButton.tsx'),
   'utf8',
 );
+const TOP_BAR = readFileSync(
+  join(__dirname, '..', '..', 'app', 'components', 'AppTopBar', 'index.tsx'),
+  'utf8',
+);
 const COLUMN_RAIL = readFileSync(
   join(__dirname, '..', '..', 'app', 'components', 'SideColumn', 'ColumnRail.tsx'),
   'utf8',
@@ -50,15 +54,11 @@ describe('the sidebar toggle axis', () => {
     ).toBe('Show sidebar');
   });
 
-  it('centers the column toggle in a 44px box, the rail width, so both land on one axis', () => {
-    expect(SIDE_COLUMN).toMatch(/className="flex w-11 shrink-0 items-center justify-center"/);
+  it('keeps one main sidebar toggle, in the top bar left of Back, and none in the column or its rail', () => {
+    expect(SIDE_COLUMN).not.toContain('<ColumnToggleButton');
+    expect(COLUMN_RAIL).not.toContain('<ColumnToggleButton');
     expect(TOGGLE).toContain('size="md"');
-    expect(SIDE_COLUMN.indexOf('<ColumnToggleButton')).toBeLessThan(
-      SIDE_COLUMN.indexOf('<ColumnDoorRow'),
-    );
-    expect(COLUMN_RAIL).toContain('items-center');
-    expect(COLUMN_RAIL.indexOf('<ColumnToggleButton')).toBeLessThan(
-      COLUMN_RAIL.indexOf('<RailButton'),
-    );
+    expect(TOP_BAR.indexOf('<ColumnToggleButton')).toBeGreaterThan(-1);
+    expect(TOP_BAR.indexOf('<ColumnToggleButton')).toBeLessThan(TOP_BAR.indexOf('<NavCluster'));
   });
 });

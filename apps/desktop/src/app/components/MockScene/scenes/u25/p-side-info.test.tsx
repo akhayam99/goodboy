@@ -67,11 +67,11 @@ describe('the side column signal scenes', () => {
     }
   });
 
-  it('side-info-doors shows one trailing slot with a dot per signal and both plus buttons', async () => {
+  it('side-info-doors keeps one trailing slot, a dot only for unread, and both plus buttons', async () => {
     await mount({ name: 'side-info-doors' });
 
     const terminal = screen.getByRole('button', { name: 'Terminal, 2 running' });
-    expect(terminal.querySelector('[data-door-signal="dot"]')).not.toBeNull();
+    expect(terminal.querySelector('[data-door-signal]')).toBeNull();
     const chat = screen.getByRole('button', { name: 'Chat, unread' });
     expect(chat.querySelector('[data-door-signal="unread"]')).not.toBeNull();
     expect(screen.getByRole('button', { name: 'New chat' })).toBeDefined();

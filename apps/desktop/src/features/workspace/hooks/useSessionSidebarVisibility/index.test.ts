@@ -36,37 +36,9 @@ describe('useSessionSidebarVisibility', () => {
     expect(localStorage.getItem(STORAGE_KEYS.sessionSidebarCollapsed)).toBe('0');
   });
 
-  it('folds by itself while narrow, opens on toggle without saving a fold, and refolds', () => {
-    const { result, rerender } = renderHook(
-      ({ isNarrow }) => useSessionSidebarVisibility({ hasSidebar: true, isNarrow }),
-      { initialProps: { isNarrow: true } },
-    );
-    expect(result.current.isCollapsed).toBe(true);
-
-    act(() => {
-      result.current.toggle();
-    });
+  it('never folds by itself: only the toggle folds the main sidebar', () => {
+    const { result } = renderHook(() => useSessionSidebarVisibility({ hasSidebar: true }));
     expect(result.current.isCollapsed).toBe(false);
-    expect(localStorage.getItem(STORAGE_KEYS.sessionSidebarCollapsed)).toBe('0');
-
-    act(() => {
-      result.current.toggle();
-    });
-    expect(result.current.isCollapsed).toBe(true);
-    expect(localStorage.getItem(STORAGE_KEYS.sessionSidebarCollapsed)).toBe('0');
-
-    rerender({ isNarrow: false });
-    expect(result.current.isCollapsed).toBe(false);
-  });
-
-  it('keeps a saved fold when the window widens', () => {
-    localStorage.setItem(STORAGE_KEYS.sessionSidebarCollapsed, '1');
-    const { result, rerender } = renderHook(
-      ({ isNarrow }) => useSessionSidebarVisibility({ hasSidebar: true, isNarrow }),
-      { initialProps: { isNarrow: true } },
-    );
-    rerender({ isNarrow: false });
-    expect(result.current.isCollapsed).toBe(true);
   });
 
   it('restores a persisted collapsed choice on remount', () => {

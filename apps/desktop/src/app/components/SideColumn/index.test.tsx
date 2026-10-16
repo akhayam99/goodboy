@@ -64,9 +64,7 @@ const mountColumn = ({
       workspaceId={scope === 'workspace' ? WORKSPACE.id : null}
       currentSessionId={null}
       place={place}
-      isCollapsed={false}
       actions={doors}
-      onToggle={vi.fn()}
       isPeek={isPeek}
       {...(settingsSlotRef !== undefined && { settingsSlotRef })}
     />,
@@ -103,12 +101,13 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('SideColumn', () => {
-  it('stacks the toggle, New session, the five doors, the sessions, then Settings and the Goodboy row', () => {
+  it('stacks New session, the five doors, the sessions, then Settings and the Goodboy row, the toggle left to the top bar', () => {
     mountColumn();
     const nav = navLayer();
 
+    expect(within(nav).queryByRole('button', { name: /^Hide sidebar/ })).toBeNull();
     expect(within(nav).getAllByRole('button')[0]?.getAttribute('aria-label')).toMatch(
-      /^Hide sidebar/,
+      /^New session/,
     );
     expect(doorNames(nav)).toEqual(['board', 'inbox', 'chat', 'workflows', 'terminal', 'settings']);
     expect(nav.querySelector('[data-column-sessions]')).not.toBeNull();
@@ -118,7 +117,7 @@ describe('SideColumn', () => {
     expect(within(foot).getByRole('button', { name: 'Report a bug' })).toBeDefined();
   });
 
-  it('names a live terminal on the Terminal row without crowding its plus', () => {
+  it('names a live terminal in the Terminal row tooltip, no running dot beside the plus', () => {
     useAppStore.setState({
       terminalTabs: {
         [WORKSPACE.id]: [
@@ -136,7 +135,7 @@ describe('SideColumn', () => {
     mountColumn({ place: 'terminal' });
 
     const door = screen.getByRole('button', { name: 'Terminal, 1 running' });
-    expect(door.querySelector('[data-door-signal="dot"]')).not.toBeNull();
+    expect(door.querySelector('[data-door-signal]')).toBeNull();
     expect(door.querySelector('[data-door-slot="signal"]')?.textContent).toBe('');
     expect(screen.getByRole('button', { name: 'New terminal' })).toBeDefined();
   });
@@ -283,7 +282,7 @@ describe('SideColumn', () => {
     }
   });
 
-  it('counts running chats and dots unread chats inside the signal slot', () => {
+  it('names running chats in the tooltip and dots only unread chats inside the signal slot', () => {
     useAppStore.setState({
       chatStreams: {
         [brandedId<ChatId>({ value: 'chat-1' })]: {
@@ -296,9 +295,7 @@ describe('SideColumn', () => {
     mountColumn({ place: 'board' });
 
     const running = screen.getByRole('button', { name: 'Chat, 1 running' });
-    expect(
-      running.querySelector('[data-door-slot="signal"] [data-door-signal="dot"]'),
-    ).not.toBeNull();
+    expect(running.querySelector('[data-door-signal]')).toBeNull();
     cleanup();
     useAppStore.setState({
       chatStreams: {},
@@ -380,10 +377,9 @@ describe('ColumnRail', () => {
   }: {
     readonly place?: ColumnPlace;
     readonly scope?: 'workspace' | 'app';
-  } = {}) =>
-    render(<ColumnRail scope={scope} place={place} onToggle={vi.fn()} actions={actions()} />);
+  } = {}) => render(<ColumnRail scope={scope} place={place} actions={actions()} />);
 
-  it('shows a dot, not a number, on the collapsed Terminal door', () => {
+  it('shows no running dot and no number on the collapsed Terminal door, the count in its label', () => {
     useAppStore.setState({
       terminalTabs: {
         [WORKSPACE.id]: [
@@ -401,7 +397,7 @@ describe('ColumnRail', () => {
     mountRail();
 
     const terminal = screen.getByRole('button', { name: 'Terminal, 1 running' });
-    expect(terminal.querySelector('[data-door-signal="dot"]')).not.toBeNull();
+    expect(terminal.querySelector('[data-door-signal]')).toBeNull();
     expect(terminal.textContent).toBe('');
   });
 
@@ -412,14 +408,12 @@ describe('ColumnRail', () => {
     expect(document.querySelector('[data-door-signal]')).toBeNull();
   });
 
-  it('keeps every door at 44px: toggle, New, the five doors, then Settings, the bug and the mark', () => {
+  it('keeps every door at 44px: New, the five doors, then Settings, the bug and the mark', () => {
     const { container } = mountRail();
     const rail = container.querySelector('[data-column-rail]') as HTMLElement;
 
     expect(rail.style.width).toBe(`${COLLAPSED_RAIL_WIDTH}px`);
-    expect(within(rail).getAllByRole('button')[0]?.getAttribute('aria-label')).toMatch(
-      /^Show sidebar/,
-    );
+    expect(within(rail).queryByRole('button', { name: /^Show sidebar/ })).toBeNull();
     expect(doorNames(rail)).toEqual([
       'new',
       'board',

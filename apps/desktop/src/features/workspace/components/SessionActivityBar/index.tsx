@@ -256,10 +256,28 @@ export const SessionActivityBar = ({
           {...rowProps}
           isActive={isActive}
           isCurrent={isActive && !isStudioOver}
-          trailing={isArchived ? undefined : column.inactiveLabels[id]}
         />
       </li>
     );
+  };
+
+  const filter = (
+    <SessionFilterPopover
+      workspaceId={workspaceId}
+      sessions={filterSessions}
+      archivedCount={archivedSessions.length}
+      onArchivedShownChange={setArchivedShown}
+    />
+  );
+  const isHeaderedOf = ({ group }: GroupParams): boolean =>
+    column.isGrouped || group.label !== null;
+  const countOf = ({ group }: GroupParams): number | null => {
+    const isFolded =
+      group.key === PINNED_GROUP_KEY || (!column.isGrouped && group.key !== INACTIVE_GROUP_KEY);
+    if (isFolded || group.total < 2) {
+      return null;
+    }
+    return group.total;
   };
 
   const renderGroup = ({ group }: GroupParams) => {
@@ -267,14 +285,14 @@ export const SessionActivityBar = ({
       key: group.key,
       groupMode: prefs.group,
     });
-    const isHeadered = column.isGrouped || group.label !== null;
+    const isHeadered = isHeaderedOf({ group });
     return (
       <div key={group.key} className="flex flex-col gap-0.5">
         {isHeadered ? (
           <SessionGroupHeader
             label={presentation?.label ?? group.label ?? group.key}
-            tone={presentation?.tone ?? 'neutral'}
-            total={group.total}
+            tone="neutral"
+            total={countOf({ group })}
             title={presentation === null ? undefined : stateDescription({ presentation })}
             isCollapsed={group.isCollapsed}
             onToggle={column.isGrouped ? () => toggleSessionGroup({ key: group.key }) : undefined}
@@ -293,17 +311,11 @@ export const SessionActivityBar = ({
     <div ref={barRef} className="relative flex h-full min-h-0 w-full shrink-0 flex-col gap-1">
       <div
         className={cn(
-          'flex h-7 shrink-0 items-center justify-between',
+          'flex h-7 shrink-0 items-center justify-end',
           PANE_RHYTHM.sessionList.headerInset,
         )}
       >
-        <Eyebrow label="Sessions" muted />
-        <SessionFilterPopover
-          workspaceId={workspaceId}
-          sessions={filterSessions}
-          archivedCount={archivedSessions.length}
-          onArchivedShownChange={setArchivedShown}
-        />
+        {filter}
       </div>
 
       <ScrollFade className="min-h-0 flex-1">
@@ -354,7 +366,7 @@ export const SessionActivityBar = ({
                 SUB_ROW_INSET,
               )}
             >
-              <span>{column.hiddenByFilters} hidden by filters</span>
+              <span>{column.hiddenByFilters} hidden</span>
               <Button variant="ghost" size="xs" onClick={clearFilters}>
                 Clear
               </Button>
