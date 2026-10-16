@@ -22,9 +22,8 @@ type BadgeParams = {
   readonly count: number;
 };
 
-const countBadge = ({ count }: BadgeParams) => (
-  <span className="tabular-nums text-faint-foreground">{count}</span>
-);
+const countBadge = ({ count }: BadgeParams) =>
+  count === 0 ? undefined : <span className="tabular-nums text-faint-foreground">{count}</span>;
 
 export const ReviewScopeBar = ({
   sessionId,

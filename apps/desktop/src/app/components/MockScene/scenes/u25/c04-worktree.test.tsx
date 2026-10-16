@@ -163,11 +163,15 @@ describe('the c04 worktree level scenes', () => {
 
   it('c04-worktree-comments and c04-worktree-checks select their entry', async () => {
     await mount('c04-worktree-comments');
-    expect(
-      within(worktreeLayer())
-        .getByRole('button', { name: /^Comments/ })
-        .getAttribute('aria-current'),
-    ).toBe('page');
+    const comments = within(worktreeLayer()).getByRole('button', { name: /^Comments/ });
+    expect(comments.getAttribute('aria-current')).toBe('page');
+    expect(comments.textContent).toBe('Comments');
+    const sources = within(screen.getByRole('tablist', { name: 'Comment source' }));
+    expect(sources.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
+      'All',
+      'Notes',
+      'On GitHub',
+    ]);
     cleanup();
 
     await mount('c04-worktree-checks');

@@ -727,7 +727,7 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   fixed right-aligned slot from `worktreeEntryFactsOf`: `#418 Draft` or
   `None`, the comment count with a warning dot while one waits on you, the
   file count, `2 not pushed` or the commit count, `1 failed` with a danger dot
-  or the check count. Files is a plain entry like the others: picking it opens
+  or the check count; a known zero leaves the slot empty. Files is a plain entry like the others: picking it opens
   the diff page in the center, whose changed file list sits in its own rail on
   the right of that page (see Branch page, Files), never in the session rail. The entries are
   the Branch page's own rail, portalled into the level (`worktreeLevelSlot`),
@@ -3198,7 +3198,8 @@ on the right and the column re-centres in what is left. The Comments section rea
 `branchLayout.test.ts` pins the widths a 1024px window gets with a wide sidebar
 and an open drawer. The entry counts (Comments, Files, Commits) read a muted `-`
 named `Not loaded` until the data arrives, then the number, never 0 for an
-unknown (`worktreeEntryFactsOf`). All three arrive without a visit: `BranchPage` loads
+unknown, and nothing for a known zero (`worktreeEntryFactsOf`; the comment
+source tabs drop a zero badge the same way). All three arrive without a visit: `BranchPage` loads
 the mount's history draft (`loadHistoryDraft`) once when the page opens and the
 draft is not there yet, so the Commits count is a number on the Comments section too. `Fix comments N`, in the section header and in the Files toolbar, is the one fix launch.
 

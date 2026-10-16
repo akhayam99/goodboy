@@ -28,6 +28,14 @@ describe('the facts of the worktree entries', () => {
     expect(facts.commits.text).toBe('7');
   });
 
+  it('draws no zero: an entry with nothing to count stays empty', () => {
+    const facts = worktreeEntryFactsOf({ ...BASE, comments: 0, files: 0, commits: 0, checks: 0 });
+    expect(facts.comments.text).toBe('');
+    expect(facts.files.text).toBe('');
+    expect(facts.commits.text).toBe('');
+    expect(facts.checks.text).toBe('');
+  });
+
   it('marks comments that wait on you with a warning', () => {
     expect(worktreeEntryFactsOf({ ...BASE, commentsWaiting: 2 }).comments.tone).toBe('warning');
   });
