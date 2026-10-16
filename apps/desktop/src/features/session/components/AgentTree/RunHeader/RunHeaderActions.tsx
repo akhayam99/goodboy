@@ -1,7 +1,7 @@
 import { HeaderActions } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { ObjectOverflowMenu } from '../../../../actions/components/ObjectOverflowMenu';
+import { RunOverflowMenu } from '../RunOverflowMenu';
 import type { ActionViewing, WorkflowRunActionTarget } from '../../../../actions/types';
 import type { RunView } from '../useRunView';
 import { WorkflowCloseButton } from '../../../../workflows/components/WorkflowCloseButton';
@@ -16,6 +16,7 @@ const OMITTED_FROM_OVERFLOW: ReadonlyArray<string> = [
   'workflowRun.nextStep',
   'workflowRun.restore',
   'workflowRun.close',
+  'workflowRun.autonomy',
 ];
 
 type Props = {
@@ -42,14 +43,11 @@ export const RunHeaderActions = ({ session, view, target, viewing }: Props) => {
         )
       }
       overflow={
-        <ObjectOverflowMenu
+        <RunOverflowMenu
           target={target}
-          label={`${name} run actions`}
-          anchorKey={`workflow-run:${run.id}`}
           viewing={viewing}
-          size="control"
+          name={name}
           omit={OMITTED_FROM_OVERFLOW}
-          hideWhenEmpty
         />
       }
     />

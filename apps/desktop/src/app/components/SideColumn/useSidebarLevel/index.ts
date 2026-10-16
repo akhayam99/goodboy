@@ -4,6 +4,7 @@ import {
   isSessionLevelLeft,
   type SidebarLevel,
 } from '../../../../store/slices/navigation/sidebarLevel';
+import { usePresetRunFocus } from '../../../../features/session/hooks/usePresetRunFocus';
 import type { ColumnPlace } from '../columnPlace';
 
 type Params = {
@@ -13,8 +14,9 @@ type Params = {
 
 export const useSidebarLevel = ({ place, currentSessionId }: Params): SidebarLevel => {
   const isLeft = useAppStore((state) => isSessionLevelLeft({ state }));
+  const runFocus = usePresetRunFocus({ sessionId: currentSessionId });
   if (place !== null || currentSessionId === null || isLeft) {
     return 'workspace';
   }
-  return 'session';
+  return runFocus === null ? 'session' : 'run';
 };

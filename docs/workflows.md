@@ -354,16 +354,66 @@ with **Raise spend cap**, which opens the chip on the editor. With **Warn only**
 nothing stops: one notification says the session passed its cap. Single
 agents are never stopped by it.
 
+## The Runs list
+
+The Runs page (`WorkflowsPane`) lists the session's runs on one `ListGrid`
+(`RunsGrid`, columns in `runsGridColumns.ts`): state dot, title, state word,
+progress ("Step 2 of 3", "3 of 3 steps"), cost and age, every row the same
+columns. Groups: **In progress**, **Finished** (the first 30, then
+**Show 12 earlier**), **Archived** folded behind **Show**. A row is the button
+and carries no action; an archived run is restored from its page. The state
+word and the dot come from `runRowFactsOf`, the same function the run level's
+identity row reads. The header holds **Start run**; a session with no run shows
+today's start card. Opening a preset run drills into its run level; opening an
+orchestrated run shows the run page below.
+
+## The preset run level
+
+A preset run is a recipe the user advances, so its steps are navigation: the
+sidebar drills into the run ([Sidebar levels](navigation.md#sidebar-levels))
+and the center shows the selected entry (`PresetRunPage`, in
+`features/session/components/PresetRun`).
+
+- **Overview** (`RunOverviewPage`): the run title as the header with the run
+  `⋯`, the goal and its attachments (`RunGoal`), the write destination while 2
+  or more worktrees can be written (`RunWriteDestination`), **Create report**
+  and **Create wireframe** on a finished run (`RunFinishedActions`), the step
+  draft when **Add step** was asked for, then the run tail. An archived run
+  shows **Restore** as its one header primary and reads dimmed.
+- **A step** (`RunStepPage`): the step's agent conversation, embedded
+  (`AgentDetailPane` with a `runStep` frame). The header reads "Step 2 ·
+  Implementer" with the provider mark, then **View transcript** and the run
+  `⋯`. The agent's own menu stays on the right click of the title. No next
+  action card above the conversation and no Start chip above the composer.
+- **The run tail** (`RunTail`, phrases in `runTailOf`) speaks for the run at
+  the end of the content, once: nothing while the step on screen runs (its
+  own thinking line speaks), else "Step 2 · Implementer is working" with **Open
+  step 2**, "No output for 15 min" with **Ask it to continue**, the open
+  question with **Answer**, a failed or stuck step with **Restart step**, "Paused
+  at the spend cap" with **Raise spend cap**, then the `runPrimaryOf` verb with
+  today's gates (`StartStepPrimary` and its Start anyway confirm,
+  `WorkflowRunStartButton`, **Review plan**, **Approve plan**, **Resume**),
+  a stopped step with **Continue step**, "Run finished" or "Stopped by you"
+  with **Add step**. The header never holds a verb while the run lives.
+- **The run `⋯`** is the `workflowRun` registry minus the verbs the tail
+  carries: View diff, Pause run, Autonomy (Ask me, Balanced, Autopilot, a
+  `choices` item), **Skip step N** for the selected step while it has not
+  finished (asks first, `skipStepDescription`), Copy run summary, Save as
+  preset, **Stop run** (asks first), Archive run, Delete run.
+- **Add step** in the sidebar opens the Overview and asks `WorkflowAddStep`
+  to open its draft there (`requestRunAddStep`, after the navigation settles).
+
 ## The run page
 
-The run page (`WorkflowsPane` over `WorkflowRunDetail`, which draws `RunHeader`
+Orchestrated runs keep this page until their document lands; preset runs use
+[the preset run level](#the-preset-run-level). The run page (`WorkflowsPane` over `WorkflowRunDetail`, which draws `RunHeader`
 and `RunBody` on a `PaneShell` with `scroll="self"`) reads top to bottom: a
 pinned header, the strips, the steps in their own scroller, and a composer
 docked under them. Every number on it comes from `useRunView`, so the header
 and the body never compute a count or a cost twice.
 
 - **Header.** One h1, the run's name (rename on hover, `Edit run name`), the state chip beside it, and one cluster of actions: **Stop run** (secondary, only while the run is live, asks first), the one primary from `runPrimaryOf` (a pure table over every phase: held for its plan **Review plan**, a plan question or a question the run waits on **Answer**, paused **Resume**, stopped **Continue the run**, failed or blocked **Retry**, spend cap **Raise spend cap**, ready **Decide next step** or **Start step 2**, queued by hand **Start run**, archived **Restore**, and nothing while a step runs or once the run is finished) and one overflow of 28px. Under the title one facts line: "2 steps · $0.88 · Set a spend cap · Balanced", where the spend cap and the when-to-ask choice (**Ask me**, **Balanced**, **Autopilot**) open a popover each. There is no chevron on the page and no second title: the Runs crumb of the trail, or Esc, goes back to the list. **Start another run** stays on the Runs list, and there is no **Make preset** on a run: a preset is made from the launch bar (**Save as preset**) or in the Studio, never from a run that already ran. The header pins only the title and these facts: the write destination ("Starts in ..."), the strips and the steps all scroll under it
-- **Overflow.** Exactly these items, in their states: **View diff** (the run's session has a mount), **Copy run summary**, **Pause run** (the run is live and not paused or stopped), **Step routing** (an orchestrated run with steps), **Archive run** (asks first, restorable) and **Delete run** (asks first). They are the actions of the `workflowRun` kind in the registry (`workflowRun.pause` and `workflowRun.routing` are the two the page added, so the palette and the right click get them too); the header leaves out the ones that have a button of their own (`Stop run`, the primary's verbs). The right click on the title lists every action of the registry
+- **Overflow.** Exactly these items, in their states: **View diff** (the run's session has a mount), **Copy run summary**, **Pause run** (the run is live and not paused or stopped), **Step routing** (an orchestrated run with steps), **Archive run** (asks first, restorable) and **Delete run** (asks first). They are the actions of the `workflowRun` kind in the registry (`workflowRun.pause` and `workflowRun.routing` are the two the page added, so the palette and the right click get them too); the header leaves out the ones that have a button of their own (`Stop run`, the primary's verbs) and **Autonomy**, which its facts line already picks. The registry also holds **Autonomy** (`workflowRun.autonomy`) and **Skip step N** (`workflowRun.skipStep`, given a `stepAgentId` on the target) for the preset run level. The right click on the title lists every action of the registry
 - **Scroll edge.** The steps scroll under the pinned block. `ScrollFade` takes `edge="line"`: its root draws a 1px `border-soft` line (the quietest divider, never the brighter `border`) at its own top edge while `scrollTop` is above 0, shown through `data-scrolled` on the root, set imperatively inside `applyFade`, never through React state, and faded in over 120ms under `motion-safe`. With the line the top mask fade shrinks to 8px, growing with the scroll from 0, so a card clipped under the line fades out instead of leaving a cut edge as a sliver; the bottom fade stays. `PaneShell` with `scroll="body"` and the steps scroller of the run both use it. The default `edge="fade"` is unchanged. The scroller opens at 0; the live-row reveal of the run tree uses `scrollIntoView({ block: 'nearest' })`, so it only moves the scroller when the live row is below the visible area
 - **Composer.** A dynamic run's hint field docks at the bottom of the page as the `dock` of the `PaneShell`, as in Chat, below the scroller and never inside it (`OrchestratorDock`). Steps and cost come first. Queued hints fold into one "2 queued" row above the steps, and the help sentence moved into the tooltips of **Queue** and **Read now**. At rest the field is one text row with the attach button, no Write and Preview tabs, no key hints and no buttons (`data-open` is `false`); it opens to two rows with all of them while it has focus or holds text or an image, and closes again on blur when empty, so a short window keeps most of its height for the steps (the steps scroller is at least 440px tall at a 760px window)
 - **Two Stops, two names.** **Stop run** is in the header: it ends the run and asks first ("Steps that have not run are skipped..."). **Stop step** is in the strip while a step is in flight: it cancels that step, holds the run and leaves **Continue the run** on offer in the header. A static run has no strip, so it has the one Stop run. Never two buttons with one name

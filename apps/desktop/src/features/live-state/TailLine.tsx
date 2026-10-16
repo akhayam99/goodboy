@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Button, cn } from '@goodboy/ui';
 import { TailGlyph } from './TailGlyph';
 import { useTailClock } from './useTailClock';
@@ -6,6 +7,7 @@ import type { TailActionId, TailFacts, TailState } from './tailFacts';
 type Props = {
   readonly facts: TailFacts;
   readonly onAction: (id: TailActionId) => void;
+  readonly verbs?: ReactNode;
 };
 
 const TICKING: ReadonlySet<TailState> = new Set(['working', 'waiting', 'queued']);
@@ -25,7 +27,7 @@ const PHRASE_CLASS = {
 const QUIET_ACTION =
   'inline-flex h-6 items-center gap-1 rounded-md px-2 text-ui text-muted-foreground hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
 
-export const TailLine = ({ facts, onAction }: Props) => {
+export const TailLine = ({ facts, onAction, verbs = null }: Props) => {
   const clock = useTailClock({
     startedAt: facts.startedAt,
     isTicking: TICKING.has(facts.state),
@@ -46,11 +48,12 @@ export const TailLine = ({ facts, onAction }: Props) => {
           {clock}
         </span>
       )}
-      {facts.actions.length === 0 ? null : (
+      {facts.actions.length === 0 && verbs === null ? null : (
         <span className="flex shrink-0 items-center gap-1">
           <span aria-hidden className="text-faint-foreground">
             ·
           </span>
+          {verbs}
           {facts.actions.map((action, index) =>
             hasForward && index === 0 ? (
               <Button

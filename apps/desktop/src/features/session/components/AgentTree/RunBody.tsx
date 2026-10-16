@@ -6,21 +6,18 @@ import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 import { agentPlace, sessionPlace, useAppStore } from '../../../../store';
-import { selectWritableMounts } from '../../../../store/slices/project-mounts/selectors';
-import { WriteDestinationControl } from '../../../chat/components/WriteDestinationControl';
 import { useOpenQuestions } from '../../../context/components/QuestionsTab/useOpenQuestions';
-import { GoalAttachmentsStrip } from '../../../context/components/ContextPanel/strips/GoalAttachmentsStrip';
-import { CreateReportCta } from '../../../reports/components/CreateReportCta';
 import type { AgentKind } from '../../agent-kind';
 import { WorkflowResumeStrip } from './WorkflowResumeStrip';
-import { WorkflowRunAsk } from './WorkflowRunAsk';
-import { CreateWireframeCta } from '../../../wireframes/components/CreateWireframeCta';
+import { RunAddStep } from './RunAddStep';
+import { RunFinishedActions } from './RunFinishedActions';
+import { RunGoal } from './RunGoal';
+import { RunWriteDestination } from './RunWriteDestination';
 import { skipStepDescription } from '../../../workflows/skipStepCopy';
 import type { RunView } from './useRunView';
 import { OrchestratorStrip } from '../../../workflows/components/OrchestratorStrip';
 import { RunTree } from '../../../workflows/components/RunTree';
 import { useRunTree } from '../../../workflows/components/RunTree/useRunTree';
-import { WorkflowAddStep } from '../../../workflows/components/WorkflowAddStep';
 import { WorkflowDecisions } from '../../../workflows/components/WorkflowDecisions';
 import { WorkflowRunSummary } from '../../../workflows/components/WorkflowRunSummary';
 
@@ -37,9 +34,6 @@ export const RunBody = ({ session, view }: Props) => {
   const skipStuckStepAndAdvance = useAppStore((state) => state.skipStuckStepAndAdvance);
   const focusQuestion = useOpenQuestions((state) => state.focusQuestion);
   const selectedAgentId = useAppStore((state) => state.selectedAgentId[sessionId] ?? null);
-  const writableMountCount = useAppStore(
-    (state) => selectWritableMounts({ state, sessionId }).length,
-  );
   const agentKindOverride = useAppStore(
     useShallow((state) => {
       const overrides: Record<string, AgentKind> = {};
@@ -82,9 +76,7 @@ export const RunBody = ({ session, view }: Props) => {
       edge="line"
     >
       <PageColumn className={cn(PANE_RHYTHM.stack, 'pb-5')}>
-        {!isDiscarded && writableMountCount > 1 && (
-          <WriteDestinationControl sessionId={sessionId} agentId={null} fallback="automatic" />
-        )}
+        {isDiscarded ? null : <RunWriteDestination sessionId={sessionId} />}
         {!isDiscarded && isDynamic && (
           <OrchestratorStrip
             sessionId={sessionId}
@@ -138,7 +130,7 @@ export const RunBody = ({ session, view }: Props) => {
             />
           )}
           {!isDiscarded && !isCompleted && (
-            <WorkflowAddStep
+            <RunAddStep
               sessionId={sessionId}
               workspaceId={workflow.workspaceId}
               workflowRunId={run.id}
@@ -147,13 +139,7 @@ export const RunBody = ({ session, view }: Props) => {
           )}
         </div>
         <WorkflowRunSummary summary={run.orchestratorSummary} />
-        <div className="flex min-w-0 flex-col gap-2">
-          <WorkflowRunAsk
-            goal={(run.goal ?? workflow.goal ?? '').trim()}
-            processText={(workflow.processText ?? '').trim()}
-          />
-          <GoalAttachmentsStrip owner={{ type: 'workflow_run', id: run.id }} />
-        </div>
+        <RunGoal run={run} workflow={workflow} />
         {isDynamic && (
           <WorkflowDecisions
             run={run}
@@ -164,16 +150,18 @@ export const RunBody = ({ session, view }: Props) => {
           />
         )}
         {isCompleted && (
-          <div className="flex shrink-0 flex-wrap items-center gap-1">
-            <CreateReportCta sessionId={sessionId} workflowRunId={run.id} />
-            <CreateWireframeCta sessionId={sessionId} workflowRunId={run.id} />
-            <WorkflowAddStep
-              sessionId={sessionId}
-              workspaceId={workflow.workspaceId}
-              workflowRunId={run.id}
-              stepCount={view.stepCount}
-            />
-          </div>
+          <RunFinishedActions
+            sessionId={sessionId}
+            workflowRunId={run.id}
+            trailing={
+              <RunAddStep
+                sessionId={sessionId}
+                workspaceId={workflow.workspaceId}
+                workflowRunId={run.id}
+                stepCount={view.stepCount}
+              />
+            }
+          />
         )}
       </PageColumn>
     </ScrollFade>

@@ -969,6 +969,10 @@ describe('moving across every place keeps one frame', () => {
       await clickButton('Start run');
       await waitFor(() => expect(sessionRuns(sessionId)).toBe(runsBefore + 1), WAIT);
       expectPlace({ session: sessionId, lens: 'workflows', studio: null, doors: [] });
+      expect(
+        document.querySelector('[data-sidebar-level]')?.getAttribute('data-sidebar-level'),
+      ).toBe('run');
+      await click(screen.getByRole('button', { name: 'Back to Runs' }));
       expect(currentPage()).toBe('Runs');
       const page = document.querySelector<HTMLElement>('main [data-drawer-main]') as HTMLElement;
       expect(
@@ -981,14 +985,16 @@ describe('moving across every place keeps one frame', () => {
       expect(startedRun).not.toBeNull();
       act(() => useAppStore.getState().setFocusedWorkflowRun(sessionId, startedRun));
       await settle();
-      await click(pageRow('Agents'));
+      await press('lens.agents');
+      await settle();
       expectPlace({ session: sessionId, lens: 'agents', studio: null, doors: [] });
       expect(useAppStore.getState().focusedWorkflowRunId[sessionId] ?? null).toBeNull();
       await click(historyButton('Back'));
       expectPlace({ session: sessionId, lens: 'workflows', studio: null, doors: [] });
       expect(useAppStore.getState().focusedWorkflowRunId[sessionId]).toBe(startedRun);
 
-      await click(pageRow('Artifacts'));
+      await press('lens.plans');
+      await settle();
       expect(useAppStore.getState().focusedWorkflowRunId[sessionId] ?? null).toBeNull();
       act(() => useAppStore.getState().setFocusedArtifactId(sessionId, JOURNEY_ARTIFACT));
       await settle();

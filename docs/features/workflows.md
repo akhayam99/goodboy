@@ -101,7 +101,7 @@ Line work up behind work. **Starts** takes **Now**, **Manually** to keep the run
 
 ### Workflow run
 
-Follow a run from the top: the status with **Pause** and **Stop run**, the steps below with sub-agents nested under their agent, and the composer at the bottom. **Review plan** opens the plan while the run waits for it, and you can add steps to a live or finished run. After a restart, **Resume all** restarts every stopped agent.
+Open a preset run and the sidebar steps into it: **Overview**, every step in order with its sub-agents, **Add step** at the end, and the run's limit and spend at the foot. The center shows the step you pick as its conversation. The line at the end says what the run waits for, with the one button that moves it on: **Start step 3**, **Review plan**, **Raise spend cap**, **Continue step**. **Pause run**, **Autonomy**, **Skip step**, **Stop run** and the rest sit in the run's **⋯**. An orchestrated run keeps its own page with the composer at the bottom. After a restart, **Resume all** restarts every stopped agent.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-dark.webp">

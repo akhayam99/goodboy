@@ -305,7 +305,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Run page',
-        desc: 'A run page reads top to bottom: the header with one title, the crumbs Session, Runs and Run, and one main button that says what comes next, such as Review plan, Pause or Resume, with Stop run beside it, then the steps with the model over its effort, sub-agents indented under their agent and finished sets folded into one row, and the composer at the bottom. While the run waits for its plan, Review plan opens it in a drawer.',
+        desc: 'Opening a run with a fixed list of steps moves the sidebar into it: back to Runs, the run title, Overview, every step in order with its sub-agents, Add step, and the limit with what it spent at the foot. The center shows the step you pick as its conversation, and the line at its end says what the run waits for with the one button that moves it on, such as Start step 3, Review plan or Raise spend cap. Pause run, Autonomy, Skip step and Stop run sit in the run menu. An orchestrated run keeps one page with its steps and the composer at the bottom.',
       },
       {
         term: 'Agent suggests',

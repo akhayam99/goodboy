@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Agent, AgentId, MeasuredTurnSpan } from '@goodboy/types';
 import { SessionOverviewPane } from '../../../../../features/session/components/SessionOverviewPane';
-import { WorkflowsPane } from '../../../../../features/session/components/SessionWorkspace/parts/WorkflowsPane';
+import { SceneRunsSurface } from '../SceneRunsSurface';
 import { useAppStore } from '../../../../../store';
 import { sceneClock } from '../../sceneClock';
 import {
@@ -161,7 +161,7 @@ const StepRowsScene = ({ surface }: SceneProps) => {
       main={
         <div className="flex h-full min-h-0 flex-col">
           {surface === 'runs' ? (
-            <WorkflowsPane session={FLOW_SESSION} />
+            <SceneRunsSurface session={FLOW_SESSION} />
           ) : (
             <SessionOverviewPane session={FLOW_SESSION} onSelectLens={() => undefined} />
           )}

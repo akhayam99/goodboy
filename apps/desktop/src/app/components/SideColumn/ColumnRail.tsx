@@ -13,7 +13,9 @@ import { RailButton } from './RailButton';
 import { RailSessions } from './RailSessions';
 import { ReportBugButton } from './ReportBugButton';
 import { COLUMN_DOORS, openColumnDoor, type ColumnActions } from './columnDoors';
+import { RailRunLevel } from './RailRunLevel';
 import { RailSessionLevel } from './RailSessionLevel';
+import { usePresetRunFocus } from '../../../features/session/hooks/usePresetRunFocus';
 import { useDoorSignals } from './useDoorSignals';
 import { useSidebarLevel } from './useSidebarLevel';
 import type { ColumnPlace } from './columnPlace';
@@ -48,13 +50,15 @@ export const ColumnRail = ({
   const signals = useDoorSignals({});
   const level = useSidebarLevel({ place, currentSessionId });
   const currentSession = useCurrentSession();
-  const isSessionLevel =
-    level === 'session' && currentSession !== null && currentSession.id === currentSessionId;
+  const runFocus = usePresetRunFocus({ sessionId: currentSessionId });
+  const isCurrentSession = currentSession !== null && currentSession.id === currentSessionId;
+  const isSessionLevel = level === 'session' && isCurrentSession;
+  const isRunLevel = level === 'run' && isCurrentSession && runFocus !== null;
   return (
     <nav
       aria-label="Sidebar"
       data-column-rail=""
-      data-sidebar-level={isSessionLevel ? 'session' : 'workspace'}
+      data-sidebar-level={isRunLevel ? 'run' : isSessionLevel ? 'session' : 'workspace'}
       className="flex h-full min-w-0 shrink-0 flex-col items-center gap-1 py-2"
       style={{ width: COLLAPSED_RAIL_WIDTH }}
     >
@@ -62,7 +66,10 @@ export const ColumnRail = ({
       {scope === 'workspace' && isSessionLevel && currentSession !== null ? (
         <RailSessionLevel session={currentSession} />
       ) : null}
-      {scope === 'workspace' && !isSessionLevel ? (
+      {scope === 'workspace' && isRunLevel && currentSession !== null && runFocus !== null ? (
+        <RailRunLevel session={currentSession} focus={runFocus} />
+      ) : null}
+      {scope === 'workspace' && !isSessionLevel && !isRunLevel ? (
         <>
           <RailButton
             id="new"

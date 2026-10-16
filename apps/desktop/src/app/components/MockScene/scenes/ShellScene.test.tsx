@@ -49,19 +49,27 @@ const renderShell = async () => {
 };
 
 describe('the shell scene mounts the real session workspace', () => {
-  it('opens the session level beside a page header with Ask and no trail band', async () => {
+  it('opens the step of its preset run on the run level, with Ask and no trail band', async () => {
     await renderShell();
     expect(document.querySelector('[data-slot="trail-bar"]')).toBeNull();
     expect(
       document
         .querySelector('[data-column-rail], [data-column-layer="nav"]')
         ?.getAttribute('data-sidebar-level'),
-    ).toBe('session');
+    ).toBe('run');
     expect(useAppStore.getState().currentSessionId).toBe(SESSION.id);
   });
 
   it('moves to Runs, Agents and Artifacts from the session level', async () => {
     await renderShell();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Back to Runs' }));
+    });
+    await waitFor(() =>
+      expect(
+        document.querySelector('[data-column-layer="nav"]')?.getAttribute('data-sidebar-level'),
+      ).toBe('session'),
+    );
     const moves: ReadonlyArray<readonly [string, string]> = [
       ['Runs', 'workflows'],
       ['Agents', 'agents'],

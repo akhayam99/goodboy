@@ -6085,16 +6085,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/session/components/SessionWorkspace/parts/WorkflowsPane.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 10
-    }
-  },
-  "apps/desktop/src/features/session/components/SessionWorkspace/parts/WorkflowsPane.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/questionsLensModel.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 10

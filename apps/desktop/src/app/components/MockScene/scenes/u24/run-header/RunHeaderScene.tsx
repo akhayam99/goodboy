@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
-import { WorkflowsPane } from '../../../../../../features/session/components/SessionWorkspace/parts/WorkflowsPane';
+import { SceneRunsSurface } from '../../SceneRunsSurface';
 import { installSceneDatabase } from '../../sceneDatabase';
 import { installScenePlanEngine } from '../../scenePlanEngine';
 import { FLOW_SESSION_ID, NOW, SESSIONS } from '../../flow-audit/fixtures';
@@ -39,7 +39,7 @@ export const RunHeaderScene = ({ session, seed }: Props) => {
       session={session}
       main={
         <div className="flex h-full min-h-0 flex-col">
-          <WorkflowsPane session={session} />
+          <SceneRunsSurface session={session} />
         </div>
       }
     />

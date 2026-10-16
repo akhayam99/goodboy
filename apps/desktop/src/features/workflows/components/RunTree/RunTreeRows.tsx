@@ -9,8 +9,10 @@ import { RunTreeRow, type RunTreeRouting } from './RunTreeRow';
 import type { RunStepSkipAction } from './RunStepSkip';
 import type { RunTreeFolds } from './useFoldedRunTree';
 import type { RunTreeModel } from './useRunTree';
+import type { RunTreeDensity } from './runTreeDensity';
 
 type Props = {
+  readonly density?: RunTreeDensity;
   readonly sessionId: SessionId;
   readonly tree: RunTreeModel;
   readonly scrollKey: string;
@@ -43,6 +45,7 @@ const isActive = ({ item }: { readonly item: TimelineRowItem }): boolean =>
   item.rowState.phase === 'failed';
 
 export const RunTreeRows = ({
+  density = 'page',
   sessionId,
   tree,
   scrollKey,
@@ -77,12 +80,14 @@ export const RunTreeRows = ({
     }
   }, [activeRowId, scrollKey]);
 
-  const hasActionColumn = stream.items.some(
-    (item) =>
-      item.kind === 'row' &&
-      (LIVE_PHASES.has(item.rowState.phase) ||
-        (isAgentRow(item) && plans.has(item.entry.agent.id))),
-  );
+  const hasActionColumn =
+    density === 'page' &&
+    stream.items.some(
+      (item) =>
+        item.kind === 'row' &&
+        (LIVE_PHASES.has(item.rowState.phase) ||
+          (isAgentRow(item) && plans.has(item.entry.agent.id))),
+    );
   const agentById = new Map<string, Agent>();
   for (const item of stream.items) {
     if (item.kind === 'row' && isAgentRow(item)) {
@@ -134,6 +139,7 @@ export const RunTreeRows = ({
         return (
           <div key={item.id} ref={item.id === activeRowId ? activeRowRef : undefined}>
             <RunTreeRow
+              density={density}
               item={item}
               entry={item.entry}
               rail={railRow}

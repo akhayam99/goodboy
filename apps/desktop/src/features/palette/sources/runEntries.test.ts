@@ -28,6 +28,8 @@ const facts = (
   hasStepRouting: false,
   canSaveAsPreset: false,
   summary: '',
+  skipStep: null,
+  autonomy: 'step',
   ...overrides,
 });
 

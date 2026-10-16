@@ -31,7 +31,10 @@ import {
   type OrchestratorView,
 } from '../../../../workflows/useOrchestratorState';
 import { useRunPlan } from '../../../../workflows/useRunPlan';
-import { useWorkflowRunAdvance } from '../../../../workflows/hooks/useWorkflowRunAdvance';
+import {
+  useWorkflowRunAdvance,
+  type WorkflowRunAdvance,
+} from '../../../../workflows/hooks/useWorkflowRunAdvance';
 import { viewWorkflowAdvance } from '../../../../workflows/workflowAdvanceView';
 
 const NO_AGENTS: ReadonlyArray<Agent> = [];
@@ -63,6 +66,7 @@ export type RunView = {
   readonly nextStepAgent: Agent | null;
   readonly predecessorName: string;
   readonly primary: RunPrimary | null;
+  readonly advance: WorkflowRunAdvance;
 };
 
 type CountParams = {
@@ -189,6 +193,7 @@ export const useRunView = ({ session, run, workflow }: Params): RunView => {
       predecessor === null
         ? 'previous'
         : (predecessor.run.title ?? workflowKindName(predecessor.workflow)),
+    advance,
     primary: runPrimaryOf({
       isDiscarded,
       isFinished: isCompleted,

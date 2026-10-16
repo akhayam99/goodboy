@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { OpenQuestion, OpenQuestionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { WorkflowsPane } from '../../../../../features/session/components/SessionWorkspace/parts/WorkflowsPane';
+import { SceneRunsSurface } from '../SceneRunsSurface';
 import { sceneClock } from '../../sceneClock';
 import { ShellFrame, seedShellChrome } from '../shellChrome';
 import {
@@ -61,7 +61,7 @@ export const RunStepQuestionScene = () => {
       session={FLOW_SESSION}
       main={
         <div className="flex h-full min-h-0 flex-col">
-          <WorkflowsPane session={FLOW_SESSION} />
+          <SceneRunsSurface session={FLOW_SESSION} />
         </div>
       }
     />

@@ -641,6 +641,22 @@ and the hidden one is `inert`.
 - **Folded (⌘B, 44px).** The rail shows the current level as icons with right
   tooltips: on level 1 the back icon first, then one icon per page with its
   dot; on level 0 New, the doors and the pinned session nodes.
+- **Level 2, a preset run.** Opening a run with a fixed step list (a saved
+  workflow or Describe steps; `executionMode` not `dynamic`) drills the sidebar
+  into it (`RunLevel`, `LevelStack` layer `run`). It reads: the back row
+  `‹ Runs`, the identity row (the run's state dot from `runRowFactsOf`, the
+  run title, which renames inline on click), **Overview**, the steps as the
+  run tree in its `rail` density (ordinals, sub agents, the state word, the
+  same tracks; model, effort and cost stay in the role glyph's card), **Add
+  step** as the last row, and the foot "Limit $3.00 · $1.12 spent"
+  (`RunLevelFoot`: the limit opens `RunSpendLimitPopover`, the spent amount is
+  `useRunSpendUsd`, the number the cap is checked against). The level comes
+  from one function, `presetRunFocusOf`: the selected agent belongs to a
+  preset run (any link to a step lands here, the deepest level that holds it),
+  or the Runs page has a preset run focused. Back (the back row, or ⌘[ in the
+  sidebar) calls `leaveRunLevel`: the Runs list, session level, a new history
+  entry. Esc on the run Overview does the same. An orchestrated run does not
+  drill: it keeps today's run page under the session level.
 
 The tools (Scripts, Terminal, Explore) and the linked records keep their
 lenses for now and stay in the palette.

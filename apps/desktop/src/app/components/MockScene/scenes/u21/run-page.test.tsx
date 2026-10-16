@@ -227,8 +227,9 @@ describe('the u21 run page scenes', () => {
       </ToastProvider>,
     );
 
-    expect(await within(header()).findByRole('button', { name: 'Review plan' })).toBeDefined();
-    expect(screen.getByTestId('workflow-run-plan-ready').tagName).not.toBe('BUTTON');
+    const tail = await screen.findByRole('region', { name: 'Run state' });
+    expect(within(tail).getByRole('button', { name: 'Review plan' })).toBeDefined();
+    expect(screen.queryByTestId('run-header')).toBeNull();
     expect(screen.queryByTestId('orchestrator-strip')).toBeNull();
     expect(screen.queryByTestId('orchestrator-hint-input')).toBeNull();
   });

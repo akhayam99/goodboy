@@ -73,6 +73,7 @@ type Props = {
   readonly composerLead?: ReactNode;
   readonly mode?: ChatViewMode;
   readonly onOpenTranscript?: () => void;
+  readonly hasAdvanceRow?: boolean;
 };
 
 type ChatViewMode = 'conversation' | 'record';
@@ -139,6 +140,7 @@ export const ChatView = ({
   composerLead,
   mode = 'record',
   onOpenTranscript,
+  hasAdvanceRow = true,
 }: Props) => {
   const storedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null) as AgentId | null;
   const selectedAgentId = agentId === undefined ? storedAgentId : agentId;
@@ -647,7 +649,7 @@ export const ChatView = ({
           </Button>
         </div>
       ) : null}
-      {hasComposer && !isEnded && selectedAgentId != null ? (
+      {hasAdvanceRow && hasComposer && !isEnded && selectedAgentId != null ? (
         <WorkflowAdvanceRow session={session} />
       ) : null}
       {hasComposer && !isEnded && selectedAgentId != null && composerLead !== undefined ? (

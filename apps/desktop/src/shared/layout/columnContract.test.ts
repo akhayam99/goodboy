@@ -109,6 +109,13 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
       'features/session/components/AgentDetailPane/index.tsx',
     ],
   },
+  PresetRunPage: {
+    kind: 'shell',
+    files: [
+      'features/session/components/PresetRun/RunOverviewPage.tsx',
+      'features/session/components/AgentDetailPane/index.tsx',
+    ],
+  },
   BranchPage: {
     kind: 'shell',
     files: ['features/branch/components/BranchPage/index.tsx'],

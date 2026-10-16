@@ -7,8 +7,10 @@ import type { RunStepSkipAction } from './RunStepSkip';
 import { plansByAgentId } from './plansByAgentId';
 import { useFoldedRunTree } from './useFoldedRunTree';
 import type { RunTreeModel } from './useRunTree';
+import type { RunTreeDensity } from './runTreeDensity';
 
 type Props = {
+  readonly density?: RunTreeDensity;
   readonly sessionId: SessionId;
   readonly runId: WorkflowRunId;
   readonly tree: RunTreeModel | null;
@@ -22,6 +24,7 @@ type Props = {
 };
 
 export const RunTree = ({
+  density = 'page',
   sessionId,
   runId,
   tree,
@@ -41,6 +44,7 @@ export const RunTree = ({
   }
   return (
     <RunTreeRows
+      density={density}
       sessionId={sessionId}
       tree={folded.tree}
       scrollKey={runId}

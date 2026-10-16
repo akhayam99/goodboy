@@ -21,6 +21,7 @@ const TRAIL = '[data-slot="trail"]';
 const BACK_GLYPH = '.lucide-chevron-left, .lucide-arrow-left';
 const BACK_CHARACTERS = /[‹←]/;
 const SESSION_SCENE = 'shell';
+const DRILLED_LEVEL = '[data-sidebar-level="session"], [data-sidebar-level="run"]';
 
 const KEPT = [
   'SettingsColumnNav.tsx',
@@ -93,15 +94,12 @@ describe('no back glyph in a trail', () => {
       </ToastProvider>,
     );
 
-    await waitFor(
-      () => expect(document.querySelector('[data-sidebar-level="session"]')).not.toBeNull(),
-      { timeout: 4_000 },
-    );
+    await waitFor(() => expect(document.querySelector(DRILLED_LEVEL)).not.toBeNull(), {
+      timeout: 4_000,
+    });
     expect(document.querySelector(TRAIL)).toBeNull();
     const glyphs = Array.from(document.querySelectorAll(BACK_GLYPH));
-    expect(glyphs.some((glyph) => glyph.closest('[data-sidebar-level="session"]') !== null)).toBe(
-      true,
-    );
+    expect(glyphs.some((glyph) => glyph.closest(DRILLED_LEVEL) !== null)).toBe(true);
     for (const glyph of glyphs) {
       expect(glyph.closest('button')?.getAttribute('aria-label') ?? '').toMatch(/^Back/);
     }
