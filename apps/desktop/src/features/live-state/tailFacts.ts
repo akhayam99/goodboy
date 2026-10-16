@@ -6,6 +6,7 @@ export type TailActionId =
   | 'stop'
   | 'stopAgent'
   | 'stopAuto'
+  | 'changeApproach'
   | 'stopStep'
   | 'continue'
   | 'retry'

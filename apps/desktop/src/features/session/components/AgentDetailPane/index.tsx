@@ -30,6 +30,7 @@ import { AdoptedNotice } from '../../../auto/adopt/AdoptedNotice';
 import { MoveToAutoPanel } from '../../../auto/adopt/MoveToAutoPanel';
 import { MOVE_TO_AUTO_EVENT, isMoveToAutoFor } from '../../../auto/adopt/moveToAutoEvent';
 import { AutoChildNotice } from '../../../auto/chat/AutoChildNotice';
+import { AutoMarkFinishedButton } from '../../../auto/chat/AutoMarkFinishedButton';
 import { useAutoChat } from '../../../auto/chat/useAutoChat';
 import { useAutoMembership } from '../../../auto/useAutoMembership';
 import { isTurnStateLive } from '../../agent-lifecycle';
@@ -44,6 +45,8 @@ type Props = {
 
 const REWRITER_PLACEHOLDER = 'Tell History rewriter what to do next';
 
+const AUTO_HEADER_VERBS: ReadonlyArray<string> = ['agent.markAutoFinished'];
+
 export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context }: Props) => {
   const turnState = useAppStore((state) => state.agentTurnState[agent.id] ?? null);
   const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
@@ -56,6 +59,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
   const isRewriterFinished = rewriter !== null && !rewriter.isLive;
   const autoChat = useAutoChat({ session, agent });
   const isAutoChild = autoChat.tree?.kind === 'child';
+  const isAutoRoot = kind === 'auto';
   const autoRootAgentId = autoChat.tree?.view.tree.rootAgentId ?? null;
   const membership = useAutoMembership({ sessionId: session.id, agentId: agent.id });
   const adoption = membership.adoption;
@@ -115,7 +119,8 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
             },
           ];
     const hasEnd =
-      agent.status === 'completed' || (runs ?? []).some((run) => run.parentAgentId === agent.id);
+      !isAutoRoot &&
+      (agent.status === 'completed' || (runs ?? []).some((run) => run.parentAgentId === agent.id));
     const end: ReadonlyArray<TranscriptInsertion> = hasEnd
       ? [
           {
@@ -126,7 +131,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
         ]
       : [];
     return [...leading, ...(autoChat.insertions ?? []), ...end];
-  }, [agent, answeredQuestion, asker, autoChat.insertions, runs, session]);
+  }, [agent, answeredQuestion, asker, autoChat.insertions, isAutoRoot, runs, session]);
 
   const openTranscript = () =>
     openDrawer({ kind: 'transcript', sessionId: session.id, payload: { agentId: agent.id } });
@@ -160,13 +165,16 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
               onContextMenu={headerMenu.onContextMenu}
               onKeyDown={headerMenu.onKeyDown}
             >
-              <AgentKindChip kind={kind} />
+              {isAutoRoot ? null : <AgentKindChip kind={kind} />}
               <AgentTitle agent={agent} sessionId={session.id} />
               <AgentProviderMark provider={routing.provider} />
             </span>
           }
           actions={
             <>
+              {isAutoRoot ? (
+                <AutoMarkFinishedButton sessionId={session.id} agentId={agent.id} />
+              ) : null}
               <GhostActionButton
                 icon={ScrollText}
                 label="View transcript"
@@ -177,6 +185,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
                 agent={agent}
                 sessionId={session.id}
                 hasStateButton={false}
+                {...(isAutoRoot && { omit: AUTO_HEADER_VERBS })}
                 onDeleted={onBack}
               />
             </>
@@ -225,7 +234,6 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
           ) : undefined
         }
         insertions={insertions}
-        {...(autoChat.composerLead !== undefined && { composerLead: autoChat.composerLead })}
       />
     </PaneShell>
   );

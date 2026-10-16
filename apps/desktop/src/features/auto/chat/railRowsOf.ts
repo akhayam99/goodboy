@@ -40,7 +40,7 @@ type NodeParams = {
   readonly card: DelegationCardModel;
 };
 
-const childNodeOf = ({ card }: NodeParams): WorkNodeState => {
+export const delegationNodeOf = ({ card }: NodeParams): WorkNodeState => {
   switch (card.status.word) {
     case 'Done':
       return 'done';
@@ -175,7 +175,7 @@ export const railRowsOf = ({ view, agents, rootRouting }: RowParams): ReadonlyAr
     kind: 'child',
     role: card.role,
     label: card.roleLabel,
-    node: childNodeOf({ card }),
+    node: delegationNodeOf({ card }),
     word: card.status.word,
     tone: card.status.tone,
     provider: card.provider,

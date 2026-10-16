@@ -1,6 +1,8 @@
 import type { Agent, TurnState } from '@goodboy/types';
 import { formatUsd } from '@goodboy/ui';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
+import { refusalNoticeOf } from '../../auto/chat/refusalNoticeOf';
+import { isAutoPlanAwaitingApproval } from '../../auto/isAutoPlanAwaitingApproval';
 import { joinNouns } from '../../auto/joinNouns';
 import { openRoleNouns } from '../../auto/openRoleNouns';
 import { TAIL_ACTION } from '../tailAction';
@@ -17,6 +19,12 @@ export type AutoTreeLiveParams = Readonly<{
 }>;
 
 const STOP = [TAIL_ACTION.stopAuto];
+
+const HANDS_OVER: ReadonlySet<AutoTreeView['tree']['phase']> = new Set([
+  'delegating',
+  'waiting',
+  'merging',
+]);
 
 type PhraseParams = {
   readonly phrase: string;
@@ -89,6 +97,9 @@ export const autoTreeLive = ({
   if (phase === 'deciding' || phase === 'answering') {
     return working({ phrase: 'Deciding what to do next' });
   }
+  if (view.pendingRefusal !== null && HANDS_OVER.has(phase)) {
+    return working({ phrase: refusalNoticeOf({ refusal: view.pendingRefusal }) });
+  }
   if (phase === 'delegating') {
     return working({ phrase: 'Starting agents' });
   }
@@ -96,13 +107,19 @@ export const autoTreeLive = ({
     return working({ phrase: 'Reading the results' });
   }
   if (phase === 'waiting') {
+    if (isAutoPlanAwaitingApproval({ view })) {
+      return null;
+    }
     const nouns = openRoleNouns({ delegations: view.delegations });
     return {
       state: 'waiting',
       phrase: nouns.length === 0 ? 'Reading the results' : `Waiting for ${joinNouns({ nouns })}`,
       startedAt: null,
-      actions: STOP,
+      actions: [TAIL_ACTION.changeApproach, TAIL_ACTION.stopAuto],
     };
+  }
+  if (phase === 'finished') {
+    return { state: 'idle', phrase: 'Finished. Write to reopen.', startedAt: null, actions: [] };
   }
   return { state: 'idle', phrase: 'Idle', startedAt: null, actions: [] };
 };

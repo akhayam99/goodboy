@@ -206,26 +206,36 @@ writing to it reopens it to **Deciding**.
   never runs unbounded. While a session budget exists, No cap is off and says the
   session budget sets the limit. A tree is only created with a number; NULL
   comes only from this choice.
-- **Delegation cards.** Each delegation is a card in the transcript: role, model
-  and effort, a live time, one state, Auto's reason, a note when the app changed
-  the model it asked for, **Reserved up to** while it works, and when it
-  settles its summary, files changed, checks with their source, artifacts and
-  open questions, then **Returned to Auto** with the cost and **Open chat**. A
-  failed, blocked, timed out or stopped child says why in one sentence. A
-  revision is the same producer: **Planner, revising v2**, then **Planner, v2
-  ready**. Cards read the delegation, attempt and agent rows, never the message
-  text, so a reload draws the same cards.
-- **Where a card sits.** A card goes before the first message sent after its
-  batch settled, and an open batch goes at the end.
-- **While Auto waits.** A line above the composer says **Waiting for Implementer
-  and Tester** with **Change approach** and **Stop**, and the composer says
-  "Queued: Auto sees it with the next results". A plan that waits for approval
-  changes it to "Message Auto, or describe changes to plan v1". In the
-  `deciding` phase with no root turn running the same line says **Deciding
-  what to do next**; while Auto's own turn runs the line hides and the
-  thinking line at the end of the transcript speaks instead, so the state is
-  said once.
-- **A child opened from a card** reads as Started by Auto. It can be read and
+- **The page.** The header is the goal as the title and the provider mark, with
+  no role, Experimental or state chip; **Mark finished** shows there as a
+  word only while Auto rests (the registry verb `agent.markAutoFinished`, left
+  out of the `⋯` then so it is said once), next to **View transcript** and `⋯`.
+- **Delegation lines.** Each delegation is one bare line in the conversation
+  (`AutoDelegationLines`): the child's node, **Delegated to**, its role chip and
+  **See more**. A revision is the same producer with "revising v2", then "v2
+  ready". The child's state word is on its rail row, never on the line; its
+  reason, model, reserved amount and result are in its pane. Lines read the
+  delegation, attempt and agent rows, never the message text, so a reload draws
+  the same lines. A revise that waits for an OK carries **Confirm** and
+  **Cancel** under its line, and a plan that waits for approval carries the
+  ask **Plan v1 needs your approval** with the plan title (opens the plan),
+  **Ask for changes** and **Approve plan** (`AutoPlanAsk`, the same
+  `useAutoPlanApproval` the plan drawer uses).
+- **Where a line sits.** A batch goes before the first message sent after it
+  settled, and an open batch goes at the end.
+- **The tail.** Auto's state is said once, on the tail at the end of the
+  conversation (`AutoTail`, phrases from `autoTreeLive`): **Waiting for
+  Implementer and Tester** with **Change approach** and **Stop Auto and its
+  agents**, **Starting agents**, **Reading the results**, **Deciding what to do
+  next**, a refused hand over in the user voice, **Paused at the limit: $4.80
+  of $5.00** with **Raise to $10** and **Change limit** (opens the limit
+  popover of the rail foot), **Blocked, open the chat** with **View
+  transcript**, **Idle**, and **Finished. Write to reopen.**. While Auto's own
+  turn runs, the thinking line of the conversation speaks instead, and while a
+  plan waits for approval the ask is the state. The composer says "Queued: Auto
+  sees it with the next results" while Auto waits, or "Message Auto, or
+  describe changes to plan v1".
+- **A child opened from its line** reads as Started by Auto. It can be read and
   stopped there, has no composer, and **Open Auto** goes back. When it
   stopped, its notice offers **Retry through Auto**, which asks Auto to retry
   it; it never runs a plain turn on the child (`docs/turns.md`, resume rules).
@@ -252,7 +262,7 @@ rework the same plan into the next version.
 
 ## Confirming
 
-A revise Auto is not sure about waits for an OK in its card: "Change plan
+A revise Auto is not sure about waits for an OK under its delegation line: "Change plan
 Retry-safe credit retries at v2?" with **Confirm** and **Cancel**. The answer
 goes through one port, `registerDelegationDecisionPort`, which the runtime
 registers; without a port the click says Auto cannot take the answer yet.
@@ -307,10 +317,10 @@ budget or limit refusal and a block that does not parse become a `refusal` row i
 delivered with the next turn under REFUSED, NOT DONE; such a turn counts as no progress, so
 `noProgressStreak` bounds retries. A refusal row keeps the action, the code and the roles of the
 refused children; while it is pending for the current generation, `readAutoTreeViews` reads it as
-`pendingRefusal` and the wait strip says it in the user voice (`refusalNoticeOf`, reasons from
+`pendingRefusal` and the tail says it in the user voice (`refusalNoticeOf`, reasons from
 `AUTO_REFUSAL_USER_REASON`): "Auto tried to start an Implementer. Not started: more than one
 project fits and it did not say which. Auto is choosing again." Once Auto's next turn takes the
-row, the line goes, and an admitted retry draws its delegation card. The mount of a child
+row, the line goes, and an admitted retry draws its delegation line. The mount of a child
 (`pickAutoMount`): a named mount wins; a reader without one works in the tree's primary mount; a
 writer without one goes to the only usable mount, is refused `mount_ambiguous` when more than
 one fits (Auto never guesses a write) and `mount_missing` when none does. The refusal counters (`refusals_used`, the limit on refusals)
@@ -318,7 +328,7 @@ move once per generation and run, so a duplicate settle of the same turn cannot 
 with role, state and age, questions waiting, the budget, and a `MOUNTS:` line listing each usable
 mount as `id (project, branch)` from `buildMountsLine`) and carries the artifact text of each
 result, cut when long, so a provider that does not resume sessions still has its memory. The
-`<<auto>>` block is hidden in the transcript like the other markers; the delegation cards show
+`<<auto>>` block is hidden in the transcript like the other markers; the delegation lines show
 what it did. See [query-bridge.md](query-bridge.md) for the bridge Auto does not use.
 
 ## Providers

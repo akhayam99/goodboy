@@ -1412,8 +1412,8 @@ Auto is described in [auto.md](auto.md); this is where it sits. Settings, App,
 General ends with the band **Experiments** (`ExperimentsBand`), drawn only
 while the release gate is open. The Work rail of an Auto agent, and of each
 child of an Auto tree, is the sidebar's Auto level (see Sidebar levels), never
-a second rail beside the chat. The chat of an Auto agent gets its delegation cards through the
-`insertions` prop of `ChatView` and its wait line through `composerLead`. The
+a second rail beside the chat. The chat of an Auto agent gets its delegation lines and its
+tail through the `insertions` prop of `ChatView` (`useAutoChat`). The
 plan drawer swaps its toolbar for `AutoPlanToolbar` when the plan belongs to an
 Auto tree, and the Overview timeline hides the children of a tree and draws its
 state from `autoFactsByAgentId`.

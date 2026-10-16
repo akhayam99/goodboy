@@ -83,6 +83,38 @@ describe('c07 Auto scenes', () => {
     expect(within(foot).getByText('$5.23 left')).toBeDefined();
   });
 
+  it('c07-auto-working keeps the center lean: no role chip, bare delegation lines, one tail', async () => {
+    mount({ id: 'c07-auto-working' });
+
+    await screen.findByRole('button', { name: 'See more about Implementer' }, WAIT);
+    const title = screen.getByTestId('agent-header-title-row');
+    expect(within(title).queryByText('Auto agent')).toBeNull();
+    expect(within(title).queryByText('Experimental')).toBeNull();
+    expect(screen.queryByRole('article')).toBeNull();
+    expect(screen.getAllByText('Delegated to').length).toBeGreaterThan(0);
+    expect(document.querySelectorAll('[data-auto-tail]')).toHaveLength(1);
+    const tail = document.querySelector<HTMLElement>('[data-auto-tail]');
+    expect(tail?.textContent).toContain('Waiting for Implementer and Tester');
+    expect(screen.queryByRole('button', { name: 'Mark finished' })).toBeNull();
+  });
+
+  it('c07-auto-plan asks for the plan approval in the stream with one primary', async () => {
+    mount({ id: 'c07-auto-plan' });
+
+    expect(await screen.findByText('Plan v1 needs your approval', undefined, WAIT)).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Approve plan' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Ask for changes' })).toBeDefined();
+    expect(document.querySelector('[data-auto-tail]')).toBeNull();
+  });
+
+  it('c07-auto-idle offers Mark finished in the header and says Idle on the tail', async () => {
+    mount({ id: 'c07-auto-idle' });
+
+    expect(await screen.findByRole('button', { name: 'Mark finished' }, WAIT)).toBeDefined();
+    const tail = document.querySelector<HTMLElement>('[data-auto-tail]');
+    expect(tail?.textContent).toContain('Idle');
+  });
+
   it('goes back to the session level with Auto agents selected, and drills in again', async () => {
     mount({ id: 'c07-auto-working' });
 

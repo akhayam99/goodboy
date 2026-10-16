@@ -82,21 +82,21 @@ describe('the Auto chat scenes', () => {
     ).toBeNull();
   });
 
-  it('auto-chat-delegating shows Auto and the Planner on one rail, one card and the wait strip', async () => {
+  it('auto-chat-delegating shows Auto and the Planner on one rail, one line and the tail', async () => {
     mount({ id: 'auto-chat-delegating' });
 
-    expect(await screen.findByRole('article', { name: 'Planner delegation' }, WAIT)).toBeDefined();
+    expect(
+      await screen.findByRole('button', { name: 'See more about Planner' }, WAIT),
+    ).toBeDefined();
     const work = rail();
     expect(within(work).getAllByRole('listitem')).toHaveLength(2);
     expect(within(work).getByText('Starting')).toBeDefined();
-    expect(screen.getByText('Waiting for Planner')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Change approach' })).toBeDefined();
-    const strip = screen.getByText('Waiting for Planner').closest('[role="status"]');
-    if (!(strip instanceof HTMLElement)) {
-      throw new Error('no wait strip');
+    expect(screen.queryByRole('article')).toBeNull();
+    const tail = screen.getByText('Starting agents').closest('[role="status"]');
+    if (!(tail instanceof HTMLElement)) {
+      throw new Error('no tail');
     }
-    expect(within(strip).getByRole('button', { name: /Stop/ })).toBeDefined();
-    expect(screen.getByText('Reserved up to $0.75')).toBeDefined();
+    expect(within(tail).getByRole('button', { name: 'Stop Auto and its agents' })).toBeDefined();
   });
 
   it('auto-chat-plan asks for approval in the drawer and keeps the rail whole', async () => {
@@ -116,14 +116,13 @@ describe('the Auto chat scenes', () => {
     mount({ id: 'auto-chat-working' });
 
     expect(
-      await screen.findByRole('article', { name: 'Implementer delegation' }, WAIT),
+      await screen.findByRole('button', { name: 'See more about Implementer' }, WAIT),
     ).toBeDefined();
     const work = rail();
     expect(within(work).getAllByRole('listitem')).toHaveLength(4);
     expect(within(work).queryByText(/subagents/i)).toBeNull();
     expect(screen.getByText('Waiting for Implementer and Tester')).toBeDefined();
-    expect(screen.getByText('Reserved up to $3.00')).toBeDefined();
-    expect(screen.getByText('Reserved up to $1.50')).toBeDefined();
+    expect(screen.queryByText(/Reserved up to/)).toBeNull();
     const foot = limitFoot();
     expect(within(foot).getByRole('button', { name: 'Limit $10.00' })).toBeDefined();
     expect(within(foot).getByText('$5.23 left')).toBeDefined();
@@ -133,7 +132,7 @@ describe('the Auto chat scenes', () => {
   it('auto-chat-working opens the limit popover from the rail foot', async () => {
     mount({ id: 'auto-chat-working' });
 
-    await screen.findByRole('article', { name: 'Implementer delegation' }, WAIT);
+    await screen.findByRole('button', { name: 'See more about Implementer' }, WAIT);
     fireEvent.click(within(limitFoot()).getByRole('button', { name: 'Limit $10.00' }));
 
     const popover = screen.getByRole('dialog', { name: 'Limit for this conversation' });
@@ -153,7 +152,7 @@ describe('the Auto chat scenes', () => {
   it('auto-chat-nocap reads No cap in the foot with what is spent and no left', async () => {
     mount({ id: 'auto-chat-nocap' });
 
-    await screen.findByRole('article', { name: 'Implementer delegation' }, WAIT);
+    await screen.findByRole('button', { name: 'See more about Implementer' }, WAIT);
     const foot = limitFoot();
     expect(within(foot).getByRole('button', { name: 'No cap' })).toBeDefined();
     expect(within(foot).getByText('$0.27 spent')).toBeDefined();
@@ -163,9 +162,7 @@ describe('the Auto chat scenes', () => {
   it('auto-chat-revising shows the revision on the same Planner', async () => {
     mount({ id: 'auto-chat-revising' });
 
-    expect(
-      await screen.findByRole('article', { name: 'Planner, revising v2 delegation' }, WAIT),
-    ).toBeDefined();
+    expect(await screen.findByText('revising v2', undefined, WAIT)).toBeDefined();
     expect(within(rail()).getAllByText('Planner')).toHaveLength(1);
   });
 
@@ -179,7 +176,7 @@ describe('the Auto chat scenes', () => {
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDefined();
   });
 
-  it('auto-chat-refused says which agent was not started and why, in the wait strip', async () => {
+  it('auto-chat-refused says which agent was not started and why, on the tail', async () => {
     mount({ id: 'auto-chat-refused' });
 
     const notice = await screen.findByText(
@@ -192,34 +189,36 @@ describe('the Auto chat scenes', () => {
     expect(screen.queryByRole('article')).toBeNull();
   });
 
-  it('auto-chat-done lists every child as done and has no wait strip', async () => {
+  it('auto-chat-done lists every child as done and has no waiting tail', async () => {
     mount({ id: 'auto-chat-done' });
 
-    expect(await screen.findByRole('article', { name: 'Reviewer delegation' }, WAIT)).toBeDefined();
+    expect(
+      await screen.findByRole('button', { name: 'See more about Reviewer' }, WAIT),
+    ).toBeDefined();
     expect(within(rail()).getAllByRole('listitem')).toHaveLength(5);
+    expect(screen.getAllByText('Delegated to')).toHaveLength(4);
     expect(screen.queryByRole('button', { name: 'Change approach' })).toBeNull();
-    expect(screen.getByText('3 files changed')).toBeDefined();
-    expect(screen.getByText('keeps the balance after two attempts')).toBeDefined();
     expect(within(limitFoot()).getByText('$9.47 left')).toBeDefined();
   });
 
-  it('auto-chat-done says Idle in the rail and offers Mark finished', async () => {
+  it('auto-chat-done says Idle in the rail and on the tail, with Mark finished in the header once', async () => {
     mount({ id: 'auto-chat-done' });
 
-    await screen.findByRole('article', { name: 'Reviewer delegation' }, WAIT);
+    await screen.findByRole('button', { name: 'See more about Reviewer' }, WAIT);
     expect(within(rail()).getByText('Idle')).toBeDefined();
+    expect(await screen.findByRole('button', { name: 'Mark finished' }, WAIT)).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'More agent actions' }));
-    expect(await screen.findByRole('menuitem', { name: /Mark finished/ }, WAIT)).toBeDefined();
+    await screen.findAllByRole('menuitem', undefined, WAIT);
+    expect(screen.queryByRole('menuitem', { name: /Mark finished/ })).toBeNull();
   });
 
   it('auto-chat-finished says Finished and no longer offers Mark finished', async () => {
     mount({ id: 'auto-chat-finished' });
 
-    await screen.findByRole('article', { name: 'Reviewer delegation' }, WAIT);
+    await screen.findByRole('button', { name: 'See more about Reviewer' }, WAIT);
     expect(within(rail()).getByText('Finished')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'More agent actions' }));
-    await screen.findAllByRole('menuitem', undefined, WAIT);
-    expect(screen.queryByRole('menuitem', { name: /Mark finished/ })).toBeNull();
+    expect(screen.getByText('Finished. Write to reopen.')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Mark finished' })).toBeNull();
   });
 
   it('auto-chat-child reads the Planner started by Auto, with no composer', async () => {
