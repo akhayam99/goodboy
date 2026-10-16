@@ -271,9 +271,9 @@ describe('buildArtifactListRows', () => {
     ]);
   });
 
-  it('files a replaced report under Ran, faint', () => {
+  it('files a replaced report under Consumed, faint', () => {
     const [row] = build({ artifacts: [report({ status: 'superseded' })] });
-    expect(row).toMatchObject({ group: 'ran', isFaint: true });
+    expect(row).toMatchObject({ group: 'consumed', isFaint: true });
     expect(row?.state?.label).toBe('Replaced');
   });
 
@@ -314,7 +314,7 @@ describe('buildArtifactListRows', () => {
     ]);
   });
 
-  it('groups in the order Needs you, Ready, Running, Ran, Recently deleted', () => {
+  it('groups in the order Needs you, Ready, Running, Consumed, Recently deleted', () => {
     const rows = build({
       plans: [
         plan({ id: 'p-ready' as ArtifactId, title: 'Ready plan' }),
@@ -326,7 +326,7 @@ describe('buildArtifactListRows', () => {
     expect(groupArtifactRows({ rows }).map((entry) => entry.group)).toEqual([
       'needs',
       'ready',
-      'ran',
+      'consumed',
       'deleted',
     ]);
   });

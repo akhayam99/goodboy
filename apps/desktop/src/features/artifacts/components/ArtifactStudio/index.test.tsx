@@ -251,7 +251,7 @@ describe('ArtifactStudio list', () => {
       'Wireframe Settlement review flow, Ready',
       'Report Rounding drift in ledger-core postings, Ready',
     ]);
-    expect(within(list).getByRole('button', { name: /^Ready 3$/ })).toBeDefined();
+    expect(within(list).getByRole('heading', { name: /^Ready 3$/ })).toBeDefined();
     expect(screen.queryByText(/Show finished/)).toBeNull();
   });
 

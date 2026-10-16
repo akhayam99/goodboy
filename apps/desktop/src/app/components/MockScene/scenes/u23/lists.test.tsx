@@ -109,7 +109,11 @@ describe('the u23 list scenes', () => {
       .getAllByTestId('artifact-row-kind')
       .map((cell) => cell.textContent);
     expect(kinds).toEqual(expect.arrayContaining(['Plan', 'Report', 'Wireframe']));
-    expect(within(list).queryAllByRole('button', { name: /^Delete / })).toEqual([]);
+    expect(
+      within(list)
+        .queryAllByRole('button', { name: /^Delete / })
+        .filter((button) => button.closest('[data-testid="artifact-group-deleted"]') === null),
+    ).toEqual([]);
     const frames = within(list).getAllByTestId('artifact-row-frame');
     for (const frame of frames) {
       const visible = within(frame)
@@ -120,6 +124,15 @@ describe('the u23 list scenes', () => {
         .filter((button) => !(button.getAttribute('aria-label') ?? '').startsWith('More for'));
       expect(visible.length).toBeLessThanOrEqual(1);
     }
+    const groups = list.querySelectorAll('section[data-testid^="artifact-group-"]');
+    expect(groups.length).toBeGreaterThan(0);
+    for (const group of groups) {
+      expect(group.querySelector('h2')).not.toBeNull();
+      if (group.getAttribute('data-testid') !== 'artifact-group-deleted') {
+        expect(group.querySelector(':scope > div > button[aria-expanded]')).toBeNull();
+      }
+    }
+    expect(within(list).queryByRole('heading', { name: /^Ran\b/ })).toBeNull();
   });
 
   it('keeps Run and Stop visible on one right edge and the overflow on hover', async () => {

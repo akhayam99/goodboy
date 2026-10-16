@@ -606,7 +606,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'By state',
-        desc: 'Artifact lists group into Needs you, Ready, Running, Ran and Recently deleted, and New marks one from the last day you have not opened. Delete has Undo, and Recently deleted restores.',
+        desc: 'Artifact lists group under plain labels, Needs you, Ready, Running, Consumed (plans that ran, and replaced versions) and Recently deleted, every row in view except Recently deleted, which opens with Show, and New marks one from the last day you have not opened. Delete has Undo, and Recently deleted restores.',
       },
     ],
     links: [],

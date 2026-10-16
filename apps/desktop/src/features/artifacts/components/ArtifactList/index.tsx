@@ -26,7 +26,7 @@ import { ArtifactFilterTabs } from '../ArtifactStudio/ArtifactFilterTabs';
 import { ArtifactListFolderButton } from './ArtifactListFolderButton';
 import { ArtifactListGroup } from './ArtifactListGroup';
 import { ArtifactNewMenu } from './ArtifactNewMenu';
-import { useArtifactGroups } from './useArtifactGroups';
+import { useArtifactParts } from './useArtifactParts';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -80,7 +80,7 @@ export const ArtifactList = ({
       }
     },
   });
-  const { closedGroups, openPartsIds, toggleGroup, toggleParts } = useArtifactGroups({ rows });
+  const { openPartsIds, toggleParts } = useArtifactParts();
   const groups = useMemo(() => groupArtifactRows({ rows }), [rows]);
   const inheritedActions = useInheritedPaneActions();
   const openNewMenu = () => window.dispatchEvent(new CustomEvent(newArtifactEventName(sessionId)));
@@ -89,14 +89,7 @@ export const ArtifactList = ({
     <PaneShell
       header={
         <div className="flex min-h-8 min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
-          <div className="flex min-w-0 items-baseline gap-2">
-            <h1 className="min-w-0 truncate text-title text-foreground">Artifacts</h1>
-            {counts.all > 0 ? (
-              <span className="shrink-0 text-meta tabular-nums text-muted-foreground">
-                {counts.all}
-              </span>
-            ) : null}
-          </div>
+          <h1 className="min-w-0 truncate text-title text-foreground">Artifacts</h1>
           <ArtifactFilterTabs value={filter} counts={counts} onChange={onFilterChange} />
           <div className="ml-auto flex shrink-0 items-center gap-1">
             <ArtifactNewMenu sessionId={sessionId} onImportWireframe={importer.pick} />
@@ -178,9 +171,7 @@ export const ArtifactList = ({
                 group={entry.group}
                 rows={entry.rows}
                 sessionId={sessionId}
-                isOpen={!closedGroups.has(entry.group)}
                 openPartsIds={openPartsIds}
-                onToggleGroup={toggleGroup}
                 onTogglePartsOf={toggleParts}
                 onOpenRow={onOpen}
               />

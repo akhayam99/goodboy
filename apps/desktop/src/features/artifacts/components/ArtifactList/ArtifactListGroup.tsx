@@ -1,58 +1,64 @@
-import { useId } from 'react';
-import { ChevronDown } from 'lucide-react';
-import { Reveal, cn } from '@goodboy/ui';
+import { useId, useState } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { ARTIFACT_GROUP_LABEL, type ArtifactListRow as Row } from '../../artifactListRows';
 import type { ArtifactGroup } from '../../artifactStateOf';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ArtifactListRow } from './ArtifactListRow';
 
 type Props = {
   readonly group: ArtifactGroup;
   readonly rows: ReadonlyArray<Row>;
   readonly sessionId: SessionId;
-  readonly isOpen: boolean;
   readonly openPartsIds: ReadonlySet<string>;
-  readonly onToggleGroup: (group: ArtifactGroup) => void;
   readonly onTogglePartsOf: (rowId: string) => void;
   readonly onOpenRow: (row: Row) => void;
 };
+
+const SHOW_BUTTON =
+  'inline-flex h-6 shrink-0 items-center rounded-md px-2 text-ui text-muted-foreground hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
 
 export const ArtifactListGroup = ({
   group,
   rows,
   sessionId,
-  isOpen,
   openPartsIds,
-  onToggleGroup,
   onTogglePartsOf,
   onOpenRow,
 }: Props) => {
-  const panelId = useId();
+  const headingId = useId();
+  const listId = useId();
+  const isTrash = group === 'deleted';
+  const [isTrashShown, setIsTrashShown] = useState(false);
+  const isShown = !isTrash || isTrashShown;
   return (
-    <section data-testid={`artifact-group-${group}`} className="flex min-w-0 flex-col">
-      <button
-        type="button"
-        aria-expanded={isOpen}
-        aria-controls={panelId}
-        onClick={() => onToggleGroup(group)}
-        className="flex h-7 w-fit items-center gap-2 rounded-md pr-2 pl-0.5 text-label text-muted-foreground hover:text-foreground"
-      >
-        <ChevronDown
-          size={ICON_SIZE.control}
-          aria-hidden
-          className={cn('motion-safe:transition-transform', !isOpen && '-rotate-90')}
-        />
-        {ARTIFACT_GROUP_LABEL[group]}
-        <span className="tabular-nums text-faint-foreground">{rows.length}</span>
-      </button>
-      <Reveal open={isOpen} id={panelId}>
-        {group === 'deleted' ? (
-          <p className="pr-2 pb-2 pl-7 text-label text-faint-foreground">
-            Deleted artifacts stay here. Restore them, or delete them for good.
-          </p>
+    <section
+      data-testid={`artifact-group-${group}`}
+      aria-labelledby={headingId}
+      className="flex min-w-0 flex-col"
+    >
+      <div className="flex h-7 min-w-0 items-center gap-2">
+        <h2 id={headingId} className="flex items-center gap-2 text-label text-muted-foreground">
+          {ARTIFACT_GROUP_LABEL[group]}
+          <span className="tabular-nums text-faint-foreground">{rows.length}</span>
+        </h2>
+        {isTrash ? (
+          <button
+            type="button"
+            className={SHOW_BUTTON}
+            aria-expanded={isTrashShown}
+            aria-controls={listId}
+            onClick={() => setIsTrashShown((isOpen) => !isOpen)}
+          >
+            {isTrashShown ? 'Hide' : 'Show'}
+          </button>
         ) : null}
-        <ul className="flex min-w-0 flex-col">
+      </div>
+      {isTrash && isTrashShown ? (
+        <p className="pr-2 pb-2 text-label text-faint-foreground">
+          Deleted artifacts stay here. Restore them, or delete them for good.
+        </p>
+      ) : null}
+      {isShown ? (
+        <ul id={listId} className="flex min-w-0 flex-col">
           {rows.map((row) => (
             <li key={row.id} className="min-w-0">
               <ArtifactListRow
@@ -65,7 +71,7 @@ export const ArtifactListGroup = ({
             </li>
           ))}
         </ul>
-      </Reveal>
+      ) : null}
     </section>
   );
 };

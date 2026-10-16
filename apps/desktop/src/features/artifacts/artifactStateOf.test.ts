@@ -39,12 +39,12 @@ const stored = (params: {
 describe('artifactStateOf', () => {
   it.each([
     ['plan', 'active', 'Ready to run', 'ready'],
-    ['plan', 'consumed', 'Ran', 'ran'],
-    ['plan', 'superseded', 'Replaced', 'ran'],
+    ['plan', 'consumed', 'Ran', 'consumed'],
+    ['plan', 'superseded', 'Replaced', 'consumed'],
     ['plan', 'discarded', 'Deleted', 'deleted'],
-    ['report', 'superseded', 'Replaced', 'ran'],
+    ['report', 'superseded', 'Replaced', 'consumed'],
     ['report', 'discarded', 'Deleted', 'deleted'],
-    ['wireframe', 'superseded', 'Replaced', 'ran'],
+    ['wireframe', 'superseded', 'Replaced', 'consumed'],
     ['wireframe', 'discarded', 'Deleted', 'deleted'],
   ] as const)('%s %s reads %s in the %s group', (kind, status, label, group) => {
     const state = stored({ kind, status });

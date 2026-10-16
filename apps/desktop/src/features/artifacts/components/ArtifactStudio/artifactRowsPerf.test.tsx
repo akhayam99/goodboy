@@ -46,7 +46,7 @@ vi.mock('../../../../shared/lib/repo', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import type { AgentId, ArtifactId, IsoDateTime, PlanWithCount, SessionId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -102,7 +102,7 @@ afterEach(cleanup);
 describe('artifact list with 200 artifacts', () => {
   it('redraws at most two rows when one artifact changes state', async () => {
     render(<ArtifactStudio sessionId={SESSION_ID} />);
-    fireEvent.click(await screen.findByRole('button', { name: /^Ran 100$/ }));
+    expect(await screen.findByRole('heading', { name: /^Consumed 100$/ })).toBeDefined();
     await waitFor(() =>
       expect(screen.getAllByTestId('artifact-row-frame')).toHaveLength(2 * PER_GROUP),
     );
@@ -124,7 +124,9 @@ describe('artifact list with 200 artifacts', () => {
       });
     });
 
-    await waitFor(() => expect(screen.getByRole('button', { name: /^Ran 101$/ })).toBeDefined());
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: /^Consumed 101$/ })).toBeDefined(),
+    );
     expect(glyph.renders).toBeLessThanOrEqual(2);
     expect(screen.getAllByTestId('artifact-row-frame')).toHaveLength(2 * PER_GROUP);
   });
