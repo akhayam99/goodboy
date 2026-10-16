@@ -61,6 +61,15 @@ const tailOf = ({ ...overrides }: BaseParams) =>
   });
 
 describe('runTailOf', () => {
+  it('says a paused run is paused and leaves Resume run to the header', () => {
+    expect(
+      tailOf({
+        agents: agentsOf({ scout: 'completed', implementer: 'pending' }),
+        primary: { kind: 'resume', label: 'Resume' },
+      }),
+    ).toEqual({ state: 'stopped', phrase: 'Paused by you', startedAt: null, verb: null });
+  });
+
   it('stays silent while the step on screen runs, since its own line speaks', () => {
     expect(tailOf({ selectedRootId: IMPLEMENTER })).toBeNull();
   });

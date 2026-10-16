@@ -64,7 +64,7 @@ type PrimaryParams = {
 };
 
 const primaryVerbs = ({ primary }: PrimaryParams): ReadonlyArray<OrchestratedVerb> =>
-  primary === null ? [] : [{ kind: 'primary', primary }];
+  primary === null || primary.kind === 'resume' ? [] : [{ kind: 'primary', primary }];
 
 type PhraseParams = {
   readonly orchestrator: OrchestratorState;

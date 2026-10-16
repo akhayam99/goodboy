@@ -326,7 +326,8 @@ read top to bottom at the conversation measure:
 - **The run header** shows **Pause run** and **Stop run** (asks first) as
   words while the run lives (`RunLiveVerbs`), so stopping never hides in a
   menu. Once paused, **Resume run** (`workflowRun.resume`) takes the place of
-  Pause run and Stop run stays beside it.
+  Pause run and Stop run stays beside it; the tail then says Paused by you
+  with no verb of its own, so Resume shows once.
 - **The run `⋯`** is the `workflowRun` registry minus the verbs the tail and
   the header carry: View diff, Step routing (opens the model per step panel,
   `OrchestratedRouting`), Autonomy, **Skip step N** for the step in flight,

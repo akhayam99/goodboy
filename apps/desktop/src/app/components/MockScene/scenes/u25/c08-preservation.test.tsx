@@ -320,12 +320,14 @@ describe('SPEC3 9.4 run rows stay reachable from the preset run level', () => {
     expect(tail().getByRole('button', { name: 'Resume' })).toBeDefined();
   });
 
-  it('Pause run and Resume: a paused run resumes from the tail', async () => {
+  it('Pause run and Resume: the tail says the run is paused, Resume run lives only in the header', async () => {
     await mount('c08-run-ready');
     patchRun({ patch: { orchestrationStop: { kind: 'paused', message: 'Paused by you.' } } });
     await settle();
     expect(tail().getByText('Paused by you')).toBeDefined();
-    expect(tail().getByRole('button', { name: 'Resume' })).toBeDefined();
+    expect(tail().queryByRole('button', { name: 'Resume' })).toBeNull();
+    const live = within(nodeOf('[data-run-live-verbs]'));
+    expect(live.getByRole('button', { name: 'Resume run' })).toBeDefined();
   });
 
   it('Next step: Start step 3 on the tail once step 2 is done', async () => {

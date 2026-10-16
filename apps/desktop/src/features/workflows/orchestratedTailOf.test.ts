@@ -75,6 +75,15 @@ const tailOf = ({ orchestrator, agents = [DONE], primary = null, queuedCount = 0
   });
 
 describe('orchestratedTailOf', () => {
+  it('says a paused run is paused and leaves Resume run to the header', () => {
+    const tail = tailOf({
+      orchestrator: stateOf({ phase: 'paused', sentence: 'Paused by you' }),
+      primary: { kind: 'resume', label: 'Resume' },
+    });
+    expect(tail.phrase).toBe('Paused by you');
+    expect(tail.verbs).toEqual([]);
+  });
+
   it('waits on the running step with Stop step N and its clock', () => {
     const tail = tailOf({
       orchestrator: stateOf({

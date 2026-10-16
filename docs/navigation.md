@@ -582,9 +582,10 @@ run** and **Stop run** (asks first) as visible words in their header while the
 run lives (`RunLiveVerbs`, the `workflowRun` registry's own `when`: Pause while
 a step is in flight and the run is not paused, Stop while the run is closable),
 then the run `⋯`; the verbs of `runPrimaryOf`
-(**Review plan**, **Answer**, **Resume**, **Continue the run**, **Retry**,
+(**Review plan**, **Answer**, **Continue the run**, **Retry**,
 **Raise spend cap**, **Decide next step**, **Start step 2**, **Start run**)
-sit on the run tail, and an archived run shows **Restore** as its one header
+sit on the run tail (a paused run's tail only says Paused by you, since
+Resume run sits in the header), and an archived run shows **Restore** as its one header
 primary. The `⋯` holds View diff, Step routing (orchestrated), Autonomy, Skip
 step N, Save as preset, Copy run summary, Archive run and Delete run, never
 **Approve plan**, **Pause run**, **Resume run** or **Stop run**. After Pause
