@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Button, EmptyState, formatError } from '@goodboy/ui';
 import {
   DEFAULT_SESSION_PROVIDER_PREFERENCE,
@@ -85,6 +85,7 @@ export type BuilderKickoff = {
   readonly primaryLabel?: string;
   readonly startError?: string | null;
   readonly canDiscard?: boolean;
+  readonly projects?: ReactNode;
   readonly onDiscard?: () => void;
   readonly onGoalChange: (goal: string) => void;
   readonly start: (run: (session: Session) => Promise<void>) => Promise<void>;
@@ -994,6 +995,7 @@ export const WorkflowBuilderView = (props: Props) => {
           onPolish={() => void onPolishGoal()}
         />
       </div>
+      {kickoff?.projects ?? null}
       <div className="flex flex-col gap-4">
         {modeControl === null && presetDescription === null ? null : (
           <div className="flex min-w-0 flex-col gap-2">

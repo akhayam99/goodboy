@@ -13,7 +13,7 @@ export type SessionDraft = {
   readonly workflowGoal: string;
   readonly workflowId: WorkflowId | null;
   readonly agentPrompt: string;
-  readonly projectId: ProjectId | null;
+  readonly projectIds: ReadonlyArray<ProjectId>;
   readonly agentKind: AgentKind;
   readonly agentRouting: AgentKindRouting | null;
   readonly autoGoal: string;
@@ -31,7 +31,7 @@ export const EMPTY_SESSION_DRAFT: SessionDraft = {
   workflowGoal: '',
   workflowId: null,
   agentPrompt: '',
-  projectId: null,
+  projectIds: [],
   agentKind: 'scout',
   agentRouting: null,
   autoGoal: '',

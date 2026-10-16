@@ -171,8 +171,9 @@ const runStart = (set: SetFn, get: GetFn) => {
     const { title, goal } = seedOf({ start });
     const candidates = start.kind === 'task' ? start.candidates : [];
     const mount = start.kind === 'task' ? (start.mount ?? null) : null;
-    const projectId =
-      mount === null ? (get().sessionDrafts[workspaceId]?.projectId ?? null) : mount.projectId;
+    const picked = get().sessionDrafts[workspaceId]?.projectIds ?? [];
+    const projectId = mount === null ? (picked[0] ?? null) : mount.projectId;
+    const additionalProjectIds = picked.filter((id) => id !== projectId);
     const checkout = start.kind === 'task' ? (start.checkout ?? null) : null;
     const attachmentInputs = start.kind === 'workflow-run' ? [] : (start.attachmentInputs ?? []);
     const { session } = await get().createSession({
@@ -183,6 +184,7 @@ const runStart = (set: SetFn, get: GetFn) => {
       omitGoalSlot: goal === '',
       ...(projectId !== null && { projectId }),
       ...(projectId !== null && mount !== null && { projectReason: mount.reason }),
+      ...(projectId !== null && additionalProjectIds.length > 0 && { additionalProjectIds }),
       ...(checkout !== null && {
         existingBranch: checkout.existingBranch,
         fallbackRef: checkout.fallbackRef,

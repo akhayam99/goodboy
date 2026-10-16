@@ -3,6 +3,7 @@ import type { Session, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useStartFromDraft } from './useStartFromDraft';
 import { useDraftDiscard } from './useDraftDiscard';
+import { KickoffProjects } from './KickoffProjects';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
 import type { Mode } from '../../../../store/slices/workflowDrafts/types';
 import {
@@ -35,6 +36,7 @@ export const WorkflowStart = ({ workspaceId, mode }: Props) => {
     goalPlaceholder: KICKOFF_GOAL_PLACEHOLDER,
     startError,
     canDiscard,
+    projects: <KickoffProjects workspaceId={workspaceId} />,
     onDiscard: discard,
     onGoalChange: (next) => patchSessionDraft({ workspaceId, patch: { workflowGoal: next } }),
     start: async (run: (session: Session) => Promise<void>) => {

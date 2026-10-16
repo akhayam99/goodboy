@@ -10,6 +10,7 @@ import { resolveSpawnRouting } from '../../spawn-routing';
 import { AGENT_KIND_META, visibleAgentKinds } from '../../agent-kind';
 import { AgentStartFields, type AgentStartRouting } from '../AgentStartFields';
 import { StartFooter } from './StartFooter';
+import { KickoffProjects } from './KickoffProjects';
 import { useDraftStart } from './useDraftStart';
 import { useWorkspaceKindRouting } from '../../../../shared/hooks/useWorkspaceKindRouting';
 import { PromptField } from '../../../../shared/components/PromptField';
@@ -51,10 +52,10 @@ export const AgentStart = ({ workspaceId }: Props) => {
   const projects = useWorkspaceRepoProjects({ workspaceId });
   useEffect(() => {
     const firstProjectId = projects[0]?.id ?? null;
-    if (draft.projectId === null && firstProjectId !== null) {
-      patchSessionDraft({ workspaceId, patch: { projectId: firstProjectId } });
+    if (draft.projectIds.length === 0 && firstProjectId !== null) {
+      patchSessionDraft({ workspaceId, patch: { projectIds: [firstProjectId] } });
     }
-  }, [draft.projectId, projects, patchSessionDraft, workspaceId]);
+  }, [draft.projectIds.length, projects, patchSessionDraft, workspaceId]);
   useEffect(() => {
     if (draft.autoGoal.trim() !== '' && draft.agentPrompt.trim() === '') {
       patchSessionDraft({ workspaceId, patch: { agentPrompt: draft.autoGoal, autoGoal: '' } });
@@ -64,7 +65,7 @@ export const AgentStart = ({ workspaceId }: Props) => {
   const suggestion = resolveSpawnRouting({ kind, roleDefault, session: null });
   const { start, isStarting, error } = useDraftStart({ workspaceId });
   const confirmMode = useConfirmStartMode();
-  const hasProject = draft.projectId !== null;
+  const hasProject = draft.projectIds.length > 0;
   const promptFiles = usePromptFiles({
     note: 'Files go to the agent you start',
     isEnabled: hasProject,
@@ -129,6 +130,7 @@ export const AgentStart = ({ workspaceId }: Props) => {
         notice={promptFiles.notice}
         {...(hasProject && { files: promptFiles.files })}
       />
+      <KickoffProjects workspaceId={workspaceId} isDisabled={isStarting} />
       <div className="flex items-center justify-between gap-2">
         <AgentStartFields
           kinds={kinds}
@@ -140,9 +142,9 @@ export const AgentStart = ({ workspaceId }: Props) => {
           onRoutingChange={(next) =>
             patchSessionDraft({ workspaceId, patch: { agentRouting: next } })
           }
-          projects={projects}
-          projectId={draft.projectId}
-          onProjectChange={(next) => patchSessionDraft({ workspaceId, patch: { projectId: next } })}
+          projects={[]}
+          projectId={null}
+          onProjectChange={() => undefined}
         />
       </div>
       <StartFooter

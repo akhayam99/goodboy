@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Button, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import type { ProjectId, Session, WorkspaceId } from '@goodboy/types';
@@ -12,7 +12,8 @@ import type {
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { draftIssueKey } from '../../../../store/slices/sessionDraft/draftIssueKey';
 import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates';
-import { LaunchMountRow } from '../../../integrations/components/LaunchSessionPanel/LaunchMountRow';
+import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
+import { KickoffProjects } from './KickoffProjects';
 import { useLaunchMount } from '../../../inbox/useLaunchMount';
 import { resolveSpawnRouting } from '../../spawn-routing';
 import { visibleAgentKinds, type AgentKind } from '../../agent-kind';
@@ -58,7 +59,11 @@ export const HowToWorkOnIt = ({ workspaceId, candidates, title, goal, onGoalChan
   const setText = onGoalChange;
   const [agentKind, setAgentKind] = useState<AgentKind>('implementer');
   const [agentRouting, setAgentRouting] = useState<AgentStartRouting>(null);
-  const [pickedProjectId, setPickedProjectId] = useState<ProjectId | null | undefined>(undefined);
+  const pickedProjectIds = useAppStore(
+    (state) => selectSessionDraft({ state, workspaceId }).projectIds,
+  );
+  const patchSessionDraft = useAppStore((state) => state.patchSessionDraft);
+  const hasPrefilledRef = useRef(false);
   const loadPhaseTemplates = useAppStore((state) => state.loadPhaseTemplates);
   const startSessionFromDraft = useStartFromDraft();
   const startLabel = startFromIssuesLabel({ identifiers });
@@ -90,9 +95,22 @@ export const HowToWorkOnIt = ({ workspaceId, candidates, title, goal, onGoalChan
   const roleDefault = useWorkspaceKindRouting({ workspaceId, kind });
   const suggestion = resolveSpawnRouting({ kind, roleDefault, session: null });
 
-  const projectId = pickedProjectId === undefined ? (mount?.selectedId ?? null) : pickedProjectId;
+  const suggestedId = mount?.selectedId ?? null;
+  const projectId = pickedProjectIds[0] ?? null;
   const draftMount: SessionDraftMount | null =
-    mount === null ? null : { projectId, reason: mount.reason };
+    mount === null || projectId === null || projectId !== suggestedId
+      ? null
+      : { projectId, reason: mount.reason };
+
+  useEffect(() => {
+    if (hasPrefilledRef.current || suggestedId === null) {
+      return;
+    }
+    hasPrefilledRef.current = true;
+    if (pickedProjectIds.length === 0) {
+      patchSessionDraft({ workspaceId, patch: { projectIds: [suggestedId] } });
+    }
+  }, [suggestedId, pickedProjectIds.length, patchSessionDraft, workspaceId]);
   const trimmed = text.trim();
   const hasProject = projectId !== null;
   const promptFiles = usePromptFiles({
@@ -149,15 +167,12 @@ export const HowToWorkOnIt = ({ workspaceId, candidates, title, goal, onGoalChan
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        {mount === null ? null : (
-          <LaunchMountRow
-            mount={mount}
-            selectedId={projectId}
-            disabled={isStarting}
-            variant="line"
-            onChange={setPickedProjectId}
-          />
-        )}
+        <KickoffProjects
+          workspaceId={workspaceId}
+          suggestedIds={suggestedId === null ? [] : [suggestedId]}
+          reason={draftMount === null ? null : draftMount.reason}
+          isDisabled={isStarting}
+        />
         {candidates.slice(1).map((candidate) => (
           <CrossProjectNote
             key={draftIssueKey({ candidate })}
