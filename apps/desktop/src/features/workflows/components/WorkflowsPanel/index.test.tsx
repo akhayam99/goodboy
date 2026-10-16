@@ -57,7 +57,10 @@ vi.mock('@goodboy/core', async (importOriginal) => {
 
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [] as readonly never[],
-  useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
+  useAppStore: Object.assign(<T,>(selector: (s: typeof state) => T) => selector(state), {
+    getState: () => state,
+    subscribe: () => () => undefined,
+  }),
 }));
 
 import { ToastProvider } from '../../../../shared/components/Toast';
