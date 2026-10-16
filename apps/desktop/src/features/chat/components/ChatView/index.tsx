@@ -57,6 +57,7 @@ import { missingAttachmentsMessage, readRetryAttachments } from './readRetryAtta
 import { useToast } from '../../../../shared/components/Toast';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { isReportedError } from '../../../../store/slices/notifications/reportedError';
+import { isTurnThinking } from '../../utils/isTurnThinking';
 
 type Props = {
   readonly session: Session;
@@ -250,10 +251,12 @@ export const ChatView = ({
           permission: permissionFor({ items: lastRow.items, toolUseId: i.toolUseId }),
         }) === 'running',
     );
-  const isThinking =
-    agentKind === 'running' &&
-    (lastItem?.kind ?? 'user_text') !== 'assistant_text' &&
-    !lastClusterRunning;
+  const isThinking = isTurnThinking({
+    isTurnRunning: agentKind === 'running',
+    lastItem,
+    isLastClusterRunning: lastClusterRunning,
+  });
+  const thinkingStartedAt = turnStateForRun.kind === 'running' ? turnStateForRun.startedAt : null;
   const thinkingContext = useMemo(() => classifyThinkingContext({ lastItem }), [lastItem]);
 
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
@@ -558,6 +561,7 @@ export const ChatView = ({
                     onOpenDiff={handleOpenDiff}
                     isThinking={isThinking}
                     thinkingContext={thinkingContext}
+                    thinkingStartedAt={thinkingStartedAt}
                     onRetryRun={(params) => void handleRetryRun(params)}
                     retryingRunId={retryingRunId}
                     mountSuggestionsByRun={mountSuggestionsByRun}

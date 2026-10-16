@@ -11,6 +11,7 @@ type Props = {
   readonly session: Session;
   readonly routing: ReturnType<typeof useTurnRouting>;
   readonly isBlocked: boolean;
+  readonly hasPermissionPicker: boolean;
   readonly attachmentCount: number;
   readonly fileInputRef: RefObject<HTMLInputElement | null>;
   readonly onFileInputChange: (event: ChangeEvent<HTMLInputElement>) => void;
@@ -29,6 +30,7 @@ export const ComposerToolbar = ({
   session,
   routing,
   isBlocked,
+  hasPermissionPicker,
   attachmentCount,
   fileInputRef,
   onFileInputChange,
@@ -49,7 +51,9 @@ export const ComposerToolbar = ({
         onAttachFiles={() => fileInputRef.current?.click()}
         onInsertPrefix={onInsertPrefix}
       />
-      <PermissionModePicker session={session} activeProvider={routing.effectiveProvider} />
+      {hasPermissionPicker ? (
+        <PermissionModePicker session={session} activeProvider={routing.effectiveProvider} />
+      ) : null}
       {attachmentCount > 0 && (
         <span className="text-meta text-faint-foreground">
           {attachmentCount} {attachmentCount === 1 ? 'file' : 'files'}

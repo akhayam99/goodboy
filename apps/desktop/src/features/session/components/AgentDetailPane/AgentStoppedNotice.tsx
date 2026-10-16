@@ -10,9 +10,10 @@ type Props = {
   readonly agent: Agent;
   readonly executedProvider: ProviderName | null;
   readonly providerOverride: ProviderId | null;
+  readonly isAutoChild: boolean;
 };
 
-type ProviderParams = Omit<Props, 'agent'>;
+type ProviderParams = Omit<Props, 'agent' | 'isAutoChild'>;
 
 const stoppedProvider = ({
   session,
@@ -28,6 +29,7 @@ export const AgentStoppedNotice = ({
   agent,
   executedProvider,
   providerOverride,
+  isAutoChild,
 }: Props) => {
   const continueStoppedAgent = useAppStore((state) => state.continueStoppedAgent);
   const authResults = useAppStore((state) => state.authResults);
@@ -37,7 +39,7 @@ export const AgentStoppedNotice = ({
   }
   const provider = stoppedProvider({ session, executedProvider, providerOverride });
   const isProviderConnected = authResults?.[provider]?.state !== 'disconnected';
-  const copy = agentStoppedCopy({ agent, provider, isProviderConnected });
+  const copy = agentStoppedCopy({ agent, provider, isProviderConnected, isAutoChild });
   const tint = tintClasses('neutral');
   const Icon = CONCEPT_ICONS.runStopped;
   return (

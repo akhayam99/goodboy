@@ -138,6 +138,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
         agent={agent}
         executedProvider={executed?.provider ?? null}
         providerOverride={providerOverride}
+        isAutoChild={isAutoChild}
       />
       <AgentNextAction session={session} agent={agent} />
     </>

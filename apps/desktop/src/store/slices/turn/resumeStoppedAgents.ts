@@ -1,4 +1,5 @@
 import type { AgentId, SessionId, WorkflowRunId } from '@goodboy/types';
+import { autoRetryRouteOf } from './autoRetryRouteOf';
 import { isStoppedByRestart } from './isStoppedByRestart';
 import type { GetFn } from './types';
 
@@ -12,10 +13,12 @@ const inFlight = new Set<AgentId>();
 export const resumeStoppedAgents = (get: GetFn) => {
   return async ({ sessionId, workflowRunId }: Params): Promise<number> => {
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
+    const views = get().autoTreeViews[sessionId] ?? [];
     const stopped = runs.filter(
       (agent) =>
         isStoppedByRestart({ agent, runs }) &&
         !inFlight.has(agent.id) &&
+        autoRetryRouteOf({ views, runs, agentId: agent.id }) === null &&
         (workflowRunId === undefined || agent.workflowRunId === workflowRunId),
     );
     for (const agent of stopped) {
