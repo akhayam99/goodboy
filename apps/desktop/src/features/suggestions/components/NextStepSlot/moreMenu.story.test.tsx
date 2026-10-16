@@ -306,7 +306,7 @@ describe('the more menu of a Next card on the real store', () => {
     expect(openDrawer).toHaveBeenCalledWith({
       kind: 'new',
       sessionId: SESSION_ID,
-      payload: { tab: 'agent' },
+      payload: { form: 'auto' },
     });
     expect(spawnAgent).not.toHaveBeenCalled();
   });

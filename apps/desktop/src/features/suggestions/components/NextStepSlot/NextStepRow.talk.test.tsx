@@ -122,7 +122,7 @@ describe('Talk it through with Auto in the more menu of a Next card', () => {
     expect(openDrawer).toHaveBeenCalledWith({
       kind: 'new',
       sessionId: SESSION_ID,
-      payload: { tab: 'agent' },
+      payload: { form: 'auto' },
     });
   });
 
