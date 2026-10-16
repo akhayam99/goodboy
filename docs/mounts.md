@@ -230,7 +230,10 @@ detach). The user resolves a proposal from the Overview Next slot
 (`cleanupSuggestionOf`): one row `Remove the <project> worktree` with the reason
 and the size (`#418 merged · 412 MB`, or `Session archived`), or one row
 `Remove 2 merged worktrees` for several. `Remove worktree` asks first, then runs a
-normal unmount for each proposal in turn; `Not now` hides the row with Undo
+normal unmount for each proposal in turn (`resolveMountCleanup` passes
+`isRemovalRequired`, so a removal git refuses fails the `unmount` operation,
+leaves the mount attached and the proposal pending, and reports the error;
+pressing `Remove worktree` again retries); `Not now` hides the row with Undo
 (the proposal stays pending, keyed by its request ids). Paths that
 outlive their row move to `retained_worktree_paths` and are probed later;
 anything a worktree scan finds that no row, retained path or unsettled

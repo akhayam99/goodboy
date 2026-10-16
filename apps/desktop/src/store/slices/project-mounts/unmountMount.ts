@@ -6,6 +6,7 @@ import { mountError } from './mountErrors';
 import { withRepositoryAndMountLock } from './mountLocks';
 import {
   beginMountOperation,
+  failMountOperation,
   markMountOperationUncertain,
   succeedMountOperation,
 } from './mountOperations';
@@ -24,6 +25,7 @@ export const unmountMount = (set: SetFn, get: GetFn) => {
     mountId,
     keepDirectory = false,
     requestId,
+    isRemovalRequired = false,
   }: UnmountMountInput): Promise<UnmountMountResult> => {
     const views = await loadMountViews({ get, sessionId });
     const view = requireMountView({ views, mountId });
@@ -59,6 +61,10 @@ export const unmountMount = (set: SetFn, get: GetFn) => {
                 keepDirectory,
               });
         const decision = cleanup?.decision ?? null;
+        if (isRemovalRequired && decision !== null && decision.kind === 'failed') {
+          await failMountOperation({ operation, errorCode: 'cleanup-failed' });
+          throw new Error(decision.reason);
+        }
         let isRetained = false;
         let removalReason: string | null = null;
         if (decision !== null) {

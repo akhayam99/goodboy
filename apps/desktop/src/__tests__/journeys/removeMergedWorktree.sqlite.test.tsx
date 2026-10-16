@@ -300,7 +300,7 @@ describe('journey: remove a merged worktree from NEXT', () => {
     expect(showNext(view)).toBe('');
   });
 
-  it('never loses the folder when git refuses the removal from the card', async () => {
+  it('keeps the card and the mount when git refuses the removal from the card, shows the error, and a retry removes it', async () => {
     const view = render(<ToastProvider>{null}</ToastProvider>);
     await mergeThePr(view);
     storySpies.removeWorktreeChecked.mockRejectedValueOnce(new Error('git worktree remove failed'));
@@ -308,19 +308,43 @@ describe('journey: remove a merged worktree from NEXT', () => {
     confirmRemoval(view);
 
     await vi.waitFor(() =>
+      expect(useAppStore.getState().notifications).toEqual([
+        expect.objectContaining({
+          kind: 'error',
+          title: "Couldn't remove the worktree",
+          body: 'git worktree remove failed',
+          sessionId,
+        }),
+      ]),
+    );
+    expect(useAppStore.getState().mountCleanupProposals[sessionId]).toHaveLength(1);
+    expect(await mountRows()).toEqual([
+      { worktree_path: WORKTREE.worktreePath, is_attached: 1, disk_state: 'unchecked' },
+    ]);
+    expect(mountOf()).toMatchObject({ isAttached: true, worktreePath: WORKTREE.worktreePath });
+    expect(await operationRows()).toEqual([
+      { kind: 'remove', status: 'pending' },
+      { kind: 'unmount', status: 'failed' },
+    ]);
+    expect(await detachEvents()).toEqual([]);
+    expect(showNext(view)).toContain(REMOVE_NOTE);
+
+    confirmRemoval(view);
+
+    await vi.waitFor(() =>
       expect(useAppStore.getState().mountCleanupProposals[sessionId]).toEqual([]),
     );
-    expect((await mountRows())[0]).toMatchObject({
-      worktree_path: WORKTREE.worktreePath,
-      disk_state: 'present',
-    });
-    expect(await detachEvents()).toEqual([
-      expect.objectContaining({
-        branch: WORKTREE.branchName,
-        kept: true,
-        reason: 'git worktree remove failed',
-      }),
+    expect(storySpies.removeWorktreeChecked).toHaveBeenCalledTimes(2);
+    expect(await mountRows()).toEqual([
+      { worktree_path: null, is_attached: 0, disk_state: 'removed' },
     ]);
-    expect(storySpies.removeWorktreeChecked).toHaveBeenCalledOnce();
+    expect(await operationRows()).toEqual([
+      { kind: 'remove', status: 'succeeded' },
+      { kind: 'unmount', status: 'succeeded' },
+    ]);
+    expect(await detachEvents()).toEqual([
+      expect.objectContaining({ branch: WORKTREE.branchName, kept: false }),
+    ]);
+    expect(showNext(view)).toBe('');
   });
 });

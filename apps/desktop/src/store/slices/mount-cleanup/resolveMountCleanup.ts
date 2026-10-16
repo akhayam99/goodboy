@@ -1,5 +1,4 @@
 import type { MountCleanupProposal, SessionId } from '@goodboy/types';
-import { formatError } from '@goodboy/ui';
 import { loadMountViews } from '../project-mounts/mountViews';
 import { listCleanupProposals, settleCleanupProposal } from './cleanupProposals';
 import type { GetFn, ResolveMountCleanupInput, SetFn } from './types';
@@ -74,28 +73,18 @@ export const resolveMountCleanup = (set: SetFn, get: GetFn) => {
       dropProposal({ set, sessionId, requestId });
       return;
     }
-    try {
-      const result = await get().unmountMount({
-        sessionId,
-        mountId: proposal.mountId,
-        requestId: `${requestId}:run`,
-      });
-      await settleCleanupProposal({
-        sessionId,
-        requestId,
-        outcome: result.kept ? 'kept' : 'removed',
-        ...(result.reason === null ? {} : { detail: result.reason }),
-      });
-    } catch (error) {
-      await settleCleanupProposal({
-        sessionId,
-        requestId,
-        outcome: 'kept',
-        detail: formatError(error),
-      });
-      dropProposal({ set, sessionId, requestId });
-      throw error;
-    }
+    const result = await get().unmountMount({
+      sessionId,
+      mountId: proposal.mountId,
+      requestId: `${requestId}:run`,
+      isRemovalRequired: true,
+    });
+    await settleCleanupProposal({
+      sessionId,
+      requestId,
+      outcome: result.kept ? 'kept' : 'removed',
+      ...(result.reason === null ? {} : { detail: result.reason }),
+    });
     dropProposal({ set, sessionId, requestId });
   };
 };
