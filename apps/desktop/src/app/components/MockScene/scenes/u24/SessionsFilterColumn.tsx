@@ -62,7 +62,6 @@ export const SessionsFilterColumn = ({ config }: Props) => {
     if (!config.hasOpenSession) {
       useAppStore.setState({ currentSessionId: null });
     }
-    useAppStore.getState().leaveSessionLevel();
     setSeed(next);
   }, [config]);
   useEffect(() => {

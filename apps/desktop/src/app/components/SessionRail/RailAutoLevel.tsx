@@ -5,7 +5,12 @@ import { useAppStore } from '../../../store';
 import { sessionTitle } from '../../../features/session/sessionTitle';
 import { useAutoTreeActions } from '../../../features/auto/chat/useAutoTreeActions';
 import { useAutoLevel } from '../../../features/auto/level/useAutoLevel';
-import { RAIL_BUTTON_IDLE, RAIL_NODE_BUTTON, RAIL_NODE_CURRENT, RailButton } from './RailButton';
+import {
+  RAIL_BUTTON_IDLE,
+  RAIL_NODE_BUTTON,
+  RAIL_NODE_CURRENT,
+  RailButton,
+} from '../SideColumn/RailButton';
 
 type Props = {
   readonly session: Session;
@@ -13,7 +18,7 @@ type Props = {
 
 export const RailAutoLevel = ({ session }: Props) => {
   const level = useAutoLevel({ session });
-  const pickSidebarLevel = useAppStore((state) => state.pickSidebarLevel);
+  const pickRailLevel = useAppStore((state) => state.pickRailLevel);
   const actions = useAutoTreeActions({ sessionId: session.id });
 
   return (
@@ -25,7 +30,7 @@ export const RailAutoLevel = ({ session }: Props) => {
         shortcut="nav.back"
         isCurrent={false}
         isPage
-        onSelect={() => pickSidebarLevel({ level: 'session' })}
+        onSelect={() => pickRailLevel({ level: 'session' })}
       />
       {level.rows.map((row) => {
         const label = `${row.label}, ${row.word}`;

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { ScrollFade } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { WorktreeLevel } from '../../SideColumn/WorktreeLevel';
+import { WorktreeLevel } from '../../SessionRail/WorktreeLevel';
 import { WorktreeEntriesSlot } from './WorktreeEntriesSlot';
 
 type Props = {

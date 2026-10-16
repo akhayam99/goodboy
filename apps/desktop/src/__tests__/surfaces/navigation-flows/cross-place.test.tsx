@@ -666,11 +666,10 @@ describe('moving across every place keeps one frame', () => {
       if (rail === null) {
         throw new Error('no rail after the fold');
       }
-      expect(rail.getAttribute('data-sidebar-level')).toBe('session');
+      expect(rail.querySelector('[data-column-door="board"]')).not.toBeNull();
       expect(document.querySelector('[data-side-column]')).toBeNull();
+      expect(document.querySelector('[data-session-rail="session"]')).not.toBeNull();
 
-      await click(within(rail).getByRole('button', { name: 'Back to Sessions' }));
-      expect(rail.getAttribute('data-sidebar-level')).toBe('workspace');
       await click(door('inbox'));
       expect(studio()).toBe('inbox');
       expect(currentDoors()).toEqual(['inbox']);
@@ -871,7 +870,7 @@ describe('moving across every place keeps one frame', () => {
 
       await click(sessionRow(sessionId));
       expectPlace({ session: sessionId, lens: null, studio: null, doors: [] });
-      expect(sessionRow(sessionId).getAttribute('aria-current')).toBeNull();
+      expect(sessionRow(sessionId).getAttribute('aria-current')).toBe('page');
       expect(currentPage()).toBe('Overview');
 
       for (const [page, lens] of SESSION_PAGES) {
@@ -944,9 +943,12 @@ describe('moving across every place keeps one frame', () => {
       fireEvent.pointerEnter(screen.getByTestId('sidebar-peek-edge'));
       await settle(16);
       const peek = screen.getByRole('region', { name: 'Sessions' });
-      expect(peek.querySelector('[data-sidebar-level="worktree"]')).not.toBeNull();
-      await click(within(peek).getByRole('button', { name: /^Back to session / }));
-      await click(within(peek).getByRole('button', { name: 'Back to Sessions' }));
+      expect(peek.querySelector('[data-column-door="board"]')).not.toBeNull();
+      const sessionRail = document.querySelector<HTMLElement>('[data-session-rail="worktree"]');
+      if (sessionRail === null) {
+        throw new Error('the session rail is not on the worktree level');
+      }
+      await click(within(sessionRail).getByRole('button', { name: /^Back to session / }));
       await click(peek.querySelector<HTMLElement>(`[data-select-id="${other}"]`) as HTMLElement);
       expectPlace({ session: other, lens: null, studio: null, doors: [] });
       await click(historyButton('Back'));
@@ -982,9 +984,9 @@ describe('moving across every place keeps one frame', () => {
       await clickButton('Start run');
       await waitFor(() => expect(sessionRuns(sessionId)).toBe(runsBefore + 1), WAIT);
       expectPlace({ session: sessionId, lens: 'workflows', studio: null, doors: [] });
-      expect(
-        document.querySelector('[data-sidebar-level]')?.getAttribute('data-sidebar-level'),
-      ).toBe('run');
+      expect(document.querySelector('[data-session-rail]')?.getAttribute('data-session-rail')).toBe(
+        'run',
+      );
       await click(screen.getByRole('button', { name: 'Back to Runs' }));
       expect(currentPage()).toBe('Runs');
       const page = document.querySelector<HTMLElement>('main [data-drawer-main]') as HTMLElement;

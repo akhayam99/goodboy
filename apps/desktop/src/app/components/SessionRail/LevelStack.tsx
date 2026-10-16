@@ -1,23 +1,22 @@
 import type { ReactNode } from 'react';
-import type { SidebarLevel } from '../../../store/slices/navigation/sidebarLevel';
+import type { RailLevel } from '../../../store/slices/navigation/railLevel';
 import { LevelLayer, type LevelLayerPosition } from './LevelLayer';
 
 type StackLayer = {
-  readonly level: SidebarLevel;
+  readonly level: RailLevel;
   readonly node: ReactNode;
 };
 
 type Props = {
-  readonly level: SidebarLevel;
+  readonly level: RailLevel;
   readonly layers: ReadonlyArray<StackLayer>;
 };
 
-const DEPTH: Readonly<Record<SidebarLevel, number>> = {
-  workspace: 0,
-  session: 1,
-  worktree: 2,
-  run: 2,
-  auto: 2,
+const DEPTH: Readonly<Record<RailLevel, number>> = {
+  session: 0,
+  worktree: 1,
+  run: 1,
+  auto: 1,
 };
 
 type ShownParams = Props;
@@ -25,19 +24,12 @@ type ShownParams = Props;
 const isPresentIn = ({ level, layers }: ShownParams): boolean =>
   layers.some((layer) => layer.level === level && layer.node !== null);
 
-const shownLevelOf = ({ level, layers }: ShownParams): SidebarLevel => {
-  if (isPresentIn({ level, layers })) {
-    return level;
-  }
-  if (DEPTH[level] > DEPTH.session && isPresentIn({ level: 'session', layers })) {
-    return 'session';
-  }
-  return 'workspace';
-};
+const shownLevelOf = ({ level, layers }: ShownParams): RailLevel =>
+  isPresentIn({ level, layers }) ? level : 'session';
 
 type PositionParams = {
-  readonly layer: SidebarLevel;
-  readonly shown: SidebarLevel;
+  readonly layer: RailLevel;
+  readonly shown: RailLevel;
 };
 
 const positionOf = ({ layer, shown }: PositionParams): LevelLayerPosition => {

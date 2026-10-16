@@ -5,6 +5,7 @@ import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDra
 import { SessionWorkspace } from '../../../../../features/session/components/SessionWorkspace';
 import { DrawerHost } from '../../../DrawerHost';
 import { SideColumn } from '../../../SideColumn';
+import { SessionFrame } from '../../../SessionRail/SessionFrame';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
 import {
   C09_SESSION_ID,
@@ -86,9 +87,9 @@ export const C09OrchestratedScene = ({ state, page, click = 'none' }: Props) => 
       <main className="relative flex min-w-0 flex-1">
         <DrawerColumn
           main={
-            <div className="relative flex h-full min-w-0 flex-1 flex-col">
+            <SessionFrame session={session}>
               <SessionWorkspace session={session} isActive />
-            </div>
+            </SessionFrame>
           }
           drawer={isDrawerOpen ? <DrawerHost /> : null}
           sizing={sizing}

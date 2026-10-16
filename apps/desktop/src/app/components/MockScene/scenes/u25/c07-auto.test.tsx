@@ -283,8 +283,9 @@ describe('c07 Auto scenes', () => {
     mount({ id: 'c07-auto-folded' });
 
     const rail = await waitFor(() => {
-      const found = document.querySelector<HTMLElement>('[data-column-rail]');
-      expect(found?.dataset.sidebarLevel).toBe('auto');
+      const found = document.querySelector<HTMLElement>('[data-session-rail]');
+      expect(found?.dataset.sessionRail).toBe('auto');
+      expect(found?.hasAttribute('data-rail-folded')).toBe(true);
       return found;
     }, WAIT);
     if (rail === null || rail === undefined) {

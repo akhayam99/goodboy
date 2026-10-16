@@ -113,7 +113,6 @@ const mountRail = ({
       [harborline.id]: pinned.map((session, index) => ({ id: idOf(session), at: index + 1 })),
     },
   });
-  useAppStore.getState().leaveSessionLevel();
   return render(railOf({ place, scope, currentSessionId }));
 };
 
@@ -126,7 +125,6 @@ const showCurrent = ({
 }) => {
   act(() => {
     useAppStore.setState({ currentSessionId: sessionId });
-    useAppStore.getState().leaveSessionLevel();
   });
   rerender(railOf({ currentSessionId: sessionId }));
 };

@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import type { MountId, ProjectId, SessionProjectMount, WorktreeStatus } from '@goodboy/types';
-import { useAppStore } from '../../../../../store';
+import { useAppStore, useCurrentSession } from '../../../../../store';
 import { brandedId } from '../../../../../features/history/testing/brandedId';
 import type { BranchTab } from '../../../../../store/slices/navigation/types';
 import { branchPlace, sessionPlace } from '../../../../../store/slices/navigation/place';
 import { BranchPage } from '../../../../../features/branch/components/BranchPage';
 import { SideColumn } from '../../../SideColumn';
-import { ColumnRail } from '../../../SideColumn/ColumnRail';
+import { SessionFrame } from '../../../SessionRail/SessionFrame';
+import { useSceneRailFold } from '../useSceneRailFold';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
 import { CTX_STATUS } from '../brand/contextBranch';
 import { handlersFor } from '../brand/DiffStage';
@@ -170,6 +171,8 @@ type Props = {
 
 export const WorktreeScene = ({ config }: Props) => {
   const [isReady, setIsReady] = useState(false);
+  const session = useCurrentSession();
+  useSceneRailFold({ isFolded: config.isFolded === true });
   useEffect(() => {
     applyPrPageSeed({ variant: config.variant });
     installIpc({ gitState: config.gitState ?? 'level' });
@@ -199,36 +202,25 @@ export const WorktreeScene = ({ config }: Props) => {
 
   return (
     <div data-shot className="flex h-screen min-h-0 bg-background">
-      <div className="h-full shrink-0 border-r border-border-soft">
-        {config.isFolded === true ? (
-          <ColumnRail
-            scope="workspace"
-            workspaceId={SESSION.workspaceId}
-            currentSessionId={SESSION_ID}
-            place={null}
-            onToggle={noop}
-            actions={ACTIONS}
-          />
-        ) : (
-          <div className="h-full w-60">
-            <SideColumn
-              scope="workspace"
-              workspaceId={SESSION.workspaceId}
-              currentSessionId={SESSION_ID}
-              place={null}
-              isCollapsed={false}
-              actions={ACTIONS}
-              onToggle={noop}
-            />
-          </div>
-        )}
+      <div className="h-full w-60 shrink-0 border-r border-border-soft">
+        <SideColumn
+          scope="workspace"
+          workspaceId={SESSION.workspaceId}
+          currentSessionId={SESSION_ID}
+          place={null}
+          isCollapsed={false}
+          actions={ACTIONS}
+          onToggle={noop}
+        />
       </div>
       <main className="flex min-w-0 flex-1 flex-col">
-        {config.level === 'worktree' ? (
-          <BranchPage session={SESSION} workingDir={PR_PAGE_WORKTREE} />
-        ) : (
-          <h1 className="p-6 text-title text-foreground">{SESSION.goal}</h1>
-        )}
+        <SessionFrame session={session ?? SESSION}>
+          {config.level === 'worktree' ? (
+            <BranchPage session={session ?? SESSION} workingDir={PR_PAGE_WORKTREE} />
+          ) : (
+            <h1 className="p-6 text-title text-foreground">{SESSION.goal}</h1>
+          )}
+        </SessionFrame>
       </main>
     </div>
   );

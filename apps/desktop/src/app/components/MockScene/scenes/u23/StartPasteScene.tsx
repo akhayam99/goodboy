@@ -83,7 +83,7 @@ export const StartPasteScene = () => {
   return (
     <>
       <NewSessionBridge />
-      <WorkspaceFrame session={SESSION} main={<SessionStartMain />} />
+      <WorkspaceFrame session={SESSION} main={<SessionStartMain />} hasRail={false} />
     </>
   );
 };

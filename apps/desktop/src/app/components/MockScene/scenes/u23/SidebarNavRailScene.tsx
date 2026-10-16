@@ -37,7 +37,6 @@ export const SidebarNavRailScene = ({ config, isHovered = false }: Props) => {
   const [seed, setSeed] = useState<SidebarNavSeed | null>(null);
   useEffect(() => {
     const next = seedSidebarNav({ ...SIDEBAR_NAV_DEFAULTS, ...config });
-    useAppStore.getState().leaveSessionLevel();
     setSeed(next);
   }, [config]);
   useEffect(() => {

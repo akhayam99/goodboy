@@ -7,7 +7,7 @@ import { agentKindPalette, classifyAgent } from '../../../features/session/agent
 import { leaveRunLevel } from '../../../features/workflows/leaveRunLevel';
 import type { PresetRunFocus } from '../../../features/workflows/presetRunFocusOf';
 import { runPlace } from '../../../features/workflows/runPlace';
-import { RailButton } from './RailButton';
+import { RailButton } from '../SideColumn/RailButton';
 
 type Props = {
   readonly session: Session;

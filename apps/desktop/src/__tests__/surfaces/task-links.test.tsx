@@ -50,7 +50,7 @@ import { InboxStudio } from '../../features/inbox/components/InboxStudio';
 import type { InboxProvider, InboxRecord } from '../../features/inbox/types';
 import { useInboxLinkedSessions } from '../../features/inbox/useInboxLinkedSessions';
 import { LinkIssueAction } from '../../features/session/components/SessionOverviewPane/LinkIssueAction';
-import { LevelLinked } from '../../app/components/SideColumn/SessionLevel/LevelLinked';
+import { LevelLinked } from '../../app/components/SessionRail/SessionLevel/LevelLinked';
 
 const ROOT_PATH = '/mock/cascade/core-api';
 const NOW = '2026-09-20T09:00:00.000Z' as IsoDateTime;

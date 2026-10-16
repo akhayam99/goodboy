@@ -1,8 +1,10 @@
-import { useEffect, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { AppShell } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { AppTopBar } from '../../../AppTopBar';
 import { ShellLeft } from '../../../SideColumn/ShellLeft';
+import { SessionFrame } from '../../../SessionRail/SessionFrame';
+import { useShellFolds } from '../../../../hooks/useShellFolds';
 import { SessionWorkspace } from '../../../../../features/session/components/SessionWorkspace';
 import { useAppStore } from '../../../../../store';
 import { selectDrawerPanel } from '../../../../../store/slices/drawer/selectDrawerPanel';
@@ -17,20 +19,16 @@ const noop = () => undefined;
 type Props = {
   readonly session: Session;
   readonly main?: ReactNode;
-  readonly level?: 'workspace' | 'session';
+  readonly hasRail?: boolean;
 };
 
-export const WorkspaceFrame = ({ session, main, level = 'session' }: Props) => {
-  useEffect(() => {
-    if (level === 'workspace') {
-      useAppStore.getState().leaveSessionLevel();
-    }
-  }, [level]);
+export const WorkspaceFrame = ({ session, main, hasRail = true }: Props) => {
+  const folds = useShellFolds();
   const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
   const drawerSizing = useAppStore(selectDrawerSizing);
   const arrangement = shellArrangement({
     hasWorkspace: true,
-    isSidebarCollapsed: sceneParam({ key: 'rail' }) === '1',
+    isSidebarCollapsed: sceneParam({ key: 'rail' }) === '1' || (hasRail && folds.isMainNarrow),
   });
   const shell = useSceneShell({ arrangement });
   return (
@@ -54,10 +52,12 @@ export const WorkspaceFrame = ({ session, main, level = 'session' }: Props) => {
           />
         }
         main={
-          main ?? (
-            <div className="relative h-full w-full">
-              <SessionWorkspace session={session} isActive />
-            </div>
+          hasRail ? (
+            <SessionFrame session={session}>
+              {main ?? <SessionWorkspace session={session} isActive />}
+            </SessionFrame>
+          ) : (
+            main
           )
         }
       />

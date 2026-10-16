@@ -19,5 +19,5 @@ export const openAutoAgents = ({ sessionId }: Params): void => {
     return;
   }
   state.navigate({ to: agentPlace({ sessionId, agentId: only.id }) });
-  state.pickSidebarLevel({ level: 'auto' });
+  state.pickRailLevel({ level: 'auto' });
 };

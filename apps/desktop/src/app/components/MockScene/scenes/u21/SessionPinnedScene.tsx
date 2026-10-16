@@ -11,5 +11,5 @@ export const SessionPinnedScene = () => {
   if (session === null) {
     return null;
   }
-  return <WorkspaceFrame session={session} level="workspace" />;
+  return <WorkspaceFrame session={session} />;
 };

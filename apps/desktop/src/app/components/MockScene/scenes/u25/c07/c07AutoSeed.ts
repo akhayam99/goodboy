@@ -250,7 +250,7 @@ export const seedC07 = ({
     store.navigate({ to: lensPlace({ state: store, sessionId: AUTO_SESSION.id, lens: 'auto' }) });
   }
   if (place === 'session') {
-    useAppStore.getState().pickSidebarLevel({ level: 'session' });
+    useAppStore.getState().pickRailLevel({ level: 'session' });
   }
   if (pane !== undefined) {
     useAppStore.getState().openDrawer({

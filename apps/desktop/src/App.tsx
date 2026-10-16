@@ -19,6 +19,8 @@ import { SessionArchiveBridge } from './features/session/components/SessionArchi
 import { SessionRefreshBridge } from './features/session/components/SessionRefreshBridge';
 import { SidebarPeekOverlay } from './features/workspace/components/SidebarPeekOverlay';
 import { ShellLeft } from './app/components/SideColumn/ShellLeft';
+import { SessionFrame } from './app/components/SessionRail/SessionFrame';
+import { useShellFolds } from './app/hooks/useShellFolds';
 import type { ColumnActions } from './app/components/SideColumn/columnDoors';
 import { useGoToBoard } from './app/hooks/useGoToBoard';
 import { useWindowPresence } from './features/workspace/hooks/useWindowPresence';
@@ -100,7 +102,11 @@ export const App = () => {
   const currentWorkspaceSessions = useSessions();
   const isDraftShown = useAppStore((s) => selectIsSessionDraftShown({ state: s }));
   const isSettingsOpen = useAppStore((s) => s.appStudio?.kind === 'settings');
-  const sessionSidebar = useSessionSidebarVisibility({ hasSidebar: true });
+  const shellFolds = useShellFolds();
+  const sessionSidebar = useSessionSidebarVisibility({
+    hasSidebar: true,
+    isNarrow: currentSession !== null && shellFolds.isMainNarrow,
+  });
   const [settingsColumnSlot, setSettingsColumnSlot] = useState<HTMLDivElement | null>(null);
   const [keepAliveIds, setKeepAliveIds] = useState<ReadonlyArray<SessionId>>([]);
   const isWorkspaceLauncherBranch = hasWorkspaces && currentWorkspace === null && isMainWindow();
@@ -339,7 +345,7 @@ export const App = () => {
           main={
             <div className="relative h-full w-full">
               {currentSession ? (
-                <div className="relative h-full w-full">
+                <SessionFrame session={currentSession}>
                   {deferredRenderedIds.map((id) => (
                     <KeepAliveWorkSurface
                       key={id}
@@ -347,7 +353,7 @@ export const App = () => {
                       isActive={id === deferredActiveId}
                     />
                   ))}
-                </div>
+                </SessionFrame>
               ) : currentWorkspace && isDraftShown ? (
                 <SessionDraftPane workspaceId={currentWorkspace.id} />
               ) : currentWorkspace ? (

@@ -165,7 +165,7 @@ c01-tail-waiting
 c01-tail-working
 c02-level-branchless
 c02-level-folded
-c02-level-left
+c02-level-main-folded
 c02-level-session
 c02-level-session-agents
 c02-level-studio-over

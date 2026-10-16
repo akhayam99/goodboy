@@ -35,11 +35,9 @@ export const RailOrderScene = () => {
       navigate: ({ to }) => {
         if (to.at === 'session') {
           useAppStore.setState({ currentSessionId: to.sessionId });
-          useAppStore.getState().leaveSessionLevel();
         }
       },
     });
-    useAppStore.getState().leaveSessionLevel();
     setSeed(next);
   }, []);
   if (seed === null) {

@@ -52,7 +52,15 @@ const mount = async (name: SceneName): Promise<void> => {
 };
 
 const levelOf = (): string | null =>
-  document.querySelector('[data-sidebar-level]')?.getAttribute('data-sidebar-level') ?? null;
+  document.querySelector('[data-session-rail]')?.getAttribute('data-session-rail') ?? null;
+
+const mainSidebar = (): HTMLElement => {
+  const nav = document.querySelector<HTMLElement>('[data-column-layer="nav"], [data-column-rail]');
+  if (nav === null) {
+    throw new Error('no main sidebar');
+  }
+  return nav;
+};
 
 const sessionLayer = (): HTMLElement => {
   const layer = document.querySelector<HTMLElement>('[data-level-layer="session"]');
@@ -62,7 +70,7 @@ const sessionLayer = (): HTMLElement => {
   return layer;
 };
 
-describe('the c02 sidebar level scenes', () => {
+describe('the c02 sidebar and session rail scenes', () => {
   it('registers every scene in the mock registry', () => {
     for (const name of Object.keys(U25_C02_LEVEL_SCENES)) {
       expect(MOCK_SCENES[name], name).toBeDefined();
@@ -72,7 +80,7 @@ describe('the c02 sidebar level scenes', () => {
   it('c02-level-workspace shows New session, the doors and the sessions, with Sessions current', async () => {
     await mount('c02-level-workspace');
 
-    expect(levelOf()).toBe('workspace');
+    expect(levelOf()).toBeNull();
     expect(screen.getByRole('button', { name: 'New session' })).toBeDefined();
     expect(document.querySelector('[data-column-door="board"]')?.getAttribute('aria-current')).toBe(
       'page',
@@ -80,12 +88,14 @@ describe('the c02 sidebar level scenes', () => {
     expect(document.querySelector('[data-level-layer="session"]')).toBeNull();
   });
 
-  it('c02-level-session shows back row, identity, counted pages, projects and linked work', async () => {
+  it('c02-level-session keeps the workspace sidebar and shows identity, pages, projects and linked work in the rail', async () => {
     await mount('c02-level-session');
 
     expect(levelOf()).toBe('session');
+    expect(mainSidebar().querySelector('[data-column-door="board"]')).not.toBeNull();
+    expect(mainSidebar().querySelector('[data-level-layer]')).toBeNull();
     const level = within(sessionLayer());
-    expect(level.getByRole('button', { name: 'Back to Sessions' })).toBeDefined();
+    expect(level.queryByRole('button', { name: 'Back to Sessions' })).toBeNull();
     expect(level.getByText('Retry failed webhook deliveries')).toBeDefined();
     const pages = within(level.getByRole('list', { name: 'Pages' }));
     expect(pages.getAllByRole('button').map((row) => row.textContent)).toEqual([
@@ -119,30 +129,31 @@ describe('the c02 sidebar level scenes', () => {
     expect(level.queryByRole('group', { name: 'Projects' })).toBeNull();
   });
 
-  it('c02-level-left shows the workspace level with the session row still selected', async () => {
-    await mount('c02-level-left');
+  it('c02-level-main-folded folds the main sidebar to its icons and keeps the rail open', async () => {
+    await mount('c02-level-main-folded');
 
-    expect(levelOf()).toBe('workspace');
-    const current = document.querySelector('[data-level-layer="workspace"] [aria-current="page"]');
-    expect(current?.textContent).toContain('Retry failed webhook deliveries');
+    expect(document.querySelector('[data-column-rail]')).not.toBeNull();
+    expect(levelOf()).toBe('session');
+    expect(document.querySelector('[data-session-rail]')?.hasAttribute('data-rail-folded')).toBe(
+      false,
+    );
+    expect(within(sessionLayer()).getByRole('list', { name: 'Pages' })).toBeDefined();
   });
 
-  it('c02-level-folded shows the session level as icons with the back icon first', async () => {
+  it('c02-level-folded folds the session rail to its page icons beside the open sidebar', async () => {
     await mount('c02-level-folded');
 
-    const rail = document.querySelector<HTMLElement>('[data-column-rail]');
-    expect(rail?.getAttribute('data-sidebar-level')).toBe('session');
-    expect(
-      within(rail ?? document.body)
-        .getAllByRole('button')[1]
-        ?.getAttribute('aria-label'),
-    ).toBe('Back to Sessions');
+    const rail = document.querySelector<HTMLElement>('[data-session-rail]');
+    expect(rail?.hasAttribute('data-rail-folded')).toBe(true);
+    expect(rail?.querySelector('[data-rail-level="session"]')).not.toBeNull();
+    expect(within(rail ?? document.body).getByRole('button', { name: /^Agents/ })).toBeDefined();
+    expect(document.querySelector('[data-column-layer="nav"]')).not.toBeNull();
   });
 
-  it('c02-level-studio-over shows the workspace level while Tasks sits over the session', async () => {
+  it('c02-level-studio-over selects Tasks in the sidebar while it sits over the session', async () => {
     await mount('c02-level-studio-over');
 
-    expect(levelOf()).toBe('workspace');
+    expect(levelOf()).toBeNull();
     expect(document.querySelector('[data-column-door="inbox"]')?.getAttribute('aria-current')).toBe(
       'page',
     );

@@ -14,7 +14,7 @@ type Props = {
 
 export const AutoLevel = ({ session }: Props) => {
   const level = useAutoLevel({ session });
-  const pickSidebarLevel = useAppStore((state) => state.pickSidebarLevel);
+  const pickRailLevel = useAppStore((state) => state.pickRailLevel);
   const actions = useAutoTreeActions({ sessionId: session.id });
   const view = level.tree?.view ?? null;
   const hasChildren = level.rows.length > 1;
@@ -24,7 +24,7 @@ export const AutoLevel = ({ session }: Props) => {
       <div className="shrink-0 px-2">
         <LevelBackRow
           label={sessionTitle({ session })}
-          onBack={() => pickSidebarLevel({ level: 'session' })}
+          onBack={() => pickRailLevel({ level: 'session' })}
         />
       </div>
       <ScrollFade className="min-h-0 flex-1">

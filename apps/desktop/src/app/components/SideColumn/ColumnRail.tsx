@@ -1,7 +1,7 @@
 import { Plus } from 'lucide-react';
 import { COLLAPSED_RAIL_WIDTH, StatusDot, cn, tintClasses } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
-import { useAppStore, useCurrentSession } from '../../../store';
+import { useAppStore } from '../../../store';
 import { selectSessionDraft } from '../../../store/slices/sessionDraft/selectSessionDraft';
 import { hasSessionDraftContent } from '../../../store/slices/sessionDraft/hasSessionDraftContent';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
@@ -13,13 +13,7 @@ import { RailButton } from './RailButton';
 import { RailSessions } from './RailSessions';
 import { ReportBugButton } from './ReportBugButton';
 import { COLUMN_DOORS, openColumnDoor, type ColumnActions } from './columnDoors';
-import { RailRunLevel } from './RailRunLevel';
-import { RailAutoLevel } from './RailAutoLevel';
-import { RailSessionLevel } from './RailSessionLevel';
-import { RailWorktreeLevel } from './RailWorktreeLevel';
-import { usePresetRunFocus } from '../../../features/session/hooks/usePresetRunFocus';
 import { useDoorSignals } from './useDoorSignals';
-import { useSidebarLevel } from './useSidebarLevel';
 import type { ColumnPlace } from './columnPlace';
 
 type Props = {
@@ -50,36 +44,15 @@ export const ColumnRail = ({
   );
   const isDraftWaiting = hasDraft && place !== 'new';
   const signals = useDoorSignals({});
-  const level = useSidebarLevel({ place, currentSessionId });
-  const currentSession = useCurrentSession();
-  const runFocus = usePresetRunFocus({ sessionId: currentSessionId });
-  const isInSession = currentSession !== null && currentSession.id === currentSessionId;
-  const shownLevel = isInSession && (level !== 'run' || runFocus !== null) ? level : 'workspace';
   return (
     <nav
       aria-label="Sidebar"
       data-column-rail=""
-      data-sidebar-level={shownLevel}
       className="flex h-full min-w-0 shrink-0 flex-col items-center gap-1 py-2"
       style={{ width: COLLAPSED_RAIL_WIDTH }}
     >
       <ColumnToggleButton isCollapsed onToggle={onToggle} />
-      {scope === 'workspace' && shownLevel === 'session' && currentSession !== null ? (
-        <RailSessionLevel session={currentSession} />
-      ) : null}
-      {scope === 'workspace' && shownLevel === 'worktree' && currentSession !== null ? (
-        <RailWorktreeLevel session={currentSession} />
-      ) : null}
-      {scope === 'workspace' &&
-      shownLevel === 'run' &&
-      currentSession !== null &&
-      runFocus !== null ? (
-        <RailRunLevel session={currentSession} focus={runFocus} />
-      ) : null}
-      {scope === 'workspace' && shownLevel === 'auto' && currentSession !== null ? (
-        <RailAutoLevel session={currentSession} />
-      ) : null}
-      {scope === 'workspace' && shownLevel === 'workspace' ? (
+      {scope === 'workspace' ? (
         <>
           <RailButton
             id="new"

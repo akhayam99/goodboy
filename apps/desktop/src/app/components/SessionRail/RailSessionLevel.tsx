@@ -1,13 +1,11 @@
-import { ChevronLeft } from 'lucide-react';
 import { StatusDot } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { useAppStore } from '../../../store';
 import { openSessionPage } from '../../../features/session/openSessionPage';
 import { pageSlotOf } from '../../../features/session/pageSlot';
 import { useSessionPageLens } from '../../../features/session/hooks/useSessionPageLens';
 import { currentSignOf } from '../../../features/workspace/components/SessionActivityBar/currentSign';
 import { useCardPages } from '../../../features/workspace/hooks/useCardPages';
-import { RailButton } from './RailButton';
+import { RailButton } from '../SideColumn/RailButton';
 
 type Props = {
   readonly session: Session;
@@ -16,7 +14,6 @@ type Props = {
 export const RailSessionLevel = ({ session }: Props) => {
   const sessionId = session.id;
   const { pages, facts } = useCardPages({ session });
-  const leaveSessionLevel = useAppStore((state) => state.leaveSessionLevel);
   const pageLens = useSessionPageLens({ session });
   const sign = currentSignOf({
     activeLens: pageLens,
@@ -26,15 +23,6 @@ export const RailSessionLevel = ({ session }: Props) => {
 
   return (
     <div data-rail-level="session" className="flex flex-col items-center gap-1">
-      <RailButton
-        id="level-back"
-        icon={ChevronLeft}
-        label="Back to Sessions"
-        shortcut="nav.back"
-        isCurrent={false}
-        isPage
-        onSelect={leaveSessionLevel}
-      />
       {pages.map((page) => {
         const slot = pageSlotOf({ page: page.count, facts });
         const isCurrent = sign === page.id;

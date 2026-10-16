@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { DrawerColumn } from '@goodboy/ui';
 import type { AgentId } from '@goodboy/types';
-import { AutoLevel } from '../../../SideColumn/AutoLevel';
+import { AutoLevel } from '../../../SessionRail/AutoLevel';
 import { AutoReleaseContext } from '../../../../../features/auto/autoReleaseContext';
 import { AgentDetailPane } from '../../../../../features/session/components/AgentDetailPane';
 import { useAppStore } from '../../../../../store';

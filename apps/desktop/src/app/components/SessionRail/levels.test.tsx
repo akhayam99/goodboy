@@ -35,10 +35,12 @@ import {
   sessionOf,
 } from '../../../features/workspace/testing/sessionColumn';
 import { brandedId } from '../../../features/history/testing/brandedId';
-import { ColumnRail } from './ColumnRail';
-import type { ColumnActions } from './columnDoors';
-import type { ColumnPlace } from './columnPlace';
-import { SideColumn } from './index';
+import { STORAGE_KEYS } from '../../../shared/lib/storage-keys';
+import { useCurrentSession } from '../../../store';
+import type { ColumnActions } from '../SideColumn/columnDoors';
+import type { ColumnPlace } from '../SideColumn/columnPlace';
+import { SideColumn } from '../SideColumn';
+import { SessionFrame } from './SessionFrame';
 
 let useAppStore: StoryStore;
 
@@ -92,21 +94,30 @@ type MountParams = {
   readonly place?: ColumnPlace;
 };
 
-const Column = ({ place = null }: MountParams) => (
-  <ToastProvider>
-    <SideColumn
-      scope="workspace"
-      workspaceId={harborline.id}
-      currentSessionId={openId}
-      place={place}
-      isCollapsed={false}
-      actions={actions()}
-      onToggle={vi.fn()}
-    />
-  </ToastProvider>
-);
+const Shell = ({ place = null }: MountParams) => {
+  const current = useCurrentSession();
+  const currentSessionId = current?.id ?? null;
+  return (
+    <ToastProvider>
+      <SideColumn
+        scope="workspace"
+        workspaceId={harborline.id}
+        currentSessionId={currentSessionId}
+        place={place}
+        isCollapsed={false}
+        actions={actions()}
+        onToggle={vi.fn()}
+      />
+      {current === null ? null : (
+        <SessionFrame session={current}>
+          <p>page</p>
+        </SessionFrame>
+      )}
+    </ToastProvider>
+  );
+};
 
-const mountColumn = ({ place = null }: MountParams = {}) => render(<Column place={place} />);
+const mountColumn = ({ place = null }: MountParams = {}) => render(<Shell place={place} />);
 
 const elementOf = (selector: string, root: ParentNode = document): HTMLElement => {
   const element = root.querySelector<HTMLElement>(selector);
@@ -118,58 +129,55 @@ const elementOf = (selector: string, root: ParentNode = document): HTMLElement =
 
 const nav = (): HTMLElement => elementOf('[data-column-layer="nav"]');
 
-const levelOf = (): string | null => nav().getAttribute('data-sidebar-level');
+const rail = (): HTMLElement => elementOf('[data-session-rail]');
+
+const levelOf = (): string | null => rail().getAttribute('data-session-rail');
 
 const sessionLayer = (): HTMLElement => elementOf('[data-level-layer="session"]');
 
-const workspaceLayer = (): HTMLElement => elementOf('[data-level-layer="workspace"]');
-
 const pages = () => within(within(sessionLayer()).getByRole('list', { name: 'Pages' }));
 
-describe('the session level', () => {
-  it('opens on the session with its back row, identity and pages, the doors one step away', () => {
+const toggle = (): HTMLElement => elementOf('[data-session-rail-toggle]');
+
+describe('the main sidebar beside the session rail', () => {
+  it('keeps the workspace level with the session row selected while the rail holds the session', () => {
     seed();
     mountColumn();
 
+    expect(within(nav()).getByRole('button', { name: /^New session/ })).toBeDefined();
+    expect(nav().querySelector('[data-column-door="board"]')).not.toBeNull();
+    expect(nav().querySelector('[data-level-layer]')).toBeNull();
+    const row = nav().querySelector(`[data-select-id="${openId}"]`);
+    expect(row?.getAttribute('aria-current')).toBe('page');
     expect(levelOf()).toBe('session');
-    expect(within(sessionLayer()).getByRole('button', { name: 'Back to Sessions' })).toBeDefined();
     expect(within(sessionLayer()).getByText('Stop retried webhooks')).toBeDefined();
+    expect(within(rail()).queryByRole('button', { name: 'Back to Sessions' })).toBeNull();
     expect(
       pages()
         .getAllByRole('button')
-        .map((row) => row.textContent),
+        .map((button) => button.textContent),
     ).toEqual(['Overview', 'Runs', 'Orchestrated', 'Agents', 'Artifacts']);
-    expect(workspaceLayer().hasAttribute('inert')).toBe(true);
   });
 
-  it('goes back to the workspace level with the session row still selected, the page untouched', () => {
+  it('opens another session from its row without changing the main sidebar level', () => {
     seed();
     mountColumn();
 
-    fireEvent.click(within(sessionLayer()).getByRole('button', { name: 'Back to Sessions' }));
-
-    expect(levelOf()).toBe('workspace');
-    expect(useAppStore.getState().currentSessionId).toBe(openId);
-    const row = workspaceLayer().querySelector(`[data-select-id="${openId}"]`);
-    expect(row?.getAttribute('aria-current')).toBe('page');
-    expect(sessionLayer().hasAttribute('inert')).toBe(true);
-  });
-
-  it('drills in again from the session row', () => {
-    seed();
-    mountColumn();
-    fireEvent.click(within(sessionLayer()).getByRole('button', { name: 'Back to Sessions' }));
-
-    const row = workspaceLayer().querySelector<HTMLElement>(`[data-select-id="${openId}"]`);
+    const row = nav().querySelector<HTMLElement>(`[data-select-id="${other.id}"]`);
     expect(row).not.toBeNull();
     act(() => {
       row?.click();
     });
 
-    expect(levelOf()).toBe('session');
+    expect(useAppStore.getState().currentSessionId).toBe(other.id);
+    expect(nav().querySelector('[data-column-door="board"]')).not.toBeNull();
+    expect(
+      nav().querySelector(`[data-select-id="${other.id}"]`)?.getAttribute('aria-current'),
+    ).toBe('page');
+    expect(within(sessionLayer()).getByText('Ledger export speedup')).toBeDefined();
   });
 
-  it('goes back with Command [ while the sidebar has focus', () => {
+  it('keeps the session level when Command [ is pressed in the rail on its top level', () => {
     seed();
     mountColumn();
 
@@ -178,30 +186,18 @@ describe('the session level', () => {
       metaKey: true,
     });
 
-    expect(levelOf()).toBe('workspace');
-  });
-
-  it('comes back to the session level when history returns to it', () => {
-    seed();
-    mountColumn();
-    fireEvent.click(within(sessionLayer()).getByRole('button', { name: 'Back to Sessions' }));
-
-    act(() => {
-      useAppStore.getState().navigate({ to: sessionPlace({ sessionId: openId, lens: 'agents' }) });
-    });
-
     expect(levelOf()).toBe('session');
+    expect(useAppStore.getState().currentSessionId).toBe(openId);
   });
 
-  it('shows the workspace level while a studio sits over the session, with its door selected', () => {
+  it('selects the door and unselects the session row while a studio sits over the session', () => {
     seed();
     mountColumn({ place: 'inbox' });
 
-    expect(levelOf()).toBe('workspace');
-    expect(
-      workspaceLayer().querySelector('[data-column-door="inbox"]')?.getAttribute('aria-current'),
-    ).toBe('page');
-    const row = workspaceLayer().querySelector(`[data-select-id="${openId}"]`);
+    expect(nav().querySelector('[data-column-door="inbox"]')?.getAttribute('aria-current')).toBe(
+      'page',
+    );
+    const row = nav().querySelector(`[data-select-id="${openId}"]`);
     expect(row?.getAttribute('aria-current')).toBeNull();
   });
 });
@@ -355,33 +351,36 @@ describe('the identity row', () => {
   });
 });
 
-describe('the folded sidebar', () => {
-  const Rail = () => (
-    <ToastProvider>
-      <ColumnRail
-        scope="workspace"
-        workspaceId={harborline.id}
-        currentSessionId={openId}
-        place={null}
-        onToggle={vi.fn()}
-        actions={actions()}
-      />
-    </ToastProvider>
-  );
-
-  it('shows the session level as icons with the back icon on top, and goes back from it', () => {
+describe('the folded session rail', () => {
+  it('folds to the page icons and back, and remembers the choice', () => {
     seed();
-    render(<Rail />);
-    const rail = elementOf('[data-column-rail]');
+    const { unmount } = mountColumn();
 
-    expect(rail.getAttribute('data-sidebar-level')).toBe('session');
-    expect(within(rail).getByRole('button', { name: 'Back to Sessions' })).toBeDefined();
-    expect(within(rail).getByRole('button', { name: 'Agents' })).toBeDefined();
-    expect(rail.querySelector('[data-column-door="board"]')).toBeNull();
+    fireEvent.click(toggle());
 
-    fireEvent.click(within(rail).getByRole('button', { name: 'Back to Sessions' }));
+    expect(rail().hasAttribute('data-rail-folded')).toBe(true);
+    expect(rail().querySelector('[data-rail-level="session"]')).not.toBeNull();
+    expect(within(rail()).getByRole('button', { name: 'Agents' })).toBeDefined();
+    expect(within(rail()).queryByRole('button', { name: /^Back to/ })).toBeNull();
+    expect(localStorage.getItem(STORAGE_KEYS.sessionRailCollapsed)).toBe('1');
+    expect(nav().querySelector('[data-column-door="board"]')).not.toBeNull();
 
-    expect(rail.getAttribute('data-sidebar-level')).toBe('workspace');
-    expect(rail.querySelector('[data-column-door="board"]')).not.toBeNull();
+    unmount();
+    mountColumn();
+    expect(rail().hasAttribute('data-rail-folded')).toBe(true);
+
+    fireEvent.click(toggle());
+    expect(rail().hasAttribute('data-rail-folded')).toBe(false);
+    expect(localStorage.getItem(STORAGE_KEYS.sessionRailCollapsed)).toBe('0');
+  });
+
+  it('opens a page from its icon', () => {
+    seed();
+    localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
+    mountColumn();
+
+    fireEvent.click(within(rail()).getByRole('button', { name: 'Agents' }));
+
+    expect(useAppStore.getState().activeLens[openId]).toBe('agents');
   });
 });

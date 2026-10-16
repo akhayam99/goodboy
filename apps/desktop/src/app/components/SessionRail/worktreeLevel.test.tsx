@@ -26,7 +26,6 @@ import { resetWorktreeStatusCache } from '../../../store/slices/worktreeStatuses
 import { ToastProvider } from '../../../shared/components/Toast';
 import { worktreeStatusOf } from '../../../test/worktreeStatusOf';
 import {
-  harborline,
   ledgerCore,
   mountGithubOf,
   mountOf,
@@ -34,8 +33,7 @@ import {
   seedColumn,
   sessionOf,
 } from '../../../features/workspace/testing/sessionColumn';
-import type { ColumnActions } from './columnDoors';
-import { SideColumn } from './index';
+import { SessionRail } from './index';
 
 let useAppStore: StoryStore;
 
@@ -50,21 +48,6 @@ beforeEach(async () => {
 });
 
 afterEach(cleanup);
-
-const actions = (): ColumnActions => ({
-  openBoard: vi.fn(),
-  openInbox: vi.fn(),
-  openChat: vi.fn(),
-  openWorkflows: vi.fn(),
-  openTerminalStudio: vi.fn(),
-  openNewChat: vi.fn(),
-  openNewTerminal: vi.fn(),
-  openMonitoring: vi.fn(),
-  openSettings: vi.fn(),
-  openChangelog: vi.fn(),
-  openGuide: vi.fn(),
-  openShortcuts: vi.fn(),
-});
 
 const session = sessionOf({
   goal: 'Stop retried webhooks',
@@ -98,18 +81,10 @@ const settle = async (): Promise<void> => {
   });
 };
 
-const mountColumn = async (): Promise<void> => {
+const mountRail = async (): Promise<void> => {
   render(
     <ToastProvider>
-      <SideColumn
-        scope="workspace"
-        workspaceId={harborline.id}
-        currentSessionId={sessionId}
-        place={null}
-        isCollapsed={false}
-        actions={actions()}
-        onToggle={vi.fn()}
-      />
+      <SessionRail session={session} />
     </ToastProvider>,
   );
   await settle();
@@ -179,7 +154,7 @@ describe('the worktree level', () => {
   it('drills in from a worktree row and goes back to the session Overview with its back row', async () => {
     seed({ status: worktreeStatusOf({}) });
     useAppStore.getState().navigate({ to: sessionPlace({ sessionId }) });
-    await mountColumn();
+    await mountRail();
 
     const rows = await screen.findByRole('list', { name: 'payments-api worktrees' });
     fireEvent.click(within(rows).getByRole('button'));
@@ -199,9 +174,9 @@ describe('the worktree level', () => {
     expect(document.querySelector('[data-level-layer="session"]:not([inert])')).not.toBeNull();
   });
 
-  it('goes up one level on Command [ while the sidebar has focus', async () => {
+  it('goes up one level on Command [ while the session rail has focus', async () => {
     seed({ status: worktreeStatusOf({}) });
-    await mountColumn();
+    await mountRail();
     await openWorktree();
 
     fireEvent.keyDown(worktreeLayer(), { key: '[', metaKey: true });
@@ -212,7 +187,7 @@ describe('the worktree level', () => {
 
   it('holds the mount actions in a visible menu, with Link work to this branch and no Rebase', async () => {
     seed({ status: worktreeStatusOf({}) });
-    await mountColumn();
+    await mountRail();
     await openWorktree();
 
     fireEvent.click(
@@ -230,7 +205,7 @@ describe('the worktree level', () => {
 
   it('opens the put on a branch picker from Link work to this branch', async () => {
     seed({ status: worktreeStatusOf({}) });
-    await mountColumn();
+    await mountRail();
     await openWorktree();
 
     fireEvent.click(
@@ -246,7 +221,7 @@ describe('the worktree level', () => {
 
   it('shows no status line on a branch level with its base', async () => {
     seed({ status: worktreeStatusOf({}) });
-    await mountColumn();
+    await mountRail();
     await openWorktree();
 
     expect(worktreeLayer().querySelector('[data-worktree-status]')).toBeNull();
@@ -256,7 +231,7 @@ describe('the worktree level', () => {
     const rebaseBranch = vi.fn(async () => 'rebased' as const);
     seed({ status: worktreeStatusOf({ behind: 6 }) });
     useAppStore.setState({ rebaseBranch });
-    await mountColumn();
+    await mountRail();
     await openWorktree();
 
     const line = await waitFor(statusLine);
@@ -270,7 +245,7 @@ describe('the worktree level', () => {
 
   it('says a rebase is running and asks before Abort runs', async () => {
     seed({ status: worktreeStatusOf({ unmerged: 1, inProgress: 'rebase' }) });
-    await mountColumn();
+    await mountRail();
     await openWorktree();
 
     const line = await waitFor(statusLine);
@@ -286,7 +261,7 @@ describe('the worktree level', () => {
 describe('the worktree rows of the session level', () => {
   it('lists each worktree under its project with its number and no dot while it is fine', async () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
-    await mountColumn();
+    await mountRail();
 
     const row = within(projectRows('payments-api')).getByRole('button');
     expect(row.textContent).toBe(`${mount.branch}#418`);
@@ -297,7 +272,7 @@ describe('the worktree rows of the session level', () => {
   it('draws the worst state as one dot named in the row, a failed check above being behind', async () => {
     seedTwoProjects({ status: worktreeStatusOf({ behind: 3 }) });
     patchRequest({ mountId: mount.mountId, patch: { checks: 'failure' } });
-    await mountColumn();
+    await mountRail();
 
     await waitFor(() =>
       expect(
@@ -312,7 +287,7 @@ describe('the worktree rows of the session level', () => {
   it('folds the finished worktrees of a project into one count row that opens them', async () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     patchRequest({ mountId: ledgerMount.mountId, patch: { state: 'merged' } });
-    await mountColumn();
+    await mountRail();
 
     const fold = within(projectRows('ledger-core')).getByRole('button', {
       name: '1 finished in ledger-core',
@@ -328,7 +303,7 @@ describe('the worktree rows of the session level', () => {
 
   it('adds from one Add word: a project, a workspace project or a new branch in each repo', async () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
-    await mountColumn();
+    await mountRail();
 
     fireEvent.click(screen.getByRole('button', { name: 'Add to this session' }));
     const panel = within(screen.getByRole('dialog', { name: 'Add to this session' }));

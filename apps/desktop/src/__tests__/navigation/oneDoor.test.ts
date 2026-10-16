@@ -8,10 +8,10 @@ const SCANNED_ROOTS = ['features', 'app', 'shared'];
 const COLUMN_ROOT = join(SRC, 'app', 'components', 'SideColumn');
 
 const SESSION_LEVEL_PAGES: ReadonlySet<string> = new Set([
-  'app/components/SideColumn/RailSessionLevel.tsx',
-  'app/components/SideColumn/RailAutoLevel.tsx',
-  'app/components/SideColumn/RailRunLevel.tsx',
-  'app/components/SideColumn/RailWorktreeLevel.tsx',
+  'app/components/SessionRail/RailSessionLevel.tsx',
+  'app/components/SessionRail/RailAutoLevel.tsx',
+  'app/components/SessionRail/RailRunLevel.tsx',
+  'app/components/SessionRail/RailWorktreeLevel.tsx',
 ]);
 
 const INTERNAL_MOVES = /\b(setActiveLens|setCurrentSession|selectAgent)\b/;

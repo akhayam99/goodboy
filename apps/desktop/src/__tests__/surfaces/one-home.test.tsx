@@ -23,7 +23,7 @@ import {
 } from '../../app/components/MockScene/scenes/audit/settingsSeed';
 import { StageBoard } from '../../features/workspace/components/StageBoard';
 import { LimitsProvidersMenu } from '../../app/components/AppTopBar/LimitsStrip/LimitsProvidersMenu';
-import { LevelLinked } from '../../app/components/SideColumn/SessionLevel/LevelLinked';
+import { LevelLinked } from '../../app/components/SessionRail/SessionLevel/LevelLinked';
 
 const STAGE_DEFAULT_REASONS = ['no PR yet', 'awaiting review'];
 const LIMIT_FIGURE = /\d+(?:\.\d+)?\s?%/;

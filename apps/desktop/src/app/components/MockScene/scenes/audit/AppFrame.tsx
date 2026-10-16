@@ -4,6 +4,8 @@ import { AppTopBar } from '../../../AppTopBar';
 import { NoWorkspaceScreen } from '../../../AppEmptyState';
 import { KeepAliveWorkSurface } from '../../../KeepAliveWorkSurface';
 import { ShellLeft } from '../../../SideColumn/ShellLeft';
+import { SessionFrame } from '../../../SessionRail/SessionFrame';
+import { useShellFolds } from '../../../../hooks/useShellFolds';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
 import { useAppOverlays } from '../../../../hooks/useAppOverlays';
 import { useGoToBoard } from '../../../../hooks/useGoToBoard';
@@ -40,9 +42,10 @@ export const AppFrame = ({ view, isRailCollapsed, hasPane = false }: Props) => {
   const [settingsSlot, setSettingsSlot] = useState<HTMLDivElement | null>(null);
   const isSettingsOpen = useAppStore((state) => state.appStudio?.kind === 'settings');
   const isLauncher = view === 'launcher';
+  const folds = useShellFolds();
   const arrangement = shellArrangement({
     hasWorkspace: currentWorkspace !== null,
-    isSidebarCollapsed: isRailCollapsed,
+    isSidebarCollapsed: isRailCollapsed || (currentSession !== null && folds.isMainNarrow),
     isSettingsOpen,
   });
   const overlays = useAppOverlays({
@@ -84,7 +87,9 @@ export const AppFrame = ({ view, isRailCollapsed, hasPane = false }: Props) => {
 
   const main =
     currentSession !== null ? (
-      <KeepAliveWorkSurface sessionId={currentSession.id} isActive />
+      <SessionFrame session={currentSession}>
+        <KeepAliveWorkSurface sessionId={currentSession.id} isActive />
+      </SessionFrame>
     ) : currentWorkspace !== null ? (
       <StageBoard workspaceId={currentWorkspace.id} sessions={sessions} />
     ) : (

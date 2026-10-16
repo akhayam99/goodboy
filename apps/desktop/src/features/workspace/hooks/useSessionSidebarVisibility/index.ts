@@ -4,6 +4,7 @@ import { STORAGE_KEYS, persistedPref } from '../../../../shared/lib/storage-keys
 
 type Params = {
   readonly hasSidebar: boolean;
+  readonly isNarrow?: boolean;
 };
 
 const OPEN_DELAY_MS = 150;
@@ -25,8 +26,10 @@ type WriteParams = {
 
 const writePreference = ({ next }: WriteParams): void => collapsedPref.write(next);
 
-export const useSessionSidebarVisibility = ({ hasSidebar }: Params) => {
-  const [isCollapsed, setIsCollapsed] = useState(readPreference);
+export const useSessionSidebarVisibility = ({ hasSidebar, isNarrow = false }: Params) => {
+  const [isFoldPicked, setIsFoldPicked] = useState(readPreference);
+  const [isOpenedNarrow, setIsOpenedNarrow] = useState(false);
+  const isCollapsed = isFoldPicked || (isNarrow && !isOpenedNarrow);
   const [isPeeking, setIsPeeking] = useState(false);
   const openTimer = useRef<number | null>(null);
   const closeTimer = useRef<number | null>(null);
@@ -109,10 +112,9 @@ export const useSessionSidebarVisibility = ({ hasSidebar }: Params) => {
 
   const pin = useCallback(() => {
     closePeek();
-    setIsCollapsed(() => {
-      writePreference({ next: false });
-      return false;
-    });
+    writePreference({ next: false });
+    setIsFoldPicked(false);
+    setIsOpenedNarrow(true);
   }, [closePeek]);
 
   const toggle = useCallback(() => {
@@ -120,12 +122,27 @@ export const useSessionSidebarVisibility = ({ hasSidebar }: Params) => {
       return;
     }
     closePeek();
-    setIsCollapsed((current) => {
-      const next = !current;
-      writePreference({ next });
-      return next;
-    });
-  }, [closePeek, hasSidebar]);
+    if (isNarrow && !isCollapsed) {
+      setIsOpenedNarrow(false);
+      return;
+    }
+    if (isNarrow) {
+      writePreference({ next: false });
+      setIsFoldPicked(false);
+      setIsOpenedNarrow(true);
+      return;
+    }
+    const next = !isFoldPicked;
+    writePreference({ next });
+    setIsFoldPicked(next);
+  }, [closePeek, hasSidebar, isCollapsed, isFoldPicked, isNarrow]);
+
+  useEffect(() => {
+    if (isNarrow) {
+      return;
+    }
+    setIsOpenedNarrow(false);
+  }, [isNarrow]);
 
   useEffect(() => {
     if (hasSidebar && isCollapsed) {

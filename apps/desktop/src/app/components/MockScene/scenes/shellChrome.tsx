@@ -13,6 +13,8 @@ import { DrawerHost } from '../../DrawerHost';
 import { selectDrawerPanel } from '../../../../store/slices/drawer/selectDrawerPanel';
 import { AppTopBar } from '../../AppTopBar';
 import { ShellLeft } from '../../SideColumn/ShellLeft';
+import { SessionFrame } from '../../SessionRail/SessionFrame';
+import { useShellFolds } from '../../../hooks/useShellFolds';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { PaneCluster } from '../../../../features/session/components/PaneCluster';
 import { useAppStore, type LensKind } from '../../../../store';
@@ -110,9 +112,10 @@ export const ShellFrame = ({
   hasOwnTrail = false,
 }: ShellFrameProps) => {
   const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
+  const folds = useShellFolds();
   const arrangement = shellArrangement({
     hasWorkspace: true,
-    isSidebarCollapsed: sidebar === 'collapsed',
+    isSidebarCollapsed: sidebar === 'collapsed' || folds.isMainNarrow,
   });
   const shell = useSceneShell({ arrangement });
 
@@ -136,15 +139,17 @@ export const ShellFrame = ({
           />
         }
         main={
-          hasOwnTrail ? (
-            main
-          ) : (
-            <div className="@container flex h-full w-full min-w-0 flex-col">
-              <PaneActionsContext.Provider value={<PaneCluster sessionId={session.id} />}>
-                <div className="min-h-0 flex-1">{main}</div>
-              </PaneActionsContext.Provider>
-            </div>
-          )
+          <SessionFrame session={session}>
+            {hasOwnTrail ? (
+              main
+            ) : (
+              <div className="@container flex h-full w-full min-w-0 flex-col">
+                <PaneActionsContext.Provider value={<PaneCluster sessionId={session.id} />}>
+                  <div className="min-h-0 flex-1">{main}</div>
+                </PaneActionsContext.Provider>
+              </div>
+            )}
+          </SessionFrame>
         }
       />
       {shell.layers}

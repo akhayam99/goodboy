@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react';
 import { cn } from '@goodboy/ui';
-import type { SidebarLevel } from '../../../store/slices/navigation/sidebarLevel';
+import type { RailLevel } from '../../../store/slices/navigation/railLevel';
 
 export type LevelLayerPosition = 'shown' | 'before' | 'after';
 
 type Props = {
-  readonly name: SidebarLevel;
+  readonly name: RailLevel;
   readonly position: LevelLayerPosition;
   readonly children: ReactNode;
 };

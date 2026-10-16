@@ -26,7 +26,7 @@ export const AutoAgentsPane = ({ session }: Props) => {
   const models = useAppStore((state) => state.agentModelOverride);
   const efforts = useAppStore((state) => state.agentEffortOverride);
   const navigate = useAppStore((state) => state.navigate);
-  const pickSidebarLevel = useAppStore((state) => state.pickSidebarLevel);
+  const pickRailLevel = useAppStore((state) => state.pickRailLevel);
   const isAutoOn = useIsAutoOn();
   const roots = useMemo(() => autoRootsOf({ agents, kindOverride }), [agents, kindOverride]);
   const rows = useMemo(
@@ -46,7 +46,7 @@ export const AutoAgentsPane = ({ session }: Props) => {
 
   const open = (agentId: AgentId) => {
     navigate({ to: agentPlace({ sessionId, agentId }) });
-    pickSidebarLevel({ level: 'auto' });
+    pickRailLevel({ level: 'auto' });
   };
 
   return (

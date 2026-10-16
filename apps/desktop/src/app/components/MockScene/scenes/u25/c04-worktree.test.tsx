@@ -151,12 +151,13 @@ describe('the c04 worktree level scenes', () => {
     expect(screen.getByRole('menuitem', { name: /Link work to this branch/ })).toBeDefined();
   });
 
-  it('c04-worktree-folded shows the worktree entries as rail icons', async () => {
+  it('c04-worktree-folded shows the worktree entries as session rail icons', async () => {
     await mount('c04-worktree-folded');
 
-    expect(document.querySelector('[data-column-rail]')?.getAttribute('data-sidebar-level')).toBe(
-      'worktree',
-    );
-    expect(document.querySelector('[data-rail-level="worktree"]')).not.toBeNull();
+    const rail = document.querySelector('[data-session-rail]');
+    expect(rail?.getAttribute('data-session-rail')).toBe('worktree');
+    expect(rail?.hasAttribute('data-rail-folded')).toBe(true);
+    expect(rail?.querySelector('[data-rail-level="worktree"]')).not.toBeNull();
+    expect(document.querySelector('[data-column-layer="nav"]')).not.toBeNull();
   });
 });

@@ -21,7 +21,7 @@ const TRAIL = '[data-slot="trail"]';
 const BACK_GLYPH = '.lucide-chevron-left, .lucide-arrow-left';
 const BACK_CHARACTERS = /[‹←]/;
 const SESSION_SCENE = 'shell';
-const DRILLED_LEVEL = '[data-sidebar-level="session"], [data-sidebar-level="run"]';
+const SESSION_RAIL = '[data-session-rail]';
 
 const KEPT = [
   'SettingsColumnNav.tsx',
@@ -83,7 +83,7 @@ const paneShellActionsOf = ({ source }: ActionsParams): ReadonlyArray<string> =>
 };
 
 describe('no back glyph in a trail', () => {
-  it('draws no trail in a session: the sidebar back row holds the one back glyph', async () => {
+  it('draws no trail in a session: the session rail back row holds the back glyph', async () => {
     const Scene = MOCK_SCENES[SESSION_SCENE];
     if (Scene === undefined) {
       throw new Error(`no scene ${SESSION_SCENE}`);
@@ -94,12 +94,12 @@ describe('no back glyph in a trail', () => {
       </ToastProvider>,
     );
 
-    await waitFor(() => expect(document.querySelector(DRILLED_LEVEL)).not.toBeNull(), {
+    await waitFor(() => expect(document.querySelector(SESSION_RAIL)).not.toBeNull(), {
       timeout: 4_000,
     });
     expect(document.querySelector(TRAIL)).toBeNull();
     const glyphs = Array.from(document.querySelectorAll(BACK_GLYPH));
-    expect(glyphs.some((glyph) => glyph.closest(DRILLED_LEVEL) !== null)).toBe(true);
+    expect(glyphs.some((glyph) => glyph.closest(SESSION_RAIL) !== null)).toBe(true);
     for (const glyph of glyphs) {
       expect(glyph.closest('button')?.getAttribute('aria-label') ?? '').toMatch(/^Back/);
     }

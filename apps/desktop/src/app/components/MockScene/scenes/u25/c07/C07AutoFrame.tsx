@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AppFrame } from '../../audit/AppFrame';
+import { useSceneRailFold } from '../../useSceneRailFold';
 import { seedC07, type C07Seed } from './c07AutoSeed';
 
 type Props = {
@@ -9,6 +10,7 @@ type Props = {
 
 export const C07AutoFrame = ({ seed, isFolded = false }: Props) => {
   const [isReady, setIsReady] = useState(false);
+  useSceneRailFold({ isFolded });
   useEffect(() => {
     seedC07(seed);
     setIsReady(true);
@@ -16,5 +18,5 @@ export const C07AutoFrame = ({ seed, isFolded = false }: Props) => {
   if (!isReady) {
     return null;
   }
-  return <AppFrame view="session" isRailCollapsed={isFolded} hasPane />;
+  return <AppFrame view="session" isRailCollapsed={false} hasPane />;
 };

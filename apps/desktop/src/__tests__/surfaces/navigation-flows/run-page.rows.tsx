@@ -192,7 +192,7 @@ const openRunPage = async (ctx: Ctx): Promise<void> => {
   act(() => useAppStore.getState().navigate({ to: runPage(ctx) }));
   await settle();
   await screen.findByRole('region', RUN_TAIL, WAIT);
-  expect(document.querySelector('[data-sidebar-level]')?.getAttribute('data-sidebar-level')).toBe(
+  expect(document.querySelector('[data-session-rail]')?.getAttribute('data-session-rail')).toBe(
     'run',
   );
 };
@@ -214,7 +214,7 @@ const pressEscape = async (): Promise<void> => {
 const clickRunsBackRow = async (): Promise<void> => {
   const level = document.querySelector<HTMLElement>('[data-level-layer="run"]');
   if (level === null) {
-    throw new Error('the sidebar did not drill into the run');
+    throw new Error('the session rail did not drill into the run');
   }
   await click(within(level).getByRole('button', { name: 'Back to Runs' }));
 };

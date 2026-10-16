@@ -45,7 +45,7 @@ const rowTitles = (root: HTMLElement): ReadonlyArray<string> =>
   );
 
 const groupOf = (name: RegExp): HTMLElement => {
-  const header = screen.getByRole('button', { name });
+  const header = within(sessionList()).getByRole('button', { name });
   return header.parentElement as HTMLElement;
 };
 
@@ -159,7 +159,9 @@ describe('the pinned sessions scene', () => {
     await mount();
 
     expect(
-      screen.getByRole('button', { name: /^notify-relay/ }).getAttribute('aria-expanded'),
+      within(sessionList())
+        .getByRole('button', { name: /^notify-relay/ })
+        .getAttribute('aria-expanded'),
     ).toBe('false');
     expect(rowTitles(groupOf(/^notify-relay/))).toEqual([]);
     expect(sessionList().querySelectorAll('[data-session-card]')).toHaveLength(0);

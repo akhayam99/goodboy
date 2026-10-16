@@ -120,10 +120,10 @@ let otherId = '';
 
 export const SIDEBAR_NAV_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'sidebar: the back row shows the workspace level with the session row selected',
-    covers: ['leaveSessionLevel', 'sidebar:back-row', 'sidebar:current-sign'],
+    name: 'sidebar: a session keeps the workspace level with its row selected beside the session rail',
+    covers: ['navigate', 'sidebar:current-sign', 'rail:session-level'],
     open: async () => {
-      await click(within(sessionLevel()).getByRole('button', { name: 'Back to Sessions' }));
+      await openCrumb(/^Overview/);
     },
     lands: async (ctx) => {
       await waitFor(() => {
@@ -132,7 +132,9 @@ export const SIDEBAR_NAV_ROWS: ReadonlyArray<Row> = [
         expect(signs[0]).toBe(rowOf(ctx.sessionId));
       }, WAIT);
       expect(useAppStore.getState().currentSessionId).toBe(ctx.sessionId);
-      expect(document.querySelector('[data-level-layer="session"]:not([inert])')).toBeNull();
+      expect(document.querySelector('[data-column-layer="nav"] [data-level-layer]')).toBeNull();
+      expect(sessionLevel().closest('[data-session-rail]')).not.toBeNull();
+      expect(screen.queryByRole('button', { name: 'Back to Sessions' })).toBeNull();
     },
   },
   {
@@ -198,13 +200,13 @@ export const SIDEBAR_NAV_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'rail: with the sidebar folded, the session level icons open Runs',
+    name: 'rail: with the session rail folded, its session level icons open Runs',
     covers: ['navigate', 'rail:session-level'],
     open: async () => {
-      await clickButton(/^Hide sidebar/);
+      await clickButton(/^Fold session rail/);
       const rail = await waitFor(() => {
-        const found = document.querySelector<HTMLElement>('[data-column-rail]');
-        expect(found?.getAttribute('data-sidebar-level')).toBe('session');
+        const found = document.querySelector<HTMLElement>('[data-session-rail="session"]');
+        expect(found?.hasAttribute('data-rail-folded')).toBe(true);
         return found as HTMLElement;
       }, WAIT);
       await click(within(rail).getByRole('button', { name: /^Runs/ }));

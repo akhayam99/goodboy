@@ -121,7 +121,7 @@ export {
   readStudioRailWidth,
   studioRailStorageKey,
 } from './components/StudioRailLayout';
-export { useResizableWidth } from './useResizableWidth';
+export { readStoredWidth, useResizableWidth } from './useResizableWidth';
 export { STUDIO_RAIL_FOLD_BELOW, studioRailFoldKey, useStudioRailFold } from './useStudioRailFold';
 export type { StudioRailFold } from './useStudioRailFold';
 export { StudioWidget } from './components/StudioWidget';

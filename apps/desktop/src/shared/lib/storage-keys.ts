@@ -9,6 +9,8 @@ export const STORAGE_KEYS = {
   diffTreeWidth: `${PREFIX}diff-tree-width`,
   sessionSidebarCollapsed: `${PREFIX}sessions-sidebar-collapsed`,
   leftSidebarWidth: `${PREFIX}left-sidebar-width:v3`,
+  sessionRailCollapsed: `${PREFIX}session-rail-collapsed:v1`,
+  sessionRailWidth: `${PREFIX}session-rail-width:v1`,
   changelogCache: `${PREFIX}changelog-cache:v1`,
   paletteFrecency: `${PREFIX}palette-frecency:v1`,
   chatUnread: `${PREFIX}chat-unread:v1`,

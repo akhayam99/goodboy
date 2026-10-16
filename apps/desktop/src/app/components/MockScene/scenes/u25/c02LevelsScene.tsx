@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { IsoDateTime } from '@goodboy/types';
-import { useAppStore, type LensKind } from '../../../../../store';
+import { useAppStore, useCurrentSession, type LensKind } from '../../../../../store';
+import { useSceneRailFold } from '../useSceneRailFold';
+import { SessionFrame } from '../../../SessionRail/SessionFrame';
 import { SideColumn } from '../../../SideColumn';
 import { ColumnRail } from '../../../SideColumn/ColumnRail';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
@@ -34,8 +36,8 @@ export type LevelsSceneConfig = {
   readonly lens: LensKind | null;
   readonly branches: number;
   readonly isBusy: boolean;
-  readonly isLeft: boolean;
-  readonly isFolded: boolean;
+  readonly isMainFolded: boolean;
+  readonly isRailFolded: boolean;
   readonly place: ColumnPlace;
 };
 
@@ -70,6 +72,8 @@ type Props = {
 
 export const LevelsScene = ({ config }: Props) => {
   const [seed, setSeed] = useState<SidebarNavSeed | null>(null);
+  const current = useCurrentSession();
+  useSceneRailFold({ isFolded: config.isRailFolded === true });
   const place = config.place ?? null;
   useEffect(() => {
     const next = seedSidebarNav({
@@ -86,9 +90,6 @@ export const LevelsScene = ({ config }: Props) => {
     if (place === 'board') {
       useAppStore.setState({ currentSessionId: null });
     }
-    if (config.isLeft === true) {
-      useAppStore.getState().leaveSessionLevel();
-    }
     setSeed(next);
   }, [config, place]);
   if (seed === null) {
@@ -98,7 +99,7 @@ export const LevelsScene = ({ config }: Props) => {
   return (
     <div data-shot className="flex h-screen min-h-0 bg-background">
       <div className="h-full shrink-0 border-r border-border-soft">
-        {config.isFolded === true ? (
+        {config.isMainFolded === true ? (
           <ColumnRail
             scope="workspace"
             workspaceId={seed.workspaceId}
@@ -121,9 +122,15 @@ export const LevelsScene = ({ config }: Props) => {
           </div>
         )}
       </div>
-      <main className="flex min-w-0 flex-1 flex-col gap-2 p-6">
-        <h1 className="text-title text-foreground">{seed.session.goal}</h1>
-      </main>
+      {currentSessionId === null || place !== null ? (
+        <main className="flex min-w-0 flex-1 flex-col gap-2 p-6" />
+      ) : (
+        <SessionFrame session={current ?? seed.session}>
+          <main className="flex h-full min-w-0 flex-col gap-2 p-6">
+            <h1 className="text-title text-foreground">{seed.session.goal}</h1>
+          </main>
+        </SessionFrame>
+      )}
     </div>
   );
 };

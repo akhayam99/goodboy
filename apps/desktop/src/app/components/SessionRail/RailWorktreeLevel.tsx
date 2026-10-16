@@ -11,7 +11,7 @@ import { useBranchIdentity } from '../../../features/branch/hooks/useBranchIdent
 import { useBranchTab } from '../../../features/branch/hooks/useBranchTab';
 import { openLens } from '../../../features/session/openLens';
 import { sessionTitle } from '../../../features/session/sessionTitle';
-import { RailButton } from './RailButton';
+import { RailButton } from '../SideColumn/RailButton';
 
 type Props = {
   readonly session: Session;

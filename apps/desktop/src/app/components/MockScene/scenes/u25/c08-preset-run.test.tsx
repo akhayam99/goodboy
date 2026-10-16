@@ -52,7 +52,7 @@ const mount = async (name: SceneName): Promise<void> => {
 };
 
 const levelOf = (): string | null =>
-  document.querySelector('[data-sidebar-level]')?.getAttribute('data-sidebar-level') ?? null;
+  document.querySelector('[data-session-rail]')?.getAttribute('data-session-rail') ?? null;
 
 const runLevel = (): HTMLElement => {
   const layer = document.querySelector<HTMLElement>('[data-level-layer="run"]');

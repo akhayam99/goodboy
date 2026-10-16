@@ -52,11 +52,9 @@ describe('the shell scene mounts the real session workspace', () => {
   it('opens the step of its preset run on the run level, with Ask and no trail band', async () => {
     await renderShell();
     expect(document.querySelector('[data-slot="trail-bar"]')).toBeNull();
-    expect(
-      document
-        .querySelector('[data-column-rail], [data-column-layer="nav"]')
-        ?.getAttribute('data-sidebar-level'),
-    ).toBe('run');
+    expect(document.querySelector('[data-session-rail]')?.getAttribute('data-session-rail')).toBe(
+      'run',
+    );
     expect(useAppStore.getState().currentSessionId).toBe(SESSION.id);
   });
 
@@ -66,9 +64,9 @@ describe('the shell scene mounts the real session workspace', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Back to Runs' }));
     });
     await waitFor(() =>
-      expect(
-        document.querySelector('[data-column-layer="nav"]')?.getAttribute('data-sidebar-level'),
-      ).toBe('session'),
+      expect(document.querySelector('[data-session-rail]')?.getAttribute('data-session-rail')).toBe(
+        'session',
+      ),
     );
     const moves: ReadonlyArray<readonly [string, string]> = [
       ['Runs', 'workflows'],
