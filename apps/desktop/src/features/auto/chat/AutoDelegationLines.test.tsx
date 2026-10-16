@@ -48,7 +48,7 @@ const renderLines = ({ view, onOpenChild = vi.fn(), onOpenArtifact = vi.fn() }: 
 };
 
 describe('AutoDelegationLines', () => {
-  it('says one bare line per hand over: its node, Delegated to, the role and See more', () => {
+  it('says one bare line per hand over: the role, the task and Open, the rail owning the state', () => {
     const onOpenChild = vi.fn();
     renderLines({
       view: aView({
@@ -59,11 +59,11 @@ describe('AutoDelegationLines', () => {
     });
 
     const line = screen.getByRole('listitem');
-    expect(within(line).getByText('Delegated to')).toBeDefined();
+    expect(within(line).queryByText('Delegated to')).toBeNull();
     expect(within(line).getByText('Implementer')).toBeDefined();
     expect(within(line).queryByText(/Reserved up to/)).toBeNull();
     expect(within(line).queryByText('Running')).toBeNull();
-    fireEvent.click(within(line).getByRole('button', { name: 'See more about Implementer' }));
+    fireEvent.click(within(line).getByRole('button', { name: /^Open / }));
     expect(onOpenChild).toHaveBeenCalledWith('agent-impl');
   });
 
@@ -136,8 +136,8 @@ describe('the confirm row of a delegation that waits for an OK', () => {
   it('names the plan and version it would change and offers Confirm and Cancel', () => {
     renderAsking();
 
-    expect(screen.getByText('Change plan Retry-safe credit retries at v2?')).toBeDefined();
-    expect(screen.getByLabelText('Needs your OK')).toBeDefined();
+    expect(screen.getByText('Revise Retry-safe credit retries to v3?')).toBeDefined();
+    expect(screen.getByRole('group', { name: 'Confirm this work' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Confirm' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDefined();
   });

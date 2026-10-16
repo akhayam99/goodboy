@@ -50,18 +50,19 @@ describe('the u23 agent brief scenes', () => {
     renderScene('agent-brief-door');
 
     const lines = await screen.findByRole('list', { name: 'Delegations' }, WAIT);
-    expect(within(lines).getAllByText('Delegated to')).toHaveLength(2);
+    expect(within(lines).getAllByRole('listitem')).toHaveLength(2);
+    expect(within(lines).queryByText('Delegated to')).toBeNull();
     expect(screen.queryByRole('tab', { name: 'Brief' })).toBeNull();
     expect(screen.queryByText('Now')).toBeNull();
     expect(screen.queryByText(/\b0 turns\b/u)).toBeNull();
   });
 
-  it('opens a subagent in the pane from See more, and the transcript door lands on the same page', async () => {
+  it('opens a subagent in the pane from Open, and the transcript door lands on the same page', async () => {
     renderScene('agent-brief-door-transcript');
 
     const more = await screen.findByRole(
       'button',
-      { name: 'See more about Read the cap in the retry loop' },
+      { name: 'Open Read the cap in the retry loop' },
       WAIT,
     );
     fireEvent.click(more);

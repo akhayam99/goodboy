@@ -96,7 +96,11 @@ describe('SPEC3 9.4 agent rows stay reachable from the one conversation', () => 
   it('Brief subagents: each child is a delegation line that opens it in the pane', async () => {
     await mount({ name: 'c06-agent-delegating' });
 
-    expect(screen.getAllByRole('button', { name: /^See more about / })).toHaveLength(2);
+    expect(
+      within(screen.getByRole('list', { name: 'Delegations' })).getAllByRole('button', {
+        name: /^Open /,
+      }),
+    ).toHaveLength(2);
   });
 
   it('Every tool call payload: the summary line opens the transcript pane, where the steps show', async () => {

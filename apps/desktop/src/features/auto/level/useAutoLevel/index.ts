@@ -40,14 +40,22 @@ export const useAutoLevel = ({ session }: Params): AutoLevelModel => {
   const effort = useAppStore((state) =>
     rootAgentId === null ? null : (state.agentEffortOverride[rootAgentId] ?? null),
   );
+  const rootTurn = useAppStore((state) =>
+    rootAgentId === null ? null : (state.agentTurnState[rootAgentId] ?? null),
+  );
   const rows = useMemo(() => {
     if (tree !== null) {
-      return railRowsOf({ view: tree.view, agents, rootRouting: { provider, model, effort } });
+      return railRowsOf({
+        view: tree.view,
+        agents,
+        rootRouting: { provider, model, effort },
+        rootTurn,
+      });
     }
     if (rootAgentId === null) {
       return [];
     }
     return [restingRootRowOf({ agentId: rootAgentId, provider, model, effort })];
-  }, [tree, agents, rootAgentId, provider, model, effort]);
+  }, [tree, agents, rootAgentId, provider, model, effort, rootTurn]);
   return { tree, rows, rootAgentId, shownAgentId: paneAgentId ?? selectedAgentId };
 };

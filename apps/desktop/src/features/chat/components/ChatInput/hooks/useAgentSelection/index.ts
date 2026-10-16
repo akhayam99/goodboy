@@ -38,7 +38,10 @@ export const useAgentSelection = ({ session }: Params) => {
     selectedAgentId ? (s.agentTurnState[selectedAgentId] ?? null) : null,
   );
   const isFirstTurnForAgent = useAppStore((s) =>
-    selectedAgentId ? (s.agentRunHistory[selectedAgentId]?.length ?? 0) === 0 : false,
+    selectedAgentId
+      ? (s.agentRunHistory[selectedAgentId]?.length ?? 0) === 0 &&
+        !(s.transcripts[selectedAgentId] ?? []).some((event) => event.kind === 'user_text')
+      : false,
   );
   const isRunning = RUNNING_KINDS.has(selectedAgentState?.kind ?? session.state.kind);
 

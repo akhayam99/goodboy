@@ -14,6 +14,8 @@ import { useAutoTreeViews } from '../../features/auto/useAutoTreeViews';
 import { AutoChildBrief } from '../../features/auto/child/AutoChildBrief';
 import { AutoChildDock } from '../../features/auto/child/AutoChildDock';
 import { AutoChildEnd } from '../../features/auto/child/AutoChildEnd';
+import { executedRoutingOf } from '../../features/auto/executedRoutingOf';
+import { useExecutedRoutingOf } from '../../features/auto/useExecutedRoutingOf';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -32,6 +34,7 @@ export const AutoChildPane = ({ sessionId, agentId, onClose }: Props) => {
   const agent = agents.find((candidate) => candidate.id === agentId) ?? null;
   const tree = useMemo(() => autoTreeOfAgent({ views, agentId }), [views, agentId]);
   const delegation = tree?.kind === 'child' ? tree.delegation : null;
+  const executed = useExecutedRoutingOf({ agent });
   const card = useMemo(
     () => (delegation === null ? null : delegationCardOf({ delegation, childAgent: agent })),
     [delegation, agent],
@@ -44,7 +47,16 @@ export const AutoChildPane = ({ sessionId, agentId, onClose }: Props) => {
       {
         key: `auto-child-brief-${agentId}`,
         beforeMs: 0,
-        node: <AutoChildBrief card={card} images={images} />,
+        node: (
+          <AutoChildBrief
+            card={card}
+            images={images}
+            routing={executedRoutingOf({
+              executed,
+              fallback: { provider: card.provider, model: card.model, effort: card.effort },
+            })}
+          />
+        ),
       },
       {
         key: `auto-child-end-${agentId}`,
@@ -54,7 +66,7 @@ export const AutoChildPane = ({ sessionId, agentId, onClose }: Props) => {
         ),
       },
     ];
-  }, [agent, agentId, card, delegation, images, sessionId]);
+  }, [agent, agentId, card, delegation, executed, images, sessionId]);
 
   if (session === null || agent === null || card === null || tree === null) {
     return (

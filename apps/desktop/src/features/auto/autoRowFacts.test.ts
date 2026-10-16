@@ -43,13 +43,13 @@ describe('autoRowFacts', () => {
     });
   });
 
-  it('says Needs your approval while a plan waits for it and nothing revises it', () => {
+  it('says Needs you while a plan waits for it and nothing revises it', () => {
     const asked = (artifacts: ReturnType<typeof aPlanRow>[]) =>
       autoRowFacts({ view: aView({ phase: 'waiting', artifacts }) });
 
     expect(asked([aPlanRow()])).toEqual({
       phase: 'waiting',
-      word: 'Needs your approval',
+      word: 'Needs you',
       short: 'Needs you',
     });
     expect(asked([aPlanRow({ openRevise: 'delegation-revise' })])?.word).toBe('Waiting');

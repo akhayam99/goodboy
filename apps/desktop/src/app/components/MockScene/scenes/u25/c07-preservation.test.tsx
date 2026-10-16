@@ -64,12 +64,13 @@ const autoLevel = async (): Promise<HTMLElement> => {
 };
 
 describe('SPEC3 9.5 Auto: every capability keeps a home in the 0.27.0 Auto', () => {
-  it('Start Auto from the Auto agents entry, with the Spend cap of the workspace', async () => {
+  it('Start Auto from the Auto agents entry, with the Limit of the workspace', async () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-start'] });
 
     const start = await screen.findByRole('region', { name: 'Start Auto' }, WAIT);
     expect(within(start).getByRole('button', { name: /Start Auto/ })).toBeDefined();
-    expect(within(start).getByText(/Spend cap/)).toBeDefined();
+    expect(within(start).getByText(/^Limit \$/)).toBeDefined();
+    expect(within(start).queryByText(/Spend cap/)).toBeNull();
   });
 
   it('Experimental marking: the chip on the Auto agents entry', async () => {
@@ -95,9 +96,13 @@ describe('SPEC3 9.5 Auto: every capability keeps a home in the 0.27.0 Auto', () 
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-working'] });
 
     const foot = within(await autoLevel()).getByRole('region', { name: 'Limit' });
-    expect(within(foot).getByText('$5.23 left')).toBeDefined();
-    fireEvent.click(within(foot).getByRole('button', { name: 'Limit $10.00' }));
-    expect(screen.getByText('Spent $0.27, reserved $4.50')).toBeDefined();
+    fireEvent.click(within(foot).getByRole('button', { name: 'Limit $10.00 · $5.23 left' }));
+    const popover = screen.getByRole('dialog', { name: 'Limit for this Auto run' });
+    expect(within(popover).getByText('Spent')).toBeDefined();
+    expect(within(popover).getByText('$0.27')).toBeDefined();
+    expect(within(popover).getByText('Reserved')).toBeDefined();
+    expect(within(popover).getByText('$4.50')).toBeDefined();
+    expect(within(popover).getByText('Turns')).toBeDefined();
   });
 
   it('Delegation reason, model changed note, Reserved up to: the child pane brief', async () => {
@@ -130,16 +135,10 @@ describe('SPEC3 9.5 Auto: every capability keeps a home in the 0.27.0 Auto', () 
     expect(within(tail).getByRole('button', { name: 'Stop Auto and its agents' })).toBeDefined();
   });
 
-  it('Composer placeholder by state: queued while Auto waits', async () => {
+  it('Composer placeholder by state: Message Auto while Auto waits', async () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-working'] });
 
-    expect(
-      await screen.findByPlaceholderText(
-        'Queued: Auto sees it with the next results',
-        undefined,
-        WAIT,
-      ),
-    ).toBeDefined();
+    expect(await screen.findByPlaceholderText('Message Auto', undefined, WAIT)).toBeDefined();
   });
 
   it('Revision line: the same producer line says revising v2', async () => {
@@ -152,7 +151,7 @@ describe('SPEC3 9.5 Auto: every capability keeps a home in the 0.27.0 Auto', () 
     mount({ Scene: U24_AUTO_CHAT_SCENES['auto-chat-confirm'] });
 
     expect(
-      await screen.findByText('Change plan Retry-safe credit retries at v1?', undefined, WAIT),
+      await screen.findByText('Revise Retry-safe credit retries to v2?', undefined, WAIT),
     ).toBeDefined();
     expect(screen.getByRole('button', { name: 'Confirm' })).toBeDefined();
   });

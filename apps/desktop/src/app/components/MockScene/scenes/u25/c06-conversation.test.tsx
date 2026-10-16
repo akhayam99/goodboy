@@ -164,10 +164,12 @@ describe('the c06 conversation scenes', () => {
     await mount({ name: 'c06-agent-delegating' });
 
     const lines = screen.getByRole('list', { name: 'Delegations' });
-    expect(within(lines).getAllByText('Delegated to')).toHaveLength(2);
+    expect(within(lines).queryByText('Delegated to')).toBeNull();
+    expect(within(lines).getAllByRole('listitem')).toHaveLength(2);
+    expect(within(lines).getByText('Run the export tests on 12,000 rows')).toBeDefined();
     fireEvent.click(
       within(lines).getByRole('button', {
-        name: 'See more about Run the export tests on 12,000 rows',
+        name: 'Open Run the export tests on 12,000 rows',
       }),
     );
     const drawer = useAppStore.getState().drawer;

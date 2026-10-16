@@ -45,6 +45,7 @@ type RunStepFrame = {
   readonly heading: ReactNode;
   readonly actions: ReactNode;
   readonly tail: ReactNode;
+  readonly stopLabel?: string;
 };
 
 type Props = {
@@ -225,7 +226,7 @@ export const AgentDetailPane = ({
               {isAutoRoot ? (
                 <AutoMarkFinishedButton sessionId={session.id} agentId={agent.id} />
               ) : null}
-              {isAutoRoot ? null : (
+              {isAutoRoot || runStep !== undefined ? null : (
                 <GhostActionButton
                   icon={ScrollText}
                   label={isTranscriptOpen ? 'Hide transcript' : 'View transcript'}
@@ -258,6 +259,7 @@ export const AgentDetailPane = ({
         mode="conversation"
         onOpenTranscript={openTranscript}
         hasAdvanceRow={runStep === undefined}
+        {...(runStep?.stopLabel !== undefined && { stopLabel: runStep.stopLabel })}
         hasComposer={!isPinned && !isRewriterFinished && adoption === null && !isMoveOpen}
         composerPlaceholder={
           rewriter?.isLive === true ? REWRITER_PLACEHOLDER : autoChat.composerPlaceholder

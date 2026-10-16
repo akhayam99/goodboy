@@ -26,7 +26,7 @@ export const autoRowFacts = ({ view }: ViewParams): AutoRowFacts | null => {
       return { phase: 'running', word: 'Starting agents', short: 'Delegating' };
     case 'waiting': {
       if (isAutoPlanAwaitingApproval({ view })) {
-        return { phase: 'waiting', word: 'Needs your approval', short: 'Needs you' };
+        return { phase: 'waiting', word: 'Needs you', short: 'Needs you' };
       }
       const nouns = openRoleNouns({ delegations: view.delegations });
       return {

@@ -13,19 +13,17 @@ import {
 import { isFilePathTool, prefixRuleFor } from '@goodboy/core';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../../chat/utils/transcript-items';
-import { formatClock } from '../../../../shared/utils/time/formatClock';
 import { TranscriptShell } from '../../../chat/components/TranscriptShell';
 import { formatRequestInput } from './formatRequestInput';
 import { PromptField } from '../../../../shared/components/PromptField';
 import { modeCopyOf } from '../../modeCopy';
-import { PROVIDER_LABEL } from '../../../providers/providerLabel';
+import { AGENT_KIND_META, classifyAgent } from '../../../session/agent-kind';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../shared/components/Toast';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 const warningTint = tintClasses('warning');
-const resolvedTint = tintClasses('success');
 
 type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'permission_request' }>;
@@ -47,6 +45,17 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
   const session = useAppStore((s) =>
     sessionId === null ? null : (sessionById(s.sessions, sessionId) ?? null),
   );
+  const askerNoun = useAppStore((s) => {
+    const asker =
+      sessionId === null || agentId === null
+        ? null
+        : ((s.sessionPhaseRuns[sessionId] ?? []).find((run) => run.id === agentId) ?? null);
+    return asker === null
+      ? null
+      : AGENT_KIND_META[
+          classifyAgent({ agent: asker, override: s.agentKindOverride[asker.id] ?? null })
+        ].noun;
+  });
   const workspaceName = useAppStore(
     (s) => s.workspaces.find((w) => w.id === session?.workspaceId)?.name ?? null,
   );
@@ -56,7 +65,6 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
   const reportError = useAppStore((s) => s.reportError);
   const { showToast } = useToast();
 
-  const timestamp = formatClock({ at: item.at });
   const inputPreview = formatRequestInput({ input: item.input });
   const commandText =
     item.toolName === 'Bash' &&
@@ -68,8 +76,7 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
       : null;
 
   const canAct = !resolved && sessionId !== null && agentId !== null;
-  const providerLabel =
-    session === null ? null : PROVIDER_LABEL[session.providerPreference.defaultProvider];
+  const askerLabel = askerNoun ?? 'The agent';
   const modeLabel = session === null ? null : modeCopyOf({ mode: session.permissionMode }).label;
   const rule = prefixRuleFor({ toolName: item.toolName, input: item.input });
   const alwaysAllowLabel = isFilePathTool({ toolName: item.toolName })
@@ -196,14 +203,11 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
       <div className="flex flex-wrap items-center gap-2">
         <Hand size={ICON_SIZE.control} aria-hidden className={warningTint.icon} />
         <span className="text-heading text-foreground">
-          {providerLabel === null ? 'The agent' : providerLabel} wants to run{' '}
-          {item.toolName === 'Bash' ? 'a command' : `${item.toolName}`}
+          {askerLabel} wants to run {item.toolName === 'Bash' ? 'a command' : `${item.toolName}`}
         </span>
         {resolved ? (
-          <span className={`ml-auto text-meta ${resolvedTint.text}`}>resolved</span>
-        ) : (
-          <span className="ml-auto text-meta text-muted-foreground">{timestamp}</span>
-        )}
+          <span className="ml-auto text-meta text-muted-foreground">Resolved</span>
+        ) : null}
       </div>
       {commandText !== null ? (
         <code className="min-w-0 break-words rounded-md bg-elevated px-2 py-1 text-code text-foreground">
@@ -218,7 +222,7 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
       )}
       {modeLabel !== null && (
         <span className="text-muted-foreground">
-          blocked by <span className="font-medium text-foreground">{modeLabel}</span>
+          <span className="font-medium text-foreground">{modeLabel}</span> is on
         </span>
       )}
       {canAct && (
@@ -314,7 +318,7 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
                         ROW_INTERACTIVE,
                       )}
                     >
-                      Deny and tell {providerLabel ?? 'the agent'} why…
+                      Deny and tell {askerNoun ?? 'the agent'} why…
                     </button>
                   </>
                 )}

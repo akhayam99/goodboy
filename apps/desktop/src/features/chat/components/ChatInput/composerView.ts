@@ -13,6 +13,17 @@ type Params = {
   readonly attachmentCount: number;
 };
 
+type NounParams = {
+  readonly kind: AgentKind | null;
+};
+
+const nounOf = ({ kind }: NounParams): string | null => {
+  if (kind === null) {
+    return null;
+  }
+  return kind === 'auto' ? 'Auto' : AGENT_KIND_META[kind].noun;
+};
+
 export const composerView = ({
   session,
   providerDisconnected,
@@ -42,7 +53,7 @@ export const composerView = ({
       ? 'Sign in to send a message'
       : composerPlaceholder({
           firstMessagePrompt,
-          agentNoun: activeAgentKind != null ? AGENT_KIND_META[activeAgentKind].noun : null,
+          agentNoun: nounOf({ kind: activeAgentKind }),
         });
   const shouldFocusFirstMessage = isFirstTurnForAgent && !isBlocked;
 

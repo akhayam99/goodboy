@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { PaneShell } from '@goodboy/ui';
 import type { Agent, AgentId, Session } from '@goodboy/types';
 import { EMPTY_ARRAY, agentPlace, useAppStore } from '../../../../store';
@@ -28,19 +29,30 @@ export const AutoAgentsPane = ({ session }: Props) => {
   const pickRailLevel = useAppStore((state) => state.pickRailLevel);
   const isAutoOn = useIsAutoOn();
   const roots = useMemo(() => autoRootsOf({ agents, kindOverride }), [agents, kindOverride]);
+  const turnStates = useAppStore(
+    useShallow((state) => roots.map((root) => state.agentTurnState[root.id] ?? null)),
+  );
   const rows = useMemo(
     () =>
-      roots.map((agent): Readonly<{ agent: Agent; row: RailRow }> => {
+      roots.map((agent, index): Readonly<{ agent: Agent; row: RailRow }> => {
         const routing = {
           provider: providers[agent.id] ?? null,
           model: models[agent.id] ?? null,
           effort: efforts[agent.id] ?? null,
         };
         const view = views.find((candidate) => candidate.tree.rootAgentId === agent.id);
-        const [root] = view === undefined ? [] : railRowsOf({ view, agents, rootRouting: routing });
+        const [root] =
+          view === undefined
+            ? []
+            : railRowsOf({
+                view,
+                agents,
+                rootRouting: routing,
+                rootTurn: turnStates[index] ?? null,
+              });
         return { agent, row: root ?? restingRootRowOf({ agentId: agent.id, ...routing }) };
       }),
-    [roots, views, agents, providers, models, efforts],
+    [roots, views, agents, providers, models, efforts, turnStates],
   );
 
   const open = (agentId: AgentId) => {

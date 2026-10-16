@@ -12,7 +12,7 @@ export const composerPlaceholderOf = ({ view }: Params): string | undefined => {
     return 'Pick a project, or write to Auto';
   }
   if (waitingTextOf({ view }) !== null) {
-    return 'Queued: Auto sees it with the next results';
+    return 'Message Auto';
   }
   if (isAutoPlanAwaitingApproval({ view })) {
     const plan = view.artifacts.find((row) => row.artifact.kind === 'plan');

@@ -1,4 +1,4 @@
-import { Button, WorkNode, type WorkNodeState } from '@goodboy/ui';
+import { Button, TruncatedText, WorkNode, type WorkNodeState } from '@goodboy/ui';
 import type { Agent, AgentStatus, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
@@ -45,17 +45,20 @@ export const DelegationLines = ({ sessionId, agents }: Props) => {
                 label={word}
               />
             </span>
-            <span className="shrink-0 text-muted-foreground">Delegated to</span>
             <AgentKindChip kind={kind} />
+            <TruncatedText className="min-w-0 truncate text-foreground" tooltip={child.name}>
+              {child.name}
+            </TruncatedText>
+            <span className="shrink-0 text-muted-foreground">{word}</span>
             <Button
               variant="quiet"
               size="xs"
-              aria-label={`See more about ${child.name}`}
+              aria-label={`Open ${child.name}`}
               onClick={() =>
                 openDrawer({ kind: 'transcript', sessionId, payload: { agentId: child.id } })
               }
             >
-              See more
+              Open
             </Button>
           </li>
         );

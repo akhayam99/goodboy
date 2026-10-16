@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { autoBudgetUsedUsd, capTextOf, type AutoBudgetFacts } from '@goodboy/core';
+import { autoBudgetUsedUsd, type AutoBudgetFacts } from '@goodboy/core';
+import { capLabelOf } from './capLabelOf';
 import {
   AnchoredPopover,
   Button,
@@ -15,6 +16,8 @@ import type { AutoTreeCapSave } from './useAutoTreeCap';
 
 type Props = {
   readonly facts: AutoBudgetFacts;
+  readonly triggerText?: string;
+  readonly turns?: number | null;
   readonly isFromSession: boolean;
   readonly openEvent?: string;
   readonly onSave: AutoTreeCapSave;
@@ -28,7 +31,7 @@ const PRESETS: ReadonlyArray<5 | 10 | 20> = [5, 10, 20];
 const INPUT_ID = 'auto-tree-limit-amount';
 const UNDER_USED = 'The limit must cover spent and reserved usage.';
 const NOT_AN_AMOUNT = 'Enter an amount more than zero, with at most 2 decimals.';
-const SESSION_SETS_IT = 'The session budget sets this limit, so it keeps a cap.';
+const SESSION_SETS_IT = 'The session budget sets this limit, so it keeps one.';
 
 type ChoiceParams = {
   readonly capUsd: number | null;
@@ -72,7 +75,16 @@ const validationOf = ({ pick, usedUsd }: ValidationParams): string | null => {
   return null;
 };
 
-export const AutoTreeLimitPopover = ({ facts, isFromSession, openEvent, onSave }: Props) => {
+const LIMIT_TITLE = 'Limit for this Auto run';
+
+export const AutoTreeLimitPopover = ({
+  facts,
+  triggerText,
+  turns = null,
+  isFromSession,
+  openEvent,
+  onSave,
+}: Props) => {
   const dropdown = useDropdown({ align: 'start', width: 'w-80' });
   const { open: isOpen, toggle, close } = dropdown;
   const [choice, setChoice] = useState<Choice>(choiceOf({ capUsd: facts.capUsd }));
@@ -125,7 +137,7 @@ export const AutoTreeLimitPopover = ({ facts, isFromSession, openEvent, onSave }
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
-      ariaLabel="Limit for this conversation"
+      ariaLabel={LIMIT_TITLE}
       className="flex flex-col bg-subtle"
       anchorClassName="inline-flex"
       trigger={
@@ -137,18 +149,25 @@ export const AutoTreeLimitPopover = ({ facts, isFromSession, openEvent, onSave }
           className="tabular-nums"
           onClick={onToggle}
         >
-          {capTextOf({ facts })}
+          {triggerText ?? capLabelOf({ facts })}
         </Button>
       }
     >
       <PopoverBody>
-        <header className="px-3 pb-1 pt-3 text-row text-foreground">
-          Limit for this conversation
-        </header>
+        <header className="px-3 pb-1 pt-3 text-row text-foreground">{LIMIT_TITLE}</header>
         <div className="flex flex-col gap-2 px-3 py-2">
-          <p className="text-meta tabular-nums text-muted-foreground">
-            Spent {formatUsd(facts.spentUsd)}, reserved {formatUsd(facts.reservedUsd)}
-          </p>
+          <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-meta tabular-nums">
+            <dt className="text-muted-foreground">Spent</dt>
+            <dd className="text-right text-foreground">{formatUsd(facts.spentUsd)}</dd>
+            <dt className="text-muted-foreground">Reserved</dt>
+            <dd className="text-right text-foreground">{formatUsd(facts.reservedUsd)}</dd>
+            {turns === null ? null : (
+              <>
+                <dt className="text-muted-foreground">Turns</dt>
+                <dd className="text-right text-foreground">{turns}</dd>
+              </>
+            )}
+          </dl>
           <div role="group" aria-label="Limit" className="flex flex-wrap items-center gap-1">
             {PRESETS.map((preset) => (
               <Chip
@@ -166,7 +185,7 @@ export const AutoTreeLimitPopover = ({ facts, isFromSession, openEvent, onSave }
               as="button"
               tone={choice === 'none' ? 'info' : 'neutral'}
               kind="reference"
-              label="No cap"
+              label="No limit"
               ariaPressed={choice === 'none'}
               disabled={isSaving || isFromSession}
               {...(isFromSession && { title: SESSION_SETS_IT })}

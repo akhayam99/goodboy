@@ -9,6 +9,7 @@ type Props = {
   readonly onStop: () => void;
   readonly startedAt?: IsoDateTime | null;
   readonly waitingFor?: string | null;
+  readonly stopLabel?: string;
 };
 
 export const ConversationTail = ({
@@ -16,6 +17,7 @@ export const ConversationTail = ({
   onStop,
   startedAt = null,
   waitingFor = null,
+  stopLabel = TAIL_ACTION.stop.label,
 }: Props) => {
   const thinking = useThinkingPhrase({ context });
   const isWaiting = waitingFor !== null && context === 'think';
@@ -26,7 +28,7 @@ export const ConversationTail = ({
           state: isWaiting ? 'waiting' : 'working',
           phrase: isWaiting ? `Waiting for ${waitingFor}` : thinking,
           startedAt,
-          actions: [TAIL_ACTION.stop],
+          actions: [{ ...TAIL_ACTION.stop, label: stopLabel }],
         }}
         onAction={onStop}
       />

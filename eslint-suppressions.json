@@ -4461,11 +4461,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/permissions/components/PermissionRequestCard/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 28
-    }
-  },
   "apps/desktop/src/features/permissions/components/PermissionRequestCard/index.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2

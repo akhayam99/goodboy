@@ -1,5 +1,13 @@
 import { useMemo, useState } from 'react';
-import { Button, Checkbox, FormActions, Input, Notice, formatError } from '@goodboy/ui';
+import {
+  Button,
+  Checkbox,
+  FormActions,
+  Input,
+  Notice,
+  OverflowMenu,
+  formatError,
+} from '@goodboy/ui';
 import type { AgentId, ProjectId, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../store';
 import { isReportedError } from '../../../store/slices/notifications/reportedError';
@@ -57,7 +65,7 @@ export const AutoProjectAsk = ({ sessionId, rootAgentId, ask }: Props) => {
         key: mount.mountId,
         name: projectById(projects, mount.projectId)?.name ?? mount.mountName,
         projectId: mount.projectId,
-        line: `${mount.branch}, in this session`,
+        line: mount.branch,
         isMounted: true,
       })),
     [mounts, projects],
@@ -143,6 +151,9 @@ export const AutoProjectAsk = ({ sessionId, rootAgentId, ask }: Props) => {
       title={`Where should the ${ask.roleNoun} work?`}
       body={
         <div className="flex min-w-0 flex-col gap-1">
+          {inSession.length === 0 ? null : (
+            <p className="text-eyebrow text-muted-foreground">In this session</p>
+          )}
           <ul aria-label="Projects" className="flex min-w-0 flex-col">
             {(isAnotherOpen ? all : inSession).map((candidate) => (
               <li key={candidate.key} className="flex h-7 min-w-0 items-center gap-2">
@@ -176,27 +187,33 @@ export const AutoProjectAsk = ({ sessionId, rootAgentId, ask }: Props) => {
       <FormActions
         error={error}
         leading={
-          isAnotherOpen ? null : (
-            <Button variant="quiet" size="sm" onClick={() => setIsAnotherOpen(true)}>
-              Another project...
-            </Button>
-          )
+          <OverflowMenu
+            label="More project choices"
+            disabled={isBusy}
+            align="left"
+            items={[
+              {
+                kind: 'item' as const,
+                key: 'another',
+                label: 'Another project…',
+                disabled: isAnotherOpen,
+                onClick: () => setIsAnotherOpen(true),
+              },
+              {
+                kind: 'item' as const,
+                key: 'discard',
+                label: 'Discard request',
+                onClick: () =>
+                  void run({
+                    label: 'Discard request',
+                    work: () =>
+                      reply({ content: 'Discard that request. Start nothing.', word: 'Discarded' }),
+                  }),
+              },
+            ]}
+          />
         }
       >
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled={isBusy}
-          onClick={() =>
-            void run({
-              label: 'Discard request',
-              work: () =>
-                reply({ content: 'Discard that request. Start nothing.', word: 'Discarded' }),
-            })
-          }
-        >
-          Discard request
-        </Button>
         <Button
           variant="secondary"
           size="sm"

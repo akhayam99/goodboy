@@ -34,6 +34,17 @@ const withRaiseLabel = ({ facts, raisedTo }: LabelParams): TailFacts =>
         ),
       };
 
+type StopParams = {
+  readonly facts: TailFacts;
+};
+
+const withPlainStop = ({ facts }: StopParams): TailFacts => ({
+  ...facts,
+  actions: facts.actions.map((action) =>
+    action.id === 'stopAuto' ? { ...action, label: 'Stop' } : action,
+  ),
+});
+
 export const AutoTail = ({ sessionId, view, rootAgent }: Props) => {
   const rootTurn = useAppStore((state) => state.agentTurnState[rootAgent.id] ?? null);
   const openDrawer = useAppStore((state) => state.openDrawer);
@@ -44,10 +55,11 @@ export const AutoTail = ({ sessionId, view, rootAgent }: Props) => {
   if (rootTurn?.kind === 'running' || rootTurn?.kind === 'starting') {
     return null;
   }
-  const facts = autoTreeLive({ view, rootTurn, rootAgent, lastTool: null, project: null });
-  if (facts === null) {
+  const live = autoTreeLive({ view, rootTurn, rootAgent, lastTool: null, project: null });
+  if (live === null || live.state === 'idle') {
     return null;
   }
+  const facts = view.delegations.length > 0 ? live : withPlainStop({ facts: live });
   const capUsd = view.budget?.capUsd ?? null;
   const raisedTo = capUsd === null ? null : raisedCapOf({ capUsd });
 

@@ -13,9 +13,9 @@ export const DelegationClock = ({ startedAtMs, endedAtMs, isLive }: Props) => {
     return null;
   }
   const end = isLive || endedAtMs === null ? now : endedAtMs;
-  return (
-    <span className="shrink-0 text-meta tabular-nums text-faint-foreground">
-      {formatDuration({ durationMs: Math.max(0, end - startedAtMs) })}
-    </span>
-  );
+  const duration = formatDuration({ durationMs: Math.max(0, end - startedAtMs) });
+  if (duration === null) {
+    return null;
+  }
+  return <span className="shrink-0 text-meta tabular-nums text-faint-foreground">{duration}</span>;
 };
