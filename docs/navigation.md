@@ -684,17 +684,20 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
   shows), Artifacts, and Questions last while one is open.
   Agents lists standalone agents only; an Auto agent lives under Auto agents
   (`isAgentsPageKind`, `agentHomeLens` sends it to the `auto` lens). A page row ends in one
-  fixed 40px right-aligned slot: the count in tabular gray, a 6px info dot
-  before it while something runs, a warning dot on Questions. The count word
+  right-aligned slot as wide as its content, so a label never truncates for an
+  empty slot: the count in tabular gray, a 6px info dot before it while
+  something runs, a warning dot on Questions. The count word
   ("1 running", "4 artifacts") is the row's tooltip. A list page repeats no
   count under its title: Orchestrated, Agents, Artifacts and a tracker list
   (Linear, Jira and the rest) carry their counts on their group rows or filter
   tabs only, and Agents has no "N running, N done" subtitle. Every number comes from
   one function, `pageSlotOf` over `usePageCountFacts`, and the folded rail and
-  its flyout read the same function.
+  its flyout read the same function; the Artifacts count is
+  `liveArtifactCountOf`, pinned equal to the page's All tab.
 - **Projects** lists each mounted project as a label row and its worktrees
   under it at the same left edge (`SessionLevel/WorktreeRow`): branch icon,
-  mono branch, pull request number in a fixed 48px column, then the worst
+  mono branch, pull request number right aligned (a row with no pull request
+  gives its branch the room), then the worst
   state as one 6px dot in the last column (`worktreeRowStateOf`: danger for a
   failed check; warning for conflicts, a running rebase, behind its base, a
   branch decision waiting, comments waiting on you; none when fine), named in

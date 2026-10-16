@@ -14,6 +14,7 @@ import { autoRootsOf } from '../../../auto/autoRootsOf';
 import type { PageCountFacts } from '../../pageCountWord';
 import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
 import { isAutoTreeActive } from '../../../auto/autoTreePhases';
+import { liveArtifactCountOf } from '../../../artifacts/liveArtifactCountOf';
 
 type Params = {
   readonly session: Session;
@@ -76,7 +77,7 @@ export const usePageCountFacts = ({ session }: Params): PageCountFacts => {
       autoAgents: autoRoots.length,
       workingAutoAgents: autoRoots.filter((agent) => isAutoRootWorking({ agent, autoViews }))
         .length,
-      artifacts: Math.max(artifacts.length, plans.length),
+      artifacts: liveArtifactCountOf({ plans, artifacts, agents }),
       openQuestions: selectOpenQuestions(openQuestions).length,
     };
   }, [openQuestions, agents, kindOverride, autoViews, session.workflowRuns, artifacts, plans]);
