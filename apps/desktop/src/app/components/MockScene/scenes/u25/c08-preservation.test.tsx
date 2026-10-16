@@ -26,6 +26,7 @@ import {
   resetStoryStore,
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
+import { mockSceneIpc } from '../mockSceneIpc';
 import { U25_C08_PRESET_RUN_SCENES } from './c08-preset-run';
 import { C08_IMPLEMENTER_ID, C08_REVIEWER_ID, C08_RUN_ID, C08_SESSION_ID } from './c08RunSeed';
 
@@ -75,6 +76,40 @@ const nodeOf = (selector: string): HTMLElement => {
     throw new Error(`nothing matches ${selector}`);
   }
   return node;
+};
+
+type Internals = {
+  invoke: (command: string, args?: unknown) => unknown;
+};
+
+const isInternals = (value: unknown): value is Internals =>
+  typeof value === 'object' &&
+  value !== null &&
+  'invoke' in value &&
+  typeof value.invoke === 'function';
+
+type FailParams = {
+  readonly marker: string;
+};
+
+const failWritesWith = ({ marker }: FailParams): { readonly heal: () => void } => {
+  const internals: unknown = Reflect.get(window, '__TAURI_INTERNALS__');
+  if (!isInternals(internals)) {
+    throw new Error('no scene IPC installed');
+  }
+  const original = internals.invoke;
+  let isFailing = true;
+  internals.invoke = (command, args) => {
+    if (isFailing && command === 'db_execute' && JSON.stringify(args).includes(marker)) {
+      return Promise.reject(new Error('database is locked'));
+    }
+    return original(command, args);
+  };
+  return {
+    heal: () => {
+      isFailing = false;
+    },
+  };
 };
 
 const runLevel = () => within(nodeOf('[data-level-layer="run"]'));
@@ -197,17 +232,46 @@ describe('SPEC3 9.4 run rows stay reachable from the preset run level', () => {
     expect(runLevel().getByRole('textbox', { name: 'Run name' })).toBeDefined();
   });
 
-  it('Run overflow, Stop run with its confirm, Autonomy and Skip step N live in the run menu', async () => {
+  it('Pause run and Stop run with its confirm sit in the header, Autonomy and Skip step N in the run menu', async () => {
     await mount('c08-run-working');
+    const live = within(
+      document.querySelector<HTMLElement>('[data-run-live-verbs]') ?? document.body,
+    );
+    expect(live.getByRole('button', { name: 'Pause run' })).toBeDefined();
     const menu = within(await openMenu());
-    expect(menu.getByText('Pause run')).toBeDefined();
+    expect(menu.queryByText('Pause run')).toBeNull();
+    expect(menu.queryByText('Stop run')).toBeNull();
     expect(menu.getByText('Copy run summary')).toBeDefined();
     expect(menu.getByText('Archive run')).toBeDefined();
     expect(menu.getByText('Delete run')).toBeDefined();
     expect(menu.getByText('Skip step 2')).toBeDefined();
     expect(menu.getByText('Autonomy')).toBeDefined();
-    await press(menu.getByText('Stop run'));
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+    await settle();
+    await press(live.getByRole('button', { name: 'Stop run' }));
     expect(screen.getByText('Stop this run?')).toBeDefined();
+  });
+
+  it('Pause run in the header: a failed write keeps the run live, and pressing again pauses it', async () => {
+    mockSceneIpc(() => null);
+    await mount('c08-run-working');
+    const live = () =>
+      within(document.querySelector<HTMLElement>('[data-run-live-verbs]') ?? document.body);
+    const runStop = () =>
+      (
+        useAppStore.getState().sessions.find((session) => session.id === C08_SESSION_ID)
+          ?.workflowRuns ?? []
+      ).find((run) => run.id === C08_RUN_ID)?.orchestrationStop;
+    const writes = failWritesWith({ marker: 'orchestration_stop_kind' });
+
+    await press(live().getByRole('button', { name: 'Pause run' }));
+    expect(runStop()).toBeUndefined();
+    expect(live().getByRole('button', { name: 'Pause run' })).toBeDefined();
+
+    writes.heal();
+    await press(live().getByRole('button', { name: 'Pause run' }));
+    expect(runStop()?.kind).toBe('paused');
+    expect(document.querySelector('[data-run-verb="workflowRun.pause"]')).toBeNull();
   });
 
   it('Continue step after an interrupted step, on the tail', async () => {

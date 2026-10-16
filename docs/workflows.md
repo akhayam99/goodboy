@@ -321,11 +321,13 @@ read top to bottom at the conversation measure:
   **Send now** (⌘Enter) reads it now, with today's `readNowCopy` tooltips. The
   routing pill for the orchestrator's model and effort sits in the composer's
   footer, its only place (`OrchestratorRoutingRow`).
-- **The run `⋯`** is the `workflowRun` registry minus the verbs the tail
-  carries: View diff, Pause run, Step routing (opens the model per step panel,
+- **The run header** shows **Pause run** and **Stop run** (asks first) as
+  words while the run lives (`RunLiveVerbs`), so stopping never hides in a
+  menu.
+- **The run `⋯`** is the `workflowRun` registry minus the verbs the tail and
+  the header carry: View diff, Step routing (opens the model per step panel,
   `OrchestratedRouting`), Autonomy, **Skip step N** for the step in flight,
-  Save as preset, Copy run summary, **Stop run** (asks first), Archive run,
-  Delete run.
+  Save as preset, Copy run summary, Archive run, Delete run.
 
 A plan the run is held for is offered once, as **Review plan** on the tail,
 which opens the plan drawer (`openPlanDrawer`); a plan question or a step
@@ -415,12 +417,14 @@ and the center shows the selected entry (`PresetRunPage`, in
   today's gates (`StartStepPrimary` and its Start anyway confirm,
   `WorkflowRunStartButton`, **Review plan**, **Approve plan**, **Resume**),
   a stopped step with **Continue step**, "Run finished" or "Stopped by you"
-  with **Add step**. The header never holds a verb while the run lives.
-- **The run `⋯`** is the `workflowRun` registry minus the verbs the tail
-  carries: View diff, Pause run, Autonomy (Ask me, Balanced, Autopilot, a
+  with **Add step**. While the run lives the header holds only **Pause run**
+  and **Stop run** (asks first, `RunLiveVerbs`) as words; every other verb
+  is on the tail or in the menu.
+- **The run `⋯`** is the `workflowRun` registry minus the verbs the tail and
+  the header carry: View diff, Autonomy (Ask me, Balanced, Autopilot, a
   `choices` item), **Skip step N** for the selected step while it has not
   finished (asks first, `skipStepDescription`), Copy run summary, Save as
-  preset, **Stop run** (asks first), Archive run, Delete run.
+  preset, Archive run, Delete run.
 - **Add step** in the session rail opens the Overview and asks `WorkflowAddStep`
   to open its draft there (`requestRunAddStep`, after the navigation settles).
 
@@ -603,7 +607,7 @@ asks before each step, the next step waits for your go.
 
 **Stop run** ends a run that nobody else will end: an orchestrated run
 between decisions, a run stuck on a failed step, a run you have seen enough
-of. It sits in the header of the workflow detail, next to **Pause**, and in the
+of. It sits as a word in the run header, next to **Pause run**, and in the
 menu of the run row in the activity feed. Goodboy asks you to confirm first. Steps that have
 not run are marked skipped, the step in flight stops and is marked skipped,
 and a failed step stays failed, because it did fail. Everything already written
@@ -618,7 +622,7 @@ opens the run again.
 
 Stop run is offered once the run has started and until it ends. A queued
 run has nothing to stop; archive it instead. **Archive run** and
-**Delete** sit in the run menu next to it.
+**Delete** sit in the run menu.
 
 **Delete** removes the run and every agent it owns, for preset, custom and
 orchestrated runs alike: its step agents, the agents the orchestrator spawned,
@@ -644,7 +648,7 @@ without its own setting follows the session.
 - The session's autorun also covers agents running outside a workflow
 - A workflow you add to a session with autorun on starts with autorun on
 - **Pause** lets the step in flight finish its turn and starts nothing new: no next step, no orchestrator decision, no read-now hint, no step button, not even turning autorun back on. The pause survives a restart. **Resume** starts where the run left off, static or orchestrated, and never changes when to ask
-- **Stop step N**, on the orchestrated tail, cancels the step that is running and holds the run. Goodboy asks you to confirm first. The step is marked skipped and everything it already wrote is kept. **Stop run** in the run `⋯` ends the run ([Closing a workflow](#closing-a-workflow))
+- **Stop step N**, on the orchestrated tail, cancels the step that is running and holds the run. Goodboy asks you to confirm first. The step is marked skipped and everything it already wrote is kept. **Stop run** in the run header ends the run ([Closing a workflow](#closing-a-workflow))
 - **Continue the run** starts a stopped run again. It turns autorun back on and asks for the next step
 
 A hands-free run still stops and waits for you when:

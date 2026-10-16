@@ -118,12 +118,14 @@ describe('the run header scenes on the orchestrated document', () => {
     expect(tail().contains(entries[0] ?? null)).toBe(true);
   });
 
-  it('keeps Stop run in the run menu of the paused run, never in the header', async () => {
+  it('shows Stop run as a word in the header of the paused run, confirmed, and not in the menu', async () => {
     renderScene('run-header-paused');
 
     const bar = await header();
-    expect(within(bar).queryByRole('button', { name: 'Stop run' })).toBeNull();
     fireEvent.click(within(bar).getByRole('button', { name: /run actions$/ }));
-    expect(within(screen.getByRole('menu')).getByText('Stop run')).toBeDefined();
+    expect(within(screen.getByRole('menu')).queryByText('Stop run')).toBeNull();
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+    fireEvent.click(within(bar).getByRole('button', { name: 'Stop run' }));
+    expect(await screen.findByText('Stop this run?')).toBeDefined();
   });
 });

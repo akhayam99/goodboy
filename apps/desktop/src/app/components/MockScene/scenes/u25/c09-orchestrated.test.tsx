@@ -216,16 +216,20 @@ describe('the c09 orchestrated scenes', () => {
     expect(screen.queryByPlaceholderText('Hint the orchestrator')).toBeNull();
   });
 
-  it('c09-orch-menu holds the run verbs, with Step routing and Skip step 3', async () => {
+  it('c09-orch-menu holds the run verbs, with Step routing and Skip step 3, Pause and Stop in the header', async () => {
     await mount('c09-orch-menu');
 
     const menu = screen.getByRole('menu');
-    expect(within(menu).getByText('Pause run')).toBeDefined();
     expect(within(menu).getByText('Autonomy')).toBeDefined();
     expect(within(menu).getByText('Step routing')).toBeDefined();
     expect(within(menu).getByText('Skip step 3')).toBeDefined();
     expect(within(menu).getByText('Copy run summary')).toBeDefined();
-    expect(within(menu).getByText('Stop run')).toBeDefined();
+    expect(within(menu).queryByText('Pause run')).toBeNull();
+    const live = within(
+      document.querySelector<HTMLElement>('[data-run-live-verbs]') ?? document.body,
+    );
+    expect(live.getByRole('button', { name: 'Pause run' })).toBeDefined();
+    expect(live.getByRole('button', { name: 'Stop run' })).toBeDefined();
     expect(within(menu).getByText('Archive run')).toBeDefined();
     expect(within(menu).getByText('Delete run')).toBeDefined();
   });

@@ -175,14 +175,18 @@ describe('the c08 preset run scenes', () => {
     expect(within(tail()).getByText('Archived run')).toBeDefined();
   });
 
-  it('c08-run-menu opens the run actions with Autonomy, Skip step 2 and Stop run', async () => {
+  it('c08-run-menu opens the run actions with Autonomy and Skip step 2, Pause and Stop in the header', async () => {
     await mount('c08-run-menu');
 
     const menu = screen.getByRole('menu');
-    expect(within(menu).getByText('Pause run')).toBeDefined();
     expect(within(menu).getByText('Autonomy')).toBeDefined();
     expect(within(menu).getByText('Skip step 2')).toBeDefined();
-    expect(within(menu).getByText('Stop run')).toBeDefined();
+    expect(within(menu).queryByText('Stop run')).toBeNull();
+    const live = within(
+      document.querySelector<HTMLElement>('[data-run-live-verbs]') ?? document.body,
+    );
+    expect(live.getByRole('button', { name: 'Pause run' })).toBeDefined();
+    expect(live.getByRole('button', { name: 'Stop run' })).toBeDefined();
     expect(within(menu).getByText('Archive run')).toBeDefined();
   });
 

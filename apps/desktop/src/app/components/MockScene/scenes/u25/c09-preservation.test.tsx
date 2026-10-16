@@ -149,21 +149,27 @@ describe('SPEC3 9.4 orchestrated rows stay reachable from the orchestrated docum
     expect(screen.getByRole('button', { name: /^Orchestrated/ })).toBeDefined();
   });
 
-  it('Run overflow: Pause run, Step routing, View diff, Save as preset, Copy run summary, Archive, Delete, Stop run confirmed', async () => {
+  it('Run header: Pause run and Stop run confirmed; overflow: Step routing, View diff, Save as preset, Copy run summary, Archive, Delete', async () => {
     await mount('c09-orch-running');
     act(() => {
       useAppStore.setState({ sessionProjectMounts: { [C09_SESSION_ID]: [mountOf({ index: 0 })] } });
     });
     await settle();
+    const live = within(
+      document.querySelector<HTMLElement>('[data-run-live-verbs]') ?? document.body,
+    );
+    expect(live.getByRole('button', { name: 'Pause run' })).toBeDefined();
     const menu = within(await openMenu());
-    expect(menu.getByText('Pause run')).toBeDefined();
+    expect(menu.queryByText('Pause run')).toBeNull();
     expect(menu.getByText('Step routing')).toBeDefined();
     expect(menu.getByText('View diff')).toBeDefined();
     expect(menu.getByText('Copy run summary')).toBeDefined();
     expect(menu.getByText('Archive run')).toBeDefined();
     expect(menu.getByText('Delete run')).toBeDefined();
     expect(menu.getByText('Save as preset')).toBeDefined();
-    await press(menu.getByText('Stop run'));
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+    await settle();
+    await press(live.getByRole('button', { name: 'Stop run' }));
     expect(screen.getByText('Stop this run?')).toBeDefined();
   });
 
