@@ -2945,8 +2945,8 @@ only while Files is the entry, and `BranchPage` hands it to `SessionDiffPane` th
 (`features/diff/diffRailHost.ts`); `SessionDiffPane` portals `ChangeTree` into it, so the
 tree and the diff still share one `useReviewState` and the keys stay in `useDiffKeys`. The tree
 never moves the column: no entry and no resize change the title, Ask or the diff's left
-edge. `F` and `/` focus the tree or the filter (`useTreeFocus`). The group reads the filter field (`/`) with the sort of the tree
-beside it, `All | Unviewed N | Commented N` (one at a time), the tree and `Next unviewed N`;
+edge. `F` and `/` focus the tree or the filter (`useTreeFocus`). The group reads the filter field (`/`) with the filter menu
+beside it (scope and grouping), the tree and `Next unviewed N` with the keyboard button;
 each file row keeps its viewed mark.
 The toolbar on the column (36 high, the diff scrolls under it) reads `Compared with main · All 5 commits ⌄`,
 then `Display ⌄` and `Fix comments N` (every open note and host thread, in every
@@ -2966,10 +2966,12 @@ six with the extension chain (`Statem…ceCard.test.tsx`, `cutFileName`); the fu
 for a screen reader. A file or folder row has no tooltip: the full path is in the file header of the diff. The tree is a `tree`: Up and Down move
 its cursor, Home and End go to the ends, Right and Left open, close and climb, `Enter` jumps
 the diff and keeps focus in the tree, `Space` toggles viewed (or folds a folder) and `Esc`
-returns to the diff. One key hint line ends the tree (`? all keys` opens the full list).
+returns to the diff. A keyboard button beside `Next unviewed` at the foot of the tree
+carries the key hint in its tooltip and opens the full list.
 Under the head a filter field (`/` and `T` focus it, `Esc` clears it) matches a
-subsequence of the path, `All | Unviewed N | Commented N` narrows it further,
-and `Folders | Kind` (beside the field) regroups the tree under Source, Tests, Config and
+subsequence of the path, and one filter menu beside the field (`Filter and group files`,
+tinted while a scope is on) holds `Show: All | Unviewed N | Commented N`, which narrows it
+further, and `Group: Folders | Kind`, which regroups the tree under Source, Tests, Config and
 Docs (each file then shows its folder beside the name). The filter narrows the
 diff as well as the tree, `Showing n of N` with `Clear` says so, and a filter
 that hides everything leaves `No files match` with `Clear` in both panes

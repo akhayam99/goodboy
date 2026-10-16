@@ -61,7 +61,7 @@ describe('the u21 files rail scene', () => {
     expect(files.getAttribute('aria-current')).toBe('page');
     expect(files.textContent).toBe('Files6');
     expect(within(rail).getByRole('navigation', { name: 'Changed files' })).toBeDefined();
-    expect(within(rail).getByRole('tab', { name: /^Commented/ })).toBeDefined();
+    expect(within(rail).getByRole('button', { name: 'Filter and group files' })).toBeDefined();
     expect(within(toolbar()).queryByRole('button', { name: /^Files/ })).toBeNull();
     expect(screen.getByRole('heading', { level: 1 })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Sections' })).toBeNull();

@@ -1,8 +1,8 @@
 import { useState, type RefObject } from 'react';
-import { SearchField, SegmentedTabs, useEscapeLayer } from '@goodboy/ui';
+import { SearchField, useEscapeLayer } from '@goodboy/ui';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import type { TreeGroup } from '../../lib/changeTree';
-import { GroupMenu } from './GroupMenu';
+import { FilterMenu, type Show } from './FilterMenu';
 
 type Props = {
   readonly total: number;
@@ -21,16 +21,6 @@ type Props = {
   readonly isFiltering: boolean;
   readonly onClear: () => void;
 };
-
-type Show = 'all' | 'unviewed' | 'commented';
-
-type BadgeParams = {
-  readonly count: number;
-};
-
-const countBadge = ({ count }: BadgeParams) => (
-  <span className="tabular-nums text-faint-foreground">{count}</span>
-);
 
 export const TreeHead = ({
   total,
@@ -87,20 +77,15 @@ export const TreeHead = ({
             </kbd>
           }
         />
-        <GroupMenu group={group} onGroup={onGroup} />
+        <FilterMenu
+          show={showNow()}
+          onShow={choose}
+          unviewed={unviewed}
+          commented={commented}
+          group={group}
+          onGroup={onGroup}
+        />
       </div>
-      <SegmentedTabs<Show>
-        ariaLabel="Show files"
-        size="xs"
-        fill
-        value={showNow()}
-        onChange={choose}
-        options={[
-          { value: 'all', label: 'All' },
-          { value: 'unviewed', label: 'Unviewed', badge: countBadge({ count: unviewed }) },
-          { value: 'commented', label: 'Commented', badge: countBadge({ count: commented }) },
-        ]}
-      />
       {isFiltering ? (
         <p className="flex items-center gap-2 text-meta tabular-nums text-muted-foreground">
           <span>

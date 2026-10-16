@@ -180,7 +180,7 @@ describe('SPEC3 9.6 Branch page capabilities from the worktree level', () => {
 
     expect(level().getByRole('navigation', { name: 'Changed files' })).toBeDefined();
     expect(level().getByRole('searchbox', { name: 'Filter files' })).toBeDefined();
-    expect(level().getByRole('tablist', { name: 'Show files' })).toBeDefined();
+    expect(level().getByRole('button', { name: 'Filter and group files' })).toBeDefined();
   });
 
   it('Commits and Checks open their bodies from their entries', async () => {

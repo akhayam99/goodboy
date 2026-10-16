@@ -71,7 +71,7 @@ export const LevelProjects = ({ session, isActive }: Props) => {
             <CONCEPT_ICONS.projectFolder size={ICON_SIZE.row} aria-hidden className="shrink-0" />
             <span className="truncate">{group.projectName}</span>
           </div>
-          <ul aria-label={`${group.projectName} worktrees`} className="flex flex-col">
+          <ul aria-label={`${group.projectName} worktrees`} className="flex flex-col pl-4">
             {group.rows.map((row) => (
               <li key={row.mountId}>
                 <WorktreeRow

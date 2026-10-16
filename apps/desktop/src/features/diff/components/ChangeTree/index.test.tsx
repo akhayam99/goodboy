@@ -128,15 +128,20 @@ describe('ChangeTree on a big change', () => {
   });
 });
 
+const openFilterMenu = () => {
+  fireEvent.click(screen.getByRole('button', { name: 'Filter and group files' }));
+  return within(screen.getByRole('menu', { name: 'Filter and group files' }));
+};
+
 describe('ChangeTree', () => {
-  it('ends with a single line that teaches the keys', () => {
+  it('teaches the keys in a tooltip, never as a line in the rail', () => {
     renderTree();
 
-    expect(screen.getByText(KEY_HELP)).toBeDefined();
+    expect(screen.queryByText(KEY_HELP)).toBeNull();
     expect(KEY_HELP).toContain('J K move');
     expect(KEY_HELP).toContain('viewed');
     expect(KEY_HELP).toContain('/ filter');
-    expect(screen.getByRole('button', { name: '? all keys' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Keyboard shortcuts' })).toBeDefined();
   });
 
   it('shows no count or +/- on an expanded folder, and the +/- on a file only at 340 or more', () => {
@@ -368,7 +373,9 @@ describe('ChangeTree', () => {
     });
     expect(toggle.getAttribute('aria-pressed')).toBe('false');
     expect(toggle.querySelector('span')).not.toBeNull();
-    expect(screen.getByRole('tab', { name: /^Unviewed/ }).textContent).toContain('4');
+    expect(
+      openFilterMenu().getByRole('menuitemradio', { name: /^Unviewed/ }).textContent,
+    ).toContain('4');
   });
 
   it('counts the unviewed and the commented files on the filter', () => {
@@ -381,8 +388,9 @@ describe('ChangeTree', () => {
           : NO_KINDS,
     });
 
-    expect(screen.getByRole('tab', { name: /^Unviewed/ }).textContent).toContain('3');
-    expect(screen.getByRole('tab', { name: /^Commented/ }).textContent).toContain('1');
+    const menu = openFilterMenu();
+    expect(menu.getByRole('menuitemradio', { name: /^Unviewed/ }).textContent).toContain('3');
+    expect(menu.getByRole('menuitemradio', { name: /^Commented/ }).textContent).toContain('1');
   });
 
   it('shows the comment count of a file and names its kinds in the tooltip', async () => {
@@ -461,7 +469,9 @@ describe('ChangeTree', () => {
       filter: { ...NO_FILTER, query: 'pack', isFiltering: true, onClear },
     });
 
-    expect(screen.getByRole('tab', { name: /^Unviewed/ }).textContent).toContain('4');
+    expect(
+      openFilterMenu().getByRole('menuitemradio', { name: /^Unviewed/ }).textContent,
+    ).toContain('4');
     expect(screen.getByText('Showing 1 of 4')).toBeDefined();
     expect(screen.queryByRole('treeitem', { name: /page\.tsx/ })).toBeNull();
 
@@ -488,14 +498,17 @@ describe('ChangeTree', () => {
     const onGroup = vi.fn();
     renderTree({ filter: { ...NO_FILTER, onUnviewedOnly, onCommentedOnly, onGroup } });
 
-    expect(screen.getByRole('tab', { name: 'All' }).getAttribute('aria-selected')).toBe('true');
-    fireEvent.click(screen.getByRole('tab', { name: /^Unviewed/ }));
+    expect(
+      openFilterMenu().getByRole('menuitemradio', { name: 'All' }).getAttribute('aria-checked'),
+    ).toBe('true');
+    fireEvent.click(screen.getByRole('menuitemradio', { name: /^Unviewed/ }));
     expect(onUnviewedOnly).toHaveBeenLastCalledWith(true);
     expect(onCommentedOnly).toHaveBeenLastCalledWith(false);
-    fireEvent.click(screen.getByRole('tab', { name: /^Commented/ }));
+    openFilterMenu();
+    fireEvent.click(screen.getByRole('menuitemradio', { name: /^Commented/ }));
     expect(onUnviewedOnly).toHaveBeenLastCalledWith(false);
     expect(onCommentedOnly).toHaveBeenLastCalledWith(true);
-    fireEvent.click(screen.getByRole('button', { name: 'Group files' }));
+    openFilterMenu();
     fireEvent.click(screen.getByRole('menuitemradio', { name: /Kind/ }));
 
     expect(onGroup).toHaveBeenCalledWith('kind');
@@ -503,15 +516,19 @@ describe('ChangeTree', () => {
 
   it('reads the filter back from the two switches, unviewed first', () => {
     renderTree({ filter: { ...NO_FILTER, unviewedOnly: true } });
-    expect(screen.getByRole('tab', { name: /^Unviewed/ }).getAttribute('aria-selected')).toBe(
-      'true',
-    );
+    expect(
+      openFilterMenu()
+        .getByRole('menuitemradio', { name: /^Unviewed/ })
+        .getAttribute('aria-checked'),
+    ).toBe('true');
     cleanup();
 
     renderTree({ filter: { ...NO_FILTER, commentedOnly: true } });
-    expect(screen.getByRole('tab', { name: /^Commented/ }).getAttribute('aria-selected')).toBe(
-      'true',
-    );
+    expect(
+      openFilterMenu()
+        .getByRole('menuitemradio', { name: /^Commented/ })
+        .getAttribute('aria-checked'),
+    ).toBe('true');
   });
 
   it('sends the typed query to the filter and clears it on Escape', () => {

@@ -251,7 +251,7 @@ describe('SessionDiffPane with the tree in the docked rail', () => {
 
     expect(hostOf().contains(treeOf())).toBe(true);
     expect(within(hostOf()).getByRole('searchbox', { name: 'Filter files' })).toBeDefined();
-    expect(within(hostOf()).getByRole('tablist', { name: 'Show files' })).toBeDefined();
+    expect(within(hostOf()).getByRole('button', { name: 'Filter and group files' })).toBeDefined();
     expect(within(hostOf()).getByRole('button', { name: /^Next unviewed/ })).toBeDefined();
     expect(screen.getByTestId('diff-view').contains(treeOf())).toBe(false);
   });
@@ -311,7 +311,8 @@ describe('SessionDiffPane with the tree in the docked rail', () => {
       target: { value: 'postings' },
     });
 
-    expect(screen.getByRole('tab', { name: /^Unviewed/ }).textContent).toContain('1');
+    fireEvent.click(screen.getByRole('button', { name: 'Filter and group files' }));
+    expect(screen.getByRole('menuitemradio', { name: /^Unviewed/ }).textContent).toContain('1');
     expect(screen.getByRole('button', { name: /^Next unviewed/ }).textContent).toContain('1');
   });
 
@@ -438,7 +439,8 @@ describe('SessionDiffPane files', () => {
     };
     renderPane({ diff });
 
-    fireEvent.click(screen.getByRole('tab', { name: /^Unviewed/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Filter and group files' }));
+    fireEvent.click(screen.getByRole('menuitemradio', { name: /^Unviewed/ }));
 
     expect(screen.getByTestId('diff-view').getAttribute('data-files')).toBe('src/ledger/export.ts');
     expect(screen.getByText('Showing 1 of 2')).toBeDefined();
