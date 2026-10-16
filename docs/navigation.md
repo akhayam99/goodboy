@@ -1016,9 +1016,11 @@ the tooltip only. `PaneCluster` lives in `features/session/components/`.
   its session folder (`scratch_dir_prepare`, dropped when the user left the
   session before it answered). The remembered scope lives in memory and is
   evicted with the session.
-- **The terminal pane header** reads `Terminal`, then the scope picker
-  (`TerminalScopePicker`, a combobox named `Terminal folder`): the project in
-  gray and the branch in mono, never the worktree folder hash. It lists this
+- **The terminal pane header** shows the terminal icon, then the scope
+  picker in the title's place (`TerminalScopePicker`, a combobox named
+  `Terminal folder`, passed as `DrawerFrame`'s `titleContent`; the region keeps
+  the name `Terminal`): the branch in mono only, never the worktree folder
+  hash. The menu names each place `project · branch`. It lists this
   session's worktrees (an info dot when a shell there runs a process), the
   main checkout, the workspace folder and, in a session without a branch,
   the session folder. Picking one opens or reuses a shell there

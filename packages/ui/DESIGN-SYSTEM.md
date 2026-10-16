@@ -1532,7 +1532,8 @@ close.
 band's centre line (`FRAME_DRAWER_ROW_PX`), a
 divider, a body and an optional `dock`. The title row reads icon, title, count
 (a number or a version, never a session title), at most one labelled action,
-then Close. Close always reads `Close` and is a 28px target (`size-7`, 14px
+then Close. A pane whose title is a control (the terminal scope picker) passes it as
+`titleContent`: it replaces the visible heading, the region keeps `title` as its name. Close always reads `Close` and is a 28px target (`size-7`, 14px
 glyph); every utility in the header (copy, open on its page) is a 28px
 icon button in one tone. The `dock` is `px-4 py-3`, the same padding for the Ask
 composer, a transcript reply field and a script run's status line. The first

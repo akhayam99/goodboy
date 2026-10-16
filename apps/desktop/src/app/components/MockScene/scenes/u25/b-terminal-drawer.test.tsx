@@ -83,8 +83,8 @@ describe('the terminal drawer scenes', () => {
     const after = store.getState().terminalTabs[SESSION_ID] ?? [];
     expect(after.map((tab) => tab.id)).toEqual(before.map((tab) => tab.id));
     expect(drawer?.kind === 'terminal' ? drawer.payload.terminalId : null).toMatch(/::t2$/);
-    expect(screen.getByRole('combobox', { name: 'Terminal folder' }).textContent).toContain(
-      'notify-relay',
+    expect(screen.getByRole('combobox', { name: 'Terminal folder' }).textContent).toBe(
+      'hl/surface-retry-state',
     );
   });
 
@@ -94,9 +94,10 @@ describe('the terminal drawer scenes', () => {
 
     const drawer = screen.getByRole('region', { name: 'Terminal' });
     expect(within(drawer).queryByTestId('worktree-chip')).toBeNull();
-    expect(within(drawer).getByRole('combobox', { name: 'Terminal folder' }).textContent).toContain(
-      'payments-api',
+    expect(within(drawer).getByRole('combobox', { name: 'Terminal folder' }).textContent).toBe(
+      'hl/fix-webhook-idempotency',
     );
+    expect(within(drawer).queryByRole('heading', { name: 'Terminal' })).toBeNull();
     expect(within(drawer).getByRole('button', { name: 'Open on Terminal page' })).toBeDefined();
     expect(within(drawer).getByRole('button', { name: 'Close' })).toBeDefined();
     expect(within(drawer).getByRole('button', { name: 'New tab on payments-api' })).toBeDefined();
@@ -113,7 +114,7 @@ describe('the terminal drawer scenes', () => {
 
     const drawer = screen.getByRole('region', { name: 'Terminal' });
     const picker = within(drawer).getByRole('combobox', { name: 'Terminal folder' });
-    expect(picker.textContent).toContain('payments-api');
+    expect(picker.textContent).toBe('hl/fix-webhook-idempotency');
     expect(picker.textContent).not.toContain('gb-7k2q9x');
     const header = drawer.querySelector('[data-drawer-header-row]');
     expect(

@@ -83,7 +83,7 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
       title="Terminal"
       icon={CONCEPT_ICONS.terminal}
       iconClassName="text-faint-foreground"
-      count={
+      titleContent={
         <TerminalScopePicker
           worktree={worktree}
           targets={model.targets}

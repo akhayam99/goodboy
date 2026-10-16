@@ -85,8 +85,8 @@ describe('c03 pane cluster scenes', () => {
     await mount('c03-panes-terminal');
     expect(useAppStore.getState().drawer?.kind).toBe('terminal');
     expect(pressed()).toEqual(['Terminal']);
-    expect(screen.getByRole('combobox', { name: 'Terminal folder' }).textContent).toContain(
-      'payments-api',
+    expect(screen.getByRole('combobox', { name: 'Terminal folder' }).textContent).toBe(
+      'hl/fix-webhook-idempotency',
     );
   });
 

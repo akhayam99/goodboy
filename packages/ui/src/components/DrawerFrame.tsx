@@ -18,6 +18,7 @@ export type DrawerBack = {
 
 export type DrawerFrameProps = {
   readonly title: string;
+  readonly titleContent?: ReactNode;
   readonly icon?: LucideIcon;
   readonly iconClassName?: string;
   readonly count?: ReactNode;
@@ -61,6 +62,7 @@ const hasDraft = (element: HTMLElement): boolean => {
 
 export const DrawerFrame = ({
   title,
+  titleContent,
   icon: Icon,
   iconClassName,
   count,
@@ -115,14 +117,20 @@ export const DrawerFrame = ({
             <Icon size={ICON_SIZE.control} aria-hidden className={iconClassName} />
           </span>
         )}
-        <h2
-          className={cn(
-            'min-w-0 text-heading text-foreground',
-            hasToolbar ? 'line-clamp-2' : 'truncate',
-          )}
-        >
-          {title}
-        </h2>
+        {titleContent != null ? (
+          <div className="flex h-5 min-w-0 items-center text-heading text-foreground">
+            {titleContent}
+          </div>
+        ) : (
+          <h2
+            className={cn(
+              'min-w-0 text-heading text-foreground',
+              hasToolbar ? 'line-clamp-2' : 'truncate',
+            )}
+          >
+            {title}
+          </h2>
+        )}
         {count != null ? (
           <span className="flex h-5 min-w-0 shrink-[4] items-center text-meta tabular-nums text-muted-foreground">
             {count}

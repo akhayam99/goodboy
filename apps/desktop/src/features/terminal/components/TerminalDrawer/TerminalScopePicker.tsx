@@ -46,13 +46,7 @@ export const TerminalScopePicker = ({
       size="sm"
       ariaLabel="Terminal folder"
       valueLabel={
-        <span className="flex min-w-0 items-center gap-1 truncate">
-          {label.project === null ? null : (
-            <span className="truncate text-muted-foreground">{label.project}</span>
-          )}
-          {label.project === null ? null : <span className="text-faint-foreground">·</span>}
-          <span className={label.isMono ? 'truncate font-mono' : 'truncate'}>{label.place}</span>
-        </span>
+        <span className={label.isMono ? 'truncate font-mono' : 'truncate'}>{label.place}</span>
       }
       align="start"
       popupWidth="content"
