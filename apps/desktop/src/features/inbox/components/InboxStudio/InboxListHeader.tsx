@@ -1,9 +1,10 @@
 import { ISSUE_SEARCH_PLACEHOLDER } from '../../../integrations/issueCode/lookupCopy';
 import type { ReactNode, RefObject } from 'react';
 import { X } from 'lucide-react';
-import { Chip, KbdPill, OverflowMenu, SearchField, SegmentedTabs } from '@goodboy/ui';
+import { Chip, KbdPill, SearchField, SegmentedTabs } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import { TaskListMenu } from '../../../actions/TaskListMenu';
 import type { TaskGroupBy } from '../../taskGroups';
 import type { TaskScope } from '../../taskListViewStorage';
 import { TasksFilterMenu } from './TasksFilterMenu';
@@ -93,18 +94,6 @@ export const InboxListHeader = ({
     </div>
     <TasksFilterMenu activeCount={activeFilterCount} facets={facets} />
     <TasksGroupByMenu groupBy={groupBy} onGroupBy={onGroupBy} />
-    <OverflowMenu
-      label="More task actions"
-      items={[
-        {
-          kind: 'item',
-          key: 'refresh',
-          label: isRefreshing ? 'Refreshing tasks' : 'Refresh tasks',
-          disabled: isRefreshing,
-          onClick: onRefresh,
-        },
-        { kind: 'item', key: 'tools', label: 'Manage tools', onClick: onManageTools },
-      ]}
-    />
+    <TaskListMenu facts={{ isRefreshing, onRefresh, onManageTools }} />
   </div>
 );

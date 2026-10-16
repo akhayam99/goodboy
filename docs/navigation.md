@@ -1095,7 +1095,8 @@ activity yet show the plain overview with its actions.
   its lifecycle menu live on the sidebar identity row. The header keeps the
   Overview actions as visible words (`OverviewPageActions`: Write title and
   goal from linked work, and Scripts in a branchless session), **New**
-  (`OverviewActions`, ⌘N on the Overview, opens the New drawer; filled only
+  (`OverviewActions`, ⌘N on the Overview, a menu from the `newForm` kind of
+  the action registry whose pick opens its form in the New drawer; filled only
   while nothing runs and Next holds no row) and, on an archived session,
   Restore. Context left the header for the cluster's more menu.
 
@@ -1103,8 +1104,8 @@ activity yet show the plain overview with its actions.
 
 One fixed group at the right of every session page header, the same on every
 page and in this order: **Ask** (⌘L), **Terminal** (⌘⌥T), **Explore** (⌘⌥X),
-then a visible `⋯` (`More panes`) holding **Context** (⌘⌥C) and **Scripts**
-(⌘⌥S). Each toggle is an icon and a word (`PaneToggle`, a quiet `xs`
+then a visible `⋯` (`More panes`, the `paneCluster` kind of the action
+registry) holding **Context** (⌘⌥C) and **Scripts** (⌘⌥S). Each toggle is an icon and a word (`PaneToggle`, a quiet `xs`
 `Button`); the open one is `bg-selected` and `aria-pressed`. The chord lives in
 the tooltip only. `PaneCluster` lives in `features/session/components/`.
 
@@ -1831,7 +1832,7 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   are shared primitives. Tasks uses the rows and the list keys but not the day
   grouping or a rail: its facets (source, show, type, project) sit in one Filter
   menu of the header, next to the For me and All switch, the search, Group by and
-  `⋯` (Refresh, Manage tools), and its rows are one `ListGrid` with a group per
+  `⋯` (Refresh, Manage tools: the `taskList` kind of the action registry), and its rows are one `ListGrid` with a group per
   source, status or project (`taskGroupsOf`), five rows each until Show all, and
   each group is its own listbox of options. J and K move a cursor through the
   rows on screen, and the record follows in the pane only once one is open.
