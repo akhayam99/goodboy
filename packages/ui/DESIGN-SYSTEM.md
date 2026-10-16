@@ -147,20 +147,22 @@ only, so emphasis gets a synthetic slant. The boot shell in
 `apps/desktop/index.html` stays on `system-ui`, because it paints before the
 stylesheet loads, and the exported report embeds the same file as a data URI.
 
-| role           | measure                       | used for                                                                               |
-| -------------- | ----------------------------- | -------------------------------------------------------------------------------------- |
-| `text-display` | 24/32, 600, -0.01em           | onboarding titles and the Impact title                                                 |
-| `text-title`   | 16/24, 600, -0.005em          | the one pane title (h1) of a surface                                                   |
-| `text-heading` | 14/20, 600                    | a page-grade section, a popover title, a kickoff question                              |
-| `text-row`     | 13/20, 500                    | a top-level row label, a card title                                                    |
-| `text-body`    | 14/20                         | running text; text with no class inherits it from the body                             |
-| `text-prose`   | 14/22                         | messages, markdown, artifacts                                                          |
-| `text-label`   | 12/16                         | controls, a nested row, a status label                                                 |
-| `text-eyebrow` | 11/16, 600, 0.08em, uppercase | a section label, only through `Eyebrow`                                                |
-| `text-meta`    | 12/16, tabular                | time, ordinal, cost, count, a row's second line                                        |
-| `text-chip`    | 11/16, 500, tabular           | the label inside a chip, a badge, a key cap, a count pill                              |
-| `text-code`    | mono 12/18                    | branch, path, command, inline code                                                     |
-| `document`     | 15/25                         | the report document body (screen and file); a reading exception, not a `--text-*` role |
+| role           | measure                   | used for                                                                               |
+| -------------- | ------------------------- | -------------------------------------------------------------------------------------- |
+| `text-display` | 24/32, 600, -0.01em       | onboarding titles and the Impact title                                                 |
+| `text-title`   | 16/24, 600, -0.005em      | the one pane title (h1) of a surface                                                   |
+| `text-heading` | 14/20, 600                | a page-grade section, a popover title, a kickoff question                              |
+| `text-row`     | 13/20, 500                | a top-level row label, a card title                                                    |
+| `text-body`    | 14/20                     | running text; text with no class inherits it from the body                             |
+| `text-prose`   | 14/22                     | messages, markdown, artifacts                                                          |
+| `text-label`   | 12/16                     | controls, a nested row, a status label                                                 |
+| `text-eyebrow` | 12/16, 500, sentence case | a section label, only through `Eyebrow`                                                |
+| `text-meta`    | 12/16, tabular            | time, ordinal, cost, count, a row's second line                                        |
+| `text-chip`    | 11/16, 500, tabular       | the label inside a chip, a badge, a key cap, a count pill                              |
+| `text-code`    | mono 12/18                | branch, path, command, inline code                                                     |
+| `text-ui`      | 13/20                     | every line of a two size surface that is not its title or prose                        |
+| `text-read`    | 15/24                     | the title and the prose of a two size surface                                          |
+| `document`     | 15/25                     | the report document body (screen and file); a reading exception, not a `--text-*` role |
 
 Mono is for code: a branch, a path, a command, a sha and code. Money, counts,
 durations, percentages, ages and key letters are the sans stack with
@@ -174,6 +176,19 @@ durations, percentages, ages and key letters are the sans stack with
 the report reads the same way in the app, on disk and on paper, and the paper
 medium shrinks every one of its tokens under `@media print`. It never appears
 outside `ArtifactDocument`.
+
+### Two sizes per region
+
+A surface rebuilt for 0.27.0 reads in two sizes and two weights. The sidebar
+is 13 throughout. The page is 15 for its title and its prose (`text-read`) and
+13 for everything else (`text-ui`): list cells, labels, times, counts, state
+words. Weight is 400 or 500 (`font-medium` for a title, a row's name and a
+selected row). Hierarchy comes from the three grays of the text hierarchy, never
+from a third size. A branch or a path in such a surface is `text-ui font-mono`,
+listed in `scale-rules.mono-code.json` like any other code. Every list built on
+`ListGrid` is a two size surface, and `two-size-type.test.ts` fails when a file
+that renders `ListGrid` reaches for another role. The older roles stay for the
+surfaces that have not moved yet; a surface moves whole, never half.
 
 A role with no weight inherits one: `text-label font-medium` is a control label
 at 500, `text-chip` a chip. Weights are 400, 500 and 600, and
@@ -1170,7 +1185,8 @@ Rules for new and changed code (the migration of old code is the sweep's):
 icons use `ICON_SIZE` (mark 10, row 12, control 14, hero 18); mono is for
 branch, path, command, sha and code; money, counts and durations are sans with
 `tabular-nums`; rows sit on 24, 28, 32, 36, 40 and 48; gaps sit on 4, 8, 12, 16,
-24 and 32 (no `gap-5`, `gap-7`, `gap-10`); uppercase goes through `Eyebrow`.
+24 and 32 (no `gap-5`, `gap-7`, `gap-10`); labels are sentence case, and a
+section label goes through `Eyebrow`.
 `control-heights.test.ts`, `kbd-overrides.test.ts`,
 `hand-rolled-radio-groups.test.ts`, `switch-labels-name-the-setting.test.ts`,
 `row-heights-on-the-scale.test.ts` and `scale-rules.test.ts` hold the line.
@@ -1696,7 +1712,7 @@ is `bg-fill` and `rounded-lg`, with 4px of padding (`inset="rows"`) or 12px
 for prose (`inset="content"`). `fill` and not `subtle`: `subtle` on the sheet
 is 1.06:1 and does not read, `fill` is 1.17:1 in dark and 1.12:1 in light, and
 because it is relative to its parent it steps down on its own inside a drawer.
-The section keeps its uppercase eyebrow **outside** the band (`label`, with the
+The section keeps its eyebrow **outside** the band (`label`, with the
 same `icon`, `hint`, `action` and `headingLevel` slots `SectionHeader` gives).
 A group inside a section names itself on the band's first row (`groupLabel`),
 in sentence case on `text-label` medium muted, with a faint count on the right
@@ -1722,7 +1738,7 @@ usage windows and Models in the picker stripe this way.
 
 A metadata line is not a section and does not get a band.
 
-`Eyebrow` is a label primitive for metadata, statistics and small internal groups. It is also the only uppercase label. A standalone label with `uppercase` renders `Eyebrow` (inside a heading element when it titles a region), never a hand-made `uppercase tracking-*` span. Chips and badges use sentence case: `Chip` has no uppercase option, and a status or kind chip has a sentence-case label. Arbitrary `tracking-[…]` values are rejected (`uppercase-label-uses-eyebrow.test.ts`). `Eyebrow` does not replace `SectionHeader` when a section also needs an action or description. `FieldRow` owns a form field's label, help copy and control alignment. It does not title a section. Its `marker` slot sits right after the label (the Reset button of workspace settings, shown only while the value differs from the default) and its `menu` slot right after the control, or at the end of the label line when the row is `stacked` and the control spans the width. Inside a `Band` its rows sit on an 8px rhythm, so a marker, a menu or a wider control never makes one row look taller than its neighbour. When these roles overlap, `SectionHeader` wins for the section, and then `FieldRow` labels the controls inside it. `Divider` is a sibling between chrome and content, never decoration after every heading or field, and never a separator between two pieces of content: use `gap`, a `Band`, or a labeled rule like `Eyebrow` instead.
+`Eyebrow` is a label primitive for metadata, statistics and small internal groups. Every label is sentence case, the eyebrow included: no label is uppercase or tracked. A section label renders `Eyebrow` (inside a heading element when it titles a region), never a hand-made `uppercase tracking-*` span. Chips and badges use sentence case: `Chip` has no uppercase option, and a status or kind chip has a sentence-case label. Arbitrary `tracking-[…]` values are rejected (`uppercase-label-uses-eyebrow.test.ts`). `Eyebrow` does not replace `SectionHeader` when a section also needs an action or description. `FieldRow` owns a form field's label, help copy and control alignment. It does not title a section. Its `marker` slot sits right after the label (the Reset button of workspace settings, shown only while the value differs from the default) and its `menu` slot right after the control, or at the end of the label line when the row is `stacked` and the control spans the width. Inside a `Band` its rows sit on an 8px rhythm, so a marker, a menu or a wider control never makes one row look taller than its neighbour. When these roles overlap, `SectionHeader` wins for the section, and then `FieldRow` labels the controls inside it. `Divider` is a sibling between chrome and content, never decoration after every heading or field, and never a separator between two pieces of content: use `gap`, a `Band`, or a labeled rule like `Eyebrow` instead.
 
 ## Prose disclosure
 

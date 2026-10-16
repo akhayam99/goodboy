@@ -170,6 +170,10 @@
   --text-chip: 11px;
   --text-chip--line-height: 16px;
   --text-chip--font-weight: 500;
+  --text-ui: 13px;
+  --text-ui--line-height: 20px;
+  --text-read: 15px;
+  --text-read--line-height: 24px;
 
   --shadow-xl: 0 16px 36px -8px oklch(0 0 0 / 0.22), 0 6px 12px -4px oklch(0 0 0 / 0.16);
 
@@ -185,8 +189,6 @@
   --radius-md: 6px;
   --radius-lg: 8px;
   --radius-frame: 10px;
-
-  --tracking-eyebrow: 0.08em;
 
   --animate-soft-pulse: soft-pulse 2.8s ease-in-out infinite;
 
@@ -659,11 +661,9 @@ body {
 }
 
 @utility text-eyebrow {
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   line-height: 16px;
-  font-weight: 600;
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  font-weight: 500;
 }
 
 @layer utilities {

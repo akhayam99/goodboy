@@ -10,4 +10,6 @@ export const TYPE_ROLES = [
   'eyebrow',
   'meta',
   'code',
+  'ui',
+  'read',
 ] as const;
