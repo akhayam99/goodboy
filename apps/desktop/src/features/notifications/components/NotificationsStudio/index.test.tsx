@@ -81,8 +81,7 @@ const seedNotifications = ({ notifications }: { notifications: ReadonlyArray<Not
 const renderStudio = () => render(<NotificationsStudio onClose={vi.fn()} />);
 
 const deleteAll = (): void => {
-  fireEvent.click(screen.getByRole('button', { name: 'More notification actions' }));
-  fireEvent.click(screen.getByRole('menuitem', { name: 'Delete all' }));
+  fireEvent.click(screen.getByRole('button', { name: /^delete all$/i }));
 };
 
 const openFilterRail = (): HTMLElement => {
@@ -364,16 +363,20 @@ describe('NotificationsStudio', () => {
     renderStudio();
 
     expect(screen.queryByRole('button', { name: /mark all read/i })).toBeNull();
-    expect(screen.getByRole('button', { name: 'More notification actions' })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^delete all$/i })).toBeDefined();
   });
 
-  it('keeps Delete all off the header, in the page menu', () => {
+  it('draws Delete all as a quiet verb after Mark all read, with no page menu', () => {
     seedNotifications({ notifications: [buildNotification()] });
     renderStudio();
 
-    expect(screen.queryByRole('button', { name: /^delete all$/i })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'More notification actions' }));
-    expect(screen.getByRole('menuitem', { name: 'Delete all' })).toBeDefined();
+    const markAllRead = screen.getByRole('button', { name: /mark all read/i });
+    const deleteAllVerb = screen.getByRole('button', { name: /^delete all$/i });
+    expect(deleteAllVerb.getAttribute('data-variant')).toBe('quiet');
+    expect(
+      markAllRead.compareDocumentPosition(deleteAllVerb) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(screen.queryByRole('button', { name: 'More notification actions' })).toBeNull();
   });
 
   it('asks in a popover beside Delete all, not inside the title row', async () => {

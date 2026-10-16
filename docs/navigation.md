@@ -2016,10 +2016,10 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   its own workspace, or its session's, and a row with neither is app-wide and
   shows in every workspace. Mark all read and Delete all act on that same scope.
   The studio header draws them through `HeaderActions`: the shared `FilterButton`
-  only while the rail is folded, then the ghost `Mark all read` (only while something is unread), then the page
-  `⋯` (the `notifications` kind of the action registry) holding `Delete all`,
-  which opens a `ConfirmPopover` anchored to the `⋯`, aligned to its end
-  edge, titled with the scope's count ("Delete 7 notifications?") and naming the
+  only while the rail is folded, then the ghost `Mark all read` (only while something is unread), then the quiet
+  `Delete all` (the `notifications` kind of the action registry, drawn by
+  `ObjectActionVerb`, since a `⋯` of one item draws nothing), which opens a
+  `ConfirmPopover` anchored to it, aligned to its end edge, titled with the scope's count ("Delete 7 notifications?") and naming the
   workspace or "every workspace"; it never swaps the title row. A row's Delete acts
   at once and pushes "Notification deleted" with Undo (`dismissNotificationGroup`
   re-inserts the rows through `insertNotification`; ⌘Z works too).

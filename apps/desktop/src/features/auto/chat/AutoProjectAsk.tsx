@@ -6,7 +6,7 @@ import { isReportedError } from '../../../store/slices/notifications/reportedErr
 import { projectById } from '../../../store/slices/projects/projectIndex';
 import { projectAnswerOf, type ProjectPick } from './projectAnswerOf';
 import type { ProjectAsk } from './projectAskOf';
-import { ProjectAskMenu } from '../../actions/ProjectAskMenu';
+import { ObjectActionVerb } from '../../actions/ObjectActionVerb';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -186,15 +186,22 @@ export const AutoProjectAsk = ({ sessionId, rootAgentId, ask }: Props) => {
                 Another project…
               </Button>
             )}
-            <ProjectAskMenu
-              facts={{
-                isBusy,
-                onDiscard: () =>
-                  void run({
-                    label: 'Discard request',
-                    work: () =>
-                      reply({ content: 'Discard that request. Start nothing.', word: 'Discarded' }),
-                  }),
+            <ObjectActionVerb
+              actionId="projectAsk.discard"
+              target={{
+                kind: 'projectAsk',
+                facts: {
+                  isBusy,
+                  onDiscard: () =>
+                    void run({
+                      label: 'Discard request',
+                      work: () =>
+                        reply({
+                          content: 'Discard that request. Start nothing.',
+                          word: 'Discarded',
+                        }),
+                    }),
+                },
               }}
             />
           </span>

@@ -345,8 +345,8 @@ should the Implementer work?" lists the session's projects with their branch, **
 project...** opens a filter over the workspace's other projects ("Not in this session. A worktree
 is created from main."), and the primary follows the choice (**Choose a project** disabled, **Use
 payments-api**, **Use both**, **Use 3 projects**) next to **No project, just answer**, one
-action row under the list; **Discard request** sits in its `⋯` (the `projectAsk` kind of the
-action registry). The composer reads "Pick a project, or write
+action row under the list, with **Discard request** as a quiet verb (the `projectAsk` kind of
+the action registry, drawn by `ObjectActionVerb`). The composer reads "Pick a project, or write
 to Auto", so a reply in the chat answers too. The answer is a message to Auto through
 `sendTurn` ("Use payments-api and ledger-core: start one Implementer per project."); a project not
 in the session is mounted first (`ensureProjectMounted`, the button says "Creating a worktree for
