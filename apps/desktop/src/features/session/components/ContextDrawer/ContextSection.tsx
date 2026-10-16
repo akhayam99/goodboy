@@ -9,9 +9,14 @@ type Props = {
   readonly children: ReactNode;
 };
 
+const REGION_LABEL: Readonly<Record<ContextDrawerTab, string>> = {
+  ...CONTEXT_TAB_LABEL,
+  learned: 'Learned in this session',
+};
+
 export const ContextSection = ({ section, action, children }: Props) => (
   <section
-    aria-label={CONTEXT_TAB_LABEL[section]}
+    aria-label={REGION_LABEL[section]}
     data-context-section={section}
     className="flex min-w-0 scroll-mt-3 flex-col gap-2"
   >
