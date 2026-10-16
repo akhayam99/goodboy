@@ -322,7 +322,9 @@ describe('c07 Auto scenes', () => {
       throw new Error('no folded rail');
     }
     expect(within(rail).getByRole('button', { name: /^Back to / })).toBeDefined();
-    expect(within(rail).getByRole('button', { name: 'Implementer, Running' })).toBeDefined();
+    const implementer = within(rail).getByRole('button', { name: 'Implementer, Running' });
+    expect(implementer.getAttribute('data-rail-auto-role')).toBe('implementer');
+    expect(within(implementer).getByRole('img', { name: 'Running' })).toBeDefined();
     expect(within(rail).getByRole('button', { name: 'Tester, Queued' })).toBeDefined();
   });
 
