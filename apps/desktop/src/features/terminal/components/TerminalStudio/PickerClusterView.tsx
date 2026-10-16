@@ -1,7 +1,6 @@
 import type { TerminalTarget } from '../../terminalTargets';
 import type { PickerCluster, PickerRow } from '../../terminalPickerClusters';
 import { PickerRowView } from './PickerRowView';
-import { TerminalGroupFacts } from './TerminalGroupFacts';
 
 type Props = {
   readonly cluster: PickerCluster;
@@ -16,9 +15,6 @@ export const PickerClusterView = ({ cluster, activeKey, onPick, onOpenProject }:
       <span className="min-w-0 shrink truncate text-label text-muted-foreground">
         {cluster.title}
       </span>
-      {cluster.sessionId === null ? null : (
-        <TerminalGroupFacts sessionId={cluster.sessionId} isStatic />
-      )}
     </div>
     {cluster.rows.map((row) => (
       <PickerRowView

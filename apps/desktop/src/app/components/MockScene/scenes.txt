@@ -181,6 +181,16 @@ c06-agent-transcript
 c06-agent-working
 c06-agents-empty
 c06-agents-list
+c13-terminal
+c13-terminal-empty
+c13-terminal-menu
+c13-terminal-other
+c13-terminal-workspace
+c13-workflows
+c13-workflows-history
+c13-workflows-history-empty
+c13-workflows-history-failed
+c13-workflows-history-filter
 card-rails
 changelog
 chat-empty-noprojects

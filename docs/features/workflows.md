@@ -39,6 +39,10 @@ Write the steps yourself with **Add step** and **Generate plan**, or let **Draft
 
 Start from **Refactor**, **Plan and ship** or **Fix a bug**. A built-in you delete stays deleted until you press **Restore built-in workflows**, which keeps your existing workflows as they are.
 
+### Runs of a workflow
+
+The Workflows list is one grid: name, **Built in** or **Edited**, the role of each step, the step count, then when it last ran and how many runs it has. The row opens the workflow. The last run cell opens the runs of that workflow beside the list, newest first, each named by its session with its state, step, age and spend; a row opens that run in its session. A workflow that never ran offers **Start a run with this workflow**. Past ten runs, **All**, **Running** and **Failed** narrow the list. If the runs cannot load, the pane says so with **Retry**.
+
 ### Saved steps
 
 Reuse steps across workflows. The built-in steps are read-only, and **Save a copy** makes your own.

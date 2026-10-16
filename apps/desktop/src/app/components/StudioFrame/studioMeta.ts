@@ -64,6 +64,7 @@ export const STUDIO_META = {
     tier: 'column',
     page: 'workflows',
     skeleton: 'grid',
+    canHostDrawer: true,
   },
   inbox: {
     icon: CONCEPT_ICONS.inbox,

@@ -3,7 +3,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { WORKFLOW_LIBRARY } from '@goodboy/core';
-import type { AgentRole, Step, StepId, Workflow, WorkflowId } from '@goodboy/types';
+import type { WorkflowRunHistoryRow } from '@goodboy/db';
+import {
+  brandId,
+  type AgentRole,
+  type Step,
+  type StepId,
+  type Workflow,
+  type WorkflowId,
+} from '@goodboy/types';
+import { aRunHistoryRow } from '../../../testing/aRunHistoryRow';
 import { WorkflowList } from './index';
 
 afterEach(cleanup);
@@ -49,34 +58,98 @@ const seeded = (overrides: Partial<Workflow> = {}): Workflow => {
   });
 };
 
+type RunParams = {
+  readonly id: string;
+  readonly minutesAgo: number;
+  readonly workflowId?: string;
+};
+
+const run = ({ id, minutesAgo, workflowId = 'wf-1' }: RunParams): WorkflowRunHistoryRow =>
+  aRunHistoryRow({
+    id,
+    workflowId,
+    createdAt: new Date(Date.now() - minutesAgo * 60_000).toISOString(),
+    overrides: { stepCount: 2, startedSteps: 2, finishedSteps: 2, costUsd: 0.71 },
+  });
+
+type RenderOptions = {
+  readonly removedBuiltinIds?: ReadonlySet<string>;
+  readonly runs?: ReadonlyArray<WorkflowRunHistoryRow> | null;
+};
+
 const renderList = (
   workflows: ReadonlyArray<Workflow>,
-  removedBuiltinIds: ReadonlySet<string> = new Set(),
+  { removedBuiltinIds = new Set(), runs = [] }: RenderOptions = {},
 ) => {
   const onOpen = vi.fn();
+  const onShowRuns = vi.fn();
   render(
     <WorkflowList
       workflows={workflows}
       removedBuiltinIds={removedBuiltinIds}
       workspaceName="Harborline"
       isRestoring={false}
+      runs={runs}
       tabs={<span>Workflows</span>}
       importControl={null}
       onOpen={onOpen}
+      onShowRuns={onShowRuns}
       onNew={vi.fn()}
       onRestore={vi.fn(async () => undefined)}
     />,
   );
-  return { onOpen };
+  return { onOpen, onShowRuns };
 };
 
 describe('WorkflowList', () => {
-  it('shows a row per workflow with its step count and last edit', () => {
-    const { onOpen } = renderList([workflow()]);
+  it('shows a row per workflow with its step count, and the row opens the editor', () => {
+    const { onOpen, onShowRuns } = renderList([workflow()]);
     const row = screen.getByRole('button', { name: 'Open Settlement replay' });
-    expect(row.textContent).toContain('2 steps · edited 2d ago');
+    expect(row.textContent).toContain('2 steps');
+    expect(row.textContent).not.toContain('edited');
     fireEvent.click(row);
     expect(onOpen).toHaveBeenCalledOnce();
+    expect(onShowRuns).not.toHaveBeenCalled();
+  });
+
+  it('puts every row on one grid of named columns', () => {
+    renderList([
+      workflow(),
+      workflow({ id: brandId<WorkflowId>({ value: 'wf-2' }), name: 'Ship a fix' }),
+    ]);
+    const grid = screen.getByRole('list', { name: 'Workflows' });
+    expect(grid.getAttribute('style')).toContain('grid-template-columns');
+    expect(within(grid).getAllByRole('listitem')).toHaveLength(2);
+  });
+
+  it('shows the last run and the run count of this workflow only, and opens its runs', () => {
+    const { onOpen, onShowRuns } = renderList([workflow()], {
+      runs: [
+        run({ id: 'run-new', minutesAgo: 4 }),
+        run({ id: 'run-old', minutesAgo: 90 }),
+        run({ id: 'run-other', minutesAgo: 1, workflowId: 'wf-9' }),
+      ],
+    });
+    const runs = screen.getByRole('button', {
+      name: 'Runs of Settlement replay: last run 4m ago, 2 runs',
+    });
+    expect(runs.textContent).toBe('4m ago2 runs');
+    fireEvent.click(runs);
+    expect(onShowRuns).toHaveBeenCalledOnce();
+    expect(onOpen).not.toHaveBeenCalled();
+  });
+
+  it('says No runs for a workflow never run and still opens its runs', () => {
+    const { onShowRuns } = renderList([workflow()], { runs: [] });
+    const runs = screen.getByRole('button', { name: 'Runs of Settlement replay: none yet' });
+    expect(runs.textContent).toBe('No runs');
+    fireEvent.click(runs);
+    expect(onShowRuns).toHaveBeenCalledOnce();
+  });
+
+  it('leaves the runs cell empty while the runs load', () => {
+    renderList([workflow()], { runs: null });
+    expect(screen.getByRole('button', { name: 'Runs of Settlement replay' }).textContent).toBe('');
   });
 
   it('marks a built-in workflow and says when it was edited', () => {
@@ -90,7 +163,7 @@ describe('WorkflowList', () => {
     expect(within(pristine).queryByText('Edited')).toBeNull();
     expect(pristine.textContent).not.toContain('· built in');
     const edited = screen.getByRole('button', { name: 'Open Refactor, tuned' });
-    expect(within(edited).getByText('Built in')).toBeDefined();
+    expect(within(edited).queryByText('Built in')).toBeNull();
     expect(within(edited).getByText('Edited')).toBeDefined();
   });
 
@@ -110,9 +183,11 @@ describe('WorkflowList', () => {
         removedBuiltinIds={new Set(['wf_seed_plan-and-ship_ws-1', 'wf_seed_fix-a-bug_ws-1'])}
         workspaceName="Harborline"
         isRestoring={false}
+        runs={[]}
         tabs={null}
         importControl={null}
         onOpen={vi.fn()}
+        onShowRuns={vi.fn()}
         onNew={vi.fn()}
         onRestore={onRestore}
       />,

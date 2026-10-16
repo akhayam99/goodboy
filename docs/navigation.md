@@ -1579,20 +1579,23 @@ opens `StudioPlace` `{ kind: 'terminal'; terminalId; sessionId; worktree }`in`Te
 `StudioShell`plus`StudioRailLayout surface="terminal"`. The rail does not fold, and its first
 child is `New terminal`, a split secondary control: the button opens a tab in the selected
 worktree, the chevron opens the picker. The picker (`NewTerminalMenu`, `terminalPickerClusters`)
-opens to the right of the chevron (`useDropdown`align`after`) in clusters: `Workspace folder`
-first, then one cluster per session with attached worktrees, headed by the session title with
-its linked tasks and diff (`TerminalGroupFacts`); a row is the project, the branch, the short
-worktree chip and the path on one line, and `Open project`opens the project settings. The
+opens to the right of the chevron (`useDropdown`align`after`) in clusters: `Workspace folder`first, then one cluster per session with attached worktrees, headed by the session title alone
+(issue chips and diff stat stay off this page, cut C3); a row is the project, the branch, the short
+worktree chip and the path on one line, and`Open project`opens the project settings. The
 `Workspace folder` row is named by the folder (`harborline`), since the cluster title says the
 rest; a worktree path keeps its project folder and its `gb-` folder whole (`pathTail`), and the
 head of the path truncates first.
 With no terminal at all the page has no rail: the empty state owns the single`New terminal`.
-The rail lists one group per session that has terminals, headed by the session title (a button
-that opens the session) with its tasks and diff, and inside it one row per worktree
-(`terminalWorktrees.ts`, key `<sessionId>#m:<mountId>`, or `#p:<cwd>`when no mount matches):
-project, short chip, branch and the number of terminals; the`Workspace folder` group comes last.
-Selecting a row shows its terminals as tabs (`TerminalTabStrip`) with a `+`that adds a tab in
-that worktree; the header carries`Open session`(absent for the workspace). A new terminal is
+The rail is one `ListGrid`named`Terminals`with one`ListGridGroup`per session that has
+terminals: the session title, a visible`Open session`beside it and the number of terminals in
+the last column; the`Workspace folder` group comes last and has no action. Inside a group, one
+28px row per worktree (`terminalWorktrees.ts`, key `<sessionId>#m:<mountId>`, or `#p:<cwd>`when
+no mount matches) on the shared columns: branch or folder icon, project and branch, the first
+port (hidden on the selected row, whose ports sit at the tab strip's right edge) and a running
+dot while a shell runs a process; the folder path and every port live in the row tooltip, never
+on screen (`TerminalWorktreeRow`). Selecting a row shows its terminals as tabs
+(`TerminalTabStrip`) with a `+`that adds a tab in that worktree. There is no terminal header:
+the tab strip's right end carries `TerminalStripActions`, a `⋯`with`Copy worktree path`(or`Copy folder path`) and `Open session`, a single word when only one applies. A new terminal is
 always a tab of its worktree, titled`shell`, then `shell 2` (`nextTerminalTitle`); a tab is
 renamed by double click, Enter saves, Esc cancels. When the shell exits, whatever the code, the
 tab closes and the studio selects a neighbour of the same worktree: the watch lives in the

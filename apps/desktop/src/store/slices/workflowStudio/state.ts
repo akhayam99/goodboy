@@ -6,4 +6,5 @@ export const initialWorkflowStudioState: WorkflowStudioState = {
   visibleWorkflowStudioWorkspaceId: null,
   workflowStudioFocus: null,
   workflowStudioView: 'workflows',
+  workflowRunHistory: {},
 };

@@ -3,8 +3,8 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import type { TerminalStudioModel } from '../../hooks/useTerminalStudioModel';
 import { displayCwd } from '../../terminalTargets';
 import { LocationRow } from './LocationRow';
-import { TerminalHeader } from './TerminalHeader';
 import { TerminalPane } from './TerminalPane';
+import { TerminalStripActions } from './TerminalStripActions';
 import { TerminalTabStrip } from './TerminalTabStrip';
 
 type Props = {
@@ -33,7 +33,7 @@ export const TerminalDetail = ({ model, isActive }: Props) => {
   const isIdle = selected.status !== 'exited' && !model.busyIds.has(selected.id);
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col gap-1">
-      <TerminalHeader worktree={worktree} />
+      <h2 className="sr-only">{`Terminal on ${worktree.projectName}`}</h2>
       <LocationRow
         cwd={displayCwd({ cwd: selected.cwd, folder: model.folder, home: model.home })}
         branch={worktree.branch}
@@ -53,6 +53,7 @@ export const TerminalDetail = ({ model, isActive }: Props) => {
         onRename={model.renameTab}
         onNew={model.openDefault}
         isShortcutEnabled={isActive}
+        actions={<TerminalStripActions worktree={worktree} />}
       />
       <div data-terminal-body="" className="flex min-h-0 flex-1 flex-col px-3">
         <TerminalPane key={selected.id} tab={selected} isActive={isActive} />
