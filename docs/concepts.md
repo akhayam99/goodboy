@@ -540,7 +540,8 @@ Plan, Investigate, Review, Implement, Test and Docs, never more than four at a
 time and one level deep. It is an experiment: off by default, switched on in
 Settings, General, **Experiments**, and while it is off the roles you pick
 today are the only start. A person sees an Auto tree as one row in the
-Overview and as one chat with a Work rail and a card for each delegation
+Overview, under **Auto agents** in the session, and as one chat with one
+line for each delegation, its Work rail being the sidebar's Auto level
 ([auto.md](auto.md)).
 
 ### Agent kinds

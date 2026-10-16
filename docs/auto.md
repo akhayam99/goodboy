@@ -170,7 +170,8 @@ cost of the whole tree. The word follows the tree phase:
 **Deciding what to do**, **Starting agents**, **Waiting for Implementer and
 Tester**, **Needs your approval**, **Reading the results**, **Blocked, open the
 chat**, **Stopping**, **Stopped by you**, **Idle**, **Finished by you**. The
-children are not rows of the Overview; they live in the Work rail of the chat.
+children are not rows of the Overview; they live in the Work rail, the sidebar's
+Auto level.
 
 Auto never finishes itself. A tree that rests after its agents settled (stored
 phase `done`) reads **Idle** in the row and the rail root, never Done. **Mark finished** in the agent menu
