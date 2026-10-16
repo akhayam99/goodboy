@@ -9,7 +9,7 @@ import { useRenameRequest } from '../../../actions/useRenameRequest';
 import { sessionObjectKey } from '../../../actions/kinds/session';
 import { sessionSelectionTarget } from '../../../actions/sessionSelectionTarget';
 import { useSessionTitleRename } from '../../../session/hooks/useSessionTitleRename';
-import { sessionNodeOf } from './sessionNode';
+import { sessionNodeOf } from '../../../session/sessionNode';
 import { SessionStateNode } from './SessionStateNode';
 
 type SelectionClickEvent = {

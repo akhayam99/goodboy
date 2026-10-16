@@ -3,7 +3,7 @@ import { InlineMarkdown, Input, Tooltip } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useSessionSummary } from '../../../../features/workspace/hooks/useSessionSummary';
-import { sessionNodeOf } from '../../../../features/workspace/components/SessionActivityBar/sessionNode';
+import { sessionNodeOf } from '../../../../features/session/sessionNode';
 import { SessionStateNode } from '../../../../features/workspace/components/SessionActivityBar/SessionStateNode';
 import { useSessionTitleRename } from '../../../../features/session/hooks/useSessionTitleRename';
 import { sessionTitle } from '../../../../features/session/sessionTitle';

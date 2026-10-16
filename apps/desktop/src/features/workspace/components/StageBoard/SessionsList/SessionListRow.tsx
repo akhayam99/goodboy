@@ -5,7 +5,7 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { useSessionSummary } from '../../../hooks/useSessionSummary';
 import { sessionRowTitle } from '../../../../session/sessionTitle';
 import { SessionStateNode } from '../../SessionActivityBar/SessionStateNode';
-import { sessionNodeOf } from '../../SessionActivityBar/sessionNode';
+import { sessionNodeOf } from '../../../../session/sessionNode';
 import { SessionSignal } from '../SessionSignal';
 import { useSessionSignal } from '../useSessionSignal';
 import { projectLineOf } from '../projectLineOf';
