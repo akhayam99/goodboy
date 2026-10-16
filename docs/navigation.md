@@ -1595,7 +1595,7 @@ port (hidden on the selected row, whose ports sit at the tab strip's right edge)
 dot while a shell runs a process; the folder path and every port live in the row tooltip, never
 on screen (`TerminalWorktreeRow`). Selecting a row shows its terminals as tabs
 (`TerminalTabStrip`) with a `+`that adds a tab in that worktree. There is no terminal header:
-the tab strip's right end carries `TerminalStripActions`, a `⋯`with`Copy worktree path`(or`Copy folder path`) and `Open session`, a single word when only one applies. A new terminal is
+the tab strip's right end carries `TerminalStripActions`, a `⋯`with`Open session`and`Copy worktree path`(or`Copy folder path`) from the `terminalTab` kind of the action registry, a single word when only one applies. A new terminal is
 always a tab of its worktree, titled`shell`, then `shell 2` (`nextTerminalTitle`); a tab is
 renamed by double click, Enter saves, Esc cancels. When the shell exits, whatever the code, the
 tab closes and the studio selects a neighbour of the same worktree: the watch lives in the

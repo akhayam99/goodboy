@@ -20,6 +20,7 @@ import type { ScriptFacts } from './kinds/script';
 import type { ChatFacts } from './kinds/chat';
 import type { ChatsFacts } from './kinds/chats';
 import type { PortFacts } from './kinds/port';
+import type { TerminalTabFacts } from './kinds/terminalTab';
 import type { AppStore } from '../../store/store';
 import type { ShowToast } from '../../shared/components/Toast';
 import type { ShortcutId } from '../../shared/keyboard/registry';
@@ -350,6 +351,11 @@ export type PortActionTarget = {
   readonly facts: PortFacts;
 };
 
+export type TerminalTabActionTarget = {
+  readonly kind: 'terminalTab';
+  readonly facts: TerminalTabFacts;
+};
+
 export type LinkActionTarget = {
   readonly kind: 'link';
   readonly href: string;
@@ -410,6 +416,7 @@ export type ObjectTarget =
   | ChatActionTarget
   | ChatsActionTarget
   | PortActionTarget
+  | TerminalTabActionTarget
   | LinkActionTarget
   | ReviewActionTarget
   | ReviewCommentActionTarget
