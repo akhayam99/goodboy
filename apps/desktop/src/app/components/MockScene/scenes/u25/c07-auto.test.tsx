@@ -212,11 +212,8 @@ describe('c07 Auto scenes', () => {
     expect(screen.getByText('In this session')).toBeDefined();
     expect(screen.queryByText(/, in this session/)).toBeNull();
     const actions = list.closest('[data-placement]')?.querySelector('[data-slot="form-actions"]');
-    expect(actions?.textContent).not.toContain('Discard request');
-    fireEvent.click(screen.getByRole('button', { name: 'More project choices' }));
-    expect(screen.getByRole('menuitem', { name: 'Discard request' })).toBeDefined();
-    expect(screen.getByRole('menuitem', { name: 'Another project…' })).toBeDefined();
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Another project…' }));
+    expect(actions?.textContent).toContain('Discard request');
+    fireEvent.click(screen.getByRole('button', { name: 'Another project…' }));
     expect(screen.getByRole('textbox', { name: 'Type a project name' })).toBeDefined();
     expect(list.compareDocumentPosition(actions ?? list) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,

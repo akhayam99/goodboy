@@ -161,7 +161,7 @@ export const AutoTreeLimitPopover = ({
             <dd className="text-right text-foreground">{formatUsd(facts.spentUsd)}</dd>
             <dt className="text-muted-foreground">Reserved</dt>
             <dd className="text-right text-foreground">{formatUsd(facts.reservedUsd)}</dd>
-            {turns === null ? null : (
+            {turns === null || turns === 0 ? null : (
               <>
                 <dt className="text-muted-foreground">Turns</dt>
                 <dd className="text-right text-foreground">{turns}</dd>

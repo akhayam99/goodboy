@@ -330,7 +330,11 @@ export const TranscriptRows = ({
                 ? (turnFooters?.get(row.item.runId)?.startedAt ?? null)
                 : undefined
             }
-            isBrief={row.item.kind === 'user_text' && turnIndex === 0 && firstAnswerIndex > idx}
+            isBrief={
+              (row.item.kind === 'user_text' || row.item.kind === 'handoff') &&
+              turnIndex === 0 &&
+              firstAnswerIndex > idx
+            }
           />
         )}
       </li>,

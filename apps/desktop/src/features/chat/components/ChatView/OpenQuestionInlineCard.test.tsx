@@ -82,9 +82,8 @@ describe('OpenQuestionInlineCard', () => {
     render(<OpenQuestionInlineCard question={answered} sessionId={'sess-1' as never} />);
 
     expect(screen.getByRole('button').closest('.border-l-2')).toBeNull();
-    expect(
-      document.querySelector(`.${tintClasses(CONCEPT_TONE.questions).border.split(' ')[0]}`),
-    ).toBeNull();
+    const warningBorder = tintClasses(CONCEPT_TONE.questions).border;
+    expect(document.body.innerHTML.includes(warningBorder)).toBe(false);
   });
 
   it('collapses a settled question to a single row until it is expanded', () => {

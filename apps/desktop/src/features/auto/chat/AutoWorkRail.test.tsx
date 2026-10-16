@@ -106,7 +106,7 @@ describe('railRowsOf', () => {
       agents: [],
       rootRouting: ROOT_ROUTING,
     })[0];
-    expect(idle).toMatchObject({ word: 'Idle', node: 'closed' });
+    expect(idle).toMatchObject({ word: 'Idle', node: 'queued' });
     const finished = railRowsOf({
       view: aView({ phase: 'finished' }),
       agents: [],

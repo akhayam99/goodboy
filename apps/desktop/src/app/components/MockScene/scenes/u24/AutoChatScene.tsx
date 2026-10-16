@@ -25,6 +25,8 @@ type Props = {
   readonly selected?: 'root' | 'planner';
 };
 
+const PLAN_OPEN_DELAY_MS = 400;
+
 export const AutoChatScene = ({ state, isPlanOpen = false, selected = 'root' }: Props) => {
   const [isReady, setIsReady] = useState(false);
   const sizing = useAppStore(selectDrawerSizing);
@@ -54,15 +56,22 @@ export const AutoChatScene = ({ state, isPlanOpen = false, selected = 'root' }: 
       sessionOpenQuestions: { [AUTO_SESSION.id]: [] },
       sessionAnsweredQuestions: { [AUTO_SESSION.id]: [] },
       sessionEvents: { [AUTO_SESSION.id]: [] },
-      drawer: isPlanOpen
-        ? {
-            kind: 'artifact-document',
-            sessionId: AUTO_SESSION.id,
-            payload: { artifactId: AUTO_PLAN_ID, revision: null },
-          }
-        : null,
+      drawer: null,
     });
     setIsReady(true);
+    if (!isPlanOpen) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      useAppStore.setState({
+        drawer: {
+          kind: 'artifact-document',
+          sessionId: AUTO_SESSION.id,
+          payload: { artifactId: AUTO_PLAN_ID, revision: null },
+        },
+      });
+    }, PLAN_OPEN_DELAY_MS);
+    return () => window.clearTimeout(timer);
   }, [state, isPlanOpen, selectedId]);
 
   if (!isReady || agent === null) {

@@ -76,7 +76,13 @@ const TranscriptCardImpl = ({
       return <AutoDeliveryRow text={item.text} />;
     case 'handoff':
       return (
-        <HandoffBlock item={item} sessionId={sessionId} agentId={agentId} workingDir={workingDir} />
+        <HandoffBlock
+          item={item}
+          sessionId={sessionId}
+          agentId={agentId}
+          workingDir={workingDir}
+          isBrief={isBrief}
+        />
       );
     case 'assistant_text':
       return <AssistantText text={item.text} sessionId={sessionId} agentId={agentId} />;

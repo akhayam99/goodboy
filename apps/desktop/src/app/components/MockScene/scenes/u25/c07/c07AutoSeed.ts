@@ -196,6 +196,13 @@ const cappedViewOf = ({ view }: CappedParams): AutoTreeView => ({
   }),
 });
 
+const SCENE_TURNS = 4;
+
+const withTurnsOf = ({ view }: CappedParams): AutoTreeView => ({
+  ...view,
+  tree: { ...view.tree, turnsUsed: SCENE_TURNS },
+});
+
 export const seedC07 = ({
   state,
   place,
@@ -217,7 +224,7 @@ export const seedC07 = ({
     autoTreeViews: {
       [AUTO_SESSION.id]: viewsOf({
         place,
-        view: isCapped ? cappedViewOf({ view: scene.view }) : scene.view,
+        view: withTurnsOf({ view: isCapped ? cappedViewOf({ view: scene.view }) : scene.view }),
       }),
     },
     loadAutoTrees: async () => undefined,

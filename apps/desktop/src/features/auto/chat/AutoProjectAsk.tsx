@@ -1,13 +1,5 @@
 import { useMemo, useState } from 'react';
-import {
-  Button,
-  Checkbox,
-  FormActions,
-  Input,
-  Notice,
-  OverflowMenu,
-  formatError,
-} from '@goodboy/ui';
+import { Button, Checkbox, FormActions, Input, Notice, formatError } from '@goodboy/ui';
 import type { AgentId, ProjectId, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../store';
 import { isReportedError } from '../../../store/slices/notifications/reportedError';
@@ -187,31 +179,27 @@ export const AutoProjectAsk = ({ sessionId, rootAgentId, ask }: Props) => {
       <FormActions
         error={error}
         leading={
-          <OverflowMenu
-            label="More project choices"
-            disabled={isBusy}
-            align="left"
-            items={[
-              {
-                kind: 'item' as const,
-                key: 'another',
-                label: 'Another project…',
-                disabled: isAnotherOpen,
-                onClick: () => setIsAnotherOpen(true),
-              },
-              {
-                kind: 'item' as const,
-                key: 'discard',
-                label: 'Discard request',
-                onClick: () =>
-                  void run({
-                    label: 'Discard request',
-                    work: () =>
-                      reply({ content: 'Discard that request. Start nothing.', word: 'Discarded' }),
-                  }),
-              },
-            ]}
-          />
+          <span className="flex items-center gap-1">
+            {isAnotherOpen ? null : (
+              <Button variant="quiet" size="sm" onClick={() => setIsAnotherOpen(true)}>
+                Another project…
+              </Button>
+            )}
+            <Button
+              variant="quiet"
+              size="sm"
+              disabled={isBusy}
+              onClick={() =>
+                void run({
+                  label: 'Discard request',
+                  work: () =>
+                    reply({ content: 'Discard that request. Start nothing.', word: 'Discarded' }),
+                })
+              }
+            >
+              Discard request
+            </Button>
+          </span>
         }
       >
         <Button

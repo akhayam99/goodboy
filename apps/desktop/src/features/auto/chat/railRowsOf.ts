@@ -111,7 +111,7 @@ export const restingRootRowOf = ({ agentId, provider, model, effort }: RestingPa
   role: 'auto',
   label: 'Auto',
   task: null,
-  node: 'closed',
+  node: 'queued',
   word: 'Idle',
   tone: 'neutral',
   provider,

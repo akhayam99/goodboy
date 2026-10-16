@@ -43,7 +43,7 @@ export const autoTreeWordOf = ({ view, rootTurn }: Params): AutoTreeWord => {
   }
   const isRootTurnLive = rootTurn?.kind === 'running' || rootTurn?.kind === 'starting';
   if (phase === 'done') {
-    return isRootTurnLive ? RUNNING : { word: 'Idle', node: 'closed', isLive: false };
+    return isRootTurnLive ? RUNNING : { word: 'Idle', node: 'queued', isLive: false };
   }
   if (projectAskOf({ view }) !== null || isAutoPlanAwaitingApproval({ view })) {
     return NEEDS_YOU;
