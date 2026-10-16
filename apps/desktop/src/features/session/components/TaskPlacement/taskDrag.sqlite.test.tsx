@@ -11,7 +11,7 @@ import {
 } from '@goodboy/types/testing';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { UndoToastBridge } from '../../../../app/components/UndoToastBridge';
-import { LinkedTaskRow } from '../../../../app/components/SideColumn/SessionLevel/LinkedTaskRow';
+import { LinkedTaskRow } from '../../../../app/components/SessionRail/SessionLevel/LinkedTaskRow';
 import { SessionDropPill } from '../SessionOverviewPane/SessionDropPill';
 import { TaskDragLayer } from '../SessionOverviewPane/TaskDragLayer';
 import {

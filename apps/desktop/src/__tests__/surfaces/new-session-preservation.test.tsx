@@ -18,7 +18,7 @@ import { clearSceneInvoke } from '../../test/sceneInvoke';
 import { MOCK_SCENES } from '../../app/components/MockScene';
 import { mockSceneIpc } from '../../app/components/MockScene/scenes/mockSceneIpc';
 import { WORKSPACE_ID } from '../../app/components/MockScene/scenes/BoardScene';
-import { IdentityRow } from '../../app/components/SideColumn/SessionLevel/IdentityRow';
+import { IdentityRow } from '../../app/components/SessionRail/SessionLevel/IdentityRow';
 import { runObjectAction } from '../../features/actions/registry';
 import { TALK_ACTION_ID } from '../../features/actions/kinds/suggestion';
 import type { ActionEnv } from '../../features/actions/types';

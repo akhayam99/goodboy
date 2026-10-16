@@ -11,7 +11,7 @@ import {
 } from '@testing-library/react';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { UndoToastBridge } from '../../../../app/components/UndoToastBridge';
-import { LinkedTaskRow } from '../../../../app/components/SideColumn/SessionLevel/LinkedTaskRow';
+import { LinkedTaskRow } from '../../../../app/components/SessionRail/SessionLevel/LinkedTaskRow';
 import { ObjectMenuProvider } from '../../../actions/components/ObjectMenuProvider';
 import { PutOnBranchPopover } from './PutOnBranchPopover';
 import { TASK_KIND } from '../../../actions/kinds/task';
