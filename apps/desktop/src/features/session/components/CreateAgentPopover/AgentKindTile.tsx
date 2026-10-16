@@ -17,7 +17,7 @@ export const AgentKindTile = ({ kind, isActive, onSelect }: Props) => {
       type="button"
       onClick={onSelect}
       aria-pressed={isActive}
-      aria-label={meta.label}
+      aria-label={meta.noun}
       className={cn(
         'flex min-w-0 items-center gap-2 rounded-md px-2 py-2 text-left transition-colors',
         isActive
@@ -26,7 +26,7 @@ export const AgentKindTile = ({ kind, isActive, onSelect }: Props) => {
       )}
     >
       <Icon size={ICON_SIZE.row} aria-hidden className={cn('shrink-0', palette.fg)} />
-      <span className="truncate text-label font-medium">{meta.label}</span>
+      <span className="truncate text-label font-medium">{meta.noun}</span>
     </button>
   );
 };

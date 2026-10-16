@@ -130,7 +130,7 @@ describe('Start agent and Start Auto with Auto always available', () => {
   it('keeps the role grid on the Agent form, so Start agent opens one role', async () => {
     openForm({ form: 'agent' });
 
-    expect(await screen.findByRole('button', { name: 'Open Generalist' })).toBeDefined();
+    expect(await screen.findByRole('button', { name: 'Start Generalist' })).toBeDefined();
     expect(screen.queryByRole('textbox', { name: 'Describe the work' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Start Auto' })).toBeNull();
   });

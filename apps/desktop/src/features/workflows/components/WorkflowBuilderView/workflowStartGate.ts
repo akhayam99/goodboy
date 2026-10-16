@@ -30,7 +30,7 @@ export const workflowStartGate = ({
     return { isDisabled: true, reason: 'Select a preset to start' };
   }
   if (!isSpendLimitValid) {
-    return { isDisabled: true, reason: 'Enter a valid spend cap to start' };
+    return { isDisabled: true, reason: 'Enter a valid limit to start' };
   }
   return { isDisabled: false, reason: null };
 };

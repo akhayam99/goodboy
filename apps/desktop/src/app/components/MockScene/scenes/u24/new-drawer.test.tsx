@@ -43,10 +43,10 @@ const SCENE_FORM: Readonly<Record<SceneId, string>> = {
   'new-drawer-run-guidance': 'Orchestrate',
   'new-drawer-run-preset': 'Run a workflow',
   'new-drawer-run-preset-pin': 'Run a workflow',
-  'new-drawer-agent': 'Start agent',
+  'new-drawer-agent': 'Ask an agent',
   'new-drawer-agent-auto': 'Start Auto',
-  'new-drawer-write': 'Report',
-  'new-drawer-write-wireframe': 'Wireframe',
+  'new-drawer-write': 'Write a report',
+  'new-drawer-write-wireframe': 'Draw a wireframe',
   'new-drawer-narrow': 'Orchestrate',
 };
 
@@ -137,13 +137,13 @@ describe('the New drawer scenes', () => {
     expect(screen.queryByRole('button', { name: 'Open providers' })).toBeNull();
   });
 
-  it('opens Start agent with the roles of today and no message field', async () => {
+  it('opens Ask an agent as one form: a goal, Role and Model', async () => {
     show({ id: 'new-drawer-agent' });
 
     const inDrawer = await drawer({ id: 'new-drawer-agent' });
-    expect(inDrawer.getByText('Generalist')).toBeDefined();
-    expect(inDrawer.getByRole('button', { name: 'Open Generalist' })).toBeDefined();
-    expect(inDrawer.queryByRole('textbox')).toBeNull();
+    expect(inDrawer.getByRole('button', { name: 'Role: Generalist' })).toBeDefined();
+    expect(inDrawer.getByRole('button', { name: 'Start Generalist' })).toBeDefined();
+    expect(inDrawer.getByRole('textbox', { name: 'Agent instructions' })).toBeDefined();
   });
 
   it('opens the Auto composer with one line about Auto', async () => {
@@ -154,7 +154,7 @@ describe('the New drawer scenes', () => {
       inDrawer.getAllByText('Auto answers, or hands the work to the roles it picks.'),
     ).toHaveLength(1);
     expect(inDrawer.queryByText('It may not work well yet.')).toBeNull();
-    expect(inDrawer.queryByText('Experimental')).toBeNull();
+    expect(inDrawer.getByText('Experimental')).toBeDefined();
     expect(inDrawer.getByRole('button', { name: 'Start Auto' })).toBeDefined();
     expect(inDrawer.queryByText('Generalist')).toBeNull();
   });
@@ -171,7 +171,7 @@ describe('the New drawer scenes', () => {
     show({ id: 'new-drawer-write-wireframe' });
 
     const inDrawer = await drawer({ id: 'new-drawer-write-wireframe' });
-    expect(inDrawer.getByText('A wireframe drawn from this session.')).toBeDefined();
+    expect(inDrawer.queryByText('A wireframe drawn from this session.')).toBeNull();
   });
 
   it('stays an overlay at 1100 px', async () => {

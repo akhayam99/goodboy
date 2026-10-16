@@ -1,6 +1,5 @@
+import { SegmentedTabs } from '@goodboy/ui';
 import { startSentence } from '../../startSentence';
-import { useRef, type KeyboardEvent } from 'react';
-import { SelectableRow } from '@goodboy/ui';
 import type { ArtifactChoiceOption } from '../../artifactCreationAdapter';
 
 type Props = {
@@ -10,81 +9,34 @@ type Props = {
   readonly onChange: (value: string) => void;
 };
 
-const nextIndex = ({
-  key,
-  current,
-  total,
-}: {
-  readonly key: string;
-  readonly current: number;
-  readonly total: number;
-}): number | null => {
-  if (key === 'ArrowDown' || key === 'ArrowRight') {
-    return (current + 1) % total;
-  }
-  if (key === 'ArrowUp' || key === 'ArrowLeft') {
-    return (current - 1 + total) % total;
-  }
-  if (key === 'Home') {
-    return 0;
-  }
-  if (key === 'End') {
-    return total - 1;
-  }
-  return null;
+type HintParams = {
+  readonly hint: string;
+};
+
+const SENTENCE_END = '. ';
+
+const firstSentenceOf = ({ hint }: HintParams): string => {
+  const sentence = startSentence({ text: hint });
+  const end = sentence.indexOf(SENTENCE_END);
+  return end === -1 ? sentence : sentence.slice(0, end + 1);
 };
 
 export const ArtifactChoiceRows = ({ ariaLabel, options, value, onChange }: Props) => {
-  const listRef = useRef<HTMLDivElement>(null);
-  const current = Math.max(
-    0,
-    options.findIndex((option) => option.value === value),
-  );
-  const hint = options[current]?.hint ?? null;
-
-  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    const target = nextIndex({ key: event.key, current, total: options.length });
-    if (target === null) {
-      return;
-    }
-    event.preventDefault();
-    const option = options[target];
-    if (option === undefined) {
-      return;
-    }
-    onChange(option.value);
-    listRef.current?.querySelectorAll('button')[target]?.focus();
-  };
+  const selected = options.find((option) => option.value === value) ?? options[0] ?? null;
+  const hint = selected?.hint ?? null;
 
   return (
-    <div className="flex min-w-0 flex-col gap-1">
-      <div
-        ref={listRef}
-        role="listbox"
-        aria-label={ariaLabel}
-        onKeyDown={onKeyDown}
-        className="flex min-w-0 flex-wrap gap-1"
-      >
-        {options.map((option, index) => (
-          <SelectableRow
-            key={option.value}
-            role="option"
-            selected={option.value === value}
-            ariaSelected={option.value === value}
-            tabIndex={index === current ? 0 : -1}
-            onClick={() => onChange(option.value)}
-            className="w-auto border border-border-soft bg-elevated px-3 py-2 data-[selected=true]:border-transparent"
-          >
-            <span className="truncate text-label font-medium">{option.label}</span>
-          </SelectableRow>
-        ))}
-      </div>
+    <div className="flex min-w-0 flex-col gap-2">
+      <SegmentedTabs
+        ariaLabel={ariaLabel}
+        options={options.map((option) => ({ value: option.value, label: option.label }))}
+        value={selected?.value ?? value}
+        onChange={onChange}
+        className="self-start"
+      />
       {hint === null ? null : (
-        <span
-          data-testid="artifact-choice-hint"
-          className="text-meta leading-relaxed text-muted-foreground"
-        >
-          {startSentence({ text: hint })}
+        <span data-testid="artifact-choice-hint" className="text-meta text-muted-foreground">
+          {firstSentenceOf({ hint })}
         </span>
       )}
     </div>

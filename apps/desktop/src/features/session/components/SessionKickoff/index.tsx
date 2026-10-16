@@ -46,7 +46,12 @@ export const SessionKickoff = ({ workspaceId, isAuto = false, notice }: Props) =
       <div className="flex flex-col gap-2">
         <StartChoiceTabs ariaLabel={KICKOFF_QUESTION} value={choice} onChange={pick} />
         <div className="relative">
-          <p className="text-label text-muted-foreground">{startChoiceLine({ choice, isAuto })}</p>
+          <p className="text-label text-muted-foreground">
+            {startChoiceLine({ choice, isAuto })}
+            {choice === 'scout' && isAuto ? (
+              <span className="text-faint-foreground"> Experimental</span>
+            ) : null}
+          </p>
           {notice !== undefined && notice !== null ? (
             <div data-slot="kickoff-notice" className="absolute inset-x-0 top-full z-10 pt-2">
               {notice}
@@ -54,7 +59,7 @@ export const SessionKickoff = ({ workspaceId, isAuto = false, notice }: Props) =
           ) : null}
         </div>
       </div>
-      <div ref={bodyRef} className="flex flex-col px-0.5">
+      <div ref={bodyRef} className="flex flex-col">
         {choice === 'task' ? <TaskStart workspaceId={workspaceId} issues={issues} /> : null}
         {choice === 'workflow' ? <WorkflowStart workspaceId={workspaceId} mode="preset" /> : null}
         {choice === 'orchestrate' ? (

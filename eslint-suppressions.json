@@ -7024,7 +7024,7 @@
   },
   "apps/desktop/src/features/workflows/components/WorkflowBuilderView/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 19
+      "count": 18
     },
     "@typescript-eslint/naming-convention": {
       "count": 2
@@ -7035,7 +7035,7 @@
       "count": 6
     },
     "@typescript-eslint/naming-convention": {
-      "count": 12
+      "count": 11
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 2
@@ -7055,11 +7055,6 @@
     }
   },
   "apps/desktop/src/features/workflows/components/WorkflowBuilderView/parts/BuilderTitleField.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/features/workflows/components/WorkflowBuilderView/parts/ControlChip.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 2
     }

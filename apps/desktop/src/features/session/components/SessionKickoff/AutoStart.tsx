@@ -14,6 +14,7 @@ import { resolveSpawnRouting } from '../../spawn-routing';
 import { AutoComposerView, type AutoRoutingChoice } from '../AutoComposerView';
 import { useDraftStart } from './useDraftStart';
 import { useDraftDiscard } from './useDraftDiscard';
+import { KickoffProjects } from './KickoffProjects';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -101,7 +102,7 @@ export const AutoStart = ({ workspaceId }: Props) => {
       onGoalChange={(next) => patchSessionDraft({ workspaceId, patch: { autoGoal: next } })}
       onSubmit={() => void submit()}
       onDiscard={discard}
-      hasExperimentalChip
+      projects={<KickoffProjects workspaceId={workspaceId} isDisabled={isStarting} />}
     />
   );
 };

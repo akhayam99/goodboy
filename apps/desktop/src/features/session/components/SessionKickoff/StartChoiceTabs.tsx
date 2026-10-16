@@ -1,5 +1,11 @@
 import { SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import {
+  ASK_AGENT_CHOICE,
+  ORCHESTRATE_CHOICE,
+  RUN_WORKFLOW_CHOICE,
+  TASK_CHOICE,
+} from '../../../../shared/lib/startCopy';
 import { START_CHOICES, type StartChoice } from './startChoice';
 
 type ChoiceOption = {
@@ -8,10 +14,10 @@ type ChoiceOption = {
 };
 
 const START_OPTIONS: Readonly<Record<StartChoice, ChoiceOption>> = {
-  task: { title: 'Pick up a task', icon: CONCEPT_ICONS.issues },
-  workflow: { title: 'Run a workflow', icon: CONCEPT_ICONS.workflows },
-  orchestrate: { title: 'Orchestrate', icon: CONCEPT_ICONS.orchestrator },
-  scout: { title: 'Ask an agent', icon: CONCEPT_ICONS.explore },
+  task: { title: TASK_CHOICE, icon: CONCEPT_ICONS.issues },
+  workflow: { title: RUN_WORKFLOW_CHOICE, icon: CONCEPT_ICONS.workflows },
+  orchestrate: { title: ORCHESTRATE_CHOICE, icon: CONCEPT_ICONS.orchestrator },
+  scout: { title: ASK_AGENT_CHOICE, icon: CONCEPT_ICONS.agents },
 };
 
 type Props = {
@@ -28,6 +34,12 @@ export const StartChoiceTabs = ({ ariaLabel, value, onChange }: Props) => {
   }));
 
   return (
-    <SegmentedTabs ariaLabel={ariaLabel} options={options} value={value} onChange={onChange} />
+    <SegmentedTabs
+      ariaLabel={ariaLabel}
+      options={options}
+      value={value}
+      onChange={onChange}
+      className="self-start"
+    />
   );
 };

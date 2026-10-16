@@ -194,7 +194,9 @@ export const CREATE_AND_SEARCH_ROWS: ReadonlyArray<Row> = [
       await settle();
     },
     lands: async () => {
-      const drawer = await screen.findByRole('region', { name: kind });
+      const drawer = await screen.findByRole('region', {
+        name: kind === 'Report' ? 'Write a report' : 'Draw a wireframe',
+      });
       expect(within(drawer).getByTestId('artifact-brief')).toBeDefined();
     },
   })),

@@ -343,7 +343,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'New menu',
-        desc: 'New in the Overview header opens a menu: Run a workflow, Orchestrate, Start agent, Start Auto while Auto is on, Report and Wireframe. Each opens its form in a pane beside the page. Run a workflow and Orchestrate take a goal with Autonomy, Starts and Spend cap. Start agent starts one role. Report and Wireframe draft a document. The button is filled when nothing is running, blocked or waiting on a question and Next has nothing to offer.',
+        desc: 'New in the Overview header opens a menu: Run a workflow, Orchestrate, Ask an agent, Start Auto while Auto is on, Write a report and Draw a wireframe. Each opens its form in a pane beside the page. Run a workflow and Orchestrate take a goal with Autonomy, Starts and Limit. Ask an agent starts one role with a goal, a role and a model. Write a report and Draw a wireframe draft a document. The button is filled when nothing is running, blocked or waiting on a question and Next has nothing to offer.',
       },
       {
         term: 'Overview',

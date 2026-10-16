@@ -61,25 +61,24 @@ export const ArtifactCreationActions = ({
       role="danger"
       icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
       title="Discard this brief?"
-      description="Back keeps it. Cancel throws it away."
       confirmLabel="Discard"
+      cancelLabel="Keep editing"
       isOpen={isDiscardArmed}
       onConfirm={onDiscard}
       onCancel={onDisarmDiscard}
       trigger={() => (
         <Button
           variant="ghost"
-          size="md"
+          size="sm"
           onClick={hasDraft ? onArmDiscard : onCancel}
           disabled={isStarting}
-          className="text-muted-foreground"
         >
-          Cancel
+          Discard
         </Button>
       )}
     />
     <Button
-      size="md"
+      size="sm"
       data-testid="artifact-generate"
       onClick={onGenerate}
       disabled={gate.isDisabled}

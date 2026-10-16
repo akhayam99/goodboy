@@ -89,7 +89,7 @@ describe('planEstimates', () => {
       cost: '$0.80-1.20',
       note: '8-12m · $0.80-1.20 · based on 10 finished implementer steps on Sonnet 5 medium',
     });
-    expect(estimates?.total?.label).toBe('≈ 16-25m · $1.60-2.40 · + your reviews');
+    expect(estimates?.total?.label).toBe('~16-25m · $1.60-2.40 · + your reviews');
     expect(estimates?.total?.detail).toContain('Machine time only');
   });
 
@@ -114,7 +114,7 @@ describe('planEstimates', () => {
     expect(estimates?.steps.get('b')?.time.detail).toContain(
       'The planner sized this step large, so this is the slower half of past runs.',
     );
-    expect(estimates?.total?.label).toBe('≈ 16-25m · $1.60-2.40');
+    expect(estimates?.total?.label).toBe('~16-25m · $1.60-2.40');
   });
 
   it('marks a step it cannot estimate with a dash and drops the total', () => {
@@ -143,6 +143,6 @@ describe('planEstimates', () => {
       nowMs: NOW,
     });
 
-    expect(estimates?.total?.label).toBe('≈ 40-60m machine time · 5 past runs');
+    expect(estimates?.total?.label).toBe('~40-60m machine time · 5 past runs');
   });
 });

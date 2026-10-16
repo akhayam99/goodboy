@@ -753,7 +753,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       await inboxKey('list.open')(ctx);
       await pressed('list.open', document.body);
     },
-    lands: () => visible('region', 'Brief from HBL-501'),
+    lands: () => visible('region', 'Brief'),
   }),
   keyRow({
     id: 'list.openInTool',

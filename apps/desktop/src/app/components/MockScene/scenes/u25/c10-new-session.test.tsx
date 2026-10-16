@@ -67,10 +67,10 @@ const mount = async ({ id }: MountParams): Promise<void> => {
 const FORM_SCENES: ReadonlyArray<readonly [SceneId, string]> = [
   ['c10-new-run', 'Run a workflow'],
   ['c10-new-orchestrate', 'Orchestrate'],
-  ['c10-new-agent', 'Start agent'],
+  ['c10-new-agent', 'Ask an agent'],
   ['c10-new-auto', 'Start Auto'],
-  ['c10-new-report', 'Report'],
-  ['c10-new-wireframe', 'Wireframe'],
+  ['c10-new-report', 'Write a report'],
+  ['c10-new-wireframe', 'Draw a wireframe'],
 ];
 
 const pickedNames = () =>
@@ -104,7 +104,7 @@ describe('the c10 New session scenes', () => {
   it('c10-start-task picks HBL-412 into one block with one Start from HBL-412', async () => {
     await mount({ id: 'c10-start-task' });
 
-    expect(screen.getByRole('tablist', { name: 'How to work on it' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Runs as: Orchestrate' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Start from HBL-412' })).toBeDefined();
   });
 
@@ -125,12 +125,12 @@ describe('the c10 New session scenes', () => {
     expect(screen.queryByText('Likely steps')).toBeNull();
   });
 
-  it('c10-start-agent asks for Scout with the model and the project the agent works in', async () => {
+  it('c10-start-agent asks for Scout with the model, the first project is where it works', async () => {
     await mount({ id: 'c10-start-agent' });
 
     expect(screen.getByRole('textbox', { name: 'Scout focus' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Role: Scout' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Project: payments-api' })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^Model:/ })).toBeDefined();
     expect(pickedNames()).toEqual(['Remove payments-api', 'Remove ledger-core']);
   });
 
@@ -186,10 +186,10 @@ describe('the c10 New session scenes', () => {
     ).toEqual([
       'Run a workflow',
       'Orchestrate',
-      'Start agent',
+      'Ask an agent',
       'Start Auto',
-      'Report',
-      'Wireframe',
+      'Write a report',
+      'Draw a wireframe',
     ]);
   });
 

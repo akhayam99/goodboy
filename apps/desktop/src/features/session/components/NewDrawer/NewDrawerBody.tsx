@@ -54,8 +54,15 @@ export const NewDrawerBody = ({ session, payload, writePanel: WritePanel, onClos
   return (
     <DrawerFrame title={meta.title} icon={meta.icon} onClose={onClose}>
       <div className="flex min-w-0 flex-col gap-3">
-        <div className="flex min-w-0 items-center justify-between gap-3">
-          <p className="min-w-0 text-label text-muted-foreground">{meta.line}</p>
+        <div className="flex min-w-0 items-center justify-between gap-3 empty:hidden">
+          {meta.line === null ? null : (
+            <p className="min-w-0 text-label text-muted-foreground">
+              {meta.line}
+              {form === 'auto' ? (
+                <span className="text-faint-foreground"> Experimental</span>
+              ) : null}
+            </p>
+          )}
           {isRunForm && isRunActive ? (
             <Button variant="ghost" size="sm" onClick={openRun}>
               <ArrowRight size={ICON_SIZE.control} aria-hidden />
@@ -100,7 +107,7 @@ export const NewDrawerBody = ({ session, payload, writePanel: WritePanel, onClos
             />
           ) : null}
         </div>
-        <div ref={setActionsHost} className="sticky bottom-0 z-10 flex flex-col bg-subtle pb-4" />
+        <div ref={setActionsHost} className="flex flex-col pb-4" />
       </div>
     </DrawerFrame>
   );

@@ -2,7 +2,6 @@ import { RotateCcw } from 'lucide-react';
 import { AnchoredPopover, Switch, cn, formatUsd, useDropdown } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import type { WorkflowSpendLimitMode } from '@goodboy/types';
-import { NAMES } from '../../../../../shared/names';
 import { SpendLimitFields } from '../../../../budget/components/SpendLimitFields';
 import { parseSpendLimit } from '../../../../budget/parseSpendLimit';
 import {
@@ -10,7 +9,7 @@ import {
   behaviorOfRunMode,
   runModeOfBehavior,
 } from '../../../../budget/spendLimitBehavior';
-import { ControlChip } from './ControlChip';
+import { ControlChip } from '../../../../../shared/components/ControlChip';
 import { RuleDot } from './RuleDot';
 
 type Props = {
@@ -27,6 +26,8 @@ type Props = {
 };
 
 const AMOUNT_ID = 'builder-spend-limit-amount';
+
+const LIMIT_LABEL = 'Limit';
 
 type ValueParams = {
   readonly isEnabled: boolean;
@@ -71,24 +72,24 @@ export const SpendCapChip = ({
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
-      ariaLabel={NAMES.spendCap}
+      ariaLabel={LIMIT_LABEL}
       className="flex flex-col gap-2 p-3"
       trigger={
         <ControlChip
-          label={NAMES.spendCap}
+          label={LIMIT_LABEL}
           value={chipValueOf({ isEnabled, amount, mode })}
           marker={differs ? <RuleDot ruleValue={ruleValue} /> : null}
           isOpen={open}
           isInvalid={isInvalid}
-          disabled={disabled}
+          isDisabled={disabled}
           onToggle={toggle}
         />
       }
     >
       <div className="flex items-center justify-between gap-3">
-        <span className="text-meta text-muted-foreground">Cap this run before it starts.</span>
+        <span className="text-meta text-muted-foreground">Set a limit for this run.</span>
         <Switch
-          ariaLabel={NAMES.spendCap}
+          ariaLabel={LIMIT_LABEL}
           checked={isEnabled}
           disabled={disabled}
           onChange={onEnabled}
@@ -121,7 +122,7 @@ export const SpendCapChip = ({
           className="flex items-center gap-2 rounded-md px-1 py-1 text-left text-label text-foreground hover:bg-hover"
         >
           <RotateCcw size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
-          <span className="min-w-0 flex-1">Reset</span>
+          <span className="min-w-0 flex-1">Reset to your rule</span>
           <span className="truncate text-meta text-faint-foreground">{ruleValue}</span>
         </button>
       ) : null}

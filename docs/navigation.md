@@ -1044,9 +1044,9 @@ in the page header. Run a workflow, Orchestrate and Ask an agent each hold
 searchable multiple `Listbox` with the picked projects as removable chips under
 it, in two groups (`projectPickerGroups`): "Suggested" holds at most five (the
 picked issue's project, then the most recently used, then starred ones) and
-"All projects" lists the rest by name with the base branch at the right. With
-no project picked the line under it reads `No project yet. Goodboy adds one
-when an agent needs it.` (mounts stay lazy). The draft keeps them as `projectIds`; the first is
+"All projects" lists the rest by name with the base branch at the right. The
+trigger reads `Add project` with or without a pick (`emptyValueLabel`) and no
+line sits under it (mounts stay lazy). The draft keeps them as `projectIds`; the first is
 the session's project and the rest are added with it (`additionalProjectIds`).
 When a picked issue maps to a project, the picker starts with it and one line
 under it names the project and the reason
@@ -1079,8 +1079,11 @@ and `AutoStart` (page, bound to the draft) both draw.
   and why. With one candidate project it is one plain line (`variant="line"`,
   `In payments-api, from GitHub repo harborline/payments-api.`) with no chip;
   with several it stays the project chip, which lets you pick another or none
-  (the Launch session panel always draws the chip). The way to start is
-  labelled `Then:`. **Start from HBL-412**, on the
+  (the Launch session panel always draws the chip). The way to start is one
+  `ControlChip` in the options row, `Runs as Orchestrate` (`RunsAsChip`, with
+  Run a workflow and Ask an agent in its menu), never a second switch; the
+  brief card is headed `Brief` and drops the model, time and cost of the
+  brief. **Start from HBL-412**, on the
   workflow side and on the agent side, links the issue, mounts that project, creates the session and
   starts the run or agent in one gesture (`startSessionFromDraft`, kind
   `task` with a `mount` and a `then`), and raises one **Follow** toast
@@ -1129,12 +1132,16 @@ reach NW-230 anymore`. Pick up a task shows only the open starred issues,
 - **Run a workflow** and **Orchestrate** are the workflow builder itself
   (`WorkflowBuilderView` with a `kickoff` target and a fixed `mode`: `preset`
   for Run a workflow, `dynamic` for Orchestrate; the choice is the mode, so
-  there is no mode switch and no remembered mode): title, goal card with Add
-  files and Polish, Projects, Can use, the preset with its editable steps and a
-  model per step or the orchestrator row, guidance, then one actions row with
-  Autonomy, Starts and Spend cap at the left and Discard, the estimate slot and
-  the primary (Start run, Start orchestration) at the right, with the start gate
-  reason under it. Its goal field is the kickoff goal (`workflowGoal` in the
+  there is no mode switch and no remembered mode): goal card with the paperclip
+  and Polish (no title field: the run is named from the preset or the goal, and
+  renamed on its page), Projects, Can use (only with two or more providers), the
+  preset with its editable steps and a model per step or the orchestrator row
+  with its model right after the label, guidance, then one actions row with
+  Autonomy, Starts and Limit at the left and Discard, the estimate and the
+  primary (Start run, Start orchestration) at the right, with the start gate
+  reason under it. No rules card: a control that leaves your rules carries the
+  rule dot and offers `Reset to your rule` in its popover. An edited preset reads
+  `edited` on the Preset select with `Reset to the preset` in its menu. Its goal field is the kickoff goal (`workflowGoal` in the
   draft), the only one on screen. Its draft lives under `kickoff:<workspace>`
   in `workflowDrafts`, so it survives leaving the kickoff, and Discard
   clears it with the rest. Start run runs `startSessionFromDraft` with
@@ -1146,30 +1153,35 @@ reach NW-230 anymore`. Pick up a task shows only the open starred issues,
   the reopened draft shows it under Start run (the builder and the agent
   starts both read it), and the next Start clears it. One start per workspace
   runs at a time: a second click while one runs gets the same session, never a
-  second one. The actions row reserves the estimate slot before the primary
-  (`LaunchBar`), so the late estimate does not move the button under the
-  pointer. Before a session exists the builder leaves out Use session goal, the
+  second one. The estimate total (`PlanEstimateChip`, one `~` prefix) sits
+  between Discard and the primary and collapses when there is none
+  (`LaunchBar`), the primary stays at the right edge; a step's own estimate is
+  in its title tooltip. Before a session exists the builder leaves out Use session goal, the
   title suggestion (the orchestrated title is generated after start, as in a
   session) and the worktree as the planner's working folder.
 - **Ask an agent** opens the role grid (`AgentStart`, below): Auto being always
   available does not make it the start here. `SessionKickoff` takes `isAuto`
   (false by default, set only by a scene) to draw the Auto composer instead
-  (`AutoStart`): one goal with files, one model chip, a **Spend cap** chip,
-  **Start Auto**, no role list, no project field, no guidance. Its goal and
+  (`AutoStart`): one goal with files, Projects, then one actions row with the
+  Model chip and the Auto limit chip at the left and Discard and **Start Auto**
+  at the right, no role list, no guidance; `Experimental` is a gray word after
+  the choice line, on the page and in the drawer. Its goal and
   model live in the draft (`autoGoal`, `autoRouting`) and count as written for
   Discard. Start runs `startSessionFromDraft` kind `scout` with an Auto agent
   (`agentKind: 'auto'`), the goal as its prompt and the chosen routing.
-- **Ask an agent** (`AgentStart`) is the real chat composer's field, then
-  Projects; role, model and project sit below it as chips (`AgentStartFields`), opening the
-  same role grid and model picker `Start agent` uses. The role defaults to
+- **Ask an agent** (`AgentStart`) is the goal field, then Projects, then one
+  actions row with Role and Model as `ControlChip`s (`AgentStartFields`,
+  `ModelControlChip`) and the primary, opening the same role grid and model
+  picker the New drawer and the Start agent popover use (`AgentStartBlock`:
+  goal, role and model; an empty goal starts the role and its chat takes the
+  first message). The role defaults to
   Scout every time, never the last one picked, because a habitual Implementer
   writes code you did not ask for. Scout alone can start with an empty field
   ("Start Scout on the whole project", which reads the project and changes
-  nothing); every other role needs a prompt first. The model chip reads Auto
-  until pinned. The project chip lists the picked projects and only shows
-  with two or more; the one you pick moves first in `projectIds`, so the agent
-  works in it. With one repo project it is preselected with no chip, with none
-  the session starts with no project attached.
+  nothing); every other role needs a prompt first. The Model chip shows the
+  resolved model with its provider mark, and `· pinned` once you pick one. The first picked project in `projectIds` is where the agent
+  works; there is no second project chip. With one repo project it is
+  preselected, with none the session starts with no project attached.
 
 Only the selected tab's panel, and only its primary, shows. The tabs
 preselect Pick up a task when a tracker has open issues and Run a workflow

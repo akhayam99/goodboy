@@ -1,8 +1,7 @@
 import { Trash2 } from 'lucide-react';
-import { IconButton, ListboxOptionRow, cn } from '@goodboy/ui';
+import { IconButton, ListboxOptionRow } from '@goodboy/ui';
 import type { ListboxMatch } from '@goodboy/ui';
 import type { Workflow } from '@goodboy/types';
-import { agentKindPalette, classifyStep } from '../../../../session/agent-kind';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -16,8 +15,6 @@ type Props = {
   readonly onDelete: () => void;
 };
 
-const MAX_DOTS = 6;
-
 export const PresetPickerOption = ({
   id,
   preset,
@@ -28,8 +25,7 @@ export const PresetPickerOption = ({
   onSelect,
   onDelete,
 }: Props) => {
-  const steps = [...preset.steps].sort((first, second) => first.ordinal - second.ordinal);
-  const kinds = steps.map((step) => classifyStep({ step }));
+  const stepCount = preset.steps.length;
   const description = preset.description !== '' ? preset.description : (preset.goal ?? '');
   return (
     <div className="group/preset flex min-w-0 items-center gap-1">
@@ -43,16 +39,7 @@ export const PresetPickerOption = ({
         isSelected={isSelected}
         onActivate={onActivate}
         onSelect={onSelect}
-        meta={
-          <span aria-hidden className="flex items-center gap-1">
-            {kinds.slice(0, MAX_DOTS).map((kind, index) => (
-              <span
-                key={`${kind}-${index}`}
-                className={cn('size-2 rounded-full', agentKindPalette({ kind }).bg)}
-              />
-            ))}
-          </span>
-        }
+        meta={stepCount === 0 ? undefined : stepCount === 1 ? '1 step' : `${stepCount} steps`}
       />
       <IconButton
         icon={Trash2}

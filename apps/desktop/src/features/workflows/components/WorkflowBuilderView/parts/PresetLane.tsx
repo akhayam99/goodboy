@@ -1,12 +1,12 @@
 import { Fragment } from 'react';
-import { Eyebrow, Tooltip, WorkMeta, WorkNode } from '@goodboy/ui';
+import { Tooltip, WorkMeta, WorkNode } from '@goodboy/ui';
 import type { EffortLevel, ProviderId, WorkflowAutonomy } from '@goodboy/types';
 import type { StepDraft } from '../../../engine';
 import { AgentKindChip } from '../../../../../shared/components/AgentKindChip';
 import type { PickedRoute } from '../../../../../shared/components/RoutingPicker/PickedRoute';
 import { ROLE_LABEL, type AgentKind } from '../../../../session/agent-kind';
 import { StepModelFields } from '../../StepTree/StepModelFields';
-import type { PlanStepEstimate, PlanTotal } from '../planEstimates';
+import type { PlanStepEstimate } from '../planEstimates';
 import { pausePointsOf } from '../pausePoints';
 import { LaneRow } from './LaneRow';
 import { PauseRow } from './PauseRow';
@@ -30,7 +30,6 @@ type Props = {
   readonly identityIndex: number;
   readonly autonomy: WorkflowAutonomy;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
-  readonly total: PlanTotal | null;
   readonly isDisabled: boolean;
   readonly onRoute: (key: string, route: PickedRoute) => void;
   readonly onFollowRole: (key: string) => void;
@@ -42,7 +41,6 @@ export const PresetLane = ({
   identityIndex,
   autonomy,
   connectedProviders,
-  total,
   isDisabled,
   onRoute,
   onFollowRole,
@@ -101,21 +99,25 @@ export const PresetLane = ({
                         </StepModelChip>
                       </span>
                     }
-                    time={
-                      row.estimate?.time == null ? undefined : (
-                        <Tooltip content={row.estimate.time.detail}>
-                          <span data-testid="work-time">{row.estimate.time.label}</span>
-                        </Tooltip>
-                      )
-                    }
                   />
                 }
               >
                 <AgentKindChip kind={row.kind} density="glyph" isDecorative />
-                <span className="min-w-0 truncate text-body text-foreground">{name}</span>
+                {row.estimate === null ? (
+                  <span className="min-w-0 truncate text-body text-foreground">{name}</span>
+                ) : (
+                  <Tooltip content={row.estimate.time.detail}>
+                    <span
+                      data-step-estimate={row.estimate.time.label}
+                      className="min-w-0 truncate text-body text-foreground"
+                    >
+                      {name}
+                    </span>
+                  </Tooltip>
+                )}
                 {row.isEdited ? (
                   <span className="inline-flex shrink-0 items-center">
-                    <span aria-hidden className="size-1.5 rounded-full bg-warning" />
+                    <span aria-hidden className="size-1.5 rounded-full bg-info" />
                     <span className="sr-only">Edited</span>
                   </span>
                 ) : null}
@@ -130,15 +132,6 @@ export const PresetLane = ({
           );
         })}
       </ol>
-      {total === null ? null : (
-        <div className="flex min-w-0 gap-2" data-testid="plan-estimate">
-          <span aria-hidden className="w-5 shrink-0" />
-          <div className="flex h-8 min-w-0 flex-1 items-center justify-between gap-3 pl-2">
-            <Eyebrow label="Estimate" muted />
-            <span className="text-meta tabular-nums text-muted-foreground">{total.label}</span>
-          </div>
-        </div>
-      )}
     </section>
   );
 };

@@ -105,10 +105,11 @@ describe('HowToWorkOnIt, where the work happens', () => {
     expect(await screen.findByRole('button', { name: 'Remove payments-api' })).toBeDefined();
   });
 
-  it('labels the way to start with Then:', () => {
+  it('picks how to work on it with one Runs as option, not a second switch', () => {
     show();
 
-    expect(screen.getByText('Then:')).toBeDefined();
-    expect(screen.getByRole('tablist', { name: 'How to work on it' })).toBeDefined();
+    expect(screen.queryByText('Then:')).toBeNull();
+    expect(screen.queryByRole('tablist', { name: 'How to work on it' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Runs as: Orchestrate' })).toBeDefined();
   });
 });

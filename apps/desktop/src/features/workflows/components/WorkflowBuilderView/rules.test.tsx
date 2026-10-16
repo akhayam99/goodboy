@@ -74,8 +74,7 @@ const openBuilder = ({ mode = 'dynamic' }: OpenBuilderParams = {}) =>
   );
 
 const autonomyChip = () => screen.getByRole('button', { name: /^Autonomy:/ });
-const spendChip = () => screen.getByRole('button', { name: /^Spend cap:/ });
-const fromRules = () => screen.getByTestId('from-your-rules').textContent ?? '';
+const spendChip = () => screen.getByRole('button', { name: /^Limit:/ });
 
 beforeAll(async () => {
   useAppStore = await importStore();
@@ -100,7 +99,7 @@ describe('WorkflowBuilderView and the workflow rules', () => {
 
     expect(autonomyChip().getAttribute('aria-label')).toBe('Autonomy: Balanced');
     expect(autonomyChip().textContent).toBe('AutonomyBalanced');
-    expect(spendChip().getAttribute('aria-label')).toBe('Spend cap: $25.00 · Pause');
+    expect(spendChip().getAttribute('aria-label')).toBe('Limit: $25.00 · Pause');
     expect(screen.queryByTestId('from-your-rules')).toBeNull();
     expect(screen.queryByRole('img', { name: /Run defaults/ })).toBeNull();
   });
@@ -113,7 +112,7 @@ describe('WorkflowBuilderView and the workflow rules', () => {
     openBuilder();
 
     expect(autonomyChip().getAttribute('aria-label')).toBe('Autonomy: Autopilot');
-    expect(spendChip().getAttribute('aria-label')).toBe('Spend cap: None');
+    expect(spendChip().getAttribute('aria-label')).toBe('Limit: None');
     expect(screen.queryByTestId('from-your-rules')).toBeNull();
   });
 
@@ -244,18 +243,19 @@ describe('WorkflowBuilderView and the workflow rules', () => {
     expect(screen.queryByTestId('run-changes')).toBeNull();
   });
 
-  it('says in the summary when this run asks differently from the rules', () => {
+  it('marks only the changed control with the rule dot, with no rules card', () => {
     openBuilder();
 
     fireEvent.click(autonomyChip());
     fireEvent.click(screen.getByRole('radio', { name: /Autopilot/ }));
 
-    expect(screen.getByTestId('run-changes').textContent).toBe('Changed for this run: autonomy');
-    expect(fromRules()).toBe('From your rulesChanged for this run: autonomyEdit');
+    expect(screen.getByRole('img', { name: 'Run defaults: Balanced' })).toBeDefined();
+    expect(screen.queryByTestId('from-your-rules')).toBeNull();
+    expect(screen.queryByText(/Changed for this run/)).toBeNull();
 
     fireEvent.click(autonomyChip());
-    fireEvent.click(screen.getByRole('radio', { name: /Balanced/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Reset to your rule/ }));
 
-    expect(screen.queryByTestId('from-your-rules')).toBeNull();
+    expect(screen.queryByRole('img', { name: /Run defaults/ })).toBeNull();
   });
 });

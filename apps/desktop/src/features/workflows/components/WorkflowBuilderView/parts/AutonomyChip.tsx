@@ -3,7 +3,7 @@ import type { WorkflowAutonomy } from '@goodboy/types';
 import { AnchoredPopover, cn, useDropdown } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { RUN_AUTONOMY_HEADER, RUN_AUTONOMY_OPTIONS, runAutonomyOf } from '../../../runAutonomy';
-import { ControlChip } from './ControlChip';
+import { ControlChip } from '../../../../../shared/components/ControlChip';
 import { RuleDot } from './RuleDot';
 
 type Props = {
@@ -35,7 +35,7 @@ export const AutonomyChip = ({ autonomy, ruleAutonomy, disabled, onChange }: Pro
           value={current.label}
           marker={differs ? <RuleDot ruleValue={rule.label} /> : null}
           isOpen={open}
-          disabled={disabled}
+          isDisabled={disabled}
           onToggle={toggle}
         />
       }
@@ -76,7 +76,9 @@ export const AutonomyChip = ({ autonomy, ruleAutonomy, disabled, onChange }: Pro
           className={cn(OPTION_ROW, 'mt-1 items-center')}
         >
           <RotateCcw size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
-          <span className="min-w-0 flex-1 truncate text-label text-foreground">Reset</span>
+          <span className="min-w-0 flex-1 truncate text-label text-foreground">
+            Reset to your rule
+          </span>
           <span className="truncate text-meta text-faint-foreground">{rule.label}</span>
         </button>
       ) : null}

@@ -172,7 +172,7 @@ const openTasksAndStart = async (ctx: Ctx): Promise<void> => {
 };
 
 const draftBlock = async (): Promise<HTMLElement> =>
-  screen.findByRole('region', { name: 'Brief from HBL-415' }, WAIT);
+  screen.findByRole('region', { name: 'Brief' }, WAIT);
 
 const toastTitles = (title: string): ReadonlyArray<HTMLElement> => screen.queryAllByText(title);
 
@@ -249,7 +249,7 @@ export const START_PATHS_ROWS: ReadonlyArray<Row> = [
         'value',
         'Retried webhooks post a second credit',
       );
-      expect(screen.getByRole('tablist', { name: 'How to work on it' })).toBeDefined();
+      expect(screen.getByRole('button', { name: 'Runs as: Orchestrate' })).toBeDefined();
       expect(screen.getAllByRole('button', { name: 'Start from HBL-415' })).toHaveLength(1);
       expect(screen.queryByRole('button', { name: 'Use brief' })).toBeNull();
       expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();

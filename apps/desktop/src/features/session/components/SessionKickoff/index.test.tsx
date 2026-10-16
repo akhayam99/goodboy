@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ReactNode } from 'react';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { StoreApi, UseBoundStore } from 'zustand';
@@ -41,6 +42,8 @@ vi.mock('../../../../store', async () => {
 
 type BuilderKickoffStub = {
   readonly primaryLabel?: string;
+  readonly leading?: ReactNode;
+  readonly projects?: ReactNode;
   readonly goal: string;
   readonly goalPlaceholder: string;
   readonly onGoalChange: (goal: string) => void;
@@ -56,6 +59,8 @@ vi.mock('../../../workflows/components/WorkflowBuilderView', () => ({
         value={kickoff.goal}
         onChange={(event) => kickoff.onGoalChange(event.target.value)}
       />
+      {kickoff.projects}
+      {kickoff.leading}
       <button
         type="button"
         onClick={() => void kickoff.start(spies.runBuilder).catch(() => undefined)}
@@ -221,8 +226,12 @@ const tab = (name: string) =>
     name: new RegExp(name),
   });
 
-const howTab = (name: string) =>
-  within(screen.getByRole('tablist', { name: 'How to work on it' })).getByRole('tab', { name });
+const howChip = () => screen.getByRole('button', { name: /^Runs as:/ });
+
+const chooseHow = (name: string) => {
+  fireEvent.click(howChip());
+  fireEvent.click(screen.getByRole('menuitemradio', { name }));
+};
 
 beforeEach(() => {
   localStorage.clear();
@@ -397,7 +406,7 @@ describe('SessionKickoff', () => {
     renderKickoff();
     fireEvent.click(tab('Ask an agent'));
     fireEvent.click(screen.getByRole('button', { name: 'Role: Scout' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Implement' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Implementer' }));
 
     const start = screen.getByRole('button', { name: 'Start Implementer' });
     expect(start.hasAttribute('disabled')).toBe(true);
@@ -415,9 +424,9 @@ describe('SessionKickoff', () => {
     renderKickoff();
     fireEvent.click(tab('Ask an agent'));
     fireEvent.click(screen.getByRole('button', { name: 'Role: Scout' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Implement' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Implementer' }));
 
-    expect(screen.getByRole('button', { name: 'Auto' })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^Model:/ })).toBeDefined();
     fireEvent.change(screen.getByRole('textbox', { name: 'Agent instructions' }), {
       target: { value: 'Build the login page' },
     });
@@ -509,7 +518,7 @@ describe('SessionKickoff', () => {
       'value',
       'Fix the login redirect',
     );
-    expect(howTab('Orchestrate').getAttribute('aria-selected')).toBe('true');
+    expect(howChip().getAttribute('aria-label')).toBe('Runs as: Orchestrate');
     const builder = screen.getByTestId('workflow-builder');
     const goalField = within(builder).getByRole('textbox', { name: 'Goal' });
     expect((goalField as HTMLTextAreaElement).value).toBe(
@@ -630,7 +639,7 @@ describe('SessionKickoff', () => {
           ],
         }),
       );
-      expect(screen.getByRole('region', { name: 'Brief from ENG-1 and 1 more' })).toBeDefined();
+      expect(screen.getByRole('region', { name: 'Brief' })).toBeDefined();
     });
 
     it('refuses a sixth issue with one line and keeps the five', async () => {
@@ -769,7 +778,7 @@ describe('SessionKickoff', () => {
 
     fireEvent.click(screen.getByRole('checkbox', { name: /ENG-1/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Pick ENG-1' }));
-    fireEvent.click(howTab('Ask an agent'));
+    chooseHow('Ask an agent');
     fireEvent.click(screen.getByRole('button', { name: 'Start from ENG-1' }));
 
     await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());

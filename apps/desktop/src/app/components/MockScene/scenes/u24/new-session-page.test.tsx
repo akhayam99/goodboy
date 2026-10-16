@@ -74,7 +74,7 @@ describe('the New session page scenes', () => {
       await screen.findByRole('button', { name: 'Model for Scout the retry path' }, WAIT),
     ).toBeDefined();
     expect(await screen.findByRole('button', { name: 'Model for Build the guard' })).toBeDefined();
-    expect(screen.getByRole('button', { name: /^Spend cap:/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^Limit:/ })).toBeDefined();
     expect(screen.getByTestId('plan-estimate')).toBeDefined();
   });
 

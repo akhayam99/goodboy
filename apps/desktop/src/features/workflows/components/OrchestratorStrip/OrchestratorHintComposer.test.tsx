@@ -63,7 +63,7 @@ describe('OrchestratorHintComposer', () => {
   it('sends a pasted image with the hint and says where images go', async () => {
     const drafts = mount();
     fireEvent.focus(field());
-    expect(screen.getByText('Files go to the next agent')).toBeDefined();
+    expect(screen.queryByText('Files go to the next agent')).toBeNull();
     fireEvent.change(field(), { target: { value: 'the trace is attached' } });
     await pasteImage('checkout-trace.png');
     expect(screen.getByRole('button', { name: 'Remove checkout-trace.png' })).toBeDefined();

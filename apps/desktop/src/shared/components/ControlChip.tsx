@@ -1,47 +1,58 @@
 import type { ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { cn, tintClasses } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { Button, cn, tintClasses } from '@goodboy/ui';
+import { ICON_SIZE } from './conceptIcons';
 
 type Props = {
   readonly label: string;
   readonly value: string;
+  readonly display?: ReactNode;
+  readonly suffix?: string | null;
   readonly marker?: ReactNode;
   readonly isOpen: boolean;
   readonly isInvalid?: boolean;
-  readonly disabled: boolean;
+  readonly isDisabled: boolean;
   readonly onToggle: () => void;
 };
 
 export const ControlChip = ({
   label,
   value,
+  display = null,
+  suffix = null,
   marker = null,
   isOpen,
   isInvalid = false,
-  disabled,
+  isDisabled,
   onToggle,
 }: Props) => (
-  <button
-    type="button"
+  <Button
+    variant="secondary"
+    size="sm"
     onClick={onToggle}
-    disabled={disabled}
+    disabled={isDisabled}
     aria-haspopup="dialog"
     aria-expanded={isOpen}
-    aria-label={`${label}: ${value}`}
+    aria-label={`${label}: ${suffix === null ? value : `${value}, ${suffix}`}`}
     className={cn(
-      'inline-flex h-7 max-w-72 items-center gap-2 rounded-md border bg-subtle px-3 text-label transition-colors hover:bg-hover',
+      'max-w-72 justify-start bg-subtle font-normal',
       isInvalid ? tintClasses('danger').borderSoft : 'border-border-soft hover:border-border',
-      disabled && 'cursor-not-allowed opacity-60',
     )}
   >
     <span className="shrink-0 text-faint-foreground">{label}</span>
     {marker}
-    <span className="min-w-0 truncate text-foreground">{value}</span>
+    {display === null ? (
+      <span className="min-w-0 truncate text-foreground">{value}</span>
+    ) : (
+      <span className="flex min-w-0 items-center text-foreground">{display}</span>
+    )}
+    {suffix === null ? null : (
+      <span className="shrink-0 text-faint-foreground">{`· ${suffix}`}</span>
+    )}
     <ChevronDown
       size={ICON_SIZE.row}
       aria-hidden
       className={cn('shrink-0 text-muted-foreground transition-transform', isOpen && 'rotate-180')}
     />
-  </button>
+  </Button>
 );
