@@ -25,6 +25,7 @@ export type SavedTerminalTabs = {
   readonly active: Readonly<Record<string, TerminalTabId | null>>;
   readonly worktreeActive: Readonly<Record<string, TerminalTabId>>;
   readonly selection: TerminalSelection | null;
+  readonly ordinals: Readonly<Record<string, number>>;
 };
 
 type SnapshotParams = {
@@ -32,6 +33,7 @@ type SnapshotParams = {
   readonly active: Readonly<Record<string, TerminalTabId | null>>;
   readonly worktreeActive: Readonly<Record<string, TerminalTabId>>;
   readonly selection: TerminalSelection | null;
+  readonly ordinals: Readonly<Record<string, number>>;
 };
 
 export const snapshotTerminalTabs = ({
@@ -39,6 +41,7 @@ export const snapshotTerminalTabs = ({
   active,
   worktreeActive,
   selection,
+  ordinals,
 }: SnapshotParams): SavedTerminalTabs => ({
   version: 1,
   tabs: Object.values(tabs)
@@ -56,7 +59,12 @@ export const snapshotTerminalTabs = ({
   active,
   worktreeActive,
   selection,
+  ordinals,
 });
+
+const isOrdinalRecord = (value: unknown): value is Record<string, number> =>
+  isRecord(value) &&
+  Object.values(value).every((ordinal) => typeof ordinal === 'number' && Number.isInteger(ordinal));
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -112,6 +120,7 @@ export const parseSavedTerminalTabs = ({ raw }: ParseParams): SavedTerminalTabs 
       active,
       worktreeActive,
       selection: isSelection(parsed['selection']) ? parsed['selection'] : null,
+      ordinals: isOrdinalRecord(parsed['ordinals']) ? parsed['ordinals'] : {},
     };
   } catch {
     return null;

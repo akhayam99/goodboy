@@ -17,6 +17,7 @@ export type TerminalState = {
   readonly terminalWorktreeActive: Readonly<Record<string, TerminalTabId>>;
   readonly terminalSelection: TerminalSelection | null;
   readonly terminalNames: Readonly<Record<string, string>>;
+  readonly terminalOrdinals: Readonly<Record<string, number>>;
   readonly terminalFolderOverrides: Readonly<Record<WorkspaceId, string | null>>;
 };
 
@@ -27,5 +28,6 @@ export const terminalInitialState: TerminalState = {
   terminalWorktreeActive: {},
   terminalSelection: null,
   terminalNames: {},
+  terminalOrdinals: {},
   terminalFolderOverrides: {},
 };

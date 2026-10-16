@@ -51,6 +51,29 @@ const readSaved = async (): Promise<SavedTerminalTabs | null> => {
   }
 };
 
+type OrdinalsParams = {
+  readonly saved: SavedTerminalTabs | null;
+  readonly rebuilt: ReadonlyMap<string, readonly TerminalTab[]>;
+};
+
+type OrdinalIdParams = {
+  readonly id: string;
+};
+
+const ordinalOfId = ({ id }: OrdinalIdParams): number => {
+  const parsed = Number.parseInt(id.slice(id.lastIndexOf('t') + 1), 10);
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
+
+const ordinalsOf = ({ saved, rebuilt }: OrdinalsParams): Record<string, number> => {
+  const ordinals: Record<string, number> = { ...saved?.ordinals };
+  for (const [key, tabs] of rebuilt) {
+    const highest = Math.max(0, ...tabs.map((tab) => ordinalOfId({ id: tab.id })));
+    ordinals[key] = Math.max(ordinals[key] ?? 0, highest);
+  }
+  return ordinals;
+};
+
 export const reattachTerminalTabs = (set: SetFn, get: GetFn) => {
   return async (): Promise<void> => {
     await terminalOutputBus.register();
@@ -157,6 +180,7 @@ export const reattachTerminalTabs = (set: SetFn, get: GetFn) => {
         activeTerminalTab,
         terminalWorktreeActive,
         terminalNames: names,
+        terminalOrdinals: { ...current.terminalOrdinals, ...ordinalsOf({ saved, rebuilt }) },
         ...(isSelectionKept && current.terminalSelection === null
           ? { terminalSelection: savedSelection }
           : {}),

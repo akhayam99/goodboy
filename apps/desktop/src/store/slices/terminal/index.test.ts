@@ -314,6 +314,49 @@ describe('store contract', () => {
         ).toEqual([FIRST]);
       });
 
+      it('keeps counting after the highest saved ordinal, not after the highest live tab', async () => {
+        answerWith(
+          JSON.stringify({
+            version: 1,
+            tabs: [
+              {
+                id: FIRST,
+                owner: SESSION_OWNER,
+                title: 'shell',
+                cwd: '/w',
+                status: 'running',
+              },
+            ],
+            active: {},
+            worktreeActive: {},
+            selection: null,
+            ordinals: { [SESSION_ID]: 4 },
+          }),
+        );
+        storySpies.invokeTerminalListLive.mockResolvedValueOnce([{ id: FIRST, cwd: '/w' }]);
+        await useAppStore.getState().reattachTerminalTabs();
+
+        const next = useAppStore.getState().addTerminalTab({ owner: SESSION_OWNER, cwd: '/w' });
+
+        expect(next).toBe(`${SESSION_ID}::t5`);
+      });
+
+      it('saves the counter with the tabs', async () => {
+        answerWith(null);
+        storySpies.invokeTerminalListLive.mockResolvedValueOnce([]);
+        await useAppStore.getState().reattachTerminalTabs();
+        storySpies.setSetting.mockClear();
+
+        useAppStore.getState().addTerminalTab({ owner: SESSION_OWNER, cwd: '/w' });
+        await vi.waitFor(() => {
+          expect(storySpies.setSetting).toHaveBeenCalledWith(
+            expect.anything(),
+            'terminal.tabs',
+            expect.stringContaining(`"ordinals":{"${SESSION_ID}":1}`),
+          );
+        });
+      });
+
       it('saves the list after a change once the saved list was loaded', async () => {
         answerWith(null);
         storySpies.invokeTerminalListLive.mockResolvedValueOnce([]);
@@ -450,6 +493,19 @@ describe('store contract', () => {
       expect(tabs).toHaveLength(1);
       expect(tabs[0]?.id).toBe(first);
       expect(store.getState().activeTerminalTab[SESSION_ID]).toBe(first);
+    });
+
+    it('never reuses the id of a tab that exited, so a new terminal starts empty', async () => {
+      const store = useAppStore;
+      await store.getState().reattachTerminalTabs();
+      store.getState().addTerminalTab({ owner: SESSION_OWNER, cwd: null });
+      const second = store.getState().addTerminalTab({ owner: SESSION_OWNER, cwd: null });
+
+      emitTerminalExit({ terminalId: second, exitCode: 0 });
+      const fresh = store.getState().addTerminalTab({ owner: SESSION_OWNER, cwd: null });
+
+      expect(fresh).not.toBe(second);
+      expect(fresh).toBe(`${SESSION_ID}::t3`);
     });
 
     it('closes a tab when its shell exits, even with no studio open', async () => {

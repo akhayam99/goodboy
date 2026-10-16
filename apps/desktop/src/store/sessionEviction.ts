@@ -305,6 +305,7 @@ export const NON_SESSION_STATE_KEYS = [
   'lastSettingsFocus',
   'lastChatByWorkspace',
   'terminalNames',
+  'terminalOrdinals',
   'terminalWorktreeActive',
   'terminalSelection',
   'terminalFolderOverrides',

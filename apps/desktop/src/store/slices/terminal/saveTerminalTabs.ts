@@ -25,6 +25,7 @@ export const saveTerminalTabs = ({ get }: SaveParams): void => {
       active: state.activeTerminalTab,
       worktreeActive: state.terminalWorktreeActive,
       selection: state.terminalSelection,
+      ordinals: state.terminalOrdinals,
     });
     await setSetting(tauriDatabase, SETTING_TERMINAL_TABS, JSON.stringify(snapshot));
   };
