@@ -41,6 +41,7 @@ auto-chat-confirm
 auto-chat-delegating
 auto-chat-done
 auto-chat-plan
+auto-chat-refused
 auto-chat-revising
 auto-chat-working
 auto-move-moved

@@ -43,6 +43,7 @@ export type RefusalPayload = Readonly<{
   action: string;
   code: string;
   text: string;
+  roles?: ReadonlyArray<string>;
 }>;
 
 export type StoredDelivery = Readonly<{

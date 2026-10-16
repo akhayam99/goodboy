@@ -240,7 +240,15 @@ same text admit once (the admission guards and the request id replay do the rest
 What Auto cannot say comes back as a message, not as a reply inside the turn. A refused spec, a
 budget or limit refusal and a block that does not parse become a `refusal` row in the outbox,
 delivered with the next turn under REFUSED, NOT DONE; such a turn counts as no progress, so
-`noProgressStreak` bounds retries. The refusal counters (`refusals_used`, the limit on refusals)
+`noProgressStreak` bounds retries. A refusal row keeps the action, the code and the roles of the
+refused children; while it is pending for the current generation, `readAutoTreeViews` reads it as
+`pendingRefusal` and the wait strip says it in the user voice (`refusalNoticeOf`, reasons from
+`AUTO_REFUSAL_USER_REASON`): "Auto tried to start an Implementer. Not started: more than one
+project fits and it did not say which. Auto is choosing again." Once Auto's next turn takes the
+row, the line goes, and an admitted retry draws its delegation card. The mount of a child
+(`pickAutoMount`): a named mount wins; a reader without one works in the tree's primary mount; a
+writer without one goes to the only usable mount, is refused `mount_ambiguous` when more than
+one fits (Auto never guesses a write) and `mount_missing` when none does. The refusal counters (`refusals_used`, the limit on refusals)
 move once per generation and run, so a duplicate settle of the same turn cannot spend the limit twice. Every delivery starts with a digest of the tree (open agents
 with role, state and age, questions waiting, the budget, and a `MOUNTS:` line listing each usable
 mount as `id (project, branch)` from `buildMountsLine`) and carries the artifact text of each

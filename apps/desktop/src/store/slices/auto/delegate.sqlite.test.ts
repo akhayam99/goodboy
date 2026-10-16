@@ -110,7 +110,23 @@ describe('the delegate command', () => {
     expect(other).toMatchObject({ isOk: false, code: 'request_conflict' });
   });
 
-  it('refuses a writer that names no mount, lists the choices and writes nothing', async () => {
+  it('admits a writer that names no mount on the only mount of the session', async () => {
+    const state = await setup();
+    state.ports.setMounts([
+      (await state.ports.loadMounts({ sessionId: WORLD_GRANT.sessionId }))[0]!,
+    ]);
+    const outcome = await run(
+      state,
+      delegateCommand({
+        children: [{ role: 'implementer', task: 'change it', reason: 'a code change' }],
+      }),
+    );
+    expect(outcome.isOk).toBe(true);
+    const rows = await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE });
+    expect(rows[0]?.target).toMatchObject({ mountId: 'mount-ledger-core', mountSource: 'only' });
+  });
+
+  it('refuses a writer that names no mount among two, lists the choices and writes nothing', async () => {
     const state = await setup();
     const outcome = await run(
       state,
@@ -118,7 +134,7 @@ describe('the delegate command', () => {
         children: [{ role: 'implementer', task: 'change it', reason: 'a code change' }],
       }),
     );
-    expect(outcome).toMatchObject({ isOk: false, code: 'mount_missing' });
+    expect(outcome).toMatchObject({ isOk: false, code: 'mount_ambiguous' });
     expect(outcome.error).toContain('mount-ledger-core');
     expect(outcome.error).toContain('mount-notify-relay');
     expect(await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE })).toHaveLength(0);

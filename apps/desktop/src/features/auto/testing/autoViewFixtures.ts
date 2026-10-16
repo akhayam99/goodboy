@@ -8,7 +8,7 @@ import {
   type AutoTreeId,
   type SessionId,
 } from '@goodboy/types';
-import type { AutoTreeView } from '../../../store/slices/auto-view/state';
+import type { AutoPendingRefusal, AutoTreeView } from '../../../store/slices/auto-view/state';
 
 export const FIXTURE_NOW = Date.UTC(2026, 9, 13, 12, 4, 0);
 export const FIXTURE_SESSION = brandId<SessionId>({ value: 'session-harborline' });
@@ -153,6 +153,7 @@ type ViewParams = {
   readonly spentUsd?: number;
   readonly reservedUsd?: number;
   readonly capUsd?: number;
+  readonly pendingRefusal?: AutoPendingRefusal | null;
 };
 
 export const aView = ({
@@ -162,7 +163,9 @@ export const aView = ({
   spentUsd = 0,
   reservedUsd = 0,
   capUsd = 10,
+  pendingRefusal = null,
 }: ViewParams = {}): AutoTreeView => ({
+  pendingRefusal,
   tree: aTree({ phase, capUsd }),
   delegations,
   artifacts,

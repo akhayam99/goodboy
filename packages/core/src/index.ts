@@ -199,6 +199,7 @@ export {
   isAutoLimitRefusal,
   type AutoRefusalCode,
 } from './auto/refusals';
+export { AUTO_REFUSAL_USER_REASON, autoRefusalUserReason } from './auto/refusalUserReason';
 export { AUTO_SYSTEM_PROMPT, autoRoleCatalog, buildAutoSystemPrompt } from './auto/prompt';
 export {
   parseRevisionFromTurn,

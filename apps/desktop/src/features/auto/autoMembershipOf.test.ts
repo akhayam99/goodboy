@@ -16,6 +16,7 @@ const viewWithScout = ({ isAdopted = false }: ViewParams = {}): AutoTreeView => 
   delegations: [{ ...aDelegation({ key: 'scout', role: 'scout', state: 'running' }), isAdopted }],
   artifacts: [],
   budget: null,
+  pendingRefusal: null,
 });
 
 describe('which Auto tree an agent belongs to', () => {

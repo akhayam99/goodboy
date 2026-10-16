@@ -16,7 +16,7 @@ import {
   type TurnState,
 } from '@goodboy/types';
 import { aPlanRow, aTree } from '../../../../../features/auto/testing/autoViewFixtures';
-import type { AutoTreeView } from '../../../../../store/slices/auto-view/state';
+import type { AutoPendingRefusal, AutoTreeView } from '../../../../../store/slices/auto-view/state';
 import { sceneClock } from '../../sceneClock';
 import { SESSION } from '../activityRunSeed';
 
@@ -54,7 +54,7 @@ const OPUS = modelKeyOf({ label: 'Opus 5.5' });
 const SONNET = modelKeyOf({ label: 'Sonnet 5.5' });
 
 export type AutoSceneState =
-  'answering' | 'delegating' | 'plan' | 'working' | 'revising' | 'confirm' | 'done';
+  'answering' | 'delegating' | 'plan' | 'working' | 'revising' | 'confirm' | 'refused' | 'done';
 
 const GOAL_TEXT =
   'Why does the ledger retry post a second credit? Fix it and add a test for the retry path.';
@@ -349,6 +349,7 @@ const THIRD_REPLY =
   'Plan approved. The Implementer starts now on Sonnet 5.5, since the plan is mechanical. The Tester is queued behind it: only one agent writes to payments-api at a time.';
 const FINAL_REPLY =
   'Fixed. The retry loop built a new idempotency key on every attempt, so a credit that timed out after the ledger wrote it could post twice. The key is now built once per credit, before the loop, and applyCredit returns the first result for a key it has seen.';
+const REFUSED_REPLY = 'I asked an implementer to commit the fix and open a draft PR.';
 const ANSWER_REPLY =
   'Retries are posted by postCredit, which builds the idempotency key inside the retry loop. A new key on every attempt is why a credit that timed out after the ledger wrote it can post twice. Say the word and I fix it.';
 
@@ -358,6 +359,7 @@ type ViewParams = {
   readonly artifacts: ReadonlyArray<AutoArtifactLedgerRow>;
   readonly spentUsd: number;
   readonly reservedUsd: number;
+  readonly pendingRefusal?: AutoPendingRefusal | null;
 };
 
 const viewOf = ({
@@ -366,7 +368,9 @@ const viewOf = ({
   artifacts,
   spentUsd,
   reservedUsd,
+  pendingRefusal = null,
 }: ViewParams): AutoTreeView => ({
+  pendingRefusal,
   tree: {
     ...aTree({ phase, capUsd: 10 }),
     id: TREE_ID,
@@ -567,6 +571,28 @@ export const autoSceneOf = ({ state }: SceneParams): AutoSceneData => {
         ],
         rootTurn: { kind: 'running', runId: RUN_THREE, startedAt: at({ time: '12:07:00' }) },
         hasPlanArtifact: true,
+      };
+    case 'refused':
+      return {
+        view: viewOf({
+          phase: 'merging',
+          delegations: [],
+          artifacts: [],
+          spentUsd: 0.06,
+          reservedUsd: 0,
+          pendingRefusal: { action: 'delegate', code: 'mount_ambiguous', roles: ['implementer'] },
+        }),
+        agents: [root('completed', '12:04:30')],
+        events: [
+          userText({
+            time: '12:04:00',
+            text: 'Commit the retry fix and open a draft PR.',
+            run: RUN_ONE,
+          }),
+          reply({ time: '12:04:20', text: REFUSED_REPLY, run: RUN_ONE }),
+        ],
+        rootTurn: IDLE,
+        hasPlanArtifact: false,
       };
     case 'done':
       return {
