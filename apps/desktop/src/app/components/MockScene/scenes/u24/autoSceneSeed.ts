@@ -54,7 +54,7 @@ const OPUS = modelKeyOf({ label: 'Opus 5.5' });
 const SONNET = modelKeyOf({ label: 'Sonnet 5.5' });
 
 export type AutoSceneState =
-  'answering' | 'delegating' | 'plan' | 'working' | 'revising' | 'confirm' | 'done';
+  'answering' | 'delegating' | 'plan' | 'working' | 'revising' | 'confirm' | 'done' | 'nocap';
 
 const GOAL_TEXT =
   'Why does the ledger retry post a second credit? Fix it and add a test for the retry path.';
@@ -621,6 +621,20 @@ export const autoSceneOf = ({ state }: SceneParams): AutoSceneData => {
         rootTurn: IDLE,
         hasPlanArtifact: true,
       };
+    case 'nocap': {
+      const working = autoSceneOf({ state: 'working' });
+      return {
+        ...working,
+        view: {
+          ...working.view,
+          tree: { ...working.view.tree, capUsd: null },
+          budget:
+            working.view.budget === null
+              ? null
+              : { ...working.view.budget, capUsd: null, remainingUsd: null },
+        },
+      };
+    }
     default: {
       const exhaustive: never = state;
       return exhaustive;

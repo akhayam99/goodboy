@@ -24,16 +24,19 @@ export const autoSettledUsdSql = ({ treeRef }: TreeRefParams): string =>
 export const autoRemainingUsdSql = ({ treeRef }: TreeRefParams): string =>
   `(auto_trees.cap_usd - ${autoSettledUsdSql({ treeRef })} - ${autoReservedUsdSql({ treeRef })})`;
 
+export const autoBudgetCoversSql = ({ treeRef }: TreeRefParams): string =>
+  `(auto_trees.cap_usd IS NULL OR ${autoRemainingUsdSql({ treeRef })} + ${AUTO_USD_EPSILON} >= ?)`;
+
 export type AutoTreeSpend = Readonly<{
-  capUsd: number;
+  capUsd: number | null;
   settledUsd: number;
   reservedUsd: number;
-  remainingUsd: number;
+  remainingUsd: number | null;
   estimatedUsd: number;
 }>;
 
 type SpendRow = {
-  readonly cap_usd: number;
+  readonly cap_usd: number | null;
   readonly settled_usd: number;
   readonly reserved_usd: number;
   readonly estimated_usd: number;
@@ -65,7 +68,7 @@ export const readAutoTreeSpend = async ({
     capUsd: row.cap_usd,
     settledUsd: row.settled_usd,
     reservedUsd: row.reserved_usd,
-    remainingUsd: row.cap_usd - row.settled_usd - row.reserved_usd,
+    remainingUsd: row.cap_usd === null ? null : row.cap_usd - row.settled_usd - row.reserved_usd,
     estimatedUsd: row.estimated_usd,
   };
 };

@@ -15,70 +15,87 @@ import type { AutoTreeCapSave } from './useAutoTreeCap';
 
 type Props = {
   readonly facts: AutoBudgetFacts;
+  readonly isFromSession: boolean;
   readonly onSave: AutoTreeCapSave;
 };
 
-type Choice = 'custom' | 5 | 10 | 20;
+type Choice = 'custom' | 'none' | 5 | 10 | 20;
+
+type Pick = Readonly<{ capUsd: number | null }>;
 
 const PRESETS: ReadonlyArray<5 | 10 | 20> = [5, 10, 20];
 const INPUT_ID = 'auto-tree-limit-amount';
 const UNDER_USED = 'The limit must cover spent and reserved usage.';
 const NOT_AN_AMOUNT = 'Enter an amount more than zero, with at most 2 decimals.';
+const SESSION_SETS_IT = 'The session budget sets this limit, so it keeps a cap.';
 
 type ChoiceParams = {
-  readonly capUsd: number;
+  readonly capUsd: number | null;
 };
 
-const choiceOf = ({ capUsd }: ChoiceParams): Choice =>
-  PRESETS.find((preset) => preset === capUsd) ?? 'custom';
+const choiceOf = ({ capUsd }: ChoiceParams): Choice => {
+  if (capUsd === null) {
+    return 'none';
+  }
+  return PRESETS.find((preset) => preset === capUsd) ?? 'custom';
+};
 
-type AmountParams = {
+type PickParams = {
   readonly choice: Choice;
   readonly draft: string;
 };
 
-const amountOf = ({ choice, draft }: AmountParams): number | null =>
-  choice === 'custom' ? parseTreeLimit({ draft }) : choice;
+const pickOf = ({ choice, draft }: PickParams): Pick | null => {
+  if (choice === 'none') {
+    return { capUsd: null };
+  }
+  if (choice === 'custom') {
+    const parsed = parseTreeLimit({ draft });
+    return parsed === null ? null : { capUsd: parsed };
+  }
+  return { capUsd: choice };
+};
 
 type ValidationParams = {
-  readonly amount: number | null;
-  readonly isUnderUsed: boolean;
+  readonly pick: Pick | null;
+  readonly usedUsd: number;
 };
 
-const validationOf = ({ amount, isUnderUsed }: ValidationParams): string | null => {
-  if (amount === null) {
+const validationOf = ({ pick, usedUsd }: ValidationParams): string | null => {
+  if (pick === null) {
     return NOT_AN_AMOUNT;
   }
-  return isUnderUsed ? UNDER_USED : null;
+  if (pick.capUsd !== null && pick.capUsd + 1e-9 < usedUsd) {
+    return UNDER_USED;
+  }
+  return null;
 };
 
-export const AutoTreeLimitPopover = ({ facts, onSave }: Props) => {
+export const AutoTreeLimitPopover = ({ facts, isFromSession, onSave }: Props) => {
   const dropdown = useDropdown({ align: 'start', width: 'w-80' });
   const { open: isOpen, toggle, close } = dropdown;
   const [choice, setChoice] = useState<Choice>(choiceOf({ capUsd: facts.capUsd }));
-  const [draft, setDraft] = useState(String(facts.capUsd));
+  const [draft, setDraft] = useState(facts.capUsd === null ? '' : String(facts.capUsd));
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const usedUsd = autoBudgetUsedUsd({ facts });
-  const amount = amountOf({ choice, draft });
-  const isUnderUsed = amount !== null && amount + 1e-9 < usedUsd;
-  const isUnchanged = amount !== null && amount === facts.capUsd;
-  const validation = validationOf({ amount, isUnderUsed });
+  const pick = pickOf({ choice, draft });
+  const validation = validationOf({ pick, usedUsd: autoBudgetUsedUsd({ facts }) });
+  const isUnchanged = pick !== null && pick.capUsd === facts.capUsd;
 
   const onToggle = () => {
     setChoice(choiceOf({ capUsd: facts.capUsd }));
-    setDraft(String(facts.capUsd));
+    setDraft(facts.capUsd === null ? '' : String(facts.capUsd));
     setError(null);
     toggle();
   };
 
   const onSet = async () => {
-    if (amount === null || isUnderUsed || isSaving) {
+    if (pick === null || validation !== null || isSaving) {
       return;
     }
     setIsSaving(true);
     setError(null);
-    const failure = await onSave({ expectedCapUsd: facts.capUsd, capUsd: amount });
+    const failure = await onSave({ expectedCapUsd: facts.capUsd, capUsd: pick.capUsd });
     setIsSaving(false);
     if (failure === null) {
       close();
@@ -130,6 +147,16 @@ export const AutoTreeLimitPopover = ({ facts, onSave }: Props) => {
             ))}
             <Chip
               as="button"
+              tone={choice === 'none' ? 'info' : 'neutral'}
+              kind="reference"
+              label="No cap"
+              ariaPressed={choice === 'none'}
+              disabled={isSaving || isFromSession}
+              {...(isFromSession && { title: SESSION_SETS_IT })}
+              onClick={() => setChoice('none')}
+            />
+            <Chip
+              as="button"
               tone={choice === 'custom' ? 'info' : 'neutral'}
               kind="reference"
               label="Custom"
@@ -138,6 +165,9 @@ export const AutoTreeLimitPopover = ({ facts, onSave }: Props) => {
               onClick={() => setChoice('custom')}
             />
           </div>
+          {isFromSession ? (
+            <p className="text-meta text-muted-foreground">{SESSION_SETS_IT}</p>
+          ) : null}
           {choice === 'custom' ? (
             <Input
               id={INPUT_ID}

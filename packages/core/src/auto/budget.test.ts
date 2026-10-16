@@ -4,6 +4,7 @@ import {
   autoBudgetOf,
   autoBudgetPromptLine,
   autoBudgetUsedUsd,
+  autoRemainingForGates,
   capTextOf,
 } from './budget';
 
@@ -52,5 +53,38 @@ describe('auto budget facts', () => {
     });
     expect(capTextOf({ facts })).toBe('Limit $5.00');
     expect(autoBudgetUsedUsd({ facts })).toBe(4.32);
+  });
+
+  it('says No cap and never prints a left when the cap is missing', () => {
+    const facts = autoBudgetOf({
+      spend: {
+        capUsd: null,
+        settledUsd: 3.82,
+        reservedUsd: 0.5,
+        remainingUsd: null,
+        estimatedUsd: 0,
+      },
+    });
+    expect(facts).toMatchObject({ capUsd: null, remainingUsd: null });
+    expect(capTextOf({ facts })).toBe('No cap');
+    expect(autoBudgetLabel({ facts })).toBe('3.82 USD, no cap');
+    expect(autoBudgetPromptLine({ facts })).toBe(
+      'Budget for this conversation: no cap. Spent 3.82 USD. Reserved for running agents 0.50 USD.',
+    );
+  });
+
+  it('lets the gates pass a missing cap and stop a missing tree', () => {
+    expect(
+      autoRemainingForGates({
+        spend: {
+          capUsd: null,
+          settledUsd: 9,
+          reservedUsd: 0,
+          remainingUsd: null,
+          estimatedUsd: 0,
+        },
+      }),
+    ).toBe(Number.POSITIVE_INFINITY);
+    expect(autoRemainingForGates({ spend: null })).toBe(0);
   });
 });

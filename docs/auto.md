@@ -173,6 +173,15 @@ Overview; they live in the Work rail of the chat.
   turn keeps its next step, then drives the tree, so a tree paused at the limit
   resumes after a raise. The cap changes only this conversation; the workspace
   cap stays the start value of the next one.
+- **No cap.** The popover also offers **No cap**, stored as a NULL `cap_usd`
+  (m231), never a sentinel. The foot then reads **No cap** with **Spent** and
+  **Reserved** and no bar or **Left**, and the prompt line says "no cap" and
+  never prints a left. The root turn claim and child admission pass a NULL cap
+  (`autoBudgetCoversSql`), and the gates read it as unbounded
+  (`autoRemainingForGates`); the per attempt ceilings still apply, so one child
+  never runs unbounded. While a session budget exists, No cap is off and says the
+  session budget sets the limit. A tree is only created with a number; NULL
+  comes only from this choice.
 - **Delegation cards.** Each delegation is a card in the transcript: role, model
   and effort, a live time, one state, Auto's reason, a note when the app changed
   the model it asked for, **Reserved up to** while it works, and when it

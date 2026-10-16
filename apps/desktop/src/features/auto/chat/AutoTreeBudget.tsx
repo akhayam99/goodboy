@@ -16,8 +16,9 @@ const shareOf = ({ part, whole }: ShareParams): number =>
   whole <= 0 ? 0 : Math.min(100, Math.max(0, (part / whole) * 100));
 
 export const AutoTreeBudget = ({ facts, limitControl }: Props) => {
-  const spent = shareOf({ part: facts.spentUsd, whole: facts.capUsd });
-  const reserved = shareOf({ part: facts.reservedUsd, whole: facts.capUsd });
+  const whole = facts.capUsd ?? 0;
+  const spent = shareOf({ part: facts.spentUsd, whole });
+  const reserved = shareOf({ part: facts.reservedUsd, whole });
   return (
     <section aria-label="Tree budget" className="flex shrink-0 flex-col gap-2 px-4 pb-4 pt-3">
       <div className="flex items-center justify-between gap-2">
@@ -28,18 +29,20 @@ export const AutoTreeBudget = ({ facts, limitControl }: Props) => {
           </span>
         )}
       </div>
-      <div
-        role="img"
-        aria-label={`Spent ${formatUsd(facts.spentUsd)}, reserved ${formatUsd(facts.reservedUsd)}, left ${formatUsd(facts.remainingUsd)}`}
-        className="flex h-1.5 overflow-hidden rounded-full bg-idle"
-      >
-        <span className="h-full bg-primary" style={{ width: `${spent}%` }} />
-        <span className="h-full bg-primary opacity-40" style={{ width: `${reserved}%` }} />
-      </div>
+      {facts.remainingUsd === null ? null : (
+        <div
+          role="img"
+          aria-label={`Spent ${formatUsd(facts.spentUsd)}, reserved ${formatUsd(facts.reservedUsd)}, left ${formatUsd(facts.remainingUsd)}`}
+          className="flex h-1.5 overflow-hidden rounded-full bg-idle"
+        >
+          <span className="h-full bg-primary" style={{ width: `${spent}%` }} />
+          <span className="h-full bg-primary opacity-40" style={{ width: `${reserved}%` }} />
+        </div>
+      )}
       <div className="flex items-center justify-between gap-2 text-meta tabular-nums text-muted-foreground">
         <span>Spent {formatUsd(facts.spentUsd)}</span>
         <span>Reserved {formatUsd(facts.reservedUsd)}</span>
-        <span>Left {formatUsd(facts.remainingUsd)}</span>
+        {facts.remainingUsd === null ? null : <span>Left {formatUsd(facts.remainingUsd)}</span>}
       </div>
       {facts.hasEstimate ? (
         <p className="text-meta text-faint-foreground">Some costs are estimated.</p>

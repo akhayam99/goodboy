@@ -131,7 +131,7 @@ describe('treeSpend', () => {
       }),
     );
     expect(next.kind === 'accepted' ? next.receipt.delegations[0]?.ceilingUsd : null).toBe(
-      Math.min(3, facts.remainingUsd),
+      Math.min(3, facts.remainingUsd ?? Number.POSITIVE_INFINITY),
     );
   });
 

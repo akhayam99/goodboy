@@ -39,7 +39,7 @@ export type AutoTree = Readonly<{
   activeDeliveryId: string | null;
   isYieldRequested: boolean;
   stopState: AutoStopState;
-  capUsd: number;
+  capUsd: number | null;
   turnsUsed: number;
   delegationsUsed: number;
   attemptsUsed: number;
@@ -68,7 +68,7 @@ type TreeRow = {
   readonly active_delivery_id: string | null;
   readonly is_yield_requested: number;
   readonly stop_state: string;
-  readonly cap_usd: number;
+  readonly cap_usd: number | null;
   readonly turns_used: number;
   readonly delegations_used: number;
   readonly attempts_used: number;
@@ -513,14 +513,14 @@ export const recordAutoRefusal = async ({
 type SetAutoTreeCapParams = {
   readonly db: Database;
   readonly treeId: AutoTreeId;
-  readonly expectedCapUsd: number;
-  readonly capUsd: number;
+  readonly expectedCapUsd: number | null;
+  readonly capUsd: number | null;
   readonly nowMs: number;
 };
 
 export type SetAutoTreeCapOutcome =
   | Readonly<{ kind: 'applied' }>
-  | Readonly<{ kind: 'stale'; capUsd: number }>
+  | Readonly<{ kind: 'stale'; capUsd: number | null }>
   | Readonly<{ kind: 'below_used'; usedUsd: number }>
   | Readonly<{ kind: 'missing' }>;
 
@@ -534,8 +534,8 @@ export const setAutoTreeCapIfUnchanged = async ({
   const usedSql = `${autoSettledUsdSql({ treeRef: 'auto_trees.id' })} + ${autoReservedUsdSql({ treeRef: 'auto_trees.id' })}`;
   const result = await db.execute(
     `UPDATE auto_trees SET cap_usd = ?, updated_at = ?
-     WHERE id = ? AND cap_usd IS ? AND ? + ${AUTO_USD_EPSILON} >= ${usedSql}`,
-    [capUsd, nowMs, treeId, expectedCapUsd, capUsd],
+     WHERE id = ? AND cap_usd IS ? AND (? IS NULL OR ? + ${AUTO_USD_EPSILON} >= ${usedSql})`,
+    [capUsd, nowMs, treeId, expectedCapUsd, capUsd, capUsd],
   );
   if (result.rowsAffected === 1) {
     return { kind: 'applied' };

@@ -13,8 +13,8 @@ type Params = {
 };
 
 type SaveParams = {
-  readonly expectedCapUsd: number;
-  readonly capUsd: number;
+  readonly expectedCapUsd: number | null;
+  readonly capUsd: number | null;
 };
 
 export type AutoTreeCapSave = (params: SaveParams) => Promise<string | null>;

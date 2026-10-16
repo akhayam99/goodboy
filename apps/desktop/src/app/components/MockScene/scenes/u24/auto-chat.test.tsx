@@ -6,7 +6,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -53,6 +53,7 @@ describe('the Auto chat scenes', () => {
       'auto-chat-confirm',
       'auto-chat-delegating',
       'auto-chat-done',
+      'auto-chat-nocap',
       'auto-chat-plan',
       'auto-chat-revising',
       'auto-chat-working',
@@ -120,6 +121,37 @@ describe('the Auto chat scenes', () => {
     expect(within(budget).getByText('Spent $0.27')).toBeDefined();
     expect(within(budget).getByText('Reserved $4.50')).toBeDefined();
     expect(within(budget).getByText('Left $5.23')).toBeDefined();
+  });
+
+  it('auto-chat-working opens the limit popover from the rail foot', async () => {
+    mount({ id: 'auto-chat-working' });
+
+    await screen.findByRole('article', { name: 'Implementer delegation' }, WAIT);
+    const budget = within(rail()).getByRole('region', { name: 'Tree budget' });
+    fireEvent.click(within(budget).getByRole('button', { name: 'Limit $10.00' }));
+
+    const popover = screen.getByRole('dialog', { name: 'Limit for this conversation' });
+    expect(within(popover).getByRole('button', { name: '$10' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    fireEvent.click(within(popover).getByRole('button', { name: 'Custom' }));
+    fireEvent.change(within(popover).getByLabelText('Custom limit in dollars'), {
+      target: { value: '4' },
+    });
+    expect(
+      within(popover).getByText('The limit must cover spent and reserved usage.'),
+    ).toBeDefined();
+  });
+
+  it('auto-chat-nocap reads No cap in the foot with spent and reserved and no left', async () => {
+    mount({ id: 'auto-chat-nocap' });
+
+    await screen.findByRole('article', { name: 'Implementer delegation' }, WAIT);
+    const budget = within(rail()).getByRole('region', { name: 'Tree budget' });
+    expect(within(budget).getByRole('button', { name: 'No cap' })).toBeDefined();
+    expect(within(budget).getByText('Spent $0.27')).toBeDefined();
+    expect(within(budget).getByText('Reserved $4.50')).toBeDefined();
+    expect(within(budget).queryByText(/^Left/)).toBeNull();
   });
 
   it('auto-chat-revising shows the revision on the same Planner', async () => {

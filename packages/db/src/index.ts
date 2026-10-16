@@ -739,6 +739,7 @@ export {
 export {
   AUTO_RESERVATION_OWNER_KINDS,
   AUTO_USD_EPSILON,
+  autoBudgetCoversSql,
   autoRemainingUsdSql,
   autoReservedUsdSql,
   autoSettledUsdSql,

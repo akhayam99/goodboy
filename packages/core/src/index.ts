@@ -169,6 +169,7 @@ export {
   autoBudgetLabel,
   autoBudgetPromptLine,
   autoBudgetUsedUsd,
+  autoRemainingForGates,
   capTextOf,
   type AutoBudgetFacts,
 } from './auto/budget';

@@ -199,4 +199,22 @@ describe('the budget cap changes only from the value that was seen', () => {
     );
     expect(retried.kind).toBe('accepted');
   });
+
+  it('admits a child with nothing left under the old cap once the cap is removed', async () => {
+    const world = await makeAutoWorld({ capUsd: 0 });
+    await setAutoTreeCapIfUnchanged({
+      db: world.db,
+      treeId: WORLD_TREE,
+      expectedCapUsd: 0,
+      capUsd: null,
+      nowMs: world.clock.now(),
+    });
+    const admitted = await world.scheduler.admit(
+      batchInput({ children: [childInput({ key: 'a', role: 'implementer' })] }),
+    );
+    expect(admitted.kind).toBe('accepted');
+    expect(admitted.kind === 'accepted' ? admitted.receipt.delegations[0]?.ceilingUsd : null).toBe(
+      3,
+    );
+  });
 });
