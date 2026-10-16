@@ -106,7 +106,10 @@ const renderPicked = (candidates: ReadonlyArray<IssueCandidate> = [CANDIDATE]) =
   return { onRemove, onAddAnother };
 };
 
-const useAgent = () => fireEvent.click(screen.getByRole('tab', { name: 'Ask an agent' }));
+const useAgent = () => {
+  fireEvent.click(screen.getByRole('button', { name: /^Runs as:/ }));
+  fireEvent.click(screen.getByRole('menuitemradio', { name: 'Ask an agent' }));
+};
 
 beforeAll(async () => {
   useAppStore = await importStore();
@@ -135,12 +138,12 @@ describe('PickedIssue', () => {
   it('shows one block right after the pick, with the issue text and no gate', () => {
     renderPicked();
 
-    expect(screen.getByRole('region', { name: 'Brief from HBL-412' })).toBeDefined();
+    expect(screen.getByRole('region', { name: 'Brief' })).toBeDefined();
     expect(screen.getByRole('textbox', { name: 'Brief title' })).toHaveProperty(
       'value',
       CANDIDATE.title,
     );
-    expect(screen.getByRole('tablist', { name: 'How to work on it' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Runs as: Orchestrate' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Use brief' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
   });
@@ -260,7 +263,7 @@ describe('PickedIssue', () => {
     expect(within(list).getAllByText('Names the branch')).toHaveLength(1);
     const [firstRow] = within(list).getAllByRole('listitem');
     expect(firstRow?.textContent).toContain('Names the branch');
-    expect(screen.getByRole('region', { name: 'Brief from HBL-412 and 2 more' })).toBeDefined();
+    expect(screen.getByRole('region', { name: 'Brief' })).toBeDefined();
 
     fireEvent.click(screen.getByRole('button', { name: 'Remove HBL-413' }));
     expect(onRemove).toHaveBeenCalledWith({ key: 'linear:issue-413' });

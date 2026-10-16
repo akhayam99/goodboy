@@ -11,7 +11,14 @@ import { InboxStudioLayout } from '../../../../../../features/inbox/components/I
 import { TaskGroupRows } from '../../../../../../features/inbox/components/InboxStudio/TaskGroupRows';
 import { integrationLabel } from '../../../../../../features/integrations/components/IntegrationGlyph';
 import { isForMeRecord } from '../../../../../../features/inbox/isForMeRecord';
-import { NO_INBOX_FILTERS, inboxFacetCounts } from '../../../../../../features/inbox/kindFilter';
+import {
+  NO_INBOX_FILTERS,
+  filterInboxRecords,
+  inboxFacetCounts,
+} from '../../../../../../features/inbox/kindFilter';
+import { openCountWord } from '../../../../../../features/inbox/openCountWord';
+import { taskGroupTotalsOf } from '../../../../../../features/inbox/taskGroupTotalsOf';
+import { NAMES } from '../../../../../../shared/names';
 import { sourceFailureLine } from '../../../../../../features/inbox/sourceFailureLine';
 import { taskGroupsOf, type TaskGroupBy } from '../../../../../../features/inbox/taskGroups';
 import type { TaskScope } from '../../../../../../features/inbox/taskListViewStorage';
@@ -22,6 +29,7 @@ import {
 } from '../../../../../../features/inbox/types';
 import { seedBoardScene } from '../../BoardScene';
 import { StudioFrame } from '../../StudioFrame';
+import { StudioFrame as AppStudioFrame } from '../../../../StudioFrame';
 import { seedStudioChrome } from '../../shellChrome';
 
 const noop = () => undefined;
@@ -89,14 +97,22 @@ export const TasksStage = ({
     scope === 'all'
       ? records
       : records.filter((record) => isForMeRecord({ record, isStarred: isStarred(record) }));
-  const starred = inScope.filter(isStarred);
-  const groups = taskGroupsOf({
-    records: inScope.filter((record) => !isStarred(record)),
-    groupBy,
-    projectNames: Object.fromEntries(
-      projects.map((project) => [project.id, project.name] as const),
-    ),
+  const projectNames = Object.fromEntries(
+    projects.map((project) => [project.id, project.name] as const),
+  );
+  const matching = filterInboxRecords({
+    records: inScope,
+    query,
+    filters: NO_INBOX_FILTERS,
+    isStarred,
   });
+  const starred = matching.filter(isStarred);
+  const groups = taskGroupsOf({
+    records: matching.filter((record) => !isStarred(record)),
+    groupBy,
+    projectNames,
+  });
+  const totals = taskGroupTotalsOf({ records: matching, groupBy, projectNames });
   const failing = INBOX_PROVIDERS.filter((provider) => failures[provider] !== undefined);
   const lineOf = (provider: InboxProvider) => ({
     key: provider,
@@ -104,7 +120,7 @@ export const TasksStage = ({
       name: integrationLabel({ provider }),
       message: failures[provider] ?? '',
     }),
-    onClick: noop,
+    onRetry: noop,
   });
   const handlers = {
     selectedKey,
@@ -144,7 +160,8 @@ export const TasksStage = ({
   const list = (
     <PaneShell
       scroll="body"
-      title={`${inScope.filter((record) => record.state !== 'done').length.toLocaleString('en-US')} open`}
+      title={NAMES.tasks}
+      meta={openCountWord({ records: inScope })}
       actions={
         <InboxListHeader
           query={query}
@@ -201,6 +218,7 @@ export const TasksStage = ({
               key={group.key}
               label={group.label}
               records={group.records}
+              total={totals.get(group.key) ?? group.records.length}
               isExpanded={groupBy === 'none' || expandedKey === group.key}
               canCollapse={groupBy !== 'none'}
               lines={failed === undefined ? [] : [lineOf(failed)]}
@@ -217,15 +235,17 @@ export const TasksStage = ({
     <StudioFrame
       target={{ place: 'inbox', tool: null }}
       main={
-        <StudioShell
-          icon={CONCEPT_ICONS.inbox}
-          tone={CONCEPT_TONE.inbox}
-          title="Tasks"
-          closeLabel="Close tasks"
-          onClose={noop}
-        >
-          {() => <InboxStudioLayout main={page} drawer={drawer} />}
-        </StudioShell>
+        <AppStudioFrame kind="inbox" placement="content" onClose={noop}>
+          <StudioShell
+            icon={CONCEPT_ICONS.inbox}
+            tone={CONCEPT_TONE.inbox}
+            title={NAMES.tasks}
+            closeLabel="Close tasks"
+            onClose={noop}
+          >
+            {() => <InboxStudioLayout main={page} drawer={drawer} />}
+          </StudioShell>
+        </AppStudioFrame>
       }
     />
   );

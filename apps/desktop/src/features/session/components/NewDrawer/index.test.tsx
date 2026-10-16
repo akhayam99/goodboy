@@ -170,7 +170,7 @@ describe('NewDrawer (shell)', () => {
 
   it('follows a later entry while open', () => {
     const view = openDrawer({ payload: { form: 'wireframe' } });
-    expect(screen.getByRole('region', { name: 'Wireframe' })).toBeDefined();
+    expect(screen.getByRole('region', { name: 'Draw a wireframe' })).toBeDefined();
 
     view.rerender(drawerWith({ payload: { form: 'run' } }));
     expect(screen.getByRole('region', { name: 'Run a workflow' })).toBeDefined();
@@ -221,7 +221,7 @@ describe('NewDrawer (Run)', () => {
     const footer = elementOf(document.querySelector('[data-slot="form-actions"]'));
     expect(within(footer).getByRole('button', { name: /^Autonomy:/ })).toBeDefined();
     expect(within(footer).getByRole('button', { name: /^Starts:/ })).toBeDefined();
-    expect(within(footer).getByRole('button', { name: /^Spend cap:/ })).toBeDefined();
+    expect(within(footer).getByRole('button', { name: /^Limit:/ })).toBeDefined();
     expect(
       buttonOf(within(footer).getByRole('button', { name: 'Start orchestration' })).disabled,
     ).toBe(true);
@@ -267,23 +267,33 @@ describe('NewDrawer (Run)', () => {
 });
 
 describe('NewDrawer (Agent)', () => {
-  it('is the agent start of today, with Generalist picked and no message field', () => {
+  it('is the one agent form: a goal, Role and Model, with Generalist picked', () => {
     openDrawer({ payload: { form: 'agent' } });
 
+    expect(screen.getByRole('region', { name: 'Ask an agent' })).toBeDefined();
     expect(screen.getByText('One agent in the role you pick.')).toBeDefined();
-    expect(screen.getByText('Generalist')).toBeDefined();
-    expect(screen.getByText('Routing')).toBeDefined();
-    expect(screen.getByText('You write the first message in its chat.')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Open Generalist' })).toBeDefined();
-    expect(screen.queryByRole('textbox')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Role: Generalist' })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^Model:/ })).toBeDefined();
+    expect(screen.queryByText('Routing')).toBeNull();
+    expect(screen.getByText('With no goal you write the first message in its chat.')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Start Generalist' })).toBeDefined();
+    expect(screen.getByRole('textbox', { name: 'Agent instructions' })).toBeDefined();
     expect(screen.queryByText('Start Auto')).toBeNull();
     expect(screen.queryByRole('button', { name: /^add guidance/i })).toBeNull();
   });
 
   it('keeps the hidden roles out of the picker', () => {
     openDrawer({ payload: { form: 'agent' } });
+    fireEvent.click(screen.getByRole('button', { name: /^Role:/ }));
 
-    for (const hidden of ['Reviewer', 'Resolver', 'Rewriter', 'Scribe', 'Report', 'Wireframe']) {
+    for (const hidden of [
+      'PR reviewer',
+      'Resolver',
+      'History rewriter',
+      'Scribe',
+      'Report',
+      'Wireframe',
+    ]) {
       expect(screen.queryByRole('button', { name: hidden })).toBeNull();
     }
     expect(screen.getByRole('button', { name: 'Docs' })).toBeDefined();
@@ -293,9 +303,10 @@ describe('NewDrawer (Agent)', () => {
   it('opens the picked role in its chat, on the same routing the popover gave', async () => {
     const onClose = vi.fn();
     openDrawer({ payload: { form: 'agent' }, onClose });
+    fireEvent.click(screen.getByRole('button', { name: /^Role:/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Scout' }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open Scout' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start Scout' }));
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
     expect(spawnAgent).toHaveBeenCalledWith(
@@ -305,10 +316,10 @@ describe('NewDrawer (Agent)', () => {
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
   });
 
-  it('offers the Suggested routing when Routing opens', () => {
+  it('offers the Suggested routing when Model opens', () => {
     openDrawer({ payload: { form: 'agent' } });
 
-    fireEvent.click(screen.getByRole('button', { name: /^Agent routing:/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Model:/ }));
 
     expect(screen.getByText('Suggested')).toBeDefined();
   });
@@ -318,7 +329,7 @@ describe('NewDrawer (Agent)', () => {
     const onClose = vi.fn();
     openDrawer({ payload: { form: 'agent' }, onClose });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open Generalist' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start Generalist' }));
 
     expect((await screen.findByRole('alert')).textContent).toContain('provider offline');
     expect(onClose).not.toHaveBeenCalled();
@@ -332,10 +343,10 @@ describe('NewDrawer (Start Auto)', () => {
     expect(
       screen.getByText('Auto answers, or hands the work to the roles it picks.'),
     ).toBeDefined();
-    expect(screen.queryByText('Experimental')).toBeNull();
+    expect(screen.getByText('Experimental')).toBeDefined();
     expect(screen.queryByText('It may not work well yet.')).toBeNull();
     expect(screen.getByRole('textbox', { name: 'Describe the work' })).toBeDefined();
-    expect(screen.getAllByRole('button', { name: /^Auto model/ })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: /^Model:/ })).toHaveLength(1);
     expect(screen.queryByRole('button', { name: 'Generalist' })).toBeNull();
     expect(screen.queryByText('Routing')).toBeNull();
     expect(screen.queryByRole('button', { name: /^add guidance/i })).toBeNull();
@@ -350,9 +361,8 @@ describe('NewDrawer (Start Auto)', () => {
     });
 
     expect(buttonOf(screen.getByRole('button', { name: 'Start Auto' })).disabled).toBe(true);
-    expect(
-      screen.getByText('Auto needs a connected provider. Connect one in Providers.'),
-    ).toBeDefined();
+    expect(screen.getByText(/Auto needs a connected provider/)).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Connect one in Providers' })).toBeDefined();
   });
 
   it('says no provider is connected when only the opencode family is', () => {
@@ -370,9 +380,8 @@ describe('NewDrawer (Start Auto)', () => {
     });
 
     expect(buttonOf(screen.getByRole('button', { name: 'Start Auto' })).disabled).toBe(true);
-    expect(
-      screen.getByText('Auto needs a connected provider. Connect one in Providers.'),
-    ).toBeDefined();
+    expect(screen.getByText(/Auto needs a connected provider/)).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Connect one in Providers' })).toBeDefined();
   });
 
   it('keeps the workspace default provider for Auto', async () => {
@@ -417,8 +426,8 @@ describe('NewDrawer (Start Auto)', () => {
     view.unmount();
 
     openDrawer({ payload: { form: 'agent' } });
-    expect(screen.queryByRole('textbox')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Open Generalist' })).toBeDefined();
+    expect(screen.queryByRole('textbox', { name: 'Describe the work' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Start Generalist' })).toBeDefined();
     cleanup();
     openDrawer({ payload: { form: 'auto' } });
 
@@ -484,10 +493,11 @@ describe('NewDrawer (Write)', () => {
   it('writes a report with every field the page had, and no format tabs', () => {
     openDrawer({ payload: { form: 'report' } });
 
-    expect(screen.getByText('A report written from this session.')).toBeDefined();
+    expect(screen.getByRole('region', { name: 'Write a report' })).toBeDefined();
+    expect(screen.queryByText('A report written from this session.')).toBeNull();
     expect(screen.queryByRole('tablist', { name: 'Write format' })).toBeNull();
     expect(screen.getByTestId('artifact-brief')).toBeDefined();
-    expect(screen.getByText('Included context')).toBeDefined();
+    expect(screen.getByText('Context')).toBeDefined();
     expect(screen.queryByRole('button', { name: /^add guidance/i })).toBeNull();
   });
 
@@ -496,7 +506,7 @@ describe('NewDrawer (Write)', () => {
     fireEvent.change(screen.getByTestId('artifact-brief'), { target: { value: 'the rounding' } });
 
     view.rerender(drawerWith({ payload: { form: 'wireframe' } }));
-    expect(screen.getByText('A wireframe drawn from this session.')).toBeDefined();
+    expect(screen.getByRole('region', { name: 'Draw a wireframe' })).toBeDefined();
     view.rerender(drawerWith({ payload: { form: 'report' } }));
 
     expect(textAreaOf(screen.getByTestId('artifact-brief')).value).toBe('the rounding');

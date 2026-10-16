@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { Button, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
-import type { ProjectId, Session, WorkspaceId } from '@goodboy/types';
+import { Button } from '@goodboy/ui';
+import type { Session, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type {
   SessionDraftMount,
   SessionDraftStart,
   SessionDraftThen,
 } from '../../../../store/slices/sessionDraft/startSessionFromDraft';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { draftIssueKey } from '../../../../store/slices/sessionDraft/draftIssueKey';
 import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
@@ -33,14 +32,8 @@ import { useWorkspaceKindRouting } from '../../../../shared/hooks/useWorkspaceKi
 import { PromptField } from '../../../../shared/components/PromptField';
 import { usePromptFiles } from '../../../../shared/hooks/usePromptFiles';
 import { toAttachmentInputs } from '../../../attachments/pendingAttachment';
-
-type How = 'workflow' | 'orchestrate' | 'agent';
-
-const HOW_OPTIONS: ReadonlyArray<SegmentedTabOption<How>> = [
-  { value: 'workflow', label: 'Run a workflow', icon: CONCEPT_ICONS.workflows },
-  { value: 'orchestrate', label: 'Orchestrate', icon: CONCEPT_ICONS.orchestrator },
-  { value: 'agent', label: 'Ask an agent', icon: CONCEPT_ICONS.explore },
-];
+import { RunsAsChip } from './RunsAsChip';
+import type { RunsAs } from './runsAs';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -53,7 +46,7 @@ type Props = {
 export const HowToWorkOnIt = ({ workspaceId, candidates, title, goal, onGoalChange }: Props) => {
   const first = candidates[0];
   const identifiers = candidates.map((candidate) => candidate.identifier);
-  const [how, setHow] = useState<How>('orchestrate');
+  const [how, setHow] = useState<RunsAs>('orchestrate');
   const text = goal;
   const setText = onGoalChange;
   const [agentKind, setAgentKind] = useState<AgentKind>('implementer');
@@ -128,9 +121,32 @@ export const HowToWorkOnIt = ({ workspaceId, candidates, title, goal, onGoalChan
     ...(draftMount !== null && { mount: draftMount }),
   });
 
+  const projectsBlock = (
+    <div className="flex flex-col gap-2">
+      <KickoffProjects
+        workspaceId={workspaceId}
+        suggestedIds={suggestedId === null ? [] : [suggestedId]}
+        launch={draftMount}
+        isDisabled={isStarting}
+      />
+      {candidates.slice(1).map((candidate) => (
+        <CrossProjectNote
+          key={draftIssueKey({ candidate })}
+          workspaceId={workspaceId}
+          candidate={candidate}
+          projectId={projectId}
+        />
+      ))}
+    </div>
+  );
+
+  const runsAs = <RunsAsChip value={how} isDisabled={isStarting} onChange={setHow} />;
+
   const kickoff: BuilderKickoff = {
     workspaceId,
     lane: 'task',
+    leading: runsAs,
+    projects: projectsBlock,
     goal: text,
     goalPlaceholder: KICKOFF_GOAL_PLACEHOLDER,
     primaryLabel: startLabel,
@@ -161,33 +177,7 @@ export const HowToWorkOnIt = ({ workspaceId, candidates, title, goal, onGoalChan
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <KickoffProjects
-          workspaceId={workspaceId}
-          suggestedIds={suggestedId === null ? [] : [suggestedId]}
-          launch={draftMount}
-          isDisabled={isStarting}
-        />
-        {candidates.slice(1).map((candidate) => (
-          <CrossProjectNote
-            key={draftIssueKey({ candidate })}
-            workspaceId={workspaceId}
-            candidate={candidate}
-            projectId={projectId}
-          />
-        ))}
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="text-label text-muted-foreground">Then:</span>
-          <SegmentedTabs
-            size="sm"
-            ariaLabel="How to work on it"
-            options={HOW_OPTIONS}
-            value={how}
-            onChange={setHow}
-          />
-        </div>
-      </div>
+    <div className="flex flex-col gap-6">
       {how === 'workflow' ? (
         <WorkflowBuilderView
           mode="preset"
@@ -197,9 +187,9 @@ export const HowToWorkOnIt = ({ workspaceId, candidates, title, goal, onGoalChan
       ) : null}
       {how === 'orchestrate' ? <WorkflowBuilderView mode="dynamic" kickoff={kickoff} /> : null}
       {how !== 'agent' ? null : (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-6">
           <PromptField
-            kind="message"
+            kind="document"
             value={text}
             onChange={setText}
             onSubmit={() => void startAgentRun()}
@@ -213,32 +203,36 @@ export const HowToWorkOnIt = ({ workspaceId, candidates, title, goal, onGoalChan
             notice={promptFiles.notice}
             {...(hasProject && { files: promptFiles.files })}
           />
-          <AgentStartFields
-            kinds={kinds}
-            kind={kind}
-            onKindChange={setAgentKind}
-            routing={agentRouting}
-            suggestion={suggestion}
-            connectedProviders={connectedProviders}
-            onRoutingChange={setAgentRouting}
-            projects={[]}
-            projectId={null}
-            onProjectChange={() => undefined}
-          />
+          {projectsBlock}
           <StartFooter
             workspaceId={workspaceId}
+            leading={
+              <>
+                {runsAs}
+                <AgentStartFields
+                  kinds={kinds}
+                  kind={kind}
+                  onKindChange={setAgentKind}
+                  routing={agentRouting}
+                  suggestion={suggestion}
+                  connectedProviders={connectedProviders}
+                  isDisabled={isStarting}
+                  onRoutingChange={setAgentRouting}
+                />
+              </>
+            }
             note={trimmed === '' ? 'Write the goal first.' : null}
             error={error}
             isStarting={isStarting}
           >
             <Button
-              size="sm"
+              size="md"
               disabled={trimmed === '' || isStarting}
               isBusy={isStarting}
               busyLabel={NAMES.starting}
               onClick={() => void startAgentRun()}
             >
-              {startLabel}
+              {error === null ? startLabel : NAMES.retry}
             </Button>
           </StartFooter>
         </div>

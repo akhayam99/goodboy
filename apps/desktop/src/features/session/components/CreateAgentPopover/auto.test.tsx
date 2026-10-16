@@ -109,7 +109,7 @@ const mount = ({ isReleased }: MountParams): void => {
 describe('Start agent with Auto always available', () => {
   const expectRoles = async (): Promise<void> => {
     fireEvent.click(screen.getByRole('button', { name: 'Start agent' }));
-    expect(await screen.findByRole('button', { name: 'Open Generalist' })).toBeDefined();
+    expect(await screen.findByRole('button', { name: 'Start Generalist' })).toBeDefined();
     expect(screen.queryByRole('textbox', { name: 'Describe the work' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Start Auto' })).toBeNull();
   };
@@ -118,7 +118,7 @@ describe('Start agent with Auto always available', () => {
     mount({ isReleased: true });
     await expectRoles();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open Generalist' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start Generalist' }));
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
     expect(spawnAgent.mock.calls[0]?.[1]).not.toMatchObject({ kindOverride: 'auto' });

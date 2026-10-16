@@ -46,7 +46,7 @@ it. From the top:
   mode's own control on the right of the same row.
 - **Plan**: the steps as a tree that reads top down, step 1 first and **Add step** last.
 - **Launch bar**: when it starts, when to ask (**Ask me** or
-  **Autopilot**), the spend cap or **Save as preset**, and **Start
+  **Autopilot**), the limit or **Save as preset**, and **Start
   workflow**. The reason Start is off shows under it.
 
 The three modes:
@@ -161,7 +161,7 @@ order, each with one line of copy at most.
 
 - **Autonomy**: Ask me, Balanced or Autopilot. The
   hints are the ones the builder shows (`RUN_AUTONOMY_OPTIONS`)
-- **Spend cap**: a switch, the amount per run and what happens at the limit, pause
+- **Limit**: a switch, the amount per run and what happens at the limit, pause
   or warn
 - **Providers**: a row **When a provider is out** with the policy in one line
   ("Claude, Codex · Cursor as backup") and a link, **Open Providers & models**.

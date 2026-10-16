@@ -1,5 +1,5 @@
 import { useId, useState, type ClipboardEvent } from 'react';
-import { GhostActionButton, SectionHeader, cn } from '@goodboy/ui';
+import { GhostActionButton, SectionHeader, cn, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import {
   ARTIFACT_BRIEF_COUNTER_FLOOR,
@@ -7,6 +7,9 @@ import {
   formatBriefCount,
 } from '../../artifactBrief';
 import { PromptField } from '../../../../shared/components/PromptField';
+import type { ArtifactAttachmentsHandle } from './useArtifactAttachments';
+import { ArtifactAttachButton } from './ArtifactAttachButton';
+import { ArtifactAttachmentChip } from './ArtifactAttachmentChip';
 
 type Props = {
   readonly label: string;
@@ -14,14 +17,19 @@ type Props = {
   readonly value: string;
   readonly goal: string;
   readonly isGoalPending: boolean;
-  readonly defaultRequest: string;
+  readonly files: ArtifactAttachmentsHandle;
   readonly onChange: (value: string) => void;
   readonly onSubmit: () => void;
 };
 
 const LIMIT = ARTIFACT_BRIEF_LIMITS.chars;
 
-const withGoal = ({ value, goal }: { readonly value: string; readonly goal: string }): string => {
+type GoalParams = {
+  readonly value: string;
+  readonly goal: string;
+};
+
+const withGoal = ({ value, goal }: GoalParams): string => {
   const trimmed = value.trimEnd();
   return trimmed.length === 0 ? goal : `${trimmed}\n\n${goal}`;
 };
@@ -33,12 +41,12 @@ type GoalTitleParams = Readonly<{
 
 const goalActionTitle = ({ isPending, hasGoal }: GoalTitleParams): string => {
   if (isPending) {
-    return 'the session goal is still loading';
+    return 'The session goal is still loading.';
   }
   if (hasGoal === false) {
-    return 'the session has no goal yet';
+    return 'The session has no goal yet.';
   }
-  return 'add the session goal to the brief';
+  return 'Add the session goal to the brief.';
 };
 
 export const ArtifactBriefField = ({
@@ -47,7 +55,7 @@ export const ArtifactBriefField = ({
   value,
   goal,
   isGoalPending,
-  defaultRequest,
+  files,
   onChange,
   onSubmit,
 }: Props) => {
@@ -64,7 +72,7 @@ export const ArtifactBriefField = ({
     if (pasted.length <= room) {
       return;
     }
-    setClipNote(`Pasted text was cut at ${formatBriefCount({ value: LIMIT })} characters`);
+    setClipNote(`Pasted text was cut at ${formatBriefCount({ value: LIMIT })} characters.`);
   };
 
   return (
@@ -88,35 +96,63 @@ export const ArtifactBriefField = ({
           />
         }
       />
-      <PromptField
-        kind="document"
-        label={label}
-        id={fieldId}
-        minRows={4}
-        maxRows={14}
-        maxLength={LIMIT}
-        value={value}
-        placeholder={placeholder}
-        testId="artifact-brief"
-        hasPreview
-        onPaste={onPaste}
-        onSubmit={onSubmit}
-        keyLabels={{ send: 'create' }}
-        onChange={(next) => {
-          setClipNote(null);
-          onChange(next);
-        }}
-      />
+      <div
+        ref={files.composerRef}
+        data-drop-composer
+        data-testid="artifact-attachments"
+        className={cn(
+          'min-w-0 rounded-lg',
+          files.isDragging && cn('ring-1 ring-primary', tintClasses('primary').bgSoft),
+        )}
+      >
+        <PromptField
+          kind="document"
+          label={label}
+          id={fieldId}
+          minRows={4}
+          maxRows={14}
+          maxLength={LIMIT}
+          value={value}
+          placeholder={placeholder}
+          testId="artifact-brief"
+          hasPreview
+          onPaste={onPaste}
+          onSubmit={onSubmit}
+          keyLabels={{ send: 'start' }}
+          footerStart={
+            <>
+              <ArtifactAttachButton
+                worktree={files.worktree}
+                fileInputRef={files.fileInputRef}
+                onFileInputChange={files.onFileInputChange}
+              />
+              {files.attachments.map((attachment) => (
+                <ArtifactAttachmentChip
+                  key={attachment.id}
+                  attachment={attachment}
+                  worktree={files.worktree}
+                  onRemove={() => files.remove({ id: attachment.id })}
+                  onMissing={() => files.remove({ id: attachment.id })}
+                />
+              ))}
+            </>
+          }
+          onChange={(next) => {
+            setClipNote(null);
+            onChange(next);
+          }}
+        />
+      </div>
       {clipNote === null ? null : (
         <span role="status" className="text-meta text-muted-foreground">
           {clipNote}
         </span>
       )}
-      {value.trim().length === 0 ? (
-        <span className="text-meta leading-relaxed text-muted-foreground">
-          With no brief the agent is asked to: {defaultRequest}
+      {files.note === null ? null : (
+        <span role="status" className="text-meta text-muted-foreground">
+          {files.note}
         </span>
-      ) : null}
+      )}
       {value.length >= ARTIFACT_BRIEF_COUNTER_FLOOR ? (
         <span
           data-testid="artifact-brief-counter"

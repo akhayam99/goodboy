@@ -16,6 +16,7 @@ import { PromptField } from '../../../../shared/components/PromptField';
 import { usePromptFiles } from '../../../../shared/hooks/usePromptFiles';
 import { toAttachmentInputs } from '../../../attachments/pendingAttachment';
 import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
+import { NAMES } from '../../../../shared/names';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -45,11 +46,6 @@ export const AgentStart = ({ workspaceId }: Props) => {
     ),
   );
   const projects = useWorkspaceRepoProjects({ workspaceId });
-  const pickedProjects = useAppStore(
-    useShallow((state) =>
-      draft.projectIds.flatMap((id) => state.projects.filter((project) => project.id === id)),
-    ),
-  );
   useEffect(() => {
     const firstProjectId = projects[0]?.id ?? null;
     if (draft.projectIds.length === 0 && firstProjectId !== null) {
@@ -109,9 +105,9 @@ export const AgentStart = ({ workspaceId }: Props) => {
     isScout && !hasPrompt ? 'Start Scout on the whole project' : `Start ${kindLabel}`;
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-6">
       <PromptField
-        kind="message"
+        kind="document"
         value={draft.agentPrompt}
         onChange={(agentPrompt) => patchSessionDraft({ workspaceId, patch: { agentPrompt } })}
         onSubmit={() => void startAgent()}
@@ -127,42 +123,35 @@ export const AgentStart = ({ workspaceId }: Props) => {
         {...(hasProject && { files: promptFiles.files })}
       />
       <KickoffProjects workspaceId={workspaceId} isDisabled={isStarting} />
-      <div className="flex items-center justify-between gap-2">
-        <AgentStartFields
-          kinds={kinds}
-          kind={kind}
-          onKindChange={(next) => patchSessionDraft({ workspaceId, patch: { agentKind: next } })}
-          routing={draft.agentRouting as AgentStartRouting}
-          suggestion={suggestion}
-          connectedProviders={connectedProviders}
-          onRoutingChange={(next) =>
-            patchSessionDraft({ workspaceId, patch: { agentRouting: next } })
-          }
-          projects={pickedProjects}
-          projectId={draft.projectIds[0] ?? null}
-          onProjectChange={(next) =>
-            patchSessionDraft({
-              workspaceId,
-              patch: { projectIds: [next, ...draft.projectIds.filter((id) => id !== next)] },
-            })
-          }
-        />
-      </div>
       <StartFooter
         workspaceId={workspaceId}
+        leading={
+          <AgentStartFields
+            kinds={kinds}
+            kind={kind}
+            onKindChange={(next) => patchSessionDraft({ workspaceId, patch: { agentKind: next } })}
+            routing={draft.agentRouting as AgentStartRouting}
+            suggestion={suggestion}
+            connectedProviders={connectedProviders}
+            isDisabled={isStarting}
+            onRoutingChange={(next) =>
+              patchSessionDraft({ workspaceId, patch: { agentRouting: next } })
+            }
+          />
+        }
         note={isScout ? 'Scout only reads. It changes nothing.' : null}
         error={error}
         isStarting={isStarting}
       >
         <Button
-          size="sm"
+          size="md"
           disabled={!canStart || isStarting}
           isBusy={isStarting}
           busyLabel={`Starting ${kindLabel}`}
           onClick={() => void startAgent()}
           title={!canStart ? `Write what ${kindLabel} should do` : undefined}
         >
-          {startLabel}
+          {error === null ? startLabel : NAMES.retry}
         </Button>
       </StartFooter>
     </div>

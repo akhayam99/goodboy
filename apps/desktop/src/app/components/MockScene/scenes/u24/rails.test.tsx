@@ -62,7 +62,7 @@ describe('the rail scenes', () => {
 
     await screen.findByRole('button', { name: 'Filter' }, WAIT);
     expect(screen.getByRole('searchbox', { name: 'Search tasks' })).toBeDefined();
-    expect(screen.getByRole('heading', { level: 1, name: /^[\d,]+ open$/ })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 1, name: 'Tasks' })).toBeDefined();
     expect(screen.queryByRole('complementary', { name: 'Task filters' })).toBeNull();
   });
 

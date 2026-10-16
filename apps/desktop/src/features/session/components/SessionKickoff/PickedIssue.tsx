@@ -1,4 +1,3 @@
-import { Button } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectIssueBrief } from '../../../../store/slices/issue-briefs/selectIssueBrief';
@@ -46,16 +45,13 @@ export const PickedIssue = ({ workspaceId, candidates, onRemove, onAddAnother }:
             );
           })}
         </ul>
-        <div className="flex px-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground"
-            onClick={onAddAnother}
-          >
-            Add another issue
-          </Button>
-        </div>
+        <button
+          type="button"
+          onClick={onAddAnother}
+          className="flex min-h-7 self-start items-center text-label text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Add another issue
+        </button>
       </div>
       <IssueBriefProposal
         sources={sources}

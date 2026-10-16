@@ -188,7 +188,8 @@ const NewDrawerScene = ({ state }: Props) => {
 };
 
 export const U24_NEW_DRAWER_SCENES = {
-  'new-drawer-run': () => <NewDrawerScene state={{ form: 'orchestrate', width: 1440 }} />,
+  'new-drawer-run': () => <NewDrawerScene state={{ form: 'run', isPreset: true, width: 1440 }} />,
+  'new-drawer-orchestrate': () => <NewDrawerScene state={{ form: 'orchestrate', width: 1440 }} />,
   'new-drawer-run-guidance': () => (
     <NewDrawerScene state={{ form: 'orchestrate', hasGuidance: true, width: 1440 }} />
   ),

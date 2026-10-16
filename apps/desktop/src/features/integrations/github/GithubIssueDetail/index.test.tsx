@@ -92,7 +92,7 @@ describe('GithubIssueDetail', () => {
     render(<GithubIssueDetail issue={ISSUE} editContext={EDIT_CONTEXT} />);
     expect(await screen.findByText('Blocked on the migration.')).toBeDefined();
 
-    fireEvent.change(screen.getByRole('textbox', { name: 'Write a comment' }), {
+    fireEvent.change(screen.getByRole('textbox', { name: 'Reply on GitHub' }), {
       target: { value: 'On it.' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));

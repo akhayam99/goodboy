@@ -215,7 +215,7 @@ describe('GitlabIssueDetail', () => {
     render(<GitlabIssueDetail issue={ISSUE} workspaceId={WORKSPACE_ID} />);
     await waitFor(() => expect(listDiscussions).toHaveBeenCalledOnce());
 
-    fireEvent.change(screen.getByRole('textbox', { name: 'Start a new thread' }), {
+    fireEvent.change(screen.getByRole('textbox', { name: 'Reply on GitLab' }), {
       target: { value: 'Reproduced on main' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));

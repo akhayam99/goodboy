@@ -67,7 +67,7 @@ describe('WorkflowBuilderView, Use session goal', () => {
       </ToastProvider>,
     );
 
-    expect(screen.getByRole('button', { name: /use session goal/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /use the session goal/i })).toBeDefined();
   });
 
   it('is not offered on the New session page', () => {
@@ -87,6 +87,6 @@ describe('WorkflowBuilderView, Use session goal', () => {
     );
 
     expect(screen.getByRole('textbox', { name: 'Goal' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: /use session goal/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /use the session goal/i })).toBeNull();
   });
 });

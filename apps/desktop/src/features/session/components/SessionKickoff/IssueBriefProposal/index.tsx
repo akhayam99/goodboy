@@ -3,10 +3,8 @@ import type {
   IssueBriefEntry,
   IssueBriefSource,
 } from '../../../../../store/slices/issue-briefs/types';
-import { briefFromIssuesLabel } from '../../../../../shared/lib/startCopy';
 import { BriefFailed } from './BriefFailed';
 import { BriefHeader } from './BriefHeader';
-import { BriefMeta } from './BriefMeta';
 
 type Props = {
   readonly sources: ReadonlyArray<IssueBriefSource>;
@@ -19,6 +17,8 @@ type Props = {
   readonly onUseIssueText: () => void;
   readonly onRetry: () => void;
 };
+
+const BRIEF_LABEL = 'Brief';
 
 export const IssueBriefProposal = ({
   sources,
@@ -35,7 +35,7 @@ export const IssueBriefProposal = ({
   if (source === undefined) {
     return null;
   }
-  const label = briefFromIssuesLabel({ identifiers: sources.map((entry) => entry.identifier) });
+  const label = BRIEF_LABEL;
   return (
     <section
       aria-label={label}
@@ -43,7 +43,6 @@ export const IssueBriefProposal = ({
       className="flex flex-col gap-2 rounded-md border border-border-soft bg-subtle p-3"
     >
       <BriefHeader
-        source={source}
         label={label}
         trailing={
           <>
@@ -51,13 +50,6 @@ export const IssueBriefProposal = ({
               <span role="status" className="shrink-0 text-meta text-shimmer">
                 Writing a brief
               </span>
-            )}
-            {entry?.status === 'ready' && (
-              <BriefMeta
-                route={entry.route}
-                durationMs={entry.durationMs}
-                costUsd={entry.costUsd}
-              />
             )}
             {hasBrief && isBriefShown && (
               <Button variant="ghost" size="sm" onClick={onUseIssueText}>
@@ -86,9 +78,6 @@ export const IssueBriefProposal = ({
           A brief needs a free model, so this is the {source.noun} text as it is.
         </p>
       )}
-      <p className="text-meta text-faint-foreground">
-        The full {source.noun} stays linked to this session.
-      </p>
     </section>
   );
 };

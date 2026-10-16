@@ -129,6 +129,7 @@ export const RecordHeader = ({
       <RecordFrameContext.Provider value={frame}>
         {facts ?? <RecordProperties facts={NO_FACTS} />}
       </RecordFrameContext.Provider>
+      {frame?.link == null ? null : <div className="flex min-w-0">{frame.link}</div>}
       <RecordActions
         primary={null}
         secondary={verbs.secondary}

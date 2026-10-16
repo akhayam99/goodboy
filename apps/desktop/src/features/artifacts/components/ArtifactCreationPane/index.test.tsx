@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { FormPage } from '@goodboy/ui';
 
 const {
@@ -180,20 +180,25 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+const openContext = () => {
+  fireEvent.click(screen.getByText('Context'));
+};
+
 describe('ArtifactCreationPane', () => {
   it('opens with the report defaults and no agent spawned', () => {
     renderPane();
     screen.getByTestId('artifact-creation-pane');
-    expect(
-      screen.getByRole('option', { name: /Session summary/ }).getAttribute('aria-selected'),
-    ).toBe('true');
+    expect(screen.getByRole('tab', { name: /Session summary/ }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
     expect(state.spawnReportAgent).not.toHaveBeenCalled();
   });
 
-  it('shows the default request under an empty brief and hides it once typed', () => {
+  it('says in the placeholder what an empty brief does, with no paragraph under it', () => {
     renderPane();
-    screen.getByText(/With no brief the agent is asked to/);
-    fireEvent.change(screen.getByTestId('artifact-brief'), { target: { value: 'the rounding' } });
+    expect(screen.getByTestId('artifact-brief').getAttribute('placeholder')).toBe(
+      'What should this report explain? Leave it empty for a session summary.',
+    );
     expect(screen.queryByText(/With no brief the agent is asked to/)).toBeNull();
   });
 
@@ -227,7 +232,7 @@ describe('ArtifactCreationPane', () => {
     const pending = screen.getByRole('button', { name: 'Use the session goal' });
     expect(pending.hasAttribute('disabled')).toBe(true);
     expect(pending.getAttribute('title')).toBeNull();
-    expect(tooltipTextOf({ element: pending })).toBe('the session goal is still loading');
+    expect(tooltipTextOf({ element: pending })).toBe('The session goal is still loading.');
     fireEvent.click(pending);
     expect((screen.getByTestId('artifact-brief') as HTMLTextAreaElement).value).toBe('');
 
@@ -281,25 +286,21 @@ describe('ArtifactCreationPane', () => {
 
   it('spends one line on the hint of the choice the user is on, beside no other', () => {
     renderPane();
-    expect(screen.getByRole('option', { name: /Session summary/ }).textContent).toBe(
+    expect(screen.getByRole('tab', { name: /Session summary/ }).textContent).toBe(
       'Session summary',
     );
     const hint = () => screen.getByTestId('artifact-choice-hint').textContent ?? '';
     expect(hint()).toContain('What the session set out to do');
-    fireEvent.click(screen.getByRole('option', { name: /Local change report/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /Local change report/ }));
     expect(hint()).toContain('as a reviewer reads it');
     expect(hint()).not.toContain('What the session set out to do');
   });
 
-  it('keeps the options on one wrapping row instead of a card each', () => {
+  it('draws the options as one switch that hugs its tabs', () => {
     renderPane();
-    const list = screen.getByRole('listbox', { name: 'Report type' });
-    expect(list.className).toContain('flex-wrap');
-    const options = [...list.querySelectorAll('[role="option"]')];
-    expect(options).toHaveLength(2);
-    for (const option of options) {
-      expect(option.className).toContain('w-auto');
-    }
+    const list = screen.getByRole('tablist', { name: 'Report type' });
+    expect(list.className).toContain('self-start');
+    expect(list.querySelectorAll('[role="tab"]')).toHaveLength(2);
   });
 
   it('prefills based on with the run it was opened from', () => {
@@ -319,6 +320,7 @@ describe('ArtifactCreationPane', () => {
     };
     state.phaseTemplates = { [WORKSPACE_ID]: [{ id: 'wf-1', name: 'Ship it', steps: [] }] };
     renderPane({ runs: [{ id: RUN_ID, workflowId: 'wf-1', ordinal: 0 }] });
+    openContext();
     expect(listboxValueOf({ trigger: screen.getByTestId('artifact-based-on') })).toBe(RUN_ID);
   });
 
@@ -338,36 +340,38 @@ describe('ArtifactCreationPane', () => {
       },
     };
     renderPane({ runs: [] });
+    openContext();
     expect(listboxValueOf({ trigger: screen.getByTestId('artifact-based-on') })).toBe('');
   });
 
   it('says the run scope leaves events, checks and the local change session wide', () => {
     state.phaseTemplates = { [WORKSPACE_ID]: [{ id: 'wf-1', name: 'Ship it', steps: [] }] };
     renderPane({ runs: [{ id: RUN_ID, workflowId: 'wf-1', ordinal: 0 }] });
+    expect(
+      screen.queryByText('No project in this session, so no local change evidence.'),
+    ).toBeNull();
+    openContext();
     chooseListboxValue({ trigger: screen.getByTestId('artifact-based-on'), value: RUN_ID });
     screen.getByText(
       'Agents and artifacts come from this run. Session events, checks and the local change are session wide either way.',
     );
-    expect(
-      screen.queryByText('No project in this session, so no local change evidence.'),
-    ).toBeNull();
-    fireEvent.click(screen.getByText('Included context'));
     screen.getByText('No project in this session, so no local change evidence.');
   });
 
-  it('keeps one help line under Based on and the repository line behind Included context', () => {
+  it('folds Read from, Based on and the repository line into one Context disclosure', () => {
     renderPane();
+    expect(screen.queryByTestId('artifact-based-on')).toBeNull();
+    expect(screen.queryByText(/No project in this session/)).toBeNull();
+    openContext();
     const basedOn = screen.getByTestId('artifact-based-on').closest('section');
     expect(basedOn?.querySelectorAll('span.text-meta')).toHaveLength(1);
-    expect(screen.queryByText(/No project in this session/)).toBeNull();
-    fireEvent.click(screen.getByText('Included context'));
     expect(screen.getByText(/No project in this session/)).toBeDefined();
   });
 
   it('lists what the pack carries and what it cuts short', async () => {
     renderPane();
     await settle();
-    fireEvent.click(screen.getByText('Included context'));
+    openContext();
     const labels = screen.getAllByTestId('artifact-context-row').map((row) => row.textContent);
     expect(labels.some((text) => text?.startsWith('Brief'))).toBe(true);
     expect(labels.some((text) => text?.includes('No mounted project'))).toBe(true);
@@ -385,6 +389,7 @@ describe('ArtifactCreationPane', () => {
     fireEvent.change(screen.getByTestId('artifact-brief'), {
       target: { value: 'call out the residual convention' },
     });
+    openContext();
     chooseListboxValue({ trigger: screen.getByTestId('artifact-based-on'), value: RUN_ID });
     fireEvent.click(screen.getByTestId('artifact-generate'));
     await waitFor(() => {
@@ -469,8 +474,12 @@ describe('ArtifactCreationPane', () => {
     expect(onClose).not.toHaveBeenCalled();
     expect(state.clearArtifactDraft).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
+    fireEvent.click(
+      within(screen.getByRole('dialog', { name: 'Discard this brief?' })).getByRole('button', {
+        name: 'Discard',
+      }),
+    );
     expect(state.clearArtifactDraft).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
       kind: 'report',
@@ -539,7 +548,7 @@ describe('ArtifactCreationPane', () => {
     fireEvent.paste(brief, {
       clipboardData: { getData: () => 'y'.repeat(100) },
     });
-    expect(screen.getByRole('status').textContent).toBe('Pasted text was cut at 2,000 characters');
+    expect(screen.getByRole('status').textContent).toBe('Pasted text was cut at 2,000 characters.');
     fireEvent.change(brief, { target: { value: 'x'.repeat(1_991) } });
     expect(screen.queryByRole('status')).toBeNull();
   });
@@ -598,8 +607,12 @@ describe('ArtifactCreationPane', () => {
     await waitFor(() => {
       screen.getByRole('button', { name: 'Remove inbox.png' });
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
+    fireEvent.click(
+      within(screen.getByRole('dialog', { name: 'Discard this brief?' })).getByRole('button', {
+        name: 'Discard',
+      }),
+    );
     await waitFor(() => {
       expect(deleteAttachmentSpy).toHaveBeenCalledWith(
         WORKTREE,
@@ -611,19 +624,21 @@ describe('ArtifactCreationPane', () => {
   it('says nothing can be attached while the session has no worktree', () => {
     state.sessionWorktrees = {};
     renderPane();
-    screen.getByText(/no worktree yet/);
+    expect(screen.getByRole('button', { name: 'Attach files' }).hasAttribute('disabled')).toBe(
+      true,
+    );
   });
 
   it('asks a wireframe what it is drawn for, and offers no target on a report', () => {
     renderPane({ kind: 'wireframe' });
-    screen.getByRole('listbox', { name: 'Target' });
+    screen.getByRole('tablist', { name: 'Target' });
     expect(
-      screen.getByRole('option', { name: /Phone and desktop/ }).getAttribute('aria-selected'),
+      screen.getByRole('tab', { name: /Phone and desktop/ }).getAttribute('aria-selected'),
     ).toBe('true');
-    screen.getByRole('option', { name: /^Desktop/ });
+    screen.getByRole('tab', { name: /^Desktop/ });
     cleanup();
     renderPane();
-    expect(screen.queryByRole('listbox', { name: 'Target' })).toBeNull();
+    expect(screen.queryByRole('tablist', { name: 'Target' })).toBeNull();
   });
 
   it('sends the target the user picked to the wireframe agent', async () => {
@@ -632,7 +647,7 @@ describe('ArtifactCreationPane', () => {
     fireEvent.change(screen.getByTestId('artifact-brief'), {
       target: { value: 'the operator console' },
     });
-    fireEvent.click(screen.getByRole('option', { name: /^Desktop/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /^Desktop/ }));
     fireEvent.click(screen.getByTestId('artifact-generate'));
     await waitFor(() => {
       expect(state.spawnWireframeAgent).toHaveBeenCalledWith({
@@ -686,6 +701,7 @@ describe('ArtifactCreationPane', () => {
     state.sessionPhaseRuns = { [SESSION_ID]: [] };
     state.sessionProjectMounts = { [SESSION_ID]: [WEB] };
     renderPane({ kind: 'wireframe' });
+    openContext();
     const chip = screen.getByRole('option', { name: /web/ });
     expect(chip.getAttribute('aria-selected')).toBe('true');
     expect(chip.textContent).toContain('ak/feat-web');
@@ -713,6 +729,7 @@ describe('ArtifactCreationPane', () => {
     fireEvent.change(screen.getByTestId('artifact-brief'), {
       target: { value: 'the settlement review flow' },
     });
+    openContext();
     fireEvent.click(screen.getByRole('option', { name: /api/ }));
     fireEvent.click(screen.getByTestId('artifact-generate'));
     await waitFor(() => {

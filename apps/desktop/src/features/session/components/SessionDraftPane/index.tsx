@@ -18,6 +18,7 @@ export const SessionDraftPane = ({ workspaceId, isAuto }: Props) => {
         title="New session"
         actions={<SessionDraftActions workspaceId={workspaceId} />}
         headerRhythm="section"
+        width="measure"
         animationClassName="animate-fade-in"
       >
         <SessionKickoff

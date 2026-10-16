@@ -127,14 +127,14 @@ describe('InboxFacetRail', () => {
     expect(onClearFilters).toHaveBeenCalledOnce();
   });
 
-  it('leads with the sources, then shows assigned and starred items, with no key list', () => {
+  it('leads with the sources, then starred items, with no Assigned to me and no key list', () => {
     renderRail();
 
     const groups = within(screen.getByRole('navigation', { name: 'Filter tasks' }))
       .getAllByRole('group')
       .map((group) => group.getAttribute('aria-label'));
     expect(groups.slice(0, 2)).toEqual(['Source', 'Show']);
-    expect(within(section('Show')).getByRole('button', { name: /Assigned to me/ })).toBeDefined();
+    expect(within(section('Show')).queryByRole('button', { name: /Assigned to me/ })).toBeNull();
     expect(within(section('Show')).getByRole('button', { name: /Starred/ })).toBeDefined();
     expect(screen.queryByText('Launch or open session')).toBeNull();
   });

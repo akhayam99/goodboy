@@ -50,6 +50,8 @@ vi.mock('../../../../store', () => {
   };
   const getState = () => ({
     sessions: [session],
+    settings: {},
+    loadSetting: async () => null,
     workspaces: [{ id: session.workspaceId, rootPath: '/tmp/repo', kind: 'repo' }],
     projects: [],
     sessionProjectMounts: {},
@@ -239,10 +241,10 @@ const rememberMode = ({ mode }: RememberModeParams) => {
 };
 
 const goalField = () =>
-  screen.getByPlaceholderText(/what should this workflow accomplish/i) as HTMLTextAreaElement;
+  screen.getByPlaceholderText(/What should this run get done/i) as HTMLTextAreaElement;
 
 const startBtn = () =>
-  screen.getByRole('button', { name: /start (run|orchestration)/i }) as HTMLButtonElement;
+  screen.getByRole('button', { name: /^(start (run|orchestration)|retry)$/i }) as HTMLButtonElement;
 
 const setGoal = () => {
   if (goalField().value.trim().length === 0) {
@@ -250,7 +252,7 @@ const setGoal = () => {
   }
 };
 
-const nameField = () => screen.getByLabelText('Workflow name') as HTMLTextAreaElement;
+const presetChip = () => screen.getByRole('button', { name: /^Preset:/ });
 
 const orchestratorPicker = () => screen.getByRole('group', { name: /orchestrator routing/i });
 
@@ -266,7 +268,7 @@ const pickPreset = (name: RegExp) => {
   fireEvent.click(screen.getByRole('option', { name }));
 };
 
-const openSpendCap = () => openChip(/^spend cap:/i);
+const openSpendCap = () => openChip(/^limit:/i);
 
 const GUIDANCE_TEXT = 'Inspect each result and stop after tests pass.';
 
@@ -319,10 +321,10 @@ describe('WorkflowBuilderView (orchestrate)', () => {
     );
   });
 
-  it('falls back to the default name and still titles the run when the name is cleared', async () => {
+  it('names the run by default and titles it from the goal, with no name field', async () => {
     render(<WorkflowBuilderView mode={currentMode} session={session} onClose={vi.fn()} />);
     setGoal();
-    fireEvent.change(nameField(), { target: { value: '   ' } });
+    expect(screen.queryByLabelText('Workflow name')).toBeNull();
 
     expect(startBtn().disabled).toBe(false);
     fireEvent.click(startBtn());
@@ -374,13 +376,13 @@ describe('WorkflowBuilderView (orchestrate)', () => {
     render(<WorkflowBuilderView mode={currentMode} session={session} onClose={vi.fn()} />);
     setGoal();
     openSpendCap();
-    fireEvent.click(screen.getByRole('switch', { name: /spend cap/i }));
+    fireEvent.click(screen.getByRole('switch', { name: /^limit$/i }));
     fireEvent.change(screen.getByLabelText('Spend cap in dollars'), {
       target: { value: 'not a number' },
     });
 
     expect(startBtn().hasAttribute('disabled')).toBe(true);
-    expect(screen.getByText('Enter a valid spend cap to start')).toBeDefined();
+    expect(screen.getByText('Enter a valid limit to start')).toBeDefined();
   });
 
   it('keeps spend cap collapsed until enabled and carries the amount and outcome', async () => {
@@ -389,7 +391,7 @@ describe('WorkflowBuilderView (orchestrate)', () => {
     openSpendCap();
     expect(screen.queryByLabelText('Spend cap in dollars')).toBeNull();
 
-    fireEvent.click(screen.getByRole('switch', { name: /spend cap/i }));
+    fireEvent.click(screen.getByRole('switch', { name: /^limit$/i }));
     fireEvent.change(screen.getByLabelText('Spend cap in dollars'), { target: { value: '15' } });
     fireEvent.click(screen.getByRole('tab', { name: /Warn only/ }));
     fireEvent.click(startBtn());
@@ -656,7 +658,7 @@ describe('WorkflowBuilderView (orchestrate)', () => {
     );
   });
 
-  it('shows a counter name as the placeholder and keeps a name the user chose', async () => {
+  it('starts on the next free counter name', async () => {
     storeState.phaseTemplates = {
       'ws-1': [
         presetWorkflow('wf-1', 'Orchestrated workflow'),
@@ -665,15 +667,10 @@ describe('WorkflowBuilderView (orchestrate)', () => {
     };
     render(<WorkflowBuilderView mode={currentMode} session={session} onClose={vi.fn()} />);
     setGoal();
-    expect(nameField().value).toBe('');
-    expect(nameField().placeholder).toBe('Orchestrated workflow 2');
-
-    fireEvent.change(nameField(), { target: { value: 'Release hardening' } });
     fireEvent.click(startBtn());
 
     await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
-    expect(mockSavePhaseTemplate.mock.calls[0]![0].name).toBe('Release hardening');
-    expect(mockGenerateWorkflowTitle).not.toHaveBeenCalled();
+    expect(mockSavePhaseTemplate.mock.calls[0]![0].name).toBe('Orchestrated workflow 2');
   });
 });
 
@@ -797,7 +794,7 @@ describe('WorkflowBuilderView (preset)', () => {
       }),
     );
 
-    expect(screen.getByText('Edited from Ship It')).toBeDefined();
+    expect(presetChip().getAttribute('aria-label')).toBe('Preset: Ship It, edited');
     fireEvent.click(startBtn());
     await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
     const saved = mockSavePhaseTemplate.mock.calls[0]![0];
@@ -825,28 +822,13 @@ describe('WorkflowBuilderView (preset)', () => {
       }),
     );
     expect(stepModelButton('Scout').getAttribute('data-flashing')).toBe('true');
-    expect(screen.getByText('Edited from Ship It')).toBeDefined();
+    expect(presetChip().getAttribute('aria-label')).toBe('Preset: Ship It, edited');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
-    expect(screen.queryByText('Edited from Ship It')).toBeNull();
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    fireEvent.click(presetChip());
+    fireEvent.click(screen.getByRole('button', { name: 'Reset to the preset' }));
+    expect(presetChip().getAttribute('aria-label')).toBe('Preset: Ship It');
     expect(screen.queryByText('Edited')).toBeNull();
-  });
-
-  it('forks a renamed preset into its own workflow instead of renaming the preset', async () => {
-    storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-preset-1', 'Ship It')] };
-    render(<WorkflowBuilderView mode={currentMode} session={session} onClose={vi.fn()} />);
-    setGoal();
-    pickPreset(/ship it/i);
-
-    expect(nameField().placeholder).toBe('Ship It');
-    fireEvent.change(nameField(), { target: { value: 'Ship It slowly' } });
-    expect(screen.getByText('Edited from Ship It')).toBeDefined();
-    fireEvent.click(startBtn());
-
-    await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
-    const saved = mockSavePhaseTemplate.mock.calls[0]![0];
-    expect(saved.name).toBe('Ship It slowly');
-    expect(saved.id).not.toBe('wf-preset-1');
   });
 
   it('blocks start on an invalid spend cap with a preset too', () => {
@@ -855,11 +837,11 @@ describe('WorkflowBuilderView (preset)', () => {
     setGoal();
     pickPreset(/ship it/i);
     openSpendCap();
-    fireEvent.click(screen.getByRole('switch', { name: /spend cap/i }));
+    fireEvent.click(screen.getByRole('switch', { name: /^limit$/i }));
     fireEvent.change(screen.getByLabelText('Spend cap in dollars'), { target: { value: 'x' } });
 
     expect(startBtn().disabled).toBe(true);
-    expect(screen.getByText('Enter a valid spend cap to start')).toBeDefined();
+    expect(screen.getByText('Enter a valid limit to start')).toBeDefined();
   });
 
   it('carries a valid spend cap onto a started preset', async () => {
@@ -868,7 +850,7 @@ describe('WorkflowBuilderView (preset)', () => {
     setGoal();
     pickPreset(/ship it/i);
     openSpendCap();
-    fireEvent.click(screen.getByRole('switch', { name: /spend cap/i }));
+    fireEvent.click(screen.getByRole('switch', { name: /^limit$/i }));
     fireEvent.change(screen.getByLabelText('Spend cap in dollars'), { target: { value: '9' } });
     fireEvent.click(startBtn());
 
@@ -942,7 +924,7 @@ describe('WorkflowBuilderView (starts)', () => {
 describe('WorkflowBuilderView (goal affordances)', () => {
   it('inserts the session goal on click and undoes it', () => {
     render(<WorkflowBuilderView mode={currentMode} session={session} onClose={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: /use session goal/i }));
+    fireEvent.click(screen.getByRole('button', { name: /use the session goal/i }));
     expect(goalField().value).toBe('do a thing');
     fireEvent.click(screen.getByRole('button', { name: /undo goal change/i }));
     expect(goalField().value).toBe('');
@@ -999,9 +981,10 @@ describe('WorkflowBuilderView (goal affordances)', () => {
     expect(screen.queryByRole('button', { name: /undo goal change/i })).toBeNull();
   });
 
-  it('shows the Files go to the agents of this run note on the goal', () => {
+  it('keeps the attach note behind the paperclip, not on the goal', () => {
     render(<WorkflowBuilderView mode={currentMode} session={session} onClose={vi.fn()} />);
-    expect(screen.getByText('Files go to the agents of this run')).toBeDefined();
+    expect(screen.queryByText('Files go to the agents of this run')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Attach files' })).toBeDefined();
   });
 });
 
@@ -1085,8 +1068,7 @@ describe('WorkflowBuilderView (docked in a drawer)', () => {
     expect(within(dock).getByRole('button', { name: 'Start orchestration' })).toBeDefined();
     expect(within(dock).getByRole('button', { name: /^autonomy:/i })).toBeDefined();
     expect(within(dock).getByRole('button', { name: /^starts:/i })).toBeDefined();
-    expect(within(dock).getByRole('button', { name: /^spend cap:/i })).toBeDefined();
-    expect(within(dock).getByTestId('launch-estimate-slot')).toBeDefined();
+    expect(within(dock).getByRole('button', { name: /^limit:/i })).toBeDefined();
     expect(within(dock).queryByRole('button', { name: /^discard$/i })).toBeNull();
 
     fireEvent.change(goalField(), { target: { value: 'now dirty' } });
@@ -1115,29 +1097,10 @@ describe('WorkflowBuilderView (suggested title)', () => {
     mockSuggestTitle.mockResolvedValue(suggestion);
     fireEvent.change(goalField(), { target: { value: 'move checkout to server actions' } });
     fireEvent.blur(goalField());
-    await waitFor(() => expect(nameField().placeholder).toBe(suggestion));
+    await waitFor(() => expect(mockSuggestTitle).toHaveBeenCalled());
   };
 
-  it('proposes a title from the goal on blur and never types it into the field', async () => {
-    render(<WorkflowBuilderView mode={currentMode} session={session} onClose={vi.fn()} />);
-    await suggestFromGoal('Move checkout to server actions');
-
-    expect(mockSuggestTitle).toHaveBeenCalledWith('sess-1', 'move checkout to server actions');
-    expect(nameField().value).toBe('');
-    expect(screen.getByText(/suggested from the goal/i)).toBeDefined();
-  });
-
-  it('accepts the suggestion with Tab', async () => {
-    render(<WorkflowBuilderView mode={currentMode} session={session} onClose={vi.fn()} />);
-    await suggestFromGoal('Move checkout to server actions');
-
-    fireEvent.keyDown(nameField(), { key: 'Tab' });
-
-    expect(nameField().value).toBe('Move checkout to server actions');
-    expect(screen.queryByText(/suggested from the goal/i)).toBeNull();
-  });
-
-  it('starts on the suggestion when the field stays empty, without a second title pass', async () => {
+  it('starts on the suggested title, without a second title pass', async () => {
     render(<WorkflowBuilderView mode={currentMode} session={session} onClose={vi.fn()} />);
     await suggestFromGoal('Move checkout to server actions');
 
@@ -1148,15 +1111,11 @@ describe('WorkflowBuilderView (suggested title)', () => {
     expect(mockGenerateWorkflowTitle).not.toHaveBeenCalled();
   });
 
-  it('asks once per goal and drops the suggestion when the goal is cleared', async () => {
+  it('asks once per goal', async () => {
     render(<WorkflowBuilderView mode={currentMode} session={session} onClose={vi.fn()} />);
     await suggestFromGoal('Move checkout to server actions');
     fireEvent.blur(goalField());
     expect(mockSuggestTitle).toHaveBeenCalledOnce();
-
-    fireEvent.change(goalField(), { target: { value: '' } });
-
-    expect(nameField().placeholder).toBe('Orchestrated workflow');
   });
 });
 
@@ -1204,13 +1163,13 @@ describe('WorkflowBuilderView (kickoff, before the session exists)', () => {
     expect(startBtn().disabled).toBe(false);
   });
 
-  it('shows the orchestrate lane, guidance, Can use and the launch controls inline', () => {
+  it('shows the orchestrate lane, guidance and the launch controls, and no Can use with one provider', () => {
     storeState.providers = [{ id: 'anthropic', connection: 'connected' }];
     render(<KickoffHarness start={kickoffStart()} />);
 
     expect(orchestratorPicker()).toBeDefined();
     expect(screen.getByRole('button', { name: /^add guidance/i })).toBeDefined();
-    expect(screen.getByText('Can use')).toBeDefined();
+    expect(screen.queryByText('Can use')).toBeNull();
     expect(screen.getByText('Set a goal to start')).toBeDefined();
     expect(startBtn().disabled).toBe(true);
   });
@@ -1244,7 +1203,7 @@ describe('WorkflowBuilderView (kickoff, before the session exists)', () => {
     render(<KickoffHarness start={kickoffStart()} />);
 
     expect(screen.getAllByRole('textbox', { name: 'Goal' })).toHaveLength(1);
-    expect(screen.queryByRole('button', { name: /use session goal/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /use the session goal/i })).toBeNull();
   });
 
   it('offers the preset picker when the workspace has presets', () => {

@@ -59,16 +59,16 @@ describe('the start scenes', () => {
       'value',
       'Stop retried webhooks posting a second credit',
     );
-    expect(screen.getByRole('tablist', { name: 'How to work on it' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Runs as: Orchestrate' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Use the issue text' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Use brief' })).toBeNull();
     expect(screen.queryByRole('textbox', { name: 'Search issues' })).toBeNull();
   });
 
-  it('starts an Inbox issue with the identifier in the verb', async () => {
+  it('starts an Inbox issue with Start session, the key at the left', async () => {
     draw({ name: 'start-from-inbox' });
 
-    expect(await screen.findByRole('button', { name: /Start from HBL-412/ })).toBeDefined();
+    expect(await screen.findByRole('button', { name: 'Start session' })).toBeDefined();
     expect(screen.queryByRole('button', { name: /Launch session/ })).toBeNull();
   });
 

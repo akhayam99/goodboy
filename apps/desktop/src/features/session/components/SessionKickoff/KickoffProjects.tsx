@@ -1,4 +1,3 @@
-import { EmptyLine } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -47,12 +46,10 @@ export const KickoffProjects = ({
         projects={projects}
         value={projectIds}
         isDisabled={isDisabled}
+        emptyValueLabel="Add project"
         {...(suggestedIds !== undefined && { suggestedIds })}
         onChange={(next) => patchSessionDraft({ workspaceId, patch: { projectIds: next } })}
       />
-      {projectIds.length === 0 ? (
-        <EmptyLine>No project yet. Goodboy adds one when an agent needs it.</EmptyLine>
-      ) : null}
       {launch === null || launchProject === null ? null : (
         <p className="text-meta text-muted-foreground">{`In ${launchProject.name}, ${launch.reason}.`}</p>
       )}

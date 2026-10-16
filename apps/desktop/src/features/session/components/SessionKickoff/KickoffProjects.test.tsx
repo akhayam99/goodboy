@@ -22,8 +22,6 @@ import type { IsoDateTime } from '@goodboy/types';
 import { brandedId } from '../../../history/testing/brandedId';
 import { KickoffProjects } from './KickoffProjects';
 
-const EMPTY_LINE = 'No project yet. Goodboy adds one when an agent needs it.';
-
 let useAppStore: StoryStore;
 
 beforeAll(async () => {
@@ -56,10 +54,12 @@ const openPicker = () => {
 };
 
 describe('KickoffProjects', () => {
-  it('reads the lazy mount line while no project is picked', () => {
+  it('reads Add project and Optional while no project is picked, with no extra line', () => {
     render(<KickoffProjects workspaceId={WORKSPACE_ID} />);
 
-    expect(screen.getByText(EMPTY_LINE)).toBeDefined();
+    expect(screen.getByRole('combobox', { name: 'Project' }).textContent).toContain('Add project');
+    expect(screen.getByText('Optional')).toBeDefined();
+    expect(screen.queryByText(/Goodboy adds one/)).toBeNull();
   });
 
   it('groups the recently used project under Suggested and the rest under All projects', () => {
@@ -74,12 +74,12 @@ describe('KickoffProjects', () => {
     ]);
   });
 
-  it('drops the lazy mount line once a project is picked', () => {
+  it('keeps Add project once a project is picked', () => {
     const list = openPicker();
 
     fireEvent.click(list.getByRole('option', { name: 'payments-api' }));
 
-    expect(screen.queryByText(EMPTY_LINE)).toBeNull();
+    expect(screen.getByRole('combobox', { name: 'Project' }).textContent).toContain('Add project');
     expect(screen.getByRole('button', { name: 'Remove payments-api' })).toBeDefined();
   });
 });

@@ -144,10 +144,9 @@ describe('the u21 page-state scenes', () => {
     renderScene('inbox-error');
 
     expect(
-      await screen.findByRole('button', {
-        name: "Sentry didn't load: The token was refused (401). Retry",
-      }),
+      await screen.findByText("Sentry didn't load: The token was refused (401)."),
     ).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeDefined();
     expect(screen.getByRole('heading', { name: 'Sentry' })).toBeDefined();
     expect(screen.queryByRole('heading', { name: 'No items yet' })).toBeNull();
   });

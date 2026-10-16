@@ -49,25 +49,23 @@ export const OrchestrateLane = ({
             label="Orchestrator"
           />
         }
-        trailing={
-          <RoutingPicker
-            variant="pill"
-            align="end"
-            ariaLabel="Orchestrator routing"
-            connectedProviders={allowedProviders}
-            provider={providerOverride}
-            model={modelOverride}
-            effort={{ editable: true, value: effort }}
-            recommendation={{ provider: recommendedProvider, model: recommendedModel }}
-            recommendationKind="auto"
-            disabled={isDisabled}
-            overridden={isOverridden}
-            onReset={onReset}
-            onChange={onRoute}
-          />
-        }
       >
-        <span className="min-w-0 flex-1 truncate text-body text-foreground">Orchestrator</span>
+        <span className="min-w-0 shrink truncate text-body text-foreground">Orchestrator</span>
+        <RoutingPicker
+          variant="pill"
+          align="start"
+          ariaLabel="Orchestrator routing"
+          connectedProviders={allowedProviders}
+          provider={providerOverride}
+          model={modelOverride}
+          effort={{ editable: true, value: effort }}
+          recommendation={{ provider: recommendedProvider, model: recommendedModel }}
+          recommendationKind="auto"
+          disabled={isDisabled}
+          overridden={isOverridden}
+          onReset={onReset}
+          onChange={onRoute}
+        />
       </LaneRow>
     </ol>
   </section>

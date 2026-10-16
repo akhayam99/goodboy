@@ -1,5 +1,5 @@
 import type { ProviderId } from '@goodboy/types';
-import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
+import { ModelControlChip } from '../../../../shared/components/ModelControlChip';
 import type { ArtifactCreationRouting } from '../../../../store/slices/artifactDrafts/types';
 
 type Props = {
@@ -20,30 +20,20 @@ export const ArtifactRoutingControl = ({
   const active = routing ?? recommendation;
 
   return (
-    <div className="flex min-w-0 flex-col gap-1">
-      <span className="text-meta text-muted-foreground">Runs on</span>
-      <RoutingPicker
-        ariaLabel="Artifact routing"
-        variant="pill"
-        align="start"
-        availability="run"
-        connectedProviders={connectedProviders}
-        provider={active.provider}
-        model={active.model}
-        effort={{ editable: true, value: active.effort }}
-        recommendation={{ provider: recommendation.provider, model: recommendation.model }}
-        disabled={isDisabled}
-        overridden={routing !== null}
-        resetLabel="Use default"
-        onReset={() => onChange(null)}
-        onChange={(route) => {
-          if (route.provider === '') {
-            onChange(null);
-            return;
-          }
-          onChange({ ...active, ...route, provider: route.provider });
-        }}
-      />
-    </div>
+    <ModelControlChip
+      connectedProviders={connectedProviders}
+      effective={active}
+      suggestion={recommendation}
+      suggestionLabel={null}
+      isOverridden={routing !== null}
+      isDisabled={isDisabled}
+      onChange={(route) => {
+        if (route === null || route.provider === '') {
+          onChange(null);
+          return;
+        }
+        onChange({ ...active, ...route, provider: route.provider });
+      }}
+    />
   );
 };

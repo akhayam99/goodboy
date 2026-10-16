@@ -40,12 +40,14 @@ export const CreateAgentPopover = ({
       }
     >
       <PopoverBody>
-        <AgentStartBlock
-          sessionId={sessionId}
-          isShown={open}
-          onDone={close}
-          {...(onSpawned !== undefined && { onSpawned })}
-        />
+        <div className="p-3">
+          <AgentStartBlock
+            sessionId={sessionId}
+            isShown={open}
+            onDone={close}
+            {...(onSpawned !== undefined && { onSpawned })}
+          />
+        </div>
       </PopoverBody>
     </AnchoredPopover>
   );

@@ -55,7 +55,6 @@ import { useToast } from '../../../../shared/components/Toast';
 import { toAttachmentInputs } from '../../../attachments/pendingAttachment';
 import { usePromptFiles } from '../../../../shared/hooks/usePromptFiles';
 import { runIdentity, runIdentitySeed } from '../../../session/timeline/runIdentity';
-import { BuilderTitleField } from './parts/BuilderTitleField';
 import { GoalField } from './parts/GoalField';
 import { LaunchBar } from './parts/LaunchBar';
 import { ProviderPoolChip } from './parts/ProviderPoolChip';
@@ -63,7 +62,6 @@ import { effectiveProviderPool } from './providerPool';
 import { PresetPicker } from './parts/PresetPicker';
 import { SpendCapChip } from './parts/SpendCapChip';
 import { AutonomyChip } from './parts/AutonomyChip';
-import { FromRulesRow } from './parts/FromRulesRow';
 import { GuidanceTools } from './parts/GuidanceTools';
 import { RuleDot } from './parts/RuleDot';
 import { RunGuidance } from './parts/RunGuidance';
@@ -83,6 +81,7 @@ export type BuilderKickoff = {
   readonly goal: string;
   readonly goalPlaceholder: string;
   readonly primaryLabel?: string;
+  readonly leading?: ReactNode;
   readonly startError?: string | null;
   readonly canDiscard?: boolean;
   readonly projects?: ReactNode;
@@ -215,7 +214,6 @@ export const WorkflowBuilderView = (props: Props) => {
     workspaceId,
     workingDir: sessionWorktree,
   });
-  const [title, setTitle] = useState(initialDraft?.title ?? '');
   const [titleSuggestion, setTitleSuggestion] = useState<string | null>(null);
   const suggestedGoalRef = useRef<string | null>(null);
   const latestGoalRef = useRef(goalText);
@@ -389,7 +387,7 @@ export const WorkflowBuilderView = (props: Props) => {
     steps,
     autoRun,
     ...(autonomyOverride !== null && { autonomy: autonomyOverride }),
-    title,
+    title: '',
     orchestratorModel: {
       providerOverride: orchestratorProviderOverride,
       modelOverride: orchestratorModelOverride,
@@ -417,7 +415,6 @@ export const WorkflowBuilderView = (props: Props) => {
     steps,
     autoRun,
     autonomyOverride,
-    title,
     orchestratorProviderOverride,
     orchestratorModelOverride,
     orchestratorEffortOverride,
@@ -440,7 +437,6 @@ export const WorkflowBuilderView = (props: Props) => {
     setGuidanceUndo(null);
     setSteps([]);
     setAutonomyOverride(null);
-    setTitle('');
     setTitleSuggestion(null);
     suggestedGoalRef.current = null;
     resetOrchestratorModel();
@@ -561,7 +557,6 @@ export const WorkflowBuilderView = (props: Props) => {
       return;
     }
     setSteps(draftFromWorkflow({ workflow: basePreset }).steps);
-    setTitle('');
   };
 
   const onDeletePreset = async (t: Workflow) => {
@@ -627,13 +622,11 @@ export const WorkflowBuilderView = (props: Props) => {
       : (presetName ?? PRESET_FALLBACK_NAME);
   const activeSuggestion = mode === 'preset' ? null : titleSuggestion;
   const defaultTitle = activeSuggestion ?? fallbackTitle;
-  const typedTitle = title.trim();
-  const resolvedTitle = typedTitle !== '' ? typedTitle : defaultTitle;
-  const isPresetRenamed = mode === 'preset' && typedTitle !== '' && typedTitle !== presetName;
-  const isPresetEdited = basePreset !== null && (presetDirty || isPresetRenamed);
+  const resolvedTitle = defaultTitle;
+  const isPresetEdited = basePreset !== null && presetDirty;
 
   const runOn = async (target: Session): Promise<void> => {
-    if (mode === 'preset' && selectedPreset !== null && !presetDirty && !isPresetRenamed) {
+    if (mode === 'preset' && selectedPreset !== null && !presetDirty) {
       await attachWorkflowToSession(target.id, selectedPreset.id, await attachOptions());
       if (kickoff === null) {
         showToast({ kind: 'success', message: `Started ${selectedPreset.name}.` });
@@ -678,7 +671,7 @@ export const WorkflowBuilderView = (props: Props) => {
             },
           }),
     );
-    if (mode === 'dynamic' && typedTitle === '' && activeSuggestion === null) {
+    if (mode === 'dynamic' && activeSuggestion === null) {
       void generateWorkflowTitle(
         workspaceId,
         workflowId,
@@ -730,12 +723,14 @@ export const WorkflowBuilderView = (props: Props) => {
         <PresetPicker
           presets={presets}
           selectedId={selectedPresetId}
+          isEdited={isPresetEdited}
           disabled={busy}
           onSelect={onSelectPreset}
+          onReset={onResetPreset}
           onDelete={onDeletePreset}
         />
       ) : null
-    ) : orchestratorProviders.length > 0 ? (
+    ) : orchestratorProviders.length > 1 ? (
       <ProviderPoolChip
         providers={orchestratorProviders}
         pool={effectivePool}
@@ -777,11 +772,6 @@ export const WorkflowBuilderView = (props: Props) => {
   }));
 
   const guidanceDiffers = guidance !== workflowRules.standingGuidance;
-  const spendDiffers =
-    isSpendLimitEnabled !== (workflowRules.spendLimitUsd !== null) ||
-    (isSpendLimitEnabled &&
-      (parseSpendLimit(spendLimitDraft) !== workflowRules.spendLimitUsd ||
-        spendLimitMode !== workflowRules.spendLimitMode));
   const guidanceRuleLines = workflowRules.standingGuidance
     .split('\n')
     .filter((line) => line.trim() !== '').length;
@@ -900,7 +890,6 @@ export const WorkflowBuilderView = (props: Props) => {
         identityIndex={identityIndex}
         autonomy={autonomy}
         connectedProviders={connectedProviders}
-        total={estimates?.total ?? null}
         isDisabled={busy}
         onRoute={(key, route) => patchStep(key, route)}
         onFollowRole={(key) => patchStep(key, { provider: '', model: '' })}
@@ -916,6 +905,7 @@ export const WorkflowBuilderView = (props: Props) => {
 
   const launchControls = (
     <>
+      {kickoff?.leading ?? null}
       <AutonomyChip
         autonomy={autonomy}
         ruleAutonomy={workflowRules.autonomy}
@@ -953,48 +943,27 @@ export const WorkflowBuilderView = (props: Props) => {
 
   const body = (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-3">
-        <BuilderTitleField
-          value={title}
-          placeholder={defaultTitle}
-          suggestion={activeSuggestion}
-          disabled={busy}
-          onChange={setTitle}
-          onAcceptSuggestion={() => {
-            if (activeSuggestion !== null) {
-              setTitle(activeSuggestion);
-            }
-          }}
-          origin={
-            isPresetEdited && basePreset !== null ? (
-              <span className="flex shrink-0 items-center gap-2">
-                <span className="rounded-sm bg-muted px-2 py-0.5 text-chip text-muted-foreground">
-                  {`Edited from ${basePreset.name}`}
-                </span>
-                <Button variant="ghost" size="sm" disabled={busy} onClick={onResetPreset}>
-                  Reset
-                </Button>
-              </span>
-            ) : null
+      <GoalField
+        value={goalText}
+        {...(kickoff !== null && { placeholder: kickoff.goalPlaceholder })}
+        hasSessionGoal={sessionGoal.length > 0}
+        isSessionGoal={goalText === sessionGoal}
+        canUndo={goalHistory.length > 0}
+        isPolishing={polishing}
+        disabled={busy}
+        files={goalFiles.files}
+        notice={goalFiles.notice}
+        onChange={onGoalChange}
+        onBlur={() => requestTitleSuggestion(goalText)}
+        onSubmit={() => {
+          if (!startGate.isDisabled) {
+            void onStart();
           }
-        />
-        <GoalField
-          value={goalText}
-          {...(kickoff !== null && { placeholder: kickoff.goalPlaceholder })}
-          hasSessionGoal={sessionGoal.length > 0}
-          isSessionGoal={goalText === sessionGoal}
-          canUndo={goalHistory.length > 0}
-          isPolishing={polishing}
-          disabled={busy}
-          files={goalFiles.files}
-          notice={goalFiles.notice}
-          onChange={onGoalChange}
-          onBlur={() => requestTitleSuggestion(goalText)}
-          onUseSessionGoal={onUseSessionGoal}
-          onUndo={onUndoGoal}
-          onPolish={() => void onPolishGoal()}
-        />
-      </div>
+        }}
+        onUseSessionGoal={onUseSessionGoal}
+        onUndo={onUndoGoal}
+        onPolish={() => void onPolishGoal()}
+      />
       {kickoff?.projects ?? null}
       <div className="flex flex-col gap-4">
         {modeControl === null && presetDescription === null ? null : (
@@ -1028,25 +997,14 @@ export const WorkflowBuilderView = (props: Props) => {
 
   const footer = (
     <div className="flex flex-col gap-3">
-      <FromRulesRow
-        changed={[
-          ...(autonomyOverride === null ? [] : ['autonomy']),
-          ...(spendDiffers ? ['spend cap'] : []),
-          ...(guidanceDiffers ? ['guidance'] : []),
-        ]}
-      />
       <LaunchBar
         controls={launchControls}
-        hasEstimateSlot={mode === 'dynamic'}
-        estimate={
-          mode === 'dynamic' && estimates?.total != null ? (
-            <PlanEstimateChip total={estimates.total} />
-          ) : null
-        }
+        estimate={estimates?.total == null ? null : <PlanEstimateChip total={estimates.total} />}
         reason={startGate.reason}
         error={shownError === null ? null : `${shownError.title}. ${shownError.message}`}
         isStartDisabled={startGate.isDisabled}
         isStarting={busy}
+        size={kickoff === null ? 'sm' : 'md'}
         label={kickoff?.primaryLabel ?? PRIMARY_LABEL[mode]}
         canDiscard={kickoff === null ? !draftEmpty : (kickoff.canDiscard ?? false)}
         onDiscard={kickoff?.onDiscard ?? resetDraft}

@@ -1,3 +1,4 @@
+import { KeyHint } from '@goodboy/ui';
 import { shortcutGlyphs, type ShortcutId } from '../../keyboard/registry';
 
 export type PromptKeyHint = {
@@ -20,7 +21,7 @@ export const PromptKeysHint = ({ hints }: Props) => {
     >
       {hints.map((hint) => (
         <span key={hint.id} className="flex items-center gap-1 whitespace-nowrap">
-          <kbd className="font-sans text-muted-foreground">{shortcutGlyphs(hint.id)}</kbd>
+          <KeyHint keys={shortcutGlyphs(hint.id)} />
           {hint.label}
         </span>
       ))}

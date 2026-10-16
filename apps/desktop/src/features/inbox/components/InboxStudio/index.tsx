@@ -19,6 +19,8 @@ import { useInboxLinkedSessions } from '../../useInboxLinkedSessions';
 import { orderInboxRecords } from '../../orderInboxRecords';
 import { isForMeRecord } from '../../isForMeRecord';
 import { shownTaskRecords } from '../../shownTaskRecords';
+import { openCountWord } from '../../openCountWord';
+import { taskGroupTotalsOf } from '../../taskGroupTotalsOf';
 import { sourceFailureLine } from '../../sourceFailureLine';
 import { taskGroupsOf, type TaskGroup } from '../../taskGroups';
 import { readTaskListView, writeTaskListView, type TaskListView } from '../../taskListViewStorage';
@@ -109,13 +111,6 @@ const initialView = ({ workspaceId, isDeepLinked }: InitialViewParams): TaskList
   const stored = readTaskListView({ workspaceId });
   return isDeepLinked ? { ...stored, scope: 'all' } : stored;
 };
-
-type OpenCountParams = {
-  readonly records: ReadonlyArray<InboxRecord>;
-};
-
-const openCountWord = ({ records }: OpenCountParams): string =>
-  `${records.filter((record) => record.state !== 'done').length.toLocaleString('en-US')} open`;
 
 export const InboxStudio = ({
   workspaceId,
@@ -224,6 +219,15 @@ export const InboxStudio = ({
         records: filterInboxRecords({ records: inScope, query, filters, isStarred }).filter(
           (record) => !isStarred(record),
         ),
+        groupBy: view.groupBy,
+        projectNames,
+      }),
+    [inScope, query, filters, isStarred, view.groupBy, projectNames],
+  );
+  const groupTotals = useMemo(
+    () =>
+      taskGroupTotalsOf({
+        records: filterInboxRecords({ records: inScope, query, filters, isStarred }),
         groupBy: view.groupBy,
         projectNames,
       }),
@@ -484,7 +488,7 @@ export const InboxStudio = ({
       name: integrationLabel({ provider }),
       message: errors[provider] ?? '',
     }),
-    onClick: refetch,
+    onRetry: refetch,
   });
   const isSourceGrouped = view.groupBy === 'source';
   const failedSourceGroups = isSourceGrouped
@@ -521,7 +525,8 @@ export const InboxStudio = ({
   const list = (
     <PaneShell
       scroll="body"
-      title={openCountWord({ records: inScope })}
+      title={NAMES.tasks}
+      meta={openCountWord({ records: inScope })}
       actions={
         <InboxListHeader
           query={query}
@@ -611,6 +616,7 @@ export const InboxStudio = ({
               key={group.key}
               label={group.label}
               records={group.records}
+              total={groupTotals.get(group.key) ?? group.records.length}
               isExpanded={isGroupExpanded(group)}
               canCollapse={view.groupBy !== 'none'}
               lines={provider === undefined ? [] : [failureLineOf(provider)]}

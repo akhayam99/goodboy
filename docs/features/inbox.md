@@ -12,11 +12,11 @@ Agents on any provider can read and act on the tools you connected, without hold
 
 ### Tasks
 
-Work from one list instead of seven tabs. Issues, Slack threads, Sentry errors and your pull and merge requests sit together, and the header says how many are open. Tasks opens on **For me**: issues assigned to you, what you starred and what is linked to your sessions. **All** next to it shows everything your tools sent.
+Work from one list instead of seven tabs. Issues, Slack threads, Sentry errors and your pull and merge requests sit together, and the header reads **Tasks** with how many are open beside it. Tasks opens on **For me**: issues assigned to you, what you starred and what is linked to your sessions. **All** next to it shows everything your tools sent.
 
-Items come in groups, by source unless you pick **Group by** **Status**, **Project** or **None**. Each group shows its first five rows and **Show all 38**; an expanded group draws only the rows on screen and names where you are ("41 of 312"), so a thousand open items never scroll forever. Every row has the same columns: source, key, title, status, priority and age. Rows carry no buttons: the row is the button.
+Items come in groups, by source unless you pick **Status**, **Project** or **None** from the grouping button, which names the current one (**Group: Source**). Each group names its total once, beside its label, shows its first five rows and **Show all**, and a starred item still counts in its source group; an expanded group draws only the rows on screen and names where you are ("41 of 312"), so a thousand open items never scroll forever. Every row has the same columns: source, key, title, status, priority and age. The key shows what tells rows apart (a Sentry error shows its number, a Slack thread has none), and a thread has no status. Rows carry no buttons: the row is the button.
 
-Narrow the list from one **Filter** menu in the header: **Source** with its counts, **Show** (assigned to me, starred, in progress, with a session, closed), **Type** and **Project**. A tool that did not load, or is rate limited, says so in one gray line inside its group, and clicking it retries. **Refresh** and **Manage tools** sit in `⋯`.
+Narrow the list from one **Filter** menu in the header: **Source** with its counts, **Show** (starred, in progress, with a session, closed), **Type** and **Project**; a choice with nothing in it is dimmed and shows no number, and an active filter puts a small dot on the button. A search that is a key shows the issue found and the rows that match. A tool that did not load, or is rate limited, says so in one gray line inside its group, with a **Retry** button. **Refresh** and **Manage tools** sit in `⋯`.
 
 Click a row or press **Enter** to open it in the pane on the right, and move with **j** and **k** while the pane follows. **Enter** again starts from the open item. **Open full** in the pane shows it at full width; **Back** at the top returns to the list.
 
@@ -44,11 +44,11 @@ Star an issue from the star next to its key in the pane, or press **s** on its r
 
 ### Start from any item
 
-Press **Start from HBL-412** on an issue or an error and the New session draft opens with the issue picked and its brief being written. On a pull request waiting for your review, **Review pull request** starts a read-only reviewer instead.
+Press **Start session** on an issue or an error (or **Start from HBL-412** from the row's menu) and the New session draft opens with the issue picked and its brief being written. On a pull request waiting for your review, **Review pull request** starts a read-only reviewer instead.
 
 ### Link an item to a session
 
-Attach a task to work that already exists with **Link to a session**, or use **Link work** (or **L**) in a session's Overview header. A link closes the task when its pull request merges, and **Don’t close** turns that into "Part of" in the pull request body. **Unlink** has an Undo for about 10 seconds.
+Attach a task to work that already exists with **Link to a session**, under the properties of the item, or use **Link work** (or **L**) in a session's Overview header. A link closes the task when its pull request merges, and **Don’t close** turns that into "Part of" in the pull request body. **Unlink** has an Undo for about 10 seconds.
 
 ### Trackers
 
@@ -97,7 +97,7 @@ See screenshots attached in Linear, Jira and GitHub inside Goodboy. Your key goe
 
 ### Records read the same way
 
-Read items from any tool the same way. The header holds the tool mark, the key and the star, with the start action, **Open full** and `⋯` (open in the tool, copy the link, refresh) beside them, and the title on its own line. Under it, the properties sit in named groups on one grid of labels and values: **State** (status, priority, assignee), **Planning** (project, labels with their colors), **Links** (pull requests with their state, sessions) and **Details**. Values you can change, like the status or the assignee of a Linear issue, open their menu from the value.
+Read items from any tool the same way. The header holds the tool mark, the key and the star, with the start action, **Open full** and `⋯` (open in the tool, copy the link, refresh) beside them, and the title on its own line. Under it, the properties sit in groups spaced apart on one grid of labels and values: status, priority and assignee, then project and labels, then pull requests and sessions, then details. A Sentry error shows its level as a word and its culprit once, with no made up description. The conversation ends with its reply box, **Reply on Linear** or **Reply on GitHub**, which scrolls with it. **‹ Tasks** above the full page leads back. Values you can change, like the status or the assignee of a Linear issue, open their menu from the value.
 
 ### Comment threads
 

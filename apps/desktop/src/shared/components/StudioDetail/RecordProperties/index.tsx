@@ -26,9 +26,6 @@ export const RecordProperties = ({ facts }: Props) => {
     >
       {groups.map((group) => (
         <section key={group.name} aria-label={group.name} className={PANE_RHYTHM.property.group}>
-          <h2 className="flex h-7 items-center pl-2 text-row text-muted-foreground">
-            {group.name}
-          </h2>
           <dl className={PANE_RHYTHM.property.grid}>
             {group.rows.map((row) => (
               <PropertyRow key={row.key} row={row} />

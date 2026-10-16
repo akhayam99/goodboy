@@ -165,10 +165,11 @@ describe('SPEC3 9.2 New session draft and the New forms, from the c10 page and d
   it('offers three ways to work on a picked issue, Orchestrate included', async () => {
     await mountScene({ name: 'start-pick-one-block' });
 
-    const ways = within(screen.getByRole('tablist', { name: 'How to work on it' }));
-    expect(ways.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
-      'Run a workflow',
+    fireEvent.click(screen.getByRole('button', { name: /^Runs as:/ }));
+    const ways = within(screen.getByRole('menu', { name: 'Runs as' }));
+    expect(ways.getAllByRole('menuitemradio').map((way) => way.textContent)).toEqual([
       'Orchestrate',
+      'Run a workflow',
       'Ask an agent',
     ]);
   });
@@ -214,11 +215,14 @@ describe('SPEC3 9.2 New session draft and the New forms, from the c10 page and d
 
     screen.getByRole('button', { name: 'Role: Scout' });
     screen.getByRole('textbox', { name: 'Scout focus' });
-    fireEvent.click(screen.getByRole('button', { name: 'Project: payments-api' }));
+    expect(screen.queryByRole('button', { name: /^Project:/ })).toBeNull();
+    fireEvent.click(screen.getByRole('combobox', { name: 'Project' }));
     fireEvent.click(screen.getByRole('option', { name: 'ledger-core' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove payments-api' }));
+    fireEvent.click(screen.getByRole('option', { name: 'payments-api' }));
     await settle();
 
-    screen.getByRole('button', { name: 'Project: ledger-core' });
+    screen.getByRole('button', { name: 'Remove ledger-core' });
     expect(
       useAppStore
         .getState()
@@ -295,21 +299,21 @@ describe('SPEC3 9.2 New session draft and the New forms, from the c10 page and d
     screen.getByRole('button', { name: 'Model for Plan the guard' });
   });
 
-  it('keeps Autonomy, Starts and Spend cap in the actions row', async () => {
+  it('keeps Autonomy, Starts and Limit in the actions row', async () => {
     await mountScene({ name: 'c10-start-orchestrate' });
 
     screen.getByRole('button', { name: /^Autonomy:/ });
     screen.getByRole('button', { name: /^Starts/ });
-    screen.getByRole('button', { name: /^Spend cap:/ });
+    screen.getByRole('button', { name: /^Limit:/ });
   });
 
-  it('keeps From your rules on the guidance of the run', async () => {
+  it('marks the control that leaves your rules and resets it from its own popover', async () => {
     await mountScene({ name: 'c10-start-workflow' });
 
-    fireEvent.click(screen.getByRole('button', { name: /^Add guidance/ }));
-    await settle();
-
-    screen.getByText('From your rules');
+    const autonomy = screen.getByRole('button', { name: /^Autonomy:/ });
+    within(autonomy).getByRole('img', { name: /^Run defaults:/ });
+    fireEvent.click(autonomy);
+    screen.getByRole('button', { name: /Reset to your rule/ });
   });
 
   it('keeps the start gate reason when the goal is empty', async () => {
@@ -392,10 +396,10 @@ describe('SPEC3 9.2 New session draft and the New forms, from the c10 page and d
 
   it('moves the Write tab to the Report and Wireframe drawer forms', async () => {
     await mountScene({ name: 'c10-new-report' });
-    screen.getByRole('region', { name: 'Report' });
+    screen.getByRole('region', { name: 'Write a report' });
     cleanup();
 
     await mountScene({ name: 'c10-new-wireframe' });
-    screen.getByRole('region', { name: 'Wireframe' });
+    screen.getByRole('region', { name: 'Draw a wireframe' });
   });
 });

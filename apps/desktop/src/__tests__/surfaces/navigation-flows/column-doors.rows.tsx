@@ -115,7 +115,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     open: () => click(doorIn('inbox')),
     lands: both(
       () => studio('Tasks'),
-      () => heading(/^[\d,]+ open$/),
+      () => heading(/^Tasks$/),
       async () => expect(doorIn('inbox').getAttribute('aria-current')).toBe('page'),
     ),
   },

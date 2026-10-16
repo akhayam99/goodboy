@@ -34,6 +34,7 @@ export type RecordStar = {
 
 export type RecordFrame = {
   readonly primary: ReactNode;
+  readonly link?: ReactNode;
   readonly sessionVerbs: ReadonlyArray<RecordVerb>;
   readonly onRefresh: (() => void) | null;
   readonly onClose: (() => void) | null;

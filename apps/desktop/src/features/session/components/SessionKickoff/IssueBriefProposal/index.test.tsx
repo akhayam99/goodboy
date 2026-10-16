@@ -68,14 +68,14 @@ const renderProposal = ({
 afterEach(cleanup);
 
 describe('IssueBriefProposal', () => {
-  it('reads Brief from the first issue and the number of others for a set', () => {
+  it('reads Brief for a set, the picked rows name the issues', () => {
     const other = { ...SOURCE, externalId: 'issue-2', identifier: 'ACME-413' };
     renderProposal({
       entry: READY,
       sources: [SOURCE, other, { ...other, identifier: 'ACME-414' }],
     });
 
-    expect(screen.getByRole('region', { name: 'Brief from ACME-412 and 2 more' })).toBeDefined();
+    expect(screen.getByRole('region', { name: 'Brief' })).toBeDefined();
   });
 
   it('shows an editable title and says the brief is being written, with no gate', () => {
@@ -89,9 +89,7 @@ describe('IssueBriefProposal', () => {
     expect(screen.getByRole('status').textContent).toBe('Writing a brief');
     expect(screen.queryByRole('button', { name: 'Use brief' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
-    expect(
-      screen.getByRole('region', { name: 'Brief from ACME-412' }).hasAttribute('aria-busy'),
-    ).toBe(true);
+    expect(screen.getByRole('region', { name: 'Brief' }).hasAttribute('aria-busy')).toBe(true);
   });
 
   it('offers the issue text while the brief is shown and the brief once it is not', () => {
@@ -109,10 +107,11 @@ describe('IssueBriefProposal', () => {
     expect(screen.queryByRole('button', { name: 'Use the issue text' })).toBeNull();
   });
 
-  it('names the model that wrote the brief', () => {
+  it('drops the model, time and cost of the brief from its header', () => {
     renderProposal({ entry: READY, isBriefShown: true, hasBrief: true });
 
-    expect(screen.getByText(/4s/)).toBeDefined();
+    expect(screen.queryByText(/4s/)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Use the issue text' })).toBeDefined();
   });
 
   it('keeps the issue text and offers Retry when the brief failed', () => {
@@ -138,6 +137,6 @@ describe('IssueBriefProposal', () => {
     expect(
       screen.getByText('A brief needs a free model, so this is the issue text as it is.'),
     ).toBeDefined();
-    expect(screen.getByText('The full issue stays linked to this session.')).toBeDefined();
+    expect(screen.queryByText('The full issue stays linked to this session.')).toBeNull();
   });
 });

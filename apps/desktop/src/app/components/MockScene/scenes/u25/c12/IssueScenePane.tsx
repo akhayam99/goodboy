@@ -15,7 +15,7 @@ const NO_ERRORS: Readonly<Record<InboxProvider, string | null>> = {
   bitbucket: null,
 };
 
-const EDIT_DELAY_MS = 50;
+const EDIT_DELAY_MS = 1500;
 
 type Props = {
   readonly record: InboxRecord;

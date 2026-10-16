@@ -99,11 +99,20 @@ const openPopover = () => {
 };
 
 const confirm = () => {
-  fireEvent.click(screen.getByRole('button', { name: /^(Open|Start) (?!agent$)/ }));
+  fireEvent.click(screen.getByRole('button', { name: /^Start (?!agent$)/ }));
 };
 
 const expandRouting = () => {
-  fireEvent.click(screen.getByRole('button', { name: /^Agent routing:/ }));
+  fireEvent.click(screen.getByRole('button', { name: /^Model:/ }));
+};
+
+const openRoles = () => {
+  fireEvent.click(screen.getByRole('button', { name: /^Role:/ }));
+};
+
+const pickRole = (noun: string) => {
+  openRoles();
+  fireEvent.click(screen.getByRole('button', { name: noun }));
 };
 
 afterEach(() => {
@@ -122,6 +131,7 @@ describe('CreateAgentPopover', () => {
   it('omits report and wireframe from the manual agent picker', () => {
     renderControl();
     openPopover();
+    openRoles();
 
     expect(screen.queryByRole('button', { name: 'Report' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Wireframe' })).toBeNull();
@@ -143,6 +153,7 @@ describe('CreateAgentPopover', () => {
   it('shows only the selected kind description and spawns the picked one', async () => {
     renderControl();
     openPopover();
+    openRoles();
 
     const scout = screen.getByRole('button', { name: 'Scout' });
     expect(
@@ -152,10 +163,13 @@ describe('CreateAgentPopover', () => {
     expect(scout.parentElement?.className).toContain('grid-cols-3');
 
     fireEvent.click(screen.getByRole('button', { name: 'Docs' }));
+    screen.getByRole('button', { name: 'Role: Docs' });
+    openRoles();
     expect(screen.getByText('Writes documentation. No production logic')).toBeTruthy();
     expect(
       screen.queryByText('Plans, investigates, edits, and verifies without a narrow role'),
     ).toBeNull();
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
     confirm();
 
     await waitFor(() =>
@@ -203,7 +217,7 @@ describe('CreateAgentPopover', () => {
     };
     renderControl();
     openPopover();
-    fireEvent.click(screen.getByRole('button', { name: 'Scout' }));
+    pickRole('Scout');
     expandRouting();
 
     expect(screen.getByRole('button', { name: /^Suggested / }).getAttribute('aria-pressed')).toBe(
@@ -237,7 +251,7 @@ describe('CreateAgentPopover', () => {
     ];
     renderControl();
     openPopover();
-    fireEvent.click(screen.getByRole('button', { name: 'Scout' }));
+    pickRole('Scout');
     expandRouting();
 
     expect(screen.getByRole('button', { name: 'Haiku' }).getAttribute('aria-pressed')).toBe('true');
@@ -331,9 +345,7 @@ describe('CreateAgentPopover', () => {
 
     expect((await screen.findByRole('alert')).textContent).toContain('provider is unavailable');
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Open Generalist' }).hasAttribute('disabled')).toBe(
-        false,
-      ),
+      expect(screen.getByRole('button', { name: 'Retry' }).hasAttribute('disabled')).toBe(false),
     );
     expect(screen.getByRole('dialog', { name: 'Start agent' })).toBeDefined();
   });
@@ -414,7 +426,7 @@ describe('CreateAgentPopover', () => {
     fireEvent.click(openProviders);
     window.removeEventListener('goodboy:open-settings', onOpenProviderStudio);
     expect(onOpenProviderStudio).toHaveBeenCalledOnce();
-    expect(screen.queryByRole('dialog', { name: 'Start agent' })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Model' })).toBeNull();
   });
 
   it('keeps the role section available for a folder project', async () => {
@@ -446,7 +458,7 @@ describe('CreateAgentPopover', () => {
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: 220 });
     renderControl();
     openPopover();
-    const action = screen.getByRole('button', { name: 'Open Generalist' });
+    const action = screen.getByRole('button', { name: 'Start Generalist' });
     expect(action.closest('[data-slot="form-actions"]')).not.toBeNull();
     expect(action.closest('footer')).toBeNull();
     expect(
@@ -457,7 +469,7 @@ describe('CreateAgentPopover', () => {
     renderControl();
     openPopover();
 
-    const routing = screen.getByRole('button', { name: /^Agent routing:/ });
+    const routing = screen.getByRole('button', { name: /^Model:/ });
     expect(routing.getAttribute('aria-expanded')).toBe('false');
     expect(routing.getAttribute('aria-label')).toContain('Claude');
     expect(routing.querySelector('svg')).not.toBeNull();
@@ -467,20 +479,37 @@ describe('CreateAgentPopover', () => {
     expect(screen.getByRole('button', { name: 'Opus' })).toBeTruthy();
   });
 
-  it('has no instructions field and never sends a first prompt', async () => {
+  it('sends no first prompt while the goal is empty and says the chat takes it', async () => {
     renderControl();
     openPopover();
+    pickRole('Scout');
 
-    expect(screen.queryByRole('textbox', { name: 'Agent instructions' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Scout' }));
-    expect(screen.getByText('You write the first message in its chat.')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Open Scout' }));
+    expect(screen.getByText('With no goal you write the first message in its chat.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Start Scout' }));
 
     await waitFor(() => expect(h.spawnAgent).toHaveBeenCalledOnce());
+    expect(h.spawnAgent).toHaveBeenCalledWith(
+      SID,
+      expect.not.objectContaining({ initialPrompt: expect.anything() }),
+    );
+  });
+
+  it('sends the goal as the first prompt of the role it starts', async () => {
+    renderControl();
+    openPopover();
+    pickRole('Scout');
+    fireEvent.change(screen.getByRole('textbox', { name: 'Agent instructions' }), {
+      target: { value: 'Map the retry path in payments-api' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Start Scout' }));
+
     await waitFor(() =>
       expect(h.spawnAgent).toHaveBeenCalledWith(
         SID,
-        expect.not.objectContaining({ initialPrompt: expect.anything() }),
+        expect.objectContaining({
+          kindOverride: 'scout',
+          initialPrompt: 'Map the retry path in payments-api',
+        }),
       ),
     );
   });
@@ -508,7 +537,7 @@ describe('CreateAgentPopover', () => {
     openPopover();
 
     expect(screen.queryByTestId('launch-estimate')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Implement' }));
+    pickRole('Implementer');
     expect(screen.getByTestId('launch-estimate').textContent).toBe('Starts now · usually 9-13m');
   });
 
@@ -516,7 +545,7 @@ describe('CreateAgentPopover', () => {
     h.sessionPlans = { [SID]: [{ title: 'Round once per batch', status: 'active' }] };
     renderControl();
     openPopover();
-    fireEvent.click(screen.getByRole('button', { name: 'Implement' }));
+    pickRole('Implementer');
 
     expect(screen.getByText('Starts now from plan: Round once per batch')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Start Implementer on the plan' }));
@@ -532,9 +561,9 @@ describe('CreateAgentPopover', () => {
     h.sessionPlans = { [SID]: [{ title: 'Round once per batch', status: 'discarded' }] };
     renderControl();
     openPopover();
-    fireEvent.click(screen.getByRole('button', { name: 'Implement' }));
+    pickRole('Implementer');
 
-    expect(screen.getByRole('button', { name: 'Open Implementer' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Start Implementer' })).toBeTruthy();
     expect(screen.queryByText(/Starts now from plan/)).toBeNull();
   });
 
@@ -543,7 +572,7 @@ describe('CreateAgentPopover', () => {
     openPopover();
 
     const role = screen.getByText('Role');
-    const routing = screen.getByRole('button', { name: /^Agent routing:/ });
+    const routing = screen.getByRole('button', { name: /^Model:/ });
 
     expect(role.compareDocumentPosition(routing) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });

@@ -240,11 +240,11 @@ describe('New session page, Run lane', () => {
     fireEvent.click(screen.getByRole('option', { name: /scout, plan, build/i }));
     expect(startButton().disabled).toBe(false);
 
-    fireEvent.click(screen.getByRole('button', { name: /^spend cap:/i }));
-    fireEvent.click(screen.getByRole('switch', { name: /spend cap/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^limit:/i }));
+    fireEvent.click(screen.getByRole('switch', { name: /^limit$/i }));
 
     expect(startButton().disabled).toBe(true);
-    expect(screen.getByText('Enter a valid spend cap to start')).toBeDefined();
+    expect(screen.getByText('Enter a valid limit to start')).toBeDefined();
     fireEvent.click(startButton());
     await settle();
     expect(createSession).not.toHaveBeenCalled();
@@ -256,8 +256,8 @@ describe('New session page, Run lane', () => {
     fireEvent.change(textBox('Goal'), { target: { value: GOAL } });
     fireEvent.click(screen.getByRole('button', { name: /^preset:/i }));
     fireEvent.click(screen.getByRole('option', { name: /scout, plan, build/i }));
-    fireEvent.click(screen.getByRole('button', { name: /^spend cap:/i }));
-    fireEvent.click(screen.getByRole('switch', { name: /spend cap/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^limit:/i }));
+    fireEvent.click(screen.getByRole('switch', { name: /^limit$/i }));
     fireEvent.change(screen.getByLabelText('Spend cap in dollars'), { target: { value: '9' } });
 
     fireEvent.click(startButton());
@@ -320,7 +320,7 @@ describe('New session page, Ask an agent drawn as the Auto composer', () => {
     expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.agentPrompt).toBe('');
   });
 
-  it('is the Auto composer: one goal, one model chip, no roles and no project field', async () => {
+  it('is the Auto composer: one goal, Projects, one model chip and no roles', async () => {
     await openPage({ choice: 'scout', isAuto: true });
 
     expect(
@@ -329,8 +329,8 @@ describe('New session page, Ask an agent drawn as the Auto composer', () => {
     expect(screen.getByRole('region', { name: 'Auto' })).toBeDefined();
     expect(screen.getByText('Experimental')).toBeDefined();
     expect(screen.queryByText('It may not work well yet.')).toBeNull();
-    expect(screen.getByRole('button', { name: /auto model/i })).toBeDefined();
-    expect(screen.queryByRole('combobox', { name: /project/i })).toBeNull();
+    expect(screen.getAllByRole('button', { name: /^Model:/ })).toHaveLength(1);
+    expect(screen.getByRole('combobox', { name: 'Project' })).toBeDefined();
     expect(screen.queryByText(/guidance/i)).toBeNull();
   });
 
@@ -372,7 +372,7 @@ describe('New session page, Ask an agent drawn as the Auto composer', () => {
     expect(spawnAgent).not.toHaveBeenCalled();
     expect(textBox('Describe the work').value).toBe(GOAL);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start Auto' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
   });
 

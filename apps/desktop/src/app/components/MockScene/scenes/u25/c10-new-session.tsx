@@ -55,7 +55,7 @@ export const U25_C10_NEW_SESSION_SCENES = {
   'c10-start-failed': () => <C10NewSessionScene state={FAILED} />,
   'c10-new-menu': C10NewMenuScene,
   'c10-new-run': U24_NEW_DRAWER_SCENES['new-drawer-run-preset'],
-  'c10-new-orchestrate': U24_NEW_DRAWER_SCENES['new-drawer-run'],
+  'c10-new-orchestrate': U24_NEW_DRAWER_SCENES['new-drawer-orchestrate'],
   'c10-new-agent': U24_NEW_DRAWER_SCENES['new-drawer-agent'],
   'c10-new-auto': U24_NEW_DRAWER_SCENES['new-drawer-agent-auto'],
   'c10-new-report': U24_NEW_DRAWER_SCENES['new-drawer-write'],

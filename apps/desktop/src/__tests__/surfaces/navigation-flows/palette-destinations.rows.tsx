@@ -278,7 +278,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     open: () => openPalette(/^Tasks$/),
     lands: both(
       () => studio('Tasks'),
-      () => heading(/^[\d,]+ open$/),
+      () => heading(/^Tasks$/),
     ),
   },
   {

@@ -794,13 +794,13 @@ describe('InboxStudio', () => {
     expect(screen.queryByText('Ship the inbox')).toBeNull();
   });
 
-  it('titles the page with the open count, not Tasks again, and marks the view in the menu', () => {
+  it('titles the page Tasks with the open count beside it, and marks the view in the menu', () => {
     renderStudio();
 
     fireEvent.click(facet('Show', /^In progress/));
 
-    expect(screen.getByRole('heading', { level: 1, name: /^\d+ open$/ })).toBeDefined();
-    expect(screen.queryByRole('heading', { level: 1, name: 'Tasks' })).toBeNull();
+    expect(screen.getByRole('heading', { level: 1, name: 'Tasks' })).toBeDefined();
+    expect(screen.getByText(/^\d+ open$/)).toBeDefined();
     expect(facet('Show', /^In progress/).getAttribute('aria-current')).toBe('true');
   });
 
@@ -869,7 +869,7 @@ describe('InboxStudio at scale', () => {
     expect(groupNames()).toEqual(['Linear', 'GitHub', 'Sentry']);
     expect(screen.queryByText('Ledger task 5')).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Show all 7' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show all' }));
 
     expect(screen.getByText('Ledger task 6')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Show fewer' }));
@@ -881,7 +881,7 @@ describe('InboxStudio at scale', () => {
 
     renderStudio();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Group by' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Group: Source' }));
     fireEvent.click(screen.getByRole('menuitemradio', { name: 'Status' }));
 
     expect(groupNames()).toContain('Linear · Open');
@@ -893,7 +893,7 @@ describe('InboxStudio at scale', () => {
     h.records = [...linearMany(300)];
 
     renderStudio();
-    fireEvent.click(screen.getByRole('button', { name: 'Show all 300' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show all' }));
 
     expect(screen.getAllByRole('option').length).toBeLessThan(300);
     expect(screen.getByText('1 of 300')).toBeDefined();
@@ -940,7 +940,8 @@ describe('InboxStudio at scale', () => {
     renderStudio();
 
     expect(groupNames()).toContain('Jira');
-    fireEvent.click(screen.getByRole('button', { name: 'Jira is rate limited. Retry' }));
+    screen.getByText('Jira is rate limited.');
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     expect(h.refetch).toHaveBeenCalledTimes(1);
   });
 });

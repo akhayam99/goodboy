@@ -10,6 +10,7 @@ type Props = {
   readonly value: ReadonlyArray<ProjectId>;
   readonly suggestedIds?: ReadonlyArray<ProjectId>;
   readonly isDisabled?: boolean;
+  readonly emptyValueLabel?: string;
   readonly onChange: (projectIds: ReadonlyArray<ProjectId>) => void;
 };
 
@@ -25,6 +26,7 @@ export const ProjectPicker = ({
   value,
   suggestedIds = NO_SUGGESTIONS,
   isDisabled = false,
+  emptyValueLabel = 'No project',
   onChange,
 }: Props) => {
   const options = useMemo((): ReadonlyArray<ListboxOption<ProjectId>> => {
@@ -66,7 +68,7 @@ export const ProjectPicker = ({
         onChange={onChange}
         valueLabel={
           <span className="truncate text-muted-foreground">
-            {picked.length === 0 ? 'No project' : 'Add project'}
+            {picked.length === 0 ? emptyValueLabel : 'Add project'}
           </span>
         }
       />

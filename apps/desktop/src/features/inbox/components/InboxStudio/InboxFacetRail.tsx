@@ -8,7 +8,6 @@ import {
   MessagesSquare,
   Star,
   TriangleAlert,
-  UserRound,
   type LucideIcon,
 } from 'lucide-react';
 import type { Project } from '@goodboy/types';
@@ -49,15 +48,13 @@ type Presentation = {
 
 const VIEW_PRESENTATION = {
   all: { label: 'All', icon: Inbox },
-  assigned: { label: 'Assigned to me', icon: UserRound },
   starred: { label: 'Starred', icon: Star },
   'in-progress': { label: 'In progress', icon: Contrast },
   'with-session': { label: NAMES.hasASession, icon: CONCEPT_ICONS.sessions },
   closed: { label: 'Closed', icon: CircleCheck },
-} satisfies Record<InboxView, Presentation>;
+} satisfies Record<Exclude<InboxView, 'assigned'>, Presentation>;
 
-const SHOWN_VIEWS: ReadonlyArray<Exclude<InboxView, 'all'>> = [
-  'assigned',
+const SHOWN_VIEWS: ReadonlyArray<Exclude<InboxView, 'all' | 'assigned'>> = [
   'starred',
   'in-progress',
   'with-session',
@@ -75,6 +72,14 @@ type SourceTrailingParams = {
   readonly isLoading: boolean;
   readonly error: string | null;
 };
+
+type ZeroParams = {
+  readonly count: number;
+};
+
+const ZERO_COUNT = <span aria-hidden />;
+
+const zeroTrailing = ({ count }: ZeroParams) => (count === 0 ? ZERO_COUNT : undefined);
 
 const sourceTrailing = ({ isLoading, error }: SourceTrailingParams) => {
   if (error != null) {
@@ -126,10 +131,12 @@ export const InboxFacetRail = ({
               glyph={<IntegrationGlyph provider={provider} size="xs" useBrandColor />}
               label={integrationLabel({ provider })}
               count={counts.source[provider]}
-              trailing={sourceTrailing({
-                isLoading: loading[provider],
-                error: errors[provider],
-              })}
+              trailing={
+                sourceTrailing({
+                  isLoading: loading[provider],
+                  error: errors[provider],
+                }) ?? zeroTrailing({ count: counts.source[provider] })
+              }
               isSelected={filters.source === provider}
               onClick={() =>
                 change({
@@ -148,6 +155,7 @@ export const InboxFacetRail = ({
             icon={VIEW_PRESENTATION[view].icon}
             label={VIEW_PRESENTATION[view].label}
             count={counts.view[view]}
+            trailing={zeroTrailing({ count: counts.view[view] })}
             isSelected={filters.view === view}
             onClick={() => change({ ...filters, view: filters.view === view ? 'all' : view })}
           />
@@ -161,6 +169,7 @@ export const InboxFacetRail = ({
               icon={TYPE_PRESENTATION[type].icon}
               label={TYPE_PRESENTATION[type].label}
               count={counts.kind[type]}
+              trailing={zeroTrailing({ count: counts.kind[type] })}
               isSelected={filters.kind === type}
               onClick={() => change({ ...filters, kind: filters.kind === type ? 'all' : type })}
             />

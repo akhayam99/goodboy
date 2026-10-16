@@ -71,7 +71,7 @@
     "session -> chat": 5,
     "session -> context": 8,
     "session -> inbox": 1,
-    "session -> integrations": 11,
+    "session -> integrations": 10,
     "session -> providers": 2,
     "session -> reports": 1,
     "session -> resolve": 2,

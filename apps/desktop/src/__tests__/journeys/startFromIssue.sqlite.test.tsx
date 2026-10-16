@@ -165,13 +165,14 @@ describe('journey: start a session from an issue', () => {
     expect(draft().pickedIssues.map((issue) => issue.identifier)).toEqual(['HBL-412']);
 
     renderPicked();
-    expect(screen.getByRole('region', { name: 'Brief from HBL-412' })).toBeDefined();
+    expect(screen.getByRole('region', { name: 'Brief' })).toBeDefined();
     expect(screen.getByRole('textbox', { name: 'Brief title' })).toHaveProperty(
       'value',
       ISSUE.title,
     );
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Ask an agent' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Runs as:/ }));
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Ask an agent' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Agent instructions' }), {
       target: { value: INSTRUCTIONS },
     });
@@ -242,7 +243,8 @@ describe('journey: start a session from an issue', () => {
     useAppStore.getState().openSessionDraft();
     pickIssue();
     renderPicked();
-    fireEvent.click(screen.getByRole('tab', { name: 'Ask an agent' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Runs as:/ }));
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Ask an agent' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Agent instructions' }), {
       target: { value: INSTRUCTIONS },
     });
@@ -263,7 +265,7 @@ describe('journey: start a session from an issue', () => {
     expect(screen.queryByText('Session started')).toBeNull();
 
     storySpies.createWorktree.mockResolvedValue(WORKTREE);
-    fireEvent.click(screen.getByRole('button', { name: 'Start from HBL-412' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
 
     await waitFor(() => expect(useAppStore.getState().sessions).toHaveLength(1));
     expect(await sessionRows()).toHaveLength(1);

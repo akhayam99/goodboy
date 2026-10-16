@@ -67,10 +67,10 @@ describe('OverviewActions', () => {
     expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
       'Run a workflow',
       'Orchestrate',
-      'Start agent',
+      'Ask an agent',
       'Start Auto',
-      'Report',
-      'Wireframe',
+      'Write a report',
+      'Draw a wireframe',
     ]);
   });
 
@@ -89,7 +89,7 @@ describe('OverviewActions', () => {
   });
 
   it.each([
-    ['Start agent', 'agent'],
+    ['Ask an agent', 'agent'],
     ['Start Auto', 'auto'],
   ] as const)('opens %s as its own form, the roles and Auto apart', (item, form) => {
     render(<OverviewActions session={SESSION} />);

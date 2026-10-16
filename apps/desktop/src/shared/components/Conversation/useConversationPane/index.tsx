@@ -18,17 +18,23 @@ type Result = {
 
 export const useConversationPane = ({ source, resetKey }: Params): Result => {
   const model = useConversation({ source, resetKey });
+  const composer = model.canSend ? <ConversationComposer source={source} model={model} /> : null;
 
   return {
     section: {
       key: 'conversation',
       kind: 'conversation',
       label: 'Conversation',
-      count: countMessages({ threads: source.threads }),
+      ...(source.error == null && { count: countMessages({ threads: source.threads }) }),
       isCollapsible: false,
       defaultOpen: true,
-      content: <Conversation source={source} model={model} />,
+      content: (
+        <div className="flex min-w-0 flex-col gap-4">
+          <Conversation source={source} model={model} />
+          {composer}
+        </div>
+      ),
     },
-    composer: model.canSend ? <ConversationComposer source={source} model={model} /> : null,
+    composer: null,
   };
 };

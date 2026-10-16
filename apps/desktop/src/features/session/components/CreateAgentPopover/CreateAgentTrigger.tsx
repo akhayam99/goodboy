@@ -10,7 +10,7 @@ type Props = {
 
 export const CreateAgentTrigger = ({ isOpen, className, onClick }: Props) => (
   <Button
-    variant="primary"
+    variant="secondary"
     size="sm"
     onClick={onClick}
     aria-haspopup="dialog"

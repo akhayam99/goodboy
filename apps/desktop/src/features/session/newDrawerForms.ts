@@ -3,43 +3,59 @@ import type { NewDrawerForm } from '../../store/slices/drawer/state';
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
 import {
   AGENT_LINE,
+  ASK_AGENT_CHOICE,
   AUTO_AGENT_LINE,
+  DRAW_WIREFRAME_CHOICE,
+  ORCHESTRATE_CHOICE,
   ORCHESTRATE_LINE,
   RUN_LINE,
+  RUN_WORKFLOW_CHOICE,
+  START_AUTO_CHOICE,
+  WRITE_REPORT_CHOICE,
 } from '../../shared/lib/startCopy';
 
 type NewDrawerFormMeta = {
   readonly title: string;
   readonly icon: LucideIcon;
-  readonly line: string;
+  readonly line: string | null;
   readonly isAutoOnly: boolean;
 };
 
 export const NEW_DRAWER_FORMS = {
   run: {
-    title: 'Run a workflow',
+    title: RUN_WORKFLOW_CHOICE,
     icon: CONCEPT_ICONS.workflows,
     line: RUN_LINE,
     isAutoOnly: false,
   },
   orchestrate: {
-    title: 'Orchestrate',
+    title: ORCHESTRATE_CHOICE,
     icon: CONCEPT_ICONS.orchestrator,
     line: ORCHESTRATE_LINE,
     isAutoOnly: false,
   },
-  agent: { title: 'Start agent', icon: CONCEPT_ICONS.agents, line: AGENT_LINE, isAutoOnly: false },
-  auto: { title: 'Start Auto', icon: CONCEPT_ICONS.auto, line: AUTO_AGENT_LINE, isAutoOnly: true },
+  agent: {
+    title: ASK_AGENT_CHOICE,
+    icon: CONCEPT_ICONS.agents,
+    line: AGENT_LINE,
+    isAutoOnly: false,
+  },
+  auto: {
+    title: START_AUTO_CHOICE,
+    icon: CONCEPT_ICONS.auto,
+    line: AUTO_AGENT_LINE,
+    isAutoOnly: true,
+  },
   report: {
-    title: 'Report',
+    title: WRITE_REPORT_CHOICE,
     icon: CONCEPT_ICONS.report,
-    line: 'A report written from this session.',
+    line: null,
     isAutoOnly: false,
   },
   wireframe: {
-    title: 'Wireframe',
+    title: DRAW_WIREFRAME_CHOICE,
     icon: CONCEPT_ICONS.wireframe,
-    line: 'A wireframe drawn from this session.',
+    line: null,
     isAutoOnly: false,
   },
 } as const satisfies Readonly<Record<NewDrawerForm, NewDrawerFormMeta>>;
