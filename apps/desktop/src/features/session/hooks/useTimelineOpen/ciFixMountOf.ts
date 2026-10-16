@@ -4,7 +4,7 @@ import {
   type CheckMountState,
 } from '../../../../store/slices/agents/selectCheckMount';
 
-export type CiFixMountState = CheckMountState & {
+type CiFixMountState = CheckMountState & {
   readonly sessionMounts: Readonly<Record<string, ReadonlyArray<SessionMountView>>>;
 };
 
