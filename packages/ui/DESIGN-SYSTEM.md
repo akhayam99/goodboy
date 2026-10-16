@@ -1544,7 +1544,7 @@ what it holds live in [docs/navigation.md](../../docs/navigation.md) → Surface
 
 | part        | shape                                                                                                    |
 | ----------- | -------------------------------------------------------------------------------------------------------- |
-| toggle      | a size-8 icon button centred in a 44px box, on the same axis as the workspace tile and the rail          |
+| toggle      | none in the column: the one sidebar toggle is `ColumnToggleButton` in the top bar, left of Back (⌘B)     |
 | New session | a 28px row, `text-row`, the primary tint (`bg` and `ring` of `tintClasses('primary')`), `+` in primary   |
 | door        | a 28px row: 14px concept icon, the word in `text-row` muted, the shortcut in `text-chip` on hover        |
 | current     | `bg-selected`, `text-foreground`, `cursor-default`, `aria-current="page"`, one per frame                 |
@@ -1577,7 +1577,7 @@ a 6px dot for running (info) or open questions (warning).
 **Pinned sessions are a group.** A **Pinned** group sits first in the sessions
 list, above every other group, in pin order. Its header is an `Eyebrow` with the
 count, the same header as a group's: a toggle in a grouped list, a plain label
-in a flat one (the rest of the flat list then reads Other sessions, so the
+in a flat one (the rest of the flat list then reads Sessions, so the
 boundary is named, with no divider). A pinned row is the same row as any other,
 with no glyph at rest.
 
@@ -2352,9 +2352,9 @@ width eases to 44px while the open layer, on the rail's own surface
 the reverse, and the icon layer leaves once the words are in. The icon layer
 draws each icon at the x and y of its open row: a `RailButton` is the open row
 without its word, the session rail's icon level starts with the session node on
-the identity row's line and its pages on 28px rows, and the main rail's toggle,
-New and doors sit on the column's rows. Both layers carry the same toggle, so
-it never moves.
+the identity row's line and its pages on 28px rows, and the main rail's New
+and doors sit on the column's rows. Neither layer carries a toggle: the one
+sidebar toggle sits in the top bar, so it never moves when the column folds.
 
 **A drill crosses levels in one move.** `LevelStack` keeps its layers
 absolute, so no height changes. On a level change `useLevelSwap` copies the
@@ -2453,10 +2453,10 @@ label loses characters before a count disappears.
 `COLLAPSED_RAIL_WIDTH` (44px, exported by `AppShell`) and its buttons center on
 22px. The top bar starts at `--titlebar-inset`, which clears the macOS traffic
 lights, so it no longer shares an axis with the rail:
-`collapsed-rail-width.test.tsx` pins both. The sidebar toggle is therefore not
-in the top bar: it is the first `size-8` button of the collapsed rail and of
-the open sidebar's first row, on the same axis in both states
-(`sidebar-toggle-axis.test.tsx`). Widening the rail to fix a padding is
+`collapsed-rail-width.test.tsx` pins both. The main sidebar has one toggle,
+`ColumnToggleButton` in the top bar left of Back and Forward (⌘B), the same
+button whether the column is open or folded, and neither the column nor its
+44px rail draws a toggle row (`sidebar-toggle-axis.test.tsx`). Widening the rail to fix a padding is
 the wrong trade, because chrome pays rent.
 
 **An inline trigger inside `AnchoredPopover` passes `anchorClassName="flex"`.**
