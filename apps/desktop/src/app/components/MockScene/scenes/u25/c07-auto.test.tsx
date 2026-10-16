@@ -98,6 +98,22 @@ describe('c07 Auto scenes', () => {
     await waitFor(() => expect(levelStack().dataset.levelStack).toBe('auto'), WAIT);
   });
 
+  it('c07-auto-folded shows the Auto level as rings with the back icon first', async () => {
+    mount({ id: 'c07-auto-folded' });
+
+    const rail = await waitFor(() => {
+      const found = document.querySelector<HTMLElement>('[data-column-rail]');
+      expect(found?.dataset.sidebarLevel).toBe('auto');
+      return found;
+    }, WAIT);
+    if (rail === null || rail === undefined) {
+      throw new Error('no folded rail');
+    }
+    expect(within(rail).getByRole('button', { name: /^Back to / })).toBeDefined();
+    expect(within(rail).getByRole('button', { name: 'Implementer, Running' })).toBeDefined();
+    expect(within(rail).getByRole('button', { name: 'Tester, Queued' })).toBeDefined();
+  });
+
   it('c07-auto-session-level keeps the Auto chat in the center with the session level shown', async () => {
     mount({ id: 'c07-auto-session-level' });
 

@@ -643,7 +643,9 @@ and the hidden one is `inert`.
   selected and the session row unselected (`useSidebarLevel`).
 - **Folded (⌘B, 44px).** The rail shows the current level as icons with right
   tooltips: on level 1 the back icon first, then one icon per page with its
-  dot; on level 0 New, the doors and the pinned session nodes.
+  dot; on the Auto level the back icon, then one ring per rail row with its
+  role and state in the tooltip (`RailAutoLevel`); on level 0 New, the doors
+  and the pinned session nodes.
 - **The Auto level (level 2).** Auto agents opens the session's only Auto
   conversation and drills the sidebar into it (`openAutoAgents`); with none or
   several it opens the Auto agents page (`AutoAgentsPane`: one grid row per

@@ -4,9 +4,10 @@ import { seedC07, type C07Seed } from './c07AutoSeed';
 
 type Props = {
   readonly seed: C07Seed;
+  readonly isFolded?: boolean;
 };
 
-export const C07AutoFrame = ({ seed }: Props) => {
+export const C07AutoFrame = ({ seed, isFolded = false }: Props) => {
   const [isReady, setIsReady] = useState(false);
   useEffect(() => {
     seedC07(seed);
@@ -15,5 +16,5 @@ export const C07AutoFrame = ({ seed }: Props) => {
   if (!isReady) {
     return null;
   }
-  return <AppFrame view="session" isRailCollapsed={false} />;
+  return <AppFrame view="session" isRailCollapsed={isFolded} />;
 };

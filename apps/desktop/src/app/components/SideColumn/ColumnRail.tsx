@@ -13,6 +13,7 @@ import { RailButton } from './RailButton';
 import { RailSessions } from './RailSessions';
 import { ReportBugButton } from './ReportBugButton';
 import { COLUMN_DOORS, openColumnDoor, type ColumnActions } from './columnDoors';
+import { RailAutoLevel } from './RailAutoLevel';
 import { RailSessionLevel } from './RailSessionLevel';
 import { useDoorSignals } from './useDoorSignals';
 import { useSidebarLevel } from './useSidebarLevel';
@@ -48,21 +49,24 @@ export const ColumnRail = ({
   const signals = useDoorSignals({});
   const level = useSidebarLevel({ place, currentSessionId });
   const currentSession = useCurrentSession();
-  const isSessionLevel =
-    level === 'session' && currentSession !== null && currentSession.id === currentSessionId;
+  const isInSession = currentSession !== null && currentSession.id === currentSessionId;
+  const shownLevel = isInSession ? level : 'workspace';
   return (
     <nav
       aria-label="Sidebar"
       data-column-rail=""
-      data-sidebar-level={isSessionLevel ? 'session' : 'workspace'}
+      data-sidebar-level={shownLevel}
       className="flex h-full min-w-0 shrink-0 flex-col items-center gap-1 py-2"
       style={{ width: COLLAPSED_RAIL_WIDTH }}
     >
       <ColumnToggleButton isCollapsed onToggle={onToggle} />
-      {scope === 'workspace' && isSessionLevel && currentSession !== null ? (
+      {scope === 'workspace' && shownLevel === 'session' && currentSession !== null ? (
         <RailSessionLevel session={currentSession} />
       ) : null}
-      {scope === 'workspace' && !isSessionLevel ? (
+      {scope === 'workspace' && shownLevel === 'auto' && currentSession !== null ? (
+        <RailAutoLevel session={currentSession} />
+      ) : null}
+      {scope === 'workspace' && shownLevel === 'workspace' ? (
         <>
           <RailButton
             id="new"
