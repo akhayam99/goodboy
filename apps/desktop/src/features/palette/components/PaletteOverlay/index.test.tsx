@@ -96,10 +96,10 @@ describe('PaletteOverlay, the commands mode', () => {
     const chip = scopeChipOf({ label: 'Speed up the payout export for large merchants' });
     expect(tooltipTextOf({ element: chip })).toBe('Backspace removes the scope');
     expect(screen.getByText('For this session')).toBeDefined();
-    expect(optionNames()[0]).toBe('Open Files');
+    expect(optionNames()[0]).toBe('Open files');
     expect(optionNames()[0]).not.toMatch(/^Message /);
     expect(optionNames()[1]).toBe('Message Stream the export instead of building it in memory');
-    expect(selectedName()).toBe('Open Files');
+    expect(selectedName()).toBe('Open files');
     expect(optionNames()).toContain('All actions for this session');
     expect(optionNames()).not.toContain('Delete…');
   });
@@ -272,7 +272,7 @@ describe('PaletteOverlay offers only the verbs the object state allows', () => {
     type(input, 'archive');
     expect(optionNames()).not.toContain('Archive');
     type(input, 'review');
-    expect(optionNames()).not.toContain('Open Comments');
+    expect(optionNames()).not.toContain('Open comments');
   });
 
   it('hides a blocked verb until it is searched, then shows it with its reason', () => {

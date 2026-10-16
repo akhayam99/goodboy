@@ -98,13 +98,13 @@ export const BRANCH_PAGE_ROWS: ReadonlyArray<Row> = [
   {
     name: 'door: Files lands on the Branch with its worktree row current',
     covers: ['navigate', 'sidebar:files-door'],
-    open: () => openPalette(/^Open Files/),
+    open: () => openPalette(/^Open files/),
     lands: both(branchTab('files'), worktreeMarked),
   },
   {
     name: 'door: Comments lands on the Branch Comments tab with the worktree level on screen',
     covers: ['navigate', 'sidebar:comments-door'],
-    open: () => openPalette(/^Open Comments/),
+    open: () => openPalette(/^Open comments/),
     lands: both(branchTab('comments'), worktreeLevelShown),
   },
   {

@@ -23,6 +23,8 @@ const RELAY_SHELL = brandedId<TerminalTabId>({ value: `${SESSION_ID}::t2` });
 const PAYMENTS_MOUNT = brandedId<MountId>({ value: 'mock-run-mount-payments-backfill' });
 const RELAY_MOUNT = brandedId<MountId>({ value: 'mock-run-mount-console' });
 
+const SCRIPT_STARTED_AT = Date.parse('2026-10-15T09:00:00.000Z');
+
 type TabParams = Pick<TerminalTab, 'id' | 'title' | 'cwd' | 'mountId'>;
 
 const tabOf = ({ id, title, cwd, mountId }: TabParams): TerminalTab => ({
@@ -125,6 +127,22 @@ const openState = ({ state }: SeedParams): void => {
     return;
   }
   if (state === 'script-output') {
+    useAppStore.setState((current) => ({
+      scriptRuns: {
+        ...current.scriptRuns,
+        [SESSION_ID]: {
+          ...current.scriptRuns[SESSION_ID],
+          'package:test': {
+            status: 'ok',
+            result: { stdout: 'Test Files  12 passed (12)\n', stderr: '', exitCode: 0 },
+            runId: 'mock-c03-run-test',
+            startedAt: SCRIPT_STARTED_AT,
+            completedAt: SCRIPT_STARTED_AT + 42_000,
+            name: 'test',
+          },
+        },
+      },
+    }));
     store.openDrawer({
       kind: 'scriptRun',
       sessionId: SESSION_ID,

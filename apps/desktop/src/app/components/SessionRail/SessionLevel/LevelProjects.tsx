@@ -7,6 +7,7 @@ import { useMountRows } from '../../../../features/session/components/SessionOve
 import { useWorktreeStatusSnapshot } from '../../../../features/session/hooks/useWorktreeStatuses';
 import { worktreeStatusTargetsOf } from '../../../../features/session/hooks/useWorktreeStatuses/targets';
 import { BRANCH_LENSES } from '../branchLenses';
+import { useLapProject } from '../../../../features/bootstrap/useLapProject';
 import { FinishedWorktrees } from './FinishedWorktrees';
 import { LevelAddMenu, type BranchableProject } from './LevelAddMenu';
 import { LevelLabel } from './LevelLabel';
@@ -43,6 +44,8 @@ export const LevelProjects = ({ session, isActive }: Props) => {
     [groups],
   );
   const isArchived = session.archivedAt != null;
+  const lap = useLapProject({ sessionId });
+  const lapName = groups.length === 0 && lap.stage !== null ? (lap.project?.name ?? null) : null;
 
   return (
     <div role="group" aria-labelledby={LABEL_ID} className="flex flex-col">
@@ -59,6 +62,15 @@ export const LevelProjects = ({ session, isActive }: Props) => {
           ),
         })}
       />
+      {lapName === null ? null : (
+        <div
+          data-lap-project=""
+          className="flex h-7 min-w-0 items-center gap-2 px-2 text-ui text-muted-foreground"
+        >
+          <CONCEPT_ICONS.projectFolder size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+          <span className="truncate">{lapName}</span>
+        </div>
+      )}
       {groups.map((group) => (
         <div key={group.projectId} className="flex flex-col">
           <div className="flex h-7 min-w-0 items-center gap-2 px-2 text-ui text-muted-foreground">
