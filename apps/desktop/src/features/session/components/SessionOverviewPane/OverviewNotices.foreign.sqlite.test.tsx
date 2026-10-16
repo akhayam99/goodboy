@@ -9,8 +9,8 @@ vi.mock('@tauri-apps/api/event', async () =>
 vi.mock('../../../../shared/lib/db', async () =>
   (await import('../../../../store/storyHarness')).sqliteDbLibModuleMock(),
 );
-const status = vi.hoisted(() => ({
-  current: null as unknown,
+const status = vi.hoisted((): { current: unknown } => ({
+  current: null,
 }));
 vi.mock('../../../worktree/worktree', async () => ({
   ...(await import('../../../../store/storyHarness')).worktreeModuleMock(),
@@ -29,14 +29,15 @@ import {
   insertWorkspace,
   listSessionMounts,
 } from '@goodboy/db';
-import type {
-  IsoDateTime,
-  MountId,
-  ProjectId,
-  PullRequestState,
-  SessionId,
-  WorkspaceId,
-  WorktreeStatus,
+import {
+  brandId,
+  type IsoDateTime,
+  type MountId,
+  type ProjectId,
+  type PullRequestState,
+  type SessionId,
+  type WorkspaceId,
+  type WorktreeStatus,
 } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 import { ToastProvider } from '../../../../shared/components/Toast';
@@ -54,11 +55,21 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 
-const NOW = '2026-10-06T09:00:00.000Z' as IsoDateTime;
-const WORKSPACE_ID = 'workspace-harborline' as WorkspaceId;
-const PROJECT_ID = 'project-ledger-core' as ProjectId;
-const SESSION_ID = 'session-review-9900' as SessionId;
-const MOUNT_ID = 'mount-review' as MountId;
+const NOW = brandId<IsoDateTime>({ value: '2026-10-06T09:00:00.000Z' });
+const WORKSPACE_ID = brandId<WorkspaceId>({ value: 'workspace-harborline' });
+const PROJECT_ID = brandId<ProjectId>({ value: 'project-ledger-core' });
+const SESSION_ID = brandId<SessionId>({ value: 'session-review-9900' });
+const MOUNT_ID = brandId<MountId>({ value: 'mount-review' });
+
+type WorktreeArgs = { readonly dirName: string; readonly existingBranch: string };
+
+const isWorktreeArgs = (value: unknown): value is WorktreeArgs =>
+  typeof value === 'object' &&
+  value !== null &&
+  'dirName' in value &&
+  'existingBranch' in value &&
+  typeof value.dirName === 'string' &&
+  typeof value.existingBranch === 'string';
 const TEAMMATE = 'grw-1348-cta-for-the-slot';
 const WORKTREE = '/repo/ledger-core/.goodboy/worktrees/review';
 
@@ -220,7 +231,10 @@ describe('a teammate pull request opened from Goodboy', () => {
       },
     ]);
     storySpies.createWorktree.mockImplementation(async (args: unknown) => {
-      const { dirName, existingBranch } = args as { dirName: string; existingBranch: string };
+      if (!isWorktreeArgs(args)) {
+        throw new Error('createWorktree got no dirName and existingBranch');
+      }
+      const { dirName, existingBranch } = args;
       return {
         worktreePath: `/repo/ledger-core/.goodboy/worktrees/${dirName}`,
         branchName: existingBranch,

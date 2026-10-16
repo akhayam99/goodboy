@@ -5685,11 +5685,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/session/components/SessionOverviewPane/OverviewNotices.foreign.sqlite.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 7
-    }
-  },
   "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/AlsoInChip.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 6
