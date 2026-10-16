@@ -17,6 +17,7 @@ import type {
 } from '@goodboy/types';
 import { brandId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
+import type { SessionGithubState } from '../../../../../store/types';
 import { projectById } from '../../../../../store/slices/projects/projectIndex';
 import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 import { SESSION, WORKSPACE_ID, seedWorkflowScene } from '../workflowSeed';
@@ -30,6 +31,19 @@ import { serializeSessionPins } from '../../../../../store/slices/session-pins/p
 const clock = sceneClock({ anchor: '2026-10-16T12:00:00.000Z' });
 
 const at = (iso: string): IsoDateTime => clock.iso({ at: iso });
+
+const NO_PULL_REQUEST: SessionGithubState = {
+  pr: null,
+  linkedIssues: [],
+  fetchedAt: at('2026-10-16T11:58:00.000Z'),
+  failedAt: null,
+  loading: false,
+  error: null,
+  detail: null,
+  detailFetchedAt: null,
+  detailLoading: false,
+  detailError: null,
+};
 
 const LEDGER_ID = brandId<ProjectId>({ value: 'mock-inactive-project-ledger-core' });
 const RELAY_ID = brandId<ProjectId>({ value: 'mock-inactive-project-notify-relay' });
@@ -243,6 +257,7 @@ export const seedInactiveSessions = ({ group, pageView }: Params): Session => {
     sessionActiveProject: Object.fromEntries(
       SEEDS.map((seed) => [idOf({ slug: seed.slug }), seed.projectId]),
     ),
+    sessionGithub: Object.fromEntries(sessions.map((session) => [session.id, NO_PULL_REQUEST])),
     sessionBranches: Object.fromEntries(
       sessions.map((session) => [session.id, `northwind/${session.id}`]),
     ),

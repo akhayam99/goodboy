@@ -54,7 +54,9 @@
   right (`boardSignalOf`, the same one the List row shows): an open question,
   else a failed check, else the pull request token in its state color (a click
   opens the pull request), else a running dot with the count of running agents
-  (`runningAgentCountOf`), else the Checking GitHub mark. An archived card shows
+  (`runningAgentCountOf`), else the Checking GitHub mark. The question and
+  running glyphs carry their number from two on; one is the glyph alone, since
+  the state node already says it. An archived card shows
   only its pull request. Age, issue chips, agent count, cost, the pin, Auto and
   draft review comments live in the session hover card, which opens on the
   board with facts only (no buttons). Restoring an archived card uses the
