@@ -1,5 +1,5 @@
 import { WorkNode, cn } from '@goodboy/ui';
-import type { SessionNode } from './sessionNode';
+import type { SessionNode } from '../../../session/sessionNode';
 
 type Props = {
   readonly node: SessionNode;

@@ -1,11 +1,7 @@
 import type { Tone, WorkNodeMark, WorkNodeState } from '@goodboy/ui';
 import type { SessionStageInfo } from '@goodboy/types';
-import { NAMES } from '../../../../shared/names';
-import {
-  ATTENTION_REASON_META,
-  attentionWordsOf,
-  type AttentionMark,
-} from '../../../session/session-stage';
+import { NAMES } from '../../shared/names';
+import { ATTENTION_REASON_META, attentionWordsOf, type AttentionMark } from './session-stage';
 
 type SessionNodeKind = 'needs' | 'queue' | 'running' | 'done' | 'idle' | 'archived';
 

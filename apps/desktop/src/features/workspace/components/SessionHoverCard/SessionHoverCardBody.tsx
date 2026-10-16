@@ -8,7 +8,7 @@ import { useReviewDraftCount } from './useReviewDraftCount';
 import { useSessionSummary } from '../../hooks/useSessionSummary';
 import { SessionProgress } from '../SessionProgress';
 import { SessionStateNode } from '../SessionActivityBar/SessionStateNode';
-import { sessionNodeOf } from '../SessionActivityBar/sessionNode';
+import { sessionNodeOf } from '../../../session/sessionNode';
 import { getLinkedRequest } from '../StageBoard/StageBoardCard/getLinkedRequest';
 import { ExternalTaskChip } from '../../../integrations/components/ExternalTaskChip';
 import { sessionRowTitle } from '../../../session/sessionTitle';

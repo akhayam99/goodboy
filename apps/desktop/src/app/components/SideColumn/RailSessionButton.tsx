@@ -1,7 +1,7 @@
 import type { FocusEvent, KeyboardEvent, MouseEvent } from 'react';
 import { Tooltip, cn, inlineMarkdownText } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { sessionNodeOf } from '../../../features/workspace/components/SessionActivityBar/sessionNode';
+import { sessionNodeOf } from '../../../features/session/sessionNode';
 import { SessionStateNode } from '../../../features/workspace/components/SessionActivityBar/SessionStateNode';
 import { useSessionSummary } from '../../../features/workspace/hooks/useSessionSummary';
 import { sessionRowTitle } from '../../../features/session/sessionTitle';

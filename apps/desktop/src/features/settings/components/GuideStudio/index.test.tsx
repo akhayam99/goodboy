@@ -173,6 +173,54 @@ describe('GuideStudio', () => {
     expect(within(board).getByText('in review')).toBeDefined();
   });
 
+  it('lists the shell chapter right after the Board in the rail', () => {
+    render(<GuideStudio onClose={vi.fn()} />);
+
+    const board = within(rail()).getByRole('button', { name: 'Board' });
+    expect(board.nextElementSibling?.textContent).toBe('Sidebar, session rail and panes');
+    const shell = within(screen.getByRole('region', { name: 'Sidebar, session rail and panes' }));
+    ['Sidebar', 'Session rail', 'Levels', 'Fold the rail', 'Panes'].forEach((term) =>
+      expect(shell.getByText(term)).toBeDefined(),
+    );
+  });
+
+  it('names the four starts and tells Orchestrated from Auto', () => {
+    render(<GuideStudio onClose={vi.fn()} />);
+
+    const kickoff = within(screen.getByRole('region', { name: 'New session and kickoff' }));
+    ['Four ways to start', 'Orchestrate', 'Projects'].forEach((term) =>
+      expect(kickoff.getByText(term)).toBeDefined(),
+    );
+    const agents = within(screen.getByRole('region', { name: 'Agents, roles and workflows' }));
+    expect(agents.getByText('Orchestrated or Auto')).toBeDefined();
+  });
+
+  it('draws the session marks of the shell in the Legend, one node per row', () => {
+    render(<GuideStudio onClose={vi.fn()} />);
+
+    const legend = screen.getByRole('region', { name: 'Legend' });
+    const marks = within(legend).getByText('Session marks').parentElement;
+    const states = Array.from(marks?.querySelectorAll('[data-node-state]') ?? []).map((node) =>
+      node.getAttribute('data-node-state'),
+    );
+    expect(states).toEqual([
+      'running',
+      'question',
+      'approval',
+      'alert',
+      'failed',
+      'approved',
+      'merging',
+      'marker',
+      'marker',
+      'finished',
+      'closed',
+      'queued',
+    ]);
+    expect(within(legend).getByText('Dots in the sidebar, rail and panes')).toBeDefined();
+    expect(within(legend).getByText('merge queue')).toBeDefined();
+  });
+
   it('draws the crumb in the detail beside the rail, on the column of the first chapter title', () => {
     const { container } = render(
       <StudioFrame kind="guide" onClose={vi.fn()}>

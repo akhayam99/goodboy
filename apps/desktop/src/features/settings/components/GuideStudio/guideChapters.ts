@@ -121,11 +121,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Pinned scripts',
-        desc: 'Pin a script per project from the Scripts page in a session or from the card of the project on Projects. It holds across worktrees and shows under $ in the palette. A project with nothing pinned shows Suggested scripts with a Pin on each.',
+        desc: 'Pin a script per project from Scripts, in the More panes menu of a session, or from the card of the project on Projects. It holds across worktrees and shows under $ in the palette. A project with nothing pinned shows Suggested scripts with a Pin on each.',
       },
       {
         term: 'Monitoring',
-        desc: 'Monitoring, a door in the left column, says which ports are taken and by whom: a worktree, a main checkout, or a script, terminal or agent Goodboy started. Pinned holds the ports you add with Pin a port, each with an optional description, and starts empty; Run by Goodboy, From workspace and Listening on this Mac follow, and a port shows in one of them only. Pin or Hide a row from its menu. Stop acts on a row, Force stop follows if the process stays, and Leftovers lists what an earlier run left behind.',
+        desc: 'Monitoring, the pulse icon in the top bar, says which ports are taken and by whom: a worktree, a main checkout, or a script, terminal or agent Goodboy started. Pinned holds the ports you add with Pin a port, each with an optional description, and starts empty; Run by Goodboy, From workspace and Listening on this Mac follow, and a port shows in one of them only. Pin or Hide a row from its menu. Stop acts on a row, Force stop follows if the process stays, and Leftovers lists what an earlier run left behind.',
       },
     ],
     links: [
@@ -151,8 +151,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: "Usage, the models in your picker, permissions and your account, in one place. Providers billed per token say so instead of showing usage windows. A check that times out says Can't check and keeps what Goodboy last knew, and a sign-in that no check has confirmed shows apart from one that has. Test connection on Claude, Codex and Cursor makes a real account call and shows how long it took, and History lists the last 20 changes.",
       },
       {
-        term: 'Auto',
-        desc: 'Auto runs each role on the newest model of its line, Sonnet 5.5 on Claude today, and Models shows what it picks now. Open a role to see how it runs, and give it up to three models for Auto to pick from. A model you turn off in Models in the picker is left out of Auto and the workflow orchestrator.',
+        term: 'Auto in Models',
+        desc: 'This is the model setting, not the Auto agent. Auto runs each role on the newest model of its line, Sonnet 5.5 on Claude today, and Models shows what it picks now. Open a role to see how it runs, and give it up to three models for Auto to pick from. A model you turn off in Models in the picker is left out of Auto and the workflow orchestrator.',
       },
       {
         term: 'When a provider is out',
@@ -191,8 +191,12 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     lead: 'A session is one task: a goal, the agents working on it, and a branch for each project they edit. It starts as a draft and becomes a session only when you press Start or Start blank. Esc closes the draft page, and with text in it asks whether to keep the draft or discard it.',
     points: [
       {
+        term: 'Four ways to start',
+        desc: 'One selector at the top of the page holds Pick up a task, Run a workflow, Orchestrate and Ask an agent, and a line under it says what the choice does. Discard, in the actions row, throws the draft away.',
+      },
+      {
         term: 'Pick up a task',
-        desc: 'One selector at the top of the page holds Pick up a task, Run a workflow and Ask an agent, and a line under it says what the choice does. Choose an issue from your tools or Tasks. Goodboy drafts a short title and goal linked back to it, and you edit them in the same block. Then run it through the same workflow builder, or ask an agent, and press Start from the issue. A Sentry error or a GitHub or GitLab item opens in its project and says why. A GitHub pull request link gives Review pull request.',
+        desc: 'Choose an issue from your tools or Tasks. Goodboy drafts a short title and goal linked back to it, and you edit them in the same block. Then choose how to work on it: Run a workflow, Orchestrate or Ask an agent, and press Start from the issue. A Sentry error or a GitHub or GitLab item opens in its project and says why. A GitHub pull request link gives Review pull request.',
       },
       {
         term: 'Several issues',
@@ -200,15 +204,23 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Run a workflow',
-        desc: 'The same form as the Run tab of the New drawer: pick Orchestrate or a Preset, see and edit the plan, set Autonomy, Starts and Spend cap, then Start run creates the session and starts the run.',
+        desc: 'Several agents work through your goal, step by step. Describe the steps or pick a saved workflow, see and edit the plan, set Autonomy, Starts and Spend cap, then Start run creates the session and starts the run.',
+      },
+      {
+        term: 'Orchestrate',
+        desc: 'Give a goal and the orchestrator picks each next step until the goal is done. Start orchestration creates the session and starts the run. See Agents, roles and workflows for how it differs from Auto.',
       },
       {
         term: 'Ask an agent',
-        desc: 'Ask a question about the code. Scout is the default and maps an unfamiliar repo before you plan.',
+        desc: 'One agent in the role you pick. Scout is the default and maps an unfamiliar repo before you plan. With Auto turned on in Settings, Ask an agent starts Auto instead, with a Spend cap, and the button reads Start Auto.',
+      },
+      {
+        term: 'Projects',
+        desc: 'Projects is optional. The picker lists Suggested projects first, then All projects, and you can pick several or none: with none, Goodboy adds a project when an agent needs it. When you pick more than one, Ask an agent shows a chip naming the project the agent works in.',
       },
       {
         term: 'Chat',
-        desc: 'Chat, a door in the left column that reopens your last chat, answers a question about the whole workspace without a session. It only reads, on Claude or Codex, with the model and effort you pick for each chat. Make default in the picker saves them for new chats in the workspace. Start work from chat drafts a brief, and Start session opens a new session with it, nothing running yet, or Add to a session leaves it in the message box of one you pick. Paste, drop or attach up to 10 images to a message, and Claude or Codex reads them. Each chat row shows its model. Pin and archive a chat from its menu, delete it from its row or header, or select several and archive or delete them together.',
+        desc: 'Chat, a door in the sidebar that reopens your last chat, answers a question about the whole workspace without a session. It only reads, on Claude or Codex, with the model and effort you pick for each chat. Make default in the picker saves them for new chats in the workspace. Start work from chat drafts a brief, and Start session opens a new session with it, nothing running yet, or Add to a session leaves it in the message box of one you pick. Paste, drop or attach up to 10 images to a message, and Claude or Codex reads them. Each chat row shows its model. Pin and archive a chat from its menu, delete it from its row or header, or select several and archive or delete them together.',
       },
       {
         term: 'Start blank',
@@ -254,11 +266,26 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Top bar',
-        desc: 'Now, Limits, Spend and the bell sit on the right, with +N for providers past the first few. Impact opens from Spend, and a button switches between light and dark. Settings, App, General keeps the choice of following your system.',
+        desc: 'Now, Limits, Spend and the bell sit on the right, with +N for providers past the first few. Impact opens from Spend, and a button switches between light and dark. Settings, App, General keeps the choice of following your system. Monitoring, the pulse icon, shows the ports in use and says Pinned port down when a pinned one drops.',
+      },
+    ],
+    links: [{ label: 'Go to the board', target: { kind: 'board' } }],
+    extra: 'stages',
+  },
+  {
+    id: 'shell',
+    group: 'task',
+    title: 'Sidebar, session rail and panes',
+    concept: 'workspace',
+    lead: 'Three places hold everything you move through. The sidebar stays on the workspace, the session rail drills inside one session, and the panes open beside the page.',
+    points: [
+      {
+        term: 'Sidebar',
+        desc: 'New session comes first, then the doors Sessions, Tasks, Chat, Workflows and Terminal. A + on Chat and on Terminal starts a new chat or terminal, a number counts what runs, and a dot says a chat has a new reply. Pinned and Sessions follow, then Settings, the Goodboy row and the Report a bug button. The Goodboy row opens a menu with the Guide. The sidebar never changes level: it looks the same on every screen, and in a session it only marks the open session row.',
       },
       {
-        term: 'Left column',
-        desc: 'New session comes first, then the doors Sessions, Tasks, Chat, Workflows and Terminal. A + on Chat and on Terminal starts a new chat or terminal, and a dot on a door says something runs or is unread. Your sessions follow, then Settings, the Goodboy row and the bug report button. The Goodboy row opens a menu with the Guide. It looks the same on every screen, and in a session it marks the open session row. ⌘B folds it into icons, and it folds by itself when a narrow window leaves the page too little room. Monitoring is the pulse icon in the top bar.',
+        term: 'Hide the sidebar',
+        desc: 'The button at the top, or ⌘B, folds the sidebar into icons, and Show sidebar brings it back. ⌘B folds only the sidebar and leaves the session rail as it is.',
       },
       {
         term: 'Session rows',
@@ -266,23 +293,34 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Pin a session',
-        desc: "Pin session, in a row's right-click menu or the palette, moves a session to a Pinned group at the top of the list, in the order you pinned them, whatever the sort or filter. Move up and Move down change the order, and Unpin session puts it back. When the column is folded to icons, pinned sessions stay on the rail, with a flyout for the rest.",
+        desc: "Pin session, in a row's right-click menu or the palette, moves a session to a Pinned group at the top of the list, in the order you pinned them, whatever the sort or filter. Move up and Move down change the order, and Unpin session puts it back. When the sidebar is folded to icons, pinned sessions stay on the rail, with a flyout for the rest.",
       },
       {
-        term: 'Inside a session',
-        desc: "Click a session and its row stays selected in the left column while the session rail opens at the left of the page. At its top sit the session's name, which you click to rename, and its menu, then its pages with their counts: Overview, Runs, Agents, Auto agents while Auto is on, Artifacts, and Questions while one waits. Projects lists each branch with its pull request number, and Linked lists the work linked to the session. A branch, a run or Auto steps the rail one level in, and the back row at its top, or ⌘[ while the rail has focus, steps out. The button at the top of the rail folds it into icons.",
+        term: 'Session rail',
+        desc: "Click a session and the session rail opens at the left of the page, beside the sidebar. At its top sit the session's name, which you click to rename, and its menu, then its pages with their counts: Overview, Runs, Orchestrated, Agents, Auto agents with an Experimental chip while Auto is on, Artifacts, and Questions while one waits. A dot beside a count says something runs, and a warning dot says a question waits. Projects lists each branch with its pull request number and one dot for its worst state, and Linked lists the work linked to the session. Drag its edge to resize it.",
       },
       {
-        term: 'Inside Auto',
-        desc: "Open Auto agents and the session rail steps into Auto: Auto, then every agent it started with its state, and the limit at the foot. A row opens that agent beside the chat, where you can read it and write to it; Auto sees what you tell it. ‹ and the session's name go back.",
+        term: 'Levels',
+        desc: "A branch, a run or Auto steps the rail one level in, and the level slides in without moving the sidebar. On a branch the rail reads ‹ and the session's name, the project and branch, a status line while a git step is due, then Pull request, Comments, Files, Commits and Checks. On a run it reads ‹ Runs, the run title, Overview and every step in order. On Auto it reads ‹ and the session's name, Auto, then each agent it started with its state, and Limit with what is left at the foot. The back row, or ⌘[ while focus is in the rail, steps out. The session level has no back row, because the sidebar is the way to another place.",
       },
       {
-        term: 'Ask in a session',
-        desc: 'Ask, at the right of every session page header or on ⌘L, opens a panel that reads the session: what needs you now, and answers with buttons for what you can do. Nothing runs in one click. Its header button, or ⌘N inside the panel, starts a new chat and keeps the old one under Earlier.',
+        term: 'Fold the rail',
+        desc: 'Fold session rail, the button at the top of the rail, shrinks it to the icons of the current level, and Show session rail brings it back. It keeps its own setting, apart from the sidebar. In a narrow window the sidebar folds first and then the rail, so the page keeps room to work; open one by hand and it stays open until the window grows.',
+      },
+      {
+        term: 'Panes',
+        desc: 'At the right of every session header sit Ask, Terminal and Explore, then ⋯, More panes, which holds Context and Scripts. A pane opens beside the page, one at a time: press its button again, or Esc, to close it, and another button replaces it. A dot on More panes says the context is updating or changed since you last looked, and a red dot says it could not update.',
+      },
+      {
+        term: 'Ask',
+        desc: 'Ask, or ⌘L, opens a panel that reads the session: what needs you now, and answers with buttons for what you can do. Nothing runs in one click. Its header button, or ⌘N inside the panel, starts a new chat and keeps the old one under Earlier.',
+      },
+      {
+        term: 'Terminal, Explore and Scripts',
+        desc: 'Terminal opens in the worktree of the session, and the picker named Terminal folder in its header switches the folder. Explore browses the files of the session, and a file opens in place with Back to files. Scripts lists the scripts of the project, and an output opens in place with Back to scripts.',
       },
     ],
-    links: [{ label: 'Go to the board', target: { kind: 'board' } }],
-    extra: 'stages',
+    links: [],
   },
   {
     id: 'agents',
@@ -304,8 +342,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Activity has two views, Activity and Log. Activity shows one row per launch: a run, an agent, or a fix run with its comments. It reads newest first, and a run has a lane in its own colour. Each row starts with its role as an icon, never a word, and ends with the model that ran and its effort (N models on a run past two), the duration and the cost. Runs shows its steps the same way. Rest the pointer on an icon or a model to see its card in either place, or press I on a row. A finished run or step folds into a count row such as 4 subagents; click it or press Right to open it. Needs you sits on top with what waits for you. Log holds the facts, such as links, branches and decisions. The Runs tab lists the runs of a session.',
       },
       {
-        term: 'New drawer',
-        desc: 'New in the Overview header opens one drawer with three tabs. Run takes a goal and plans the steps, with Autonomy, Starts and Spend cap. Agent starts one role. Write drafts a report or a wireframe. The button is filled when nothing is running, blocked or waiting on a question and Next has nothing to offer.',
+        term: 'New menu',
+        desc: 'New in the Overview header opens a menu: Run a workflow, Orchestrate, Start agent, Start Auto while Auto is on, Report and Wireframe. Each opens its form in a pane beside the page. Run a workflow and Orchestrate take a goal with Autonomy, Starts and Spend cap. Start agent starts one role. Report and Wireframe draft a document. The button is filled when nothing is running, blocked or waiting on a question and Next has nothing to offer.',
       },
       {
         term: 'Overview',
@@ -317,7 +355,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Run page',
-        desc: 'Opening a run with a fixed list of steps moves the session rail into it: back to Runs, the run title, Overview, every step in order with its sub-agents, Add step, and the limit with what it spent at the foot. The center shows the step you pick as its conversation, and the line at its end says what the run waits for with the one button that moves it on, such as Start step 3, Review plan or Raise spend cap. Pause run, Autonomy, Skip step and Stop run sit in the run menu. An orchestrated run stays under Orchestrated as one page: the goal, one checklist of its steps and what is left, the line that says what the orchestrator does now and why, and the hint box at the bottom.',
+        desc: 'Opening a run with a fixed list of steps moves the session rail into it: back to Runs, the run title, Overview, every step in order with its sub-agents, Add step, and the limit with what it spent at the foot. The center shows the step you pick as its conversation, and the line at its end says what the run waits for with the one button that moves it on, such as Start step 3, Review plan or Raise spend cap. Pause run, Autonomy, Skip step and Stop run sit in the run menu. An orchestrated run does not step the rail in: it stays on Orchestrated as one page.',
       },
       {
         term: 'Agent suggests',
@@ -333,7 +371,15 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Orchestrated',
-        desc: 'Give a goal and let a model pick each next step with a reason, until it says done or blocked. Hints steer it while it runs, with several lines, markdown and images.',
+        desc: 'Give a goal and an orchestrator model picks each next step with a reason, until it says done or blocked. Orchestrated is its own page in the session rail, after Runs: the goal, one checklist of the steps and what is left, a line that says what the orchestrator does now and why, and a box that reads Hint the orchestrator. Queue holds a hint for the next decision, and Send now makes the orchestrator read it at once: its tooltip says Read now stops the step in flight, keeps what it wrote, and decides again. A waiting hint says Waits for the next decision, and one being read says Reading now.',
+      },
+      {
+        term: 'Auto',
+        desc: 'Auto is an experimental agent, off until you turn on Auto agent in Settings, App, General, under Experiments. Ask an agent then starts Auto: it answers what it can, hands the rest to child agents of the roles it picks, waits for their results and goes on, all under a Spend cap. Its agents live under Auto agents in the session rail, where each shows its state and the foot says Limit and what is left. You can write to Auto at any time, and Move to Auto hands it an agent you started yourself.',
+      },
+      {
+        term: 'Orchestrated or Auto',
+        desc: 'Orchestrated is not Auto. Orchestrated runs a workflow: the orchestrator only decides the next step, each step gets its own agent, and you steer with hints. Auto is one agent you talk to, which delegates work to children on its own under a Spend cap. Each has its own entry in the session rail, and only Auto carries the Experimental chip.',
       },
       {
         term: 'Pause and resume',
@@ -359,19 +405,19 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Decisions',
-        desc: 'Each decision gets a number and a byline. A decision Goodboy records keeps why it was made. Click one in the context drawer to open it and edit or remove it. A removal takes effect at once and can be undone while the drawer stays open.',
+        desc: 'Each decision gets a number and a byline. A decision Goodboy records keeps why it was made. Click one in the Context pane to open it and edit or remove it. A removal takes effect at once and can be undone while the pane stays open.',
       },
       {
         term: 'Running summary',
         desc: 'After each turn, State, Next and Learned are updated for the next agent, and an edit you made is kept.',
       },
       {
-        term: 'Context drawer',
-        desc: 'Open the goal, decisions and summary from any session page, and Copy context. A dot on Context means something changed since you last looked, and those changes come first, with Mark as read on the Decisions list. Context updates, at the top, shows the last update with its model and cost, and Update now queues one. Learned lists what agents explained about your topics, for you only, with Dismiss and Undo.',
+        term: 'Context pane',
+        desc: 'Open Context from More panes in any session header, or with ⌘⌥C, to see the goal, decisions and summary, and Copy context. A dot on More panes means something changed since you last looked, and those changes come first, with Mark as read on the Decisions list. Context updates, at the top, shows the last update with its model and cost, and Update now queues one. Learned lists what agents explained about your topics, for you only, with Dismiss and Undo.',
       },
       {
         term: 'Visible to',
-        desc: 'Each tab of the drawer says which roles receive it. Reviewers, debuggers and resolvers also read the decisions.',
+        desc: 'Each tab of the pane says which roles receive it. Reviewers, debuggers and resolvers also read the decisions.',
       },
       {
         term: 'What the agent received',
@@ -401,7 +447,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Task links',
-        desc: 'A task chip opens the task. Move to, Unlink, Stop tracking and Take off this branch act at once and show an Undo toast, and ⌘Z undoes the last one when focus is not in a text field. The Log keeps the event with Re-link. Drag a Linked row onto a worktree row of the session rail to move it there (Alt copies), or use Link work to this branch in the worktree menu.',
+        desc: 'A Linked row in the session rail opens the task. Its right click menu holds Move to, Take off this branch and Unlink from session, which act at once and show an Undo toast, and ⌘Z undoes the last one when focus is not in a text field. The Log keeps the event with Re-link. Drag a Linked row onto a worktree row of the session rail to move it there (Alt copies), or use Link work to this branch in the worktree menu.',
       },
       {
         term: 'Slack',
@@ -626,7 +672,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Settings rail',
-        desc: 'Settings opens on the page you opened last, or General the first time, and takes over the left column with Back to app and Search settings on top, open or folded. The rail lists App, Workspace, Providers & models and Integrations, and a dot marks a page that needs you. Every page is also in the palette. Drag the edge of a rail to resize it.',
+        desc: 'Settings opens on the page you opened last, or General the first time, and takes over the sidebar with Back to app and Search settings on top, open or folded. The rail lists App, Workspace, Providers & models and Integrations, and a dot marks a page that needs you. Every page is also in the palette. Drag the edge of a rail to resize it.',
       },
       {
         term: 'App and workspace',
@@ -712,11 +758,15 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Terminal',
-        desc: 'Control and the backtick key open Terminal, with every terminal of the workspace and its sessions in one list. A new terminal opens in the workspace folder, chips open one in a worktree or the main checkout, and the shells and their output are still there after a reload. ⌘T adds a terminal while one has focus. From a session, a terminal opens in a drawer on the right and stays in the list. Terminals are grouped by session, one row per worktree, each with its terminals as tabs and a port chip for a port it listens on. The tabs come back after a restart.',
+        desc: 'Control and the backtick key open Terminal, with every terminal of the workspace and its sessions in one list. A new terminal opens in the workspace folder, chips open one in a worktree or the main checkout, and the shells and their output are still there after a reload. ⌘T adds a terminal while one has focus. From a session, Terminal in the pane buttons opens one beside the page and it stays in the list. Terminals are grouped by session, one row per worktree, each with its terminals as tabs and a port chip for a port it listens on. The tabs come back after a restart.',
       },
       {
         term: 'Search',
         desc: 'Finds sessions, messages, agents, plans, decisions, questions, issues, pull requests, branches, workflows and diff comments, filtered by type, project, provider, status or date. Walk the matches in a view with ⌘G. In a focused terminal it finds in the scrollback.',
+      },
+      {
+        term: 'Sidebar, rail and panes',
+        desc: '⌘B hides or shows the sidebar and nothing else. ⌘[ steps the session rail out one level while focus is in it, and anywhere else it is Back. In a session, ⌘L opens Ask, ⌘⌥T Terminal, ⌘⌥X Explore, ⌘⌥C Context and ⌘⌥S Scripts.',
       },
       {
         term: 'Right click',

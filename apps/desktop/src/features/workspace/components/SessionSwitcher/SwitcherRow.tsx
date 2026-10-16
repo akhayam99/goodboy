@@ -3,7 +3,7 @@ import type { Session } from '@goodboy/types';
 import { useSessionSummary } from '../../hooks/useSessionSummary';
 import { sessionRowTitle } from '../../../session/sessionTitle';
 import { SessionRowTitle } from '../SessionRowTitle';
-import { sessionNodeOf } from '../SessionActivityBar/sessionNode';
+import { sessionNodeOf } from '../../../session/sessionNode';
 import { SessionStateNode } from '../SessionActivityBar/SessionStateNode';
 
 type Props = {

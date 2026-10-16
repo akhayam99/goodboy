@@ -531,7 +531,7 @@ that opened it.
 **The column** (`app/components/SideColumn/`) is on every screen with a
 workspace, in the same shape everywhere: the toggle on the traffic-light axis,
 the doors Board
-(⌘⇧H), Tasks, Chat, Workflows, Terminal (⌃`) and Monitoring as one 28px row each (icon and word, the
+(⌘⇧H), Tasks, Chat, Workflows and Terminal (⌃`) as one 28px row each (icon and word, the
 shortcut on hover); Chat ends in a plus (`DoorCreateButton`, New chat, ⌘⇧N, always a
 new chat, never the last one) and Terminal in a plus (New terminal in the workspace folder),
 both always visible; one separator
@@ -1164,7 +1164,7 @@ the tooltip only. `PaneCluster` lives in `features/session/components/`.
   the old `explore` and `scripts` lenses to the panes, so the palette, toasts
   and stored notifications (`open-lens` scripts) still land.
 - **Context signals ride on `⋯`.** A dot on the more button marks decisions
-  changed since the last look (primary) or a failed summary (danger); the
+  changed since the last look or a running summary (info) or a failed summary (danger); the
   Context row says why. The cluster loads the seen marker and the decisions
   once, as the old chip did.
 - **Stored pages map to panes.** `withoutRemovedPages` sends a stored
@@ -1512,7 +1512,11 @@ kind has no `visible` row. Three links open the Guide on a chapter and Back
 returns to the page you were on: the session hover card's "What do these marks
 mean?" (Legend), Impact's Spend tab "How cost is counted" (Tokens and cost) and
 the Storage worktree row's "What is a worktree?" (Words). They share
-`features/settings/openGuideChapter.ts`. The addresses live in
+`features/settings/openGuideChapter.ts`. The Guide chapter "Sidebar, session rail
+and panes" restates this shell in `guideChapters.ts`, and
+`guideChapters.test.ts` pins its names against `COLUMN_DOORS`, the page
+registry and `NEW_DRAWER_FORMS`; the Legend draws its session marks through
+`sessionNodeOf`, so a new mark appears there without a second table. The addresses live in
 `shared/lib/productLinks.ts`. Report a bug closes the
 popover and opens the report sheet. The popover opens by itself once, when the
 first agent finishes a turn, and never while the setup wizard is open; the

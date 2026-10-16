@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { aSession } from '@goodboy/types/testing';
 import type { SessionId, SessionStageInfo } from '@goodboy/types';
 import { needsYouEntries } from '../palette/sources/needsYouEntries';
-import { sessionNodeOf } from '../workspace/components/SessionActivityBar/sessionNode';
+import { sessionNodeOf } from './sessionNode';
 import { sessionTone } from './components/sessionCardShell';
 import { ATTENTION_REASON_META, attentionWordsOf, describeSessionStage } from './session-stage';
 

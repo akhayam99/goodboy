@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { SessionAttentionReason, SessionStage } from '@goodboy/types';
-import { ATTENTION_REASON_META, attentionWordsOf } from '../../../session/session-stage';
+import { ATTENTION_REASON_META, attentionWordsOf } from './session-stage';
 import { sessionNodeOf } from './sessionNode';
 
 type SessionNodeInfo = Parameters<typeof sessionNodeOf>[0]['info'];
