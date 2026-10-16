@@ -175,7 +175,7 @@ describe('StageBoard lanes', () => {
 
     expect(within(lane('done')).getByText('Nothing done yet')).toBeDefined();
     expect(within(lane('archived')).getByText('Nothing archived')).toBeDefined();
-    expect(within(lane('running')).getByText('No agent running')).toBeDefined();
+    expect(within(lane('running')).getByText('Nothing running')).toBeDefined();
     expect(within(lane('needs you')).getByText('Nothing needs you')).toBeDefined();
     expect(within(lane('in review')).getByText('Nothing in review')).toBeDefined();
     expect(within(lane('building')).queryByText('Nothing in progress')).toBeNull();
@@ -380,7 +380,7 @@ describe('StageBoard header', () => {
     inProgress: null,
   });
 
-  it('shows one repo pill after the title only when repos need attention', () => {
+  it('moves repo attention into the filter: a warning dot on its icon, the pill in its footer', () => {
     const building = sessionOf('Add idempotency keys to the refund endpoint');
     const repos = ['payments-api', 'notify-relay', 'ledger-core'].map((name) =>
       aProject({ workspaceId: workspace.id, name, kind: 'repo', rootPath: `/tmp/${name}` }),
@@ -397,11 +397,12 @@ describe('StageBoard header', () => {
     });
     mountBoard([building]);
 
-    const title = screen.getByRole('heading', { level: 1, name: 'Sessions' });
+    expect(screen.queryByRole('button', { name: '3 repository git statuses' })).toBeNull();
+    expect(document.querySelector('[data-filter-dot]')?.getAttribute('data-filter-dot')).toBe(
+      'warning',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Filter sessions' }));
     const chip = screen.getByRole('button', { name: '3 repository git statuses' });
-
-    expect(title.compareDocumentPosition(chip) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
-    expect(title.parentElement?.contains(chip)).toBe(true);
     expect(within(chip).getByText('2 repos need attention')).toBeDefined();
   });
 

@@ -2,7 +2,8 @@ import { SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import type { Session, SessionPageView, WorkspaceId } from '@goodboy/types';
 import type { ProjectGitStatusEntry } from '../../hooks/useProjectGitStatuses';
 import { SessionFilterPopover } from '../SessionActivityBar/SessionFilterPopover';
-import { RepoAttentionPill } from '../ProjectGitPill/RepoAttentionPill';
+import { repoNeedsAttention } from '../ProjectGitPill/repoNeedsAttention';
+import { HiddenByFilters } from './HiddenByFilters';
 import { RepoStatusSection } from '../ProjectGitPill/RepoStatusSection';
 
 const VIEW_OPTIONS: ReadonlyArray<SegmentedTabOption<SessionPageView>> = [
@@ -18,6 +19,8 @@ type Props = {
   readonly archivedCount: number;
   readonly onArchivedShownChange: (isShown: boolean) => void;
   readonly gitEntries: ReadonlyArray<ProjectGitStatusEntry>;
+  readonly hiddenCount: number;
+  readonly onClearFilters: () => void;
 };
 
 export const SessionsHeader = ({
@@ -28,16 +31,17 @@ export const SessionsHeader = ({
   archivedCount,
   onArchivedShownChange,
   gitEntries,
+  hiddenCount,
+  onClearFilters,
 }: Props) => (
   <div data-slot="board-header" className="flex shrink-0 flex-col">
-    <div aria-hidden data-slot="board-band" className="h-10 shrink-0" />
     <div
       data-slot="pane-title-row"
-      className="flex h-8 shrink-0 items-center justify-between gap-4"
+      className="flex h-10 shrink-0 items-center justify-between gap-4"
     >
       <h1 className="min-w-0 truncate text-title text-foreground">Sessions</h1>
       <span className="flex shrink-0 items-center gap-2">
-        <RepoAttentionPill entries={gitEntries} />
+        <HiddenByFilters count={hiddenCount} onClear={onClearFilters} />
         <SegmentedTabs
           size="xs"
           ariaLabel="Sessions view"
@@ -52,6 +56,7 @@ export const SessionsHeader = ({
             archivedCount={archivedCount}
             onArchivedShownChange={onArchivedShownChange}
             isBoard={view === 'board'}
+            hasAttention={gitEntries.some(({ status }) => repoNeedsAttention({ status }))}
             footer={<RepoStatusSection workspaceId={workspaceId} entries={gitEntries} />}
           />
         </span>

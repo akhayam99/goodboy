@@ -4,6 +4,7 @@ import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { ProjectGitStatusEntry } from '../../hooks/useProjectGitStatuses';
 import { FilterSection } from '../SessionActivityBar/SessionFilterPopover/FilterSection';
+import { RepoAttentionPill } from './RepoAttentionPill';
 import { repoNeedsAttention } from './repoNeedsAttention';
 
 type Props = {
@@ -17,7 +18,13 @@ export const RepoStatusSection = ({ workspaceId, entries }: Props) => {
   const isQuiet =
     entries.length > 0 && entries.every(({ status }) => !repoNeedsAttention({ status }));
   if (!isQuiet) {
-    return null;
+    return entries.length === 0 ? null : (
+      <FilterSection title="Repositories">
+        <div className="flex h-7 items-center px-2">
+          <RepoAttentionPill entries={entries} />
+        </div>
+      </FilterSection>
+    );
   }
   const words = entries.length === 1 ? '1 repo, up to date' : `${entries.length} repos, up to date`;
 

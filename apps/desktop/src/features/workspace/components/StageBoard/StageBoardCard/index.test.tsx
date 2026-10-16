@@ -360,17 +360,16 @@ describe('StageBoardCard one signal', () => {
     expect(screen.getByRole('img', { name: '2 agents running' })).toBeDefined();
   });
 
-  it('marks the slot as still being checked before GitHub answers', () => {
+  it('leaves the slot empty while GitHub has not answered, no skeleton per card', () => {
     hooks.prFetchState = 'unknown';
     render(<StageBoardCard session={session} nav={nav} />);
-    expect(screen.getByLabelText('Checking GitHub for a pull request')).toBeTruthy();
+    expect(signalSlot()?.children.length).toBe(0);
   });
 
   it('marks the slot offline when GitHub could not be reached', () => {
     hooks.prFetchState = 'unreachable';
     render(<StageBoardCard session={session} nav={nav} />);
     expect(screen.getByLabelText('Could not reach GitHub, will retry')).toBeTruthy();
-    expect(screen.queryByLabelText('Checking GitHub for a pull request')).toBeNull();
   });
 
   it('keeps an archived card to its pull request, never a live signal', () => {
@@ -395,7 +394,7 @@ describe('StageBoardCard actions', () => {
     ['warning', '1 open question'],
     ['danger', 'Confirm skip and continue'],
   ] as const)(
-    'keeps a %s quick action quiet at rest, so the tone line is the one signal',
+    'keeps a %s quick action quiet at rest, with no tone bar beside it',
     (tone, label) => {
       useDynamicActionsMock.mockReturnValue([
         { key: 'attention', icon: HelpCircle, tone, label, onClick: vi.fn() },
@@ -404,16 +403,14 @@ describe('StageBoardCard actions', () => {
       render(<StageBoardCard session={session} nav={nav} />);
 
       expect(screen.getByLabelText(label).hasAttribute('data-highlighted')).toBe(false);
-      expect(screen.getAllByTestId('tone-bar')).toHaveLength(1);
+      expect(screen.queryByTestId('tone-bar')).toBeNull();
       expect(screen.queryByLabelText('run next step')).toBeNull();
     },
   );
 
-  it('shows the lifecycle menu at rest, never only on hover', () => {
+  it('draws no menu glyph on the card: the lifecycle menu is its right click', () => {
     render(<StageBoardCard session={session} nav={nav} />);
-    const group = screen.getByRole('group', { name: 'Session quick actions' });
-    const trigger = within(group).getByRole('button', { name: 'Session actions' });
-    expect(trigger.className).not.toContain('opacity-0');
+    expect(screen.queryByRole('button', { name: 'Session actions' })).toBeNull();
     expect(screen.getByRole('article').querySelector('.opacity-0')).toBeNull();
   });
 

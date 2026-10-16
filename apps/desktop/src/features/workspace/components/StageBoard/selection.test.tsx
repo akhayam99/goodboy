@@ -143,21 +143,15 @@ describe('StageBoard selection bar', () => {
     }
   });
 
-  it('keeps 6px between the checkbox, the card edge and the title, and gaps the rail under it', () => {
+  it('keeps 6px between the checkbox, the card edge and the title, and draws no side rail', () => {
     mountBoard(sessionsOf(GOALS));
-    const shown = [
-      new Set(['group-hover/select-row']),
-      new Set(['group-focus-within/select-row']),
-      new Set(['group-data-[selecting=true]/select-list']),
-    ];
 
     for (const goal of GOALS) {
       const box = checkboxOf(goal);
       const card = box.closest('article');
       const anchor = box.parentElement;
       const square = box.querySelector('span[aria-hidden]');
-      const rail = card?.querySelector('[data-testid="tone-bar"]');
-      if (card == null || anchor == null || square == null || rail == null) {
+      if (card == null || anchor == null || square == null) {
         throw new Error(`card parts missing for ${goal}`);
       }
       const border = borderOf({ element: card });
@@ -174,11 +168,7 @@ describe('StageBoard selection bar', () => {
       expect(left).toBeGreaterThanOrEqual(6);
       expect(top).toBeGreaterThanOrEqual(6);
       expect(titleLeft - (left + squareSize)).toBeGreaterThanOrEqual(6);
-      for (const states of shown) {
-        expect(border + spacingOf({ element: rail, property: 'top', states })).toBeGreaterThan(
-          top + squareSize,
-        );
-      }
+      expect(card.querySelector('[data-testid="tone-bar"]')).toBeNull();
     }
   });
 
