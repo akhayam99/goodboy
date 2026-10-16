@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { DrawerColumn } from '@goodboy/ui';
 import type { AgentId } from '@goodboy/types';
-import { AutoWorkRailHost } from '../../../../../features/auto/chat/AutoWorkRailHost';
+import { AutoLevel } from '../../../SideColumn/AutoLevel';
 import { AutoReleaseContext } from '../../../../../features/auto/autoReleaseContext';
 import { AgentDetailPane } from '../../../../../features/session/components/AgentDetailPane';
 import { useAppStore } from '../../../../../store';
@@ -71,16 +71,20 @@ export const AutoChatScene = ({ state, isPlanOpen = false, selected = 'root' }: 
   return (
     <AutoReleaseContext.Provider value>
       <main className="flex h-screen bg-background text-foreground">
+        <nav
+          aria-label="Sidebar"
+          className="flex h-full w-60 shrink-0 flex-col border-r border-border-soft pt-1"
+        >
+          <AutoLevel session={AUTO_SESSION} />
+        </nav>
         <DrawerColumn
           main={
-            <AutoWorkRailHost session={AUTO_SESSION} agent={agent}>
-              <AgentDetailPane
-                session={AUTO_SESSION}
-                agent={agent}
-                isChatActive
-                onBack={() => undefined}
-              />
-            </AutoWorkRailHost>
+            <AgentDetailPane
+              session={AUTO_SESSION}
+              agent={agent}
+              isChatActive
+              onBack={() => undefined}
+            />
           }
           drawer={isDrawerOpen ? <DrawerHost /> : null}
           sizing={sizing}

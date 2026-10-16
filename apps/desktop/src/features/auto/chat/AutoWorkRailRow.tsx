@@ -51,7 +51,8 @@ export const AutoWorkRailRow = ({ row, isSelected, onOpen }: Props) => (
       onClick={() => onOpen(row)}
       aria-label={`Show ${row.label}`}
       className={cn(
-        'flex size-full min-w-0 flex-col rounded-md pr-3 text-left motion-safe:transition-colors hover:bg-hover',
+        'flex size-full min-w-0 flex-col rounded-md pr-2 text-left motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+        isSelected ? 'bg-selected' : 'hover:bg-hover',
       )}
       style={{ paddingLeft: row.kind === 'child' ? CHILD_INDENT : ROOT_INDENT }}
     >

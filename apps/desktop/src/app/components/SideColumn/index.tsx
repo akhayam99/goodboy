@@ -10,10 +10,12 @@ import { ColumnDoorRow } from './ColumnDoorRow';
 import { ColumnFoot } from './ColumnFoot';
 import { ColumnToggleButton } from './ColumnToggleButton';
 import { COLUMN_DOORS, openColumnDoor, type ColumnActions } from './columnDoors';
+import { AutoLevel } from './AutoLevel';
 import { LevelBackRow } from './LevelBackRow';
 import { LevelStack } from './LevelStack';
 import { SessionLevel } from './SessionLevel';
 import { useDoorSignals } from './useDoorSignals';
+import { useIsOnAutoAgent } from './useIsOnAutoAgent';
 import { useSidebarLevel } from './useSidebarLevel';
 import { isStudioOverSession, type ColumnPlace } from './columnPlace';
 
@@ -50,8 +52,10 @@ export const SideColumn = ({
 }: Props) => {
   const signals = useDoorSignals({});
   const level = useSidebarLevel({ place, currentSessionId });
+  const isOnAutoAgent = useIsOnAutoAgent({ currentSessionId });
   const currentSession = useCurrentSession();
   const leaveSessionLevel = useAppStore((state) => state.leaveSessionLevel);
+  const pickSidebarLevel = useAppStore((state) => state.pickSidebarLevel);
   const isSettingsShown = place === 'settings' && settingsSlotRef !== undefined;
   const go = (open: () => void) => () => {
     open();
@@ -66,6 +70,10 @@ export const SideColumn = ({
         <SessionLevel session={currentSession} isActive={level === 'session'} />
       </>
     );
+  const autoLevel =
+    sessionLevel === null || currentSession === null || !isOnAutoAgent ? null : (
+      <AutoLevel session={currentSession} />
+    );
 
   return (
     <div data-side-column="" className="relative flex h-full min-h-0 min-w-0 flex-col">
@@ -75,11 +83,15 @@ export const SideColumn = ({
         data-sidebar-level={level}
         inert={isSettingsShown}
         onKeyDown={(event) => {
-          if (level !== 'session' || !isBackKey(event)) {
+          if (level === 'workspace' || !isBackKey(event)) {
             return;
           }
           event.preventDefault();
           event.stopPropagation();
+          if (level === 'auto') {
+            pickSidebarLevel({ level: 'session' });
+            return;
+          }
           leaveSessionLevel();
         }}
         className={cn(
@@ -94,6 +106,7 @@ export const SideColumn = ({
           <LevelStack
             level={level}
             session={sessionLevel}
+            auto={autoLevel}
             workspace={
               <>
                 <div className={cn('flex shrink-0 flex-col px-2', PANE_RHYTHM.navRail.doorGap)}>

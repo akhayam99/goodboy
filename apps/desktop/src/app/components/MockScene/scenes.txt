@@ -181,6 +181,13 @@ c06-agent-transcript
 c06-agent-working
 c06-agents-empty
 c06-agents-list
+c07-auto-answering
+c07-auto-idle
+c07-auto-list
+c07-auto-plan
+c07-auto-session-level
+c07-auto-start
+c07-auto-working
 c13-terminal
 c13-terminal-empty
 c13-terminal-menu

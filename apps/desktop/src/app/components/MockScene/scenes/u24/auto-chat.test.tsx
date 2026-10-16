@@ -43,7 +43,9 @@ const mount = ({ id }: { readonly id: string }): void => {
   );
 };
 
-const rail = () => screen.getByRole('complementary', { name: 'Work' });
+const rail = () => screen.getByRole('list', { name: 'Work' });
+
+const limitFoot = () => screen.getByRole('region', { name: 'Limit' });
 
 describe('the Auto chat scenes', () => {
   it('registers every scene for the capture', () => {
@@ -66,13 +68,14 @@ describe('the Auto chat scenes', () => {
     }
   });
 
-  it('auto-chat-answering has no Work rail and no card', async () => {
+  it('auto-chat-answering keeps the Work rail with Auto alone, its empty state and no card', async () => {
     mount({ id: 'auto-chat-answering' });
 
     expect(
       await screen.findByText(/Retries are posted by postCredit/, undefined, WAIT),
     ).toBeDefined();
-    expect(screen.queryByRole('complementary', { name: 'Work' })).toBeNull();
+    expect(within(rail()).getAllByRole('listitem')).toHaveLength(1);
+    expect(screen.getByText('No agents started yet')).toBeDefined();
     expect(screen.queryByRole('article')).toBeNull();
     expect(
       within(screen.getByTestId('agent-header-title-row')).queryByText('Experimental'),
@@ -121,20 +124,20 @@ describe('the Auto chat scenes', () => {
     expect(screen.getByText('Waiting for Implementer and Tester')).toBeDefined();
     expect(screen.getByText('Reserved up to $3.00')).toBeDefined();
     expect(screen.getByText('Reserved up to $1.50')).toBeDefined();
-    const budget = within(work).getByRole('region', { name: 'Tree budget' });
-    expect(within(budget).getByText('Spent $0.27')).toBeDefined();
-    expect(within(budget).getByText('Reserved $4.50')).toBeDefined();
-    expect(within(budget).getByText('Left $5.23')).toBeDefined();
+    const foot = limitFoot();
+    expect(within(foot).getByRole('button', { name: 'Limit $10.00' })).toBeDefined();
+    expect(within(foot).getByText('$5.23 left')).toBeDefined();
+    expect(within(foot).queryByText(/Spent|Reserved/)).toBeNull();
   });
 
   it('auto-chat-working opens the limit popover from the rail foot', async () => {
     mount({ id: 'auto-chat-working' });
 
     await screen.findByRole('article', { name: 'Implementer delegation' }, WAIT);
-    const budget = within(rail()).getByRole('region', { name: 'Tree budget' });
-    fireEvent.click(within(budget).getByRole('button', { name: 'Limit $10.00' }));
+    fireEvent.click(within(limitFoot()).getByRole('button', { name: 'Limit $10.00' }));
 
     const popover = screen.getByRole('dialog', { name: 'Limit for this conversation' });
+    expect(within(popover).getByText('Spent $0.27, reserved $4.50')).toBeDefined();
     expect(within(popover).getByRole('button', { name: '$10' }).getAttribute('aria-pressed')).toBe(
       'true',
     );
@@ -147,15 +150,14 @@ describe('the Auto chat scenes', () => {
     ).toBeDefined();
   });
 
-  it('auto-chat-nocap reads No cap in the foot with spent and reserved and no left', async () => {
+  it('auto-chat-nocap reads No cap in the foot with what is spent and no left', async () => {
     mount({ id: 'auto-chat-nocap' });
 
     await screen.findByRole('article', { name: 'Implementer delegation' }, WAIT);
-    const budget = within(rail()).getByRole('region', { name: 'Tree budget' });
-    expect(within(budget).getByRole('button', { name: 'No cap' })).toBeDefined();
-    expect(within(budget).getByText('Spent $0.27')).toBeDefined();
-    expect(within(budget).getByText('Reserved $4.50')).toBeDefined();
-    expect(within(budget).queryByText(/^Left/)).toBeNull();
+    const foot = limitFoot();
+    expect(within(foot).getByRole('button', { name: 'No cap' })).toBeDefined();
+    expect(within(foot).getByText('$0.27 spent')).toBeDefined();
+    expect(within(foot).queryByText(/left/)).toBeNull();
   });
 
   it('auto-chat-revising shows the revision on the same Planner', async () => {
@@ -198,7 +200,7 @@ describe('the Auto chat scenes', () => {
     expect(screen.queryByRole('button', { name: 'Change approach' })).toBeNull();
     expect(screen.getByText('3 files changed')).toBeDefined();
     expect(screen.getByText('keeps the balance after two attempts')).toBeDefined();
-    expect(within(rail()).getByText('Spent $0.53')).toBeDefined();
+    expect(within(limitFoot()).getByText('$9.47 left')).toBeDefined();
   });
 
   it('auto-chat-done says Idle in the rail and offers Mark finished', async () => {

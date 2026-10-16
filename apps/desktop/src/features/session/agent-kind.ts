@@ -42,7 +42,7 @@ import type {
 
 export type AgentKind = AgentKindLabel;
 
-export type AgentHomeLens = 'agents' | 'review' | 'workflows';
+export type AgentHomeLens = 'agents' | 'auto' | 'review' | 'workflows';
 
 type Params = {
   readonly agents: ReadonlyArray<Agent>;
@@ -81,8 +81,18 @@ export const agentHomeLens = ({ agent, kind }: AgentHomeLensParams): AgentHomeLe
   if (kind === 'resolver') {
     return 'review';
   }
+  if (kind === 'auto') {
+    return 'auto';
+  }
   return 'agents';
 };
+
+type PageKindParams = {
+  readonly kind: AgentKind;
+};
+
+export const isAgentsPageKind = ({ kind }: PageKindParams): boolean =>
+  kind !== 'resolver' && kind !== 'auto';
 
 export const AGENT_KIND_ORDER: ReadonlyArray<AgentKind> = [
   'planner',

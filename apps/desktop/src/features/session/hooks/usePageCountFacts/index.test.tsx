@@ -14,15 +14,16 @@ vi.mock('../../../../shared/lib/db', async () =>
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, renderHook } from '@testing-library/react';
 import { aWorkflowRun, anAgent } from '@goodboy/types/testing';
-import type {
-  AgentId,
-  ArtifactId,
-  IsoDateTime,
-  PlanArtifact,
-  Session,
-  SessionId,
-  StepId,
-  WorkflowRunId,
+import {
+  brandId,
+  type AgentId,
+  type ArtifactId,
+  type IsoDateTime,
+  type PlanArtifact,
+  type Session,
+  type SessionId,
+  type StepId,
+  type WorkflowRunId,
 } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -79,9 +80,35 @@ describe('usePageCountFacts', () => {
       runningRuns: 0,
       agents: 0,
       runningAgents: 0,
+      autoAgents: 0,
+      workingAutoAgents: 0,
       artifacts: 0,
       openQuestions: 0,
     });
+  });
+
+  it('counts an Auto agent under Auto agents, never under Agents', () => {
+    seedColumn({ store: useAppStore, sessions: [base], currentSessionId: sessionId });
+    useAppStore.setState({
+      sessionPhaseRuns: {
+        [sessionId]: [
+          anAgent({
+            id: brandId<AgentId>({ value: 'agent-scout' }),
+            sessionId,
+            kind: 'scout',
+            status: 'completed',
+          }),
+          anAgent({
+            id: brandId<AgentId>({ value: 'agent-auto' }),
+            sessionId,
+            kind: 'auto',
+            status: 'running',
+          }),
+        ],
+      },
+    });
+
+    expect(factsOf(base)).toMatchObject({ agents: 1, autoAgents: 1, workingAutoAgents: 1 });
   });
 
   it('counts the artifacts', () => {

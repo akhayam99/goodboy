@@ -1,46 +1,46 @@
 import type { ReactNode } from 'react';
-import { cn } from '@goodboy/ui';
 import type { SidebarLevel } from '../../../store/slices/navigation/sidebarLevel';
+import { LevelLayer } from './LevelLayer';
 
 type Props = {
   readonly level: SidebarLevel;
   readonly workspace: ReactNode;
   readonly session: ReactNode;
+  readonly auto?: ReactNode;
 };
 
-const LAYER =
-  'absolute inset-0 flex min-h-0 min-w-0 flex-col gap-1 motion-safe:transition-[opacity,transform,visibility] motion-safe:duration-180 motion-safe:ease-out';
+type ShownParams = {
+  readonly level: SidebarLevel;
+  readonly session: ReactNode;
+  readonly auto: ReactNode;
+};
 
-export const LevelStack = ({ level, workspace, session }: Props) => {
-  const isSession = level === 'session' && session !== null;
+const shownLevelOf = ({ level, session, auto }: ShownParams): SidebarLevel => {
+  if (level === 'auto' && auto !== null) {
+    return 'auto';
+  }
+  if (level !== 'workspace' && session !== null) {
+    return 'session';
+  }
+  return 'workspace';
+};
+
+export const LevelStack = ({ level, workspace, session, auto = null }: Props) => {
+  const shown = shownLevelOf({ level, session, auto });
   return (
-    <div
-      data-level-stack={isSession ? 'session' : 'workspace'}
-      className="relative min-h-0 flex-1 overflow-hidden"
-    >
-      <div
-        data-level-layer="workspace"
-        inert={isSession}
-        style={{ visibility: isSession ? 'hidden' : 'visible' }}
-        className={cn(
-          LAYER,
-          isSession ? 'pointer-events-none -translate-x-full opacity-0' : 'opacity-100',
-        )}
-      >
+    <div data-level-stack={shown} className="relative min-h-0 flex-1 overflow-hidden">
+      <LevelLayer layer="workspace" shown={shown}>
         {workspace}
-      </div>
+      </LevelLayer>
       {session === null ? null : (
-        <div
-          data-level-layer="session"
-          inert={!isSession}
-          style={{ visibility: isSession ? 'visible' : 'hidden' }}
-          className={cn(
-            LAYER,
-            isSession ? 'opacity-100' : 'pointer-events-none translate-x-full opacity-0',
-          )}
-        >
+        <LevelLayer layer="session" shown={shown}>
           {session}
-        </div>
+        </LevelLayer>
+      )}
+      {auto === null ? null : (
+        <LevelLayer layer="auto" shown={shown}>
+          {auto}
+        </LevelLayer>
       )}
     </div>
   );

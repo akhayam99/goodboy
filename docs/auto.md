@@ -173,14 +173,18 @@ writing to it reopens it to **Deciding**.
 
 ## The chat
 
-- **Work rail.** The chat of an Auto agent, and of each of its children, has the
-  Work rail on its left. Auto comes first, then one row per child, all expanded
-  and with no group row. A row has the role, the name and state on the first
-  line, the model and time on the second. One spine runs from ring edge to ring
-  edge in the tone of the ring it reaches: green when done, blue when working,
-  dashed when queued. The foot is the tree budget, **Spent**, **Reserved** and
-  **Left** from `treeSpend`, read through `autoBudgetOf`. The rail can fold to a
-  strip of rings, and it is not drawn for an Auto that only answers.
+- **Work rail.** The Work rail is the sidebar's Auto level
+  ([navigation.md](navigation.md), Sidebar levels): opening Auto agents, an Auto
+  agent or one of its children drills the sidebar into it, with the back row
+  `‹ <session title>` on top. Auto comes first, then one row per child, all
+  expanded and with no group row. A row has the role, the name and state on the
+  first line, the model and time on the second. One spine runs from ring edge
+  to ring edge in the tone of the ring it reaches: green when done, blue when
+  working, dashed when queued. The rail is always there: while Auto has no
+  child it shows Auto alone ("Ready" before a tree exists) and "No agents
+  started yet". The foot is one line, **Limit $10.00 · $5.23 left** (No cap:
+  **No cap · $3.82 spent**), from `autoBudgetOf`; Spent and Reserved are in
+  the limit popover.
 - **Changing the limit.** The **Limit** in the rail foot is a button. Its popover
   offers $5, $10, $20 or a custom amount (at most 2 decimals) and applies it on
   **Set limit**, also while the tree runs. An amount under spent plus reserved
@@ -194,8 +198,8 @@ writing to it reopens it to **Deciding**.
   resumes after a raise. The cap changes only this conversation; the workspace
   cap stays the start value of the next one.
 - **No cap.** The popover also offers **No cap**, stored as a NULL `cap_usd`
-  (m231), never a sentinel. The foot then reads **No cap** with **Spent** and
-  **Reserved** and no bar or **Left**, and the prompt line says "no cap" and
+  (m231), never a sentinel. The foot then reads **No cap** with what is spent
+  and no **Left**, and the prompt line says "no cap" and
   never prints a left. The root turn claim and child admission pass a NULL cap
   (`autoBudgetCoversSql`), and the gates read it as unbounded
   (`autoRemainingForGates`); the per attempt ceilings still apply, so one child

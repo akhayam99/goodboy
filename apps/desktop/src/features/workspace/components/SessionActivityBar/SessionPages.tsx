@@ -1,4 +1,4 @@
-import { SelectableRow, StatusDot } from '@goodboy/ui';
+import { Chip, SelectableRow, StatusDot } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { openSessionPage } from '../../../session/openSessionPage';
@@ -39,7 +39,12 @@ export const SessionPages = ({ session, pages, facts, sign, onOpened }: Props) =
               className="h-7 items-center gap-2 px-2 text-label"
             >
               <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-              <span className="min-w-0 flex-1 truncate">{page.label}</span>
+              <span className="flex min-w-0 flex-1 items-center gap-2">
+                <span className="min-w-0 truncate">{page.label}</span>
+                {page.id === 'auto' ? (
+                  <Chip tone="neutral" kind="state" shape="badge" label="Experimental" />
+                ) : null}
+              </span>
               <span
                 data-page-value={page.id}
                 data-tone={slot.isWarning ? 'warning' : slot.isRunning ? 'running' : 'count'}

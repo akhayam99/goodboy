@@ -20,7 +20,7 @@ import type { AutoPendingRefusal, AutoTreeView } from '../../../../../store/slic
 import { sceneClock } from '../../sceneClock';
 import { SESSION } from '../activityRunSeed';
 
-const clock = sceneClock({ anchor: '2026-10-13T12:10:00.000Z' });
+const clock = sceneClock({ anchor: '2026-10-13T12:21:00.000Z' });
 
 type AtParams = {
   readonly time: string;

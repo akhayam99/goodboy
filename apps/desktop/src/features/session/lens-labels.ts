@@ -6,6 +6,7 @@ import { NAMES } from '../../shared/names';
 export const LENS_LABEL: Record<LensKind, string> = {
   questions: NAMES.questions,
   agents: NAMES.agents,
+  auto: NAMES.autoAgents,
   workflows: NAMES.runs,
   review: NAMES.comments,
   plans: NAMES.artifacts,
@@ -28,6 +29,7 @@ export const LENS_LABEL: Record<LensKind, string> = {
 export const LENS_ICON = {
   questions: CONCEPT_ICONS.questions,
   agents: CONCEPT_ICONS.agents,
+  auto: CONCEPT_ICONS.auto,
   workflows: CONCEPT_ICONS.workflows,
   review: CONCEPT_ICONS.review,
   plans: CONCEPT_ICONS.plans,
@@ -50,6 +52,7 @@ export const LENS_ICON = {
 export const SIMPLE_LENSES = new Set<LensKind>([
   'workflows',
   'agents',
+  'auto',
   'questions',
   'plans',
   'context',

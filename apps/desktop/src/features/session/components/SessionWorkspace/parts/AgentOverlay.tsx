@@ -2,7 +2,6 @@ import { ArrowLeft } from 'lucide-react';
 import { Button, EmptyState, Skeleton, SkeletonText, PaneShell } from '@goodboy/ui';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { AgentDetailPane } from '../../AgentDetailPane';
-import { AutoWorkRailHost } from '../../../../auto/chat/AutoWorkRailHost';
 import { AgentHeader } from '../../AgentDetailPane/AgentHeader';
 import { WorkTimeProvider } from '../../../../workTreeModel/components/WorkTimeProvider';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
@@ -60,14 +59,12 @@ export const AgentOverlay = ({
           </PaneShell>
         ) : (
           <WorkTimeProvider sessionId={sessionId} workspaceId={session.workspaceId}>
-            <AutoWorkRailHost session={session} agent={selectedAgent}>
-              <AgentDetailPane
-                session={session}
-                agent={selectedAgent}
-                isChatActive={isChatActive}
-                onBack={onBack}
-              />
-            </AutoWorkRailHost>
+            <AgentDetailPane
+              session={session}
+              agent={selectedAgent}
+              isChatActive={isChatActive}
+              onBack={onBack}
+            />
           </WorkTimeProvider>
         )}
       </div>

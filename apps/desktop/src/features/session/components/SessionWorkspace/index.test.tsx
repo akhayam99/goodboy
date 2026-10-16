@@ -171,9 +171,6 @@ vi.mock('@goodboy/ui', async (importOriginal) => {
   };
 });
 
-vi.mock('../../../auto/chat/AutoWorkRailHost', () => ({
-  AutoWorkRailHost: ({ children }: { readonly children: React.ReactNode }) => children,
-}));
 vi.mock('../AgentDetailPane', () => ({
   AgentDetailPane: ({ agent }: { agent: Agent }) => (
     <div>

@@ -13,6 +13,7 @@ import { AskTrailButton } from '../../ask/components/AskTrailButton';
 import { useAskOpenShortcut } from '../../ask/useAskOpenShortcut';
 import { AgentOverlay } from './parts/AgentOverlay';
 import { AgentsPane } from './parts/AgentsPane';
+import { AutoAgentsPane } from '../AutoAgentsPane';
 import { Pane } from './parts/Pane';
 import { QuestionsPane } from './parts/QuestionsPane';
 import { FilesPane } from './parts/FilesPane';
@@ -24,7 +25,12 @@ import { WorkflowsPane } from './parts/WorkflowsPane';
 import { IntegrationPane } from './parts/IntegrationPane';
 import { GithubTaskDetail } from './parts/IntegrationPane/GithubTaskDetail';
 import { LinkIssueAction } from '../SessionOverviewPane/LinkIssueAction';
-import { isStandaloneAgent, resolveRootAgent } from '../../agent-kind';
+import {
+  classifyAgent,
+  isAgentsPageKind,
+  isStandaloneAgent,
+  resolveRootAgent,
+} from '../../agent-kind';
 import { selectResolverAgentIds } from '../../../review/selectResolverAgentIds';
 import { SessionOverviewLoading } from './parts/SessionOverviewLoading';
 import { BranchPage } from '../../../branch/components/BranchPage';
@@ -110,8 +116,15 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     focusedGithubIssueNumber ?? (githubTask != null ? Number(githubTask.externalId) : null);
   const standaloneAgents = useMemo(
     () =>
-      phaseRuns.filter((agent) => isStandaloneAgent({ agent }) && !resolverAgentIds.has(agent.id)),
-    [phaseRuns, resolverAgentIds],
+      phaseRuns.filter(
+        (agent) =>
+          isStandaloneAgent({ agent }) &&
+          !resolverAgentIds.has(agent.id) &&
+          isAgentsPageKind({
+            kind: classifyAgent({ agent, override: agentKindOverride[agent.id] ?? null }),
+          }),
+      ),
+    [phaseRuns, resolverAgentIds, agentKindOverride],
   );
   const agentCounts = useMemo(
     () => ({
@@ -222,6 +235,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                 />
               ) : null}
               {lens === 'explore' ? <ExplorePane sessionId={sessionId} /> : null}
+              {lens === 'auto' ? <AutoAgentsPane session={session} /> : null}
               <Pane visible={lens === 'agents'}>
                 <PaneActionsContext.Provider value={lens === 'agents' && showLens ? ask : null}>
                   <PaneBannerContext.Provider

@@ -164,6 +164,10 @@ describe('agentHomeLens', () => {
     expect(agentHomeLens({ agent: agentOf({}), kind: 'scout' })).toBe('agents');
   });
 
+  it('routes an Auto agent to Auto agents, never to Agents', () => {
+    expect(agentHomeLens({ agent: agentOf({}), kind: 'auto' })).toBe('auto');
+  });
+
   it('does not route to workflows on stepId alone when workflowRunId is absent', () => {
     expect(agentHomeLens({ agent: agentOf({ stepId: STEP }), kind: 'generic' })).toBe('agents');
     expect(agentHomeLens({ agent: agentOf({ stepId: STEP }), kind: 'resolver' })).toBe('review');

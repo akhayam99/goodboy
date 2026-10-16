@@ -138,6 +138,27 @@ const rootRowOf = ({ view, agent, routing }: RootParams): RailRow => {
   };
 };
 
+type RestingParams = RailRouting & {
+  readonly agentId: AgentId;
+};
+
+export const restingRootRowOf = ({ agentId, provider, model, effort }: RestingParams): RailRow => ({
+  id: agentId,
+  agentId,
+  kind: 'root',
+  role: 'auto',
+  label: 'Auto',
+  node: 'ready',
+  word: 'Ready',
+  tone: 'neutral',
+  provider,
+  model,
+  effort,
+  startedAtMs: null,
+  endedAtMs: null,
+  isLive: false,
+});
+
 export const railRowsOf = ({ view, agents, rootRouting }: RowParams): ReadonlyArray<RailRow> => {
   const rootAgent = agents.find((agent) => agent.id === view.tree.rootAgentId) ?? null;
   const latestByChild = new Map<string, DelegationCardModel>();
