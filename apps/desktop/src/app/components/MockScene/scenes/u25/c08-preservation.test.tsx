@@ -272,6 +272,37 @@ describe('SPEC3 9.4 run rows stay reachable from the preset run level', () => {
     await press(live().getByRole('button', { name: 'Pause run' }));
     expect(runStop()?.kind).toBe('paused');
     expect(document.querySelector('[data-run-verb="workflowRun.pause"]')).toBeNull();
+    expect(live().getByRole('button', { name: 'Resume run' })).toBeDefined();
+    expect(live().getByRole('button', { name: 'Stop run' })).toBeDefined();
+  });
+
+  it('Resume run takes the place of Pause run: a failed write keeps it paused, pressing again resumes', async () => {
+    mockSceneIpc(() => null);
+    await mount('c08-run-working');
+    const live = () =>
+      within(document.querySelector<HTMLElement>('[data-run-live-verbs]') ?? document.body);
+    const runStop = () =>
+      (
+        useAppStore.getState().sessions.find((session) => session.id === C08_SESSION_ID)
+          ?.workflowRuns ?? []
+      ).find((run) => run.id === C08_RUN_ID)?.orchestrationStop;
+    await press(live().getByRole('button', { name: 'Pause run' }));
+    expect(runStop()?.kind).toBe('paused');
+    const verbs = () =>
+      Array.from(document.querySelectorAll('[data-run-live-verbs] [data-run-verb]')).map((verb) =>
+        verb.getAttribute('data-run-verb'),
+      );
+    expect(verbs()).toEqual(['workflowRun.resume', 'workflowRun.close']);
+    const writes = failWritesWith({ marker: 'orchestration_stop_kind' });
+
+    await press(live().getByRole('button', { name: 'Resume run' }));
+    expect(runStop()?.kind).toBe('paused');
+    expect(live().getByRole('button', { name: 'Resume run' })).toBeDefined();
+
+    writes.heal();
+    await press(live().getByRole('button', { name: 'Resume run' }));
+    expect(runStop() ?? null).toBeNull();
+    expect(verbs()).toEqual(['workflowRun.pause', 'workflowRun.close']);
   });
 
   it('Continue step after an interrupted step, on the tail', async () => {

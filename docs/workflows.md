@@ -325,7 +325,8 @@ read top to bottom at the conversation measure:
   footer, its only place (`OrchestratorRoutingRow`).
 - **The run header** shows **Pause run** and **Stop run** (asks first) as
   words while the run lives (`RunLiveVerbs`), so stopping never hides in a
-  menu.
+  menu. Once paused, **Resume run** (`workflowRun.resume`) takes the place of
+  Pause run and Stop run stays beside it.
 - **The run `⋯`** is the `workflowRun` registry minus the verbs the tail and
   the header carry: View diff, Step routing (opens the model per step panel,
   `OrchestratedRouting`), Autonomy, **Skip step N** for the step in flight,
@@ -421,7 +422,8 @@ and the center shows the selected entry (`PresetRunPage`, in
   `WorkflowRunStartButton`, **Review plan**, **Approve plan**, **Resume**),
   a stopped step with **Continue step**, "Run finished" or "Stopped by you"
   with **Add step**. While the run lives the header holds only **Pause run**
-  and **Stop run** (asks first, `RunLiveVerbs`) as words; every other verb
+  (or **Resume run** once paused, in the same place) and **Stop run** (asks
+  first, `RunLiveVerbs`) as words; every other verb
   is on the tail or in the menu.
 - **The run `⋯`** is the `workflowRun` registry minus the verbs the tail and
   the header carry: View diff, Autonomy (Ask me, Balanced, Autopilot, a

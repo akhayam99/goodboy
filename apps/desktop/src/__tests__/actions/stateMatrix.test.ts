@@ -742,6 +742,7 @@ const RUN_STATES: ReadonlyArray<readonly [string, ActionSeed, ReadonlyArray<stri
     [
       'workflowRun.open',
       'workflowRun.diff',
+      'workflowRun.resume',
       'workflowRun.routing',
       'workflowRun.autonomy',
       'workflowRun.saveAsPreset',

@@ -118,12 +118,20 @@ describe('the run header scenes on the orchestrated document', () => {
     expect(tail().contains(entries[0] ?? null)).toBe(true);
   });
 
-  it('shows Stop run as a word in the header of the paused run, confirmed, and not in the menu', async () => {
+  it('shows Resume run where Pause run was and Stop run beside it, both off the menu', async () => {
     renderScene('run-header-paused');
 
     const bar = await header();
+    const verbs = bar.querySelector('[data-run-live-verbs]');
+    expect(
+      Array.from(verbs?.querySelectorAll('[data-run-verb]') ?? []).map((verb) =>
+        verb.getAttribute('data-run-verb'),
+      ),
+    ).toEqual(['workflowRun.resume', 'workflowRun.close']);
+    expect(within(bar).queryByRole('button', { name: 'Pause run' })).toBeNull();
     fireEvent.click(within(bar).getByRole('button', { name: /run actions$/ }));
     expect(within(screen.getByRole('menu')).queryByText('Stop run')).toBeNull();
+    expect(within(screen.getByRole('menu')).queryByText('Resume run')).toBeNull();
     fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
     fireEvent.click(within(bar).getByRole('button', { name: 'Stop run' }));
     expect(await screen.findByText('Stop this run?')).toBeDefined();

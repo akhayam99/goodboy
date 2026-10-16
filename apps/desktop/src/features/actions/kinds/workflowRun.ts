@@ -56,6 +56,7 @@ export type WorkflowRunFacts = {
   readonly readyStepName: string | null;
   readonly hasChanges: boolean;
   readonly canPause: boolean;
+  readonly canResume: boolean;
   readonly hasStepRouting: boolean;
   readonly canSaveAsPreset: boolean;
   readonly summary: string;
@@ -230,6 +231,7 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
         isInFlight &&
         !isRunPaused({ run }) &&
         run.orchestrationStop?.kind !== 'operator',
+      canResume: !isEnded && isRunPaused({ run }),
       hasStepRouting: run.executionMode === 'dynamic' && !isEnded && agents.length > 0,
       canSaveAsPreset: workflow !== null && workflow.steps.length > 0 && workflow.isPreset !== true,
       summary: [name, ...agents.map((agent) => `- ${agent.name}: ${agent.status}`)].join('\n'),
@@ -347,6 +349,14 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
       group: 'act',
       when: ({ facts }) => facts.canPause,
       run: ({ facts, env }) => env.getState().pauseWorkflowRun(facts.sessionId, facts.run.id),
+    },
+    {
+      id: 'workflowRun.resume',
+      label: 'Resume run',
+      icon: Play,
+      group: 'act',
+      when: ({ facts }) => facts.canResume,
+      run: ({ facts, env }) => env.getState().resumeWorkflowRun(facts.sessionId, facts.run.id),
     },
     {
       id: 'workflowRun.routing',

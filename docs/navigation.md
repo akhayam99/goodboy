@@ -587,9 +587,11 @@ then the run `⋯`; the verbs of `runPrimaryOf`
 sit on the run tail, and an archived run shows **Restore** as its one header
 primary. The `⋯` holds View diff, Step routing (orchestrated), Autonomy, Skip
 step N, Save as preset, Copy run summary, Archive run and Delete run, never
-**Approve plan**, **Pause run** or **Stop run**. A failed Pause or Stop leaves
-the run as it was, reports the error and keeps the word, so pressing it again
-is the retry.
+**Approve plan**, **Pause run**, **Resume run** or **Stop run**. After Pause
+run the header shows **Resume run** in its place (`workflowRun.resume`, while
+`isRunPaused`), and Stop run stays. A failed Pause, Resume or Stop leaves the
+run as it was, reports the error and keeps the word, so pressing it again is
+the retry.
 The title is the only h1 of the page; the trail says `Session > Runs > Run`, the
 Runs crumb or Esc goes back to the list, and no chevron on the page does.
 Scripts reads `[search] [New script]`. A page with no actions draws no `...`.

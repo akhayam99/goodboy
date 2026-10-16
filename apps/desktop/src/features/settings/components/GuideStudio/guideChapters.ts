@@ -355,7 +355,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Run page',
-        desc: 'Opening a run with a fixed list of steps moves the session rail into it: back to Runs, the run title, Overview, every step in order with its sub-agents, Add step, and the limit with what it spent at the foot. The center shows the step you pick as its conversation, and the line at its end says what the run waits for with the one button that moves it on, such as Start step 3, Review plan or Raise spend cap. Pause run and Stop run sit in the run header, and Autonomy and Skip step in the run menu. An orchestrated run does not step the rail in: it stays on Orchestrated as one page.',
+        desc: 'Opening a run with a fixed list of steps moves the session rail into it: back to Runs, the run title, Overview, every step in order with its sub-agents, Add step, and the limit with what it spent at the foot. The center shows the step you pick as its conversation, and the line at its end says what the run waits for with the one button that moves it on, such as Start step 3, Review plan or Raise spend cap. Pause run, then Resume run in its place, and Stop run sit in the run header, and Autonomy and Skip step in the run menu. An orchestrated run does not step the rail in: it stays on Orchestrated as one page.',
       },
       {
         term: 'Agent suggests',
@@ -383,7 +383,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Pause and resume',
-        desc: 'Pause lets the step in flight finish and starts nothing new. Resume picks up where the run was, Skip step cancels the step that is running, and Stop run ends it now. Pause run and Stop run sit as buttons in the run header while the run lives, and Stop run asks first. A step quiet for 15 minutes offers Ask it to continue.',
+        desc: 'Pause lets the step in flight finish and starts nothing new. Resume picks up where the run was, Skip step cancels the step that is running, and Stop run ends it now. Pause run and Stop run sit as buttons in the run header while the run lives; once paused, Resume run takes the place of Pause run, and Stop run asks first. A step quiet for 15 minutes offers Ask it to continue.',
       },
       {
         term: 'Autonomy',
