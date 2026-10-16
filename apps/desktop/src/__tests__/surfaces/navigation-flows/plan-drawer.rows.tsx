@@ -337,13 +337,11 @@ const openPlanThePlannerAsksAbout = async (ctx: Ctx): Promise<void> => {
 
 const askedPlanWaitsThenApproves = async (ctx: Ctx): Promise<void> => {
   await screen.findByTestId('plan-drawer-question', undefined, WAIT);
-  expect(screen.getByTestId('artifact-state-detail').textContent).toBe('waiting for your answer');
+  expect(screen.queryByTestId('artifact-state-detail')).toBeNull();
   expect(screen.queryByText(/Revising/)).toBeNull();
   expect(screen.queryByTestId('plan-drawer-state-line')).toBeNull();
   expect(screen.getByTestId('plan-primary').hasAttribute('disabled')).toBe(true);
-  expect(screen.getByTestId('plan-drawer-reason').textContent).toBe(
-    'The planner asked a question. Answer it first.',
-  );
+  expect(screen.queryByTestId('plan-drawer-reason')).toBeNull();
   expect(screen.getAllByRole('button', { name: 'Approve' })).toHaveLength(1);
 
   act(() =>

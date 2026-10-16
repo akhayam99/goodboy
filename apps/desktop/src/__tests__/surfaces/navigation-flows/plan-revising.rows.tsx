@@ -97,7 +97,7 @@ const expectRevisingOnPage = async ({ sessionId }: Ctx): Promise<void> => {
   await waitFor(
     () =>
       expect(
-        screen.getAllByTestId('artifact-state-chip').map((chip) => chip.textContent ?? ''),
+        screen.getAllByTestId('artifact-state-word').map((word) => word.textContent ?? ''),
       ).toContain('Revising to v2'),
     WAIT,
   );
@@ -122,10 +122,7 @@ const sendInTheDrawerThenOpenTheArtifactsPage = async (ctx: Ctx): Promise<void> 
   await visible('button', 'Open in Artifacts');
   await sendToPlanner();
   await waitFor(
-    () =>
-      expect(
-        screen.getAllByTestId('artifact-state-chip').map((chip) => chip.textContent ?? ''),
-      ).toContain('Revising to v2'),
+    () => expect(screen.getByTestId('plan-drawer-reason').textContent).toBe(REVISING_REASON),
     WAIT,
   );
   await click(await screen.findByRole('button', { name: 'Open in Artifacts' }, WAIT));
