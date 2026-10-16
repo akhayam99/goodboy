@@ -73,12 +73,13 @@ export const RunsGrid = ({ session, attachedRuns, label = 'Runs' }: Props) => {
   return (
     <ListGrid label={label} columns={RUNS_GRID_COLUMNS} isGrouped>
       {active.length > 0 ? (
-        <ListGridGroup label="In progress" count={active.length}>
+        <ListGridGroup headingLevel={2} label="In progress" count={active.length}>
           {active.map(renderRow)}
         </ListGridGroup>
       ) : null}
       {completed.length > 0 ? (
         <ListGridGroup
+          headingLevel={2}
           label="Finished"
           count={completed.length}
           action={
@@ -99,6 +100,7 @@ export const RunsGrid = ({ session, attachedRuns, label = 'Runs' }: Props) => {
       ) : null}
       {discarded.length > 0 ? (
         <ListGridGroup
+          headingLevel={2}
           label="Archived"
           count={discarded.length}
           action={
