@@ -1,7 +1,12 @@
 import type { Session, SessionId, SessionStage, SessionViewPrefs } from '@goodboy/types';
 import { foldSessions } from './foldSessions';
 import { isSessionGroupCollapsed } from './isSessionGroupCollapsed';
-import { PINNED_GROUP_KEY, type GroupedSessions } from './types';
+import {
+  INACTIVE_GROUP_KEY,
+  INACTIVE_GROUP_LABEL,
+  PINNED_GROUP_KEY,
+  type GroupedSessions,
+} from './types';
 
 type ColumnGroup = {
   readonly key: string;
@@ -86,6 +91,15 @@ export const layoutSessionColumn = ({
           key: group.key,
           label: group.label ?? null,
           isCollapsed: isSessionGroupCollapsed({ key: group.key, overrides: groupExpanded }),
+          total: group.sessions.length,
+          sessions: group.sessions,
+        };
+      }
+      if (group.key === INACTIVE_GROUP_KEY) {
+        return {
+          key: group.key,
+          label: INACTIVE_GROUP_LABEL,
+          isCollapsed: false,
           total: group.sessions.length,
           sessions: group.sessions,
         };

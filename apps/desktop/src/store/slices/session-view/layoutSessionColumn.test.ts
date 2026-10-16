@@ -14,7 +14,13 @@ import type {
 import { sessionMatchesProjectFilter } from '../sessionFilters/sessionMatchesProjectFilter';
 import { layoutSessionColumn } from './layoutSessionColumn';
 import { sortAndGroupSessions } from './sortAndGroupSessions';
-import { DEFAULT_PREFS, FOLD_LIMIT, PINNED_GROUP_KEY, type SessionProjectRef } from './types';
+import {
+  DEFAULT_PREFS,
+  FOLD_LIMIT,
+  INACTIVE_GROUP_KEY,
+  PINNED_GROUP_KEY,
+  type SessionProjectRef,
+} from './types';
 
 const sessions = (count: number): ReadonlyArray<Session> =>
   Array.from({ length: count }, (_, index) =>
@@ -381,5 +387,56 @@ describe('the Pinned group', () => {
     expect(
       layout({ all, pinnedIds: ['session-2' as SessionId] }).groups.map((group) => group.label),
     ).toEqual(['Pinned', 'Other sessions']);
+  });
+});
+
+describe('the Inactive group', () => {
+  const active = sessions(10);
+  const inactive = Array.from({ length: 3 }, (_, index) =>
+    aSession({ goal: `Quiet ${index + 1}` }),
+  );
+  const STAGE_PREFS: SessionViewPrefs = { ...DEFAULT_PREFS, group: 'stage' };
+  const groups = [
+    { key: 'all', sessions: active },
+    { key: INACTIVE_GROUP_KEY, label: 'Inactive', sessions: inactive },
+  ];
+
+  it('closes a flat list with a labeled Inactive group that never folds', () => {
+    const result = layoutSessionColumn({
+      groups,
+      prefs: DEFAULT_PREFS,
+      groupExpanded: {},
+      currentSessionId: null,
+      stageBySession: {},
+      pinnedIds: [],
+    });
+
+    expect(result.groups.map((group) => [group.key, group.label, group.total])).toEqual([
+      ['all', null, 10],
+      [INACTIVE_GROUP_KEY, 'Inactive', 3],
+    ]);
+    expect(result.groups[1]?.sessions).toEqual(inactive);
+    expect(result.hiddenCount).toBe(2);
+    expect(result.order.slice(-3)).toEqual(inactive.map((session) => session.id));
+  });
+
+  it('is a group you can fold in a grouped list, open by default', () => {
+    const grouped = {
+      groups,
+      prefs: STAGE_PREFS,
+      currentSessionId: null,
+      stageBySession: {},
+      pinnedIds: [],
+    };
+
+    const open = layoutSessionColumn({ ...grouped, groupExpanded: {} });
+    expect(open.groups.at(-1)?.isCollapsed).toBe(false);
+
+    const folded = layoutSessionColumn({
+      ...grouped,
+      groupExpanded: { [INACTIVE_GROUP_KEY]: false },
+    });
+    expect(folded.groups.at(-1)?.isCollapsed).toBe(true);
+    expect(folded.order).not.toContain(inactive[0]?.id);
   });
 });

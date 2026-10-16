@@ -15,7 +15,7 @@ See where each task stands without moving cards around. Six lanes, **building**,
 
 ### List view
 
-Scan every session in one table. Each row holds the state node, the issue key, the title, the project, the same one signal as the card and the time of the last update, in columns that line up from row to row. The list follows the filter's sort and grouping, says how many sessions the filters hide, and a click opens the session.
+Scan every session in one table. Each row holds the state node, the issue key, the title, the project, the same one signal as the card and the time of the last update, in columns that line up from row to row. The list follows the filter's sort and grouping, says how many sessions the filters hide, and a click opens the session. Sessions with no activity for three days close the list in an **Inactive** group, newest first, and their last column reads how long, such as "inactive 5d", by the same rule as the sidebar.
 
 ### Repository status
 

@@ -4,7 +4,7 @@ Move between the tasks of a workspace without losing your place, and see from an
 
 ### Session list
 
-The left column lists the sessions of the workspace, one line each, with a sign that says whether an agent is working, you must act, or the task is done. Sessions that need you sit on top, and the open one shows its pages under its row. Hold **Control** and press **Tab** to flip through recent sessions without the list.
+The left column lists the sessions of the workspace, one line each, with a sign that says whether an agent is working, you must act, or the task is done. Sessions that need you sit on top, and the open one shows its pages under its row. A session nobody touched for three days moves to an **Inactive** group at the bottom, newest first, with how long it slept, such as "inactive 5d". A pinned session, the open one, one with work running or waiting on you, an unread reply or a draft never moves there, and touching an inactive session brings it straight back up. Hold **Control** and press **Tab** to flip through recent sessions without the list.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-rail-dark.webp">

@@ -158,7 +158,9 @@ state is a `StateDot` or a glyph in a 16px column.
   page group) sits right after the name and never takes the count's column; a
   grouped grid (`isGrouped`) spaces its groups 16px apart, never with a divider.
   `headingLevel` is 3 by default and 2 on a page whose title is the only heading
-  above the groups.
+  above the groups. A group with no `label` draws its rows alone, with no heading
+  and no count, for a lead group that needs no name above a named one (the
+  Sessions list before **Inactive**).
 - A list with a keyboard cursor (Tasks) makes each group its own listbox
   (`isListbox`, `activeDescendant`) and its rows options (`isOption`,
   `isCursor` marks the cursor with `data-cursor` and the hover fill). What is not

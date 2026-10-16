@@ -4,7 +4,7 @@ import { cn } from '../../cn';
 import { FOCUS_RING } from '../../focusRing';
 
 export type ListGridGroupProps = {
-  readonly label: string;
+  readonly label?: string;
   readonly count?: number;
   readonly action?: ReactNode;
   readonly isListbox?: boolean;
@@ -36,37 +36,39 @@ export const ListGridGroup = ({
   const Heading = HEADING_TAG[headingLevel];
   return (
     <li className={SUBGRID}>
-      <div
-        data-list-grid-group-label=""
-        className={cn(SUBGRID, 'h-7 items-center', isSticky && 'sticky top-0 z-10 bg-background')}
-      >
-        <div className="col-start-2 col-end-[-3] flex min-w-0 items-center gap-3">
-          <Heading
-            id={headingId}
-            className={cn('min-w-0 flex-1 truncate text-row', TEXT_ROLE.secondary)}
-          >
-            {label}
-          </Heading>
-          {action === undefined || action === null ? null : (
-            <span className={cn('flex shrink-0 items-center gap-2 tabular-nums', TEXT_ROLE.hint)}>
-              {action}
-            </span>
-          )}
-        </div>
-        <span
-          data-list-grid-count=""
-          className={cn(
-            'col-start-[-3] col-end-[-2] flex items-center justify-end tabular-nums',
-            TEXT_ROLE.hint,
-          )}
+      {label === undefined ? null : (
+        <div
+          data-list-grid-group-label=""
+          className={cn(SUBGRID, 'h-7 items-center', isSticky && 'sticky top-0 z-10 bg-background')}
         >
-          {count === undefined ? null : count}
-        </span>
-      </div>
+          <div className="col-start-2 col-end-[-3] flex min-w-0 items-center gap-3">
+            <Heading
+              id={headingId}
+              className={cn('min-w-0 flex-1 truncate text-row', TEXT_ROLE.secondary)}
+            >
+              {label}
+            </Heading>
+            {action === undefined || action === null ? null : (
+              <span className={cn('flex shrink-0 items-center gap-2 tabular-nums', TEXT_ROLE.hint)}>
+                {action}
+              </span>
+            )}
+          </div>
+          <span
+            data-list-grid-count=""
+            className={cn(
+              'col-start-[-3] col-end-[-2] flex items-center justify-end tabular-nums',
+              TEXT_ROLE.hint,
+            )}
+          >
+            {count === undefined ? null : count}
+          </span>
+        </div>
+      )}
       {lead === undefined || lead === null ? null : <ul className={SUBGRID}>{lead}</ul>}
       <ul
         role={isListbox ? 'listbox' : undefined}
-        aria-labelledby={headingId}
+        aria-labelledby={label === undefined ? undefined : headingId}
         aria-activedescendant={isListbox ? activeDescendant : undefined}
         tabIndex={isListbox && activeDescendant !== undefined ? 0 : undefined}
         className={cn(SUBGRID, isListbox && cn('rounded-md', FOCUS_RING))}

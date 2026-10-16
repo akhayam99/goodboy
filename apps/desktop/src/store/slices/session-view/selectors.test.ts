@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { aProject, aSession, aWorkspace } from '@goodboy/types/testing';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   IsoDateTime,
   MountId,
@@ -91,7 +91,12 @@ const setProjectScope = ({ kind = 'repo' }: { readonly kind?: Project['kind'] } 
   store.state.sessionActiveProject = { [SESSION_ID]: PROJECT_ID };
 };
 
+afterEach(() => {
+  vi.useRealTimers();
+});
+
 beforeEach(() => {
+  vi.useFakeTimers({ now: Date.parse('2026-07-28T12:00:00.000Z'), toFake: ['Date'] });
   store.state = {
     sessionPhaseRuns: {},
     selectedAgentId: {},
@@ -100,6 +105,9 @@ beforeEach(() => {
     terminalTabs: {},
     terminalSessions: {},
     sessionGithub: {},
+    mountGithub: {},
+    agentDraft: {},
+    agentQueue: {},
     sessionGitlabMr: {},
     sessionOpenQuestions: {},
     sessionViewPrefs: {},
