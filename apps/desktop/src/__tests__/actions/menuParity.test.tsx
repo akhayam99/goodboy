@@ -355,7 +355,6 @@ describe('every ⋯ menu and its right click list the same actions in the same o
     expect(fromOverflow).toEqual([
       'View diff',
       'Step routing',
-      'Autonomy',
       'Skip step 1',
       'Save as preset',
       'Copy run summary',

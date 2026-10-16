@@ -10,6 +10,7 @@ type Props = {
   readonly session: Session;
   readonly view: RunView;
   readonly stepAgentId: AgentId | null;
+  readonly isOrchestrated?: boolean;
 };
 
 const OFF_THE_MENU: ReadonlyArray<string> = [
@@ -23,7 +24,9 @@ const OFF_THE_MENU: ReadonlyArray<string> = [
   'workflowRun.restore',
 ];
 
-export const RunPageActions = ({ session, view, stepAgentId }: Props) => {
+const OFF_THE_ORCHESTRATED_MENU: ReadonlyArray<string> = [...OFF_THE_MENU, 'workflowRun.autonomy'];
+
+export const RunPageActions = ({ session, view, stepAgentId, isOrchestrated = false }: Props) => {
   const { run, name, primary } = view;
   const target: WorkflowRunActionTarget = {
     kind: 'workflowRun',
@@ -38,7 +41,12 @@ export const RunPageActions = ({ session, view, stepAgentId }: Props) => {
       {view.isDiscarded && primary !== null ? (
         <RunPrimaryAction session={session} view={view} primary={primary} />
       ) : null}
-      <RunOverflowMenu target={target} viewing={viewing} name={name} omit={OFF_THE_MENU} />
+      <RunOverflowMenu
+        target={target}
+        viewing={viewing}
+        name={name}
+        omit={isOrchestrated ? OFF_THE_ORCHESTRATED_MENU : OFF_THE_MENU}
+      />
     </div>
   );
 };

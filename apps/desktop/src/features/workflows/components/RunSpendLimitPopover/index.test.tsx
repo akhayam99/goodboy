@@ -48,7 +48,7 @@ describe('RunSpendLimitPopover', () => {
   it('offers to set a limit on a run that has none, and reads no limit as infinite', () => {
     renderPopover();
 
-    expect(screen.getByTestId('run-spend-limit-trigger').textContent).toContain('Set a spend cap');
+    expect(screen.getByTestId('run-spend-limit-trigger').textContent).toContain('Set a limit');
     openPopover();
 
     const field = screen.getByTestId('spend-limit-amount') as HTMLInputElement;
@@ -90,7 +90,7 @@ describe('RunSpendLimitPopover', () => {
   it('carries the limit already set into the trigger and the field', () => {
     renderPopover(run({ spendLimitUsd: 12.5, spendLimitMode: 'notify' }));
 
-    expect(screen.getByTestId('run-spend-limit-trigger').textContent).toContain('Spend cap $12.50');
+    expect(screen.getByTestId('run-spend-limit-trigger').textContent).toContain('Limit $12.50');
     openPopover();
 
     expect((screen.getByTestId('spend-limit-amount') as HTMLInputElement).value).toBe('12.5');

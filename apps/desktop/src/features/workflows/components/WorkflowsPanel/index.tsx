@@ -169,8 +169,15 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
         workspaceName={workspaceName}
         isRestoring={isRestoring}
         runs={history.load?.runs ?? null}
+        isHistoryFailed={history.load?.status === 'failed'}
         tabs={tabs}
-        importControl={<ImportPopover workspaceId={workspaceId} takenNames={takenNames} />}
+        renderImport={({ renderTrigger }) => (
+          <ImportPopover
+            workspaceId={workspaceId}
+            takenNames={takenNames}
+            {...(renderTrigger !== null && { renderTrigger })}
+          />
+        )}
         onOpen={editor.open}
         onShowRuns={showRuns}
         onNew={editor.openNew}

@@ -103,7 +103,7 @@ export const StepEditorFields = ({
           <StepFieldLabel
             htmlFor={idOf('instruction')}
             label="Instruction"
-            hint="Markdown, Cmd+Enter saves"
+            hint="Markdown, ⌘↵ saves"
             polish={fieldPolish({ polish, field: 'prompt' })}
             isPolishable={step.prompt.trim().length > 0}
             disabled={disabled}

@@ -19,7 +19,6 @@ export type RunTailVerb =
   | { readonly kind: 'quiet'; readonly agentId: AgentId }
   | { readonly kind: 'openStep'; readonly agentId: AgentId; readonly label: string }
   | { readonly kind: 'continueStep'; readonly agentId: AgentId }
-  | { readonly kind: 'addStep' }
   | { readonly kind: 'resumeAll'; readonly count: number };
 
 export type RunTail = {
@@ -112,7 +111,7 @@ const primaryTailOf = ({
     case 'resume':
       return { state: 'stopped', phrase: 'Paused by you', startedAt: null, verb: null };
     case 'raise-cap':
-      return { state: 'paused', phrase: 'Paused at the spend cap', startedAt: null, verb };
+      return { state: 'paused', phrase: 'Paused at the limit', startedAt: null, verb };
     case 'review-plan':
     case 'approve-plan':
       return { state: 'waiting', phrase: 'The plan waits for your review', startedAt: null, verb };
@@ -145,18 +144,13 @@ export const runTailOf = ({
   question,
 }: Params): RunTail | null => {
   if (run.discardedAt != null) {
-    return { state: 'idle', phrase: 'Archived run', startedAt: null, verb: null };
+    return null;
   }
   if (isWorkflowRunClosedByUser({ run })) {
-    return {
-      state: 'stopped',
-      phrase: 'Stopped by you',
-      startedAt: null,
-      verb: { kind: 'addStep' },
-    };
+    return { state: 'stopped', phrase: 'Stopped by you', startedAt: null, verb: null };
   }
   if (isCompleted) {
-    return { state: 'idle', phrase: 'Run finished', startedAt: null, verb: { kind: 'addStep' } };
+    return { state: 'idle', phrase: 'Run finished', startedAt: null, verb: null };
   }
   const steps = agents.filter((agent) => agent.parentAgentId == null);
   if (quiet !== null) {
@@ -225,7 +219,7 @@ export const runTailOf = ({
   if (run.orchestrationStop?.kind === 'budget') {
     return {
       state: 'paused',
-      phrase: 'Paused at the spend cap',
+      phrase: 'Paused at the limit',
       startedAt: null,
       verb: { kind: 'raiseCap' },
     };

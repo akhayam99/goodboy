@@ -91,7 +91,9 @@ const renderList = (
       isRestoring={false}
       runs={runs}
       tabs={<span>Workflows</span>}
-      importControl={null}
+      renderImport={({ renderTrigger }) =>
+        renderTrigger?.({ isOpen: false, onToggle: vi.fn() }) ?? null
+      }
       onOpen={onOpen}
       onShowRuns={onShowRuns}
       onNew={vi.fn()}
@@ -133,13 +135,16 @@ describe('WorkflowList', () => {
     const runs = screen.getByRole('button', {
       name: 'Runs of Settlement replay: last run 4m ago, 2 runs',
     });
-    expect(runs.textContent).toBe('4m ago2 runs');
+    expect(runs.textContent).toBe('2 runs');
+    expect(screen.getByRole('button', { name: 'Open Settlement replay' }).textContent).toContain(
+      '4m ago',
+    );
     fireEvent.click(runs);
     expect(onShowRuns).toHaveBeenCalledOnce();
     expect(onOpen).not.toHaveBeenCalled();
   });
 
-  it('says No runs for a workflow never run and still opens its runs', () => {
+  it('says No runs on a workflow never run and still opens its runs', () => {
     const { onShowRuns } = renderList([workflow()], { runs: [] });
     const runs = screen.getByRole('button', { name: 'Runs of Settlement replay: none yet' });
     expect(runs.textContent).toBe('No runs');
@@ -147,9 +152,9 @@ describe('WorkflowList', () => {
     expect(onShowRuns).toHaveBeenCalledOnce();
   });
 
-  it('leaves the runs cell empty while the runs load', () => {
+  it('draws no runs link while the runs load', () => {
     renderList([workflow()], { runs: null });
-    expect(screen.getByRole('button', { name: 'Runs of Settlement replay' }).textContent).toBe('');
+    expect(screen.queryByRole('button', { name: /^Runs of Settlement replay/ })).toBeNull();
   });
 
   it('marks a built-in workflow and says when it was edited', () => {
@@ -167,12 +172,15 @@ describe('WorkflowList', () => {
     expect(within(edited).getByText('Edited')).toBeDefined();
   });
 
-  it('caps the role chips at six and counts the rest', () => {
-    const steps = Array.from({ length: 8 }, (_, ordinal) =>
-      step(ordinal, 'implementer', `S${ordinal}`),
-    );
+  it('names two roles in gray and counts the rest', () => {
+    const steps = [
+      step(0, 'scout', 'S0'),
+      step(1, 'implementer', 'S1'),
+      step(2, 'tester', 'S2'),
+      step(3, 'reviewer', 'S3'),
+    ];
     renderList([workflow({ steps })]);
-    expect(screen.getByText('+2')).toBeDefined();
+    expect(screen.getByText('Scout, Implementer +2')).toBeDefined();
   });
 
   it('names only the built-ins that changed in the restore confirm', async () => {
@@ -185,7 +193,9 @@ describe('WorkflowList', () => {
         isRestoring={false}
         runs={[]}
         tabs={null}
-        importControl={null}
+        renderImport={({ renderTrigger }) =>
+          renderTrigger?.({ isOpen: false, onToggle: vi.fn() }) ?? null
+        }
         onOpen={vi.fn()}
         onShowRuns={vi.fn()}
         onNew={vi.fn()}
@@ -193,7 +203,8 @@ describe('WorkflowList', () => {
       />,
     );
     expect(screen.queryByRole('button', { name: 'Workflow actions' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Restore built-in workflows' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More workflow actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Restore built-in workflows\u2026' }));
     const confirm = screen.getByRole('group', {
       name: 'Restore built-in workflows in Harborline?',
     });

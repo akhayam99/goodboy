@@ -9,9 +9,17 @@ import { isRunHeldForPlan } from '../../store/slices/workflows/workflowPlanAppro
 export type RunRowFacts = {
   readonly dot: DotState;
   readonly word: string;
+  readonly isWordRead: boolean;
   readonly progress: string;
   readonly isActive: boolean;
 };
+
+const DOT_ONLY_WORDS: ReadonlySet<string> = new Set([
+  'Running',
+  'Done',
+  'Archived',
+  'Waits to start',
+]);
 
 type Params = {
   readonly run: WorkflowRun;
@@ -94,7 +102,7 @@ const stateOf = ({
       : { dot: 'idle', word: 'Stopped' };
   }
   if (stop?.kind === 'budget' && !isRunning) {
-    return { dot: 'needsYou', word: 'Paused at the cap' };
+    return { dot: 'needsYou', word: 'Paused at the limit' };
   }
   if (stop !== null && !isRunning) {
     return { dot: 'failed', word: 'Failed' };
@@ -124,11 +132,15 @@ export const runRowFactsOf = ({
   predecessorName,
   isOrchestrating,
   questions,
-}: Params): RunRowFacts => ({
-  ...stateOf({ run, workflow, agents, predecessorName, isOrchestrating, questions }),
-  progress: progressOf({ run, workflow, agents }),
-  isActive:
-    run.discardedAt == null &&
-    !isWorkflowRunClosedByUser({ run }) &&
-    !isRunDone({ run, workflow, agents }),
-});
+}: Params): RunRowFacts => {
+  const state = stateOf({ run, workflow, agents, predecessorName, isOrchestrating, questions });
+  return {
+    ...state,
+    isWordRead: !DOT_ONLY_WORDS.has(state.word),
+    progress: progressOf({ run, workflow, agents }),
+    isActive:
+      run.discardedAt == null &&
+      !isWorkflowRunClosedByUser({ run }) &&
+      !isRunDone({ run, workflow, agents }),
+  };
+};

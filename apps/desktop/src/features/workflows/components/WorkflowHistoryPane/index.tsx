@@ -1,6 +1,6 @@
 import type { WorkflowRunHistoryRow } from '@goodboy/db';
 import type { Workflow } from '@goodboy/types';
-import { Button, DrawerFrame, EmptyLine, Skeleton } from '@goodboy/ui';
+import { Button, DrawerFrame, EmptyLine, Notice, Skeleton } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { WorkflowRunHistoryLoad } from '../../../../store/slices/workflowStudio/types';
 import { workflowRunsOf } from '../../workflowRunsOf';
@@ -15,12 +15,6 @@ type Props = {
   readonly onOpenRun: (run: WorkflowRunHistoryRow) => void;
   readonly onStartRun: () => void;
 };
-
-type CountParams = {
-  readonly count: number;
-};
-
-const runCountOf = ({ count }: CountParams): string => `${count} ${count === 1 ? 'run' : 'runs'}`;
 
 export const WorkflowHistoryPane = ({
   workflow,
@@ -41,7 +35,6 @@ export const WorkflowHistoryPane = ({
       title={workflow.name}
       icon={CONCEPT_ICONS.workflows}
       closeLabel="Close runs"
-      {...(runs !== null && { count: runCountOf({ count: runs.length }) })}
       action={
         <Button size="xs" variant="ghost" onClick={onOpenWorkflow}>
           Open workflow
@@ -51,15 +44,17 @@ export const WorkflowHistoryPane = ({
     >
       <div className="flex min-w-0 flex-col gap-3">
         {isFailed ? (
-          <EmptyLine
-            action={
+          <Notice
+            tone="danger"
+            placement="inline"
+            role="alert"
+            title="Couldn't load runs"
+            actions={
               <Button size="xs" variant="secondary" onClick={onRetry}>
                 Retry
               </Button>
             }
-          >
-            Could not load runs.
-          </EmptyLine>
+          />
         ) : null}
         {runs === null && !isFailed ? (
           <div role="status" aria-label="Loading runs" className="flex flex-col gap-2">
@@ -75,7 +70,7 @@ export const WorkflowHistoryPane = ({
               </Button>
             }
           >
-            No runs yet.
+            No runs yet
           </EmptyLine>
         ) : null}
         {runs !== null && runs.length > 0 ? (

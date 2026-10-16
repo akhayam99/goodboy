@@ -13,7 +13,7 @@ type Props = {
 };
 
 const QUIET_TOGGLE =
-  'inline-flex h-6 items-center self-start rounded-md px-1 text-ui text-muted-foreground hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
+  'inline-flex h-6 items-center self-start rounded-md text-ui text-muted-foreground hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
 
 export const OrchestratedGoal = ({ session, view }: Props) => {
   const { run, workflow } = view;

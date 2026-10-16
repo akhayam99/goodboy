@@ -10,8 +10,8 @@ const autonomyLabel = ({ rules }: { readonly rules: WorkflowRules }): string =>
 
 const spendRuleText = ({ rules }: { readonly rules: WorkflowRules }): string =>
   rules.spendLimitUsd === null
-    ? 'No spend cap'
-    : `${capAmount({ usd: rules.spendLimitUsd })} cap, ${rules.spendLimitMode === 'pause' ? 'pause' : 'warn'}`;
+    ? 'No limit'
+    : `${capAmount({ usd: rules.spendLimitUsd })} limit, ${rules.spendLimitMode === 'pause' ? 'pause' : 'warn'}`;
 
 const guidanceRuleText = ({ rules }: { readonly rules: WorkflowRules }): string =>
   rules.standingGuidance.trim() === '' ? 'No guidance' : 'Guidance set';

@@ -112,6 +112,7 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
           }),
         }}
         recommendationKind="auto"
+        autoTrigger="resolved"
         disabled={disabled}
         overridden={pinned != null}
         defaultSummary={`${automatic.providerId} ${automatic.model}`}

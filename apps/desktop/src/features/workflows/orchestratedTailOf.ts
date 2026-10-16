@@ -4,6 +4,7 @@ import type {
   OrchestratorPhase,
   OrchestratorState,
 } from './components/OrchestratorStrip/orchestratorState';
+import { modelNamesIn } from './modelNamesIn';
 import type { RunPrimary } from './runPrimaryOf';
 
 export type OrchestratedVerb =
@@ -75,7 +76,7 @@ const phraseOf = ({ orchestrator }: PhraseParams): string => {
   if (orchestrator.phase !== 'failed' || detail === '') {
     return orchestrator.sentence;
   }
-  return `${orchestrator.sentence}: ${detail}`;
+  return `${orchestrator.sentence}: ${modelNamesIn({ text: detail })}`;
 };
 
 export const orchestratedTailOf = ({
@@ -86,9 +87,9 @@ export const orchestratedTailOf = ({
   isDiscarded,
   quiet,
   restartStoppedCount,
-}: Params): OrchestratedTail => {
+}: Params): OrchestratedTail | null => {
   if (isDiscarded) {
-    return { state: 'idle', phrase: 'Archived run', startedAt: null, verbs: [] };
+    return null;
   }
   const phase = orchestrator.phase;
   if (quiet !== null && phase === 'waiting') {

@@ -23,7 +23,9 @@ type Props = {
   readonly selectedAgentId: AgentId | null;
 };
 
-const ENTRY_CLASS = 'h-7 items-center gap-2 px-2 text-label';
+const ENTRY_CLASS = 'h-7 min-w-0 flex-1 items-center gap-2 px-2 text-ui';
+
+const RAIL_ROW_HEIGHT = 28;
 
 export const RunLevelBody = ({ session, run, workflow, selectedAgentId }: Props) => {
   const sessionId = session.id;
@@ -41,7 +43,14 @@ export const RunLevelBody = ({ session, run, workflow, selectedAgentId }: Props)
       return overrides;
     }),
   );
-  const tree = useRunTree({ session, run, workflow, agentKindOverride });
+  const tree = useRunTree({
+    session,
+    run,
+    workflow,
+    agentKindOverride,
+    rowHeight: RAIL_ROW_HEIGHT,
+  });
+  const gutter = tree?.rail.width ?? 0;
   const isOverview = selectedAgentId === null;
   const isArchived = run.discardedAt != null;
   const open = (agentId: AgentId | null) =>
@@ -55,15 +64,21 @@ export const RunLevelBody = ({ session, run, workflow, selectedAgentId }: Props)
       </div>
       <ScrollFade className="min-h-0 flex-1">
         <div className="flex flex-col px-2 pb-2">
-          <SelectableRow
-            selected={isOverview}
-            ariaCurrent={isOverview ? 'page' : undefined}
-            onClick={() => open(null)}
-            className={ENTRY_CLASS}
-          >
-            <CONCEPT_ICONS.timeline size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-            <span className="min-w-0 flex-1 truncate">{NAMES.overview}</span>
-          </SelectableRow>
+          <div data-run-overview-row="" className="flex min-w-0">
+            <span aria-hidden className="shrink-0" style={{ width: gutter }} />
+            <SelectableRow
+              selected={isOverview}
+              ariaCurrent={isOverview ? 'page' : undefined}
+              onClick={() => open(null)}
+              className={ENTRY_CLASS}
+            >
+              <span aria-hidden className="w-6 shrink-0" />
+              <span className="inline-flex size-4.5 shrink-0 items-center justify-center">
+                <CONCEPT_ICONS.timeline size={ICON_SIZE.row} aria-hidden />
+              </span>
+              <span className="min-w-0 flex-1 truncate">{NAMES.overview}</span>
+            </SelectableRow>
+          </div>
           <RunTree
             density="rail"
             sessionId={sessionId}
@@ -83,7 +98,8 @@ export const RunLevelBody = ({ session, run, workflow, selectedAgentId }: Props)
             onAnswer={() => undefined}
           />
           {isArchived ? null : (
-            <div data-run-add-step="">
+            <div data-run-add-step="" className="flex min-w-0">
+              <span aria-hidden className="shrink-0" style={{ width: gutter }} />
               <SelectableRow
                 selected={false}
                 onClick={() => {
@@ -92,7 +108,10 @@ export const RunLevelBody = ({ session, run, workflow, selectedAgentId }: Props)
                 }}
                 className={cn(ENTRY_CLASS, 'text-muted-foreground')}
               >
-                <Plus size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+                <span aria-hidden className="w-6 shrink-0" />
+                <span className="inline-flex size-4.5 shrink-0 items-center justify-center">
+                  <Plus size={ICON_SIZE.row} aria-hidden />
+                </span>
                 <span className="min-w-0 flex-1 truncate">Add step</span>
               </SelectableRow>
             </div>

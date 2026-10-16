@@ -58,7 +58,7 @@ describe('SPEC3 9.9 Workflows rows stay reachable from the Workflows grid', () =
     expect(screen.getByRole('tab', { name: /Saved steps/ })).toBeDefined();
   });
 
-  it('keeps Built in, Edited, role glyphs and the step count on the row', async () => {
+  it('keeps Built in, Edited, the role names and the step count on the row', async () => {
     await renderWorkflows();
 
     const builtin = within(grid()).getByRole('button', { name: 'Open Fix a bug' });
@@ -67,14 +67,17 @@ describe('SPEC3 9.9 Workflows rows stay reachable from the Workflows grid', () =
     expect(edited.textContent).toContain('Edited');
     const flaky = within(grid()).getByRole('button', { name: 'Open Fix flaky tests' });
     expect(flaky.textContent).toContain('3 steps');
-    expect(flaky.querySelectorAll('.rounded-full')).toHaveLength(3);
+    expect(flaky.querySelector('[data-workflow-roles]')?.textContent ?? '').not.toBe('');
   });
 
-  it('keeps Import and Restore built-in workflows in the title row', async () => {
+  it('keeps Import and Restore built-in workflows in the page menu', async () => {
     await renderWorkflows();
 
-    expect(screen.getByRole('button', { name: /^Import/ })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Restore built-in workflows' })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'More workflow actions' }));
+    expect(screen.getByRole('menuitem', { name: 'Import workflows\u2026' })).toBeDefined();
+    expect(
+      screen.getByRole('menuitem', { name: 'Restore built-in workflows\u2026' }),
+    ).toBeDefined();
   });
 
   it('opens the editor from the row, with Delete in its actions', async () => {

@@ -31,7 +31,7 @@ export const RaiseCapPrimary = ({ session, view }: Props) => {
       onClick={() => requestSessionSpendLimitEdit({ sessionId: session.id })}
     >
       <Wallet size={ICON_SIZE.control} aria-hidden />
-      Raise spend cap
+      Raise limit
     </Button>
   ) : (
     <RunSpendLimitPopover sessionId={session.id} run={view.run} variant="primary" />

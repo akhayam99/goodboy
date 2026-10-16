@@ -125,8 +125,10 @@ export const RunTreeRow = ({
         });
   const answer = answerOf({ ask: item.rowState.ask });
   const answersFor = isPage && isQuestionDelegate({ agent }) ? parentStepName : null;
-  const boxHeight = TIMELINE_RHYTHM.grade[item.grade].height;
-  const slot = rowSlotWidth({ rail, railWidth, isNested });
+  const isFixed = density !== 'rail';
+  const boxHeight = isFixed ? TIMELINE_RHYTHM.grade[item.grade].height : item.height;
+  const slot = rowSlotWidth({ rail, railWidth, isNested, isFixed });
+  const markerColumn = isFixed ? Math.min(rail.markerColumn, 1) : rail.markerColumn;
   const isSkipShown = answer === null && skip !== null && !isNested && agent.status === 'running';
   const planAction = isNested || answer !== null || isSkipShown ? null : plan;
   const isPlanHeld =
@@ -165,8 +167,8 @@ export const RunTreeRow = ({
             {rail.markerY == null ? null : (
               <span
                 className="absolute -translate-x-1/2 -translate-y-1/2"
-                style={{ left: railColumnX({ column: rail.markerColumn }), top: rail.markerY }}
-                data-rail-column={rail.markerColumn}
+                style={{ left: railColumnX({ column: markerColumn }), top: rail.markerY }}
+                data-rail-column={markerColumn}
               >
                 <TimelineRowMarker item={item} progress={work.time?.progress ?? null} />
               </span>
@@ -207,7 +209,7 @@ export const RunTreeRow = ({
                         className={cn(
                           WORK_ROW.title,
                           'flex-1 truncate',
-                          isNested ? 'text-label' : 'text-body',
+                          density === 'rail' ? 'text-ui' : isNested ? 'text-label' : 'text-body',
                           item.rowState.phase === 'queued'
                             ? 'text-muted-foreground'
                             : item.rowState.phase === 'running' || item.hasUnread

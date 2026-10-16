@@ -302,7 +302,7 @@ describe('journey: an orchestrated run to completion', () => {
     expect(useAppStore.getState().orchestratingWorkflowRuns[workflowRunId]).toBe(false);
     expect(held.turns).toHaveLength(2);
     const finished = showPage({ view, workflowRunId });
-    expect(finished).toContain('Run complete · 2 steps');
+    expect(finished).toContain('Run complete');
     expect(finished).toContain('The settlement flow is mapped and reviewed.');
     expect(finished).not.toContain('Waiting on step');
   });

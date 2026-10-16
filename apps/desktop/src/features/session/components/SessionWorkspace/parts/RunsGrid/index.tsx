@@ -90,7 +90,7 @@ export const RunsGrid = ({ session, attachedRuns, label = 'Runs' }: Props) => {
                 aria-expanded={isEarlierShown}
                 onClick={() => setIsEarlierShown((isShown) => !isShown)}
               >
-                {isEarlierShown ? 'Show fewer' : `Show ${earlierCount} earlier`}
+                {isEarlierShown ? 'Show fewer' : 'Show all'}
               </button>
             )
           }
