@@ -223,7 +223,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
         ref={frame.ref}
         className={cn(
           'mx-auto flex h-full min-h-0 w-full flex-col gap-6',
-          PANE_RHYTHM.board.maxWidth,
+          view === 'list' ? PANE_RHYTHM.board.listMaxWidth : PANE_RHYTHM.board.maxWidth,
         )}
       >
         {pending || !empty || hasProjects ? (

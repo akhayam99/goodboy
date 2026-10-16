@@ -24,11 +24,13 @@
   row of the sidebar's workspace level. Nothing else sits on that line, and no
   row sits under it. A filter that hides sessions says "N hidden by filters"
   with Clear under the lanes or the list. The List is one `ListGrid` with 32px
-  rows: state node 16, issue key 72 in mono, title, project 128, signal 96,
-  updated 56, right aligned; it follows the filter's sort and grouping, shows
-  archived sessions only under Show archived, and a row opens its session. Header and lanes
-  share one frame centred in the pane, so the title's left edge is the first
-  lane's left edge and the actions' right edge is the last lane's right edge.
+  rows on the 960 list measure: state node 28 (glyph 16, so the title sits 24
+  after it), title led by its issue key in mono when there is one, project 128,
+  signal 96, updated 56, right aligned; it follows the filter's sort and
+  grouping, shows archived sessions only under Show archived, and a row opens
+  its session. Header and lanes share one frame centred in the pane, so the
+  title's left edge is the first lane's left edge and the actions' right edge is
+  the last lane's right edge.
   There are six lanes in pipeline order (building, running, needs you, in
   review, done, archived), each from 13rem to 20rem wide with 0.75rem gaps, and
   the frame stops at six lanes of 20rem, so a wide or zoomed-out window never

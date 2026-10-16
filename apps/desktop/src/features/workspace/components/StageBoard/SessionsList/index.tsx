@@ -6,8 +6,7 @@ import { sentenceCase } from '../../../../../shared/utils/sentenceCase';
 import { SessionListRow } from './SessionListRow';
 
 const COLUMNS: ReadonlyArray<ListGridColumn> = [
-  { key: 'node', width: 16 },
-  { key: 'key', width: 72, tone: 'hint' },
+  { key: 'node', width: 28 },
   { key: 'title', width: 'fill', isTitle: true },
   { key: 'project', width: 128, tone: 'secondary' },
   { key: 'signal', width: 96, align: 'end' },
