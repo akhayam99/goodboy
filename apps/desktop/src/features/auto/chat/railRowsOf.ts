@@ -42,7 +42,7 @@ type NodeParams = {
   readonly card: DelegationCardModel;
 };
 
-export const delegationNodeOf = ({ card }: NodeParams): WorkNodeState => {
+const delegationNodeOf = ({ card }: NodeParams): WorkNodeState => {
   if (card.status.node !== undefined) {
     return card.status.node;
   }
