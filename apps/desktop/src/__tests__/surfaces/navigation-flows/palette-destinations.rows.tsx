@@ -128,16 +128,14 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: () => band('Terminal'),
   },
   {
-    name: 'palette: New terminal',
-    covers: ['studio:terminal', 'palette:New terminal'],
+    name: 'palette: New terminal in this session',
+    covers: ['palette:New terminal'],
     door: 'palette',
-    open: () => openPalette(/^New terminal$/, 'new terminal'),
+    open: () => openPalette(/^New terminal in this session$/, 'new terminal'),
     lands: async () => {
-      await band('Terminal');
-      await waitFor(
-        () => expect(document.querySelectorAll('[data-terminal-tab]')).toHaveLength(1),
-        WAIT,
-      );
+      await screen.findByRole('button', { name: 'Open on Terminal page' }, WAIT);
+      expect(useAppStore.getState().drawer?.kind).toBe('terminal');
+      expect(useAppStore.getState().appStudio).toBeNull();
     },
   },
   {

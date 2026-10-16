@@ -133,3 +133,49 @@ describe('the palette entries for new things', () => {
     expect(listener).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('the palette New terminal entry', () => {
+  const newTerminal = () => {
+    const { result } = renderHook(() => useCommandEntries(), { wrapper });
+    return result.current.find((entry) => entry.key === 'action:new-terminal');
+  };
+
+  it('opens a fresh tab in the session drawer on the workspace folder of a branchless session', async () => {
+    useAppStore.setState({
+      sessionBranches: { [SESSION_ID]: '' },
+      terminalFolderOverrides: { [WORKSPACE_ID]: '/work/harborline' },
+    });
+    const entry = newTerminal();
+
+    expect(entry?.label).toBe('New terminal in this session');
+    act(() => entry?.run());
+    await vi.waitFor(() => expect(useAppStore.getState().drawer?.kind).toBe('terminal'));
+
+    const tabs = useAppStore.getState().terminalTabs[SESSION_ID] ?? [];
+    expect(tabs).toHaveLength(1);
+    expect(tabs[0]?.cwd).toBe('/work/harborline');
+    expect(useAppStore.getState().appStudio).toBeNull();
+  });
+
+  it('adds a second tab instead of reusing the one on the same folder', async () => {
+    useAppStore.setState({
+      sessionBranches: { [SESSION_ID]: '' },
+      terminalFolderOverrides: { [WORKSPACE_ID]: '/work/harborline' },
+    });
+
+    const entry = newTerminal();
+
+    act(() => entry?.run());
+    await vi.waitFor(() => expect(useAppStore.getState().drawer?.kind).toBe('terminal'));
+    act(() => entry?.run());
+    await vi.waitFor(() => expect(useAppStore.getState().terminalTabs[SESSION_ID]).toHaveLength(2));
+  });
+
+  it('keeps the plain label and the Terminal page when a studio covers the session', () => {
+    act(() => {
+      useAppStore.getState().openStudio({ studio: { kind: 'monitoring' } });
+    });
+
+    expect(newTerminal()?.label).toBe('New terminal');
+  });
+});

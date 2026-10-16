@@ -11,7 +11,9 @@ while a text field, editable surface or terminal owns input.
 
 A key means the new thing of the place you are in. ⌘N is a new session
 (`session.new`), except on the Chat page (`chat.newHere`, a new chat), on the
-Terminal page (`terminal.newHere`, a new terminal) and inside the Ask panel
+Terminal page and the session terminal drawer (`terminal.newHere`, the New
+terminal in picker: type to filter, arrows, Enter opens a tab, Esc closes; ⌘T
+adds a tab in place with no picker) and inside the Ask panel
 (`ask.reset`, Reset chat). Each contextual entry carries a `scope`, so the
 registry binds a chord once per place, and a contextual handler that declines
 (focus outside the Ask panel) hands the chord back to the global one. ⌘K is

@@ -27,6 +27,7 @@ import { requestNewSession } from '../../session/requestNewSession';
 import { openReportSheet } from '../../bug-report/openReportSheet';
 import { NOTIFICATIONS_STUDIO_EVENT } from '../../notifications/studioEvent';
 import { terminalStudioPlace } from '../../terminal/terminalStudioPlace';
+import { openSessionTerminalHere } from '../../terminal/openSessionTerminalHere';
 import { openWorkspaceTerminal } from '../../terminal/openWorkspaceTerminal';
 import { openImpactStudio } from '../../impact/openImpactStudio';
 import { openWorkflowRules } from '../../workflows/openWorkflowRules';
@@ -118,6 +119,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
   const isAskReplying = useAppStore((s) =>
     sessionId === null ? false : isAskStreaming({ state: s, sessionId }),
   );
+  const isInSession = useAppStore((s) => sessionId !== null && s.appStudio === null);
   const destinations = useLensDestinations({ sessionId });
   const runScript = useAppStore((s) => s.runScript);
   const workspaceProjects = useMemo(
@@ -297,12 +299,15 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         },
         {
           key: 'action:new-terminal',
-          label: 'New terminal',
+          label: isInSession ? 'New terminal in this session' : 'New terminal',
           kind: 'page',
           group: 'action',
           icon: Plus,
-          secondary: ['Open terminal'],
-          run: () => void openWorkspaceTerminal({ workspaceId }),
+          secondary: ['Open terminal', 'New terminal'],
+          run: () =>
+            isInSession && sessionId !== null
+              ? void openSessionTerminalHere({ sessionId, isFresh: true })
+              : void openWorkspaceTerminal({ workspaceId }),
         },
         {
           key: 'goto:workflows',
@@ -563,6 +568,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     agentKindOverride,
     isAskOpen,
     isAskReplying,
+    isInSession,
     destinations,
     openWorkspace,
     navigate,

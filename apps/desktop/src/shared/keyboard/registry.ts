@@ -48,7 +48,7 @@ export const SHORTCUT_SCOPE_LABEL: Readonly<Record<ShortcutScope, string>> = {
   composer: 'Where a chat composer is open',
   ask: 'In the Ask panel',
   chatPage: 'On the Chat page',
-  terminalPage: 'On the Terminal page',
+  terminalPage: 'On the Terminal page and the terminal drawer',
   find: 'After a search in the view',
   overview: 'On a session overview',
   row: 'On a focused row',
