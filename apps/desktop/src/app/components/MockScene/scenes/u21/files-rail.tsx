@@ -3,8 +3,6 @@ import { parseUnifiedDiff } from '@goodboy/core';
 import { UnderTrailContext } from '@goodboy/ui';
 import type { DiffComment } from '@goodboy/types';
 import { fileSignature, writeReviewedMap } from '../../../../../features/diff/lib/reviewedFiles';
-import { AskTrailButton } from '../../../../../features/session/ask/components/AskTrailButton';
-import { TrailBar } from '../../../../../features/session/components/SessionWorkspace/parts/TrailBar';
 import { StudioBandContext } from '../../../../../shared/components/StudioShell/studioBandContext';
 import { useAppStore } from '../../../../../store';
 import { BRAND_PEOPLE } from '../brand/canon';
@@ -70,11 +68,7 @@ const FilesRailScene = ({ paneWidth }: Props) => {
       style={{ width: paneWidth }}
     >
       <UnderTrailContext.Provider value>
-        <StudioBandContext.Provider
-          value={
-            <TrailBar session={CTX_SESSION} end={<AskTrailButton sessionId={CTX_SESSION_ID} />} />
-          }
-        >
+        <StudioBandContext.Provider value={null}>
           <div className="relative min-h-0 flex-1">
             <div className="absolute inset-0 z-0">
               <DiffStage centerNote={false} />

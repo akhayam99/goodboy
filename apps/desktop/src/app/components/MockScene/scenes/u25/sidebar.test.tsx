@@ -8,7 +8,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -22,7 +22,7 @@ import { U25_SIDEBAR_SCENES } from './sidebar';
 
 const SETTLE_MS = 2_000;
 
-const NAMES = ['sidebar-rhythm', 'sidebar-meta-branch', 'sidebar-meta-branches'] as const;
+const NAMES = ['sidebar-rhythm'] as const;
 
 type SceneName = (typeof NAMES)[number];
 
@@ -55,8 +55,6 @@ const mount = async (name: SceneName): Promise<Element> => {
   return container;
 };
 
-const pages = () => within(screen.getByRole('list', { name: 'Pages' }));
-
 describe('the sidebar scenes', () => {
   it('registers every scene for the capture', () => {
     expect(Object.keys(U25_SIDEBAR_SCENES).sort()).toEqual([...NAMES].sort());
@@ -65,28 +63,14 @@ describe('the sidebar scenes', () => {
     }
   });
 
-  it('sidebar-rhythm has one separator, doors with a plus, and New session under Sessions', async () => {
+  it('sidebar-rhythm has no separator, doors with a plus, and New session first', async () => {
     await mount('sidebar-rhythm');
 
-    expect(screen.getAllByRole('separator')).toHaveLength(1);
+    expect(screen.queryAllByRole('separator')).toHaveLength(0);
     expect(screen.getByRole('button', { name: 'New chat' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'New terminal' })).toBeDefined();
     expect(screen.getAllByRole('button', { name: 'New session' })).toHaveLength(1);
     expect(document.querySelector('[data-column-create]')).toBeNull();
-  });
-
-  it('sidebar-meta-branch names the branch of the one mount', async () => {
-    await mount('sidebar-meta-branch');
-
-    expect(pages().getByRole('button', { name: /^Branch/ }).textContent).toBe(
-      'Branchharborline/webhook-retries',
-    );
-  });
-
-  it('sidebar-meta-branches counts the branches', async () => {
-    await mount('sidebar-meta-branches');
-
-    expect(pages().getByRole('button', { name: /^Branch/ }).textContent).toBe('Branch3 branches');
   });
 
   it.each(NAMES)('%s has no accessibility violation', async (name) => {

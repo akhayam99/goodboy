@@ -1,6 +1,14 @@
 import { useState, type ReactNode } from 'react';
 import { ArrowUpRight, ExternalLink, WrapText } from 'lucide-react';
-import { Button, CopyButton, DrawerFrame, IconButton, SegmentedTabs, Tooltip } from '@goodboy/ui';
+import {
+  Button,
+  CopyButton,
+  DrawerFrame,
+  IconButton,
+  SegmentedTabs,
+  Tooltip,
+  type DrawerBack,
+} from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { selectMountForPath } from '../../../store/slices/project-mounts/selectors';
@@ -29,6 +37,7 @@ type Props = {
   readonly entry: ExploreEntry;
   readonly line?: number;
   readonly renderChanges: (params: RenderChangesParams) => ReactNode;
+  readonly back?: DrawerBack;
   readonly onClose: () => void;
 };
 
@@ -56,6 +65,7 @@ export const ExploreFileDrawer = ({
   entry,
   line,
   renderChanges,
+  back,
   onClose,
 }: Props) => {
   const previewState = useExplorePreview({ sessionDir, entry });
@@ -114,6 +124,7 @@ export const ExploreFileDrawer = ({
       title={entry.name}
       icon={fileGlyphOf({ name: entry.name })}
       iconClassName="text-muted-foreground"
+      {...(back !== undefined && { back })}
       onClose={onClose}
       scroll="self"
       action={

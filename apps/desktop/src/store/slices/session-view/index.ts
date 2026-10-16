@@ -9,7 +9,6 @@ import { setAgentTab } from './setAgentTab';
 import { setExploreExpanded } from './setExploreExpanded';
 import { setExploreMountPath } from './setExploreMountPath';
 import { dismissCheckProposal } from './dismissCheckProposal';
-import { setSessionPagesFolded } from './setSessionPagesFolded';
 import { toggleSessionGroup } from './toggleSessionGroup';
 import {
   openDiffLens,
@@ -42,7 +41,6 @@ export const createSessionViewSlice = ({ set, get }: SliceDeps): SessionViewSlic
     setSessionViewPrefs: setSessionViewPrefs(set, get),
     markSessionOpened: markSessionOpened(set),
     toggleSessionGroup: toggleSessionGroup(set),
-    setSessionPagesFolded: setSessionPagesFolded(set),
     dismissCheckProposal: dismissCheckProposal({ set }),
     setExploreExpanded: setExploreExpanded(set),
     setExploreMountPath: setExploreMountPath(set),

@@ -35,7 +35,7 @@
   have one fixed height: a goal of up to two lines (the full goal in the
   tooltip) is the card's one button, and the lifecycle menu and the cost show
   next to the quick actions on hover or focus. Restoring an archived card uses
-  the `restore` glyph. The Board door works from every place, the New session
+  the `restore` glyph. The Sessions door works from every place, the New session
   draft included.
 - **An archived session is read-only until Restore.** Its overview shows an
   Archived chip with an inline Restore. The composer, new agents, workflows and
@@ -51,13 +51,19 @@
   reads like a figure, not a place you work in. The spend chip is state that
   opens the studio that owns that number, on Impact's Spend tab, and the Limits
   chips open the Providers menu. The bar never edits a record in place.
-- **The column holds every door.** Board, Tasks, Chat, Workflows, Terminal and
-  Monitoring sit under the toggle; Chat and Terminal each end in a plus (New chat, New
-  terminal) that is always visible. One separator,
-  then the Sessions list with a New session row first, Settings and the Goodboy row sit at
-  the foot. Board is home and the first door (⌘⇧H). The column is on every
-  screen with a workspace: the board, a session, the draft and every studio but
-  Settings, which swaps the column's content (see Studios).
+- **The column holds every door, one level at a time.** At the workspace
+  level New session comes first, then the doors Sessions (the board, ⌘⇧H),
+  Tasks, Chat, Workflows and Terminal; Chat and Terminal each end in a plus
+  (New chat, New terminal) that is always visible. No separator: the Pinned and
+  Sessions lists follow, and Settings and the Goodboy row sit at the foot. A
+  door's trailing slot is a 6px dot (running, unread, warning); the count is in
+  its tooltip and accessible name, never a colored number. Monitoring is not a
+  door: it is the top bar signal (`MonitoringSignal`), an `activity` icon with a
+  dot while ports are in use and the words "Pinned port down" when a pinned
+  port is free. Inside a session the column shows the session level (see
+  Sidebar levels). The column is on every screen with a workspace: the board, a
+  session, the draft and every studio but Settings, which swaps the column's
+  content (see Studios).
 - **One home per thing.** Say a thing must exist in state A and can exist in
   state B. It lives where it must, and B gets no second copy. Workspace identity
   is always pinned at the left of the top bar. Neither the column nor a studio
@@ -105,7 +111,7 @@
   open, or Board on the board, takes `bg-selected` with `cursor-default` and
   `aria-current="page"`, in the column and on the rail alike. Every door reads it from one place (`columnPlaceOf`, through
   `useColumnPlace`), so at most one door carries it; inside a session no door
-  does, because the open session's card is the sign (see the card below). A popover trigger (the
+  does, because the session level's page row is the sign (see Sidebar levels). A popover trigger (the
   Limits chips, the Goodboy row) is never selected: it only reports
   `aria-expanded`. A button's label, `aria-label` and tooltip name the same word
   (`Workflows`, `Chat`); the hover hint adds only the shortcut.
@@ -214,7 +220,7 @@ opens it on a mode. Commands is the first mode.
 
 In the composer, `$` lists the scripts of the session's mounted projects
 (`useSessionScripts`): saved scripts first, then the `package.json` and
-`composer.json` scripts pinned for the project, by category. The Scripts lens
+`composer.json` scripts pinned for the project, by category. The Scripts pane
 lists the same set in two bands per project: **Services** (category `dev`, or a
 script named `start`, `serve`, `watch` or `preview`, decided by `isService`) and
 **Tasks** (the rest), each with a count. A running service row shows the last
@@ -557,7 +563,7 @@ hide animation or overlay can move it.
 
 - **A column has one reduced state, and it is never a narrower copy of
   itself.** The left column's one reduced state is the 44px rail
-  (`ColumnRail`): the toggle, New, Board, Tasks, Chat, Workflows, Terminal and Monitoring as icons
+  (`ColumnRail`): on the workspace level the toggle, New, Sessions, Tasks, Chat, Workflows and Terminal as icons
   with their names and shortcuts in tooltips, then the open session and the
   pinned sessions as 28px node buttons (see the rail paragraph below), then
   Settings, the bug and the Goodboy mark at the bottom. It works at rail width
@@ -586,31 +592,54 @@ on the workspace ([concepts.md](concepts.md) → Lazy sessions), and this sectio
 is where a session's footprint grows. The session header has no second mount
 control.
 
-**Inside a session the sidebar stays the sessions list.** There is no second
-mode. The sidebar lists the workspace's sessions in one list, and the open
-session tells its own story in the main pane. Its five work pages nest under
-its row: Overview, Branch, Runs, Agents and Artifacts. They are the same pages
-as the first five rows of the trail's page menu, with the same count words from
-one selector (`usePageSummaries`), so the two doors never disagree. Both read
-one page registry (`features/session/pageRegistry.ts`: id, label, icon, shortcut,
-count word, group), and `pageRegistry.test.ts` states the claim: the column rows
-equal the first five menu rows in label, order, icon and shortcut. The branch
-child rows that wave 2 nests under Branch are not menu rows. The menu never
-lists `Review`, `Diff` or `Pull request` (they are Branch tabs), starts with
-`Overview`, and shows Questions, warning-toned, only while one is open. The open
-session and its pages sit in one card (`data-session-card`, the elevated surface with
-a hairline, so it reads against the column in light too), so it is plain that the pages belong to that session; every
-other session stays a flat row. The nesting is not a mode: the list stays the
-list, the card moves to another session when it opens, and `←` and `→` on the
-open row, or the chevron at its right end (`Fold the pages of <title>` and
-`Show the pages of <title>`, `aria-expanded`), fold and open the pages while the
-session row stays in the card. The fold is remembered per session in memory
-(`sessionPagesFolded`, evicted when the session is archived) and the default is
-open. The
-tools (Scripts, Terminal, Explore) and the linked records (Linear, GitLab,
-Jira, Slack, GitHub issue) stay in the page menu and the palette. Rows and
-chips inside the overview still route to the other surfaces. Board → session
-is the full depth of navigation.
+## Sidebar levels
+
+**The sidebar shows one level at a time.** Level 0 is the workspace: New
+session, the doors, then the Pinned and Sessions lists. Level 1 is a session.
+Clicking a session row drills the sidebar into it: the level slides left over
+180ms (`LevelStack`, instant under reduced motion), the session opens on its
+Overview and the center shows it. The level host is `SideColumn`
+(`app/components/SideColumn`); both levels stay mounted, so the workspace
+level keeps its scroll and its selection while the session level is on screen,
+and the hidden one is `inert`.
+
+- **Level 1 reads top to bottom:** the back row `‹ Sessions` (`LevelBackRow`),
+  the identity row (`SessionLevel/IdentityRow`: the session node, the title,
+  which renames inline on click, and a visible `⋯` with Rename, Pin, Refresh,
+  Archive and Delete), the pages, then Projects and Linked. Only one level
+  shows, so a session never carries a nested card in the workspace list.
+- **The pages** come from one registry (`features/session/pageRegistry.ts`):
+  Overview, File versions in a branchless session only, Runs, Agents,
+  Artifacts, and Questions last while one is open. A page row ends in one
+  fixed 40px right-aligned slot: the count in tabular gray, a 6px info dot
+  before it while something runs, a warning dot on Questions. The count word
+  ("1 running", "4 artifacts") is the row's tooltip. Every number comes from
+  one function, `pageSlotOf` over `usePageCountFacts`, and the folded rail and
+  its flyout read the same function.
+- **Projects** lists each mounted project as a label row and its worktrees
+  under it at the same left edge: branch icon, mono branch, pull request
+  number in a fixed 48px column. A worktree row opens today's Branch page on
+  that worktree. The label carries Add project. The worktree level (level 2)
+  replaces this click later; the row is the seam.
+- **Linked** lists the session's linked work, one row per item: provider
+  mark, key in mono, title. The row opens the item; its right-click menu holds
+  Unlink and Move. The label carries Link work (L).
+- **Back.** The back row goes back to level 0 without changing the center:
+  the session stays open and its row stays selected. ⌘[ does the same while
+  focus is in the sidebar; anywhere else ⌘[ is the top bar Back. The level is
+  part of the history entry (`focus.selection['sidebar-level']`, set by
+  `leaveSessionLevel`), so Back and Forward restore it, and any move into the
+  session (a row click, a page key, a link from the palette, a notification)
+  starts a fresh entry on level 1. A studio over the session (Tasks, Chat,
+  Workflows, Terminal, Monitoring, Impact) shows level 0 with its door
+  selected and the session row unselected (`useSidebarLevel`).
+- **Folded (⌘B, 44px).** The rail shows the current level as icons with right
+  tooltips: on level 1 the back icon first, then one icon per page with its
+  dot; on level 0 New, the doors and the pinned session nodes.
+
+The tools (Terminal, Explore, Scripts) are panes, not pages: they open from
+the pane cluster at the right of every session header (see The pane cluster).
+The linked records keep their lenses for now and stay in the palette.
 
 **A sidebar row says the name and the state, and the hover card and the board
 card say the rest.** A row is one line of 28px: a 14px `WorkNode` and the
@@ -626,7 +655,7 @@ check for an approved pull request, and a red `!` only for an agent error or
 failing checks); running is the ring, done a solid violet disc with a white check, in review and
 building a 1px hollow ring named by the stage word, and archived a dashed ring,
 only under Show archived. Colour is never the only sign. The open
-session is set in medium weight, and its pages nest under it. The row's
+session is set in medium weight and selected while its page is on screen. The row's
 accessible description carries the stage word and its reason, so nothing is
 mouse-only.
 
@@ -700,36 +729,18 @@ switcher's Pinned section. **Move up** and **Move down** (`session.pinnedUp`,
 while it can move; `movePin` swaps the `at` of two neighbours and goes through
 the same compare and swap. Dragging is not built.
 
-**The card carries one current sign, from every page.** `currentSignOf`
-(`SessionActivityBar/currentSign.ts`) returns exactly one of a page id, `session`
-or `remembered` for the open session. A page that has a row in the card
-(Overview, Branch, Runs, Agents, Artifacts, and Questions while one is open)
-takes `bg-selected` and `aria-current="page"` alone. Where no row matches (the
-Tools Explore and Scripts, a linked record, Questions with nothing
-open) or the pages are folded, the session row takes the sign. While a studio
-(Tasks, Chat, Workflows, Terminal, Impact) sits over the session the row is `remembered`:
-medium weight, no fill, no `aria-current`; closing the studio returns the sign to
-the page. The session row also carries `data-current-sign`. Questions renders in
-the card only while something is open, warning-toned with the count word
-`1 open`. The first crumb of the session trail (`Session`) opens the Pages menu
-at every depth, including on the Branch page, where the second crumb keeps its
-own branch menu (`buildTrailMenus`).
-
-**A session with several branches lists them under Branch.** With two or more
-mounts, the card nests one row per branch directly under the Branch row while
-Branch is the current page: the repo glyph, the branch name cut in the middle
-(`splitBranchLabel`) and the pull request glyph of that mount
-(`PULL_REQUEST_PRESENTATION`). At most five show, then `All branches`, which opens
-the Overview, where the Projects section lists every mount. The current branch
-(the mount in `diffMountPath`) reads in foreground with `aria-current="true"`;
-the Branch row keeps the page sign. A click is a forward move through
-`switchBranchMount` (the same handler as the switcher chip and the trail menu),
-and it lands on the landing tab of the target branch
-(`branchLandingTabOf({ hasPullRequest, deepLink: null })`), never on the tab,
-thread or diff focus of the branch it leaves. Navigating anywhere that is not a
-branch page stores no branch tab (`applyLocation`), so the tab always falls back
-to the landing rule. The rows carry no needs-you count because the resolve queue
-rows know their project and pull request number but not their mount.
+**The session level carries one current sign.** `currentSignOf`
+(`SessionActivityBar/currentSign.ts`) returns a page id, `session` or
+`remembered`. A page with an entry (Overview, File versions, Runs, Agents,
+Artifacts, and Questions while one is open) takes `bg-selected` and
+`aria-current="page"`; on the Branch page the worktree row of the shown mount
+(`useBranchIdentity`) takes it instead. On the workspace level the open session
+row takes the sign while its page is on screen. While a studio (Tasks, Chat,
+Workflows, Terminal, Impact) sits over the session the sidebar shows the
+workspace level with that studio's door selected and the session row in medium
+weight with no fill. A worktree row click goes through `switchBranchMount` and
+lands on the landing tab of that branch (`branchLandingTabOf`), never on the
+tab, thread or diff focus of the branch it leaves.
 
 **The rail holds the pinned sessions and, when needed, the open one.** Under the
 doors, in the workspace scope only, the pinned sessions are 28px node buttons
@@ -946,26 +957,74 @@ activity yet show the plain overview with its actions.
 
 ## Breadcrumbs
 
-- **The trail belongs to the page, not to the chrome, and it is mounted
-  once.** `TrailBar` sits at the top of `SessionWorkspace`, above every layer
-  (lens, child page) and outside every animation, in a 40px
-  band (12 above, a 24px row, 4 below) on the same `PageColumn` as the title
-  and body. It is never in the top bar and never a full-width strip. Changing
-  lens or opening an agent keeps the same DOM node;
-  only the segments change. The layers under it fade in over 150ms with no
-  scale. Panes under the band get one header grammar from `PaneShell`: title,
-  optional tabs, 16 below, no crumb row of their own. A form page (merge request,
-  Bitbucket) has no second title bar: its title is the crumb,
-  and Esc or the parent crumb is Up.
-- **The band has one right slot, and Ask holds it.** `TrailBar` takes an `end`
-  node outside the `PageColumn`, at the right end of the band.
-  `SessionWorkspace` puts `AskTrailButton` there: the question-bubble glyph
-  (`CONCEPT_ICONS.ask`, never Chat's `MessageCircle`), the word **Ask** and the
-  ⌘L chord as bare faint text, the same inline `Kbd` hint as Search's ⌘K and
-  with no box around it, pressed while the Ask drawer is open for that session. Its
-  tooltip reads `Ask what is happening in this session ⌘L`. It toggles the
-  drawer; ⌘L (`ask.open`, app plane) opens it or, when it is open, focuses its
-  box. Only the visible session's button binds ⌘L.
+- **A session page has no trail.** The path is the sidebar back row
+  (`‹ Sessions`, see Sidebar levels) and history is the top bar Back. Each
+  session page opens with one 44px header row from `PaneShell`: the page
+  title (Overview, Runs, Agents), the page actions, then the pane actions at
+  the far right. No crumb row, no second title row. A deeper object (a run,
+  an artifact, a child agent) goes back to its list from its page row in the
+  sidebar, from Esc (Up) or from the top bar Back. The crumb menus are gone
+  (cut C1).
+- **The header's right end holds the pane cluster.** `SessionWorkspace`
+  hands `PaneCluster` to every `PaneShell` title row through
+  `PaneActionsContext` (see The pane cluster). ⌘L (`ask.open`, app plane)
+  opens Ask or, when it is open, focuses its box; the key is bound once per
+  visible session (`useAskOpenShortcut` in `SessionWorkspace`), not by the
+  button, so two mounted panes never bind it twice.
+- **The Overview header** reads `Overview`. The session title, its rename and
+  its lifecycle menu live on the sidebar identity row. The header keeps the
+  Overview actions as visible words (`OverviewPageActions`: Write title and
+  goal from linked work, and Scripts in a branchless session) and, on an
+  archived session, Restore. Context left the header for the cluster's more
+  menu.
+
+## The pane cluster
+
+One fixed group at the right of every session page header, the same on every
+page and in this order: **Ask** (⌘L), **Terminal** (⌘⌥T), **Explore** (⌘⌥X),
+then a visible `⋯` (`More panes`) holding **Context** (⌘⌥C) and **Scripts**
+(⌘⌥S). Each toggle is an icon and a word (`PaneToggle`, a quiet `xs`
+`Button`); the open one is `bg-selected` and `aria-pressed`. The chord lives in
+the tooltip only. `PaneCluster` lives in `features/session/components/`.
+
+- **One pane at a time.** Every toggle goes through `togglePane`
+  (`features/session/panes/`): pressing the open pane's toggle closes it,
+  pressing another replaces it in the one right drawer. `openPaneOf` maps the
+  open drawer to a cluster pane, so an Explore file opened from Explore keeps
+  Explore lit, and a script output opened from Scripts keeps Scripts lit. Esc
+  closes the pane (`DrawerFrame`).
+- **Explore and Scripts are drawer kinds** (`explore`, `scripts`), not lenses.
+  `ExplorePane` and `ScriptsPanel` render in a `DrawerFrame`. A file opened
+  from Explore replaces it and shows **Back to files**; a script output opened
+  from Scripts replaces it and shows **Back to scripts** (`DrawerFrame`'s
+  `back`, carried by the payload's `from`). `openExplorePane` takes the
+  worktree to browse (the mount registry's Browse files passes it),
+  `openScriptsPane` the project to scope to (Open scripts). `openLens` sends
+  the old `explore` and `scripts` lenses to the panes, so the palette, toasts
+  and stored notifications (`open-lens` scripts) still land.
+- **Context signals ride on `⋯`.** A dot on the more button marks decisions
+  changed since the last look (primary) or a failed summary (danger); the
+  Context row says why. The cluster loads the seen marker and the decisions
+  once, as the old chip did.
+- **Stored pages map to panes.** `withoutRemovedPages` sends a stored
+  `explore` or `scripts` page to the Overview with that pane open, and drops
+  a stored `terminal` page.
+- **Terminal picks its folder by itself.** ⌘⌥T and the toggle run
+  `toggleSessionTerminal`: one worktree, that worktree; two or more, the one
+  this session last opened a terminal on (`terminalScopes`, set by
+  `openSessionTerminal`), else the active mount; a session without a branch,
+  its session folder (`scratch_dir_prepare`, dropped when the user left the
+  session before it answered). The remembered scope lives in memory and is
+  evicted with the session.
+- **The terminal pane header** reads `Terminal`, then the scope picker
+  (`TerminalScopePicker`, a combobox named `Terminal folder`): the project in
+  gray and the branch in mono, never the worktree folder hash. It lists this
+  session's worktrees (an info dot when a shell there runs a process), the
+  main checkout, the workspace folder and, in a session without a branch,
+  the session folder. Picking one opens or reuses a shell there
+  (`openSessionTerminal`, a workspace-owned tab for the workspace folder);
+  each scope keeps its own tabs, nothing is killed. Then **Open on Terminal
+  page** and Close.
 - **Studios use the same `Trail`.** The `StudioFrame` band renders the studio
   name through the `Trail` primitive from `@goodboy/ui`. A studio body that
   goes deeper claims the band with `StudioTrail` (the workflow editor shows
@@ -2157,7 +2216,7 @@ on you] }`. Any other agent keeps its page, and its pane tab is part of the
 - **The switcher and the palette list only destinations the session can
   use.** One function feeds both. Context is a drawer, not a destination: the
   palette offers **Show context** (⌘⌥C) and neither lists a Context page.
-  Explore is always listed and
+  Explore is always listed, opens as a pane (see The pane cluster), and
   browses one project of the session at a time as a tree (`role="tree"`). A
   project chip under the title (`ExploreProjectChip`) names it, `ledger-core ·
 hl/ledger-rounding`, and with two or more mounts opens a menu grouped by
@@ -2169,10 +2228,10 @@ hl/ledger-rounding`, and with two or more mounts opens a menu grouped by
   (`selectExploreMount` in `features/explore`, built on
   `resolveWriteDestination`). A pick whose worktree lost its files reads
   "This worktree is gone", and a session with nothing to browse reads "Nothing
-  to browse yet". The pick is captured as the `explore` target of a place
-  (`s/{session}/explore/{mount}`), so Back restores the project and the file
-  drawer together, and the `mount.browseFiles` action (Browse files) opens
-  Explore on a given mount from the Projects rows. Rows are 40px
+  to browse yet". The `mount.browseFiles` action (Browse files) opens the
+  Explore pane on a given mount (`openExplorePane`). An `explore` target in a
+  stored place (`s/{session}/explore/{mount}`) still parses and lands on the
+  Overview with the pane open. Rows are 40px
   high with no gap (`EXPLORE_ROW_PX`): a type glyph, the name with its
   extension kept, a slot for change marks, the size and the age. The size
   hides under a 520px column and the age under 440px.
@@ -3171,9 +3230,9 @@ the branch has no pull request, its thread in Comments when it has one (`openRev
 `notes` destination, `reviewRequest` for a compose request, `Open in Files` from a thread).
 Opening the run transcript of a note keeps its drawer beside Files.
 
-## The Scripts lens
+## The Scripts pane
 
-`ScriptsPanel` is one `PaneShell` (`Scripts`, meta `N projects · N running`,
+`ScriptsPanel` is one `DrawerFrame` (`Scripts`, count `N projects · N running`,
 a `Filter scripts` field that `/` focuses and `New script`) over one list
 grouped by mount, project plus branch, from `useSessionScripts`. A project
 mounted twice is two groups, and its saved scripts show in both; you pick

@@ -83,6 +83,10 @@ vi.mock('../../../features/notifications/components/NotificationCenter', () => (
   NotificationCenter: () => <span data-testid="notification-center" />,
 }));
 
+vi.mock('./MonitoringSignal', () => ({
+  MonitoringSignal: () => <span data-testid="monitoring-signal" />,
+}));
+
 beforeEach(() => {
   hooks.sessions = [];
   hooks.groups = [];

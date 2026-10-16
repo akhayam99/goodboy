@@ -316,7 +316,7 @@ export const ExploreScene = (props: Props) => {
     return null;
   }
 
-  const pane = <ExplorePane sessionId={SESSION_ID} />;
+  const pane = <ExplorePane sessionId={SESSION_ID} onClose={() => undefined} />;
 
   return (
     <ShellFrame

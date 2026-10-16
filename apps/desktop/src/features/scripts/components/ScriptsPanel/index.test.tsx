@@ -195,7 +195,13 @@ vi.mock('../../../../store', () => {
 import { ScriptsPanel } from './index';
 
 const renderPanel = () =>
-  render(<ScriptsPanel workspaceId={WORKSPACE as never} sessionId={SESSION as never} />);
+  render(
+    <ScriptsPanel
+      workspaceId={WORKSPACE as never}
+      sessionId={SESSION as never}
+      onClose={vi.fn()}
+    />,
+  );
 
 const group = (name: string) => screen.getByRole('region', { name });
 
@@ -419,7 +425,7 @@ describe('ScriptsPanel', () => {
 
     state.mounts = [];
     renderPanel();
-    expect(screen.getByRole('heading', { level: 2, name: 'No scripts yet' })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 3, name: 'No scripts yet' })).toBeDefined();
     expect(screen.getByText('Scripts run inside a project of this session.')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
   });
@@ -476,14 +482,14 @@ describe('ScriptsPanel', () => {
     expect(state.toggleDrawer).toHaveBeenCalledWith({
       kind: 'scriptRun',
       sessionId: SESSION,
-      payload: { scriptKey: testKey, mountId: ROUNDING.mountId },
+      payload: { scriptKey: testKey, mountId: ROUNDING.mountId, from: 'scripts' },
     });
 
     fireEvent.click(within(rounding).getByRole('button', { name: 'Run test' }));
     expect(state.openDrawer).toHaveBeenCalledWith({
       kind: 'scriptRun',
       sessionId: SESSION,
-      payload: { scriptKey: testKey, mountId: ROUNDING.mountId },
+      payload: { scriptKey: testKey, mountId: ROUNDING.mountId, from: 'scripts' },
     });
     expect(state.runDiscoveredScript).toHaveBeenCalledWith(
       expect.objectContaining({ scriptId: testKey, cwd: ROUNDING_PATH, mountId: ROUNDING.mountId }),

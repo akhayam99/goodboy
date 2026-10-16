@@ -23,7 +23,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../store/storyHarness';
-import { sessionPlace } from '../../store/slices/navigation/place';
+import { branchPlace, sessionPlace } from '../../store/slices/navigation/place';
 import { ToastProvider } from '../../shared/components/Toast';
 import { KeepAliveWorkSurface } from '../../app/components/KeepAliveWorkSurface';
 import { DrawerHost } from '../../app/components/DrawerHost';
@@ -242,13 +242,14 @@ describe('main flows on the real store', () => {
     expectNoRenderLoop();
   });
 
-  it('opens the diff from the session trail', async () => {
+  it('opens the diff from the Branch page', async () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
 
     await mountFlow(<KeepAliveWorkSurface sessionId={sessionId} isActive />);
     expect(screen.queryByRole('navigation', { name: 'Sections' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /Session/ }));
-    fireEvent.click(await screen.findByRole('menuitemradio', { name: /^Branch/ }));
+    act(() => {
+      useAppStore.getState().navigate({ to: branchPlace({ sessionId }) });
+    });
     await settle();
     const rail = within(await screen.findByRole('navigation', { name: 'Sections' }));
     fireEvent.click(rail.getByRole('button', { name: /^Files/ }));
@@ -270,7 +271,8 @@ describe('main flows on the real store', () => {
       </>,
     );
     expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
-    fireEvent.click(screen.getByTestId('context-chip'));
+    fireEvent.click(screen.getByRole('button', { name: /^More panes/ }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: /^Context/ }));
     await settle();
 
     expect(useAppStore.getState().drawer).toEqual(

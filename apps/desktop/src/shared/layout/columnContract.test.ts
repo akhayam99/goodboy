@@ -82,7 +82,6 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
     kind: 'shell',
     files: ['features/session/components/SessionWorkspace/parts/IntegrationPane/index.tsx'],
   },
-  ExplorePane: { kind: 'shell', files: ['features/explore/components/ExplorePane/index.tsx'] },
   AgentsPane: {
     kind: 'shell',
     files: ['features/session/components/SessionWorkspace/parts/AgentsPane.tsx'],
@@ -121,8 +120,7 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
   },
   PaneShell: { kind: 'helper', files: [] },
   StudioBandContext: { kind: 'helper', files: [] },
-  TrailBar: { kind: 'helper', files: [] },
-  AskTrailButton: { kind: 'helper', files: [] },
+  PaneCluster: { kind: 'helper', files: [] },
   FirstLapBanner: {
     kind: 'banner',
     files: [
@@ -133,10 +131,6 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
   },
   SessionCrumbs: { kind: 'helper', files: [] },
   Pane: { kind: 'helper', files: [] },
-  ScriptsPanel: {
-    kind: 'shell',
-    files: ['features/scripts/components/ScriptsPanel/index.tsx'],
-  },
   LinkIssueAction: { kind: 'helper', files: [] },
   EmptyState: { kind: 'helper', files: [] },
 };
@@ -202,7 +196,6 @@ const H1_ALLOWLIST: ReadonlySet<string> = new Set([
 ]);
 
 const TITLE_ROW_PAGES: ReadonlyArray<string> = [
-  'features/session/components/SessionOverviewPane/HeaderBand.tsx',
   'features/session/components/AgentDetailPane/AgentHeader.tsx',
   'features/session/components/AgentTree/RunHeader/index.tsx',
   'features/workspace/components/StageBoard/index.tsx',
@@ -286,13 +279,12 @@ describe('content column contract', () => {
     expect(centred).toEqual([]);
   });
 
-  it('puts the Ask button inside the trail column, on the same rail as the crumbs', () => {
-    const source = read('features/session/components/SessionWorkspace/parts/TrailBar.tsx');
-    const column = source.slice(source.indexOf('<PageColumn'), source.indexOf('</PageColumn>'));
+  it('hands the pane cluster to the page header through the pane actions, with no trail band', () => {
+    const source = read(WORKSPACE);
 
-    expect(column).toContain('{end}');
-    expect(column).toContain('<SessionCrumbs');
-    expect(source.slice(source.indexOf('</PageColumn>'))).not.toContain('{end}');
+    expect(source).toContain('<PaneActionsContext.Provider value={showLens ? panes : null}>');
+    expect(source).toMatch(/const panes = <PaneCluster sessionId=\{sessionId\} \/>;/);
+    expect(source).not.toContain('TrailBar');
   });
 
   it('puts the workspace chat header, thread and composer on the page column', () => {
@@ -433,9 +425,6 @@ describe('content column contract', () => {
     expect(files.filter((file) => !/<Notice\b/.test(read(file)))).toEqual([]);
     expect(files.filter((file) => /bg-subtle|px-4 py-3/.test(read(file)))).toEqual([]);
     const workspace = read(WORKSPACE);
-    const trailEnd = workspace.indexOf('<TrailBar');
-    const region = workspace.slice(trailEnd, workspace.indexOf('<UnderTrailContext.Provider'));
-    expect(region).not.toContain('FirstLapBanner');
     expect(workspace).toMatch(/const banner = <FirstLapBanner sessionId=\{sessionId\} \/>;/);
     const shell = readFileSync(join(UI_COMPONENTS, 'PaneShell/index.tsx'), 'utf8');
     expect(shell).toContain('PaneBannerContext');
@@ -446,7 +435,11 @@ describe('content column contract', () => {
     const mounted = [...source.matchAll(/(?<![\w.])<([A-Z][A-Za-z]+)\b/g)]
       .map((match) => match[1] ?? '')
       .filter(
-        (name) => name !== '' && name !== 'UnderTrailContext' && name !== 'PaneBannerContext',
+        (name) =>
+          name !== '' &&
+          name !== 'UnderTrailContext' &&
+          name !== 'PaneBannerContext' &&
+          name !== 'PaneActionsContext',
       );
     const unknown = [...new Set(mounted)].filter((name) => LENS_ROOTS[name] === undefined);
 

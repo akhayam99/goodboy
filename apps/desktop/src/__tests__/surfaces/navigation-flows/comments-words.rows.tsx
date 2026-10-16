@@ -313,10 +313,11 @@ export const openComments = async (ctx: Ctx): Promise<void> => {
 };
 
 const sidebarNamesTheBranches = (): void => {
-  const pages = screen.getByRole('list', { name: 'Pages' });
-  expect(within(pages).getByRole('button', { name: /^Branch/ }).textContent).toBe(
-    'Branch2 branches',
+  const projects = document.querySelector<HTMLElement>(
+    '[data-level-layer="session"]:not([inert]) [aria-labelledby="level-projects-label"]',
   );
+  expect(projects).not.toBeNull();
+  expect(projects?.querySelectorAll('li button')).toHaveLength(2);
 };
 
 export const COMMENTS_WORDS_ROWS: ReadonlyArray<Row> = [

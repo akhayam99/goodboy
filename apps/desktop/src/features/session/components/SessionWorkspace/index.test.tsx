@@ -183,7 +183,7 @@ vi.mock('../AgentDetailPane', () => ({
   ),
 }));
 vi.mock('../../../artifacts/components/ArtifactStudio', () => ({ ArtifactStudio: () => null }));
-vi.mock('../../../scripts', () => ({ ScriptsPanel: () => null }));
+vi.mock('../PaneCluster', () => ({ PaneCluster: () => null }));
 vi.mock('../../../worktree/worktree', () => ({ worktreeStatus: vi.fn() }));
 vi.mock('../StandaloneAgentsLane', () => ({
   StandaloneAgentsLane: ({
@@ -230,9 +230,6 @@ vi.mock('../../../branch/components/BranchPage', async () => {
     BranchPage: () => <div data-testid="branch-page">{useStudioBand()}</div>,
   };
 });
-vi.mock('../SessionTrail/SessionCrumbs', () => ({
-  SessionCrumbs: () => <div data-testid="session-crumb-bar" />,
-}));
 vi.mock('../../../bootstrap/FirstLapBanner', () => ({ FirstLapBanner: () => null }));
 vi.mock('./parts/QuestionsPane', () => ({ QuestionsPane: () => null }));
 vi.mock('./parts/FilesPane', () => ({ FilesPane: () => null }));
@@ -257,7 +254,8 @@ vi.mock('../../hooks/useSelectedAgentHome', () => ({
   useSelectedAgentHome: () => hooks.agentHome,
 }));
 import { SessionWorkspace } from './index';
-import { useSessionCrumbs } from '../../hooks/useSessionCrumbs';
+
+const trailBands = (): number => document.querySelectorAll('[data-slot="trail-bar"]').length;
 
 const SESSION_ID = 'session-1' as SessionId;
 const selectedAgent = anAgent({
@@ -306,10 +304,10 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('SessionWorkspace agent overlay', () => {
-  it('gives a workflow agent the session crumb bar and no second ladder', () => {
+  it('gives a workflow agent no trail band and no second ladder', () => {
     store.activeLens = { [SESSION_ID]: 'workflows' };
     render(<SessionWorkspace session={session} isActive />);
-    expect(screen.getByTestId('session-crumb-bar')).toBeDefined();
+    expect(trailBands()).toBe(0);
     expect(screen.queryByRole('navigation', { name: 'Workflow breadcrumb' })).toBeNull();
     expect(screen.getByTestId('agent-detail-pane')).toBeDefined();
     expect(screen.getByTestId('agents-lane')).toBeDefined();
@@ -333,7 +331,7 @@ describe('SessionWorkspace agent overlay', () => {
     expect(screen.queryByRole('separator', { name: 'Resize agent inspector' })).toBeNull();
   });
 
-  it('keeps a standalone resolver on the Branch trail, with no run level', () => {
+  it('shows a standalone resolver in the overlay', () => {
     const standaloneResolver = anAgent({
       ...selectedAgent,
       id: 'resolver-1' as AgentId,
@@ -350,10 +348,7 @@ describe('SessionWorkspace agent overlay', () => {
     render(<SessionWorkspace session={session} isActive />);
 
     expect(screen.getByTestId('agent-detail-pane').textContent).toBe('resolver-1');
-    expect(screen.getByTestId('session-crumb-bar')).toBeDefined();
-
-    const { result } = renderHook(() => useSessionCrumbs({ session }));
-    expect(result.current.map((crumb) => crumb.label)).toEqual(['Session', 'Branch', 'Fix run']);
+    expect(trailBands()).toBe(0);
   });
 
   it('does not show workflow linkage outside the workflows lens', () => {
@@ -389,9 +384,6 @@ describe('SessionWorkspace agent overlay', () => {
 
     expect(screen.queryByText('Part of')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Release flow' })).toBeNull();
-
-    const { result } = renderHook(() => useSessionCrumbs({ session: workflowSession }));
-    expect(result.current.map((crumb) => crumb.label)).toEqual(['Session', 'Agents', 'Agent']);
   });
 
   it('shows the selected resolver in the overlay without an inspector rail', () => {
@@ -537,78 +529,31 @@ describe('SessionWorkspace overview layout', () => {
   });
 });
 
-describe('SessionWorkspace breadcrumb visibility', () => {
-  it('hands the crumb to the page so it sits in the content column', () => {
-    store.activeLens = { [SESSION_ID]: null };
-    store.selectedAgentId = {};
-
-    render(<SessionWorkspace session={session} isActive />);
-
-    expect(screen.getByTestId('session-crumb-bar')).toBeDefined();
-  });
-
-  it('puts the crumb on the column for the branch page, inside its detail, like every other page', () => {
+describe('SessionWorkspace page header', () => {
+  it('draws no trail band on any page: the path is the sidebar back row', () => {
     store.selectedAgentId = {};
     store.activeLens = { [SESSION_ID]: null };
     const view = render(<SessionWorkspace session={session} isActive />);
-    const width = () =>
-      view.container
-        .querySelector('[data-slot="trail-bar"] [data-page-column]')
-        ?.getAttribute('data-width');
-    expect(width()).toBe('column');
+    expect(trailBands()).toBe(0);
 
     store.activeLens = { [SESSION_ID]: 'branch' };
     view.rerender(<SessionWorkspace session={session} isActive />);
-    expect(width()).toBe('column');
-    expect(view.container.querySelectorAll('[data-slot="trail-bar"]')).toHaveLength(1);
-    expect(
-      screen.getByTestId('branch-page').querySelector('[data-slot="trail-bar"]'),
-    ).not.toBeNull();
-
-    store.activeLens = { [SESSION_ID]: 'files' };
-    view.rerender(<SessionWorkspace session={session} isActive />);
-    expect(width()).toBe('column');
-  });
-
-  it('keeps one trail band mounted across lens and agent changes', () => {
-    store.activeLens = { [SESSION_ID]: null };
-    store.selectedAgentId = {};
-    store.sessionPhaseRuns = { [SESSION_ID]: [selectedAgent] };
-    const view = render(<SessionWorkspace session={session} isActive />);
-    const trail = screen.getByTestId('session-crumb-bar');
-    const band = view.container.querySelector('[data-slot="trail-bar"]');
-    expect(band?.className).toContain('h-10');
-
-    store.activeLens = { [SESSION_ID]: 'review' };
-    view.rerender(<SessionWorkspace session={session} isActive />);
-    expect(screen.getByTestId('session-crumb-bar')).toBe(trail);
+    expect(trailBands()).toBe(0);
+    expect(screen.getByTestId('branch-page').textContent).toBe('');
 
     store.activeLens = { [SESSION_ID]: 'agents' };
     store.selectedAgentId = { [SESSION_ID]: selectedAgent.id };
     view.rerender(<SessionWorkspace session={session} isActive />);
-    expect(screen.getByTestId('session-crumb-bar')).toBe(trail);
-
-    expect(view.container.querySelectorAll('[data-slot="trail-bar"]')).toHaveLength(1);
+    expect(trailBands()).toBe(0);
   });
 
-  it('keeps the crumb bar mounted once an agent overlay owns the surface', () => {
-    store.activeLens = { [SESSION_ID]: 'agents' };
-    store.selectedAgentId = { [SESSION_ID]: selectedAgent.id };
-    store.sessionPhaseRuns = { [SESSION_ID]: [selectedAgent] };
-
-    render(<SessionWorkspace session={session} isActive />);
-
-    expect(screen.getByTestId('session-crumb-bar')).toBeDefined();
-  });
-
-  it('keeps the overlay ladder up while the selected agent has not loaded yet', () => {
+  it('shows the loading state while the selected agent has not loaded yet', () => {
     store.activeLens = { [SESSION_ID]: 'agents' };
     store.selectedAgentId = { [SESSION_ID]: 'agent-not-loaded' };
     store.sessionPhaseRuns = {};
 
     render(<SessionWorkspace session={session} isActive />);
 
-    expect(screen.getByTestId('session-crumb-bar')).toBeDefined();
     expect(screen.getByRole('status', { name: 'Loading' })).toBeDefined();
     expect(screen.queryByTestId('agent-detail-pane')).toBeNull();
   });
@@ -638,67 +583,7 @@ describe('SessionWorkspace breadcrumb visibility', () => {
     expect(screen.getByTestId('agent-detail-pane')).toBeDefined();
   });
 
-  it('gives an open workflow step the run as its own crumb, one level above it', () => {
-    const workflowAgent = anAgent({
-      ...selectedAgent,
-      stepId: 'step-1' as StepId,
-      workflowRunId: 'run-1' as WorkflowRunId,
-    });
-    store.activeLens = { [SESSION_ID]: 'workflows' };
-    store.selectedAgentId = { [SESSION_ID]: workflowAgent.id };
-    store.sessionPhaseRuns = { [SESSION_ID]: [workflowAgent] };
-    store.phaseTemplates = {
-      'workspace-1': [
-        {
-          id: 'workflow-1',
-          name: 'Release flow',
-          steps: [],
-        },
-      ],
-    };
-    const workflowSession = aSession({
-      ...session,
-      workflowRuns: [
-        aWorkflowRun({
-          id: 'run-1' as WorkflowRunId,
-          workflowId: 'workflow-1' as WorkflowId,
-          autoRun: true,
-        }),
-      ],
-    });
-
-    const { result } = renderHook(() => useSessionCrumbs({ session: workflowSession }));
-
-    expect(result.current.map((crumb) => crumb.label)).toEqual([
-      'Session',
-      'Runs',
-      'Release flow',
-      'Agent',
-    ]);
-
-    act(() => result.current[2]!.onClick!());
-    expect(store.setFocusedWorkflowRun).toHaveBeenCalledWith(SESSION_ID, 'run-1');
-    expect(store.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: SESSION_ID, lens: 'workflows' }),
-    });
-  });
-
-  it('keeps the run crumb out of a trail whose agent belongs to no run', () => {
-    const adHocAgent = anAgent({
-      ...selectedAgent,
-      stepId: undefined,
-      workflowRunId: undefined,
-    });
-    store.activeLens = { [SESSION_ID]: 'workflows' };
-    store.selectedAgentId = { [SESSION_ID]: adHocAgent.id };
-    store.sessionPhaseRuns = { [SESSION_ID]: [adHocAgent] };
-
-    const { result } = renderHook(() => useSessionCrumbs({ session }));
-
-    expect(result.current.map((crumb) => crumb.label)).toEqual(['Session', 'Runs', 'Agent']);
-  });
-
-  it('goes up on Escape while the trail still names the run', () => {
+  it('goes up on Escape from a run step', () => {
     const workflowAgent = anAgent({
       ...selectedAgent,
       stepId: 'step-1' as StepId,
@@ -726,42 +611,6 @@ describe('SessionWorkspace breadcrumb visibility', () => {
     expect(screen.queryByText('Part of')).toBeNull();
     fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
     expect(store.up).toHaveBeenCalledTimes(1);
-
-    const { result } = renderHook(() => useSessionCrumbs({ session: workflowSession }));
-    expect(result.current.map((crumb) => crumb.label)).toEqual([
-      'Session',
-      'Runs',
-      'Release flow',
-      'Agent',
-    ]);
-  });
-
-  it('leaves the trail on the list when no run is explicitly focused', () => {
-    store.activeLens = { [SESSION_ID]: 'workflows' };
-    store.selectedAgentId = {};
-    store.phaseTemplates = {
-      'workspace-1': [
-        {
-          id: 'workflow-1',
-          name: 'refactor',
-          steps: [],
-        },
-      ],
-    };
-    const workflowSession = aSession({
-      ...session,
-      workflowRuns: [
-        aWorkflowRun({
-          id: 'run-1' as WorkflowRunId,
-          workflowId: 'workflow-1' as WorkflowId,
-          autoRun: true,
-        }),
-      ],
-    });
-
-    const { result } = renderHook(() => useSessionCrumbs({ session: workflowSession }));
-
-    expect(result.current.map((crumb) => crumb.label)).toEqual(['Session', 'Runs']);
   });
 });
 

@@ -1,6 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import { Button, Kbd, KeyHint } from '@goodboy/ui';
-import { AskTrailButton } from '../../../../../../features/session/ask/components/AskTrailButton';
+import { PaneCluster } from '../../../../../../features/session/components/PaneCluster';
 import { CommandCenter } from '../../../../AppTopBar/CommandCenter';
 import { SceneFrame } from './SceneFrame';
 import { SceneRow } from './SceneRow';
@@ -9,9 +9,9 @@ const SESSION_ID = 'mock-controls-session-ledger-export' as SessionId;
 
 export const ControlsHintsScene = () => (
   <SceneFrame>
-    <SceneRow name="Ask and Search side by side">
+    <SceneRow name="Pane cluster and Search side by side">
       <div className="@container/topbar flex w-full items-center gap-4">
-        <AskTrailButton sessionId={SESSION_ID} />
+        <PaneCluster sessionId={SESSION_ID} />
         <CommandCenter />
       </div>
     </SceneRow>

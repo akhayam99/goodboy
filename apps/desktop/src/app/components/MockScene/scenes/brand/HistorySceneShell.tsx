@@ -36,5 +36,5 @@ export const HistorySceneShell = ({ draft, run, github, isLedger }: Props) => {
     return null;
   }
 
-  return <ShellFrame session={CTX_SESSION} main={<HistoryStage />} isTrailInDetail />;
+  return <ShellFrame session={CTX_SESSION} main={<HistoryStage />} />;
 };

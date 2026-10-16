@@ -84,15 +84,18 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: () => visible('region', 'Previous versions'),
   },
   {
-    name: 'context drawer from the overview chip',
+    name: 'context drawer from the pane cluster',
     covers: ['openContextDrawer', 'drawer:context'],
-    open: async () => click(await screen.findByTestId('context-chip')),
+    open: async () => {
+      await click(await screen.findByRole('button', { name: /^More panes/ }));
+      await click(await screen.findByRole('menuitem', { name: /^Context/ }));
+    },
     lands: () => visible('region', 'Context'),
   },
   {
     name: 'Ask drawer from the trail band',
     covers: ['openAsk', 'drawer:ask'],
-    open: async () => click(await screen.findByTestId('ask-trail-button')),
+    open: async () => click(await screen.findByTestId('pane-toggle-ask')),
     lands: () => visible('region', 'Ask'),
   },
   {
@@ -411,8 +414,11 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
           expect(state.openSessionDraftWorkspaceId).toBeNull();
         }, WAIT);
       },
-      () => visible('button', /^Untitled session$/),
-      async () => expect(await screen.findByTestId('context-chip')).toBeDefined(),
+      async () =>
+        expect(
+          (await screen.findAllByRole('button', { name: /^Untitled session$/ }, WAIT)).length,
+        ).toBeGreaterThan(0),
+      async () => expect((await screen.findAllByTestId('pane-cluster')).length).toBeGreaterThan(0),
     ),
   },
   {

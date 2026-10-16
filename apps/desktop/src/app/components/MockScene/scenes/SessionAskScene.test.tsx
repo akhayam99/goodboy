@@ -40,7 +40,7 @@ const renderState = async (state: string) => {
       <SessionAskScene />
     </ToastProvider>,
   );
-  return screen.findByTestId('ask-trail-button');
+  return screen.findByTestId('pane-toggle-ask');
 };
 
 const askDrawer = () => screen.getByRole('region', { name: 'Ask' });
@@ -107,12 +107,12 @@ describe('the session Ask scene', () => {
     if (questionChip === null) {
       throw new Error('no question chip');
     }
-    expect(screen.getByTestId('context-chip')).toBeDefined();
+    expect(screen.getByRole('heading', { level: 1, name: 'Overview' })).toBeDefined();
     act(() => {
       fireEvent.click(questionChip);
     });
     expect(useAppStore.getState().activeLens[SESSION.id]).toBe('questions');
-    expect(screen.queryByTestId('context-chip')).toBeNull();
+    expect(screen.queryByRole('heading', { level: 1, name: 'Overview' })).toBeNull();
     expect(useAppStore.getState().drawer).toMatchObject({ kind: 'ask', sessionId: SESSION.id });
     expect(askDrawer()).toBeDefined();
   });

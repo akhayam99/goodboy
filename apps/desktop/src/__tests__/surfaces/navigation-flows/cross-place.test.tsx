@@ -247,12 +247,11 @@ const expectCentredColumns = (): void => {
 };
 
 const expectAskInColumn = (): void => {
-  const end = document.querySelector('main [data-slot="trail-end"]');
-  const column = end?.closest<HTMLElement>('[data-page-column]') ?? null;
-  expect(column, 'the Ask button sits in the trail column').not.toBeNull();
-  expect(column?.querySelector('[data-testid="ask-trail-button"]')).not.toBeNull();
-  expect(end?.parentElement).toBe(column);
-  expect(end?.nextElementSibling).toBeNull();
+  const ask = shown('[data-testid="pane-toggle-ask"]');
+  const row = ask?.closest<HTMLElement>('[data-slot="pane-header"]') ?? null;
+  expect(row, 'the Ask button sits at the end of the page header row').not.toBeNull();
+  expect(row?.closest('[data-page-column]')).not.toBeNull();
+  expect(document.querySelector('main [data-slot="trail-bar"]')).toBeNull();
 };
 
 const expectDrawerBesideContent = ({
@@ -325,8 +324,24 @@ const sessionRow = (sessionId: SessionId): HTMLElement => {
   return found as HTMLElement;
 };
 
+const SESSION_LEVEL = '[data-level-layer="session"]:not([inert])';
+
+const PROJECTS = `${SESSION_LEVEL} [aria-labelledby="level-projects-label"]`;
+
 const pageRow = (label: string): HTMLElement => {
-  const pages = screen.getByTestId('session-pages');
+  if (label === 'Branch') {
+    const worktree = document.querySelector<HTMLElement>(`${PROJECTS} li button`);
+    if (worktree === null) {
+      throw new Error('no worktree row on the session level');
+    }
+    return worktree;
+  }
+  const pages = document.querySelector<HTMLElement>(
+    `${SESSION_LEVEL} [data-testid="session-pages"]`,
+  );
+  if (pages === null) {
+    throw new Error('the sidebar is not on a session level');
+  }
   const found = within(pages)
     .getAllByRole('button')
     .find((button) => button.textContent?.startsWith(label));
@@ -335,7 +350,10 @@ const pageRow = (label: string): HTMLElement => {
 };
 
 const currentPage = (): string | null => {
-  const pages = document.querySelector('[data-testid="session-pages"]');
+  if (document.querySelector(`${PROJECTS} [aria-current="page"]`) !== null) {
+    return 'Branch';
+  }
+  const pages = document.querySelector(`${SESSION_LEVEL} [data-testid="session-pages"]`);
   const current = pages?.querySelector('[aria-current="page"]');
   return current?.querySelector('span')?.textContent ?? null;
 };
@@ -439,7 +457,7 @@ const expectOneRail = ({
 
 const sessionLayers = (extra: RailLayers): RailLayers => ({
   header: shown('[data-slot="pane-header"]'),
-  trail: document.querySelector('main [data-slot="trail-end"]'),
+  ask: shown('[data-testid="pane-toggle-ask"]'),
   ...extra,
 });
 
@@ -634,9 +652,15 @@ describe('moving across every place keeps one frame', () => {
       await boot({ seed: 'pr' });
 
       await press('column.toggle');
-      expect(document.querySelector('[data-column-rail]')).not.toBeNull();
+      const rail = document.querySelector<HTMLElement>('[data-column-rail]');
+      if (rail === null) {
+        throw new Error('no rail after the fold');
+      }
+      expect(rail.getAttribute('data-sidebar-level')).toBe('session');
       expect(document.querySelector('[data-side-column]')).toBeNull();
 
+      await click(within(rail).getByRole('button', { name: 'Back to Sessions' }));
+      expect(rail.getAttribute('data-sidebar-level')).toBe('workspace');
       await click(door('inbox'));
       expect(studio()).toBe('inbox');
       expect(currentDoors()).toEqual(['inbox']);
@@ -693,7 +717,7 @@ describe('moving across every place keeps one frame', () => {
 
       const PAGES = ['Overview', 'Runs', 'Agents', 'Artifacts'] as const;
       const trailColumn = (): string =>
-        document.querySelector('main [data-slot="trail-bar"] [data-page-column]')?.className ?? '';
+        shown('[data-slot="pane-header"]')?.closest('[data-page-column]')?.className ?? '';
       const columnTiers = (): ReadonlySet<string> =>
         new Set(
           visiblePageColumns()
@@ -850,7 +874,6 @@ describe('moving across every place keeps one frame', () => {
       await click(sessionRow(sessionId));
       expectPlace({ session: sessionId, lens: null, studio: null, doors: [] });
       expect(sessionRow(sessionId).getAttribute('aria-current')).toBeNull();
-      expect(sessionRow(sessionId).getAttribute('data-current-sign')).toBe('overview');
       expect(currentPage()).toBe('Overview');
 
       for (const [page, lens] of SESSION_PAGES) {
@@ -909,7 +932,7 @@ describe('moving across every place keeps one frame', () => {
       await settle();
       expect(screen.queryByRole('listbox', { name: 'Recent sessions' })).toBeNull();
       expectPlace({ session: other, lens: null, studio: null, doors: [] });
-      expect(sessionRow(other).getAttribute('data-current-sign')).toBe('overview');
+      expect(currentPage()).toBe('Overview');
 
       await click(historyButton('Back'));
       expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
@@ -923,9 +946,8 @@ describe('moving across every place keeps one frame', () => {
       fireEvent.pointerEnter(screen.getByTestId('sidebar-peek-edge'));
       await settle(16);
       const peek = screen.getByRole('region', { name: 'Sessions' });
-      expect(
-        peek.querySelector(`[data-select-id="${sessionId}"]`)?.getAttribute('data-current-sign'),
-      ).toBe('branch');
+      expect(peek.querySelector('[data-sidebar-level="session"]')).not.toBeNull();
+      await click(within(peek).getByRole('button', { name: 'Back to Sessions' }));
       await click(peek.querySelector<HTMLElement>(`[data-select-id="${other}"]`) as HTMLElement);
       expectPlace({ session: other, lens: null, studio: null, doors: [] });
       await click(historyButton('Back'));
@@ -964,7 +986,7 @@ describe('moving across every place keeps one frame', () => {
       expect(
         (await within(page).findAllByText(/Ship a fix/, undefined, WAIT)).length,
       ).toBeGreaterThan(0);
-      expect(pageRow('Runs').textContent).toBe('Runs1 run');
+      expect(pageRow('Runs').textContent).toBe('Runs1');
       expect(screen.queryByText(/workflow run/i)).toBeNull();
 
       const startedRun = currentSession(sessionId).workflowRuns.at(-1)?.id ?? null;

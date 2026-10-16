@@ -2,15 +2,14 @@ import { useCallback, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { isAgentStatusSettled } from '@goodboy/core';
-import { cn, useEscapeLayer, UnderTrailContext, PaneBannerContext, PaneShell } from '@goodboy/ui';
+import { cn, useEscapeLayer, PaneActionsContext, PaneBannerContext, PaneShell } from '@goodboy/ui';
 import { ArtifactStudio } from '../../../artifacts/components/ArtifactStudio';
-import { ScriptsPanel } from '../../../scripts';
 import { EMPTY_ARRAY, useAppStore, useIsSessionCollectionLoaded } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { SessionOverviewPane } from '../SessionOverviewPane';
 import { FirstLapBanner } from '../../../bootstrap/FirstLapBanner';
-import { TrailBar } from './parts/TrailBar';
-import { AskTrailButton } from '../../ask/components/AskTrailButton';
+import { PaneCluster } from '../PaneCluster';
+import { useAskOpenShortcut } from '../../ask/useAskOpenShortcut';
 import { AgentOverlay } from './parts/AgentOverlay';
 import { AgentsPane } from './parts/AgentsPane';
 import { Pane } from './parts/Pane';
@@ -31,11 +30,9 @@ import { BranchPage } from '../../../branch/components/BranchPage';
 import { useIsBranchlessSession } from '../../hooks/useIsBranchlessSession';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 import { resolveActiveMountPath } from '../../../../store/slices/worktrees/resolveActiveMountPath';
-import { ExplorePane } from '../../../explore/components/ExplorePane';
 import { SIMPLE_LENSES } from '../../lens-labels';
 import { resolveLensSurface } from '../../lens-surface';
 import { EmptyState } from '@goodboy/ui';
-import { StudioBandContext } from '../../../../shared/components/StudioShell/studioBandContext';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type SessionWorkspaceProps = {
@@ -46,6 +43,7 @@ type SessionWorkspaceProps = {
 export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) => {
   const sessionId = session.id as SessionId;
   useSessionBranchSync({ session, isActive });
+  useAskOpenShortcut({ sessionId });
   const storedActiveLens = useAppStore((s) => s.activeLens[sessionId]);
   const isBranchless = useIsBranchlessSession({ session });
   const activeLens =
@@ -133,14 +131,12 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   useEscapeLayer(leaveAgentOverlay, showAgentOverlay && isActive);
 
   const banner = <FirstLapBanner sessionId={sessionId} />;
-  const trail = <TrailBar session={session} end={<AskTrailButton sessionId={sessionId} />} />;
-  const isBranchSplit = lens === 'branch' && showLens;
+  const panes = <PaneCluster sessionId={sessionId} />;
 
   return (
     <div className="@container relative flex h-full w-full min-w-0 flex-col">
-      {isBranchSplit ? null : trail}
-      <UnderTrailContext.Provider value>
-        <div className="relative flex min-h-0 flex-1 flex-col">
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <PaneActionsContext.Provider value={showLens ? panes : null}>
           <div
             className={cn('absolute inset-0 z-0', !showLens && 'invisible pointer-events-none')}
             inert={!showLens}
@@ -161,13 +157,8 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               {lens === 'workflows' ? (
                 <WorkflowsPane session={session} isActive={isActive && showLens} />
               ) : null}
-              {lens === 'scripts' ? (
-                <ScriptsPanel workspaceId={session.workspaceId} sessionId={sessionId} />
-              ) : null}
               {lens === 'branch' ? (
-                <StudioBandContext.Provider value={isBranchSplit ? trail : null}>
-                  <BranchPage session={session} workingDir={workingDir} isActive={isActive} />
-                </StudioBandContext.Provider>
+                <BranchPage session={session} workingDir={workingDir} isActive={isActive} />
               ) : null}
               {lens === 'linear' ? (
                 <IntegrationPane
@@ -225,18 +216,21 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                   onClose={onSelectOverview}
                 />
               ) : null}
-              {lens === 'explore' ? <ExplorePane sessionId={sessionId} /> : null}
               <Pane visible={lens === 'agents'}>
-                <PaneBannerContext.Provider
-                  value={lens === 'agents' && !showAgentOverlay ? banner : null}
-                >
-                  <AgentsPane session={session} meta={agentsMeta} />
-                </PaneBannerContext.Provider>
+                <PaneActionsContext.Provider value={lens === 'agents' && showLens ? panes : null}>
+                  <PaneBannerContext.Provider
+                    value={lens === 'agents' && !showAgentOverlay ? banner : null}
+                  >
+                    <AgentsPane session={session} meta={agentsMeta} />
+                  </PaneBannerContext.Provider>
+                </PaneActionsContext.Provider>
               </Pane>
             </PaneBannerContext.Provider>
           </div>
+        </PaneActionsContext.Provider>
 
-          {showAgentOverlay ? (
+        {showAgentOverlay ? (
+          <PaneActionsContext.Provider value={panes}>
             <PaneBannerContext.Provider value={banner}>
               <AgentOverlay
                 session={session}
@@ -246,9 +240,9 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                 onBack={leaveAgentOverlay}
               />
             </PaneBannerContext.Provider>
-          ) : null}
-        </div>
-      </UnderTrailContext.Provider>
+          </PaneActionsContext.Provider>
+        ) : null}
+      </div>
     </div>
   );
 };

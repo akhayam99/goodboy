@@ -37,48 +37,17 @@ const show = (name: keyof typeof U23_SIDEBAR_NAV_SCENES) => {
 const marked = () => Array.from(document.querySelectorAll('[aria-current="page"]'));
 
 describe('the sidebar navigation scenes', () => {
-  it('marks the session row alone when Scripts is open', async () => {
-    show('sidebar-scripts-current');
-    await screen.findByRole('list', { name: 'Pages' });
-    expect(marked()).toHaveLength(1);
-    expect(marked()[0]?.getAttribute('data-current-sign')).toBe('session');
-  });
-
-  it('nests three branches under Branch, one with a pull request', async () => {
-    show('sidebar-branches');
-    const list = within(await screen.findByRole('list', { name: 'Branches' }));
-    expect(list.getAllByRole('button')).toHaveLength(3);
-    expect(
-      list
-        .getAllByRole('button')
-        .filter((row) => /In review/.test(row.getAttribute('aria-label') ?? '')),
-    ).toHaveLength(1);
-  });
-
-  it('shows five branches and All branches for six', async () => {
-    show('sidebar-branches-many');
-    const list = within(await screen.findByRole('list', { name: 'Branches' }));
-    expect(list.getAllByRole('button')).toHaveLength(6);
-    expect(list.getByText('All branches')).toBeDefined();
-  });
-
-  it('keeps the pages folded with a button that shows them', async () => {
-    show('sidebar-pages-folded');
-    await screen.findByRole('button', { name: /^Show the pages of/ });
-    expect(screen.queryByRole('list', { name: 'Pages' })).toBeNull();
-  });
-
-  it('remembers the session without a sign while a studio sits over it', async () => {
+  it('shows the workspace level with only the studio door marked while a studio sits over it', async () => {
     show('session-studio-over');
-    await screen.findByRole('list', { name: 'Pages' });
-    expect(document.querySelector('[data-current-sign="remembered"]')).not.toBeNull();
+    await screen.findByRole('button', { name: 'Tasks' });
+    expect(marked()).toHaveLength(1);
+    expect(marked()[0]?.getAttribute('data-column-door')).toBe('inbox');
   });
 
   it('opens the flyout of the open session on hover', async () => {
     show('rail-flyout');
     const card = await screen.findByRole('dialog', { name: 'Session pages' }, { timeout: 4_000 });
     expect(within(card).getByRole('list', { name: 'Pages' })).toBeDefined();
-    expect(within(card).getByRole('list', { name: 'Branches' })).toBeDefined();
     expect(within(card).getByText('Pinned')).toBeDefined();
   });
 

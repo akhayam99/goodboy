@@ -891,7 +891,7 @@ unknown and never read it as no checks.
 
 Review is one flow: the list on the left, the focused comment on the right.
 Every comment in a fix run shows one of five words, the same word in the list,
-the thread, Activity, Needs you, the transcript card and the breadcrumb menus.
+the thread, Activity, Needs you and the transcript card.
 A comment not yet in a fix run reads Open, which is not a sixth word. One pure
 projection (`features/resolve/commentProjection.ts`) owns the words, and every
 count is a count of comments, never of agents:

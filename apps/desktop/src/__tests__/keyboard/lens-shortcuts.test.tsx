@@ -52,6 +52,8 @@ const { sessionList, sidebarOrder, state } = vi.hoisted(() => {
       amendStudio: vi.fn(),
       closeStudio: vi.fn(),
       toggleContextDrawer: vi.fn(),
+      openDrawer: vi.fn(),
+      drawer: null,
     },
   };
 });
@@ -386,16 +388,21 @@ describe('App lens shortcuts on darwin', () => {
     expect(state.navigate).toHaveBeenCalledWith({ to: { at: 'board' } });
   });
 
-  it('routes the diff binding to the Diff lens for repo-backed sessions', () => {
+  it('routes the diff binding to the Diff lens and the explore binding to the Explore pane', () => {
     render(<App />);
 
     press({ code: 'KeyF', key: 'f', metaKey: true, altKey: true });
     press({ code: 'KeyX', key: 'x', metaKey: true, altKey: true });
 
     expect(lensCalls()).toEqual([['session-1', 'files']]);
+    expect(state.openDrawer).toHaveBeenCalledWith({
+      kind: 'explore',
+      sessionId: 'session-1',
+      payload: null,
+    });
   });
 
-  it('routes the explore binding to the Explore lens for branchless sessions', () => {
+  it('opens the Explore pane in a branchless session and keeps the diff binding off', () => {
     state.workspaces = [
       { id: 'workspace-1', name: 'Workspace', rootPath: '/simple', kind: 'simple' },
     ];
@@ -405,7 +412,12 @@ describe('App lens shortcuts on darwin', () => {
     press({ code: 'KeyX', key: 'x', metaKey: true, altKey: true });
     press({ code: 'KeyF', key: 'f', metaKey: true, altKey: true });
 
-    expect(lensCalls()).toEqual([['session-1', 'explore']]);
+    expect(lensCalls()).toEqual([]);
+    expect(state.openDrawer).toHaveBeenCalledWith({
+      kind: 'explore',
+      sessionId: 'session-1',
+      payload: null,
+    });
   });
 
   it('reloads on the plain reload combo', () => {

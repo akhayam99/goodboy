@@ -37,14 +37,21 @@ type GridParams = {
 
 const expectOnGrid = ({ page, isStudio }: GridParams): void => {
   const geometry = frameGeometryOf({ page });
-  expect(geometry.titleCentreY).toBe(56);
-  expect(geometry.bandHeight + geometry.titleRowHeight / 2).toBe(56);
+  expect(geometry.titleCentreY).toBe(geometry.bandHeight + geometry.titleRowHeight / 2);
+  expect(geometry.titleCentreY).toBe(isStudio ? 56 : 28);
   const title = onlyH1({
     scope: isStudio ? (document.querySelector('[data-studio-frame]') ?? document) : document,
   });
   const row = titleRowOf(title);
   expect(row).not.toBeNull();
   expect(row?.firstElementChild).toBe(title);
+  if (!isStudio) {
+    expect(document.querySelector('[data-slot="trail-bar"]')).toBeNull();
+    expect(
+      title.closest('[data-slot="pane-header"]')?.hasAttribute('data-under-trail') ?? false,
+    ).toBe(false);
+    return;
+  }
   if (geometry.titleLeft === 'detail') {
     const detail = title.closest('[data-studio-detail]');
     expect(detail).not.toBeNull();
@@ -58,13 +65,9 @@ const expectOnGrid = ({ page, isStudio }: GridParams): void => {
   if (header !== null) {
     expect(header.hasAttribute('data-under-trail')).toBe(true);
   }
-  if (isStudio) {
-    const frame = title.closest('[data-studio-frame]');
-    expect(frame).not.toBeNull();
-    expect(frame?.querySelector('[data-studio-band] [data-page-column]')).not.toBeNull();
-    return;
-  }
-  expect(document.querySelector('[data-slot="trail-bar"]')).not.toBeNull();
+  const frame = title.closest('[data-studio-frame]');
+  expect(frame).not.toBeNull();
+  expect(frame?.querySelector('[data-studio-band] [data-page-column]')).not.toBeNull();
 };
 
 const landsOnSessionPage =
@@ -81,7 +84,7 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
     name: 'frame: the Board title sits under an empty band on the same 32px row',
     covers: ['navigate'],
     open: async () => {
-      await clickButton(/^Board/);
+      await clickButton(/^Sessions/);
     },
     lands: async () => {
       await heading('Board');
@@ -93,14 +96,14 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'frame: the Overview title is the one h1 on the trail grid',
+    name: 'frame: the Overview title is the one h1 on the page header row',
     covers: [],
     open: async () => {
       await settle();
     },
     lands: async (ctx) => {
       await lens(null)(ctx);
-      expect(await screen.findByTestId('context-chip')).toBeDefined();
+      expect(await screen.findByRole('heading', { level: 1, name: 'Overview' })).toBeDefined();
       await waitFor(() => expectOnGrid({ page: 'overview', isStudio: false }), WAIT);
     },
   },

@@ -29,6 +29,7 @@ import {
   clickFirstButton,
   heading,
   lens,
+  pane,
   openCrumb,
   openPalette,
   settle,
@@ -392,7 +393,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   pressRow({ id: 'lens.questions', lands: both(lens('questions'), () => heading('Questions')) }),
   pressRow({ id: 'lens.files', lands: branchTab('files') }),
   pressRow({ id: 'lens.plans', lands: both(lens('plans'), () => heading('Artifacts')) }),
-  pressRow({ id: 'lens.scripts', lands: both(lens('scripts'), () => heading('Scripts')) }),
+  pressRow({ id: 'lens.scripts', lands: pane('Scripts') }),
   pressRow({
     id: 'session.terminal',
     lands: async () => {
@@ -622,7 +623,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       await focusAnchor();
       await pressed('lens.explore');
     },
-    lands: both(lens('explore'), () => heading('Explore')),
+    lands: pane('Explore'),
   }),
   keyRow({
     id: 'lens.linear',

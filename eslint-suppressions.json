@@ -453,11 +453,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/__tests__/surfaces/one-home.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/__tests__/surfaces/primary-surfaces.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -1217,7 +1212,7 @@
   },
   "apps/desktop/src/app/components/MockScene/scenes/u21/sidebar-list.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
+      "count": 2
     }
   },
   "apps/desktop/src/app/components/MockScene/scenes/u21/sidebarListSeed.ts": {
@@ -1465,7 +1460,7 @@
   },
   "apps/desktop/src/app/components/SideColumn/RailSessions.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 27
+      "count": 24
     }
   },
   "apps/desktop/src/app/components/SideColumn/RailSessions.tsx": {
@@ -5836,12 +5831,7 @@
   },
   "apps/desktop/src/features/session/components/SessionOverviewPane/HeaderBand.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 8
-    }
-  },
-  "apps/desktop/src/features/session/components/SessionOverviewPane/HeaderBand.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
+      "count": 3
     }
   },
   "apps/desktop/src/features/session/components/SessionOverviewPane/LinkIssueAction.test.tsx": {
@@ -5862,11 +5852,6 @@
   "apps/desktop/src/features/session/components/SessionOverviewPane/LinkWorkPicker.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 1
-    }
-  },
-  "apps/desktop/src/features/session/components/SessionOverviewPane/LinkedWorkChips.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
     }
   },
   "apps/desktop/src/features/session/components/SessionOverviewPane/MountCleanupProposals.tsx": {
@@ -6015,19 +6000,9 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/session/components/SessionTrail/SessionCrumbs.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 28
-    }
-  },
-  "apps/desktop/src/features/session/components/SessionTrail/SessionCrumbs.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/session/components/SessionWorkspace/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 28
+      "count": 22
     },
     "@typescript-eslint/naming-convention": {
       "count": 2
@@ -6333,16 +6308,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/session/hooks/usePageSummaries/index.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/session/hooks/usePageSummaries/index.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/session/hooks/useRebaseAgent/index.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 14
@@ -6383,16 +6348,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/session/hooks/useSessionCrumbs/index.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 13
-    }
-  },
-  "apps/desktop/src/features/session/hooks/useSessionCrumbs/index.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/session/hooks/useSessionFocusRecheck/index.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -6412,31 +6367,6 @@
     }
   },
   "apps/desktop/src/features/session/hooks/useTimelineOpen/index.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/session/hooks/useTrailMenus/index.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 47
-    }
-  },
-  "apps/desktop/src/features/session/hooks/useTrailMenus/trailMenuActions.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    }
-  },
-  "apps/desktop/src/features/session/hooks/useTrailMenus/trailMenuScope.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
-    }
-  },
-  "apps/desktop/src/features/session/hooks/useTrailMenus/useTrailMenuInputs/index.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    }
-  },
-  "apps/desktop/src/features/session/hooks/useTrailMenus/workflowRunCrumbMenu.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
     }
@@ -6649,16 +6579,6 @@
   "apps/desktop/src/features/session/timeline/shownQuestionIds.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 8
-    }
-  },
-  "apps/desktop/src/features/session/trail/menus/menus.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 32
-    }
-  },
-  "apps/desktop/src/features/session/trail/menus/pullRequestMenu.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
     }
   },
   "apps/desktop/src/features/session/workItems.test.ts": {
@@ -8015,14 +7935,6 @@
       "count": 8
     }
   },
-  "apps/desktop/src/features/workspace/components/SessionActivityBar/OpenSessionCard.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionActivityItem.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -8034,11 +7946,6 @@
   "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionPages.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
-    }
-  },
-  "apps/desktop/src/features/workspace/components/SessionActivityBar/branchRowModels.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
     }
   },
   "apps/desktop/src/features/workspace/components/SessionActivityBar/bulkSelection.test.tsx": {
@@ -8062,11 +7969,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/workspace/components/SessionActivityBar/pages.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 16
-    }
-  },
   "apps/desktop/src/features/workspace/components/SessionActivityBar/rowRenders.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 3
@@ -8085,11 +7987,6 @@
   "apps/desktop/src/features/workspace/components/SessionActivityBar/sessionNode.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
-    }
-  },
-  "apps/desktop/src/features/workspace/components/SessionActivityBar/sidebarNav.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 13
     }
   },
   "apps/desktop/src/features/workspace/components/SessionHoverCard/SessionHoverCardBody.tsx": {

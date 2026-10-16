@@ -644,7 +644,11 @@ export const ScriptsLensScene = () => {
     <ToastProvider>
       <main className="flex h-screen overflow-hidden bg-background p-4 text-foreground">
         <PageSheet>
-          <ScriptsPanel workspaceId={SCRIPTS_WORKSPACE_ID} sessionId={SCRIPTS_SESSION_ID} />
+          <ScriptsPanel
+            workspaceId={SCRIPTS_WORKSPACE_ID}
+            sessionId={SCRIPTS_SESSION_ID}
+            onClose={() => undefined}
+          />
         </PageSheet>
       </main>
     </ToastProvider>

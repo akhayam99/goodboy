@@ -4,7 +4,7 @@ import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer'
 import { pressShortcut } from '../../helpers/pressKey';
 import { type Row, WAIT, settle, useAppStore } from './harness';
 
-const askButton = (): Promise<HTMLElement> => screen.findByTestId('ask-trail-button');
+const askButton = (): Promise<HTMLElement> => screen.findByTestId('pane-toggle-ask');
 
 const sidePanel = (): HTMLElement => screen.getByRole('complementary', { name: 'Side panel' });
 

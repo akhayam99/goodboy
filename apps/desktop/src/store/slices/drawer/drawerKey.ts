@@ -16,6 +16,10 @@ export const drawerKey = (content: DrawerContent): string => {
       return `plan-part:${content.payload.planId}:${content.payload.index}`;
     case 'scriptRun':
       return `scriptRun:${content.payload.mountId ?? ''}:${content.payload.scriptKey}`;
+    case 'explore':
+      return 'explore';
+    case 'scripts':
+      return 'scripts';
     case 'conversation':
       return `conversation:${content.payload.threadId}`;
     case 'ask':
