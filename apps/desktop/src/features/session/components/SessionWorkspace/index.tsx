@@ -20,6 +20,8 @@ import { openLens } from '../../openLens';
 import { resolveSessionSurfaceLayer } from '../../resolveSessionSurfaceLayer';
 import { resolveDiffMount } from './parts/resolveDiffMount';
 import { WorkflowsPane } from './parts/WorkflowsPane';
+import { PresetRunPage } from '../PresetRun';
+import { usePresetRunFocus } from '../../hooks/usePresetRunFocus';
 import { IntegrationPane } from './parts/IntegrationPane';
 import { GithubTaskDetail } from './parts/IntegrationPane/GithubTaskDetail';
 import { LinkIssueAction } from '../SessionOverviewPane/LinkIssueAction';
@@ -89,10 +91,12 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const onSelectOverview = () => {
     openLens({ sessionId, lens: null });
   };
+  const runFocus = usePresetRunFocus({ sessionId });
   const surfaceLayer = resolveSessionSurfaceLayer({
     lens,
     selectedAgentId,
     artifactConversationAgentId,
+    hasRunFocus: runFocus !== null,
   });
   const showAgentOverlay = surfaceLayer === 'agent';
   const showLens = surfaceLayer === 'lens';
@@ -229,6 +233,15 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
           </div>
         </PaneActionsContext.Provider>
 
+        {surfaceLayer === 'run' && runFocus !== null ? (
+          <PaneActionsContext.Provider value={panes}>
+            <PaneBannerContext.Provider value={banner}>
+              <div className="absolute inset-0 z-20 flex flex-col bg-background">
+                <PresetRunPage session={session} focus={runFocus} isActive={isActive} />
+              </div>
+            </PaneBannerContext.Provider>
+          </PaneActionsContext.Provider>
+        ) : null}
         {showAgentOverlay ? (
           <PaneActionsContext.Provider value={panes}>
             <PaneBannerContext.Provider value={banner}>

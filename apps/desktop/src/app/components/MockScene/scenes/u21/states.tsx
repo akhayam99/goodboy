@@ -3,7 +3,7 @@ import { PaneShell, ScrollFade } from '@goodboy/ui';
 import { SessionOverviewPane } from '../../../../../features/session/components/SessionOverviewPane';
 import { AgentsPane } from '../../../../../features/session/components/SessionWorkspace/parts/AgentsPane';
 import { QuestionsPane } from '../../../../../features/session/components/SessionWorkspace/parts/QuestionsPane';
-import { WorkflowsPane } from '../../../../../features/session/components/SessionWorkspace/parts/WorkflowsPane';
+import { SceneRunsSurface } from '../SceneRunsSurface';
 import { NeedsYouBlock } from '../../../../../features/session/components/SessionWorkspace/parts/TimelinePane/NeedsYouBlock';
 import type { NeedsYouOwner } from '../../../../../features/session/timeline/needsYou';
 import { ArtifactStudio } from '../../../../../features/artifacts/components/ArtifactStudio';
@@ -166,7 +166,7 @@ const NEEDS_YOU_OWNERS: ReadonlyArray<NeedsYouOwner> = [
 export const U21_STATES_SCENES: Readonly<Record<string, ComponentType>> = {
   'runs-list-empty': () => (
     <StateScene lens="workflows">
-      <WorkflowsPane session={SESSION} />
+      <SceneRunsSurface session={SESSION} />
     </StateScene>
   ),
   'agents-list-empty': () => (
@@ -205,7 +205,7 @@ export const U21_STATES_SCENES: Readonly<Record<string, ComponentType>> = {
   ),
   'notifications-empty': () => (
     <StateScene lens="workflows" afterMount={openNotificationsSoon}>
-      <WorkflowsPane session={SESSION} />
+      <SceneRunsSurface session={SESSION} />
     </StateScene>
   ),
   'inbox-empty': () => (

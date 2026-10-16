@@ -8,7 +8,7 @@ import type {
   TelemetryRecord,
   TelemetryRecordId,
 } from '@goodboy/types';
-import { WorkflowsPane } from '../../../../../features/session/components/SessionWorkspace/parts/WorkflowsPane';
+import { SceneRunsSurface } from '../SceneRunsSurface';
 import type { AgentKind } from '../../../../../features/session/agent-kind';
 import { useAppStore } from '../../../../../store';
 import { sceneClock } from '../../sceneClock';
@@ -306,7 +306,7 @@ const RunTreeScene = ({ seed }: SceneProps) => {
       session={FLOW_SESSION}
       main={
         <div className="flex h-full min-h-0 flex-col">
-          <WorkflowsPane session={FLOW_SESSION} />
+          <SceneRunsSurface session={FLOW_SESSION} />
         </div>
       }
     />

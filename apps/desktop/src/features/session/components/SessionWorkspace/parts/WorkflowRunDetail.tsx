@@ -5,7 +5,7 @@ import { OrchestratorDock } from '../../../../workflows/components/OrchestratorS
 import { RunBody } from '../../AgentTree/RunBody';
 import { RunHeader } from '../../AgentTree/RunHeader';
 import { useRunView } from '../../AgentTree/useRunView';
-import { WorkTimeProvider } from '../../../../workTreeModel/components/WorkTimeProvider';
+import { RunWorkTime } from '../../AgentTree/RunWorkTime';
 
 type Props = {
   readonly session: Session;
@@ -21,7 +21,7 @@ export const WorkflowRunDetail = ({ session, run, workflow }: Props) => {
     ) : undefined;
 
   return (
-    <WorkTimeProvider sessionId={session.id} workspaceId={session.workspaceId}>
+    <RunWorkTime sessionId={session.id} workspaceId={session.workspaceId}>
       <PaneShell
         scroll="self"
         dock={composer}
@@ -39,6 +39,6 @@ export const WorkflowRunDetail = ({ session, run, workflow }: Props) => {
       >
         <RunBody session={session} view={view} />
       </PaneShell>
-    </WorkTimeProvider>
+    </RunWorkTime>
   );
 };

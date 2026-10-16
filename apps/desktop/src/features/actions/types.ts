@@ -218,6 +218,7 @@ export type WorkflowRunActionTarget = {
   readonly kind: 'workflowRun';
   readonly sessionId: SessionId;
   readonly runId: WorkflowRunId;
+  readonly stepAgentId?: AgentId | null;
 };
 
 export type PlanPartActionTarget = {

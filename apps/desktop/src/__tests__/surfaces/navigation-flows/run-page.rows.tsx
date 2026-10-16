@@ -17,16 +17,7 @@ import { STORY_NOW } from '../../../store/storyHarness';
 import { sessionPlace } from '../../../store/slices/navigation/place';
 import { aPlan, aStoredPlan } from '../../../test/planFixtures';
 import userEvent from '@testing-library/user-event';
-import {
-  type Ctx,
-  type Row,
-  WAIT,
-  click,
-  heading,
-  openCrumb,
-  settle,
-  useAppStore,
-} from './harness';
+import { type Ctx, type Row, WAIT, click, heading, settle, useAppStore } from './harness';
 
 const WORKFLOW_ID = 'journey-run-page-workflow' as WorkflowId;
 const RUN_ID = 'journey-run-page-run' as WorkflowRunId;
@@ -146,7 +137,9 @@ const statusOf = ({ sessionId }: Ctx, agentId: AgentId): Agent['status'] | undef
 const toastCount = (): number =>
   screen.queryAllByRole('button', { name: 'Dismiss notification' }).length;
 
-const header = () => screen.getByTestId('run-header');
+const RUN_TAIL = { name: 'Run state' } as const;
+
+const runPageNode = (): Element | null => document.querySelector('[data-preset-run]');
 
 const openRunHeldForItsPlan = async (ctx: Ctx): Promise<void> => {
   seedHeldRun(ctx);
@@ -156,7 +149,7 @@ const openRunHeldForItsPlan = async (ctx: Ctx): Promise<void> => {
 
 const reviewThenApproveFromTheDrawer = async (ctx: Ctx): Promise<void> => {
   await openRunHeldForItsPlan(ctx);
-  const entry = await within(await screen.findByTestId('run-header', {}, WAIT)).findByRole(
+  const entry = await within(await screen.findByRole('region', RUN_TAIL, WAIT)).findByRole(
     'button',
     { name: 'Review plan' },
     WAIT,
@@ -198,7 +191,10 @@ const openRunPage = async (ctx: Ctx): Promise<void> => {
   seedHeldRun(ctx);
   act(() => useAppStore.getState().navigate({ to: runPage(ctx) }));
   await settle();
-  await screen.findByTestId('run-header', {}, WAIT);
+  await screen.findByRole('region', RUN_TAIL, WAIT);
+  expect(document.querySelector('[data-sidebar-level]')?.getAttribute('data-sidebar-level')).toBe(
+    'run',
+  );
 };
 
 const backToTheList = async (ctx: Ctx): Promise<void> => {
@@ -207,7 +203,7 @@ const backToTheList = async (ctx: Ctx): Promise<void> => {
     WAIT,
   );
   await heading('Runs');
-  expect(screen.queryByTestId('run-header')).toBeNull();
+  expect(runPageNode()).toBeNull();
 };
 
 const pressEscape = async (): Promise<void> => {
@@ -215,7 +211,13 @@ const pressEscape = async (): Promise<void> => {
   await settle();
 };
 
-const clickRunsCrumb = (): Promise<void> => openCrumb(/^Runs/);
+const clickRunsBackRow = async (): Promise<void> => {
+  const level = document.querySelector<HTMLElement>('[data-level-layer="run"]');
+  if (level === null) {
+    throw new Error('the sidebar did not drill into the run');
+  }
+  await click(within(level).getByRole('button', { name: 'Back to Runs' }));
+};
 
 export const RUN_PAGE_ROWS: ReadonlyArray<Row> = [
   {
@@ -230,17 +232,17 @@ export const RUN_PAGE_ROWS: ReadonlyArray<Row> = [
     open: async (ctx) => {
       await openRunPage(ctx);
       expect(screen.queryByRole('button', { name: 'Show run summary' })).toBeNull();
-      expect(within(header()).queryByRole('button', { name: /^Expand / })).toBeNull();
+      expect(screen.queryByRole('button', { name: /^Expand / })).toBeNull();
       await pressEscape();
     },
     lands: backToTheList,
   },
   {
-    name: 'the Runs entry of the session level goes back to the Runs list',
+    name: 'the back row of the run level goes back to the Runs list',
     covers: ['navigate', 'setFocusedWorkflowRun'],
     open: async (ctx) => {
       await openRunPage(ctx);
-      await clickRunsCrumb();
+      await clickRunsBackRow();
     },
     lands: backToTheList,
   },

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Session, WorkflowRun } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { WorkflowsPane } from '../../../../../features/session/components/SessionWorkspace/parts/WorkflowsPane';
+import { SceneRunsSurface } from '../SceneRunsSurface';
 import { ShellFrame, seedShellChrome } from '../shellChrome';
 import { FLOW_SESSION, FLOW_SESSION_ID, NOW, SESSIONS } from '../flow-audit/fixtures';
 import { seedWorkflowRun, seedWorkflowRunFinished } from '../flow-audit/seeds';
@@ -101,7 +101,7 @@ const QueueScene = ({ seed, isComposerOpen = false }: SceneProps) => {
       session={session}
       main={
         <div className="flex h-full min-h-0 flex-col">
-          <WorkflowsPane session={session} />
+          <SceneRunsSurface session={session} />
         </div>
       }
     />

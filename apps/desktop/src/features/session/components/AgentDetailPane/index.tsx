@@ -34,17 +34,31 @@ import { useAutoChat } from '../../../auto/chat/useAutoChat';
 import { useAutoMembership } from '../../../auto/useAutoMembership';
 import { isTurnStateLive } from '../../agent-lifecycle';
 
+export type RunStepFrame = {
+  readonly heading: ReactNode;
+  readonly actions: ReactNode;
+  readonly tail: ReactNode;
+};
+
 type Props = {
   readonly session: Session;
   readonly agent: Agent;
   readonly isChatActive: boolean;
   readonly onBack: () => void;
   readonly context?: ReactNode;
+  readonly runStep?: RunStepFrame;
 };
 
 const REWRITER_PLACEHOLDER = 'Tell History rewriter what to do next';
 
-export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context }: Props) => {
+export const AgentDetailPane = ({
+  session,
+  agent,
+  isChatActive,
+  onBack,
+  context,
+  runStep,
+}: Props) => {
   const turnState = useAppStore((state) => state.agentTurnState[agent.id] ?? null);
   const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
   const kind = classifyAgent({ agent, override: kindOverride });
@@ -125,8 +139,12 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
           },
         ]
       : [];
-    return [...leading, ...(autoChat.insertions ?? []), ...end];
-  }, [agent, answeredQuestion, asker, autoChat.insertions, runs, session]);
+    const tail: ReadonlyArray<TranscriptInsertion> =
+      runStep === undefined
+        ? []
+        : [{ key: `run-tail-${agent.id}`, beforeMs: null, node: runStep.tail }];
+    return [...leading, ...(autoChat.insertions ?? []), ...end, ...tail];
+  }, [agent, answeredQuestion, asker, autoChat.insertions, runs, session, runStep]);
 
   const openTranscript = () =>
     openDrawer({ kind: 'transcript', sessionId: session.id, payload: { agentId: agent.id } });
@@ -144,7 +162,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
         providerOverride={providerOverride}
         isAutoChild={isAutoChild}
       />
-      <AgentNextAction session={session} agent={agent} />
+      {runStep === undefined ? <AgentNextAction session={session} agent={agent} /> : null}
     </>
   );
 
@@ -160,8 +178,14 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
               onContextMenu={headerMenu.onContextMenu}
               onKeyDown={headerMenu.onKeyDown}
             >
-              <AgentKindChip kind={kind} />
-              <AgentTitle agent={agent} sessionId={session.id} />
+              {runStep === undefined ? (
+                <>
+                  <AgentKindChip kind={kind} />
+                  <AgentTitle agent={agent} sessionId={session.id} />
+                </>
+              ) : (
+                runStep.heading
+              )}
               <AgentProviderMark provider={routing.provider} />
             </span>
           }
@@ -172,13 +196,17 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
                 label="View transcript"
                 onClick={openTranscript}
               />
-              <AgentHeaderActions
-                key={agent.id}
-                agent={agent}
-                sessionId={session.id}
-                hasStateButton={false}
-                onDeleted={onBack}
-              />
+              {runStep === undefined ? (
+                <AgentHeaderActions
+                  key={agent.id}
+                  agent={agent}
+                  sessionId={session.id}
+                  hasStateButton={false}
+                  onDeleted={onBack}
+                />
+              ) : (
+                runStep.actions
+              )}
             </>
           }
         />
@@ -190,6 +218,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
         topInset="tight"
         mode="conversation"
         onOpenTranscript={openTranscript}
+        hasAdvanceRow={runStep === undefined}
         hasComposer={!isRewriterFinished && !isAutoChild && adoption === null && !isMoveOpen}
         composerPlaceholder={
           rewriter?.isLive === true ? REWRITER_PLACEHOLDER : autoChat.composerPlaceholder

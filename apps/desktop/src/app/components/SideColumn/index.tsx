@@ -5,6 +5,8 @@ import { useAppStore, useCurrentSession } from '../../../store';
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 import { SessionNavSidebar } from '../../../features/session/components/SessionNavSidebar';
 import { NewSessionRow } from '../../../features/workspace/components/SessionActivityBar/NewSessionRow';
+import { usePresetRunFocus } from '../../../features/session/hooks/usePresetRunFocus';
+import { leaveRunLevel } from '../../../features/workflows/leaveRunLevel';
 import type { ShellColumnScope } from '../../shellArrangement';
 import { ColumnDoorRow } from './ColumnDoorRow';
 import { ColumnFoot } from './ColumnFoot';
@@ -12,6 +14,7 @@ import { ColumnToggleButton } from './ColumnToggleButton';
 import { COLUMN_DOORS, openColumnDoor, type ColumnActions } from './columnDoors';
 import { LevelBackRow } from './LevelBackRow';
 import { LevelStack } from './LevelStack';
+import { RunLevel } from './RunLevel';
 import { SessionLevel } from './SessionLevel';
 import { WorktreeLevel } from './WorktreeLevel';
 import { openLens } from '../../../features/session/openLens';
@@ -55,6 +58,7 @@ export const SideColumn = ({
   const signals = useDoorSignals({});
   const level = useSidebarLevel({ place, currentSessionId });
   const currentSession = useCurrentSession();
+  const runFocus = usePresetRunFocus({ sessionId: currentSessionId });
   const leaveSessionLevel = useAppStore((state) => state.leaveSessionLevel);
   const isSettingsShown = place === 'settings' && settingsSlotRef !== undefined;
   const go = (open: () => void) => () => {
@@ -71,6 +75,17 @@ export const SideColumn = ({
       return;
     }
     openLens({ sessionId: levelSession.id, lens: null });
+  };
+  const goBack = () => {
+    if (level === 'run' && levelSession !== null) {
+      leaveRunLevel({ sessionId: levelSession.id });
+      return;
+    }
+    if (level === 'worktree') {
+      leaveWorktreeLevel();
+      return;
+    }
+    leaveSessionLevel();
   };
   const sessionLevel =
     levelSession === null ? null : (
@@ -94,7 +109,10 @@ export const SideColumn = ({
         {level === 'worktree' ? <WorktreeLevel session={levelSession} /> : null}
       </>
     );
-
+  const runLevel =
+    levelSession === null || runFocus === null ? null : (
+      <RunLevel session={levelSession} focus={runFocus} />
+    );
   return (
     <div data-side-column="" className="relative flex h-full min-h-0 min-w-0 flex-col">
       <nav
@@ -108,11 +126,7 @@ export const SideColumn = ({
           }
           event.preventDefault();
           event.stopPropagation();
-          if (level === 'worktree') {
-            leaveWorktreeLevel();
-            return;
-          }
-          leaveSessionLevel();
+          goBack();
         }}
         className={cn(
           LAYER,
@@ -125,51 +139,60 @@ export const SideColumn = ({
         {scope === 'workspace' && workspaceId !== null ? (
           <LevelStack
             level={level}
-            session={sessionLevel}
-            worktree={worktreeLevel}
-            workspace={
-              <>
-                <div className={cn('flex shrink-0 flex-col px-2', PANE_RHYTHM.navRail.doorGap)}>
-                  <NewSessionRow
-                    workspaceId={workspaceId}
-                    {...(onNavigate !== undefined && { onNavigate })}
-                  />
-                  {COLUMN_DOORS.map((door) => (
-                    <ColumnDoorRow
-                      key={door.id}
-                      id={door.id}
-                      icon={door.icon}
-                      label={door.label}
-                      {...(door.shortcutId !== undefined && {
-                        shortcut: shortcutGlyphs(door.shortcutId),
-                      })}
-                      isCurrent={place === door.id}
-                      signal={signals[door.id]}
-                      {...(door.id === 'chat' && {
-                        create: {
-                          label: 'New chat',
-                          shortcut: 'chat.new',
-                          onCreate: go(actions.openNewChat),
-                        },
-                      })}
-                      {...(door.id === 'terminal' && {
-                        create: { label: 'New terminal', onCreate: go(actions.openNewTerminal) },
-                      })}
-                      onSelect={go(() => openColumnDoor({ id: door.id, actions }))}
-                    />
-                  ))}
-                </div>
-                <div data-column-sessions="" className="flex min-h-0 flex-1 flex-col">
-                  <SessionNavSidebar
-                    currentSessionId={
-                      place === null || isStudioOverSession({ place }) ? currentSessionId : null
-                    }
-                    isStudioOver={isStudioOverSession({ place }) || level !== 'workspace'}
-                    {...(onNavigate !== undefined && { onNavigate })}
-                  />
-                </div>
-              </>
-            }
+            layers={[
+              {
+                level: 'workspace',
+                node: (
+                  <>
+                    <div className={cn('flex shrink-0 flex-col px-2', PANE_RHYTHM.navRail.doorGap)}>
+                      <NewSessionRow
+                        workspaceId={workspaceId}
+                        {...(onNavigate !== undefined && { onNavigate })}
+                      />
+                      {COLUMN_DOORS.map((door) => (
+                        <ColumnDoorRow
+                          key={door.id}
+                          id={door.id}
+                          icon={door.icon}
+                          label={door.label}
+                          {...(door.shortcutId !== undefined && {
+                            shortcut: shortcutGlyphs(door.shortcutId),
+                          })}
+                          isCurrent={place === door.id}
+                          signal={signals[door.id]}
+                          {...(door.id === 'chat' && {
+                            create: {
+                              label: 'New chat',
+                              shortcut: 'chat.new',
+                              onCreate: go(actions.openNewChat),
+                            },
+                          })}
+                          {...(door.id === 'terminal' && {
+                            create: {
+                              label: 'New terminal',
+                              onCreate: go(actions.openNewTerminal),
+                            },
+                          })}
+                          onSelect={go(() => openColumnDoor({ id: door.id, actions }))}
+                        />
+                      ))}
+                    </div>
+                    <div data-column-sessions="" className="flex min-h-0 flex-1 flex-col">
+                      <SessionNavSidebar
+                        currentSessionId={
+                          place === null || isStudioOverSession({ place }) ? currentSessionId : null
+                        }
+                        isStudioOver={isStudioOverSession({ place }) || level !== 'workspace'}
+                        {...(onNavigate !== undefined && { onNavigate })}
+                      />
+                    </div>
+                  </>
+                ),
+              },
+              { level: 'session', node: sessionLevel },
+              { level: 'worktree', node: worktreeLevel },
+              { level: 'run', node: runLevel },
+            ]}
           />
         ) : (
           <div className="min-h-0 flex-1" />

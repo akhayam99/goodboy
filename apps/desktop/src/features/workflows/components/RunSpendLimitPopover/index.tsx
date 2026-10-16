@@ -20,8 +20,11 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 type Props = {
   readonly sessionId: SessionId;
   readonly run: WorkflowRun;
-  readonly variant: 'primary' | 'meta';
+  readonly variant: 'primary' | 'meta' | 'foot';
 };
+
+const FOOT_TRIGGER =
+  'inline-flex h-6 items-center rounded-md px-1 text-ui text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
 
 export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
   const setWorkflowRunSpendLimit = useAppStore((state) => state.setWorkflowRunSpendLimit);
@@ -69,7 +72,17 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
       className="flex flex-col bg-subtle"
       anchorClassName="inline-flex"
       trigger={
-        variant === 'meta' ? (
+        variant === 'foot' ? (
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-expanded={open}
+            data-testid="run-spend-limit-trigger"
+            className={FOOT_TRIGGER}
+          >
+            {limitUsd == null ? 'Set a limit' : `Limit ${formatUsd(limitUsd)}`}
+          </button>
+        ) : variant === 'meta' ? (
           <button
             type="button"
             onClick={onToggle}

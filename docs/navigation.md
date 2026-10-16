@@ -695,10 +695,27 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   selected and the session row unselected (`useSidebarLevel`).
 - **Folded (⌘B, 44px).** The rail shows the current level as icons with right
   tooltips: on level 2 the back icon, then one icon per worktree entry
-  (`RailWorktreeLevel`); on level 1 the back icon first, then one icon per
-  page with its dot; on level 0 New, the doors and the pinned session nodes.
+  (`RailWorktreeLevel`) or per run step (`RailRunLevel`); on level 1 the back
+  icon first, then one icon per page with its dot; on level 0 New, the doors
+  and the pinned session nodes.
   The changed file tree needs the open sidebar (or its peek); the diff and its
   keys work without it.
+- **Level 2, a preset run.** Opening a run with a fixed step list (a saved
+  workflow or Describe steps; `executionMode` not `dynamic`) drills the sidebar
+  into it (`RunLevel`, `LevelStack` layer `run`). It reads: the back row
+  `‹ Runs`, the identity row (the run's state dot from `runRowFactsOf`, the
+  run title, which renames inline on click), **Overview**, the steps as the
+  run tree in its `rail` density (ordinals, sub agents, the state word, the
+  same tracks; model, effort and cost stay in the role glyph's card), **Add
+  step** as the last row, and the foot "Limit $3.00 · $1.12 spent"
+  (`RunLevelFoot`: the limit opens `RunSpendLimitPopover`, the spent amount is
+  `useRunSpendUsd`, the number the cap is checked against). The level comes
+  from one function, `presetRunFocusOf`: the selected agent belongs to a
+  preset run (any link to a step lands here, the deepest level that holds it),
+  or the Runs page has a preset run focused. Back (the back row, or ⌘[ in the
+  sidebar) calls `leaveRunLevel`: the Runs list, session level, a new history
+  entry. Esc on the run Overview does the same. An orchestrated run does not
+  drill: it keeps today's run page under the session level.
 
 The tools (Terminal, Explore, Scripts) are panes, not pages: they open from
 the pane cluster at the right of every session header (see The pane cluster).

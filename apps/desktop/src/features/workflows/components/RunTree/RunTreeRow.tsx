@@ -37,6 +37,7 @@ import { TIMELINE_RHYTHM } from '../../../workTreeModel/timelineRhythm';
 import { ROW_ACTION_LABEL } from '../../../workTreeModel/rowActionLabels';
 import { RunStepSkip, type RunStepSkipAction } from './RunStepSkip';
 import { rowSlotWidth } from './rowSlotWidth';
+import type { RunTreeDensity } from './runTreeDensity';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 export type RunTreeRouting = {
@@ -48,6 +49,7 @@ export type RunTreeRouting = {
 };
 
 type Props = {
+  readonly density?: RunTreeDensity;
   readonly item: TimelineRowItem;
   readonly entry: TimelineAgentEntry;
   readonly rail: RailRow;
@@ -91,6 +93,7 @@ const answerOf = ({ ask }: AskParams): { readonly question: OpenQuestion | null 
 };
 
 export const RunTreeRow = ({
+  density = 'page',
   item,
   entry,
   rail,
@@ -111,14 +114,16 @@ export const RunTreeRow = ({
   const { agent } = entry;
   const step =
     !isNested && agent.stepId != null ? (routing.stepById.get(agent.stepId) ?? null) : null;
-  const guidance = isNested
-    ? null
-    : guidanceSentTo({
-        run: routing.run,
-        role: step?.role ?? KIND_TO_ROLE[entry.agentKind] ?? null,
-      });
+  const isPage = density === 'page';
+  const guidance =
+    isNested || !isPage
+      ? null
+      : guidanceSentTo({
+          run: routing.run,
+          role: step?.role ?? KIND_TO_ROLE[entry.agentKind] ?? null,
+        });
   const answer = answerOf({ ask: item.rowState.ask });
-  const answersFor = isQuestionDelegate({ agent }) ? parentStepName : null;
+  const answersFor = isPage && isQuestionDelegate({ agent }) ? parentStepName : null;
   const boxHeight = TIMELINE_RHYTHM.grade[item.grade].height;
   const slot = rowSlotWidth({ rail, railWidth, isNested });
   const isSkipShown = answer === null && skip !== null && !isNested && agent.status === 'running';
@@ -222,7 +227,7 @@ export const RunTreeRow = ({
                   )}
                 </span>
                 {state}
-                {meta}
+                {isPage ? meta : null}
                 {hasActionColumn ? (
                   <span data-meta-column="action" className={WORK_META_COLUMN.action}>
                     {isSkipShown && skip !== null ? (

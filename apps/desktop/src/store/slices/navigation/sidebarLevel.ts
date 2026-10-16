@@ -1,7 +1,7 @@
 import type { AppState } from '../../types';
 import { stackKey } from './currentStack';
 
-export type SidebarLevel = 'workspace' | 'session' | 'worktree';
+export type SidebarLevel = 'workspace' | 'session' | 'worktree' | 'run';
 
 export const SIDEBAR_LEVEL_KEY = 'sidebar-level';
 
