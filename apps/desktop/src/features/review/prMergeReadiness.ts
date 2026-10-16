@@ -8,6 +8,8 @@ export type PrMergeReadiness = {
   readonly tone: PrMergeTone;
   readonly reason: string;
   readonly word: string;
+  readonly detail: string | null;
+  readonly labelBlocker: string | null;
   readonly blockers: ReadonlyArray<string>;
   readonly caveats: ReadonlyArray<string>;
 };
@@ -23,6 +25,7 @@ export type MergeReadinessFacts = {
   readonly hasConflicts: boolean;
   readonly writeInFlight: string | null;
   readonly commentsNeedYou: number;
+  readonly commentsUnresolved?: number;
   readonly isFixRunLive: boolean;
   readonly host?: ReviewSourceKind;
 };
@@ -73,9 +76,7 @@ const checksBlocker = ({ facts }: { readonly facts: MergeReadinessFacts }): stri
     return 'Checks unknown.';
   }
   if (facts.checks === 'failing') {
-    const count = Math.max(facts.failingChecks.length, 1);
-    const names = facts.failingChecks.length > 0 ? `: ${facts.failingChecks.join(', ')}` : '';
-    return `${plural({ count, one: 'check', many: 'checks' })} failing${names}.`;
+    return `${failingWord({ facts })}.`;
   }
   if (facts.checks === 'pending') {
     return facts.runningChecks > 0
@@ -84,6 +85,15 @@ const checksBlocker = ({ facts }: { readonly facts: MergeReadinessFacts }): stri
   }
   return null;
 };
+
+type FactsParams = {
+  readonly facts: MergeReadinessFacts;
+};
+
+const failingWord = ({ facts }: FactsParams): string =>
+  facts.failingChecks.length > 0
+    ? `Blocked by ${facts.failingChecks.join(', ')}`
+    : 'Blocked by a failing check';
 
 const reviewBlocker = ({ facts }: { readonly facts: MergeReadinessFacts }): string | null => {
   if (facts.review === 'changes_requested') {
@@ -154,8 +164,7 @@ const blockedWord = ({ facts }: { readonly facts: MergeReadinessFacts }): string
     return 'Blocked: checks unknown';
   }
   if (facts.checks === 'failing') {
-    const count = Math.max(facts.failingChecks.length, 1);
-    return `Blocked: ${plural({ count, one: 'check', many: 'checks' })} failing`;
+    return failingWord({ facts });
   }
   if (facts.review === 'changes_requested') {
     return 'Changes requested';
@@ -197,6 +206,43 @@ const toneOf = ({
   return facts.isFixRunLive ? 'info' : 'success';
 };
 
+type RestatesParams = {
+  readonly reason: string;
+  readonly word: string;
+};
+
+const restates = ({ reason, word }: RestatesParams): boolean => {
+  const trimmed = reason.trim();
+  const bare = trimmed.endsWith('.') ? trimmed.slice(0, -1) : trimmed;
+  return bare.toLowerCase() === word.trim().toLowerCase();
+};
+
+const labelBlockerOf = ({ facts }: FactsParams): string | null => {
+  if (facts.phase !== 'open') {
+    return null;
+  }
+  if (facts.hasConflicts) {
+    return 'conflicts';
+  }
+  if (facts.checks === 'failing') {
+    return `${Math.max(facts.failingChecks.length, 1)} failing`;
+  }
+  if (facts.checks === 'unknown') {
+    return 'checks unknown';
+  }
+  if (facts.checks === 'pending') {
+    return 'checks running';
+  }
+  if (facts.review === 'changes_requested') {
+    return 'changes requested';
+  }
+  if (facts.review === 'review_required') {
+    return 'needs review';
+  }
+  const unresolved = facts.commentsUnresolved ?? 0;
+  return unresolved > 0 ? `${unresolved} unresolved` : null;
+};
+
 export const evaluatePrMergeReadiness = ({
   facts,
 }: {
@@ -206,13 +252,22 @@ export const evaluatePrMergeReadiness = ({
   const caveats = caveatsOf({ facts });
   const word = wordOf({ facts });
   const tone = toneOf({ facts, blockers });
+  const labelBlocker = labelBlockerOf({ facts });
+  const shape = ({ reason }: Pick<RestatesParams, 'reason'>) => ({
+    reason,
+    word,
+    detail: restates({ reason, word }) ? null : reason,
+    labelBlocker,
+    blockers,
+    caveats,
+  });
   if (blockers.length > 0) {
-    return { status: 'blocked', tone, reason: blockers[0] ?? word, word, blockers, caveats };
+    return { status: 'blocked', tone, ...shape({ reason: blockers[0] ?? word }) };
   }
   if (facts.pr?.mergeable === null && facts.host !== 'bitbucket') {
-    return { status: 'unknown', tone: 'neutral', reason: UNKNOWN_REASON, word, blockers, caveats };
+    return { status: 'unknown', tone: 'neutral', ...shape({ reason: UNKNOWN_REASON }) };
   }
-  return { status: 'ready', tone, reason: word, word, blockers, caveats };
+  return { status: 'ready', tone, ...shape({ reason: word }) };
 };
 
 export const mergeabilityNoteOf = ({

@@ -114,17 +114,15 @@ describe('the c04 worktree level scenes', () => {
     await mount('c04-worktree-pr-draft');
 
     expect(
-      within(worktreeLayer()).getByRole('button', { name: /^Pull request, #\d+ Draft$/ }),
+      within(worktreeLayer()).getByRole('button', { name: 'Pull request, Draft' }),
     ).toBeDefined();
     expect(document.querySelector('[data-slot="branch-state"]')?.textContent).toBe('Draft');
   });
 
-  it('c04-worktree-no-pr reads None and offers the create form', async () => {
+  it('c04-worktree-no-pr leaves the entry slot empty and offers the create form', async () => {
     await mount('c04-worktree-no-pr');
 
-    expect(
-      within(worktreeLayer()).getByRole('button', { name: 'Pull request, None' }),
-    ).toBeDefined();
+    expect(within(worktreeLayer()).getByRole('button', { name: 'Pull request' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Create pull request' })).toBeDefined();
   });
 

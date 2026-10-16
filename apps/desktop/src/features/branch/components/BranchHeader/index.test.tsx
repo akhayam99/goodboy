@@ -50,6 +50,7 @@ import type { SessionDiff } from '../../../diff/hooks/useSessionDiff';
 import { branchLandingTabOf } from '../../branchLandingTab';
 import type { BranchReviewCounts } from '../../branchPrimary';
 import { useBranchControls } from '../../hooks/useBranchControls';
+import { pullRequestStateWordOf } from '../../pullRequestStateWordOf';
 import { BranchStateChip } from './BranchStateChip';
 import { BranchSwitcher } from './BranchSwitcher';
 import { BranchHeader } from './index';
@@ -316,14 +317,14 @@ describe('BranchHeader state chip', () => {
     'closed',
   ];
 
-  it.each(CASES)('reads the word and the tone of %s from the presentation table', (state) => {
+  it.each(CASES)('reads the tone of %s from the table and its word from the one map', (state) => {
     render(<BranchStateChip state={state} host="github" />);
 
     const chip = document.querySelector<HTMLElement>('[data-slot="branch-state"]');
     const expected = PULL_REQUEST_PRESENTATION[state];
     expect(chip?.getAttribute('data-state')).toBe(state);
     expect(chip?.getAttribute('data-tone')).toBe(expected.tone);
-    expect(chip?.textContent).toBe(state === 'none' ? 'No pull request' : expected.label);
+    expect(chip?.textContent).toBe(pullRequestStateWordOf({ state }) ?? 'No pull request');
   });
 });
 

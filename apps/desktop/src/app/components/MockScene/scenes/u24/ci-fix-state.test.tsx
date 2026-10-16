@@ -59,17 +59,30 @@ const show = ({ name }: Params) => {
   );
 };
 
+const rowWord = (): string | null =>
+  document.querySelector('[data-check-status]')?.textContent ?? null;
+
+const openRowDrawer = () => {
+  const row = document.querySelector<HTMLElement>('[data-check-row] button');
+  if (row === null) {
+    throw new Error('The failing check row is missing');
+  }
+  fireEvent.click(row);
+  return screen.getByRole('region', { name: 'Debugger' });
+};
+
 const nextCard = () => screen.getByRole('region', { name: 'Next' });
 
 describe('CI fix state scenes', () => {
-  it('labels the checks row as fixed and not pushed and offers Push', () => {
+  it('labels the checks row Not pushed and opens the Debugger with Push from the row', () => {
     show({ name: 'checks-fixed-local' });
-    expect(screen.getByText('Fixed, not pushed')).toBeDefined();
-    expect(screen.queryByText('The fix stopped')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Open' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Push' })).toBeDefined();
+    expect(rowWord()).toBe('Not pushed');
+    expect(screen.queryByRole('button', { name: 'Open' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Push' })).toBeNull();
+    const drawer = openRowDrawer();
+    expect(within(drawer).getByRole('button', { name: 'Push' })).toBeDefined();
   });
-  it('pushes from the checks row once and moves the row to re-running', async () => {
+  it('pushes once from the drawer of the row and moves the row to re-running', async () => {
     store.setState({
       refreshSessionPr: async () => undefined,
       loadSessionMounts: async () => [],
@@ -98,14 +111,14 @@ describe('CI fix state scenes', () => {
       }
       return null;
     });
-    const button = screen.getByRole('button', { name: 'Push' });
+    const button = within(openRowDrawer()).getByRole('button', { name: 'Push' });
     fireEvent.click(button);
     fireEvent.click(button);
-    await waitFor(() => expect(screen.getByText('Pushed, re-running')).toBeDefined());
+    await waitFor(() => expect(rowWord()).toBe('Re-running'));
     expect(pushes).toHaveLength(1);
     expect(screen.queryByRole('button', { name: 'Push' })).toBeNull();
   });
-  it('keeps Push on the checks row and reports the error when the push fails', async () => {
+  it('keeps Push in the drawer and reports the error when the push fails', async () => {
     const reportError = vi.fn(async (_params: unknown) => undefined);
     store.setState({
       refreshSessionPr: async () => undefined,
@@ -132,13 +145,13 @@ describe('CI fix state scenes', () => {
       }
       return null;
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Push' }));
+    fireEvent.click(within(openRowDrawer()).getByRole('button', { name: 'Push' }));
     await waitFor(() =>
       expect(reportError).toHaveBeenCalledWith(
         expect.objectContaining({ title: "Couldn't push the branch" }),
       ),
     );
-    expect(screen.getByText('Fixed, not pushed')).toBeDefined();
+    expect(rowWord()).toBe('Not pushed');
     expect(screen.getByRole('button', { name: 'Push' })).toBeDefined();
   });
   it('leads the drawer with the outcome, Push as its one primary and the steps as rows', () => {
@@ -164,7 +177,7 @@ describe('CI fix state scenes', () => {
       );
     }
   });
-  it('shows one Push while the drawer of the check is open, the row gets it back on close', () => {
+  it('shows one Push, in the drawer, and the row carries none once it closes', () => {
     show({ name: 'debugger-drawer-fixed-local' });
     const drawer = screen.getByRole('region', { name: 'Debugger' });
     const pushes = screen.getAllByRole('button', { name: 'Push' });
@@ -173,7 +186,7 @@ describe('CI fix state scenes', () => {
     act(() => {
       store.getState().closeDrawer();
     });
-    expect(screen.getAllByRole('button', { name: 'Push' })).toHaveLength(1);
+    expect(screen.queryAllByRole('button', { name: 'Push' })).toHaveLength(0);
     expect(screen.queryByRole('region', { name: 'Debugger' })).toBeNull();
   });
   it('pushes from the drawer and then reads the three green steps and the check', async () => {

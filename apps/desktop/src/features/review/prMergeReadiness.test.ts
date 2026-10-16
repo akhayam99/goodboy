@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { PullRequestState, SessionId } from '@goodboy/types';
+import { brandId, type PullRequestState, type SessionId } from '@goodboy/types';
 import { pullRequestFacts, type PullRequestFacts } from '../actions/kinds/pullRequestFacts';
 import { evaluatePrMergeReadiness, mergeIsClear, mergeabilityNoteOf } from './prMergeReadiness';
 
@@ -124,16 +124,16 @@ const ROWS: ReadonlyArray<Row> = [
     name: 'one failing check',
     facts: factsOf({ checks: 'failing', failingChecks: ['unit tests'] }),
     status: 'blocked',
-    reason: '1 check failing: unit tests.',
-    word: 'Blocked: 1 check failing',
+    reason: 'Blocked by unit tests.',
+    word: 'Blocked by unit tests',
     isClear: false,
   },
   {
     name: 'two failing checks',
     facts: factsOf({ checks: 'failing', failingChecks: ['unit tests', 'lint'] }),
     status: 'blocked',
-    reason: '2 checks failing: unit tests, lint.',
-    word: 'Blocked: 2 checks failing',
+    reason: 'Blocked by unit tests, lint.',
+    word: 'Blocked by unit tests, lint',
     isClear: false,
   },
   {
@@ -258,7 +258,7 @@ describe('evaluatePrMergeReadiness', () => {
       facts: factsOf({ checks: 'failing', failingChecks: ['unit tests'], commentsNeedYou: 2 }),
     });
 
-    expect(readiness.blockers).toEqual(['1 check failing: unit tests.']);
+    expect(readiness.blockers).toEqual(['Blocked by unit tests.']);
     expect(readiness.caveats).toEqual(['2 comments need you']);
   });
 
@@ -274,9 +274,41 @@ describe('evaluatePrMergeReadiness', () => {
 
     expect(readiness.blockers).toEqual([
       'Conflicts with main. Rebase on main from the Branch header.',
-      '1 check failing: lint.',
+      'Blocked by lint.',
       'Needs an approving review.',
     ]);
+  });
+
+  it('names the failing checks once: the reason that restates the word is no detail', () => {
+    const readiness = evaluatePrMergeReadiness({
+      facts: factsOf({ checks: 'failing', failingChecks: ['lint', 'contract tests'] }),
+    });
+
+    expect(readiness.word).toBe('Blocked by lint, contract tests');
+    expect(readiness.detail).toBeNull();
+    expect(readiness.labelBlocker).toBe('2 failing');
+  });
+
+  it('waits on review, never on checks, when the read worked and no runs reported', () => {
+    const facts = pullRequestFacts({
+      sessionId: brandId<SessionId>({ value: 'session-harborline' }),
+      pr: { ...PR, checks: 'pending', reviewDecision: 'review_required' },
+      checks: [],
+      checksRead: 'ok',
+      comments: [],
+      reviews: [],
+      viewer: null,
+      writeInFlight: null,
+      isScribeWriting: false,
+    });
+
+    expect(evaluatePrMergeReadiness({ facts }).word).toBe('Waiting on review');
+  });
+
+  it('names the unresolved comments on the merge label when nothing else blocks', () => {
+    const readiness = evaluatePrMergeReadiness({ facts: factsOf({ commentsUnresolved: 4 }) });
+
+    expect(readiness.labelBlocker).toBe('4 unresolved');
   });
 
   it('says why a draft cannot merge before it says anything about checks', () => {
@@ -335,7 +367,7 @@ describe('merge readiness on Bitbucket', () => {
     });
 
     expect(readiness.status).toBe('blocked');
-    expect(readiness.blockers).toEqual(['1 check failing: lint.', 'omar-t asked for changes.']);
+    expect(readiness.blockers).toEqual(['Blocked by lint.', 'omar-t asked for changes.']);
   });
 
   it('says a declined pull request was declined, with no Reopen to suggest', () => {

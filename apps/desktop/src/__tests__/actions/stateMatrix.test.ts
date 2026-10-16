@@ -1065,7 +1065,7 @@ const UX5_PR_STATES: ReadonlyArray<
     [
       'pullRequest.openOnGithub secondary',
       'pullRequest.checkLog hover',
-      'pullRequest.merge secondary (Checks are still running.)',
+      'pullRequest.merge secondary (Needs an approving review.)',
       ...PR_OWN_TAIL,
       'pullRequest.convertToDraft menu',
       ...PR_COPIES,
@@ -1078,7 +1078,7 @@ const UX5_PR_STATES: ReadonlyArray<
     [
       'pullRequest.openOnGithub secondary',
       'pullRequest.checkLog hover',
-      'pullRequest.merge secondary (1 check failing: unit tests.)',
+      'pullRequest.merge secondary (Blocked by unit tests.)',
       ...PR_OWN_TAIL,
       'pullRequest.convertToDraft menu',
       ...PR_COPIES,

@@ -1,75 +1,48 @@
-import type { ReactNode } from 'react';
-import type { PrCheckRun, PrDetail, PullRequestState } from '@goodboy/types';
-import {
-  ROW_INTERACTIVE,
-  Tooltip,
-  Button,
-  EmptyState,
-  Eyebrow,
-  FOCUS_RING,
-  Skeleton,
-  StatusDot,
-  cn,
-  type Tone,
-} from '@goodboy/ui';
+import { Fragment, type ReactNode } from 'react';
+import type { PrCheckRun } from '@goodboy/types';
+import { Button, EmptyState, Skeleton, TEXT_ROLE, cn } from '@goodboy/ui';
 import { ExternalLink } from 'lucide-react';
-import { formatDuration } from '../../../../../shared/utils/time/formatDuration';
-import {
-  CONCEPT_ICONS,
-  CONCEPT_TONE,
-  ICON_SIZE,
-} from '../../../../../shared/components/conceptIcons';
-import { CheckConclusionIcon } from './CheckConclusionIcon';
-import { checksGroupsOf, checksRollup, checksWordOf, type ChecksWord } from '../../checksRollup';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { CheckRunRow, type CheckRunRowParts } from './CheckRunRow';
+
+type RenderCheckRowParams = {
+  readonly check: PrCheckRun;
+  readonly renderRow: (parts: CheckRunRowParts) => ReactNode;
+};
+
+export type RenderCheckRow = (params: RenderCheckRowParams) => ReactNode;
+import { checksGroupsOf } from '../../checksRollup';
 
 type Props = {
-  readonly renderCheckActions?: (check: PrCheckRun) => ReactNode;
-  readonly renderCheckHint?: (check: PrCheckRun) => ReactNode;
+  readonly renderCheckRow?: RenderCheckRow;
   readonly checks: ReadonlyArray<PrCheckRun>;
   readonly fallbackUrl: string;
   readonly hostLabel: string;
   readonly isLoading?: boolean;
-  readonly pr?: PullRequestState;
-  readonly detail?: PrDetail | null;
   readonly onOpenUrl: (url: string) => void;
-};
-
-const WORD_TONE: Readonly<Record<ChecksWord, Tone>> = {
-  unknown: 'neutral',
-  none: 'neutral',
-  pending: 'warning',
-  failing: 'danger',
-  passing: 'success',
 };
 
 const SKELETON_ROWS = [0, 1, 2] as const;
 
+const MIN_COUNTED_ROWS = 2;
+
 export const PrChecks = ({
-  renderCheckActions,
-  renderCheckHint,
+  renderCheckRow,
   checks,
   fallbackUrl,
   hostLabel,
   isLoading = false,
-  pr,
-  detail = null,
   onOpenUrl,
 }: Props) => {
   if (isLoading && checks.length === 0) {
     return (
-      <div className="flex flex-col gap-3">
-        <p
-          role="status"
-          className="px-2 text-label text-muted-foreground"
-          data-testid="checks-rollup"
-        >
+      <div className="flex flex-col gap-2 px-2">
+        <span role="status" className="sr-only">
           Reading checks
-        </p>
-        <div className="flex flex-col gap-2 px-2">
-          {SKELETON_ROWS.map((row) => (
-            <Skeleton key={row} className="h-4 w-full" />
-          ))}
-        </div>
+        </span>
+        {SKELETON_ROWS.map((row) => (
+          <Skeleton key={row} className="h-4 w-full" />
+        ))}
       </div>
     );
   }
@@ -77,10 +50,10 @@ export const PrChecks = ({
   if (checks.length === 0) {
     return (
       <EmptyState
-        bordered
+        size="page"
         icon={CONCEPT_ICONS.checks}
-        tone={CONCEPT_TONE.checks}
-        title="No checks have reported on this pull request yet"
+        title="No checks yet"
+        description="No checks have reported on this pull request."
         action={
           <Button variant="ghost" size="sm" onClick={() => onOpenUrl(fallbackUrl)}>
             View on {hostLabel}
@@ -91,53 +64,38 @@ export const PrChecks = ({
     );
   }
 
-  const word = pr === undefined ? null : checksWordOf({ pr, detail });
-
   return (
-    <div className="flex flex-col gap-4">
-      <p
-        className="flex items-center gap-2 px-2 text-label text-muted-foreground"
-        data-testid="checks-rollup"
-      >
-        {word === null ? null : <StatusDot tone={WORD_TONE[word]} size="sm" />}
-        {checksRollup({ checks })}
-      </p>
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_max-content_max-content] gap-x-3 gap-y-4">
       {checksGroupsOf({ checks }).map((entry) => (
-        <div key={entry.group} className="flex flex-col gap-1">
-          <Eyebrow className="px-2" label={entry.label} />
-          <ul aria-label={`${entry.label} checks`} className="flex flex-col gap-0.5">
+        <section key={entry.group} className="col-span-full grid grid-cols-subgrid">
+          <h3 className="col-span-full flex h-7 items-center gap-2 px-2 text-row">
+            <span className={TEXT_ROLE.secondary}>{entry.label}</span>
+            {entry.runs.length < MIN_COUNTED_ROWS ? null : (
+              <span className={cn('tabular-nums', TEXT_ROLE.hint)}>{entry.runs.length}</span>
+            )}
+          </h3>
+          <ul
+            aria-label={`${entry.label} checks`}
+            className="col-span-full grid grid-cols-subgrid gap-y-0.5"
+          >
             {entry.runs.map((check, index) => (
-              <li key={`${check.name}-${index}`} className="flex flex-col gap-1">
-                <div className="flex items-center gap-2">
-                  <Tooltip
-                    content={check.detailsUrl ?? check.name}
-                    anchorClassName="min-w-0 flex-1"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => onOpenUrl(check.detailsUrl ?? fallbackUrl)}
-                      className={cn(
-                        'flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-body transition-colors',
-                        ROW_INTERACTIVE,
-                        FOCUS_RING,
-                      )}
-                    >
-                      <CheckConclusionIcon conclusion={check.conclusion} />
-                      <span className="min-w-0 flex-1 truncate text-foreground">{check.name}</span>
-                      <span className="w-14 shrink-0 text-right text-label tabular-nums text-faint-foreground">
-                        {check.durationMs === null
-                          ? ''
-                          : formatDuration({ durationMs: check.durationMs })}
-                      </span>
-                    </button>
-                  </Tooltip>
-                  {renderCheckActions?.(check)}
-                </div>
-                {renderCheckHint?.(check)}
-              </li>
+              <Fragment key={`${check.name}-${index}`}>
+                {renderCheckRow === undefined ? (
+                  <CheckRunRow
+                    check={check}
+                    tooltip={check.detailsUrl ?? check.name}
+                    onOpen={() => onOpenUrl(check.detailsUrl ?? fallbackUrl)}
+                  />
+                ) : (
+                  renderCheckRow({
+                    check,
+                    renderRow: (parts) => <CheckRunRow check={check} {...parts} />,
+                  })
+                )}
+              </Fragment>
             ))}
           </ul>
-        </div>
+        </section>
       ))}
     </div>
   );

@@ -8,8 +8,6 @@ type ChecksGroupRuns = {
   readonly runs: ReadonlyArray<PrCheckRun>;
 };
 
-export type ChecksWord = 'unknown' | 'none' | 'pending' | 'failing' | 'passing';
-
 const GROUP_ORDER: ReadonlyArray<ChecksGroup> = ['failing', 'running', 'passed', 'skipped'];
 
 const GROUP_LABEL: Readonly<Record<ChecksGroup, string>> = {
@@ -18,8 +16,6 @@ const GROUP_LABEL: Readonly<Record<ChecksGroup, string>> = {
   passed: 'Passed',
   skipped: 'Skipped',
 };
-
-const ROLLUP_SEPARATOR = ' · ';
 
 type GroupParams = {
   readonly conclusion: PrCheckConclusion;
@@ -62,34 +58,54 @@ export const checksGroupsOf = ({ checks }: Params): ReadonlyArray<ChecksGroupRun
 export const checksRollup = ({ checks }: Params): string =>
   checksGroupsOf({ checks })
     .map((entry) => `${entry.runs.length} ${entry.label.toLowerCase()}`)
-    .join(ROLLUP_SEPARATOR);
+    .join(' · ');
 
-type WordParams = {
+export type ChecksCounts = {
+  readonly failing: number;
+  readonly running: number;
+  readonly passed: number;
+};
+
+export const checksCountsOf = ({ checks }: Params): ChecksCounts => {
+  const sizeOf = (group: ChecksGroup): number =>
+    checks.filter((check) => groupOf({ conclusion: check.conclusion }) === group).length;
+  return {
+    failing: sizeOf('failing'),
+    running: sizeOf('running'),
+    passed: sizeOf('passed') + sizeOf('skipped'),
+  };
+};
+
+type RunsParams = {
   readonly pr: PullRequestState | null;
   readonly detail: PrDetail | null;
 };
 
-export const checksWordOf = ({ pr, detail }: WordParams): ChecksWord => {
-  if (pr === null) {
-    return 'none';
+export const checksRunsOf = ({ pr, detail }: RunsParams): ReadonlyArray<PrCheckRun> | null => {
+  if (pr === null || pr.checksUnknown === true) {
+    return null;
   }
   const matched = detail !== null && detail.prNumber === pr.number ? detail : null;
-  const read = matched?.checksRead ?? 'ok';
-  if (pr.checksUnknown === true || read !== 'ok') {
-    return 'unknown';
+  if (matched === null || (matched.checksRead ?? 'ok') !== 'ok') {
+    return null;
   }
-  if (matched !== null && matched.checks.length > 0) {
-    const groups = checksGroupsOf({ checks: matched.checks }).map((entry) => entry.group);
-    if (groups.includes('failing')) {
-      return 'failing';
-    }
-    return groups.includes('running') ? 'pending' : 'passing';
+  return matched.checks;
+};
+
+type WordParams = {
+  readonly runs: ReadonlyArray<PrCheckRun> | null;
+};
+
+export const checksWordOf = ({ runs }: WordParams): string | null => {
+  if (runs === null || runs.length === 0) {
+    return null;
   }
-  if (pr.checks === 'failure') {
-    return 'failing';
+  const counts = checksCountsOf({ checks: runs });
+  if (counts.failing > 0) {
+    return `${counts.failing} failing`;
   }
-  if (pr.checks === 'pending') {
-    return 'pending';
+  if (counts.running > 0) {
+    return `${counts.running} running`;
   }
-  return pr.checks === 'success' ? 'passing' : 'none';
+  return counts.passed > 0 ? `${counts.passed} passed` : null;
 };

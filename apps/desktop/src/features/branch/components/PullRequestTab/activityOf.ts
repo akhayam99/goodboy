@@ -1,4 +1,5 @@
 import type { PrCheckRun, PrDetail, PullRequestView } from '@goodboy/types';
+import { checksCountsOf, checksWordOf } from '../../../integrations/github/checksRollup';
 import { openReviewThreadIds } from '../../../../store/slices/resolve/openReviewThreadIds';
 import type { PullRequestEdit } from '../../../../store/slices/pull-request-view/state';
 
@@ -56,6 +57,7 @@ export type ActivityItem =
 type Params = {
   readonly view: PullRequestView;
   readonly detail: PrDetail | null;
+  readonly runs: ReadonlyArray<PrCheckRun> | null;
   readonly needYou: number;
   readonly edits: ReadonlyArray<PullRequestEdit>;
 };
@@ -64,15 +66,16 @@ const SHORT_SHA = 7;
 
 const dayOf = ({ iso }: { readonly iso: string }): string => iso.slice(0, 10);
 
-const plural = ({
-  count,
-  one,
-  many,
+const handleOf = ({
+  view,
+  author,
 }: {
-  readonly count: number;
-  readonly one: string;
-  readonly many: string;
-}): string => `${count} ${count === 1 ? one : many}`;
+  readonly view: PullRequestView;
+  readonly author: string | null;
+}): string | null =>
+  view.author !== null && author !== null && author === view.author.name
+    ? view.author.login
+    : author;
 
 const pushesOf = ({ view }: { readonly view: PullRequestView }): ReadonlyArray<ActivityItem> => {
   const groups = new Map<string, { who: string | null; count: number; at: string; sha: string }>();
@@ -84,7 +87,7 @@ const pushesOf = ({ view }: { readonly view: PullRequestView }): ReadonlyArray<A
     const group = groups.get(key);
     if (group === undefined) {
       groups.set(key, {
-        who: commit.author,
+        who: handleOf({ view, author: commit.author }),
         count: 1,
         at: commit.committedAt,
         sha: commit.sha,
@@ -155,30 +158,26 @@ const commentsOf = ({
   ];
 };
 
-const FAILED: ReadonlySet<PrCheckRun['conclusion']> = new Set(['failure', 'timed_out']);
-
-const checksOf = ({ view }: { readonly view: PullRequestView }): ReadonlyArray<ActivityItem> => {
-  const { runs, read } = view.checks;
-  if (read !== 'ok' || runs.length === 0) {
+const checksOf = ({
+  view,
+  runs,
+}: {
+  readonly view: PullRequestView;
+  readonly runs: ReadonlyArray<PrCheckRun> | null;
+}): ReadonlyArray<ActivityItem> => {
+  const word = checksWordOf({ runs });
+  if (runs === null || word === null) {
     return [];
   }
-  const failing = runs.filter((run) => FAILED.has(run.conclusion)).length;
-  const running = runs.filter((run) => run.conclusion === 'pending').length;
-  const passed = runs.filter((run) => run.conclusion === 'success').length;
-  const text =
-    failing > 0
-      ? `${plural({ count: failing, one: 'check', many: 'checks' })} failing, ${passed} passed`
-      : running > 0
-        ? `${plural({ count: passed, one: 'check', many: 'checks' })} passed, ${running} running`
-        : `All ${runs.length} passed`;
+  const counts = checksCountsOf({ checks: runs });
   return [
     {
       kind: 'checks',
       key: 'checks',
       at: view.updatedAt,
-      text,
-      isRunning: running > 0 && failing === 0,
-      isFailing: failing > 0,
+      text: `Checks ${word}`,
+      isRunning: counts.running > 0 && counts.failing === 0,
+      isFailing: counts.failing > 0,
     },
   ];
 };
@@ -196,6 +195,7 @@ const endOf = ({ view }: { readonly view: PullRequestView }): ReadonlyArray<Acti
 export const pullRequestActivityOf = ({
   view,
   detail,
+  runs,
   needYou,
   edits,
 }: Params): ReadonlyArray<ActivityItem> => {
@@ -210,7 +210,7 @@ export const pullRequestActivityOf = ({
     ...pushesOf({ view }),
     ...reviewsOf({ detail }),
     ...commentsOf({ detail, needYou }),
-    ...checksOf({ view }),
+    ...checksOf({ view, runs }),
     ...edits.map((edit, index): ActivityItem => ({
       kind: 'edit',
       key: `edit:${index}:${edit.at}`,

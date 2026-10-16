@@ -53,7 +53,11 @@ describe('checks analysis scenes', () => {
   it('opens the analysis beside the page and preserves its selected agent', async () => {
     const store = await importStore();
     const { container } = show({ name: 'branch-checks-analyzing' });
-    fireEvent.click(screen.getByRole('button', { name: 'Open' }));
+    const row = document.querySelector<HTMLElement>('[data-check-row] button');
+    if (row === null) {
+      throw new Error('The failing check row is missing');
+    }
+    fireEvent.click(row);
     const drawer = screen.getByRole('region', { name: 'Debugger' });
     expect(
       screen.getByRole('complementary', { name: 'Side panel' }).getAttribute('data-drawer-sizing'),

@@ -120,8 +120,17 @@ const show = () =>
   render(
     <ToastProvider>
       <BranchChecks sessionId={seed.sessionId} />
+      <CheckAnalysisDrawer
+        sessionId={seed.sessionId}
+        mountId={seed.repo.mountId}
+        checkUrl={seed.check.detailsUrl ?? ''}
+        onClose={() => undefined}
+      />
     </ToastProvider>,
   );
+
+const rowWord = (): string | null =>
+  document.querySelector('[data-check-status]')?.textContent ?? null;
 
 const fixers = () =>
   (store.getState().sessionPhaseRuns[seed.sessionId] ?? []).filter(
@@ -179,7 +188,7 @@ describe('Start fix with the real store and SQLite', () => {
         },
       }),
     );
-    expect(screen.getByText('Implementer is fixing')).toBeDefined();
+    expect(rowWord()).toBe('Fixing');
     expect(screen.queryByRole('button', { name: 'Start fix' })).toBeNull();
     storySpies.listBranchCommits.mockResolvedValue([
       {
@@ -229,8 +238,7 @@ describe('Start fix with the real store and SQLite', () => {
         },
       }),
     );
-    await waitFor(() => expect(screen.getByText('Fixed, not pushed')).toBeDefined());
-    expect(screen.queryByText('The fix stopped')).toBeNull();
+    await waitFor(() => expect(rowWord()).toBe('Not pushed'));
     expect(store.getState().checkFixCommits[child.id]).toMatchObject({
       kind: 'found',
       sha: '9e4c1a7',
@@ -254,7 +262,7 @@ describe('Start fix with the real store and SQLite', () => {
         fixAgentId: child.id,
       }),
     );
-    expect(screen.getByText('Pushed, re-running')).toBeDefined();
+    expect(rowWord()).toBe('Re-running');
   });
   it.each([
     {
@@ -452,7 +460,7 @@ describe('Start fix with the real store and SQLite', () => {
     expect(spawn).toHaveBeenCalledTimes(1);
     expect(fixers().length).toBe(1);
     show();
-    expect(screen.getByText('Implementer is fixing')).toBeDefined();
+    expect(rowWord()).toBe('Fixing');
   });
   it('refuses when there is no proposal and spawns nothing', async () => {
     seed = checksAnalyzeSeed({ phase: 'no-fix' });

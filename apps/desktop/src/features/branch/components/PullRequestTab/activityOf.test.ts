@@ -75,7 +75,13 @@ const kinds = (items: ReadonlyArray<{ readonly kind: string }>): ReadonlyArray<s
 
 describe('pullRequestActivityOf', () => {
   it('opens the list with the author and groups the pushes by day', () => {
-    const items = pullRequestActivityOf({ view: VIEW, detail: null, needYou: 0, edits: [] });
+    const items = pullRequestActivityOf({
+      view: VIEW,
+      detail: null,
+      runs: null,
+      needYou: 0,
+      edits: [],
+    });
 
     expect(kinds(items)).toEqual(['opened', 'push', 'push']);
     expect(items[0]).toMatchObject({ kind: 'opened', who: 'nadia-p', isDraft: false });
@@ -106,6 +112,7 @@ describe('pullRequestActivityOf', () => {
           },
         ],
       }),
+      runs: null,
       needYou: 0,
       edits: [],
     });
@@ -132,6 +139,7 @@ describe('pullRequestActivityOf', () => {
           { ...base, id: 'd', author: 'd', state: 'commented', body: 'Nice' },
         ],
       }),
+      runs: null,
       needYou: 0,
       edits: [],
     });
@@ -150,6 +158,7 @@ describe('pullRequestActivityOf', () => {
           comment({ id: 'issue-4', source: 'issue', threadId: undefined }),
         ],
       }),
+      runs: null,
       needYou: 1,
       edits: [],
     });
@@ -162,6 +171,7 @@ describe('pullRequestActivityOf', () => {
     const items = pullRequestActivityOf({
       view: VIEW,
       detail: detail({ comments: [comment({ source: 'issue', threadId: undefined })] }),
+      runs: null,
       needYou: 0,
       edits: [],
     });
@@ -180,17 +190,18 @@ describe('pullRequestActivityOf', () => {
       pullRequestActivityOf({
         view: { ...VIEW, checks: { read: 'ok', error: null, runs } },
         detail: null,
+        runs,
         needYou: 0,
         edits: [],
       }).find((item) => item.kind === 'checks');
 
-    expect(line([run('success'), run('success')])).toMatchObject({ text: 'All 2 passed' });
+    expect(line([run('success'), run('success')])).toMatchObject({ text: 'Checks 2 passed' });
     expect(line([run('success'), run('pending')])).toMatchObject({
-      text: '1 check passed, 1 running',
+      text: 'Checks 1 running',
       isRunning: true,
     });
     expect(line([run('success'), run('failure')])).toMatchObject({
-      text: '1 check failing, 1 passed',
+      text: 'Checks 1 failing',
       isFailing: true,
     });
     expect(line([])).toBeUndefined();
@@ -200,6 +211,7 @@ describe('pullRequestActivityOf', () => {
     const items = pullRequestActivityOf({
       view: { ...VIEW, state: 'merged', mergedAt: '2026-10-07T08:00:00Z' },
       detail: null,
+      runs: null,
       needYou: 0,
       edits: [{ what: 'description', at: '2026-10-07T07:00:00Z' as IsoDateTime }],
     });
@@ -212,6 +224,7 @@ describe('pullRequestActivityOf', () => {
     const items = pullRequestActivityOf({
       view: { ...VIEW, state: 'closed' },
       detail: null,
+      runs: null,
       needYou: 0,
       edits: [],
     });
