@@ -2,8 +2,8 @@ import { useMemo } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
-import { usePageSummaries } from '../../../session/hooks/usePageSummaries';
-import type { PageSummaries } from '../../../session/pageCountWord';
+import { usePageCountFacts } from '../../../session/hooks/usePageCountFacts';
+import type { PageCountFacts } from '../../../session/pageCountWord';
 import { columnPagesOf, pagesOf, type Page } from '../../../session/pageRegistry';
 
 type Params = {
@@ -12,7 +12,7 @@ type Params = {
 
 export type CardPages = {
   readonly pages: ReadonlyArray<Page>;
-  readonly summaries: PageSummaries;
+  readonly facts: PageCountFacts;
 };
 
 const QUESTION_DESTINATION = [{ lens: 'questions', shortcut: 'lens.questions' }] as const;
@@ -22,8 +22,8 @@ export const useCardPages = ({ session }: Params): CardPages => {
   const isBranchless = useAppStore((state) =>
     isBranchlessSession({ branch: state.sessionBranches[sessionId] }),
   );
-  const summaries = usePageSummaries({ session });
-  const hasOpenQuestions = summaries.questions !== undefined;
+  const facts = usePageCountFacts({ session });
+  const hasOpenQuestions = facts.openQuestions > 0;
   const pages = useMemo(
     () => [
       ...columnPagesOf({ isBranchless }),
@@ -35,5 +35,5 @@ export const useCardPages = ({ session }: Params): CardPages => {
     ],
     [hasOpenQuestions, isBranchless],
   );
-  return { pages, summaries };
+  return { pages, facts };
 };

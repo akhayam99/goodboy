@@ -91,6 +91,17 @@ const addSecondBranch = ({ sessionId }: Ctx): void => {
 const currentSigns = (): ReadonlyArray<Element> =>
   Array.from(sessionsList().querySelectorAll('[aria-current="page"]'));
 
+const sessionLevel = (): HTMLElement => {
+  const level = document.querySelector<HTMLElement>('[data-level-layer="session"]:not([inert])');
+  if (level === null) {
+    throw new Error('the sidebar is not on a session level');
+  }
+  return level;
+};
+
+const levelSigns = (): ReadonlyArray<Element> =>
+  Array.from(sessionLevel().querySelectorAll('[aria-current="page"]'));
+
 const otherSessionId = (current: SessionId): string => {
   const last = rowIds()
     .filter((id) => id !== current)
@@ -109,39 +120,40 @@ let otherId = '';
 
 export const SIDEBAR_NAV_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'sidebar: Scripts open, the session row carries the only current sign',
-    covers: ['navigate', 'sidebar:current-sign'],
-    open: async () => openCrumb(/^Scripts/),
+    name: 'sidebar: the back row shows the workspace level with the session row selected',
+    covers: ['leaveSessionLevel', 'sidebar:back-row', 'sidebar:current-sign'],
+    open: async () => {
+      await click(within(sessionLevel()).getByRole('button', { name: 'Back to Sessions' }));
+    },
     lands: async (ctx) => {
-      await heading('Scripts');
       await waitFor(() => {
         const signs = currentSigns();
         expect(signs).toHaveLength(1);
         expect(signs[0]).toBe(rowOf(ctx.sessionId));
       }, WAIT);
+      expect(useAppStore.getState().currentSessionId).toBe(ctx.sessionId);
+      expect(document.querySelector('[data-level-layer="session"]:not([inert])')).toBeNull();
     },
   },
   {
-    name: 'sidebar: on a page the card marks that page and no other row',
+    name: 'sidebar: on a page the session level marks that page and no other row',
     covers: ['navigate', 'sidebar:current-sign'],
     open: async () => openCrumb(/^Agents/),
-    lands: async (ctx) => {
+    lands: async () => {
       await heading('Agents');
       await waitFor(() => {
-        const signs = currentSigns();
+        const signs = levelSigns();
         expect(signs).toHaveLength(1);
         expect(signs[0]?.textContent ?? '').toMatch(/^Agents/);
-        expect(rowOf(ctx.sessionId).getAttribute('aria-current')).toBeNull();
       }, WAIT);
     },
   },
   {
-    name: 'crumb: on the Branch page the Session crumb opens the Pages menu and Runs lands',
-    covers: ['navigate', 'trail:session-crumb-pages'],
+    name: 'sidebar: from the Branch page the Runs entry lands',
+    covers: ['navigate', 'sidebar:session-pages'],
     open: async () => {
       await openCrumb(/^Branch/);
-      await click(await screen.findByRole('button', { name: /^Switch page: / }, WAIT));
-      await click(await screen.findByRole('menuitemradio', { name: /^Runs/ }, WAIT));
+      await openCrumb(/^Runs/);
     },
     lands: async (ctx) => {
       await heading('Runs');
@@ -152,8 +164,8 @@ export const SIDEBAR_NAV_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'sidebar: two branches, switching from the sidebar moves the page and the crumb to the landing tab',
-    covers: ['navigate', 'sidebar:branch-rows'],
+    name: 'sidebar: two worktrees, the second one opens its Branch page on the landing tab',
+    covers: ['navigate', 'sidebar:worktree-rows'],
     open: async (ctx) => {
       addSecondBranch(ctx);
       await openCrumb(/^Branch/);
@@ -162,9 +174,8 @@ export const SIDEBAR_NAV_ROWS: ReadonlyArray<Row> = [
         () => expect(useAppStore.getState().branchTab[ctx.sessionId]).toBe('commits'),
         WAIT,
       );
-      const rows = within(await screen.findByRole('list', { name: 'Branches' }, WAIT));
-      expect(rows.getAllByRole('button').length).toBeGreaterThanOrEqual(2);
-      await click(rows.getByRole('button', { name: new RegExp(SECOND_BRANCH) }));
+      const projects = within(within(sessionLevel()).getByRole('group', { name: 'Projects' }));
+      await click(projects.getByRole('button', { name: new RegExp(SECOND_BRANCH) }));
       await settle(8);
     },
     lands: async (ctx) => {
@@ -177,46 +188,39 @@ export const SIDEBAR_NAV_ROWS: ReadonlyArray<Row> = [
         branchLandingTabOf({ hasPullRequest: false, deepLink: null }),
       );
       expect(state.branchThreadId[ctx.sessionId] ?? null).toBeNull();
-      await screen.findByRole('button', { name: `Branch ${SECOND_BRANCH}` }, WAIT);
-      const rows = within(await screen.findByRole('list', { name: 'Branches' }, WAIT));
       await waitFor(() => {
-        const current = rows
-          .getAllByRole('button')
-          .filter((row) => row.getAttribute('aria-current') === 'true');
-        expect(current).toHaveLength(1);
-        expect(current[0]?.getAttribute('aria-label') ?? '').toContain(SECOND_BRANCH);
+        const signs = levelSigns();
+        expect(signs).toHaveLength(1);
+        expect(signs[0]?.textContent ?? '').toContain(SECOND_BRANCH);
       }, WAIT);
     },
   },
   {
-    name: 'rail: with the sidebar collapsed, hovering the session button lists the pages and Runs lands',
-    covers: ['navigate', 'rail:session-flyout'],
+    name: 'rail: with the sidebar folded, the session level icons open Runs',
+    covers: ['navigate', 'rail:session-level'],
     open: async () => {
       await clickButton(/^Hide sidebar/);
-      const button = await waitFor(() => {
-        const found = document.querySelector<HTMLElement>('[data-rail-session]');
-        expect(found).not.toBeNull();
+      const rail = await waitFor(() => {
+        const found = document.querySelector<HTMLElement>('[data-column-rail]');
+        expect(found?.getAttribute('data-sidebar-level')).toBe('session');
         return found as HTMLElement;
       }, WAIT);
-      fireEvent.mouseEnter(button);
-      const card = await screen.findByRole('dialog', { name: 'Session pages' }, WAIT);
-      await click(within(card).getByRole('button', { name: /^Runs/ }));
+      await click(within(rail).getByRole('button', { name: /^Runs/ }));
     },
     lands: async (ctx) => {
       await heading('Runs');
       expect(useAppStore.getState().activeLens[ctx.sessionId] ?? null).toBe('workflows');
-      expect(screen.queryByRole('dialog', { name: 'Session pages' })).toBeNull();
     },
   },
   {
-    name: 'pins: pin from the header menu, Move down from the row menu, and the order survives a reload',
+    name: 'pins: pin from the identity menu, Move down from the row menu, and the order survives a reload',
     covers: ['pin:header-toggle', 'row menu: Move down'],
     open: async (ctx) => {
       otherId = otherSessionId(ctx.sessionId);
-      const titleRow = document.querySelector<HTMLElement>('[data-slot="pane-title-row"]');
-      expect(titleRow).not.toBeNull();
+      const identity = sessionLevel().querySelector<HTMLElement>('[data-level-identity]');
+      expect(identity).not.toBeNull();
       await click(
-        within(titleRow as HTMLElement).getByRole('button', { name: 'More session actions' }),
+        within(identity as HTMLElement).getByRole('button', { name: 'More session actions' }),
       );
       await click(await screen.findByRole('menuitem', { name: 'Pin session' }, WAIT));
       await waitFor(() => expect(pinnedIds()).toEqual([ctx.sessionId]), WAIT);

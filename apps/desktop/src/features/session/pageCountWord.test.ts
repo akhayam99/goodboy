@@ -2,16 +2,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   COUNTED_PAGE_IDS,
-  isRunningWord,
   pageCountWordOf,
   type CountedPageId,
   type PageCountFacts,
 } from './pageCountWord';
 
 const QUIET: PageCountFacts = {
-  waiting: 0,
-  mounts: 1,
-  branchName: null,
   runs: 0,
   runningRuns: 0,
   agents: 0,
@@ -26,21 +22,6 @@ const wordOf = (page: CountedPageId, facts: Partial<PageCountFacts>): string | n
 describe('pageCountWordOf', () => {
   it.each(COUNTED_PAGE_IDS)('is empty on %s when there is nothing to count', (page) => {
     expect(wordOf(page, {})).toBeNull();
-  });
-
-  it.each([
-    [{ waiting: 5 }, '5 need you'],
-    [{ waiting: 1 }, '1 need you'],
-    [{ waiting: 5, mounts: 3 }, '3 branches'],
-    [{ mounts: 3 }, '3 branches'],
-    [{ mounts: 2 }, '2 branches'],
-    [{ mounts: 1 }, null],
-    [{ mounts: 1, branchName: 'ak/fix-ledger-sync' }, 'ak/fix-ledger-sync'],
-    [{ mounts: 3, branchName: null }, '3 branches'],
-    [{ mounts: 4, branchName: 'ak/fix-ledger-sync' }, '4 branches'],
-    [{ waiting: 2, mounts: 1, branchName: 'ak/fix-ledger-sync' }, '2 need you'],
-  ])('reads Branch for %j as %s', (facts, expected) => {
-    expect(wordOf('branch', facts)).toBe(expected);
   });
 
   it.each([
@@ -74,9 +55,6 @@ describe('pageCountWordOf', () => {
 
   it('puts the noun last and never a bare number', () => {
     const everything: PageCountFacts = {
-      waiting: 0,
-      mounts: 4,
-      branchName: null,
       runs: 4,
       runningRuns: 0,
       agents: 3,
@@ -87,12 +65,5 @@ describe('pageCountWordOf', () => {
     for (const page of COUNTED_PAGE_IDS) {
       expect(pageCountWordOf({ page, facts: everything })).toMatch(/^\d+ [a-z]+$/);
     }
-  });
-});
-
-describe('isRunningWord', () => {
-  it('tells a running word from a count', () => {
-    expect(isRunningWord({ word: '2 running' })).toBe(true);
-    expect(isRunningWord({ word: '4 runs' })).toBe(false);
   });
 });

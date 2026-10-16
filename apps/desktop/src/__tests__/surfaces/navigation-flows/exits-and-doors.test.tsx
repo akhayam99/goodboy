@@ -165,7 +165,7 @@ describe('the Board door leaves an open studio for the board', () => {
       if (door.kind === 'settings') {
         await click(screen.getByRole('button', { name: /^Back to app/ }));
       }
-      await clickButton(/^Board/);
+      await clickButton(/^Sessions/);
 
       expect(appStudioKind()).toBeNull();
       expect(useAppStore.getState().currentSessionId).toBeNull();
@@ -253,9 +253,9 @@ describe('exactly one door in the frame is marked current', () => {
   it('marks Board once the board is shown', async () => {
     await boot({ seed: 'pr' });
 
-    await clickButton(/^Board/);
+    await clickButton(/^Sessions/);
 
-    expect(currentMarks()).toEqual(['Board']);
+    expect(currentMarks()).toEqual(['Sessions']);
   });
 });
 
@@ -263,7 +263,7 @@ const WAY_BACK = /^(Close\b(?! branch)|Back to )/i;
 
 const waysBack = (): ReadonlyArray<HTMLElement> =>
   Array.from(document.querySelectorAll<HTMLElement>('button'))
-    .filter((button) => button.closest('[data-nav-cluster], [inert]') === null)
+    .filter((button) => button.closest('[data-nav-cluster], [inert], [data-level-back]') === null)
     .filter((button) =>
       WAY_BACK.test(button.getAttribute('aria-label') ?? button.textContent?.trim() ?? ''),
     );

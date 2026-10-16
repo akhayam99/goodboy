@@ -155,7 +155,7 @@ describe('the session marks scene', () => {
 
     const title = await screen.findByRole('heading', {
       level: 1,
-      name: 'Refactor the CSV mapper',
+      name: 'Overview',
     });
     expect(title).toBeDefined();
     expect(screen.queryByRole('status', { name: 'Loading session overview' })).toBeNull();

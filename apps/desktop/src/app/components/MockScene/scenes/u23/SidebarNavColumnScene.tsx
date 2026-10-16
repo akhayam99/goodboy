@@ -32,6 +32,7 @@ type Props = {
   readonly place?: ColumnPlace;
   readonly isFramed?: boolean;
   readonly onSeeded?: () => void;
+  readonly isSessionLevel?: boolean;
 };
 
 export const SidebarNavColumnScene = ({
@@ -39,6 +40,7 @@ export const SidebarNavColumnScene = ({
   place = null,
   isFramed = false,
   onSeeded,
+  isSessionLevel = false,
 }: Props) => {
   const [seed, setSeed] = useState<SidebarNavSeed | null>(null);
   useEffect(() => {
@@ -49,9 +51,12 @@ export const SidebarNavColumnScene = ({
         currentSessionId: null,
       });
     }
+    if (place === null && !isSessionLevel) {
+      useAppStore.getState().leaveSessionLevel();
+    }
     onSeeded?.();
     setSeed(next);
-  }, [config, place, onSeeded]);
+  }, [config, place, onSeeded, isSessionLevel]);
   if (seed === null) {
     return null;
   }

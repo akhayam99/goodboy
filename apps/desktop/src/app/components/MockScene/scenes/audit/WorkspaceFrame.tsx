@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { AppShell } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { AppTopBar } from '../../../AppTopBar';
@@ -17,9 +17,15 @@ const noop = () => undefined;
 type Props = {
   readonly session: Session;
   readonly main?: ReactNode;
+  readonly level?: 'workspace' | 'session';
 };
 
-export const WorkspaceFrame = ({ session, main }: Props) => {
+export const WorkspaceFrame = ({ session, main, level = 'session' }: Props) => {
+  useEffect(() => {
+    if (level === 'workspace') {
+      useAppStore.getState().leaveSessionLevel();
+    }
+  }, [level]);
   const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
   const drawerSizing = useAppStore(selectDrawerSizing);
   const arrangement = shellArrangement({

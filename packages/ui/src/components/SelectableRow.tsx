@@ -9,6 +9,7 @@ export type SelectableRowProps = {
   readonly children: ReactNode;
   readonly onClick?: () => void;
   readonly ariaCurrent?: AriaAttributes['aria-current'];
+  readonly ariaLabel?: string;
   readonly title?: string;
   readonly id?: string;
   readonly role?: 'option';
@@ -28,6 +29,7 @@ export const SelectableRow = ({
   children,
   onClick,
   ariaCurrent,
+  ariaLabel,
   title,
   id,
   role,
@@ -42,6 +44,7 @@ export const SelectableRow = ({
         id={id}
         data-selected={selected}
         aria-current={ariaCurrent}
+        aria-label={ariaLabel}
         role={role}
         aria-selected={ariaSelected}
         tabIndex={tabIndex}

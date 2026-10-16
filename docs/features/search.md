@@ -4,7 +4,7 @@ Find any session, message, plan or action, and reach it from the keyboard. One s
 
 ### Sidebar
 
-Every place you go sits in one sidebar on the left: **Board**, **Tasks**, **Chat** and **Terminal** (each with a **+** to start one), **Workflows**, then your sessions with **New session** as their first row, and **Settings**. **⌘B** folds it into a slim bar of icons that keeps every door.
+Every place you go sits in one sidebar on the left: **New session**, then **Sessions**, **Tasks**, **Chat** and **Terminal** (each with a **+** to start one) and **Workflows**, then your pinned and recent sessions, and **Settings**. Click a session and the sidebar steps into it: **‹ Sessions** at the top takes you back, the session's name and its menu sit under it, then its pages (**Overview**, **Runs**, **Agents**, **Artifacts**, and **Questions** while one waits) with their counts, its projects and branches, and the work linked to it. **⌘B** folds it into a slim bar of icons for the level you are on. **Monitoring** is the pulse icon in the top bar.
 
 ### Go anywhere
 

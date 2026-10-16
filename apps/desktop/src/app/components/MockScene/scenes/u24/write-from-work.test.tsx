@@ -11,7 +11,7 @@ vi.mock('@goodboy/db', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -51,10 +51,8 @@ describe('write from work scenes', () => {
       await screen.findByText('Write the title and goal from HL-204 and HL-211?'),
     ).toBeDefined();
     expect(screen.getByRole('button', { name: 'Write' })).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'More session actions' }));
-    expect(screen.getAllByRole('menuitem').length).toBeGreaterThanOrEqual(2);
     expect(
-      screen.getByRole('menuitem', { name: 'Write title and goal from linked work' }),
+      screen.getByRole('button', { name: 'Write title and goal from linked work' }),
     ).toBeDefined();
   });
   it('shows an editable proposal and the model cost', async () => {

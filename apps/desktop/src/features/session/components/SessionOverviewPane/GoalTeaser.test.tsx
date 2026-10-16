@@ -25,7 +25,7 @@ import { ToastProvider } from '../../../../shared/components/Toast';
 import { GoalTab } from '../ContextDrawer/GoalTab';
 import { bindTarget, runObjectAction } from '../../../actions/registry';
 import type { ActionEnv } from '../../../actions/types';
-import { SessionHeaderMenu } from './SessionHeaderMenu';
+import { OverviewPageActions } from './OverviewPageActions';
 
 let store: StoryStore;
 const session = aSession({ goal: 'Untitled session' });
@@ -360,18 +360,16 @@ describe('GoalTeaser on the real store', () => {
     await ready();
     expect(screen.getByText('Based on the first five linked issues.')).toBeDefined();
   });
-  it('shows the action in the header menu with at least two rows', () => {
+  it('shows the action as a word in the Overview header when it is the only one', () => {
     store.setState({ sessionExternalTasks: { [session.id]: TASKS } });
     render(
       <ToastProvider>
-        <SessionHeaderMenu session={session} onDelete={vi.fn()} />
+        <OverviewPageActions session={session} />
       </ToastProvider>,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'More session actions' }));
     expect(
-      screen.getByRole('menuitem', { name: 'Write title and goal from linked work' }),
+      screen.getByRole('button', { name: 'Write title and goal from linked work' }),
     ).toBeDefined();
-    expect(screen.getAllByRole('menuitem').length).toBeGreaterThanOrEqual(2);
   });
   it('starts the proposal through the Goal tab button', async () => {
     store.setState({ sessionExternalTasks: { [session.id]: TASKS } });

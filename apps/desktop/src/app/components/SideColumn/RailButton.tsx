@@ -12,6 +12,7 @@ type Props = {
   readonly isCurrent: boolean;
   readonly className?: string;
   readonly badge?: ReactNode;
+  readonly isPage?: boolean;
   readonly onSelect: () => void;
 };
 
@@ -36,12 +37,14 @@ export const RailButton = ({
   isCurrent,
   className,
   badge,
+  isPage = false,
   onSelect,
 }: Props) => (
   <Tooltip content={label} shortcut={shortcut} side="right">
     <button
       type="button"
-      data-column-door={id}
+      data-column-door={isPage ? undefined : id}
+      data-rail-page={isPage ? id : undefined}
       aria-label={label}
       aria-current={isCurrent ? 'page' : undefined}
       onClick={() => {

@@ -50,7 +50,7 @@ import { InboxStudio } from '../../features/inbox/components/InboxStudio';
 import type { InboxProvider, InboxRecord } from '../../features/inbox/types';
 import { useInboxLinkedSessions } from '../../features/inbox/useInboxLinkedSessions';
 import { LinkIssueAction } from '../../features/session/components/SessionOverviewPane/LinkIssueAction';
-import { LinkedWorkChips } from '../../features/session/components/SessionOverviewPane/LinkedWorkChips';
+import { LevelLinked } from '../../app/components/SideColumn/SessionLevel/LevelLinked';
 
 const ROOT_PATH = '/mock/cascade/core-api';
 const NOW = '2026-09-20T09:00:00.000Z' as IsoDateTime;
@@ -427,7 +427,7 @@ const surfaces = (session: Session, entry: ProviderCase, extra: ReactNode = null
   <>
     <section aria-label="Session">
       {extra}
-      <LinkedWorkChips sessionId={session.id} onSelectLens={() => undefined} />
+      <LevelLinked session={session} isActive />
     </section>
     <InboxItem record={entry.record} workspaceId={WORKSPACE_ID} />
   </>
@@ -585,7 +585,7 @@ describe('tasks and sessions on the real store', () => {
         } as unknown as Partial<StoreState>);
       }
 
-      await mount(surfaces(session, entry, <LinkIssueAction session={session} />));
+      await mount(surfaces(session, entry));
       fireEvent.click(screen.getByRole('button', { name: 'Link work' }));
       const dialog = await screen.findByRole('dialog', { name: 'Link work' });
       const picker = within(dialog).getByRole('combobox');
@@ -668,7 +668,7 @@ describe('tasks and sessions on the real store', () => {
         sentry_resolve_short_id: () => resolved,
       };
 
-      await mount(surfaces(session, entry, <LinkIssueAction session={session} />));
+      await mount(surfaces(session, entry));
       fireEvent.click(screen.getByRole('button', { name: 'Link work' }));
       const dialog = await screen.findByRole('dialog', { name: 'Link work' });
       const picker = within(dialog).getByRole('combobox');

@@ -23,7 +23,7 @@ import {
 } from '../../app/components/MockScene/scenes/audit/settingsSeed';
 import { StageBoard } from '../../features/workspace/components/StageBoard';
 import { LimitsProvidersMenu } from '../../app/components/AppTopBar/LimitsStrip/LimitsProvidersMenu';
-import { LinkedWorkChips } from '../../features/session/components/SessionOverviewPane/LinkedWorkChips';
+import { LevelLinked } from '../../app/components/SideColumn/SessionLevel/LevelLinked';
 
 const STAGE_DEFAULT_REASONS = ['no PR yet', 'awaiting review'];
 const LIMIT_FIGURE = /\d+(?:\.\d+)?\s?%/;
@@ -74,9 +74,12 @@ describe('one home per fact', () => {
 
     for (const [sessionId, tasks] of linked) {
       cleanup();
-      await mount({
-        ui: <LinkedWorkChips sessionId={sessionId as SessionId} onSelectLens={() => undefined} />,
-      });
+      const session = useAppStore.getState().sessions.find((row) => row.id === sessionId);
+      expect(session).toBeDefined();
+      if (session === undefined) {
+        return;
+      }
+      await mount({ ui: <LevelLinked session={session} isActive /> });
       const text = document.body.textContent ?? '';
 
       for (const task of tasks) {

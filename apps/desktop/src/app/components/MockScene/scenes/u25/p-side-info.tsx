@@ -8,14 +8,14 @@ import { seedSideSignals } from './b-side-signals';
 import { seedSideInfoValues } from './seedSideInfoValues';
 
 const MANY: Partial<SidebarNavConfig> = { lens: 'agents', branches: 3, hasDiff: true };
-const ONE: Partial<SidebarNavConfig> = { lens: 'agents', branches: 1, hasDiff: true };
 
 type Props = {
   readonly config: Partial<SidebarNavConfig>;
   readonly isFramed?: boolean;
+  readonly isSessionLevel?: boolean;
 };
 
-const SideInfoScene = ({ config, isFramed = false }: Props) => {
+const SideInfoScene = ({ config, isFramed = false, isSessionLevel = false }: Props) => {
   const [isReady, setIsReady] = useState(false);
   useEffect(() => {
     seedSideSignals({ isBusy: true });
@@ -29,12 +29,16 @@ const SideInfoScene = ({ config, isFramed = false }: Props) => {
     return null;
   }
   return (
-    <SidebarNavColumnScene config={config} isFramed={isFramed} onSeeded={seedSideInfoValues} />
+    <SidebarNavColumnScene
+      config={config}
+      isFramed={isFramed}
+      isSessionLevel={isSessionLevel}
+      onSeeded={seedSideInfoValues}
+    />
   );
 };
 
 export const U25_P_SIDE_INFO_SCENES = {
-  'side-info-branches': () => <SideInfoScene config={MANY} />,
-  'side-info-branch': () => <SideInfoScene config={ONE} />,
-  'side-info-framed': () => <SideInfoScene config={MANY} isFramed />,
+  'side-info-doors': () => <SideInfoScene config={MANY} />,
+  'side-info-framed': () => <SideInfoScene config={MANY} isFramed isSessionLevel />,
 };

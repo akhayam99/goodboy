@@ -4,6 +4,7 @@ import {
   FRAME_DRAWER_INSET_PX,
   FRAME_DRAWER_ROW_PX,
   FRAME_PAGES,
+  FRAME_PAGE_HEADER_INSET_PX,
   FRAME_TITLE_CENTRE_PX,
   FRAME_TITLE_ROW_PX,
   FRAME_TYPES,
@@ -18,20 +19,25 @@ const pagesOf = ({ type }: { readonly type: FrameType }): ReadonlyArray<FramePag
   FRAME_PAGES.filter((page) => PAGE_FRAME[page] === type);
 
 describe('frameGeometryOf', () => {
-  it('puts every title centre at the band plus half the title row', () => {
+  it('puts every title centre at the space above it plus half the title row', () => {
     expect(FRAME_BAND_PX).toBe(40);
     expect(FRAME_TITLE_ROW_PX).toBe(32);
     expect(FRAME_TITLE_CENTRE_PX).toBe(56);
-    const centres = FRAME_PAGES.map((page) => frameGeometryOf({ page }).titleCentreY);
-
-    expect(new Set(centres)).toEqual(new Set([56]));
+    for (const page of FRAME_PAGES) {
+      const geometry = frameGeometryOf({ page });
+      expect(geometry.titleCentreY, page).toBe(geometry.bandHeight + FRAME_TITLE_ROW_PX / 2);
+    }
   });
 
-  it('gives every page the same band and row', () => {
-    const geometry = FRAME_PAGES.map((page) => frameGeometryOf({ page }));
-
-    expect(geometry.every((entry) => entry.bandHeight === 40)).toBe(true);
-    expect(geometry.every((entry) => entry.titleRowHeight === 32)).toBe(true);
+  it('opens a session page on its 44px header row and keeps the 40px band on the others', () => {
+    expect(FRAME_PAGE_HEADER_INSET_PX + FRAME_TITLE_ROW_PX).toBe(44);
+    for (const page of ['overview', 'branch', 'runs', 'agents', 'questions'] as const) {
+      expect(frameGeometryOf({ page }).bandHeight, page).toBe(FRAME_PAGE_HEADER_INSET_PX);
+    }
+    for (const page of ['board', 'inbox', 'workflows', 'settings', 'monitoring'] as const) {
+      expect(frameGeometryOf({ page }).bandHeight, page).toBe(FRAME_BAND_PX);
+    }
+    expect(FRAME_PAGES.every((page) => frameGeometryOf({ page }).titleRowHeight === 32)).toBe(true);
   });
 
   it('centres the drawer header row on the band centre line', () => {

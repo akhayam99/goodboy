@@ -3,8 +3,6 @@ import { UnderTrailContext } from '@goodboy/ui';
 import type { DiffComment } from '@goodboy/types';
 import type { BranchTab } from '../../../../../store/slices/navigation/types';
 import { BranchPage } from '../../../../../features/branch/components/BranchPage';
-import { TrailBar } from '../../../../../features/session/components/SessionWorkspace/parts/TrailBar';
-import { AskTrailButton } from '../../../../../features/session/ask/components/AskTrailButton';
 import { StudioBandContext } from '../../../../../shared/components/StudioShell/studioBandContext';
 import { useAppStore } from '../../../../../store';
 import { sceneClock } from '../../sceneClock';
@@ -99,9 +97,7 @@ export const PrpageFrameScene = ({
     >
       <PageSheet>
         <UnderTrailContext.Provider value>
-          <StudioBandContext.Provider
-            value={<TrailBar session={SESSION} end={<AskTrailButton sessionId={SESSION_ID} />} />}
-          >
+          <StudioBandContext.Provider value={null}>
             <BranchPage session={SESSION} workingDir={PR_PAGE_WORKTREE} />
           </StudioBandContext.Provider>
         </UnderTrailContext.Provider>

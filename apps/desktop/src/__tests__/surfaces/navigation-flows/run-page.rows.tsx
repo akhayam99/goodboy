@@ -17,7 +17,16 @@ import { STORY_NOW } from '../../../store/storyHarness';
 import { sessionPlace } from '../../../store/slices/navigation/place';
 import { aPlan, aStoredPlan } from '../../../test/planFixtures';
 import userEvent from '@testing-library/user-event';
-import { type Ctx, type Row, WAIT, click, heading, settle, useAppStore } from './harness';
+import {
+  type Ctx,
+  type Row,
+  WAIT,
+  click,
+  heading,
+  openCrumb,
+  settle,
+  useAppStore,
+} from './harness';
 
 const WORKFLOW_ID = 'journey-run-page-workflow' as WorkflowId;
 const RUN_ID = 'journey-run-page-run' as WorkflowRunId;
@@ -206,10 +215,7 @@ const pressEscape = async (): Promise<void> => {
   await settle();
 };
 
-const clickRunsCrumb = async (): Promise<void> => {
-  const trail = await screen.findByRole('navigation', { name: 'Breadcrumb' }, WAIT);
-  await click(within(trail).getByRole('button', { name: /^Runs/ }));
-};
+const clickRunsCrumb = (): Promise<void> => openCrumb(/^Runs/);
 
 export const RUN_PAGE_ROWS: ReadonlyArray<Row> = [
   {
@@ -230,7 +236,7 @@ export const RUN_PAGE_ROWS: ReadonlyArray<Row> = [
     lands: backToTheList,
   },
   {
-    name: 'the Runs crumb goes back to the Runs list',
+    name: 'the Runs entry of the session level goes back to the Runs list',
     covers: ['navigate', 'setFocusedWorkflowRun'],
     open: async (ctx) => {
       await openRunPage(ctx);
