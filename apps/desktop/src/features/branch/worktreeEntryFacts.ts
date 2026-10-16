@@ -1,7 +1,7 @@
 import type { PullRequestPresentationState } from '../../shared/pullRequestPresentation';
 import type { BranchTab } from '../../store/slices/navigation/types';
 
-export type WorktreeEntryTone = 'danger' | 'warning' | null;
+type WorktreeEntryTone = 'danger' | 'warning' | null;
 
 export type WorktreeEntryFact = {
   readonly text: string | null;
@@ -10,7 +10,7 @@ export type WorktreeEntryFact = {
 
 export type WorktreeEntryFacts = Readonly<Record<BranchTab, WorktreeEntryFact>>;
 
-export type WorktreePullRequestFact = {
+type WorktreePullRequestFact = {
   readonly label: string;
   readonly state: PullRequestPresentationState;
 };

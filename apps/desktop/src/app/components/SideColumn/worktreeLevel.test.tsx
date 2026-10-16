@@ -330,7 +330,8 @@ describe('the worktree rows of the session level', () => {
     await mountColumn();
 
     fireEvent.click(screen.getByRole('button', { name: 'Add to this session' }));
-    const labels = screen.getAllByRole('menuitem').map((item) => item.textContent ?? '');
+    const panel = within(screen.getByRole('dialog', { name: 'Add to this session' }));
+    const labels = panel.getAllByRole('button').map((item) => item.textContent ?? '');
     expect(labels).toEqual([
       'Add project',
       'Add workspace project',
@@ -338,7 +339,7 @@ describe('the worktree rows of the session level', () => {
       'New branch in ledger-core',
     ]);
 
-    fireEvent.click(screen.getByRole('menuitem', { name: 'New branch in ledger-core' }));
+    fireEvent.click(panel.getByRole('button', { name: 'New branch in ledger-core' }));
     await settle();
     await settle();
 

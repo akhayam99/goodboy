@@ -1,6 +1,5 @@
-import { useMemo } from 'react';
-import { FolderPlus, GitFork, Plus, Settings2 } from 'lucide-react';
-import { AnchoredPopover, Chip, MenuList, useDropdown, type MenuEntry } from '@goodboy/ui';
+import { FolderPlus, GitFork, Plus, Settings2, type LucideIcon } from 'lucide-react';
+import { AnchoredPopover, Button, Chip, useDropdown } from '@goodboy/ui';
 import type { ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { NAMES } from '../../../../shared/names';
@@ -21,45 +20,48 @@ type Props = {
   readonly projects: ReadonlyArray<BranchableProject>;
 };
 
-const MENU_LABEL = 'Add to this session';
+type Choice = {
+  readonly key: string;
+  readonly label: string;
+  readonly icon: LucideIcon;
+  readonly run: () => void;
+};
+
+const PANEL_LABEL = 'Add to this session';
 
 export const LevelAddMenu = ({ sessionId, workspaceId, projects }: Props) => {
   const dropdown = useDropdown({ align: 'end', width: 'min-w-[200px] max-w-sm' });
-  const entries = useMemo<ReadonlyArray<MenuEntry>>(
-    () => [
-      {
-        kind: 'item',
-        key: 'add-project',
-        label: 'Add project',
-        icon: FolderPlus,
-        onSelect: () =>
-          dispatchAfterNavigation({ name: levelAddEventName({ sessionId, projectId: null }) }),
-      },
-      {
-        kind: 'item',
-        key: 'add-workspace-project',
-        label: 'Add workspace project',
-        icon: Settings2,
-        onSelect: openWorkspaceProjects,
-      },
-      ...projects.map((project): MenuEntry => ({
-        kind: 'item',
-        key: `new-branch-${project.projectId}`,
-        label: `${NAMES.newBranch} in ${project.projectName}`,
-        icon: GitFork,
-        onSelect: () =>
-          dispatchAfterNavigation({
-            name: levelAddEventName({ sessionId, projectId: project.projectId }),
-          }),
-      })),
-    ],
-    [projects, sessionId],
-  );
+  const choices: ReadonlyArray<Choice> = [
+    {
+      key: 'add-project',
+      label: 'Add project',
+      icon: FolderPlus,
+      run: () =>
+        dispatchAfterNavigation({ name: levelAddEventName({ sessionId, projectId: null }) }),
+    },
+    {
+      key: 'add-workspace-project',
+      label: 'Add workspace project',
+      icon: Settings2,
+      run: openWorkspaceProjects,
+    },
+    ...projects.map((project): Choice => ({
+      key: `new-branch-${project.projectId}`,
+      label: `${NAMES.newBranch} in ${project.projectName}`,
+      icon: GitFork,
+      run: () =>
+        dispatchAfterNavigation({
+          name: levelAddEventName({ sessionId, projectId: project.projectId }),
+        }),
+    })),
+  ];
 
   return (
     <div className="relative flex shrink-0 items-center">
       <AnchoredPopover
         dropdown={dropdown}
+        role="dialog"
+        ariaLabel={PANEL_LABEL}
         anchorClassName="shrink-0"
         trigger={
           <Chip
@@ -67,8 +69,8 @@ export const LevelAddMenu = ({ sessionId, workspaceId, projects }: Props) => {
             tone="neutral"
             shape="badge"
             kind="reference"
-            ariaLabel={MENU_LABEL}
-            hasPopup="menu"
+            ariaLabel={PANEL_LABEL}
+            hasPopup="dialog"
             expanded={dropdown.open}
             onClick={dropdown.toggle}
             icon={<Plus size={ICON_SIZE.row} aria-hidden />}
@@ -76,7 +78,23 @@ export const LevelAddMenu = ({ sessionId, workspaceId, projects }: Props) => {
           />
         }
       >
-        <MenuList label={MENU_LABEL} entries={entries} onClose={dropdown.close} />
+        <div className="flex flex-col p-1">
+          {choices.map((choice) => (
+            <Button
+              key={choice.key}
+              size="sm"
+              variant="ghost"
+              className="justify-start"
+              onClick={() => {
+                dropdown.close();
+                choice.run();
+              }}
+            >
+              <choice.icon size={ICON_SIZE.row} aria-hidden />
+              {choice.label}
+            </Button>
+          ))}
+        </div>
       </AnchoredPopover>
       <div className="absolute right-0 top-full flex h-0 w-0">
         <MountProjectAction

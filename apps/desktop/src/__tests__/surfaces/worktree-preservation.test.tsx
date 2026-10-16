@@ -232,7 +232,9 @@ describe('SPEC3 9.3 worktree actions from the worktree level', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Add to this session' }));
     await advance();
-    const labels = screen.getAllByRole('menuitem').map((item) => item.textContent ?? '');
+    const labels = within(screen.getByRole('dialog', { name: 'Add to this session' }))
+      .getAllByRole('button')
+      .map((item) => item.textContent ?? '');
 
     expect(labels).toContain('Add project');
     expect(labels).toContain('Add workspace project');
