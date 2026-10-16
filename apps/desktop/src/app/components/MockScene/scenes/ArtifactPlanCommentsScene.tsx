@@ -3,13 +3,17 @@ import { ArtifactStudio } from '../../../../features/artifacts/components/Artifa
 import { SESSION_ID } from './artifactSeed';
 import { seedPlanCommentsScene } from './artifactCommentsSeed';
 
-export const ArtifactPlanCommentsScene = () => {
+type Props = {
+  readonly hasComments?: boolean;
+};
+
+export const ArtifactPlanCommentsScene = ({ hasComments = true }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    seedPlanCommentsScene();
+    seedPlanCommentsScene({ hasComments });
     setIsReady(true);
-  }, []);
+  }, [hasComments]);
 
   if (!isReady) {
     return null;

@@ -44,10 +44,14 @@ const DRAFTS: ReadonlyArray<ArtifactComment> = [
 
 const NOW = clock.iso({ at: '2026-09-14T16:40:00.000Z' });
 
-export const seedPlanCommentsScene = () => {
+type SeedParams = {
+  readonly hasComments: boolean;
+};
+
+export const seedPlanCommentsScene = ({ hasComments }: SeedParams) => {
   seedArtifactScene({ focusedArtifactId: PLAN_COMMENTS_ARTIFACT_ID, withStates: true });
   useAppStore.setState({
-    artifactComments: { [SESSION_ID]: DRAFTS },
+    artifactComments: { [SESSION_ID]: hasComments ? DRAFTS : [] },
     artifactCommentSends: {},
     loadArtifactComments: async () => undefined,
     addArtifactComment: async ({ artifactId, revision, anchor, body }) => {
