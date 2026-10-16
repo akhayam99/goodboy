@@ -556,6 +556,8 @@ questions-empty
 queue-composer-primary
 queue-read-finished
 queue-stopped-resume
+r1-motion-shell-folded
+r1-motion-shell-open
 rail-draft-dot
 rail-flyout
 rail-pinned

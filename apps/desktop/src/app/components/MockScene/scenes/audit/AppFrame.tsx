@@ -29,9 +29,17 @@ type Props = {
   readonly view: string;
   readonly isRailCollapsed: boolean;
   readonly hasPane?: boolean;
+  readonly hasLiveToggle?: boolean;
 };
 
-export const AppFrame = ({ view, isRailCollapsed, hasPane = false }: Props) => {
+export const AppFrame = ({
+  view,
+  isRailCollapsed,
+  hasPane = false,
+  hasLiveToggle = false,
+}: Props) => {
+  const [isFoldPicked, setIsFoldPicked] = useState(isRailCollapsed);
+  const isMainCollapsed = hasLiveToggle ? isFoldPicked : isRailCollapsed;
   const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
   const drawerSizing = useAppStore(selectDrawerSizing);
   const drawerPlacement = useAppStore(selectDrawerPlacement);
@@ -45,7 +53,7 @@ export const AppFrame = ({ view, isRailCollapsed, hasPane = false }: Props) => {
   const folds = useShellFolds();
   const arrangement = shellArrangement({
     hasWorkspace: currentWorkspace !== null,
-    isSidebarCollapsed: isRailCollapsed || (currentSession !== null && folds.isMainNarrow),
+    isSidebarCollapsed: isMainCollapsed || (currentSession !== null && folds.isMainNarrow),
     isSettingsOpen,
   });
   const overlays = useAppOverlays({
@@ -108,7 +116,7 @@ export const AppFrame = ({ view, isRailCollapsed, hasPane = false }: Props) => {
             currentSessionId={currentSession?.id ?? null}
             isDraftShown={false}
             actions={actions}
-            onToggle={noop}
+            onToggle={hasLiveToggle ? () => setIsFoldPicked((isPicked) => !isPicked) : noop}
             settingsSlotRef={setSettingsSlot}
           />
         }
