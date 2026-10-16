@@ -60,7 +60,7 @@ export const PresetPickerOption = ({
         variant="ghost"
         iconSize={ICON_SIZE.row}
         onClick={onDelete}
-        className="shrink-0 opacity-0 focus-visible:opacity-100 group-hover/preset:opacity-100"
+        className="shrink-0"
       />
     </div>
   );

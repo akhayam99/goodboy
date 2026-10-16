@@ -91,7 +91,7 @@ describe('the primary of a plan row follows the plan rule', () => {
 const visibleButtons = (): ReadonlyArray<string> =>
   screen
     .getAllByRole('button', { hidden: true })
-    .filter((button) => button.closest('[data-reveal="hover"]') === null)
+    .filter((button) => button.closest('[data-row-secondary=""]') === null)
     .map((button) => button.getAttribute('aria-label') ?? button.textContent ?? '');
 
 describe('an artifact row shows one action', () => {

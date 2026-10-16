@@ -35,21 +35,19 @@ const ChatArchivedRowView = ({
         frameClassName="group"
         className="flex min-w-0 flex-col gap-0.5 py-2 pl-4 pr-2"
       >
-        <span className="flex min-w-0 items-center gap-2">
+        <span className="flex min-w-0 items-center gap-2 pr-14">
           <span
             className={cn(
-              'min-w-0 flex-1 truncate text-label group-hover:pr-12 group-focus-within:pr-12',
+              'min-w-0 flex-1 truncate text-label',
               isSelected ? 'text-foreground' : 'text-muted-foreground',
             )}
           >
             {title}
           </span>
-          <span className="shrink-0 text-meta text-faint-foreground group-hover:invisible group-focus-within:invisible">
-            {age}
-          </span>
+          <span className="shrink-0 text-meta text-faint-foreground">{age}</span>
         </span>
         <span className="truncate text-meta text-faint-foreground">{snippet}</span>
-        <span className="absolute right-0 top-0 flex items-center opacity-0 motion-safe:transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 has-[[aria-expanded=true]]:opacity-100">
+        <span className="absolute right-0 top-0 flex items-center">
           <IconButton
             icon={ArchiveRestore}
             label={`Restore ${title}`}

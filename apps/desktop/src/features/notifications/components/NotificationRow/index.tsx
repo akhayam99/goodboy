@@ -133,9 +133,7 @@ export const NotificationRow = ({
           {action != null && ActionIcon != null && (
             <IconButton icon={ActionIcon} label={action.label} size="xs" onClick={runAction} />
           )}
-          <span className="flex opacity-0 motion-safe:transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-            {deleteControl(<Trash2 size={ICON_SIZE.row} aria-hidden />)}
-          </span>
+          <span className="flex">{deleteControl(<Trash2 size={ICON_SIZE.row} aria-hidden />)}</span>
         </span>
       </li>
     );
@@ -150,7 +148,7 @@ export const NotificationRow = ({
         isSelected ? 'bg-subtle ring-1 ring-inset ring-border-soft' : 'hover:bg-hover',
       )}
     >
-      <div className="relative grid grid-cols-[0.375rem_1rem_minmax(0,1fr)_auto_4rem] items-start gap-x-3 px-3 py-2">
+      <div className="relative grid grid-cols-[0.375rem_1rem_minmax(0,1fr)_auto_4rem_auto] items-start gap-x-3 px-3 py-2">
         {overlay}
         {unreadSlot}
         <SeverityIcon
@@ -199,20 +197,10 @@ export const NotificationRow = ({
           )}
         </div>
         <div className="relative flex h-4 items-center justify-end">
-          <span
-            className={cn(
-              'flex motion-safe:transition-opacity group-hover:opacity-0 group-focus-within:opacity-0',
-              isSelected && 'opacity-0',
-            )}
-          >
-            {age}
-          </span>
-          <span
-            className={cn(
-              'pointer-events-none absolute inset-y-0 right-0 flex items-center gap-0.5 opacity-0 motion-safe:transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100',
-              isSelected && 'pointer-events-auto opacity-100',
-            )}
-          >
+          <span className="flex">{age}</span>
+        </div>
+        <div className="relative flex h-4 items-center justify-end">
+          <span className="flex items-center gap-0.5">
             {isUnread && onMarkRead != null && (
               <IconButton
                 icon={Check}

@@ -86,7 +86,6 @@ export const OtherWorkspaceRow = ({
         size="sm"
         iconSize={ICON_SIZE.row}
         onClick={onOpenNewWindow}
-        className="hidden focus-visible:inline-flex group-hover:inline-flex"
       />
     </div>
   );

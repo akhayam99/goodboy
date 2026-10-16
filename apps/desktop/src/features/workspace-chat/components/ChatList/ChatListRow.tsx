@@ -1,15 +1,6 @@
-import { memo, useMemo, useState, type FocusEvent, type MouseEvent } from 'react';
-import { Pin, PinOff } from 'lucide-react';
-import {
-  ICON_SIZE,
-  IconButton,
-  InteractiveRow,
-  SelectionCheckbox,
-  StatusDot,
-  cn,
-} from '@goodboy/ui';
+import { memo, useMemo, useState, type MouseEvent } from 'react';
+import { InteractiveRow, SelectionCheckbox, StatusDot, cn } from '@goodboy/ui';
 import type { ChatId, ChatModelUsed, EffortLevel, ProviderId } from '@goodboy/types';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
 import { sessionPlace } from '../../../../store/slices/navigation/place';
 import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
@@ -20,7 +11,6 @@ import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { useRenameRequest } from '../../../actions/useRenameRequest';
 import { useChatSessionMarker } from '../../hooks/useChatSessionMarker';
 import { ageTokenOf } from './ageToken';
-import { ChatDeleteConfirm } from './ChatDeleteConfirm';
 import { ChatModelGlyphs } from './ChatModelGlyphs';
 import { ChatRenameInput } from './ChatRenameInput';
 import { ChatSessionMark } from './ChatSessionMark';
@@ -94,8 +84,6 @@ const ChatListRowView = ({
   const navigate = useAppStore((state) => state.navigate);
   const marker = useChatSessionMarker({ chatId });
   const [isRenaming, setIsRenaming] = useState(false);
-  const [isConfirming, setIsConfirming] = useState(false);
-  const [isRevealed, setIsRevealed] = useState(false);
   const anchorKey = `chat-row:${chatId}`;
 
   useRenameRequest({
@@ -144,23 +132,12 @@ const ChatListRowView = ({
     selection.onModifierClick(chatId, event);
   };
 
-  const hideUnlessInside = (event: FocusEvent<HTMLLIElement>): void => {
-    if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) {
-      return;
-    }
-    setIsRevealed(false);
-  };
-
   return (
     <li
       data-chat-row={chatId}
       data-idle={isIdle ? 'true' : undefined}
       data-checked={isChecked ? 'true' : undefined}
       onClickCapture={captureModifierClick}
-      onMouseEnter={() => setIsRevealed(true)}
-      onMouseLeave={() => setIsRevealed(false)}
-      onFocus={() => setIsRevealed(true)}
-      onBlur={hideUnlessInside}
     >
       <InteractiveRow
         label={title}
@@ -212,49 +189,15 @@ const ChatListRowView = ({
               >
                 {title}
               </span>
-              <span className="group/slot relative h-6 w-18 shrink-0">
-                <span className="absolute inset-y-0 right-1 flex items-center whitespace-nowrap text-meta tabular-nums text-faint-foreground motion-safe:transition-opacity group-focus-within:opacity-0 group-hover:opacity-0 group-has-[[aria-expanded=true]]/slot:opacity-0">
+              <span className="flex h-6 shrink-0 items-center gap-1">
+                <span className="whitespace-nowrap text-meta tabular-nums text-faint-foreground">
                   {ageTokenOf({ time })}
                 </span>
-                <span className="absolute inset-y-0 right-0 flex items-center opacity-0 motion-safe:transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 group-has-[[aria-expanded=true]]/slot:opacity-100">
-                  <IconButton
-                    size="xs"
-                    icon={isPinned ? PinOff : Pin}
-                    label={isPinned ? `Unpin ${title}` : `Pin ${title}`}
-                    tooltip={isPinned ? 'Unpin' : 'Pin'}
-                    variant="ghost"
-                    iconSize={ICON_SIZE.row}
-                    onClick={() => onPin({ chatId, isPinned: !isPinned })}
-                  />
-                  <ObjectOverflowMenu
-                    target={target}
-                    label={`More actions for ${title}`}
-                    anchorKey={anchorKey}
-                  />
-                  {isRevealed || isConfirming ? (
-                    <ChatDeleteConfirm
-                      title={title}
-                      canArchive
-                      isOpen={isConfirming}
-                      onDelete={() => onDelete(chatId)}
-                      onArchive={() => onArchive(chatId)}
-                      onCancel={() => setIsConfirming(false)}
-                      trigger={() => (
-                        <IconButton
-                          size="xs"
-                          icon={CONCEPT_ICONS.delete}
-                          label={`Delete ${title}`}
-                          tooltip="Delete"
-                          variant="ghost"
-                          iconSize={ICON_SIZE.row}
-                          className="hover:text-danger"
-                          aria-haspopup="dialog"
-                          onClick={() => setIsConfirming(true)}
-                        />
-                      )}
-                    />
-                  ) : null}
-                </span>
+                <ObjectOverflowMenu
+                  target={target}
+                  label={`More actions for ${title}`}
+                  anchorKey={anchorKey}
+                />
               </span>
             </>
           )}

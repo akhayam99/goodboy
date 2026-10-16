@@ -859,8 +859,8 @@ under Pinned. Pins are stored per workspace in the `settings` table (key
 compare and swap with one retry so two windows never drop each other's pin,
 read when a workspace opens and when the window regains focus, and pruned of
 deleted sessions on read (`store/slices/session-pins`). The pin shows in six
-places: the list's Pinned group, a ghost pin button in the right end of a row on
-hover and focus (`Pin session` and `Unpin session`), a pin toggle in the
+places: the list's Pinned group, the row's `⋯` and right click menu
+(`Pin session` and `Unpin session`), a pin toggle in the
 Overview title row, a "Pinned" fact in the session hover card, the rail buttons, and the
 switcher's Pinned section. **Move up** and **Move down** (`session.pinnedUp`,
 `session.pinnedDown`) reorder a pinned session from the row menu and `⌘K`, only
@@ -1846,8 +1846,8 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   members and Report this). Both lead with a fixed unread slot that holds
   a primary dot on unread rows and stays empty on read ones, so every title
   keeps one left edge; unread titles are also bold and read rows recede. In the
-  studio the time owns a fixed last column and Mark read and Delete swap in
-  over it on hover, so the row never changes width. The facets (view, severity,
+  studio the time owns a fixed column and Mark read and Delete sit in their own
+  last column, visible at rest, so the row never changes width. The facets (view, severity,
   source and the workspace scope) are a page rail docked beside the list, in
   Chat's frame (`StudioRailLayout`, `placement="page"`, surface `notifications`,
   288px), with counts that come from SQL (`countNotifications`), so they stay
@@ -2119,8 +2119,8 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   group grid (star, kind, name, description, a base-branch chip only when set
   by hand, a Folder-not-found flag) with Open in editor, Copy path and Remove
   link in a reserved column, dim at rest. The star shows at rest only on
-  starred rows (filled, warning tone); on the others it appears on hover and
-  focus in the same 24px slot (`StarToggle isQuietAtRest`). Clicking the name
+  starred rows (filled, warning tone) and stays visible at rest in
+  `text-faint-foreground` on the others, in the same 24px slot (`StarToggle`). Clicking the name
   opens an inline editor card below the row for the rest (description, base
   branch, After merge for repos, folder, scripts, facts, footer actions); the
   card starts at the name column (`grid-cols-subgrid`) so its content sits 12px
@@ -2278,7 +2278,7 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   drawer. A fix run is one agent and one transcript for all its comments: answers, retries and
   hints continue that run, only a model the owner picks starts a new one, and a finished turn
   without a result for a comment reads Failed with Retry, never a question. A thread in the address is
-  `s/{session}/branch/comments/t/{thread}`. A comment nobody started shows `Fix` on hover (and `F`), which opens the **Fix comments** drawer
+  `s/{session}/branch/comments/t/{thread}`. A comment nobody started shows `Fix` at rest at the row's right edge (and `F`), which opens the **Fix comments** drawer
   (kind `fix-comments`, side tier) with that comment checked; a checkbox on hover picks comments (`X` on the focused row,
   Cmd+A for every fixable comment, open or couldn't fix, Esc clears) and the bar `N selected ·
 Fix N` opens the same panel, or `Apply N fixes` for comments with a fix ready. With no fix run
@@ -2417,8 +2417,9 @@ hl/ledger-rounding`, and with two or more mounts opens a menu grouped by
   opens a folder or enters it, Left closes it or goes to its parent, Home and
   End jump, Enter and Space open the preview of a file or toggle a folder. Above
   120 rows it draws only the rows near the scroll position (`shared/utils/windowRows.ts`, the
-  diff tree's math). A row's verbs come from the `exploreFile` kind: Ask an
-  agent (files), Open in editor or Open, Show in Finder and Copy path. A folder
+  diff tree's math). A row's verbs come from the `exploreFile` kind, in the
+  row's `⋯` visible at rest (`ExploreFileMenu`) and its right click menu: Ask
+  an agent (files), Open in editor or Open, Show in Finder and Copy path. A folder
   offers Open only when an editor can take it (a repository with an editor),
   and a linked folder is listed as a folder; the Rust containment check on
   read and open stays. A file opens in a reader drawer whose header reads like
@@ -2465,9 +2466,9 @@ hl/ledger-rounding`, and with two or more mounts opens a menu grouped by
   turn of its own to count, instead of reading `0 turns`.
 - **An Artifacts row has one visible action.** The state-driven primary
   (`Run plan`, `Approve`, `Stop`, from the plan rule) and the open control
-  are all a row shows at rest. Edit, Open in browser and Copy source appear on
-  hover and focus (`data-reveal="hover"`), and Delete, Rename and the rest live
-  in the row overflow. Kind has its own fixed column (Plan, Report,
+  lead the row. Edit, Open in browser and Copy source sit beside them, visible
+  at rest (`data-row-secondary`), and Delete, Rename and the rest live in the
+  row overflow. Kind has its own fixed column (Plan, Report,
   Wireframe), and progress (`part 2 of 4`) sits under the status. A report's
   document title is an `h2` under the page's single `h1`.
 
@@ -3223,7 +3224,7 @@ yours, how far main moved and what is online. At rest the section is one
 column (`grid-cols-1`) on a 72px lane (trunk at x 20, lane at x 52): one row
 per commit (title, then sha, author and age in
 `text-meta`, a faint `Not pushed` chip only on a commit that is not on the
-online copy, the grip on hover and focus only), then the base row.
+online copy, the grip a faint mark of a row that drags), then the base row.
 
 **The base row** (`HistoryBaseRow`) is the action point for the base. Behind the
 base it reads `78 new commits on main` with `Rebase onto latest`; level with it
@@ -3353,7 +3354,7 @@ project and branch, no dialog) when it has several; the move goes through
 re-insert the same rows with the same ids (`restoreDiffComment`); a status
 `discarded` would need a migration because `diff_comments.status` is a CHECK
 list. With two or more notes the section header has `Discard all`. Write review puts
-its form under the last file: the line comments with Edit and Delete on hover (Delete offers Undo), the verdict,
+its form under the last file: the line comments with Edit and Delete visible at rest (Delete offers Undo), the verdict,
 the summary, and one primary that says the verdict (`Approve`,
 `Request changes`, `Submit comments`), ⌘↵ from the summary. The form's `⋯`
 in the diff toolbar holds Discard review, which confirms. The actions are
@@ -3411,8 +3412,8 @@ section, since the header already says it; shown as `Saved`/`package.json`/
 `composer.json` only for a flat, single-package list), Last run in glyph and
 word and one right edge of actions: Pin, Run and a horizontal `…` menu
 (saved: Edit, Duplicate, Delete with an inline confirm; manifest: Save as
-script, Copy command, both using the invocation). Pin, Run and the menu show on
-hover and focus; Stop stays visible while the script runs. The group header's
+script, Copy command, both using the invocation). Pin, Run and the menu are
+visible at rest, and Stop stays visible while the script runs. The group header's
 one ghost refresh sits on the same edge. "Save as script" from a workspace package writes a command
 that still runs in that package once saved at the project root
 (`workspaceInvocation`: `yarn workspace <pkg> run <name>`, `pnpm --filter

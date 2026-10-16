@@ -18,7 +18,7 @@ export const ChatRowsFrame = () => {
     <ConfirmFrame name="Chats">
       {titles.map((title) => (
         <ConfirmRow key={title} label={title} meta="2h">
-          <span className="group/slot flex items-center opacity-0 motion-safe:transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 group-has-[[aria-expanded=true]]/slot:opacity-100">
+          <span className="flex items-center">
             <ConfirmPopover
               role="danger"
               icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}

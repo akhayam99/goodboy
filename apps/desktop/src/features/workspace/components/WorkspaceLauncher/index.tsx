@@ -149,11 +149,7 @@ export const WorkspaceLauncher = () => {
                         tooltip={`Disconnect ${w.name}`}
                         variant="ghost"
                         onClick={arm}
-                        className={
-                          isArmed
-                            ? 'text-danger'
-                            : 'opacity-0 group-hover/launcher:opacity-100 focus-visible:opacity-100'
-                        }
+                        className={isArmed ? 'text-danger' : 'text-faint-foreground'}
                       />
                     )}
                   />

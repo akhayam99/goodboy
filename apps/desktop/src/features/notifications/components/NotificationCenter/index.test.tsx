@@ -296,7 +296,7 @@ describe('NotificationCenter', () => {
     expect(state.dismissNotificationGroup).toHaveBeenCalledWith({ ids: ['n2', 'n1'] });
   });
 
-  it('keeps retry visible and reserves the hover slot for delete', async () => {
+  it('keeps retry and delete visible at rest in their own slots', async () => {
     state.notifications = [
       {
         ...buildNotification({ id: 'n1', title: 'step summary failed', coalesceKey: 'retry' }),
@@ -313,7 +313,7 @@ describe('NotificationCenter', () => {
     const slot = screen
       .getByRole('button', { name: 'Delete "step summary failed"' })
       .closest('span');
-    expect(slot?.className).toContain('group-hover:opacity-100');
+    expect(slot?.className).not.toContain('opacity-0');
     expect(slot?.className).not.toMatch(/(^|\s)hidden(\s|$)/);
     expect(slot?.contains(screen.getByRole('button', { name: 'Retry' }))).toBe(false);
   });

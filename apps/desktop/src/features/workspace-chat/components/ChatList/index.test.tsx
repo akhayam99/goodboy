@@ -178,28 +178,21 @@ describe('ChatList', () => {
     expect(ageTokenOf({ time: '09:41' })).toBe('09:41');
   });
 
-  it('keeps the delete button out of the row at rest and shows it on hover and focus', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+  it('keeps the row actions in a menu visible at rest, with Delete inside it', async () => {
     await renderList();
     const row = rowOf('lunch');
-    const deleteName = 'Delete Lunch ideas near the office';
 
-    expect(within(row).queryByRole('button', { name: deleteName })).toBeNull();
+    expect(
+      within(row).queryByRole('button', { name: 'Delete Lunch ideas near the office' }),
+    ).toBeNull();
+    const more = within(row).getByRole('button', {
+      name: 'More actions for Lunch ideas near the office',
+    });
+    expect(more.tabIndex).not.toBe(-1);
 
-    await user.hover(row);
-    expect(within(row).getByRole('button', { name: deleteName })).toBeDefined();
+    fireEvent.click(more);
 
-    await user.unhover(row);
-    expect(within(row).queryByRole('button', { name: deleteName })).toBeNull();
-
-    const opener = within(row).getByRole('button', { name: 'Lunch ideas near the office' });
-    act(() => opener.focus());
-    const reached = within(row).getByRole('button', { name: deleteName });
-    expect(reached.tabIndex).not.toBe(-1);
-    act(() => reached.focus());
-    expect(document.activeElement).toBe(reached);
-    act(() => reached.blur());
-    expect(within(row).queryByRole('button', { name: deleteName })).toBeNull();
+    expect(await screen.findByRole('menuitem', { name: /Delete/ })).toBeDefined();
   });
 
   it('archives the idle chats with an undo', async () => {

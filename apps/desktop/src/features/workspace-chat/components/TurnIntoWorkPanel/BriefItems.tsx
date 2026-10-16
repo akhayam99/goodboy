@@ -44,7 +44,6 @@ export const BriefItems = ({
               tooltip="Remove"
               variant="ghost"
               iconSize={ICON_SIZE.row}
-              className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
               onClick={() => onRemove(item)}
             />
           </li>

@@ -354,12 +354,20 @@ describe('ChatList selection', () => {
   });
 });
 
-const revealDelete = (): void => {
-  fireEvent.mouseEnter(rowOf('lunch'));
+const pickDelete = async (): Promise<HTMLElement> => {
+  fireEvent.click(
+    within(rowOf('lunch')).getByRole('button', { name: `More actions for ${TITLES.lunch}` }),
+  );
+  fireEvent.click(await screen.findByRole('menuitem', { name: /Delete/ }));
+  const panel = (await screen.findByText('Delete chat?')).closest('[data-menu-panel]');
+  if (!(panel instanceof HTMLElement)) {
+    throw new Error('the delete confirmation is not in the row menu');
+  }
+  return panel;
 };
 
 describe('ChatList delete on the row', () => {
-  it('keeps Delete off every row at rest and gives it to the hovered row only', async () => {
+  it('keeps Delete off every row at rest and puts it in the row menu', async () => {
     await renderList();
 
     for (const seed of SEEDS) {
@@ -367,47 +375,39 @@ describe('ChatList delete on the row', () => {
         within(rowOf(seed.key)).queryByRole('button', { name: `Delete ${seed.title}` }),
       ).toBeNull();
     }
-    fireEvent.mouseEnter(rowOf('lunch'));
-    expect(screen.getAllByRole('button', { name: /^Delete / })).toHaveLength(1);
-    fireEvent.mouseLeave(rowOf('lunch'));
-    expect(screen.queryByRole('button', { name: /^Delete / })).toBeNull();
+    fireEvent.click(
+      within(rowOf('lunch')).getByRole('button', { name: `More actions for ${TITLES.lunch}` }),
+    );
+    expect(await screen.findByRole('menuitem', { name: /Delete/ })).toBeDefined();
   });
 
-  it('asks in a popover beside the row button, then deletes with the second click', async () => {
+  it('asks from the row menu, then deletes with the second click', async () => {
     const { onDeleted } = await renderList();
 
-    revealDelete();
-    fireEvent.click(screen.getByRole('button', { name: `Delete ${TITLES.lunch}` }));
-
-    const dialog = screen.getByRole('dialog', { name: `Delete "${TITLES.lunch}"?` });
-    expect(dialog.closest('[data-dropdown-portal]')).not.toBeNull();
+    const dialog = await pickDelete();
     expect(rowOf('lunch').contains(dialog)).toBe(false);
     expect(within(rowOf('lunch')).getByRole('button', { name: TITLES.lunch ?? '' })).toBeDefined();
 
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete chat' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }));
     await waitFor(() => expect(onDeleted).toHaveBeenCalledWith([chatIdOf({ key: 'lunch' })]));
     expect(rowOf('lunch')).toBeNull();
   });
 
   it('gives the row back on Cancel without deleting anything', async () => {
     const { onDeleted } = await renderList();
-    revealDelete();
-    fireEvent.click(screen.getByRole('button', { name: `Delete ${TITLES.lunch}` }));
+    const dialog = await pickDelete();
 
-    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
 
     expect(within(rowOf('lunch')).getByRole('button', { name: TITLES.lunch ?? '' })).toBeDefined();
     expect(onDeleted).not.toHaveBeenCalled();
   });
 
-  it('archives from the row confirmation and keeps the chat', async () => {
+  it('archives from the row menu confirmation and keeps the chat', async () => {
     const { onArchived } = await renderList();
-    revealDelete();
-    fireEvent.click(screen.getByRole('button', { name: `Delete ${TITLES.lunch}` }));
+    const dialog = await pickDelete();
 
-    fireEvent.click(
-      within(screen.getByRole('dialog')).getByRole('button', { name: 'Archive instead' }),
-    );
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Archive instead' }));
 
     await waitFor(() => expect(onArchived).toHaveBeenCalledWith([chatIdOf({ key: 'lunch' })]));
     expect(

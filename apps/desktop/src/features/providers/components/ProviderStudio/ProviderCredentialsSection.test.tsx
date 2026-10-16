@@ -45,13 +45,11 @@ const ANTHROPIC = 'anthropic' as ProviderId;
 afterEach(cleanup);
 
 describe('ProviderCredentialsSection', () => {
-  it('reveals the remove control on keyboard focus, not only on hover', () => {
+  it('shows the remove control at rest', () => {
     render(<ProviderCredentialsSection providerId={ANTHROPIC} />);
     const remove = screen.getByRole('button', { name: 'Remove work' });
 
-    expect(remove.className).toContain('opacity-0');
-    expect(remove.className).toContain('focus-visible:opacity-100');
-    expect(remove.className).toContain('group-hover:opacity-100');
+    expect(remove.className).not.toContain('opacity-0');
   });
 
   it('asks in a popover beside the key and removes it on confirm', async () => {

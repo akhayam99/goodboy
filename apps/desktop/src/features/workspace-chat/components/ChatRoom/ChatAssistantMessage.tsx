@@ -48,7 +48,7 @@ const ChatAssistantMessageView = ({ message, workspaceName, onStartWork }: Props
       ) : null}
       {isStreaming || !hasText ? null : (
         <div className="-ml-2 flex h-7 items-center gap-1">
-          <div className="flex items-center gap-1 opacity-0 motion-safe:transition-opacity group-focus-within/answer:opacity-100 group-hover/answer:opacity-100">
+          <div className="flex items-center gap-1">
             <CopyButton
               value={message.content}
               label="Copy the answer"

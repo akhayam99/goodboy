@@ -114,7 +114,7 @@ describe('the u23 list scenes', () => {
     for (const frame of frames) {
       const visible = within(frame)
         .queryAllByRole('button', { hidden: true })
-        .filter((button) => button.closest('[data-reveal="hover"]') === null)
+        .filter((button) => button.closest('[data-row-secondary=""]') === null)
         .filter((button) => button.getAttribute('aria-expanded') === null)
         .filter((button) => button.getAttribute('data-artifact-row') === null)
         .filter((button) => !(button.getAttribute('aria-label') ?? '').startsWith('More for'));
@@ -128,12 +128,12 @@ describe('the u23 list scenes', () => {
     const stops = await screen.findAllByRole('button', { name: /^Stop / });
     expect(stops.length).toBeGreaterThan(0);
     for (const stop of stops) {
-      expect(stop.closest('[data-reveal]')).toBeNull();
+      expect(stop.closest('[data-row-secondary]')).toBeNull();
     }
     const run = screen.getAllByRole('button', { name: /^Run / })[0]!;
-    expect(run.closest('[data-reveal]')).toBeNull();
+    expect(run.closest('[data-row-secondary]')).toBeNull();
     const more = screen.getAllByRole('button', { name: /^More for / })[0]!;
-    expect(more.closest('[data-reveal="hover"]')).not.toBeNull();
+    expect(more.closest('[data-row-secondary=""]')).not.toBeNull();
     expect(screen.getAllByRole('button', { name: /scripts again$/ })).toHaveLength(1);
   });
 

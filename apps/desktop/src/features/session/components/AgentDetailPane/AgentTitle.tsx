@@ -46,7 +46,7 @@ export const AgentTitle = ({ agent, sessionId }: Props) => {
     agentDisplayName({ name: agent.name, kind });
 
   return (
-    <span className="group/title flex min-w-0 items-center gap-2">
+    <span className="flex min-w-0 items-center gap-2">
       <TruncatedText className="min-w-0 truncate" onDoubleClick={rename.start}>
         {displayName}
       </TruncatedText>
@@ -56,7 +56,7 @@ export const AgentTitle = ({ agent, sessionId }: Props) => {
         tooltipSide="top"
         size="xs"
         onClick={rename.start}
-        className="size-5 opacity-0 focus-visible:opacity-100 group-hover/title:opacity-100 motion-reduce:opacity-60"
+        className="size-5 text-faint-foreground"
       />
     </span>
   );

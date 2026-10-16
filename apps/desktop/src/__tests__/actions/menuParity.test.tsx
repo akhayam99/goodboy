@@ -527,7 +527,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
 });
 
 describe('an Explore row lists the same verbs on its buttons, its right click and ⌘K', () => {
-  it('file row: the hover buttons are the right click without Copy path, and ⌘K on the focused row lists them all', async () => {
+  it('file row: the visible menu is the right click, and ⌘K on the focused row lists them all', async () => {
     seedActionState({ useAppStore, seed: {} });
     withMenus(
       <ExploreTree
@@ -564,6 +564,9 @@ describe('an Explore row lists the same verbs on its buttons, its right click an
     const buttons = within(row)
       .getAllByRole('button')
       .map((button) => button.getAttribute('aria-label'));
+    fireEvent.click(within(row).getByRole('button', { name: 'Actions for rounding.ts' }));
+    const fromOverflow = menuLabels();
+    await closeMenus();
     act(() => row.focus());
     render(
       <ToastProvider>
@@ -581,11 +584,8 @@ describe('an Explore row lists the same verbs on its buttons, its right click an
       'Ask an agent about this file',
       'Copy path',
     ]);
-    expect(buttons).toEqual([
-      'Ask an agent about rounding.ts',
-      'Open rounding.ts',
-      'Show rounding.ts in Finder',
-    ]);
+    expect(buttons).toEqual(['Actions for rounding.ts']);
+    expect(fromOverflow).toEqual(fromContext);
     expect(fromPalette).toEqual(fromContext);
     expect(screen.getByText('For this file')).toBeDefined();
   });

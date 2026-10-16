@@ -54,12 +54,7 @@ export const ReviewListRow = ({ entry, isSelected, onSelect, onFix, selection }:
   const stateWord = (
     <span
       data-row-state
-      className={cn(
-        'ml-auto shrink-0 whitespace-nowrap motion-safe:transition-opacity',
-        STATE_WORD_TONE[entry.toneKey],
-        onFix !== null &&
-          'group-focus-within/review-row:opacity-0 group-hover/review-row:opacity-0',
-      )}
+      className={cn('ml-auto shrink-0 whitespace-nowrap', STATE_WORD_TONE[entry.toneKey])}
     >
       {entry.word}
     </span>
@@ -76,6 +71,7 @@ export const ReviewListRow = ({ entry, isSelected, onSelect, onFix, selection }:
           'flex w-full min-w-0 items-start gap-3 rounded-md px-3 py-2 text-left',
           ROW_INTERACTIVE,
           isSelected && 'bg-selected',
+          onFix !== null && 'pr-14',
         )}
       >
         <span
@@ -146,11 +142,7 @@ export const ReviewListRow = ({ entry, isSelected, onSelect, onFix, selection }:
           variant="secondary"
           data-fix-row={entry.threadId}
           onClick={onFix}
-          className={cn(
-            'absolute right-2 top-1 bg-elevated',
-            'opacity-0 group-focus-within/review-row:opacity-100 group-hover/review-row:opacity-100',
-            'motion-safe:transition-opacity',
-          )}
+          className="absolute right-2 top-1.5"
         >
           {REVIEW_LAUNCH_LABEL.fix}
         </Button>

@@ -303,7 +303,7 @@ describe('NotificationsStudio', () => {
     expect(screen.getAllByRole('img', { name: 'Unread' })).toHaveLength(1);
   });
 
-  it('keeps the primary action visible and reserves the hover slot for row actions', () => {
+  it('keeps the primary action and the row actions visible at rest', () => {
     seedNotifications({
       notifications: [
         buildNotification({
@@ -322,7 +322,7 @@ describe('NotificationsStudio', () => {
     const slot = screen
       .getByRole('button', { name: /delete "summarizer failed"/i })
       .closest('span');
-    expect(slot?.className).toContain('group-hover:opacity-100');
+    expect(slot?.className).not.toContain('opacity-0');
     expect(slot?.className).not.toMatch(/(^|\s)hidden(\s|$)/);
     expect(slot?.contains(screen.getByRole('button', { name: 'Retry' }))).toBe(false);
   });

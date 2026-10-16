@@ -133,10 +133,7 @@ export const PutOnBranchPopover = ({ sessionId, mountId, projectId, branch, anch
             onClick={dropdown.toggle}
             title="Put on a branch"
             icon={<Plus size={ICON_SIZE.row} aria-hidden />}
-            className={cn(
-              'w-6 justify-center px-0 opacity-0 focus-visible:opacity-100 group-hover/mount-row:opacity-100 group-focus-within/mount-row:opacity-100',
-              isOpen && 'opacity-100',
-            )}
+            className="w-6 justify-center px-0"
           />
         )
       }

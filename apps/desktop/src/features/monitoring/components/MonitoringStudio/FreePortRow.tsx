@@ -22,6 +22,6 @@ export const FreePortRow = ({ row, name, nameSlot, actions, isNested = false }: 
     {nameSlot ?? <span className="min-w-0 truncate">{name}</span>}
     <span>Free</span>
     <span className="col-span-4" />
-    <ActionsCell actions={actions} isRevealedOnHover />
+    <ActionsCell actions={actions} />
   </li>
 );

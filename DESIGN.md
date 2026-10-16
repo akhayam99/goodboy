@@ -107,8 +107,9 @@ Six rules, written so you can check a diff against them directly.
 - **Terminal state hides behind a count.** Items that are completed, answered,
   resolved, dismissed or discarded never show inline by default. Use a header
   toggle with a count, or a collapsed disclosure row.
-- **One visible action per row**, plus the chevron. Every other action shows
-  on hover and focus, or lives in the focused view.
+- **One primary action per row**, plus the chevron. Every other action sits in
+  the row's visible `⋯` menu or in the focused view; nothing appears only on
+  hover (G17, guarded by `no-hover-only-actions.test.ts`).
 - **Empty sections collapse.** When a surface is the whole body of where the
   user navigated (a pane, or a wizard step), it shows an `EmptyState`. A
   section inside a composite page shows its header at most, never a

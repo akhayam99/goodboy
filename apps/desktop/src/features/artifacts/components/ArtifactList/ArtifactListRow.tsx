@@ -241,7 +241,7 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
                 </Button>
               )}
             </span>
-            <span data-reveal="hover" className={ARTIFACT_ROW_GRID.hover}>
+            <span data-row-secondary="" className={ARTIFACT_ROW_GRID.secondary}>
               {hover.map((action) => (
                 <IconButton
                   key={action.id}

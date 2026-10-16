@@ -181,8 +181,8 @@ describe('ProjectGroups', () => {
 
     const starred = screen.getByRole('button', { name: 'Starred: payments-api' });
     const other = screen.getByRole('button', { name: 'Starred: notify-relay' });
-    expect(starred.getAttribute('data-quiet-at-rest')).toBeNull();
-    expect(other.getAttribute('data-quiet-at-rest')).toBe('true');
+    expect(starred.getAttribute('aria-pressed')).toBe('true');
+    expect(other.getAttribute('aria-pressed')).toBe('false');
   });
 
   it('puts the scripts slot in the open editor card, never on the row', () => {

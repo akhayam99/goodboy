@@ -26,7 +26,6 @@ export const ProjectStarToggle = ({ project, busy }: Props) => {
       label={`Starred: ${project.name}`}
       tooltip="Starred projects come first for agents"
       disabled={busy}
-      isQuietAtRest
       onToggle={() => void toggle()}
     />
   );

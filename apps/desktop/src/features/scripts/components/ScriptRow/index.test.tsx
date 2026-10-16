@@ -139,7 +139,7 @@ describe('ScriptRow task', () => {
     const onStop = vi.fn();
     renderRow({ script: REPLAY });
     expect(
-      screen.getByRole('button', { name: `Run ${REPLAY.name}` }).closest('[data-reveal]'),
+      screen.getByRole('button', { name: `Run ${REPLAY.name}` }).closest('[data-row-secondary]'),
     ).toBeNull();
     cleanup();
 
@@ -230,7 +230,9 @@ describe('ScriptRow task', () => {
     renderRow({});
 
     for (const name of ['Pin test', 'More for test']) {
-      expect(screen.getByRole('button', { name }).closest('[data-reveal="hover"]')).not.toBeNull();
+      expect(
+        screen.getByRole('button', { name }).closest('[data-row-secondary=""]'),
+      ).not.toBeNull();
     }
   });
 
@@ -274,8 +276,8 @@ describe('ScriptRow service', () => {
 
     const stop = screen.getByRole('button', { name: 'Stop dev' });
     const restart = screen.getByRole('button', { name: 'Restart dev' });
-    expect(stop.closest('[data-reveal]')).toBeNull();
-    expect(restart.closest('[data-reveal]')).toBeNull();
+    expect(stop.closest('[data-row-secondary]')).toBeNull();
+    expect(restart.closest('[data-row-secondary]')).toBeNull();
     fireEvent.click(stop);
     fireEvent.click(restart);
     expect(onStop).toHaveBeenCalledTimes(1);

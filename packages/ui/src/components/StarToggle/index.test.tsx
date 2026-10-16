@@ -64,15 +64,9 @@ describe('StarToggle', () => {
     expect(button.className).toContain('focus-visible:ring-2');
   });
 
-  it('marks a quiet unstarred toggle so a row can reveal it on hover and focus', () => {
-    const { button } = renderToggle({ isQuietAtRest: true });
+  it('keeps an unstarred toggle on screen at rest, not pressed', () => {
+    const { button } = renderToggle();
 
-    expect(button.getAttribute('data-quiet-at-rest')).toBe('true');
-  });
-
-  it('never quiets a starred toggle', () => {
-    const { button } = renderToggle({ isQuietAtRest: true, isStarred: true });
-
-    expect(button.getAttribute('data-quiet-at-rest')).toBeNull();
+    expect(button.getAttribute('aria-pressed')).toBe('false');
   });
 });

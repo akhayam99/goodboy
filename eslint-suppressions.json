@@ -14305,7 +14305,7 @@
   },
   "packages/ui/src/components/CardAction.tsx": {
     "@typescript-eslint/naming-convention": {
-      "count": 10
+      "count": 8
     }
   },
   "packages/ui/src/components/Checkbox.tsx": {

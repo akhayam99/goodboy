@@ -13,8 +13,6 @@ type Props = {
   readonly onEditor: () => void;
 };
 
-const REVEAL_ON_HOVER = 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100';
-
 export const RowPrimaryAction = ({ folder, status, isBusy, onRemove, onEditor }: Props) => {
   const navigate = useAppStore((state) => state.navigate);
   if (status === 'safe' && folder.origin !== 'in-use') {
@@ -24,11 +22,7 @@ export const RowPrimaryAction = ({ folder, status, isBusy, onRemove, onEditor }:
         size="sm"
         disabled={isBusy}
         onClick={() => onRemove('safe')}
-        className={cn(
-          'text-danger hover:text-danger',
-          REVEAL_ON_HOVER,
-          tintClasses('danger').hoverBg,
-        )}
+        className={cn('text-danger hover:text-danger', tintClasses('danger').hoverBg)}
       >
         Remove
       </Button>

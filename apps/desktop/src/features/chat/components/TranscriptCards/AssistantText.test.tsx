@@ -63,13 +63,11 @@ describe('AssistantText', () => {
     expect(screen.queryByRole('button', { name: 'copy' })).toBeNull();
   });
 
-  it('reveals copy when focus lands anywhere inside the message, not on copy itself', () => {
+  it('shows copy at rest, with no hover reveal around it', () => {
     render(<AssistantText text="hello" sessionId={null} />);
     const copyButton = screen.getByRole('button', { name: 'copy' });
-    const revealWrapper = copyButton.parentElement as HTMLElement;
 
-    expect(revealWrapper.className).toContain('group-focus-within:opacity-100');
-    expect(revealWrapper.className).not.toContain('focus-visible:');
+    expect(copyButton.parentElement?.className ?? '').not.toContain('opacity-0');
   });
 
   it('draws the pull request text card under a message that carries the blocks, and only then', () => {

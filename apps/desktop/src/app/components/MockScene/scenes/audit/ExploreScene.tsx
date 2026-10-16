@@ -163,18 +163,9 @@ const listFolder = ({ sessionDir, relPath, variant, isBig }: ListParams) => {
 
 type HoverLabelParams = {
   readonly row: string;
-  readonly action: string;
 };
 
-const hoverLabel = ({ row, action }: HoverLabelParams): string => {
-  if (action === 'open') {
-    return `Open ${row}`;
-  }
-  if (action === 'show') {
-    return `Show ${row} in Finder`;
-  }
-  return `Ask an agent about ${row}`;
-};
+const hoverLabel = ({ row }: HoverLabelParams): string => `Actions for ${row}`;
 
 type RowHoverParams = {
   readonly isReady: boolean;
@@ -187,7 +178,7 @@ const useRowHover = ({ isReady, row, action }: RowHoverParams): void => {
     if (!isReady || row === null) {
       return;
     }
-    const label = hoverLabel({ row, action });
+    const label = hoverLabel({ row });
     const interval = window.setInterval(() => {
       const target = window.document.querySelector(`button[aria-label="${CSS.escape(label)}"]`);
       if (!(target instanceof HTMLElement)) {

@@ -12,7 +12,7 @@ type Props = {
 export const HistoryRowActions = ({ target, anchorKey }: Props) => {
   const controls = useActionControls({ target, anchorKey });
   return (
-    <span className="pointer-events-none flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
+    <span className="flex shrink-0 items-center gap-0.5">
       {controls.inSlot({ slot: 'hover' }).map((action) => (
         <IconButton
           key={action.id}

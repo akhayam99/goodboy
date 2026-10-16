@@ -59,12 +59,12 @@ describe('the settings projects scenes', () => {
     expect(
       within(starred)
         .getAllByRole('button', { name: /^Starred: / })
-        .every((star) => star.getAttribute('data-quiet-at-rest') === null),
+        .every((star) => star.getAttribute('aria-pressed') === 'true'),
     ).toBe(true);
     expect(
       within(others)
         .getAllByRole('button', { name: /^Starred: / })
-        .every((star) => star.getAttribute('data-quiet-at-rest') === 'true'),
+        .every((star) => star.getAttribute('aria-pressed') === 'false'),
     ).toBe(true);
     screen.getByRole('group', { name: 'Terminal folder' });
   });

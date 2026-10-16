@@ -1824,26 +1824,27 @@ The desktop app has no wrapper for it now: a word that stays gets a
 ## Card action grammar and creation grammar
 
 **One card action grammar.** Two fixed slots. Navigation sits top right and is
-always visible. Lifecycle and destructive actions sit bottom right. Hover may
-show lifecycle actions without moving either slot, and keyboard focus shows the
-same. A card says its state once, with its `ToneBar`: the quick action stays
+always visible. Lifecycle and destructive actions sit bottom right, visible at
+rest. A card says its state once, with its `ToneBar`: the quick action stays
 `muted-foreground` at rest and takes its tone only on hover, and a closed pull
 request glyph on a Done card is quiet too. `CardAction` has no resting tint unless
 a caller passes `highlighted` for a state of its own (an inspected or armed row). The
 warning line paints with `warning-mark` (the same amber as `warning` in dark, a
-lighter amber in light), because the text amber reads brick red as a line. Icon actions use the shared `Tooltip`, never the native `title`. A
-hover slot keeps its width at rest: it fades with `opacity-0
-group-hover:opacity-100 group-focus-within:opacity-100`, never `hidden
-group-hover:flex`, and the row's primary action stays outside it, visible.
+lighter amber in light), because the text amber reads brick red as a line. Icon actions use the shared `Tooltip`, never the native `title`. No action
+shows only on hover: hover may add a tooltip, a fill or a hover card, never the
+only way to do something. `no-hover-only-actions.test.ts` fails on an
+`opacity-0`, `invisible` or `hidden` element that a `hover:` or `group-hover:`
+class reveals, outside its short list of decorative marks (an aria-hidden hint
+inside a button that is itself the action) and second ways (the multi select
+tick, entered by Cmd or Shift click).
 
-**A list row shows one action at rest.** A row in a list (the Artifacts list, the
-Scripts list) keeps its state-driven primary visible, plus the open control, and
-nothing else: no trash column, no second text button. Secondary actions
-(Edit, Copy, Pin, Run) appear on hover and focus inside one element marked
-`data-reveal="hover"`, which hides itself with `invisible` as well as `opacity-0`
-so it is out of the accessibility tree at rest and a test counts visible buttons
-by what sits outside it. Destructive and rare actions (Delete, Rename) live in
-the row's overflow menu, drawn as a horizontal `Ellipsis`. A running Stop is the
+**A list row leads with one action.** A row in a list (the Artifacts list, the
+Scripts list) leads with its state-driven primary and the open control: no
+trash column, no second text button. Secondary actions (Edit, Copy, Pin, Run)
+sit after them, visible at rest, inside one element marked
+`data-row-secondary` so a test can tell the primary from the rest. Destructive
+and rare actions (Delete, Rename) live in the row's overflow menu, drawn as a
+horizontal `Ellipsis` and visible at rest. A running Stop is the
 exception: it stays visible. Every control of a list, row actions and group
 header refresh alike, sits in a 28px slot on the same right edge.
 

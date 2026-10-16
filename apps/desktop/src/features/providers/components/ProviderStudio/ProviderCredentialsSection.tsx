@@ -139,9 +139,9 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
                       aria-label={`Remove ${c.label}`}
                       onClick={() => setArmedId(c.id)}
                       className={cn(
-                        'inline-flex size-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity',
+                        'inline-flex size-7 items-center justify-center rounded-md text-muted-foreground',
                         tintClasses('danger').hoverBg,
-                        'hover:text-danger focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring group-hover:opacity-100 group-has-[[aria-expanded=true]]:opacity-100',
+                        'hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
                       )}
                     >
                       <Trash2 size={ICON_SIZE.row} aria-hidden />

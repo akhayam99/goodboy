@@ -10,8 +10,6 @@ import {
 import { ScrollFade } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import type { ExploreFileActionTarget } from '../../../actions/types';
-import { runObjectAction } from '../../../actions/registry';
-import { useActionEnv } from '../../../actions/useActionEnv';
 import { useHeldPaletteScope } from '../../../palette/useHeldPaletteScope';
 import {
   WINDOW_MIN_ROWS,
@@ -26,7 +24,6 @@ import type {
   FocusRowParams,
   LoadFolderParams,
   OpenEntryParams,
-  RunRowActionParams,
   SelectFileParams,
   SetExpandedParams,
 } from '../../exploreHandlers';
@@ -71,7 +68,6 @@ export const ExploreTree = ({
   onSelectFile,
 }: Props) => {
   const exploreOpen = useExploreOpen({ sessionId, sessionDir });
-  const env = useActionEnv({ origin: 'button' });
   const [failureByPath, setFailureByPath] = useState<
     Readonly<Record<string, ExploreOpenFailure | null>>
   >({});
@@ -160,11 +156,6 @@ export const ExploreTree = ({
   const treeRef = useHeldPaletteScope<HTMLDivElement>({
     scope: activeRow === undefined ? null : targetOf(activeRow),
   });
-
-  const handleRun = useCallback(
-    ({ target, actionId }: RunRowActionParams) => void runObjectAction({ target, actionId, env }),
-    [env],
-  );
 
   const handleAskClosed = useCallback(() => setAskPath(null), []);
 
@@ -286,7 +277,6 @@ export const ExploreTree = ({
               folderChangeCount={changes.countByFolder.get(row.entry.relPath) ?? 0}
               onToggle={onSetExpanded}
               onSelectFile={onSelectFile}
-              onRun={handleRun}
               onAskClosed={handleAskClosed}
             />
           ) : (

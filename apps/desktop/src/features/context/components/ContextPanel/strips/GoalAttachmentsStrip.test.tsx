@@ -57,12 +57,10 @@ import { GoalAttachmentsStrip } from './GoalAttachmentsStrip';
 afterEach(cleanup);
 
 describe('GoalAttachmentsStrip', () => {
-  it('reveals the remove control on keyboard focus, not only on hover', () => {
+  it('shows the remove control at rest', () => {
     render(<GoalAttachmentsStrip owner={{ type: 'session', id: 'sess-1' as never }} />);
     const remove = screen.getByRole('button', { name: 'Remove notes.txt' });
 
-    expect(remove.className).toContain('opacity-0');
-    expect(remove.className).toContain('focus-visible:opacity-100');
-    expect(remove.className).toContain('group-hover:opacity-100');
+    expect(remove.className).not.toContain('opacity-0');
   });
 });

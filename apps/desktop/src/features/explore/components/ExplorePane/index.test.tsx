@@ -112,6 +112,25 @@ const mount = () => render(<Shell />);
 
 const rowNamed = async (name: string) => screen.findByRole('treeitem', { name });
 
+type RowMenuParams = {
+  readonly row: HTMLElement;
+};
+
+type RowActionParams = RowMenuParams & {
+  readonly item: RegExp;
+};
+
+const openRowMenu = async ({ row }: RowMenuParams): Promise<ReadonlyArray<string>> => {
+  fireEvent.click(within(row).getByRole('button', { name: /^Actions for / }));
+  const items = await screen.findAllByRole('menuitem');
+  return items.map((item) => item.getAttribute('data-menu-label') ?? item.textContent ?? '');
+};
+
+const pickRowAction = async ({ row, item }: RowActionParams): Promise<void> => {
+  await openRowMenu({ row });
+  fireEvent.click(screen.getByRole('menuitem', { name: item }));
+};
+
 type MountParams = {
   readonly kind: 'repo' | 'folder';
   readonly worktreePath: string;
@@ -486,9 +505,9 @@ describe('ExplorePane keys', () => {
     seed();
     mount();
     const file = await rowNamed('package.json');
-    const reveal = within(file).getByRole('button', { name: 'Show package.json in Finder' });
+    const more = within(file).getByRole('button', { name: 'Actions for package.json' });
 
-    fireEvent.keyDown(reveal, { key: 'ArrowDown' });
+    fireEvent.keyDown(more, { key: 'ArrowDown' });
 
     expect(focusedName()).not.toBe('docs');
   });
@@ -617,15 +636,15 @@ describe('ExplorePane previews', () => {
 describe('ExplorePane row actions', () => {
   const listOne = (relPath: string) => list({ relPath: '', entries: [entry({ relPath })] });
 
-  it('keeps the actions on every row, focusable and working', async () => {
+  it('keeps the actions on every row in a visible menu, focusable and working', async () => {
     listOne('notes.txt');
     mount();
     const row = await rowNamed('notes.txt');
-    const reveal = within(row).getByRole('button', { name: 'Show notes.txt in Finder' });
+    const more = within(row).getByRole('button', { name: 'Actions for notes.txt' });
 
-    reveal.focus();
-    expect(document.activeElement).toBe(reveal);
-    fireEvent.click(reveal);
+    more.focus();
+    expect(document.activeElement).toBe(more);
+    await pickRowAction({ row, item: /Show in Finder/ });
 
     await waitFor(() =>
       expect(callsTo('explore_open')).toContainEqual([
@@ -640,28 +659,22 @@ describe('ExplorePane row actions', () => {
     mount();
     const row = await rowNamed('notes.txt');
 
-    fireEvent.click(within(row).getByRole('button', { name: 'Show notes.txt in Finder' }));
+    await pickRowAction({ row, item: /Show in Finder/ });
 
     expect(selectOpenDrawer(useAppStore.getState())).toBeNull();
   });
 
-  it('names each row action on hover, one tooltip at a time', async () => {
+  it('lists the row actions in its menu, in the registry order', async () => {
     listOne('notes.txt');
     mount();
     const row = await rowNamed('notes.txt');
 
-    const expected = [
-      { name: 'Ask an agent about notes.txt', tip: 'Ask an agent' },
-      { name: 'Open notes.txt', tip: 'Open' },
-      { name: 'Show notes.txt in Finder', tip: 'Show in Finder' },
-    ];
-    for (const { name, tip } of expected) {
-      const button = within(row).getByRole('button', { name });
-      fireEvent.mouseEnter(button);
-      expect((await screen.findByRole('tooltip')).textContent).toBe(tip);
-      fireEvent.mouseLeave(button);
-      expect(screen.queryByRole('tooltip')).toBeNull();
-    }
+    expect(await openRowMenu({ row })).toEqual([
+      'Open',
+      'Show in Finder',
+      'Ask an agent about this file',
+      'Copy path',
+    ]);
   });
 
   it('gives the row no native title', async () => {
@@ -678,7 +691,7 @@ describe('ExplorePane row actions', () => {
     await rowNamed('a.txt');
     expect(screen.queryByRole('dialog')).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Ask an agent about b.txt' }));
+    await pickRowAction({ row: await rowNamed('b.txt'), item: /Ask an agent/ });
 
     const dialog = await screen.findByRole('dialog', { name: 'Ask an agent about b.txt' });
     expect(dialog).toBeDefined();
@@ -688,10 +701,7 @@ describe('ExplorePane row actions', () => {
   it('shows no tooltip over the ask button while its popover is open', async () => {
     listOne('notes.txt');
     mount();
-    await rowNamed('notes.txt');
-    const ask = screen.getByRole('button', { name: 'Ask an agent about notes.txt' });
-
-    fireEvent.click(ask);
+    await pickRowAction({ row: await rowNamed('notes.txt'), item: /Ask an agent/ });
     const open = await screen.findByRole('button', { name: 'Ask an agent about notes.txt' });
     fireEvent.mouseEnter(open);
     await new Promise((resolve) => setTimeout(resolve, 600));
@@ -700,17 +710,16 @@ describe('ExplorePane row actions', () => {
     expect(screen.queryByRole('tooltip')).toBeNull();
   });
 
-  it('puts the ask button back when its popover closes', async () => {
+  it('puts the row menu back when the ask popover closes', async () => {
     listOne('notes.txt');
     mount();
-    await rowNamed('notes.txt');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Ask an agent about notes.txt' }));
+    await pickRowAction({ row: await rowNamed('notes.txt'), item: /Ask an agent/ });
     await screen.findByRole('dialog', { name: 'Ask an agent about notes.txt' });
     fireEvent.mouseDown(document.body);
 
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-    expect(screen.getByRole('button', { name: 'Ask an agent about notes.txt' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Actions for notes.txt' })).toBeDefined();
   });
 
   it('spawns from a file with the selected model and a prompt that includes ask and path', async () => {
@@ -721,9 +730,7 @@ describe('ExplorePane row actions', () => {
     listOne('budget.xlsx');
     h.reads.push({ type: 'binary', size: 4096 }, { type: 'binary', size: 4096 });
     mount();
-    await rowNamed('budget.xlsx');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Ask an agent about budget.xlsx' }));
+    await pickRowAction({ row: await rowNamed('budget.xlsx'), item: /Ask an agent/ });
     fireEvent.change(
       await screen.findByRole('textbox', { name: 'What should the agent do with this file?' }),
       { target: { value: 'Analyze this spreadsheet and summarize trends.' } },
@@ -755,9 +762,7 @@ describe('ExplorePane row actions', () => {
   it('keeps spawn disabled when the ask is empty', async () => {
     listOne('notes.txt');
     mount();
-    await rowNamed('notes.txt');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Ask an agent about notes.txt' }));
+    await pickRowAction({ row: await rowNamed('notes.txt'), item: /Ask an agent/ });
 
     expect(
       (await screen.findByRole('button', { name: 'Start agent' })).hasAttribute('disabled'),
@@ -777,8 +782,10 @@ describe('ExplorePane row actions', () => {
     mount();
     const row = await rowNamed('docs');
 
-    expect(within(row).queryByRole('button', { name: /Ask an agent/ })).toBeNull();
-    expect(within(row).getByRole('button', { name: 'Show docs in Finder' })).toBeDefined();
+    const labels = await openRowMenu({ row });
+
+    expect(labels.some((label) => label.startsWith('Ask an agent'))).toBe(false);
+    expect(labels).toContain('Show in Finder');
   });
 });
 
@@ -789,12 +796,9 @@ describe('ExplorePane in a repository with an editor', () => {
     mountRepo();
     listPage('page.tsx');
     mount();
-    await rowNamed('page.tsx');
+    const row = await rowNamed('page.tsx');
 
-    const open = screen.getByRole('button', { name: 'Open page.tsx in VS Code' });
-    fireEvent.mouseEnter(open);
-    expect((await screen.findByRole('tooltip')).textContent).toBe('Open in editor');
-    fireEvent.click(open);
+    await pickRowAction({ row, item: /Open in editor/ });
 
     await waitFor(() =>
       expect(callsTo('explore_open')).toContainEqual([
@@ -828,9 +832,7 @@ describe('ExplorePane in a repository with an editor', () => {
     mountRepo();
     listPage('spec.pdf');
     mount();
-    await rowNamed('spec.pdf');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Open spec.pdf' }));
+    await pickRowAction({ row: await rowNamed('spec.pdf'), item: /^Open/ });
 
     await waitFor(() =>
       expect(callsTo('explore_open')).toContainEqual([
@@ -850,9 +852,7 @@ describe('ExplorePane in a repository with an editor', () => {
       }),
     );
     mount();
-    await rowNamed('page.tsx');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Open page.tsx in VS Code' }));
+    await pickRowAction({ row: await rowNamed('page.tsx'), item: /Open in editor/ });
 
     expect(await screen.findByText(/^Couldn't open page.tsx in VS Code\./)).toBeDefined();
     expect(screen.getByRole('button', { name: 'Choose editor' })).toBeDefined();
@@ -863,9 +863,7 @@ describe('ExplorePane in a repository with an editor', () => {
     listPage('page.tsx');
     h.openFailures.push(new Error('permission denied'));
     mount();
-    await rowNamed('page.tsx');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Open page.tsx in VS Code' }));
+    await pickRowAction({ row: await rowNamed('page.tsx'), item: /Open in editor/ });
 
     expect(
       await screen.findByText("Couldn't open page.tsx in VS Code. permission denied"),
@@ -879,7 +877,7 @@ describe('ExplorePane in a repository with an editor', () => {
     mount();
     const row = await rowNamed('apps');
 
-    fireEvent.click(within(row).getByRole('button', { name: 'Open apps in VS Code' }));
+    await pickRowAction({ row, item: /Open in editor/ });
 
     await waitFor(() =>
       expect(callsTo('explore_open')).toContainEqual([
@@ -895,7 +893,7 @@ describe('ExplorePane in a repository with an editor', () => {
     mount();
     const row = await rowNamed('apps');
 
-    fireEvent.click(within(row).getByRole('button', { name: 'Show apps in Finder' }));
+    await pickRowAction({ row, item: /Show in Finder/ });
 
     await waitFor(() =>
       expect(callsTo('explore_open')).toContainEqual([
@@ -912,8 +910,10 @@ describe('ExplorePane folders outside a repository', () => {
     mount();
     const row = await rowNamed('exports');
 
-    expect(within(row).queryByRole('button', { name: /^Open / })).toBeNull();
-    expect(within(row).getByRole('button', { name: 'Show exports in Finder' })).toBeDefined();
+    const labels = await openRowMenu({ row });
+
+    expect(labels.some((label) => label.startsWith('Open'))).toBe(false);
+    expect(labels).toContain('Show in Finder');
   });
 });
 

@@ -144,7 +144,7 @@ export const StepRow = ({
                 onKeyDown={onGripKeyDown}
                 disabled={disabled}
                 aria-label={`Reorder step ${ordinal} (drag or arrow keys)`}
-                className="inline-flex size-6 cursor-grab touch-none items-center justify-center rounded-md text-faint-foreground opacity-0 transition-opacity hover:bg-hover hover:text-foreground focus-visible:opacity-100 active:cursor-grabbing disabled:cursor-not-allowed group-hover/plan-row:opacity-100"
+                className="inline-flex size-6 cursor-grab touch-none items-center justify-center rounded-md text-faint-foreground hover:bg-hover hover:text-foreground active:cursor-grabbing disabled:cursor-not-allowed"
               >
                 <GripVertical size={ICON_SIZE.control} aria-hidden />
               </button>

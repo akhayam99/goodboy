@@ -155,7 +155,7 @@ export const TurnsTable = ({
                           label={`Open session ${sessionGoal}`}
                           size="xs"
                           onClick={() => onOpenSession(sessionId)}
-                          className="size-5 opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
+                          className="size-5"
                         />
                       )}
                     </td>
