@@ -401,7 +401,7 @@ fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), Te
             }
         }
 
-        let exit_code = {
+        let (exit_code, is_closed) = {
             let slot = {
                 let guard = registry_r.lock().ok();
                 guard
@@ -411,16 +411,20 @@ fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), Te
             };
             if let Some(slot) = slot {
                 let mut g = slot.lock().unwrap_or_else(|e| e.into_inner());
-                g.as_mut()
+                let code = g
+                    .as_mut()
                     .and_then(|r| r.child.wait().ok())
                     .map(|s| s.exit_code() as i32)
-                    .unwrap_or(-1)
+                    .unwrap_or(-1);
+                (code, false)
             } else {
-                -1
+                (-1, true)
             }
         };
 
-        exited.keep(&sid, Arc::clone(&ring), exit_code);
+        if !is_closed {
+            exited.keep(&sid, Arc::clone(&ring), exit_code);
+        }
         crate::proc::ledger::forget(&spawn_id);
         if let Ok(mut map) = registry_r.lock() {
             map.remove(&sid);
@@ -531,13 +535,15 @@ pub async fn terminal_close(
         terminal_scrollback::forget(&dir, &session_id)
             .map_err(|e| TerminalError::Io(e.to_string()))?;
     }
-    close_session(&registry.0, &session_id)
+    close_session(&registry.0, &registry.1, &session_id)
 }
 
 fn close_session(
     registry: &Arc<Mutex<HashMap<String, TerminalEntry>>>,
+    exited: &ExitedStore,
     session_id: &str,
 ) -> Result<(), TerminalError> {
+    exited.forget(session_id);
     let slot = {
         let mut map = registry.lock().map_err(|_| TerminalError::Poisoned)?;
         map.remove(session_id).map(|entry| entry.slot)
@@ -556,6 +562,17 @@ fn close_session(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn close_session_forgets_the_exited_ring_of_a_closed_tab() {
+        let registry = TerminalRegistry::new();
+        registry.1.keep("session-3::t2", new_shared_ring(), 0);
+        assert!(registry.1.snapshot("session-3::t2").is_some());
+
+        close_session(&registry.0, &registry.1, "session-3::t2").expect("close");
+
+        assert!(registry.1.snapshot("session-3::t2").is_none());
+    }
 
     #[test]
     fn registry_lists_open_terminal_keys_with_their_cwd() {
@@ -735,7 +752,7 @@ mod tests {
         assert_eq!(live[0].pid, Some(row.pid));
         assert!(live[0].foreground_pid.is_some());
 
-        close_session(&registry.0, "session-7::t1").expect("close");
+        close_session(&registry.0, &registry.1, "session-7::t1").expect("close");
 
         crate::proc::ledger::test_support::assert_row_gone(&cwd);
         assert!(registry.0.lock().unwrap().is_empty());
@@ -814,7 +831,7 @@ mod tests {
         let text = String::from_utf8_lossy(&STANDARD.decode(&snapshot.data).unwrap()).into_owned();
         assert!(text.starts_with("yesterday's build"));
         assert!(terminal_scrollback::take(&saved, "session-11::t1").is_none());
-        close_session(&registry.0, "session-11::t1").expect("close");
+        close_session(&registry.0, &registry.1, "session-11::t1").expect("close");
         let _ = std::fs::remove_dir_all(&dir);
     }
 

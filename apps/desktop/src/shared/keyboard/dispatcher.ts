@@ -44,7 +44,7 @@ export const eventMatches = ({ event, entry }: MatchParams): boolean => {
 
 type Handler = (event: KeyboardEvent) => void | boolean;
 
-type RegistrationOptions = {
+export type RegistrationOptions = {
   readonly canDecline?: boolean;
 };
 
