@@ -6,6 +6,7 @@ export type StatusDotProps = {
   readonly tone: Tone;
   readonly size?: 'sm' | 'md';
   readonly pulsing?: boolean;
+  readonly isRing?: boolean;
   readonly role?: 'status' | 'presentation';
   readonly title?: string;
   readonly ariaLabel?: string;
@@ -21,6 +22,7 @@ export const StatusDot = ({
   tone,
   size = 'md',
   pulsing,
+  isRing = false,
   role = 'presentation',
   title,
   ariaLabel,
@@ -41,7 +43,7 @@ export const StatusDot = ({
         className={cn(
           'inline-block shrink-0 rounded-full',
           dim,
-          dot,
+          isRing ? 'bg-transparent ring-1 ring-idle ring-inset' : dot,
           pulsing ? 'motion-safe:animate-soft-pulse' : '',
           className,
         )}

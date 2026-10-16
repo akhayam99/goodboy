@@ -52,7 +52,7 @@ describe('StudioFrame', () => {
     expect(frame?.className).toContain('bg-chrome');
     expect(screen.getByRole('status', { name: 'Loading Workflows' })).toBeDefined();
     expect(container.querySelector('[data-studio-skeleton="grid"]')).not.toBeNull();
-    expect(screen.getByRole('banner', { name: 'Workflows' })).toBeDefined();
+    expect(container.querySelector('[data-studio-band]')).toBeNull();
   });
 
   it('loads settings behind a rail', () => {
@@ -99,16 +99,64 @@ describe('StudioFrame', () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it('names the studio with the trail primitive in its band', () => {
-    render(
-      <StudioFrame kind="inbox" onClose={() => undefined}>
-        <Body />
+  it.each(['inbox', 'chat', 'workflow', 'terminal'] as const)(
+    'draws no band, no title and no Close around the %s door page',
+    (kind) => {
+      const { container } = render(
+        <StudioFrame kind={kind} onClose={() => undefined}>
+          <PaneShell title="Page title">
+            <p>body</p>
+          </PaneShell>
+        </StudioFrame>,
+      );
+
+      expect(container.querySelector('[data-studio-band]')).toBeNull();
+      expect(screen.queryByRole('button', { name: /^Close/ })).toBeNull();
+      expect(screen.getAllByRole('heading')).toHaveLength(1);
+      const header = container.querySelector('[data-slot="pane-header"]');
+      expect(header?.hasAttribute('data-under-trail')).toBe(false);
+    },
+  );
+
+  it.each([
+    ['monitoring', 'Close monitoring'],
+    ['notifications', 'Close notifications'],
+    ['guide', 'Close guide'],
+  ] as const)('puts Close as the last action of the %s page header', (kind, label) => {
+    const { container } = render(
+      <StudioFrame kind={kind} onClose={() => undefined}>
+        <PaneShell title="Page title" actions={<button type="button">Refresh</button>}>
+          <p>body</p>
+        </PaneShell>
       </StudioFrame>,
     );
 
-    const band = screen.getByRole('banner', { name: 'Tasks' });
-    const trail = within(band).getByRole('navigation', { name: 'Breadcrumb' });
-    expect(within(trail).getByText('Tasks').getAttribute('aria-current')).toBe('page');
+    expect(container.querySelector('[data-studio-band]')).toBeNull();
+    const header = container.querySelector('[data-slot="pane-header"]');
+    const close = screen.getByRole('button', { name: label });
+    const refresh = screen.getByRole('button', { name: 'Refresh' });
+    expect(header?.contains(close)).toBe(true);
+    expect(refresh.compareDocumentPosition(close)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(screen.getAllByRole('button', { name: label })).toHaveLength(1);
+  });
+
+  it('closes an overlay from the Close in its page header', () => {
+    vi.useFakeTimers();
+    const onClose = vi.fn();
+    render(
+      <StudioFrame kind="monitoring" onClose={onClose}>
+        <PaneShell title="Monitoring">
+          <p>body</p>
+        </PaneShell>
+      </StudioFrame>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close monitoring' }));
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+
+    expect(onClose).toHaveBeenCalledOnce();
   });
 
   it('lets a studio body carry its own trail into the band, in place of the root', () => {
@@ -131,7 +179,7 @@ describe('StudioFrame', () => {
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
-  it('draws the band once and lets the body fill it', () => {
+  it('draws a band only for what the body hands it, never a title or a subtitle', () => {
     const { container } = render(
       <StudioFrame kind="inbox" onClose={() => undefined}>
         <Body subtitle="3 items" />
@@ -139,8 +187,12 @@ describe('StudioFrame', () => {
     );
 
     expect(container.querySelectorAll('header')).toHaveLength(1);
-    expect(screen.getByText('3 items')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Refresh' })).toBeDefined();
+    const band = screen.getByRole('banner', { name: 'Tasks' });
+    expect(within(band).getByRole('button', { name: 'Refresh' })).toBeDefined();
+    expect(within(band).queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
+    expect(within(band).queryByText('Tasks')).toBeNull();
+    expect(screen.queryByText('3 items')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Close tasks' })).toBeNull();
     expect(screen.getByText('inbox body')).toBeDefined();
   });
 
@@ -161,7 +213,7 @@ describe('StudioFrame', () => {
     );
 
     expect(container.querySelector('[data-studio-frame]')).toBe(frame);
-    expect(screen.getByRole('banner', { name: 'Notifications' })).toBeDefined();
+    expect(screen.getByText('notifications body')).toBeDefined();
     expect(screen.queryByText('inbox body')).toBeNull();
   });
 
@@ -204,12 +256,12 @@ describe('StudioFrame', () => {
     vi.useFakeTimers();
     const onClose = vi.fn();
     render(
-      <StudioFrame kind="inbox" onClose={onClose}>
-        <Body />
+      <StudioFrame kind="impact" onClose={onClose}>
+        <p>impact body</p>
       </StudioFrame>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close tasks' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close impact' }));
     act(() => {
       vi.advanceTimersByTime(300);
     });
@@ -221,7 +273,7 @@ describe('StudioFrame', () => {
 describe('StudioFrame grid', () => {
   const columnOf = (node: HTMLElement) => node.closest('[data-page-column]') as HTMLElement | null;
 
-  it.each(['workflow', 'impact'] as const)(
+  it.each(['impact', 'addWorkspace'] as const)(
     'draws the %s band inside the page column, like the title under it',
     (kind) => {
       render(
@@ -241,8 +293,8 @@ describe('StudioFrame grid', () => {
     },
   );
 
-  it.each(['inbox', 'guide', 'changelog', 'notifications', 'chat'] as const)(
-    'draws the %s crumb and title in the detail beside the rail, on one column',
+  it.each(['changelog'] as const)(
+    'draws the %s band in the detail beside the rail, on the column of its title',
     (kind) => {
       const { container } = render(
         <StudioFrame kind={kind} onClose={() => undefined}>
@@ -269,7 +321,7 @@ describe('StudioFrame grid', () => {
     },
   );
 
-  it('keeps Close at the right edge of the same column as the crumb', () => {
+  it('keeps Close at the right edge of the band column, with no crumb of its own', () => {
     render(
       <StudioFrame kind="impact" onClose={() => undefined}>
         <p>body</p>
@@ -277,14 +329,14 @@ describe('StudioFrame grid', () => {
     );
 
     const column = screen.getByRole('banner').querySelector('[data-page-column]') as HTMLElement;
-    expect(column.contains(screen.getByRole('navigation', { name: 'Breadcrumb' }))).toBe(true);
+    expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
     expect(column.contains(screen.getByRole('button', { name: 'Close impact' }))).toBe(true);
   });
 
   it('sits the studio title right under the band, with no extra top inset', () => {
     const { container } = render(
-      <StudioFrame kind="workflow" onClose={() => undefined}>
-        <PaneShell title="Workflows">
+      <StudioFrame kind="impact" onClose={() => undefined}>
+        <PaneShell title="Impact">
           <p>body</p>
         </PaneShell>
       </StudioFrame>,

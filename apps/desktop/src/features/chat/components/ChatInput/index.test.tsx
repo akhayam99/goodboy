@@ -237,6 +237,19 @@ vi.mock('@goodboy/core', async (importOriginal) => {
 import { ARCHIVED_SESSION_REASON } from '../../../session/archivedSession';
 import { ChatInput } from './index';
 
+const routingTrigger = (): HTMLElement => screen.getByRole('button', { name: /^Model routing:/ });
+
+type ResetRowParams = {
+  readonly user: ReturnType<typeof userEvent.setup>;
+};
+
+const openResetRow = async ({ user }: ResetRowParams): Promise<HTMLElement> => {
+  if (screen.queryByRole('dialog', { name: 'Model routing' }) === null) {
+    await user.click(routingTrigger());
+  }
+  return screen.findByRole('button', { name: 'reset' });
+};
+
 function makeSession(overrides: Partial<Session> = {}): Session {
   return {
     id: 'session-1' as Session['id'],
@@ -668,7 +681,7 @@ describe('ChatInput, agent reference routing', () => {
     const user = userEvent.setup();
     render(<ChatInput session={scoutSession()} />);
 
-    expect(screen.queryByLabelText('Reset routing override')).toBeNull();
+    expect(routingTrigger().textContent).not.toContain('pinned');
 
     await user.click(screen.getByRole('button', { name: /^Model routing:/ }));
     const dialog = screen.getByRole('dialog', { name: 'Model routing' });
@@ -691,9 +704,9 @@ describe('ChatInput, agent reference routing', () => {
       }),
     );
 
-    expect(await screen.findByLabelText('Reset routing override')).toBeTruthy();
+    await waitFor(() => expect(routingTrigger().textContent).toContain('· pinned'));
 
-    await user.click(screen.getByLabelText('Reset routing override'));
+    await user.click(await openResetRow({ user }));
 
     expect(setAgentConfig).toHaveBeenLastCalledWith('session-1', 'agent-1', {
       providerOverride: 'anthropic',
@@ -702,7 +715,7 @@ describe('ChatInput, agent reference routing', () => {
     });
     expect(setSessionConfig).not.toHaveBeenCalled();
     await waitFor(() => {
-      expect(screen.queryByLabelText('Reset routing override')).toBeNull();
+      expect(routingTrigger().textContent).not.toContain('pinned');
     });
   });
 
@@ -717,7 +730,7 @@ describe('ChatInput, agent reference routing', () => {
         name: 'Cursor',
       }),
     );
-    await user.click(await screen.findByLabelText('Reset routing override'));
+    await user.click(await openResetRow({ user }));
 
     const textarea = screen.getByRole('textbox');
     await user.type(textarea, 'find the files');
@@ -1013,7 +1026,7 @@ describe('ChatInput, cursor combo axes', () => {
     await togglePicker(user);
     await user.click(modeChip('Fast'));
 
-    expect(await screen.findByLabelText('Reset routing override')).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'reset' })).toBeTruthy();
     expect(screen.getByRole('dialog', { name: 'Model routing' }).textContent).toContain(
       'Overriding default',
     );
@@ -1050,7 +1063,7 @@ describe('ChatInput, cursor combo axes', () => {
     const user = userEvent.setup();
     render(<ChatInput session={cursorSession('composer-2.5-fast')} />);
 
-    expect(screen.queryByLabelText('Reset routing override')).toBeNull();
+    expect(routingTrigger().textContent).not.toContain('pinned');
 
     await togglePicker(user);
     expect(modeChip('Fast').getAttribute('aria-pressed')).toBe('true');
@@ -1066,7 +1079,7 @@ describe('ChatInput, cursor combo axes', () => {
     await togglePicker(user);
     await user.click(modeChip('Fast'));
 
-    expect(await screen.findByLabelText('Reset routing override')).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'reset' })).toBeTruthy();
     expect(modeChip('Fast').getAttribute('aria-pressed')).toBe('false');
   });
 

@@ -7,7 +7,7 @@ import {
   type Ctx,
   type Row,
   WAIT,
-  band,
+  studio,
   both,
   branchTab,
   click,
@@ -166,7 +166,7 @@ const SEARCH_JUMPS: ReadonlyArray<{
       const first = workspaceId === null ? undefined : state.phaseTemplates[workspaceId]?.[0];
       return { kind: 'workflow', sessionId: null, refId: first?.id ?? 'workflow-none' };
     },
-    lands: () => band('Workflows'),
+    lands: () => studio('Workflows'),
   },
   {
     kind: 'branch',

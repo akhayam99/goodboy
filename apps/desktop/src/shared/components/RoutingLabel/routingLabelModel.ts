@@ -72,6 +72,13 @@ const labelOf = ({ provider, model, effort }: LabelParams): RoutingTriggerLabel 
   return { name: [modelLabel(model)], detail: effort != null ? [EFFORT_LABEL[effort]] : [] };
 };
 
+const DEFAULT_EFFORT_WORD = EFFORT_LABEL.medium;
+
+const withoutDefaultEffort = (label: RoutingTriggerLabel): RoutingTriggerLabel => ({
+  ...label,
+  detail: label.detail.filter((segment) => segment !== DEFAULT_EFFORT_WORD),
+});
+
 const sentenceOf = (label: RoutingTriggerLabel): string =>
   [routingNameText(label), ...label.detail].join(' ');
 
@@ -160,7 +167,7 @@ export const routingLabelModel = ({
   });
   return {
     provider: resolved,
-    label,
+    label: divergence == null ? withoutDefaultEffort(label) : label,
     tooltip: divergence == null ? route : `${route}. ${divergence}`,
     divergence,
     isDiverged: divergence != null,

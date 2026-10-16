@@ -12,6 +12,7 @@ import {
   cn,
   DrawerColumn,
   PAGE_FRAME,
+  PaneActionsContext,
   readStudioRailWidth,
   SHEET_CLASSES,
   StudioSlotContext,
@@ -20,6 +21,8 @@ import {
 } from '@goodboy/ui';
 import { StudioBand } from '../../../shared/components/StudioShell/StudioBand';
 import { StudioBandContext } from '../../../shared/components/StudioShell/studioBandContext';
+import { HeaderCloseButton } from '../../../shared/components/StudioShell/HeaderCloseButton';
+import { useHeaderCloseClaim } from '../../../shared/components/StudioShell/useHeaderCloseClaim';
 import {
   StudioFrameContext,
   type StudioChrome,
@@ -95,22 +98,26 @@ export const StudioFrame = ({
     }),
     [requestClose, trailSlot, claimTrail, isDrawerHost],
   );
-  const band = { ...meta, ...chrome };
+  const title = chrome?.title ?? meta.title;
+  const closeLabel = chrome?.closeLabel ?? meta.closeLabel;
+  const accessory = chrome?.accessory ?? null;
+  const headerCloseClaim = useHeaderCloseClaim();
+  const isHeaderClose = isClosable && meta.close === 'header';
+  const isBandClose =
+    isClosable && (meta.close === 'band' || (isHeaderClose && !headerCloseClaim.isClaimed));
+  const headerClose = isHeaderClose ? (
+    <HeaderCloseButton label={closeLabel} onClose={requestClose} onClaim={headerCloseClaim.claim} />
+  ) : null;
+  const isBandDrawn = hasBand && (isBandClose || trailClaims > 0 || accessory !== null);
 
   const isSplit = meta.page !== null && PAGE_FRAME[meta.page] === 'split';
-  const bandNode = hasBand ? (
+  const bandNode = isBandDrawn ? (
     <StudioBand
-      crumbKey={kind}
-      icon={band.icon}
-      {...('tone' in band && band.tone !== undefined && { tone: band.tone })}
-      {...(chrome?.glyph !== undefined && { glyph: chrome.glyph })}
+      label={title}
       width={meta.tier}
-      title={band.title}
-      {...(chrome?.subtitle !== undefined && { subtitle: chrome.subtitle })}
-      closeLabel={band.closeLabel}
-      isClosable={isClosable}
-      accessory={chrome?.accessory}
-      isTrailClaimed={trailClaims > 0}
+      closeLabel={closeLabel}
+      isClosable={isBandClose}
+      accessory={accessory}
       trailSlotRef={setTrailSlot}
       onClose={requestClose}
     />
@@ -140,11 +147,13 @@ export const StudioFrame = ({
           }
         >
           <StudioBandContext.Provider value={isSplit ? bandNode : null}>
-            {hasBand ? (
-              <UnderTrailContext.Provider value>{children}</UnderTrailContext.Provider>
-            ) : (
-              children
-            )}
+            <PaneActionsContext.Provider value={headerClose}>
+              {isBandDrawn ? (
+                <UnderTrailContext.Provider value>{children}</UnderTrailContext.Provider>
+              ) : (
+                children
+              )}
+            </PaneActionsContext.Provider>
           </StudioBandContext.Provider>
         </Suspense>
       </div>
@@ -157,6 +166,7 @@ export const StudioFrame = ({
         data-studio-frame=""
         data-studio-overlay=""
         data-studio={kind}
+        data-studio-title={title}
         data-studio-placement={placement}
         {...(isDrawerHost && { 'data-studio-sheet-owner': '' })}
         className={cn(
@@ -170,7 +180,7 @@ export const StudioFrame = ({
             frame="sheet"
             main={framed}
             drawer={
-              drawerSpec?.node == null ? null : hasBand ? (
+              drawerSpec?.node == null ? null : isBandDrawn ? (
                 <UnderTrailContext.Provider value>{drawerSpec.node}</UnderTrailContext.Provider>
               ) : (
                 drawerSpec.node
