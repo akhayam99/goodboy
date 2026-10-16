@@ -46,6 +46,8 @@ const { sessionList, sidebarOrder, state } = vi.hoisted(() => {
       currentSessionId: 'session-1' as string | null,
       activeLens: {} as Record<string, string | null>,
       selectedAgentId: {} as Record<string, string | null>,
+      sessionPhaseRuns: {},
+      agentKindOverride: {},
       sessionWorktrees: {},
       appStudio: null,
       openStudio: vi.fn(),

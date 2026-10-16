@@ -6,7 +6,7 @@ import { AGENT_KIND_META, kindForRole, type AgentKind } from '../../session/agen
 import { delegationResultOf, type DelegationResultView } from './delegationResultOf';
 import { recordField, textField } from './readJson';
 
-export type DelegationStatus = Readonly<{
+type DelegationStatus = Readonly<{
   word: string;
   tone: Tone;
   isLive: boolean;

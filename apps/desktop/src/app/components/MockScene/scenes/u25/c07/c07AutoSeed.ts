@@ -24,7 +24,7 @@ import {
   type AutoSceneState,
 } from '../../u24/autoSceneSeed';
 
-export type C07Place = 'auto' | 'list' | 'start' | 'session';
+type C07Place = 'auto' | 'list' | 'start' | 'session';
 
 export type C07Seed = Readonly<{
   state: AutoSceneState;
