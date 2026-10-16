@@ -8,9 +8,7 @@ import { WritePanel } from '../../../../../features/artifacts/components/WritePa
 import { NewDrawerBody } from '../../../../../features/session/components/NewDrawer/NewDrawerBody';
 import { SessionOverviewPane } from '../../../../../features/session/components/SessionOverviewPane';
 import { draftFromWorkflow } from '../../../../../features/workflows/engine';
-import { writeLastWorkflowMode } from '../../../../../features/workflows/components/WorkflowBuilderView/lastWorkflowMode';
-import { writeLastNewTab } from '../../../../../features/session/newDrawerTab';
-import type { NewDrawerTab } from '../../../../../store/slices/drawer/state';
+import type { NewDrawerForm } from '../../../../../store/slices/drawer/state';
 import { sceneClock } from '../../sceneClock';
 import { useSceneClicks } from '../audit/useSceneClicks';
 import { RULES_PROVIDERS } from '../audit/workflowRulesSeed';
@@ -94,8 +92,7 @@ const PRESET: Workflow = {
 };
 
 type SceneState = {
-  readonly tab: NewDrawerTab;
-  readonly writeKind?: 'report' | 'wireframe';
+  readonly form: NewDrawerForm;
   readonly isAuto?: boolean;
   readonly isPreset?: boolean;
   readonly hasGuidance?: boolean;
@@ -130,9 +127,7 @@ const NewDrawerScene = ({ state }: Props) => {
         },
       },
     });
-    writeLastNewTab({ workspaceId, tab: state.tab });
-    writeLastWorkflowMode({ workspaceId, mode: state.isPreset === true ? 'preset' : 'dynamic' });
-    if (state.tab === 'run') {
+    if (state.form === 'run' || state.form === 'orchestrate') {
       store.setWorkflowDraft(SESSION_ID, {
         mode: state.isPreset === true ? 'preset' : 'dynamic',
         goalText: GOAL,
@@ -179,10 +174,7 @@ const NewDrawerScene = ({ state }: Props) => {
         drawer={
           <NewDrawerBody
             session={SESSION}
-            payload={{
-              tab: state.tab,
-              ...(state.writeKind !== undefined && { writeKind: state.writeKind }),
-            }}
+            payload={{ form: state.form }}
             isAuto={state.isAuto === true}
             writePanel={WritePanel}
             onClose={() => undefined}
@@ -198,39 +190,35 @@ const NewDrawerScene = ({ state }: Props) => {
 };
 
 export const U24_NEW_DRAWER_SCENES = {
-  'new-drawer-run': () => <NewDrawerScene state={{ tab: 'run', width: 1440 }} />,
+  'new-drawer-run': () => <NewDrawerScene state={{ form: 'orchestrate', width: 1440 }} />,
   'new-drawer-run-guidance': () => (
-    <NewDrawerScene state={{ tab: 'run', hasGuidance: true, width: 1440 }} />
+    <NewDrawerScene state={{ form: 'orchestrate', hasGuidance: true, width: 1440 }} />
   ),
   'new-drawer-run-preset': () => (
-    <NewDrawerScene state={{ tab: 'run', isPreset: true, width: 1440 }} />
+    <NewDrawerScene state={{ form: 'run', isPreset: true, width: 1440 }} />
   ),
   'new-drawer-run-preset-pin': () => (
     <NewDrawerScene
       state={{
-        tab: 'run',
+        form: 'run',
         isPreset: true,
         clicks: ['Model for Plan the guard', 'Pin a model'],
         width: 1440,
       }}
     />
   ),
-  'new-drawer-agent': () => <NewDrawerScene state={{ tab: 'agent', width: 1440 }} />,
+  'new-drawer-agent': () => <NewDrawerScene state={{ form: 'agent', width: 1440 }} />,
   'new-drawer-agent-auto': () => (
     <NewDrawerScene
       state={{
-        tab: 'agent',
+        form: 'auto',
         isAuto: true,
         autoGoal: 'Find why webhooks retry and tell me where to fix it',
         width: 1440,
       }}
     />
   ),
-  'new-drawer-write': () => (
-    <NewDrawerScene state={{ tab: 'write', writeKind: 'report', width: 1440 }} />
-  ),
-  'new-drawer-write-wireframe': () => (
-    <NewDrawerScene state={{ tab: 'write', writeKind: 'wireframe', width: 1440 }} />
-  ),
-  'new-drawer-narrow': () => <NewDrawerScene state={{ tab: 'run', width: 1100 }} />,
+  'new-drawer-write': () => <NewDrawerScene state={{ form: 'report', width: 1440 }} />,
+  'new-drawer-write-wireframe': () => <NewDrawerScene state={{ form: 'wireframe', width: 1440 }} />,
+  'new-drawer-narrow': () => <NewDrawerScene state={{ form: 'orchestrate', width: 1100 }} />,
 };

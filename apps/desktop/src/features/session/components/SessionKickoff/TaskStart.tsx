@@ -258,7 +258,11 @@ export const TaskStart = ({ workspaceId, issues }: Props) => {
               {ISSUE_CAP_LINE}
             </p>
           ) : null}
-          <StartFooter note={isSelecting ? null : 'Pick an issue to start from it.'}>
+          <StartFooter
+            workspaceId={workspaceId}
+            note={isSelecting ? null : 'Pick an issue to start from it.'}
+            isStarting={false}
+          >
             <Button size="sm" disabled={!isSelecting} onClick={confirm}>
               {isSelecting
                 ? pickIssuesLabel({

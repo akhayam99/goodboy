@@ -14,6 +14,8 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'branch header menu: its entries come from the pull request and diff kinds of the registry',
   'features/artifacts/components/ArtifactList/ArtifactNewMenu.tsx':
     'creation menu: picks the kind of artifact to create',
+  'features/session/components/SessionOverviewPane/OverviewActions/index.tsx':
+    'creation menu: picks the New form to open in the drawer',
   'features/integrations/linear/LinearAssigneeMenu.tsx':
     'property picker: sets the assignee value from the control that shows it',
   'features/integrations/linear/LinearStateMenu.tsx':

@@ -1,9 +1,20 @@
-import { AGENT_LINE, AUTO_AGENT_LINE, RUN_LINE, TASK_LINE } from '../../../../shared/lib/startCopy';
+import {
+  AGENT_LINE,
+  AUTO_AGENT_LINE,
+  ORCHESTRATE_LINE,
+  RUN_LINE,
+  TASK_LINE,
+} from '../../../../shared/lib/startCopy';
 import type { StartChoice } from '../../../../store/slices/sessionDraft/state';
 
 export type { StartChoice };
 
-export const START_CHOICES: ReadonlyArray<StartChoice> = ['task', 'workflow', 'scout'];
+export const START_CHOICES: ReadonlyArray<StartChoice> = [
+  'task',
+  'workflow',
+  'orchestrate',
+  'scout',
+];
 
 type PreselectParams = {
   readonly hasTrackerCandidates: boolean;
@@ -23,6 +34,9 @@ export const startChoiceLine = ({ choice, isAuto }: LineParams): string => {
   }
   if (choice === 'workflow') {
     return RUN_LINE;
+  }
+  if (choice === 'orchestrate') {
+    return ORCHESTRATE_LINE;
   }
   return isAuto ? AUTO_AGENT_LINE : AGENT_LINE;
 };

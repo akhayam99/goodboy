@@ -1,19 +1,18 @@
 import { Button, EmptyState } from '@goodboy/ui';
-import type { SessionId, WorkspaceId } from '@goodboy/types';
+import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
-import { writeLastWorkflowMode } from './WorkflowBuilderView/lastWorkflowMode';
 import { ORCHESTRATED_COPY } from '../orchestratedCopy';
 
 type Props = {
   readonly sessionId: SessionId;
-  readonly workspaceId: WorkspaceId;
 };
 
-export const OrchestrateStart = ({ sessionId, workspaceId }: Props) => {
+export const OrchestrateStart = ({ sessionId }: Props) => {
   const onClick = () => {
-    writeLastWorkflowMode({ workspaceId, mode: 'dynamic' });
     window.dispatchEvent(
-      new CustomEvent('goodboy:open-workflow-builder', { detail: { sessionId } }),
+      new CustomEvent('goodboy:open-workflow-builder', {
+        detail: { sessionId, form: 'orchestrate' },
+      }),
     );
   };
 

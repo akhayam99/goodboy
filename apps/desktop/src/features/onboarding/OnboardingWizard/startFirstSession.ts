@@ -11,7 +11,10 @@ type ScoutParams = {
 
 export const startFirstScout = async ({ workspaceId, projectId, prompt }: ScoutParams) => {
   const state = useAppStore.getState();
-  state.patchSessionDraft({ workspaceId, patch: { projectId } });
+  state.patchSessionDraft({
+    workspaceId,
+    patch: { projectIds: projectId === null ? [] : [projectId] },
+  });
   await state.startSessionFromDraft({
     workspaceId,
     start: {
@@ -32,6 +35,9 @@ type HandOffParams = {
 
 export const handOffFirstSession = ({ workspaceId, projectId, choice }: HandOffParams): void => {
   const state = useAppStore.getState();
-  state.patchSessionDraft({ workspaceId, patch: { choice, projectId } });
+  state.patchSessionDraft({
+    workspaceId,
+    patch: { choice, projectIds: projectId === null ? [] : [projectId] },
+  });
   state.openSessionDraft();
 };

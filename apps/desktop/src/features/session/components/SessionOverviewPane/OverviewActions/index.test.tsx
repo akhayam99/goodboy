@@ -57,40 +57,44 @@ afterEach(cleanup);
 const openedKind = () => useAppStore.getState().drawer?.kind ?? null;
 
 describe('OverviewActions', () => {
-  it('is one New button, not a menu', () => {
+  it('is a menu with one item per form, Start Auto only while Auto is on', () => {
     render(<OverviewActions session={SESSION} />);
 
-    expect(screen.getByRole('button', { name: 'New' }).getAttribute('aria-haspopup')).toBe(
-      'dialog',
-    );
-    expect(screen.queryByRole('menuitem')).toBeNull();
+    expect(screen.getByRole('button', { name: 'New' }).getAttribute('aria-haspopup')).toBe('menu');
+    fireEvent.click(screen.getByRole('button', { name: 'New' }));
+
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Run a workflow',
+      'Orchestrate',
+      'Start agent',
+      'Report',
+      'Wireframe',
+    ]);
   });
 
-  it('opens the New drawer on this session from the button and closes it again', () => {
+  it('opens the picked form in the drawer, on this session', () => {
     render(<OverviewActions session={SESSION} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'New' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Orchestrate' }));
 
     expect(useAppStore.getState().drawer).toEqual({
       kind: 'new',
       sessionId: SESSION_ID,
-      payload: null,
+      payload: { form: 'orchestrate' },
     });
-    expect(screen.getByRole('button', { name: 'New' }).getAttribute('aria-expanded')).toBe('true');
-
-    fireEvent.click(screen.getByRole('button', { name: 'New' }));
-
-    expect(openedKind()).toBeNull();
+    expect(screen.queryByRole('menuitem')).toBeNull();
   });
 
-  it('opens and closes the drawer with the contextual new chord', async () => {
+  it('opens the menu with the contextual new chord, and the drawer only on a pick', async () => {
     render(<OverviewActions session={SESSION} />);
 
     await act(async () => pressShortcut({ id: 'overview.newHere' }));
-    expect(openedKind()).toBe('new');
-
-    await act(async () => pressShortcut({ id: 'overview.newHere' }));
+    expect(screen.getAllByRole('menuitem').length).toBeGreaterThan(0);
     expect(openedKind()).toBeNull();
+
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Run a workflow' }));
+    expect(useAppStore.getState().drawer).toMatchObject({ payload: { form: 'run' } });
   });
 
   it('leaves the chord to Reset chat while the Ask panel is open', async () => {
@@ -102,10 +106,10 @@ describe('OverviewActions', () => {
     expect(openedKind()).toBe('ask');
   });
 
-  it('has no chevron, since it opens a drawer and not a menu', () => {
+  it('draws a chevron, since it opens a menu', () => {
     const { container } = render(<OverviewActions session={SESSION} />);
 
-    expect(container.querySelector('.lucide-chevron-down')).toBeNull();
+    expect(container.querySelector('.lucide-chevron-down')).not.toBeNull();
   });
 });
 

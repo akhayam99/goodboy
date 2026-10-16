@@ -655,12 +655,12 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
   }),
   keyRow({
     id: 'overview.newHere',
-    note: 'on a session overview the new chord opens the New drawer, not a new session',
+    note: 'on a session overview the new chord opens the New menu, not a new session',
     open: async () => {
       await settle();
       await pressed('overview.newHere', document.body);
     },
-    lands: () => visible('region', 'New'),
+    lands: () => visible('menu', 'New'),
   }),
   keyRow({
     id: 'session.linkWork',

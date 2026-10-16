@@ -3,8 +3,6 @@ import { Button, Tooltip } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
-import { hasSessionDraftContent } from '../../../../store/slices/sessionDraft/hasSessionDraftContent';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -13,10 +11,6 @@ type Props = {
 const START_BLANK_HINT = 'Create the session now. Set the goal and the rest on its Overview.';
 
 export const SessionDraftActions = ({ workspaceId }: Props) => {
-  const hasContent = useAppStore((state) =>
-    hasSessionDraftContent({ draft: selectSessionDraft({ state, workspaceId }) }),
-  );
-  const discardSessionDraft = useAppStore((state) => state.discardSessionDraft);
   const startBlankSession = useAppStore((state) => state.startBlankSession);
   const reportError = useAppStore((state) => state.reportError);
   const [isStarting, setIsStarting] = useState(false);
@@ -35,25 +29,18 @@ export const SessionDraftActions = ({ workspaceId }: Props) => {
   };
 
   return (
-    <div className="flex shrink-0 items-center gap-2">
-      {hasContent ? (
-        <Button variant="ghost" size="sm" onClick={() => discardSessionDraft({ workspaceId })}>
-          Discard draft
-        </Button>
-      ) : null}
-      <Tooltip content={START_BLANK_HINT}>
-        <Button
-          variant="secondary"
-          size="sm"
-          isBusy={isStarting}
-          busyLabel="Creating the session"
-          onClick={() => void startBlank()}
-          className="gap-2"
-        >
-          <CONCEPT_ICONS.goal size={ICON_SIZE.row} aria-hidden />
-          Start blank
-        </Button>
-      </Tooltip>
-    </div>
+    <Tooltip content={START_BLANK_HINT}>
+      <Button
+        variant="secondary"
+        size="sm"
+        isBusy={isStarting}
+        busyLabel="Creating the session"
+        onClick={() => void startBlank()}
+        className="gap-2"
+      >
+        <CONCEPT_ICONS.goal size={ICON_SIZE.row} aria-hidden />
+        Start blank
+      </Button>
+    </Tooltip>
   );
 };

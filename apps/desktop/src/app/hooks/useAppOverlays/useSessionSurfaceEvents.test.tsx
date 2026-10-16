@@ -59,14 +59,14 @@ const fireBuilder = ({ detail }: { readonly detail: Readonly<Record<string, stri
 };
 
 describe('the open workflow builder event', () => {
-  it('opens the New drawer on the Run tab and leaves the page where it is', () => {
+  it('opens the New drawer on the Run a workflow form and leaves the page where it is', () => {
     fireBuilder({ detail: { sessionId: PLAN_FIXTURE_SESSION } });
 
     expect(close).toHaveBeenCalledTimes(1);
     expect(useAppStore.getState().drawer).toEqual({
       kind: 'new',
       sessionId: PLAN_FIXTURE_SESSION,
-      payload: { tab: 'run' },
+      payload: { form: 'run' },
     });
     expect(useAppStore.getState().activeLens[PLAN_FIXTURE_SESSION]).toBeNull();
   });
@@ -88,7 +88,7 @@ describe('the open workflow builder event', () => {
     expect(useAppStore.getState().drawer).toEqual({
       kind: 'new',
       sessionId: PLAN_FIXTURE_SESSION,
-      payload: { tab: 'run' },
+      payload: { form: 'run' },
     });
     expect(useAppStore.getState().currentSessionId).toBe(PLAN_FIXTURE_SESSION);
   });

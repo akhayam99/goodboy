@@ -25,8 +25,6 @@ export const STORAGE_PREFIXES = {
   inboxKindFilter: `${PREFIX}inbox-kind-filter:`,
   taskListView: `${PREFIX}task-list-view:v1:`,
   artifactDrafts: `${PREFIX}artifact-drafts:`,
-  workflowBuilderMode: `${PREFIX}workflow-builder-mode:`,
-  newDrawerTab: `${PREFIX}new-drawer-tab:`,
   scriptsGroupsCollapsed: `${PREFIX}scripts-groups-collapsed:v1:`,
   scriptsPackagesCollapsed: `${PREFIX}scripts-packages-collapsed:v1:`,
   turnCursor: `${PREFIX}turn-cursor:`,

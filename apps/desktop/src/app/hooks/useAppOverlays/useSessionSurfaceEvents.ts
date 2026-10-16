@@ -34,7 +34,8 @@ export const useSessionSurfaceEvents = ({
           to: sessionPlace({ sessionId, lens: state.activeLens[sessionId] ?? null }),
         });
       }
-      useAppStore.getState().openDrawer({ kind: 'new', sessionId, payload: { tab: 'run' } });
+      const form = eventValue({ event, key: 'form' }) === 'orchestrate' ? 'orchestrate' : 'run';
+      useAppStore.getState().openDrawer({ kind: 'new', sessionId, payload: { form } });
     };
     const openPlanStudio = (event: Event) => {
       const sessionId = eventSessionId(event);

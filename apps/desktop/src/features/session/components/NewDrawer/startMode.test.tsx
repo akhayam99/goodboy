@@ -108,7 +108,7 @@ const openAgentTab = (): void => {
       <ToastProvider>
         <NewDrawer
           sessionId={SESSION_ID}
-          payload={{ tab: 'agent' }}
+          payload={{ form: 'agent' }}
           writePanel={WritePanel}
           onClose={vi.fn()}
         />

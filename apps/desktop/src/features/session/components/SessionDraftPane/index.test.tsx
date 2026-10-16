@@ -79,19 +79,19 @@ const goalOfDraft = (): string =>
   useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.workflowGoal ?? '';
 
 describe('closing the New session page', () => {
-  it('shows no Esc label and no close button, and Discard draft only with content', async () => {
+  it('shows no Esc label and no close button, and Discard only with content', async () => {
     await openDraft();
 
     expect(screen.queryByText('Esc')).toBeNull();
     expect(screen.queryByRole('button', { name: /close|esc/i })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Discard draft' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Discard' })).toBeNull();
     expect(screen.getByRole('button', { name: /Start blank/ })).toBeDefined();
   });
 
-  it('shows Discard draft once something is written', async () => {
+  it('shows Discard once something is written', async () => {
     await openDraft({ text: 'Round the ledger postings' });
 
-    expect(screen.getByRole('button', { name: 'Discard draft' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Discard' })).toBeDefined();
   });
 
   it('closes on Esc with nothing written, back to where you were', async () => {
@@ -112,8 +112,7 @@ describe('closing the New session page', () => {
 
     expect(screen.getByText('Keep this draft?')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Keep draft' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Discard' })).toBeNull();
-    expect(screen.getAllByRole('button', { name: 'Discard draft' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Discard' })).toHaveLength(1);
     expect(screen.queryByRole('dialog')).toBeNull();
     const notice = screen.getByText('Keep this draft?').closest('[data-slot="kickoff-notice"]');
     expect(notice?.closest('section[aria-label="Kickoff"]')).not.toBeNull();
@@ -148,11 +147,11 @@ describe('closing the New session page', () => {
     expect(goalOfDraft()).toBe('Round the ledger postings');
   });
 
-  it('discards for real from the header while asked, leaving the page', async () => {
+  it('discards for real from the actions row while asked, leaving the page', async () => {
     await openDraft({ text: 'Round the ledger postings' });
     await pressEscape();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Discard draft' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
     await settle();
 
     expect(isDraftShown()).toBe(false);

@@ -6,18 +6,16 @@ type Props = {
   readonly sessionId: SessionId;
   readonly isAuto: boolean;
   readonly actionsHost: HTMLElement | null;
-  readonly action: HTMLElement | null;
   readonly onClose: () => void;
 };
 
 const FOOTER_CLASS = 'px-0 py-0';
 
-export const AgentPanel = ({ sessionId, isAuto, actionsHost, action, onClose }: Props) =>
+export const AgentPanel = ({ sessionId, isAuto, actionsHost, onClose }: Props) =>
   isAuto ? (
     <AutoComposer
       sessionId={sessionId}
       actionsHost={actionsHost}
-      action={action}
       footerClassName={FOOTER_CLASS}
       onDone={onClose}
     />

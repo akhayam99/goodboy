@@ -44,7 +44,7 @@ import {
 } from '../../workDrafter';
 import { BriefItems } from './BriefItems';
 import { DraftedBy } from './DraftedBy';
-import { ProjectField } from './ProjectField';
+import { ProjectPicker } from '../../../../shared/components/ProjectPicker';
 import { RunsOnField } from './RunsOnField';
 import { SessionField } from './SessionField';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
@@ -402,7 +402,11 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
                 <>
                   <div className="flex flex-col gap-2">
                     <span className="text-label text-muted-foreground">Project</span>
-                    <ProjectField projects={projects} value={projectIds} onChange={setProjectIds} />
+                    <ProjectPicker
+                      projects={projects}
+                      value={projectIds}
+                      onChange={setProjectIds}
+                    />
                   </div>
                   <RunsOnField
                     connectedProviders={connectedProviders}

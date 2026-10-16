@@ -242,7 +242,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('SessionKickoff', () => {
-  it('shows three choices on one row as tabs, no example tree or tiles', () => {
+  it('shows four choices on one row as tabs, no example tree or tiles', () => {
     renderKickoff();
 
     expect(screen.getByRole('tablist', { name: 'How do you want to start?' })).toBeDefined();
@@ -251,7 +251,7 @@ describe('SessionKickoff', () => {
       within(kinds)
         .getAllByRole('tab')
         .map((node) => node.textContent),
-    ).toEqual(['Pick up a task', 'Run a workflow', 'Ask an agent']);
+    ).toEqual(['Pick up a task', 'Run a workflow', 'Orchestrate', 'Ask an agent']);
     expect(screen.queryByRole('button', { name: 'More ways to start' })).toBeNull();
   });
 
@@ -321,6 +321,8 @@ describe('SessionKickoff', () => {
     workflow.focus();
 
     fireEvent.keyDown(workflow, { key: 'ArrowRight' });
+    expect(tab('Orchestrate').getAttribute('aria-selected')).toBe('true');
+    fireEvent.keyDown(tab('Orchestrate'), { key: 'ArrowRight' });
     expect(tab('Ask an agent').getAttribute('aria-selected')).toBe('true');
     expect(document.activeElement).toBe(tab('Ask an agent'));
 
@@ -329,7 +331,7 @@ describe('SessionKickoff', () => {
     );
 
     fireEvent.keyDown(tab('Ask an agent'), { key: 'ArrowLeft' });
-    expect(tab('Run a workflow').getAttribute('aria-selected')).toBe('true');
+    expect(tab('Orchestrate').getAttribute('aria-selected')).toBe('true');
   });
 
   it('feeds one goal field into the builder and starts the session with the run', async () => {
@@ -508,7 +510,7 @@ describe('SessionKickoff', () => {
       'value',
       'Fix the login redirect',
     );
-    expect(howTab('Run a workflow').getAttribute('aria-selected')).toBe('true');
+    expect(howTab('Orchestrate').getAttribute('aria-selected')).toBe('true');
     const builder = screen.getByTestId('workflow-builder');
     const goalField = within(builder).getByRole('textbox', { name: 'Goal' });
     expect((goalField as HTMLTextAreaElement).value).toBe(
@@ -609,7 +611,6 @@ describe('SessionKickoff', () => {
       const user = userEvent.setup();
       await manyIssues();
 
-      await user.tab();
       await user.tab();
       await user.tab();
       expect(document.activeElement).toBe(screen.getByRole('checkbox', { name: /ENG-1/ }));

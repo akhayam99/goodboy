@@ -17,7 +17,7 @@ export const WorkflowBuilderScene = () => {
 
   return (
     <main className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
-      <WorkflowBuilderView session={FLOW_SESSION} onClose={noop} />
+      <WorkflowBuilderView mode="preset" session={FLOW_SESSION} onClose={noop} />
     </main>
   );
 };

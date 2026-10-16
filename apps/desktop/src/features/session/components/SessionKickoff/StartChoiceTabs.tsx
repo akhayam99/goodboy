@@ -10,6 +10,7 @@ type ChoiceOption = {
 const START_OPTIONS: Readonly<Record<StartChoice, ChoiceOption>> = {
   task: { title: 'Pick up a task', icon: CONCEPT_ICONS.issues },
   workflow: { title: 'Run a workflow', icon: CONCEPT_ICONS.workflows },
+  orchestrate: { title: 'Orchestrate', icon: CONCEPT_ICONS.orchestrator },
   scout: { title: 'Ask an agent', icon: CONCEPT_ICONS.explore },
 };
 

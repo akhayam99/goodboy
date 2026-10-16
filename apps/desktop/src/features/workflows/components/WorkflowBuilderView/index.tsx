@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, EmptyState, Notice, formatError } from '@goodboy/ui';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Button, EmptyState, formatError } from '@goodboy/ui';
 import {
   DEFAULT_SESSION_PROVIDER_PREFERENCE,
   PROVIDER_CAPABILITIES,
@@ -33,7 +33,6 @@ import { polishWorkflowGoalText } from '../../workflows';
 import { usePolishGuidance } from '../../hooks/usePolishGuidance';
 import { EMPTY_ARRAY, useAppStore, useSessionSlots } from '../../../../store';
 import { workflowStartGate } from './workflowStartGate';
-import { readLastWorkflowMode, writeLastWorkflowMode } from './lastWorkflowMode';
 import { editedStepKeys, stepsMatchPreset } from './presetEdits';
 import type {
   KickoffLane,
@@ -59,7 +58,6 @@ import { runIdentity, runIdentitySeed } from '../../../session/timeline/runIdent
 import { BuilderTitleField } from './parts/BuilderTitleField';
 import { GoalField } from './parts/GoalField';
 import { LaunchBar } from './parts/LaunchBar';
-import { RunModeBar } from './parts/RunModeBar';
 import { ProviderPoolChip } from './parts/ProviderPoolChip';
 import { effectiveProviderPool } from './providerPool';
 import { PresetPicker } from './parts/PresetPicker';
@@ -86,16 +84,21 @@ export type BuilderKickoff = {
   readonly goalPlaceholder: string;
   readonly primaryLabel?: string;
   readonly startError?: string | null;
+  readonly canDiscard?: boolean;
+  readonly projects?: ReactNode;
+  readonly onDiscard?: () => void;
   readonly onGoalChange: (goal: string) => void;
   readonly start: (run: (session: Session) => Promise<void>) => Promise<void>;
 };
 
 type BuilderSlots = {
   readonly actionsHost: HTMLElement | null;
-  readonly action: HTMLElement | null;
 };
 
-type Props =
+type Props = {
+  readonly mode: Mode;
+  readonly onOrchestrateInstead?: () => void;
+} & (
   | {
       readonly session: Session;
       readonly kickoff?: never;
@@ -107,7 +110,8 @@ type Props =
       readonly session?: never;
       readonly slots?: never;
       readonly onClose?: never;
-    };
+    }
+);
 
 type ProviderEntry = { readonly id: ProviderId; readonly connection: string };
 
@@ -136,13 +140,13 @@ const DYNAMIC_EXECUTION_MODE: WorkflowExecutionMode = 'dynamic';
 const PRESET_FALLBACK_NAME = 'Preset run';
 const IMMEDIATE_START: StartChoice = { triggerMode: 'immediate', chainAfterId: null };
 
-const MODE_DESCRIPTION: Record<Mode, string> = {
-  dynamic:
-    'Goodboy picks each next agent after the previous one finishes. The steps are likely, not fixed.',
-  preset: 'A saved sequence of steps. Change the model of any step before starting.',
+const PRIMARY_LABEL: Readonly<Record<Mode, string>> = {
+  preset: 'Start run',
+  dynamic: 'Start orchestration',
 };
 
 export const WorkflowBuilderView = (props: Props) => {
+  const mode = props.mode;
   const session = props.session ?? null;
   const kickoff = props.kickoff ?? null;
   const slots = props.slots;
@@ -187,12 +191,6 @@ export const WorkflowBuilderView = (props: Props) => {
 
   const [initialDraft] = useState(() => useAppStore.getState().workflowDrafts[draftKey]);
 
-  const defaultMode = (): Mode => {
-    const last = readLastWorkflowMode({ workspaceId });
-    return last === 'preset' && presets.length === 0 ? 'dynamic' : last;
-  };
-
-  const [mode, setMode] = useState<Mode>(() => initialDraft?.mode ?? defaultMode());
   const [localGoal, setLocalGoal] = useState(initialDraft?.goalText ?? '');
   const goalText = kickoff?.goal ?? localGoal;
   const setGoalText = kickoff?.onGoalChange ?? setLocalGoal;
@@ -433,7 +431,6 @@ export const WorkflowBuilderView = (props: Props) => {
   };
 
   const resetDraft = () => {
-    setMode(defaultMode());
     setGoalText('');
     setGoalHistory([]);
     setSelectedPresetId(null);
@@ -638,7 +635,6 @@ export const WorkflowBuilderView = (props: Props) => {
   const runOn = async (target: Session): Promise<void> => {
     if (mode === 'preset' && selectedPreset !== null && !presetDirty && !isPresetRenamed) {
       await attachWorkflowToSession(target.id, selectedPreset.id, await attachOptions());
-      writeLastWorkflowMode({ workspaceId, mode });
       if (kickoff === null) {
         showToast({ kind: 'success', message: `Started ${selectedPreset.name}.` });
       }
@@ -693,7 +689,6 @@ export const WorkflowBuilderView = (props: Props) => {
       );
     }
     await attachWorkflowToSession(target.id, workflowId, await attachOptions());
-    writeLastWorkflowMode({ workspaceId, mode });
     if (kickoff === null) {
       showToast({ kind: 'success', message: `Started ${saved?.name ?? name}.` });
     }
@@ -748,6 +743,11 @@ export const WorkflowBuilderView = (props: Props) => {
         onChange={setProviderPool}
       />
     ) : null;
+
+  const presetDescription =
+    mode === 'preset' && selectedPreset !== null && selectedPreset.description !== ''
+      ? selectedPreset.description
+      : null;
 
   const estimates = usePlanEstimates({
     workspaceId,
@@ -854,7 +854,6 @@ export const WorkflowBuilderView = (props: Props) => {
       return (
         <OrchestrateLane
           identityIndex={identityIndex}
-          autonomy={autonomy}
           providerOverride={orchestratorProviderOverride}
           modelOverride={orchestratorModelOverride}
           effort={orchestratorEffort}
@@ -883,9 +882,11 @@ export const WorkflowBuilderView = (props: Props) => {
           title="No presets in this workspace yet"
           description="Save a run as a preset from its page, and it shows up here."
           action={
-            <Button size="sm" variant="secondary" onClick={() => setMode('dynamic')}>
-              Orchestrate instead
-            </Button>
+            props.onOrchestrateInstead === undefined ? undefined : (
+              <Button size="sm" variant="secondary" onClick={props.onOrchestrateInstead}>
+                Orchestrate instead
+              </Button>
+            )
           }
         />
       );
@@ -994,18 +995,16 @@ export const WorkflowBuilderView = (props: Props) => {
           onPolish={() => void onPolishGoal()}
         />
       </div>
+      {kickoff?.projects ?? null}
       <div className="flex flex-col gap-4">
-        <RunModeBar
-          mode={mode}
-          isDisabled={busy}
-          control={modeControl}
-          description={
-            mode === 'preset' && selectedPreset !== null && selectedPreset.description !== ''
-              ? selectedPreset.description
-              : MODE_DESCRIPTION[mode]
-          }
-          onChange={setMode}
-        />
+        {modeControl === null && presetDescription === null ? null : (
+          <div className="flex min-w-0 flex-col gap-2">
+            {modeControl}
+            {presetDescription === null ? null : (
+              <p className="text-label text-muted-foreground">{presetDescription}</p>
+            )}
+          </div>
+        )}
         {renderLane()}
         <RunGuidance
           guidance={guidance}
@@ -1029,15 +1028,6 @@ export const WorkflowBuilderView = (props: Props) => {
 
   const footer = (
     <div className="flex flex-col gap-3">
-      {shownError === null ? null : (
-        <Notice
-          tone="danger"
-          placement="inline"
-          role="alert"
-          title={shownError.title}
-          body={shownError.message}
-        />
-      )}
       <FromRulesRow
         changed={[
           ...(autonomyOverride === null ? [] : ['autonomy']),
@@ -1054,11 +1044,12 @@ export const WorkflowBuilderView = (props: Props) => {
           ) : null
         }
         reason={startGate.reason}
+        error={shownError === null ? null : `${shownError.title}. ${shownError.message}`}
         isStartDisabled={startGate.isDisabled}
         isStarting={busy}
-        label={kickoff?.primaryLabel ?? null}
-        canDiscard={kickoff === null && slots === undefined && !draftEmpty}
-        onDiscard={resetDraft}
+        label={kickoff?.primaryLabel ?? PRIMARY_LABEL[mode]}
+        canDiscard={kickoff === null ? !draftEmpty : (kickoff.canDiscard ?? false)}
+        onDiscard={kickoff?.onDiscard ?? resetDraft}
         onStart={() => void onStart()}
       />
     </div>
@@ -1077,13 +1068,6 @@ export const WorkflowBuilderView = (props: Props) => {
     <>
       {body}
       <Docked node={slots.actionsHost}>{footer}</Docked>
-      {draftEmpty ? null : (
-        <Docked node={slots.action}>
-          <Button variant="ghost" size="sm" onClick={resetDraft} disabled={busy}>
-            Discard draft
-          </Button>
-        </Docked>
-      )}
     </>
   );
 };

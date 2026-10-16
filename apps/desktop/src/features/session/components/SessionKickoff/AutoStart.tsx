@@ -14,6 +14,7 @@ import { useAutoTreeLimit } from '../../../auto/useAutoTreeLimit';
 import { resolveSpawnRouting } from '../../spawn-routing';
 import { AutoComposerView, type AutoRoutingChoice } from '../AutoComposerView';
 import { useDraftStart } from './useDraftStart';
+import { useDraftDiscard } from './useDraftDiscard';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -45,6 +46,7 @@ export const AutoStart = ({ workspaceId }: Props) => {
   };
   const promptFiles = usePromptFiles({ note: 'Files go to Auto' });
   const { start, isStarting, error } = useDraftStart({ workspaceId });
+  const { discard } = useDraftDiscard({ workspaceId });
   const confirmMode = useConfirmStartMode();
   const limit = useAutoTreeLimit({ workspaceId });
   const goal = draft.autoGoal;
@@ -103,6 +105,8 @@ export const AutoStart = ({ workspaceId }: Props) => {
       error={error}
       onGoalChange={(next) => patchSessionDraft({ workspaceId, patch: { autoGoal: next } })}
       onSubmit={() => void submit()}
+      onDiscard={discard}
+      hasExperimentalChip
     />
   );
 };

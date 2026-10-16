@@ -227,7 +227,7 @@ describe('store contract', () => {
       });
     });
 
-    it('opening artifact creation clears the focused artifact and opens the New drawer on Write', async () => {
+    it('opening artifact creation clears the focused artifact and opens the New drawer on its form', async () => {
       const store = useAppStore;
       store.getState().setFocusedArtifactId(SESSION_ID, PLAN_ID);
       store.getState().openArtifactCreation({
@@ -238,7 +238,7 @@ describe('store contract', () => {
       expect(store.getState().drawer).toEqual({
         kind: 'new',
         sessionId: SESSION_ID,
-        payload: { tab: 'write', writeKind: 'wireframe', note: 'Start from the plan' },
+        payload: { form: 'wireframe', note: 'Start from the plan' },
       });
       expect(store.getState().focusedArtifactId[SESSION_ID]).toBeNull();
     });

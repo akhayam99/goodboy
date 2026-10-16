@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Button, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import type { ProjectId, Session, WorkspaceId } from '@goodboy/types';
@@ -12,7 +12,8 @@ import type {
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { draftIssueKey } from '../../../../store/slices/sessionDraft/draftIssueKey';
 import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates';
-import { LaunchMountRow } from '../../../integrations/components/LaunchSessionPanel/LaunchMountRow';
+import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
+import { KickoffProjects } from './KickoffProjects';
 import { useLaunchMount } from '../../../inbox/useLaunchMount';
 import { resolveSpawnRouting } from '../../spawn-routing';
 import { visibleAgentKinds, type AgentKind } from '../../agent-kind';
@@ -25,6 +26,7 @@ import { KICKOFF_GOAL_PLACEHOLDER } from './WorkflowStart';
 import { CrossProjectNote } from './CrossProjectNote';
 import { StartFooter } from './StartFooter';
 import { useDraftStart } from './useDraftStart';
+import { useDraftDiscard } from './useDraftDiscard';
 import { useStartFromDraft } from './useStartFromDraft';
 import { NAMES } from '../../../../shared/names';
 import { startFromIssuesLabel, willCloseLine } from '../../../../shared/lib/startCopy';
@@ -33,10 +35,11 @@ import { PromptField } from '../../../../shared/components/PromptField';
 import { usePromptFiles } from '../../../../shared/hooks/usePromptFiles';
 import { toAttachmentInputs } from '../../../attachments/pendingAttachment';
 
-type How = 'workflow' | 'agent';
+type How = 'workflow' | 'orchestrate' | 'agent';
 
 const HOW_OPTIONS: ReadonlyArray<SegmentedTabOption<How>> = [
   { value: 'workflow', label: 'Run a workflow', icon: CONCEPT_ICONS.workflows },
+  { value: 'orchestrate', label: 'Orchestrate', icon: CONCEPT_ICONS.orchestrator },
   { value: 'agent', label: 'Ask an agent', icon: CONCEPT_ICONS.explore },
 ];
 
@@ -51,17 +54,22 @@ type Props = {
 export const HowToWorkOnIt = ({ workspaceId, candidates, title, goal, onGoalChange }: Props) => {
   const first = candidates[0];
   const identifiers = candidates.map((candidate) => candidate.identifier);
-  const [how, setHow] = useState<How>('workflow');
+  const [how, setHow] = useState<How>('orchestrate');
   const text = goal;
   const setText = onGoalChange;
   const [agentKind, setAgentKind] = useState<AgentKind>('implementer');
   const [agentRouting, setAgentRouting] = useState<AgentStartRouting>(null);
-  const [pickedProjectId, setPickedProjectId] = useState<ProjectId | null | undefined>(undefined);
+  const pickedProjectIds = useAppStore(
+    (state) => selectSessionDraft({ state, workspaceId }).projectIds,
+  );
+  const patchSessionDraft = useAppStore((state) => state.patchSessionDraft);
+  const hasPrefilledRef = useRef(false);
   const loadPhaseTemplates = useAppStore((state) => state.loadPhaseTemplates);
   const startSessionFromDraft = useStartFromDraft();
   const startLabel = startFromIssuesLabel({ identifiers });
   const closeLine = willCloseLine({ identifiers });
   const { start: startAgent, isStarting, error } = useDraftStart({ workspaceId });
+  const { canDiscard, discard } = useDraftDiscard({ workspaceId });
   const mount = useLaunchMount({
     workspaceId,
     source:
@@ -87,9 +95,22 @@ export const HowToWorkOnIt = ({ workspaceId, candidates, title, goal, onGoalChan
   const roleDefault = useWorkspaceKindRouting({ workspaceId, kind });
   const suggestion = resolveSpawnRouting({ kind, roleDefault, session: null });
 
-  const projectId = pickedProjectId === undefined ? (mount?.selectedId ?? null) : pickedProjectId;
+  const suggestedId = mount?.selectedId ?? null;
+  const projectId = pickedProjectIds[0] ?? null;
   const draftMount: SessionDraftMount | null =
-    mount === null ? null : { projectId, reason: mount.reason };
+    mount === null || projectId === null || projectId !== suggestedId
+      ? null
+      : { projectId, reason: mount.reason };
+
+  useEffect(() => {
+    if (hasPrefilledRef.current || suggestedId === null) {
+      return;
+    }
+    hasPrefilledRef.current = true;
+    if (pickedProjectIds.length === 0) {
+      patchSessionDraft({ workspaceId, patch: { projectIds: [suggestedId] } });
+    }
+  }, [suggestedId, pickedProjectIds.length, patchSessionDraft, workspaceId]);
   const trimmed = text.trim();
   const hasProject = projectId !== null;
   const promptFiles = usePromptFiles({
@@ -117,6 +138,8 @@ export const HowToWorkOnIt = ({ workspaceId, candidates, title, goal, onGoalChan
     goal: text,
     goalPlaceholder: KICKOFF_GOAL_PLACEHOLDER,
     primaryLabel: startLabel,
+    canDiscard,
+    onDiscard: discard,
     onGoalChange: setText,
     start: async (run: (session: Session) => Promise<void>) => {
       await startSessionFromDraft({
@@ -144,15 +167,12 @@ export const HowToWorkOnIt = ({ workspaceId, candidates, title, goal, onGoalChan
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        {mount === null ? null : (
-          <LaunchMountRow
-            mount={mount}
-            selectedId={projectId}
-            disabled={isStarting}
-            variant="line"
-            onChange={setPickedProjectId}
-          />
-        )}
+        <KickoffProjects
+          workspaceId={workspaceId}
+          suggestedIds={suggestedId === null ? [] : [suggestedId]}
+          reason={draftMount === null ? null : draftMount.reason}
+          isDisabled={isStarting}
+        />
         {candidates.slice(1).map((candidate) => (
           <CrossProjectNote
             key={draftIssueKey({ candidate })}
@@ -173,8 +193,14 @@ export const HowToWorkOnIt = ({ workspaceId, candidates, title, goal, onGoalChan
         </div>
       </div>
       {how === 'workflow' ? (
-        <WorkflowBuilderView kickoff={kickoff} />
-      ) : (
+        <WorkflowBuilderView
+          mode="preset"
+          kickoff={kickoff}
+          onOrchestrateInstead={() => setHow('orchestrate')}
+        />
+      ) : null}
+      {how === 'orchestrate' ? <WorkflowBuilderView mode="dynamic" kickoff={kickoff} /> : null}
+      {how !== 'agent' ? null : (
         <div className="flex flex-col gap-2">
           <PromptField
             kind="message"
@@ -203,7 +229,12 @@ export const HowToWorkOnIt = ({ workspaceId, candidates, title, goal, onGoalChan
             projectId={null}
             onProjectChange={() => undefined}
           />
-          <StartFooter note={trimmed === '' ? 'Write the goal first.' : null} error={error}>
+          <StartFooter
+            workspaceId={workspaceId}
+            note={trimmed === '' ? 'Write the goal first.' : null}
+            error={error}
+            isStarting={isStarting}
+          >
             <Button
               size="sm"
               disabled={trimmed === '' || isStarting}

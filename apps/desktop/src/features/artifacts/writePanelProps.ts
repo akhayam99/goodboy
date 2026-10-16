@@ -6,7 +6,6 @@ export type WritePanelProps = {
   readonly kind: GeneratedArtifactKind;
   readonly note: string | null;
   readonly actionsHost: HTMLElement | null;
-  readonly onKind: (kind: GeneratedArtifactKind) => void;
   readonly onStarted: (agentId: AgentId) => void;
   readonly onClose: () => void;
 };
