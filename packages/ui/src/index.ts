@@ -232,6 +232,7 @@ export { FoldLayers } from './components/FoldLayers';
 export type { FoldLayersProps } from './components/FoldLayers';
 export { FOLD_MS, LEVEL_MS } from './motionTimings';
 export { canAnimate } from './canAnimate';
+export { useFoldPhase } from './useFoldPhase';
 export { exitSnapshotOf, mountExitSnapshot } from './exitSnapshot';
 export type { ExitSnapshot } from './exitSnapshot';
 export type { RevealProps } from './components/Reveal';

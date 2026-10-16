@@ -2240,7 +2240,7 @@ Eight animations, one meaning each. Transition keyframes (`fade-in`,
 registry.
 
 **Motion tokens.** A width that opens or folds (the main sidebar grid column,
-the session rail, the drawer track) eases in 220ms `ease-out` (`FOLD_MS` in
+the session rail, the drawer track, the diff file rail) eases in 220ms `ease-out` (`FOLD_MS` in
 `packages/ui/src/motionTimings.ts`); words fade in 140ms (`fold-label-out`, and
 `fold-label-in` after 60ms, so they arrive once there is room); a level drill
 takes 200ms in, after 60ms, and 120ms out (`LEVEL_MS`); drawer content fades in

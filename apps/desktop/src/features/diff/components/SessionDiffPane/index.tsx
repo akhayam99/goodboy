@@ -340,8 +340,14 @@ export const SessionDiffPane = ({
 
   const railContent = diff.loading ? <TreeLoading /> : hasTree ? tree : null;
   const railNode =
-    railContent === null || !rail.isShown ? null : (
-      <FileRail isOverlay={rail.isOverlay} bodyRef={setRailBody}>
+    railContent === null ? null : (
+      <FileRail
+        key={rail.isOverlay ? 'overlay' : 'docked'}
+        isShown={rail.isShown}
+        isOverlay={rail.isOverlay}
+        frame={slots.page ?? ownPage}
+        bodyRef={setRailBody}
+      >
         {railContent}
       </FileRail>
     );

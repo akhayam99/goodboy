@@ -3209,7 +3209,10 @@ over the whole page (rail included) by the push rule of Drawers below. The rail 
 the page is 880px or wider (560 for the diff plus the rail); a narrower page (a pushing drawer,
 a small window) folds it without writing the saved choice, and `Files N`, `F` or `/` then open it
 over the right edge of the diff (`data-file-rail="overlay"`) until a pick, `Esc` or Fold
-closes it. The rail head reads `Next unviewed N`, the keyboard button and Fold, then the
+closes it. Folding and opening move like the session rail (`FileRail` over `useFoldPhase`,
+the page as its frame): the width eases on the 220ms fold token while the list, held at its
+final width, fades out (`fold-label-out`) or in (`fold-label-in`); a switch between docked and
+overlay (the page crossing 880px) remounts the rail in place, with no move. The rail head reads `Next unviewed N`, the keyboard button and Fold, then the
 filter field (`/`) with the filter menu beside it (scope and grouping), then the tree;
 each file row keeps its viewed mark.
 The toolbar on the column (36 high, the diff scrolls under it) reads `Compared with main · All 5 commits ⌄`,
