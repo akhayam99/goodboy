@@ -8,17 +8,22 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
 vi.mock('./HeaderBand', () => ({ HeaderBand: () => <p>Overview goal</p> }));
-vi.mock('./OverviewHeaderActions', () => ({ OverviewHeaderActions: () => null }));
-vi.mock('./ProjectMountRows', () => ({
-  ProjectMountRows: () => <section aria-label="Projects" />,
+vi.mock('./ArchivedRestore', () => ({ ArchivedRestore: () => null }));
+vi.mock('./OverviewPageActions', () => ({ OverviewPageActions: () => null }));
+vi.mock('./OverviewNotices', () => ({
+  OverviewNotices: () => <section aria-label="Notices" />,
 }));
 vi.mock('./OverviewActions', () => ({ OverviewActions: () => <button type="button">New</button> }));
 vi.mock('../../../suggestions/components/NextStepSlot', () => ({
-  NextStepSlot: () => <section aria-label="Next step" />,
+  NextStepSlot: () => <section aria-label="Next" />,
 }));
 vi.mock('../SessionWorkspace/parts/TimelinePane', () => ({
-  TimelinePane: ({ actions }: { readonly actions: ReactNode }) => (
-    <section aria-label="Activity">{actions}</section>
+  TimelinePane: ({ lead }: { readonly lead: ReactNode }) => (
+    <>
+      <section aria-label="Needs you" />
+      {lead}
+      <section aria-label="Activity" />
+    </>
   ),
 }));
 
@@ -76,18 +81,20 @@ const renderPane = ({ session = SESSION }: PaneParams = {}) =>
   render(<SessionOverviewPane session={session} onSelectLens={vi.fn()} />);
 
 describe('SessionOverviewPane', () => {
-  it('stacks Projects and Activity as body sections on the one pane rhythm', () => {
+  it('stacks goal, notices, Needs you, Next and Activity as body sections in that order', () => {
     const { container } = renderPane();
 
     const body = container.querySelector('[data-slot="pane-body"]');
     const header = container.querySelector('[data-slot="pane-header"]');
-    expect(screen.getByRole('region', { name: 'Projects' }).parentElement).toBe(body);
-    expect(screen.getByRole('region', { name: 'Next step' }).parentElement).toBe(body);
-    expect(screen.getByRole('region', { name: 'Activity' }).parentElement).toBe(body);
+    const names = ['Notices', 'Needs you', 'Next', 'Activity'];
+    const sections = names.map((name) => screen.getByRole('region', { name }));
+    sections.forEach((section) => expect(section.parentElement).toBe(body));
+    expect(Array.from(body?.querySelectorAll(':scope > section') ?? [])).toEqual(sections);
+    expect(screen.queryByRole('region', { name: 'Projects' })).toBeNull();
     expect(header?.getAttribute('data-rhythm')).toBe('section');
   });
 
-  it('says what waits on the user in the next step, never as a callout above it', () => {
+  it('says what waits on the user only through the Needs you section of the timeline', () => {
     useAppStore.setState({
       sessionOpenQuestions: {
         [SESSION_ID]: [
@@ -106,7 +113,7 @@ describe('SessionOverviewPane', () => {
     });
     renderPane();
 
-    expect(screen.queryByRole('region', { name: 'Needs you' })).toBeNull();
+    expect(screen.getAllByRole('region', { name: 'Needs you' })).toHaveLength(1);
   });
 
   it('keeps New on a live session and disables it once archived', () => {

@@ -288,6 +288,7 @@ describe('the session level projects and linked work', () => {
     stubStoryInvoke({
       worktree_status: () => worktreeStatusOf({}),
       worktree_remote_url: () => 'git@github.com:harborline/payments-api.git',
+      detect_editors: () => [],
     });
     mountColumn();
 

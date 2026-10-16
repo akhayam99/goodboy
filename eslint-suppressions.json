@@ -1323,7 +1323,7 @@
   },
   "apps/desktop/src/app/components/MockScene/scenes/u23/overview.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 12
+      "count": 9
     },
     "react-hooks/exhaustive-deps": {
       "count": 2
@@ -5725,12 +5725,9 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/session/components/SessionOverviewPane/MountCleanupProposals.tsx": {
+  "apps/desktop/src/features/session/components/SessionOverviewPane/OverviewNotices.foreign.sqlite.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    },
-    "react-hooks/exhaustive-deps": {
-      "count": 1
+      "count": 7
     }
   },
   "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/AlsoInChip.test.tsx": {
@@ -5758,29 +5755,9 @@
       "count": 9
     }
   },
-  "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/MountRequestLink.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    }
-  },
-  "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/ProjectBranchChip.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    }
-  },
-  "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/ProjectMountRow.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 35
-    }
-  },
   "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/branchDecision.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 4
-    }
-  },
-  "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/foreign.sqlite.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 7
     }
   },
   "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/foreignCommits.test.ts": {
@@ -5788,27 +5765,9 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 10
-    }
-  },
-  "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    },
-    "react-hooks/exhaustive-deps": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/mountFailure.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 6
-    }
-  },
-  "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/useMergedThen/index.ts": {
-    "react-hooks/exhaustive-deps": {
-      "count": 1
     }
   },
   "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/useMountPreflight/index.test.ts": {
@@ -6188,14 +6147,6 @@
   "apps/desktop/src/features/session/hooks/useSessionProjectScope/index.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 6
-    }
-  },
-  "apps/desktop/src/features/session/hooks/useSessionSkeleton/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    },
-    "@typescript-eslint/no-floating-promises": {
-      "count": 8
     }
   },
   "apps/desktop/src/features/session/hooks/useTimelineOpen/index.test.ts": {
@@ -6798,7 +6749,7 @@
       "count": 36
     },
     "@typescript-eslint/no-floating-promises": {
-      "count": 21
+      "count": 19
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1

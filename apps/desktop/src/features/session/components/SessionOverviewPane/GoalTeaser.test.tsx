@@ -130,11 +130,12 @@ describe('GoalTeaser on the real store', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Goal: Credit each invoice once.' }));
     expect(store.getState().drawer).toEqual(expect.objectContaining({ sessionId: session.id }));
   });
-  it('stays out of the way when the goal is the title', () => {
+  it('reads the goal as prose even when it matches the title, which lives in the sidebar', () => {
     store.setState({
       sessionSlots: { [session.id]: [{ key: 'goal', value: session.goal, enabled: true }] },
     });
-    expect(mount().container.textContent).toBe('');
+    mount();
+    expect(screen.getByRole('button', { name: `Goal: ${session.goal}` })).toBeDefined();
   });
   it('offers Add a goal without a linked issue', () => {
     mount();

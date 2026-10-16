@@ -17,14 +17,15 @@ type Props = {
 
 export const LinkedTaskRow = ({ sessionId, task, branches, isShown }: Props) => {
   const openExternalTaskLens = useAppStore((state) => state.openExternalTaskLens);
-  const drag = useTaskDrag({ sessionId, task, branch: null });
+  const branch = task.scope === 'branch' ? (task.branch ?? null) : null;
+  const drag = useTaskDrag({ sessionId, task, branch });
   const target = {
     kind: 'task',
     sessionId,
     provider: task.provider,
     externalId: task.externalId,
     projectId: task.projectId ?? null,
-    branch: null,
+    branch,
   } satisfies ObjectTarget;
   const placement = branches.length === 0 ? null : taskPlacementLabel({ branches });
 

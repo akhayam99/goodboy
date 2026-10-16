@@ -1,27 +1,27 @@
 // @vitest-environment happy-dom
 
 vi.mock('@tauri-apps/api/core', async () =>
-  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
 );
 vi.mock('@tauri-apps/api/event', async () =>
-  (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
 );
-vi.mock('../../../../../shared/lib/db', async () =>
-  (await import('../../../../../store/storyHarness')).sqliteDbLibModuleMock(),
+vi.mock('../../../../shared/lib/db', async () =>
+  (await import('../../../../store/storyHarness')).sqliteDbLibModuleMock(),
 );
 const status = vi.hoisted(() => ({
   current: null as unknown,
 }));
-vi.mock('../../../../worktree/worktree', async () => ({
-  ...(await import('../../../../../store/storyHarness')).worktreeModuleMock(),
+vi.mock('../../../worktree/worktree', async () => ({
+  ...(await import('../../../../store/storyHarness')).worktreeModuleMock(),
   worktreeStatus: async () => status.current,
 }));
-vi.mock('../../../../integrations/github/github', async () => ({
-  ...(await import('../../../../../store/storyHarness')).githubModuleMock(),
+vi.mock('../../../integrations/github/github', async () => ({
+  ...(await import('../../../../store/storyHarness')).githubModuleMock(),
 }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import {
   insertProject,
   insertSession,
@@ -39,9 +39,9 @@ import type {
   WorktreeStatus,
 } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
-import { ToastProvider } from '../../../../../shared/components/Toast';
-import { BranchSwitchPanel } from '../../../../worktree/BranchSwitchPanel';
-import { NewBranchMountAction } from './NewBranchMountAction';
+import { ToastProvider } from '../../../../shared/components/Toast';
+import { BranchSwitchPanel } from '../../../worktree/BranchSwitchPanel';
+import { NewBranchMountAction } from './ProjectMountRows/NewBranchMountAction';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   buildStoryProject,
@@ -52,7 +52,7 @@ import {
   storySpies,
   stubStoryInvoke,
   type StoryStore,
-} from '../../../../../store/storyHarness';
+} from '../../../../store/storyHarness';
 
 const NOW = '2026-10-06T09:00:00.000Z' as IsoDateTime;
 const WORKSPACE_ID = 'workspace-harborline' as WorkspaceId;
@@ -63,11 +63,11 @@ const TEAMMATE = 'grw-1348-cta-for-the-slot';
 const WORKTREE = '/repo/ledger-core/.goodboy/worktrees/review';
 
 let useAppStore: StoryStore;
-let ProjectMountRows: typeof import('.').ProjectMountRows;
+let OverviewNotices: typeof import('./OverviewNotices').OverviewNotices;
 
 beforeAll(async () => {
   useAppStore = await importStore();
-  ({ ProjectMountRows } = await import('.'));
+  ({ OverviewNotices } = await import('./OverviewNotices'));
 }, STORE_IMPORT_TIMEOUT_MS);
 
 const onBase = {
@@ -98,7 +98,7 @@ const openPr: PullRequestState = {
 };
 
 const storedMount = async () => {
-  const db = (await import('../../../../../test/sqliteDb')).storySqlite();
+  const db = (await import('../../../../test/sqliteDb')).storySqlite();
   return (await listSessionMounts({ db, sessionId: SESSION_ID }))[0];
 };
 
@@ -189,13 +189,10 @@ describe('a teammate pull request opened from Goodboy', () => {
     const session = aSession({ id: SESSION_ID, workspaceId: WORKSPACE_ID });
     render(
       <ToastProvider>
-        <ProjectMountRows session={session} />
+        <OverviewNotices session={session} />
       </ToastProvider>,
     );
 
-    const row = await screen.findByTestId('project-mount-row');
-    await within(row).findByText("Not on the PR's commits");
-    expect(screen.queryByRole('button', { name: /Show finished/ })).toBeNull();
     expect((await storedMount())?.branchOrigin).toBe('created');
 
     fireEvent.click(await screen.findByRole('button', { name: "Use the PR's commits" }));
@@ -254,7 +251,7 @@ describe('a teammate pull request opened from Goodboy', () => {
         expect.objectContaining({ existingBranch: 'grw-1348-cta', branchName: 'grw-1348-cta' }),
       ),
     );
-    const db = (await import('../../../../../test/sqliteDb')).storySqlite();
+    const db = (await import('../../../../test/sqliteDb')).storySqlite();
     await waitFor(async () =>
       expect(await listSessionMounts({ db, sessionId: SESSION_ID })).toHaveLength(2),
     );

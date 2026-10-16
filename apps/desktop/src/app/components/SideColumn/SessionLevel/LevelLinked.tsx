@@ -49,11 +49,9 @@ export const LevelLinked = ({ session, isActive }: Props) => {
   );
   const setFocusedGithubIssueNumber = useAppStore((s) => s.setFocusedGithubIssueNumber);
   const isOverview = useAppStore((s) => (s.activeLens[sessionId] ?? null) === null);
-  const tasks = distinctTasks({ tasks: externalTasks })
-    .filter(({ task }) => task.scope !== 'branch')
-    .sort(
-      (left, right) => PROVIDER_ORDER[left.task.provider] - PROVIDER_ORDER[right.task.provider],
-    );
+  const tasks = [...distinctTasks({ tasks: externalTasks })].sort(
+    (left, right) => PROVIDER_ORDER[left.task.provider] - PROVIDER_ORDER[right.task.provider],
+  );
   const isArchived = session.archivedAt != null;
 
   return (

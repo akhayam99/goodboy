@@ -589,14 +589,14 @@ hide animation or overlay can move it.
 **The pane** is the work. It is the only surface that scrolls its own body,
 mounts editors and takes a title.
 
-**The projects section shows which projects a session has materialized.** It
-lives in the session overview and always has the Add project action, even
-before the first mount. Each mounted project is one band under the section eyebrow, with its worktrees as dense rows indented by one constant (`MOUNT_CHILD_INDENT`) so a branch glyph sits under the project name; merged and closed ones sit behind `Show finished (n)`. The empty section
-is its header with a one-line hint: turns run in the session folder until you
-add a project. Sessions are created lazily
-on the workspace ([concepts.md](concepts.md) → Lazy sessions), and this section
-is where a session's footprint grows. The session header has no second mount
-control.
+**The Projects group of the session level shows which projects a session has
+materialized.** It lives in the sidebar, not on the Overview, and always has
+the Add action, even before the first mount. Each mounted project is a label
+row with its worktrees as one line rows under it; merged and closed ones fold
+into `N finished`. Sessions are created lazily on the workspace
+([concepts.md](concepts.md) → Lazy sessions), and this group is where a
+session's footprint grows. What a worktree asks the user to decide shows in the
+Overview notices slot ([mounts.md](mounts.md#worktree-rows-and-the-overview-notices)).
 
 ## Sidebar levels
 
@@ -822,13 +822,13 @@ open it.
 **The session overview is the reference page.** It shows the whole surface
 grammar on one screen, so read it before designing a new surface. Here is its
 rhythm. Each section has an eyebrow label, and a section has at most one
-primary button. Projects, Next and Activity are peer sections in the pane body,
-one `PANE_RHYTHM.stack` gap apart: the header passes `headerRhythm="section"`,
-so the gap under it is the same. Space separates sections, never a
-`<Divider />`, and a section never has a border. The Activity header holds the
-**Activity | Log** switch, **Mark all seen** while an agent has an unread reply
-and **New** on the right; the Log adds a search field under it, and there is no
-description line. A section appears once its
+primary button. The goal, the notices, Needs you, Next and Activity are peer
+sections in the pane body, one `PANE_RHYTHM.stack` gap apart: the header passes
+`headerRhythm="section"`, so the gap under it is the same. Space separates
+sections, never a `<Divider />`, and a section never has a border. The Activity
+header holds the **Activity | Log** switch, **Mark all seen** while an agent has
+an unread reply and the session cost on the right; the Log adds a search field
+under it, and there is no description line. A section appears once its
 fact exists (a plan, a workflow run, a PR on a project). Before that it is one
 quiet action row (link an issue, start an agent, attach a workflow). So the
 empty session reads as a young version of the same document, not a wall of
@@ -1021,9 +1021,10 @@ activity yet show the plain overview with its actions.
 - **The Overview header** reads `Overview`. The session title, its rename and
   its lifecycle menu live on the sidebar identity row. The header keeps the
   Overview actions as visible words (`OverviewPageActions`: Write title and
-  goal from linked work, and Scripts in a branchless session) and, on an
-  archived session, Restore. Context left the header for the cluster's more
-  menu.
+  goal from linked work, and Scripts in a branchless session), **New**
+  (`OverviewActions`, ⌘N on the Overview, opens the New drawer; filled only
+  while nothing runs and Next holds no row) and, on an archived session,
+  Restore. Context left the header for the cluster's more menu.
 
 ## The pane cluster
 
@@ -2113,26 +2114,23 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   a detail and has no back link. Completed and discarded groups sit behind
   header toggles that hide themselves at zero. So a session whose runs are all
   done shows an empty state, instead of opening the last completed run.
-- **The Overview is one column of sections that share one heading.** Under
-  the title: one provenance line (`From chat: <title>`, `Fed by chat` only
-  with no `From chat`, the others behind `+N more`), then the facts row
-  (Context, Artifacts, the session's own tasks, Link work). Branch tasks show
-  on their mount row only, as the first chip and `+N`; the cost lives in the
-  Activity header. Projects, Next and Unassigned notes open with
-  `SectionHeader` at level 2, and Needs you opens with the same eyebrow.
-  The Projects card lays its rows on four fixed tracks
-  (`mountGridTracksOf`: branch, pull request 96, changes 120, action 96) and
-  every mount row is `MOUNT_ROW_HEIGHT` (36px), so a long branch or a failure
-  never moves a column. A failed row action raises an inline `Notice`
-  (`danger`, title `Couldn't <verb> <project>`, `Details`, `Retry`) under its
-  row; a mount follows a branch renamed or switched in its worktree on the
-  next status read and logs it as a `Branch` activity row, and only a mismatch
-  it cannot follow (a git operation in progress, the branch held by another
-  mount, a detached HEAD) is a `warning` `Notice` with `Use this branch here`,
-  `Keep both branches` and `Not now`. A card whose mounts have not loaded
-  draws skeleton rows on the same tracks. `Add project` stays a button in the
-  header; once nothing is left to add its popover says every project is already in
-  and offers `Add workspace project`.
+- **The Overview is one column: goal, notices, Needs you, Next, Activity.**
+  The goal reads as prose (`GoalTeaser`, it opens the Context drawer on its
+  Goal), with one gray provenance line under it only when it came from chat
+  (`From chat: <title>`, `Fed by chat` only with no `From chat`, the others
+  behind `+N more`). The notices slot (`OverviewNotices`) holds what a worktree
+  asks the user to decide ([mounts.md](mounts.md#worktree-rows-and-the-overview-notices)):
+  a closed worktree with Reopen, Restore branch or Remove, a failed action with
+  `Retry`, a stopped rebase, foreign commits, a branch drift decision (a mount
+  follows a branch renamed or switched in its worktree on the next status read
+  and logs it as a `Branch` activity row; only a mismatch it cannot follow is a
+  `warning` `Notice` with `Use this branch here`, `Keep both branches` and
+  `Not now`) and the first lap Publish. Needs you follows, then Next (up to
+  three rows, the first one's verb the only filled button on the page), then
+  Activity. Projects, Linked work, Artifacts and Add project live on the
+  sidebar session level. Next and Unassigned notes open with `SectionHeader`
+  at level 2, and Needs you opens with the same eyebrow. The cost chip sits at
+  the right of the Activity header.
   `Mark all seen` is a ghost button in the Activity header and shows only
   while an agent is unseen; a waiting question is answered from its Needs you row, never from a
   second `Answer` on the timeline row.

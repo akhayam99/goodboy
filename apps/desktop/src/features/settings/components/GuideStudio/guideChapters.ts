@@ -297,11 +297,15 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'New drawer',
-        desc: 'New on a session Overview opens one drawer with three tabs. Run takes a goal and plans the steps, with Autonomy, Starts and Spend cap. Agent starts one role. Write drafts a report or a wireframe. The button is filled when nothing is running, blocked or waiting on a question.',
+        desc: 'New in the Overview header opens one drawer with three tabs. Run takes a goal and plans the steps, with Autonomy, Starts and Spend cap. Agent starts one role. Write drafts a report or a wireframe. The button is filled when nothing is running, blocked or waiting on a question and Next has nothing to offer.',
+      },
+      {
+        term: 'Overview',
+        desc: 'The Overview reads top to bottom: the goal, then anything a worktree needs you to decide (a closed worktree with Reopen, a failed action with Retry, a stopped rebase, a branch that moved), then Needs you, Next and Activity. Projects and linked work live in the sidebar.',
       },
       {
         term: 'Next steps',
-        desc: 'Next offers the one move that unblocks the task as a short button such as Start, Analyze or Push. When it starts an agent, the icon is that role in its color. Other ways to do it sit in the more menu. Not now says Dismissed with Undo, and ⌘Z brings the last one back.',
+        desc: 'Next offers up to three moves that unblock the task as short buttons such as Start, Analyze or Push; the first one is filled. When it starts an agent, the icon is that role in its color. Other ways to do it sit in the more menu. Once a pull request merges, Next offers Remove the worktree with the reason and its size. Not now says Dismissed with Undo, and ⌘Z brings the last one back.',
       },
       {
         term: 'Run page',
@@ -389,7 +393,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Task links',
-        desc: 'A task chip opens the task. Move to, Unlink, Stop tracking and Take off this branch act at once and show an Undo toast, and ⌘Z undoes the last one when focus is not in a text field. The Log keeps the event with Re-link. Put on a branch sits on the branch row, and Link work to this branch in the worktree menu.',
+        desc: 'A task chip opens the task. Move to, Unlink, Stop tracking and Take off this branch act at once and show an Undo toast, and ⌘Z undoes the last one when focus is not in a text field. The Log keeps the event with Re-link. Drag a Linked row onto a worktree row of the sidebar to move it there (Alt copies), or use Link work to this branch in the worktree menu.',
       },
       {
         term: 'Slack',

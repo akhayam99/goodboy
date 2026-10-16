@@ -10,9 +10,10 @@ import { isSessionIdle } from '../../../isSessionIdle';
 
 type Props = {
   readonly session: Session;
+  readonly hasNextLead?: boolean;
 };
 
-export const OverviewActions = ({ session }: Props) => {
+export const OverviewActions = ({ session, hasNextLead = false }: Props) => {
   const sessionId = session.id;
   const toggleDrawer = useAppStore((state) => state.toggleDrawer);
   const isOpen = useAppStore((state) => selectOpenDrawer(state)?.kind === 'new');
@@ -39,7 +40,7 @@ export const OverviewActions = ({ session }: Props) => {
   return (
     <Tooltip content="New" shortcut="overview.newHere">
       <Button
-        variant={isIdle ? 'primary' : 'secondary'}
+        variant={isIdle && !hasNextLead ? 'primary' : 'secondary'}
         size="sm"
         onClick={toggle}
         aria-haspopup="dialog"

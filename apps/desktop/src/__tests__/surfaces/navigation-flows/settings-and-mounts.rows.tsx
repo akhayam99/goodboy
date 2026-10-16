@@ -8,7 +8,7 @@ import {
   branchTab,
   click,
   clickButton,
-  clickFirstButton,
+  openWorktreeMenu,
   heading,
   lens,
   pane,
@@ -88,7 +88,7 @@ export const SETTINGS_AND_MOUNT_ROWS: ReadonlyArray<Row> = [
     name: 'mount row menu: scripts',
     covers: ['openDrawer', 'lens:scripts'],
     open: async () => {
-      await clickFirstButton(/ on .+ actions$/);
+      await openWorktreeMenu();
       await click(await screen.findByRole('menuitem', { name: /^Open scripts/ }));
     },
     lands: pane('Scripts'),
@@ -97,7 +97,7 @@ export const SETTINGS_AND_MOUNT_ROWS: ReadonlyArray<Row> = [
     name: 'mount row menu: terminal',
     covers: ['openMountTerminal'],
     open: async () => {
-      await clickFirstButton(/ on .+ actions$/);
+      await openWorktreeMenu();
       await click(await screen.findByRole('menuitem', { name: /^Open terminal/ }));
     },
     lands: async () => {

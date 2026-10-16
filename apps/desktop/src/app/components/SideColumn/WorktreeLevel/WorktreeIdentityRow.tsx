@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import type { SessionId, SessionProjectMount } from '@goodboy/types';
+import { useAppStore } from '../../../../store';
 import { BranchSwitcher } from '../../../../features/branch/components/BranchHeader/BranchSwitcher';
 import { ObjectOverflowMenu } from '../../../../features/actions/components/ObjectOverflowMenu';
 import type { MountActionTarget } from '../../../../features/actions/types';
@@ -29,6 +31,13 @@ export const WorktreeIdentityRow = ({
   projectName,
   target,
 }: Props) => {
+  const hasDetectedEditors = useAppStore((state) => state.detectedEditors.length > 0);
+  const loadDetectedEditors = useAppStore((state) => state.loadDetectedEditors);
+  useEffect(() => {
+    if (!hasDetectedEditors) {
+      void loadDetectedEditors();
+    }
+  }, [hasDetectedEditors, loadDetectedEditors]);
   const name = projectName ?? mount.mountName;
   const branch = mount.branch === '' ? mount.mountName : mount.branch;
   return (

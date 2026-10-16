@@ -19,7 +19,6 @@ import type {
 import type { ExplodeGroups } from '../../../../../hooks/useExplodeGroups';
 import { useAgentTouchedWorktrees } from '../../../../../hooks/useAgentTouchedWorktrees';
 import { useTimelineOpen } from '../../../../../hooks/useTimelineOpen';
-import { RAIL_COUNT_RADIUS, railInsetOf } from '../../../../../../workTreeModel/railGeometry';
 import { ROW_ACTION_LABEL } from '../../../../../../workTreeModel/rowActionLabels';
 import type { TimelineEntryRowHandlers } from '../TimelineEntryRow';
 import type { TimelineLaneControl, TimelineLaneTarget } from '../TimelineRail';
@@ -78,6 +77,7 @@ export const useTimelineRowProps = ({
   const sessionProvider = session.providerPreference?.defaultProvider ?? null;
   const sessionEffort = session.effort ?? null;
   const { worktrees, laneRuns, stream } = rows;
+  const railWidth = rows.laneGutter;
   const fixOffers = useAppStore((state) => selectFixOffers({ state, sessionId }));
 
   const latestLaneRuns = useRef(laneRuns);
@@ -359,10 +359,6 @@ export const useTimelineRowProps = ({
     if (rail === undefined) {
       return null;
     }
-    const railWidth = railInsetOf({
-      rail,
-      markerRadius: item.kind === 'count' ? RAIL_COUNT_RADIUS : undefined,
-    });
     const rowLaneId = item.kind === 'row' ? (laneRuns.laneIdByRowId.get(item.id) ?? null) : null;
     if (item.kind === 'now') {
       return { kind: 'now', item, rail, railWidth, sessionId, lanes };

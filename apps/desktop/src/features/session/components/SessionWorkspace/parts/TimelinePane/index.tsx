@@ -27,7 +27,7 @@ import { useTimelineRows } from './useTimelineRows';
 
 type Props = {
   readonly session: Session;
-  readonly actions: ReactNode;
+  readonly lead?: ReactNode;
   readonly onShownQuestionsChange?: (ids: ReadonlySet<string>) => void;
 };
 
@@ -36,7 +36,7 @@ const VIEW_OPTIONS = ACTIVITY_VIEWS.map((view) => ({
   label: ACTIVITY_VIEW_LABEL[view],
 }));
 
-export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props) => {
+export const TimelinePane = ({ session, lead = null, onShownQuestionsChange }: Props) => {
   const sessionId: SessionId = session.id;
   const markAllAgentsSeen = useAppStore((s) => s.markAllAgentsSeen);
   const [view, setView] = useState<ActivityView>('activity');
@@ -68,7 +68,7 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
     session,
     explode,
     rows,
-    isNeedsYouShown: view !== 'log',
+    isNeedsYouShown: true,
   });
   const { stream, entries, viewEntries, shownQuestions, owners } = rows;
   const shownQuestionsKey = [...shownQuestions].sort().join(' ');
@@ -99,6 +99,8 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
 
   return (
     <ActionColumnContext.Provider value={hasActionColumn}>
+      <NeedsYouBlock owners={owners} onOpen={openNeedsYou} />
+      {lead}
       <section aria-label="Activity" className="@container/activity flex flex-col gap-2">
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
@@ -109,7 +111,6 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
               value={view}
               onChange={setView}
             />
-            <SessionCostChip sessionId={sessionId} />
             {hasUnreadAgents ? (
               <Button variant="ghost" size="sm" onClick={() => void markAllAgentsSeen(sessionId)}>
                 <CheckCheck size={ICON_SIZE.row} aria-hidden />
@@ -117,7 +118,7 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
               </Button>
             ) : null}
           </div>
-          {actions}
+          <SessionCostChip sessionId={sessionId} />
         </div>
         {view === 'log' ? (
           <Input
@@ -127,9 +128,7 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
-        ) : (
-          <NeedsYouBlock owners={owners} onOpen={openNeedsYou} />
-        )}
+        ) : null}
         {isLoading ? (
           <TimelineSkeleton />
         ) : viewEntries.length === 0 ? (

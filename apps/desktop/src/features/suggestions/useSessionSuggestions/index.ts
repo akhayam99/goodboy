@@ -451,21 +451,15 @@ export const useSessionSuggestions = ({
           })
         : [],
       checkChains,
-      cleanupProposals: cleanupProposals.flatMap((proposal) => {
-        if (proposal.request === null) {
-          return [];
-        }
-        const project = projectById(projects, proposal.projectId) ?? null;
-        return [
-          {
-            requestId: proposal.requestId,
-            mountId: proposal.mountId,
-            projectName: project?.name ?? proposal.branch,
-            branch: proposal.branch,
-            prNumber: proposal.request.prNumber,
-          },
-        ];
-      }),
+      cleanupProposals: cleanupProposals.map((proposal) => ({
+        requestId: proposal.requestId,
+        mountId: proposal.mountId,
+        projectName: projectById(projects, proposal.projectId)?.name ?? proposal.branch,
+        branch: proposal.branch,
+        prNumber: proposal.request?.prNumber ?? null,
+        sizeBytes: proposal.sizeBytes,
+        isArchived: proposal.reason === 'archive',
+      })),
       hasRunningAgent: effectiveAgents.some((agent) => agent.status === 'running'),
       hasGoal: session.goal.trim() !== '',
       hasEverAttachedWorkflow: attachedRuns.some(({ run }) => run.discardedAt == null),

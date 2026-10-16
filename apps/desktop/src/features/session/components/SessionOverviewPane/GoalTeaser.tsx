@@ -1,12 +1,11 @@
 import { X } from 'lucide-react';
-import { Button, IconButton, Notice, Skeleton, inlineMarkdownText, Tooltip } from '@goodboy/ui';
+import { Button, IconButton, Notice, Skeleton, inlineMarkdownText } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore, useSessionLoading, useSessionSlots } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useGoalHint } from '../../hooks/useGoalHint';
 import { useGoalFromWork } from '../../hooks/useGoalFromWork';
 import { GoalFromWorkCard } from './GoalFromWorkCard';
-import { goalPresence } from './goalPresence';
 
 type Props = {
   readonly session: Session;
@@ -33,7 +32,7 @@ export const GoalTeaser = ({ session }: Props) => {
     );
   }
 
-  const presence = goalPresence({ value, sessionTitle: session.goal });
+  const isEmpty = value.trim() === '';
   const open = () => openContextDrawer({ sessionId, tab: 'goal' });
 
   if (proposal.isReading) {
@@ -78,7 +77,7 @@ export const GoalTeaser = ({ session }: Props) => {
       />
     );
   }
-  if (presence === 'empty' && proposal.linked.length > 0 && !hint.isDismissed) {
+  if (isEmpty && proposal.linked.length > 0 && !hint.isDismissed) {
     return (
       <div className="flex min-h-5 items-center gap-2">
         <span className="min-w-0 text-meta text-muted-foreground">
@@ -91,11 +90,7 @@ export const GoalTeaser = ({ session }: Props) => {
       </div>
     );
   }
-  if (presence === 'title') {
-    return null;
-  }
-
-  if (presence === 'empty') {
+  if (isEmpty) {
     return (
       <button type="button" onClick={open} className={`${ROW} self-start px-1 py-0.5`}>
         <CONCEPT_ICONS.goal size={ICON_SIZE.row} aria-hidden className="text-muted-foreground" />
@@ -107,16 +102,14 @@ export const GoalTeaser = ({ session }: Props) => {
   const text = inlineMarkdownText({ text: value }).replace(/\s+/g, ' ').trim();
 
   return (
-    <Tooltip content={text}>
-      <button
-        type="button"
-        onClick={open}
-        aria-label={`Goal: ${text}`}
-        className={`${ROW} w-full px-1 py-0.5`}
-      >
-        <span className="shrink-0 text-meta text-faint-foreground">Goal</span>
-        <span className="min-w-0 flex-1 truncate text-label text-muted-foreground">{text}</span>
-      </button>
-    </Tooltip>
+    <button
+      type="button"
+      onClick={open}
+      aria-label={`Goal: ${text}`}
+      data-overview-goal=""
+      className={`${ROW} w-full px-1 py-0.5`}
+    >
+      <span className="line-clamp-3 min-w-0 flex-1 text-body text-foreground">{text}</span>
+    </button>
   );
 };

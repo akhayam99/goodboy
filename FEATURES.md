@@ -34,7 +34,7 @@ Begin from an issue, a workflow or a question. Everything starts as one draft, a
 
 ## Overview and activity
 
-Open a session to see everything about its task in one place: the goal, the projects and branches it touches, what happened so far and what waits on you.
+Open a session to see what it is for, what needs you and what happened so far.
 
 - Session overview
 - Activity

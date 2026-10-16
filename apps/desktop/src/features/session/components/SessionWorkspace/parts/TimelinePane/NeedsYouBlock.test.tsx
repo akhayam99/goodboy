@@ -39,7 +39,7 @@ describe('NeedsYouBlock', () => {
     expect(screen.queryByRole('region', { name: 'Needs you' })).toBeNull();
   });
 
-  it('gives each owner exactly one Open named after the row, and sends that owner', () => {
+  it('makes each row the button, with no Open word, and sends that owner', () => {
     const onOpen = vi.fn();
     render(<NeedsYouBlock owners={[PR_OWNER, REBASE_OWNER]} onOpen={onOpen} />);
     const card = screen.getByRole('region', { name: 'Needs you' });
@@ -49,7 +49,10 @@ describe('NeedsYouBlock', () => {
       'Open: #318 · 1 question · 5 to review',
       'Open: Rebase of hl/fix-duplicate-credit stopped ×2',
     ]);
-    expect(buttons.map((button) => button.textContent)).toEqual(['Open', 'Open']);
+    expect(buttons.map((button) => button.textContent)).toEqual([
+      '#318 · 1 question · 5 to review',
+      'Rebase of hl/fix-duplicate-credit stopped ×2',
+    ]);
     fireEvent.click(
       within(card).getByRole('button', {
         name: 'Open: Rebase of hl/fix-duplicate-credit stopped ×2',

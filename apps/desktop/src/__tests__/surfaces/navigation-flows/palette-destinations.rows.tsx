@@ -11,7 +11,7 @@ import {
   both,
   click,
   clickButton,
-  clickFirstButton,
+  openWorktreeMenu,
   heading,
   lens,
   openCrumb,
@@ -54,7 +54,7 @@ const seedWorkflow = (): void => {
 };
 
 const openDiffHistory = async (): Promise<void> => {
-  await clickFirstButton(/ on .+ actions$/);
+  await openWorktreeMenu();
   await click(await screen.findByRole('menuitem', { name: /^Rewrite history/ }));
 };
 

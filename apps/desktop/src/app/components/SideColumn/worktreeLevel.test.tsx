@@ -88,6 +88,7 @@ const seed = ({ status }: SeedParams) => {
   stubStoryInvoke({
     worktree_status: () => status,
     worktree_remote_url: () => 'git@github.com:harborline/payments-api.git',
+    detect_editors: () => [],
   });
 };
 

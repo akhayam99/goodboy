@@ -77,7 +77,7 @@ export const ChatOriginRow = ({ session }: Props) => {
         >
           <CONCEPT_ICONS.chat size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           <span className="shrink-0">{`${KIND_LABEL[primary.kind]}: `}</span>
-          <span className="min-w-0 truncate text-foreground">{primary.title}</span>
+          <span className="min-w-0 truncate">{primary.title}</span>
         </button>
       </Tooltip>
       {others.length === 0 ? null : (

@@ -44,7 +44,7 @@ export const AnalyzeFixScene = ({
   const main =
     surface === 'timeline' ? (
       <div className="relative h-full w-full">
-        <TimelinePane session={SESSION} actions={null} />
+        <TimelinePane session={SESSION} />
       </div>
     ) : surface === 'activity' ? (
       <ScrollFade className="min-h-0 flex-1">

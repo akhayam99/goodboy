@@ -8,7 +8,6 @@ import {
   both,
   branchTab,
   click,
-  clickFirstButton,
   heading,
   openCrumb,
   settle,
@@ -79,7 +78,7 @@ const approveAndTurnGreen = ({ sessionId }: Ctx): void => {
 
 const openPrPage = async (ctx: Ctx): Promise<void> => {
   stopSyncs();
-  await clickFirstButton(/^Open PR #\d+ of /);
+  await openCrumb(/Branch/);
   await branchTab('pr')(ctx);
 };
 
@@ -89,10 +88,10 @@ const activity = (): Promise<HTMLElement> =>
 export const PULL_REQUEST_PAGE_ROWS: ReadonlyArray<Row> = [
   {
     name: 'pull request page: a branch with a pull request lands on the Overview, first of the five sections',
-    covers: ['openMountRequest', 'openReviewTarget', 'tab:pr'],
+    covers: ['tab:pr'],
     open: async () => {
       stopSyncs();
-      await clickFirstButton(/^Open PR #\d+ of /);
+      await openCrumb(/Branch/);
     },
     lands: both(
       branchTab('pr'),

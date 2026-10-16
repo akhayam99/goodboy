@@ -2107,8 +2107,7 @@ are `section` states. `inline-empty-states-use-the-wrappers.test.ts` fails on an
 **Loading keeps the page in place.** A part that reloads shows a skeleton of
 its own height: `SkeletonRow` (a row, with a `status` label naming what loads)
 or `SkeletonChip` (a chip). Only the parts that reload turn to skeleton; the
-title, the goal, the timeline and the cost stay. A session refresh shows them
-only after 250 ms (`useSessionSkeleton`), so a fast refresh never flashes.
+title, the goal, the timeline and the cost stay.
 
 **Bare beats the circle and the hero.** The pane already has a title and a
 rhythm. A tinted circle, a border and a bigger title repeat the title and

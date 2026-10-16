@@ -7,8 +7,6 @@ import type {
   IsoDateTime,
   MountBranchObservation,
   MountId,
-  ProjectId,
-  SessionExternalTask,
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
@@ -22,41 +20,19 @@ const NOW: IsoDateTime = clock.iso({ at: '2026-09-07T09:12:00.000Z' });
 
 const WORKSPACE_ID = 'mock-workspace-harborline' as WorkspaceId;
 const SESSION_ID = 'mock-session-mount-rows' as SessionId;
-const LEDGER_ID = 'mock-project-ledger-core' as ProjectId;
 const RELAY_MOUNT = 'mock-mount-relay-backoff' as MountId;
-const POSTINGS_MOUNT = 'mock-mount-ledger-postings' as MountId;
-const ROUNDING_MOUNT = 'mock-mount-ledger-rounding' as MountId;
 
 const RELAY_BRANCH = 'fix/notify-relay-webhook-rate-limit-backoff';
 const RELAY_OBSERVED = 'fix/notify-relay-retry-budget';
 
-const LONG_BRANCHES: Readonly<Record<string, string>> = {
-  [ROUNDING_MOUNT]:
-    'fix/ledger-reconciliation-rounding-drift-in-multi-currency-statement-totals-after-fx-rebase',
-  [POSTINGS_MOUNT]:
-    'fix/ledger-reconciliation-idempotent-postings-for-replayed-statement-batches-after-gateway-timeouts',
-  [RELAY_MOUNT]:
-    'fix/notify-relay-webhook-rate-limit-backoff-with-jitter-and-retry-budget-per-tenant',
-};
-
 const POLL_MS = 150;
 
-type Variant =
-  'error' | 'mismatch' | 'loading' | 'add-project-empty' | 'long-branches' | 'provenance';
+type Variant = 'mismatch' | 'provenance';
 
 type Match = (button: HTMLButtonElement) => boolean;
 
-const startsWithLabel =
-  ({ prefix }: { readonly prefix: string }): Match =>
-  (button) =>
-    button.getAttribute('aria-label')?.startsWith(prefix) === true;
-
 const CLICKS: Readonly<Record<Variant, Match | null>> = {
-  error: startsWithLabel({ prefix: 'Reopen for' }),
   mismatch: null,
-  loading: null,
-  'add-project-empty': startsWithLabel({ prefix: 'Add project' }),
-  'long-branches': null,
   provenance: (button) => /^\+\d+ more$/.test(button.textContent ?? ''),
 };
 
@@ -94,25 +70,6 @@ const linkOf = ({
   createdAt: clock.iso({ at: `2026-09-07T09:${String(10 + minutes).padStart(2, '0')}:00.000Z` }),
 });
 
-const longTaskOf = ({
-  index,
-  branch,
-}: {
-  readonly index: number;
-  readonly branch: string;
-}): SessionExternalTask => ({
-  sessionId: SESSION_ID,
-  provider: 'linear',
-  externalId: `mock-long-hbl-${index}`,
-  identifier: `HBL-${400 + index}`,
-  url: `https://example.invalid/linear/HBL-${400 + index}`,
-  title: `Ledger task ${index}`,
-  scope: 'branch',
-  branch,
-  projectId: LEDGER_ID,
-  createdAt: NOW,
-});
-
 const seedMismatch = (): void => {
   const observation: MountBranchObservation = {
     mountId: RELAY_MOUNT,
@@ -124,48 +81,6 @@ const seedMismatch = (): void => {
     observedAt: NOW,
   };
   useAppStore.setState({ mountBranchObservations: { [SESSION_ID]: [observation] } });
-};
-
-const seedFailingReopen = (): void => {
-  useAppStore.setState({
-    attachMount: async () => {
-      throw new Error(
-        "fatal: '~/code/harborline/ledger-core-backfill' is already registered as a worktree of another process",
-      );
-    },
-  });
-};
-
-const seedLoading = (): void => {
-  useAppStore.setState({ sessionProjectMounts: {}, sessionMounts: {} });
-};
-
-const seedLongBranches = (): void => {
-  const state = useAppStore.getState();
-  const longOf = (mountId: string, branch: string): string => LONG_BRANCHES[mountId] ?? branch;
-  const postings = LONG_BRANCHES[POSTINGS_MOUNT] ?? '';
-  const rounding = LONG_BRANCHES[ROUNDING_MOUNT] ?? '';
-  useAppStore.setState({
-    sessionMounts: {
-      [SESSION_ID]: (state.sessionMounts[SESSION_ID] ?? []).map((view) => ({
-        ...view,
-        branch: longOf(view.id, view.branch),
-      })),
-    },
-    sessionProjectMounts: {
-      [SESSION_ID]: (state.sessionProjectMounts[SESSION_ID] ?? []).map((mount) => ({
-        ...mount,
-        branch: longOf(mount.mountId, mount.branch),
-      })),
-    },
-    sessionExternalTasks: {
-      [SESSION_ID]: [
-        ...(state.sessionExternalTasks[SESSION_ID] ?? []).filter((task) => task.scope !== 'branch'),
-        ...[1, 2, 3, 4].map((index) => longTaskOf({ index, branch: postings })),
-        longTaskOf({ index: 5, branch: rounding }),
-      ],
-    },
-  });
 };
 
 const seedProvenance = (): void => {
@@ -195,11 +110,7 @@ const seedProvenance = (): void => {
 };
 
 const SEEDS: Readonly<Record<Variant, () => void>> = {
-  error: seedFailingReopen,
   mismatch: seedMismatch,
-  loading: seedLoading,
-  'add-project-empty': () => undefined,
-  'long-branches': seedLongBranches,
   provenance: seedProvenance,
 };
 
@@ -230,10 +141,6 @@ const OverviewVariantScene = ({ variant }: Props) => {
 };
 
 export const U23_OVERVIEW_SCENES = {
-  'overview-mount-error': () => <OverviewVariantScene variant="error" />,
   'overview-mount-mismatch': () => <OverviewVariantScene variant="mismatch" />,
-  'overview-mount-loading': () => <OverviewVariantScene variant="loading" />,
-  'overview-add-project-empty': () => <OverviewVariantScene variant="add-project-empty" />,
-  'overview-long-branches': () => <OverviewVariantScene variant="long-branches" />,
   'overview-header-provenance': () => <OverviewVariantScene variant="provenance" />,
 };

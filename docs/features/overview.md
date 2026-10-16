@@ -1,10 +1,10 @@
 # Overview and activity
 
-Open a session to see everything about its task in one place: the goal, the projects and branches it touches, what happened so far and what waits on you.
+Open a session to see what it is for, what needs you and what happened so far.
 
 ### Session overview
 
-See the goal, linked issues, projects and branches of a session on one screen, with the buttons to start an agent or a workflow. Each branch is one row with its pull request, its changes and the one action its state asks for, such as **Rebase**, **Push** or **Create PR**. Merged or closed branches fold away under their project.
+The Overview reads top to bottom: the goal, then anything a branch needs you to decide (a closed worktree with **Reopen**, a failed action with **Retry**, a stopped rebase, a branch that moved), then **Needs you**, **Next** and **Activity**. **New** in the header starts an agent, a workflow or a write-up. The projects, branches and linked work of the session sit in the sidebar: click a branch to open its pull request, comments, files, commits and checks.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-session-dark.webp">
@@ -19,7 +19,7 @@ Pull requests opened outside Goodboy, by an agent or from a terminal, show up wh
 
 ### Activity
 
-Follow what happened in a session in two views. **Activity** has one row per agent, workflow run or fix run, with its state, model, time and cost, and a **Needs you** block on top lists what waits on you. **Log** lists the plain facts, such as context changes, branch events and links, newest first with a search box.
+Follow what happened in a session in two views. **Activity** has one row per agent, workflow run or fix run, with its state, model, time and cost; step numbers line up in one column that no lane crosses. The **Needs you** block above Next lists what waits on you, and each row opens the exact ask. **Log** lists the plain facts, such as context changes, branch events and links, newest first with a search box.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-activity-dark.webp">
@@ -30,7 +30,7 @@ Follow what happened in a session in two views. **Activity** has one row per age
 
 ### Next
 
-Know the one move that unblocks the task, such as answering a question, fixing a failing check or opening a pull request. **Next** offers it as one short button such as **Start**, **Analyze** or **Push**, and **Not now** puts a suggestion away until the situation changes. When the button starts an agent, the icon on the left is that agent's role in its color, and the button carries the same icon. Other ways to do it, such as starting a tester instead, sit in the **⋯** menu, where pointing at one shows its role on the icon. **Not now** says Dismissed with **Undo**, and ⌘Z brings the last dismissed suggestion back, several times in reverse order.
+Know the moves that unblock the task, such as answering a question, fixing a failing check or opening a pull request. **Next** offers up to three, each as one short button such as **Start**, **Analyze** or **Push**, the first one filled, and **Not now** puts a suggestion away until the situation changes. Once a pull request merges, Next offers **Remove the payments-api worktree** with the reason and its size (`#418 merged · 412 MB`), or one row for several merged worktrees. When the button starts an agent, the icon on the left is that agent's role in its color, and the button carries the same icon. Other ways to do it, such as starting a tester instead, sit in the **⋯** menu, where pointing at one shows its role on the icon. **Not now** says Dismissed with **Undo**, and ⌘Z brings the last dismissed suggestion back, several times in reverse order.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-next-dark.webp">

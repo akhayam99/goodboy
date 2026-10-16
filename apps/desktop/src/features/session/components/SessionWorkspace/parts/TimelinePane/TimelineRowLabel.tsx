@@ -280,7 +280,10 @@ export const TimelineRowLabel = ({
   return (
     <>
       {item.ordinal != null ? (
-        <span className="w-4 shrink-0 text-left text-chip text-faint-foreground">
+        <span
+          data-timeline-ordinal=""
+          className="w-7 shrink-0 text-right text-meta tabular-nums text-faint-foreground"
+        >
           {item.ordinal}
         </span>
       ) : null}

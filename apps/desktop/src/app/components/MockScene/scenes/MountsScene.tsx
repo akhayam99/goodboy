@@ -31,11 +31,6 @@ import type {
 } from '@goodboy/types';
 import { SessionOverviewPane } from '../../../../features/session/components/SessionOverviewPane';
 import { useAppStore } from '../../../../store';
-import {
-  useHoveredMountRow,
-  useOpenProjectDisclosures,
-  useShowFinishedMounts,
-} from './sceneReveal';
 import { ShellFrame, seedShellChrome } from './shellChrome';
 import { sceneClock } from '../sceneClock';
 import { overviewFullSeed } from './overviewFullSeed';
@@ -206,7 +201,6 @@ type MountsVariant =
   | 'many'
   | 'many-open'
   | 'closed-rows'
-  | 'big-stats'
   | 'gone-branch'
   | 'gone-branch-restore'
   | 'refreshing'
@@ -214,7 +208,9 @@ type MountsVariant =
   | 'branch-tasks'
   | 'task-split'
   | 'branch-split'
-  | 'unassigned-notes';
+  | 'unassigned-notes'
+  | 'blank'
+  | 'archived';
 
 const UNASSIGNED_NOTES: ReadonlyArray<DiffComment> = [
   {
@@ -696,6 +692,20 @@ const TASK_SPLIT_TASKS: ReadonlyArray<SessionExternalTask> = [
   },
 ];
 
+type SessionParams = {
+  readonly variant: MountsVariant;
+};
+
+const sessionOf = ({ variant }: SessionParams): Session => {
+  if (variant === 'blank') {
+    return { ...SESSION, goal: '', titleUserEdited: false };
+  }
+  if (variant === 'archived') {
+    return { ...SESSION, archivedAt: later(-30) };
+  }
+  return SESSION;
+};
+
 const DEFAULT_VARIANT: MountsVariant =
   sceneParam({ key: 'scene' }) === 'rail-ticket-ids' ||
   sceneParam({ key: 'variant' }) === 'task-split'
@@ -707,37 +717,28 @@ export const MountsScene = ({ variant = DEFAULT_VARIANT }: Props) => {
   const seeds =
     variant === 'many' || variant === 'many-open'
       ? [...MOUNT_SEEDS, ...EXTRA_SEEDS]
-      : variant === 'big-stats'
-        ? MOUNT_SEEDS.map((seed) =>
-            seed.id === ROUNDING_MOUNT || seed.id === POSTINGS_MOUNT
-              ? {
-                  ...seed,
-                  worktreePath: `${seed.worktreePath}-bulk`,
-                  lastWorktreePath: `${seed.worktreePath}-bulk`,
-                }
-              : seed,
-          )
-        : variant === 'closed-rows' ||
-            variant === 'gone-branch' ||
-            variant === 'gone-branch-restore'
-          ? [MOUNT_SEEDS[1], MOUNT_SEEDS[2], MOUNT_SEEDS[3]]
-              .filter((seed) => seed !== undefined)
-              .map((seed) =>
-                seed.id === RELAY_MOUNT ? { ...seed, worktreePath: null, isAttached: false } : seed,
-              )
-          : variant === 'task-split'
-            ? [MOUNT_SEEDS[2]].filter((seed) => seed !== undefined)
-            : variant === 'branch-split'
-              ? [MOUNT_SEEDS[0], MOUNT_SEEDS[1]].filter((seed) => seed !== undefined)
+      : variant === 'closed-rows' || variant === 'gone-branch' || variant === 'gone-branch-restore'
+        ? [MOUNT_SEEDS[1], MOUNT_SEEDS[2], MOUNT_SEEDS[3]]
+            .filter((seed) => seed !== undefined)
+            .map((seed) =>
+              seed.id === RELAY_MOUNT ? { ...seed, worktreePath: null, isAttached: false } : seed,
+            )
+        : variant === 'task-split'
+          ? [MOUNT_SEEDS[2]].filter((seed) => seed !== undefined)
+          : variant === 'branch-split'
+            ? [MOUNT_SEEDS[0], MOUNT_SEEDS[1]].filter((seed) => seed !== undefined)
+            : variant === 'blank'
+              ? []
               : MOUNT_SEEDS;
   const views = viewsOf(seeds);
+  const session = sessionOf({ variant });
 
   useEffect(() => {
     useAppStore.setState({
       workspaces: [WORKSPACE],
       currentWorkspaceId: WORKSPACE_ID,
       projects: PROJECTS,
-      sessions: [SESSION],
+      sessions: [session],
       currentSessionId: SESSION_ID,
       sessionMounts: { [SESSION_ID]: views },
       sessionProjectMounts: { [SESSION_ID]: projectMountsOf(seeds) },
@@ -810,7 +811,10 @@ export const MountsScene = ({ variant = DEFAULT_VARIANT }: Props) => {
           createdAt: Date.parse(NOW),
         })),
       },
-      sessionSlots: { [SESSION_ID]: CONTEXT_SLOTS },
+      sessionSlots: {
+        [SESSION_ID]:
+          variant === 'blank' ? CONTEXT_SLOTS.filter((slot) => slot.key !== 'goal') : CONTEXT_SLOTS,
+      },
       sessionSlotsLoad: { [SESSION_ID]: 'loaded' },
       sessionLoading: {
         [SESSION_ID]: {
@@ -836,33 +840,35 @@ export const MountsScene = ({ variant = DEFAULT_VARIANT }: Props) => {
       sessionWorkflows: { [SESSION_ID]: [] },
       phaseTemplates: { [WORKSPACE_ID]: [] },
       sessionTelemetry: { [SESSION_ID]: TELEMETRY },
-      sessionEvents: { [SESSION_ID]: SESSION_EVENTS },
+      sessionEvents: { [SESSION_ID]: variant === 'blank' ? [] : SESSION_EVENTS },
       loadSessionEvents: async () => undefined,
       sessionExternalTasks: {
         [SESSION_ID]:
-          variant === 'task-split'
-            ? TASK_SPLIT_TASKS
-            : [
-                {
-                  sessionId: SESSION_ID,
-                  provider: 'linear',
-                  externalId: 'mock-mounts-hrb-2481',
-                  identifier: 'HBL-391',
-                  url: 'https://example.invalid/linear/HBL-391',
-                  title: 'Ledger reconciliation rewrite',
-                  createdAt: NOW,
-                },
-                {
-                  sessionId: SESSION_ID,
-                  provider: 'jira',
-                  externalId: 'mock-mounts-ops-77',
-                  identifier: 'LEDG-77',
-                  url: 'https://example.invalid/jira/LEDG-77',
-                  title: 'Notify relay floods the webhook provider',
-                  createdAt: NOW,
-                },
-                ...(variant === 'branch-tasks' ? BRANCH_TASKS : []),
-              ],
+          variant === 'blank'
+            ? []
+            : variant === 'task-split'
+              ? TASK_SPLIT_TASKS
+              : [
+                  {
+                    sessionId: SESSION_ID,
+                    provider: 'linear',
+                    externalId: 'mock-mounts-hrb-2481',
+                    identifier: 'HBL-391',
+                    url: 'https://example.invalid/linear/HBL-391',
+                    title: 'Ledger reconciliation rewrite',
+                    createdAt: NOW,
+                  },
+                  {
+                    sessionId: SESSION_ID,
+                    provider: 'jira',
+                    externalId: 'mock-mounts-ops-77',
+                    identifier: 'LEDG-77',
+                    url: 'https://example.invalid/jira/LEDG-77',
+                    title: 'Notify relay floods the webhook provider',
+                    createdAt: NOW,
+                  },
+                  ...(variant === 'branch-tasks' ? BRANCH_TASKS : []),
+                ],
       },
       sessionGithub: { [SESSION_ID]: { ...EMPTY_GITHUB, pr: POSTINGS_PR } },
       sessionProjectPrs: {
@@ -884,7 +890,7 @@ export const MountsScene = ({ variant = DEFAULT_VARIANT }: Props) => {
       loadMountCleanupProposals: async () => [],
     });
     seedShellChrome({
-      session: SESSION,
+      session,
       siblings: SIBLINGS,
       branches: { [SESSION_ID]: POSTINGS_BRANCH },
       telemetryAt: NOW,
@@ -893,18 +899,15 @@ export const MountsScene = ({ variant = DEFAULT_VARIANT }: Props) => {
     setIsReady(true);
   }, []);
 
-  useShowFinishedMounts({ isReady });
-  useOpenProjectDisclosures({ isReady: isReady && variant === 'many-open' });
-  useHoveredMountRow({ isReady, rowLabel: 'fix/notify-relay' });
-
   if (!isReady) {
     return null;
   }
 
   return (
     <ShellFrame
-      session={SESSION}
-      main={<SessionOverviewPane session={SESSION} onSelectLens={() => undefined} />}
+      session={session}
+      sidebar="expanded"
+      main={<SessionOverviewPane session={session} onSelectLens={() => undefined} />}
     />
   );
 };

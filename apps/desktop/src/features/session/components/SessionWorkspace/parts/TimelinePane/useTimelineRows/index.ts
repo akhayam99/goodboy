@@ -50,6 +50,8 @@ import {
   type RailRow,
 } from '../../../../../../workTreeModel/railGeometry';
 import { keepEqualById } from '../../../../../../../shared/utils/keepEqualById';
+import { timelineFullGutterOf } from '../timelineFullGutter';
+import { timelineLaneGutterOf } from '../timelineLaneGutter';
 import type { ExplodeGroups } from '../../../../../hooks/useExplodeGroups';
 import { useResolveActivity } from '../../../../../hooks/useResolveActivity';
 import { useJobActivity } from '../../../../../hooks/useJobActivity';
@@ -75,6 +77,7 @@ export type TimelineRows = {
   readonly stream: TimelineStream;
   readonly laidOutItems: ReadonlyArray<TimelineStreamItem>;
   readonly rail: RailLayout;
+  readonly laneGutter: number;
   readonly laneRuns: TimelineLaneRuns;
   readonly owners: ReadonlyArray<NeedsYouOwner>;
   readonly unreadAgentIds: ReadonlySet<string>;
@@ -325,6 +328,37 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
     ],
   );
 
+  const fullGutter = useMemo(
+    () =>
+      timelineFullGutterOf({
+        build: ({ expandedGroupIds, fullGroupIds }) =>
+          buildTimelineStream({
+            entries: viewEntries,
+            unreadAgentIds,
+            advanceByRunId,
+            decidingRunIds,
+            dayLabelFor: dayLabel,
+            showQuestions: view === 'log',
+            resolveFactsByAgentId: resolveActivity.factsByAgentId,
+            jobFactsByAgentId: jobActivity.factsByAgentId,
+            autoFactsByAgentId,
+            expandedGroupIds,
+            fullGroupIds,
+            foldsFinished: true,
+          }),
+      }),
+    [
+      advanceByRunId,
+      autoFactsByAgentId,
+      decidingRunIds,
+      jobActivity,
+      resolveActivity,
+      unreadAgentIds,
+      view,
+      viewEntries,
+    ],
+  );
+
   const isLoaded = areEventsLoaded && areAgentsLoaded;
   const { keepOpen } = explode;
   const liveRootKey = useMemo(
@@ -341,13 +375,11 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
 
   const shownQuestions = useMemo(() => {
     const shown = new Set(shownQuestionIds({ items: stream.items }));
-    if (view === 'activity') {
-      for (const owner of owners) {
-        owner.questionIds.forEach((id) => shown.add(id));
-      }
+    for (const owner of owners) {
+      owner.questionIds.forEach((id) => shown.add(id));
     }
     return shown;
-  }, [owners, stream.items, view]);
+  }, [owners, stream.items]);
 
   const estimatedDetails = useMemo(() => {
     const details = new Map<string, DecisionChangeDetail>();
@@ -415,6 +447,11 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
     return { ...layout, rows };
   }, [stream.groups, laidOutItems]);
 
+  const laneGutter = useMemo(
+    () => Math.max(fullGutter, timelineLaneGutterOf({ items: laidOutItems, rails: rail.rows })),
+    [fullGutter, laidOutItems, rail.rows],
+  );
+
   const laneRuns = useMemo(
     () => timelineLaneRuns({ items: stream.items, groups: stream.groups }),
     [stream.groups, stream.items],
@@ -429,6 +466,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
     stream,
     laidOutItems,
     rail,
+    laneGutter,
     laneRuns,
     owners,
     unreadAgentIds,

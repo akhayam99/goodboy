@@ -75,6 +75,8 @@ export const NAMES = {
   retryPush: 'Retry push',
   newBranch: 'New branch',
   closeBranch: 'Close branch',
+  removeWorktree: 'Remove worktree',
+  removeWorktrees: 'Remove worktrees',
   switchBranch: 'Switch branch',
   rebaseOn: 'Rebase on',
   role: {
@@ -138,7 +140,7 @@ const FORMER_NAMES: Readonly<Record<string, ReadonlyArray<string>>> = {
   [NAMES.resolve]: ['Resolve without a reply'],
   [NAMES.publishReply]: ['Post reply now'],
   [NAMES.newBranch]: ['New worktree'],
-  [NAMES.closeBranch]: ['Remove worktree', 'Close worktree'],
+  [NAMES.closeBranch]: ['Close worktree'],
   [NAMES.rebaseOn]: ["Start from today's main"],
   [NAMES.start]: ['Launch session'],
   [NAMES.pickAnIssue]: ['Pick up issue'],

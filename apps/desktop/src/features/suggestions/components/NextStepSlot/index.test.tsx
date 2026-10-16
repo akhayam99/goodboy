@@ -125,17 +125,23 @@ describe('NextStepSlot', () => {
     screen.getByText('Approve for agent-other');
   });
 
-  it('collapses the rest behind "N more" until expanded', () => {
+  it('shows three rows, fills only the first primary and collapses the rest behind "N more"', () => {
     suggestionState.list = [
       suggestion({ id: 'a' }),
       suggestion({ id: 'b', title: 'Rebase web' }),
       suggestion({ id: 'c', title: 'Fix review conversations' }),
+      suggestion({ id: 'd', title: 'Open a pull request for web' }),
+      suggestion({ id: 'e', title: 'Push web' }),
     ];
-    render(<NextStepSlot session={SESSION} onSelectLens={vi.fn()} />);
-    expect(screen.queryByText('Rebase web')).toBeNull();
-    fireEvent.click(screen.getByText('2 more'));
+    const onLeadChange = vi.fn();
+    render(<NextStepSlot session={SESSION} onSelectLens={vi.fn()} onLeadChange={onLeadChange} />);
     screen.getByText('Rebase web');
     screen.getByText('Fix review conversations');
+    expect(screen.queryByText('Push web')).toBeNull();
+    expect(onLeadChange).toHaveBeenLastCalledWith({ hasLead: true });
+    fireEvent.click(screen.getByText('2 more'));
+    screen.getByText('Open a pull request for web');
+    screen.getByText('Push web');
   });
 
   it('drops a suggestion locally once dismissed with Not now', () => {
