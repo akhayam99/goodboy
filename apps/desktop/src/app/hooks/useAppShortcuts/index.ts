@@ -16,6 +16,8 @@ import { branchTabOf } from '../../../store/slices/session-view/branchTabOf';
 import { requestNewSession } from '../../../features/session/requestNewSession';
 import { toggleSessionTerminal } from '../../../features/terminal/toggleSessionTerminal';
 import { openLens } from '../../../features/session/openLens';
+import { togglePane } from '../../../features/session/panes/togglePane';
+import type { ClusterPane } from '../../../features/session/panes/clusterPane';
 import { isLensReachable } from '../../../features/session/isLensReachable';
 import { isBranchTabAvailable } from '../../../features/branch/branchTabs';
 import type { OpenPaletteParams } from '../../../features/palette/paletteModeTypes';
@@ -46,6 +48,10 @@ type LensParams = {
 
 type ContextParams = {
   readonly tab?: ContextDrawerTab;
+};
+
+type PaneParams = {
+  readonly pane: ClusterPane;
 };
 
 const doorTabOf = ({ kind }: { readonly kind: LensKind | null }): BranchTab => {
@@ -94,6 +100,14 @@ export const useAppShortcuts = ({
       return;
     }
     state.toggleContextDrawer({ sessionId, ...(tab !== undefined && { tab }) });
+  }, []);
+
+  const toggleCurrentPane = useCallback(({ pane }: PaneParams) => {
+    const sessionId = useAppStore.getState().currentSessionId;
+    if (sessionId == null) {
+      return;
+    }
+    togglePane({ sessionId, pane });
   }, []);
 
   const goToLens = useCallback(({ kind }: LensParams) => {
@@ -205,9 +219,9 @@ export const useAppShortcuts = ({
   useShortcut('lens.review', () => goToLens({ kind: 'review' }));
   useShortcut('lens.questions', () => goToLens({ kind: 'questions' }));
   useShortcut('lens.files', () => goToLens({ kind: 'files' }), !isExploreSession);
-  useShortcut('lens.explore', () => goToLens({ kind: 'explore' }), isExploreSession);
+  useShortcut('lens.explore', () => toggleCurrentPane({ pane: 'explore' }));
   useShortcut('lens.plans', () => goToLens({ kind: 'plans' }));
-  useShortcut('lens.scripts', () => goToLens({ kind: 'scripts' }));
+  useShortcut('lens.scripts', () => toggleCurrentPane({ pane: 'scripts' }));
   useShortcut('session.terminal', () => toggleSessionTerminal({}));
   useShortcut('lens.pr', () => goToLens({ kind: 'pr' }));
   useShortcut('lens.linear', () => goToLens({ kind: 'linear' }));

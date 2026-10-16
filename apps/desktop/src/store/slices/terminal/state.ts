@@ -18,6 +18,7 @@ export type TerminalState = {
   readonly terminalSelection: TerminalSelection | null;
   readonly terminalNames: Readonly<Record<string, string>>;
   readonly terminalFolderOverrides: Readonly<Record<WorkspaceId, string | null>>;
+  readonly terminalScopes: Readonly<Record<SessionId, string>>;
 };
 
 export const terminalInitialState: TerminalState = {
@@ -28,4 +29,5 @@ export const terminalInitialState: TerminalState = {
   terminalSelection: null,
   terminalNames: {},
   terminalFolderOverrides: {},
+  terminalScopes: {},
 };

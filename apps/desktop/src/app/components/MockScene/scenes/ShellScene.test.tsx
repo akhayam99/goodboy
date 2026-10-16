@@ -45,7 +45,7 @@ const pageRow = (label: string): HTMLElement => {
 
 const renderShell = async () => {
   render(<ShellScene />);
-  await screen.findByTestId('ask-trail-button');
+  await screen.findByTestId('pane-toggle-ask');
 };
 
 describe('the shell scene mounts the real session workspace', () => {
@@ -88,6 +88,6 @@ describe('the shell scene mounts the real session workspace', () => {
     });
     await waitFor(() => expect(document.querySelector('[data-settings-column]')).toBeNull());
     expect(useAppStore.getState().appStudio).toBeNull();
-    expect(screen.getByTestId('ask-trail-button')).toBeDefined();
+    expect(screen.getByTestId('pane-toggle-ask')).toBeDefined();
   });
 });

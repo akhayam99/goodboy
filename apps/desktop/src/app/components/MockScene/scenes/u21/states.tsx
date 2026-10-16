@@ -175,7 +175,11 @@ export const U21_STATES_SCENES: Readonly<Record<string, ComponentType>> = {
   ),
   'scripts-empty': () => (
     <StateScene lens="scripts" seed={seedNoMounts}>
-      <ScriptsPanel workspaceId={SESSION.workspaceId} sessionId={SESSION_ID} />
+      <ScriptsPanel
+        workspaceId={SESSION.workspaceId}
+        sessionId={SESSION_ID}
+        onClose={() => undefined}
+      />
     </StateScene>
   ),
   'questions-empty': () => (

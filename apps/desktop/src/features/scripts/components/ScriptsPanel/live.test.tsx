@@ -208,7 +208,7 @@ const stubMonitor = ({ snapshot }: { readonly snapshot: MonitorSnapshot }) =>
 const renderLens = () =>
   render(
     <ToastProvider>
-      <ScriptsPanel workspaceId={HARBORLINE.id} sessionId={FIRST.id} />
+      <ScriptsPanel workspaceId={HARBORLINE.id} sessionId={FIRST.id} onClose={vi.fn()} />
     </ToastProvider>,
   );
 

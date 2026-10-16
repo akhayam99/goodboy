@@ -11,6 +11,7 @@ import { openProviderCliUpdate } from '../../../providers/openProviderCliUpdate'
 import { openStorage } from '../../../storage/openStorage';
 import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
+import { openLens } from '../../../session/openLens';
 
 export const pickFreshFailures = (
   notifications: ReadonlyArray<Notification>,
@@ -183,7 +184,7 @@ export const mapNotificationAction = (
     return {
       label: 'Show output',
       onClick: () => {
-        store.navigate({ to: sessionPlace({ sessionId, lens }) });
+        openLens({ sessionId, lens });
       },
     };
   }

@@ -1,14 +1,20 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { X } from 'lucide-react';
+import { ArrowLeft, X } from 'lucide-react';
 import { cn } from '../cn';
 import { useEscapeLayer } from '../useEscapeLayer';
 import { lastFocusedElement } from '../useLastFocused';
+import { Button } from './Button';
 import { Divider } from './Divider';
 import { IconButton } from './IconButton';
 import { ScrollFade } from './ScrollFade';
 import { FRAME_DRAWER_INSET_PX, FRAME_DRAWER_ROW_PX } from '../frameGeometry';
 import { ICON_SIZE } from '../iconSize';
+
+export type DrawerBack = {
+  readonly label: string;
+  readonly onBack: () => void;
+};
 
 export type DrawerFrameProps = {
   readonly title: string;
@@ -17,6 +23,7 @@ export type DrawerFrameProps = {
   readonly count?: ReactNode;
   readonly action?: ReactNode;
   readonly toolbar?: ReactNode;
+  readonly back?: DrawerBack;
   readonly closeLabel?: string;
   readonly onClose: () => void;
   readonly dock?: ReactNode;
@@ -59,6 +66,7 @@ export const DrawerFrame = ({
   count,
   action,
   toolbar,
+  back,
   closeLabel = 'Close',
   onClose,
   dock,
@@ -157,6 +165,14 @@ export const DrawerFrame = ({
         ) : null}
       </header>
       <Divider />
+      {back === undefined ? null : (
+        <div data-drawer-back="" className="flex shrink-0 px-2 pt-2">
+          <Button variant="quiet" size="xs" onClick={back.onBack}>
+            <ArrowLeft size={ICON_SIZE.row} aria-hidden />
+            {back.label}
+          </Button>
+        </div>
+      )}
       {scroll === 'self' ? (
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">{children}</div>
       ) : (

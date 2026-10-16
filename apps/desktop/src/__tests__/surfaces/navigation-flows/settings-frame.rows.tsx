@@ -75,7 +75,7 @@ const railAndSessionBack =
     await waitFor(() => expect(hasRail()).toBe(collapsed === '1'), WAIT);
     expect(document.querySelector('[data-studio-frame]')).toBeNull();
     expect(useAppStore.getState().currentSessionId).toBe(ctx.sessionId);
-    expect(await screen.findByTestId('context-chip')).toBeDefined();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Overview' })).toBeDefined();
     expect(storedCollapse()).toBe(collapsed);
   };
 

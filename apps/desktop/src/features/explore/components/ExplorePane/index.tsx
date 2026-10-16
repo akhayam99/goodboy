@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Button,
+  DrawerFrame,
   EmptyState,
-  PageColumn,
-  PaneShell,
   RefreshIconButton,
   SegmentedTabs,
   Skeleton,
@@ -24,6 +23,7 @@ import { ExploreTree } from './ExploreTree';
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly onClose: () => void;
 };
 
 const GONE_SENTENCE = 'Closed. Its files were removed.';
@@ -40,7 +40,7 @@ type ChangedView = {
 
 const FRESH_VIEW: ChangedView = { mountPath: null, mode: 'all', collapsed: NO_EXPANDED };
 
-export const ExplorePane = ({ sessionId }: Props) => {
+export const ExplorePane = ({ sessionId, onClose }: Props) => {
   const now = useNow(30_000);
   const root = useExploreRoot({ sessionId });
   const { target } = root;
@@ -119,7 +119,11 @@ export const ExplorePane = ({ sessionId }: Props) => {
       if (changes.byPath.get(entry.relPath)?.status === 'deleted') {
         return;
       }
-      toggleDrawer({ kind: 'explore-file', sessionId, payload: { sessionDir, entry } });
+      toggleDrawer({
+        kind: 'explore-file',
+        sessionId,
+        payload: { sessionDir, entry, from: 'explore' },
+      });
     },
     [sessionDir, sessionId, toggleDrawer, changes],
   );
@@ -277,11 +281,13 @@ export const ExplorePane = ({ sessionId }: Props) => {
     );
 
   return (
-    <PaneShell
+    <DrawerFrame
       title="Explore"
+      icon={CONCEPT_ICONS.explore}
+      iconClassName="text-faint-foreground"
       scroll="self"
-      subheader={chip}
-      actions={
+      toolbar={chip}
+      action={
         sessionDir === null ? undefined : (
           <RefreshIconButton
             label="Refresh the files"
@@ -290,8 +296,9 @@ export const ExplorePane = ({ sessionId }: Props) => {
           />
         )
       }
+      onClose={onClose}
     >
-      <PageColumn className="flex min-h-0 flex-1 flex-col pb-5">{renderBody()}</PageColumn>
-    </PaneShell>
+      <div className="flex min-h-0 flex-1 flex-col px-2 py-2">{renderBody()}</div>
+    </DrawerFrame>
   );
 };

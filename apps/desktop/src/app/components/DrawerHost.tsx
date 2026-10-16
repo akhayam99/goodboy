@@ -3,6 +3,8 @@ import { useAppStore } from '../../store';
 import { selectDrawerPanel } from '../../store/slices/drawer/selectDrawerPanel';
 import { ContextDrawer } from '../../features/session/components/ContextDrawer';
 import { ExploreFileDrawer } from '../../features/explore/components/ExploreFileDrawer';
+import { ExplorePane } from '../../features/explore/components/ExplorePane';
+import { SessionScriptsDrawer } from '../../features/scripts/components/SessionScriptsDrawer';
 import { ArtifactShellDrawer } from '../../features/artifacts/components/ArtifactShell/ArtifactShellDrawer';
 import { ArtifactDocumentDrawer } from '../../features/artifacts/components/ArtifactDocumentDrawer';
 import { PlanPartDrawer } from '../../features/plans/components/PlanParts/PlanPartDrawer';
@@ -26,6 +28,7 @@ const NO_HIGHLIGHT: ReadonlyArray<number> = [];
 export const DrawerHost = () => {
   const drawer = useAppStore(selectDrawerPanel);
   const closeDrawer = useAppStore((s) => s.closeDrawer);
+  const openDrawer = useAppStore((s) => s.openDrawer);
   const isReading = useAppStore((s) => {
     const open = selectDrawerPanel(s);
     return (
@@ -70,6 +73,13 @@ export const DrawerHost = () => {
           sessionDir={drawer.payload.sessionDir}
           entry={drawer.payload.entry}
           line={drawer.payload.line}
+          {...(drawer.payload.from === 'explore' && {
+            back: {
+              label: 'Back to files',
+              onBack: () =>
+                openDrawer({ kind: 'explore', sessionId: drawer.sessionId, payload: null }),
+            },
+          })}
           renderChanges={({ sessionDir, relPath, baseBranch }) => (
             <ExploreFileChanges sessionDir={sessionDir} relPath={relPath} baseBranch={baseBranch} />
           )}
@@ -118,6 +128,25 @@ export const DrawerHost = () => {
           sessionId={drawer.sessionId}
           scriptKey={drawer.payload.scriptKey}
           mountId={drawer.payload.mountId}
+          {...(drawer.payload.from === 'scripts' && {
+            back: {
+              label: 'Back to scripts',
+              onBack: () =>
+                openDrawer({ kind: 'scripts', sessionId: drawer.sessionId, payload: null }),
+            },
+          })}
+          onClose={closeDrawer}
+        />
+      );
+    case 'explore':
+      return (
+        <ExplorePane key={drawer.sessionId} sessionId={drawer.sessionId} onClose={closeDrawer} />
+      );
+    case 'scripts':
+      return (
+        <SessionScriptsDrawer
+          key={drawer.sessionId}
+          sessionId={drawer.sessionId}
           onClose={closeDrawer}
         />
       );

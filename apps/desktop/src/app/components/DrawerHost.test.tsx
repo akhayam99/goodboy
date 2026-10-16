@@ -162,6 +162,18 @@ const ENTRIES: ReadonlyArray<Entry> = [
     },
   },
   {
+    kind: 'explore',
+    region: 'Explore',
+    seed: seedSession,
+    drawer: { kind: 'explore', sessionId: SESSION, payload: null },
+  },
+  {
+    kind: 'scripts',
+    region: 'Scripts',
+    seed: seedSession,
+    drawer: { kind: 'scripts', sessionId: SESSION, payload: null },
+  },
+  {
     kind: 'file-diff',
     region: 'Commit a1b2c3d',
     seed: seedSession,

@@ -4,12 +4,11 @@ import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { isAgentStatusSettled } from '@goodboy/core';
 import { cn, useEscapeLayer, PaneActionsContext, PaneBannerContext, PaneShell } from '@goodboy/ui';
 import { ArtifactStudio } from '../../../artifacts/components/ArtifactStudio';
-import { ScriptsPanel } from '../../../scripts';
 import { EMPTY_ARRAY, useAppStore, useIsSessionCollectionLoaded } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { SessionOverviewPane } from '../SessionOverviewPane';
 import { FirstLapBanner } from '../../../bootstrap/FirstLapBanner';
-import { AskTrailButton } from '../../ask/components/AskTrailButton';
+import { PaneCluster } from '../PaneCluster';
 import { useAskOpenShortcut } from '../../ask/useAskOpenShortcut';
 import { AgentOverlay } from './parts/AgentOverlay';
 import { AgentsPane } from './parts/AgentsPane';
@@ -31,7 +30,6 @@ import { BranchPage } from '../../../branch/components/BranchPage';
 import { useIsBranchlessSession } from '../../hooks/useIsBranchlessSession';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 import { resolveActiveMountPath } from '../../../../store/slices/worktrees/resolveActiveMountPath';
-import { ExplorePane } from '../../../explore/components/ExplorePane';
 import { SIMPLE_LENSES } from '../../lens-labels';
 import { resolveLensSurface } from '../../lens-surface';
 import { EmptyState } from '@goodboy/ui';
@@ -133,12 +131,12 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   useEscapeLayer(leaveAgentOverlay, showAgentOverlay && isActive);
 
   const banner = <FirstLapBanner sessionId={sessionId} />;
-  const ask = <AskTrailButton sessionId={sessionId} />;
+  const panes = <PaneCluster sessionId={sessionId} />;
 
   return (
     <div className="@container relative flex h-full w-full min-w-0 flex-col">
       <div className="relative flex min-h-0 flex-1 flex-col">
-        <PaneActionsContext.Provider value={showLens ? ask : null}>
+        <PaneActionsContext.Provider value={showLens ? panes : null}>
           <div
             className={cn('absolute inset-0 z-0', !showLens && 'invisible pointer-events-none')}
             inert={!showLens}
@@ -158,9 +156,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               {lens === 'plans' ? <ArtifactStudio sessionId={sessionId} /> : null}
               {lens === 'workflows' ? (
                 <WorkflowsPane session={session} isActive={isActive && showLens} />
-              ) : null}
-              {lens === 'scripts' ? (
-                <ScriptsPanel workspaceId={session.workspaceId} sessionId={sessionId} />
               ) : null}
               {lens === 'branch' ? (
                 <BranchPage session={session} workingDir={workingDir} isActive={isActive} />
@@ -221,9 +216,8 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                   onClose={onSelectOverview}
                 />
               ) : null}
-              {lens === 'explore' ? <ExplorePane sessionId={sessionId} /> : null}
               <Pane visible={lens === 'agents'}>
-                <PaneActionsContext.Provider value={lens === 'agents' && showLens ? ask : null}>
+                <PaneActionsContext.Provider value={lens === 'agents' && showLens ? panes : null}>
                   <PaneBannerContext.Provider
                     value={lens === 'agents' && !showAgentOverlay ? banner : null}
                   >
@@ -236,7 +230,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
         </PaneActionsContext.Provider>
 
         {showAgentOverlay ? (
-          <PaneActionsContext.Provider value={ask}>
+          <PaneActionsContext.Provider value={panes}>
             <PaneBannerContext.Provider value={banner}>
               <AgentOverlay
                 session={session}

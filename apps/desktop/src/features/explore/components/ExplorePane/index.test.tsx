@@ -86,7 +86,7 @@ const PaneWithDrawer = () => {
   const closeDrawer = useAppStore((state) => state.closeDrawer);
   return (
     <>
-      <ExplorePane sessionId={SESSION_ID} />
+      <ExplorePane sessionId={SESSION_ID} onClose={vi.fn()} />
       {drawer !== null && drawer.kind === 'explore-file' ? (
         <ExploreFileDrawer
           sessionId={SESSION_ID}

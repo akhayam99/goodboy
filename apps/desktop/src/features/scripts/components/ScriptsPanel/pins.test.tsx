@@ -104,7 +104,7 @@ const savedPins = async (): Promise<ReadonlyArray<string>> => {
 const renderLens = (sessionId: SessionId) =>
   render(
     <ToastProvider>
-      <ScriptsPanel workspaceId={HARBORLINE.id} sessionId={sessionId} />
+      <ScriptsPanel workspaceId={HARBORLINE.id} sessionId={sessionId} onClose={vi.fn()} />
     </ToastProvider>,
   );
 

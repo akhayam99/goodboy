@@ -1,6 +1,8 @@
 import type { SessionId } from '@goodboy/types';
 import { useAppStore, type LensKind } from '../../store';
 import { lensPlace } from '../../store/slices/navigation/canonicalLocation';
+import { openExplorePane } from '../explore/openExplorePane';
+import { openScriptsPane } from '../scripts/openScriptsPane';
 
 type Params = Readonly<{
   sessionId: SessionId;
@@ -9,8 +11,16 @@ type Params = Readonly<{
 
 export const openLens = ({ sessionId, lens }: Params): void => {
   const state = useAppStore.getState();
-  if (lens === 'scripts') {
-    state.setScriptsLensScope({ scope: null });
+  if (lens !== 'explore' && lens !== 'scripts') {
+    state.navigate({ to: lensPlace({ state, sessionId, lens }) });
+    return;
   }
-  state.navigate({ to: lensPlace({ state, sessionId, lens }) });
+  if (state.currentSessionId !== sessionId) {
+    state.navigate({ to: lensPlace({ state, sessionId, lens: null }) });
+  }
+  if (lens === 'explore') {
+    openExplorePane({ state, sessionId, mountPath: null });
+    return;
+  }
+  openScriptsPane({ state, sessionId, projectId: null });
 };

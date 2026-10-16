@@ -220,7 +220,7 @@ opens it on a mode. Commands is the first mode.
 
 In the composer, `$` lists the scripts of the session's mounted projects
 (`useSessionScripts`): saved scripts first, then the `package.json` and
-`composer.json` scripts pinned for the project, by category. The Scripts lens
+`composer.json` scripts pinned for the project, by category. The Scripts pane
 lists the same set in two bands per project: **Services** (category `dev`, or a
 script named `start`, `serve`, `watch` or `preview`, decided by `isService`) and
 **Tasks** (the rest), each with a count. A running service row shows the last
@@ -637,8 +637,9 @@ and the hidden one is `inert`.
   tooltips: on level 1 the back icon first, then one icon per page with its
   dot; on level 0 New, the doors and the pinned session nodes.
 
-The tools (Scripts, Terminal, Explore) and the linked records keep their
-lenses for now and stay in the palette.
+The tools (Terminal, Explore, Scripts) are panes, not pages: they open from
+the pane cluster at the right of every session header (see The pane cluster).
+The linked records keep their lenses for now and stay in the palette.
 
 **A sidebar row says the name and the state, and the hover card and the board
 card say the rest.** A row is one line of 28px: a 14px `WorkNode` and the
@@ -964,22 +965,57 @@ activity yet show the plain overview with its actions.
   an artifact, a child agent) goes back to its list from its page row in the
   sidebar, from Esc (Up) or from the top bar Back. The crumb menus are gone
   (cut C1).
-- **The header's right end holds Ask.** `SessionWorkspace` hands
-  `AskTrailButton` to every `PaneShell` title row through
-  `PaneActionsContext`: the question-bubble glyph (`CONCEPT_ICONS.ask`, never
-  Chat's `MessageCircle`), the word **Ask** and the ⌘L chord as bare faint
-  text, pressed while the Ask drawer is open for that session. Its tooltip
-  reads `Ask what is happening in this session ⌘L`. It toggles the drawer; ⌘L
-  (`ask.open`, app plane) opens it or, when it is open, focuses its box. The
-  key is bound once per visible session (`useAskOpenShortcut` in
-  `SessionWorkspace`), not by the button, so two mounted panes never bind it
-  twice. The pane cluster (Ask, Terminal, Explore, more) replaces this slot
-  later; the context is the seam.
+- **The header's right end holds the pane cluster.** `SessionWorkspace`
+  hands `PaneCluster` to every `PaneShell` title row through
+  `PaneActionsContext` (see The pane cluster). ⌘L (`ask.open`, app plane)
+  opens Ask or, when it is open, focuses its box; the key is bound once per
+  visible session (`useAskOpenShortcut` in `SessionWorkspace`), not by the
+  button, so two mounted panes never bind it twice.
 - **The Overview header** reads `Overview`. The session title, its rename and
   its lifecycle menu live on the sidebar identity row. The header keeps the
-  Context chip, the Overview actions as visible words (`OverviewPageActions`:
-  Write title and goal from linked work, and Scripts in a branchless session)
-  and, on an archived session, Restore.
+  Overview actions as visible words (`OverviewPageActions`: Write title and
+  goal from linked work, and Scripts in a branchless session) and, on an
+  archived session, Restore. Context left the header for the cluster's more
+  menu.
+
+## The pane cluster
+
+One fixed group at the right of every session page header, the same on every
+page and in this order: **Ask** (⌘L), **Terminal** (⌘⌥T), **Explore** (⌘⌥X),
+then a visible `⋯` (`More panes`) holding **Context** (⌘⌥C) and **Scripts**
+(⌘⌥S). Each toggle is an icon and a word (`PaneToggle`, a quiet `xs`
+`Button`); the open one is `bg-selected` and `aria-pressed`. The chord lives in
+the tooltip only. `PaneCluster` lives in `features/session/components/`.
+
+- **One pane at a time.** Every toggle goes through `togglePane`
+  (`features/session/panes/`): pressing the open pane's toggle closes it,
+  pressing another replaces it in the one right drawer. `openPaneOf` maps the
+  open drawer to a cluster pane, so an Explore file opened from Explore keeps
+  Explore lit, and a script output opened from Scripts keeps Scripts lit. Esc
+  closes the pane (`DrawerFrame`).
+- **Explore and Scripts are drawer kinds** (`explore`, `scripts`), not lenses.
+  `ExplorePane` and `ScriptsPanel` render in a `DrawerFrame`. A file opened
+  from Explore replaces it and shows **Back to files**; a script output opened
+  from Scripts replaces it and shows **Back to scripts** (`DrawerFrame`'s
+  `back`, carried by the payload's `from`). `openExplorePane` takes the
+  worktree to browse (the mount registry's Browse files passes it),
+  `openScriptsPane` the project to scope to (Open scripts). `openLens` sends
+  the old `explore` and `scripts` lenses to the panes, so the palette, toasts
+  and stored notifications (`open-lens` scripts) still land.
+- **Context signals ride on `⋯`.** A dot on the more button marks decisions
+  changed since the last look (primary) or a failed summary (danger); the
+  Context row says why. The cluster loads the seen marker and the decisions
+  once, as the old chip did.
+- **Stored pages map to panes.** `withoutRemovedPages` sends a stored
+  `explore` or `scripts` page to the Overview with that pane open, and drops
+  a stored `terminal` page.
+- **Terminal picks its folder by itself.** ⌘⌥T and the toggle run
+  `toggleSessionTerminal`: one worktree, that worktree; two or more, the one
+  this session last opened a terminal on (`terminalScopes`, set by
+  `openSessionTerminal`), else the active mount; a session without a branch,
+  its session folder (`scratch_dir_prepare`, dropped when the user left the
+  session before it answered). The remembered scope lives in memory and is
+  evicted with the session.
 - **Studios use the same `Trail`.** The `StudioFrame` band renders the studio
   name through the `Trail` primitive from `@goodboy/ui`. A studio body that
   goes deeper claims the band with `StudioTrail` (the workflow editor shows
@@ -2171,7 +2207,7 @@ on you] }`. Any other agent keeps its page, and its pane tab is part of the
 - **The switcher and the palette list only destinations the session can
   use.** One function feeds both. Context is a drawer, not a destination: the
   palette offers **Show context** (⌘⌥C) and neither lists a Context page.
-  Explore is always listed and
+  Explore is always listed, opens as a pane (see The pane cluster), and
   browses one project of the session at a time as a tree (`role="tree"`). A
   project chip under the title (`ExploreProjectChip`) names it, `ledger-core ·
 hl/ledger-rounding`, and with two or more mounts opens a menu grouped by
@@ -2183,10 +2219,10 @@ hl/ledger-rounding`, and with two or more mounts opens a menu grouped by
   (`selectExploreMount` in `features/explore`, built on
   `resolveWriteDestination`). A pick whose worktree lost its files reads
   "This worktree is gone", and a session with nothing to browse reads "Nothing
-  to browse yet". The pick is captured as the `explore` target of a place
-  (`s/{session}/explore/{mount}`), so Back restores the project and the file
-  drawer together, and the `mount.browseFiles` action (Browse files) opens
-  Explore on a given mount from the Projects rows. Rows are 40px
+  to browse yet". The `mount.browseFiles` action (Browse files) opens the
+  Explore pane on a given mount (`openExplorePane`). An `explore` target in a
+  stored place (`s/{session}/explore/{mount}`) still parses and lands on the
+  Overview with the pane open. Rows are 40px
   high with no gap (`EXPLORE_ROW_PX`): a type glyph, the name with its
   extension kept, a slot for change marks, the size and the age. The size
   hides under a 520px column and the age under 440px.
@@ -3185,9 +3221,9 @@ the branch has no pull request, its thread in Comments when it has one (`openRev
 `notes` destination, `reviewRequest` for a compose request, `Open in Files` from a thread).
 Opening the run transcript of a note keeps its drawer beside Files.
 
-## The Scripts lens
+## The Scripts pane
 
-`ScriptsPanel` is one `PaneShell` (`Scripts`, meta `N projects · N running`,
+`ScriptsPanel` is one `DrawerFrame` (`Scripts`, count `N projects · N running`,
 a `Filter scripts` field that `/` focuses and `New script`) over one list
 grouped by mount, project plus branch, from `useSessionScripts`. A project
 mounted twice is two groups, and its saved scripts show in both; you pick

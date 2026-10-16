@@ -183,7 +183,7 @@ vi.mock('../AgentDetailPane', () => ({
   ),
 }));
 vi.mock('../../../artifacts/components/ArtifactStudio', () => ({ ArtifactStudio: () => null }));
-vi.mock('../../../scripts', () => ({ ScriptsPanel: () => null }));
+vi.mock('../PaneCluster', () => ({ PaneCluster: () => null }));
 vi.mock('../../../worktree/worktree', () => ({ worktreeStatus: vi.fn() }));
 vi.mock('../StandaloneAgentsLane', () => ({
   StandaloneAgentsLane: ({

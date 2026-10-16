@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Square, SquareTerminal } from 'lucide-react';
-import { Button, DrawerFrame } from '@goodboy/ui';
+import { Button, DrawerFrame, type DrawerBack } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
@@ -19,10 +19,11 @@ type Props = {
   readonly sessionId: SessionId;
   readonly scriptKey: string;
   readonly mountId: MountId | null;
+  readonly back?: DrawerBack;
   readonly onClose: () => void;
 };
 
-export const ScriptRunDrawer = ({ sessionId, scriptKey, mountId, onClose }: Props) => {
+export const ScriptRunDrawer = ({ sessionId, scriptKey, mountId, back, onClose }: Props) => {
   const workspaceId = useAppStore(
     (state) => sessionById(state.sessions, sessionId)?.workspaceId ?? null,
   );
@@ -83,6 +84,7 @@ export const ScriptRunDrawer = ({ sessionId, scriptKey, mountId, onClose }: Prop
       icon={SquareTerminal}
       iconClassName="text-faint-foreground"
       action={action}
+      {...(back !== undefined && { back })}
       onClose={onClose}
       dock={
         record === null ? null : (

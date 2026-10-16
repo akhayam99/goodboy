@@ -82,7 +82,6 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
     kind: 'shell',
     files: ['features/session/components/SessionWorkspace/parts/IntegrationPane/index.tsx'],
   },
-  ExplorePane: { kind: 'shell', files: ['features/explore/components/ExplorePane/index.tsx'] },
   AgentsPane: {
     kind: 'shell',
     files: ['features/session/components/SessionWorkspace/parts/AgentsPane.tsx'],
@@ -121,7 +120,7 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
   },
   PaneShell: { kind: 'helper', files: [] },
   StudioBandContext: { kind: 'helper', files: [] },
-  AskTrailButton: { kind: 'helper', files: [] },
+  PaneCluster: { kind: 'helper', files: [] },
   FirstLapBanner: {
     kind: 'banner',
     files: [
@@ -132,10 +131,6 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
   },
   SessionCrumbs: { kind: 'helper', files: [] },
   Pane: { kind: 'helper', files: [] },
-  ScriptsPanel: {
-    kind: 'shell',
-    files: ['features/scripts/components/ScriptsPanel/index.tsx'],
-  },
   LinkIssueAction: { kind: 'helper', files: [] },
   EmptyState: { kind: 'helper', files: [] },
 };
@@ -284,11 +279,11 @@ describe('content column contract', () => {
     expect(centred).toEqual([]);
   });
 
-  it('hands Ask to the page header through the pane actions, with no trail band', () => {
+  it('hands the pane cluster to the page header through the pane actions, with no trail band', () => {
     const source = read(WORKSPACE);
 
-    expect(source).toContain('<PaneActionsContext.Provider value={showLens ? ask : null}>');
-    expect(source).toMatch(/const ask = <AskTrailButton sessionId=\{sessionId\} \/>;/);
+    expect(source).toContain('<PaneActionsContext.Provider value={showLens ? panes : null}>');
+    expect(source).toMatch(/const panes = <PaneCluster sessionId=\{sessionId\} \/>;/);
     expect(source).not.toContain('TrailBar');
   });
 

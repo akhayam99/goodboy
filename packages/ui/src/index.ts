@@ -62,7 +62,7 @@ export type {
   CrumbMenuRow,
   CrumbState,
 } from './components/Trail/crumbMenuTypes';
-export type { DrawerFrameProps } from './components/DrawerFrame';
+export type { DrawerBack, DrawerFrameProps } from './components/DrawerFrame';
 export type { AppShellProps } from './components/AppShell';
 export { Button } from './components/Button';
 export { Avatar } from './components/Avatar';
