@@ -144,7 +144,7 @@ const runStopOf = ({ state }: RunParams): Pick<WorkflowRun, 'orchestrationStop'>
   }
   if (state === 'capped') {
     return {
-      orchestrationStop: { kind: 'budget', message: 'Paused at the spend cap: $3.00 of $3.00' },
+      orchestrationStop: { kind: 'budget', message: 'Paused at the $3.00 limit for this run.' },
     };
   }
   return {};

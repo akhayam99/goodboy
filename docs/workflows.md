@@ -382,11 +382,13 @@ the run reaches it: **Pause workflows** or **Warn only**, the same editor
 and words as the session's spend cap. The cap starts at unlimited. The
 orchestrator decides how many steps to plan based on the goal.
 
-A session has its own spend cap, set from the spend chip in its header. With
+A session has its own limit, set from the spend chip in its header. With
 **Pause workflows** (the default) every workflow of the session stops at the
-cap and its strip says `Paused at the $10.00 spend cap for this session.`
-with **Raise spend cap**, which opens the chip on the editor. With **Warn only**
-nothing stops: one notification says the session passed its cap. Single
+limit and its strip says `Paused at the $10.00 limit for this session.`
+with **Raise limit**, which opens the chip on the editor. With **Warn only**
+nothing stops: one notification says the session passed its limit. A run that
+pauses at its own limit says `Paused at the $3.00 limit for this run.` and
+notifies "Run is over its limit" (`budgetBlock.ts`, `orchestrateNextStep.ts`). Single
 agents are never stopped by it.
 
 ## The Runs and Orchestrated lists
