@@ -107,11 +107,11 @@ describe('SPEC3 9.3 Overview capabilities from the c05 Overview', () => {
     screen.getByRole('button', { name: /From chat: Payments retry design/ });
   });
 
-  it('keeps Write title and goal from linked work and Context in the header', async () => {
+  it('keeps Write title and goal from linked work in the header and Context in More panes', async () => {
     await mountScene({ name: 'c05-overview-merged-next' });
 
     header().getByRole('button', { name: 'Write title and goal from linked work' });
-    header().getByRole('button', { name: /Context/ });
+    header().getByRole('button', { name: /More panes/ });
   });
 
   it('turns a mount cleanup proposal into a Next row with Remove worktree and an undoable Not now', async () => {
