@@ -570,6 +570,35 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     lands: async () => waitFor(() => expect(terminalRows().length).toBeGreaterThan(0), WAIT),
   }),
   keyRow({
+    id: 'terminal.closeTab',
+    note: 'on the Terminal page the close chord closes the selected tab, not the page',
+    open: async () => {
+      await press('terminal.studio')();
+      await screen.findByRole('heading', { name: 'No terminal yet' }, WAIT);
+      await pressed('terminal.newHere', document.body);
+      await waitFor(() => expect(terminalRows().length).toBe(1), WAIT);
+      await pressed('terminal.closeTab', document.body);
+    },
+    lands: async () => {
+      await waitFor(() => expect(terminalRows().length).toBe(0), WAIT);
+      expect(useAppStore.getState().appStudio?.kind).toBe('terminal');
+    },
+  }),
+  keyRow({
+    id: 'app.close',
+    note: 'closes the open page one level and never quits',
+    open: async () => {
+      useAppStore.getState().openStudio({
+        studio: { kind: 'chat', chatId: brandedId<ChatId>({ value: 'keys-close-chat' }) },
+      });
+      await settle();
+      await pressed('app.close', document.body);
+    },
+    lands: async () => {
+      await waitFor(() => expect(useAppStore.getState().appStudio).toBeNull(), WAIT);
+    },
+  }),
+  keyRow({
     id: 'ask.reset',
     note: 'inside the Ask panel the new chord resets the chat, not a session',
     open: async (ctx) => {
