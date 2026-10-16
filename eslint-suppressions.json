@@ -7921,7 +7921,7 @@
   },
   "apps/desktop/src/features/workspace/hooks/useSessionSidebarVisibility/index.ts": {
     "@typescript-eslint/naming-convention": {
-      "count": 5
+      "count": 4
     }
   },
   "apps/desktop/src/features/workspace/hooks/useSessionSummary/index.ts": {

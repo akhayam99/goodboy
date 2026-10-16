@@ -1,6 +1,6 @@
 import { COLLAPSED_RAIL_WIDTH } from '@goodboy/ui';
 
-export const SESSION_PAGE_MIN = 720;
+const SESSION_PAGE_MIN = 720;
 
 const MAIN_HANDLE_WIDTH = 6;
 
