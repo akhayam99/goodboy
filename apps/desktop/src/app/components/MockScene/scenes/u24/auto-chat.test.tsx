@@ -221,17 +221,14 @@ describe('the Auto chat scenes', () => {
     expect(screen.queryByRole('button', { name: 'Mark finished' })).toBeNull();
   });
 
-  it('auto-chat-child reads the Planner started by Auto, with no composer', async () => {
+  it('auto-chat-child reads the Planner started by Auto, with a composer Auto hears', async () => {
     mount({ id: 'auto-chat-child' });
 
     expect(
-      await screen.findByText(
-        'Started by Auto. You can read and stop it here. To change what it does, tell Auto.',
-        undefined,
-        WAIT,
-      ),
+      await screen.findByText('Started by Auto. Auto sees what you tell it.', undefined, WAIT),
     ).toBeDefined();
     expect(screen.getByRole('button', { name: 'Open Auto' })).toBeDefined();
+    expect(screen.getByRole('textbox')).toBeDefined();
   });
 
   it('auto-overview-row draws one row for the tree and none for its children', async () => {

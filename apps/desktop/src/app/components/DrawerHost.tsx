@@ -15,6 +15,7 @@ import { WritePanel } from '../../features/artifacts/components/WritePanel';
 import { NewDrawer } from '../../features/session/components/NewDrawer';
 import { HistoryVersionsDrawer } from '../../features/history/components/HistoryVersionsDrawer';
 import { FixCommentsDrawer } from '../../features/resolve/components/FixCommentsDrawer';
+import { AutoChildPane } from './AutoChildPane';
 import { FixRunTranscriptDrawer } from './FixRunTranscriptDrawer';
 import { ExploreFileChanges } from './ExploreFileChanges';
 import { ArtifactReadingDrawer } from './ArtifactReadingDrawer';
@@ -136,6 +137,15 @@ export const DrawerHost = () => {
     case 'transcript':
       return (
         <FixRunTranscriptDrawer
+          key={drawerKey(drawer)}
+          sessionId={drawer.sessionId}
+          agentId={drawer.payload.agentId}
+          onClose={closeDrawer}
+        />
+      );
+    case 'auto-child':
+      return (
+        <AutoChildPane
           key={drawerKey(drawer)}
           sessionId={drawer.sessionId}
           agentId={drawer.payload.agentId}

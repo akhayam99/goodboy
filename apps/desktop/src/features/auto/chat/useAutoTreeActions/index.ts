@@ -4,6 +4,7 @@ import { agentPlace, useAppStore } from '../../../../store';
 import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
 import { currentTreeStopPort } from '../../treeStopPort';
 import { focusAgentComposer } from '../focusAgentComposer';
+import type { RailRow } from '../railRowsOf';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -18,12 +19,15 @@ export type AutoTreeActions = Readonly<{
   stop: (params: ViewParams) => Promise<void>;
   changeApproach: (params: ViewParams) => Promise<void>;
   openAgent: (agentId: AgentId) => void;
+  openChild: (agentId: AgentId) => void;
+  openRow: (row: Pick<RailRow, 'kind' | 'agentId'>) => void;
   openArtifact: (artifactId: string) => void;
 }>;
 
 export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
   const navigate = useAppStore((state) => state.navigate);
   const openDrawer = useAppStore((state) => state.openDrawer);
+  const closeDrawer = useAppStore((state) => state.closeDrawer);
   const reportError = useAppStore((state) => state.reportError);
   const [isStopping, setIsStopping] = useState(false);
 
@@ -60,8 +64,27 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
   );
 
   const openAgent = useCallback(
-    (agentId: AgentId) => navigate({ to: agentPlace({ sessionId, agentId }) }),
-    [navigate, sessionId],
+    (agentId: AgentId) => {
+      closeDrawer();
+      navigate({ to: agentPlace({ sessionId, agentId }) });
+    },
+    [closeDrawer, navigate, sessionId],
+  );
+
+  const openChild = useCallback(
+    (agentId: AgentId) => openDrawer({ kind: 'auto-child', sessionId, payload: { agentId } }),
+    [openDrawer, sessionId],
+  );
+
+  const openRow = useCallback(
+    (row: Pick<RailRow, 'kind' | 'agentId'>) => {
+      if (row.kind === 'child') {
+        openChild(row.agentId);
+        return;
+      }
+      openAgent(row.agentId);
+    },
+    [openAgent, openChild],
   );
 
   const openArtifact = useCallback(
@@ -74,5 +97,5 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
     [openDrawer, sessionId],
   );
 
-  return { isStopping, stop, changeApproach, openAgent, openArtifact };
+  return { isStopping, stop, changeApproach, openAgent, openChild, openRow, openArtifact };
 };

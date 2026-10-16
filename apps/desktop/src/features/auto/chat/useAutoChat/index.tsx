@@ -24,7 +24,7 @@ export type AutoChat = Readonly<{
 export const useAutoChat = ({ session, agent }: Params): AutoChat => {
   const views = useAutoTreeViews({ sessionId: session.id });
   const agents = useAppStore((state) => state.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
-  const { openAgent, openArtifact } = useAutoTreeActions({ sessionId: session.id });
+  const { openChild, openArtifact } = useAutoTreeActions({ sessionId: session.id });
   const tree = useMemo(() => autoTreeOfAgent({ views, agentId: agent.id }), [views, agent.id]);
   const view = tree?.kind === 'root' ? tree.view : null;
 
@@ -41,7 +41,7 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
           view={view}
           delegations={batch.delegations}
           agents={agents}
-          onOpenChild={openAgent}
+          onOpenChild={openChild}
           onOpenArtifact={openArtifact}
         />
       ),
@@ -52,7 +52,7 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
       node: <AutoTail sessionId={session.id} view={view} rootAgent={agent} />,
     };
     return [...lines, tail];
-  }, [view, agents, agent, openAgent, openArtifact, session.id]);
+  }, [view, agents, agent, openChild, openArtifact, session.id]);
 
   return {
     tree,

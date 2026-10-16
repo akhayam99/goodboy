@@ -16,5 +16,5 @@ export const C07AutoFrame = ({ seed, isFolded = false }: Props) => {
   if (!isReady) {
     return null;
   }
-  return <AppFrame view="session" isRailCollapsed={isFolded} />;
+  return <AppFrame view="session" isRailCollapsed={isFolded} hasPane />;
 };

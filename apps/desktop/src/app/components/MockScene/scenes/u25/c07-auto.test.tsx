@@ -115,6 +115,56 @@ describe('c07 Auto scenes', () => {
     expect(tail?.textContent).toContain('Idle');
   });
 
+  it('c07-auto-child opens the Implementer in the pane with its why, its tail and a composer', async () => {
+    mount({ id: 'c07-auto-child' });
+
+    expect(await screen.findByText(/^Why Auto chose Implementer:/, undefined, WAIT)).toBeDefined();
+    expect(screen.getByText('Started by Auto. Auto sees what you tell it.')).toBeDefined();
+    expect(screen.getByPlaceholderText('Message Implementer')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Open full' })).toBeDefined();
+    expect(screen.getByText(/Reserved up to \$3\.00/)).toBeDefined();
+    const current = within(shownLayer())
+      .getAllByRole('listitem')
+      .filter((item) => item.getAttribute('aria-current') === 'true');
+    expect(current[0]?.textContent).toContain('Implementer');
+  });
+
+  it('a rail row and a delegation line open the child pane; the Auto row closes it', async () => {
+    mount({ id: 'c07-auto-working' });
+
+    await screen.findByRole('button', { name: 'See more about Tester' }, WAIT);
+    fireEvent.click(screen.getByRole('button', { name: 'See more about Tester' }));
+    expect(await screen.findByPlaceholderText('Message Tester', undefined, WAIT)).toBeDefined();
+
+    fireEvent.click(within(shownLayer()).getByRole('button', { name: 'Show Implementer' }));
+    expect(
+      await screen.findByPlaceholderText('Message Implementer', undefined, WAIT),
+    ).toBeDefined();
+
+    fireEvent.click(within(shownLayer()).getByRole('button', { name: 'Show Auto' }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Open full' })).toBeNull());
+  });
+
+  it('Open full puts the child in the center and keeps the Auto level with its row selected', async () => {
+    mount({ id: 'c07-auto-child' });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Open full' }, WAIT));
+
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Open full' })).toBeNull());
+    expect(levelStack().dataset.levelStack).toBe('auto');
+    expect(await screen.findByRole('button', { name: 'Open Auto' }, WAIT)).toBeDefined();
+  });
+
+  it('c07-auto-child-done shows what came back and says Returned to Auto', async () => {
+    mount({ id: 'c07-auto-child-done' });
+
+    expect(await screen.findByText('Returned to Auto', undefined, WAIT)).toBeDefined();
+    expect(
+      screen.getAllByText('Three tests added in payments-api, all pass.').length,
+    ).toBeGreaterThan(0);
+    expect(screen.getByText('keeps the balance after two attempts')).toBeDefined();
+  });
+
   it('goes back to the session level with Auto agents selected, and drills in again', async () => {
     mount({ id: 'c07-auto-working' });
 

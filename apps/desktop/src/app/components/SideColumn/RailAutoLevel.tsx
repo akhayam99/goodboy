@@ -37,7 +37,7 @@ export const RailAutoLevel = ({ session }: Props) => {
               data-rail-page={`auto-${row.id}`}
               aria-label={label}
               aria-current={isCurrent ? 'page' : undefined}
-              onClick={() => actions.openAgent(row.agentId)}
+              onClick={() => actions.openRow(row)}
               className={cn(RAIL_NODE_BUTTON, isCurrent ? RAIL_NODE_CURRENT : RAIL_BUTTON_IDLE)}
             >
               <WorkNode state={row.node} label={label} mark={{ kind: 'dot' }} />

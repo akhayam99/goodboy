@@ -199,10 +199,22 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
         topInset="tight"
         mode="conversation"
         onOpenTranscript={openTranscript}
-        hasComposer={!isRewriterFinished && !isAutoChild && adoption === null && !isMoveOpen}
+        hasComposer={!isRewriterFinished && adoption === null && !isMoveOpen}
         composerPlaceholder={
           rewriter?.isLive === true ? REWRITER_PLACEHOLDER : autoChat.composerPlaceholder
         }
+        {...(isAutoChild &&
+          autoRootAgentId !== null && {
+            composerLead: (
+              <AutoChildNotice
+                onOpenAuto={() =>
+                  navigateTo({
+                    to: agentPlace({ sessionId: session.id, agentId: autoRootAgentId }),
+                  })
+                }
+              />
+            ),
+          })}
         composerNotice={
           isRewriterFinished ? (
             <RewriterFinishedNotice sessionId={session.id} worktreePath={rewriter.worktreePath} />
@@ -220,14 +232,6 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
               onOpenAuto={() =>
                 navigateTo({
                   to: agentPlace({ sessionId: session.id, agentId: adoption.autoAgentId }),
-                })
-              }
-            />
-          ) : isAutoChild && autoRootAgentId !== null ? (
-            <AutoChildNotice
-              onOpenAuto={() =>
-                navigateTo({
-                  to: agentPlace({ sessionId: session.id, agentId: autoRootAgentId }),
                 })
               }
             />

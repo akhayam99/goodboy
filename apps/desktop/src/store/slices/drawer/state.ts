@@ -76,6 +76,10 @@ export type DrawerContent =
       readonly payload: { readonly agentId: AgentId };
     }
   | {
+      readonly kind: 'auto-child';
+      readonly payload: { readonly agentId: AgentId };
+    }
+  | {
       readonly kind: 'fix-comments';
       readonly payload: {
         readonly mountId: MountId | null;

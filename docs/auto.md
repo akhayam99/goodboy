@@ -235,10 +235,28 @@ writing to it reopens it to **Deciding**.
   plan waits for approval the ask is the state. The composer says "Queued: Auto
   sees it with the next results" while Auto waits, or "Message Auto, or
   describe changes to plan v1".
-- **A child opened from its line** reads as Started by Auto. It can be read and
-  stopped there, has no composer, and **Open Auto** goes back. When it
-  stopped, its notice offers **Retry through Auto**, which asks Auto to retry
-  it; it never runs a plain turn on the child (`docs/turns.md`, resume rules).
+- **A child opens in the pane** (drawer kind `auto-child`, `AutoChildPane`)
+  from its rail row or its line's **See more**, so Auto's conversation stays in
+  view; another child swaps in place, the Auto row of the rail closes it, Esc
+  closes it, and its rail row is the selected one. The pane title is the role
+  and the task; on top, why Auto chose that role, the model it runs on with its
+  provider, **Reserved up to** while it works and the note when the app changed
+  the model (`AutoChildBrief`); then the child's conversation; at the end what
+  came back (summary, files changed, checks with their source, open questions,
+  `DelegationResult`) and its tail (`autoChildLive`: its live line with **Stop
+  agent**, **Failed: ...** or **Stopped** with **Retry through Auto**, or
+  **Returned to Auto**). **Open full** puts the child in the center with the
+  Auto level kept and its row selected; there the notice reads the same and
+  **Open Auto** goes back.
+- **Talking to a child.** The pane and the child page carry a composer,
+  "Message Implementer", under the line "Started by Auto. Auto sees what you
+  tell it." A message is a plain turn on the child (queued while its turn
+  runs), and `noticeAutoOfChildTurn` (called by `sendTurn`) also hands Auto a
+  note through the user turn port: "I wrote to the Implementer you started:
+  ...", read with Auto's next delivery. A lost note is reported and the
+  message still goes to the child. **Retry through Auto** asks Auto to retry
+  a stopped child; it never runs a plain turn on it (`docs/turns.md`, resume
+  rules).
 - **No permission picker in the tree.** The composer of Auto and of its
   children hides the session's permission mode picker: a tree member runs
   with its role's access, not the session mode.

@@ -1,4 +1,11 @@
-import { brandId, type Agent, type AgentId, type AutoTreeId } from '@goodboy/types';
+import {
+  brandId,
+  type Agent,
+  type AgentId,
+  type AutoTreeId,
+  type ProviderRunId,
+  type TurnEvent,
+} from '@goodboy/types';
 import { agentPlace, useAppStore } from '../../../../../../store';
 import { lensPlace } from '../../../../../../store/slices/navigation/canonicalLocation';
 import type { AutoTreeView } from '../../../../../../store/slices/auto-view/state';
@@ -10,6 +17,8 @@ import {
   AUTO_PLAN_STORED,
   AUTO_ROOT_ID,
   AUTO_SESSION,
+  IMPLEMENTER_ID,
+  TESTER_ID,
   autoSceneOf,
   type AutoSceneState,
 } from '../../u24/autoSceneSeed';
@@ -19,13 +28,52 @@ export type C07Place = 'auto' | 'list' | 'start' | 'session';
 export type C07Seed = Readonly<{
   state: AutoSceneState;
   place: C07Place;
+  pane?: 'implementer' | 'tester';
 }>;
 
-export const C07_SESSION = AUTO_SESSION;
+const clock = sceneClock({ anchor: '2026-10-13T12:21:00.000Z' });
 
-export const C07_ROOT_ID = AUTO_ROOT_ID;
+const CHILD_START = '2026-10-13T12:09:16.000Z';
 
-const clock = sceneClock({ anchor: '2026-10-13T12:10:00.000Z' });
+const RUN_CHILD = brandId<ProviderRunId>({ value: 'mock-auto-child-run' });
+
+type ChildTextParams = {
+  readonly time: string;
+  readonly brief: string;
+  readonly answer: string | null;
+};
+
+const childEventsOf = ({ time, brief, answer }: ChildTextParams): ReadonlyArray<TurnEvent> => {
+  const at = clock.iso({ at: `2026-10-13T${time}.000Z` });
+  const asked: TurnEvent = {
+    kind: 'user_text',
+    runId: RUN_CHILD,
+    text: brief,
+    at,
+    deliveredBy: 'auto',
+  };
+  if (answer === null) {
+    return [asked];
+  }
+  const answered: TurnEvent = { kind: 'assistant_text', runId: RUN_CHILD, delta: answer, at };
+  return [asked, answered];
+};
+
+const CHILD_EVENTS = {
+  implementer: childEventsOf({
+    time: '12:09:16',
+    brief:
+      'Build the credit key once per retry in postCredit, then make applyCredit reject a repeated key.',
+    answer: null,
+  }),
+  tester: childEventsOf({
+    time: '12:11:56',
+    brief: 'Test the retry path with a timeout on the first attempt.',
+    answer: 'Three tests added in payments-api, all pass.',
+  }),
+} as const;
+
+const CHILD_ID = { implementer: IMPLEMENTER_ID, tester: TESTER_ID } as const;
 
 const EARLIER_ROOT_ID = brandId<AgentId>({ value: 'mock-auto-root-earlier' });
 
@@ -83,7 +131,7 @@ const agentsOf = ({ place, agents }: AgentsParams): ReadonlyArray<Agent> => {
   return place === 'list' ? [...agents, EARLIER_ROOT] : agents;
 };
 
-export const seedC07 = ({ state, place }: C07Seed): void => {
+export const seedC07 = ({ state, place, pane }: C07Seed): void => {
   const { navigate, openExternalTaskLens } = useAppStore.getState();
   seedActivityRunScene();
   const scene = autoSceneOf({ state });
@@ -97,8 +145,18 @@ export const seedC07 = ({ state, place }: C07Seed): void => {
     agentEffortOverride: { [AUTO_ROOT_ID]: 'medium' },
     autoTreeViews: { [AUTO_SESSION.id]: viewsOf({ place, view: scene.view }) },
     loadAutoTrees: async () => undefined,
-    agentTurnState: { [AUTO_ROOT_ID]: scene.rootTurn },
-    transcripts: { [AUTO_ROOT_ID]: scene.events },
+    agentTurnState: {
+      [AUTO_ROOT_ID]: scene.rootTurn,
+      [IMPLEMENTER_ID]:
+        state === 'working'
+          ? { kind: 'running', runId: RUN_CHILD, startedAt: clock.iso({ at: CHILD_START }) }
+          : { kind: 'idle', lastActivityAt: clock.iso({ at: CHILD_START }) },
+    },
+    transcripts: {
+      [AUTO_ROOT_ID]: scene.events,
+      [IMPLEMENTER_ID]: CHILD_EVENTS.implementer,
+      [TESTER_ID]: CHILD_EVENTS.tester,
+    },
     loadAgentTranscript: async () => undefined,
     sessionPlans: { [AUTO_SESSION.id]: scene.hasPlanArtifact ? [AUTO_PLAN] : [] },
     sessionArtifacts: { [AUTO_SESSION.id]: scene.hasPlanArtifact ? [AUTO_PLAN_STORED] : [] },
@@ -116,5 +174,12 @@ export const seedC07 = ({ state, place }: C07Seed): void => {
   }
   if (place === 'session') {
     useAppStore.getState().pickSidebarLevel({ level: 'session' });
+  }
+  if (pane !== undefined) {
+    useAppStore.getState().openDrawer({
+      kind: 'auto-child',
+      sessionId: AUTO_SESSION.id,
+      payload: { agentId: CHILD_ID[pane] },
+    });
   }
 };

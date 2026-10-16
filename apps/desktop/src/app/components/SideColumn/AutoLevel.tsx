@@ -33,7 +33,7 @@ export const AutoLevel = ({ session }: Props) => {
           <AutoWorkRail
             rows={level.rows}
             selectedAgentId={level.shownAgentId}
-            onOpen={(row) => actions.openAgent(row.agentId)}
+            onOpen={actions.openRow}
           />
           {hasChildren ? null : (
             <EmptyState

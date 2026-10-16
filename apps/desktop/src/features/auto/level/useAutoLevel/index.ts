@@ -21,6 +21,11 @@ export const useAutoLevel = ({ session }: Params): AutoLevelModel => {
   const views = useAutoTrees({ sessionId });
   const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const selectedAgentId = useAppStore((state) => state.selectedAgentId[sessionId] ?? null);
+  const paneAgentId = useAppStore((state) =>
+    state.drawer?.kind === 'auto-child' && state.drawer.sessionId === sessionId
+      ? state.drawer.payload.agentId
+      : null,
+  );
   const tree = useMemo(
     () => (selectedAgentId === null ? null : autoTreeOfAgent({ views, agentId: selectedAgentId })),
     [views, selectedAgentId],
@@ -44,5 +49,5 @@ export const useAutoLevel = ({ session }: Params): AutoLevelModel => {
     }
     return [restingRootRowOf({ agentId: rootAgentId, provider, model, effort })];
   }, [tree, agents, rootAgentId, provider, model, effort]);
-  return { tree, rows, rootAgentId, shownAgentId: selectedAgentId };
+  return { tree, rows, rootAgentId, shownAgentId: paneAgentId ?? selectedAgentId };
 };
