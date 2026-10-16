@@ -220,6 +220,16 @@ capability token and no allow rule. It decides by ending its final reply with at
   waits.
 - No block is a plain answer to the user.
 
+The system prompt (`packages/core/src/auto/prompt.ts`) carries the role list and a routing table,
+**WHICH ROLE FOR WHICH WORK**, generated from `AUTO_ROLE_WHEN` (one line per Auto role, so a role
+cannot join without one): diagnosing a failure goes to an Investigator, tests to a Tester, text
+about code to Docs, git work on the branch to an Implementer. It names the `mount` field of a
+child and the MOUNTS line it is filled from. Auto keeps its read tools and answers questions
+itself; when it reports what happens next it describes a hand over and names the role ("I asked
+an implementer to reinstall the dependencies"), never an action of its own. The brief of every
+writer child carries `AUTO_DEPENDENCIES_RULE`: install missing dependencies with the project's
+package manager in its own mount, never link or copy `node_modules` from another checkout.
+
 `parseAutoBlock` (`packages/core/src/auto/autoBlock.ts`) reads only the settled text of a turn that
 ended ok: it takes the last complete block, strips code fences, escapes raw line breaks in strings
 and falls back to the last `}` when the close marker is missing. `store/slices/auto/applyAutoBlock.ts`
@@ -232,7 +242,8 @@ budget or limit refusal and a block that does not parse become a `refusal` row i
 delivered with the next turn under REFUSED, NOT DONE; such a turn counts as no progress, so
 `noProgressStreak` bounds retries. The refusal counters (`refusals_used`, the limit on refusals)
 move once per generation and run, so a duplicate settle of the same turn cannot spend the limit twice. Every delivery starts with a digest of the tree (open agents
-with role, state and age, questions waiting, the budget) and carries the artifact text of each
+with role, state and age, questions waiting, the budget, and a `MOUNTS:` line listing each usable
+mount as `id (project, branch)` from `buildMountsLine`) and carries the artifact text of each
 result, cut when long, so a provider that does not resume sessions still has its memory. The
 `<<auto>>` block is hidden in the transcript like the other markers; the delegation cards show
 what it did. See [query-bridge.md](query-bridge.md) for the bridge Auto does not use.

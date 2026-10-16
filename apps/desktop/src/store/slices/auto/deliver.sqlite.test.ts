@@ -36,6 +36,9 @@ describe('delivering stored rows to Auto', () => {
     expect(state.ports.autoTurns[0]?.text).toContain('add the ledger export');
     expect(state.ports.autoTurns[0]?.text).toContain('Artifacts in this tree');
     expect(state.ports.autoTurns[0]?.text).toContain('Budget for this conversation');
+    expect(state.ports.autoTurns[0]?.text).toContain(
+      'MOUNTS: mount-ledger-core (ledger-core, branch ak/ledger-export); mount-notify-relay (notify-relay, branch ak/notify-queue).',
+    );
     expect(await getAutoTree({ db: state.world.db, treeId: WORLD_TREE })).toMatchObject({
       phase: 'deciding',
       activeRunId: state.ports.autoTurns[0]?.runId,

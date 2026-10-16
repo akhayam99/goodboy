@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { extractStepDone } from '../context/marker-parsing';
-import { AUTO_DELEGATION_ROLES } from './roles';
+import { AUTO_DELEGATION_ROLES, isAutoWriterRole } from './roles';
 import {
   AUTO_DEFAULT_DONE_WHEN,
+  AUTO_DEPENDENCIES_RULE,
   AUTO_KICKOFF_HEADER,
   composeDelegationKickoff,
   type DelegationKickoffParams,
@@ -45,6 +46,14 @@ describe('the kickoff of a delegated child', () => {
     const reader = composeDelegationKickoff(base({ role: 'scout', mountLabel: null }));
     expect(reader).toContain('You read only. You never change a file.');
     expect(reader).not.toContain('**Mount**');
+  });
+
+  it('tells every writer to install missing dependencies in its own mount, and no reader', () => {
+    for (const role of AUTO_DELEGATION_ROLES) {
+      const text = composeDelegationKickoff(base({ role }));
+      expect(text.includes(AUTO_DEPENDENCIES_RULE)).toBe(isAutoWriterRole({ role }));
+    }
+    expect(AUTO_DEPENDENCIES_RULE).toContain('Never link or copy node_modules');
   });
 
   it('says on a retry that the earlier attempt did not finish, right after the role', () => {

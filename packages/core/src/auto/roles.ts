@@ -32,6 +32,18 @@ export const AUTO_ROLE_ARTIFACT = {
   docs: null,
 } as const satisfies Readonly<Record<AutoDelegationRole, AutoArtifactKind | null>>;
 
+export const AUTO_ROLE_WHEN = {
+  scout:
+    'find where something is in the code or how it works today, when you cannot read it fast yourself',
+  planner: 'turn a request into steps with risks and checks before anything changes',
+  investigator: 'diagnose a failure, a crash or a wrong result and find its cause',
+  reviewer: 'judge a change that already exists and list what is wrong with it',
+  implementer:
+    'change code, run git work on the branch (commits, a rebase, reinstalling dependencies) or fix what an investigator found',
+  tester: 'write or fix tests for a named behavior',
+  docs: 'write text about the code: documentation, a README, a changelog',
+} as const satisfies Readonly<Record<AutoDelegationRole, string>>;
+
 type ParseAutoDelegationRoleParams = {
   readonly role: unknown;
 };

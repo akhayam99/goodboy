@@ -325,6 +325,7 @@ export {
   type PickMountParams,
   type PickableMount,
 } from './auto/mountPick';
+export { buildMountsLine } from './auto/mountsLine';
 export {
   ADOPTION_DEFAULT_INSTRUCTION,
   ADOPTION_REFUSAL_TEXT,
@@ -342,6 +343,7 @@ export {
 export {
   AUTO_DELEGATION_ROLES,
   AUTO_ROLE_ARTIFACT,
+  AUTO_ROLE_WHEN,
   AUTO_WRITER_ROLES,
   isAutoWriterRole,
   parseAutoDelegationRole,

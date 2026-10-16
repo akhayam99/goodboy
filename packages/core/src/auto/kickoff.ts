@@ -28,6 +28,9 @@ export const AUTO_DEFAULT_EXPECTED = {
   docs: 'A short text summary and the results of the checks you ran.',
 } as const satisfies Readonly<Record<AutoDelegationRole, string>>;
 
+export const AUTO_DEPENDENCIES_RULE =
+  "If dependencies are missing, install them with the project's package manager in this mount. Never link or copy node_modules or other files from another checkout.";
+
 export const AUTO_KICKOFF_HEADER =
   'You were started by Auto and report back to Auto. A question you ask goes to Auto first. Never emit `<<fan-out>>`, `<<scout-split>>` or `<<handoff>>` markers and never start other agents yourself: Auto does that.';
 
@@ -74,7 +77,7 @@ type RoleSectionParams = {
 
 const roleSection = ({ role }: RoleSectionParams): string => {
   const access = isAutoWriterRole({ role })
-    ? 'You change files, only in the mount named below.'
+    ? `You change files, only in the mount named below. ${AUTO_DEPENDENCIES_RULE}`
     : 'You read only. You never change a file.';
   return [`**Role** ${role}. ${ROLE_REGISTRY[role].explain.does}`, access].join(' ');
 };
