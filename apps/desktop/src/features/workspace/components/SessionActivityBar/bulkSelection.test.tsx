@@ -28,11 +28,15 @@ beforeAll(async () => {
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
+  vi.useFakeTimers({ now: Date.parse('2026-10-03T12:00:00.000Z'), toFake: ['Date'] });
   await resetStoryStore();
   localStorage.clear();
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 const one = sessionOf({ goal: 'one', lastOpenedAt: '2026-10-06T09:00:00.000Z' });
 const two = sessionOf({ goal: 'two', lastOpenedAt: '2026-10-06T08:00:00.000Z' });

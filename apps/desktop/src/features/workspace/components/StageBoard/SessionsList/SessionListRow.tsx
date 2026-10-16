@@ -13,10 +13,16 @@ import { projectLineOf } from '../projectLineOf';
 type Props = {
   readonly session: Session;
   readonly isArchived: boolean;
+  readonly inactiveLabel?: string;
   readonly onOpen: (session: Session) => void;
 };
 
-export const SessionListRow = memo(function SessionListRow({ session, isArchived, onOpen }: Props) {
+export const SessionListRow = memo(function SessionListRow({
+  session,
+  isArchived,
+  inactiveLabel,
+  onOpen,
+}: Props) {
   const id = session.id;
   const summary = useSessionSummary({ session });
   const signal = useSessionSignal({ session, isArchived });
@@ -39,7 +45,7 @@ export const SessionListRow = memo(function SessionListRow({ session, isArchived
         </span>,
         projectLineOf({ mounts }),
         <SessionSignal key="signal" signal={signal} />,
-        summary.age,
+        inactiveLabel ?? summary.age,
       ]}
     />
   );

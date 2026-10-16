@@ -39,12 +39,16 @@ beforeAll(async () => {
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
+  vi.useFakeTimers({ now: Date.parse('2026-10-06T23:00:00.000Z'), toFake: ['Date'] });
   await resetStoryStore();
   localStorage.clear();
   navigate.mockClear();
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 const opened = (hour: number, goal: string): Session =>
   sessionOf({

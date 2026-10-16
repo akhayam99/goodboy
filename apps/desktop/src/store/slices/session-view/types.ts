@@ -153,6 +153,16 @@ export const NO_PROJECT_GROUP_KEY = 'no-project';
 
 export const PINNED_GROUP_KEY = 'pinned';
 
+export const INACTIVE_GROUP_KEY = 'inactive';
+
+export const INACTIVE_GROUP_LABEL = 'Inactive';
+
+const HOUR_MS = 60 * 60 * 1000;
+
+export const INACTIVE_AFTER_MS = 72 * HOUR_MS;
+
+export const RECENTLY_OPENED_MS = 24 * HOUR_MS;
+
 export const PR_GROUP_ORDER: Record<SessionPrGroup, number> = {
   'not-open': 0,
   draft: 1,

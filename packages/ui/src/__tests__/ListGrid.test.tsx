@@ -125,6 +125,24 @@ describe('ListGrid', () => {
     expect(action.closest('[class*="col-end-[-3]"]')).not.toBeNull();
     expect(screen.getByText('12').textContent).toBe('12');
   });
+
+  it('draws a group with no name as rows alone, with no heading and no count', () => {
+    const { container } = render(
+      <ListGrid label="Sessions" columns={COLUMNS} isGrouped>
+        <ListGridGroup>
+          <ListGridRow cells={['', 'HBL-412', 'Ledger export times out', '2h']} />
+        </ListGridGroup>
+        <ListGridGroup label="Inactive" count={1}>
+          <ListGridRow cells={['', 'HBL-398', 'Settlement dates', 'inactive 5d']} />
+        </ListGridGroup>
+      </ListGrid>,
+    );
+    expect(screen.getAllByRole('heading').map((heading) => heading.textContent)).toEqual([
+      'Inactive',
+    ]);
+    expect(container.querySelectorAll('[data-list-grid-group-label]')).toHaveLength(1);
+    expect(screen.getByText('Ledger export times out')).toBeDefined();
+  });
 });
 
 describe('StateDot', () => {

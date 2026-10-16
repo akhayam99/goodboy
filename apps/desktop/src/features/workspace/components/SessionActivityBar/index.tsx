@@ -17,7 +17,12 @@ import {
   useSessionViewPrefs,
 } from '../../../../store';
 import { sortAndGroupSessions } from '../../../../store/slices/session-view/sortAndGroupSessions';
-import { FOLD_LIMIT, PINNED_GROUP_KEY } from '../../../../store/slices/session-view/types';
+import type { SessionColumnLayout } from '../../../../store/slices/session-view/layoutSessionColumn';
+import {
+  FOLD_LIMIT,
+  INACTIVE_GROUP_KEY,
+  PINNED_GROUP_KEY,
+} from '../../../../store/slices/session-view/types';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
 import { useMultiSelect } from '../../../../shared/hooks/useMultiSelect';
 import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
@@ -49,6 +54,10 @@ type Props = {
   isStudioOver?: boolean;
   onSelectSession: (id: SessionId) => void;
   onArchivedTabOpen?: () => void;
+};
+
+type GroupParams = {
+  readonly group: SessionColumnLayout['groups'][number];
 };
 
 type OpenAttention = {
@@ -220,7 +229,7 @@ export const SessionActivityBar = ({
 
   const total = column.groups.reduce((count, group) => count + group.total, 0);
   const foldableTotal = column.groups
-    .filter((group) => group.key !== PINNED_GROUP_KEY)
+    .filter((group) => group.key !== PINNED_GROUP_KEY && group.key !== INACTIVE_GROUP_KEY)
     .reduce((count, group) => count + group.total, 0);
   const isFoldShown =
     !column.isGrouped &&
@@ -247,8 +256,36 @@ export const SessionActivityBar = ({
           {...rowProps}
           isActive={isActive}
           isCurrent={isActive && !isStudioOver}
+          trailing={isArchived ? undefined : column.inactiveLabels[id]}
         />
       </li>
+    );
+  };
+
+  const renderGroup = ({ group }: GroupParams) => {
+    const presentation = sessionGroupPresentation({
+      key: group.key,
+      groupMode: prefs.group,
+    });
+    const isHeadered = column.isGrouped || group.label !== null;
+    return (
+      <div key={group.key} className="flex flex-col gap-0.5">
+        {isHeadered ? (
+          <SessionGroupHeader
+            label={presentation?.label ?? group.label ?? group.key}
+            tone={presentation?.tone ?? 'neutral'}
+            total={group.total}
+            title={presentation === null ? undefined : stateDescription({ presentation })}
+            isCollapsed={group.isCollapsed}
+            onToggle={column.isGrouped ? () => toggleSessionGroup({ key: group.key }) : undefined}
+          />
+        ) : null}
+        {group.isCollapsed ? null : (
+          <ul role="list" className={cn('flex flex-col', PANE_RHYTHM.sessionList.rowGap)}>
+            {group.sessions.map((session) => renderRow(session, false))}
+          </ul>
+        )}
+      </div>
     );
   };
 
@@ -286,34 +323,9 @@ export const SessionActivityBar = ({
             PANE_RHYTHM.sessionList.pad,
           )}
         >
-          {column.groups.map((group) => {
-            const presentation = sessionGroupPresentation({
-              key: group.key,
-              groupMode: prefs.group,
-            });
-            const isHeadered = column.isGrouped || group.label !== null;
-            return (
-              <div key={group.key} className="flex flex-col gap-0.5">
-                {isHeadered ? (
-                  <SessionGroupHeader
-                    label={presentation?.label ?? group.label ?? group.key}
-                    tone={presentation?.tone ?? 'neutral'}
-                    total={group.total}
-                    title={presentation === null ? undefined : stateDescription({ presentation })}
-                    isCollapsed={group.isCollapsed}
-                    onToggle={
-                      column.isGrouped ? () => toggleSessionGroup({ key: group.key }) : undefined
-                    }
-                  />
-                ) : null}
-                {group.isCollapsed ? null : (
-                  <ul role="list" className={cn('flex flex-col', PANE_RHYTHM.sessionList.rowGap)}>
-                    {group.sessions.map((session) => renderRow(session, false))}
-                  </ul>
-                )}
-              </div>
-            );
-          })}
+          {column.groups
+            .filter((group) => group.key !== INACTIVE_GROUP_KEY)
+            .map((group) => renderGroup({ group }))}
 
           {isFoldShown ? (
             <button
@@ -330,6 +342,10 @@ export const SessionActivityBar = ({
               <span>{prefs.isFoldOpen ? 'Show fewer' : `Show ${column.hiddenCount} more`}</span>
             </button>
           ) : null}
+
+          {column.groups
+            .filter((group) => group.key === INACTIVE_GROUP_KEY)
+            .map((group) => renderGroup({ group }))}
 
           {column.hiddenByFilters > 0 ? (
             <div

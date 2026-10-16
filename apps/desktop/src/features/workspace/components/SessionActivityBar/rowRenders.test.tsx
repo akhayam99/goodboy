@@ -51,7 +51,7 @@ afterEach(cleanup);
 const sessions = Array.from({ length: 8 }, (_, index) =>
   sessionOf({
     goal: `session ${index}`,
-    lastOpenedAt: `2026-10-06T${String(20 - index).padStart(2, '0')}:00:00.000Z`,
+    lastOpenedAt: new Date(Date.now() - (index + 1) * 60 * 60 * 1000).toISOString(),
   }),
 );
 

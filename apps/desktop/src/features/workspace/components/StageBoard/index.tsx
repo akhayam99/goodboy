@@ -326,6 +326,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
                   groups={listModel.groups}
                   groupMode={prefs.group}
                   shownArchived={shownArchived}
+                  inactiveLabels={listModel.inactiveLabels}
                   onOpen={nav.selectCard}
                 />
               )}

@@ -844,13 +844,50 @@ first, and the rest follow their last activity (`activityKeyOf`: the later of
 the last finished turn and `sessions.updated_at`). Opening a session writes
 `sessions.last_opened_at` and never moves a row, so the list holds still while
 you click through it. A row moves only when its session has new activity or
-starts needing you. `last_opened_at` feeds `⌃Tab` and the switcher's recents
+starts needing you, or when it leaves or rejoins the Inactive group below. `last_opened_at` feeds `⌃Tab` and the switcher's recents
 only. The Board's default order uses the same key. With no grouping the first
 eight rows show and the rest sit under **Show N more**, remembered per
 workspace. A session that needs you and the open session are never folded. A
 grouped list shows every group, finished groups start collapsed, and nothing
 folds. `⌘⇧[` and `⌘⇧]` walk this same displayed order and skip folded rows, so
 pressing `⌘⇧]` four times from the first row visits the next four sessions.
+
+**A session nobody touched for three days moves to an Inactive group at the
+bottom.** One pure function, `sessionInactivityOf`
+(`store/slices/session-view/sessionInactivityOf.ts`), owns the decision. A
+session is inactive only when every one of these holds: it is not pinned, not
+the open session, has no queued message (`agentQueue`) and no unsent draft
+(`agentDraft`) on any of its agents, its own state is not starting, running,
+blocked or error, its stage info is quiet (stage not needs you or running, no
+attention reason and no second reason, so a question, an approval, a
+permission, a failed check, a merge queue or an unread reply all keep it up),
+it was not opened in the last 24 hours (`RECENTLY_OPENED_MS`), and its last
+activity is more than 72 hours old (`INACTIVE_AFTER_MS`, strictly older, so a
+session exactly at the edge stays). The last activity is the latest of
+`created_at`, `updated_at` (bumped when the session's state changes),
+`last_opened_at`, the state's own time, each run's start and
+each hint sent to its orchestrator, and what `inactivityInputsOf` saw: each
+agent's start, finish, completion, stop, close and last view, and the
+`updatedAt` and `mergedAt` of the session's pull request and of every pull
+request on its mounts, which move on a push or a review. A message you send
+starts a turn, which keeps the session up while it runs and stamps the agent's
+finish when it ends. Three days lets a Friday session survive the weekend; the
+24 hour floor is stated on its own so a session you opened in the last day
+stays up whatever the threshold. The threshold and
+the floor are constants, with no setting. `useSessionInactivity` runs the
+function for every listed session on a one minute clock (`useNow`) and keeps
+the same map while no session crosses the line; `splitInactiveSessions` then
+pulls the inactive sessions out of every group, drops a group it leaves empty
+and appends one group with the key `inactive`, newest activity first,
+whatever the sort. The sidebar draws it last as **Inactive** with its count,
+after the fold, never folded; in a grouped list it is a toggle like the
+others, open by default. Each row shows "inactive 5d" (`inactiveWords`, the
+span from `formatSpan`) in the trailing slot in hint text. The List view of the
+Sessions page uses the same model: a flat list becomes an unnamed group
+followed by **Inactive**, and the last column of an inactive row reads the same
+words in place of the age. A change to any input recomputes at once, so
+opening, an agent starting, a new reply, a draft or a pull request event puts
+the row straight back in the list. `⌘⇧[` and `⌘⇧]` walk the Inactive rows too.
 
 **Pin a session and it stays at the top of the list.** **Pin session** and
 **Unpin session** are session actions (the row's right-click menu, `⌘K` and

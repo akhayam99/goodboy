@@ -38,11 +38,15 @@ beforeAll(async () => {
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
+  vi.useFakeTimers({ now: Date.parse('2026-10-03T12:00:00.000Z'), toFake: ['Date'] });
   await resetStoryStore();
   localStorage.clear();
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 const titlesOnScreen = (): ReadonlyArray<string> =>
   screen
