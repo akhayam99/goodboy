@@ -138,7 +138,7 @@ describe('the session level', () => {
       pages()
         .getAllByRole('button')
         .map((row) => row.textContent),
-    ).toEqual(['Overview', 'Runs', 'Agents', 'Artifacts']);
+    ).toEqual(['Overview', 'Runs', 'Orchestrated', 'Agents', 'Artifacts']);
     expect(workspaceLayer().hasAttribute('inert')).toBe(true);
   });
 

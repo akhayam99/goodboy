@@ -462,8 +462,9 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   (`continueStoppedAgent`). Nothing restarts on its own after a crash.
   Past the agent itself, Next steps in the overview offers one **Resume all**
   for every agent the restart stopped in the session, and a workflow run
-  shows the same action above its steps for its own agents
-  (`WorkflowResumeStrip`). Both run `resumeStoppedAgents`, which resumes each
+  offers the same action on its run tail for its own agents (**Resume** or
+  **Resume all**, `runTailOf` and `orchestratedTailOf`). Both run
+  `resumeStoppedAgents`, which resumes each
   `isStoppedByRestart` agent, never one you stopped and never a fan-out
   container while a child is unfinished (the children are resumed instead), skips an agent a second click
   is already resuming, and reports a failure only after trying the rest.

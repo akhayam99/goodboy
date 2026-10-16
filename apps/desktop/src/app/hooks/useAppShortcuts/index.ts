@@ -125,7 +125,13 @@ export const useAppShortcuts = ({
       active === 'branch' &&
       (kind === 'review' || kind === 'pr' || kind === 'files') &&
       branchTabOf({ state, sessionId, mountPath: null }) === doorTabOf({ kind });
-    const isLeaving = kind != null && (active === kind || isBranchDoor);
+    if (kind === 'workflows' && active === 'workflows') {
+      openLens({ sessionId, lens: 'orchestrated' });
+      return;
+    }
+    const isLeaving =
+      kind != null &&
+      (active === kind || isBranchDoor || (kind === 'workflows' && active === 'orchestrated'));
     if (kind === 'review' && !isLeaving) {
       state.navigate({
         to: branchPlace({

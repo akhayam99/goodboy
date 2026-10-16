@@ -1,1 +1,1 @@
-export type RunTreeDensity = 'page' | 'rail';
+export type RunTreeDensity = 'page' | 'rail' | 'checklist';

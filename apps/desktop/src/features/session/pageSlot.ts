@@ -18,6 +18,8 @@ const countOf = ({ page, facts }: CountParams): number => {
   switch (page) {
     case 'runs':
       return facts.runs;
+    case 'orchestrated':
+      return facts.orchestratedRuns;
     case 'agents':
       return facts.agents;
     case 'auto':
@@ -36,6 +38,9 @@ const countOf = ({ page, facts }: CountParams): number => {
 const isRunningOf = ({ page, facts }: CountParams): boolean => {
   if (page === 'runs') {
     return facts.runningRuns > 0;
+  }
+  if (page === 'orchestrated') {
+    return facts.runningOrchestratedRuns > 0;
   }
   if (page === 'agents') {
     return facts.runningAgents > 0;

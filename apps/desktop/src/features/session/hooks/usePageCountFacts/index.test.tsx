@@ -78,6 +78,8 @@ describe('usePageCountFacts', () => {
     expect(factsOf(base)).toEqual({
       runs: 0,
       runningRuns: 0,
+      orchestratedRuns: 0,
+      runningOrchestratedRuns: 0,
       agents: 0,
       runningAgents: 0,
       autoAgents: 0,
@@ -157,6 +159,32 @@ describe('usePageCountFacts', () => {
       },
     });
     expect(factsOf(withRuns)).toMatchObject({ runs: 2, runningRuns: 1 });
+  });
+
+  it('counts orchestrated runs apart from preset runs', () => {
+    const preset = aWorkflowRun({ ordinal: 0 });
+    const orchestrated = aWorkflowRun({ ordinal: 1, executionMode: 'dynamic' });
+    const withRuns: Session = { ...base, workflowRuns: [preset, orchestrated] };
+    seedColumn({ store: useAppStore, sessions: [withRuns], currentSessionId: sessionId });
+    useAppStore.setState({
+      sessionPhaseRuns: {
+        [sessionId]: [
+          anAgent({
+            sessionId,
+            status: 'running',
+            workflowRunId: orchestrated.id as WorkflowRunId,
+            stepId: 'step-1' as StepId,
+          }),
+        ],
+      },
+    });
+
+    expect(factsOf(withRuns)).toMatchObject({
+      runs: 1,
+      runningRuns: 0,
+      orchestratedRuns: 1,
+      runningOrchestratedRuns: 1,
+    });
   });
 
   it('counts the standalone agents, and the ones running', () => {

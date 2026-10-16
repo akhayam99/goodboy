@@ -237,6 +237,7 @@ describe('the open session on the rail', () => {
     expect(pages.getAllByRole('button').map((row) => row.textContent)).toEqual([
       'Overview',
       'Runs',
+      'Orchestrated',
       'Agents',
       'Artifacts',
     ]);

@@ -1216,7 +1216,7 @@ describe('orchestrateNextStep', () => {
       decision: {
         action: 'done',
         reason: 'All required tests pass.',
-        runSummary: { kind: 'structured', done: ['shipped the gate'], left: [] },
+        runSummary: { kind: 'structured', done: ['shipped the gate'], left: [], leftRoles: {} },
       },
     });
     const state = baseState();
@@ -1806,7 +1806,7 @@ describe('orchestrateNextStep', () => {
         action: 'next',
         reason: 'Keep going.',
         step: { name: 'Implement', role: 'implementer', promptPrefix: 'Implement it.' },
-        runSummary: { kind: 'structured', done: ['mapped'], left: ['implement'] },
+        runSummary: { kind: 'structured', done: ['mapped'], left: ['implement'], leftRoles: {} },
       },
       usage: BILLED_USAGE,
       model: 'claude-haiku-4-5',

@@ -1360,11 +1360,6 @@
       "count": 6
     }
   },
-  "apps/desktop/src/app/components/MockScene/scenes/u23/step-rows.test.tsx": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/app/components/MockScene/scenes/u23/topbar.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
@@ -5577,11 +5572,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/session/components/AgentTree/WorkflowResumeStrip/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
-    }
-  },
   "apps/desktop/src/features/session/components/AgentTree/WorkflowRunAsk.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 2
@@ -5590,11 +5580,6 @@
   "apps/desktop/src/features/session/components/AgentTree/WorkflowRunStartButton.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
-    }
-  },
-  "apps/desktop/src/features/session/components/AgentTree/WorkflowRunStatus.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 10
     }
   },
   "apps/desktop/src/features/session/components/ContextDrawer/decisionByline.test.ts": {
@@ -6929,26 +6914,6 @@
       "count": 18
     }
   },
-  "apps/desktop/src/features/workflows/components/OrchestratorStrip/OrchestratorAction.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 4
-    }
-  },
-  "apps/desktop/src/features/workflows/components/OrchestratorStrip/OrchestratorDock.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 8
-    }
-  },
-  "apps/desktop/src/features/workflows/components/OrchestratorStrip/OrchestratorHintLog.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/workflows/components/OrchestratorStrip/OrchestratorHintRow.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/workflows/components/OrchestratorStrip/OrchestratorRoutingRow/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 6
@@ -6957,11 +6922,6 @@
   "apps/desktop/src/features/workflows/components/OrchestratorStrip/OrchestratorRoutingRow/index.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 2
-    }
-  },
-  "apps/desktop/src/features/workflows/components/OrchestratorStrip/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 22
     }
   },
   "apps/desktop/src/features/workflows/components/OrchestratorStrip/orchestratorState.test.ts": {
@@ -7165,11 +7125,6 @@
   "apps/desktop/src/features/workflows/components/WorkflowBuilderView/usePlanEstimates.ts": {
     "react-hooks/exhaustive-deps": {
       "count": 1
-    }
-  },
-  "apps/desktop/src/features/workflows/components/WorkflowDecisions/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 10
     }
   },
   "apps/desktop/src/features/workflows/components/WorkflowFollowToastBridge/index.test.tsx": {
@@ -12848,11 +12803,6 @@
       "count": 1
     },
     "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
-  "packages/core/src/orchestrator/runSummary.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
       "count": 1
     }
   },

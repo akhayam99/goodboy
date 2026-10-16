@@ -53,9 +53,9 @@ The other valid forms are:
 <<orchestrator>>{"action":"blocked","reason":"..."}<</orchestrator>>
 
 After the decision, on its own line, emit the running recap of the whole run as one JSON object on a single line:
-<<run-summary>>{"done":["one entry per thing the run has actually landed"],"left":["one entry per thing still open"]}<</run-summary>>
+<<run-summary>>{"done":["one entry per thing the run has actually landed"],"left":["one entry per thing still open",{"text":"a thing still open that a later step would settle","role":"tester"}]}<</run-summary>>
 
-Each entry is one short sentence of plain text, no markdown and no bullet glyphs. An empty left array means the run is complete. The recap is written for the operator, it replaces the previous one every time, and it covers the run so far rather than only the step you just decided. Emit it with every decision, including done and blocked.`;
+Each entry is one short sentence of plain text, no markdown and no bullet glyphs. A left entry you expect a later step to settle is an object with that sentence as text and the role you expect to run it, one of the role keywords above; leave it a plain string when no step is planned for it. An empty left array means the run is complete. The recap is written for the operator, it replaces the previous one every time, and it covers the run so far rather than only the step you just decided. Emit it with every decision, including done and blocked.`;
 
 type RoleModelSetLinesParams = {
   readonly roleDefaults: OrchestratorInput['roleDefaults'];

@@ -11,6 +11,7 @@ type PageId =
   | 'overview'
   | 'files'
   | 'runs'
+  | 'orchestrated'
   | 'agents'
   | 'auto'
   | 'artifacts'
@@ -87,6 +88,14 @@ const RUNS_PAGE = lensPage({
   shortcut: 'lens.workflows',
   group: 'work',
   count: 'runs',
+});
+
+const ORCHESTRATED_PAGE = lensPage({
+  id: 'orchestrated',
+  lens: 'orchestrated',
+  shortcut: 'lens.workflows',
+  group: 'work',
+  count: 'orchestrated',
 });
 
 const AGENTS_PAGE = lensPage({
@@ -171,6 +180,7 @@ export const columnPagesOf = ({
   OVERVIEW_PAGE,
   ...(isBranchless ? [FILE_VERSIONS_PAGE] : []),
   RUNS_PAGE,
+  ORCHESTRATED_PAGE,
   AGENTS_PAGE,
   ...(hasAutoAgents ? [AUTO_PAGE] : []),
   ARTIFACTS_PAGE,

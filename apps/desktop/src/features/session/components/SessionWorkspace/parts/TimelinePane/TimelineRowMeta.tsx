@@ -9,6 +9,7 @@ type Props = {
   readonly cost?: string | null;
   readonly isPlanned?: boolean;
   readonly note?: string | null;
+  readonly isModelShown?: boolean;
 };
 
 export const TimelineRowMeta = ({
@@ -17,9 +18,12 @@ export const TimelineRowMeta = ({
   cost = null,
   isPlanned = false,
   note = null,
+  isModelShown = true,
 }: Props) => (
   <span data-testid="work-meta" className="flex shrink-0 items-center gap-2">
-    {model ?? <span aria-hidden data-meta-column="model" className={WORK_META_COLUMN.model} />}
+    {isModelShown
+      ? (model ?? <span aria-hidden data-meta-column="model" className={WORK_META_COLUMN.model} />)
+      : null}
     <span data-meta-column="stack" className={WORK_META_COLUMN.stack}>
       {time === null ? null : (
         <span

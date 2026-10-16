@@ -1,4 +1,4 @@
-import { useRef, useState, type FocusEvent } from 'react';
+import { useRef, useState, type FocusEvent, type ReactNode } from 'react';
 import { DeliveryActions } from '../../../../shared/components/DeliveryActions';
 import { PromptField, type PromptSubmitMode } from '../../../../shared/components/PromptField';
 import { usePromptFiles } from '../../../../shared/hooks/usePromptFiles';
@@ -12,6 +12,9 @@ type Props = {
   readonly isDeciding: boolean;
   readonly isStepRunning: boolean;
   readonly isPaused?: boolean;
+  readonly placeholder?: string;
+  readonly readNowLabel?: string;
+  readonly footerStart?: ReactNode;
   readonly onSubmit: (draft: OrchestratorHintDraft) => Promise<boolean>;
 };
 
@@ -49,6 +52,9 @@ export const OrchestratorHintComposer = ({
   isDeciding,
   isStepRunning,
   isPaused = false,
+  placeholder = 'Tell the orchestrator something',
+  readNowLabel,
+  footerStart,
   onSubmit,
 }: Props) => {
   const [text, setText] = useState('');
@@ -102,7 +108,8 @@ export const OrchestratorHintComposer = ({
       <PromptField
         kind="message"
         label="Hint for the orchestrator"
-        placeholder="Tell the orchestrator something"
+        placeholder={placeholder}
+        footerStart={footerStart}
         value={text}
         onChange={setText}
         onSubmit={(mode) => void send({ delivery: DELIVERY[mode] })}
@@ -125,6 +132,7 @@ export const OrchestratorHintComposer = ({
               readNowHint={readNowCopy({ isDeciding, isStepRunning, isPaused })}
               queueTestId="orchestrator-hint-queue"
               readNowTestId="orchestrator-hint-now"
+              {...(readNowLabel !== undefined && { readNowLabel })}
               onReadNow={() => void send({ delivery: 'now' })}
             />
           ) : undefined

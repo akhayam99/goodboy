@@ -14,6 +14,7 @@ type BaseProps = {
   readonly scroll?: 'pane' | 'body' | 'self';
   readonly tabs?: ReactNode;
   readonly dock?: ReactNode;
+  readonly dockEdge?: 'line' | 'space';
   readonly lead?: ReactNode;
   readonly headerRhythm?: 'title' | 'section';
   readonly width?: PageColumnWidth;
@@ -44,6 +45,7 @@ export const PaneShell = (props: Props) => {
     scroll = 'pane',
     tabs,
     dock,
+    dockEdge = 'line',
     lead,
     headerRhythm = 'title',
     width = 'column',
@@ -110,8 +112,8 @@ export const PaneShell = (props: Props) => {
   const dockBlock =
     dock != null ? (
       <>
-        <Divider />
-        <div data-slot="pane-dock" className="shrink-0">
+        {dockEdge === 'line' ? <Divider /> : null}
+        <div data-slot="pane-dock" data-dock-edge={dockEdge} className="shrink-0">
           <PageColumn width={width} className="flex flex-col py-4">
             {dock}
           </PageColumn>

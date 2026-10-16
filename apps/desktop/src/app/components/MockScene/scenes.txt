@@ -231,6 +231,16 @@ c08-run-ready
 c08-run-working
 c08-run-working-other
 c08-runs
+c09-orch-archived
+c09-orch-done
+c09-orch-failed
+c09-orch-menu
+c09-orch-reading
+c09-orch-ready
+c09-orch-running
+c09-orch-step
+c09-orchestrated-empty
+c09-orchestrated-list
 c11-sessions-board
 c11-sessions-board-filtered
 c11-sessions-empty

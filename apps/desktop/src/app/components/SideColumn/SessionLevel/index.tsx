@@ -2,7 +2,7 @@ import { ScrollFade } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
-import { supportedLens } from '../../../../features/session/supportedLens';
+import { useSessionPageLens } from '../../../../features/session/hooks/useSessionPageLens';
 import { currentSignOf } from '../../../../features/workspace/components/SessionActivityBar/currentSign';
 import { SessionPages } from '../../../../features/workspace/components/SessionActivityBar/SessionPages';
 import { useCardPages } from '../../../../features/workspace/hooks/useCardPages';
@@ -18,12 +18,12 @@ type Props = {
 export const SessionLevel = ({ session, isActive }: Props) => {
   const sessionId = session.id;
   const { pages, facts } = useCardPages({ session });
-  const storedLens = useAppStore((state) => state.activeLens[sessionId] ?? null);
+  const pageLens = useSessionPageLens({ session });
   const isBranchless = useAppStore((state) =>
     isBranchlessSession({ branch: state.sessionBranches[sessionId] }),
   );
   const sign = currentSignOf({
-    activeLens: supportedLens({ lens: storedLens, isBranchless }),
+    activeLens: pageLens,
     pages,
     hasStudioOver: !isActive,
   });

@@ -1,4 +1,11 @@
-import type { AgentId, ArtifactId, FileDiff, MountId, SessionId } from '@goodboy/types';
+import type {
+  AgentId,
+  ArtifactId,
+  FileDiff,
+  MountId,
+  SessionId,
+  WorkflowRunId,
+} from '@goodboy/types';
 import type { ExploreEntry } from '../../../features/explore/explore';
 import type { TerminalTabId } from '../../../shared/types/terminal';
 
@@ -91,6 +98,10 @@ export type DrawerContent =
   | {
       readonly kind: 'auto-child';
       readonly payload: { readonly agentId: AgentId };
+    }
+  | {
+      readonly kind: 'run-step';
+      readonly payload: { readonly runId: WorkflowRunId; readonly agentId: AgentId };
     }
   | {
       readonly kind: 'fix-comments';

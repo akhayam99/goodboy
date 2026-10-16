@@ -1,10 +1,10 @@
 import type { Session } from '@goodboy/types';
-import { useAppStore } from '../../../../../store';
+import { sessionPlace, useAppStore } from '../../../../../store';
 import { PaneShell, useEscapeLayer } from '@goodboy/ui';
 import { useAttachedWorkflowRuns } from '../../../../workflows/useAttachedWorkflowRuns';
 import { WorkflowAttachButton } from '../../../../workflows/components/WorkflowAttachButton';
 import { WorkflowStartButton } from '../../AgentTree/WorkflowStartButton';
-import { WorkflowRunDetail } from './WorkflowRunDetail';
+import { OrchestratedRunPage } from '../../OrchestratedRun';
 import { RunsGrid } from './RunsGrid';
 import { NAMES } from '../../../../../shared/names';
 
@@ -19,17 +19,21 @@ export const WorkflowsPane = ({ session, isActive = true }: Props) => {
   const focusedWorkflowRunId = useAppStore(
     (state) => state.focusedWorkflowRunId[sessionId] ?? null,
   );
-  const setFocusedWorkflowRun = useAppStore((state) => state.setFocusedWorkflowRun);
+  const navigate = useAppStore((state) => state.navigate);
   const focusedRun =
     attachedRuns.find(
       ({ run }) => run.id === focusedWorkflowRunId && run.executionMode === 'dynamic',
     ) ?? null;
-  useEscapeLayer(() => setFocusedWorkflowRun(sessionId, null), focusedRun !== null && isActive);
-  const hasRuns = attachedRuns.length > 0;
+  useEscapeLayer(
+    () => navigate({ to: sessionPlace({ sessionId, lens: 'orchestrated' }) }),
+    focusedRun !== null && isActive,
+  );
+  const presetRuns = attachedRuns.filter(({ run }) => run.executionMode !== 'dynamic');
+  const hasRuns = presetRuns.length > 0;
 
   if (focusedRun != null) {
     return (
-      <WorkflowRunDetail session={session} run={focusedRun.run} workflow={focusedRun.workflow} />
+      <OrchestratedRunPage session={session} run={focusedRun.run} workflow={focusedRun.workflow} />
     );
   }
 
@@ -39,7 +43,7 @@ export const WorkflowsPane = ({ session, isActive = true }: Props) => {
       actions={hasRuns ? <WorkflowAttachButton sessionId={sessionId} placement="header" /> : null}
     >
       {hasRuns ? (
-        <RunsGrid session={session} attachedRuns={attachedRuns} />
+        <RunsGrid session={session} attachedRuns={presetRuns} />
       ) : (
         <WorkflowStartButton sessionId={sessionId} />
       )}

@@ -91,6 +91,7 @@ describe('the c02 sidebar level scenes', () => {
     expect(pages.getAllByRole('button').map((row) => row.textContent)).toEqual([
       'Overview',
       'Runs1',
+      'Orchestrated',
       'Agents3',
       'Artifacts3',
       'Questions1',

@@ -63,7 +63,7 @@ Use real branded id casts (e.g. `'x' as Agent['id']`) and real enum values.
 Pass it straight in. No store involved.
 
 **The component reads the zustand store.** `SessionOverviewPane`,
-`WorkflowRunDetail`, `DefaultsPanel` and `SessionNavSidebar` work
+`OrchestratedRunPage`, `DefaultsPanel` and `SessionNavSidebar` work
 this way. `useAppStore` is a bare `create()` store: no `persist` middleware,
 and no Tauri side effect on `setState`. So it is safe to fill it directly:
 

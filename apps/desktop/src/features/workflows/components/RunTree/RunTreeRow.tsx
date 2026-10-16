@@ -36,6 +36,7 @@ import type { RowAsk } from '../../../workTreeModel/rowState';
 import { TIMELINE_RHYTHM } from '../../../workTreeModel/timelineRhythm';
 import { ROW_ACTION_LABEL } from '../../../workTreeModel/rowActionLabels';
 import { RunStepSkip, type RunStepSkipAction } from './RunStepSkip';
+import { RunTreeChecklistCells } from './RunTreeChecklistCells';
 import { rowSlotWidth } from './rowSlotWidth';
 import type { RunTreeDensity } from './runTreeDensity';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -146,7 +147,7 @@ export const RunTreeRow = ({
       costUsd={costUsd}
       onOpen={onSelect}
     >
-      {({ work, glyph, state, meta, cardHandlers }) => (
+      {({ work, glyph, state, meta, time, cardHandlers }) => (
         <div
           className="flex min-w-0"
           style={{ height: item.height }}
@@ -187,76 +188,88 @@ export const RunTreeRow = ({
                 frameClassName={cn('min-w-0 flex-1', isHighlighted && 'bg-hover text-foreground')}
                 className="flex h-full min-w-0 items-center gap-2 px-2"
               >
-                <span className="w-6 shrink-0 text-right text-chip text-faint-foreground">
-                  {entry.stepLabel}
-                </span>
-                {glyph}
-                <span className="flex min-w-0 flex-1 items-center gap-2">
-                  <TruncatedText
-                    className={cn(
-                      WORK_ROW.title,
-                      'flex-1 truncate',
-                      isNested ? 'text-label' : 'text-body',
-                      item.rowState.phase === 'queued'
-                        ? 'text-muted-foreground'
-                        : item.rowState.phase === 'running' || item.hasUnread
-                          ? 'font-medium text-foreground'
-                          : 'text-foreground',
-                    )}
-                  >
-                    {agent.name}
-                  </TruncatedText>
-                  {guidance === null ? null : (
-                    <Tooltip content={guidanceTagTip({ text: guidance })} side="top">
-                      <span
-                        aria-label={`Guidance: ${guidanceTagTip({ text: guidance })}`}
+                {density === 'checklist' ? (
+                  <RunTreeChecklistCells
+                    entry={entry}
+                    glyph={glyph}
+                    duration={time}
+                    phase={item.rowState.phase}
+                    isNested={isNested}
+                  />
+                ) : (
+                  <>
+                    <span className="w-6 shrink-0 text-right text-chip text-faint-foreground">
+                      {entry.stepLabel}
+                    </span>
+                    {glyph}
+                    <span className="flex min-w-0 flex-1 items-center gap-2">
+                      <TruncatedText
                         className={cn(
-                          'pointer-events-auto inline-flex shrink-0 cursor-default items-center gap-1 text-chip',
-                          tintClasses('info').text,
+                          WORK_ROW.title,
+                          'flex-1 truncate',
+                          isNested ? 'text-label' : 'text-body',
+                          item.rowState.phase === 'queued'
+                            ? 'text-muted-foreground'
+                            : item.rowState.phase === 'running' || item.hasUnread
+                              ? 'font-medium text-foreground'
+                              : 'text-foreground',
                         )}
                       >
-                        <SlidersHorizontal size={ICON_SIZE.mark} aria-hidden />
-                        Guidance
-                      </span>
-                    </Tooltip>
-                  )}
-                  {answersFor === null ? null : (
-                    <span className="max-w-40 shrink-0 truncate text-meta text-muted-foreground">
-                      {`answering for ${answersFor}`}
+                        {agent.name}
+                      </TruncatedText>
+                      {guidance === null ? null : (
+                        <Tooltip content={guidanceTagTip({ text: guidance })} side="top">
+                          <span
+                            aria-label={`Guidance: ${guidanceTagTip({ text: guidance })}`}
+                            className={cn(
+                              'pointer-events-auto inline-flex shrink-0 cursor-default items-center gap-1 text-chip',
+                              tintClasses('info').text,
+                            )}
+                          >
+                            <SlidersHorizontal size={ICON_SIZE.mark} aria-hidden />
+                            Guidance
+                          </span>
+                        </Tooltip>
+                      )}
+                      {answersFor === null ? null : (
+                        <span className="max-w-40 shrink-0 truncate text-meta text-muted-foreground">
+                          {`answering for ${answersFor}`}
+                        </span>
+                      )}
                     </span>
-                  )}
-                </span>
-                {state}
-                {isPage ? meta : null}
-                {hasActionColumn ? (
-                  <span data-meta-column="action" className={WORK_META_COLUMN.action}>
-                    {isSkipShown && skip !== null ? (
-                      <RunStepSkip agent={agent} skip={skip} />
+                    {state}
+                    {isPage ? meta : null}
+                    {hasActionColumn ? (
+                      <span data-meta-column="action" className={WORK_META_COLUMN.action}>
+                        {isSkipShown && skip !== null ? (
+                          <RunStepSkip agent={agent} skip={skip} />
+                        ) : null}
+                        {answer === null ? null : (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="h-6 shrink-0"
+                            onClick={() => onAnswer(answer.question)}
+                          >
+                            {ROW_ACTION_LABEL.answer}
+                          </Button>
+                        )}
+                        {planAction === null || isPlanHeld ? null : (
+                          <Button
+                            variant="ghost"
+                            size="xs"
+                            className="shrink-0"
+                            onClick={() =>
+                              openPlanDrawer({ sessionId: agent.sessionId, planId: planAction.id })
+                            }
+                          >
+                            {ROW_ACTION_LABEL.openPlan}
+                          </Button>
+                        )}
+                      </span>
                     ) : null}
-                    {answer === null ? null : (
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="h-6 shrink-0"
-                        onClick={() => onAnswer(answer.question)}
-                      >
-                        {ROW_ACTION_LABEL.answer}
-                      </Button>
-                    )}
-                    {planAction === null || isPlanHeld ? null : (
-                      <Button
-                        variant="ghost"
-                        size="xs"
-                        className="shrink-0"
-                        onClick={() =>
-                          openPlanDrawer({ sessionId: agent.sessionId, planId: planAction.id })
-                        }
-                      >
-                        {ROW_ACTION_LABEL.openPlan}
-                      </Button>
-                    )}
-                  </span>
-                ) : null}
+                  </>
+                )}
               </InteractiveRow>
             </div>
           </div>

@@ -78,6 +78,13 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
     kind: 'shell',
     files: ['features/session/components/SessionWorkspace/parts/WorkflowsPane.tsx'],
   },
+  OrchestratedPane: {
+    kind: 'shell',
+    files: [
+      'features/session/components/SessionWorkspace/parts/OrchestratedPane.tsx',
+      'features/session/components/OrchestratedRun/index.tsx',
+    ],
+  },
   IntegrationPane: {
     kind: 'shell',
     files: ['features/session/components/SessionWorkspace/parts/IntegrationPane/index.tsx'],
@@ -175,7 +182,7 @@ const STUDIO_ROOTS: Readonly<Record<StudioKind, ReadonlyArray<string>>> = {
 };
 
 const FORM_AND_DETAIL_ROOTS: PlaceRoots = {
-  'Runs > a run': ['features/session/components/SessionWorkspace/parts/WorkflowRunDetail.tsx'],
+  'Runs > a run': ['features/session/components/OrchestratedRun/index.tsx'],
   'Questions detail': ['features/session/components/SessionWorkspace/parts/QuestionsPane.tsx'],
   'Branch > create pull request': ['features/branch/components/BranchPage/index.tsx'],
   'Create merge request': ['features/integrations/gitlab/MergeRequest/MrDetailPanel/index.tsx'],
@@ -208,7 +215,6 @@ const H1_ALLOWLIST: ReadonlySet<string> = new Set([
 
 const TITLE_ROW_PAGES: ReadonlyArray<string> = [
   'features/session/components/AgentDetailPane/AgentHeader.tsx',
-  'features/session/components/AgentTree/RunHeader/index.tsx',
   'features/workspace/components/StageBoard/SessionsHeader.tsx',
 ];
 
