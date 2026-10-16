@@ -559,6 +559,29 @@ the provider's, not a lifecycle glyph, since done is the expected case;
 clicking it (or `ⓘ`) opens `TurnFooterDetail`, an `AnchoredPopover` with
 the itemized breakdown.
 
+## Chat scroll
+
+The chat scrolls inside the `ScrollFade` viewport of `ChatView`, which carries
+`overflow-anchor: auto`, so the line under the pointer stays put while rows
+above it change height. `useScrollPin` follows the latest line only while the
+reader is within 32 px of the bottom; the first wheel, touch, pointer or key
+event stops its settle loop, and a reader who scrolled up is never pulled back
+down by new rows (the "Jump to latest" button pins again).
+
+Every row is `content-visibility: auto`. Its `contain-intrinsic-size` is
+`auto <estimate>px` from `rowEstimatePx` (`ChatView/rowEstimatePx.ts`): a user
+message and an answer by their line count (capped at 40 lines), an operations
+cluster by its steps (capped at 12), a workflow rail group by its rows, any
+other kind 72 px. `auto` makes the browser keep the real height once a row has
+rendered. A row estimate that is too small is what made the view snap while
+scrolling up; adjust a constant there, never a per-row class. The day divider
+key is the day plus the key of the row that opens it, never the index.
+
+jsdom has no layout, so the tests prove the wiring (the estimate on each row,
+the pin staying off for an unpinned reader). The real check is the
+`transcript-long` scene (about 150 rows): scroll up and watch that the line
+under the pointer does not move.
+
 ## Failure and fallback
 
 `classifyProviderError` names the failure. A usage limit puts the provider on

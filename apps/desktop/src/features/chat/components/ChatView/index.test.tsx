@@ -182,7 +182,9 @@ describe('ChatView', () => {
     } as never;
     state.sessionActiveProject = { 'sess-1': 'project-1' };
     state.selectedAgentId = { 'sess-1': 'agent-1' };
-    transcriptItems.current = [{ kind: 'user_text', key: 'u0', at: '2026-06-13T00:00:00.000Z' }];
+    transcriptItems.current = [
+      { kind: 'user_text', key: 'u0', text: 'hi', at: '2026-06-13T00:00:00.000Z' },
+    ];
     render(<ChatView session={session} />);
     const props = transcriptRowsMock.mock.calls.at(-1)?.[0] as {
       onOpenDiff: (path: string) => void;
@@ -202,7 +204,9 @@ describe('ChatView', () => {
     state.sessionWorktrees = { 'sess-1': ['/repo/sessions/study-plan'] };
     state.sessionBranches = { 'sess-1': '' };
     state.selectedAgentId = { 'sess-1': 'agent-1' };
-    transcriptItems.current = [{ kind: 'user_text', key: 'u0', at: '2026-06-13T00:00:00.000Z' }];
+    transcriptItems.current = [
+      { kind: 'user_text', key: 'u0', text: 'hi', at: '2026-06-13T00:00:00.000Z' },
+    ];
     render(<ChatView session={session} />);
     const props = transcriptRowsMock.mock.calls.at(-1)?.[0] as {
       onOpenDiff: (path: string) => void;
@@ -213,7 +217,9 @@ describe('ChatView', () => {
 
   it('tightens the top inset under a pane header', () => {
     state.selectedAgentId = { 'sess-1': 'agent-1' };
-    transcriptItems.current = [{ kind: 'user_text', key: 'u0', at: '2026-06-13T00:00:00.000Z' }];
+    transcriptItems.current = [
+      { kind: 'user_text', key: 'u0', text: 'hi', at: '2026-06-13T00:00:00.000Z' },
+    ];
     const viewportOf = (root: HTMLElement) => {
       let node = root.querySelector('ul[data-find-root]')?.parentElement ?? null;
       while (node !== null && !node.className.includes('overflow-y-auto')) {
@@ -272,7 +278,9 @@ describe('ChatView', () => {
 
   it('clusters same-turn questions for the selected agent, sorted by createdAt', () => {
     state.selectedAgentId = { 'sess-1': 'agent-1' };
-    transcriptItems.current = [{ kind: 'user_text', key: 'u0', at: '2026-06-13T00:00:00.000Z' }];
+    transcriptItems.current = [
+      { kind: 'user_text', key: 'u0', text: 'hi', at: '2026-06-13T00:00:00.000Z' },
+    ];
     openQuestions.current = [
       {
         id: 'q-late',
@@ -392,7 +400,9 @@ describe('ChatView', () => {
 
   it('splits questions from different turns into separate clusters', () => {
     state.selectedAgentId = { 'sess-1': 'agent-1' };
-    transcriptItems.current = [{ kind: 'user_text', key: 'u0', at: '2026-06-13T00:00:00.000Z' }];
+    transcriptItems.current = [
+      { kind: 'user_text', key: 'u0', text: 'hi', at: '2026-06-13T00:00:00.000Z' },
+    ];
     openQuestions.current = [
       {
         id: 'q-turn0',
@@ -417,7 +427,7 @@ describe('ChatView', () => {
   it('positions OQ cluster before oq_answer boundary (temporal ordering)', () => {
     state.selectedAgentId = { 'sess-1': 'agent-1' };
     transcriptItems.current = [
-      { kind: 'user_text', key: 'u0', at: '2026-06-13T00:00:00.000Z' },
+      { kind: 'user_text', key: 'u0', text: 'hi', at: '2026-06-13T00:00:00.000Z' },
       { kind: 'assistant_text', key: 'a0', text: 'response' },
       { kind: 'oq_answer', key: 'oq-a-1' },
       { kind: 'assistant_text', key: 'a1', text: 'follow-up' },
@@ -443,7 +453,7 @@ describe('ChatView', () => {
   it('renders OQs after answer cycle at correct ordinal (no desync)', () => {
     state.selectedAgentId = { 'sess-1': 'agent-1' };
     transcriptItems.current = [
-      { kind: 'user_text', key: 'u0', at: '2026-06-13T00:00:00.000Z' },
+      { kind: 'user_text', key: 'u0', text: 'hi', at: '2026-06-13T00:00:00.000Z' },
       { kind: 'assistant_text', key: 'a0', text: 'asking first q' },
       { kind: 'oq_answer', key: 'oq-a-1' },
       { kind: 'assistant_text', key: 'a1', text: 'asking second q' },
@@ -477,7 +487,7 @@ describe('ChatView', () => {
   it('stays aligned across multiple answer cycles (no cumulative drift)', () => {
     state.selectedAgentId = { 'sess-1': 'agent-1' };
     transcriptItems.current = [
-      { kind: 'user_text', key: 'u0', at: '2026-06-13T00:00:00.000Z' },
+      { kind: 'user_text', key: 'u0', text: 'hi', at: '2026-06-13T00:00:00.000Z' },
       { kind: 'assistant_text', key: 'a0', text: 'q1' },
       { kind: 'oq_answer', key: 'oq-a-1' },
       { kind: 'assistant_text', key: 'a1', text: 'q2' },
@@ -519,7 +529,7 @@ describe('ChatView', () => {
   it('advances the ordinal on an oq_answer with no matching question bucket', () => {
     state.selectedAgentId = { 'sess-1': 'agent-1' };
     transcriptItems.current = [
-      { kind: 'user_text', key: 'u0', at: '2026-06-13T00:00:00.000Z' },
+      { kind: 'user_text', key: 'u0', text: 'hi', at: '2026-06-13T00:00:00.000Z' },
       { kind: 'assistant_text', key: 'a0', text: 'something' },
       { kind: 'oq_answer', key: 'oq-orphan' },
       { kind: 'assistant_text', key: 'a1', text: 'later question' },

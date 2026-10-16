@@ -238,4 +238,17 @@ describe('TranscriptRows', () => {
     );
     expect(screen.getAllByTestId('mount-suggestion')).toHaveLength(1);
   });
+
+  it('gives each row kind its own intrinsic size estimate', () => {
+    const { container } = renderRows([
+      itemRow(userText('u1', new Date())),
+      itemRow({ kind: 'assistant_text', key: 'a1', text: 'word '.repeat(300) }),
+    ]);
+    const sizes = [...container.querySelectorAll<HTMLElement>('li')].map(
+      (li) => li.style.containIntrinsicSize,
+    );
+    expect(sizes).toHaveLength(2);
+    expect(sizes[0]).not.toBe(sizes[1]);
+    expect(sizes.every((size) => size.startsWith('auto '))).toBe(true);
+  });
 });
