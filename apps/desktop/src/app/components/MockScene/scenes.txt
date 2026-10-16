@@ -437,6 +437,8 @@ goaltitlesonly
 gone-branch
 gone-branch-restore
 guide
+guide-legend
+guide-shell
 guide-words
 header-agent
 header-artifact-details

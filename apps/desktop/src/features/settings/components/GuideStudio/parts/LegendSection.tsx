@@ -5,6 +5,7 @@ import { contextUsageTone } from '../../../../session/contextUsageTone';
 import { SESSION_STAGE_META, STAGE_TONE } from '../../../../session/session-stage';
 import { LegendaGrid } from './LegendaGrid';
 import { LegendBlock } from './LegendBlock';
+import { LegendSessionMarks } from './LegendSessionMarks';
 
 const STAGES: ReadonlyArray<SessionStage> = ['attention', 'running', 'review', 'building', 'done'];
 
@@ -19,6 +20,37 @@ export const LegendSection = ({}: Props) => (
           label: SESSION_STAGE_META[stage].label,
           desc: SESSION_STAGE_META[stage].reason,
         }))}
+      />
+    </LegendBlock>
+
+    <LegendBlock title="Session marks">
+      <LegendSessionMarks />
+    </LegendBlock>
+
+    <LegendBlock title="Dots in the sidebar, rail and panes">
+      <LegendaGrid
+        rows={[
+          {
+            dot: tintClasses('info').dot,
+            label: 'running',
+            desc: 'a door counts what runs, a page has work going, or the context changed',
+          },
+          {
+            dot: tintClasses('primary').dot,
+            label: 'new reply',
+            desc: 'a chat has a reply you have not read',
+          },
+          {
+            dot: tintClasses('warning').dot,
+            label: 'needs you',
+            desc: 'a question waits, a pinned port is down, or a branch is behind, rebasing, in conflict or has comments waiting',
+          },
+          {
+            dot: tintClasses('danger').dot,
+            label: 'failed',
+            desc: 'a check failed on a branch, or the context could not update',
+          },
+        ]}
       />
     </LegendBlock>
 
