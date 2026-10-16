@@ -28,6 +28,10 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'step draft actions inside the step editor, a draft is not an object in the map',
   'features/workflows/components/WorkflowStudio/WorkflowEditor/EditorTrail.tsx':
     'workflow editor band actions, studio chrome',
+  'features/workflows/components/WorkflowStudio/WorkflowList/index.tsx':
+    'Workflows page menu: Import and Restore built-in workflows, studio chrome',
+  'features/session/components/RunStepDrawer.tsx':
+    'run step pane frame: View transcript and Open full of the step shown in the pane',
   'features/search/components/SearchMode/SearchHitActions.tsx':
     'search preview: lists the registry verbs of the hit through toMenuEntries',
   'features/storage/components/StoragePage/ArtifactRowActions.tsx':
