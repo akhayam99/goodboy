@@ -26,7 +26,7 @@ describe('AutoDeliveryRow', () => {
   it('keeps the text built for Auto out of the transcript until it is asked for', () => {
     renderRow();
 
-    expect(screen.getByRole('button', { name: 'What Auto was told' })).toBeTruthy();
+    screen.getByRole('button', { name: 'What Auto was told' });
     expect(screen.queryByText(/STATE OF THIS CONVERSATION/)).toBeNull();
   });
 
@@ -36,7 +36,7 @@ describe('AutoDeliveryRow', () => {
 
     fireEvent.click(toggle);
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
-    expect(screen.getByText(/STATE OF THIS CONVERSATION/)).toBeTruthy();
+    screen.getByText(/STATE OF THIS CONVERSATION/);
 
     fireEvent.click(toggle);
     expect(screen.queryByText(/STATE OF THIS CONVERSATION/)).toBeNull();
