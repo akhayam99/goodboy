@@ -6,7 +6,9 @@ import { sessionNodeOf } from './sessionNode';
 
 type SessionNodeInfo = Parameters<typeof sessionNodeOf>[0]['info'];
 
-const REASONS = Object.keys(ATTENTION_REASON_META) as ReadonlyArray<SessionAttentionReason>;
+const REASONS: ReadonlyArray<SessionAttentionReason> = Object.keys(ATTENTION_REASON_META).filter(
+  (key): key is SessionAttentionReason => Object.hasOwn(ATTENTION_REASON_META, key),
+);
 
 type NodeOver = Partial<SessionNodeInfo> & { readonly isArchived?: boolean };
 

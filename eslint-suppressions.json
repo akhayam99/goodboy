@@ -6185,11 +6185,6 @@
       "count": 3
     }
   },
-  "apps/desktop/src/features/session/sessionNode.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/session/sessionTitle.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
