@@ -87,7 +87,7 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
       await clickButton(/^Sessions/);
     },
     lands: async () => {
-      await heading('Board');
+      await heading('Sessions');
       const title = onlyH1({ scope: document });
       const row = titleRowOf(title);
       expect(row).not.toBeNull();

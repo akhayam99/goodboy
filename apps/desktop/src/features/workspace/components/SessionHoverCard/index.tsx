@@ -28,6 +28,7 @@ type Props = {
   readonly onLeave: () => void;
   readonly onClose: () => void;
   readonly onOpenAttention: (params: OpenAttention) => void;
+  readonly isFactsOnly?: boolean;
 };
 
 export const SessionHoverCard = ({
@@ -39,6 +40,7 @@ export const SessionHoverCard = ({
   onLeave,
   onClose,
   onOpenAttention,
+  isFactsOnly = false,
 }: Props) => {
   const isShown = session !== null && anchor !== null;
   const cardRef = useRef<HTMLDivElement | null>(null);
@@ -55,8 +57,10 @@ export const SessionHoverCard = ({
     const edge = boundary === null ? anchorRect.right : boundary.getBoundingClientRect().right;
     const height = card.getBoundingClientRect().height;
     const maxTop = Math.max(EDGE, window.innerHeight - height - EDGE);
+    const right = edge + GAP;
+    const isPastEdge = right + CARD_WIDTH > window.innerWidth - EDGE;
     setPlace({
-      left: edge + GAP,
+      left: isPastEdge ? Math.max(EDGE, anchorRect.left - GAP - CARD_WIDTH) : right,
       top: Math.min(Math.max(EDGE, anchorRect.top - GAP), maxTop),
     });
   }, [anchor, boundary, isShown, session?.id]);
@@ -88,6 +92,7 @@ export const SessionHoverCard = ({
       <SessionHoverCardBody
         session={session}
         isArchived={isArchived}
+        isFactsOnly={isFactsOnly}
         onOpenAttention={onOpenAttention}
         onOpenLegend={() => {
           openGuideChapter({ id: 'legend' });

@@ -106,7 +106,7 @@ The Branch page holds one branch: its pull request, review comments, changed fil
 
 [More on review and resolve on the branch page](docs/features/review.md)
 
-<a id="stage-board"></a><a id="session-card"></a><a id="done-and-archived-dock"></a><a id="done-and-archived-lanes"></a><a id="bulk-select"></a>
+<a id="stage-board"></a><a id="session-card"></a><a id="list-view"></a><a id="repository-status"></a><a id="done-and-archived-dock"></a><a id="done-and-archived-lanes"></a><a id="bulk-select"></a>
 
 ## The board
 
@@ -114,6 +114,7 @@ The board shows every session of a workspace in lanes by stage, so you see where
 
 - Stage board
 - Session card
+- List view
 
 [More on the board](docs/features/board.md)
 

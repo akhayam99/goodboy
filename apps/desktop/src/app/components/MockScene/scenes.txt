@@ -168,6 +168,14 @@ c02-level-session-agents
 c02-level-studio-over
 c02-level-workspace
 c02-shell-overview
+c11-sessions-board
+c11-sessions-board-filtered
+c11-sessions-empty
+c11-sessions-hover-facts
+c11-sessions-list
+c11-sessions-list-filtered
+c11-sessions-list-grouped
+c11-sessions-repos-attention
 card-rails
 changelog
 chat-empty-noprojects

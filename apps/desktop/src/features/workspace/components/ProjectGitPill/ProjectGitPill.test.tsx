@@ -9,6 +9,7 @@ import type {
   WorkspaceGitState,
   WorkspaceId,
 } from '@goodboy/types';
+import { brandId } from '@goodboy/types';
 
 const h = vi.hoisted(() => ({
   invoke: vi.fn(async () => undefined),
@@ -35,8 +36,8 @@ vi.mock('../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: h.showToast }),
 }));
 
-import { ProjectGitPill } from './ProjectGitPill';
-import { ProjectGitPills } from './index';
+import { ProjectGitSummaryPill } from './ProjectGitSummaryPill';
+import { RepoAttentionPill } from './RepoAttentionPill';
 
 const project = {
   id: 'project-1' as ProjectId,
@@ -67,7 +68,12 @@ const statusOf = ({
 });
 
 const renderPill = ({ status }: { readonly status: WorkspaceGitStatus }) =>
-  render(<ProjectGitPill project={project} status={status} shouldShowProjectName={false} />);
+  render(<ProjectGitSummaryPill entries={[{ project, status }]} />);
+
+const openDetail = () => {
+  fireEvent.click(screen.getByRole('button', { name: '1 repository git statuses' }));
+  fireEvent.click(screen.getByRole('button', { name: /^Web/ }));
+};
 
 beforeEach(() => {
   h.invoke.mockReset();
@@ -88,22 +94,41 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-describe('ProjectGitPill', () => {
+describe('the repo pill of the Sessions page', () => {
+  it('shows only when a repo needs attention, naming how many', () => {
+    render(<RepoAttentionPill entries={[{ project, status: statusOf({}) }]} />);
+    expect(screen.queryByRole('button', { name: /repository git statuses/ })).toBeNull();
+
+    cleanup();
+    render(
+      <RepoAttentionPill
+        entries={[
+          { project, status: statusOf({ behind: 2 }) },
+          {
+            project: { ...project, id: brandId<ProjectId>({ value: 'project-2' }) },
+            status: statusOf({}),
+          },
+        ]}
+      />,
+    );
+    expect(screen.getByText('1 repo needs attention')).toBeDefined();
+  });
+
   it('names what the count counts instead of showing a bare number', () => {
     renderPill({ status: statusOf({ behind: 2, changed: 3, unmerged: 1 }) });
-    expect(screen.getByTestId('project-git-count').textContent).toBe('4 uncommitted');
+    expect(screen.getByTestId('project-git-summary-count').textContent).toBe('4 uncommitted');
   });
 
   it('shows no badge when the checkout is clean', () => {
     renderPill({ status: statusOf({}) });
-    expect(screen.queryByTestId('project-git-count')).toBeNull();
-    expect(screen.queryByTestId('project-git-warning')).toBeNull();
+    expect(screen.queryByTestId('project-git-summary-count')).toBeNull();
+    expect(screen.queryByTestId('project-git-summary-warning')).toBeNull();
   });
 
   it('shows a warning and opens the init guide for an absent repository', () => {
     renderPill({ status: statusOf({ state: 'absent' }) });
-    expect(screen.getByTestId('project-git-warning')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: /Web git status/ }));
+    expect(screen.getByTestId('project-git-summary-warning')).toBeDefined();
+    openDetail();
     expect(screen.getByText('This folder has no git repository yet')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Start a repository' })).toBeDefined();
     expect(screen.getByText('Or run it yourself')).toBeDefined();
@@ -112,7 +137,7 @@ describe('ProjectGitPill', () => {
 
   it('offers the first commit for an unborn repository and never says Goodboy will not commit', () => {
     renderPill({ status: statusOf({ state: 'unborn' }) });
-    fireEvent.click(screen.getByRole('button', { name: /Web git status/ }));
+    openDetail();
     expect(screen.getByRole('button', { name: 'Make the first commit' })).toBeDefined();
     expect(
       screen.getByText(
@@ -124,7 +149,7 @@ describe('ProjectGitPill', () => {
 
   it('starts the repository, then reads the project status again', async () => {
     renderPill({ status: statusOf({ state: 'absent' }) });
-    fireEvent.click(screen.getByRole('button', { name: /Web git status/ }));
+    openDetail();
     fireEvent.click(screen.getByRole('button', { name: 'Start a repository' }));
     await waitFor(() => expect(h.invoke).toHaveBeenCalledWith('repo_init', { path: '/repo/web' }));
     await waitFor(() => expect(h.loadStatus).toHaveBeenCalledWith({ projectId: project.id }));
@@ -133,7 +158,7 @@ describe('ProjectGitPill', () => {
   it('shows why the repository could not be started', async () => {
     h.invoke.mockRejectedValueOnce(new Error('this folder is already inside a repository'));
     renderPill({ status: statusOf({ state: 'absent' }) });
-    fireEvent.click(screen.getByRole('button', { name: /Web git status/ }));
+    openDetail();
     fireEvent.click(screen.getByRole('button', { name: 'Start a repository' }));
     expect((await screen.findByRole('alert')).textContent).toContain('already inside a repository');
     expect(h.loadStatus).not.toHaveBeenCalled();
@@ -141,13 +166,13 @@ describe('ProjectGitPill', () => {
 
   it('fast-forwards the correct project and shows the disabled reason inline', () => {
     renderPill({ status: statusOf({ behind: 2 }) });
-    fireEvent.click(screen.getByRole('button', { name: /Web git status/ }));
+    openDetail();
     fireEvent.click(screen.getByRole('button', { name: /Fast-forward main to origin\/main/ }));
     expect(h.fastForward).toHaveBeenCalledWith({ projectId: project.id });
 
     cleanup();
     renderPill({ status: statusOf({}) });
-    fireEvent.click(screen.getByRole('button', { name: /Web git status/ }));
+    openDetail();
     expect(screen.getByText('Already up to date.')).toBeDefined();
     expect(
       screen
@@ -158,7 +183,7 @@ describe('ProjectGitPill', () => {
 
   it('renders an editor launch error as an alert', async () => {
     renderPill({ status: statusOf({}) });
-    fireEvent.click(screen.getByRole('button', { name: /Web git status/ }));
+    openDetail();
     await waitFor(() => expect(h.invoke).toHaveBeenCalled());
 
     h.invoke.mockRejectedValueOnce(new Error('editor unavailable'));
@@ -171,7 +196,7 @@ describe('ProjectGitPill', () => {
   it('opens the project in the editor chosen in settings', async () => {
     h.store.settings = { 'editor.binary': 'zed' };
     renderPill({ status: statusOf({}) });
-    fireEvent.click(screen.getByRole('button', { name: /Web git status/ }));
+    openDetail();
     await waitFor(() => expect(h.invoke).toHaveBeenCalled());
     h.invoke.mockClear();
 
@@ -187,12 +212,13 @@ describe('ProjectGitPill', () => {
 
   it('labels an unreachable checkout instead of calling it setup', () => {
     renderPill({ status: statusOf({ state: 'missing' }) });
+    fireEvent.click(screen.getByRole('button', { name: '1 repository git statuses' }));
     expect(screen.getByText('Unreachable')).toBeDefined();
     expect(screen.queryByText('Git setup')).toBeNull();
   });
 });
 
-describe('ProjectGitPills', () => {
+describe('ProjectGitSummaryPill', () => {
   const entryOf = ({
     id,
     name,
@@ -208,7 +234,7 @@ describe('ProjectGitPills', () => {
 
   it('renders one aggregate trigger naming the summed uncommitted files', () => {
     render(
-      <ProjectGitPills
+      <ProjectGitSummaryPill
         entries={[
           entryOf({ id: 'one', name: 'One', status: statusOf({ behind: 2 }) }),
           entryOf({ id: 'two', name: 'Two', status: statusOf({ changed: 3 }) }),
@@ -222,7 +248,7 @@ describe('ProjectGitPills', () => {
 
   it('shows the aggregate warning instead of the count', () => {
     render(
-      <ProjectGitPills
+      <ProjectGitSummaryPill
         entries={[
           entryOf({ id: 'one', name: 'One', status: statusOf({ behind: 2 }) }),
           entryOf({ id: 'two', name: 'Two', status: statusOf({ state: 'absent' }) }),
@@ -236,7 +262,7 @@ describe('ProjectGitPills', () => {
 
   it('drills into project detail and returns to the sorted list', () => {
     render(
-      <ProjectGitPills
+      <ProjectGitSummaryPill
         entries={[
           entryOf({ id: 'alpha', name: 'Alpha', status: statusOf({ behind: 1 }) }),
           entryOf({ id: 'warning', name: 'Warning', status: statusOf({ state: 'absent' }) }),
@@ -263,7 +289,7 @@ describe('ProjectGitPills', () => {
 
   it('checks origin as soon as the popover opens, once', async () => {
     render(
-      <ProjectGitPills
+      <ProjectGitSummaryPill
         entries={[
           entryOf({ id: 'one', name: 'One', status: statusOf({ behind: 2 }) }),
           entryOf({ id: 'two', name: 'Two', status: statusOf({}) }),
@@ -280,7 +306,7 @@ describe('ProjectGitPills', () => {
 
   it('offers Update N for the repos behind and up to date otherwise', () => {
     render(
-      <ProjectGitPills
+      <ProjectGitSummaryPill
         entries={[
           entryOf({ id: 'one', name: 'One', status: statusOf({ behind: 2 }) }),
           entryOf({ id: 'two', name: 'Two', status: statusOf({ behind: 1 }) }),
@@ -293,7 +319,7 @@ describe('ProjectGitPills', () => {
 
     cleanup();
     render(
-      <ProjectGitPills
+      <ProjectGitSummaryPill
         entries={[
           entryOf({ id: 'one', name: 'One', status: statusOf({}) }),
           entryOf({ id: 'two', name: 'Two', status: statusOf({}) }),
@@ -309,7 +335,7 @@ describe('ProjectGitPills', () => {
   it('fast-forwards every updatable repo in one action and reports the outcome', async () => {
     h.store.fastForwardProjectCheckouts = vi.fn(async () => ({ updated: 2, failed: 0 }));
     render(
-      <ProjectGitPills
+      <ProjectGitSummaryPill
         entries={[
           entryOf({ id: 'one', name: 'One', status: statusOf({ behind: 2 }) }),
           entryOf({ id: 'two', name: 'Two', status: statusOf({ behind: 1 }) }),

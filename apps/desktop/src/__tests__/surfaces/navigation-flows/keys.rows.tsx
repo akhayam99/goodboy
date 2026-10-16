@@ -277,7 +277,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   }),
   pressRow({
     id: 'session.board',
-    lands: () => heading('Board'),
+    lands: () => heading('Sessions'),
   }),
   pressRow({
     id: 'terminal.studio',
@@ -1164,7 +1164,7 @@ let terminalTabCount = 0;
 
 const openBoardCard = async (): Promise<HTMLElement> => {
   await press('session.board')();
-  await heading('Board');
+  await heading('Sessions');
   const card = await waitFor(() => {
     const found = document.querySelector<HTMLElement>('[data-select-id]');
     expect(found).not.toBeNull();

@@ -3,6 +3,8 @@ import { ArrowRight, Folder } from 'lucide-react';
 import { Chip, GhostActionButton, StatusDot, formatUsd } from '@goodboy/ui';
 import type { Session, SessionAttentionReason, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { NAMES } from '../../../../shared/names';
+import { useReviewDraftCount } from './useReviewDraftCount';
 import { useSessionSummary } from '../../hooks/useSessionSummary';
 import { SessionProgress } from '../SessionProgress';
 import { SessionStateNode } from '../SessionActivityBar/SessionStateNode';
@@ -26,6 +28,7 @@ type Props = {
   readonly isArchived: boolean;
   readonly onOpenAttention: (params: OpenAttention) => void;
   readonly onOpenLegend: () => void;
+  readonly isFactsOnly?: boolean;
 };
 
 export const SessionHoverCardBody = ({
@@ -33,20 +36,29 @@ export const SessionHoverCardBody = ({
   isArchived,
   onOpenAttention,
   onOpenLegend,
+  isFactsOnly = false,
 }: Props) => {
   const sessionId = session.id as SessionId;
   const summary = useSessionSummary({ session });
   const pullRequest = useAppStore((state) => state.sessionGithub[sessionId]?.pr ?? null);
   const mergeRequest = useAppStore((state) => state.sessionGitlabMr[sessionId]?.mr ?? null);
   const mounts = useAppStore((state) => state.sessionProjectMounts?.[sessionId] ?? EMPTY_ARRAY);
+  const isPinned = useAppStore((state) =>
+    (state.sessionPins?.[session.workspaceId] ?? EMPTY_ARRAY).some((pin) => pin.id === sessionId),
+  );
+  const draftCount = useReviewDraftCount({ sessionId });
   const node = sessionNodeOf({ info: summary.info, isArchived });
   const { keys, title } = sessionRowTitle({ session, tasks: summary.tasks });
   const linked = getLinkedRequest({ pullRequest, mergeRequest });
   const request = linked.state === 'none' ? null : PULL_REQUEST_PRESENTATION[linked.state];
   const RequestIcon = request?.icon;
   const agentWord = summary.agentCount === 1 ? 'agent' : 'agents';
+  const draftWord = draftCount === 1 ? 'draft comment' : 'draft comments';
   const facts = [
+    isPinned && !isArchived ? 'Pinned' : null,
+    summary.isAutorun ? NAMES.autopilot : null,
     `${summary.agentCount} ${agentWord}`,
+    draftCount > 0 ? `${draftCount} ${draftWord}` : null,
     summary.cost > 0 ? formatUsd(summary.cost) : null,
     summary.age === '' ? null : summary.age,
   ].filter((fact): fact is string => fact !== null);
@@ -113,18 +125,20 @@ export const SessionHoverCardBody = ({
         </div>
       ) : null}
       <span className="text-meta text-faint-foreground">{facts.join(' · ')}</span>
-      {needsYou ? (
+      {needsYou && !isFactsOnly ? (
         <GhostActionButton
           icon={ArrowRight}
           label="Open what needs you"
           onClick={() => onOpenAttention({ sessionId, reason: summary.attention })}
         />
       ) : null}
-      <GhostActionButton
-        icon={CONCEPT_ICONS.help}
-        label="What do these marks mean?"
-        onClick={onOpenLegend}
-      />
+      {isFactsOnly ? null : (
+        <GhostActionButton
+          icon={CONCEPT_ICONS.help}
+          label="What do these marks mean?"
+          onClick={onOpenLegend}
+        />
+      )}
     </div>
   );
 };

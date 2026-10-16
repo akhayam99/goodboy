@@ -111,7 +111,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     name: 'palette: Board',
     covers: ['navigate', 'palette:Board'],
     open: () => openPalette(/^Board$/),
-    lands: () => heading('Board'),
+    lands: () => heading('Sessions'),
   },
   {
     name: 'palette: Chat',

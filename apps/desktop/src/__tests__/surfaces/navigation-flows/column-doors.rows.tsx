@@ -187,7 +187,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     covers: ['navigate'],
     open: () => click(doorIn('board')),
     lands: both(
-      () => heading('Board'),
+      () => heading('Sessions'),
       async () => expect(useAppStore.getState().currentSessionId).toBeNull(),
     ),
   },

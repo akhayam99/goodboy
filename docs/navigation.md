@@ -11,10 +11,22 @@
   (needs you / running / in review / building / done). You reach chat, diff,
   terminal and open-in-IDE from the cards. You never land on them. Every
   capability stays one step away.
-- **The board frame.** The header has the pane title grade (`Board` alone, no
-  total: each lane carries its own count), with the repository summary as quiet
-  meta text after it and the project filter and New session on the right.
-  Nothing else sits on that line, and no row sits under it. Header and lanes
+- **The Sessions page frame.** The header has the pane title grade (`Sessions`
+  alone, no total: each lane carries its own count), then on the right at most
+  three controls: the repo pill, only while a repository needs attention ("2
+  repos need attention", `RepoAttentionPill` over `repoNeedsAttention`, opening
+  today's repository popover whole), the **Board** and **List** switch
+  (`SessionViewPrefs.pageView`, kept per workspace in the session view prefs,
+  a version 3 record without it reads Board), and **Filter sessions**
+  (`SessionFilterPopover`). On the Board the filter holds Project and Sort, plus
+  a Repositories line with Check origin while every repository is fine; the
+  List adds Status, Archive and Group. New session is not here: it is the first
+  row of the sidebar's workspace level. Nothing else sits on that line, and no
+  row sits under it. A filter that hides sessions says "N hidden by filters"
+  with Clear under the lanes or the list. The List is one `ListGrid` with 32px
+  rows: state node 16, issue key 72 in mono, title, project 128, signal 96,
+  updated 56, right aligned; it follows the filter's sort and grouping, shows
+  archived sessions only under Show archived, and a row opens its session. Header and lanes
   share one frame centred in the pane, so the title's left edge is the first
   lane's left edge and the actions' right edge is the last lane's right edge.
   There are six lanes in pipeline order (building, running, needs you, in
@@ -31,11 +43,20 @@
   Loading until its list answers, and it is the list the sidebar shows under
   Show archived. There is no dock and no collapse: Done and Archived are never
   folded, and no lane caps its cards. Selection covers every lane in lane order:
-  Select all, Shift ranges and the lasso run across Done and Archived too. Cards
-  have one fixed height: a goal of up to two lines (the full goal in the
-  tooltip) is the card's one button, and the lifecycle menu and the cost show
-  next to the quick actions on hover or focus. Restoring an archived card uses
-  the `restore` glyph. The Sessions door works from every place, the New session
+  Select all, Shift ranges and the lasso run across Done and Archived too. Lane
+  labels are sentence case in the neutral grade with the count in gray, never
+  the stage color. Cards are a fixed 96px: a goal of up to two lines (the full
+  goal in the tooltip) is the card's one button, the quick action and the
+  lifecycle menu sit visible at its right, and the bottom line holds the project
+  in gray (`projectLineOf`, "payments-api +1" for several) and one signal at the
+  right (`boardSignalOf`, the same one the List row shows): an open question,
+  else a failed check, else the pull request token in its state color (a click
+  opens the pull request), else a running dot with the count of running agents
+  (`runningAgentCountOf`), else the Checking GitHub mark. An archived card shows
+  only its pull request. Age, issue chips, agent count, cost, the pin, Auto and
+  draft review comments live in the session hover card, which opens on the
+  board with facts only (no buttons). Restoring an archived card uses the
+  `restore` glyph. The Sessions door works from every place, the New session
   draft included.
 - **An archived session is read-only until Restore.** Its overview shows an
   Archived chip with an inline Restore. The composer, new agents, workflows and
@@ -670,12 +691,14 @@ you**, when the session needs you. That action lands where the Now chip lands
 (`attentionPlace`). Moving to another row swaps the card at once, with no second
 wait. Esc and opening a session close it, and the pointer may move onto the
 card. The row, the card and the board card all read `useSessionSummary`, so they
-say the same things in the same words. The board card keeps the whole summary
-and the session header keeps its chips.
+say the same things in the same words. The board card keeps one signal and
+hands the rest of the summary to the hover card; the session header keeps its
+chips.
 
 **The user chooses what the list shows and in what order.** The Sessions header
 holds one funnel button, **Filter sessions** (`SessionFilterPopover`), with the
-count of active filters as a small badge, like the Board's project filter. Its
+count of active filters as a small badge; the Sessions page header holds the
+same button. Its
 popover is a labelled dialog, not a menu of menus. Status lists Needs you,
 Running, In review, Building and Done with their counts (`statusFilter` in the
 prefs). Project lists the projects of the sessions with their counts and shows
@@ -722,7 +745,7 @@ read when a workspace opens and when the window regains focus, and pruned of
 deleted sessions on read (`store/slices/session-pins`). The pin shows in six
 places: the list's Pinned group, a ghost pin button in the right end of a row on
 hover and focus (`Pin session` and `Unpin session`), a pin toggle in the
-Overview title row, a quiet pin on the Board card, the rail buttons, and the
+Overview title row, a "Pinned" fact in the session hover card, the rail buttons, and the
 switcher's Pinned section. **Move up** and **Move down** (`session.pinnedUp`,
 `session.pinnedDown`) reorder a pinned session from the row menu and `⌘K`, only
 while it can move; `movePin` swaps the `at` of two neighbours and goes through

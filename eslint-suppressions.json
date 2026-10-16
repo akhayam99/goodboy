@@ -1329,11 +1329,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/app/components/MockScene/scenes/u23/pagesSeed.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 11
-    }
-  },
   "apps/desktop/src/app/components/MockScene/scenes/u23/policy-failures.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -8032,14 +8027,9 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/workspace/components/StageBoard/StageBoardCard/PrRequestSlot.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/workspace/components/StageBoard/StageBoardCard/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 29
+      "count": 25
     },
     "@typescript-eslint/naming-convention": {
       "count": 3
@@ -8047,13 +8037,13 @@
   },
   "apps/desktop/src/features/workspace/components/StageBoard/StageBoardCard/index.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
+      "count": 1
     },
     "@typescript-eslint/naming-convention": {
-      "count": 10
+      "count": 9
     },
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 3
+      "count": 1
     }
   },
   "apps/desktop/src/features/workspace/components/StageBoard/StageBoardCard/useDynamicActions/index.test.ts": {

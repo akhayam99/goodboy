@@ -80,7 +80,7 @@ describe('StageColumn', () => {
     renderColumn({ spec: { kind: 'stage', stage: 'attention' } });
     const lane = screen.getByRole('group', { name: 'needs you' });
 
-    expect(within(lane).getByText('needs you')).toBeDefined();
+    expect(within(lane).getByText('Needs you')).toBeDefined();
     expect(within(lane).getByText('Nothing needs you')).toBeDefined();
     expect(within(lane).queryByText(/when an agent asks you something/)).toBeNull();
     expect(within(lane).queryByText('0')).toBeNull();
@@ -104,7 +104,7 @@ describe('StageColumn', () => {
     renderColumn({ sessions: [makeSession('s-1', 'one')] });
     const lane = screen.getByRole('group', { name: 'building' });
     expect(within(lane).getByText('1')).toBeDefined();
-    expect(within(lane).getByText('building')).toBeDefined();
+    expect(within(lane).getByText('Building')).toBeDefined();
     expect(within(lane).queryByText('Nothing in progress')).toBeNull();
 
     cleanup();

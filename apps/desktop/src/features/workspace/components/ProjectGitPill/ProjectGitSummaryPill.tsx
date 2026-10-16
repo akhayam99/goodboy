@@ -34,6 +34,7 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 type Props = {
   readonly entries: ReadonlyArray<ProjectGitStatusEntry>;
   readonly isQuiet?: boolean;
+  readonly label?: string;
 };
 
 type SummaryEntry = ProjectGitStatusEntry & {
@@ -120,7 +121,7 @@ const summaryPhraseOf = (entries: ReadonlyArray<SummaryEntry>): string | null =>
   return parts.length === 0 ? null : parts.join(' · ');
 };
 
-export const ProjectGitSummaryPill = ({ entries, isQuiet = false }: Props) => {
+export const ProjectGitSummaryPill = ({ entries, isQuiet = false, label }: Props) => {
   const dropdown = useDropdown({
     width: 'w-80',
     expectedWidth: 320,
@@ -243,7 +244,7 @@ export const ProjectGitSummaryPill = ({ entries, isQuiet = false }: Props) => {
           )}
         >
           <GitBranch size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-          <span>{entries.length} repos</span>
+          <span>{label ?? `${entries.length} repos`}</span>
           {hasWarning ? (
             <span
               data-testid="project-git-summary-warning"
