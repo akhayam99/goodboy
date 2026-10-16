@@ -1,9 +1,9 @@
-import type { TranscriptRow } from '../../utils/cluster-operations';
+import type { ConversationRow } from '../../utils/conversationRows';
 
 const WORKFLOW_RAIL_KINDS = new Set(['orchestrator_decision', 'step_transition']);
 
 type Params = {
-  row: TranscriptRow;
+  row: ConversationRow;
 };
 
 export const isWorkflowRailRow = ({ row }: Params): boolean =>

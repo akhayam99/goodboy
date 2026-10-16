@@ -33,6 +33,7 @@ import {
 } from '../../../../store';
 import { reduceTranscript } from '../../utils/transcript-items';
 import { clusterOperations } from '../../utils/cluster-operations';
+import { conversationRows } from '../../utils/conversationRows';
 import { classifyThinkingContext } from '../../utils/thinking-context';
 import { permissionFor, toolStatus } from '../../utils/toolStatus';
 import { turnFootersFor } from '../../utils/turnOutcome';
@@ -69,7 +70,11 @@ type Props = {
   readonly briefLabel?: string;
   readonly insertions?: ReadonlyArray<TranscriptInsertion>;
   readonly composerLead?: ReactNode;
+  readonly mode?: ChatViewMode;
+  readonly onOpenTranscript?: () => void;
 };
+
+type ChatViewMode = 'conversation' | 'record';
 
 type RetrySource = {
   readonly content: string;
@@ -131,6 +136,8 @@ export const ChatView = ({
   briefLabel,
   insertions,
   composerLead,
+  mode = 'record',
+  onOpenTranscript,
 }: Props) => {
   const storedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null) as AgentId | null;
   const selectedAgentId = agentId === undefined ? storedAgentId : agentId;
@@ -147,7 +154,6 @@ export const ChatView = ({
   const deferredTagged = useDeferredValue(taggedItems);
   const transcriptStale = deferredTagged.agentId !== selectedAgentId;
   const deferredItems = deferredTagged.items;
-  const rows = useMemo(() => clusterOperations(deferredItems), [deferredItems]);
   const loading = useSessionLoading(session.id);
   const transcriptCached = useAppStore((s) =>
     selectedAgentId ? s.transcripts[selectedAgentId] !== undefined : true,
@@ -237,9 +243,19 @@ export const ChatView = ({
       ? turnStateForRun.runId
       : null;
   const turnFooters = useMemo(() => turnFootersFor({ items, activeRunId }), [items, activeRunId]);
+  const isConversation = mode === 'conversation';
+  const isTurnLive = activeRunId !== null;
+  const rows = useMemo(
+    () =>
+      isConversation
+        ? conversationRows({ items: deferredItems, isLive: isTurnLive })
+        : clusterOperations(deferredItems),
+    [deferredItems, isConversation, isTurnLive],
+  );
   const lastItem = items[items.length - 1];
   const lastRow = rows[rows.length - 1];
   const lastClusterRunning =
+    !isConversation &&
     lastRow?.kind === 'operations' &&
     lastRow.items.some(
       (i) =>
@@ -252,8 +268,8 @@ export const ChatView = ({
     );
   const isThinking =
     agentKind === 'running' &&
-    (lastItem?.kind ?? 'user_text') !== 'assistant_text' &&
-    !lastClusterRunning;
+    (isConversation ||
+      ((lastItem?.kind ?? 'user_text') !== 'assistant_text' && !lastClusterRunning));
   const thinkingContext = useMemo(() => classifyThinkingContext({ lastItem }), [lastItem]);
 
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
@@ -565,6 +581,7 @@ export const ChatView = ({
                     turnFooters={turnFooters}
                     briefLabel={briefLabel}
                     {...(insertions !== undefined && { insertions })}
+                    {...(onOpenTranscript !== undefined && { onOpenTranscript })}
                   />
                 </ChatImageLoaderProvider>
               </ul>

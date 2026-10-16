@@ -1,9 +1,9 @@
-import type { TranscriptRow } from '../../utils/cluster-operations';
+import type { ConversationRow } from '../../utils/conversationRows';
 
 export const planBlockVersions = ({
   rows,
 }: {
-  readonly rows: ReadonlyArray<TranscriptRow>;
+  readonly rows: ReadonlyArray<ConversationRow>;
 }): ReadonlyMap<string, number> => {
   const versions = new Map<string, number>();
   for (const row of rows) {
