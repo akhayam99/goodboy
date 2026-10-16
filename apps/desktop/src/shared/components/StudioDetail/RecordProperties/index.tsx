@@ -1,5 +1,7 @@
+import { useContext } from 'react';
 import { PANE_RHYTHM, cn } from '@goodboy/ui';
 import type { ResolvedFact } from '../../../detail-fields/factTypes';
+import { RecordFrameContext } from '../RecordFrameContext';
 import { propertyGroupsOf } from './propertyGroupsOf';
 import { PropertyRow } from './PropertyRow';
 
@@ -7,8 +9,11 @@ type Props = {
   readonly facts: ReadonlyArray<ResolvedFact>;
 };
 
+const NO_LINK_FACTS: ReadonlyArray<ResolvedFact> = [];
+
 export const RecordProperties = ({ facts }: Props) => {
-  const groups = propertyGroupsOf({ facts });
+  const linkFacts = useContext(RecordFrameContext)?.linkFacts ?? NO_LINK_FACTS;
+  const groups = propertyGroupsOf({ facts: [...facts, ...linkFacts] });
   if (groups.length === 0) {
     return null;
   }

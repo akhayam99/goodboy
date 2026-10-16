@@ -1,3 +1,4 @@
+import { RecordProperties } from '../../../../../../shared/components/StudioDetail/RecordProperties';
 import type { ProjectId, SessionExternalTask, WorkspaceId } from '@goodboy/types';
 import { ErrorStrip, PaneShell } from '@goodboy/ui';
 import { RecordDetailSkeleton } from '../../../../../../shared/components/StudioDetail/RecordDetailSkeleton';
@@ -28,6 +29,7 @@ export const LinearTaskDetail = ({ workspaceId, projectId, task }: Props) => {
         title={task.title}
         meta={<span className="font-mono">{task.identifier}</span>}
       >
+        <RecordProperties facts={[]} />
         <ErrorStrip label="the Linear issue" error={new Error(error)} onRetry={refetch} />
       </PaneShell>
     );

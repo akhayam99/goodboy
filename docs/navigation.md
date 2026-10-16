@@ -2084,12 +2084,15 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   `Mark all seen` is a ghost button in the Activity header and shows only
   while an agent is unseen; a waiting question is answered from its Needs you row, never from a
   second `Answer` on the timeline row.
-- **The focused issue page says where the issue lives.** Under the page
-  header (All issues, Unlink) a `Linked to` row (`w-28` label, muted) shows
-  `This session` or the branches; its value opens the same `Move to` menu as
-  the task chip, `This session` and one entry per open branch of the issue's
-  project (`project · branch`, middle cut), the current placement checked.
-  `LinkedToRow` draws it once for every tracker, not inside each detail.
+- **The focused issue page says where the issue lives.** The page header holds
+  All issues; `Unlink from session` sits in the record's `⋯`, asks first and
+  leaves an Undo toast. A `Placed on` property in the Links group shows
+  `This session` or the branches; its value (`TaskPlacementMenu`) opens the
+  same `Move to` menu as the task chip, `This session` and one entry per open
+  branch of the issue's project (`project · branch`, middle cut), the current
+  placement checked. `IntegrationPane` hands both to every tracker through
+  `RecordFrameContext` (`sessionVerbs`, `linkFacts`), so the loading and error
+  states show the placement too.
 - **A step chat is one explicit click**, never an automatic redirect.
 - **A lens-wide toggle is its own row**, never inside an empty state's action
   slot.

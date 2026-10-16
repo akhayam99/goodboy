@@ -1,4 +1,7 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useContext, useEffect, useState, type ReactNode } from 'react';
+import type { ResolvedFact } from '../../../detail-fields/factTypes';
+import { RecordFrameContext } from '../RecordFrameContext';
+import { RecordProperties } from '../RecordProperties';
 import { X } from 'lucide-react';
 import { Button, IconButton, StarToggle, useInheritedPaneActions } from '@goodboy/ui';
 import {
@@ -12,6 +15,8 @@ import { NO_RECORD_VERBS, type RecordFrame, type RecordVerbs } from '../RecordAc
 import { ObjectOverflowMenu } from '../../../../features/actions/components/ObjectOverflowMenu';
 import { useObjectMenuTrigger } from '../../../../features/actions/useObjectMenuTrigger';
 import type { RecordActionTarget } from '../../../../features/actions/types';
+
+const NO_FACTS: ReadonlyArray<ResolvedFact> = [];
 
 type ExternalRef = {
   readonly url: string;
@@ -40,9 +45,11 @@ export const RecordHeader = ({
   facts,
   externalRef = null,
   verbs = NO_RECORD_VERBS,
-  frame = null,
+  frame: ownFrame = null,
   onRefresh = null,
 }: Props) => {
+  const sharedFrame = useContext(RecordFrameContext);
+  const frame = ownFrame ?? sharedFrame;
   const [armedKey, setArmedKey] = useState<string | null>(null);
   const hostLabel = integrationLabel({ provider });
   const armed = verbs.secondary.find((verb) => verb.key === armedKey) ?? null;
@@ -119,7 +126,9 @@ export const RecordHeader = ({
       {byline == null ? null : (
         <div className="truncate text-ui text-faint-foreground">{byline}</div>
       )}
-      {facts}
+      <RecordFrameContext.Provider value={frame}>
+        {facts ?? <RecordProperties facts={NO_FACTS} />}
+      </RecordFrameContext.Provider>
       <RecordActions
         primary={null}
         secondary={verbs.secondary}

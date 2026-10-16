@@ -1,5 +1,7 @@
 import { Skeleton, PaneShell } from '@goodboy/ui';
 import { RecordHeader } from '../RecordHeader';
+import { RecordProperties } from '../RecordProperties';
+import type { ResolvedFact } from '../../../detail-fields/factTypes';
 import type { IntegrationGlyphProvider } from '../../../../features/integrations/components/IntegrationGlyph';
 
 type Props = {
@@ -11,6 +13,8 @@ type Props = {
 
 const PROPERTY_ROWS = 4;
 
+const NO_FACTS: ReadonlyArray<ResolvedFact> = [];
+
 export const RecordDetailSkeleton = ({ provider, identifier, title, loadingLabel }: Props) => (
   <PaneShell
     scroll="body"
@@ -21,11 +25,18 @@ export const RecordDetailSkeleton = ({ provider, identifier, title, loadingLabel
         title={title}
         byline={<Skeleton className="h-4 w-32 rounded-sm" />}
         facts={
-          <div role="status" aria-label={loadingLabel} className="flex min-w-0 flex-col gap-1 py-1">
-            {Array.from({ length: PROPERTY_ROWS }, (_, index) => (
-              <Skeleton key={index} className="h-7 w-full rounded-sm" />
-            ))}
-          </div>
+          <>
+            <div
+              role="status"
+              aria-label={loadingLabel}
+              className="flex min-w-0 flex-col gap-1 py-1"
+            >
+              {Array.from({ length: PROPERTY_ROWS }, (_, index) => (
+                <Skeleton key={index} className="h-7 w-full rounded-sm" />
+              ))}
+            </div>
+            <RecordProperties facts={NO_FACTS} />
+          </>
         }
       />
     }
