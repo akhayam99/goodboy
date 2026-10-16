@@ -1,6 +1,12 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { brandId, type AgentId, type SessionId, type WorkspaceId } from '@goodboy/types';
+import {
+  brandId,
+  type AgentId,
+  type MessageAttachment,
+  type SessionId,
+  type WorkspaceId,
+} from '@goodboy/types';
 import {
   registerAutoUserTurnPort,
   type AutoUserTurnPort,
@@ -10,7 +16,24 @@ import { routeAutoUserTurn, type RouteAutoUserTurnParams } from './routeAutoUser
 
 type AutoTurnState = ReturnType<RouteAutoUserTurnParams['get']>;
 
-const AUTO_ATTACHMENTS_MESSAGE = 'Auto does not take files in a message yet.';
+const AUTO_ATTACHMENTS_MESSAGE = 'Auto takes images in a message, not other files yet.';
+const AUTO_IMAGES_LOST_MESSAGE = 'Auto could not keep the images. Attach them again.';
+
+const BANNER_INPUT = {
+  id: 'attachment-banner',
+  fileName: 'banner-wide.png',
+  mimeType: 'image/png',
+  dataBase64: 'iVBORw0KGgo=',
+};
+
+const BANNER_STORED: MessageAttachment = {
+  id: 'attachment-banner',
+  kind: 'image',
+  fileName: 'banner-wide.png',
+  mimeType: 'image/png',
+  relPath: '.goodboy/attachments/attachment-banner/banner-wide.png',
+  dir: '/scratch/session-harborline',
+};
 const AUTO_MESSAGE_LOST_MESSAGE = 'Auto could not take your message. Send it again in a moment.';
 
 const SESSION = brandId<SessionId>({ value: 'session-harborline' });
@@ -133,6 +156,46 @@ describe('a message typed to an Auto agent', () => {
         input: inputOf({ attachments }),
       }),
     ).rejects.toThrow(AUTO_ATTACHMENTS_MESSAGE);
+
+    expect(port).not.toHaveBeenCalled();
+    expect(reportError).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the images, hands them to Auto and shows them on the bubble', async () => {
+    const port = vi.fn<AutoUserTurnPort>(async () => 'queued');
+    registerAutoUserTurnPort({ port });
+    const { get, appendTurnEvent } = harness({ agents: [autoRow] });
+    const storeImages = vi.fn(async () => [BANNER_STORED]);
+
+    await routeAutoUserTurn({
+      get,
+      input: inputOf({ attachments: [BANNER_INPUT] }),
+      storeImages,
+    });
+
+    expect(storeImages).toHaveBeenCalledWith({ sessionId: SESSION, images: [BANNER_INPUT] });
+    expect(port).toHaveBeenCalledWith(expect.objectContaining({ images: [BANNER_STORED] }));
+    expect(appendTurnEvent).toHaveBeenCalledWith(
+      AUTO_AGENT,
+      SESSION,
+      expect.objectContaining({ kind: 'operator_text', attachments: [BANNER_STORED] }),
+    );
+  });
+
+  it('refuses the message when the images cannot be kept, and Auto hears nothing', async () => {
+    const port = vi.fn<AutoUserTurnPort>(async () => 'queued');
+    registerAutoUserTurnPort({ port });
+    const { get, reportError } = harness({ agents: [autoRow] });
+
+    await expect(
+      routeAutoUserTurn({
+        get,
+        input: inputOf({ attachments: [BANNER_INPUT] }),
+        storeImages: async () => {
+          throw new Error('disk full');
+        },
+      }),
+    ).rejects.toThrow(AUTO_IMAGES_LOST_MESSAGE);
 
     expect(port).not.toHaveBeenCalled();
     expect(reportError).toHaveBeenCalledTimes(1);

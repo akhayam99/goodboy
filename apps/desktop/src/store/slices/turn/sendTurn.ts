@@ -18,6 +18,7 @@ import { closeTurnCapture } from './closeTurnCapture';
 import { settleTurn } from './settleTurn';
 import { continueOnRequestedMount } from './continueOnRequestedMount';
 import { haltRunawayWorkflowAgent } from './haltRunawayWorkflowAgent';
+import { noticeAutoOfChildTurn } from '../auto/noticeAutoOfChildTurn';
 import { routeAutoUserTurn } from '../auto/routeAutoUserTurn';
 
 type RunOnceParams = Readonly<{
@@ -76,6 +77,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     if (autoResult !== null) {
       return autoResult;
     }
+    await noticeAutoOfChildTurn({ get, input });
     if (input.agentId !== undefined && input.origin === 'workflow') {
       const claim = claimWorkflowTurn({ agentId: input.agentId, nowMs: Date.now() });
       if (claim === 'tripped') {

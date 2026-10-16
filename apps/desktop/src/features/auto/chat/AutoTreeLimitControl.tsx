@@ -1,6 +1,7 @@
 import type { AutoBudgetFacts } from '@goodboy/core';
 import type { AutoTreeId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
+import { autoLimitOpenEvent } from './autoLimitOpenEvent';
 import { AutoTreeLimitPopover } from './AutoTreeLimitPopover';
 import { useAutoTreeCap } from './useAutoTreeCap';
 
@@ -15,5 +16,12 @@ export const AutoTreeLimitControl = ({ sessionId, treeId, facts }: Props) => {
   const hasSessionBudget = useAppStore(
     (state) => (state.sessionBudgets[sessionId]?.softCapUsd ?? null) !== null,
   );
-  return <AutoTreeLimitPopover facts={facts} isFromSession={hasSessionBudget} onSave={save} />;
+  return (
+    <AutoTreeLimitPopover
+      facts={facts}
+      isFromSession={hasSessionBudget}
+      openEvent={autoLimitOpenEvent({ treeId })}
+      onSave={save}
+    />
+  );
 };

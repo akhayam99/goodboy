@@ -13,6 +13,7 @@ export type RailRow = Readonly<{
   kind: 'root' | 'child';
   role: AgentKind;
   label: string;
+  task: string | null;
   node: WorkNodeState;
   word: string;
   tone: Tone;
@@ -40,7 +41,7 @@ type NodeParams = {
   readonly card: DelegationCardModel;
 };
 
-const childNodeOf = ({ card }: NodeParams): WorkNodeState => {
+export const delegationNodeOf = ({ card }: NodeParams): WorkNodeState => {
   switch (card.status.word) {
     case 'Done':
       return 'done';
@@ -126,6 +127,7 @@ const rootRowOf = ({ view, agent, routing }: RootParams): RailRow => {
     kind: 'root',
     role: 'auto',
     label: 'Auto',
+    task: null,
     node,
     word: rootWordOf({ view, facts, isApproval }),
     tone: rootToneOf({ node, isLive }),
@@ -137,6 +139,28 @@ const rootRowOf = ({ view, agent, routing }: RootParams): RailRow => {
     isLive,
   };
 };
+
+type RestingParams = RailRouting & {
+  readonly agentId: AgentId;
+};
+
+export const restingRootRowOf = ({ agentId, provider, model, effort }: RestingParams): RailRow => ({
+  id: agentId,
+  agentId,
+  kind: 'root',
+  role: 'auto',
+  label: 'Auto',
+  task: null,
+  node: 'ready',
+  word: 'Ready',
+  tone: 'neutral',
+  provider,
+  model,
+  effort,
+  startedAtMs: null,
+  endedAtMs: null,
+  isLive: false,
+});
 
 export const railRowsOf = ({ view, agents, rootRouting }: RowParams): ReadonlyArray<RailRow> => {
   const rootAgent = agents.find((agent) => agent.id === view.tree.rootAgentId) ?? null;
@@ -154,7 +178,8 @@ export const railRowsOf = ({ view, agents, rootRouting }: RowParams): ReadonlyAr
     kind: 'child',
     role: card.role,
     label: card.roleLabel,
-    node: childNodeOf({ card }),
+    task: card.task,
+    node: delegationNodeOf({ card }),
     word: card.status.word,
     tone: card.status.tone,
     provider: card.provider,

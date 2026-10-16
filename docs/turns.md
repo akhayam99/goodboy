@@ -543,7 +543,12 @@ behavior beyond rendering:
 - `operator_text` is display only: the words a user typed to an Auto agent,
   written when Auto takes the message. It is not a provider turn, so nothing
   that resumes or counts turns reads it, and the question ordinals (which count
-  `user_text` events) ignore it (`isOperatorEcho` on the drawn bubble).
+  `user_text` events) ignore it (`isOperatorEcho` on the drawn bubble). Its
+  `attachments` are the images the message carried, already written, so the
+  bubble shows them.
+- `storedAttachments` on `sendTurn` are images written before the turn (an Auto
+  delivery and a child brief). `prepareTurn` uses them as they are, like a
+  retry's `attachmentRefs`, and names each by its full path in the prompt.
 - `step_transition` reports a workflow run advancing, with the context it
   carried forward.
 - `error` carries `retryable`; only a retryable error offers Retry in the

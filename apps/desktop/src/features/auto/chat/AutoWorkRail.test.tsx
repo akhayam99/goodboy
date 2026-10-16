@@ -117,44 +117,38 @@ describe('railRowsOf', () => {
 });
 
 type RailParams = {
-  readonly isCollapsed?: boolean;
   readonly onOpen?: () => void;
-  readonly onToggle?: () => void;
 };
 
-const renderRail = ({
-  isCollapsed = false,
-  onOpen = vi.fn(),
-  onToggle = vi.fn(),
-}: RailParams = {}) =>
+const renderRail = ({ onOpen = vi.fn() }: RailParams = {}) =>
   render(
     <AutoWorkRail
       rows={railRowsOf({ view: WORKING, agents: [], rootRouting: ROOT_ROUTING })}
-      budget={WORKING.budget}
-      limitControl={null}
       selectedAgentId={FIXTURE_ROOT}
-      isCollapsed={isCollapsed}
-      onToggleCollapsed={onToggle}
       onOpen={onOpen}
     />,
   );
 
 describe('AutoWorkRail', () => {
-  it('draws every row expanded with no group row, one spine layer and the tree budget', () => {
+  it('draws every row expanded with no group row and one spine layer', () => {
     renderRail();
 
-    const rail = screen.getByRole('complementary', { name: 'Work' });
-    expect(within(rail).getByRole('heading', { name: /Work/ }).textContent).toContain('4');
+    const rail = screen.getByRole('list', { name: 'Work' });
     expect(within(rail).getAllByRole('listitem')).toHaveLength(4);
     expect(within(rail).queryByText(/subagents/i)).toBeNull();
     expect(
-      rail.querySelectorAll('svg[aria-hidden] [data-testid="auto-rail-segment"]'),
+      document.querySelectorAll('svg[aria-hidden] [data-testid="auto-rail-segment"]'),
     ).toHaveLength(3);
-    const budget = within(rail).getByRole('region', { name: 'Tree budget' });
-    expect(within(budget).getByText('Limit $10.00')).toBeDefined();
-    expect(within(budget).getByText('Spent $0.27')).toBeDefined();
-    expect(within(budget).getByText('Reserved $4.50')).toBeDefined();
-    expect(within(budget).getByText('Left $5.23')).toBeDefined();
+  });
+
+  it('marks the row of the agent on screen as current', () => {
+    renderRail();
+
+    const current = screen
+      .getAllByRole('listitem')
+      .filter((item) => item.getAttribute('aria-current') === 'true');
+    expect(current).toHaveLength(1);
+    expect(current[0]?.textContent).toContain('Auto');
   });
 
   it('draws the spine in the tone of the ring it reaches, dashed for the queued one', () => {
@@ -177,17 +171,5 @@ describe('AutoWorkRail', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Show Implementer' }));
 
     expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ label: 'Implementer' }));
-  });
-
-  it('collapses to a strip of rings and drops the budget', () => {
-    const onToggle = vi.fn();
-    renderRail({ isCollapsed: true, onToggle });
-
-    const rail = screen.getByRole('complementary', { name: 'Work' });
-    expect(rail.getAttribute('data-mode')).toBe('strip');
-    expect(within(rail).getAllByRole('button', { name: /^Show / })).toHaveLength(4);
-    expect(within(rail).queryByRole('region', { name: 'Tree budget' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Expand the work list' }));
-    expect(onToggle).toHaveBeenCalledOnce();
   });
 });

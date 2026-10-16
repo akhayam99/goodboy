@@ -4,6 +4,7 @@ import { forward } from './forward';
 import { goToHistory } from './goToHistory';
 import { leaveSessionLevel } from './leaveSessionLevel';
 import { navigate } from './navigate';
+import { pickSidebarLevel } from './pickSidebarLevel';
 import { restoreLocation } from './restoreLocation';
 import { amendStudio, closeStudio, openStudio, switchStudio } from './studioMoves';
 import { up } from './up';
@@ -18,6 +19,7 @@ export const createNavigationSlice = ({ set, get }: SliceDeps) => {
     up: up(set, get),
     amendFocus: amendFocus(set, get),
     leaveSessionLevel: leaveSessionLevel(set, get),
+    pickSidebarLevel: pickSidebarLevel(set, get),
     openStudio: openStudio(set, get),
     amendStudio: amendStudio(set, get),
     switchStudio: switchStudio(set, get),

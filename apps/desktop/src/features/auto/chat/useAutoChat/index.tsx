@@ -3,14 +3,14 @@ import type { Agent, Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 import { autoTreeOfAgent, type AutoTreeOfAgent } from '../../autoTreeOfAgent';
-import { useAutoTreeViews } from '../../useAutoTreeViews';
-import { AutoWaitingStrip } from '../AutoWaitingStrip';
+import { useAutoTrees } from '../../useAutoTrees';
+import { AutoDelegationLines } from '../AutoDelegationLines';
+import { AutoProjectAsk } from '../AutoProjectAsk';
+import { AutoTail } from '../AutoTail';
+import { projectAskOf } from '../projectAskOf';
 import { batchesOf } from '../batchesOf';
 import { composerPlaceholderOf } from '../composerPlaceholderOf';
-import { DelegationBatch } from '../DelegationBatch';
 import { useAutoTreeActions } from '../useAutoTreeActions';
-import { waitingTextOf } from '../waitingTextOf';
-import type { ReactNode } from 'react';
 
 type Params = {
   readonly session: Session;
@@ -20,56 +20,51 @@ type Params = {
 export type AutoChat = Readonly<{
   tree: AutoTreeOfAgent | null;
   insertions: ReadonlyArray<TranscriptInsertion> | undefined;
-  composerLead: ReactNode | undefined;
   composerPlaceholder: string | undefined;
 }>;
 
 export const useAutoChat = ({ session, agent }: Params): AutoChat => {
-  const views = useAutoTreeViews({ sessionId: session.id });
+  const views = useAutoTrees({ sessionId: session.id });
   const agents = useAppStore((state) => state.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
-  const actions = useAutoTreeActions({ sessionId: session.id });
-  const { openAgent, openArtifact } = actions;
+  const { openChild, openArtifact } = useAutoTreeActions({ sessionId: session.id });
   const tree = useMemo(() => autoTreeOfAgent({ views, agentId: agent.id }), [views, agent.id]);
   const view = tree?.kind === 'root' ? tree.view : null;
 
-  const insertions = useMemo(
-    () =>
-      view === null
-        ? undefined
-        : batchesOf({ view }).map((batch): TranscriptInsertion => ({
-            key: batch.key,
-            beforeMs: batch.beforeMs,
-            node: (
-              <DelegationBatch
-                view={view}
-                delegations={batch.delegations}
-                agents={agents}
-                onOpenAgent={(card) => openAgent(card.childAgentId)}
-                onOpenArtifact={openArtifact}
-              />
-            ),
-          })),
-    [view, agents, openAgent, openArtifact],
-  );
-
-  const isRootTurnRunning = useAppStore(
-    (state) => state.agentTurnState[agent.id]?.kind === 'running',
-  );
-  const waitingText = view === null || isRootTurnRunning ? null : waitingTextOf({ view });
-  const composerLead =
-    view === null || waitingText === null ? undefined : (
-      <AutoWaitingStrip
-        text={waitingText}
-        isStopping={actions.isStopping}
-        onChangeApproach={() => void actions.changeApproach({ view })}
-        onStop={() => void actions.stop({ view })}
-      />
-    );
+  const insertions = useMemo(() => {
+    if (view === null) {
+      return undefined;
+    }
+    const lines = batchesOf({ view }).map((batch): TranscriptInsertion => ({
+      key: batch.key,
+      beforeMs: batch.beforeMs,
+      node: (
+        <AutoDelegationLines
+          sessionId={session.id}
+          view={view}
+          delegations={batch.delegations}
+          agents={agents}
+          onOpenChild={openChild}
+          onOpenArtifact={openArtifact}
+        />
+      ),
+    }));
+    const ask = projectAskOf({ view });
+    const tail: TranscriptInsertion = {
+      key: `auto-tail-${view.tree.id}`,
+      beforeMs: null,
+      node:
+        ask === null ? (
+          <AutoTail sessionId={session.id} view={view} rootAgent={agent} />
+        ) : (
+          <AutoProjectAsk sessionId={session.id} rootAgentId={agent.id} ask={ask} />
+        ),
+    };
+    return [...lines, tail];
+  }, [view, agents, agent, openChild, openArtifact, session.id]);
 
   return {
     tree,
     insertions,
-    composerLead,
     composerPlaceholder: view === null ? undefined : composerPlaceholderOf({ view }),
   };
 };

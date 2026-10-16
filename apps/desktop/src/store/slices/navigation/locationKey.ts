@@ -5,6 +5,7 @@ import type { Place, SessionTarget, SessionView } from './types';
 const LENS_ADDRESS: Record<LensKind, string> = {
   questions: 'questions',
   agents: 'agents',
+  auto: 'auto',
   workflows: 'workflows',
   review: 'review',
   plans: 'artifacts',

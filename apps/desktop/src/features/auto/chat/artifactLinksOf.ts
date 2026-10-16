@@ -1,7 +1,14 @@
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
-import { artifactApprovalOf } from './artifactApprovalOf';
-import type { ArtifactLinkModel } from './ArtifactLinkRow';
+import { artifactApprovalOf, type ArtifactApprovalView } from './artifactApprovalOf';
 import type { DelegationCardModel } from './delegationCardOf';
+
+export type ArtifactLinkModel = Readonly<{
+  artifactId: string;
+  kindLabel: string;
+  title: string;
+  revision: number | null;
+  approval: ArtifactApprovalView | null;
+}>;
 
 const KIND_LABEL: ReadonlyMap<string, string> = new Map([
   ['plan', 'Plan'],

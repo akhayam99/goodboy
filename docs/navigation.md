@@ -638,8 +638,11 @@ and the hidden one is `inert`.
   Archive and Delete), the pages, then Projects and Linked. Only one level
   shows, so a session never carries a nested card in the workspace list.
 - **The pages** come from one registry (`features/session/pageRegistry.ts`):
-  Overview, File versions in a branchless session only, Runs, Agents,
-  Artifacts, and Questions last while one is open. A page row ends in one
+  Overview, File versions in a branchless session only, Runs, Agents, Auto
+  agents (with a neutral Experimental chip, only while Auto is on or the
+  session has an Auto agent), Artifacts, and Questions last while one is open.
+  Agents lists standalone agents only; an Auto agent lives under Auto agents
+  (`isAgentsPageKind`, `agentHomeLens` sends it to the `auto` lens). A page row ends in one
   fixed 40px right-aligned slot: the count in tabular gray, a 6px info dot
   before it while something runs, a warning dot on Questions. The count word
   ("1 running", "4 artifacts") is the row's tooltip. Every number comes from
@@ -695,9 +698,10 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   selected and the session row unselected (`useSidebarLevel`).
 - **Folded (⌘B, 44px).** The rail shows the current level as icons with right
   tooltips: on level 2 the back icon, then one icon per worktree entry
-  (`RailWorktreeLevel`) or per run step (`RailRunLevel`); on level 1 the back
-  icon first, then one icon per page with its dot; on level 0 New, the doors
-  and the pinned session nodes.
+  (`RailWorktreeLevel`) or per run step (`RailRunLevel`); on the Auto level
+  the back icon, then one ring per rail row with its role and state in the
+  tooltip (`RailAutoLevel`); on level 1 the back icon first, then one icon per
+  page with its dot; on level 0 New, the doors and the pinned session nodes.
   The changed file tree needs the open sidebar (or its peek); the diff and its
   keys work without it.
 - **Level 2, a preset run.** Opening a run with a fixed step list (a saved
@@ -716,6 +720,22 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   sidebar) calls `leaveRunLevel`: the Runs list, session level, a new history
   entry. Esc on the run Overview does the same. An orchestrated run does not
   drill: it keeps today's run page under the session level.
+- **The Auto level (level 2).** Auto agents opens the session's only Auto
+  conversation and drills the sidebar into it (`openAutoAgents`); with none or
+  several it opens the Auto agents page (`AutoAgentsPane`: one grid row per
+  conversation with its state word, then Start Auto while Auto is on), and a
+  row there drills in. The Auto level (`SideColumn/AutoLevel`) reads: the back
+  row `‹ <session title>`, the Work rail exactly as the chat had it (Auto
+  first, then each child with its state word, queued children on the dashed
+  spine), the empty state "No agents started yet" while Auto has no child, and
+  the foot "Limit $10.00 · $5.23 left" (`AutoLimitFoot`; the limit opens the
+  limit popover). It shows while the center is an Auto agent or one of its
+  children (`useIsOnAutoAgent`) unless the user went back: the back row and ⌘[
+  write `sidebar-level: session` (`pickSidebarLevel`), which keeps the Auto
+  chat in the center with Auto agents selected; a click on Auto agents drills
+  in again. The Agents key (`lens.agents`) pressed again on Agents opens Auto
+  agents while it shows (`isAutoAgentsShown`), and pressed on Auto agents goes
+  back to the Overview.
 
 The tools (Terminal, Explore, Scripts) are panes, not pages: they open from
 the pane cluster at the right of every session header (see The pane cluster).
@@ -1516,11 +1536,10 @@ ticks when an agent finishes a turn, not when a session row exists.
 
 Auto is described in [auto.md](auto.md); this is where it sits. Settings, App,
 General ends with the band **Experiments** (`ExperimentsBand`), drawn only
-while the release gate is open. The agent overlay (`AgentOverlay`) wraps the
-detail pane of an Auto agent, and of each child of an Auto tree, in
-`AutoWorkRailHost`, which draws the Work rail on its left when the tree has a
-child. The chat of an Auto agent gets its delegation cards through the
-`insertions` prop of `ChatView` and its wait line through `composerLead`. The
+while the release gate is open. The Work rail of an Auto agent, and of each
+child of an Auto tree, is the sidebar's Auto level (see Sidebar levels), never
+a second rail beside the chat. The chat of an Auto agent gets its delegation lines and its
+tail through the `insertions` prop of `ChatView` (`useAutoChat`). The
 plan drawer swaps its toolbar for `AutoPlanToolbar` when the plan belongs to an
 Auto tree, and the Overview timeline hides the children of a tree and draws its
 state from `autoFactsByAgentId`.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { brandId, type IsoDateTime, type ProviderRunId, type TurnState } from '@goodboy/types';
-import { aDelegation, aView } from '../../auto/testing/autoViewFixtures';
+import { aDelegation, aPlanRow, aView } from '../../auto/testing/autoViewFixtures';
 import { agentTurnLive } from './agentTurnLive';
 import { autoChildLive } from './autoChildLive';
 import { autoTreeLive } from './autoTreeLive';
@@ -109,6 +109,28 @@ describe('autoTreeLive', () => {
     });
     const facts = autoTreeLive({ ...base, view, rootTurn: null });
     expect(facts).toMatchObject({ state: 'waiting', phrase: 'Waiting for Implementer' });
+    expect(idsOf(facts)).toEqual(['changeApproach', 'stopAuto']);
+  });
+
+  it('says a refused hand over in the user voice while Auto chooses again', () => {
+    const view = {
+      ...aView({ phase: 'waiting' }),
+      pendingRefusal: { action: 'delegate', code: 'mount_ambiguous', roles: ['implementer'] },
+    };
+    const facts = autoTreeLive({ ...base, view, rootTurn: null });
+    expect(facts?.state).toBe('working');
+    expect(facts?.phrase).toMatch(/^Auto tried to start an Implementer\. Not started:/);
+  });
+
+  it('leaves the tail to the plan ask while a plan waits for approval', () => {
+    const view = aView({
+      phase: 'waiting',
+      artifacts: [aPlanRow()],
+      delegations: [
+        aDelegation({ key: 'planner', role: 'planner', state: 'settled', outcome: 'completed' }),
+      ],
+    });
+    expect(autoTreeLive({ ...base, view, rootTurn: null })).toBeNull();
   });
 
   it('pauses at the limit with Raise limit first', () => {

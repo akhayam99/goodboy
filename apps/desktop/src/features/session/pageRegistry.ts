@@ -12,6 +12,7 @@ type PageId =
   | 'files'
   | 'runs'
   | 'agents'
+  | 'auto'
   | 'artifacts'
   | 'questions'
   | 'explore'
@@ -80,29 +81,37 @@ const FILE_VERSIONS_PAGE: Page = {
   currentLenses: ['files'],
 };
 
-const WORK_AFTER_BRANCH: ReadonlyArray<Page> = [
-  lensPage({
-    id: 'runs',
-    lens: 'workflows',
-    shortcut: 'lens.workflows',
-    group: 'work',
-    count: 'runs',
-  }),
-  lensPage({
-    id: 'agents',
-    lens: 'agents',
-    shortcut: 'lens.agents',
-    group: 'work',
-    count: 'agents',
-  }),
-  lensPage({
-    id: 'artifacts',
-    lens: 'plans',
-    shortcut: 'lens.plans',
-    group: 'work',
-    count: 'artifacts',
-  }),
-];
+const RUNS_PAGE = lensPage({
+  id: 'runs',
+  lens: 'workflows',
+  shortcut: 'lens.workflows',
+  group: 'work',
+  count: 'runs',
+});
+
+const AGENTS_PAGE = lensPage({
+  id: 'agents',
+  lens: 'agents',
+  shortcut: 'lens.agents',
+  group: 'work',
+  count: 'agents',
+});
+
+const AUTO_PAGE = lensPage({
+  id: 'auto',
+  lens: 'auto',
+  shortcut: 'lens.agents',
+  group: 'work',
+  count: 'auto',
+});
+
+const ARTIFACTS_PAGE = lensPage({
+  id: 'artifacts',
+  lens: 'plans',
+  shortcut: 'lens.plans',
+  group: 'work',
+  count: 'artifacts',
+});
 
 const REST: ReadonlyArray<Page> = [
   lensPage({
@@ -152,12 +161,19 @@ const REST: ReadonlyArray<Page> = [
 
 type ColumnParams = {
   readonly isBranchless: boolean;
+  readonly hasAutoAgents?: boolean;
 };
 
-export const columnPagesOf = ({ isBranchless }: ColumnParams): ReadonlyArray<Page> => [
+export const columnPagesOf = ({
+  isBranchless,
+  hasAutoAgents = false,
+}: ColumnParams): ReadonlyArray<Page> => [
   OVERVIEW_PAGE,
   ...(isBranchless ? [FILE_VERSIONS_PAGE] : []),
-  ...WORK_AFTER_BRANCH,
+  RUNS_PAGE,
+  AGENTS_PAGE,
+  ...(hasAutoAgents ? [AUTO_PAGE] : []),
+  ARTIFACTS_PAGE,
 ];
 
 type PagesParams = ColumnParams & {
@@ -167,10 +183,11 @@ type PagesParams = ColumnParams & {
 
 export const pagesOf = ({
   isBranchless,
+  hasAutoAgents = false,
   destinations,
   hasOpenQuestions,
 }: PagesParams): ReadonlyArray<Page> => [
-  ...columnPagesOf({ isBranchless }),
+  ...columnPagesOf({ isBranchless, hasAutoAgents }),
   ...REST.filter(
     (page) =>
       (page.id !== 'questions' || hasOpenQuestions) &&

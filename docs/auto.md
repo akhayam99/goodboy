@@ -148,8 +148,18 @@ row, **What Auto was told**, never as a user bubble; opening it shows the text
 as sent. A transcript written before this change has no origin on its events, so
 its delivery text still renders as a bubble: there is no text sniffing. A
 message the runtime
-cannot take, or one with files, is refused with "Auto didn't get your message"
-and the composer keeps its text. A turn that is not an operator message, a
+cannot take, or one with a file that is not an image, is refused with "Auto didn't get your
+message" and the composer keeps its text.
+
+**Images.** A message to Auto may carry images. `routeAutoUserTurn` writes them once to the
+session's scratch folder (`storeAutoImages`), so they have a full path, queues them on the `user`
+outbox row (`images` in the payload) and shows them on the bubble (`operator_text` with
+`attachments`). The delivery that reads the row hands them to Auto's turn (`storedAttachments` on
+`sendTurn`, listed by full path in the prompt, never written again), and every child Auto starts
+after that message gets them in its brief (`childImagesOf`: the images of the accepted user rows
+of the tree's generation up to the delegation); the child pane names them as chips. An image that
+cannot be written refuses the message with "Auto could not keep the images. Attach them again.":
+nothing is dropped silently. A turn that is not an operator message, a
 child, or an Auto agent in a window with no runtime (the main window owns it) is
 left to the plain turn.
 
@@ -160,7 +170,8 @@ cost of the whole tree. The word follows the tree phase:
 **Deciding what to do**, **Starting agents**, **Waiting for Implementer and
 Tester**, **Needs your approval**, **Reading the results**, **Blocked, open the
 chat**, **Stopping**, **Stopped by you**, **Idle**, **Finished by you**. The
-children are not rows of the Overview; they live in the Work rail of the chat.
+children are not rows of the Overview; they live in the Work rail, the sidebar's
+Auto level.
 
 Auto never finishes itself. A tree that rests after its agents settled (stored
 phase `done`) reads **Idle** in the row and the rail root, never Done. **Mark finished** in the agent menu
@@ -173,14 +184,20 @@ writing to it reopens it to **Deciding**.
 
 ## The chat
 
-- **Work rail.** The chat of an Auto agent, and of each of its children, has the
-  Work rail on its left. Auto comes first, then one row per child, all expanded
-  and with no group row. A row has the role, the name and state on the first
-  line, the model and time on the second. One spine runs from ring edge to ring
-  edge in the tone of the ring it reaches: green when done, blue when working,
-  dashed when queued. The foot is the tree budget, **Spent**, **Reserved** and
-  **Left** from `treeSpend`, read through `autoBudgetOf`. The rail can fold to a
-  strip of rings, and it is not drawn for an Auto that only answers.
+- **Work rail.** The Work rail is the sidebar's Auto level
+  ([navigation.md](navigation.md), Sidebar levels): opening Auto agents, an Auto
+  agent or one of its children drills the sidebar into it, with the back row
+  `‹ <session title>` on top. Auto comes first, then one row per child, all
+  expanded and with no group row. A row has the role, the name and state on the
+  first line, the task Auto gave and the time on the second, with the model in
+  the row's tooltip. Auto's own row keeps its model on the second line, since
+  its state is said once, on the tail. One spine runs from ring edge
+  to ring edge in the tone of the ring it reaches: green when done, blue when
+  working, dashed when queued. The rail is always there: while Auto has no
+  child it shows Auto alone ("Ready" before a tree exists) and "No agents
+  started yet". The foot is one line, **Limit $10.00 · $5.23 left** (No cap:
+  **No cap · $3.82 spent**), from `autoBudgetOf`; Spent and Reserved are in
+  the limit popover.
 - **Changing the limit.** The **Limit** in the rail foot is a button. Its popover
   offers $5, $10, $20 or a custom amount (at most 2 decimals) and applies it on
   **Set limit**, also while the tree runs. An amount under spent plus reserved
@@ -194,37 +211,65 @@ writing to it reopens it to **Deciding**.
   resumes after a raise. The cap changes only this conversation; the workspace
   cap stays the start value of the next one.
 - **No cap.** The popover also offers **No cap**, stored as a NULL `cap_usd`
-  (m231), never a sentinel. The foot then reads **No cap** with **Spent** and
-  **Reserved** and no bar or **Left**, and the prompt line says "no cap" and
+  (m231), never a sentinel. The foot then reads **No cap** with what is spent
+  and no **Left**, and the prompt line says "no cap" and
   never prints a left. The root turn claim and child admission pass a NULL cap
   (`autoBudgetCoversSql`), and the gates read it as unbounded
   (`autoRemainingForGates`); the per attempt ceilings still apply, so one child
   never runs unbounded. While a session budget exists, No cap is off and says the
   session budget sets the limit. A tree is only created with a number; NULL
   comes only from this choice.
-- **Delegation cards.** Each delegation is a card in the transcript: role, model
-  and effort, a live time, one state, Auto's reason, a note when the app changed
-  the model it asked for, **Reserved up to** while it works, and when it
-  settles its summary, files changed, checks with their source, artifacts and
-  open questions, then **Returned to Auto** with the cost and **Open chat**. A
-  failed, blocked, timed out or stopped child says why in one sentence. A
-  revision is the same producer: **Planner, revising v2**, then **Planner, v2
-  ready**. Cards read the delegation, attempt and agent rows, never the message
-  text, so a reload draws the same cards.
-- **Where a card sits.** A card goes before the first message sent after its
-  batch settled, and an open batch goes at the end.
-- **While Auto waits.** A line above the composer says **Waiting for Implementer
-  and Tester** with **Change approach** and **Stop**, and the composer says
-  "Queued: Auto sees it with the next results". A plan that waits for approval
-  changes it to "Message Auto, or describe changes to plan v1". In the
-  `deciding` phase with no root turn running the same line says **Deciding
-  what to do next**; while Auto's own turn runs the line hides and the
-  thinking line at the end of the transcript speaks instead, so the state is
-  said once.
-- **A child opened from a card** reads as Started by Auto. It can be read and
-  stopped there, has no composer, and **Open Auto** goes back. When it
-  stopped, its notice offers **Retry through Auto**, which asks Auto to retry
-  it; it never runs a plain turn on the child (`docs/turns.md`, resume rules).
+- **The page.** The header is the goal as the title and the provider mark, with
+  no role, Experimental or state chip; **Mark finished** shows there as a
+  word only while Auto rests (the registry verb `agent.markAutoFinished`, left
+  out of the `⋯` then so it is said once), next to **View transcript** and `⋯`.
+- **Delegation lines.** Each delegation is one bare line in the conversation
+  (`AutoDelegationLines`): the child's node, **Delegated to**, its role chip and
+  **See more**. A revision is the same producer with "revising v2", then "v2
+  ready". The child's state word is on its rail row, never on the line; its
+  reason, model, reserved amount and result are in its pane. Lines read the
+  delegation, attempt and agent rows, never the message text, so a reload draws
+  the same lines. A revise that waits for an OK carries **Confirm** and
+  **Cancel** under its line, and a plan that waits for approval carries the
+  ask **Plan v1 needs your approval** with the plan title (opens the plan),
+  **Ask for changes** and **Approve plan** (`AutoPlanAsk`, the same
+  `useAutoPlanApproval` the plan drawer uses).
+- **Where a line sits.** A batch goes before the first message sent after it
+  settled, and an open batch goes at the end.
+- **The tail.** Auto's state is said once, on the tail at the end of the
+  conversation (`AutoTail`, phrases from `autoTreeLive`): **Waiting for
+  Implementer and Tester** with **Change approach** and **Stop Auto and its
+  agents**, **Starting agents**, **Reading the results**, **Deciding what to do
+  next**, a refused hand over in the user voice, **Paused at the limit: $4.80
+  of $5.00** with **Raise to $10** and **Change limit** (opens the limit
+  popover of the rail foot), **Blocked, open the chat** with **View
+  transcript**, **Idle**, and **Finished. Write to reopen.**. While Auto's own
+  turn runs, the thinking line of the conversation speaks instead, and while a
+  plan waits for approval the ask is the state. The composer says "Queued: Auto
+  sees it with the next results" while Auto waits, or "Message Auto, or
+  describe changes to plan v1".
+- **A child opens in the pane** (drawer kind `auto-child`, `AutoChildPane`)
+  from its rail row or its line's **See more**, so Auto's conversation stays in
+  view; another child swaps in place, the Auto row of the rail closes it, Esc
+  closes it, and its rail row is the selected one. The pane title is the task
+  Auto gave it (the role when the task is missing); on top, why Auto chose that role, the model it runs on with its
+  provider, **Reserved up to** while it works and the note when the app changed
+  the model (`AutoChildBrief`); then the child's conversation; at the end what
+  came back (summary, files changed, checks with their source, open questions,
+  `DelegationResult`) and its tail (`autoChildLive`: its live line with **Stop
+  agent**, **Failed: ...** or **Stopped** with **Retry through Auto**, or
+  **Returned to Auto**). **Open full** puts the child in the center with the
+  Auto level kept and its row selected; there the notice reads the same and
+  **Open Auto** goes back.
+- **Talking to a child.** The pane and the child page carry a composer,
+  "Message Implementer", under the line "Started by Auto. Auto sees what you
+  tell it." A message is a plain turn on the child (queued while its turn
+  runs), and `noticeAutoOfChildTurn` (called by `sendTurn`) also hands Auto a
+  note through the user turn port: "I wrote to the Implementer you started:
+  ...", read with Auto's next delivery. A lost note is reported and the
+  message still goes to the child. **Retry through Auto** asks Auto to retry
+  a stopped child; it never runs a plain turn on it (`docs/turns.md`, resume
+  rules).
 - **No permission picker in the tree.** The composer of Auto and of its
   children hides the session's permission mode picker: a tree member runs
   with its role's access, not the session mode.
@@ -248,7 +293,7 @@ rework the same plan into the next version.
 
 ## Confirming
 
-A revise Auto is not sure about waits for an OK in its card: "Change plan
+A revise Auto is not sure about waits for an OK under its delegation line: "Change plan
 Retry-safe credit retries at v2?" with **Confirm** and **Cancel**. The answer
 goes through one port, `registerDelegationDecisionPort`, which the runtime
 registers; without a port the click says Auto cannot take the answer yet.
@@ -303,10 +348,21 @@ budget or limit refusal and a block that does not parse become a `refusal` row i
 delivered with the next turn under REFUSED, NOT DONE; such a turn counts as no progress, so
 `noProgressStreak` bounds retries. A refusal row keeps the action, the code and the roles of the
 refused children; while it is pending for the current generation, `readAutoTreeViews` reads it as
-`pendingRefusal` and the wait strip says it in the user voice (`refusalNoticeOf`, reasons from
+`pendingRefusal` and the tail says it in the user voice (`refusalNoticeOf`, reasons from
 `AUTO_REFUSAL_USER_REASON`): "Auto tried to start an Implementer. Not started: more than one
-project fits and it did not say which. Auto is choosing again." Once Auto's next turn takes the
-row, the line goes, and an admitted retry draws its delegation card. The mount of a child
+project fits and it did not say which. Auto is choosing again." A refusal about the project
+(`mount_ambiguous`, `mount_missing`) is asked instead (`projectAskOf`, `AutoProjectAsk`): "Where
+should the Implementer work?" lists the session's projects with their branch, **Another
+project...** opens a filter over the workspace's other projects ("Not in this session. A worktree
+is created from main."), and the primary follows the choice (**Choose a project** disabled, **Use
+payments-api**, **Use both**, **Use 3 projects**) next to **No project, just answer** and
+**Discard request**, one action row under the list. The composer reads "Pick a project, or write
+to Auto", so a reply in the chat answers too. The answer is a message to Auto through
+`sendTurn` ("Use payments-api and ledger-core: start one Implementer per project."); a project not
+in the session is mounted first (`ensureProjectMounted`, the button says "Creating a worktree for
+notify-relay from main"), and a failure keeps the ask with the reason. The ask then collapses to
+its answered line. Once Auto's next turn takes the
+row, the line goes, and an admitted retry draws its delegation line. The mount of a child
 (`pickAutoMount`): a named mount wins; a reader without one works in the tree's primary mount; a
 writer without one goes to the only usable mount, is refused `mount_ambiguous` when more than
 one fits (Auto never guesses a write) and `mount_missing` when none does. The refusal counters (`refusals_used`, the limit on refusals)
@@ -314,7 +370,7 @@ move once per generation and run, so a duplicate settle of the same turn cannot 
 with role, state and age, questions waiting, the budget, and a `MOUNTS:` line listing each usable
 mount as `id (project, branch)` from `buildMountsLine`) and carries the artifact text of each
 result, cut when long, so a provider that does not resume sessions still has its memory. The
-`<<auto>>` block is hidden in the transcript like the other markers; the delegation cards show
+`<<auto>>` block is hidden in the transcript like the other markers; the delegation lines show
 what it did. See [query-bridge.md](query-bridge.md) for the bridge Auto does not use.
 
 ## Providers

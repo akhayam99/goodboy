@@ -17,6 +17,7 @@ const DEPTH: Readonly<Record<SidebarLevel, number>> = {
   session: 1,
   worktree: 2,
   run: 2,
+  auto: 2,
 };
 
 type ShownParams = Props;

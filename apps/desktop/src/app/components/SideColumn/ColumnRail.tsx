@@ -14,6 +14,7 @@ import { RailSessions } from './RailSessions';
 import { ReportBugButton } from './ReportBugButton';
 import { COLUMN_DOORS, openColumnDoor, type ColumnActions } from './columnDoors';
 import { RailRunLevel } from './RailRunLevel';
+import { RailAutoLevel } from './RailAutoLevel';
 import { RailSessionLevel } from './RailSessionLevel';
 import { RailWorktreeLevel } from './RailWorktreeLevel';
 import { usePresetRunFocus } from '../../../features/session/hooks/usePresetRunFocus';
@@ -52,29 +53,33 @@ export const ColumnRail = ({
   const level = useSidebarLevel({ place, currentSessionId });
   const currentSession = useCurrentSession();
   const runFocus = usePresetRunFocus({ sessionId: currentSessionId });
-  const isCurrentSession = currentSession !== null && currentSession.id === currentSessionId;
-  const isSessionLevel = level !== 'workspace' && level !== 'run' && isCurrentSession;
-  const isWorktreeLevel = isSessionLevel && level === 'worktree';
-  const isRunLevel = level === 'run' && isCurrentSession && runFocus !== null;
+  const isInSession = currentSession !== null && currentSession.id === currentSessionId;
+  const shownLevel = isInSession && (level !== 'run' || runFocus !== null) ? level : 'workspace';
   return (
     <nav
       aria-label="Sidebar"
       data-column-rail=""
-      data-sidebar-level={isRunLevel ? 'run' : isSessionLevel ? level : 'workspace'}
+      data-sidebar-level={shownLevel}
       className="flex h-full min-w-0 shrink-0 flex-col items-center gap-1 py-2"
       style={{ width: COLLAPSED_RAIL_WIDTH }}
     >
       <ColumnToggleButton isCollapsed onToggle={onToggle} />
-      {scope === 'workspace' && isSessionLevel && !isWorktreeLevel && currentSession !== null ? (
+      {scope === 'workspace' && shownLevel === 'session' && currentSession !== null ? (
         <RailSessionLevel session={currentSession} />
       ) : null}
-      {scope === 'workspace' && isWorktreeLevel && currentSession !== null ? (
+      {scope === 'workspace' && shownLevel === 'worktree' && currentSession !== null ? (
         <RailWorktreeLevel session={currentSession} />
       ) : null}
-      {scope === 'workspace' && isRunLevel && currentSession !== null && runFocus !== null ? (
+      {scope === 'workspace' &&
+      shownLevel === 'run' &&
+      currentSession !== null &&
+      runFocus !== null ? (
         <RailRunLevel session={currentSession} focus={runFocus} />
       ) : null}
-      {scope === 'workspace' && !isSessionLevel && !isRunLevel ? (
+      {scope === 'workspace' && shownLevel === 'auto' && currentSession !== null ? (
+        <RailAutoLevel session={currentSession} />
+      ) : null}
+      {scope === 'workspace' && shownLevel === 'workspace' ? (
         <>
           <RailButton
             id="new"

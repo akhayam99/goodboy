@@ -29,6 +29,8 @@ import { closeCurrentLevel } from './closeCurrentLevel';
 import { useGoToBoard } from '../useGoToBoard';
 import { useSessionNavigation } from '../useSessionNavigation';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
+import { isAutoAgentsShown } from '../../../features/auto/isAutoAgentsShown';
+import { openAutoAgents } from '../../../features/auto/openAutoAgents';
 
 type AppShortcutsParams = {
   readonly armDeleteConfirm: () => void;
@@ -137,6 +139,17 @@ export const useAppShortcuts = ({
     openLens({ sessionId, lens: isLeaving ? null : kind });
   }, []);
 
+  const goToAgents = useCallback(() => {
+    const state = useAppStore.getState();
+    const sessionId = state.currentSessionId;
+    const active = sessionId === null ? null : (state.activeLens[sessionId] ?? null);
+    if (sessionId === null || active !== 'agents' || !isAutoAgentsShown({ state, sessionId })) {
+      goToLens({ kind: active === 'auto' ? null : 'agents' });
+      return;
+    }
+    openAutoAgents({ sessionId });
+  }, [goToLens]);
+
   const isExploreSession = useAppStore((state) => {
     const sessionId = state.currentSessionId;
     if (sessionId == null) {
@@ -219,7 +232,7 @@ export const useAppShortcuts = ({
   useShortcut('lens.decisions', () => toggleContext({ tab: 'decisions' }));
   useShortcut('lens.summary', () => toggleContext({ tab: 'summary' }));
   useShortcut('lens.workflows', () => goToLens({ kind: 'workflows' }));
-  useShortcut('lens.agents', () => goToLens({ kind: 'agents' }));
+  useShortcut('lens.agents', goToAgents);
   useShortcut('lens.review', () => goToLens({ kind: 'review' }));
   useShortcut('lens.questions', () => goToLens({ kind: 'questions' }));
   useShortcut('lens.files', () => goToLens({ kind: 'files' }), !isExploreSession);

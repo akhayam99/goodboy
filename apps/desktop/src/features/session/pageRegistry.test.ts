@@ -27,6 +27,16 @@ describe('the session level pages', () => {
     ]);
   });
 
+  it('add Auto agents after Agents only while Auto is on or the session has one', () => {
+    expect(
+      columnPagesOf({ isBranchless: false, hasAutoAgents: true }).map((page) => page.label),
+    ).toEqual(['Overview', 'Runs', 'Agents', 'Auto agents', 'Artifacts']);
+    const auto = columnPagesOf({ isBranchless: false, hasAutoAgents: true }).find(
+      (page) => page.id === 'auto',
+    );
+    expect(auto).toMatchObject({ lens: 'auto', count: 'auto', shortcut: 'lens.agents' });
+  });
+
   it('leave the branch entries to the worktree rows', () => {
     const labels = columnPagesOf({ isBranchless: false }).map((page) => page.label);
     for (const child of ['Branch', 'Comments', 'Files', 'Commits', 'Checks', 'Pull request']) {

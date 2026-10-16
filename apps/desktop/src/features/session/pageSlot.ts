@@ -20,6 +20,8 @@ const countOf = ({ page, facts }: CountParams): number => {
       return facts.runs;
     case 'agents':
       return facts.agents;
+    case 'auto':
+      return facts.autoAgents;
     case 'artifacts':
       return facts.artifacts;
     case 'questions':
@@ -37,6 +39,9 @@ const isRunningOf = ({ page, facts }: CountParams): boolean => {
   }
   if (page === 'agents') {
     return facts.runningAgents > 0;
+  }
+  if (page === 'auto') {
+    return facts.workingAutoAgents > 0;
   }
   return false;
 };

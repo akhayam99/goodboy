@@ -2,7 +2,12 @@ import { useCallback, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, AgentId, Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionLoading, agentPlace } from '../../../../../store';
-import { classifyAgent, isStandaloneAgent, type AgentKind } from '../../../agent-kind';
+import {
+  classifyAgent,
+  isAgentsPageKind,
+  isStandaloneAgent,
+  type AgentKind,
+} from '../../../agent-kind';
 import { isAgentFinished } from '../../../agent-lifecycle';
 import { useAgentLifecycleSignals } from '../../../hooks/useAgentLifecycleSignals';
 import { openAgentRevealEvent } from '../../../../../shared/utils/openAgentReveal';
@@ -53,8 +58,9 @@ export const useAgentsGrid = ({ session }: Params) => {
         .filter(
           (run) =>
             isStandaloneAgent({ agent: run }) &&
-            classifyAgent({ agent: run, override: agentKindOverride[run.id] ?? null }) !==
-              'resolver',
+            isAgentsPageKind({
+              kind: classifyAgent({ agent: run, override: agentKindOverride[run.id] ?? null }),
+            }),
         )
         .sort((a, b) => b.ordinal - a.ordinal),
     [phaseRuns, agentKindOverride],

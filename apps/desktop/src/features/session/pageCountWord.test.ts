@@ -5,6 +5,7 @@ import { pageCountWordOf, type CountedPageId, type PageCountFacts } from './page
 const COUNTED_PAGE_IDS = [
   'runs',
   'agents',
+  'auto',
   'artifacts',
   'questions',
 ] as const satisfies ReadonlyArray<CountedPageId>;
@@ -14,6 +15,8 @@ const QUIET: PageCountFacts = {
   runningRuns: 0,
   agents: 0,
   runningAgents: 0,
+  autoAgents: 0,
+  workingAutoAgents: 0,
   artifacts: 0,
   openQuestions: 0,
 };
@@ -45,6 +48,14 @@ describe('pageCountWordOf', () => {
   });
 
   it.each([
+    [{ autoAgents: 2 }, '2 conversations'],
+    [{ autoAgents: 1 }, '1 conversation'],
+    [{ autoAgents: 2, workingAutoAgents: 1 }, '1 working'],
+  ])('reads Auto agents for %j as %s', (facts, expected) => {
+    expect(wordOf('auto', facts)).toBe(expected);
+  });
+
+  it.each([
     [{ artifacts: 4 }, '4 artifacts'],
     [{ artifacts: 1 }, '1 artifact'],
   ])('reads Artifacts for %j as %s', (facts, expected) => {
@@ -61,6 +72,8 @@ describe('pageCountWordOf', () => {
       runningRuns: 0,
       agents: 3,
       runningAgents: 0,
+      autoAgents: 2,
+      workingAutoAgents: 0,
       artifacts: 4,
       openQuestions: 2,
     };

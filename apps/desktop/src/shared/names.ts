@@ -14,6 +14,7 @@ export const NAMES = {
   stop: 'Stop',
   questions: 'Questions',
   agents: 'Agents',
+  autoAgents: 'Auto agents',
   runs: 'Runs',
   overview: 'Overview',
   branch: 'Branch',

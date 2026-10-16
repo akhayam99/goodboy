@@ -389,6 +389,32 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   }),
   pressRow({ id: 'lens.workflows', lands: both(lens('workflows'), () => heading('Runs')) }),
   pressRow({ id: 'lens.agents', lands: both(lens('agents'), () => heading('Agents')) }),
+  keyRow({
+    id: 'lens.agents',
+    note: 'again on Agents opens Auto agents while the session has Auto',
+    open: async (ctx) => {
+      useAppStore.setState((state) => ({
+        sessionPhaseRuns: {
+          ...state.sessionPhaseRuns,
+          [ctx.sessionId]: [
+            ...(state.sessionPhaseRuns[ctx.sessionId] ?? []),
+            {
+              id: brandedId({ value: 'agent-auto-keys' }),
+              sessionId: ctx.sessionId,
+              ordinal: 99,
+              name: 'Why does the ledger retry post a second credit?',
+              status: 'completed',
+              kind: 'auto',
+            },
+          ],
+        },
+      }));
+      await press('lens.agents')();
+      await lens('agents')(ctx);
+      await press('lens.agents')();
+    },
+    lands: both(lens('auto'), () => heading('Why does the ledger retry post a second credit?')),
+  }),
   pressRow({ id: 'lens.review', lands: branchTab('comments') }),
   pressRow({ id: 'lens.questions', lands: both(lens('questions'), () => heading('Questions')) }),
   pressRow({ id: 'lens.files', lands: branchTab('files') }),

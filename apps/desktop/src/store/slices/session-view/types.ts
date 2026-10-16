@@ -30,6 +30,7 @@ export type { SetFn, GetFn } from '../../slice-types';
 export type LensKind =
   | 'questions'
   | 'agents'
+  | 'auto'
   | 'workflows'
   | 'review'
   | 'plans'
@@ -51,6 +52,7 @@ export type LensKind =
 export const LENS_KINDS: ReadonlySet<LensKind> = new Set<LensKind>([
   'questions',
   'agents',
+  'auto',
   'workflows',
   'review',
   'plans',

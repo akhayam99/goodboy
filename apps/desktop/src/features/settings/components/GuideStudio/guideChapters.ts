@@ -270,7 +270,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Inside a session',
-        desc: "Click a session and the sidebar steps into it. ‹ Sessions at the top goes back, and ⌘[ does too while the sidebar has focus. Under it sit the session's name, which you click to rename, and its menu, then its pages with their counts: Overview, Runs, Agents, Artifacts, and Questions while one waits. Projects lists each branch with its pull request number, and Linked lists the work linked to the session.",
+        desc: "Click a session and the sidebar steps into it. ‹ Sessions at the top goes back, and ⌘[ does too while the sidebar has focus. Under it sit the session's name, which you click to rename, and its menu, then its pages with their counts: Overview, Runs, Agents, Auto agents while Auto is on, Artifacts, and Questions while one waits. Projects lists each branch with its pull request number, and Linked lists the work linked to the session.",
+      },
+      {
+        term: 'Inside Auto',
+        desc: "Open Auto agents and the sidebar steps into Auto: Auto, then every agent it started with its state, and the limit at the foot. A row opens that agent beside the chat, where you can read it and write to it; Auto sees what you tell it. ‹ and the session's name go back.",
       },
       {
         term: 'Ask in a session',

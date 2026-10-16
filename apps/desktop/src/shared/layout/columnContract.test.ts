@@ -86,6 +86,10 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
     kind: 'shell',
     files: ['features/session/components/SessionWorkspace/parts/AgentsPane.tsx'],
   },
+  AutoAgentsPane: {
+    kind: 'shell',
+    files: ['features/session/components/AutoAgentsPane/index.tsx'],
+  },
   FilesPane: {
     kind: 'shell',
     files: [

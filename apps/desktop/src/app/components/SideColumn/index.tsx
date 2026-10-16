@@ -12,6 +12,7 @@ import { ColumnDoorRow } from './ColumnDoorRow';
 import { ColumnFoot } from './ColumnFoot';
 import { ColumnToggleButton } from './ColumnToggleButton';
 import { COLUMN_DOORS, openColumnDoor, type ColumnActions } from './columnDoors';
+import { AutoLevel } from './AutoLevel';
 import { LevelBackRow } from './LevelBackRow';
 import { LevelStack } from './LevelStack';
 import { RunLevel } from './RunLevel';
@@ -21,6 +22,7 @@ import { openLens } from '../../../features/session/openLens';
 import { sessionTitle } from '../../../features/session/sessionTitle';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { useDoorSignals } from './useDoorSignals';
+import { useIsOnAutoAgent } from './useIsOnAutoAgent';
 import { useSidebarLevel } from './useSidebarLevel';
 import { isStudioOverSession, type ColumnPlace } from './columnPlace';
 
@@ -57,9 +59,11 @@ export const SideColumn = ({
 }: Props) => {
   const signals = useDoorSignals({});
   const level = useSidebarLevel({ place, currentSessionId });
+  const isOnAutoAgent = useIsOnAutoAgent({ currentSessionId });
   const currentSession = useCurrentSession();
   const runFocus = usePresetRunFocus({ sessionId: currentSessionId });
   const leaveSessionLevel = useAppStore((state) => state.leaveSessionLevel);
+  const pickSidebarLevel = useAppStore((state) => state.pickSidebarLevel);
   const isSettingsShown = place === 'settings' && settingsSlotRef !== undefined;
   const go = (open: () => void) => () => {
     open();
@@ -83,6 +87,10 @@ export const SideColumn = ({
     }
     if (level === 'worktree') {
       leaveWorktreeLevel();
+      return;
+    }
+    if (level === 'auto') {
+      pickSidebarLevel({ level: 'session' });
       return;
     }
     leaveSessionLevel();
@@ -113,6 +121,8 @@ export const SideColumn = ({
     levelSession === null || runFocus === null ? null : (
       <RunLevel session={levelSession} focus={runFocus} />
     );
+  const autoLevel =
+    levelSession === null || !isOnAutoAgent ? null : <AutoLevel session={levelSession} />;
   return (
     <div data-side-column="" className="relative flex h-full min-h-0 min-w-0 flex-col">
       <nav
@@ -192,6 +202,7 @@ export const SideColumn = ({
               { level: 'session', node: sessionLevel },
               { level: 'worktree', node: worktreeLevel },
               { level: 'run', node: runLevel },
+              { level: 'auto', node: autoLevel },
             ]}
           />
         ) : (

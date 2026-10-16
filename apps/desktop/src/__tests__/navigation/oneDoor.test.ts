@@ -9,6 +9,8 @@ const COLUMN_ROOT = join(SRC, 'app', 'components', 'SideColumn');
 
 const SESSION_LEVEL_PAGES: ReadonlySet<string> = new Set([
   'app/components/SideColumn/RailSessionLevel.tsx',
+  'app/components/SideColumn/RailAutoLevel.tsx',
+  'app/components/SideColumn/RailRunLevel.tsx',
   'app/components/SideColumn/RailWorktreeLevel.tsx',
 ]);
 

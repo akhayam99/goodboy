@@ -3,11 +3,13 @@ import type {
   Agent,
   AgentId,
   IsoDateTime,
+  MessageAttachment,
   ProviderRunId,
   Session,
   SessionId,
   TurnEvent,
 } from '@goodboy/types';
+import { storeAutoImages } from './storeAutoImages';
 import type { ReportErrorParams } from '../notifications/reportError';
 import { currentAutoUserTurnPort } from '../../../features/auto/autoUserTurnPort';
 import { sessionById } from '../sessions/sessionIndex';
@@ -28,9 +30,11 @@ type AutoTurnState = Readonly<{
 export type RouteAutoUserTurnParams = Readonly<{
   get: () => AutoTurnState;
   input: SendTurnInput;
+  storeImages?: typeof storeAutoImages;
 }>;
 
-const AUTO_ATTACHMENTS_MESSAGE = 'Auto does not take files in a message yet.';
+const AUTO_ATTACHMENTS_MESSAGE = 'Auto takes images in a message, not other files yet.';
+const AUTO_IMAGES_LOST_MESSAGE = 'Auto could not keep the images. Attach them again.';
 const AUTO_MESSAGE_LOST_MESSAGE = 'Auto could not take your message. Send it again in a moment.';
 
 const REFUSED_TITLE = "Auto didn't get your message";
@@ -49,9 +53,31 @@ const refuse = async ({ get, input, message }: RefuseParams): Promise<never> => 
 
 const QUEUED: SendTurnResult = { blockedOverBudget: false };
 
+type StoreImages = typeof storeAutoImages;
+
+type KeepParams = {
+  readonly get: () => AutoTurnState;
+  readonly input: SendTurnInput;
+  readonly storeImages: StoreImages;
+};
+
+const keptImages = async ({
+  get,
+  input,
+  storeImages,
+}: KeepParams): Promise<ReadonlyArray<MessageAttachment>> => {
+  try {
+    return await storeImages({ sessionId: input.sessionId, images: input.attachments ?? [] });
+  } catch (cause) {
+    await get().reportError({ title: REFUSED_TITLE, error: cause, sessionId: input.sessionId });
+    throw new ReportedError(AUTO_IMAGES_LOST_MESSAGE);
+  }
+};
+
 export const routeAutoUserTurn = async ({
   get,
   input,
+  storeImages = storeAutoImages,
 }: RouteAutoUserTurnParams): Promise<SendTurnResult | null> => {
   if (input.origin !== undefined && input.origin !== 'operator') {
     return null;
@@ -79,14 +105,17 @@ export const routeAutoUserTurn = async ({
   if (session === undefined) {
     return null;
   }
-  if ((input.attachments ?? []).length > 0) {
+  const given = input.attachments ?? [];
+  if (given.some((attachment) => !attachment.mimeType.startsWith('image/'))) {
     return refuse({ get, input, message: AUTO_ATTACHMENTS_MESSAGE });
   }
+  const images = await keptImages({ get, input, storeImages });
   const result = await port({
     agentId,
     sessionId: input.sessionId,
     workspaceId: session.workspaceId,
     text: input.content,
+    ...(images.length > 0 && { images }),
   });
   if (result === 'lost') {
     return refuse({ get, input, message: AUTO_MESSAGE_LOST_MESSAGE });
@@ -95,6 +124,7 @@ export const routeAutoUserTurn = async ({
     kind: 'operator_text',
     runId: brandId<ProviderRunId>({ value: `operator-${crypto.randomUUID()}` }),
     text: input.content,
+    ...(images.length > 0 && { attachments: images }),
     at: brandId<IsoDateTime>({ value: new Date().toISOString() }),
   });
   input.onStarted?.();

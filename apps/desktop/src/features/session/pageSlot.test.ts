@@ -8,6 +8,8 @@ const QUIET: PageCountFacts = {
   runningRuns: 0,
   agents: 0,
   runningAgents: 0,
+  autoAgents: 0,
+  workingAutoAgents: 0,
   artifacts: 0,
   openQuestions: 0,
 };

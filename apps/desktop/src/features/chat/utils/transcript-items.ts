@@ -302,6 +302,8 @@ export const reduceTranscript = (
           kind: 'user_text',
           key: `user-${i}`,
           text: event.text,
+          ...(event.attachments !== undefined &&
+            event.attachments.length > 0 && { attachments: event.attachments }),
           isOperatorEcho: true,
           at: event.at,
         });

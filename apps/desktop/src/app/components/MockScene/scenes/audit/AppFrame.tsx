@@ -15,6 +15,10 @@ import {
   useCurrentWorkspace,
   useSessions,
 } from '../../../../../store';
+import { DrawerHost } from '../../../DrawerHost';
+import { selectDrawerPanel } from '../../../../../store/slices/drawer/selectDrawerPanel';
+import { selectDrawerPlacement } from '../../../../../store/slices/drawer/selectDrawerPlacement';
+import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
 import { triggerFrameView } from './frameViews';
 
 const noop = () => undefined;
@@ -22,9 +26,13 @@ const noop = () => undefined;
 type Props = {
   readonly view: string;
   readonly isRailCollapsed: boolean;
+  readonly hasPane?: boolean;
 };
 
-export const AppFrame = ({ view, isRailCollapsed }: Props) => {
+export const AppFrame = ({ view, isRailCollapsed, hasPane = false }: Props) => {
+  const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
+  const drawerSizing = useAppStore(selectDrawerSizing);
+  const drawerPlacement = useAppStore(selectDrawerPlacement);
   const currentWorkspace = useCurrentWorkspace();
   const currentSession = useCurrentSession();
   const sessions = useSessions();
@@ -102,6 +110,11 @@ export const AppFrame = ({ view, isRailCollapsed }: Props) => {
         main={<div className="relative h-full w-full">{main}</div>}
         studio={overlays.studio}
         studioCoversLeft={arrangement.studioCoversLeft}
+        {...(hasPane && {
+          drawer: isDrawerOpen ? <DrawerHost /> : null,
+          drawerSizing,
+          drawerPlacement,
+        })}
       />
       {overlays.layers}
     </>

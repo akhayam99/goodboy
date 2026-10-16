@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { autoBudgetUsedUsd, capTextOf, type AutoBudgetFacts } from '@goodboy/core';
 import {
   AnchoredPopover,
@@ -16,6 +16,7 @@ import type { AutoTreeCapSave } from './useAutoTreeCap';
 type Props = {
   readonly facts: AutoBudgetFacts;
   readonly isFromSession: boolean;
+  readonly openEvent?: string;
   readonly onSave: AutoTreeCapSave;
 };
 
@@ -71,7 +72,7 @@ const validationOf = ({ pick, usedUsd }: ValidationParams): string | null => {
   return null;
 };
 
-export const AutoTreeLimitPopover = ({ facts, isFromSession, onSave }: Props) => {
+export const AutoTreeLimitPopover = ({ facts, isFromSession, openEvent, onSave }: Props) => {
   const dropdown = useDropdown({ align: 'start', width: 'w-80' });
   const { open: isOpen, toggle, close } = dropdown;
   const [choice, setChoice] = useState<Choice>(choiceOf({ capUsd: facts.capUsd }));
@@ -88,6 +89,22 @@ export const AutoTreeLimitPopover = ({ facts, isFromSession, onSave }: Props) =>
     setError(null);
     toggle();
   };
+  const onToggleRef = useRef(onToggle);
+  onToggleRef.current = onToggle;
+
+  useEffect(() => {
+    if (openEvent === undefined) {
+      return;
+    }
+    const open = () => {
+      if (isOpen) {
+        return;
+      }
+      onToggleRef.current();
+    };
+    window.addEventListener(openEvent, open);
+    return () => window.removeEventListener(openEvent, open);
+  }, [openEvent, isOpen]);
 
   const onSet = async () => {
     if (pick === null || validation !== null || isSaving) {
