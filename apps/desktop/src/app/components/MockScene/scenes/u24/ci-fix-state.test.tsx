@@ -277,7 +277,11 @@ describe('CI fix state scenes', () => {
       ).toBeDefined(),
     );
     expect(pushes).toHaveLength(1);
-    expect(within(nextCard()).queryByRole('button', { name: 'Push' })).toBeNull();
+    const fixRow = within(nextCard())
+      .getByText('payments-api / test is running again on #318')
+      .closest<HTMLElement>('[data-testid^="next-step-"]');
+    expect(fixRow).not.toBeNull();
+    expect(within(fixRow ?? nextCard()).queryByRole('button', { name: 'Push' })).toBeNull();
     expect(within(nextCard()).getByText('payments-api · 1 commit pushed')).toBeDefined();
   });
   it('moves to pushed when the branch is pushed from somewhere else', async () => {

@@ -550,6 +550,8 @@ const cleanupProposal = (
   projectName: 'web',
   branch: 'feature/web',
   prNumber: 612,
+  sizeBytes: 412 * 1024 * 1024,
+  isArchived: false,
   ...overrides,
 });
 
@@ -893,7 +895,37 @@ describe('deriveNextSteps eleven new kinds', () => {
       cleanupProposals: [cleanupProposal()],
     });
     const suggestion = suggestions.find((candidate) => candidate.kind === 'close-worktree');
-    expect(suggestion?.title).toBe('Close the web worktree');
-    expect(suggestion?.detail).toBe('#612 merged');
+    expect(suggestion?.title).toBe('Remove the web worktree');
+    expect(suggestion?.detail).toBe('#612 merged · 412 MB');
+  });
+
+  it('says why an archived session keeps a worktree when no pull request merged', () => {
+    const suggestions = deriveNextSteps({
+      ...BASE_PARAMS,
+      cleanupProposals: [cleanupProposal({ prNumber: null, isArchived: true, sizeBytes: null })],
+    });
+    const suggestion = suggestions.find((candidate) => candidate.kind === 'close-worktree');
+    expect(suggestion?.detail).toBe('Session archived');
+  });
+
+  it('groups two merged worktrees into one row that removes both', () => {
+    const suggestions = deriveNextSteps({
+      ...BASE_PARAMS,
+      cleanupProposals: [
+        cleanupProposal(),
+        cleanupProposal({
+          requestId: 'cleanup:merge_cleanup:mount-api:feature/api',
+          projectName: 'payments-api',
+          branch: 'feature/api',
+          prNumber: 418,
+          sizeBytes: 612 * 1024 * 1024,
+        }),
+      ],
+    });
+    const rows = suggestions.filter((candidate) => candidate.kind === 'close-worktree');
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.title).toBe('Remove 2 merged worktrees');
+    expect(rows[0]?.detail).toBe('web #612, payments-api #418 · 1.0 GB');
+    expect(rows[0]?.kind === 'close-worktree' ? rows[0].payload.worktrees.length : 0).toBe(2);
   });
 });

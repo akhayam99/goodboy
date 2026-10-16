@@ -871,36 +871,45 @@ describe('useSuggestionActions', () => {
     });
   });
 
-  it('removes the worktree on close, keeps it on dismiss', () => {
+  it('removes every worktree of the row on Remove, and leaves Not now to the undoable dismiss', async () => {
     const actions = actionsFor({
       suggestion: {
         ...suggestionBase,
-        id: 'close-worktree:mount-web',
+        id: 'close-worktree:group',
         kind: 'close-worktree',
         band: 3,
         payload: {
-          mountId: WEB_MOUNT_ID,
-          requestId: 'cleanup:merge_cleanup:mount-web:feature/web',
-          branch: 'feature/web',
-          prNumber: 612,
+          worktrees: [
+            {
+              mountId: WEB_MOUNT_ID,
+              requestId: 'cleanup:merge_cleanup:mount-web:feature/web',
+              branch: 'feature/web',
+              prNumber: 612,
+            },
+            {
+              mountId: WEB_MOUNT_ID,
+              requestId: 'cleanup:merge_cleanup:mount-web:feature/api',
+              branch: 'feature/api',
+              prNumber: 418,
+            },
+          ],
         },
       },
     });
 
-    expect(actions.primary?.label).toBe('Close branch');
+    expect(actions.primary?.label).toBe('Remove worktrees');
     expect(actions.primary?.requiresConfirm).toBe(true);
-    actions.primary?.run();
-    expect(spies.resolveMountCleanup).toHaveBeenCalledWith({
+    expect(actions.onDismiss).toBeNull();
+    await actions.primary?.run();
+    expect(spies.resolveMountCleanup).toHaveBeenNthCalledWith(1, {
       sessionId: SESSION_ID,
       requestId: 'cleanup:merge_cleanup:mount-web:feature/web',
       decision: 'remove',
     });
-
-    actions.onDismiss?.();
-    expect(spies.resolveMountCleanup).toHaveBeenCalledWith({
+    expect(spies.resolveMountCleanup).toHaveBeenNthCalledWith(2, {
       sessionId: SESSION_ID,
-      requestId: 'cleanup:merge_cleanup:mount-web:feature/web',
-      decision: 'keep',
+      requestId: 'cleanup:merge_cleanup:mount-web:feature/api',
+      decision: 'remove',
     });
   });
 
@@ -1047,10 +1056,14 @@ const EVERY_KIND = {
     id: 'close-worktree:mount-web',
     kind: 'close-worktree',
     payload: {
-      mountId: WEB_MOUNT_ID,
-      requestId: 'cleanup:mount-web',
-      branch: 'feature/web',
-      prNumber: null,
+      worktrees: [
+        {
+          mountId: WEB_MOUNT_ID,
+          requestId: 'cleanup:mount-web',
+          branch: 'feature/web',
+          prNumber: null,
+        },
+      ],
     },
   },
   'continue-with-workflow': {

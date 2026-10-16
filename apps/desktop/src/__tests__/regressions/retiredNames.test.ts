@@ -15,7 +15,7 @@ describe('retired names match whatever the casing', () => {
   });
 
   it('flags a lowercase worktree name', () => {
-    expect(retiredIdsIn({ text: 'remove worktree' })).toContain('remove-worktree');
+    expect(retiredIdsIn({ text: 'close worktree' })).toContain('close-worktree');
   });
 
   it('leaves a data attribute alone', () => {

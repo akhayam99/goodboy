@@ -601,26 +601,25 @@ export const useSuggestionActions = ({
       };
     }
     if (suggestion.kind === 'close-worktree') {
+      const worktrees = suggestion.payload.worktrees;
+      const isMany = worktrees.length > 1;
       return {
         primary: {
-          label: NAMES.closeBranch,
-          shortLabel: 'Close',
+          label: isMany ? NAMES.removeWorktrees : NAMES.removeWorktree,
           isDisabled: false,
           requiresConfirm: true,
-          failureTitle: "Couldn't close the branch",
-          run: () =>
-            resolveMountCleanup({
-              sessionId,
-              requestId: suggestion.payload.requestId,
-              decision: 'remove',
-            }),
+          failureTitle: isMany ? "Couldn't remove the worktrees" : "Couldn't remove the worktree",
+          run: async () => {
+            for (const worktree of worktrees) {
+              await resolveMountCleanup({
+                sessionId,
+                requestId: worktree.requestId,
+                decision: 'remove',
+              });
+            }
+          },
         },
-        onDismiss: () =>
-          resolveMountCleanup({
-            sessionId,
-            requestId: suggestion.payload.requestId,
-            decision: 'keep',
-          }),
+        onDismiss: null,
       };
     }
     if (suggestion.kind === 'continue-with-workflow') {

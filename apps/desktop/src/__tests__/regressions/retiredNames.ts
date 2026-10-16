@@ -92,7 +92,6 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
     use: NAMES.rebaseOn,
   },
   { id: 'new-worktree', pattern: /\bNew worktree\b/i, use: NAMES.newBranch },
-  { id: 'remove-worktree', pattern: /\bRemove worktree\b/i, use: NAMES.closeBranch },
   { id: 'close-worktree', pattern: /\bClose worktree\b/i, use: NAMES.closeBranch },
   {
     id: 'waiting-for-approval',

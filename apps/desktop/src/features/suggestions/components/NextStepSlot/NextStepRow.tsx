@@ -27,6 +27,7 @@ type Props = {
   readonly suggestion: SessionSuggestion;
   readonly actions: SuggestionActions;
   readonly compact: boolean;
+  readonly isLead?: boolean;
   readonly isPending: boolean;
   readonly pendingChoiceIds?: ReadonlySet<string>;
   readonly trackChoice?: ActionTrack;
@@ -45,6 +46,7 @@ export const NextStepRow = ({
   suggestion,
   actions,
   compact,
+  isLead = false,
   isPending,
   pendingChoiceIds = NO_PENDING_CHOICES,
   trackChoice = runUntracked,
@@ -110,7 +112,7 @@ export const NextStepRow = ({
     primary == null ? null : (
       <Button
         size="sm"
-        variant="secondary"
+        variant={isLead ? 'primary' : 'secondary'}
         className="w-full min-w-0 gap-1"
         aria-label={visibleLabel === primary.label ? undefined : primary.label}
         disabled={primary.isDisabled || (isChoicePending && !isPending)}

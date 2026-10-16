@@ -38,14 +38,27 @@ const pendingChoiceIds = ({
   );
 };
 
+type LeadChange = {
+  readonly hasLead: boolean;
+};
+
 type Props = {
   readonly session: Session;
   readonly onSelectLens: (lens: LensKind) => void;
   readonly shownQuestionIds?: ReadonlySet<string>;
   readonly shownAgentIds?: ReadonlySet<string>;
+  readonly onLeadChange?: (change: LeadChange) => void;
 };
 
 const NO_AGENTS: ReadonlySet<string> = new Set();
+
+const SHOWN_ROWS = 3;
+
+type RowParams = {
+  readonly suggestion: SessionSuggestion;
+  readonly isLead: boolean;
+  readonly isCompact: boolean;
+};
 
 const isShownElsewhere = ({
   suggestion,
@@ -60,6 +73,7 @@ export const NextStepSlot = ({
   onSelectLens,
   shownQuestionIds,
   shownAgentIds = NO_AGENTS,
+  onLeadChange,
 }: Props) => {
   const sessionId = session.id;
   const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
@@ -94,8 +108,15 @@ export const NextStepSlot = ({
       !isShownElsewhere({ suggestion, shownAgentIds }) &&
       (suggestion.kind !== 'mount-project' || !transcriptOwned.has(suggestion.payload.projectId)),
   );
-  const [first, ...rest] = visible;
-  if (first === undefined) {
+  const hasLead = visible.length > 0;
+
+  useEffect(() => {
+    onLeadChange?.({ hasLead });
+  }, [hasLead, onLeadChange]);
+
+  const shown = visible.slice(0, SHOWN_ROWS);
+  const rest = visible.slice(SHOWN_ROWS);
+  if (shown.length === 0) {
     return null;
   }
 
@@ -188,13 +209,7 @@ export const NextStepSlot = ({
       });
     };
 
-  const rowFor = ({
-    suggestion,
-    isCompact,
-  }: {
-    readonly suggestion: SessionSuggestion;
-    readonly isCompact: boolean;
-  }) => {
+  const rowFor = ({ suggestion, isLead, isCompact }: RowParams) => {
     const actions = trackedActions(suggestion);
     return (
       <NextStepRow
@@ -202,6 +217,7 @@ export const NextStepSlot = ({
         suggestion={suggestion}
         actions={actions}
         compact={isCompact}
+        isLead={isLead}
         isPending={pending.pendingKeys.has(suggestion.id)}
         pendingChoiceIds={pendingChoiceIds({ suggestion, pendingKeys: pending.pendingKeys })}
         trackChoice={trackChoiceFor({ suggestion, actions })}
@@ -214,7 +230,9 @@ export const NextStepSlot = ({
     <section aria-label="Next" className="flex flex-col gap-2">
       <SectionHeader label="Next" headingLevel={2} />
       <div className="flex flex-col gap-1">
-        {rowFor({ suggestion: first, isCompact: false })}
+        {shown.map((suggestion, index) =>
+          rowFor({ suggestion, isLead: index === 0, isCompact: false }),
+        )}
         {rest.length > 0 && !expanded && (
           <button
             type="button"
@@ -224,7 +242,8 @@ export const NextStepSlot = ({
             {rest.length} more
           </button>
         )}
-        {expanded && rest.map((suggestion) => rowFor({ suggestion, isCompact: true }))}
+        {expanded &&
+          rest.map((suggestion) => rowFor({ suggestion, isLead: false, isCompact: true }))}
       </div>
     </section>
   );
