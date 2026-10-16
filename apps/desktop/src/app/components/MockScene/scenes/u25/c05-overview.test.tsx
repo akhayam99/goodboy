@@ -183,6 +183,7 @@ describe('the c05 overview scenes', () => {
     const header = document.querySelector<HTMLElement>('[data-slot="pane-header"]');
     expect(header).not.toBeNull();
     within(present({ value: header, what: 'the header' })).getByRole('button', { name: /Restore/ });
-    expect(screen.getByRole('button', { name: 'New' }).closest('fieldset')?.disabled).toBe(true);
+    expect(screen.queryByRole('button', { name: 'New' })).toBeNull();
+    expect(screen.queryByText('Archived')).toBeNull();
   });
 });

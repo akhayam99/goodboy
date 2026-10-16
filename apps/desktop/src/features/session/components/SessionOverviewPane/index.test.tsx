@@ -8,8 +8,9 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
 vi.mock('./HeaderBand', () => ({ HeaderBand: () => <p>Overview goal</p> }));
-vi.mock('./ArchivedRestore', () => ({ ArchivedRestore: () => null }));
-vi.mock('./OverviewPageActions', () => ({ OverviewPageActions: () => null }));
+vi.mock('./ArchivedRestore', () => ({
+  ArchivedRestore: () => <button type="button">Restore</button>,
+}));
 vi.mock('./OverviewNotices', () => ({
   OverviewNotices: () => <section aria-label="Notices" />,
 }));
@@ -116,12 +117,16 @@ describe('SessionOverviewPane', () => {
     expect(screen.getAllByRole('region', { name: 'Needs you' })).toHaveLength(1);
   });
 
-  it('keeps New on a live session and disables it once archived', () => {
+  it('keeps New on a live session and only Restore once archived', () => {
     const { unmount } = renderPane();
     screen.getByRole('button', { name: /New/ });
     unmount();
 
     renderPane({ session: { ...SESSION, archivedAt: '2026-09-01T00:00:00.000Z' as IsoDateTime } });
-    expect(screen.getByRole('button', { name: /New/ }).closest('fieldset')?.disabled).toBe(true);
+    expect(screen.queryByRole('button', { name: /New/ })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Restore' })).toBeDefined();
+    expect(screen.queryByText('Archived')).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Next' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Notices' })).toBeNull();
   });
 });

@@ -26,27 +26,31 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   const [shownQuestionIds, setShownQuestionIds] = useState<ReadonlySet<string>>(NO_SHOWN_QUESTIONS);
   const [hasNextLead, setHasNextLead] = useState(false);
   const onLeadChange = useCallback(({ hasLead }: LeadChange) => setHasNextLead(hasLead), []);
+  const isArchived = session.archivedAt != null;
 
   return (
     <PaneShell
       title={NAMES.overview}
+      width="measure"
       actions={<OverviewHeaderActions session={session} hasNextLead={hasNextLead} />}
       headerRhythm="section"
       animationClassName="animate-fade-in"
     >
       <HeaderBand session={session} />
-      <OverviewNotices session={session} />
-      <UnassignedNotes sessionId={sessionId} />
+      {isArchived ? null : <OverviewNotices session={session} />}
+      {isArchived ? null : <UnassignedNotes sessionId={sessionId} />}
       <TimelinePane
         session={session}
         onShownQuestionsChange={setShownQuestionIds}
         lead={
-          <NextStepSlot
-            session={session}
-            onSelectLens={onSelectLens}
-            shownQuestionIds={shownQuestionIds}
-            onLeadChange={onLeadChange}
-          />
+          isArchived ? null : (
+            <NextStepSlot
+              session={session}
+              onSelectLens={onSelectLens}
+              shownQuestionIds={shownQuestionIds}
+              onLeadChange={onLeadChange}
+            />
+          )
         }
       />
     </PaneShell>

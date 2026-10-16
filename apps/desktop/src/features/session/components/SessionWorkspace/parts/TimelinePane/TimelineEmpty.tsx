@@ -5,18 +5,10 @@ import type { ActivityView } from '../../../../timeline/activityView';
 type Props = {
   readonly view: ActivityView;
   readonly isSearching: boolean;
-  readonly hasLogEntries: boolean;
-  readonly onSeeLog: () => void;
   readonly onClearSearch: () => void;
 };
 
-export const TimelineEmpty = ({
-  view,
-  isSearching,
-  hasLogEntries,
-  onSeeLog,
-  onClearSearch,
-}: Props) => {
+export const TimelineEmpty = ({ view, isSearching, onClearSearch }: Props) => {
   if (isSearching) {
     return (
       <EmptyLine
@@ -41,19 +33,5 @@ export const TimelineEmpty = ({
       />
     );
   }
-  return (
-    <EmptyState
-      className="px-3"
-      icon={CONCEPT_ICONS.timeline}
-      title="No runs or agents yet"
-      description="Start a run or an agent to work on this session."
-      action={
-        hasLogEntries ? (
-          <Button variant="ghost" size="xs" onClick={onSeeLog}>
-            See Log
-          </Button>
-        ) : undefined
-      }
-    />
-  );
+  return <EmptyLine>Nothing ran yet</EmptyLine>;
 };

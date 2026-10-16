@@ -92,7 +92,7 @@ export const GoalTeaser = ({ session }: Props) => {
   }
   if (isEmpty) {
     return (
-      <button type="button" onClick={open} className={`${ROW} self-start px-1 py-0.5`}>
+      <button type="button" onClick={open} className={`${ROW} self-start py-0.5`}>
         <CONCEPT_ICONS.goal size={ICON_SIZE.row} aria-hidden className="text-muted-foreground" />
         <span className="text-meta text-muted-foreground">Add a goal</span>
       </button>
@@ -107,7 +107,7 @@ export const GoalTeaser = ({ session }: Props) => {
       onClick={open}
       aria-label={`Goal: ${text}`}
       data-overview-goal=""
-      className={`${ROW} w-full px-1 py-0.5`}
+      className={`${ROW} py-0.5`}
     >
       <span className="line-clamp-3 min-w-0 flex-1 text-body text-foreground">{text}</span>
     </button>

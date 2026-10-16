@@ -155,18 +155,16 @@ describe('the u23 frame scenes', () => {
     expect(document.querySelectorAll('[data-page-column][data-width="measure"]')).toHaveLength(0);
   });
 
-  it('shows the first lap as one notice on the column, under the title', async () => {
+  it('shows the first lap as one notice in the Overview notices, under the title', async () => {
     await renderScene('frame-first-lap-notice');
 
-    const notice = await screen.findByText(
-      /Your work is in the project folder\. Nothing is published yet\./,
-    );
-    const banner = notice.closest('[data-slot="pane-banner"]') as HTMLElement;
-    expect(banner).not.toBeNull();
+    const notice = await screen.findByText('Not published yet');
+    const slot = notice.closest('[data-overview-notices]') as HTMLElement;
+    expect(slot).not.toBeNull();
     const title = visibleH1s()[0] as HTMLElement;
-    expect(title.compareDocumentPosition(banner) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(banner.closest('[data-page-column]')).toBe(title.closest('[data-page-column]'));
-    expect(screen.getAllByText(/Nothing is published yet/)).toHaveLength(1);
+    expect(title.compareDocumentPosition(slot) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getAllByText(/[Pp]ublished yet/)).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeDefined();
   });
 
   it('puts no action in the Commits tab row and no legend', async () => {

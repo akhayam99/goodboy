@@ -60,9 +60,6 @@ export const UnassignedNotes = ({ sessionId }: Props) => {
         label="Unassigned notes"
         headingLevel={2}
         hint="Written before notes were tied to a branch. Move or discard them."
-        meta={
-          <span className="text-label tabular-nums text-faint-foreground">{unassigned.length}</span>
-        }
         action={
           unassigned.length >= 2 ? (
             <Button

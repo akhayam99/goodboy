@@ -142,7 +142,8 @@ const NEEDS_YOU_OWNERS: ReadonlyArray<NeedsYouOwner> = [
   {
     id: 'mock-states-owner-pr',
     kind: 'fixRun',
-    text: '#318 · 1 question · 5 to review',
+    text: '#318 · 5 to review · 1 question',
+    where: null,
     at: null,
     item: null,
     question: null,
@@ -153,7 +154,8 @@ const NEEDS_YOU_OWNERS: ReadonlyArray<NeedsYouOwner> = [
   {
     id: 'mock-states-owner-rebase',
     kind: 'rebase',
-    text: 'Rebase of hl/fix-duplicate-credit stopped ×2',
+    text: 'Rebase of hl/fix-duplicate-credit stopped',
+    where: null,
     at: null,
     item: null,
     question: null,

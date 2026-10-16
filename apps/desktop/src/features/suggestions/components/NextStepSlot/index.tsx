@@ -14,6 +14,7 @@ import type { SessionSuggestion } from '../../types';
 import type { AgentKindRouting } from '../../../session/agent-kind';
 import type { ActionTrack } from '../../../actions/types';
 import { NextStepRow } from './NextStepRow';
+import { NEXT_STEP_LIST } from './nextStepGrid';
 
 const CHOICE_FAILURE_TITLE = "Couldn't start that";
 
@@ -229,7 +230,7 @@ export const NextStepSlot = ({
   return (
     <section aria-label="Next" className="flex flex-col gap-2">
       <SectionHeader label="Next" headingLevel={2} />
-      <div className="flex flex-col gap-1">
+      <div className={NEXT_STEP_LIST}>
         {shown.map((suggestion, index) =>
           rowFor({ suggestion, isLead: index === 0, isCompact: false }),
         )}

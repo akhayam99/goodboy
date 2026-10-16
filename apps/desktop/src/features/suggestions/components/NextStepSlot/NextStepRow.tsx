@@ -1,15 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Button, ConfirmPopover, cn, tintClasses, type ConfirmRole } from '@goodboy/ui';
+import { Button, ConfirmPopover, cn, type ConfirmRole } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { SUGGESTION_ICONS } from '../../suggestionIcons';
 import type { NextStepBand, SessionSuggestion } from '../../types';
 import type { SuggestionActions } from '../../useSuggestionActions';
 import type { ActionTrack, SuggestionActionTarget } from '../../../actions/types';
-import {
-  agentKindPalette,
-  type AgentKind,
-  type AgentKindRouting,
-} from '../../../session/agent-kind';
+import type { AgentKind, AgentKindRouting } from '../../../session/agent-kind';
 import { useIsAutoOn } from '../../../auto/useIsAutoOn';
 import { NextStepMenu } from './NextStepMenu';
 import { NextStepRunsOn } from './NextStepRunsOn';
@@ -95,17 +91,6 @@ export const NextStepRow = ({
     void primary.run();
   };
 
-  const primaryIcon = (() => {
-    if (agentKind === null) {
-      return (
-        <Icon size={ICON_SIZE.row} aria-hidden className={cn('shrink-0', tintClasses(tone).icon)} />
-      );
-    }
-    const palette = agentKindPalette({ kind: agentKind });
-    const KindIcon = palette.icon;
-    return <KindIcon size={ICON_SIZE.row} aria-hidden className={cn('shrink-0', palette.fg)} />;
-  })();
-
   const visibleLabel = primary?.shortLabel ?? primary?.label;
 
   const primaryButton =
@@ -113,7 +98,7 @@ export const NextStepRow = ({
       <Button
         size="sm"
         variant={isLead ? 'primary' : 'secondary'}
-        className="w-full min-w-0 gap-1"
+        className="w-full min-w-0"
         aria-label={visibleLabel === primary.label ? undefined : primary.label}
         disabled={primary.isDisabled || (isChoicePending && !isPending)}
         isBusy={isPending}
@@ -125,7 +110,6 @@ export const NextStepRow = ({
           runPrimary();
         }}
       >
-        {primaryIcon}
         <span className="truncate">{visibleLabel}</span>
       </Button>
     );

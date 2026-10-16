@@ -51,9 +51,6 @@ describe('write from work scenes', () => {
       await screen.findByText('Write the title and goal from HL-204 and HL-211?'),
     ).toBeDefined();
     expect(screen.getByRole('button', { name: 'Write' })).toBeDefined();
-    expect(
-      screen.getByRole('button', { name: 'Write title and goal from linked work' }),
-    ).toBeDefined();
   });
   it('shows an editable proposal and the model cost', async () => {
     mount({ id: 'goalproposal' });

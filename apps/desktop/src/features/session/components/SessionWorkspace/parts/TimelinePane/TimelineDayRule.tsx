@@ -1,4 +1,4 @@
-import { Divider, cn } from '@goodboy/ui';
+import { cn } from '@goodboy/ui';
 import type { TimelineDayItem } from '../../../../timeline/buildTimelineStream';
 import type { RailRow } from '../../../../../workTreeModel/railGeometry';
 import { TIMELINE_GUTTER, TIMELINE_GUTTER_FALLBACK } from './timelineLayout';
@@ -23,7 +23,6 @@ export const TimelineDayRule = ({ item, rail, railWidth, lanes = null }: Props) 
       <span className={cn('shrink-0 text-chip text-muted-foreground', TIMELINE_GUTTER_FALLBACK)}>
         {item.label}
       </span>
-      <Divider className="min-w-0 flex-1" />
     </span>
   </div>
 );

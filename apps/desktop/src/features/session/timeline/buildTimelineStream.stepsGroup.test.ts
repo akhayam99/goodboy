@@ -30,7 +30,7 @@ import {
 } from './buildTimelineStream';
 import { dayLabel } from './dayLabel';
 import { groupSummaryText } from './groupSummary';
-import { CONTEXT_LABEL, decisionCountsText } from './sessionEventPresentation';
+import { decisionCountsText } from './sessionEventPresentation';
 import { layoutTimelineRail } from '../../workTreeModel/railGeometry';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -272,7 +272,7 @@ describe('buildTimelineStream steps group', () => {
     });
 
     expect(phraseOf({ items, expandId: RUN_ROW })).toBe(
-      '3 steps · Context · 2 added, 1 replaced, 2 withdrawn',
+      '3 steps · 2 decisions added, 1 replaced, 2 withdrawn',
     );
   });
 
@@ -293,7 +293,7 @@ describe('buildTimelineStream steps group', () => {
       row.entry.kind === 'event' ? decisionCountsText({ payload: row.entry.event.payload }) : null,
     ).toBe('2 added, 2 replaced');
     expect(phraseOf({ items: closed.items, expandId: RUN_ROW })).toBe(
-      `3 steps · ${CONTEXT_LABEL} · 2 added, 2 replaced`,
+      '3 steps · 2 decisions added, 2 replaced',
     );
   });
 

@@ -13,9 +13,16 @@ type BranchDecisionAction = Readonly<{
   isDisabled: boolean;
 }>;
 
+export type BranchFound = Readonly<{
+  text: string;
+  isBranch: boolean;
+}>;
+
 export type BranchDecision = Readonly<{
   title: string;
-  description: string;
+  expected: string;
+  found: BranchFound | null;
+  note: string | null;
   confirm: BranchDecisionAction;
   alt: BranchDecisionAction | null;
 }>;
@@ -44,6 +51,8 @@ const holderLocation = ({ holder }: LocationParams): string => {
   return `as ${holder.label} in this session`;
 };
 
+const NO_BRANCH: BranchFound = { text: 'a commit with no branch', isBranch: false };
+
 export const buildBranchDecision = ({
   observation,
   projectName,
@@ -57,24 +66,29 @@ export const buildBranchDecision = ({
     case 'unavailable':
       return {
         title: `${projectName}'s branch could not be read`,
-        description: `Expected ${recorded}, but its directory could not be read.`,
+        expected: recorded,
+        found: null,
+        note: 'Its directory could not be read.',
         confirm: recheck({ isDisabled: false }),
         alt: null,
       };
     case 'detached': {
       const title = `${projectName} is not on a branch`;
-      const cause = `Expected ${recorded}, found a commit with no branch.`;
       if (holder !== null && holder !== 'checking') {
         return {
           title,
-          description: `${cause} ${recorded} is already checked out ${holderLocation({ holder })}.`,
+          expected: recorded,
+          found: NO_BRANCH,
+          note: `${recorded} is already checked out ${holderLocation({ holder })}.`,
           confirm: recheck({ isDisabled: false }),
           alt: null,
         };
       }
       return {
         title,
-        description: cause,
+        expected: recorded,
+        found: NO_BRANCH,
+        note: null,
         confirm: {
           label: `Put it back on ${recorded}`,
           resolution: 'restore-recorded',
@@ -84,13 +98,17 @@ export const buildBranchDecision = ({
       };
     }
     case 'mismatch': {
-      const found = observed ?? 'another branch';
-      const title = `${projectName} is not on the branch it was left on`;
-      const cause = `Expected ${recorded}, found ${found}.`;
+      const found: BranchFound =
+        observed === null
+          ? { text: 'another branch', isBranch: false }
+          : { text: observed, isBranch: true };
+      const title = `${projectName} is on another branch`;
       if (holder === 'checking') {
         return {
           title,
-          description: cause,
+          expected: recorded,
+          found,
+          note: null,
           confirm: {
             label: 'Use this branch here',
             resolution: 'adopt-observed',
@@ -102,14 +120,18 @@ export const buildBranchDecision = ({
       if (holder !== null) {
         return {
           title,
-          description: `${cause} ${found} is already checked out ${holderLocation({ holder })}, and git keeps one branch in one worktree.`,
+          expected: recorded,
+          found,
+          note: `${found.text} is already checked out ${holderLocation({ holder })}.`,
           confirm: recheck({ isDisabled: false }),
           alt: null,
         };
       }
       return {
         title,
-        description: `${cause} Keep both branches keeps ${found} here and opens ${recorded} again in a worktree of its own.`,
+        expected: recorded,
+        found,
+        note: null,
         confirm: { label: 'Use this branch here', resolution: 'adopt-observed', isDisabled: false },
         alt: { label: 'Keep both branches', resolution: 'keep-both', isDisabled: false },
       };
@@ -119,37 +141,4 @@ export const buildBranchDecision = ({
       return exhaustive;
     }
   }
-};
-
-export type BranchTextSegment = Readonly<{
-  text: string;
-  isBranch: boolean;
-}>;
-
-type SplitParams = {
-  readonly text: string;
-  readonly branches: ReadonlyArray<string | null>;
-};
-
-const escapeRegExp = ({ text }: { readonly text: string }): string =>
-  text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-export const splitOnBranches = ({
-  text,
-  branches,
-}: SplitParams): ReadonlyArray<BranchTextSegment> => {
-  const names = [
-    ...new Set(branches.filter((name): name is string => name !== null && name !== '')),
-  ]
-    .sort((left, right) => right.length - left.length)
-    .map((name) => escapeRegExp({ text: name }));
-  if (names.length === 0) {
-    return [{ text, isBranch: false }];
-  }
-  const pattern = new RegExp(`(?<![\\w/.-])(${names.join('|')})(?![\\w/-])`, 'g');
-  const known = new Set(branches);
-  return text
-    .split(pattern)
-    .filter((part) => part !== '')
-    .map((part) => ({ text: part, isBranch: known.has(part) }));
 };

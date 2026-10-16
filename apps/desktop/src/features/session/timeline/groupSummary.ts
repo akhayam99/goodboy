@@ -1,6 +1,15 @@
 import type { Tone } from '@goodboy/ui';
 
-import { CONTEXT_LABEL } from './sessionEventPresentation';
+const LEADING_COUNT = /^(\d+) /;
+
+type DecisionsTextParams = {
+  readonly contextText: string;
+};
+
+const decisionsText = ({ contextText }: DecisionsTextParams): string =>
+  contextText.replace(LEADING_COUNT, (_match, count: string) =>
+    Number(count) === 1 ? `${count} decision ` : `${count} decisions `,
+  );
 
 export type GroupSummaryPart<State extends string = string> = {
   readonly state: State;
@@ -124,7 +133,7 @@ export const stepsGroupSummary = ({
       failure: null,
     }).map((part) =>
       part.state === 'context' && contextText !== null
-        ? { ...part, text: `${CONTEXT_LABEL} · ${contextText}`, isKept: true }
+        ? { ...part, text: decisionsText({ contextText }), isKept: true }
         : part,
     ),
     attentionCount: 0,

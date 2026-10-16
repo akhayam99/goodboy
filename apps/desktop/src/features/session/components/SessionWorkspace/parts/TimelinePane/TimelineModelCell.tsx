@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ModelBlock, Tooltip, WORK_META_COLUMN } from '@goodboy/ui';
+import { ModelBlock, Tooltip, WORK_META_COLUMN, cn } from '@goodboy/ui';
 import type { ModelsSummary } from '../../../../timeline/ranModels';
 import { TimelineProviderGlyph } from './TimelineProviderGlyph';
 import { ROW_CARD_REST_MS } from './timelineRowIdentity';
@@ -10,13 +10,22 @@ type Props = {
   readonly card?: ReactNode;
 };
 
+const MODEL_CELL = 'w-44 shrink-0 @max-[640px]:w-auto';
+
 export const TimelineModelCell = ({ summary, isPlanned = false, card = null }: Props) => {
   if (summary === null) {
-    return <span aria-hidden data-meta-column="model" className={WORK_META_COLUMN.model} />;
+    return (
+      <span
+        aria-hidden
+        data-meta-column="model"
+        className={cn(WORK_META_COLUMN.modelInline, MODEL_CELL)}
+      />
+    );
   }
   const block = (
     <ModelBlock
-      className="cursor-default"
+      className={cn('cursor-default', MODEL_CELL)}
+      layout="inline"
       isPlanned={isPlanned}
       name={summary.name}
       detail={summary.detail}

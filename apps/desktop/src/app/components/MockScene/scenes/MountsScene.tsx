@@ -6,11 +6,8 @@ import type {
   IsoDateTime,
   PlanId,
   PlanWithCount,
-  ProviderRunId,
   SessionEvent,
   SessionEventId,
-  TelemetryRecord,
-  TelemetryRecordId,
   MountId,
   MountPullRequestLink,
   MountPullRequestState,
@@ -344,26 +341,6 @@ const PLANS: ReadonlyArray<PlanWithCount> = [
     updatedAt: later(-240),
     consumptionCount: 3,
   },
-];
-
-const telemetryOf = (index: number, model: string, cost: number): TelemetryRecord => ({
-  id: `mock-mounts-telemetry-${index}` as TelemetryRecordId,
-  runId: `mock-mounts-run-${index}` as ProviderRunId,
-  sessionId: SESSION_ID,
-  kind: 'turn',
-  provider: 'anthropic',
-  model,
-  recordedAt: later(-200 + index * 30),
-  inputTokens: 18_000,
-  outputTokens: 4_200,
-  estimatedCostUsd: cost,
-});
-
-const TELEMETRY: ReadonlyArray<TelemetryRecord> = [
-  telemetryOf(0, 'claude-opus-5-5', 1.42),
-  telemetryOf(1, 'claude-sonnet-5', 0.61),
-  telemetryOf(2, 'claude-sonnet-5', 0.74),
-  telemetryOf(3, 'claude-haiku-4-5', 0.09),
 ];
 
 type PrEventParams = {
@@ -839,7 +816,7 @@ export const MountsScene = ({ variant = DEFAULT_VARIANT }: Props) => {
       sessionPlans: { [SESSION_ID]: PLANS },
       sessionWorkflows: { [SESSION_ID]: [] },
       phaseTemplates: { [WORKSPACE_ID]: [] },
-      sessionTelemetry: { [SESSION_ID]: TELEMETRY },
+      sessionTelemetry: { [SESSION_ID]: [] },
       sessionEvents: { [SESSION_ID]: variant === 'blank' ? [] : SESSION_EVENTS },
       loadSessionEvents: async () => undefined,
       sessionExternalTasks: {
