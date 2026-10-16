@@ -2,6 +2,7 @@ import { ChevronLeft } from 'lucide-react';
 import { Tooltip, WorkNode, cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../store';
+import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 import { sessionTitle } from '../../../features/session/sessionTitle';
 import { useAutoTreeActions } from '../../../features/auto/chat/useAutoTreeActions';
 import { useAutoLevel } from '../../../features/auto/level/useAutoLevel';
@@ -22,10 +23,11 @@ export const RailAutoLevel = ({ session }: Props) => {
   const actions = useAutoTreeActions({ sessionId: session.id });
 
   return (
-    <div data-rail-level="auto" className="flex flex-col items-center gap-1">
+    <div data-rail-level="auto" className="flex flex-col items-center gap-1 px-2">
       <RailButton
         id="level-back"
         icon={ChevronLeft}
+        iconSize={ICON_SIZE.row}
         label={`Back to ${sessionTitle({ session })}`}
         shortcut="nav.back"
         isCurrent={false}

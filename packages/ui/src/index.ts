@@ -228,6 +228,12 @@ export type {
 } from './components/RemoteImage/loaderContext';
 export { ResizeHandle } from './components/ResizeHandle';
 export { Reveal } from './components/Reveal';
+export { FoldLayers } from './components/FoldLayers';
+export type { FoldLayersProps } from './components/FoldLayers';
+export { FOLD_MS, LEVEL_MS } from './motionTimings';
+export { canAnimate } from './canAnimate';
+export { exitSnapshotOf, mountExitSnapshot } from './exitSnapshot';
+export type { ExitSnapshot } from './exitSnapshot';
 export type { RevealProps } from './components/Reveal';
 export type { ResizeHandleProps } from './components/ResizeHandle';
 export { PaneShell } from './components/PaneShell';

@@ -169,13 +169,33 @@ sweeps every main from 600 to 2400 and runs a width matrix: 1024, 1440 and
 1920 windows at zoom 0.8, 1 and 1.25, default and widest sidebar.
 `selectDrawerSizing.test.ts` takes every drawer kind at 1280 and 1440 and
 checks the pushing card ends 8px inside the aside and the overlay card ends on
-the column edge. `drawer-card-in` and `drawer-overlay-in` slide at most the
-8px inset; the overlay card starts that far outside the sheet and is clipped by
-it. `drawer-overlay-out` and `drawer-fade-out` run `DRAWER_EXIT_MS`
-(160ms) while `useDrawerExit` keeps the overlay card mounted after a close. `DrawerColumn.test.tsx` pins the structure that math assumes (the two
+the column edge. A pushing card grows from the window's right edge: the aside
+eases its width with its right edge fixed (`justify-end`, `overflow-clip`, so a
+field focused while it opens cannot scroll the track), the card follows it with
+its border and corners in view, and the content keeps its final width
+(`--goodboy-drawer-track` minus the 18px of handle gutter, inset and border)
+pinned to the right edge and fades in once there is room (`drawer-content-in`).
+Closing, the card keeps a copy of its content for `FOLD_MS` (220ms) while the
+width eases to 0 and the copy fades (`drawer-content-out`). `drawer-overlay-in`
+slides at most the 8px inset; the overlay card starts that far outside the
+sheet and is clipped by it. `drawer-overlay-out` and `drawer-fade-out` run
+`DRAWER_EXIT_MS` (160ms) while `useDrawerExit` keeps the overlay card mounted
+after a close. `DrawerColumn.test.tsx` pins the structure that math assumes (the two
 containers as siblings, an 8px `w-2` handle gutter, the track's `pr-2`, the
-overlay container's `rounded-l-frame` and `border-l`, the track's min width).
+overlay container's `rounded-l-frame` and `border-l`, the overlay track's min
+width, the push track variable).
 [navigation.md](navigation.md#the-right-drawer) owns what goes in it.
+
+**A fold never re-centres an icon.** The main sidebar (⌘B) and the session
+rail fold through `FoldLayers` (`packages/ui/src/components/FoldLayers.tsx`):
+the grid column or the rail width eases in 220ms, the open layer keeps its full
+width pinned to the left edge and clipped, so no label wraps or truncates anew,
+and its words fade over the icon layer, which draws each icon at its open row's
+x and y. Unfolding fades the words in after 60ms. A level drill in the session
+rail slides a copy of the leaving level out and the new level in, 24px each,
+from the drill side (`LevelStack`). Tokens and timings are in
+[DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#motion-registry); under
+reduced motion each one is an instant swap.
 
 The top bar's 6px left padding puts the workspace tile on the collapsed rail's
 22px axis. The identity row adds `--titlebar-inset`, which defaults to 0px in
@@ -271,8 +291,8 @@ artifact document, a plan) the main area gives up the drawer's track and the
 centred column re-centres in the space left of the drawer, keeping its full
 width while that space is wide enough. It shrinks only below its frame, down to
 the column minimum (560px plus gutters); under that the drawer lies over the
-page. Closing the drawer slides the column back. It is one 180ms
-ease-out width transition on the drawer's track, so the column's centre follows
+page. Closing the drawer slides the column back. It is one 220ms
+ease-out width transition on the drawer's track (`FOLD_MS`), so the column's centre follows
 it in the same frames; it is off under `prefers-reduced-motion`. A route change
 never moves the column, with or without a drawer. The pure geometry is
 `pageBoxOf` in `packages/ui/src/drawerGeometry.ts`.

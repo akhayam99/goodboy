@@ -1,6 +1,8 @@
-import type { ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 import type { RailLevel } from '../../../store/slices/navigation/railLevel';
-import { LevelLayer, type LevelLayerPosition } from './LevelLayer';
+import { LevelGhost } from './LevelGhost';
+import { LevelLayer } from './LevelLayer';
+import { useLevelSwap } from './useLevelSwap';
 
 type StackLayer = {
   readonly level: RailLevel;
@@ -12,13 +14,6 @@ type Props = {
   readonly layers: ReadonlyArray<StackLayer>;
 };
 
-const DEPTH: Readonly<Record<RailLevel, number>> = {
-  session: 0,
-  worktree: 1,
-  run: 1,
-  auto: 1,
-};
-
 type ShownParams = Props;
 
 const isPresentIn = ({ level, layers }: ShownParams): boolean =>
@@ -27,36 +22,36 @@ const isPresentIn = ({ level, layers }: ShownParams): boolean =>
 const shownLevelOf = ({ level, layers }: ShownParams): RailLevel =>
   isPresentIn({ level, layers }) ? level : 'session';
 
-type PositionParams = {
-  readonly layer: RailLevel;
-  readonly shown: RailLevel;
-};
-
-const positionOf = ({ layer, shown }: PositionParams): LevelLayerPosition => {
-  if (layer === shown) {
-    return 'shown';
-  }
-  return DEPTH[layer] < DEPTH[shown] ? 'before' : 'after';
-};
-
 export const LevelStack = ({ level, layers }: Props) => {
   const shown = shownLevelOf({ level, layers });
+  const elementsRef = useRef(new Map<RailLevel, HTMLElement>());
+  const swap = useLevelSwap({ shown, elementsRef });
   return (
-    <div data-level-stack={shown} className="relative min-h-0 flex-1 overflow-hidden">
+    <div data-level-stack={shown} className="relative min-h-0 flex-1 overflow-clip">
       {layers.map((layer) => {
         if (layer.node === null) {
           return null;
         }
+        const isShown = layer.level === shown;
         return (
           <LevelLayer
             key={layer.level}
             name={layer.level}
-            position={positionOf({ layer: layer.level, shown })}
+            isShown={isShown}
+            entry={isShown ? swap.entry : null}
+            layerRef={(node) => {
+              if (node === null) {
+                elementsRef.current.delete(layer.level);
+                return;
+              }
+              elementsRef.current.set(layer.level, node);
+            }}
           >
             {layer.node}
           </LevelLayer>
         );
       })}
+      {swap.ghost === null ? null : <LevelGhost key={swap.ghost.id} ghost={swap.ghost} />}
     </div>
   );
 };

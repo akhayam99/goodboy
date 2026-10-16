@@ -1,5 +1,4 @@
 import type { SessionId } from '@goodboy/types';
-import { cn } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { openPaneOf } from '../../panes/openPaneOf';
 import { togglePane } from '../../panes/togglePane';
@@ -22,7 +21,7 @@ export const SessionTools = ({ sessionId, isFolded }: Props) => {
       aria-label="Session tools"
       data-testid="session-tools"
       data-folded={isFolded ? '' : undefined}
-      className={cn('flex shrink-0 flex-col', isFolded ? 'items-center gap-1' : 'px-2')}
+      className="flex shrink-0 flex-col px-2"
     >
       {SESSION_TOOLS.map((tool) => {
         const isOpen = openPane === tool.pane;

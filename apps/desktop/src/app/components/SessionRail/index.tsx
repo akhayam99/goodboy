@@ -1,6 +1,7 @@
 import type { KeyboardEvent } from 'react';
 import {
   COLLAPSED_RAIL_WIDTH,
+  FoldLayers,
   LEFT_SIDEBAR_DEFAULT,
   LEFT_SIDEBAR_MAX,
   LEFT_SIDEBAR_MIN,
@@ -79,28 +80,32 @@ export const SessionRail = ({ session }: Props) => {
       }}
       className={cn(
         'relative flex h-full min-h-0 shrink-0 flex-col gap-1 bg-background pb-2 pt-1',
-        'motion-safe:transition-[width] motion-safe:duration-200 motion-safe:ease-out',
-        fold.isFolded && 'items-center',
+        'motion-safe:transition-[width] motion-safe:duration-220 motion-safe:ease-out',
       )}
     >
       <div className="flex w-11 shrink-0 items-center justify-center">
         <SessionRailToggle isFolded={fold.isFolded} onToggle={fold.toggle} />
       </div>
-      {fold.isFolded ? (
-        <>
-          <div className="flex min-h-0 flex-1 flex-col items-center overflow-hidden">
+      <FoldLayers
+        isFolded={fold.isFolded}
+        openWidth={`var(${WIDTH_VAR})`}
+        open={
+          <div className="flex min-h-0 flex-1 flex-col gap-1">
+            <SessionRailLevels session={session} level={level} isStudioOver={isStudioOver} />
+            <SessionTools sessionId={sessionId} isFolded={false} />
+          </div>
+        }
+        folded={
+          <div className="flex min-h-0 flex-1 flex-col gap-1">
             <SessionRailIcons session={session} level={level} />
+            <SessionTools sessionId={sessionId} isFolded />
           </div>
-          <SessionTools sessionId={sessionId} isFolded />
-        </>
-      ) : (
-        <>
-          <SessionRailLevels session={session} level={level} isStudioOver={isStudioOver} />
-          <SessionTools sessionId={sessionId} isFolded={false} />
-          <div className="absolute inset-y-0 -right-1 z-10 flex">
-            <ResizeHandle {...resizable.handleProps} ariaLabel="Resize session rail" drawsEdge />
-          </div>
-        </>
+        }
+      />
+      {fold.isFolded ? null : (
+        <div className="absolute inset-y-0 -right-1 z-10 flex">
+          <ResizeHandle {...resizable.handleProps} ariaLabel="Resize session rail" drawsEdge />
+        </div>
       )}
     </nav>
   );

@@ -1,6 +1,7 @@
 import type { Session } from '@goodboy/types';
 import type { RailLevel } from '../../../store/slices/navigation/railLevel';
 import { usePresetRunFocus } from '../../../features/session/hooks/usePresetRunFocus';
+import { LevelStack } from './LevelStack';
 import { RailAutoLevel } from './RailAutoLevel';
 import { RailRunLevel } from './RailRunLevel';
 import { RailSessionLevel } from './RailSessionLevel';
@@ -13,14 +14,24 @@ type Props = {
 
 export const SessionRailIcons = ({ session, level }: Props) => {
   const runFocus = usePresetRunFocus({ sessionId: session.id });
-  if (level === 'worktree') {
-    return <RailWorktreeLevel session={session} />;
-  }
-  if (level === 'run' && runFocus !== null) {
-    return <RailRunLevel session={session} focus={runFocus} />;
-  }
-  if (level === 'auto') {
-    return <RailAutoLevel session={session} />;
-  }
-  return <RailSessionLevel session={session} />;
+  return (
+    <LevelStack
+      level={level}
+      layers={[
+        { level: 'session', node: <RailSessionLevel session={session} /> },
+        {
+          level: 'worktree',
+          node: level === 'worktree' ? <RailWorktreeLevel session={session} /> : null,
+        },
+        {
+          level: 'run',
+          node:
+            level === 'run' && runFocus !== null ? (
+              <RailRunLevel session={session} focus={runFocus} />
+            ) : null,
+        },
+        { level: 'auto', node: level === 'auto' ? <RailAutoLevel session={session} /> : null },
+      ]}
+    />
+  );
 };
