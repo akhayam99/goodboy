@@ -160,6 +160,11 @@ c01-tail-stopped
 c01-tail-stopping
 c01-tail-waiting
 c01-tail-working
+c13-workflows
+c13-workflows-history
+c13-workflows-history-empty
+c13-workflows-history-failed
+c13-workflows-history-filter
 card-rails
 changelog
 chat-empty-noprojects

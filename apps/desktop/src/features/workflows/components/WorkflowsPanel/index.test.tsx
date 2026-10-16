@@ -34,6 +34,11 @@ const { invokeMock, state } = vi.hoisted(() => ({
       async (_args: unknown, _workspaceId: unknown): Promise<unknown> => undefined,
     ),
     deleteStepDef: vi.fn(async (_id: unknown, _workspaceId: unknown) => undefined),
+    workflowRunHistory: Object.fromEntries<unknown>([]),
+    loadWorkflowRunHistory: vi.fn(async (_input: unknown) => undefined),
+    navigate: vi.fn(),
+    patchSessionDraft: vi.fn(),
+    openSessionDraft: vi.fn(),
   },
 }));
 

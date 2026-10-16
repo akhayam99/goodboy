@@ -564,6 +564,7 @@ export const storyDbStubs = () => ({
   listSettingsWithPrefix: vi.fn(async () => []),
   listResolveCheckRuns: vi.fn(async () => []),
   listPlansForSession: vi.fn(async () => []),
+  listWorkspaceWorkflowRuns: vi.fn(async () => []),
   getArtifactProvenance: vi.fn(async () => null),
   upsertWorkflow: vi.fn(async () => undefined),
   listActiveResolveAttempts: storySpies.listActiveResolveAttempts,
