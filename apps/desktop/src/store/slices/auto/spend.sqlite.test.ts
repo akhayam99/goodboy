@@ -119,7 +119,7 @@ describe('treeSpend', () => {
     const facts = autoBudgetFacts({ spend });
     expect(budget?.facts).toEqual(facts);
     expect(budget?.label).toBe(autoBudgetLabel({ facts }));
-    expect(budget?.promptLine).toBe(autoBudgetPromptLine({ facts }));
+    expect(budget?.promptLine).toBe(autoBudgetPromptLine({ facts, turnReservedUsd: 0 }));
     expect(budget?.label).toBe('2.40 USD of 5.00 USD');
     expect(budget?.promptLine).toContain('Left 2.60 USD.');
 

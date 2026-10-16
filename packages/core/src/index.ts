@@ -168,6 +168,7 @@ export {
   autoBudgetFacts,
   autoBudgetLabel,
   autoBudgetPromptLine,
+  autoTreeSpendOf,
   type AutoBudgetFacts,
 } from './auto/budget';
 export {

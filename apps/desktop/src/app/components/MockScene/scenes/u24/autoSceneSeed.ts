@@ -1,4 +1,4 @@
-import { MODEL_CATALOGS } from '@goodboy/core';
+import { MODEL_CATALOGS, autoBudgetFacts, autoTreeSpendOf } from '@goodboy/core';
 import type { AutoArtifactLedgerRow, AutoDelegation, AutoPhase } from '@goodboy/db';
 import {
   brandId,
@@ -379,13 +379,9 @@ const viewOf = ({
   },
   delegations,
   artifacts,
-  budget: {
-    capUsd: 10,
-    spentUsd,
-    reservedUsd,
-    remainingUsd: 10 - spentUsd - reservedUsd,
-    hasEstimate: false,
-  },
+  budget: autoBudgetFacts({
+    spend: autoTreeSpendOf({ capUsd: 10, settledUsd: spentUsd, reservedUsd, estimatedUsd: 0 }),
+  }),
 });
 
 const IDLE: TurnState = { kind: 'idle', lastActivityAt: at({ time: '12:10:00' }) };

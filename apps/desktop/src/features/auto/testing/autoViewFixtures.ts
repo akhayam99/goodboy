@@ -1,3 +1,4 @@
+import { autoBudgetFacts, autoTreeSpendOf } from '@goodboy/core';
 import type { AutoArtifactLedgerRow, AutoDelegation, AutoPhase, AutoTree } from '@goodboy/db';
 import {
   brandId,
@@ -169,11 +170,7 @@ export const aView = ({
   tree: aTree({ phase, capUsd }),
   delegations,
   artifacts,
-  budget: {
-    capUsd,
-    spentUsd,
-    reservedUsd,
-    remainingUsd: capUsd - spentUsd - reservedUsd,
-    hasEstimate: false,
-  },
+  budget: autoBudgetFacts({
+    spend: autoTreeSpendOf({ capUsd, settledUsd: spentUsd, reservedUsd, estimatedUsd: 0 }),
+  }),
 });

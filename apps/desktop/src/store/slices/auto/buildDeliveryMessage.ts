@@ -1,4 +1,5 @@
 import {
+  AUTO_TURN_CEILING_USD,
   buildArtifactBodiesBlock,
   buildArtifactLedgerBlock,
   buildDeliveryText,
@@ -151,7 +152,11 @@ export const buildDeliveryMessage = async ({
   nowMs,
 }: BuildDeliveryMessageParams): Promise<string> => {
   const entries = await treeArtifacts({ db, treeId: tree.id });
-  const budget = await treeBudget({ db, treeId: tree.id });
+  const budget = await treeBudget({
+    db,
+    treeId: tree.id,
+    turnReservedUsd: AUTO_TURN_CEILING_USD,
+  });
   const delegations = await listAutoDelegations({ db, treeId: tree.id });
   const digest = await digestDelegations({ db, delegations, nowMs });
   const bodies = await artifactBodies({ db, tree, rows });

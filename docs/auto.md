@@ -280,4 +280,11 @@ The screens read the registry through the `auto-view` slice
 (`loadAutoTrees`), which polls every 2 seconds while a session has an Auto
 agent or a tree that is not finished. Nothing pushes tree changes to a window
 yet. The numbers on screen come from the budget function the prompt and the
-admission use, so they agree.
+admission use, so they agree. What is left has one SQL formula
+(`autoRemainingUsdSql`, read by `readAutoTreeSpend` and by every admission
+check) and one JS formula (`autoTreeSpendOf` in core, used by seeds, fixtures
+and the delivery line); nothing else subtracts. The budget line of a delivery
+is built before the claim reserves the turn's 0.50 USD, so it counts that
+reservation itself and names it ("Reserved 0.50 USD, of which 0.50 USD for this
+answer. Left 0.68 USD."): the Left Auto reads equals the rail's Left while that
+turn runs. A delivery retried after a failed start reuses its stored text.

@@ -715,7 +715,9 @@ reads.
   lifetime counters, four open children, remaining budget, plan approval and
   revision. `core/auto/admission.ts` only names the refusal for the caller.
 - Money has one source, `treeSpend`: settled, reserved and remaining. It feeds
-  admission, the prompt line and the screen through `autoBudgetFacts`. An
+  admission, the prompt line and the screen through `autoBudgetFacts`;
+  remaining is `autoRemainingUsdSql` in SQL and `autoTreeSpendOf` in JS, and
+  the delivery line counts the turn reservation it is delivered with. An
   attempt reserves its ceiling at admission and is reconciled to the actual
   cost, or to the ceiling, marked estimated, when the provider reports none.
 - `settleAttempt` and `landRevision` apply a result only while the tree
