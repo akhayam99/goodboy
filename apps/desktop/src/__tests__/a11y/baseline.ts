@@ -39,7 +39,6 @@ export const A11Y_BASELINE = {
   'scene review-modes': [],
   'scene workflow-studio': [],
   'scene workflow-builder-modes': [],
-  'scene brand-lookup': ['aria-required-parent'],
 } satisfies Record<string, ReadonlyArray<string>>;
 
 const BASELINE_BY_CASE: Readonly<Record<string, ReadonlyArray<string>>> = A11Y_BASELINE;
