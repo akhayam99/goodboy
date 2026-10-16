@@ -21,7 +21,8 @@ import {
 } from '@goodboy/ui';
 import { StudioBand } from '../../../shared/components/StudioShell/StudioBand';
 import { StudioBandContext } from '../../../shared/components/StudioShell/studioBandContext';
-import { StudioCloseButton } from '../../../shared/components/StudioShell/StudioCloseButton';
+import { HeaderCloseButton } from '../../../shared/components/StudioShell/HeaderCloseButton';
+import { useHeaderCloseClaim } from '../../../shared/components/StudioShell/useHeaderCloseClaim';
 import {
   StudioFrameContext,
   type StudioChrome,
@@ -100,11 +101,13 @@ export const StudioFrame = ({
   const title = chrome?.title ?? meta.title;
   const closeLabel = chrome?.closeLabel ?? meta.closeLabel;
   const accessory = chrome?.accessory ?? null;
-  const isBandClose = isClosable && meta.close === 'band';
-  const headerClose =
-    isClosable && meta.close === 'header' ? (
-      <StudioCloseButton label={closeLabel} onClose={requestClose} />
-    ) : null;
+  const headerCloseClaim = useHeaderCloseClaim();
+  const isHeaderClose = isClosable && meta.close === 'header';
+  const isBandClose =
+    isClosable && (meta.close === 'band' || (isHeaderClose && !headerCloseClaim.isClaimed));
+  const headerClose = isHeaderClose ? (
+    <HeaderCloseButton label={closeLabel} onClose={requestClose} onClaim={headerCloseClaim.claim} />
+  ) : null;
   const isBandDrawn = hasBand && (isBandClose || trailClaims > 0 || accessory !== null);
 
   const isSplit = meta.page !== null && PAGE_FRAME[meta.page] === 'split';

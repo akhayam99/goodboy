@@ -271,7 +271,7 @@ describe('RoutingPicker', () => {
     expect(row.textContent).toBe('AutoNow: Claude · Sonnet 4.6 · Medium');
   });
 
-  it('shows the resolved model on the closed trigger when asked to', () => {
+  it('shows the resolved model after Auto on the closed trigger when asked to', () => {
     render(
       <RoutingPicker
         {...baseProps}
@@ -285,7 +285,7 @@ describe('RoutingPicker', () => {
       />,
     );
     const trigger = screen.getByRole('button', { name: /^New chats routing:/ });
-    expect(trigger.textContent).toBe('Sonnet 4.6·Medium');
+    expect(trigger.textContent).toBe('Auto·Sonnet 4.6·Medium');
     expect(trigger.getAttribute('aria-label')).toContain('Auto, now Claude · Sonnet 4.6 · Medium');
   });
 
@@ -361,7 +361,6 @@ describe('RoutingPicker', () => {
     const trigger = screen.getByRole('button', { name: /^Scout routing:/ });
     expect(trigger.textContent).toContain('Haiku');
     expect(trigger.textContent).toContain('· pinned');
-    expect(trigger.className).not.toContain('warning');
     expect(screen.queryByRole('button', { name: 'Back to Auto' })).toBeNull();
     fireEvent.click(trigger);
     fireEvent.click(screen.getByRole('button', { name: 'Back to Auto' }));

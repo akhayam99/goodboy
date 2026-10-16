@@ -64,7 +64,14 @@ const GROUPS: ReadonlyArray<TaskGroup> = [
 export const TasksGridSpecimen = () => (
   <ListGrid label="Tasks" columns={COLUMNS} isGrouped>
     {GROUPS.map((group) => (
-      <ListGridGroup key={group.label} label={group.label} count={group.count}>
+      <ListGridGroup
+        key={group.label}
+        label={group.label}
+        count={group.count}
+        {...(group.count > group.rows.length && {
+          fold: { label: 'Show all', onToggle: () => undefined },
+        })}
+      >
         {group.rows.map((row) => (
           <ListGridRow
             key={row.key}

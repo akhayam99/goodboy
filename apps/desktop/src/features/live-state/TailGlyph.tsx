@@ -12,6 +12,9 @@ export const TailGlyph = ({ state }: Props) => {
   if (state === 'waiting') {
     return <span className="size-3.5 rounded-full ring-2 ring-info ring-inset" />;
   }
+  if (state === 'needsYou') {
+    return <WorkNode size="sm" state="question" mark={{ kind: 'dot' }} label="Needs you" />;
+  }
   if (state === 'paused') {
     return <WorkNode size="sm" state="budget" mark={{ kind: 'dot' }} label="Paused" />;
   }

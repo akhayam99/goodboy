@@ -78,7 +78,7 @@ export const routingTriggerLabel = ({
   detail: [
     ...modeNames({ model, selection }),
     ...(showEffort ? [EFFORT_LABEL[effort]] : []),
-    ...(verbosity == null ? [] : [VERBOSITY_LABEL[verbosity]]),
+    ...(verbosity == null || verbosity === 'normal' ? [] : [VERBOSITY_LABEL[verbosity]]),
   ],
 });
 
