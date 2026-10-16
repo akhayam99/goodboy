@@ -17,7 +17,6 @@ export const useAgentsGrid = ({ session }: Params) => {
   const phaseRuns: ReadonlyArray<Agent> = useAppStore(
     (state) => state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY,
   );
-  const messages = useAppStore((state) => state.messages[sessionId] ?? EMPTY_ARRAY);
   const agentKindOverride = useAppStore(
     useShallow((state) => {
       const out: Record<string, AgentKind> = {};
@@ -49,17 +48,6 @@ export const useAgentsGrid = ({ session }: Params) => {
     }
     return map;
   }, [phaseRuns]);
-
-  const firstUserTextByAgentId = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const message of messages) {
-      if (message.role !== 'user' || map.has(message.agentId)) {
-        continue;
-      }
-      map.set(message.agentId, message.content);
-    }
-    return map;
-  }, [messages]);
 
   const standaloneAgents = useMemo(
     () =>
@@ -114,7 +102,6 @@ export const useAgentsGrid = ({ session }: Params) => {
     activeAgents,
     agentKindOverride,
     completedAgents,
-    firstUserTextByAgentId,
     isAgentsLoading: loading.agents,
     metrics,
     onPickAgent,

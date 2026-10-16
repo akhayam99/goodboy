@@ -2,7 +2,7 @@ import type { Agent, Session } from '@goodboy/types';
 import { EmptyLine } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { FinishedRegister } from '../../../../shared/components/FinishedRegister';
-import { resolveAgentKind } from '../../agent-kind';
+import { classifyAgent } from '../../agent-kind';
 import { AgentListSkeleton } from './AgentListSkeleton';
 import { AgentsGridRow } from './AgentsGridRow';
 import { useAgentsGrid } from './useAgentsGrid';
@@ -36,11 +36,7 @@ export const AgentsGrid = ({ session }: Props) => {
         <AgentsGridRow
           key={run.id}
           run={run}
-          kind={resolveAgentKind({
-            name: run.name,
-            firstUserText: lane.firstUserTextByAgentId.get(run.id) ?? null,
-            override: lane.agentKindOverride[run.id] ?? null,
-          })}
+          kind={classifyAgent({ agent: run, override: lane.agentKindOverride[run.id] ?? null })}
           telemetry={lane.metrics.latestTelemetryByAgentId.get(run.id) ?? null}
           nowMs={nowMs}
           isMuted={isMuted}

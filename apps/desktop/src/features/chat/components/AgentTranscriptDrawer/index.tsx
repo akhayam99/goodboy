@@ -19,6 +19,7 @@ type Props = {
   readonly isLeadPreferred?: boolean;
   readonly leadAlertCount?: number;
   readonly briefLabel?: string;
+  readonly detail?: ReactNode;
   readonly onClose: () => void;
 };
 
@@ -29,6 +30,7 @@ export const AgentTranscriptDrawer = ({
   isLeadPreferred = false,
   leadAlertCount = 0,
   briefLabel,
+  detail = null,
   onClose,
 }: Props) => {
   const session = useAppStore((s) => sessionById(s.sessions, sessionId) ?? null);
@@ -120,6 +122,11 @@ export const AgentTranscriptDrawer = ({
 
   const transcript = (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      {detail === null ? null : (
+        <div data-transcript-usage className={PANE_RHYTHM.body}>
+          {detail}
+        </div>
+      )}
       {session === null || agent === null ? null : (
         <ChatView
           session={session}
