@@ -278,7 +278,9 @@ read top to bottom at the conversation measure:
   (`useRunTimeLeft`). The autonomy word is today's run autonomy menu
   (`OrchestratedAutonomyMenu`: Ask me, Balanced, Autopilot, each hint in its
   tooltip), shown while the run lives. **Limit** opens `RunSpendLimitPopover`. The workflow's
-  process text and the run's standing guidance sit behind **Show guidance**;
+  process text and the run's standing guidance sit behind **Show guidance** as
+  the one text the orchestrator reads (`orchestratorProcessText`), so guidance
+  the builder saved in both shows once;
   the goal attachments follow. The write destination shows under it while 2 or
   more worktrees can be written.
 - **Plan and progress** (`OrchestratedChecklist`). One checklist: the decided

@@ -12,4 +12,10 @@ export const U25_C09_ORCHESTRATED_SCENES = {
   'c09-orch-done': () => <C09OrchestratedScene state="done" page="document" />,
   'c09-orch-archived': () => <C09OrchestratedScene state="archived" page="document" />,
   'c09-orch-menu': () => <C09OrchestratedScene state="running" page="document" click="menu" />,
+  'c09-orch-guidance': () => (
+    <C09OrchestratedScene state="running" page="document" click="guidance" />
+  ),
+  'c09-orch-guidance-once': () => (
+    <C09OrchestratedScene state="running" page="document" click="guidance" isGuidanceRepeated />
+  ),
 } satisfies Readonly<Record<string, ComponentType>>;

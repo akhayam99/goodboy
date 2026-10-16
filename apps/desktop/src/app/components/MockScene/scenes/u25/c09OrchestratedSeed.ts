@@ -59,7 +59,10 @@ export type C09Page = 'document' | 'list' | 'empty' | 'step';
 type SeedParams = {
   readonly state: C09State;
   readonly page: C09Page;
+  readonly isGuidanceRepeated?: boolean;
 };
+
+const STANDING_GUIDANCE = 'Keep every change behind the existing export flag.';
 
 type StateParams = {
   readonly state: C09State;
@@ -117,13 +120,19 @@ const DOCS = stepOf({
 
 const isFinished = ({ state }: StateParams): boolean => state === 'done' || state === 'archived';
 
-const workflowOf = ({ state }: StateParams): Workflow => ({
+type WorkflowParams = StateParams & {
+  readonly isGuidanceRepeated: boolean;
+};
+
+const workflowOf = ({ state, isGuidanceRepeated }: WorkflowParams): Workflow => ({
   id: WORKFLOW_ID,
   workspaceId: C09_WORKSPACE_ID,
   name: 'Speed up the export end to end',
   description: '',
   origin: 'orchestrated',
-  processText: 'Prefer small steps. Measure before and after every change.',
+  processText: isGuidanceRepeated
+    ? STANDING_GUIDANCE
+    : 'Prefer small steps. Measure before and after every change.',
   steps: isFinished({ state }) ? [SCOUT, IMPLEMENT, TEST, DOCS] : [SCOUT, IMPLEMENT, TEST],
   createdAt: at('00:00'),
   updatedAt: at('00:00'),
@@ -222,7 +231,7 @@ const runOf = ({ state }: StateParams): WorkflowRun => ({
   rulesSnapshot: {
     ...DEFAULT_WORKFLOW_RULES,
     autonomy: state === 'ready' ? 'step' : 'plan',
-    standingGuidance: 'Keep every change behind the existing export flag.',
+    standingGuidance: STANDING_GUIDANCE,
   },
   orchestratorHints: hintsOf({ state }),
   orchestratorSummary: isFinished({ state }) ? SUMMARY_DONE : SUMMARY_RUNNING,
@@ -523,7 +532,7 @@ const sessionOf = ({ state, page }: SessionParams): Session => ({
   updatedAt: C09_NOW,
 });
 
-export const seedC09 = ({ state, page }: SeedParams): Session => {
+export const seedC09 = ({ state, page, isGuidanceRepeated = false }: SeedParams): Session => {
   const session = sessionOf({ state, page });
   const isDocument = page === 'document' || page === 'step';
   useAppStore.setState({
@@ -533,7 +542,9 @@ export const seedC09 = ({ state, page }: SeedParams): Session => {
     activeLens: { [C09_SESSION_ID]: isDocument ? 'workflows' : 'orchestrated' },
     focusedWorkflowRunId: { [C09_SESSION_ID]: isDocument ? C09_RUN_ID : null },
     selectedAgentId: { [C09_SESSION_ID]: null },
-    sessionWorkflows: { [C09_SESSION_ID]: [workflowOf({ state }), PRESET_WORKFLOW] },
+    sessionWorkflows: {
+      [C09_SESSION_ID]: [workflowOf({ state, isGuidanceRepeated }), PRESET_WORKFLOW],
+    },
     phaseTemplates: { [C09_WORKSPACE_ID]: [PRESET_WORKFLOW] },
     sessionPhaseRuns: {
       [C09_SESSION_ID]: page === 'empty' ? [PRESET_AGENT] : [...agentsOf({ state }), PRESET_AGENT],

@@ -234,6 +234,8 @@ c08-runs
 c09-orch-archived
 c09-orch-done
 c09-orch-failed
+c09-orch-guidance
+c09-orch-guidance-once
 c09-orch-menu
 c09-orch-reading
 c09-orch-ready

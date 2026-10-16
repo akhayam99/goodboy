@@ -7,6 +7,7 @@ import { DrawerHost } from '../../../DrawerHost';
 import { SideColumn } from '../../../SideColumn';
 import { SessionFrame } from '../../../SessionRail/SessionFrame';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
+import { ORCHESTRATED_COPY } from '../../../../../features/workflows/orchestratedCopy';
 import {
   C09_SESSION_ID,
   C09_WORKSPACE_ID,
@@ -15,12 +16,13 @@ import {
   type C09State,
 } from './c09OrchestratedSeed';
 
-type C09Click = 'none' | 'menu';
+type C09Click = 'none' | 'menu' | 'guidance';
 
 type Props = {
   readonly state: C09State;
   readonly page: C09Page;
   readonly click?: C09Click;
+  readonly isGuidanceRepeated?: boolean;
 };
 
 const noop = () => undefined;
@@ -42,27 +44,37 @@ const ACTIONS: ColumnActions = {
 
 const CLICK_DELAY_MS = 200;
 
-const SELECTOR: Readonly<Record<Exclude<C09Click, 'none'>, string>> = {
-  menu: 'button[aria-label$="run actions"]',
+const TARGET: Readonly<Record<Exclude<C09Click, 'none'>, () => HTMLButtonElement | undefined>> = {
+  menu: () =>
+    document.querySelector<HTMLButtonElement>('button[aria-label$="run actions"]') ?? undefined,
+  guidance: () =>
+    [...document.querySelectorAll<HTMLButtonElement>('section[aria-label="Goal"] button')].find(
+      (button) => button.textContent === ORCHESTRATED_COPY.showGuidance,
+    ),
 };
 
-export const C09OrchestratedScene = ({ state, page, click = 'none' }: Props) => {
+export const C09OrchestratedScene = ({
+  state,
+  page,
+  click = 'none',
+  isGuidanceRepeated = false,
+}: Props) => {
   const [isSeeded, setIsSeeded] = useState(false);
   const session = useSessionById(C09_SESSION_ID);
   const sizing = useAppStore(selectDrawerSizing);
   const isDrawerOpen = useAppStore((current) => current.drawer !== null);
 
   useEffect(() => {
-    seedC09({ state, page });
+    seedC09({ state, page, isGuidanceRepeated });
     setIsSeeded(true);
-  }, [state, page]);
+  }, [state, page, isGuidanceRepeated]);
 
   useEffect(() => {
     if (!isSeeded || click === 'none') {
       return;
     }
     const timer = window.setTimeout(() => {
-      document.querySelector<HTMLButtonElement>(SELECTOR[click])?.click();
+      TARGET[click]()?.click();
     }, CLICK_DELAY_MS);
     return () => window.clearTimeout(timer);
   }, [isSeeded, click]);

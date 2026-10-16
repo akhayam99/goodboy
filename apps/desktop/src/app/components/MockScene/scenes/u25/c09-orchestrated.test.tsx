@@ -229,4 +229,20 @@ describe('the c09 orchestrated scenes', () => {
     expect(within(menu).getByText('Archive run')).toBeDefined();
     expect(within(menu).getByText('Delete run')).toBeDefined();
   });
+  it('c09-orch-guidance shows the process and the standing guidance under Hide guidance', async () => {
+    await mount('c09-orch-guidance');
+
+    const goal = nodeOf('section[aria-label="Goal"]');
+    expect(within(goal).getByRole('button', { name: 'Hide guidance' })).toBeDefined();
+    expect(within(goal).getAllByText(/Measure before and after every change/)).toHaveLength(1);
+    expect(within(goal).getAllByText(/behind the existing export flag/)).toHaveLength(1);
+  });
+
+  it('c09-orch-guidance-once shows guidance the builder saved twice only once', async () => {
+    await mount('c09-orch-guidance-once');
+
+    const goal = nodeOf('section[aria-label="Goal"]');
+    expect(within(goal).getByRole('button', { name: 'Hide guidance' })).toBeDefined();
+    expect(within(goal).getAllByText(/behind the existing export flag/)).toHaveLength(1);
+  });
 });
