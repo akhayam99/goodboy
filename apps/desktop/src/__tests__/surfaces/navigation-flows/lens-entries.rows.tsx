@@ -58,7 +58,7 @@ export const LENS_ENTRY_ROWS: ReadonlyArray<Row> = [
     name: 'right click board card: Open',
     covers: ['navigate', 'rightclick:session:Open'],
     open: async (ctx) => {
-      await clickButton(/^Board/);
+      await clickButton(/^Sessions/);
       await openObjectMenu(await sessionRow(ctx));
       await runMenuItem(/^Open$/);
     },
@@ -91,7 +91,7 @@ export const LENS_ENTRY_ROWS: ReadonlyArray<Row> = [
     },
   },
   ...CRUMB_ROWS.map((row): Row => ({
-    name: `crumb menu: ${row.label}${row.note === undefined ? '' : `, ${row.note}`}`,
+    name: `session level page: ${row.label}${row.note === undefined ? '' : `, ${row.note}`}`,
     covers: ['navigate', `crumb:${row.label}`, `lens:${row.lens ?? 'overview'}`],
     ...(row.seed !== undefined && { seed: row.seed }),
     open: async (ctx) => {

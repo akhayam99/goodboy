@@ -7,6 +7,10 @@ const SRC = join(__dirname, '..', '..');
 const SCANNED_ROOTS = ['features', 'app', 'shared'];
 const COLUMN_ROOT = join(SRC, 'app', 'components', 'SideColumn');
 
+const SESSION_LEVEL_PAGES: ReadonlySet<string> = new Set([
+  'app/components/SideColumn/RailSessionLevel.tsx',
+]);
+
 const INTERNAL_MOVES = /\b(setActiveLens|setCurrentSession|selectAgent)\b/;
 
 const isSource = (path: string): boolean =>
@@ -47,7 +51,8 @@ describe('one selected sign across the column doors', () => {
   });
 
   it('derives every door current from the one column place', () => {
-    const currents = columnSources.flatMap(({ path, source }) =>
+    const doorSources = columnSources.filter(({ path }) => !SESSION_LEVEL_PAGES.has(path));
+    const currents = doorSources.flatMap(({ path, source }) =>
       Array.from(source.matchAll(/isCurrent=\{([^}]*)\}/g), (match) => `${path}: ${match[1]}`),
     );
     expect(currents.length).toBeGreaterThan(0);

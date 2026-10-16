@@ -26,6 +26,14 @@ const doorIn = (name: string): HTMLElement => {
   return door as HTMLElement;
 };
 
+const signalIn = (): HTMLElement => {
+  const signal = document.querySelector<HTMLElement>('[data-top-bar] [data-monitoring-signal]');
+  if (signal === null) {
+    throw new Error('no monitoring signal in the top bar');
+  }
+  return signal;
+};
+
 const createIn = (name: string): HTMLElement => {
   const button = document.querySelector<HTMLElement>(
     `[data-side-column] [data-create="${name}"], [data-side-column] [data-door-create="${name}"]`,
@@ -129,13 +137,17 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
-    name: 'column: monitoring',
+    name: 'top bar: the monitoring signal opens Monitoring',
     covers: ['openMonitoring', 'studio:monitoring'],
     door: 'visible',
-    open: () => click(doorIn('monitoring')),
+    open: () => click(signalIn()),
     lands: both(
       () => band('Monitoring'),
-      async () => expect(doorIn('monitoring').getAttribute('aria-current')).toBe('page'),
+      async () => expect(signalIn().getAttribute('aria-pressed')).toBe('true'),
+      async () =>
+        expect(document.querySelector('[data-side-column] [data-column-door="monitoring"]')).toBe(
+          null,
+        ),
     ),
   },
   {

@@ -254,7 +254,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Left column',
-        desc: 'Board, Tasks, Chat, Workflows, Terminal and Monitoring are the doors. A + on Chat and on Terminal starts a new chat or terminal. Your sessions follow, with a New session row on top, then Settings, the Goodboy row and the bug report button. The Goodboy row opens a menu with the Guide. ⌘B folds it into icons.',
+        desc: 'New session comes first, then the doors Sessions, Tasks, Chat, Workflows and Terminal. A + on Chat and on Terminal starts a new chat or terminal, and a dot on a door says something runs or is unread. Your sessions follow, then Settings, the Goodboy row and the bug report button. The Goodboy row opens a menu with the Guide. ⌘B folds it into icons. Monitoring is the pulse icon in the top bar.',
       },
       {
         term: 'Session rows',
@@ -265,12 +265,12 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: "Pin session, in a row's right-click menu or the palette, moves a session to a Pinned group at the top of the list, in the order you pinned them, whatever the sort or filter. Move up and Move down change the order, and Unpin session puts it back. When the column is folded to icons, pinned sessions stay on the rail, with a flyout for the rest.",
       },
       {
-        term: 'Branches in the sidebar',
-        desc: "The open session shows its pages in one card: Overview, Branch, Runs, Agents and Artifacts. Branch lists the session's branches under it, and one click switches the page to that branch.",
+        term: 'Inside a session',
+        desc: "Click a session and the sidebar steps into it. ‹ Sessions at the top goes back, and ⌘[ does too while the sidebar has focus. Under it sit the session's name, which you click to rename, and its menu, then its pages with their counts: Overview, Runs, Agents, Artifacts, and Questions while one waits. Projects lists each branch with its pull request number, and Linked lists the work linked to the session.",
       },
       {
         term: 'Ask in a session',
-        desc: 'Ask, in the page bar or on ⌘L, opens a panel that reads the session: what needs you now, and answers with buttons for what you can do. Nothing runs in one click. Its header button, or ⌘N inside the panel, starts a new chat and keeps the old one under Earlier.',
+        desc: 'Ask, at the right of every session page header or on ⌘L, opens a panel that reads the session: what needs you now, and answers with buttons for what you can do. Nothing runs in one click. Its header button, or ⌘N inside the panel, starts a new chat and keeps the old one under Earlier.',
       },
     ],
     links: [{ label: 'Go to the board', target: { kind: 'board' } }],

@@ -1,5 +1,5 @@
 import { expect } from 'vitest';
-import { screen, waitFor, within } from '@testing-library/react';
+import { waitFor } from '@testing-library/react';
 import { STORY_NOW } from '../../../store/storyHarness';
 import {
   type Ctx,
@@ -19,21 +19,27 @@ import {
   findSection,
 } from './harness';
 
-const trailNav = (): HTMLElement => screen.getByRole('navigation', { name: 'Breadcrumb' });
+const worktreeMarked = async (): Promise<void> => {
+  await waitFor(() => {
+    const projects = document.querySelector(
+      '[data-level-layer="session"]:not([inert]) [aria-labelledby="level-projects-label"]',
+    );
+    expect(projects?.querySelectorAll('[aria-current="page"]')).toHaveLength(1);
+  }, WAIT);
+};
 
-const trailReads =
-  (...labels: ReadonlyArray<string>) =>
-  async (): Promise<void> => {
-    const pattern = new RegExp(labels.map((label) => label.replace('#', '#\\d*')).join('.*'));
-    await waitFor(() => expect(trailNav().textContent ?? '').toMatch(pattern), WAIT);
-  };
+const sessionLevelShown = async (): Promise<void> => {
+  await waitFor(
+    () =>
+      expect(document.querySelector('[data-level-layer="session"]:not([inert])')).not.toBeNull(),
+    WAIT,
+  );
+};
 
 const stackDepth = (): number => {
   const state = useAppStore.getState();
   return state.navigation[state.currentWorkspaceId ?? '']?.entries.length ?? 0;
 };
-
-const BRANCH_TRAIL = ['Session', 'Branch'];
 
 const seedReviewComment = ({ sessionId }: Ctx): void => {
   const state = useAppStore.getState();
@@ -86,23 +92,23 @@ export const BRANCH_PAGE_ROWS: ReadonlyArray<Row> = [
       await settle();
       await clickFirstButton(/^Open Comments for .+, 1 to resolve$/);
     },
-    lands: both(branchTab('comments'), trailReads(...BRANCH_TRAIL)),
+    lands: both(branchTab('comments'), worktreeMarked),
   },
   {
-    name: 'trail: the Files door reads Session then the Branch',
-    covers: ['navigate', 'trail:files-door'],
+    name: 'door: Files lands on the Branch with its worktree row current',
+    covers: ['navigate', 'sidebar:files-door'],
     open: () => openPalette(/^Open Files/),
-    lands: both(branchTab('files'), trailReads(...BRANCH_TRAIL)),
+    lands: both(branchTab('files'), worktreeMarked),
   },
   {
-    name: 'trail: the Comments door reads the same Session then the Branch',
-    covers: ['navigate', 'trail:comments-door'],
+    name: 'door: Comments lands on the Branch Comments tab with the session level on screen',
+    covers: ['navigate', 'sidebar:comments-door'],
     open: () => openPalette(/^Open Comments/),
-    lands: both(branchTab('comments'), trailReads(...BRANCH_TRAIL)),
+    lands: both(branchTab('comments'), sessionLevelShown),
   },
   {
     name: 'tabs: switching a tab edits the address in place, and Back leaves the Branch',
-    covers: ['back', 'trail:tabs-in-place'],
+    covers: ['back', 'branch:tabs-in-place'],
     open: async () => {
       await openBranchFiles();
       const depth = stackDepth();
@@ -110,20 +116,8 @@ export const BRANCH_PAGE_ROWS: ReadonlyArray<Row> = [
       await click(await findSection(/^Checks/));
       await click(await findSection(/^Comments/));
       expect(stackDepth()).toBe(depth);
-      await clickButton(/^Back/);
+      await clickButton(/^Back(?! to Sessions$)/);
     },
     lands: lens(null),
-  },
-  {
-    name: 'trail: the Branch crumb menu lists the branches of the session',
-    covers: ['trail:branch-menu'],
-    open: async () => {
-      await openBranchFiles();
-      const crumb = within(trailNav()).getByRole('button', { name: /Branch/ });
-      await click(crumb);
-    },
-    lands: async () => {
-      expect(await screen.findAllByRole('menuitemradio', undefined, WAIT)).not.toHaveLength(0);
-    },
   },
 ];

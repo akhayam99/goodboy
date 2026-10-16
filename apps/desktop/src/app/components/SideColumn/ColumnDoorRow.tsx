@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { PANE_RHYTHM, cn } from '@goodboy/ui';
+import { PANE_RHYTHM, Tooltip, cn } from '@goodboy/ui';
 import type { ShortcutId } from '../../../shared/keyboard/registry';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 import { DoorCreateButton } from './DoorCreateButton';
@@ -32,12 +32,13 @@ export const ColumnDoorRow = ({
   signal,
   create,
   onSelect,
-}: Props) => (
-  <div data-column-door-row={id} className="group/door relative">
+}: Props) => {
+  const name = signal === undefined ? label : `${label}, ${signal.fact}`;
+  const door = (
     <button
       type="button"
       data-column-door={id}
-      aria-label={signal === undefined ? label : `${label}, ${signal.fact}`}
+      aria-label={name}
       aria-current={isCurrent ? 'page' : undefined}
       onClick={() => {
         if (isCurrent) {
@@ -71,13 +72,24 @@ export const ColumnDoorRow = ({
       </span>
       <span data-door-slot="action" aria-hidden className="size-6 shrink-0" />
     </button>
-    {create === undefined ? null : (
-      <DoorCreateButton
-        id={id}
-        label={create.label}
-        {...(create.shortcut !== undefined && { shortcut: create.shortcut })}
-        onCreate={create.onCreate}
-      />
-    )}
-  </div>
-);
+  );
+  return (
+    <div data-column-door-row={id} className="group/door relative">
+      {signal === undefined ? (
+        door
+      ) : (
+        <Tooltip content={name} side="right">
+          {door}
+        </Tooltip>
+      )}
+      {create === undefined ? null : (
+        <DoorCreateButton
+          id={id}
+          label={create.label}
+          {...(create.shortcut !== undefined && { shortcut: create.shortcut })}
+          onCreate={create.onCreate}
+        />
+      )}
+    </div>
+  );
+};

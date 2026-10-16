@@ -22,7 +22,7 @@ import { U25_P_SIDE_INFO_SCENES } from './p-side-info';
 
 const SETTLE_MS = 2_000;
 
-const NAMES = ['side-info-branches', 'side-info-branch', 'side-info-framed'] as const;
+const NAMES = ['side-info-doors', 'side-info-framed'] as const;
 
 type SceneName = (typeof NAMES)[number];
 
@@ -67,43 +67,27 @@ describe('the side column signal scenes', () => {
     }
   });
 
-  it('side-info-branches shows one trailing grid with count, dot and both plus buttons', async () => {
-    await mount({ name: 'side-info-branches' });
+  it('side-info-doors shows one trailing slot with a dot per signal and both plus buttons', async () => {
+    await mount({ name: 'side-info-doors' });
 
-    expect(screen.getByRole('button', { name: 'Terminal, 2 running' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Monitoring, 3 in use' })).toBeDefined();
+    const terminal = screen.getByRole('button', { name: 'Terminal, 2 running' });
+    expect(terminal.querySelector('[data-door-signal="dot"]')).not.toBeNull();
     const chat = screen.getByRole('button', { name: 'Chat, unread' });
     expect(chat.querySelector('[data-door-signal="unread"]')).not.toBeNull();
     expect(screen.getByRole('button', { name: 'New chat' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'New terminal' })).toBeDefined();
-    expect(document.querySelectorAll('[data-door-slot="signal"]').length).toBeGreaterThan(5);
+    expect(document.querySelectorAll('[data-door-slot="signal"]').length).toBe(6);
   });
 
-  it('side-info-branches reads Branch as the number of branches with no diff', async () => {
-    await mount({ name: 'side-info-branches' });
-
-    const branch = screen.getByRole('button', { name: /^Branch/ });
-    expect(branch.textContent).toBe('Branch3 branches');
-    expect(branch.querySelector('[data-testid="diff-stat"]')).toBeNull();
-  });
-
-  it('side-info-branch names the one branch', async () => {
-    await mount({ name: 'side-info-branch' });
-
-    const branch = screen.getByRole('button', { name: /^Branch/ });
-    expect(branch.textContent).toContain('webhook-retries');
-    expect(branch.textContent).not.toMatch(/branches|note/);
-  });
-
-  it('side-info-framed gives every session page a value in a shot frame', async () => {
+  it('side-info-framed gives every counted session page its number in a shot frame', async () => {
     const container = await mount({ name: 'side-info-framed' });
 
     expect(container.querySelector('[data-shot]')).not.toBeNull();
-    expect(screen.getByRole('button', { name: /^Runs/ }).textContent).toBe('Runs1 running');
-    expect(screen.getByRole('button', { name: /^Agents/ }).textContent).toBe('Agents3 agents');
-    expect(screen.getByRole('button', { name: /^Artifacts/ }).textContent).toBe(
-      'Artifacts3 artifacts',
-    );
+    const runs = screen.getByRole('button', { name: /^Runs/ });
+    expect(runs.textContent).toBe('Runs1');
+    expect(runs.querySelector('[data-tone="running"]')).not.toBeNull();
+    expect(screen.getByRole('button', { name: /^Agents/ }).textContent).toBe('Agents3');
+    expect(screen.getByRole('button', { name: /^Artifacts/ }).textContent).toBe('Artifacts3');
   });
 
   it.each(NAMES)('%s has no accessibility violation', async (name) => {

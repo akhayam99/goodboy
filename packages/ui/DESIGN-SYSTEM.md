@@ -1410,19 +1410,13 @@ page (Settings in the default shell) draws no band (`hasBand={false}`) and gives
 its page the band's 40px as top padding, so the title row lands where a session
 page's does under its trail.
 
-**The open session is a card.** In the sessions list the open session and its
-page rows sit in one card (`data-session-card`, `SESSION_CARD_CLASS`):
-`rounded-lg`, `bg-elevated`, a `border-soft` hairline and `p-0.75` inside it, so
-the rows sit 4px from the list edge as they did without the border. The card
-must read against the chrome in both themes: the surface or the hairline clears
-1.25:1 (`sessionCard.test.ts` measures it). In light the white surface alone is
-1.15:1, so the hairline carries it. It is not `bg-fill`: that is white at 6%
-and the hover layer is 8.5%, so a card on it would read as a stuck
-hover. The rows inside are `rounded-md`, concentric with the card, and the
-current page keeps `bg-selected`. The card stays around the session row when
-`←` folds the pages, it follows the open session, and every other session is a
-flat row. The selection checkbox sits relative to its row, so it moves with the
-card's padding.
+**A session has its own sidebar level, not a card.** The workspace list keeps
+every session a flat row; the open one is set in medium weight and takes
+`bg-selected` while its page is on screen. Its pages, projects and linked work
+live on the session level of the sidebar (`SideColumn/SessionLevel`), which
+replaces the list with a 180ms slide, so no card nests inside the list. A page
+entry ends in one fixed 40px right-aligned slot: the count in tabular gray and
+a 6px dot for running (info) or open questions (warning).
 
 **Pinned sessions are a group.** A **Pinned** group sits first in the sessions
 list, above every other group, in pin order. Its header is an `Eyebrow` with the

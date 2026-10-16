@@ -12,7 +12,7 @@ export type ColumnDoor = {
 };
 
 export const COLUMN_DOORS: ReadonlyArray<ColumnDoor> = [
-  { id: 'board', label: 'Board', icon: SquareKanban, shortcutId: 'session.board' },
+  { id: 'board', label: 'Sessions', icon: SquareKanban, shortcutId: 'session.board' },
   { id: 'inbox', label: NAMES.tasks, icon: CONCEPT_ICONS.inbox },
   { id: 'chat', label: 'Chat', icon: CONCEPT_ICONS.chat },
   { id: 'workflows', label: 'Workflows', icon: CONCEPT_ICONS.workflows },
@@ -22,7 +22,6 @@ export const COLUMN_DOORS: ReadonlyArray<ColumnDoor> = [
     icon: CONCEPT_ICONS.terminal,
     shortcutId: 'terminal.studio',
   },
-  { id: 'monitoring', label: 'Monitoring', icon: CONCEPT_ICONS.monitoring },
 ];
 
 export type ColumnActions = {

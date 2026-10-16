@@ -293,7 +293,17 @@ export const click = async (element: HTMLElement): Promise<void> => {
   await settle();
 };
 
+const backRow = (): HTMLElement | null =>
+  document.querySelector<HTMLElement>(
+    '[data-level-layer="session"]:not([inert]) [data-level-back] button',
+  );
+
 export const clickButton = async (name: RegExp | string): Promise<void> => {
+  const [visible] = screen.queryAllByRole('button', { name });
+  const back = backRow();
+  if (visible === undefined && back !== null) {
+    await click(back);
+  }
   await click(await screen.findByRole('button', { name }));
 };
 
@@ -302,9 +312,31 @@ export const clickFirstButton = async (name: RegExp): Promise<void> => {
   await click(first!);
 };
 
+const sessionLevel = async (): Promise<HTMLElement> => {
+  await waitFor(() =>
+    expect(document.querySelector('[data-level-layer="session"]:not([inert])')).not.toBeNull(),
+  );
+  const level = document.querySelector<HTMLElement>('[data-level-layer="session"]:not([inert])');
+  if (level === null) {
+    throw new Error('the sidebar is not on a session level');
+  }
+  return level;
+};
+
 export const openCrumb = async (label: RegExp): Promise<void> => {
-  await clickButton(/^Session/);
-  await click(await screen.findByRole('menuitemradio', { name: label }));
+  const level = within(await sessionLevel());
+  if (label.test('Branch')) {
+    const projects = within(level.getByRole('group', { name: 'Projects' }));
+    const [first] = projects.getAllByRole('button').filter((row) => row.closest('li') !== null);
+    if (first === undefined) {
+      throw new Error('the session level lists no worktree');
+    }
+    await click(first);
+    return;
+  }
+  await click(
+    within(level.getByRole('list', { name: 'Pages' })).getByRole('button', { name: label }),
+  );
 };
 
 export const openPalette = async (label: RegExp, query?: string): Promise<void> => {
@@ -436,8 +468,6 @@ export const CRUMB_ROWS: ReadonlyArray<LensRow> = [
       }),
     lands: () => heading('Questions'),
   },
-  { label: 'Explore', lens: 'explore', lands: () => heading('Explore') },
-  { label: 'Scripts', lens: 'scripts', lands: () => heading('Scripts') },
 ];
 
 export const LENS_ROWS: ReadonlyArray<LensRow> = [
@@ -460,8 +490,6 @@ export const LENS_ROWS: ReadonlyArray<LensRow> = [
     seed: 'issue',
     lands: branchTab('pr'),
   },
-  { label: 'Explore', lens: 'explore', lands: () => heading('Explore') },
-  { label: 'Scripts', lens: 'scripts', lands: () => heading('Scripts') },
 ];
 
 export const openBranchFiles = async (): Promise<void> => {

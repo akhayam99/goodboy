@@ -18,5 +18,5 @@ export const SessionColumnScene = ({ isArchivedShown, run }: Props) => {
   if (session === null) {
     return null;
   }
-  return <WorkspaceFrame session={session} />;
+  return <WorkspaceFrame session={session} level="workspace" />;
 };

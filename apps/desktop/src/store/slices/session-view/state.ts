@@ -19,7 +19,6 @@ export type SessionViewState = {
   readonly diffFocus: Readonly<Record<SessionId, DiffFocus | null>>;
   readonly diffMountPath: Readonly<Record<SessionId, string | null>>;
   readonly branchTab: Readonly<Record<SessionId, BranchTab>>;
-  readonly sessionPagesFolded: Readonly<Record<SessionId, boolean>>;
   readonly dismissedCheckProposals: Readonly<Record<SessionId, ReadonlyArray<AgentId>>>;
   readonly branchThreadId: Readonly<Record<SessionId, string | null>>;
   readonly sessionCreations: Readonly<Record<SessionId, ReadonlyArray<SessionCreation>>>;

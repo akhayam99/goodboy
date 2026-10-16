@@ -4,8 +4,6 @@ import { useAppStore } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
-import { useShortcut } from '../../../../shared/keyboard/useShortcut';
-import { requestAskFocus } from '../askFocusEvent';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -18,24 +16,9 @@ export const AskTrailButton = ({ sessionId }: Props) => {
     const drawer = selectOpenDrawer(state);
     return drawer?.kind === 'ask' && drawer.sessionId === sessionId;
   });
-  const isCurrent = useAppStore(
-    (state) => state.currentSessionId === sessionId && state.appStudio === null,
-  );
   const closeDrawer = useAppStore((state) => state.closeDrawer);
   const openAsk = useAppStore((state) => state.openAsk);
   const glyphs = shortcutGlyphs('ask.open');
-
-  useShortcut(
-    'ask.open',
-    (event) => {
-      event.preventDefault();
-      if (!isOpen) {
-        openAsk({ sessionId });
-      }
-      requestAskFocus();
-    },
-    isCurrent,
-  );
 
   return (
     <Tooltip content="Ask what is happening in this session" shortcut="ask.open">

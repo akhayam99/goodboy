@@ -34,17 +34,14 @@ afterEach(() => {
 const pageRow = (label: string): HTMLElement => {
   const row = screen
     .getAllByRole('button')
-    .find((button) => button.textContent?.trim().startsWith(label) === true);
+    .find((button) =>
+      (button.getAttribute('aria-label') ?? button.textContent ?? '').trim().startsWith(label),
+    );
   if (row === undefined) {
     throw new Error(`no ${label} row in the column`);
   }
   return row;
 };
-
-const trailSegments = (): ReadonlyArray<string> =>
-  [...document.querySelectorAll<HTMLElement>('[data-trail-segment]')].map(
-    (segment) => segment.dataset['trailSegment'] ?? '',
-  );
 
 const renderShell = async () => {
   render(<ShellScene />);
@@ -52,26 +49,29 @@ const renderShell = async () => {
 };
 
 describe('the shell scene mounts the real session workspace', () => {
-  it('shows the trail band with Ask over the open session', async () => {
+  it('opens the session level beside a page header with Ask and no trail band', async () => {
     await renderShell();
-    expect(document.querySelector('[data-slot="trail-bar"]')).not.toBeNull();
-    expect(trailSegments()[0]).toBe('overview');
+    expect(document.querySelector('[data-slot="trail-bar"]')).toBeNull();
+    expect(
+      document
+        .querySelector('[data-column-rail], [data-column-layer="nav"]')
+        ?.getAttribute('data-sidebar-level'),
+    ).toBe('session');
     expect(useAppStore.getState().currentSessionId).toBe(SESSION.id);
   });
 
-  it('moves to Branch, Runs, Agents and Artifacts from the column', async () => {
+  it('moves to Runs, Agents and Artifacts from the session level', async () => {
     await renderShell();
     const moves: ReadonlyArray<readonly [string, string]> = [
-      ['Branch', 'branch'],
-      ['Runs', 'lens-workflows'],
-      ['Agents', 'lens-agents'],
-      ['Artifacts', 'lens-plans'],
+      ['Runs', 'workflows'],
+      ['Agents', 'agents'],
+      ['Artifacts', 'plans'],
     ];
-    for (const [label, segment] of moves) {
+    for (const [label, lens] of moves) {
       act(() => {
         fireEvent.click(pageRow(label));
       });
-      await waitFor(() => expect(trailSegments()).toContain(segment));
+      await waitFor(() => expect(useAppStore.getState().activeLens[SESSION.id]).toBe(lens));
     }
   });
 

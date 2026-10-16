@@ -10,9 +10,10 @@ import { LinkWorkPanel } from './LinkWorkPanel';
 type Props = {
   readonly session: Session;
   readonly initialSource?: SessionExternalTaskProvider;
+  readonly isShortcutOn?: boolean;
 };
 
-export const LinkIssueAction = ({ session, initialSource }: Props) => {
+export const LinkIssueAction = ({ session, initialSource, isShortcutOn = true }: Props) => {
   const [initialQuery, setInitialQuery] = useState('');
   const dropdown = useDropdown({
     align: 'end',
@@ -49,7 +50,7 @@ export const LinkIssueAction = ({ session, initialSource }: Props) => {
       }
       toggle();
     },
-    !isOpen,
+    isShortcutOn && !isOpen,
   );
 
   return (

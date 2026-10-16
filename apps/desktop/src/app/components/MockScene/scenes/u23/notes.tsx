@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react';
 import { UnderTrailContext } from '@goodboy/ui';
-import { AskTrailButton } from '../../../../../features/session/ask/components/AskTrailButton';
-import { TrailBar } from '../../../../../features/session/components/SessionWorkspace/parts/TrailBar';
 import { CTX_SESSION, CTX_SESSION_ID } from '../brand/contextBase';
 import { DiffStage } from '../brand/DiffStage';
 import { seedNotesScene, type NotesVariant } from './notesSeed';
@@ -25,7 +23,6 @@ const NotesScene = ({ variant }: Props) => {
   return (
     <main className="flex h-screen w-full bg-background text-foreground">
       <div className="@container flex h-full w-full min-w-0 flex-col">
-        <TrailBar session={CTX_SESSION} end={<AskTrailButton sessionId={CTX_SESSION_ID} />} />
         <UnderTrailContext.Provider value>
           <div className="min-h-0 flex-1">
             <DiffStage centerNote={false} />
