@@ -29,7 +29,7 @@ export type RunTail = {
   readonly verb: RunTailVerb | null;
 };
 
-export type RunQuiet = {
+type RunQuiet = {
   readonly agentId: AgentId;
   readonly minutes: number;
 };

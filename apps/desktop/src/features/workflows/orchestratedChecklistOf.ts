@@ -6,7 +6,7 @@ type Summary = {
   readonly leftRoles: Readonly<Partial<Record<string, AgentRole>>>;
 };
 
-export type OrchestratedPlannedItem = {
+type OrchestratedPlannedItem = {
   readonly text: string;
   readonly role: AgentRole | null;
 };

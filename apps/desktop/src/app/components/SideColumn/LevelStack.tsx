@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { SidebarLevel } from '../../../store/slices/navigation/sidebarLevel';
 import { LevelLayer, type LevelLayerPosition } from './LevelLayer';
 
-export type StackLayer = {
+type StackLayer = {
   readonly level: SidebarLevel;
   readonly node: ReactNode;
 };

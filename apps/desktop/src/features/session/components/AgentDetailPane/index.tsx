@@ -35,7 +35,7 @@ import { useAutoChat } from '../../../auto/chat/useAutoChat';
 import { useAutoMembership } from '../../../auto/useAutoMembership';
 import { isTurnStateLive } from '../../agent-lifecycle';
 
-export type RunStepFrame = {
+type RunStepFrame = {
   readonly heading: ReactNode;
   readonly actions: ReactNode;
   readonly tail: ReactNode;

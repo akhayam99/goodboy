@@ -4,12 +4,6 @@ import {
   type PullRequestPresentationState,
 } from '../../../../../shared/pullRequestPresentation';
 
-type MetaParams = {
-  readonly state: PullRequestPresentationState;
-};
-
-export const pullRequestMeta = ({ state }: MetaParams) => PULL_REQUEST_PRESENTATION[state];
-
 type Variant = 'icon' | 'compact' | 'badge';
 
 type Props = {

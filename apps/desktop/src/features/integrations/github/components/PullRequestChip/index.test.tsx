@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { tooltipTextOf } from '../../../../../__tests__/helpers/tooltip';
-import { PullRequestChip, pullRequestMeta } from './index';
+import { PullRequestChip } from './index';
 
 afterEach(cleanup);
 
@@ -36,14 +36,5 @@ describe('PullRequestChip', () => {
     expect(icon.getAttribute('title')).toBeNull();
     expect(tooltipTextOf({ element: icon })).toBe('No pull request');
     expect(icon.querySelector('.lucide-circle-dashed')).not.toBeNull();
-  });
-});
-
-describe('pullRequestMeta', () => {
-  it('exposes a label for every state', () => {
-    expect(pullRequestMeta({ state: 'open' }).label).toBe('In review');
-    expect(pullRequestMeta({ state: 'queued' }).label).toBe('Queued');
-    expect(pullRequestMeta({ state: 'closed' }).label).toBe('Closed');
-    expect(pullRequestMeta({ state: 'none' }).label).toBe('No pull request');
   });
 });
