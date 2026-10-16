@@ -123,6 +123,8 @@ describe('the run header scenes on the orchestrated document', () => {
     const bar = await header();
     expect(within(tail()).getByText('Paused by you')).toBeDefined();
     expect(within(tail()).queryByRole('button', { name: 'Resume' })).toBeNull();
+    expect(document.querySelectorAll('[data-hint-chip="queued"]')).toHaveLength(2);
+    expect(screen.getAllByText('Waits for the next decision')).toHaveLength(1);
     const verbs = bar.querySelector('[data-run-live-verbs]');
     expect(
       Array.from(verbs?.querySelectorAll('[data-run-verb]') ?? []).map((verb) =>

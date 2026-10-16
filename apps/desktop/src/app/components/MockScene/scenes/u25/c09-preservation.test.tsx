@@ -194,7 +194,7 @@ describe('SPEC3 9.4 orchestrated rows stay reachable from the orchestrated docum
     expect(screen.getByTestId('orchestrator-hint-queue').textContent).toContain('Queue');
     expect(screen.getByTestId('orchestrator-hint-now').textContent).toContain('Send now');
     const queued = within(screen.getByRole('list', { name: 'Queued hints' }));
-    expect(queued.getByText('Waits for the next decision')).toBeDefined();
+    expect(screen.getAllByText('Waits for the next decision')).toHaveLength(1);
     expect(queued.getByRole('button', { name: 'Remove' })).toBeDefined();
     expect(checklist().getByText('Your hint, read at step 3')).toBeDefined();
   });

@@ -318,8 +318,9 @@ read top to bottom at the conversation measure:
   wireframe** and **Add step**. A live run offers **Add step** under the tail
   (not while the orchestrator decides).
 - **Composer** (`OrchestratedComposer`), docked: "Hint the orchestrator".
-  Waiting hints sit above it as rows that say **Waits for the next decision**
-  with **Remove**, or **Reading now** with **Remove** disabled. Enter queues,
+  Waiting hints sit above it under one line, **Waits for the next decision**,
+  each row with **Remove**; a row being read says **Reading now** with
+  **Remove** disabled. Enter queues,
   **Send now** (⌘Enter) reads it now, with today's `readNowCopy` tooltips. The
   routing pill for the orchestrator's model and effort sits in the composer's
   footer, its only place (`OrchestratorRoutingRow`).

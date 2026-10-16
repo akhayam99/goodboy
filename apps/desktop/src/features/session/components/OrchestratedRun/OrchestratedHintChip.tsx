@@ -24,10 +24,12 @@ export const OrchestratedHintChip = ({ hint, isReading, onRemove }: Props) => {
       <span className="min-w-0 flex-1 truncate text-foreground">
         {inlineMarkdownText({ text: hint.text })}
       </span>
-      <span className="flex shrink-0 items-center gap-1 text-muted-foreground">
-        {isReading ? <StatusDot tone="info" size="sm" pulsing /> : null}
-        {isReading ? 'Reading now' : 'Waits for the next decision'}
-      </span>
+      {isReading ? (
+        <span className="flex shrink-0 items-center gap-1 text-muted-foreground">
+          <StatusDot tone="info" size="sm" pulsing />
+          Reading now
+        </span>
+      ) : null}
       {isReading ? (
         <Tooltip content="The orchestrator is reading it now" side="top">
           <span className="inline-flex">{remove}</span>

@@ -18,6 +18,7 @@ export const ORCHESTRATED_COPY = {
   done: 'Done',
   left: 'Left',
   composerPlaceholder: 'Hint the orchestrator',
+  queuedHintsNote: 'Waits for the next decision',
   stepGone: 'This step is no longer in the run.',
   stepPane: 'Step',
   nextStep: 'Next step, not decided yet',
