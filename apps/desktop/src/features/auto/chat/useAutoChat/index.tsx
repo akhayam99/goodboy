@@ -3,7 +3,7 @@ import type { Agent, Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 import { autoTreeOfAgent, type AutoTreeOfAgent } from '../../autoTreeOfAgent';
-import { useAutoTreeViews } from '../../useAutoTreeViews';
+import { useAutoTrees } from '../../useAutoTrees';
 import { AutoDelegationLines } from '../AutoDelegationLines';
 import { AutoProjectAsk } from '../AutoProjectAsk';
 import { AutoTail } from '../AutoTail';
@@ -24,7 +24,7 @@ export type AutoChat = Readonly<{
 }>;
 
 export const useAutoChat = ({ session, agent }: Params): AutoChat => {
-  const views = useAutoTreeViews({ sessionId: session.id });
+  const views = useAutoTrees({ sessionId: session.id });
   const agents = useAppStore((state) => state.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
   const { openChild, openArtifact } = useAutoTreeActions({ sessionId: session.id });
   const tree = useMemo(() => autoTreeOfAgent({ views, agentId: agent.id }), [views, agent.id]);

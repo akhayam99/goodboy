@@ -217,6 +217,24 @@ describe('c07 Auto scenes', () => {
     ).toBeDefined();
   });
 
+  it('c07-auto-capped pauses at the limit with Raise to and Change limit on the tail', async () => {
+    mount({ id: 'c07-auto-capped' });
+
+    const tail = await waitFor(() => {
+      const found = document.querySelector<HTMLElement>('[data-auto-tail]');
+      expect(found?.textContent).toContain('Paused at the limit: $10.00 of $10.00');
+      return found;
+    }, WAIT);
+    if (tail === null || tail === undefined) {
+      throw new Error('no tail');
+    }
+    expect(within(tail).getByRole('button', { name: 'Raise to $20.00' })).toBeDefined();
+    fireEvent.click(within(tail).getByRole('button', { name: 'Change limit' }));
+    expect(
+      await screen.findByRole('dialog', { name: 'Limit for this conversation' }, WAIT),
+    ).toBeDefined();
+  });
+
   it('goes back to the session level with Auto agents selected, and drills in again', async () => {
     mount({ id: 'c07-auto-working' });
 

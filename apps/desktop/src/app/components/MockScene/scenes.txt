@@ -182,6 +182,7 @@ c06-agent-working
 c06-agents-empty
 c06-agents-list
 c07-auto-answering
+c07-auto-capped
 c07-auto-child
 c07-auto-child-done
 c07-auto-folded

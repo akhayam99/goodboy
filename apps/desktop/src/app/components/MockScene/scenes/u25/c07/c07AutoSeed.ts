@@ -1,3 +1,4 @@
+import { autoBudgetOf, autoTreeSpendOf } from '@goodboy/core';
 import {
   brandId,
   type Agent,
@@ -31,6 +32,7 @@ export type C07Seed = Readonly<{
   place: C07Place;
   pane?: 'implementer' | 'tester';
   hasImages?: boolean;
+  isCapped?: boolean;
 }>;
 
 const SHOTS: ReadonlyArray<MessageAttachment> = [
@@ -184,7 +186,24 @@ const agentsOf = ({ place, agents }: AgentsParams): ReadonlyArray<Agent> => {
   return place === 'list' ? [...agents, EARLIER_ROOT] : agents;
 };
 
-export const seedC07 = ({ state, place, pane, hasImages = false }: C07Seed): void => {
+type CappedParams = {
+  readonly view: AutoTreeView;
+};
+
+const cappedViewOf = ({ view }: CappedParams): AutoTreeView => ({
+  ...view,
+  budget: autoBudgetOf({
+    spend: autoTreeSpendOf({ capUsd: 10, settledUsd: 9.5, reservedUsd: 0.5, estimatedUsd: 0 }),
+  }),
+});
+
+export const seedC07 = ({
+  state,
+  place,
+  pane,
+  hasImages = false,
+  isCapped = false,
+}: C07Seed): void => {
   const { navigate, openExternalTaskLens } = useAppStore.getInitialState();
   seedActivityRunScene();
   const scene = autoSceneOf({ state });
@@ -196,7 +215,12 @@ export const seedC07 = ({ state, place, pane, hasImages = false }: C07Seed): voi
     agentProviderOverride: { [AUTO_ROOT_ID]: 'anthropic', [EARLIER_ROOT_ID]: 'anthropic' },
     agentModelOverride: { [AUTO_ROOT_ID]: 'opus-5.5', [EARLIER_ROOT_ID]: 'opus-5.5' },
     agentEffortOverride: { [AUTO_ROOT_ID]: 'medium' },
-    autoTreeViews: { [AUTO_SESSION.id]: viewsOf({ place, view: scene.view }) },
+    autoTreeViews: {
+      [AUTO_SESSION.id]: viewsOf({
+        place,
+        view: isCapped ? cappedViewOf({ view: scene.view }) : scene.view,
+      }),
+    },
     loadAutoTrees: async () => undefined,
     agentTurnState: {
       [AUTO_ROOT_ID]: scene.rootTurn,

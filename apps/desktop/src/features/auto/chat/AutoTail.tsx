@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { formatUsd } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
@@ -39,6 +40,7 @@ export const AutoTail = ({ sessionId, view, rootAgent }: Props) => {
   const reportError = useAppStore((state) => state.reportError);
   const actions = useAutoTreeActions({ sessionId });
   const saveCap = useAutoTreeCap({ sessionId, treeId: view.tree.id });
+  const isRaisingRef = useRef(false);
   if (rootTurn?.kind === 'running' || rootTurn?.kind === 'starting') {
     return null;
   }
@@ -50,16 +52,21 @@ export const AutoTail = ({ sessionId, view, rootAgent }: Props) => {
   const raisedTo = capUsd === null ? null : raisedCapOf({ capUsd });
 
   const raise = async () => {
-    if (raisedTo === null) {
+    if (raisedTo === null || isRaisingRef.current) {
       return;
     }
-    const failure = await saveCap({ expectedCapUsd: capUsd, capUsd: raisedTo });
-    if (failure !== null) {
-      await reportError({
-        title: "Couldn't raise the limit",
-        error: new Error(failure),
-        sessionId,
-      });
+    isRaisingRef.current = true;
+    try {
+      const failure = await saveCap({ expectedCapUsd: capUsd, capUsd: raisedTo });
+      if (failure !== null) {
+        await reportError({
+          title: "Couldn't raise the limit",
+          error: new Error(failure),
+          sessionId,
+        });
+      }
+    } finally {
+      isRaisingRef.current = false;
     }
   };
 

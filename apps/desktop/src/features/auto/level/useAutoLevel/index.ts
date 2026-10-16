@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import type { AgentId, Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { autoTreeOfAgent, type AutoTreeOfAgent } from '../../autoTreeOfAgent';
-import { useAutoTrees } from '../../useAutoTrees';
+import { useAutoTreeViews } from '../../useAutoTreeViews';
 import { railRowsOf, restingRootRowOf, type RailRow } from '../../chat/railRowsOf';
 
 type Params = {
@@ -18,7 +18,7 @@ export type AutoLevelModel = Readonly<{
 
 export const useAutoLevel = ({ session }: Params): AutoLevelModel => {
   const sessionId = session.id;
-  const views = useAutoTrees({ sessionId });
+  const views = useAutoTreeViews({ sessionId });
   const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const selectedAgentId = useAppStore((state) => state.selectedAgentId[sessionId] ?? null);
   const paneAgentId = useAppStore((state) =>
