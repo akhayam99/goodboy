@@ -117,6 +117,7 @@ vi.mock('../../../integrations/components/IntegrationGlyph', () => ({
 }));
 
 import { SessionKickoff } from './index';
+import { AutoReleaseContext } from '../../../auto/autoReleaseContext';
 import { patchSessionDraft } from '../../../../store/slices/sessionDraft/patchSessionDraft';
 
 const WORKSPACE_ID = 'ws-1' as WorkspaceId;
@@ -203,7 +204,12 @@ const resetStore = () => {
   );
 };
 
-const renderKickoff = () => render(<SessionKickoff workspaceId={WORKSPACE_ID} />);
+const renderKickoff = () =>
+  render(
+    <AutoReleaseContext.Provider value={false}>
+      <SessionKickoff workspaceId={WORKSPACE_ID} />
+    </AutoReleaseContext.Provider>,
+  );
 
 const isSessionDraft = (value: unknown): value is SessionDraft =>
   typeof value === 'object' && value !== null && 'pickedIssues' in value;

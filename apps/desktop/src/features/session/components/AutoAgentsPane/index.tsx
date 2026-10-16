@@ -1,8 +1,7 @@
 import { useMemo } from 'react';
-import { EmptyLine, PaneShell } from '@goodboy/ui';
+import { PaneShell } from '@goodboy/ui';
 import type { Agent, AgentId, Session } from '@goodboy/types';
 import { EMPTY_ARRAY, agentPlace, useAppStore } from '../../../../store';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { autoRootsOf } from '../../../auto/autoRootsOf';
 import { railRowsOf, restingRootRowOf, type RailRow } from '../../../auto/chat/railRowsOf';
 import { useAutoTrees } from '../../../auto/useAutoTrees';
@@ -64,11 +63,6 @@ export const AutoAgentsPane = ({ session }: Props) => {
             <p className="text-prose text-muted-foreground">{START_HINT}</p>
             <AutoComposer sessionId={sessionId} onDone={() => undefined} />
           </section>
-        ) : null}
-        {!isAutoOn && rows.length === 0 ? (
-          <EmptyLine icon={CONCEPT_ICONS.auto}>
-            Auto is off. Turn it on in Settings to start one.
-          </EmptyLine>
         ) : null}
       </div>
     </PaneShell>

@@ -167,7 +167,7 @@ describe('main flows on the real store', () => {
     const startSessionFromDraft = vi.fn(async () => ({ id: 'session-started' }) as Session);
     stubActions({ startSessionFromDraft });
 
-    await mountFlow(<SessionDraftPane workspaceId={WORKSPACE_ID} />);
+    await mountFlow(<SessionDraftPane workspaceId={WORKSPACE_ID} isAuto={false} />);
     fireEvent.click(screen.getByRole('tab', { name: /Ask an agent/ }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Scout focus' }), {
       target: { value: 'the ledger-core importer' },

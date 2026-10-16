@@ -37,7 +37,6 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { AutoReleaseContext } from '../../../auto/autoReleaseContext';
-import { SETTING_AUTO_EXPERIMENT } from '../../../settings/settings';
 
 let useAppStore: StoryStore;
 let CreateAgentPopover: typeof import('./index').CreateAgentPopover;
@@ -107,9 +106,8 @@ const mount = ({ isReleased }: MountParams): void => {
   );
 };
 
-describe('Start agent with the Auto experiment', () => {
-  it('offers only the Auto composer when it is on, and starts an Auto agent', async () => {
-    stored.set(SETTING_AUTO_EXPERIMENT, 'true');
+describe('Start agent with Auto always on', () => {
+  it('offers only the Auto composer and starts an Auto agent', async () => {
     mount({ isReleased: true });
     fireEvent.click(screen.getByRole('button', { name: 'Start agent' }));
 
@@ -125,28 +123,28 @@ describe('Start agent with the Auto experiment', () => {
     });
   });
 
-  it('keeps the roles of today when it is off', async () => {
-    stored.set(SETTING_AUTO_EXPERIMENT, 'false');
+  it('keeps the Auto composer when an old experiment row still says false', async () => {
+    stored.set('agents.autoExperiment', 'false');
+    useAppStore.setState({ settings: { 'agents.autoExperiment': 'false' } });
     mount({ isReleased: true });
     fireEvent.click(screen.getByRole('button', { name: 'Start agent' }));
 
-    expect(await screen.findByRole('button', { name: 'Open Generalist' })).toBeDefined();
-    expect(screen.queryByRole('textbox', { name: 'Describe the work' })).toBeNull();
+    expect(await screen.findByRole('textbox', { name: 'Describe the work' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Open Generalist' })).toBeNull();
   });
 
-  it('keeps the roles of today in the build that ships while the setting was never written', async () => {
+  it('offers the Auto composer in the build that ships', async () => {
     render(<CreateAgentPopover sessionId={SESSION_ID} />);
     fireEvent.click(screen.getByRole('button', { name: 'Start agent' }));
 
-    expect(await screen.findByRole('button', { name: 'Open Generalist' })).toBeDefined();
-    expect(screen.queryByRole('textbox', { name: 'Describe the work' })).toBeNull();
+    expect(await screen.findByRole('textbox', { name: 'Describe the work' })).toBeDefined();
   });
 
-  it('keeps the roles of today while the release gate is closed, whatever is stored', async () => {
-    stored.set(SETTING_AUTO_EXPERIMENT, 'true');
+  it('keeps the roles while the release gate is closed', async () => {
     mount({ isReleased: false });
     fireEvent.click(screen.getByRole('button', { name: 'Start agent' }));
 
     expect(await screen.findByRole('button', { name: 'Open Generalist' })).toBeDefined();
+    expect(screen.queryByRole('textbox', { name: 'Describe the work' })).toBeNull();
   });
 });

@@ -104,6 +104,7 @@ describe('ObjectOverflowMenu', () => {
           'agent.close',
           'agent.reopen',
           'agent.model',
+          'agent.moveToAuto',
           'agent.copyReply',
           'agent.copyName',
         ]}

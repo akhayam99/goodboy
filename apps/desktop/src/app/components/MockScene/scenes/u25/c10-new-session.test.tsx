@@ -183,7 +183,14 @@ describe('the c10 New session scenes', () => {
       within(menu)
         .getAllByRole('menuitem')
         .map((item) => item.textContent),
-    ).toEqual(['Run a workflow', 'Orchestrate', 'Start agent', 'Report', 'Wireframe']);
+    ).toEqual([
+      'Run a workflow',
+      'Orchestrate',
+      'Start agent',
+      'Start Auto',
+      'Report',
+      'Wireframe',
+    ]);
   });
 
   it.each(FORM_SCENES)('%s opens the %s form in the drawer', async (id, form) => {

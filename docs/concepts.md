@@ -537,9 +537,9 @@ no instruction. `isAgentFinished` and `isAgentClosable` in
 do alone to agents of the right role, with a model it picks for each, then
 reads their results and goes on. Its children are agents of the roles Scout,
 Plan, Investigate, Review, Implement, Test and Docs, never more than four at a
-time and one level deep. It is an experiment: off by default, switched on in
-Settings, General, **Experiments**, and while it is off the roles you pick
-today are the only start. A person sees an Auto tree as one row in the
+time and one level deep. It is always on and labelled **Experimental** on its
+session entry; there is no switch in Settings, and the role start of before
+stays only for a build whose release gate is closed. A person sees an Auto tree as one row in the
 Overview, under **Auto agents** in the session, and as one chat with one
 line for each delegation, its Work rail being the sidebar's Auto level
 ([auto.md](auto.md)).

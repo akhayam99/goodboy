@@ -25,8 +25,6 @@ import { useAppStore } from '../../../store';
 import type { AppStore } from '../../../store/store';
 import { adoptAgent } from '../../../store/slices/auto/adoptAgent';
 import { MOVE_TO_AUTO_EVENT } from '../../auto/adopt/moveToAutoEvent';
-import { isAutoStartEnabled } from '../../auto/isAutoStartEnabled';
-import { SETTING_AUTO_EXPERIMENT } from '../../settings/settings';
 import { resolveActions } from '../resolveActions';
 import type { ActionEnv } from '../types';
 import { AGENT_KIND, type AgentFacts } from './agent';
@@ -74,14 +72,9 @@ beforeEach(async () => {
 });
 
 describe('the Move to Auto and Detach from Auto verbs of an agent', () => {
-  it('reads the experiment from the settings the same way the start does', () => {
-    useAppStore.setState({ settings: { [SETTING_AUTO_EXPERIMENT]: 'false' } });
-    expect(factsOf().isAutoOn).toBe(false);
-
-    useAppStore.setState({ settings: { [SETTING_AUTO_EXPERIMENT]: 'true' } });
-    expect(factsOf().isAutoOn).toBe(
-      isAutoStartEnabled({ settings: { [SETTING_AUTO_EXPERIMENT]: 'true' } }),
-    );
+  it('keeps Auto on even when an old experiment row still says false', () => {
+    useAppStore.setState({ settings: { 'agents.autoExperiment': 'false' } });
+    expect(factsOf().isAutoOn).toBe(true);
   });
 
   it('hides Move to Auto while the experiment is off', () => {

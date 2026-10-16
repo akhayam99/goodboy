@@ -36,7 +36,6 @@ import {
 import { aSession } from '@goodboy/types/testing';
 import { useAppStore } from '../../store';
 import { invokeAgentList } from '../workflows/workflows';
-import { SETTING_AUTO_EXPERIMENT } from '../settings/settings';
 import { autoTreeLimitKey } from './autoTreeLimit';
 import { moveToAuto } from './moveToAuto';
 
@@ -55,7 +54,6 @@ beforeEach(async () => {
     SOURCE,
   ]);
   await seedPlanArtifact({ db, id: 'plan-retry', agentId: 'agent-source' });
-  await setSetting(db, SETTING_AUTO_EXPERIMENT, 'true');
   const agents = await invokeAgentList(AUTO_SEED_SESSION);
   useAppStore.setState({
     sessions: [aSession({ id: AUTO_SEED_SESSION, workspaceId: WORKSPACE })],
@@ -88,14 +86,12 @@ const move = ({ instruction = 'Test it, then review it.' }: MoveParams = {}) =>
   });
 
 describe('moving an agent to Auto from the app', () => {
-  it('reads the setting from the database at the click, not from the cache', async () => {
-    useAppStore.setState({ settings: { [SETTING_AUTO_EXPERIMENT]: 'true' } });
-    await setSetting(db, SETTING_AUTO_EXPERIMENT, 'false');
+  it('moves the agent even when an old experiment row still says false', async () => {
+    await setSetting(db, 'agents.autoExperiment', 'false');
 
     const outcome = await move();
 
-    expect(outcome).toMatchObject({ kind: 'off' });
-    expect(await db.select('SELECT id FROM auto_trees')).toEqual([]);
+    expect(outcome.kind).toBe('adopted');
   });
 
   it('stays off while the release gate is closed', async () => {

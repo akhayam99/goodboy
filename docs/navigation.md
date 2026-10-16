@@ -405,9 +405,8 @@ never exists on one surface only.
   Delete with its confirm (Restore once archived). Several sessions: Copy
   titles, Archive N, Restore N, Delete N. An agent: Open agent, Show its
   changes; Message this agent, Interrupt while a turn runs, Close or Reopen,
-  Move to Auto on a standalone agent of a standard role while the Auto experiment is on,
-  Detach from Auto on an agent that was moved (always, so the way back never
-  disappears with the switch), Change model (one submenu); copy the last reply
+  Move to Auto on a standalone agent of a standard role,
+  Detach from Auto on an agent that was moved, Change model (one submenu); copy the last reply
   and the name; Delete agent. A
   workflow run: Open run, View diff; Answer, Start run, Continue step, Restart
   step, Start the next step, Restore; Copy run summary; Stop run, Archive
@@ -425,8 +424,7 @@ never exists on one surface only.
   items of its **⋯** menu: Start tester instead and Start implementer instead
   on a check-changes card, one verb per project (`suggestion.rebase.<target id>`,
   built by `adapted`) on a rebase card with two or more, and Talk it through
-  with Auto (`suggestion.talkWithAuto`) on a card that starts a role while the
-  experiment is on. The run handlers live in the kind (`spawnAgent`,
+  with Auto (`suggestion.talkWithAuto`) on a card that starts a role. The run handlers live in the kind (`spawnAgent`,
   `startRebaseTarget`, `startTalkItThrough`); the row only adds the pending and
   accepted bookkeeping around them (`track`). One field says which available actions
   also get a visible control on their surface: `slot` (`primary`,
@@ -1078,17 +1076,14 @@ reach NW-230 anymore`. Pick up a task shows only the open starred issues,
   pointer. Before a session exists the builder leaves out Use session goal, the
   title suggestion (the orchestrated title is generated after start, as in a
   session) and the worktree as the planner's working folder.
-- **Ask an agent** with the Auto experiment on (`useIsAutoOn`) is the
-  Auto composer (`AutoStart`): one goal with files, one model chip, a **Spend cap** chip, **Start Auto**,
+- **Ask an agent** is the Auto composer (`AutoStart`, Auto is always on,
+  `useIsAutoOn` reads only the release gate): one goal with files, one model chip, a **Spend cap** chip, **Start Auto**,
   no role list, no project field, no guidance. Its goal and model live in the
   draft (`autoGoal`, `autoRouting`) and count as written for Discard. Start
-  first reads the stored setting (`useConfirmStartMode`): when it differs from the
-  form on screen, another window changed it, so the form repaints for the stored
-  mode, keeps the text (the goal moves between `autoGoal` and the legacy prompt
-  field) and waits for a new Start click. Then it runs `startSessionFromDraft`
-  kind `scout` with an Auto agent (`agentKind: 'auto'`), the goal as its prompt
-  and the chosen routing. With the experiment off the choice is the next one.
-- **Ask an agent** (`AgentStart`) is the real chat composer's field, then
+  runs `startSessionFromDraft` kind `scout` with an Auto agent
+  (`agentKind: 'auto'`), the goal as its prompt and the chosen routing. In a
+  build whose release gate is closed the choice is the next one.
+- **Ask an agent** with the release gate closed (`AgentStart`) is the real chat composer's field, then
   Projects; role, model and project sit below it as chips (`AgentStartFields`), opening the
   same role grid and model picker `Start agent` uses. The role defaults to
   Scout every time, never the last one picked, because a habitual Implementer
@@ -1593,9 +1588,9 @@ ticks when an agent finishes a turn, not when a session row exists.
 
 ## Auto in the shell
 
-Auto is described in [auto.md](auto.md); this is where it sits. Settings, App,
-General ends with the band **Experiments** (`ExperimentsBand`), drawn only
-while the release gate is open. The Work rail of an Auto agent, and of each
+Auto is described in [auto.md](auto.md); this is where it sits. Auto is always
+on: Settings has no Auto switch, and the **Experimental** chip sits on the
+**Auto agents** entry of the session rail. The Work rail of an Auto agent, and of each
 child of an Auto tree, is the session rail's Auto level (see Session rail), never
 a second rail beside the chat. The chat of an Auto agent gets its delegation lines and its
 tail through the `insertions` prop of `ChatView` (`useAutoChat`). The

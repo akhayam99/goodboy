@@ -1,7 +1,7 @@
 # Auto
 
-> **Read this when** you change or explain the Auto agent: its experiment
-> switch, how a person starts it, what it shows in the Overview and its chat,
+> **Read this when** you change or explain the Auto agent: its release gate,
+> how a person starts it, what it shows in the Overview and its chat,
 > how a plan is approved, and which providers it may use. **Not for** the
 > tables and the scheduler behind it ([architecture.md](architecture.md), Auto
 > tree registry) or
@@ -9,18 +9,17 @@
 
 Auto is an agent that answers questions itself and hands the work it cannot do
 alone to agents of the right role, with a model it picks for each. It waits for
-their results, reads them and goes on. It ships as an experiment: off by
-default, labelled **Experimental**, and the roles you pick today stay as they
-are while it is off.
+their results, reads them and goes on. It is always on and stays labelled
+**Experimental**: the **Auto agents** entry of the session rail carries the chip,
+and there is no switch to turn it off.
 
 ## Status
 
-The feature is on behind the experiment switch: `AUTO_GATES.isDelegationEnabled` is `true`, the
-Experiments band shows in Settings, and `agents.autoExperiment` is off by default. The runtime
-(`startAutoRuntime`) runs in the main window and drives the trees that exist; with the switch off
-none is ever created, so nothing changes for a person who does not turn it on. Its 15 second tick
-runs only while the switch is on or a tree that is not finished is left: trees started before a
-switch-off still finish and recover, and a person who never opted in has no timer.
+The feature is on: `AUTO_GATES.isDelegationEnabled` is `true` and is the only gate. Settings has
+no Auto switch and no Experiments band. The runtime (`startAutoRuntime`) runs in the main window,
+ticks every 15 seconds from its start and drives the trees that exist. An old
+`agents.autoExperiment` row left in the database is never read, so a stored `false` hides nothing:
+`useIsAutoOn`, the agent menu facts, `isAutoAgentsShown` and `moveToAuto` read only the gate.
 
 **Live proof before the flip.** The real CLIs were launched with the exact argv and prompt
 Goodboy builds for an Auto turn:
@@ -33,45 +32,25 @@ Goodboy builds for an Auto turn:
 Both ended with a valid `<<auto>>` delegate block that `parseAutoBlock` and `parseDelegateSpec`
 accept. Neither tried to write a file or run a shell command, and the work tree stayed clean.
 
-## The experiment switch
+## The release gate
 
-- Settings, App, General has a band **Experiments**, below Search, with one row
-  **Auto agent**, its **Experimental** chip and a switch. The row says once what
-  it does and that it may not work well yet. With the switch off and Auto agents
-  still working, a muted line under it counts them: "2 Auto agents are still
-  running. They keep going." The switch governs entry only.
-- The value is the setting `agents.autoExperiment`. It is on only for the exact
-  string `true`; absent or anything else is off.
-- `isAutoStartEnabled` (`features/auto/isAutoStartEnabled.ts`) is the one
-  function that says whether Auto is on. `useIsAutoOn` reads it for every
-  surface. It needs the release gate too: `AUTO_GATES.isDelegationEnabled` is
-  `true` in this build and reaches the screens through `AutoReleaseContext`. A
-  build with the gate false would hide the band, the Auto start and every Auto
-  control, whatever is stored. With the gate on, the band always shows and the
-  switch is off until a person turns it on, so every start surface, menu and
-  runtime path stays exactly as it was before Auto.
-- The switch saves with a compare and swap (`writeAutoExperiment`): it reads the
-  stored value, writes against it, rereads once on a lost swap, and when an
-  answer is lost after the commit it rereads and accepts what is stored. The
-  cache repaints from the stored value only, so a failed save snaps the switch
-  back and shows "Couldn't save the Auto setting". Two quick clicks write once
-  (`usePendingAction`).
-- The value reloads from the database when the window gets focus and whenever a
-  start surface opens, so a second window follows the first.
+- `AUTO_GATES.isDelegationEnabled` is `true` in this build and reaches the
+  screens through `AutoReleaseContext`; `useIsAutoOn` returns it. A build with
+  the gate false hides the Auto start and every Auto control and keeps the role
+  start of before.
+- Settings, App, General has no Experiments band. The **Experimental** chip
+  stays on the **Auto agents** entry of the session rail.
 
 ## Starting
 
-With the experiment on, Auto is the only start in the **Agent** tab of the New
-drawer, in the **Start agent** popover of the Agents lane and under **Ask an
-agent** on the New session page. There is no role list, no project field and no
-guidance: Auto picks the mount and asks when it is ambiguous. With it off, the
-start is the one of before: role grid, Generalist as default, Routing.
+Auto is the only start in the **Agent** tab of the New drawer, in the **Start
+agent** popover of the Agents lane and under **Ask an agent** on the New session
+page. There is no role list, no project field and no guidance: Auto picks the
+mount and asks when it is ambiguous. The role grid, Generalist as default and
+Routing of before stay only for a build whose release gate is closed.
 
-- Every start reads the stored setting at the click (`useConfirmStartMode`). If
-  the form on screen is not the stored mode, another window changed it: the form
-  repaints for the stored mode, the text is kept (the Auto goal and the legacy
-  instructions move between `autoGoal` and `agentPrompt`) and the person starts
-  again. Nothing starts in a mode they did not see.
+- A start never rereads a setting at the click: there is no mode another window
+  can change, so the form on screen is the mode that starts.
 - The goal is the first message of the Auto agent. It is not a plain turn: the
   tree is created at the start and the goal is queued in its outbox, so Auto's
   first turn is a delivery like every later one. A start that loses the message
@@ -87,8 +66,8 @@ start is the one of before: role grid, Generalist as default, Routing.
   not asked again; a person can change it from the chip.
 - A Next card that starts a role gets **Talk it through with Auto** as the last
   entry of its more menu. It is the registry verb `suggestion.talkWithAuto`
-  (`features/actions/kinds/suggestion.ts`), shown only while the experiment is
-  on and the card starts a role. It opens the Agent tab with the card as context
+  (`features/actions/kinds/suggestion.ts`), shown whenever the card starts a
+  role. It opens the Agent tab with the card as context
   (`startTalkItThrough`) and starts nothing.
 - **Generalist** keeps its name, with no mark of being old, and existing
   Generalist agents are not changed. Auto never appears in the manual role list.
@@ -99,15 +78,15 @@ start is the one of before: role grid, Generalist as default, Routing.
 of an Implementer, Tester, Scout, Planner, Reviewer, Debugger or docs agent and
 of an old Generalist (the registry verbs `agent.moveToAuto` and
 `agent.detachFromAuto` in `features/actions/kinds/agent.ts`, so the header menu,
-the right click and the palette agree). It is hidden while the experiment is off
-and blocked with "Wait for the turn to end first." while the agent works.
+the right click and the palette agree). It is blocked with "Wait for the turn to
+end first." while the agent works.
 
 - The verb opens the chat of the agent and replaces its composer with a panel,
   **What should Auto do next?** (`MoveToAutoPanel`). The field may stay empty. A
   handoff marker with `kind=auto` shows the same panel from the chip **Agent
   suggests: Auto**, which does not start an agent of its own.
-- `moveToAuto` (`features/auto/moveToAuto.ts`) reads the setting from the database
-  at the click, then `adoptAgent` (`store/slices/auto/adoptAgent.ts`) writes the
+- `moveToAuto` (`features/auto/moveToAuto.ts`) checks the release gate, then
+  `adoptAgent` (`store/slices/auto/adoptAgent.ts`) writes the
   whole transfer in one guarded transaction: a new Auto agent, its tree, one
   adopted delegation for the source (settled, `adopted = 1`), the plan and report
   artifacts of the source in `auto_artifacts`, and one `user` outbox row with the

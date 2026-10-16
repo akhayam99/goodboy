@@ -513,6 +513,7 @@ export const CRUMB_ROWS: ReadonlyArray<LensRow> = [
   { label: 'Runs', lens: 'workflows', lands: () => heading('Runs') },
   { label: 'Orchestrated', lens: 'orchestrated', lands: () => heading('Orchestrated') },
   { label: 'Agents', lens: 'agents', lands: () => heading('Agents') },
+  { label: 'Auto agents', lens: 'auto', lands: () => heading('Auto agents') },
   { label: 'Artifacts', lens: 'plans', lands: () => heading('Artifacts') },
   {
     label: 'Questions',

@@ -237,6 +237,7 @@ describe('the open session on the rail', () => {
       'Runs',
       'Orchestrated',
       'Agents',
+      'Auto agentsExperimental',
       'Artifacts',
     ]);
     expect(pages.getByRole('button', { name: 'Overview' }).getAttribute('aria-current')).toBe(

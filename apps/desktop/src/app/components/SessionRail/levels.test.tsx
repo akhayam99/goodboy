@@ -156,7 +156,14 @@ describe('the main sidebar beside the session rail', () => {
       pages()
         .getAllByRole('button')
         .map((button) => button.textContent),
-    ).toEqual(['Overview', 'Runs', 'Orchestrated', 'Agents', 'Artifacts']);
+    ).toEqual([
+      'Overview',
+      'Runs',
+      'Orchestrated',
+      'Agents',
+      'Auto agentsExperimental',
+      'Artifacts',
+    ]);
   });
 
   it('opens another session from its row without changing the main sidebar level', () => {

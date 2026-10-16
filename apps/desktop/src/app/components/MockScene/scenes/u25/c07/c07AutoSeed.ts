@@ -11,7 +11,6 @@ import {
 import { agentPlace, useAppStore } from '../../../../../../store';
 import { lensPlace } from '../../../../../../store/slices/navigation/canonicalLocation';
 import type { AutoTreeView } from '../../../../../../store/slices/auto-view/state';
-import { SETTING_AUTO_EXPERIMENT } from '../../../../../../features/settings/settings';
 import { sceneClock } from '../../../sceneClock';
 import { seedActivityRunScene } from '../../activityRunSeed';
 import {
@@ -239,7 +238,6 @@ export const seedC07 = ({
     sessionArtifacts: { [AUTO_SESSION.id]: scene.hasPlanArtifact ? [AUTO_PLAN_STORED] : [] },
     sessionOpenQuestions: { [AUTO_SESSION.id]: [] },
     sessionAnsweredQuestions: { [AUTO_SESSION.id]: [] },
-    settings: { ...current.settings, [SETTING_AUTO_EXPERIMENT]: 'true' },
     loadSetting: async () => 'true',
   }));
   const store = useAppStore.getState();

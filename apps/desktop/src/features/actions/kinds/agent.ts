@@ -1,19 +1,17 @@
 import { CircleCheck, CircleDot, Copy, MessageSquare, OctagonX, Cpu, Tag } from 'lucide-react';
-import { isAdoptableKind, parseHiddenModels, visibleCatalog } from '@goodboy/core';
+import { AUTO_GATES, isAdoptableKind, parseHiddenModels, visibleCatalog } from '@goodboy/core';
 import type { Agent, AgentStatus, ProviderId, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
 import { agentPlace } from '../../../store/slices/navigation/place';
 import type { AgentPane } from '../../../store/slices/navigation/types';
-import { SETTING_AUTO_EXPERIMENT, SETTING_HIDDEN_MODELS } from '../../settings/settings';
+import { SETTING_HIDDEN_MODELS } from '../../settings/settings';
 import { MOVE_TO_AUTO_EVENT, moveToAutoDetail } from '../../auto/adopt/moveToAutoEvent';
-import { autoExperimentSettings } from '../../auto/autoExperimentSettings';
 import { autoMembershipOf } from '../../auto/autoMembershipOf';
 import { autoRestOf, type AutoRest } from '../../auto/autoRestOf';
 import { moveAutoRestingPhase } from '../../auto/moveAutoRestingPhase';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { detachFromAuto } from '../../auto/detachFromAuto';
-import { isAutoStartEnabled } from '../../auto/isAutoStartEnabled';
 import { classifyAgent } from '../../session/agent-kind';
 import {
   isAgentClosable,
@@ -104,9 +102,7 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
         'anthropic',
       modelKey: state.agentModelOverride[agent.id] ?? agent.modelOverride ?? null,
       hiddenModels: state.settings?.[SETTING_HIDDEN_MODELS] ?? null,
-      isAutoOn: isAutoStartEnabled({
-        settings: autoExperimentSettings({ raw: state.settings?.[SETTING_AUTO_EXPERIMENT] }),
-      }),
+      isAutoOn: AUTO_GATES.isDelegationEnabled,
       canMoveToAuto:
         isAdoptableKind({ kind }) &&
         agent.workflowRunId == null &&

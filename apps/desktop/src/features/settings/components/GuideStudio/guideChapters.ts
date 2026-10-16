@@ -375,7 +375,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Auto',
-        desc: 'Auto is an experimental agent, off until you turn on Auto agent in Settings, App, General, under Experiments. Ask an agent then starts Auto: it answers what it can, hands the rest to child agents of the roles it picks, waits for their results and goes on, all under a Spend cap. Its agents live under Auto agents in the session rail, where each shows its state and the foot says Limit and what is left. You can write to Auto at any time, and Move to Auto hands it an agent you started yourself.',
+        desc: 'Auto is an experimental agent that is always on. Ask an agent starts Auto: it answers what it can, hands the rest to child agents of the roles it picks, waits for their results and goes on, all under a Spend cap. Its agents live under Auto agents in the session rail, where each shows its state and the foot says Limit and what is left. You can write to Auto at any time, and Move to Auto hands it an agent you started yourself.',
       },
       {
         term: 'Orchestrated or Auto',

@@ -16,14 +16,12 @@ import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../sto
 import type { StoryStore } from '../../store/storyHarness';
 import { clearSceneInvoke } from '../../test/sceneInvoke';
 import { MOCK_SCENES } from '../../app/components/MockScene';
-import { mockSceneIpc } from '../../app/components/MockScene/scenes/mockSceneIpc';
 import { WORKSPACE_ID } from '../../app/components/MockScene/scenes/BoardScene';
 import { IdentityRow } from '../../app/components/SessionRail/SessionLevel/IdentityRow';
 import { runObjectAction } from '../../features/actions/registry';
 import { TALK_ACTION_ID } from '../../features/actions/kinds/suggestion';
 import type { ActionEnv } from '../../features/actions/types';
 import { brandedId } from '../../features/history/testing/brandedId';
-import { SETTING_AUTO_EXPERIMENT } from '../../features/settings/settings';
 
 const SETTLE_MS = 2_000;
 
@@ -236,19 +234,6 @@ describe('SPEC3 9.2 New session draft and the New forms, from the c10 page and d
     screen.getByRole('region', { name: 'Auto' });
     screen.getByText('Experimental');
     screen.getByRole('button', { name: 'Start Auto' });
-  });
-
-  it('reads the start mode again at the click and holds the start when it changed', async () => {
-    await mountScene({ name: 'c10-start-agent' });
-    mockSceneIpc((cmd) =>
-      cmd === 'db_select' ? [{ key: SETTING_AUTO_EXPERIMENT, value: 'true' }] : undefined,
-    );
-    const sessionsBefore = useAppStore.getState().sessions.length;
-
-    await clickNamed({ name: 'Start Scout' });
-
-    expect(useAppStore.getState().sessions).toHaveLength(sessionsBefore);
-    expect(useAppStore.getState().settings[SETTING_AUTO_EXPERIMENT]).toBe('true');
   });
 
   it('marks a title Goodboy wrote as Named by Goodboy on the identity row', async () => {

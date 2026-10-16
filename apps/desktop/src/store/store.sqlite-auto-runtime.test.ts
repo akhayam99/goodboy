@@ -1,10 +1,8 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AUTO_SEED_ROOT, AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
-import { listAutoOutbox } from '@goodboy/db';
+import { listAutoOutbox, setSetting } from '@goodboy/db';
 import { brandId, type AutoTreeId, type WorkspaceId } from '@goodboy/types';
 import { writeAutoTreeLimit } from '../features/auto/autoTreeLimit';
-import { writeAutoExperiment } from '../features/auto/writeAutoExperiment';
-import { SETTING_AUTO_EXPERIMENT } from '../features/settings/settings';
 import { currentAutoUserTurnPort } from '../features/auto/autoUserTurnPort';
 import { currentDelegationDecisionPort } from '../features/auto/delegationDecisionPort';
 import { currentTreeStopPort } from '../features/auto/treeStopPort';
@@ -114,9 +112,7 @@ describe('the Auto runtime on the real store', () => {
     expect(useAppStore.getState().sessionPhaseRuns).toEqual({});
   });
 
-  it('recovers nothing and ticks quietly with no tree when the experiment is on', async () => {
-    const db = await openStorySqlite();
-    await writeAutoExperiment({ db, isOn: true });
+  it('recovers nothing and ticks quietly with no tree', async () => {
     const stop = await startAutoRuntime({ isEnabled: true, tickMs: 10 });
     stops.push(stop);
     await new Promise((resolve) => setTimeout(resolve, 40));
@@ -124,74 +120,38 @@ describe('the Auto runtime on the real store', () => {
     expect(useAppStore.getState().notifications ?? []).toEqual([]);
   });
 
-  it('reads nothing after the first look while the experiment is off and no tree is left', async () => {
-    const db = await openStorySqlite();
-    stops.push(await startAutoRuntime({ isEnabled: true, tickMs: 10 }));
-    const select = vi.spyOn(db, 'select');
-    const execute = vi.spyOn(db, 'execute');
-    await new Promise((resolve) => setTimeout(resolve, 80));
-
-    expect(select).not.toHaveBeenCalled();
-    expect(execute).not.toHaveBeenCalled();
-    expect(useAppStore.getState().notifications ?? []).toEqual([]);
-  });
-
-  it('keeps the settings object while the experiment is off', async () => {
-    stops.push(await startAutoRuntime({ isEnabled: true, tickMs: 10 }));
-    const before = useAppStore.getState().settings;
-    await new Promise((resolve) => setTimeout(resolve, 60));
-
-    expect(useAppStore.getState().settings).toBe(before);
-  });
-
-  it('starts ticking when the experiment is switched on after the runtime started', async () => {
+  it('starts the tree of an Auto agent with no setting written', async () => {
     const db = await seedSessionWithAutoAgent({ kind: 'auto' });
     stops.push(await startAutoRuntime({ isEnabled: true, tickMs: 10 }));
-    await new Promise((resolve) => setTimeout(resolve, 40));
-    expect(await db.select('SELECT id FROM auto_trees')).toHaveLength(0);
-
-    await writeAutoExperiment({ db, isOn: true });
-    await useAppStore.getState().loadSetting(SETTING_AUTO_EXPERIMENT);
 
     await vi.waitFor(async () => {
       expect(await db.select('SELECT id FROM auto_trees')).toHaveLength(1);
     });
   });
 
-  it('keeps recovering a tree that was left behind when the experiment is off', async () => {
-    const db = await seedSessionWithAutoAgent({ kind: null });
-    await seedTree(db);
-    await db.execute(`UPDATE auto_trees SET phase = 'waiting'`);
-    await writeAutoExperiment({ db, isOn: false });
-
+  it('starts the tree of an Auto agent even when an old experiment row says false', async () => {
+    const db = await seedSessionWithAutoAgent({ kind: 'auto' });
+    await setSetting(db, 'agents.autoExperiment', 'false');
     stops.push(await startAutoRuntime({ isEnabled: true, tickMs: 10 }));
 
     await vi.waitFor(async () => {
-      const rows = await db.select<{ scheduler_owner: string | null }>(
-        'SELECT scheduler_owner FROM auto_trees',
-      );
-      expect(rows[0]?.scheduler_owner).not.toBeNull();
+      expect(await db.select('SELECT id FROM auto_trees')).toHaveLength(1);
     });
   });
 
-  it('stops ticking once the last tree ends with the experiment off', async () => {
+  it('keeps recovering a tree that was left behind', async () => {
     const db = await seedSessionWithAutoAgent({ kind: null });
     await seedTree(db);
     await db.execute(`UPDATE auto_trees SET phase = 'waiting'`);
+
     stops.push(await startAutoRuntime({ isEnabled: true, tickMs: 10 }));
+
     await vi.waitFor(async () => {
       const rows = await db.select<{ scheduler_owner: string | null }>(
         'SELECT scheduler_owner FROM auto_trees',
       );
       expect(rows[0]?.scheduler_owner).not.toBeNull();
     });
-
-    await db.execute(`UPDATE auto_trees SET phase = 'stopped'`);
-    await new Promise((resolve) => setTimeout(resolve, 60));
-    const select = vi.spyOn(db, 'select');
-    await new Promise((resolve) => setTimeout(resolve, 60));
-
-    expect(select).not.toHaveBeenCalled();
   });
 
   it('drives a stored tree on the next tick, so a lease taken by this window is renewed', async () => {
@@ -269,7 +229,6 @@ describe('the tree an Auto agent starts with', () => {
       },
     });
 
-    await writeAutoExperiment({ db, isOn: true });
     stops.push(await startAutoRuntime({ isEnabled: true, tickMs: 10 }));
 
     expect(await capOfTree(db)).toBe(25);
@@ -283,7 +242,6 @@ describe('the tree an Auto agent starts with', () => {
       usd: 8,
     });
 
-    await writeAutoExperiment({ db, isOn: true });
     stops.push(await startAutoRuntime({ isEnabled: true, tickMs: 10 }));
 
     expect(await capOfTree(db)).toBe(8);

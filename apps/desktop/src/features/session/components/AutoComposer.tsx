@@ -7,7 +7,6 @@ import { useAppStore } from '../../../store';
 import { usePromptFiles } from '../../../shared/hooks/usePromptFiles';
 import { useAgentRouting } from '../hooks/useAgentRouting';
 import { useAutoStart } from '../hooks/useAutoStart';
-import { useConfirmStartMode } from '../../auto/useConfirmStartMode';
 import { useAutoTreeLimit } from '../../auto/useAutoTreeLimit';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import { AutoComposerView } from './AutoComposerView';
@@ -31,7 +30,6 @@ export const AutoComposer = ({ sessionId, actionsHost, footerClassName, onDone }
   );
   const routed = useAgentRouting({ sessionId, kind: 'auto' });
   const start = useAutoStart({ sessionId });
-  const confirmMode = useConfirmStartMode();
   const workspaceId = useAppStore(
     (state) => sessionById(state.sessions, sessionId)?.workspaceId ?? null,
   );
@@ -49,9 +47,6 @@ export const AutoComposer = ({ sessionId, actionsHost, footerClassName, onDone }
     setIsStarting(true);
     setError(null);
     try {
-      if (!(await confirmMode({ isShown: true }))) {
-        return;
-      }
       await limit.persist();
       await start({ goal, routing: routed.effective });
       setGoal({ sessionId, goal: '' });

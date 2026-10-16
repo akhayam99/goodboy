@@ -16,7 +16,6 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
-import { SETTING_AUTO_EXPERIMENT } from '../../../settings/settings';
 import { AutoReleaseContext } from '../../../auto/autoReleaseContext';
 import type { SessionSuggestion } from '../../types';
 import type { SuggestionActions } from '../../useSuggestionActions';
@@ -68,10 +67,9 @@ type RenderParams = {
 };
 
 const renderRow = ({ suggestion, actions, isAutoOn = true }: RenderParams) => {
-  useAppStore.setState({ settings: { [SETTING_AUTO_EXPERIMENT]: isAutoOn ? 'true' : 'false' } });
   return render(
     <ToastProvider>
-      <AutoReleaseContext.Provider value>
+      <AutoReleaseContext.Provider value={isAutoOn}>
         <NextStepRow
           suggestion={suggestion}
           actions={actions}
@@ -148,7 +146,7 @@ describe('Talk it through with Auto in the more menu of a Next card', () => {
     expect(screen.queryByRole('menuitem', { name: /Talk it through/ })).toBeNull();
   });
 
-  it('is hidden while the experiment is off, and the menu keeps its other roles', () => {
+  it('is hidden while the release gate is closed, and the menu keeps its other roles', () => {
     renderRow({
       suggestion: CHECK_CHANGES,
       actions: { primary: primaryOf({ agentKind: 'reviewer' }), onDismiss: null },

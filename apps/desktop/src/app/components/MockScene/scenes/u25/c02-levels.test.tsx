@@ -103,6 +103,7 @@ describe('the c02 sidebar and session rail scenes', () => {
       'Runs1',
       'Orchestrated',
       'Agents3',
+      'Auto agentsExperimental',
       'Artifacts3',
       'Questions1',
     ]);

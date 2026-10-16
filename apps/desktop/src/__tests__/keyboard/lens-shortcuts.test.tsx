@@ -280,14 +280,26 @@ describe('App lens shortcuts on darwin', () => {
     expect(state.navigate).not.toHaveBeenCalled();
   });
 
-  it('toggles back to the overview when the lens is already active', () => {
-    state.activeLens = { 'session-1': 'agents' };
+  it('toggles back to the overview when the last lens of the chord is already active', () => {
+    state.activeLens = { 'session-1': 'auto' };
     render(<App />);
 
     press({ code: 'KeyA', key: 'a', metaKey: true, altKey: true });
 
     expect(state.navigate).toHaveBeenCalledWith({
       to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: null }),
+    });
+  });
+
+  it('moves from Agents to Auto agents on the second press, whatever an old setting says', () => {
+    state.activeLens = { 'session-1': 'agents' };
+    state.settings = { 'agents.autoExperiment': 'false' };
+    render(<App />);
+
+    press({ code: 'KeyA', key: 'a', metaKey: true, altKey: true });
+
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: 'auto' }),
     });
   });
 

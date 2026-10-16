@@ -51,7 +51,7 @@ Map an unfamiliar repo before you plan. **Scout** is the default role and only r
 
 ### Start more work in a session
 
-**New** in a session opens a menu: **Run a workflow**, **Orchestrate**, **Start agent**, **Start Auto** (with the Auto experiment on), **Report** and **Wireframe**. Each opens its own form in the drawer. Run a workflow and Orchestrate end with Autonomy (**Ask me**, **Balanced** or **Autopilot**), Starts and Spend cap. Start agent starts one role. Report and Wireframe draft one from the session. The button is filled when nothing is running, blocked or waiting on a question, and neutral otherwise. A run you like can be kept from its page with **Save as preset**.
+**New** in a session opens a menu: **Run a workflow**, **Orchestrate**, **Start agent**, **Start Auto**, **Report** and **Wireframe**. Each opens its own form in the drawer. Run a workflow and Orchestrate end with Autonomy (**Ask me**, **Balanced** or **Autopilot**), Starts and Spend cap. Start agent starts Auto, which picks the roles. Report and Wireframe draft one from the session. The button is filled when nothing is running, blocked or waiting on a question, and neutral otherwise. A run you like can be kept from its page with **Save as preset**.
 
 ### Start blank
 

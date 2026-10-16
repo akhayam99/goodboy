@@ -693,8 +693,8 @@ cleanup) and moving those calls behind the commands is not done yet.
 
 Migration m230 adds seven tables for Auto, the agent that hands work to agents
 of other roles. `AUTO_GATES.isDelegationEnabled` in
-`packages/core/src/auto/limits.ts` is `true`; no tree exists until a person
-turns on the setting `agents.autoExperiment` (off by default), and Auto decides
+`packages/core/src/auto/limits.ts` is `true` and is the only gate (Auto has no
+setting; an old `agents.autoExperiment` row is never read), and Auto decides
 through the `<<auto>>` block, not through a bridge verb. The tables are additive, so an older build
 refuses the file with `DatabaseFromNewerBuildError` instead of reading it.
 m230 also adds the partial index `idx_agents_auto_roots` on `agents(session_id, ordinal)` for
@@ -759,7 +759,7 @@ kept.
   `core/auto/mountPick.ts`, the model through `resolveProposedRouting`, the artifact
   bodies and the kickoff text from `core/auto/kickoff.ts`) and admits the batch in one
   transaction. A writer must name its mount; a reader without one gets the primary
-  mount, captured at admission. Nothing runs for a person until the experiment switch is on, because no tree exists before.
+  mount, captured at admission. Nothing runs for a person until they start an Auto agent, because no tree exists before.
 - Delivery to Auto is `deliver.ts`. One transaction claims the pending rows, stores the
   built text on the first row, reserves the turn ceiling and makes the tree `deciding`
   on a planned run id; then the turn starts under the first row id as its delivery id,
@@ -807,12 +807,8 @@ kept.
   (`createRealAutoPorts.ts`: the store's `sendTurn` and confirmed cancel, the mount list,
   `worktree_snapshot`, the delivery lookup of Rust, the child agent rows and the run
   ledger of `provider_runs`), claims each tree it recovers, and drives every live tree
-  every fifteen seconds, which also renews the owner lease. The interval runs only while
-  the setting `agents.autoExperiment` is on or a tree that is not finished is left, so a
-  person who never turned Auto on pays no timer, no read and no error. It looks once at
-  start, re-arms when the setting changes (the settings cache, `loadSetting`, which keeps
-  the `settings` object when the value is unchanged) and stops itself on the tick that
-  finds no live tree with the setting off. Each tick also starts the tree
+  every fifteen seconds, which also renews the owner lease. The interval starts with the
+  runtime and stops only on teardown. Each tick also starts the tree
   of an Auto agent that has none (`startAutoTrees.ts`), capped at the budget of its session,
   else at the workspace key `auto.treeLimitUsd.<workspaceId>`, else at the default
   (`autoTreeCapUsd`). It hands the screens the ports they call, the answer to a

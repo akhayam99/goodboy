@@ -1,38 +1,16 @@
 // @vitest-environment happy-dom
 
-const holder = vi.hoisted(() => {
-  const state: { db: Database | null } = { db: null };
-  return state;
-});
-
-vi.mock('../../../../shared/lib/db', () => ({
-  get tauriDatabase() {
-    return holder.db;
-  },
-}));
-
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { setSetting, type Database } from '@goodboy/db';
-import { makeMigratedTestDatabase } from '@goodboy/db/test-helpers';
 import { brandId, type AgentId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { MOVE_TO_AUTO_EVENT } from '../../../auto/adopt/moveToAutoEvent';
 import { AutoReleaseContext } from '../../../auto/autoReleaseContext';
-import { SETTING_AUTO_EXPERIMENT } from '../../../settings/settings';
 import { AutoHandoffChip } from './AutoHandoffChip';
-
-const dbOf = (): Database => {
-  if (holder.db === null) {
-    throw new Error('no database');
-  }
-  return holder.db;
-};
 
 const AGENT = brandId<AgentId>({ value: 'agent-source' });
 
-beforeEach(async () => {
-  holder.db = await makeMigratedTestDatabase();
+beforeEach(() => {
   useAppStore.setState({ settings: {} });
 });
 
@@ -51,14 +29,7 @@ const mount = ({ isReleased = true }: MountParams = {}): void => {
 };
 
 describe('the chip where an agent suggests Auto', () => {
-  it('shows nothing while the experiment is off', async () => {
-    mount();
-
-    expect(screen.queryByText('Agent suggests: Auto')).toBeNull();
-  });
-
   it('shows the reason and asks the pane to open the Move to Auto panel', async () => {
-    await setSetting(dbOf(), SETTING_AUTO_EXPERIMENT, 'true');
     const heard: Array<unknown> = [];
     const listen = (event: Event) => {
       heard.push(event instanceof CustomEvent ? event.detail : null);
@@ -74,13 +45,16 @@ describe('the chip where an agent suggests Auto', () => {
     await waitFor(() => expect(heard).toEqual([{ agentId: AGENT }]));
   });
 
-  it('stays hidden while the release gate is closed, whatever is stored', async () => {
-    await setSetting(dbOf(), SETTING_AUTO_EXPERIMENT, 'true');
+  it('shows the chip even when an old experiment row still says false', () => {
+    useAppStore.setState({ settings: { 'agents.autoExperiment': 'false' } });
+    mount();
+
+    expect(screen.getByText('Agent suggests: Auto')).toBeDefined();
+  });
+
+  it('stays hidden while the release gate is closed', () => {
     mount({ isReleased: false });
 
-    await waitFor(() =>
-      expect(useAppStore.getState().settings[SETTING_AUTO_EXPERIMENT]).toBe('true'),
-    );
     expect(screen.queryByText('Agent suggests: Auto')).toBeNull();
   });
 });

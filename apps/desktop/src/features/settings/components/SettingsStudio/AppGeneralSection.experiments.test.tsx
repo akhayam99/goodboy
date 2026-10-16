@@ -43,28 +43,15 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
-describe('General page and the Experiments band', () => {
-  it('puts Experiments below Search with the Auto agent row', () => {
-    mount({ isReleased: true });
+describe('General page without an Auto switch', () => {
+  it.each([true, false])(
+    'has no Experiments band and no Auto switch, release gate open %s',
+    (isReleased) => {
+      mount({ isReleased });
 
-    const headings = screen.getAllByRole('heading', { level: 2 }).map((node) => node.textContent);
-    expect(headings.indexOf('Experiments')).toBeGreaterThan(headings.indexOf('Search'));
-    expect(screen.getByRole('switch', { name: 'Auto agent' })).toBeDefined();
-  });
-
-  it('has no Experiments band while the release gate is closed', () => {
-    mount({ isReleased: false });
-
-    expect(screen.queryByRole('heading', { name: 'Experiments' })).toBeNull();
-    expect(screen.queryByRole('switch', { name: 'Auto agent' })).toBeNull();
-  });
-
-  it('shows the band in the build that ships, whose gate is open, with the switch off', () => {
-    render(<AppGeneralSection />);
-
-    expect(screen.getByRole('heading', { name: 'Experiments' })).toBeDefined();
-    expect(screen.getByRole('switch', { name: 'Auto agent' }).getAttribute('aria-checked')).toBe(
-      'false',
-    );
-  });
+      expect(screen.getByRole('heading', { name: 'Search' })).toBeDefined();
+      expect(screen.queryByRole('heading', { name: 'Experiments' })).toBeNull();
+      expect(screen.queryByRole('switch', { name: 'Auto agent' })).toBeNull();
+    },
+  );
 });

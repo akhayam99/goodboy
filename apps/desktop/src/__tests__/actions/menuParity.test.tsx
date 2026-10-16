@@ -39,7 +39,6 @@ import type {
 import { NextStepRow } from '../../features/suggestions/components/NextStepSlot/NextStepRow';
 import type { SessionSuggestion } from '../../features/suggestions/types';
 import { AutoReleaseContext } from '../../features/auto/autoReleaseContext';
-import { SETTING_AUTO_EXPERIMENT } from '../../features/settings/settings';
 import { HistoryCommitRow } from '../../features/history/components/CommitsHistory/HistoryCommitRow';
 import { NO_EXPLORE_CHANGES } from '../../features/explore/exploreChanges';
 import { ExploreTree } from '../../features/explore/components/ExplorePane/ExploreTree';
@@ -597,7 +596,6 @@ type NextCardParams = {
 };
 
 const nextCardMenu = ({ suggestion, startsRole }: NextCardParams) => {
-  useAppStore.setState({ settings: { [SETTING_AUTO_EXPERIMENT]: 'true' } });
   render(
     <ToastProvider>
       <AutoReleaseContext.Provider value>

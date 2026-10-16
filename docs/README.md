@@ -20,7 +20,7 @@ private `goodboy-atlas` repository. Ask the owner if you need access.
 - [providers.md](./providers.md): how to install, connect or manage a
   provider CLI
 - [auto.md](./auto.md): how the Auto agent starts, hands work to other roles
-  and shows it, and its experiment switch
+  and shows it, and its release gate
 - [query-bridge.md](./query-bridge.md): what agents can ask your connected
   tools
 - [SECURITY.md](../SECURITY.md): how to report a vulnerability, and what

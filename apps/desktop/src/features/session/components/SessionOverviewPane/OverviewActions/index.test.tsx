@@ -57,7 +57,8 @@ afterEach(cleanup);
 const openedKind = () => useAppStore.getState().drawer?.kind ?? null;
 
 describe('OverviewActions', () => {
-  it('is a menu with one item per form, Start Auto only while Auto is on', () => {
+  it('is a menu with one item per form, Start Auto always in it', () => {
+    useAppStore.setState({ settings: { 'agents.autoExperiment': 'false' } });
     render(<OverviewActions session={SESSION} />);
 
     expect(screen.getByRole('button', { name: 'New' }).getAttribute('aria-haspopup')).toBe('menu');
@@ -67,6 +68,7 @@ describe('OverviewActions', () => {
       'Run a workflow',
       'Orchestrate',
       'Start agent',
+      'Start Auto',
       'Report',
       'Wireframe',
     ]);

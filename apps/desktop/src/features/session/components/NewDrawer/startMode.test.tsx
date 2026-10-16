@@ -39,7 +39,6 @@ import {
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { AutoReleaseContext } from '../../../auto/autoReleaseContext';
-import { SETTING_AUTO_EXPERIMENT } from '../../../settings/settings';
 
 let useAppStore: StoryStore;
 let NewDrawer: typeof import('./index').NewDrawer;
@@ -123,19 +122,14 @@ const typeGoal = (): void => {
   });
 };
 
-describe('the Agent start decides on the stored setting at the click', () => {
-  it('repaints the legacy form as Auto when another window turned it on, and starts on the second click', async () => {
-    stored.set(SETTING_AUTO_EXPERIMENT, 'false');
+describe('the Agent tab with Auto always on', () => {
+  it('shows the Auto composer and starts at once', async () => {
     openAgentTab();
-    await screen.findByRole('button', { name: 'Open Generalist' });
-    stored.set(SETTING_AUTO_EXPERIMENT, 'true');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Open Generalist' }));
-
     await screen.findByRole('textbox', { name: 'Describe the work' });
-    expect(spawnAgent).not.toHaveBeenCalled();
     typeGoal();
+
     fireEvent.click(screen.getByRole('button', { name: 'Start Auto' }));
+
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
     expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({
       kindOverride: 'auto',
@@ -143,22 +137,8 @@ describe('the Agent start decides on the stored setting at the click', () => {
     });
   });
 
-  it('repaints Auto as the legacy form when another window turned it off, and keeps the goal', async () => {
-    stored.set(SETTING_AUTO_EXPERIMENT, 'true');
-    openAgentTab();
-    await screen.findByRole('textbox', { name: 'Describe the work' });
-    typeGoal();
-    stored.set(SETTING_AUTO_EXPERIMENT, 'false');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Start Auto' }));
-
-    await screen.findByRole('button', { name: 'Open Generalist' });
-    expect(spawnAgent).not.toHaveBeenCalled();
-    expect(useAppStore.getState().newDrawerDrafts[SESSION_ID]?.autoGoal).toBe(GOAL);
-  });
-
-  it('starts at once when the form already shows the stored mode', async () => {
-    stored.set(SETTING_AUTO_EXPERIMENT, 'true');
+  it('starts Auto even when an old experiment row still says false', async () => {
+    stored.set('agents.autoExperiment', 'false');
     openAgentTab();
     await screen.findByRole('textbox', { name: 'Describe the work' });
     typeGoal();
@@ -166,18 +146,7 @@ describe('the Agent start decides on the stored setting at the click', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Start Auto' }));
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
-  });
-
-  it('starts nothing and reports it when the setting cannot be read', async () => {
-    stored.set(SETTING_AUTO_EXPERIMENT, 'true');
-    openAgentTab();
-    await screen.findByRole('textbox', { name: 'Describe the work' });
-    typeGoal();
-    storySpies.getSetting.mockRejectedValue(new Error('database is locked'));
-
-    fireEvent.click(screen.getByRole('button', { name: 'Start Auto' }));
-
-    await waitFor(() => expect(reportError).toHaveBeenCalled());
-    expect(spawnAgent).not.toHaveBeenCalled();
+    expect(reportError).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Open Generalist' })).toBeNull();
   });
 });
