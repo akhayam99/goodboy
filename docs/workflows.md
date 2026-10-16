@@ -378,7 +378,7 @@ agents are never stopped by it.
 
 The Runs page (`WorkflowsPane`) lists the session's preset runs on one
 `ListGrid` (`RunsGrid`, columns in `runsGridColumns.ts`): state dot, title,
-state word, progress ("Step 2 of 3", "3 of 3 steps"), cost and age, every row
+state word, progress ("Step 2 of 3", "3 steps" once all ran), cost and age, every row
 the same columns. Groups: **In progress**, **Finished** (the first 30, then
 **Show 12 earlier**), **Archived** folded behind **Show**. A row is the button
 and carries no action; an archived run is restored from its page. The state

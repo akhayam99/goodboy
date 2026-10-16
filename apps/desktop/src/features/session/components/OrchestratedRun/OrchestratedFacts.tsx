@@ -47,11 +47,12 @@ export const OrchestratedFacts = ({ session, view }: Props) => {
         <span>{`Can use ${pool.map((provider) => PROVIDER_LABEL[provider]).join(', ')}`}</span>
       ) : null}
       {isOpen || pool.length > 0 ? DOT : null}
-      <span className="inline-flex items-center gap-1 tabular-nums">
+      <span className="inline-flex items-center gap-2 tabular-nums">
         {view.isDiscarded ? null : (
           <RunSpendLimitPopover sessionId={session.id} run={run} variant="foot" />
         )}
-        <span>{`${formatUsd(spentUsd)} spent`}</span>
+        {view.isDiscarded || spentUsd === 0 ? null : DOT}
+        {spentUsd === 0 ? null : <span>{`${formatUsd(spentUsd)} spent`}</span>}
       </span>
       {timeLeft === null ? null : DOT}
       {timeLeft === null ? null : <RunTimeLeftLabel timeLeft={timeLeft} />}
