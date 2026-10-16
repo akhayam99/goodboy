@@ -13,7 +13,6 @@ import { PLAN_PART_KIND } from './kinds/planPart';
 import { PORT_KIND } from './kinds/port';
 import { TERMINAL_TAB_KIND } from './kinds/terminalTab';
 import { NEW_FORM_KIND } from './kinds/newForm';
-import { PANE_CLUSTER_KIND } from './kinds/paneCluster';
 import { TASK_LIST_KIND } from './kinds/taskList';
 import { PULL_REQUEST_KIND } from './kinds/pullRequest';
 import { MESSAGE_KIND } from './kinds/message';
@@ -151,8 +150,6 @@ export const bindTarget = ({ state, target }: TargetParams): BoundObject | null 
       return bind({ definition: TERMINAL_TAB_KIND, state, target });
     case 'newForm':
       return bind({ definition: NEW_FORM_KIND, state, target });
-    case 'paneCluster':
-      return bind({ definition: PANE_CLUSTER_KIND, state, target });
     case 'taskList':
       return bind({ definition: TASK_LIST_KIND, state, target });
     case 'link':

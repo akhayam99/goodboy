@@ -102,14 +102,14 @@ describe('the u21 run page scenes on the orchestrated document', () => {
     expect(screen.queryByText('Queue waits for the next decision.')).toBeNull();
   });
 
-  it('names its two Stops: Stop step on the tail, Stop run in the run menu', async () => {
+  it('names its two Stops: Stop step on the tail, Stop run in the header', async () => {
     renderScene('workflow-run-scrolled');
 
     await screen.findByTestId('run-tree');
     expect(within(tail()).getByRole('button', { name: /^Stop step \d+$/ })).toBeDefined();
-    expect(within(header()).queryByRole('button', { name: 'Stop run' })).toBeNull();
+    expect(within(header()).getByRole('button', { name: 'Stop run' })).toBeDefined();
     fireEvent.click(within(header()).getByRole('button', { name: /run actions$/ }));
-    expect(within(screen.getByRole('menu')).getByText('Stop run')).toBeDefined();
+    expect(within(screen.getByRole('menu')).queryByText('Stop run')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Show run summary' })).toBeNull();
   });
 

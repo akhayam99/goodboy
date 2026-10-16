@@ -167,10 +167,10 @@ describe('controls fields', () => {
 });
 
 describe('controls hints', () => {
-  it('reads the pane cluster as words and keeps the chord bare on Search', () => {
+  it('reads the session tools as words and keeps the chord bare on Search', () => {
     renderScene('controls-hints');
 
-    const row = rowOf('Pane cluster and Search side by side');
+    const row = rowOf('Session tools and Search side by side');
     const ask = within(row).getByTestId('pane-toggle-ask');
     const search = within(row).getByRole('button', { name: /^Search \(/ });
     expect(ask.textContent).toBe('Ask');

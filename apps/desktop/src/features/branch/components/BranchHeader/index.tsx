@@ -1,12 +1,5 @@
 import { ChevronUp } from 'lucide-react';
-import {
-  Button,
-  HeaderActions,
-  HeaderBand,
-  Notice,
-  Tooltip,
-  useInheritedPaneActions,
-} from '@goodboy/ui';
+import { Button, HeaderActions, HeaderBand, Notice, Tooltip } from '@goodboy/ui';
 import type { PullRequestHost, PullRequestState, SessionId } from '@goodboy/types';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
 import { usePullRequestTitleEdit } from '../../hooks/usePullRequestTitleEdit';
@@ -58,7 +51,6 @@ export const BranchHeader = ({
   canEditTitle,
   onMutated,
 }: Props) => {
-  const inheritedActions = useInheritedPaneActions();
   const { primary, secondary } = controls;
   const titleEdit = usePullRequestTitleEdit({
     sessionId,
@@ -142,7 +134,6 @@ export const BranchHeader = ({
                 />
               }
             />
-            {inheritedActions}
           </div>
         }
       />

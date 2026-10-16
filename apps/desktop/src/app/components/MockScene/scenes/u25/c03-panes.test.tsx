@@ -54,7 +54,7 @@ const mount = async (name: SceneName): Promise<void> => {
   expect(screen.queryByText('Something went wrong')).toBeNull();
 };
 
-const cluster = (): HTMLElement => screen.getAllByRole('group', { name: 'Panes' })[0]!;
+const cluster = (): HTMLElement => screen.getByRole('group', { name: 'Session tools' });
 
 const pressed = (): ReadonlyArray<string> =>
   within(cluster())
@@ -62,7 +62,7 @@ const pressed = (): ReadonlyArray<string> =>
     .filter((button) => button.getAttribute('aria-pressed') === 'true')
     .map((button) => button.textContent ?? '');
 
-describe('c03 pane cluster scenes', () => {
+describe('c03 session tools scenes', () => {
   it('registers every scene with the mock scene registry', () => {
     for (const name of Object.keys(U25_C03_PANE_SCENES)) {
       expect(MOCK_SCENES[name]).toBeDefined();
@@ -109,13 +109,47 @@ describe('c03 pane cluster scenes', () => {
     expect(screen.getByRole('button', { name: 'Back to scripts' })).toBeDefined();
   });
 
-  it('opens Context and shows the more menu with its signal', async () => {
+  it('opens Context from its own row', async () => {
     await mount('c03-panes-context');
     expect(useAppStore.getState().drawer?.kind).toBe('context');
-    cleanup();
-    await resetStoryStore();
-    await mount('c03-panes-more');
-    expect(screen.getByRole('menuitem', { name: /^Context/ })).toBeDefined();
-    expect(screen.getByRole('menuitem', { name: /^Scripts/ })).toBeDefined();
+    expect(pressed()).toEqual(['Context']);
+  });
+
+  it('keeps the tools at the foot of the rail, and no page header holds a pane toggle', async () => {
+    await mount('c03-panes-closed');
+    const rail = screen.getByRole('navigation', { name: 'Session' });
+    expect(within(rail).getByRole('group', { name: 'Session tools' })).toBeDefined();
+    const headers = [...document.querySelectorAll('[data-slot="pane-title-row"]')];
+    expect(headers.length).toBeGreaterThan(0);
+    expect(
+      headers.filter((header) => header.querySelector('[data-testid^="pane-toggle-"]')),
+    ).toEqual([]);
+  });
+
+  it('folds the tools to icons with the open one pressed', async () => {
+    await mount('c03-panes-folded');
+    const icons = within(cluster()).getAllByRole('button');
+    expect(icons.map((icon) => icon.getAttribute('aria-label')?.split(',')[0])).toEqual([
+      'Ask',
+      'Terminal',
+      'Explore',
+      'Context',
+      'Scripts',
+    ]);
+    expect(icons.map((icon) => icon.getAttribute('aria-pressed'))).toEqual([
+      'true',
+      'false',
+      'false',
+      'false',
+      'false',
+    ]);
+  });
+
+  it('keeps the same tools while the rail drills into a worktree', async () => {
+    await mount('c03-panes-drilled');
+    const rail = screen.getByRole('navigation', { name: 'Session' });
+    expect(rail.getAttribute('data-session-rail')).toBe('worktree');
+    expect(pressed()).toEqual(['Explore']);
+    expect(within(cluster()).getAllByRole('button')).toHaveLength(5);
   });
 });

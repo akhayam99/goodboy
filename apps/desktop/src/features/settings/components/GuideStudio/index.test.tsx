@@ -179,7 +179,7 @@ describe('GuideStudio', () => {
     const board = within(rail()).getByRole('button', { name: 'Board' });
     expect(board.nextElementSibling?.textContent).toBe('Sidebar, session rail and panes');
     const shell = within(screen.getByRole('region', { name: 'Sidebar, session rail and panes' }));
-    ['Sidebar', 'Session rail', 'Levels', 'Fold the rail', 'Panes'].forEach((term) =>
+    ['Sidebar', 'Session rail', 'Levels', 'Fold the rail', 'Session tools'].forEach((term) =>
       expect(shell.getByText(term)).toBeDefined(),
     );
   });

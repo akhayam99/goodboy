@@ -171,9 +171,10 @@ c02-shell-overview
 c03-panes-ask
 c03-panes-closed
 c03-panes-context
+c03-panes-drilled
 c03-panes-explore
 c03-panes-explore-file
-c03-panes-more
+c03-panes-folded
 c03-panes-script-output
 c03-panes-scripts
 c03-panes-terminal

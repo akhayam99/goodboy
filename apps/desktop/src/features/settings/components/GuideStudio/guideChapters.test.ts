@@ -108,7 +108,7 @@ describe('the shell chapter', () => {
         'Session rail',
         'Levels',
         'Fold the rail',
-        'Panes',
+        'Session tools',
         'Ask',
         'Terminal, Explore and Scripts',
       ]),
@@ -153,11 +153,12 @@ describe('the shell chapter', () => {
     expect(pointOf('shell', 'Hide the sidebar')).toContain('only the sidebar');
   });
 
-  it('names the pane buttons and the More panes menu', () => {
-    const panes = pointOf('shell', 'Panes');
-    ['Ask', 'Terminal', 'Explore', 'More panes', 'Context', 'Scripts'].forEach((pane) =>
-      expect(panes).toContain(pane),
+  it('names the session tools at the foot of the rail, with no second menu', () => {
+    const panes = pointOf('shell', 'Session tools');
+    ['Ask', 'Terminal', 'Explore', 'Context', 'Scripts', 'foot of the session rail'].forEach(
+      (pane) => expect(panes).toContain(pane),
     );
+    expect(panes).not.toContain('More panes');
     expect(pointOf('shell', 'Terminal, Explore and Scripts')).toContain('Terminal folder');
   });
 });

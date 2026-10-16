@@ -1899,7 +1899,9 @@ enters, and shows its text (or `tooltip`) only when `scrollWidth` is wider than
 `clientWidth` or `scrollHeight` is taller than `clientHeight`. A control with a
 `title` prop (`Chip`, `StatusDot`, `GhostActionButton`, `SelectableRow`,
 `ValueToken`, a `SegmentedTabs` option, a `SelectionBar` verb) shows it in a
-`Tooltip`, never as an attribute. An empty tooltip shows nothing, so a
+`Tooltip`, never as an attribute; `SelectableRow` also takes the tooltip's
+`shortcut` and `tooltipSide`, and `isPressed` for a row that toggles a pane
+(the session tools). An empty tooltip shows nothing, so a
 conditional reason is `content={reason}` with `reason` possibly `undefined`.
 A long label wraps at 28rem and keeps a line break it is given. `Button` still
 forwards a `title` as the native attribute, so a `Button` that needs a reason
