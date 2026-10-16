@@ -176,17 +176,15 @@ describe('the Auto chat scenes', () => {
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDefined();
   });
 
-  it('auto-chat-refused says which agent was not started and why, on the tail', async () => {
+  it('auto-chat-refused turns a refused hand over into the project ask, nothing started', async () => {
     mount({ id: 'auto-chat-refused' });
 
-    const notice = await screen.findByText(
-      'Auto tried to start an Implementer. Not started: more than one project fits and it did not say which. Auto is choosing again.',
-      undefined,
-      WAIT,
-    );
-    expect(notice.closest('[role="status"]')).not.toBeNull();
+    expect(
+      await screen.findByText('Where should the Implementer work?', undefined, WAIT),
+    ).toBeDefined();
     expect(screen.queryByText('Auto is reading the results')).toBeNull();
     expect(screen.queryByRole('article')).toBeNull();
+    expect(screen.queryByText('Delegated to')).toBeNull();
   });
 
   it('auto-chat-done lists every child as done and has no waiting tail', async () => {

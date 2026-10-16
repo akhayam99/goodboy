@@ -337,7 +337,18 @@ delivered with the next turn under REFUSED, NOT DONE; such a turn counts as no p
 refused children; while it is pending for the current generation, `readAutoTreeViews` reads it as
 `pendingRefusal` and the tail says it in the user voice (`refusalNoticeOf`, reasons from
 `AUTO_REFUSAL_USER_REASON`): "Auto tried to start an Implementer. Not started: more than one
-project fits and it did not say which. Auto is choosing again." Once Auto's next turn takes the
+project fits and it did not say which. Auto is choosing again." A refusal about the project
+(`mount_ambiguous`, `mount_missing`) is asked instead (`projectAskOf`, `AutoProjectAsk`): "Where
+should the Implementer work?" lists the session's projects with their branch, **Another
+project...** opens a filter over the workspace's other projects ("Not in this session. A worktree
+is created from main."), and the primary follows the choice (**Choose a project** disabled, **Use
+payments-api**, **Use both**, **Use 3 projects**) next to **No project, just answer** and
+**Discard request**, with "Or reply in the chat." The composer reads "Pick a project, or write to
+Auto". The answer is a message to Auto through
+`sendTurn` ("Use payments-api and ledger-core: start one Implementer per project."); a project not
+in the session is mounted first (`ensureProjectMounted`, the button says "Creating a worktree for
+notify-relay from main"), and a failure keeps the ask with the reason. The ask then collapses to
+its answered line. Once Auto's next turn takes the
 row, the line goes, and an admitted retry draws its delegation line. The mount of a child
 (`pickAutoMount`): a named mount wins; a reader without one works in the tree's primary mount; a
 writer without one goes to the only usable mount, is refused `mount_ambiguous` when more than

@@ -5,7 +5,9 @@ import type { TranscriptInsertion } from '../../../../shared/types/transcriptIns
 import { autoTreeOfAgent, type AutoTreeOfAgent } from '../../autoTreeOfAgent';
 import { useAutoTreeViews } from '../../useAutoTreeViews';
 import { AutoDelegationLines } from '../AutoDelegationLines';
+import { AutoProjectAsk } from '../AutoProjectAsk';
 import { AutoTail } from '../AutoTail';
+import { projectAskOf } from '../projectAskOf';
 import { batchesOf } from '../batchesOf';
 import { composerPlaceholderOf } from '../composerPlaceholderOf';
 import { useAutoTreeActions } from '../useAutoTreeActions';
@@ -46,10 +48,16 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
         />
       ),
     }));
+    const ask = projectAskOf({ view });
     const tail: TranscriptInsertion = {
       key: `auto-tail-${view.tree.id}`,
       beforeMs: null,
-      node: <AutoTail sessionId={session.id} view={view} rootAgent={agent} />,
+      node:
+        ask === null ? (
+          <AutoTail sessionId={session.id} view={view} rootAgent={agent} />
+        ) : (
+          <AutoProjectAsk sessionId={session.id} rootAgentId={agent.id} ask={ask} />
+        ),
     };
     return [...lines, tail];
   }, [view, agents, agent, openChild, openArtifact, session.id]);

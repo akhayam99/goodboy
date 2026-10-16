@@ -14,6 +14,10 @@ import {
   importStore,
   resetStoryStore,
 } from '../../../../../store/storyHarness';
+import {
+  registerAutoUserTurnPort,
+  type AutoUserTurnPort,
+} from '../../../../../features/auto/autoUserTurnPort';
 import { MOCK_SCENES } from '../..';
 import { U25_C07_AUTO_SCENES } from './c07-auto';
 
@@ -163,6 +167,43 @@ describe('c07 Auto scenes', () => {
       screen.getAllByText('Three tests added in payments-api, all pass.').length,
     ).toBeGreaterThan(0);
     expect(screen.getByText('keeps the balance after two attempts')).toBeDefined();
+  });
+
+  it('c07-auto-project asks where the Implementer works and names the primary by the choice', async () => {
+    mount({ id: 'c07-auto-project' });
+
+    const ask = await screen.findByText('Where should the Implementer work?', undefined, WAIT);
+    expect(ask).toBeDefined();
+    expect(document.querySelector('[data-auto-tail]')).toBeNull();
+    expect(screen.getByPlaceholderText('Pick a project, or write to Auto')).toBeDefined();
+    const list = screen.getByRole('list', { name: 'Projects' });
+    const boxes = within(list).getAllByRole('checkbox');
+    expect(boxes.length).toBeGreaterThan(1);
+    expect(screen.getByRole('button', { name: 'Choose a project' })).toHaveProperty(
+      'disabled',
+      true,
+    );
+    fireEvent.click(boxes[0] ?? list);
+    expect(screen.getByRole('button', { name: /^Use / })).toHaveProperty('disabled', false);
+    fireEvent.click(boxes[1] ?? list);
+    expect(screen.getByRole('button', { name: 'Use both' })).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Another project...' }));
+    expect(screen.getByRole('textbox', { name: 'Type a project name' })).toBeDefined();
+  });
+
+  it('No project, just answer tells Auto through its door and collapses the ask', async () => {
+    const port = vi.fn<AutoUserTurnPort>(async () => 'queued');
+    registerAutoUserTurnPort({ port });
+    mount({ id: 'c07-auto-project' });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'No project, just answer' }, WAIT));
+
+    expect(await screen.findByText('Answered: no project', undefined, WAIT)).toBeDefined();
+    expect(port).toHaveBeenCalledWith(
+      expect.objectContaining({ text: 'No project, just answer in the chat.' }),
+    );
+    registerAutoUserTurnPort({ port: null });
   });
 
   it('goes back to the session level with Auto agents selected, and drills in again', async () => {

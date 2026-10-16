@@ -188,6 +188,7 @@ c07-auto-folded
 c07-auto-idle
 c07-auto-list
 c07-auto-plan
+c07-auto-project
 c07-auto-session-level
 c07-auto-start
 c07-auto-working

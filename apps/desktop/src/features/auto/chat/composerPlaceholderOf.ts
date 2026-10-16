@@ -1,5 +1,6 @@
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { isAutoPlanAwaitingApproval } from '../isAutoPlanAwaitingApproval';
+import { projectAskOf } from './projectAskOf';
 import { waitingTextOf } from './waitingTextOf';
 
 type Params = {
@@ -7,6 +8,9 @@ type Params = {
 };
 
 export const composerPlaceholderOf = ({ view }: Params): string | undefined => {
+  if (projectAskOf({ view }) !== null) {
+    return 'Pick a project, or write to Auto';
+  }
   if (waitingTextOf({ view }) !== null) {
     return 'Queued: Auto sees it with the next results';
   }
