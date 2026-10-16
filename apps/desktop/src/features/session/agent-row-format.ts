@@ -1,9 +1,4 @@
 import type { TelemetryRecord } from '@goodboy/types';
-import { formatUsd } from '@goodboy/ui';
-
-export { formatTokens } from '@goodboy/ui';
-
-export const formatCost = formatUsd;
 
 export const computeLatestTelemetryByAgentId = (
   agentIds: ReadonlyArray<{ id: string; runId?: string }>,

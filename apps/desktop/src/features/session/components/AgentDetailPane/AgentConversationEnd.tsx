@@ -65,7 +65,7 @@ export const AgentConversationEnd = ({ session, agent }: Props) => {
 
   return (
     <div className="flex min-w-0 flex-col gap-3">
-      <DelegationLines sessionId={session.id} children={delegated} />
+      <DelegationLines sessionId={session.id} agents={delegated} />
       {isRecordedOutcome ? (
         <Band inset="content" label="Outcome" headingLevel={2}>
           <div className="text-prose text-foreground">

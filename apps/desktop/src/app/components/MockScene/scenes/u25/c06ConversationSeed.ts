@@ -15,7 +15,7 @@ import { sceneClock } from '../../sceneClock';
 
 const clock = sceneClock({ anchor: '2026-09-14T15:12:00.000Z' });
 
-export const C06_NOW = clock.iso({ at: '2026-09-14T15:12:00.000Z' });
+const C06_NOW = clock.iso({ at: '2026-09-14T15:12:00.000Z' });
 
 const at = (minute: string) => clock.iso({ at: `2026-09-14T15:${minute}.000Z` });
 
@@ -110,7 +110,7 @@ const STATUS: Record<C06State, Agent['status']> = {
   delegating: 'running',
 };
 
-export const c06Agent = ({ state }: StateParams): Agent =>
+const c06Agent = ({ state }: StateParams): Agent =>
   agentOf({
     id: C06_AGENT_ID,
     name: 'Reinstall dependencies in payments-api',
@@ -121,8 +121,7 @@ export const c06Agent = ({ state }: StateParams): Agent =>
     ...(state === 'finished' || state === 'failed' ? { completedMinute: '11:40' } : {}),
   });
 
-export const C06_OUTCOME =
-  'payments-api now installs with pnpm; the export tests pass on 12,000 rows.';
+const C06_OUTCOME = 'payments-api now installs with pnpm; the export tests pass on 12,000 rows.';
 
 const withOutcome = ({ state }: StateParams): Agent =>
   state === 'finished'

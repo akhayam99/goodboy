@@ -3,7 +3,7 @@ import { toolKind } from './toolKind';
 
 export type PlanItemState = 'done' | 'running' | 'todo';
 
-export type PlanItem = {
+type PlanItem = {
   readonly text: string;
   readonly state: PlanItemState;
 };

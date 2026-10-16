@@ -451,15 +451,11 @@ sub-agents run oldest first, top to bottom, and a set inside a set folds on its
 own. `foldSettledSets` does this over the items of the run tree, so the
 activity feed and its stream builder are untouched.
 
-An agent's Brief draws its sub-agents with the same tree, under **Subagents**
-(`SubagentTree`, from `buildAgentTreeStream`). The agent sits on top
-with its ordinal in the run, for example `3`, and its sub-agents follow under
-it one column right, `3.1`, `3.2`, `3.3`, each with its own model, effort and
-spend. Sub-agents of an agent outside a workflow are numbered from `1`. The
-header counts them in words ("2 of 3 done"). An implementer split into parts
-shows no Outcome, because the tree already says what each part did. A planner
-shows no sub-agents, and delegates and follow-ups keep their own sections. This
-tree never folds a set and has no plan action.
+An agent's conversation says each sub-agent in one line at its end,
+**Delegated to** with the child's role and state and **See more**, which opens
+the child in the transcript drawer (`DelegationLines`). The run tree above stays
+the place that draws sub-agents with their tracks. A planner lists only its
+question delegates, and follow-ups keep their own row after the last answer.
 
 In the activity feed, an agent or step row leads with its role as a glyph and
 ends with the model that ran, then its duration with what it has spent under

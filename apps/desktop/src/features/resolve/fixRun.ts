@@ -106,25 +106,6 @@ export const fixRunLabel = ({
   return prNumber === null ? `Fix run · ${comments}` : `Fix run · #${prNumber} · ${comments}`;
 };
 
-const WORD_PRECEDENCE: ReadonlyArray<ResolveWord> = [
-  'question',
-  'working',
-  'push_failed',
-  'to_review',
-  'couldnt_fix',
-  'ready',
-  'replied',
-  'done',
-  'left_open',
-  'open',
-];
-
-export const fixRunWordOf = ({
-  words,
-}: {
-  readonly words: ReadonlyArray<ResolveWord>;
-}): ResolveWord => WORD_PRECEDENCE.find((word) => words.includes(word)) ?? 'done';
-
 export const fixRunThreadIdsOf = ({
   attempts,
   agentId,

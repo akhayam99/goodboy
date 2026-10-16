@@ -25,7 +25,6 @@ import { useAppStore } from '../../../../store';
 
 import { OPERATOR_NOTES_GUIDANCE } from '../../utils/operatorNotesGuidance';
 import { HandoffBlock } from '.';
-import { requestHandoffOpen } from './handoffOpenRequest';
 
 const SESSION = 'session-1' as SessionId;
 const AGENT = 'agent-4' as AgentId;
@@ -200,15 +199,6 @@ describe('HandoffBlock', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Implementer instructions' }));
     expect(screen.queryByTestId('handoff-section-plan')).toBeNull();
     screen.getByTestId('handoff-section-role');
-  });
-
-  it('opens the Ask section when the Brief requests the handoff', () => {
-    requestHandoffOpen({ agentId: AGENT });
-    renderBlock();
-
-    screen.getByTestId('handoff-section-ask');
-    expect(screen.getByRole('button', { name: 'Ask' }).getAttribute('aria-pressed')).toBe('true');
-    expect(screen.queryByTestId('handoff-section-plan')).toBeNull();
   });
 
   it('Escape closes the open section and returns focus to its chip', () => {

@@ -7,7 +7,7 @@ import { describeAgentStatus } from '../../agent-status';
 
 type Props = {
   readonly sessionId: SessionId;
-  readonly children: ReadonlyArray<Agent>;
+  readonly agents: ReadonlyArray<Agent>;
 };
 
 const NODE_STATE: Record<AgentStatus, WorkNodeState> = {
@@ -20,15 +20,15 @@ const NODE_STATE: Record<AgentStatus, WorkNodeState> = {
   stopped: 'stopped',
 };
 
-export const DelegationLines = ({ sessionId, children }: Props) => {
+export const DelegationLines = ({ sessionId, agents }: Props) => {
   const overrides = useAppStore((state) => state.agentKindOverride);
   const openDrawer = useAppStore((state) => state.openDrawer);
-  if (children.length === 0) {
+  if (agents.length === 0) {
     return null;
   }
   return (
     <ul aria-label="Delegations" className="flex flex-col gap-1">
-      {children.map((child) => {
+      {agents.map((child) => {
         const kind = classifyAgent({ agent: child, override: overrides[child.id] ?? null });
         const word = describeAgentStatus({ status: child.status }).label;
         return (

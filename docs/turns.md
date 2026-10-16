@@ -300,8 +300,8 @@ threadIds? })`), a hint on one comment (`continueResolveThreads`) and a
   the `handoff` item and `TranscriptRows` counts it as the first user turn.
 - The transcript drawer is the record and the agent page is one conversation.
   What the agent received lives only in the handoff block at the top of the
-  conversation ("Sent by Orchestrator · step 4", opened in place with
-  `requestHandoffOpen`). The old kickoff cards and their text parsers are gone.
+  conversation ("Sent by Orchestrator · step 4", opened in place). The old
+  kickoff cards and their text parsers are gone.
 - The conversation (`ChatView` `mode="conversation"`, rows from
   `conversationRows`) keeps per turn the user message, one summary line for the
   turn's tools (`turnSummary`, steps open inline), the final answer, app

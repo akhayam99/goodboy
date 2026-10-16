@@ -19,7 +19,7 @@ import {
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { U25_C06_CONVERSATION_SCENES } from './c06-conversation';
-import { C06_AGENT_ID, C06_OUTCOME } from './c06ConversationSeed';
+import { C06_AGENT_ID } from './c06ConversationSeed';
 
 const SETTLE_MS = 1_500;
 
@@ -89,7 +89,7 @@ describe('SPEC3 9.4 agent rows stay reachable from the one conversation', () => 
 
     const outcome = screen.getByRole('heading', { name: 'Outcome' });
     expect(outcome).toBeDefined();
-    expect(screen.getByText(C06_OUTCOME)).toBeDefined();
+    expect(screen.getByText(/the export tests pass on 12,000 rows/)).toBeDefined();
   });
 
   it('Brief subagents: each child is a delegation line that opens it in the pane', async () => {
