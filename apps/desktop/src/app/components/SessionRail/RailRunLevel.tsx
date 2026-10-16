@@ -1,7 +1,7 @@
 import { ChevronLeft } from 'lucide-react';
 import type { Agent, Session } from '@goodboy/types';
 import { useAppStore } from '../../../store';
-import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
 import { NAMES } from '../../../shared/names';
 import { agentKindPalette, classifyAgent } from '../../../features/session/agent-kind';
 import { leaveRunLevel } from '../../../features/workflows/leaveRunLevel';
@@ -28,10 +28,11 @@ export const RailRunLevel = ({ session, focus }: Props) => {
     navigate({ to: runPlace({ sessionId, runId: focus.runId, agentId }) });
 
   return (
-    <div data-rail-level="run" className="flex flex-col items-center gap-1">
+    <div data-rail-level="run" className="flex flex-col px-2">
       <RailButton
         id="level-back"
         icon={ChevronLeft}
+        iconSize={ICON_SIZE.row}
         label={`Back to ${NAMES.runs}`}
         shortcut="nav.back"
         isCurrent={false}
@@ -41,6 +42,7 @@ export const RailRunLevel = ({ session, focus }: Props) => {
       <RailButton
         id="run-overview"
         icon={CONCEPT_ICONS.timeline}
+        iconSize={ICON_SIZE.row}
         label={NAMES.overview}
         isCurrent={focus.agentId === null}
         isPage
@@ -55,6 +57,7 @@ export const RailRunLevel = ({ session, focus }: Props) => {
             key={agent.id}
             id={`run-step-${agent.id}`}
             icon={palette.icon}
+            iconSize={ICON_SIZE.row}
             label={`Step ${index + 1}, ${palette.label}`}
             isCurrent={focus.agentId === agent.id}
             isPage

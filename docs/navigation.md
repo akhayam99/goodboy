@@ -610,7 +610,10 @@ hide animation or overlay can move it.
   outright sets it and its handle to zero width and marks the aside `inert`: a
   zero-width column that still takes focus is a keyboard trap. The shell
   primitive can lay out more reduced states than the product uses. Which one a
-  column gets is decided here, not by what the primitive offers.
+  column gets is decided here, not by what the primitive offers. Folding and
+  unfolding either column is one move that keeps every icon in place
+  (`FoldLayers`, [styling.md](styling.md#the-window-grid)): the width eases, the
+  words fade, and the 44px rail's icons sit on the open rows' lines.
 - **At narrow widths the column folds first, then the session rail.** While a
   session is open, `shellFoldsOf` (read through `useShellFolds`) takes the
   window width, the saved column and rail widths and the open pane's track,
@@ -646,9 +649,11 @@ shows the workspace: New session, the doors, then the Pinned and Sessions
 lists. Clicking a session row selects that row, opens the session on its
 Overview and shows its session rail at the left of the page, inside the
 content sheet. The rail holds the levels that drill: level 1 is the session,
-level 2 a worktree, a preset run or Auto. A drill and its back slide the
-rail's levels over 180ms (`LevelStack`, instant under reduced motion); the
-column never moves. The host is `SessionRail` (`app/components/SessionRail`),
+level 2 a worktree, a preset run or Auto. A drill and its back cross the
+rail's levels in one move: a frozen copy of the leaving level slides 24px
+toward the back and fades in 120ms while the new level slides in 24px from the
+drill side over 200ms (`LevelStack`, `useLevelSwap`; the folded icons drill the
+same way; instant under reduced motion); the column never moves. The host is `SessionRail` (`app/components/SessionRail`),
 mounted once for the open session by `SessionFrame` beside the kept-alive
 session pages, its level read by `useSessionRailLevel`. Every level stays
 mounted, so the session level keeps its scroll and its selection while a
@@ -2592,22 +2597,26 @@ screen reader. A click on the scrim asks the top layer of the escape stack
 (`dismissTopEscapeLayer` in `packages/ui/src/escape.ts`), so an editor or an
 unsent draft inside the drawer answers first, exactly as it does to Esc.
 Pushing has no scrim and nothing is inert. Closed, the
-aside is 0px wide and `inert`. Opening and closing move the track in 180ms
-ease-out (none under reduced motion), and the centred column slides with it
-while the card slides 8px in; over the page it slides in 200ms; a new kind in
+aside is 0px wide and `inert`. Opening and closing ease the track's width in
+220ms (`FOLD_MS`, none under reduced motion) with its right edge fixed, and the
+centred column slides with it: the card grows leftward from the window edge,
+its content held at its final width on that edge so nothing reflows, and the
+content fades in once there is room; over the page it slides in 200ms; a new kind in
 an open drawer fades its content in 120ms. It never writes the sidebar
 preference: a pane that leaves a session page under 720px folds the column,
 then the session rail, only while it is open (`shellFoldsOf`, see Surfaces).
 
 **Closing never moves the page behind a drawer.** `DrawerColumn` remembers the
 last mode the drawer was open in (`useDrawerExit`). Closed from pushing, the
-aside stays in the flow and its width eases to 0 in 180ms, as above. Closed from
+aside stays in the flow, its width eases to 0 in 220ms and the card keeps a
+frozen copy of its content that fades in 120ms (`drawer-content-out`); with
+nothing laid out or under reduced motion it closes at once. Closed from
 over the page, the aside stays out of the flow with no width transition, so the
 page keeps its width at every frame, and the card and scrim stay mounted for
 `DRAWER_EXIT_MS` (160ms) while they fade and slide 8px right (`drawer-overlay-out`;
 only the fade, `drawer-fade-out`, under reduced motion). The exit card is a
 frozen copy of the DOM the drawer had, so its escape layers, focus and handlers
-are gone the moment it closes (a drawer that holds a `canvas`, `iframe`, `video`, `audio` or `webview`, or more than `DRAWER_EXIT_MAX_ELEMENTS` (2000) elements, is not copied and closes at once with no exit; the copy is taken in a layout effect, before paint, never during render): the aside, the card and the scrim are `inert` or
+are gone the moment it closes (a drawer that holds a `canvas`, `iframe`, `video`, `audio` or `webview`, or more than `DRAWER_EXIT_MAX_ELEMENTS` (2000) elements, is not copied and closes at once with no exit; the copy is taken during the render that closes the drawer, before React commits it, because a host that reads the same store, such as `DrawerHost`, empties itself in that same commit): the aside, the card and the scrim are `inert` or
 `pointer-events-none`, the page is not `inert`, and a click on the page behind
 works at once. Reopening during the exit cancels it and shows the drawer as it
 stands, without playing the entry again.

@@ -112,12 +112,23 @@ const CASES = EVERY_KIND.flatMap((drawer) =>
   ),
 );
 
-const slideOf = (keyframes: string): number => {
+type FrameParams = {
+  readonly keyframes: string;
+};
+
+const fromFrameOf = ({ keyframes }: FrameParams): string => {
   const styles = readFileSync(join(__dirname, '..', '..', '..', 'styles.css'), 'utf8');
   const block = new RegExp(`@keyframes ${keyframes} \\{[\\s\\S]*?from \\{([\\s\\S]*?)\\}`).exec(
     styles,
   );
-  const slide = /translateX\((-?\d+)px\)/.exec(block?.[1] ?? '');
+  if (block === null) {
+    throw new Error(`${keyframes} has no from frame`);
+  }
+  return block[1] ?? '';
+};
+
+const slideOf = (keyframes: string): number => {
+  const slide = /translateX\((-?\d+)px\)/.exec(fromFrameOf({ keyframes }));
   if (slide === null) {
     throw new Error(`${keyframes} must slide in with translateX in px`);
   }
@@ -189,9 +200,9 @@ describe('every drawer fits inside its aside at 1280 and 1440', () => {
     expect(sizingOf(transcript)).toBe('side');
   });
 
-  it('slides a card in by at most its 8px inset, so it never passes the window edge', () => {
-    expect(slideOf('drawer-card-in')).toBeLessThanOrEqual(DRAWER_INSET);
+  it('slides an overlay card in by at most its 8px inset and grows a pushing card in place', () => {
     expect(slideOf('drawer-overlay-in')).toBeLessThanOrEqual(DRAWER_INSET);
+    expect(fromFrameOf({ keyframes: 'fold-fade-in' })).not.toContain('transform');
   });
 
   it.each(CASES)(
@@ -209,7 +220,6 @@ describe('every drawer fits inside its aside at 1280 and 1440', () => {
       expect(asidePx).toBeLessThanOrEqual(columnWidth);
       if (mode === 'push') {
         expect(cardRight + DRAWER_INSET).toBe(columnWidth);
-        expect(cardRight + slideOf('drawer-card-in')).toBeLessThanOrEqual(columnWidth);
         expect(mainWidthOf({ columnWidth, mode, drawerWidthPx }) + asidePx).toBe(columnWidth);
         expect(canDrawerPush({ mainWidthPx: columnWidth, drawerWidthPx })).toBe(true);
         return;

@@ -1,59 +1,52 @@
-import { useEffect, useLayoutEffect, useState, type RefObject } from 'react';
-import { DRAWER_EXIT_MAX_ELEMENTS, DRAWER_EXIT_MS, type DrawerMode } from '../drawerGeometry';
+import { useEffect, useState, type RefObject } from 'react';
+import { canAnimate } from '../canAnimate';
+import { DRAWER_EXIT_MS, type DrawerMode } from '../drawerGeometry';
+import { exitSnapshotOf, type ExitSnapshot } from '../exitSnapshot';
+import { FOLD_MS } from '../motionTimings';
 
 type OpenMode = Exclude<DrawerMode, 'closed'>;
 
-type Phase = 'closed' | 'open' | 'capturing' | 'exiting';
+type Phase = 'closed' | 'open' | 'exiting';
 
 type ExitState = {
   readonly phase: Phase;
   readonly last: OpenMode | null;
   readonly isResumed: boolean;
-  readonly snapshot: Node | null;
+  readonly snapshot: ExitSnapshot | null;
 };
 
 export type DrawerExit = {
   readonly isExiting: boolean;
-  readonly isCapturing: boolean;
   readonly lastMode: OpenMode | null;
   readonly isResumed: boolean;
-  readonly snapshot: Node | null;
+  readonly snapshot: ExitSnapshot | null;
 };
 
 type Params = {
   readonly isOpen: boolean;
   readonly layoutMode: OpenMode;
   readonly cardRef: RefObject<HTMLElement | null>;
+  readonly contentRef: RefObject<HTMLElement | null>;
 };
 
-type NextParams = Omit<Params, 'cardRef'> & {
+type NextParams = Params & {
   readonly state: ExitState;
+};
+
+type CaptureParams = Pick<Params, 'cardRef' | 'contentRef'> & {
+  readonly last: OpenMode | null;
 };
 
 const CLOSED: ExitState = { phase: 'closed', last: null, isResumed: false, snapshot: null };
 
-const UNCLONEABLE = 'canvas, iframe, video, audio, webview';
-
-const isHeavy = (card: HTMLElement): boolean => {
-  const walker = document.createTreeWalker(card, NodeFilter.SHOW_ELEMENT);
-  let count = 0;
-  while (walker.nextNode() !== null) {
-    count += 1;
-    if (count > DRAWER_EXIT_MAX_ELEMENTS) {
-      return true;
-    }
-  }
-  return false;
-};
-
-const snapshotOf = (card: HTMLElement | null): Node | null => {
-  if (card === null || card.querySelector(UNCLONEABLE) !== null || isHeavy(card)) {
+const captureOf = ({ cardRef, contentRef, last }: CaptureParams): ExitSnapshot | null => {
+  if (last === 'push' && !canAnimate({ element: cardRef.current })) {
     return null;
   }
-  return card.firstElementChild?.cloneNode(true) ?? null;
+  return exitSnapshotOf({ element: contentRef.current });
 };
 
-const nextOf = ({ state, isOpen, layoutMode }: NextParams): ExitState => {
+const nextOf = ({ state, isOpen, layoutMode, cardRef, contentRef }: NextParams): ExitState => {
   if (isOpen) {
     if (state.phase === 'open' && state.last === layoutMode) {
       return state;
@@ -61,46 +54,28 @@ const nextOf = ({ state, isOpen, layoutMode }: NextParams): ExitState => {
     return {
       phase: 'open',
       last: layoutMode,
-      isResumed:
-        state.phase === 'exiting' ||
-        state.phase === 'capturing' ||
-        (state.phase === 'open' && state.isResumed),
+      isResumed: state.phase === 'exiting' || (state.phase === 'open' && state.isResumed),
       snapshot: null,
     };
   }
   if (state.phase !== 'open') {
     return state;
   }
-  if (state.last !== 'overlay') {
+  const snapshot = captureOf({ cardRef, contentRef, last: state.last });
+  if (snapshot === null) {
     return { phase: 'closed', last: state.last, isResumed: false, snapshot: null };
   }
-  return { phase: 'capturing', last: state.last, isResumed: false, snapshot: null };
+  return { phase: 'exiting', last: state.last, isResumed: false, snapshot };
 };
 
-export const useDrawerExit = ({ isOpen, layoutMode, cardRef }: Params): DrawerExit => {
+export const useDrawerExit = ({ isOpen, layoutMode, cardRef, contentRef }: Params): DrawerExit => {
   const [state, setState] = useState<ExitState>(CLOSED);
-  const next = nextOf({ state, isOpen, layoutMode });
+  const next = nextOf({ state, isOpen, layoutMode, cardRef, contentRef });
   if (next !== state) {
     setState(next);
   }
   const isExiting = next.phase === 'exiting';
-  const isCapturing = next.phase === 'capturing';
-
-  useLayoutEffect(() => {
-    if (!isCapturing) {
-      return;
-    }
-    const snapshot = snapshotOf(cardRef.current);
-    setState((current) => {
-      if (current.phase !== 'capturing') {
-        return current;
-      }
-      if (snapshot === null) {
-        return { ...current, phase: 'closed', snapshot: null };
-      }
-      return { ...current, phase: 'exiting', snapshot };
-    });
-  }, [isCapturing, cardRef]);
+  const exitMs = next.last === 'push' ? FOLD_MS : DRAWER_EXIT_MS;
 
   useEffect(() => {
     if (!isExiting) {
@@ -110,13 +85,12 @@ export const useDrawerExit = ({ isOpen, layoutMode, cardRef }: Params): DrawerEx
       setState((current) =>
         current.phase === 'exiting' ? { ...current, phase: 'closed', snapshot: null } : current,
       );
-    }, DRAWER_EXIT_MS);
+    }, exitMs);
     return () => clearTimeout(timer);
-  }, [isExiting]);
+  }, [isExiting, exitMs]);
 
   return {
     isExiting,
-    isCapturing,
     lastMode: next.last,
     isResumed: next.isResumed,
     snapshot: next.snapshot,

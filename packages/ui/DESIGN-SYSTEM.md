@@ -1470,14 +1470,14 @@ content sheet. The column is 240px by default, resizable from 200 to 400
 (`COLLAPSED_RAIL_WIDTH`). The desktop fills it with `SideColumn`; the rules for
 what it holds live in [docs/navigation.md](../../docs/navigation.md) → Surfaces.
 
-| part        | shape                                                                                                  |
-| ----------- | ------------------------------------------------------------------------------------------------------ |
-| toggle      | a size-8 icon button centred in a 44px box, on the same axis as the workspace tile and the rail        |
-| New session | a 28px row, `text-row`, the primary tint (`bg` and `ring` of `tintClasses('primary')`), `+` in primary |
-| door        | a 28px row: 14px concept icon, the word in `text-row` muted, the shortcut in `text-chip` on hover      |
-| current     | `bg-selected`, `text-foreground`, `cursor-default`, `aria-current="page"`, one per frame               |
-| foot        | Settings as a door, then the Goodboy row (`flex-1`) and a size-7 bug icon button                       |
-| rail button | a size-8 icon button with the word and shortcut in a right-side `Tooltip`                              |
+| part        | shape                                                                                                    |
+| ----------- | -------------------------------------------------------------------------------------------------------- |
+| toggle      | a size-8 icon button centred in a 44px box, on the same axis as the workspace tile and the rail          |
+| New session | a 28px row, `text-row`, the primary tint (`bg` and `ring` of `tintClasses('primary')`), `+` in primary   |
+| door        | a 28px row: 14px concept icon, the word in `text-row` muted, the shortcut in `text-chip` on hover        |
+| current     | `bg-selected`, `text-foreground`, `cursor-default`, `aria-current="page"`, one per frame                 |
+| foot        | Settings as a door, then the Goodboy row (`flex-1`) and a size-7 bug icon button                         |
+| rail button | its open row without the word: `h-7 w-full px-2`, the icon at the row's x, the word in a right `Tooltip` |
 
 Rows sit 4px apart (`gap-1`); the doors start 4px under New session. The
 column swaps its content only for Settings, as two layers in place that
@@ -1596,8 +1596,8 @@ the right drawer opens. `PANE_RHYTHM.hero` (640px) is only for the content of an
 **The drawer slides the column left.** A drawer (context, plan or artifact,
 file diff, script output, a fix run transcript, an agent conversation) takes
 its track from the main area and the centred column re-centres in the space
-left of it, at its full width while that space is wide enough, in one 180ms
-ease-out move (none under reduced motion). A full tier work surface keeps its
+left of it, at its full width while that space is wide enough, in one 220ms
+ease-out move (`FOLD_MS`, none under reduced motion). A full tier work surface keeps its
 left edge and only gives up its right. One rule decides the mode: with
 `room = main - 16 - 48 - 560`, the drawer pushes while `room` covers its saved
 width (side tier 400 by default, reader tier 720) and otherwise lies over the
@@ -2223,14 +2223,48 @@ conversation is the wrapped sheet, and "Start work from chat" is the
 
 Eight animations, one meaning each. Transition keyframes (`fade-in`,
 `nav-step-in`, `nav-step-out`, `studio-in`, `studio-out`, `layer-in`,
-`layer-out`, `trail-crumb-in`, `crumb-menu-in`, `history-arrive`) move content between states and sit outside the
-registry. The `Trail` closes a crumb label with `grid-template-columns` from
+`layer-out`, `trail-crumb-in`, `crumb-menu-in`, `history-arrive`, `fold-fade-in`,
+`fold-fade-out`, `level-in-forward`, `level-in-back`, `level-out-forward`,
+`level-out-back`) move content between states and sit outside the
+registry.
+
+**Motion tokens.** A width that opens or folds (the main sidebar grid column,
+the session rail, the drawer track) eases in 220ms `ease-out` (`FOLD_MS` in
+`packages/ui/src/motionTimings.ts`); words fade in 140ms (`fold-label-out`, and
+`fold-label-in` after 60ms, so they arrive once there is room); a level drill
+takes 200ms in, after 60ms, and 120ms out (`LEVEL_MS`); drawer content fades in
+140ms after 80ms (`drawer-content-in`) and out in 120ms (`drawer-content-out`).
+Width moves only on the one element that owns it; what moves inside it is
+opacity and `transform`, and the content keeps its final width, so nothing
+reflows or wraps mid move. Every new keyframe lives under
+`prefers-reduced-motion: no-preference`, and the hooks that stage a move
+(`useFoldPhase`, `useLevelSwap`, `useDrawerExit`) check `canAnimate` first: under
+reduced motion, or with nothing laid out, the state changes in place.
+
+**A fold keeps every icon where it is.** `FoldLayers` holds a rail's two
+states as two layers pinned to its left edge and clipped (`overflow-clip`): the
+open layer at its full width and the 44px icon layer under it. Folding, the
+width eases to 44px while the open layer, on the rail's own surface
+(`bg-inherit`), fades out over the icons and is removed at the end; unfolding is
+the reverse, and the icon layer leaves once the words are in. The icon layer
+draws each icon at the x and y of its open row: a `RailButton` is the open row
+without its word, the session rail's icon level starts with the session node on
+the identity row's line and its pages on 28px rows, and the main rail's toggle,
+New and doors sit on the column's rows. Both layers carry the same toggle, so
+it never moves.
+
+**A drill crosses levels in one move.** `LevelStack` keeps its layers
+absolute, so no height changes. On a level change `useLevelSwap` copies the
+leaving layer (`exitSnapshotOf`, the drawer's exit copy) during the render that
+changes it, slides the copy 24px toward the back and fades it, and slides the
+new layer in 24px from the drill side (forward from the right, back from the
+left). The folded icon levels drill the same way. The `Trail` closes a crumb label with `grid-template-columns` from
 `1fr` to `0fr` (220ms, `cubic-bezier(0.2, 0, 0, 1)`, 40ms cascade), the same
 trick as `Reveal` on the other axis.
 
 `Reveal` is the one height transition for disclosed content: `grid-template-rows`
-from `0fr` to `1fr`, 200ms `ease-out`, the same curve as the `AppShell`
-columns, behind `motion-safe`. It keeps its children mounted through the
+from `0fr` to `1fr`, 200ms `ease-out`, the curve of the `AppShell` columns,
+behind `motion-safe`. It keeps its children mounted through the
 collapse and unmounts them on `transitionend`, or at once when no transition
 runs (reduced motion, tests). `Collapsible` opens through it. A disclosure
 never mounts and unmounts its panel by hand.

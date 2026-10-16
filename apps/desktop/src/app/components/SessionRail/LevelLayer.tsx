@@ -1,33 +1,35 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 import { cn } from '@goodboy/ui';
 import type { RailLevel } from '../../../store/slices/navigation/railLevel';
-
-export type LevelLayerPosition = 'shown' | 'before' | 'after';
+import { LEVEL_LAYER } from './levelLayerClass';
+import type { LevelDirection } from './useLevelSwap';
 
 type Props = {
   readonly name: RailLevel;
-  readonly position: LevelLayerPosition;
+  readonly isShown: boolean;
+  readonly entry: LevelDirection | null;
+  readonly layerRef: Ref<HTMLDivElement>;
   readonly children: ReactNode;
 };
 
-const LAYER =
-  'absolute inset-0 flex min-h-0 min-w-0 flex-col gap-1 motion-safe:transition-[opacity,transform,visibility] motion-safe:duration-180 motion-safe:ease-out';
-
-export const LevelLayer = ({ name, position, children }: Props) => {
-  const isShown = position === 'shown';
-  return (
-    <div
-      data-level-layer={name}
-      inert={!isShown}
-      style={{ visibility: isShown ? 'visible' : 'hidden' }}
-      className={cn(
-        LAYER,
-        isShown && 'opacity-100',
-        position === 'before' && 'pointer-events-none -translate-x-full opacity-0',
-        position === 'after' && 'pointer-events-none translate-x-full opacity-0',
-      )}
-    >
-      {children}
-    </div>
-  );
+const ENTRY: Readonly<Record<LevelDirection, string>> = {
+  forward: 'motion-safe:animate-level-in-forward',
+  back: 'motion-safe:animate-level-in-back',
 };
+
+export const LevelLayer = ({ name, isShown, entry, layerRef, children }: Props) => (
+  <div
+    ref={layerRef}
+    data-level-layer={name}
+    data-level-entry={isShown && entry !== null ? entry : undefined}
+    inert={!isShown}
+    style={{ visibility: isShown ? 'visible' : 'hidden' }}
+    className={cn(
+      LEVEL_LAYER,
+      !isShown && 'pointer-events-none',
+      isShown && entry !== null && ENTRY[entry],
+    )}
+  >
+    {children}
+  </div>
+);

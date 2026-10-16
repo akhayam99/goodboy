@@ -253,8 +253,6 @@
 
   --animate-studio-body-in: studio-body-in 160ms cubic-bezier(0.2, 0, 0, 1);
 
-  --animate-drawer-card-in: drawer-card-in 220ms cubic-bezier(0.2, 0, 0, 1);
-
   --animate-drawer-overlay-in: drawer-overlay-in 200ms cubic-bezier(0.2, 0, 0, 1);
 
   --animate-drawer-swap: drawer-swap 120ms ease-out;
@@ -270,6 +268,22 @@
       opacity: 0;
     }
   }
+
+  --animate-drawer-content-in: fold-fade-in 140ms cubic-bezier(0, 0, 0.2, 1) 80ms both;
+
+  --animate-drawer-content-out: fold-fade-out 120ms cubic-bezier(0, 0, 0.2, 1) forwards;
+
+  --animate-fold-label-in: fold-fade-in 140ms cubic-bezier(0, 0, 0.2, 1) 60ms both;
+
+  --animate-fold-label-out: fold-fade-out 140ms cubic-bezier(0, 0, 0.2, 1) forwards;
+
+  --animate-level-in-forward: level-in-forward 200ms cubic-bezier(0.2, 0, 0, 1) 60ms both;
+
+  --animate-level-in-back: level-in-back 200ms cubic-bezier(0.2, 0, 0, 1) 60ms both;
+
+  --animate-level-out-forward: level-out-forward 120ms cubic-bezier(0, 0, 0.2, 1) forwards;
+
+  --animate-level-out-back: level-out-back 120ms cubic-bezier(0, 0, 0.2, 1) forwards;
 
   --animate-layer-in: layer-in 150ms cubic-bezier(0.2, 0, 0, 1);
 
@@ -352,6 +366,68 @@
    so reduced-motion users get no fade/rise — the animation resolves to a no-op
    (unknown animation name) instead of a movement neutralized after the fact. */
 @media (prefers-reduced-motion: no-preference) {
+  @keyframes fold-fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes fold-fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes level-in-forward {
+    from {
+      opacity: 0;
+      transform: translateX(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes level-in-back {
+    from {
+      opacity: 0;
+      transform: translateX(-24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes level-out-forward {
+    from {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(-24px);
+    }
+  }
+
+  @keyframes level-out-back {
+    from {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(24px);
+    }
+  }
+
   @keyframes crumb-menu-in {
     from {
       opacity: 0;
@@ -382,17 +458,6 @@
     to {
       opacity: 1;
       transform: translateY(0);
-    }
-  }
-
-  @keyframes drawer-card-in {
-    from {
-      opacity: 0;
-      transform: translateX(8px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
     }
   }
 

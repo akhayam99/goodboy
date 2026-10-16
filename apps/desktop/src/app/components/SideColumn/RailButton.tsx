@@ -13,11 +13,13 @@ type Props = {
   readonly className?: string;
   readonly badge?: ReactNode;
   readonly isPage?: boolean;
+  readonly iconSize?: number;
+  readonly isIconSlotted?: boolean;
   readonly onSelect: () => void;
 };
 
 const RAIL_BUTTON_BASE =
-  'relative flex shrink-0 items-center justify-center rounded-md motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
+  'relative flex shrink-0 items-center rounded-md motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
 
 const RAIL_BUTTON_CURRENT = 'cursor-default bg-selected text-foreground';
 
@@ -25,9 +27,9 @@ export const RAIL_NODE_CURRENT = cn(RAIL_BUTTON_CURRENT, 'ring-1 ring-inset ring
 
 export const RAIL_BUTTON_IDLE = 'text-muted-foreground hover:bg-hover hover:text-foreground';
 
-export const RAIL_NODE_BUTTON = cn('size-7', RAIL_BUTTON_BASE);
+export const RAIL_NODE_BUTTON = cn('size-7 justify-center', RAIL_BUTTON_BASE);
 
-const RAIL_BUTTON = cn('size-8', RAIL_BUTTON_BASE);
+const RAIL_BUTTON = cn('h-7 w-full justify-start px-2', RAIL_BUTTON_BASE);
 
 export const RailButton = ({
   id,
@@ -38,6 +40,8 @@ export const RailButton = ({
   className,
   badge,
   isPage = false,
+  iconSize = ICON_SIZE.control,
+  isIconSlotted = false,
   onSelect,
 }: Props) => (
   <Tooltip content={label} shortcut={shortcut} side="right">
@@ -55,7 +59,13 @@ export const RailButton = ({
       }}
       className={cn(RAIL_BUTTON, isCurrent ? RAIL_BUTTON_CURRENT : RAIL_BUTTON_IDLE, className)}
     >
-      <Icon size={ICON_SIZE.control} aria-hidden />
+      {isIconSlotted ? (
+        <span className="flex size-4 shrink-0 items-center justify-center">
+          <Icon size={iconSize} aria-hidden />
+        </span>
+      ) : (
+        <Icon size={iconSize} aria-hidden className="shrink-0" />
+      )}
       {badge}
     </button>
   </Tooltip>

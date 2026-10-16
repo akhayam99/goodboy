@@ -5,7 +5,7 @@ import { useAppStore } from '../../../store';
 import { branchPlace } from '../../../store/slices/navigation/place';
 import type { BranchTab } from '../../../store/slices/navigation/types';
 import { branchScopeOf } from '../../../store/slices/session-view/branchScopeOf';
-import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
 import { branchTabsOf, resolveBranchTab } from '../../../features/branch/branchTabs';
 import { useBranchIdentity } from '../../../features/branch/hooks/useBranchIdentity';
 import { useBranchTab } from '../../../features/branch/hooks/useBranchTab';
@@ -34,10 +34,11 @@ export const RailWorktreeLevel = ({ session }: Props) => {
   const tab = resolveBranchTab({ tab: storedTab, scope });
 
   return (
-    <div data-rail-level="worktree" className="flex flex-col items-center gap-1">
+    <div data-rail-level="worktree" className="flex flex-col px-2">
       <RailButton
         id="level-back"
         icon={ChevronLeft}
+        iconSize={ICON_SIZE.row}
         label={`Back to session ${sessionTitle({ session })}`}
         shortcut="nav.back"
         isCurrent={false}
@@ -49,6 +50,7 @@ export const RailWorktreeLevel = ({ session }: Props) => {
           key={entry.id}
           id={`worktree-${entry.id}`}
           icon={ENTRY_ICON[entry.id]}
+          iconSize={ICON_SIZE.row}
           label={entry.label}
           {...(entry.shortcut !== null && { shortcut: entry.shortcut })}
           isCurrent={tab === entry.id}
