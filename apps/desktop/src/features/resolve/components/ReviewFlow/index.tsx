@@ -41,9 +41,8 @@ import {
   reviewTargetErrorLabel,
   reviewTargetPending,
 } from '../../../review/reviewTargetCopy';
-import { FIX_RUN_CHIPS, FIX_RUN_CHIP_WORDS, fixRunOf, type FixRunChipKey } from '../../fixRun';
-import { RESOLVE_GROUP_OF_WORD, type ResolveGroup } from '../../commentProjection';
-import { reviewTallyOf } from '../../reviewTally';
+import { fixRunOf } from '../../fixRun';
+import type { ResolveGroup } from '../../commentProjection';
 import { useActiveReviewSource } from '../../hooks/useActiveReviewSource';
 import { useLaneStatus } from '../../hooks/useLaneStatus';
 import { useReviewCommentController } from '../../hooks/useReviewCommentController';
@@ -98,7 +97,6 @@ type ShownParams = {
 };
 
 const SKELETON_ROWS = [0, 1, 2];
-const COLLAPSIBLE_GROUPS: ReadonlySet<ResolveGroup> = new Set(['done', 'left_open']);
 const DOCK_BOTTOM_OFFSET = 24;
 
 export const ReviewFlow = ({ session, push }: Props) => {
@@ -110,7 +108,8 @@ export const ReviewFlow = ({ session, push }: Props) => {
     all: laneEntries,
     counts,
   } = useReviewEntries({ sessionId, scope: 'branch' });
-  const [scope, setScope] = useState<CommentScope>('branch');
+  const [pickedScope, setScope] = useState<CommentScope>('branch');
+  const scope: CommentScope = counts.notes > 0 && counts.host > 0 ? pickedScope : 'branch';
   const [commentState, setCommentState] = useState<CommentState>('open');
   const allGroups = useMemo(() => {
     const isShown = ({ entry, group }: ShownParams): boolean => {
@@ -132,8 +131,6 @@ export const ReviewFlow = ({ session, push }: Props) => {
   }, [branchGroups, commentState, scope]);
   const forceCloseResolver = useAppStore((s) => s.forceCloseResolver);
   const stopResolveLane = useAppStore((s) => s.stopResolveLane);
-  const [filter, setFilter] = useState<FixRunChipKey | null>(null);
-  const [openGroups, setOpenGroups] = useState<ReadonlySet<ResolveGroup>>(new Set());
   const run = useMemo(
     () =>
       fixRunOf({
@@ -145,53 +142,9 @@ export const ReviewFlow = ({ session, push }: Props) => {
       }),
     [entries],
   );
-  const tally = useMemo(
-    () => reviewTallyOf({ rows: entries.map((entry) => entry.row) }),
-    [entries],
-  );
   const lane = useLaneStatus({ sessionId, entries: laneEntries });
-  const filterChip = filter === null ? null : FIX_RUN_CHIPS.find((chip) => chip.key === filter);
-  const activeFilter =
-    run !== null && filter !== null && (filterChip?.countOf(run.tally) ?? 0) > 0 ? filter : null;
-  const groups = useMemo(() => {
-    if (activeFilter === null) {
-      return allGroups;
-    }
-    const words = FIX_RUN_CHIP_WORDS[activeFilter];
-    return allGroups
-      .map(({ group, entries: members }) => ({
-        group,
-        entries: members.filter((entry) => words.includes(entry.resolveWord)),
-      }))
-      .filter((group) => group.entries.length > 0);
-  }, [activeFilter, allGroups]);
-  const isResolvedState = commentState === 'resolved';
-  const isGroupShown = useCallback(
-    (group: ResolveGroup): boolean =>
-      !COLLAPSIBLE_GROUPS.has(group) ||
-      openGroups.has(group) ||
-      allGroups.length === 1 ||
-      isResolvedState,
-    [allGroups.length, isResolvedState, openGroups],
-  );
-  const shownGroups = useMemo(
-    () => (allGroups.length === 1 || isResolvedState ? COLLAPSIBLE_GROUPS : openGroups),
-    [allGroups.length, isResolvedState, openGroups],
-  );
-  const toggleGroup = useCallback((group: ResolveGroup): void => {
-    setOpenGroups((current) => {
-      const next = new Set(current);
-      if (current.has(group)) {
-        next.delete(group);
-        return next;
-      }
-      return next.add(group);
-    });
-  }, []);
-  const shownEntries = useMemo(
-    () => groups.flatMap((group) => (isGroupShown(group.group) ? group.entries : [])),
-    [groups, isGroupShown],
-  );
+  const groups = allGroups;
+  const shownEntries = useMemo(() => groups.flatMap((group) => group.entries), [groups]);
   const storedSelection = useAppStore((s) => s.reviewSelection[sessionId]);
   const setReviewSelection = useAppStore((s) => s.setReviewSelection);
   const toggleReviewSelection = useAppStore((s) => s.toggleReviewSelection);
@@ -307,29 +260,6 @@ export const ReviewFlow = ({ session, push }: Props) => {
     entries[0] ??
     null;
   const focusedThreadId = focused?.threadId ?? null;
-  const focusedGroup = focused === null ? null : RESOLVE_GROUP_OF_WORD[focused.resolveWord];
-
-  const canPushFromList =
-    tally.readyToPush > 0 &&
-    focused?.resolveWord !== 'ready' &&
-    (
-      bindTarget({
-        state: useAppStore.getState(),
-        target: { kind: 'review', sessionId },
-      })?.resolve() ?? []
-    ).some((action) => action.id === 'review.push' && action.blockedReason === null);
-  const pushFromList = (): void => {
-    void runObjectAction({ target: { kind: 'review', sessionId }, actionId: 'review.push', env });
-  };
-
-  useEffect(() => {
-    if (focusedGroup === null || !COLLAPSIBLE_GROUPS.has(focusedGroup)) {
-      return;
-    }
-    setOpenGroups((current) =>
-      current.has(focusedGroup) ? current : new Set(current).add(focusedGroup),
-    );
-  }, [focusedThreadId, focusedGroup]);
 
   const select = useCallback(
     (threadId: string): void => {
@@ -624,15 +554,8 @@ export const ReviewFlow = ({ session, push }: Props) => {
               <div ref={listRef}>
                 <ReviewList
                   groups={groups}
-                  tally={tally}
                   focusedThreadId={focusedThreadId}
-                  openGroups={shownGroups}
-                  onToggleGroup={toggleGroup}
                   onSelect={select}
-                  onFix={(threadId) => openLaunch({ threadIds: [threadId] })}
-                  onAccept={(threadIds) => void acceptMany(threadIds)}
-                  onPush={canPushFromList ? pushFromList : null}
-                  isAccepting={isAccepting}
                   checked={checked}
                   onToggle={(threadId) => toggleReviewSelection({ sessionId, threadId })}
                 />
@@ -721,6 +644,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
                 sessionId={sessionId}
                 entry={focused}
                 push={push}
+                hasRunLine={run !== null && run.threadIds.includes(focused.threadId)}
                 binding={controller.bind(focused.threadId)}
               />
             )}
@@ -779,8 +703,6 @@ export const ReviewFlow = ({ session, push }: Props) => {
         {run === null ? null : (
           <ResolveRunStatus
             run={run}
-            filter={activeFilter}
-            onFilter={setFilter}
             onOpenTranscript={
               isRunTranscriptOpen
                 ? null

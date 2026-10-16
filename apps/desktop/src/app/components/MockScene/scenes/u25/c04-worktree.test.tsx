@@ -164,12 +164,7 @@ describe('the c04 worktree level scenes', () => {
     const comments = within(worktreeLayer()).getByRole('button', { name: /^Comments/ });
     expect(comments.getAttribute('aria-current')).toBe('page');
     expect(comments.textContent).toBe('Comments');
-    const sources = within(screen.getByRole('tablist', { name: 'Comment source' }));
-    expect(sources.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
-      'All',
-      'Notes',
-      'On GitHub',
-    ]);
+    expect(screen.queryByRole('tablist', { name: 'Comment source' })).toBeNull();
     cleanup();
 
     await mount('c04-worktree-checks');

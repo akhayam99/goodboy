@@ -1,9 +1,7 @@
 import { EmptyState, PageColumn } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
-import { selectMountForPath } from '../../../store/slices/project-mounts/selectors';
-import { FixCommentsButton } from '../../resolve/components/FixCommentsButton';
+import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { SessionDiffPane } from '../../diff/components/SessionDiffPane';
 import type { SessionDiff } from '../../diff/hooks/useSessionDiff';
 import { WriteReview } from '../../review/components/ReviewPane/WriteReview';
@@ -28,18 +26,14 @@ export const BranchFiles = ({
 }: Props) => {
   const sessionId = session.id as SessionId;
   const mode = useAppStore((s) => s.pullRequestModes[sessionId] ?? 'overview');
-  const mountId = useAppStore(
-    (s) => selectMountForPath({ state: s, sessionId, path: worktreePath })?.mountId ?? null,
-  );
   if (worktreePath === null) {
     return (
       <PageColumn width="column">
         <EmptyState
-          size="section"
-          tone={CONCEPT_TONE.diff}
+          size="page"
           icon={CONCEPT_ICONS.diff}
           title="No worktree for this session"
-          description="This session has no checked-out worktree, so there is no diff to show."
+          description="There is no diff without a checked-out worktree."
         />
       </PageColumn>
     );
@@ -59,7 +53,6 @@ export const BranchFiles = ({
         worktreePath={worktreePath}
         diff={diff}
         isReadOnly={isReadOnly}
-        toolbarEnd={<FixCommentsButton sessionId={sessionId} mountId={mountId} />}
       />
     </BranchBodyColumn>
   );

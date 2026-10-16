@@ -41,14 +41,14 @@ describe('FixCommentsButton', () => {
 
     mountButton();
 
-    expect(screen.getByRole('button', { name: 'Fix comments 2' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Fix 2 comments' })).toBeDefined();
   });
 
   it('opens the fix comments drawer for the session and its mount', () => {
     seedNotesScene({ variant: 'comments-no-pr' });
     mountButton();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Fix comments 2' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Fix 2 comments' }));
 
     expect(useAppStore.getState().drawer).toEqual({
       kind: 'fix-comments',

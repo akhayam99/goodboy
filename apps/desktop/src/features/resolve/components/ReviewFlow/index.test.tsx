@@ -108,6 +108,18 @@ const mountFailed = async ({
   await settle();
 };
 
+type FirstParams = {
+  readonly items: ReadonlyArray<HTMLElement>;
+};
+
+const firstOf = ({ items }: FirstParams): HTMLElement => {
+  const first = items[0];
+  if (first === undefined) {
+    throw new Error('no element');
+  }
+  return first;
+};
+
 const list = (): HTMLElement => screen.getByRole('navigation', { name: 'Comments' });
 
 const row = (name: RegExp): HTMLElement =>
@@ -168,27 +180,23 @@ describe('Review as one flow', () => {
   it('counts each state group in its own title and has no summary line or filter menu', async () => {
     await mount({ threadId: null });
 
-    expect(within(list()).getByRole('region', { name: 'Open' }).textContent).toMatch(/Open \d+/);
+    const open = within(list()).getByRole('region', { name: 'Open' });
+    expect(within(open).getByRole('heading').textContent).toMatch(/^Open( \d+)?$/);
     showResolved();
-    expect(within(list()).getByRole('region', { name: 'Done' }).textContent).toMatch(/Done \d+/);
+    expect(within(list()).getByRole('region', { name: 'Done' })).toBeDefined();
     expect(screen.queryByLabelText('Comment summary')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Filter comments' })).toBeNull();
   });
 
-  it('keeps Replied under Done, open there, and Left open closed until it is opened', async () => {
+  it('keeps every group open, Left open last and Replied under Done, with no fold control', async () => {
     await mount({ threadId: null });
 
-    const leftOpen = within(list()).getByRole('button', { name: /^Left open on GitHub \d+/ });
-    expect(within(list()).queryByRole('button', { name: /^Done \d+/ })).toBeNull();
-    expect(leftOpen.getAttribute('aria-expanded')).toBe('false');
-    expect(within(list()).queryByText('Left open')).toBeNull();
-
-    fireEvent.click(leftOpen);
-    expect(leftOpen.getAttribute('aria-expanded')).toBe('true');
-    expect(within(list()).getAllByText('Left open').length).toBeGreaterThan(0);
+    const leftOpen = within(list()).getByRole('region', { name: 'Left open on GitHub' });
+    expect(within(leftOpen).getAllByRole('listitem').length).toBeGreaterThan(0);
+    expect(list().querySelectorAll('[aria-expanded]')).toHaveLength(0);
 
     showResolved();
-    expect(within(list()).getAllByText('Replied').length).toBeGreaterThan(0);
+    expect(within(list()).getByRole('region', { name: 'Done' })).toBeDefined();
     expect(within(list()).queryByRole('region', { name: 'Needs you' })).toBeNull();
   });
 
@@ -205,7 +213,6 @@ describe('Review as one flow', () => {
 
   it('names every state with its own word and never says Resolve on a control', async () => {
     await mount({ threadId: null });
-    fireEvent.click(within(list()).getByRole('button', { name: /^Left open on GitHub \d+/ }));
     const openWords = Array.from(list().querySelectorAll('[data-row-state]')).map(
       (node) => node.textContent ?? '',
     );
@@ -217,18 +224,12 @@ describe('Review as one flow', () => {
         (node) => node.textContent ?? '',
       ),
     ];
-    for (const word of [
-      'Fix ready',
-      'Question for you',
-      'Working',
-      'Applied',
-      'Open',
-      'Left open',
-      'Replied',
-    ]) {
+    for (const word of ['Fix ready', 'Question for you']) {
       expect(words, word).toContain(word);
     }
-    expect(words).not.toContain('Needs you');
+    for (const word of ['Working', 'Applied', 'Open', 'Left open', 'Replied', 'Needs you']) {
+      expect(words, word).not.toContain(word);
+    }
     expect(words).not.toContain('Skipped');
     expect(words).not.toContain('Pushed');
     expect(words).not.toContain('Accepted');
@@ -237,16 +238,12 @@ describe('Review as one flow', () => {
     expect(within(comment()).queryByRole('button', { name: 'Resolve' })).toBeNull();
   });
 
-  it('puts Fix on the row of a comment nobody started, and nowhere else', async () => {
-    await mount({ threadId: null });
+  it('keeps Fix off the rows: the row is the button and the detail bar fixes', async () => {
+    await mount({ threadId: NOT_STARTED_THREAD_ID });
 
-    const fixRows = Array.from(list().querySelectorAll('[data-fix-row]')).map((node) =>
-      node.getAttribute('data-fix-row'),
-    );
-    expect(fixRows).toContain(NOT_STARTED_THREAD_ID);
-    expect(fixRows).not.toContain(EXPANDED_THREAD_ID);
-    expect(fixRows).not.toContain(FAILED_THREAD_ID);
-    expect(screen.queryByRole('button', { name: /^Draft (a fix|fixes)/ })).toBeNull();
+    expect(list().querySelectorAll('[data-fix-row]')).toHaveLength(0);
+    expect(within(list()).queryAllByRole('button', { name: /^Fix$/ })).toHaveLength(0);
+    expect(bar().querySelector('[data-review-verb="reviewComment.draft"]')).not.toBeNull();
   });
 
   it('checks a not started row from its checkbox and shows the selection bar', async () => {
@@ -254,13 +251,11 @@ describe('Review as one flow', () => {
 
     expect(screen.queryByRole('toolbar', { name: 'Selected comments' })).toBeNull();
     const boxes = within(list()).getAllByRole('checkbox');
-    const fixable = Array.from(list().querySelectorAll('[data-fix-row]')).length;
-    expect(boxes.length).toBe(fixable + READY_SELECTABLE_COUNT);
+    expect(boxes.length).toBeGreaterThan(READY_SELECTABLE_COUNT);
     fireEvent.click(boxes[0] as HTMLElement);
 
     const bar = screen.getByRole('toolbar', { name: 'Selected comments' });
     expect(within(bar).getByText('1 selected')).toBeDefined();
-    expect(list().querySelectorAll('[data-fix-row]').length).toBe(0);
     fireEvent.click(within(bar).getByRole('button', { name: 'Clear selection' }));
     expect(screen.queryByRole('toolbar', { name: 'Selected comments' })).toBeNull();
   });
@@ -311,12 +306,11 @@ describe('Review as one flow', () => {
     });
 
     it('keeps the list and its selected comment where they are when it opens', async () => {
-      await mount({ threadId: EXPANDED_THREAD_ID });
+      await mount({ threadId: NOT_STARTED_THREAD_ID });
 
       const before = currentRow();
-      expect(before).toBe(EXPANDED_THREAD_ID);
-      const fixRow = list().querySelector<HTMLElement>(`[data-fix-row="${NOT_STARTED_THREAD_ID}"]`);
-      fireEvent.click(fixRow as HTMLElement);
+      expect(before).toBe(NOT_STARTED_THREAD_ID);
+      fireEvent.click(within(bar()).getByRole('button', { name: /^Fix/ }));
 
       expect(openedDrawer()?.payload.threadIds).toEqual([NOT_STARTED_THREAD_ID]);
       expect(currentRow()).toBe(before);
@@ -439,7 +433,7 @@ describe('Review as one flow', () => {
     await mount({ threadId: null });
 
     const changed = rowDescribed(/Comment changed/);
-    expect(changed.querySelector('[data-row-author]')?.textContent).toBe('kenji-w');
+    expect(changed.querySelector('[data-row-author]')?.textContent).toMatch(/^kenji-w · /);
     expect(changed.querySelector('[data-row-file]')?.textContent).toMatch(/\.ts/);
     expect(changed.querySelector('[data-row-state]')?.textContent).toBe('Fix ready');
     expect(changed.textContent).not.toContain('Comment changed');
@@ -552,8 +546,8 @@ describe('Review as one flow', () => {
     press('s', 'KeyS');
     await waitFor(() => expect(defer).toHaveBeenCalledOnce());
 
-    fireEvent.click(within(list()).getByRole('button', { name: /^Left open on GitHub \d+/ }));
-    fireEvent.click(row(/Left open/));
+    const leftOpen = within(list()).getByRole('region', { name: 'Left open on GitHub' });
+    fireEvent.click(firstOf({ items: within(leftOpen).getAllByRole('button') }));
     await settle();
     fireEvent.click(within(bar()).getByRole('button', { name: /^Undo skip/ }));
     await waitFor(() => expect(takeUp).toHaveBeenCalledOnce());
@@ -575,14 +569,17 @@ describe('Review as one flow', () => {
     expect(within(comment()).queryByRole('textbox', { name: 'Your answer' })).toBeNull();
   });
 
-  it('keeps Stop and the transcript in the action bar of a drafting comment, behind a confirm', async () => {
+  it('leaves Stop and the transcript of a drafting comment to the run line, behind a confirm', async () => {
     await mount({ threadId: null });
-    fireEvent.click(row(/Working/));
+    const working = within(list()).getByRole('region', { name: 'Working' });
+    fireEvent.click(firstOf({ items: within(working).getAllByRole('button') }));
     await settle();
 
     expect(within(bar()).queryAllByRole('button', { name: /^Apply fix|^Edit|^Reply/ })).toEqual([]);
-    expect(within(bar()).getByRole('button', { name: 'Open transcript' })).toBeDefined();
-    fireEvent.click(within(bar()).getByRole('button', { name: 'Stop' }));
+    expect(within(bar()).queryByRole('button', { name: 'Open transcript' })).toBeNull();
+    const line = within(screen.getByTestId('resolve-run-status'));
+    expect(line.getByRole('button', { name: 'View transcript' })).toBeDefined();
+    fireEvent.click(line.getByRole('button', { name: 'Stop' }));
     expect(await screen.findByText('Stop this fix run?')).toBeDefined();
   });
 

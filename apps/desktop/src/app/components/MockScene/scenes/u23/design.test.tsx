@@ -30,15 +30,9 @@ describe('design-comments', () => {
       </ToastProvider>,
     );
     const list = screen.getByRole('navigation', { name: 'Comments' });
-    expect(within(list).getByRole('region', { name: 'Needs you' }).textContent).toContain(
-      'Needs you 4',
-    );
-    expect(within(list).getByRole('region', { name: 'Working' }).textContent).toContain(
-      'Working 2',
-    );
-    expect(within(list).getByRole('region', { name: 'Ready to push' }).textContent).toContain(
-      'Ready to push 2',
-    );
+    expect(within(list).getByRole('heading', { name: 'Needs you 4' })).toBeDefined();
+    expect(within(list).getByRole('heading', { name: 'Working 2' })).toBeDefined();
+    expect(within(list).getByRole('heading', { name: 'Ready to push 2' })).toBeDefined();
     screen.getByRole('toolbar', { name: 'Comment actions' });
     expect(within(list).getAllByText('Fix ready', { selector: '[data-row-state]' })).toHaveLength(
       2,

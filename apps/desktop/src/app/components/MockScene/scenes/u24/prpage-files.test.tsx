@@ -79,7 +79,7 @@ describe('the u24 prpage files scenes', () => {
     for (const host of hosts) {
       expect(within(host).getByText('On GitHub')).toBeDefined();
     }
-    expect(screen.getByRole('button', { name: /^Fix comments \d/ })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /^Fix \d+ comments?$/ })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Write review' })).toBeNull();
   });
 
@@ -136,7 +136,7 @@ describe('the u24 prpage files scenes', () => {
 
     expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Files', 'Commits']);
     expect(screen.queryAllByRole('article', { name: /^On GitHub/ })).toHaveLength(0);
-    expect(screen.getByRole('button', { name: /^Fix comments \d/ })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /^Fix \d+ comments?$/ })).toBeNull();
   });
 
   it('draws Files at 1920 in the split layout', async () => {
@@ -151,11 +151,11 @@ describe('the u24 prpage files scenes', () => {
 
     const list = await screen.findByRole('navigation', { name: 'Comments' }, WAIT);
     expect(within(list).getAllByText('Note').length).toBeGreaterThanOrEqual(1);
-    expect(within(list).getAllByText('On GitHub').length).toBeGreaterThanOrEqual(1);
+    expect(within(list).queryAllByText('On GitHub')).toHaveLength(0);
     expect(screen.getByRole('tab', { name: /^All/ })).toBeDefined();
     expect(screen.getByRole('tab', { name: /^Notes/ })).toBeDefined();
     expect(screen.getByRole('tab', { name: /^On GitHub/ })).toBeDefined();
     expect(screen.getByRole('tab', { name: 'Resolved' })).toBeDefined();
-    expect(screen.getByRole('button', { name: /^Fix comments \d/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^Fix \d+ comments?$/ })).toBeDefined();
   });
 });

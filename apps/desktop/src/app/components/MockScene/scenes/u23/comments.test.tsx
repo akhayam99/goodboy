@@ -80,8 +80,7 @@ describe('the u23 comments scenes', () => {
         .getAllByRole('region')
         .map((region) => {
           const label = region.getAttribute('aria-label') ?? '';
-          const match = new RegExp(`${label} (\\d+)`).exec(region.textContent ?? '');
-          return [label, Number(match?.[1] ?? 0)];
+          return [label, within(region).getAllByRole('listitem').length];
         }),
     );
     expect(counts).toEqual({
@@ -93,7 +92,9 @@ describe('the u23 comments scenes', () => {
     });
     fireEvent.click(screen.getByRole('tab', { name: 'Resolved' }));
     expect(regionTitles()).toEqual(['Done']);
-    expect(within(list()).getByRole('region', { name: 'Done' }).textContent).toContain('Done 1');
+    expect(
+      within(within(list()).getByRole('region', { name: 'Done' })).getAllByRole('listitem'),
+    ).toHaveLength(1);
   });
 
   it("orders Needs you as Question for you, Push failed, Fix ready, and never calls a failed push Couldn't fix", async () => {
@@ -111,18 +112,17 @@ describe('the u23 comments scenes', () => {
       'Fix ready',
     ]);
     expect(within(list()).queryByText("Couldn't fix")).toBeNull();
-    expect(within(needsYou).getByRole('button', { name: /^Apply \d/ })).toBeDefined();
+    expect(within(needsYou).queryByRole('button', { name: /^Apply \d/ })).toBeNull();
   });
 
-  it('shows Ready to push with a quiet Push link that reads what the header reads', async () => {
+  it('shows Ready to push with its count, Push only in the header', async () => {
     await renderScene({ name: 'comments-ready-to-push' });
 
     const ready = within(list()).getByRole('region', { name: 'Ready to push' });
-    expect(within(ready).getByText('Ready to push 3')).toBeDefined();
-    const pushes = screen.getAllByRole('button', { name: /^Push 3 fixes$/ });
-    expect(pushes).toHaveLength(2);
-    expect(within(ready).getByRole('button', { name: 'Push 3 fixes' })).toBeDefined();
-    expect(within(ready).getAllByText('Applied')).toHaveLength(3);
+    expect(within(ready).getByRole('heading', { name: 'Ready to push 3' })).toBeDefined();
+    expect(screen.getAllByRole('button', { name: /^Push 3 fixes$/ })).toHaveLength(1);
+    expect(within(ready).queryByRole('button', { name: 'Push 3 fixes' })).toBeNull();
+    expect(within(ready).getAllByRole('listitem')).toHaveLength(3);
     const first = ready.querySelector<HTMLElement>('button[data-thread-id]');
     expect(first).not.toBeNull();
     if (first !== null) {
@@ -146,8 +146,8 @@ describe('the u23 comments scenes', () => {
     await renderScene({ name: 'comments-left-open' });
 
     const left = within(list()).getByRole('region', { name: 'Left open on GitHub' });
-    expect(within(left).getByRole('button', { name: /^Left open on GitHub 1/ })).toBeDefined();
-    expect(within(left).getByText('Left open')).toBeDefined();
+    expect(within(left).getAllByRole('listitem')).toHaveLength(1);
+    expect(left.querySelector('[aria-expanded]')).toBeNull();
     expect(
       screen.getByText('Left open on GitHub. You skipped it. The thread stays open there.'),
     ).toBeDefined();
@@ -167,11 +167,17 @@ describe('the u23 comments scenes', () => {
     expect(within(bar()).queryByText('R', { selector: 'kbd[data-look="cap"]' })).toBeNull();
   });
 
-  it('stops a working comment only behind a confirm', async () => {
+  it('stops a working comment only behind a confirm, from its one live line', async () => {
     await renderScene({ name: 'comments-working' });
 
-    expect(within(bar()).getByRole('button', { name: 'Open transcript' })).toBeDefined();
-    fireEvent.click(within(bar()).getByRole('button', { name: 'Stop' }));
+    const line = screen.queryByTestId('resolve-run-status');
+    const home = line === null ? bar() : line;
+    expect(
+      within(home).getByRole('button', {
+        name: line === null ? 'Open transcript' : 'View transcript',
+      }),
+    ).toBeDefined();
+    fireEvent.click(within(home).getByRole('button', { name: 'Stop' }));
     expect(await screen.findByRole('dialog', { name: 'Stop this fix run?' })).toBeDefined();
   });
 });
