@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { ChevronLeft } from 'lucide-react';
-import { Button } from '@goodboy/ui';
+import { Button, PageColumn } from '@goodboy/ui';
 import { NAMES } from '../../../../shared/names';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
@@ -17,8 +17,8 @@ export const TaskFullPage = ({ onBack, children }: Props) => (
         Back
       </Button>
     </div>
-    <div className="mx-auto flex min-h-0 w-full max-w-[var(--measure-frame)] flex-1 flex-col">
+    <PageColumn width="measure" className="flex min-h-0 flex-1 flex-col px-0 @max-[720px]:px-0">
       {children}
-    </div>
+    </PageColumn>
   </div>
 );
