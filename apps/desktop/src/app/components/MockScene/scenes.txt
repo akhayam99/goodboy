@@ -159,6 +159,13 @@ c04-worktree-no-pr
 c04-worktree-pr-behind
 c04-worktree-pr-draft
 c04-worktree-rebasing
+c05-overview-archived
+c05-overview-blank
+c05-overview-lanes
+c05-overview-merged-group
+c05-overview-merged-next
+c05-overview-notices
+c05-overview-running
 card-rails
 changelog
 chat-empty-noprojects

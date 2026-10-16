@@ -6,7 +6,6 @@ import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptI
 import { useGoalHint } from '../../hooks/useGoalHint';
 import { useGoalFromWork } from '../../hooks/useGoalFromWork';
 import { GoalFromWorkCard } from './GoalFromWorkCard';
-import { goalPresence } from './goalPresence';
 
 type Props = {
   readonly session: Session;
@@ -33,7 +32,7 @@ export const GoalTeaser = ({ session }: Props) => {
     );
   }
 
-  const presence = goalPresence({ value, sessionTitle: session.goal });
+  const isEmpty = value.trim() === '';
   const open = () => openContextDrawer({ sessionId, tab: 'goal' });
 
   if (proposal.isReading) {
@@ -78,7 +77,7 @@ export const GoalTeaser = ({ session }: Props) => {
       />
     );
   }
-  if (presence === 'empty' && proposal.linked.length > 0 && !hint.isDismissed) {
+  if (isEmpty && proposal.linked.length > 0 && !hint.isDismissed) {
     return (
       <div className="flex min-h-5 items-center gap-2">
         <span className="min-w-0 text-meta text-muted-foreground">
@@ -91,11 +90,7 @@ export const GoalTeaser = ({ session }: Props) => {
       </div>
     );
   }
-  if (presence === 'title') {
-    return null;
-  }
-
-  if (presence === 'empty') {
+  if (isEmpty) {
     return (
       <button type="button" onClick={open} className={`${ROW} self-start px-1 py-0.5`}>
         <CONCEPT_ICONS.goal size={ICON_SIZE.row} aria-hidden className="text-muted-foreground" />
