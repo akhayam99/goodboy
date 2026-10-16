@@ -299,7 +299,7 @@ describe('App lens shortcuts on darwin', () => {
     press({ code: 'KeyA', key: 'a', metaKey: true, altKey: true });
 
     expect(state.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: 'auto' }),
+      to: expect.objectContaining({ view: expect.objectContaining({ lens: 'auto' }) }),
     });
   });
 

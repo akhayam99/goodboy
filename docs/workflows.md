@@ -383,7 +383,8 @@ identity row reads. The header holds **Start run**; a session with no run shows
 today's start card. Opening a preset run drills into its run level.
 
 The Orchestrated page (`OrchestratedPane`, lens `orchestrated`, ⌘⌥W pressed
-again) lists the orchestrated runs on the same `RunsGrid`. With none it says
+again) lists the orchestrated runs on the same `RunsGrid`, its counts on the
+group rows (In progress, Finished, Archived) and none under the title. With none it says
 "No orchestrated runs yet. The orchestrator picks each next step from your
 goal." with **Orchestrate**, which opens the launch form on its orchestrated
 mode (`OrchestrateStart`). Opening a row shows
@@ -640,8 +641,12 @@ run and its agents restorable.
 ### Hands-free runs
 
 **Autopilot** makes a run hands-free. Each next step starts without you
-clicking. You can turn it on for one run or for the whole session. A run
-without its own setting follows the session.
+clicking. You can turn it on for one run, or for the whole session with
+**Turn on Autopilot** in the session `⋯` (the registry verbs
+`session.autopilotOn` and `session.autopilotOff` in
+`features/actions/kinds/session.ts`, also in the right click and the palette;
+the Agents page header has no switch). A run without its own setting follows
+the session.
 
 - The session's autorun also covers agents running outside a workflow
 - A workflow you add to a session with autorun on starts with autorun on

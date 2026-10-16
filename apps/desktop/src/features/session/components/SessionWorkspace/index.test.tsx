@@ -465,7 +465,7 @@ describe('SessionWorkspace agents lens', () => {
 });
 
 describe('SessionWorkspace pane metadata', () => {
-  it('summarizes standalone agent statuses', () => {
+  it('draws no status subtitle under Agents, the rows and the Completed group say it', () => {
     store.activeLens = { [SESSION_ID]: 'agents' };
     store.selectedAgentId = {};
     store.sessionPhaseRuns = {
@@ -492,17 +492,8 @@ describe('SessionWorkspace pane metadata', () => {
 
     render(<SessionWorkspace session={session} isActive />);
 
-    expect(screen.getByTestId('pane-meta-agents').textContent).toBe('1 running, 1 done, 1 failed');
-  });
-
-  it('hides metadata when all displayed counts are zero', () => {
-    store.activeLens = { [SESSION_ID]: 'agents' };
-    store.selectedAgentId = {};
-    store.sessionPhaseRuns = { [SESSION_ID]: [] };
-
-    render(<SessionWorkspace session={session} isActive />);
-
     expect(screen.queryByTestId('pane-meta-agents')).toBeNull();
+    expect(screen.queryByText(/\d+ running, \d+ done/)).toBeNull();
   });
 });
 

@@ -22,7 +22,7 @@ export const C06AgentsScene = ({ isEmpty }: Props) => {
   return (
     <main className="flex h-screen bg-background text-foreground">
       <PageSheet>
-        <AgentsPane session={C06_SESSION} meta={undefined} />
+        <AgentsPane session={C06_SESSION} />
       </PageSheet>
     </main>
   );

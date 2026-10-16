@@ -16,7 +16,7 @@ export const OrchestratedPane = ({ session }: Props) => {
   const hasRuns = orchestratedRuns.length > 0;
 
   return (
-    <PaneShell title={NAMES.orchestrated} meta={hasRuns ? orchestratedRuns.length : undefined}>
+    <PaneShell title={NAMES.orchestrated}>
       {hasRuns ? (
         <RunsGrid session={session} attachedRuns={orchestratedRuns} label={NAMES.orchestrated} />
       ) : (

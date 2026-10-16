@@ -1,7 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
-import { isAgentStatusSettled } from '@goodboy/core';
+import type { AgentId, Session, SessionId } from '@goodboy/types';
 import { cn, useEscapeLayer, PaneActionsContext, PaneBannerContext, PaneShell } from '@goodboy/ui';
 import { ArtifactStudio } from '../../../artifacts/components/ArtifactStudio';
 import { EMPTY_ARRAY, useAppStore, useIsSessionCollectionLoaded } from '../../../../store';
@@ -27,13 +26,6 @@ import { usePresetRunFocus } from '../../hooks/usePresetRunFocus';
 import { IntegrationPane } from './parts/IntegrationPane';
 import { GithubTaskDetail } from './parts/IntegrationPane/GithubTaskDetail';
 import { LinkIssueAction } from '../SessionOverviewPane/LinkIssueAction';
-import {
-  classifyAgent,
-  isAgentsPageKind,
-  isStandaloneAgent,
-  resolveRootAgent,
-} from '../../agent-kind';
-import { selectResolverAgentIds } from '../../../review/selectResolverAgentIds';
 import { SessionOverviewLoading } from './parts/SessionOverviewLoading';
 import { BranchPage } from '../../../branch/components/BranchPage';
 import { useIsBranchlessSession } from '../../hooks/useIsBranchlessSession';
@@ -75,10 +67,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     (s) => s.artifactConversationAgentId[sessionId] ?? null,
   );
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
-  const phaseRuns = useAppStore(
-    (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
-  );
-  const agentKindOverride = useAppStore((s) => s.agentKindOverride);
   const areAgentsLoaded = useIsSessionCollectionLoaded({ sessionId, collection: 'agents' });
   const arePlansLoaded = useIsSessionCollectionLoaded({ sessionId, collection: 'plans' });
   const loadPhaseRunsForSession = useAppStore((s) => s.loadPhaseRunsForSession);
@@ -107,43 +95,12 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   });
   const showAgentOverlay = surfaceLayer === 'agent';
   const showLens = surfaceLayer === 'lens';
-  const resolverAgentIds = useMemo(
-    () => selectResolverAgentIds({ agents: phaseRuns, kindOverride: agentKindOverride }),
-    [phaseRuns, agentKindOverride],
-  );
   const githubTask = useMemo(
     () => sessionExternalTasks.find((task) => task.provider === 'github') ?? null,
     [sessionExternalTasks],
   );
   const githubIssueNumber =
     focusedGithubIssueNumber ?? (githubTask != null ? Number(githubTask.externalId) : null);
-  const standaloneAgents = useMemo(
-    () =>
-      phaseRuns.filter(
-        (agent) =>
-          isStandaloneAgent({ agent }) &&
-          !resolverAgentIds.has(agent.id) &&
-          isAgentsPageKind({
-            kind: classifyAgent({ agent, override: agentKindOverride[agent.id] ?? null }),
-          }),
-      ),
-    [phaseRuns, resolverAgentIds, agentKindOverride],
-  );
-  const agentCounts = useMemo(
-    () => ({
-      running: standaloneAgents.filter((agent) => agent.status === 'running').length,
-      done: standaloneAgents.filter((agent) => isAgentStatusSettled({ status: agent.status }))
-        .length,
-      failed: standaloneAgents.filter((agent) => agent.status === 'failed').length,
-    }),
-    [standaloneAgents],
-  );
-  const agentsMeta =
-    agentCounts.running === 0 && agentCounts.done === 0 && agentCounts.failed === 0
-      ? undefined
-      : `${agentCounts.running} running, ${agentCounts.done} done${
-          agentCounts.failed > 0 ? `, ${agentCounts.failed} failed` : ''
-        }`;
   const leaveAgentOverlay = useCallback(() => up(), [up]);
 
   useEscapeLayer(leaveAgentOverlay, showAgentOverlay && isActive);
@@ -241,7 +198,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                   <PaneBannerContext.Provider
                     value={lens === 'agents' && !showAgentOverlay ? banner : null}
                   >
-                    <AgentsPane session={session} meta={agentsMeta} />
+                    <AgentsPane session={session} />
                   </PaneBannerContext.Provider>
                 </PaneActionsContext.Provider>
               </Pane>

@@ -171,7 +171,7 @@ export const U21_STATES_SCENES: Readonly<Record<string, ComponentType>> = {
   ),
   'agents-list-empty': () => (
     <StateScene lens="agents">
-      <AgentsPane session={SESSION} meta={undefined} />
+      <AgentsPane session={SESSION} />
     </StateScene>
   ),
   'artifacts-empty': () => (

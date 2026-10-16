@@ -5795,7 +5795,7 @@
   },
   "apps/desktop/src/features/session/components/SessionWorkspace/index.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
+      "count": 2
     },
     "@typescript-eslint/naming-convention": {
       "count": 4
@@ -5810,11 +5810,6 @@
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
     },
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/session/components/SessionWorkspace/parts/AgentsPane.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 1
     }

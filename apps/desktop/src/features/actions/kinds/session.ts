@@ -13,6 +13,7 @@ import {
   Pencil,
   Pin,
   PinOff,
+  Rocket,
 } from 'lucide-react';
 import type { Session, SessionId, SessionProjectMount, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
@@ -301,6 +302,22 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     group: 'act',
     when: ({ facts }) => isLive({ facts }) && facts.isPinned,
     run: ({ facts, env }) => env.getState().unpinSession(facts.sessionId),
+  },
+  {
+    id: 'session.autopilotOn',
+    label: `Turn on ${NAMES.autopilot}`,
+    icon: Rocket,
+    group: 'act',
+    when: ({ facts }) => isLive({ facts }) && !facts.session.autoRun,
+    run: ({ facts, env }) => env.getState().setSessionAutoRun(facts.sessionId, true),
+  },
+  {
+    id: 'session.autopilotOff',
+    label: `Turn off ${NAMES.autopilot}`,
+    icon: Rocket,
+    group: 'act',
+    when: ({ facts }) => isLive({ facts }) && facts.session.autoRun,
+    run: ({ facts, env }) => env.getState().setSessionAutoRun(facts.sessionId, false),
   },
   {
     id: 'session.pinnedUp',

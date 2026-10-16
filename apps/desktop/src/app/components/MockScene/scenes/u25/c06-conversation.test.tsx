@@ -185,6 +185,8 @@ describe('the c06 conversation scenes', () => {
     expect(within(first).getByText('Running')).toBeDefined();
     expect(within(first).queryAllByRole('button')).toHaveLength(0);
     expect(screen.getByRole('button', { name: 'Start agent' })).toBeDefined();
+    expect(screen.queryByRole('switch', { name: 'Autopilot' })).toBeNull();
+    expect(document.querySelector('[data-slot="pane-meta"]')).toBeNull();
     act(() => useAppStore.setState({ selectedAgentId: {} }));
     fireEvent.click(first);
     expect(useAppStore.getState().selectedAgentId[C06_SESSION_ID]).toBe(C06_AGENT_ID);

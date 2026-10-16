@@ -233,7 +233,6 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
   return (
     <PaneShell
       title={meta.label}
-      meta={hasTasks ? tasks.length : undefined}
       actions={connection.isConnected && hasTasks ? linkAction : undefined}
     >
       {!connection.isConnected ? (

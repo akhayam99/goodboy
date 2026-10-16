@@ -77,6 +77,8 @@ describe('the c09 orchestrated scenes', () => {
   it('c09-orchestrated-list lists only orchestrated runs on the run grid', async () => {
     await mount('c09-orchestrated-list');
 
+    expect(document.querySelector('[data-slot="pane-meta"]')).toBeNull();
+
     expect(currentPage()).toBe('Orchestrated1');
     const grid = screen.getByRole('list', { name: 'Orchestrated' });
     expect(

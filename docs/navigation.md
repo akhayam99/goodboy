@@ -400,7 +400,10 @@ never exists on one surface only.
   (creation pickers, property pickers, page chrome).
 - **What each object offers.** A session: Open, Comments, Files, Open in terminal
   (one choice per worktree), Open in
-  editor; Rename (inline, in the row that opened the menu), Start agent, Link
+  editor; Rename (inline, in the row that opened the menu), Turn on Autopilot or
+  Turn off Autopilot (the session's autorun, the default of a run started
+  without its own setting and of agents outside a workflow; the Agents page
+  header has no switch), Start agent, Link
   work (L on the Overview); copy the title, worktree path, branch and pull request link; Archive with Undo and
   Delete with its confirm (Restore once archived). Several sessions: Copy
   titles, Archive N, Restore N, Delete N. An agent: Open agent, Show its
@@ -662,13 +665,16 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
   never carries a nested card in the workspace list.
 - **The pages** come from one registry (`features/session/pageRegistry.ts`):
   Overview, File versions in a branchless session only, Runs, Agents, Auto
-  agents (with a neutral Experimental chip, only while Auto is on or the
-  session has an Auto agent), Artifacts, and Questions last while one is open.
+  agents (with a neutral Experimental chip; Auto is always on, so it always
+  shows), Artifacts, and Questions last while one is open.
   Agents lists standalone agents only; an Auto agent lives under Auto agents
   (`isAgentsPageKind`, `agentHomeLens` sends it to the `auto` lens). A page row ends in one
   fixed 40px right-aligned slot: the count in tabular gray, a 6px info dot
   before it while something runs, a warning dot on Questions. The count word
-  ("1 running", "4 artifacts") is the row's tooltip. Every number comes from
+  ("1 running", "4 artifacts") is the row's tooltip. A list page repeats no
+  count under its title: Orchestrated, Agents, Artifacts and a tracker list
+  (Linear, Jira and the rest) carry their counts on their group rows or filter
+  tabs only, and Agents has no "N running, N done" subtitle. Every number comes from
   one function, `pageSlotOf` over `usePageCountFacts`, and the folded rail and
   its flyout read the same function.
 - **Projects** lists each mounted project as a label row and its worktrees
