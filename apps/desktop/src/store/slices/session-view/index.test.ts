@@ -208,6 +208,7 @@ describe('store contract', () => {
       const store = useAppStore;
       const prefs = store.getState().getSessionViewPrefs(WS_ID);
       expect(prefs).toEqual({
+        pageView: 'board',
         sort: 'needsYou',
         group: 'none',
         isArchivedShown: false,

@@ -9,6 +9,7 @@ import type {
   SessionExternalTaskProvider,
   SessionGroupKey,
   SessionId,
+  SessionPageView,
   SessionPrGroup,
   SessionSortKey,
   SessionStage,
@@ -99,6 +100,7 @@ export const EMPTY_RESOLVE_QUEUE_VIEW: ResolveQueueView = {
 };
 
 export const DEFAULT_PREFS: SessionViewPrefs = {
+  pageView: 'board',
   sort: 'needsYou',
   group: 'none',
   isArchivedShown: false,
@@ -122,6 +124,8 @@ export const VALID_STAGES: ReadonlyArray<SessionStage> = [
 ];
 
 export const VALID_GROUPS: ReadonlyArray<SessionGroupKey> = ['none', 'pr', 'stage', 'project'];
+
+export const VALID_PAGE_VIEWS: ReadonlyArray<SessionPageView> = ['board', 'list'];
 
 export const STAGE_ORDER: Record<SessionStage, number> = {
   building: 0,

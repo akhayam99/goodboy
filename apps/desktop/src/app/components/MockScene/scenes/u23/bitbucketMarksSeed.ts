@@ -175,6 +175,7 @@ export const seedBitbucketMarks = (): Session => {
     ),
     sessionViewPrefs: {
       [WORKSPACE_ID]: {
+        pageView: 'board',
         sort: 'needsYou',
         group: 'none',
         isArchivedShown: false,

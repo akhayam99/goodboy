@@ -324,6 +324,7 @@ export const seedSessionMarks = (): Session => {
     sessionWorkflows: { ...state.sessionWorkflows, [idOf('plan')]: [] },
     sessionViewPrefs: {
       [WORKSPACE_ID]: {
+        pageView: 'board',
         sort: 'needsYou',
         group: 'none',
         isArchivedShown: false,
