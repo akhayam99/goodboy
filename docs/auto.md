@@ -230,7 +230,8 @@ is a compare and swap on the version the drawer shows, then Auto is told once
 ("Approved plan v1."). A newer version, a revise in progress, a used plan or a
 discarded one refuse it with a sentence and the drawer stays open. A second
 click, or a second window, on an approved version does not tell Auto again.
-Auto cannot start a writer role (Implementer, Tester, Docs) on a plan that is not
+Auto cannot start a writer role (Implementer, Tester, Docs, Scribe, CI fixer,
+Rewriter) on a plan that is not
 approved. The policy is `isAutoPlanApprovalRequired`: the runtime reads the
 stored setting `agents.autoPlanApproval` on every tick, and approval is required
 unless the stored value is exactly `false`. There is no screen for that setting
@@ -264,6 +265,24 @@ capability token and no allow rule. It decides by ending its final reply with at
   close.
 - No block is a plain answer to the user.
 
+The system prompt (`packages/core/src/auto/prompt.ts`) carries the role list and a routing table,
+**WHICH ROLE FOR WHICH WORK**, generated from `AUTO_ROLE_WHEN` (one line per Auto role, so a role
+cannot join without one): diagnosing a failure goes to an Investigator, tests to a Tester, text
+about code to Docs, code changes and their commits to an Implementer, the pull request to a
+Scribe, a failing check to a CI fixer, the commit history of the branch to a Rewriter. Scribe, CI
+fixer and Rewriter are writers (m232 widens the role CHECK of `auto_delegations`; Rust
+`WRITER_ROLES` holds them). A Scribe child writes `<<pr-title>>` and `<<pr-body>>` and never runs
+gh: when it ends completed, `finishAttempt` calls the `publishScribePullRequest` port, which goes
+through `resumeScribePullRequest` and `openScribePullRequest`, the path the Branch page uses
+(draft, the repository's base, never a second request when the branch already has one). The
+result Auto reads starts with "Pull request #421 is open: <url>"; a failure fails the delegation
+with the reason, and a retry of the same child opens it once. It names the `mount` field of a
+child and the MOUNTS line it is filled from. Auto keeps its read tools and answers questions
+itself; when it reports what happens next it describes a hand over and names the role ("I asked
+an implementer to reinstall the dependencies"), never an action of its own. The brief of every
+writer child carries `AUTO_DEPENDENCIES_RULE`: install missing dependencies with the project's
+package manager in its own mount, never link or copy `node_modules` from another checkout.
+
 `parseAutoBlock` (`packages/core/src/auto/autoBlock.ts`) reads only the settled text of a turn that
 ended ok: it takes the last complete block, strips code fences, escapes raw line breaks in strings
 and falls back to the last `}` when the close marker is missing. `store/slices/auto/applyAutoBlock.ts`
@@ -274,9 +293,18 @@ same text admit once (the admission guards and the request id replay do the rest
 What Auto cannot say comes back as a message, not as a reply inside the turn. A refused spec, a
 budget or limit refusal and a block that does not parse become a `refusal` row in the outbox,
 delivered with the next turn under REFUSED, NOT DONE; such a turn counts as no progress, so
-`noProgressStreak` bounds retries. The refusal counters (`refusals_used`, the limit on refusals)
+`noProgressStreak` bounds retries. A refusal row keeps the action, the code and the roles of the
+refused children; while it is pending for the current generation, `readAutoTreeViews` reads it as
+`pendingRefusal` and the wait strip says it in the user voice (`refusalNoticeOf`, reasons from
+`AUTO_REFUSAL_USER_REASON`): "Auto tried to start an Implementer. Not started: more than one
+project fits and it did not say which. Auto is choosing again." Once Auto's next turn takes the
+row, the line goes, and an admitted retry draws its delegation card. The mount of a child
+(`pickAutoMount`): a named mount wins; a reader without one works in the tree's primary mount; a
+writer without one goes to the only usable mount, is refused `mount_ambiguous` when more than
+one fits (Auto never guesses a write) and `mount_missing` when none does. The refusal counters (`refusals_used`, the limit on refusals)
 move once per generation and run, so a duplicate settle of the same turn cannot spend the limit twice. Every delivery starts with a digest of the tree (open agents
-with role, state and age, questions waiting, the budget) and carries the artifact text of each
+with role, state and age, questions waiting, the budget, and a `MOUNTS:` line listing each usable
+mount as `id (project, branch)` from `buildMountsLine`) and carries the artifact text of each
 result, cut when long, so a provider that does not resume sessions still has its memory. The
 `<<auto>>` block is hidden in the transcript like the other markers; the delegation cards show
 what it did. See [query-bridge.md](query-bridge.md) for the bridge Auto does not use.
@@ -305,4 +333,11 @@ The screens read the registry through the `auto-view` slice
 (`loadAutoTrees`), which polls every 2 seconds while a session has an Auto
 agent or a tree that is not finished. Nothing pushes tree changes to a window
 yet. The numbers on screen come from the budget function the prompt and the
-admission use, so they agree.
+admission use, so they agree. What is left has one SQL formula
+(`autoRemainingUsdSql`, read by `readAutoTreeSpend` and by every admission
+check) and one JS formula (`autoTreeSpendOf` in core, used by seeds, fixtures
+and the delivery line); nothing else subtracts. The budget line of a delivery
+is built before the claim reserves the turn's 0.50 USD, so it counts that
+reservation itself and names it ("Reserved 0.50 USD, of which 0.50 USD for this
+answer. Left 0.68 USD."): the Left Auto reads equals the rail's Left while that
+turn runs. A delivery retried after a failed start reuses its stored text.

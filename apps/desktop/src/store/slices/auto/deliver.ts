@@ -255,7 +255,13 @@ export const deliverNext = async ({
   const text =
     stored !== null && stored.rowIds.length === rows.length
       ? stored.text
-      : await buildDeliveryMessage({ db: ctx.db, tree, rows, nowMs: ctx.now() });
+      : await buildDeliveryMessage({
+          db: ctx.db,
+          tree,
+          rows,
+          mounts: await ctx.ports.loadMounts({ sessionId: tree.sessionId }),
+          nowMs: ctx.now(),
+        });
   const runId = ctx.ports.newId();
   const claimed = await ctx.db.transaction({
     statements: claimStatements({ ctx, tree, rows, runId, text }),

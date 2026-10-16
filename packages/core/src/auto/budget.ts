@@ -14,6 +14,21 @@ type RoundUsdParams = {
 
 const roundUsd = ({ usd }: RoundUsdParams): number => Math.round(usd * 100) / 100;
 
+type AutoTreeSpendOfParams = Omit<AutoTreeSpend, 'remainingUsd'>;
+
+export const autoTreeSpendOf = ({
+  capUsd,
+  settledUsd,
+  reservedUsd,
+  estimatedUsd,
+}: AutoTreeSpendOfParams): AutoTreeSpend => ({
+  capUsd,
+  settledUsd,
+  reservedUsd,
+  remainingUsd: capUsd === null ? null : capUsd - settledUsd - reservedUsd,
+  estimatedUsd,
+});
+
 type BudgetOfParams = {
   readonly spend: AutoTreeSpend;
 };
@@ -61,10 +76,17 @@ export const autoBudgetLabel = ({ facts }: FactsParams): string => {
   return `${spent} of ${usdText({ usd: facts.capUsd })}${estimate}`;
 };
 
-export const autoBudgetPromptLine = ({ facts }: FactsParams): string => {
+type PromptLineParams = FactsParams & {
+  readonly turnReservedUsd: number;
+};
+
+export const autoBudgetPromptLine = ({ facts, turnReservedUsd }: PromptLineParams): string => {
   const estimate = facts.hasEstimate ? ' (some of it estimated)' : '';
   const spent = `Spent ${usdText({ usd: facts.spentUsd })}${estimate}.`;
-  const reserved = `Reserved for running agents ${usdText({ usd: facts.reservedUsd })}.`;
+  const reserved =
+    turnReservedUsd > 0
+      ? `Reserved ${usdText({ usd: facts.reservedUsd })}, of which ${usdText({ usd: roundUsd({ usd: turnReservedUsd }) })} for this answer.`
+      : `Reserved for running agents ${usdText({ usd: facts.reservedUsd })}.`;
   if (facts.capUsd === null || facts.remainingUsd === null) {
     return ['Budget for this conversation: no cap.', spent, reserved].join(' ');
   }

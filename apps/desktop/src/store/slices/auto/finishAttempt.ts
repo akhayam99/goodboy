@@ -341,6 +341,51 @@ const plainOutcomeOf = ({ params, envelope }: PlainOutcomeParams): PlainOutcome 
   return { outcome: envelope.outcome, reason: envelope.reason };
 };
 
+type PublishedOutcomeParams = PlainOutcomeParams & {
+  readonly plain: PlainOutcome;
+};
+
+type PublishedOutcome = PlainOutcome & {
+  readonly declared: DelegationResultV1['declared'];
+};
+
+const publishedOutcomeOf = async ({
+  params,
+  envelope,
+  plain,
+}: PublishedOutcomeParams): Promise<PublishedOutcome> => {
+  const { ctx, ended, tree, delegation } = params;
+  const mountId = delegation.target['mountId'];
+  const isPublishable =
+    delegationRoleOf({ delegation }) === 'scribe' &&
+    plain.outcome === 'completed' &&
+    ended.exit === 'ok' &&
+    typeof mountId === 'string';
+  if (!isPublishable) {
+    return { ...plain, declared: envelope.declared };
+  }
+  const published = await ctx.ports.publishScribePullRequest({
+    sessionId: tree.sessionId,
+    mountId,
+    agentId: delegation.childAgentId,
+    assistantText: ended.assistantText,
+  });
+  if (published.kind === 'failed') {
+    return { outcome: 'failed', reason: published.message, declared: envelope.declared };
+  }
+  const opened = `Pull request #${published.number} is open: ${published.url}`;
+  return {
+    ...plain,
+    declared: {
+      ...envelope.declared,
+      summary:
+        envelope.declared.summary === '' ? opened : `${opened}. ${envelope.declared.summary}`,
+      summarySource:
+        envelope.declared.summarySource === 'none' ? 'child' : envelope.declared.summarySource,
+    },
+  };
+};
+
 const finishedPlain = async (params: ReviseParams): Promise<FinishAttemptOutcome> => {
   const { ctx, ended, tree, delegation, attempt, closing, attribution } = params;
   const artifacts = isArtifactRole({ delegation })
@@ -362,7 +407,12 @@ const finishedPlain = async (params: ReviseParams): Promise<FinishAttemptOutcome
     costUsd: ended.costUsd,
     durationMs: ended.durationMs,
   });
-  const { outcome, reason } = plainOutcomeOf({ params, envelope });
+  const plain = plainOutcomeOf({ params, envelope });
+  const { outcome, reason, declared } = await publishedOutcomeOf({
+    params,
+    envelope,
+    plain,
+  });
   const settled: SettleAttemptOutcome = await ctx.scheduler.settleAttempt({
     attemptId: attempt.id,
     generation: ended.generation,
@@ -371,7 +421,7 @@ const finishedPlain = async (params: ReviseParams): Promise<FinishAttemptOutcome
       outcome,
       endReason: reason,
       costUsd: ended.costUsd,
-      resultSnapshot: { envelope: { ...envelope, outcome, reason } },
+      resultSnapshot: { envelope: { ...envelope, outcome, reason, declared } },
     },
   });
   return settled.kind === 'settled'

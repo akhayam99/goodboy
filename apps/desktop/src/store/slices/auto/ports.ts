@@ -177,6 +177,17 @@ type IsRunLiveParams = Readonly<{
   runId: string;
 }>;
 
+export type PublishScribeParams = Readonly<{
+  sessionId: SessionId;
+  mountId: string;
+  agentId: AgentId;
+  assistantText: string;
+}>;
+
+export type ScribePublication =
+  | Readonly<{ kind: 'opened'; number: number; url: string }>
+  | Readonly<{ kind: 'failed'; message: string }>;
+
 export type AutoPorts = Readonly<{
   newId: () => string;
   loadMounts: (params: LoadMountsParams) => Promise<ReadonlyArray<PickableMount>>;
@@ -190,4 +201,5 @@ export type AutoPorts = Readonly<{
   cancelRun: (params: CancelRunParams) => Promise<CancelRunOutcome>;
   isRunLive: (params: IsRunLiveParams) => Promise<boolean>;
   readRunOutcome: (params: ReadRunOutcomeParams) => Promise<RunOutcome | null>;
+  publishScribePullRequest: (params: PublishScribeParams) => Promise<ScribePublication>;
 }>;

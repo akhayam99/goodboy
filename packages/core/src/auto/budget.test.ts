@@ -5,6 +5,7 @@ import {
   autoBudgetPromptLine,
   autoBudgetUsedUsd,
   autoRemainingForGates,
+  autoTreeSpendOf,
   capTextOf,
 } from './budget';
 
@@ -42,7 +43,7 @@ describe('auto budget facts', () => {
       spend: { capUsd: 5, settledUsd: 0.75, reservedUsd: 1.5, remainingUsd: 2.75, estimatedUsd: 0 },
     });
     expect(autoBudgetLabel({ facts })).toBe('0.75 USD of 5.00 USD');
-    expect(autoBudgetPromptLine({ facts })).toBe(
+    expect(autoBudgetPromptLine({ facts, turnReservedUsd: 0 })).toBe(
       'Budget for this conversation: 5.00 USD. Spent 0.75 USD. Reserved for running agents 1.50 USD. Left 2.75 USD.',
     );
   });
@@ -68,7 +69,7 @@ describe('auto budget facts', () => {
     expect(facts).toMatchObject({ capUsd: null, remainingUsd: null });
     expect(capTextOf({ facts })).toBe('No cap');
     expect(autoBudgetLabel({ facts })).toBe('3.82 USD, no cap');
-    expect(autoBudgetPromptLine({ facts })).toBe(
+    expect(autoBudgetPromptLine({ facts, turnReservedUsd: 0 })).toBe(
       'Budget for this conversation: no cap. Spent 3.82 USD. Reserved for running agents 0.50 USD.',
     );
   });
@@ -86,5 +87,33 @@ describe('auto budget facts', () => {
       }),
     ).toBe(Number.POSITIVE_INFINITY);
     expect(autoRemainingForGates({ spend: null })).toBe(0);
+  });
+
+  it('counts the reservation of the answer the line is delivered with, and names it', () => {
+    const facts = autoBudgetOf({
+      spend: autoTreeSpendOf({ capUsd: 5, settledUsd: 3.82, reservedUsd: 0.5, estimatedUsd: 0 }),
+    });
+    expect(autoBudgetPromptLine({ facts, turnReservedUsd: 0.5 })).toBe(
+      'Budget for this conversation: 5.00 USD. Spent 3.82 USD. Reserved 0.50 USD, of which 0.50 USD for this answer. Left 0.68 USD.',
+    );
+  });
+
+  it('computes what is left from cap, spent and reserved in one place', () => {
+    expect(
+      autoTreeSpendOf({ capUsd: 10, settledUsd: 0.27, reservedUsd: 4.5, estimatedUsd: 0 }),
+    ).toEqual({
+      capUsd: 10,
+      settledUsd: 0.27,
+      reservedUsd: 4.5,
+      remainingUsd: 10 - 0.27 - 4.5,
+      estimatedUsd: 0,
+    });
+  });
+
+  it('leaves no remainder for a missing cap in the one formula', () => {
+    expect(
+      autoTreeSpendOf({ capUsd: null, settledUsd: 0.27, reservedUsd: 4.5, estimatedUsd: 0 })
+        .remainingUsd,
+    ).toBeNull();
   });
 });

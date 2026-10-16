@@ -699,7 +699,10 @@ through the `<<auto>>` block, not through a bridge verb. The tables are additive
 refuses the file with `DatabaseFromNewerBuildError` instead of reading it.
 m230 also adds the partial index `idx_agents_auto_roots` on `agents(session_id, ordinal)` for
 root Auto agents, which the scan for an Auto agent without a tree (`listAutoAgentsWithoutTree`)
-reads.
+reads. m232 rebuilds `auto_delegations` (foreign keys off, copy, drop, rename,
+the four indexes again, `foreign_key_check`) so its role CHECK also takes
+`scribe`, `ci-fixer` and `rewriter`; the rows of the tables that hang on it are
+kept.
 
 - `auto_trees` is one row per Auto agent: phase, `phase_rev`, generation, stop
   state, the budget cap, the lifetime counters and the scheduler lease
@@ -720,7 +723,9 @@ reads.
   lifetime counters, four open children, remaining budget, plan approval and
   revision. `core/auto/admission.ts` only names the refusal for the caller.
 - Money has one source, `treeSpend`: settled, reserved and remaining. It feeds
-  admission, the prompt line and the screen through `autoBudgetOf`. An
+  admission, the prompt line and the screen through `autoBudgetOf`;
+  remaining is `autoRemainingUsdSql` in SQL and `autoTreeSpendOf` in JS, and
+  the delivery line counts the turn reservation it is delivered with. An
   attempt reserves its ceiling at admission and is reconciled to the actual
   cost, or to the ceiling, marked estimated, when the provider reports none.
 - `settleAttempt` and `landRevision` apply a result only while the tree

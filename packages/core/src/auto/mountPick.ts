@@ -21,7 +21,7 @@ export type PickMountParams = Readonly<{
 export type MountPickRefusalCode = 'mount_missing' | 'mount_ambiguous';
 
 export type MountPickOutcome =
-  | Readonly<{ kind: 'picked'; mount: PickableMount; source: 'named' | 'primary' }>
+  | Readonly<{ kind: 'picked'; mount: PickableMount; source: 'named' | 'primary' | 'only' }>
   | Readonly<{
       kind: 'refused';
       code: MountPickRefusalCode;
@@ -112,9 +112,21 @@ export const pickAutoMount = ({
     return { kind: 'picked', mount: first, source: 'named' };
   }
   if (isAutoWriterRole({ role })) {
+    const usable = mounts.filter((mount) => isUsableMount({ mount }));
+    const only = usable[0];
+    if (usable.length === 1 && only !== undefined) {
+      return { kind: 'picked', mount: only, source: 'only' };
+    }
+    if (usable.length > 1) {
+      return refuse({
+        code: 'mount_ambiguous',
+        message: `A ${role} changes files and more than one mount fits, so name the one it works in. If the request does not say which, ask the user.`,
+        mounts,
+      });
+    }
     return refuse({
       code: 'mount_missing',
-      message: `A ${role} changes files, so you must name the mount it works in. If the request does not say which, ask the user.`,
+      message: `A ${role} changes files and this conversation has no mount it can work in.`,
       mounts,
     });
   }

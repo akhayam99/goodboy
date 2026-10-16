@@ -56,6 +56,7 @@ describe('the Auto chat scenes', () => {
       'auto-chat-finished',
       'auto-chat-nocap',
       'auto-chat-plan',
+      'auto-chat-refused',
       'auto-chat-revising',
       'auto-chat-working',
       'auto-overview-row',
@@ -172,6 +173,19 @@ describe('the Auto chat scenes', () => {
     ).toBeDefined();
     expect(screen.getByRole('button', { name: 'Confirm' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDefined();
+  });
+
+  it('auto-chat-refused says which agent was not started and why, in the wait strip', async () => {
+    mount({ id: 'auto-chat-refused' });
+
+    const notice = await screen.findByText(
+      'Auto tried to start an Implementer. Not started: more than one project fits and it did not say which. Auto is choosing again.',
+      undefined,
+      WAIT,
+    );
+    expect(notice.closest('[role="status"]')).not.toBeNull();
+    expect(screen.queryByText('Auto is reading the results')).toBeNull();
+    expect(screen.queryByRole('article')).toBeNull();
   });
 
   it('auto-chat-done lists every child as done and has no wait strip', async () => {

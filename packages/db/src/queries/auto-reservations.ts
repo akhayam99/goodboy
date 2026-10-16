@@ -39,6 +39,7 @@ type SpendRow = {
   readonly cap_usd: number | null;
   readonly settled_usd: number;
   readonly reserved_usd: number;
+  readonly remaining_usd: number | null;
   readonly estimated_usd: number;
 };
 
@@ -55,6 +56,7 @@ export const readAutoTreeSpend = async ({
     `SELECT auto_trees.cap_usd AS cap_usd,
        ${autoSettledUsdSql({ treeRef: 'auto_trees.id' })} AS settled_usd,
        ${autoReservedUsdSql({ treeRef: 'auto_trees.id' })} AS reserved_usd,
+       ${autoRemainingUsdSql({ treeRef: 'auto_trees.id' })} AS remaining_usd,
        (SELECT COALESCE(SUM(actual_usd), 0) FROM auto_reservations
          WHERE tree_id = auto_trees.id AND state = 'reconciled' AND cost_known = 0) AS estimated_usd
      FROM auto_trees WHERE auto_trees.id = ?`,
@@ -68,7 +70,7 @@ export const readAutoTreeSpend = async ({
     capUsd: row.cap_usd,
     settledUsd: row.settled_usd,
     reservedUsd: row.reserved_usd,
-    remainingUsd: row.cap_usd === null ? null : row.cap_usd - row.settled_usd - row.reserved_usd,
+    remainingUsd: row.remaining_usd,
     estimatedUsd: row.estimated_usd,
   };
 };

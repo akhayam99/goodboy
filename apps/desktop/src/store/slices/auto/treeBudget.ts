@@ -2,6 +2,7 @@ import {
   autoBudgetOf,
   autoBudgetLabel,
   autoBudgetPromptLine,
+  autoTreeSpendOf,
   type AutoBudgetFacts,
 } from '@goodboy/core';
 import type { Database } from '@goodboy/db';
@@ -17,17 +18,24 @@ export type TreeBudget = Readonly<{
 type TreeBudgetParams = {
   readonly db: Database;
   readonly treeId: AutoTreeId;
+  readonly turnReservedUsd?: number;
 };
 
-export const treeBudget = async ({ db, treeId }: TreeBudgetParams): Promise<TreeBudget | null> => {
+export const treeBudget = async ({
+  db,
+  treeId,
+  turnReservedUsd = 0,
+}: TreeBudgetParams): Promise<TreeBudget | null> => {
   const spend = await treeSpend({ db, treeId });
   if (spend === null) {
     return null;
   }
-  const facts = autoBudgetOf({ spend });
+  const facts = autoBudgetOf({
+    spend: autoTreeSpendOf({ ...spend, reservedUsd: spend.reservedUsd + turnReservedUsd }),
+  });
   return {
     facts,
     label: autoBudgetLabel({ facts }),
-    promptLine: autoBudgetPromptLine({ facts }),
+    promptLine: autoBudgetPromptLine({ facts, turnReservedUsd }),
   };
 };

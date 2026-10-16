@@ -1,11 +1,14 @@
 import {
+  AUTO_TURN_CEILING_USD,
   buildArtifactBodiesBlock,
   buildArtifactLedgerBlock,
   buildDeliveryText,
+  buildMountsLine,
   buildStateDigest,
   isResultsPayload,
   type DeliveryArtifactBody,
   type DigestDelegation,
+  type PickableMount,
 } from '@goodboy/core';
 import {
   listAutoArtifactLedger,
@@ -23,6 +26,7 @@ export type BuildDeliveryMessageParams = Readonly<{
   db: Database;
   tree: AutoTree;
   rows: ReadonlyArray<AutoOutboxRow>;
+  mounts: ReadonlyArray<PickableMount>;
   nowMs: number;
 }>;
 
@@ -144,16 +148,22 @@ export const buildDeliveryMessage = async ({
   db,
   tree,
   rows,
+  mounts,
   nowMs,
 }: BuildDeliveryMessageParams): Promise<string> => {
   const entries = await treeArtifacts({ db, treeId: tree.id });
-  const budget = await treeBudget({ db, treeId: tree.id });
+  const budget = await treeBudget({
+    db,
+    treeId: tree.id,
+    turnReservedUsd: AUTO_TURN_CEILING_USD,
+  });
   const delegations = await listAutoDelegations({ db, treeId: tree.id });
   const digest = await digestDelegations({ db, delegations, nowMs });
   const bodies = await artifactBodies({ db, tree, rows });
   return buildDeliveryText({
     ledgerBlock: buildArtifactLedgerBlock({ entries, nowMs, generation: tree.generation }),
     budgetLine: budget === null ? '' : budget.promptLine,
+    mountsLine: buildMountsLine({ mounts }),
     digestBlock: buildStateDigest({ delegations: digest, nowMs }),
     artifactsBlock: buildArtifactBodiesBlock({ artifacts: bodies }),
     rows: rows.map((row) => ({ id: row.id, payload: row.payload })),

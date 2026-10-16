@@ -27,18 +27,41 @@ describe('choosing the mount of a delegation', () => {
     ).toMatchObject({ kind: 'picked', mount: { id: 'mount-notify' }, source: 'named' });
   });
 
-  it('refuses a writer that names no mount, even with a single mount, and lists the choices', () => {
+  it('starts a writer that names no mount on the only usable mount', () => {
+    expect(
+      pickAutoMount({
+        role: 'implementer',
+        requested: null,
+        mounts: [ledger, mount({ id: 'mount-gone', diskState: 'missing' })],
+        primaryMountId: null,
+      }),
+    ).toMatchObject({ kind: 'picked', mount: { id: 'mount-ledger' }, source: 'only' });
+  });
+
+  it('never guesses a writer mount when two fit, and lists the choices', () => {
     const outcome = pickAutoMount({
       role: 'implementer',
       requested: null,
-      mounts: [ledger],
+      mounts: [ledger, notify],
       primaryMountId: 'mount-ledger',
     });
-    expect(outcome).toMatchObject({ kind: 'refused', code: 'mount_missing' });
+    expect(outcome).toMatchObject({ kind: 'refused', code: 'mount_ambiguous' });
     if (outcome.kind === 'refused') {
       expect(outcome.message).toContain('mount-ledger');
-      expect(outcome.allowed.map((entry) => entry.id)).toEqual(['mount-ledger']);
+      expect(outcome.message).toContain('mount-notify');
+      expect(outcome.allowed.map((entry) => entry.id)).toEqual(['mount-ledger', 'mount-notify']);
     }
+  });
+
+  it('refuses a writer when no mount can be used', () => {
+    expect(
+      pickAutoMount({
+        role: 'docs',
+        requested: null,
+        mounts: [mount({ id: 'mount-ledger', worktreePath: null })],
+        primaryMountId: 'mount-ledger',
+      }),
+    ).toMatchObject({ kind: 'refused', code: 'mount_missing' });
   });
 
   it('starts a reader without a mount on the primary mount of the tree', () => {

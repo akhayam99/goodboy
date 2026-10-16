@@ -43,6 +43,7 @@ auto-chat-done
 auto-chat-finished
 auto-chat-nocap
 auto-chat-plan
+auto-chat-refused
 auto-chat-revising
 auto-chat-working
 auto-move-moved
