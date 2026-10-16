@@ -14,19 +14,21 @@ export const ListGridGroup = ({ label, count, action, children }: ListGridGroupP
   return (
     <li className="col-span-full grid grid-cols-subgrid">
       <div className="col-span-full grid h-7 grid-cols-subgrid items-center">
-        <h3
-          id={headingId}
-          className={cn('col-start-2 col-end-[-3] min-w-0 truncate text-row', TEXT_ROLE.secondary)}
-        >
-          {label}
-        </h3>
+        <div className="col-start-2 col-end-[-3] flex min-w-0 items-center gap-2">
+          <h3
+            id={headingId}
+            className={cn('min-w-0 flex-1 truncate text-row', TEXT_ROLE.secondary)}
+          >
+            {label}
+          </h3>
+          {action}
+        </div>
         <span
           className={cn(
-            'col-start-[-3] col-end-[-2] flex items-center justify-end gap-2 tabular-nums',
+            'col-start-[-3] col-end-[-2] flex items-center justify-end tabular-nums',
             TEXT_ROLE.hint,
           )}
         >
-          {action}
           {count === undefined ? null : count}
         </span>
       </div>

@@ -160,6 +160,11 @@ c01-tail-stopped
 c01-tail-stopping
 c01-tail-waiting
 c01-tail-working
+c13-terminal
+c13-terminal-empty
+c13-terminal-menu
+c13-terminal-other
+c13-terminal-workspace
 c13-workflows
 c13-workflows-history
 c13-workflows-history-empty

@@ -1,4 +1,4 @@
-import { useId, useRef, useState, type KeyboardEvent } from 'react';
+import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Plus } from 'lucide-react';
 import { IconButton, ScrollFade } from '@goodboy/ui';
 import { useTerminalPorts } from '../../../monitoring/useTerminalPorts';
@@ -25,6 +25,7 @@ type Props = {
   readonly onRename: (params: RenameParams) => Promise<void>;
   readonly onNew: () => void;
   readonly isShortcutEnabled?: boolean;
+  readonly actions?: ReactNode;
 };
 
 const NO_PORTS: ReadonlyArray<number> = [];
@@ -41,6 +42,7 @@ export const TerminalTabStrip = ({
   onRename,
   onNew,
   isShortcutEnabled = true,
+  actions = null,
 }: Props) => {
   const portsByTerminal = useTerminalPorts();
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -140,6 +142,7 @@ export const TerminalTabStrip = ({
         {selectedPorts.map((port) => (
           <PortChip key={port} port={port} />
         ))}
+        {actions}
       </div>
     </div>
   );

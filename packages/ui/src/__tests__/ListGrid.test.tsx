@@ -112,6 +112,19 @@ describe('ListGrid', () => {
     expect(screen.getByText('12').className).toContain('col-start-[-3]');
     expect(screen.getByRole('list', { name: 'Tasks' }).className).toContain('gap-y-4');
   });
+
+  it('keeps a group action beside its name and the count alone in the last column', () => {
+    render(
+      <ListGrid label="Tasks" columns={COLUMNS} isGrouped>
+        <ListGridGroup label="In progress" count={12} action={<button type="button">Open</button>}>
+          <ListGridRow cells={['', 'HBL-412', 'Ledger export times out', '2h']} />
+        </ListGridGroup>
+      </ListGrid>,
+    );
+    const action = screen.getByRole('button', { name: 'Open' });
+    expect(action.parentElement?.className).toContain('col-end-[-3]');
+    expect(screen.getByText('12').textContent).toBe('12');
+  });
 });
 
 describe('StateDot', () => {

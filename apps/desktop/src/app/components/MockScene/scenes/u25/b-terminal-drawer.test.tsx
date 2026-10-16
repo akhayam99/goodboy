@@ -195,14 +195,16 @@ describe('the terminal drawer scenes', () => {
     renderScene({ name: 'terminal-drawer-page' });
     await settle();
 
-    const groups = screen.getAllByRole('region').map((group) => group.getAttribute('aria-label'));
-    expect(groups).toEqual(['Stop retried webhooks posting a second credit', 'Workspace folder']);
-    const session = screen.getByRole('region', {
+    const terminals = screen.getByRole('list', { name: 'Terminals' });
+    const headings = within(terminals).getAllByRole('heading', { level: 3 });
+    expect(headings.map((heading) => heading.textContent)).toEqual([
+      'Stop retried webhooks posting a second credit',
+      'Workspace folder',
+    ]);
+    const session = within(terminals).getByRole('list', {
       name: 'Stop retried webhooks posting a second credit',
     });
-    const rows = within(session).getAllByRole('listitem');
-    expect(rows).toHaveLength(2);
-    expect(within(rows[0] ?? document.body).getByLabelText('2 terminals')).toBeDefined();
-    expect(within(rows[1] ?? document.body).getByLabelText('1 terminal')).toBeDefined();
+    expect(within(session).getAllByRole('listitem')).toHaveLength(2);
+    expect(headings[0]?.closest('li')?.querySelector('.tabular-nums')?.textContent).toBe('3');
   });
 });

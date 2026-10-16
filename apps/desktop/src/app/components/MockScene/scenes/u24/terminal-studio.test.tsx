@@ -51,23 +51,29 @@ const PAYMENTS_TREE = '/mock/harborline/payments-api/.goodboy/worktrees/gb-7k2q9
 const LEDGER_TREE = '/mock/harborline/ledger-core/.goodboy/worktrees/gb-4m8d1c';
 const NOTIFY_TREE = '/mock/harborline/notify-relay/.goodboy/worktrees/gb-2p6w0z';
 
-const groupNamed = (name: string): HTMLElement => screen.getByRole('region', { name });
+const terminalsGrid = (): HTMLElement => screen.getByRole('list', { name: 'Terminals' });
+
+const groupNamed = (name: string): HTMLElement =>
+  within(terminalsGrid()).getByRole('list', { name });
+
+const BRANCH_OF: Readonly<Record<string, string>> = {
+  'payments-api': 'hl/fix-duplicate-credit',
+  'ledger-core': 'hl/ledger-rounding',
+  'notify-relay': 'hl/retry-backoff',
+};
 
 type RowParams = {
   readonly session: string;
   readonly project: string;
 };
 
-const worktreeRow = ({ session, project }: RowParams): HTMLElement => {
-  const row = within(groupNamed(session)).getByText(project).closest('li');
-  if (row === null) {
-    throw new Error(`no row for ${project}`);
-  }
-  return row;
-};
+const worktreeRow = ({ session, project }: RowParams): HTMLElement =>
+  within(groupNamed(session)).getByRole('button', {
+    name: `${project} · ${BRANCH_OF[project] ?? ''}`,
+  });
 
 const selectWorktree = async ({ session, project }: RowParams): Promise<void> => {
-  fireEvent.click(within(worktreeRow({ session, project })).getByRole('button'));
+  fireEvent.click(worktreeRow({ session, project }));
   await settle();
 };
 
@@ -86,48 +92,54 @@ describe('the terminal studio scenes', () => {
     renderScene('terminal-studio');
     await settle();
 
-    const groups = screen.getAllByRole('region').map((group) => group.getAttribute('aria-label'));
+    const groups = within(terminalsGrid())
+      .getAllByRole('heading', { level: 3 })
+      .map((heading) => heading.textContent);
     expect(groups).toEqual([PAYMENTS_SESSION, NOTIFY_SESSION, 'Workspace folder']);
   });
 
-  it('draws one row per worktree with its terminal count', async () => {
+  it('draws one row per worktree and counts the terminals of each group', async () => {
     renderScene('terminal-studio');
     await settle();
 
     expect(within(groupNamed(PAYMENTS_SESSION)).getAllByRole('listitem')).toHaveLength(2);
-    const payments = worktreeRow({ session: PAYMENTS_SESSION, project: 'payments-api' });
-    expect(within(payments).getByLabelText('2 terminals')).toBeDefined();
-    const ledger = worktreeRow({ session: PAYMENTS_SESSION, project: 'ledger-core' });
-    expect(within(ledger).getByLabelText('1 terminal')).toBeDefined();
-    const notify = worktreeRow({ session: NOTIFY_SESSION, project: 'notify-relay' });
-    expect(within(notify).getByLabelText('1 terminal')).toBeDefined();
+    const counts = within(terminalsGrid())
+      .getAllByRole('heading', { level: 3 })
+      .map((heading) => heading.closest('li')?.querySelector('.tabular-nums')?.textContent);
+    expect(counts).toEqual(['3', '1', '1']);
   });
 
-  it('shows the dev server port on its worktree row and at the right of the tab strip, never on a tab', async () => {
+  it('shows the first port as quiet text on a row that is not selected, and the ports at the right of the tab strip', async () => {
     renderScene('terminal-studio');
     await settle();
 
     const payments = worktreeRow({ session: PAYMENTS_SESSION, project: 'payments-api' });
-    expect(within(payments).getByRole('button', { name: 'Open localhost:5173' })).toBeDefined();
-    const ledger = worktreeRow({ session: PAYMENTS_SESSION, project: 'ledger-core' });
-    expect(within(ledger).queryByRole('button', { name: /^Open localhost:/ })).toBeNull();
+    expect(payments.textContent).not.toContain(':5173');
     const [devTab, shellTab] = tabsOf('payments-api').map(
       (tab) => tab.closest<HTMLElement>('[data-terminal-tab]')?.textContent ?? '',
     );
     expect(devTab).toContain('dev server');
     expect(devTab).not.toMatch(/:\d+/);
     expect(shellTab).not.toMatch(/:\d+/);
+    expect(screen.getByRole('button', { name: 'Open localhost:5173' })).toBeDefined();
+
+    await selectWorktree({ session: PAYMENTS_SESSION, project: 'ledger-core' });
+
     expect(
-      screen.getAllByRole('button', { name: 'Open localhost:5173' }).length,
-    ).toBeGreaterThanOrEqual(2);
+      worktreeRow({ session: PAYMENTS_SESSION, project: 'payments-api' }).textContent,
+    ).toContain(':5173');
+    expect(
+      worktreeRow({ session: PAYMENTS_SESSION, project: 'ledger-core' }).textContent,
+    ).not.toMatch(/:\d+/);
   });
 
-  it('shows the linked task of the session in its group head', async () => {
+  it('keeps issue chips and the diff stat off the terminal list (cut C3)', async () => {
     renderScene('terminal-studio');
     await settle();
 
-    const facts = within(groupNamed(PAYMENTS_SESSION)).getByLabelText('Linked work and changes');
-    expect(facts.textContent).toContain('HBL-412');
+    expect(within(terminalsGrid()).queryByText('HBL-412')).toBeNull();
+    expect(within(terminalsGrid()).queryByText('+47')).toBeNull();
+    expect(screen.queryByTestId('worktree-chip')).toBeNull();
   });
 
   it('shows the terminals of the selected worktree as tabs, never as rail rows', async () => {
@@ -264,11 +276,19 @@ describe('the terminal studio scenes', () => {
     expect(screen.getAllByText(/gb-7k2q9x/).length).toBeGreaterThan(0);
   });
 
-  it('offers Open session in the header of a session worktree', async () => {
+  it('offers Open session beside each session group and in the tab strip menu', async () => {
     renderScene('terminal-studio');
     await settle();
 
-    expect(screen.getAllByRole('button', { name: /^Open session/ }).length).toBeGreaterThan(0);
+    expect(
+      within(terminalsGrid()).getByRole('button', { name: `Open session ${PAYMENTS_SESSION}` }),
+    ).toBeDefined();
+    expect(
+      within(terminalsGrid()).queryByRole('button', { name: /^Open session Workspace/ }),
+    ).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'More on payments-api' }));
+    expect(screen.getByRole('menuitem', { name: 'Open session' })).toBeDefined();
+    expect(screen.getByRole('menuitem', { name: 'Copy worktree path' })).toBeDefined();
   });
 
   it('groups the picker by session, with the workspace folder first', async () => {
