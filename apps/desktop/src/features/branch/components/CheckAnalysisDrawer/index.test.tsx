@@ -70,7 +70,7 @@ describe('the Debugger drawer', () => {
     expect(within(chain).getAllByRole('listitem')).toHaveLength(2);
     expect(within(chain).getByText('Proposal')).toBeDefined();
     expect(within(chain).getByText('Waiting for you')).toBeDefined();
-    expect(within(drawer).getByText('Sonnet 5.5')).toBeDefined();
+    expect(within(drawer).queryByText('Sonnet 5.5')).toBeNull();
     expect(within(drawer).getByRole('button', { name: /^Transcript of / })).toBeDefined();
   });
   it('says Running with the live step while the analysis works', () => {

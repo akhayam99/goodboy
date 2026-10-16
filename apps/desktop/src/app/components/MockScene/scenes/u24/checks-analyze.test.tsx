@@ -82,8 +82,8 @@ describe('checks analysis scenes', () => {
       ).getByText('src/ledger.ts'),
     ).toBeDefined();
     expect(within(drawer).getByText('+1')).toBeDefined();
-    expect(within(drawer).getByText('−0')).toBeDefined();
-    expect(within(drawer).getByText('Sonnet 5.5')).toBeDefined();
+    expect(within(drawer).queryByText('−0')).toBeNull();
+    expect(within(drawer).getByText(/^Implementer · /)).toBeDefined();
   });
   it.each(Object.keys(U24_CHECKS_ANALYZE_SCENES))(
     '%s has no accessibility violations',
