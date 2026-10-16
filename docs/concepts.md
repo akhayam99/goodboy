@@ -1066,7 +1066,7 @@ N`, the `apply` mode of today. The choice is `ResolveLaunchChoice.mode`
   Needs you, and `Continue with N answers` calls `answerQuestions` once for the
   launch (the same agent, no new one); `Retry N that couldn't fix` calls
   `retryCouldntFix` with every could-not-fix comment of the launch. `Apply N fixes`
-  on the group header of the ready comments and in the selection bar calls
+  in the selection bar (group labels carry no verbs) calls
   `acceptReviewComments` (`review-bulk` slice): it walks the comments in order
   through the same accept as the single `Accept` (`acceptReviewItem`), skips
   one that is no longer ready, keeps going when one throws and names the ones
@@ -1608,7 +1608,7 @@ before a change adds a word.
 
 - **Fix**: start fixing comments. The count is the comments a fix can start now
   (`Fix 3`), the same on the Board card, in Next steps, on the Branch bar and as
-  the **Fix comments** button (**Fix comments 3**). The drawer's own button, **Start fix for 3**, stays.
+  the **Fix comments** button (**Fix 3 comments**). The drawer's own button, **Start fix for 3**, stays.
 - **Reply**: answer a thread yourself. **Reply only** drops the code change and
   keeps the reply. **Publish reply** sends a decided reply that did not go out.
   **Resolve** ends a thread without a reply (a note says **Close**).

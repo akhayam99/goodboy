@@ -1,7 +1,7 @@
-import { ChevronRight, MoreHorizontal } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { Button, Checkbox, IconButton, Tooltip, cn, tintClasses } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { STATUS_LETTER, STATUS_TONE, STATUS_WORD, splitPath } from '../../lib/fileStatus';
 import type { ViewedState } from '../../lib/reviewedFiles';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
@@ -133,7 +133,7 @@ export const FileHeader = ({
         </Tooltip>
       )}
       <IconButton
-        icon={MoreHorizontal}
+        icon={CONCEPT_ICONS.more}
         label={`More for ${name}`}
         aria-haspopup="menu"
         onClick={menu.onContextMenu}
