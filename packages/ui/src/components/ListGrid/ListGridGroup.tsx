@@ -6,21 +6,29 @@ export type ListGridGroupProps = {
   readonly label: string;
   readonly count?: number;
   readonly action?: ReactNode;
+  readonly headingLevel?: 2 | 3;
   readonly children: ReactNode;
 };
 
-export const ListGridGroup = ({ label, count, action, children }: ListGridGroupProps) => {
+export const ListGridGroup = ({
+  label,
+  count,
+  action,
+  headingLevel = 3,
+  children,
+}: ListGridGroupProps) => {
   const headingId = useId();
+  const Heading = headingLevel === 2 ? 'h2' : 'h3';
   return (
     <li className="col-span-full grid grid-cols-subgrid">
       <div className="col-span-full grid h-7 grid-cols-subgrid items-center">
         <div className="col-start-2 col-end-[-3] flex min-w-0 items-center gap-2">
-          <h3
+          <Heading
             id={headingId}
             className={cn('min-w-0 flex-1 truncate text-row', TEXT_ROLE.secondary)}
           >
             {label}
-          </h3>
+          </Heading>
           {action}
         </div>
         <span

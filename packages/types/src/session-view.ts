@@ -4,7 +4,10 @@ export type SessionSortKey = 'needsYou' | 'updatedAt' | 'goal' | 'createdAt';
 
 export type SessionGroupKey = 'none' | 'pr' | 'stage' | 'project';
 
+export type SessionPageView = 'board' | 'list';
+
 export type SessionViewPrefs = Readonly<{
+  pageView: SessionPageView;
   sort: SessionSortKey;
   group: SessionGroupKey;
   isArchivedShown: boolean;

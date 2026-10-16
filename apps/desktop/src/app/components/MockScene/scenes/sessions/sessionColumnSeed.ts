@@ -302,6 +302,7 @@ export const seedSessionColumn = ({
     },
     sessionViewPrefs: {
       [WORKSPACE_ID]: {
+        pageView: 'board',
         sort: 'needsYou',
         group: 'none',
         isArchivedShown,

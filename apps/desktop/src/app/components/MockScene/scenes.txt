@@ -206,6 +206,14 @@ c06-agent-transcript
 c06-agent-working
 c06-agents-empty
 c06-agents-list
+c11-sessions-board
+c11-sessions-board-filtered
+c11-sessions-empty
+c11-sessions-hover-facts
+c11-sessions-list
+c11-sessions-list-filtered
+c11-sessions-list-grouped
+c11-sessions-repos-attention
 c13-terminal
 c13-terminal-empty
 c13-terminal-menu

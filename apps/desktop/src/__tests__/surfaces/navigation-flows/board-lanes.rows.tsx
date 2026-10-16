@@ -52,7 +52,7 @@ export const BOARD_LANES_ROWS: ReadonlyArray<Row> = [
       await clickButton(/^Sessions/);
     },
     lands: async () => {
-      await heading('Board');
+      await heading('Sessions');
       const archived = await lane('archived');
       expect(within(archived).getByRole('button', { name: ARCHIVED_GOAL })).toBeDefined();
       expect(await lane('done')).toBeDefined();
@@ -75,7 +75,7 @@ export const BOARD_LANES_ROWS: ReadonlyArray<Row> = [
       await clickButton(/^Sessions/);
     },
     lands: async () => {
-      await heading('Board');
+      await heading('Sessions');
       expect(await lane('archived')).toBeDefined();
       expect(await lane('done')).toBeDefined();
       expect(screen.queryByRole('heading', { name: 'New session' })).toBeNull();

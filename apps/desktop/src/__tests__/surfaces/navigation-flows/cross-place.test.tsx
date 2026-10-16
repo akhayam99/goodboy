@@ -507,7 +507,7 @@ describe('moving across every place keeps one frame', () => {
       const { sessionId } = await boot({ seed: 'pr' });
 
       await click(door('board'));
-      await heading('Board');
+      await heading('Sessions');
       expect(currentDoors()).toEqual(['board']);
 
       await click(historyButton('Back'));
@@ -685,7 +685,7 @@ describe('moving across every place keeps one frame', () => {
 
       await backToApp();
       await click(door('board'));
-      await heading('Board');
+      await heading('Sessions');
       await press('column.toggle');
       expect(door('board').getAttribute('aria-current')).toBe('page');
       await press('column.toggle');
@@ -865,7 +865,7 @@ describe('moving across every place keeps one frame', () => {
       seedShipAFix();
 
       await click(door('board'));
-      await heading('Board');
+      await heading('Sessions');
       expectPlace({ session: null, lens: 'board', studio: null, doors: ['board'] });
       expectColumn('column');
 

@@ -198,7 +198,7 @@ const H1_ALLOWLIST: ReadonlySet<string> = new Set([
 const TITLE_ROW_PAGES: ReadonlyArray<string> = [
   'features/session/components/AgentDetailPane/AgentHeader.tsx',
   'features/session/components/AgentTree/RunHeader/index.tsx',
-  'features/workspace/components/StageBoard/index.tsx',
+  'features/workspace/components/StageBoard/SessionsHeader.tsx',
 ];
 
 const UI_COMPONENTS = join(SRC, '..', '..', '..', 'packages/ui/src/components');

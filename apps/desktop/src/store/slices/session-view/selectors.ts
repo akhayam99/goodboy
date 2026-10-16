@@ -241,13 +241,13 @@ const useLastTurnBySession = (sessions: ReadonlyArray<Session>): Readonly<Record
     }),
   );
 
-type SessionListModel = {
+export type SessionListModel = {
   readonly groups: ReadonlyArray<GroupedSessions>;
   readonly stageBySession: Readonly<Record<SessionId, SessionStage>>;
   readonly hiddenByFilters: number;
 };
 
-const useSessionListModel = (
+export const useSessionListModel = (
   workspaceId: WorkspaceId | null,
   sessions: ReadonlyArray<Session>,
 ): SessionListModel => {

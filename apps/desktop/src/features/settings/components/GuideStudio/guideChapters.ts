@@ -234,7 +234,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Session card',
-        desc: 'Pull request, issue and project chips, step progress, agent count, age and cost, plus one suggested action.',
+        desc: 'The title, the project and one signal: an open question, a failed check, the pull request in its state color, or the agents at work. Rest the pointer on a card for its age, issues, agents and cost. One suggested action and the card menu sit at its right.',
+      },
+      {
+        term: 'Board and List',
+        desc: 'The Sessions page header switches between the lanes and one list with aligned columns: key, title, project, signal and last update. The filter beside it sorts, groups and narrows both, and a repo pill shows only while a repository needs you.',
       },
       {
         term: 'Done and archived',

@@ -480,6 +480,7 @@ export type {
   PersistedSessionViewPrefs,
   SessionAttentionReason,
   SessionGroupKey,
+  SessionPageView,
   SessionPrFetchState,
   SessionPrGroup,
   SessionSortKey,

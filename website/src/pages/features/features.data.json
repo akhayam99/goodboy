@@ -294,9 +294,16 @@
         },
         {
           "title": "Session card",
-          "text": "Read a task at a glance: pull request or status, agent count, project, cost and age. A round button opens a waiting action.",
+          "text": "Read a task at a glance: its title, its project and one signal, such as an open question or the pull request. The rest waits in the hover card.",
           "group": "The board",
           "also": "session cards",
+          "shown": true
+        },
+        {
+          "title": "List view",
+          "text": "See every session in one table with aligned columns: key, title, project, signal and last update.",
+          "group": "The board",
+          "also": "sessions list",
           "shown": true
         },
         {

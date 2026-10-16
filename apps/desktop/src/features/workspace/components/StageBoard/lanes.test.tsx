@@ -380,7 +380,7 @@ describe('StageBoard header', () => {
     inProgress: null,
   });
 
-  it('reads the repo summary as quiet text after the title, with the filter on the right', () => {
+  it('shows one repo pill after the title only when repos need attention', () => {
     const building = sessionOf('Add idempotency keys to the refund endpoint');
     const repos = ['payments-api', 'notify-relay', 'ledger-core'].map((name) =>
       aProject({ workspaceId: workspace.id, name, kind: 'repo', rootPath: `/tmp/${name}` }),
@@ -397,13 +397,32 @@ describe('StageBoard header', () => {
     });
     mountBoard([building]);
 
-    const title = screen.getByRole('heading', { level: 1, name: 'Board' });
+    const title = screen.getByRole('heading', { level: 1, name: 'Sessions' });
     const chip = screen.getByRole('button', { name: '3 repository git statuses' });
 
     expect(title.compareDocumentPosition(chip) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
     expect(title.parentElement?.contains(chip)).toBe(true);
-    expect(within(chip).getByText('3 repos')).toBeDefined();
-    expect(within(chip).getByText(/uncommitted$/)).toBeDefined();
+    expect(within(chip).getByText('2 repos need attention')).toBeDefined();
+  });
+
+  it('shows no repo pill while every repo is fine', () => {
+    const building = sessionOf('Add idempotency keys to the refund endpoint');
+    const repos = ['payments-api', 'ledger-core'].map((name) =>
+      aProject({ workspaceId: workspace.id, name, kind: 'repo', rootPath: `/tmp/${name}` }),
+    );
+    seed({ active: [building] });
+    useAppStore.setState({
+      projects: repos,
+      projectGitStatus: {
+        [repos[0]?.id ?? '']: statusOf({}),
+        [repos[1]?.id ?? '']: statusOf({}),
+      },
+      loadProjectGitStatus: async () => undefined,
+    });
+    mountBoard([building]);
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Sessions' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /repository git statuses/ })).toBeNull();
   });
 });
 

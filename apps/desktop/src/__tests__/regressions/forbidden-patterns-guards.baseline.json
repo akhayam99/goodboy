@@ -1155,7 +1155,6 @@
     "apps/desktop/src/features/workspace/components/SessionActivityBar/index.tsx": 1,
     "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionGroupHeader.tsx": 2,
     "apps/desktop/src/features/workspace/components/StageBoard/StageBoardCard/index.tsx": 1,
-    "apps/desktop/src/features/workspace/components/StageBoard/StageBoardCard/PrRequestSlot.tsx": 1,
     "apps/desktop/src/features/workspace/components/WorkspaceIdentityRow/index.tsx": 1,
     "apps/desktop/src/features/workspace/components/WorkspaceLinkForm/index.tsx": 1,
     "apps/desktop/src/features/workspace/components/WorkspaceSwitcher/DisconnectedWorkspaces.tsx": 1,
