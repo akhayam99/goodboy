@@ -148,8 +148,18 @@ row, **What Auto was told**, never as a user bubble; opening it shows the text
 as sent. A transcript written before this change has no origin on its events, so
 its delivery text still renders as a bubble: there is no text sniffing. A
 message the runtime
-cannot take, or one with files, is refused with "Auto didn't get your message"
-and the composer keeps its text. A turn that is not an operator message, a
+cannot take, or one with a file that is not an image, is refused with "Auto didn't get your
+message" and the composer keeps its text.
+
+**Images.** A message to Auto may carry images. `routeAutoUserTurn` writes them once to the
+session's scratch folder (`storeAutoImages`), so they have a full path, queues them on the `user`
+outbox row (`images` in the payload) and shows them on the bubble (`operator_text` with
+`attachments`). The delivery that reads the row hands them to Auto's turn (`storedAttachments` on
+`sendTurn`, listed by full path in the prompt, never written again), and every child Auto starts
+after that message gets them in its brief (`childImagesOf`: the images of the accepted user rows
+of the tree's generation up to the delegation); the child pane names them as chips. An image that
+cannot be written refuses the message with "Auto could not keep the images. Attach them again.":
+nothing is dropped silently. A turn that is not an operator message, a
 child, or an Auto agent in a window with no runtime (the main window owns it) is
 left to the plain turn.
 

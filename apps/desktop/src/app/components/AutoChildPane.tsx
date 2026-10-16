@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { Button, DrawerFrame, EmptyState } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, agentPlace, useAppStore } from '../../store';
+import { EMPTY_ARRAY, agentPlace, useAppStore, useTranscript } from '../../store';
+import { briefImagesOf } from '../../features/auto/child/briefImagesOf';
 import { sessionById } from '../../store/slices/sessions/sessionIndex';
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
 import type { TranscriptInsertion } from '../../shared/types/transcriptInsertion';
@@ -26,6 +27,8 @@ export const AutoChildPane = ({ sessionId, agentId, onClose }: Props) => {
   const isActive = useAppStore((state) => state.currentSessionId === sessionId);
   const navigate = useAppStore((state) => state.navigate);
   const views = useAutoTreeViews({ sessionId });
+  const events = useTranscript(agentId);
+  const images = useMemo(() => briefImagesOf({ events }), [events]);
   const agent = agents.find((candidate) => candidate.id === agentId) ?? null;
   const tree = useMemo(() => autoTreeOfAgent({ views, agentId }), [views, agentId]);
   const delegation = tree?.kind === 'child' ? tree.delegation : null;
@@ -41,7 +44,7 @@ export const AutoChildPane = ({ sessionId, agentId, onClose }: Props) => {
       {
         key: `auto-child-brief-${agentId}`,
         beforeMs: 0,
-        node: <AutoChildBrief card={card} />,
+        node: <AutoChildBrief card={card} images={images} />,
       },
       {
         key: `auto-child-end-${agentId}`,
@@ -51,7 +54,7 @@ export const AutoChildPane = ({ sessionId, agentId, onClose }: Props) => {
         ),
       },
     ];
-  }, [agent, agentId, card, delegation, sessionId]);
+  }, [agent, agentId, card, delegation, images, sessionId]);
 
   if (session === null || agent === null || card === null || tree === null) {
     return (

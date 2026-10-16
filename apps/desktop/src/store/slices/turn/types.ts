@@ -43,6 +43,7 @@ export type SendTurnInput = Readonly<{
   captureMode?: 'new' | 'revise';
   content: string;
   attachments?: ReadonlyArray<AttachmentInput>;
+  storedAttachments?: ReadonlyArray<MessageAttachment>;
   override?: TurnProviderOverride;
   force?: boolean;
   origin?: 'operator' | 'workflow' | 'mount-continuation' | 'delegation';

@@ -3,6 +3,7 @@ import {
   type Agent,
   type AgentId,
   type AutoTreeId,
+  type MessageAttachment,
   type ProviderRunId,
   type TurnEvent,
 } from '@goodboy/types';
@@ -29,7 +30,27 @@ export type C07Seed = Readonly<{
   state: AutoSceneState;
   place: C07Place;
   pane?: 'implementer' | 'tester';
+  hasImages?: boolean;
 }>;
+
+const SHOTS: ReadonlyArray<MessageAttachment> = [
+  {
+    id: 'mock-shot-wide',
+    kind: 'image',
+    fileName: 'banner-wide.png',
+    mimeType: 'image/png',
+    relPath: 'attachments/banner-wide.png',
+    dir: '/scratch/session-harborline',
+  },
+  {
+    id: 'mock-shot-narrow',
+    kind: 'image',
+    fileName: 'banner-narrow.png',
+    mimeType: 'image/png',
+    relPath: 'attachments/banner-narrow.png',
+    dir: '/scratch/session-harborline',
+  },
+];
 
 const clock = sceneClock({ anchor: '2026-10-13T12:21:00.000Z' });
 
@@ -41,14 +62,21 @@ type ChildTextParams = {
   readonly time: string;
   readonly brief: string;
   readonly answer: string | null;
+  readonly images?: ReadonlyArray<MessageAttachment>;
 };
 
-const childEventsOf = ({ time, brief, answer }: ChildTextParams): ReadonlyArray<TurnEvent> => {
+const childEventsOf = ({
+  time,
+  brief,
+  answer,
+  images = [],
+}: ChildTextParams): ReadonlyArray<TurnEvent> => {
   const at = clock.iso({ at: `2026-10-13T${time}.000Z` });
   const asked: TurnEvent = {
     kind: 'user_text',
     runId: RUN_CHILD,
     text: brief,
+    ...(images.length > 0 && { attachments: images }),
     at,
     deliveredBy: 'auto',
   };
@@ -74,6 +102,31 @@ const CHILD_EVENTS = {
 } as const;
 
 const CHILD_ID = { implementer: IMPLEMENTER_ID, tester: TESTER_ID } as const;
+
+const RUN_SHOTS = brandId<ProviderRunId>({ value: 'mock-auto-shots-run' });
+
+const SHOTS_EVENTS: ReadonlyArray<TurnEvent> = [
+  {
+    kind: 'operator_text',
+    runId: RUN_SHOTS,
+    text: 'The banner overlaps the totals on narrow screens, see both shots.',
+    attachments: SHOTS,
+    at: clock.iso({ at: '2026-10-13T12:15:00.000Z' }),
+  },
+  {
+    kind: 'assistant_text',
+    runId: RUN_SHOTS,
+    delta: 'I sent both screenshots to an Implementer.',
+    at: clock.iso({ at: '2026-10-13T12:15:20.000Z' }),
+  },
+];
+
+const IMPLEMENTER_WITH_SHOTS = childEventsOf({
+  time: '12:15:30',
+  brief: 'Fix the banner overlap on narrow screens.',
+  answer: null,
+  images: SHOTS,
+});
 
 const EARLIER_ROOT_ID = brandId<AgentId>({ value: 'mock-auto-root-earlier' });
 
@@ -131,7 +184,7 @@ const agentsOf = ({ place, agents }: AgentsParams): ReadonlyArray<Agent> => {
   return place === 'list' ? [...agents, EARLIER_ROOT] : agents;
 };
 
-export const seedC07 = ({ state, place, pane }: C07Seed): void => {
+export const seedC07 = ({ state, place, pane, hasImages = false }: C07Seed): void => {
   const { navigate, openExternalTaskLens } = useAppStore.getState();
   seedActivityRunScene();
   const scene = autoSceneOf({ state });
@@ -153,8 +206,8 @@ export const seedC07 = ({ state, place, pane }: C07Seed): void => {
           : { kind: 'idle', lastActivityAt: clock.iso({ at: CHILD_START }) },
     },
     transcripts: {
-      [AUTO_ROOT_ID]: scene.events,
-      [IMPLEMENTER_ID]: CHILD_EVENTS.implementer,
+      [AUTO_ROOT_ID]: hasImages ? [...scene.events, ...SHOTS_EVENTS] : scene.events,
+      [IMPLEMENTER_ID]: hasImages ? IMPLEMENTER_WITH_SHOTS : CHILD_EVENTS.implementer,
       [TESTER_ID]: CHILD_EVENTS.tester,
     },
     loadAgentTranscript: async () => undefined,

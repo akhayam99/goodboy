@@ -1,10 +1,11 @@
-import type { AgentId, SessionId } from '@goodboy/types';
+import type { AgentId, MessageAttachment, SessionId } from '@goodboy/types';
 
 type AutoUserTurnParams = Readonly<{
   agentId: AgentId;
   sessionId: SessionId;
   workspaceId: string;
   text: string;
+  images?: ReadonlyArray<MessageAttachment>;
 }>;
 
 type AutoUserTurnResult = 'queued' | 'lost';

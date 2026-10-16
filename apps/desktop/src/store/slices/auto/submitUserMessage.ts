@@ -1,6 +1,6 @@
 import { EMPTY_USER_FACTS, isResultsPayload, type UserFacts } from '@goodboy/core';
 import { getAutoTree, insertAutoOutboxStatement, listAutoOutbox, type AutoTree } from '@goodboy/db';
-import { brandId, type AutoOutboxId } from '@goodboy/types';
+import { brandId, type AutoOutboxId, type MessageAttachment } from '@goodboy/types';
 import { treeArtifacts } from './treeArtifacts';
 import type { AgentVerbContext } from './verbContext';
 
@@ -9,6 +9,7 @@ export type SubmitUserMessageParams = Readonly<{
   treeId: AutoTree['id'];
   text: string;
   facts?: Partial<Pick<UserFacts, 'focusArtifactId' | 'attachedArtifacts' | 'explicitChange'>>;
+  images?: ReadonlyArray<MessageAttachment>;
 }>;
 
 export type SubmitUserMessageOutcome =
@@ -54,6 +55,7 @@ export const submitUserMessage = async ({
   treeId,
   text,
   facts,
+  images = [],
 }: SubmitUserMessageParams): Promise<SubmitUserMessageOutcome> => {
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
     const tree = await getAutoTree({ db: ctx.db, treeId });
@@ -80,6 +82,7 @@ export const submitUserMessage = async ({
               kind: 'user',
               text,
               facts: await factsOf({ ctx, tree, given: facts }),
+              ...(images.length > 0 && { images }),
             },
             nowMs: ctx.now(),
           },

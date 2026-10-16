@@ -10,6 +10,7 @@ import type {
   AutoAttemptId,
   AutoDelegationId,
   AutoTreeId,
+  MessageAttachment,
   SessionId,
 } from '@goodboy/types';
 
@@ -84,6 +85,7 @@ export type StartAutoTurnParams = Readonly<{
   runId: string;
   deliveryId: string;
   text: string;
+  images?: ReadonlyArray<MessageAttachment>;
   onEnded: (ended: AutoTurnEnded) => void;
 }>;
 
@@ -137,6 +139,7 @@ export type StartChildTurnParams = Readonly<{
   sessionId: SessionId;
   role: AutoDelegationRole;
   text: string;
+  images?: ReadonlyArray<MessageAttachment>;
   mountTarget: ChildMountTarget;
   runId: string;
   captureMode: 'new' | 'revise';

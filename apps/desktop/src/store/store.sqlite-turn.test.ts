@@ -534,6 +534,35 @@ describe('sendTurn on sqlite: retry', () => {
     expect((await agentRows()).map((row) => row.id)).toEqual([agentId]);
   });
 
+  it('with stored images names them by their full path and writes none again', async () => {
+    storySpies.runTurn.mockImplementation(({ runId }: RunArgs) =>
+      streamOf({ events: [text({ runId, delta: 'I sent both screenshots on.' })] })(),
+    );
+
+    await useAppStore.getState().sendTurn({
+      sessionId,
+      agentId,
+      content: 'The banner overlaps the totals on narrow screens.',
+      storedAttachments: [
+        {
+          id: 'attachment-banner',
+          kind: 'image',
+          fileName: 'banner-wide.png',
+          mimeType: 'image/png',
+          relPath: 'attachments/banner-wide.png',
+          dir: '/scratch/session-harborline',
+        },
+      ],
+    });
+
+    expect(storySpies.runTurn.mock.calls[0]?.[0]?.prompt).toContain(
+      '/scratch/session-harborline/attachments/banner-wide.png',
+    );
+    expect(transcript().find((event) => event.kind === 'user_text')).toMatchObject({
+      attachments: [expect.objectContaining({ id: 'attachment-banner' })],
+    });
+  });
+
   it('sending again after a failure reuses the agent and leaves no run open', async () => {
     storySpies.runTurn
       .mockImplementationOnce(failingStream({ message: 'connection reset by peer' }))

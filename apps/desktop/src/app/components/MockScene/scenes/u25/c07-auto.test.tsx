@@ -206,6 +206,17 @@ describe('c07 Auto scenes', () => {
     registerAutoUserTurnPort({ port: null });
   });
 
+  it('c07-auto-images passes the screenshots on: the child brief names both', async () => {
+    mount({ id: 'c07-auto-images' });
+
+    const shots = await screen.findByRole('list', { name: 'Images Auto passed on' }, WAIT);
+    expect(within(shots).getByText('banner-wide.png')).toBeDefined();
+    expect(within(shots).getByText('banner-narrow.png')).toBeDefined();
+    expect(
+      screen.getByText('The banner overlaps the totals on narrow screens, see both shots.'),
+    ).toBeDefined();
+  });
+
   it('goes back to the session level with Auto agents selected, and drills in again', async () => {
     mount({ id: 'c07-auto-working' });
 

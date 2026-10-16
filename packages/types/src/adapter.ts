@@ -33,7 +33,13 @@ export type TurnEvent =
       deliveredBy?: 'auto';
       at: IsoDateTime;
     }
-  | { kind: 'operator_text'; runId: ProviderRunId; text: string; at: IsoDateTime }
+  | {
+      kind: 'operator_text';
+      runId: ProviderRunId;
+      text: string;
+      attachments?: ReadonlyArray<MessageAttachment>;
+      at: IsoDateTime;
+    }
   | { kind: 'assistant_text'; runId: ProviderRunId; delta: string; at: IsoDateTime }
   | {
       kind: 'tool_call_start';

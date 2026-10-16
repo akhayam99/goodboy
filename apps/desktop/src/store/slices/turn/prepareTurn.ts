@@ -41,6 +41,7 @@ export const prepareTurn = async ({ set, get, input }: Params) => {
     resolveCopyPath,
     content,
     attachments,
+    storedAttachments,
     origin,
     retry,
   } = input;
@@ -201,15 +202,19 @@ export const prepareTurn = async ({ set, get, input }: Params) => {
   let resolvedPrompt = slashResult.resolvedPrompt;
 
   const attachmentInputs = attachments ?? [];
-  const alreadyPersistedRefs = retry?.attachmentRefs ?? [];
+  const alreadyPersistedRefs = retry?.attachmentRefs ?? storedAttachments ?? [];
   const attachmentResult =
-    retry != null
+    retry != null || storedAttachments !== undefined
       ? {
           ok: true as const,
           attachmentRefs: alreadyPersistedRefs,
           resolvedPrompt:
             alreadyPersistedRefs.length > 0
-              ? `${resolvedPrompt}\n\n${buildAttachmentPromptBlock(alreadyPersistedRefs)}`
+              ? `${resolvedPrompt}\n\n${buildAttachmentPromptBlock(
+                  alreadyPersistedRefs.map((ref) =>
+                    ref.dir === undefined ? ref : { ...ref, relPath: `${ref.dir}/${ref.relPath}` },
+                  ),
+                )}`
               : resolvedPrompt,
         }
       : await persistAttachments(get, {

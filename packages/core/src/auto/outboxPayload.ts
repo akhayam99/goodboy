@@ -1,3 +1,4 @@
+import type { MessageAttachment } from '@goodboy/types';
 import type { DelegationResultV1 } from './result';
 import type { AutoDelegationRole } from './roles';
 
@@ -35,6 +36,7 @@ export type UserPayload = Readonly<{
   kind: 'user';
   text: string;
   facts: UserFacts;
+  images?: ReadonlyArray<MessageAttachment>;
 }>;
 
 export type RefusalPayload = Readonly<{

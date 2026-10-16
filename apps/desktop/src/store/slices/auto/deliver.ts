@@ -27,6 +27,7 @@ import { formatError } from '@goodboy/ui';
 import { buildDeliveryMessage } from './buildDeliveryMessage';
 import { chooseDeliveryRows } from './deliveryRows';
 import type { AutoTurnEnded, TurnStartOutcome } from './ports';
+import { userImagesOf } from './userImagesOf';
 import type { AgentVerbContext } from './verbContext';
 
 export type DeliverParams = Readonly<{
@@ -281,6 +282,7 @@ export const deliverNext = async ({
       runId,
       deliveryId: primary.id,
       text,
+      images: userImagesOf({ rows }),
       onEnded,
     })
     .catch((error: unknown): TurnStartOutcome => ({

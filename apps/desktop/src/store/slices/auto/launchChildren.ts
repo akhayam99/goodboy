@@ -11,6 +11,7 @@ import {
 } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
 import { resumeOf, snapshotJson, snapshotOf } from './attemptBaseline';
+import { childImagesOf } from './childImagesOf';
 import { delegationRoleOf } from './attemptEnvelope';
 import { failAttempt } from './failAttempt';
 import type { ChildMountTarget, ChildStartOutcome, ChildTurnEnded } from './ports';
@@ -154,6 +155,7 @@ const startTurn = async ({
       sessionId: tree.sessionId,
       role,
       text: kickoffTextOf({ delegation, attempt }),
+      images: await childImagesOf({ ctx, tree, delegation }),
       mountTarget: target,
       runId: ctx.ports.newId(),
       captureMode: delegation.reviseOf === null ? 'new' : 'revise',

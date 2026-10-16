@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getAutoOutbox, getAutoTree, listAutoOutbox, listAutoReservations } from '@goodboy/db';
-import { AUTO_TURN_CEILING_USD } from '@goodboy/core';
+import { AUTO_TURN_CEILING_USD, EMPTY_USER_FACTS } from '@goodboy/core';
 import { brandId, type AutoOutboxId, type SessionId } from '@goodboy/types';
 import { readAutoTreeViews } from '../auto-view/readAutoTreeViews';
 import { deliverNext } from './deliver';
@@ -39,6 +39,44 @@ describe('the budget line of a delivery', () => {
     expect(text).toContain(
       `Reserved ${budget?.reservedUsd.toFixed(2)} USD, of which ${AUTO_TURN_CEILING_USD.toFixed(2)} USD for this answer.`,
     );
+  });
+});
+
+describe('the images of a user message', () => {
+  it('reach Auto with the delivery of the message that carried them', async () => {
+    const state = await makeDeliveryWorld();
+    const banner = {
+      id: 'attachment-banner',
+      kind: 'image',
+      fileName: 'banner-wide.png',
+      mimeType: 'image/png',
+      relPath: 'attachments/banner-wide.png',
+      dir: '/scratch/session-harborline',
+    };
+    await addOutboxRow({
+      world: state.world,
+      id: 'outbox-user-images',
+      kind: 'user',
+      payload: {
+        kind: 'user',
+        text: 'The banner overlaps the totals on narrow screens, see both shots.',
+        facts: EMPTY_USER_FACTS,
+        images: [banner],
+      },
+    });
+
+    await deliver(state);
+
+    expect(state.ports.autoTurns[0]?.images).toEqual([banner]);
+  });
+
+  it('send nothing extra with a message that had none', async () => {
+    const state = await makeDeliveryWorld();
+    await addUserRow({ world: state.world, id: 'outbox-user-1', text: 'hello' });
+
+    await deliver(state);
+
+    expect(state.ports.autoTurns[0]?.images).toEqual([]);
   });
 });
 

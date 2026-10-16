@@ -186,6 +186,7 @@ c07-auto-child
 c07-auto-child-done
 c07-auto-folded
 c07-auto-idle
+c07-auto-images
 c07-auto-list
 c07-auto-plan
 c07-auto-project
