@@ -59,6 +59,21 @@ describe('m233 agent mount', () => {
     expect(reloaded?.mountId).toBe(MOUNT);
   });
 
+  it('stores no mount for a worktree that does not exist and still inserts the agent', async () => {
+    const db = await seed();
+    const agent = await insertAgent(db, {
+      sessionId: SESSION,
+      ordinal: 1,
+      name: 'CI fix',
+      status: 'pending',
+      kind: 'ci-fixer',
+      mountId: idOf<MountId>({ value: 'mount-unknown' }),
+    });
+    const reloaded = await getAgentById(db, agent.id);
+    expect(reloaded).not.toBeNull();
+    expect(reloaded?.mountId).toBeUndefined();
+  });
+
   it('remove the worktree, the agent keeps the R6 chain', async () => {
     const db = await seed();
     const agent = await insertAgent(db, {

@@ -87,7 +87,8 @@ const AGENT_INSERT_SQL = `INSERT INTO agents
     effort, model_override, provider_override,
     parent_agent_id, workflow_run_id, source_thread_id, source_thread_ids, source_comment_url, source_kind,
     domains_json, routing_lock, routing_decision, task_profile, mount_id)
- VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+    (SELECT id FROM session_worktrees WHERE id = ?))`;
 
 const TERMINAL_STATUSES: ReadonlyArray<AgentStatus> = ['completed', 'failed', 'blocked', 'skipped'];
 const STARTED_LIST = `'starting', 'running', 'completed'`;
