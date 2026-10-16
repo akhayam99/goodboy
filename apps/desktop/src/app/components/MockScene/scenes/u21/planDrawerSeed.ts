@@ -118,7 +118,7 @@ const DRAFTS: ReadonlyArray<ArtifactComment> = [
   }),
   draft({
     id: 'mock-plan-drawer-comment-2',
-    body: 'Finance rounds half up. Check with Priya Nair.',
+    body: 'Finance rounds half up. Check with finance.',
     status: 'draft',
   }),
   draft({

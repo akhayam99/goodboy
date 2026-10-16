@@ -467,12 +467,7 @@ describe('ArtifactStudio shell', () => {
       sessionId: 'sess-1',
       payload: { artifactId: 'artifact-report', tab: 'details' },
     });
-    fireEvent.click(screen.getByTestId('artifact-built-from-link'));
-    expect(state.openDrawer).toHaveBeenCalledWith({
-      kind: 'artifact',
-      sessionId: 'sess-1',
-      payload: { artifactId: 'artifact-report', tab: 'details' },
-    });
+    expect(screen.queryByTestId('artifact-built-from-link')).toBeNull();
   });
 
   it('goes back to the list on Escape, but leaves Escape to the drawer while it is open', async () => {
@@ -606,8 +601,8 @@ describe('ArtifactStudio plan parts', () => {
     };
     focus('plan-1');
     renderStudio();
-    expect(screen.getByTestId('artifact-state-chip').textContent).toContain('Running');
-    expect(screen.getByTestId('artifact-state-detail').textContent).toBe('part 2 of 2');
+    expect(screen.queryByTestId('artifact-state-chip')).toBeNull();
+    expect(screen.getByTestId('artifact-state-word').textContent).toContain('Running');
     expect(screen.queryByTestId('artifact-action-runAgain')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /Part 1, Add a dry run/ }));
     expect(state.navigate).toHaveBeenCalledWith({

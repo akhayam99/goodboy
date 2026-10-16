@@ -94,13 +94,13 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('plan document drawer header', () => {
-  it('shows the title, then a second row with the state, the version and the plan', () => {
+  it('shows the title, then a second row with the version and the plan, no state chip', () => {
     seedAndRender();
 
     const frame = screen.getByRole('region', { name: 'Retry-safe webhook credits' });
     const toolbar = frame.querySelector('[data-drawer-toolbar]');
     expect(toolbar?.textContent).toContain('v2');
-    expect(within(frame).getByTestId('artifact-state-chip').textContent).toContain('Ready to run');
+    expect(within(frame).queryByTestId('artifact-state-chip')).toBeNull();
     expect(toolbar?.contains(screen.getByRole('button', { name: 'Close' }))).toBe(false);
     expect(screen.getByTestId('plan-drawer-body').textContent).toContain(
       'Retried webhooks must never post a second credit.',
@@ -280,10 +280,7 @@ describe('a plan whose run was approved and has not chosen its next step', () =>
     expect(screen.queryByTestId('plan-primary')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Run plan' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
-    const chip = within(
-      screen.getByRole('region', { name: 'Retry-safe webhook credits' }),
-    ).getByTestId('artifact-state-chip');
-    expect(chip.textContent).toContain('Approved');
+    expect(screen.queryByTestId('artifact-state-chip')).toBeNull();
     expect(screen.getByTestId('plan-drawer-reason').textContent).toContain(
       'The run is choosing the next step',
     );
@@ -293,7 +290,9 @@ describe('a plan whose run was approved and has not chosen its next step', () =>
     seedAndRender({ run: 'took' });
 
     expect(screen.queryByTestId('plan-primary')).toBeNull();
-    expect(screen.getByTestId('artifact-state-chip').textContent).toContain('Approved');
+    expect(screen.getByTestId('plan-drawer-reason').textContent).toContain(
+      'The run is choosing the next step',
+    );
   });
 });
 
@@ -479,14 +478,13 @@ describe('approving from the drawer', () => {
 });
 
 describe('comment and re-plan', () => {
-  it('says revising once in the chip and once in the reason, with no third line in the body', () => {
+  it('says revising once, in the reason, with no chip and no line in the body', () => {
     seedAndRender({ run: 'held', turn: running('run-2') });
 
     expect(screen.getByTestId('plan-drawer-body').getAttribute('data-revising')).toBe('true');
     expect(screen.queryByTestId('plan-drawer-state-line')).toBeNull();
-    expect(screen.getAllByText(/Revising to v3/)).toHaveLength(1);
     expect(screen.getAllByText(REVISING_REASON)).toHaveLength(1);
-    expect(screen.getByTestId('artifact-state-chip').textContent).toContain('Revising to v3');
+    expect(screen.queryByTestId('artifact-state-chip')).toBeNull();
   });
 
   it('keeps the Writing a new version line for a plan that already ran', () => {
@@ -566,12 +564,11 @@ describe('comment and re-plan', () => {
     expect(body.firstElementChild).toBe(question);
     const send = screen.getByRole('button', { name: 'Send to planner' });
     expect(send.hasAttribute('disabled')).toBe(true);
-    expect(screen.getByTestId('plan-comment-note').textContent).toBe(
-      'The planner asked a question. Answer it first.',
-    );
+    expect(send.getAttribute('title')).toBe('The planner asked a question. Answer it first.');
+    expect(screen.queryByTestId('plan-comment-note')).toBeNull();
   });
 
-  it('says waiting for your answer, never revising, while the planner asks', async () => {
+  it('leaves the wait to the question card, never revising, while the planner asks', async () => {
     seedPlanDrawer({
       run: 'held',
       questions: [aPlannerQuestion()],
@@ -580,15 +577,14 @@ describe('comment and re-plan', () => {
     renderDrawer();
 
     await screen.findByTestId('plan-drawer-question');
-    const chip = screen.getByTestId('artifact-state-chip');
-    expect(chip.textContent).toContain('Needs you');
-    expect(screen.getByTestId('artifact-state-detail').textContent).toBe('waiting for your answer');
+    expect(screen.queryByTestId('artifact-state-chip')).toBeNull();
+    expect(screen.queryByText('waiting for your answer')).toBeNull();
     expect(screen.queryByText(/Revising/)).toBeNull();
     expect(screen.queryByTestId('plan-drawer-state-line')).toBeNull();
     expect(screen.getByTestId('plan-drawer-body').getAttribute('data-revising')).toBe('false');
   });
 
-  it('holds Approve off with the question reason beside it while the planner asks', async () => {
+  it('holds Approve off with the question reason in its tooltip while the planner asks', async () => {
     seedPlanDrawer({
       run: 'held',
       questions: [aPlannerQuestion()],
@@ -600,9 +596,7 @@ describe('comment and re-plan', () => {
     const primary = screen.getByTestId('plan-primary');
     expect(primary.hasAttribute('disabled')).toBe(true);
     expect(primary.getAttribute('title')).toBe('The planner asked a question. Answer it first.');
-    expect(screen.getByTestId('plan-drawer-reason').textContent).toBe(
-      'The planner asked a question. Answer it first.',
-    );
+    expect(screen.queryByTestId('plan-drawer-reason')).toBeNull();
   });
 
   it('lets Approve through when the open question belongs to another agent', async () => {

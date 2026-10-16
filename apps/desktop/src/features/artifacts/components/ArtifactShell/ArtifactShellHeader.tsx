@@ -14,12 +14,20 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 type Props = {
   readonly kind: ArtifactKind;
   readonly title: string;
+  readonly isTitleInDocument?: boolean;
   readonly chip: ReactNode;
   readonly actions: ReactNode;
   readonly meta: ReactNode;
 };
 
-export const ArtifactShellHeader = ({ kind, title, chip, actions, meta }: Props) => {
+export const ArtifactShellHeader = ({
+  kind,
+  title,
+  isTitleInDocument = false,
+  chip,
+  actions,
+  meta,
+}: Props) => {
   const targetRef = useRef<ArtifactActionTarget | null>(null);
   const [viewingId, setViewingId] = useState<string | null>(null);
   const register = useCallback((target: ArtifactActionTarget | null) => {
@@ -44,14 +52,21 @@ export const ArtifactShellHeader = ({ kind, title, chip, actions, meta }: Props)
       >
         <div className="flex min-h-8 min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           <ArtifactKindGlyph kind={kind} size={ICON_SIZE.control} />
-          <Tooltip content={title}>
-            <h1
-              data-testid="artifact-title"
-              className="min-w-0 flex-1 truncate text-title text-foreground"
-            >
+          {isTitleInDocument ? (
+            <h1 data-testid="artifact-title" className="sr-only">
               {title}
             </h1>
-          </Tooltip>
+          ) : (
+            <Tooltip content={title}>
+              <h1
+                data-testid="artifact-title"
+                className="min-w-0 flex-1 truncate text-title text-foreground"
+              >
+                {title}
+              </h1>
+            </Tooltip>
+          )}
+          {isTitleInDocument ? <span className="flex-1" /> : null}
           {chip}
           {actions}
         </div>

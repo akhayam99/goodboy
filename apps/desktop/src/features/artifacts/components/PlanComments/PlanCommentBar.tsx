@@ -4,6 +4,7 @@ import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptI
 import type { PlanCommentGuard } from '../../../plans/planComments/planCommentGuard';
 import { PlanApproveConfirm } from '../../../plans/planSurfaces';
 import type { PlanPrimaryAction } from '../../../plans/usePlanPrimaryAction';
+import { PLANNER_QUESTION_REASON } from '../../../plans/plannerQuestions';
 
 type PlanBarApprove = Pick<PlanPrimaryAction, 'press' | 'isBusy' | 'confirm'>;
 
@@ -19,7 +20,7 @@ type Props = {
 const CommentIcon = CONCEPT_ICONS.comments;
 
 export const PlanCommentBar = ({ count, guard, isSending, error, onSend, approve }: Props) => {
-  const note = error ?? guard.reason;
+  const note = error ?? (guard.reason === PLANNER_QUESTION_REASON ? null : guard.reason);
   const hasDrafts = count > 0;
 
   return (

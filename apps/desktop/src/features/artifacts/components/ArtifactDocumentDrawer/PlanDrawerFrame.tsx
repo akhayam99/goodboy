@@ -106,7 +106,6 @@ export const PlanDrawerFrame = ({ sessionId, model, revision, onClose }: Props) 
     ) : (
       <PlanDrawerToolbar
         version={pastVersion ?? version}
-        state={state}
         isPast={pastVersion !== null}
         action={action}
         editor={editor}
