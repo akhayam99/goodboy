@@ -42,7 +42,7 @@ Check exactly what an agent was told. The top of each chat shows the message and
 
 ### Agent transcript
 
-Follow one agent's work in order. The plan, report and wireframe it writes show as chips under its text, file edits group into **Operations** rows, and questions and permission cards appear in the flow where you answer them.
+Follow one agent's work in order. The plan, report and wireframe it writes show as chips under its text, file edits group into **Operations** rows, and questions and permission cards appear in the flow where you answer them. A message you type shows once, as you wrote it. Text Goodboy writes for an agent (an Auto delivery, a delegated brief) never shows as yours: it sits in one collapsed row, **What Auto was told**, that you can open.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-transcript-dark.webp">

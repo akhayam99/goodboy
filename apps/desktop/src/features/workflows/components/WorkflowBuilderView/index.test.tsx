@@ -1243,9 +1243,10 @@ describe('WorkflowBuilderView (suggested title)', () => {
 
 type KickoffHarnessProps = {
   readonly start: BuilderKickoff['start'];
+  readonly startError?: string | null;
 };
 
-const KickoffHarness = ({ start }: KickoffHarnessProps) => {
+const KickoffHarness = ({ start, startError = null }: KickoffHarnessProps) => {
   const [goal, setGoal] = useState('');
   return (
     <WorkflowBuilderView
@@ -1254,6 +1255,7 @@ const KickoffHarness = ({ start }: KickoffHarnessProps) => {
         goal,
         goalPlaceholder: 'What should get done?',
         onGoalChange: setGoal,
+        startError,
         start,
       }}
     />
@@ -1271,6 +1273,16 @@ const kickoffGoal = () =>
   screen.getByPlaceholderText('What should get done?') as HTMLTextAreaElement;
 
 describe('WorkflowBuilderView (kickoff, before the session exists)', () => {
+  it('shows the start error the store kept, and Start stays pressable to retry', () => {
+    storeState.providers = [{ id: 'anthropic', connection: 'connected' }];
+    const start = kickoffStart();
+    render(<KickoffHarness start={start} startError="workflow not found: wf_builder_missing" />);
+    fireEvent.change(kickoffGoal(), { target: { value: 'Speed up the ledger export' } });
+
+    expect(screen.getByRole('alert').textContent).toContain('workflow not found');
+    expect(startBtn().disabled).toBe(false);
+  });
+
   it('shows the orchestrate lane, guidance, Can use and the launch controls inline', () => {
     storeState.providers = [{ id: 'anthropic', connection: 'connected' }];
     render(<KickoffHarness start={kickoffStart()} />);

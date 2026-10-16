@@ -510,7 +510,10 @@ export const ChatView = ({
         <ScrollFade
           className="flex-1"
           fadeSize="h-12"
-          viewportClassName={cn('pb-4', topInset === 'tight' ? 'pt-2' : 'pt-6')}
+          viewportClassName={cn(
+            'pb-4 [overflow-anchor:auto]',
+            topInset === 'tight' ? 'pt-2' : 'pt-6',
+          )}
         >
           <PageColumn className="h-full">
             {transcriptStale || (loading.transcript && deferredItems.length === 0) ? (

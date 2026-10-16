@@ -19,6 +19,7 @@ export const WorkflowStart = ({ workspaceId }: Props) => {
   const patchSessionDraft = useAppStore((state) => state.patchSessionDraft);
   const startSessionFromDraft = useStartFromDraft();
   const goal = useAppStore((state) => selectSessionDraft({ state, workspaceId }).workflowGoal);
+  const startError = useAppStore((state) => selectSessionDraft({ state, workspaceId }).startError);
 
   useEffect(() => {
     void loadPhaseTemplates(workspaceId).catch(() => undefined);
@@ -28,6 +29,7 @@ export const WorkflowStart = ({ workspaceId }: Props) => {
     workspaceId,
     goal,
     goalPlaceholder: KICKOFF_GOAL_PLACEHOLDER,
+    startError,
     onGoalChange: (next) => patchSessionDraft({ workspaceId, patch: { workflowGoal: next } }),
     start: async (run: (session: Session) => Promise<void>) => {
       await startSessionFromDraft({

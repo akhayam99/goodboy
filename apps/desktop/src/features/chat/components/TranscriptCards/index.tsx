@@ -18,6 +18,7 @@ import { PermissionDecisionCard } from '../../../../features/permissions/compone
 import { ToolCallCard } from '../ToolCallCard';
 import { TurnFooter } from '../TurnFooter';
 import { AssistantText } from './AssistantText';
+import { AutoDeliveryRow } from './AutoDeliveryRow';
 import { DecisionNoteRow } from './DecisionNoteRow';
 import { StoppedProcessesLine } from './StoppedProcessesLine';
 import { TranscriptErrorRow } from './TranscriptErrorRow';
@@ -70,6 +71,8 @@ const TranscriptCardImpl = ({
           agentId={agentId}
         />
       );
+    case 'auto_delivery':
+      return <AutoDeliveryRow text={item.text} />;
     case 'handoff':
       return (
         <HandoffBlock item={item} sessionId={sessionId} agentId={agentId} workingDir={workingDir} />

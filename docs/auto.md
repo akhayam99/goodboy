@@ -136,7 +136,18 @@ A message typed in the composer of an Auto agent is not a plain turn either. The
 store's `sendTurn` hands an operator message for the root of an Auto tree to the
 runtime (`routeAutoUserTurn`), which creates the tree if it is missing and
 queues the text as a `user` outbox row; Auto reads it with the next delivery.
-Approving a plan is the same path ("Approved plan v1."). A message the runtime
+Approving a plan is the same path ("Approved plan v1."). Once the runtime has
+taken a message, `routeAutoUserTurn` writes the user's own words to the
+transcript as an `operator_text` event, so the bubble appears once at queue
+time and never depends on the delivery. The delivery text Auto builds for its
+own agent (the ledger, the budget line, the results, "MESSAGES FROM THE USER")
+is stored with `deliveredBy: 'auto'` on its `user_text` event, set in
+`startTurnRun` when the turn's origin is `delegation` (the root's deliveries
+and a child's first brief). The transcript draws such an event as one collapsed
+row, **What Auto was told**, never as a user bubble; opening it shows the text
+as sent. A transcript written before this change has no origin on its events, so
+its delivery text still renders as a bubble: there is no text sniffing. A
+message the runtime
 cannot take, or one with files, is refused with "Auto didn't get your message"
 and the composer keeps its text. A turn that is not an operator message, a
 child, or an Auto agent in a window with no runtime (the main window owns it) is

@@ -73,6 +73,7 @@ function applyTurnEvent(state: TurnState, turn: TurnEvent): TurnState {
     case 'permission_request':
       return { kind: 'blocked', runId: turn.runId, blockedAt: turn.at };
     case 'user_text':
+    case 'operator_text':
     case 'assistant_text':
     case 'tool_call_start':
     case 'tool_call_end':
