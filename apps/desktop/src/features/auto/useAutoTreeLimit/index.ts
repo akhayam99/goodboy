@@ -38,7 +38,7 @@ export const useAutoTreeLimit = ({ workspaceId, sessionId = null }: Params): Aut
       return;
     }
     loadSetting(key).catch((error: unknown) => {
-      void reportError({ title: "Couldn't read the Auto spend cap", error });
+      void reportError({ title: "Couldn't read the Auto limit", error });
     });
   }, [key, loadSetting, reportError]);
 

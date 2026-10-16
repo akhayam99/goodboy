@@ -447,7 +447,7 @@ describe('ArtifactCreationPane', () => {
     state.sessionPhaseRuns = { [SESSION_ID]: [finishedAgent({ status: 'running' })] };
     renderPane();
     expect(screen.getByTestId('artifact-generate').hasAttribute('disabled')).toBe(true);
-    screen.getByText('The run is still going. Finish it first');
+    screen.getByText('The run is still going. Finish it first.');
   });
 
   it('disables generate when no provider is usable', () => {

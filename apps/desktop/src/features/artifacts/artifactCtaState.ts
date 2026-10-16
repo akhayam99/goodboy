@@ -20,7 +20,7 @@ export type ArtifactCtaParams = Readonly<{
 
 export const ARTIFACT_CTA_BLOCK_COPY: Record<ArtifactCtaBlockReason, string> = {
   'no-evidence': 'Nothing has run yet, so there is nothing to work from',
-  'run-active': 'The run is still going. Finish it first',
+  'run-active': 'The run is still going. Finish it first.',
   'session-busy': 'The session is busy. Wait for it to settle',
 };
 

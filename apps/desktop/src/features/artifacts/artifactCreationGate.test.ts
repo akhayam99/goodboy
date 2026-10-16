@@ -69,7 +69,7 @@ describe('artifactCreationGate', () => {
         hasUsableProvider: false,
       }),
     );
-    expect(gate.reason).toBe('The run is still going. Finish it first');
+    expect(gate.reason).toBe('The run is still going. Finish it first.');
   });
 
   it('blocks a restored brief that is over the bound', () => {
