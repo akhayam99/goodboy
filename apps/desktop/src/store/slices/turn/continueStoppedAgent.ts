@@ -1,4 +1,5 @@
 import type { AgentId, SessionId } from '@goodboy/types';
+import { autoRetryRouteOf } from './autoRetryRouteOf';
 import { resumeAfterRestart } from './resumeAfterRestart';
 import type { GetFn } from './types';
 
@@ -11,9 +12,22 @@ type Params = Readonly<{
 
 export const continueStoppedAgent = (get: GetFn) => {
   return async ({ sessionId, agentId }: Params): Promise<void> => {
-    const agent = (get().sessionPhaseRuns[sessionId] ?? []).find(
-      (candidate) => candidate.id === agentId,
-    );
+    const runs = get().sessionPhaseRuns[sessionId] ?? [];
+    const autoRoute = autoRetryRouteOf({
+      views: get().autoTreeViews[sessionId] ?? [],
+      runs,
+      agentId,
+    });
+    if (autoRoute !== null) {
+      await get().sendTurn({
+        sessionId,
+        agentId: autoRoute.rootAgentId,
+        content: autoRoute.message,
+        origin: 'operator',
+      });
+      return;
+    }
+    const agent = runs.find((candidate) => candidate.id === agentId);
     if (agent?.stoppedBy === 'app') {
       const result = await resumeAfterRestart({ get, sessionId, agentId, reason: 'restart' });
       if (result !== 'unresumable') {

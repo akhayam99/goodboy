@@ -51,7 +51,7 @@ export const AutoWorkRailRow = ({ row, isSelected, onOpen }: Props) => (
       onClick={() => onOpen(row)}
       aria-label={`Show ${row.label}`}
       className={cn(
-        'flex size-full min-w-0 flex-col gap-0.5 rounded-md pr-3 text-left motion-safe:transition-colors hover:bg-hover',
+        'flex size-full min-w-0 flex-col rounded-md pr-3 text-left motion-safe:transition-colors hover:bg-hover',
       )}
       style={{ paddingLeft: row.kind === 'child' ? CHILD_INDENT : ROOT_INDENT }}
     >
@@ -60,7 +60,7 @@ export const AutoWorkRailRow = ({ row, isSelected, onOpen }: Props) => (
         <span className="min-w-0 flex-1 truncate text-label text-foreground">{row.label}</span>
         <span className={cn('shrink-0 text-label', WORD_TONE_CLASS[row.tone])}>{row.word}</span>
       </span>
-      <span className="flex min-w-0 items-center gap-2">
+      <span className="flex h-5 min-w-0 items-center gap-2">
         <span className="min-w-0 flex-1">
           <RoutingLabel provider={row.provider} model={row.model} muted />
         </span>

@@ -41,7 +41,7 @@ export const PrRequestSlot = ({ linkedRequest, isGitlab, prFetchState, onOpen }:
             state={linkedRequest.state}
             variant="icon"
             number={linkedRequest.number}
-            iconSize={14}
+            iconSize={ICON_SIZE.control}
             title={linkedRequest.title}
             className={linkedRequest.state === 'closed' ? 'text-muted-foreground' : undefined}
           />

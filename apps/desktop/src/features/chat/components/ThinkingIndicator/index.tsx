@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { WorkNode } from '@goodboy/ui';
+import type { IsoDateTime } from '@goodboy/types';
 import type { ThinkingContext } from '../../utils/thinking-context';
 import { useElapsedMs } from '../../hooks/useElapsedMs';
 import { formatDuration } from '../../../../shared/utils/time/formatDuration';
 
 type Props = {
   readonly context: ThinkingContext;
+  readonly startedAt?: IsoDateTime | null;
 };
 
 const PHRASES: Record<ThinkingContext, readonly string[]> = {
@@ -24,10 +26,10 @@ const prefersReducedMotion = () =>
   typeof window.matchMedia === 'function' &&
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-export const ThinkingIndicator = ({ context }: Props) => {
+export const ThinkingIndicator = ({ context, startedAt = null }: Props) => {
   const [reduced] = useState(prefersReducedMotion);
   const [tick, setTick] = useState(0);
-  const elapsedMs = useElapsedMs({ running: true });
+  const elapsedMs = useElapsedMs({ running: true, startedAt });
 
   useEffect(() => {
     if (reduced) {

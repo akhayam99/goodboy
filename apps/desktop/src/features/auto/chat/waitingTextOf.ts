@@ -8,8 +8,13 @@ type Params = {
   readonly view: AutoTreeView;
 };
 
+const DECIDING_TEXT = 'Deciding what to do next';
+
 export const waitingTextOf = ({ view }: Params): string | null => {
   const phase = view.tree.phase;
+  if (phase === 'deciding') {
+    return DECIDING_TEXT;
+  }
   if (phase !== 'delegating' && phase !== 'waiting' && phase !== 'merging') {
     return null;
   }

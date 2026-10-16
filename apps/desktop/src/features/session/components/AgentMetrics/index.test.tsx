@@ -186,7 +186,7 @@ describe('AgentMetrics', () => {
     );
     expect(screen.getByText('Opus 4.5')).toBeDefined();
     expect(screen.queryByText('Model unknown')).toBeNull();
-    expect(screen.getByTestId('agent-metrics-inline').className).toContain('opacity-60');
+    expect(screen.getByTestId('agent-metrics-inline').className).not.toContain('opacity');
   });
 
   it('shows what actually ran and names the plan it replaced', () => {

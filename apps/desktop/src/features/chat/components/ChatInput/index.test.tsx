@@ -53,6 +53,7 @@ const {
     selectedAgentId: Record<string, string>;
     agentTurnState: Record<string, never>;
     agentWriterWait: Record<string, never>;
+    autoTreeViews: Record<string, never>;
     agentModelOverride: Record<string, string>;
     agentProviderOverride: Record<string, string>;
     agentEffortOverride: Record<string, string>;
@@ -113,6 +114,7 @@ const {
     selectedAgentId: { 'session-1': 'agent-1' },
     agentTurnState: {},
     agentWriterWait: {},
+    autoTreeViews: {},
     agentModelOverride: {},
     agentProviderOverride: {},
     agentEffortOverride: {},

@@ -52,7 +52,10 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
     [view, agents, openAgent, openArtifact],
   );
 
-  const waitingText = view === null ? null : waitingTextOf({ view });
+  const isRootTurnRunning = useAppStore(
+    (state) => state.agentTurnState[agent.id]?.kind === 'running',
+  );
+  const waitingText = view === null || isRootTurnRunning ? null : waitingTextOf({ view });
   const composerLead =
     view === null || waitingText === null ? undefined : (
       <AutoWaitingStrip

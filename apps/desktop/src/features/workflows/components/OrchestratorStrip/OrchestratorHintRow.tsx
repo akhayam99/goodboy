@@ -112,7 +112,7 @@ export const OrchestratorHintRow = ({ hint, status, attachments, onRemove }: Pro
             : 'Remove it from what the orchestrator reads'
         }
         variant="ghost"
-        iconSize={11}
+        iconSize={ICON_SIZE.row}
         disabled={isReading}
         onClick={onRemove}
       />

@@ -139,7 +139,8 @@ describe('Chip', () => {
 
     const chip = screen.getByRole('button', { name: 'Open' });
     expect(chip.className).toContain('focus-visible:ring-2');
-    expect(chip.className).toContain('hover:bg-hover');
+    expect(chip.className).toContain('hover:ring-border');
+    expect(chip.className).not.toContain('hover:bg-');
     expect(chip.className).not.toContain('hover:opacity-80');
   });
 });

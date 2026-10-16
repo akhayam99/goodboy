@@ -29,6 +29,8 @@ import { PromptField } from '../../../../shared/components/PromptField';
 import { PromptDropOverlay } from '../../../../shared/components/PromptField/PromptDropOverlay';
 import { ComposerToolbar } from './parts/ComposerToolbar';
 import { ComposerTray } from './parts/ComposerTray';
+import { autoTreeOfAgent } from '../../../auto/autoTreeOfAgent';
+import { useAutoTreeViews } from '../../../auto/useAutoTreeViews';
 
 type Props = {
   readonly session: Session;
@@ -47,6 +49,10 @@ export const ChatInput = ({
   const isWaitingForWriter = useAppStore(
     (s) => selectedAgentId !== null && s.agentWriterWait[selectedAgentId] !== undefined,
   );
+  const autoViews = useAutoTreeViews({ sessionId: session.id });
+  const isAutoTreeMember =
+    selectedAgentId !== null &&
+    autoTreeOfAgent({ views: autoViews, agentId: selectedAgentId }) !== null;
 
   const { showToast } = useToast();
 
@@ -264,6 +270,7 @@ export const ChatInput = ({
               session={session}
               routing={routing}
               isBlocked={isBlocked}
+              hasPermissionPicker={!isAutoTreeMember}
               attachmentCount={attachments.length}
               fileInputRef={fileInputRef}
               onFileInputChange={onFileInputChange}

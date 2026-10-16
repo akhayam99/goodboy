@@ -1,4 +1,4 @@
-import { Chip, Tooltip, cn } from '@goodboy/ui';
+import { Chip, ICON_SIZE, Tooltip, cn } from '@goodboy/ui';
 import { agentKindPalette, type AgentKind } from '../../../features/session/agent-kind';
 
 type AgentKindChipDensity = 'label' | 'glyph';
@@ -12,8 +12,6 @@ type Props = {
   readonly isDecorative?: boolean;
   readonly className?: string;
 };
-
-const KIND_ICON_SIZE = 10;
 
 export const AgentKindChip = ({
   kind,
@@ -41,7 +39,7 @@ export const AgentKindChip = ({
           className,
         )}
       >
-        <Icon size={KIND_ICON_SIZE} aria-hidden />
+        <Icon size={ICON_SIZE.mark} aria-hidden />
       </span>
     );
     if (isDecorative) {
@@ -58,7 +56,7 @@ export const AgentKindChip = ({
     <Chip
       tone="neutral"
       kind="state"
-      icon={<Icon size={KIND_ICON_SIZE} aria-hidden className="shrink-0" />}
+      icon={<Icon size={ICON_SIZE.mark} aria-hidden className="shrink-0" />}
       label={text}
       title={title}
       className={cn(

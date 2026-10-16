@@ -17,15 +17,14 @@ const RecapGroup = ({ label, entries, tone }: GroupProps) => (
     <Eyebrow label={label} />
     <ul className="flex min-w-0 flex-col gap-1">
       {entries.map((entry) => (
-        <li key={entry} className="flex min-w-0 items-start gap-2 text-label leading-relaxed">
-          {tone === 'done' ? (
-            <Check className="mt-1 size-3 shrink-0 text-success" aria-hidden />
-          ) : (
-            <Circle
-              className="mt-2 size-1.5 shrink-0 fill-current text-muted-foreground"
-              aria-hidden
-            />
-          )}
+        <li key={entry} className="flex min-w-0 items-start gap-2 text-label">
+          <span aria-hidden className="flex h-4 w-3 shrink-0 items-center justify-center">
+            {tone === 'done' ? (
+              <Check className="size-3 text-success" />
+            ) : (
+              <Circle className="size-1.5 fill-current text-muted-foreground" />
+            )}
+          </span>
           <span className="min-w-0 flex-1">{entry}</span>
         </li>
       ))}

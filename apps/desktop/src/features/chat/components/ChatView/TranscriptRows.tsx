@@ -3,6 +3,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import type {
   AgentId,
   IntegrationDraft,
+  IsoDateTime,
   OpenQuestion,
   ProviderRunId,
   SessionId,
@@ -34,6 +35,7 @@ type Props = {
   onOpenDiff: (filePath: string) => void;
   isThinking: boolean;
   thinkingContext: ThinkingContext;
+  thinkingStartedAt?: IsoDateTime | null;
   onRetryRun: (params: RetryRunParams) => void;
   retryingRunId: ProviderRunId | null;
   mountSuggestionsByRun?: ReadonlyMap<ProviderRunId, ReactNode>;
@@ -99,6 +101,7 @@ export const TranscriptRows = ({
   onOpenDiff,
   isThinking,
   thinkingContext,
+  thinkingStartedAt = null,
   onRetryRun,
   retryingRunId,
   mountSuggestionsByRun,
@@ -315,7 +318,7 @@ export const TranscriptRows = ({
       {out}
       {isThinking ? (
         <li>
-          <ThinkingIndicator context={thinkingContext} />
+          <ThinkingIndicator context={thinkingContext} startedAt={thinkingStartedAt} />
         </li>
       ) : null}
     </>

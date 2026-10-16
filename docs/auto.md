@@ -217,9 +217,18 @@ writing to it reopens it to **Deciding**.
 - **While Auto waits.** A line above the composer says **Waiting for Implementer
   and Tester** with **Change approach** and **Stop**, and the composer says
   "Queued: Auto sees it with the next results". A plan that waits for approval
-  changes it to "Message Auto, or describe changes to plan v1".
+  changes it to "Message Auto, or describe changes to plan v1". In the
+  `deciding` phase with no root turn running the same line says **Deciding
+  what to do next**; while Auto's own turn runs the line hides and the
+  thinking line at the end of the transcript speaks instead, so the state is
+  said once.
 - **A child opened from a card** reads as Started by Auto. It can be read and
-  stopped there, has no composer, and **Open Auto** goes back.
+  stopped there, has no composer, and **Open Auto** goes back. When it
+  stopped, its notice offers **Retry through Auto**, which asks Auto to retry
+  it; it never runs a plain turn on the child (`docs/turns.md`, resume rules).
+- **No permission picker in the tree.** The composer of Auto and of its
+  children hides the session's permission mode picker: a tree member runs
+  with its role's access, not the session mode.
 
 ## Plans
 

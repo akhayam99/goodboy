@@ -389,7 +389,7 @@ export const MrDetailPanel = ({
       actions={
         <RefreshIconButton
           label="refresh merge request"
-          iconSize={12}
+          iconSize={ICON_SIZE.row}
           isLoading={loading}
           error={error}
           onClick={refresh}
