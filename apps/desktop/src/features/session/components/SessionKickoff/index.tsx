@@ -2,7 +2,6 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
-import { useIsAutoOn } from '../../../auto/useIsAutoOn';
 import { useKickoffIssues } from './useKickoffIssues';
 import { preselectStartChoice, startChoiceLine, type StartChoice } from './startChoice';
 import { StartChoiceTabs } from './StartChoiceTabs';
@@ -19,9 +18,7 @@ type Props = {
 
 const KICKOFF_QUESTION = 'How do you want to start?';
 
-export const SessionKickoff = ({ workspaceId, isAuto, notice }: Props) => {
-  const isAutoExperiment = useIsAutoOn();
-  const isAutoOn = isAuto ?? isAutoExperiment;
+export const SessionKickoff = ({ workspaceId, isAuto = false, notice }: Props) => {
   const issues = useKickoffIssues({ workspaceId });
   const storedChoice = useAppStore((state) => selectSessionDraft({ state, workspaceId }).choice);
   const patchSessionDraft = useAppStore((state) => state.patchSessionDraft);
@@ -49,9 +46,7 @@ export const SessionKickoff = ({ workspaceId, isAuto, notice }: Props) => {
       <div className="flex flex-col gap-2">
         <StartChoiceTabs ariaLabel={KICKOFF_QUESTION} value={choice} onChange={pick} />
         <div className="relative">
-          <p className="text-label text-muted-foreground">
-            {startChoiceLine({ choice, isAuto: isAutoOn })}
-          </p>
+          <p className="text-label text-muted-foreground">{startChoiceLine({ choice, isAuto })}</p>
           {notice !== undefined && notice !== null ? (
             <div data-slot="kickoff-notice" className="absolute inset-x-0 top-full z-10 pt-2">
               {notice}
@@ -65,8 +60,8 @@ export const SessionKickoff = ({ workspaceId, isAuto, notice }: Props) => {
         {choice === 'orchestrate' ? (
           <WorkflowStart workspaceId={workspaceId} mode="dynamic" />
         ) : null}
-        {choice === 'scout' && isAutoOn ? <AutoStart workspaceId={workspaceId} /> : null}
-        {choice === 'scout' && !isAutoOn ? <AgentStart workspaceId={workspaceId} /> : null}
+        {choice === 'scout' && isAuto ? <AutoStart workspaceId={workspaceId} /> : null}
+        {choice === 'scout' && !isAuto ? <AgentStart workspaceId={workspaceId} /> : null}
       </div>
     </section>
   );

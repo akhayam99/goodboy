@@ -212,7 +212,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Ask an agent',
-        desc: 'One agent in the role you pick. Scout is the default and maps an unfamiliar repo before you plan. With Auto turned on in Settings, Ask an agent starts Auto instead, with a Spend cap, and the button reads Start Auto.',
+        desc: 'One agent in the role you pick. Scout is the default and maps an unfamiliar repo before you plan. To let Auto pick the roles, use Start Auto in the session New menu, with a Spend cap.',
       },
       {
         term: 'Projects',
@@ -375,7 +375,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Auto',
-        desc: 'Auto is an experimental agent that is always on. Ask an agent starts Auto: it answers what it can, hands the rest to child agents of the roles it picks, waits for their results and goes on, all under a Spend cap. Its agents live under Auto agents in the session rail, where each shows its state and the foot says Limit and what is left. You can write to Auto at any time, and Move to Auto hands it an agent you started yourself.',
+        desc: 'Auto is an experimental agent that is always available. Start Auto in the session New menu starts it: it answers what it can, hands the rest to child agents of the roles it picks, waits for their results and goes on, all under a Spend cap. Its agents live under Auto agents in the session rail, where each shows its state and the foot says Limit and what is left. You can write to Auto at any time, and Move to Auto hands it an agent you started yourself.',
       },
       {
         term: 'Orchestrated or Auto',

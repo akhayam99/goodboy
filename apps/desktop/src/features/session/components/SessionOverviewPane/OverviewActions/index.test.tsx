@@ -88,6 +88,22 @@ describe('OverviewActions', () => {
     expect(screen.queryByRole('menuitem')).toBeNull();
   });
 
+  it.each([
+    ['Start agent', 'agent'],
+    ['Start Auto', 'auto'],
+  ] as const)('opens %s as its own form, the roles and Auto apart', (item, form) => {
+    render(<OverviewActions session={SESSION} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'New' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: item }));
+
+    expect(useAppStore.getState().drawer).toEqual({
+      kind: 'new',
+      sessionId: SESSION_ID,
+      payload: { form },
+    });
+  });
+
   it('opens the menu with the contextual new chord, and the drawer only on a pick', async () => {
     render(<OverviewActions session={SESSION} />);
 

@@ -93,7 +93,6 @@ const PRESET: Workflow = {
 
 type SceneState = {
   readonly form: NewDrawerForm;
-  readonly isAuto?: boolean;
   readonly isPreset?: boolean;
   readonly hasGuidance?: boolean;
   readonly autoGoal?: string;
@@ -175,7 +174,6 @@ const NewDrawerScene = ({ state }: Props) => {
           <NewDrawerBody
             session={SESSION}
             payload={{ form: state.form }}
-            isAuto={state.isAuto === true}
             writePanel={WritePanel}
             onClose={() => undefined}
           />
@@ -212,7 +210,6 @@ export const U24_NEW_DRAWER_SCENES = {
     <NewDrawerScene
       state={{
         form: 'auto',
-        isAuto: true,
         autoGoal: 'Find why webhooks retry and tell me where to fix it',
         width: 1440,
       }}

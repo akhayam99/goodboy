@@ -6,12 +6,6 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
-const experiment = vi.hoisted(() => ({ isOn: false }));
-
-vi.mock('../../../auto/useIsAutoOn', () => ({
-  useIsAutoOn: () => experiment.isOn,
-}));
-
 vi.mock('../../../auto/useAutoTreeLimit', () => ({
   useAutoTreeLimit: () => ({
     usd: 5,
@@ -94,7 +88,6 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
   seedBoardScene();
-  experiment.isOn = false;
   const first = useAppStore.getState().sessions[0];
   if (first === undefined) {
     throw new Error('the board seed has no session');
@@ -138,15 +131,16 @@ const settle = async (): Promise<void> => {
 
 type OpenPageParams = {
   readonly choice: 'task' | 'workflow' | 'orchestrate' | 'scout';
+  readonly isAuto?: boolean;
 };
 
-const openPage = async ({ choice }: OpenPageParams): Promise<void> => {
+const openPage = async ({ choice, isAuto }: OpenPageParams): Promise<void> => {
   useAppStore.getState().navigate({ to: sessionPlace({ sessionId: cameFrom.id }) });
   useAppStore.getState().openSessionDraft();
   useAppStore.getState().patchSessionDraft({ workspaceId: WORKSPACE_ID, patch: { choice } });
   render(
     <ToastProvider>
-      <SessionDraftPane workspaceId={WORKSPACE_ID} />
+      <SessionDraftPane workspaceId={WORKSPACE_ID} {...(isAuto !== undefined && { isAuto })} />
     </ToastProvider>,
   );
   await settle();
@@ -273,8 +267,8 @@ describe('New session page, Run lane', () => {
   });
 });
 
-describe('New session page, Agent (experiment off)', () => {
-  it('is the agent start of today, with the role and no Auto', async () => {
+describe('New session page, Ask an agent', () => {
+  it('opens the role start with Auto always available, with the role and no Auto', async () => {
     await openPage({ choice: 'scout' });
 
     expect(textBox('Scout focus')).toBeDefined();
@@ -295,9 +289,8 @@ describe('New session page, Agent (experiment off)', () => {
   });
 });
 
-describe('New session page, Agent (experiment on)', () => {
+describe('New session page, Ask an agent drawn as the Auto composer', () => {
   beforeEach(() => {
-    experiment.isOn = true;
     useAppStore.setState({
       providers: [
         {
@@ -321,14 +314,14 @@ describe('New session page, Agent (experiment on)', () => {
       .getState()
       .patchSessionDraft({ workspaceId: WORKSPACE_ID, patch: { agentPrompt: GOAL } });
 
-    await openPage({ choice: 'scout' });
+    await openPage({ choice: 'scout', isAuto: true });
 
     expect(textBox('Describe the work').value).toBe(GOAL);
     expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.agentPrompt).toBe('');
   });
 
   it('is the Auto composer: one goal, one model chip, no roles and no project field', async () => {
-    await openPage({ choice: 'scout' });
+    await openPage({ choice: 'scout', isAuto: true });
 
     expect(
       screen.getByText('Auto answers, or hands the work to the roles it picks.'),
@@ -342,7 +335,7 @@ describe('New session page, Agent (experiment on)', () => {
   });
 
   it('keeps Start Auto disabled until the work is described', async () => {
-    await openPage({ choice: 'scout' });
+    await openPage({ choice: 'scout', isAuto: true });
 
     const start = screen.getByRole('button', { name: 'Start Auto' });
     expect(start).toHaveProperty('disabled', true);
@@ -351,7 +344,7 @@ describe('New session page, Agent (experiment on)', () => {
   });
 
   it('creates the session and starts Auto with the goal on the auto agent', async () => {
-    await openPage({ choice: 'scout' });
+    await openPage({ choice: 'scout', isAuto: true });
     fireEvent.change(textBox('Describe the work'), { target: { value: GOAL } });
 
     fireEvent.click(screen.getByRole('button', { name: 'Start Auto' }));
@@ -370,7 +363,7 @@ describe('New session page, Agent (experiment on)', () => {
 
   it('keeps the goal and shows the error when the start fails', async () => {
     createSession.mockRejectedValueOnce(new Error('disk full'));
-    await openPage({ choice: 'scout' });
+    await openPage({ choice: 'scout', isAuto: true });
     fireEvent.change(textBox('Describe the work'), { target: { value: GOAL } });
 
     fireEvent.click(screen.getByRole('button', { name: 'Start Auto' }));
@@ -384,7 +377,7 @@ describe('New session page, Agent (experiment on)', () => {
   });
 
   it('counts the Auto goal as a draft, so Discard draft appears and clears it', async () => {
-    await openPage({ choice: 'scout' });
+    await openPage({ choice: 'scout', isAuto: true });
     expect(screen.queryByRole('button', { name: 'Discard' })).toBeNull();
 
     fireEvent.change(textBox('Describe the work'), { target: { value: GOAL } });

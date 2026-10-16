@@ -6,7 +6,6 @@ import type { AgentId, Session } from '@goodboy/types';
 import { EMPTY_ARRAY, sessionPlace, useAppStore } from '../../../../store';
 import type { NewDrawerPayload } from '../../../../store/slices/drawer/state';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { AUTO_AGENT_LINE } from '../../../../shared/lib/startCopy';
 import { WorkflowBuilderView } from '../../../workflows/components/WorkflowBuilderView';
 import { hasActiveWorkflowRun } from '../../../workflows/activeWorkflowRuns';
 import { NEW_DRAWER_FORMS } from '../../newDrawerForms';
@@ -16,18 +15,11 @@ import type { WritePanelProps } from '../../../artifacts/writePanelProps';
 type Props = {
   readonly session: Session;
   readonly payload: NewDrawerPayload;
-  readonly isAuto: boolean;
   readonly writePanel: ComponentType<WritePanelProps>;
   readonly onClose: () => void;
 };
 
-export const NewDrawerBody = ({
-  session,
-  payload,
-  isAuto,
-  writePanel: WritePanel,
-  onClose,
-}: Props) => {
+export const NewDrawerBody = ({ session, payload, writePanel: WritePanel, onClose }: Props) => {
   const sessionId = session.id;
   const form = payload.form;
   const meta = NEW_DRAWER_FORMS[form];
@@ -37,7 +29,6 @@ export const NewDrawerBody = ({
   );
   const isRunForm = form === 'run' || form === 'orchestrate';
   const isRunActive = hasActiveWorkflowRun({ workflowRuns: session.workflowRuns, agents });
-  const line = form === 'agent' && isAuto ? AUTO_AGENT_LINE : meta.line;
 
   useEffect(() => {
     if (isRunForm) {
@@ -64,7 +55,7 @@ export const NewDrawerBody = ({
     <DrawerFrame title={meta.title} icon={meta.icon} onClose={onClose}>
       <div className="flex min-w-0 flex-col gap-3">
         <div className="flex min-w-0 items-center justify-between gap-3">
-          <p className="min-w-0 text-label text-muted-foreground">{line}</p>
+          <p className="min-w-0 text-label text-muted-foreground">{meta.line}</p>
           {isRunForm && isRunActive ? (
             <Button variant="ghost" size="sm" onClick={openRun}>
               <ArrowRight size={ICON_SIZE.control} aria-hidden />
@@ -93,7 +84,7 @@ export const NewDrawerBody = ({
           {form === 'agent' || form === 'auto' ? (
             <AgentPanel
               sessionId={sessionId}
-              isAuto={form === 'auto' || isAuto}
+              isAuto={form === 'auto'}
               actionsHost={actionsHost}
               onClose={onClose}
             />

@@ -65,10 +65,6 @@ const h = vi.hoisted(() => ({
   sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
 }));
 
-vi.mock('../../../auto/useIsAutoOn', () => ({
-  useIsAutoOn: () => false,
-}));
-
 vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (state: Store) => T) =>
     selector({

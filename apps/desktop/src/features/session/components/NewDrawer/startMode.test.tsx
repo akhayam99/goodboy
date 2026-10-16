@@ -101,13 +101,17 @@ afterEach(() => {
   localStorage.clear();
 });
 
-const openAgentTab = (): void => {
+type OpenParams = {
+  readonly form: 'agent' | 'auto';
+};
+
+const openForm = ({ form }: OpenParams): void => {
   render(
     <AutoReleaseContext.Provider value>
       <ToastProvider>
         <NewDrawer
           sessionId={SESSION_ID}
-          payload={{ form: 'agent' }}
+          payload={{ form }}
           writePanel={WritePanel}
           onClose={vi.fn()}
         />
@@ -122,9 +126,17 @@ const typeGoal = (): void => {
   });
 };
 
-describe('the Agent tab with Auto always on', () => {
-  it('shows the Auto composer and starts at once', async () => {
-    openAgentTab();
+describe('Start agent and Start Auto with Auto always available', () => {
+  it('keeps the role grid on the Agent form, so Start agent opens one role', async () => {
+    openForm({ form: 'agent' });
+
+    expect(await screen.findByRole('button', { name: 'Open Generalist' })).toBeDefined();
+    expect(screen.queryByRole('textbox', { name: 'Describe the work' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Start Auto' })).toBeNull();
+  });
+
+  it('opens the Auto composer on the Start Auto form and starts at once', async () => {
+    openForm({ form: 'auto' });
     await screen.findByRole('textbox', { name: 'Describe the work' });
     typeGoal();
 
@@ -139,7 +151,7 @@ describe('the Agent tab with Auto always on', () => {
 
   it('starts Auto even when an old experiment row still says false', async () => {
     stored.set('agents.autoExperiment', 'false');
-    openAgentTab();
+    openForm({ form: 'auto' });
     await screen.findByRole('textbox', { name: 'Describe the work' });
     typeGoal();
 
@@ -147,6 +159,5 @@ describe('the Agent tab with Auto always on', () => {
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
     expect(reportError).not.toHaveBeenCalled();
-    expect(screen.queryByRole('button', { name: 'Open Generalist' })).toBeNull();
   });
 });

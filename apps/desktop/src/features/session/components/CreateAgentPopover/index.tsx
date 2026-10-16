@@ -1,9 +1,7 @@
 import type { ReactNode } from 'react';
 import { AnchoredPopover, PopoverBody, useDropdown } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { useIsAutoOn } from '../../../auto/useIsAutoOn';
 import { AgentStartBlock } from '../AgentStartBlock';
-import { AutoComposer } from '../AutoComposer';
 import { CreateAgentTrigger } from './CreateAgentTrigger';
 
 type Props = {
@@ -29,7 +27,6 @@ export const CreateAgentPopover = ({
     ...(openEvent !== undefined && { openEvent }),
   });
   const { open, close, toggle } = dropdown;
-  const isAuto = useIsAutoOn();
 
   return (
     <AnchoredPopover
@@ -43,18 +40,12 @@ export const CreateAgentPopover = ({
       }
     >
       <PopoverBody>
-        {isAuto ? (
-          <div className="px-3 py-3">
-            <AutoComposer sessionId={sessionId} footerClassName="pt-3" onDone={close} />
-          </div>
-        ) : (
-          <AgentStartBlock
-            sessionId={sessionId}
-            isShown={open}
-            onDone={close}
-            {...(onSpawned !== undefined && { onSpawned })}
-          />
-        )}
+        <AgentStartBlock
+          sessionId={sessionId}
+          isShown={open}
+          onDone={close}
+          {...(onSpawned !== undefined && { onSpawned })}
+        />
       </PopoverBody>
     </AnchoredPopover>
   );

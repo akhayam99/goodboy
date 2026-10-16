@@ -43,11 +43,14 @@ accept. Neither tried to write a file or run a shell command, and the work tree 
 
 ## Starting
 
-Auto is the only start in the **Agent** tab of the New drawer, in the **Start
-agent** popover of the Agents lane and under **Ask an agent** on the New session
-page. There is no role list, no project field and no guidance: Auto picks the
-mount and asks when it is ambiguous. The role grid, Generalist as default and
-Routing of before stay only for a build whose release gate is closed.
+Auto is always available, and it is its own start: **Start Auto** in the
+session **New** menu opens the **Start Auto** form of the New drawer
+(`form: 'auto'`). There is no role list, no project field and no guidance: Auto
+picks the mount and asks when it is ambiguous. **Start agent** stays the role
+start: the **Agent** form of the New drawer, the **Start agent** popover of the
+Agents page and **Ask an agent** on the New session page open the role grid
+(Generalist as default, Routing), whatever the gate says (`CreateAgentPopover`,
+`NewDrawerBody`, `SessionKickoff` with `isAuto` false by default).
 
 - A start never rereads a setting at the click: there is no mode another window
   can change, so the form on screen is the mode that starts.

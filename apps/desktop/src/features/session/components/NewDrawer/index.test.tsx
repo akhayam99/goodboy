@@ -11,12 +11,6 @@ vi.mock('../../../../shared/lib/db', async () =>
   (await import('../../../../store/storyHarness')).dbLibModuleMock(),
 );
 
-const experiment = vi.hoisted(() => ({ isOn: false }));
-
-vi.mock('../../../auto/useIsAutoOn', () => ({
-  useIsAutoOn: () => experiment.isOn,
-}));
-
 vi.mock('../../../auto/useAutoTreeLimit', () => ({
   useAutoTreeLimit: () => ({
     usd: 5,
@@ -96,7 +90,6 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
-  experiment.isOn = false;
   spawnAgent.mockReset();
   spawnAgent.mockResolvedValue(brandedId<AgentId>({ value: 'agent-1' }));
   useAppStore.setState({
@@ -273,7 +266,7 @@ describe('NewDrawer (Run)', () => {
   });
 });
 
-describe('NewDrawer (Agent, experiment off)', () => {
+describe('NewDrawer (Agent)', () => {
   it('is the agent start of today, with Generalist picked and no message field', () => {
     openDrawer({ payload: { form: 'agent' } });
 
@@ -332,13 +325,9 @@ describe('NewDrawer (Agent, experiment off)', () => {
   });
 });
 
-describe('NewDrawer (Agent, experiment on)', () => {
-  beforeEach(() => {
-    experiment.isOn = true;
-  });
-
+describe('NewDrawer (Start Auto)', () => {
   it('is the Auto composer: a goal, one model chip and Start Auto, with no roles or guidance', () => {
-    openDrawer({ payload: { form: 'agent' } });
+    openDrawer({ payload: { form: 'auto' } });
 
     expect(
       screen.getByText('Auto answers, or hands the work to the roles it picks.'),
@@ -355,7 +344,7 @@ describe('NewDrawer (Agent, experiment on)', () => {
 
   it('keeps Start Auto disabled and says why when no provider is connected', () => {
     useAppStore.setState({ providers: [{ ...connected('anthropic'), connection: 'missing' }] });
-    openDrawer({ payload: { form: 'agent' } });
+    openDrawer({ payload: { form: 'auto' } });
     fireEvent.change(screen.getByRole('textbox', { name: 'Describe the work' }), {
       target: { value: 'Find why webhooks retry' },
     });
@@ -375,7 +364,7 @@ describe('NewDrawer (Agent, experiment on)', () => {
         connected('moonshot'),
       ],
     });
-    openDrawer({ payload: { form: 'agent' } });
+    openDrawer({ payload: { form: 'auto' } });
     fireEvent.change(screen.getByRole('textbox', { name: 'Describe the work' }), {
       target: { value: 'Find why webhooks retry' },
     });
@@ -396,7 +385,7 @@ describe('NewDrawer (Agent, experiment on)', () => {
         },
       ],
     });
-    openDrawer({ payload: { form: 'agent' } });
+    openDrawer({ payload: { form: 'auto' } });
     fireEvent.change(screen.getByRole('textbox', { name: 'Describe the work' }), {
       target: { value: 'Find why webhooks retry' },
     });
@@ -408,7 +397,7 @@ describe('NewDrawer (Agent, experiment on)', () => {
   });
 
   it('keeps Start Auto disabled until a goal is written', () => {
-    openDrawer({ payload: { form: 'agent' } });
+    openDrawer({ payload: { form: 'auto' } });
     const start = () => buttonOf(screen.getByRole('button', { name: 'Start Auto' }));
 
     expect(start().disabled).toBe(true);
@@ -420,19 +409,18 @@ describe('NewDrawer (Agent, experiment on)', () => {
     expect(start().disabled).toBe(false);
   });
 
-  it('keeps the goal in memory when the experiment is turned off', () => {
-    const view = openDrawer({ payload: { form: 'agent' } });
+  it('keeps the Auto goal in memory while the Agent form shows the role grid', () => {
+    const view = openDrawer({ payload: { form: 'auto' } });
     fireEvent.change(screen.getByRole('textbox', { name: 'Describe the work' }), {
       target: { value: 'Find why webhooks retry' },
     });
     view.unmount();
-    experiment.isOn = false;
 
     openDrawer({ payload: { form: 'agent' } });
     expect(screen.queryByRole('textbox')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Open Generalist' })).toBeDefined();
     cleanup();
-    experiment.isOn = true;
-    openDrawer({ payload: { form: 'agent' } });
+    openDrawer({ payload: { form: 'auto' } });
 
     expect(textAreaOf(screen.getByRole('textbox', { name: 'Describe the work' })).value).toBe(
       'Find why webhooks retry',
@@ -444,7 +432,7 @@ describe('NewDrawer (Agent, experiment on)', () => {
 
   it('starts Auto with the goal and clears the draft', async () => {
     const onClose = vi.fn();
-    openDrawer({ payload: { form: 'agent' }, onClose });
+    openDrawer({ payload: { form: 'auto' }, onClose });
     fireEvent.change(screen.getByRole('textbox', { name: 'Describe the work' }), {
       target: { value: 'Find why webhooks retry' },
     });
@@ -465,7 +453,7 @@ describe('NewDrawer (Agent, experiment on)', () => {
   });
 
   it('discards the draft from the actions row', () => {
-    openDrawer({ payload: { form: 'agent' } });
+    openDrawer({ payload: { form: 'auto' } });
     fireEvent.change(screen.getByRole('textbox', { name: 'Describe the work' }), {
       target: { value: 'Find why webhooks retry' },
     });
@@ -477,10 +465,10 @@ describe('NewDrawer (Agent, experiment on)', () => {
     expect(useAppStore.getState().newDrawerDrafts[SESSION_ID]).toBeUndefined();
   });
 
-  it('keeps a separate draft for Orchestrate and for Start agent', () => {
+  it('keeps a separate draft for Orchestrate and for Start Auto', () => {
     const view = openDrawer();
     fireEvent.change(goalBox(), { target: { value: 'the run goal' } });
-    view.rerender(drawerWith({ payload: { form: 'agent' } }));
+    view.rerender(drawerWith({ payload: { form: 'auto' } }));
     expect(textAreaOf(screen.getByRole('textbox', { name: 'Describe the work' })).value).toBe('');
     fireEvent.change(screen.getByRole('textbox', { name: 'Describe the work' }), {
       target: { value: 'the agent goal' },

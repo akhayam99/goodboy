@@ -106,45 +106,38 @@ const mount = ({ isReleased }: MountParams): void => {
   );
 };
 
-describe('Start agent with Auto always on', () => {
-  it('offers only the Auto composer and starts an Auto agent', async () => {
-    mount({ isReleased: true });
+describe('Start agent with Auto always available', () => {
+  const expectRoles = async (): Promise<void> => {
     fireEvent.click(screen.getByRole('button', { name: 'Start agent' }));
-
-    const goal = await screen.findByRole('textbox', { name: 'Describe the work' });
-    expect(screen.queryByRole('button', { name: 'Generalist' })).toBeNull();
-    fireEvent.change(goal, { target: { value: 'Find why webhooks retry' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Start Auto' }));
-
-    await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
-    expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({
-      kindOverride: 'auto',
-      initialPrompt: 'Find why webhooks retry',
-    });
-  });
-
-  it('keeps the Auto composer when an old experiment row still says false', async () => {
-    stored.set('agents.autoExperiment', 'false');
-    useAppStore.setState({ settings: { 'agents.autoExperiment': 'false' } });
-    mount({ isReleased: true });
-    fireEvent.click(screen.getByRole('button', { name: 'Start agent' }));
-
-    expect(await screen.findByRole('textbox', { name: 'Describe the work' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Open Generalist' })).toBeNull();
-  });
-
-  it('offers the Auto composer in the build that ships', async () => {
-    render(<CreateAgentPopover sessionId={SESSION_ID} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Start agent' }));
-
-    expect(await screen.findByRole('textbox', { name: 'Describe the work' })).toBeDefined();
-  });
-
-  it('keeps the roles while the release gate is closed', async () => {
-    mount({ isReleased: false });
-    fireEvent.click(screen.getByRole('button', { name: 'Start agent' }));
-
     expect(await screen.findByRole('button', { name: 'Open Generalist' })).toBeDefined();
     expect(screen.queryByRole('textbox', { name: 'Describe the work' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Start Auto' })).toBeNull();
+  };
+
+  it('opens the role grid while Auto is released, and starts the picked role', async () => {
+    mount({ isReleased: true });
+    await expectRoles();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open Generalist' }));
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
+    expect(spawnAgent.mock.calls[0]?.[1]).not.toMatchObject({ kindOverride: 'auto' });
+  });
+
+  it('opens the role grid whatever an old experiment row says', async () => {
+    stored.set('agents.autoExperiment', 'true');
+    useAppStore.setState({ settings: { 'agents.autoExperiment': 'true' } });
+    mount({ isReleased: true });
+    await expectRoles();
+  });
+
+  it('opens the role grid in the build that ships', async () => {
+    render(<CreateAgentPopover sessionId={SESSION_ID} />);
+    await expectRoles();
+  });
+
+  it('opens the role grid while the release gate is closed', async () => {
+    mount({ isReleased: false });
+    await expectRoles();
   });
 });
