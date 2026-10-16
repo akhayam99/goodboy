@@ -1,4 +1,11 @@
-import { useContext, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
+import {
+  useContext,
+  useId,
+  useLayoutEffect,
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactNode,
+} from 'react';
 import { cn } from '../../cn';
 import { OptionalTooltip } from '../OptionalTooltip';
 import { ROW_INTERACTIVE } from '../../rowInteractive';
@@ -54,6 +61,21 @@ const cellClass = ({ column, cell, isFirst }: CellParams) =>
 
 const HEIGHT_CLASS = { 28: 'h-7', 32: 'h-8' } as const;
 
+const isFilledCell = (cell: ReactNode): boolean =>
+  cell !== null && cell !== undefined && cell !== false && cell !== '';
+
+type FilledParams = {
+  readonly cells: ReadonlyArray<ReactNode>;
+  readonly columns: ReadonlyArray<ListGridColumn>;
+};
+
+const filledHideableKeyOf = ({ cells, columns }: FilledParams): string =>
+  columns
+    .flatMap((column, index) =>
+      column.shouldHideWhenEmpty === true && isFilledCell(cells[index]) ? [column.key] : [],
+    )
+    .join('\n');
+
 export const ListGridRow = ({
   cells,
   onSelect,
@@ -68,12 +90,25 @@ export const ListGridRow = ({
   onContextMenu,
   onKeyDown,
 }: ListGridRowProps) => {
-  const columns = useContext(ListGridColumnsContext);
-  const body = cells.map((cell, index) => (
+  const { columns, hiddenKeys, hasHideable, reportFilled } = useContext(ListGridColumnsContext);
+  const rowId = useId();
+  const filledKey = hasHideable ? filledHideableKeyOf({ cells, columns }) : '';
+  useLayoutEffect(() => {
+    if (!hasHideable) {
+      return;
+    }
+    reportFilled({ rowId, keys: filledKey === '' ? [] : filledKey.split('\n') });
+    return () => reportFilled({ rowId, keys: null });
+  }, [hasHideable, filledKey, reportFilled, rowId]);
+  const shown = cells.flatMap((cell, index) => {
+    const column = columns[index];
+    return column !== undefined && hiddenKeys.has(column.key) ? [] : [{ cell, column, index }];
+  });
+  const body = shown.map(({ cell, column, index }, position) => (
     <span
-      key={columns[index]?.key ?? index}
-      data-list-grid-cell={columns[index]?.key}
-      className={cellClass({ column: columns[index], cell, isFirst: index === 0 })}
+      key={column?.key ?? index}
+      data-list-grid-cell={column?.key}
+      className={cellClass({ column, cell, isFirst: position === 0 })}
     >
       {cell}
     </span>

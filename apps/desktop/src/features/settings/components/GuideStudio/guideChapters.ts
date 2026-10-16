@@ -371,7 +371,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Orchestrated',
-        desc: 'Give a goal and an orchestrator model picks each next step with a reason, until it says done or blocked. Orchestrated is its own page in the session rail, after Runs: the goal, one checklist of the steps and what is left, a line that says what the orchestrator does now and why, and a box that reads Hint the orchestrator. Queue holds a hint for the next decision, and Send now makes the orchestrator read it at once: its tooltip says Read now stops the step in flight, keeps what it wrote, and decides again. A waiting hint says Waits for the next decision, and one being read says Reading now.',
+        desc: 'Give a goal and an orchestrator model picks each next step with a reason, until it says done or blocked. Orchestrated is its own page in the session rail, after Runs: the goal, one checklist of the steps and what is left, a line that says what the orchestrator does now and why, and a box that reads Hint the orchestrator. Queue holds a hint for the next decision, and Send now makes the orchestrator read it at once: its tooltip says Read now stops the step in flight, keeps what it wrote, and decides again. Waiting hints sit under one line, Waits for the next decision, and one being read says Reading now.',
       },
       {
         term: 'Auto',

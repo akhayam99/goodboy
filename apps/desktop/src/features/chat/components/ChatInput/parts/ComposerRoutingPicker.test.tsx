@@ -12,7 +12,7 @@ vi.mock('@goodboy/db', async () =>
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ComponentProps } from 'react';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { ComposerRoutingPicker } from './ComposerRoutingPicker';
 
 type ComposerRouting = ComponentProps<typeof ComposerRoutingPicker>['routing'];
@@ -57,7 +57,7 @@ describe('the composer model chip', () => {
   it('shows no reset control while the next turn uses the reference model', () => {
     render(<ComposerRoutingPicker routing={routingOn({ modelId: 'claude-opus-5' })} />);
 
-    expect(screen.queryByRole('button', { name: 'Reset routing override' })).toBeNull();
+    expect(trigger().textContent).not.toContain('pinned');
   });
 
   it('names the picked model and offers the reset when the turn is overridden', () => {
@@ -68,6 +68,8 @@ describe('the composer model chip', () => {
     );
 
     expect(trigger().textContent).toContain('Sonnet 5');
-    screen.getByRole('button', { name: 'Reset routing override' });
+    expect(trigger().textContent).toContain('· pinned');
+    fireEvent.click(trigger());
+    screen.getByRole('button', { name: 'reset' });
   });
 });

@@ -318,15 +318,17 @@ read top to bottom at the conversation measure:
   wireframe** and **Add step**. A live run offers **Add step** under the tail
   (not while the orchestrator decides).
 - **Composer** (`OrchestratedComposer`), docked: "Hint the orchestrator".
-  Waiting hints sit above it as rows that say **Waits for the next decision**
-  with **Remove**, or **Reading now** with **Remove** disabled. Enter queues,
+  Waiting hints sit above it under one line, **Waits for the next decision**,
+  each row with **Remove**; a row being read says **Reading now** with
+  **Remove** disabled. Enter queues,
   **Send now** (⌘Enter) reads it now, with today's `readNowCopy` tooltips. The
   routing pill for the orchestrator's model and effort sits in the composer's
   footer, its only place (`OrchestratorRoutingRow`).
 - **The run header** shows **Pause run** and **Stop run** (asks first) as
   words while the run lives (`RunLiveVerbs`), so stopping never hides in a
   menu. Once paused, **Resume run** (`workflowRun.resume`) takes the place of
-  Pause run and Stop run stays beside it.
+  Pause run and Stop run stays beside it; the tail then says Paused by you
+  with no verb of its own, so Resume shows once.
 - **The run `⋯`** is the `workflowRun` registry minus the verbs the tail and
   the header carry: View diff, Step routing (opens the model per step panel,
   `OrchestratedRouting`), Autonomy, **Skip step N** for the step in flight,
@@ -377,7 +379,7 @@ agents are never stopped by it.
 
 The Runs page (`WorkflowsPane`) lists the session's preset runs on one
 `ListGrid` (`RunsGrid`, columns in `runsGridColumns.ts`): state dot, title,
-state word, progress ("Step 2 of 3", "3 of 3 steps"), cost and age, every row
+state word, progress ("Step 2 of 3", "3 steps" once all ran), cost and age, every row
 the same columns. Groups: **In progress**, **Finished** (the first 30, then
 **Show 12 earlier**), **Archived** folded behind **Show**. A row is the button
 and carries no action; an archived run is restored from its page. The state

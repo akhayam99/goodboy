@@ -31,6 +31,7 @@ export const OrchestratedComposer = ({ sessionId, run, agents }: Props) => {
   );
   const waiting = (run.orchestratorHints ?? NO_HINTS).filter((hint) => hint.consumedAt == null);
   const isStepRunning = agents.some((agent) => agent.status === 'running');
+  const isAnyQueued = waiting.some((hint) => !readingIds.includes(hint.id));
 
   const remove = async ({ hint }: RemoveParams) => {
     try {
@@ -43,16 +44,23 @@ export const OrchestratedComposer = ({ sessionId, run, agents }: Props) => {
   return (
     <div data-orchestrated-composer="" className="flex min-w-0 flex-col gap-2">
       {waiting.length > 0 ? (
-        <ul aria-label="Queued hints" className="flex min-w-0 flex-col gap-1">
-          {waiting.map((hint) => (
-            <OrchestratedHintChip
-              key={hint.id}
-              hint={hint}
-              isReading={readingIds.includes(hint.id)}
-              onRemove={() => void remove({ hint })}
-            />
-          ))}
-        </ul>
+        <div className="flex min-w-0 flex-col gap-1">
+          {isAnyQueued ? (
+            <p data-hint-queue-note="" className="px-2 text-ui text-muted-foreground">
+              {ORCHESTRATED_COPY.queuedHintsNote}
+            </p>
+          ) : null}
+          <ul aria-label="Queued hints" className="flex min-w-0 flex-col gap-1">
+            {waiting.map((hint) => (
+              <OrchestratedHintChip
+                key={hint.id}
+                hint={hint}
+                isReading={readingIds.includes(hint.id)}
+                onRemove={() => void remove({ hint })}
+              />
+            ))}
+          </ul>
+        </div>
       ) : null}
       <OrchestratorHintComposer
         isDeciding={isOrchestrating}

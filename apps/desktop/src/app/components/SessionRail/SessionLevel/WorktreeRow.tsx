@@ -83,9 +83,11 @@ export const WorktreeRow = ({ sessionId, row, status, isShown }: Props) => {
         <span data-worktree-branch="" className="min-w-0 flex-1 truncate text-code">
           {branch}
         </span>
-        <span className="w-12 shrink-0 text-right text-meta tabular-nums text-faint-foreground">
-          {number}
-        </span>
+        {number === '' ? null : (
+          <span className="shrink-0 text-right text-meta tabular-nums text-faint-foreground">
+            {number}
+          </span>
+        )}
         <span data-worktree-dot="" className="flex w-2 shrink-0 items-center justify-center">
           {state.tone === null ? null : (
             <Tooltip content={state.reason}>

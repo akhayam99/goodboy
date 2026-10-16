@@ -54,7 +54,9 @@
   right (`boardSignalOf`, the same one the List row shows): an open question,
   else a failed check, else the pull request token in its state color (a click
   opens the pull request), else a running dot with the count of running agents
-  (`runningAgentCountOf`), else the Checking GitHub mark. An archived card shows
+  (`runningAgentCountOf`), else the Checking GitHub mark. The question and
+  running glyphs carry their number from two on; one is the glyph alone, since
+  the state node already says it. An archived card shows
   only its pull request. Age, issue chips, agent count, cost, the pin, Auto and
   draft review comments live in the session hover card, which opens on the
   board with facts only (no buttons). Restoring an archived card uses the
@@ -582,9 +584,10 @@ run** and **Stop run** (asks first) as visible words in their header while the
 run lives (`RunLiveVerbs`, the `workflowRun` registry's own `when`: Pause while
 a step is in flight and the run is not paused, Stop while the run is closable),
 then the run `⋯`; the verbs of `runPrimaryOf`
-(**Review plan**, **Answer**, **Resume**, **Continue the run**, **Retry**,
+(**Review plan**, **Answer**, **Continue the run**, **Retry**,
 **Raise spend cap**, **Decide next step**, **Start step 2**, **Start run**)
-sit on the run tail, and an archived run shows **Restore** as its one header
+sit on the run tail (a paused run's tail only says Paused by you, since
+Resume run sits in the header), and an archived run shows **Restore** as its one header
 primary. The `⋯` holds View diff, Step routing (orchestrated), Autonomy, Skip
 step N, Save as preset, Copy run summary, Archive run and Delete run, never
 **Approve plan**, **Pause run**, **Resume run** or **Stop run**. After Pause
@@ -681,17 +684,20 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
   shows), Artifacts, and Questions last while one is open.
   Agents lists standalone agents only; an Auto agent lives under Auto agents
   (`isAgentsPageKind`, `agentHomeLens` sends it to the `auto` lens). A page row ends in one
-  fixed 40px right-aligned slot: the count in tabular gray, a 6px info dot
-  before it while something runs, a warning dot on Questions. The count word
+  right-aligned slot as wide as its content, so a label never truncates for an
+  empty slot: the count in tabular gray, a 6px info dot before it while
+  something runs, a warning dot on Questions. The count word
   ("1 running", "4 artifacts") is the row's tooltip. A list page repeats no
   count under its title: Orchestrated, Agents, Artifacts and a tracker list
   (Linear, Jira and the rest) carry their counts on their group rows or filter
   tabs only, and Agents has no "N running, N done" subtitle. Every number comes from
   one function, `pageSlotOf` over `usePageCountFacts`, and the folded rail and
-  its flyout read the same function.
+  its flyout read the same function; the Artifacts count is
+  `liveArtifactCountOf`, pinned equal to the page's All tab.
 - **Projects** lists each mounted project as a label row and its worktrees
   under it at the same left edge (`SessionLevel/WorktreeRow`): branch icon,
-  mono branch, pull request number in a fixed 48px column, then the worst
+  mono branch, pull request number right aligned (a row with no pull request
+  gives its branch the room), then the worst
   state as one 6px dot in the last column (`worktreeRowStateOf`: danger for a
   failed check; warning for conflicts, a running rebase, behind its base, a
   branch decision waiting, comments waiting on you; none when fine), named in
@@ -721,7 +727,7 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   fixed right-aligned slot from `worktreeEntryFactsOf`: `#418 Draft` or
   `None`, the comment count with a warning dot while one waits on you, the
   file count, `2 not pushed` or the commit count, `1 failed` with a danger dot
-  or the check count. Files is a plain entry like the others: picking it opens
+  or the check count; a known zero leaves the slot empty. Files is a plain entry like the others: picking it opens
   the diff page in the center, whose changed file list sits in its own rail on
   the right of that page (see Branch page, Files), never in the session rail. The entries are
   the Branch page's own rail, portalled into the level (`worktreeLevelSlot`),
@@ -1793,8 +1799,8 @@ screen with the green button, View > Exit Full Screen or Ctrl+⌘F.
 
 Utility studios (Tasks, Chat, Workflows, Terminal, Impact, Notifications, Changelog,
 the guide, pairing, Add workspace) render in the shell's studio slot, which
-covers the content area only, beside the column, as its own sheet with the
-studio band on top. The column stays live, so another door or a session row is
+covers the content area only, beside the column, as its own sheet; the page
+title is its one header (no title band). The column stays live, so another door or a session row is
 one click away. **Settings is the one studio that takes the column**, in
 both sidebar states: `shellArrangement` takes `isSettingsOpen` and returns
 `leftSlot: 'column'` with no peek, so a folded sidebar shows the column at its
@@ -1843,16 +1849,21 @@ one is open at a time.
   (Tasks, Notifications, Add workspace, Impact), `rail`
   (Settings) or `grid` (Workflows, Changelog, the guide, pairing). With no studio
   open, no frame node exists, so nothing covers the page.
-- **The band sits on the studio's column.** `StudioBand` draws its crumb and Close
-  inside a `PageColumn` of the studio's tier (`tier` in `STUDIO_META`): `column` for
-  Tasks, Workflows, Impact, the guide, What's new, Notifications, Add workspace and
-  Settings, so the crumb starts where the title starts and Close ends where the
-  column ends (at 1920 it no longer sits 330px outside it), and `full` only for
-  Chat and pairing, the rail-plus-detail studios aligned to the 24px gutter. While it
-  draws a band, the frame hands its body `UnderTrailContext`, so a studio title does
-  not add the 12px a bare page adds and sits where a session title does (centre 56px
-  under the pane top).
-- **Every studio draws the grid's title row.** Under the band each studio has one
+- **One title per page; the band holds no title.** `StudioBand` never draws a
+  crumb title, an icon or a subtitle; the page `h1` is the one title.
+  `STUDIO_META[kind].close` places Close: `none` for the sidebar door pages
+  (Tasks, Chat, Workflows, Terminal: no band, no Close, the top bar Back and
+  Escape leave them), `header` for Monitoring, Notifications and the guide
+  (`StudioFrame` passes Close through `PaneActionsContext`, so it is the last
+  action of the page title row), `band` for the rest (Settings over the window,
+  Impact, What's new, pairing, Add workspace), whose 40px band holds only Close
+  inside a `PageColumn` of the studio's tier. A band also appears when the body
+  claims it with a `StudioTrail` or passes a header accessory. While it draws a
+  band, the frame hands its body `UnderTrailContext`, so a studio title does not
+  add the 12px a bare page adds; a bandless page sits on the 12px header inset
+  (`frameGeometryOf`), like a session page. The frame root carries
+  `data-studio-title` for the journey tests.
+- **Every studio draws the grid's title row.** Each studio has one
   `h1` in the same 32px row as every page (`PaneTitleRow`, fixed `h-8`, the actions
   at its right, a long title truncates and never wraps the row): Tasks the view's name,
   Workflows `Workflows` with its tab strip under the title and `New workflow` as the
@@ -3192,7 +3203,8 @@ on the right and the column re-centres in what is left. The Comments section rea
 `branchLayout.test.ts` pins the widths a 1024px window gets with a wide sidebar
 and an open drawer. The entry counts (Comments, Files, Commits) read a muted `-`
 named `Not loaded` until the data arrives, then the number, never 0 for an
-unknown (`worktreeEntryFactsOf`). All three arrive without a visit: `BranchPage` loads
+unknown, and nothing for a known zero (`worktreeEntryFactsOf`; the comment
+source tabs drop a zero badge the same way). All three arrive without a visit: `BranchPage` loads
 the mount's history draft (`loadHistoryDraft`) once when the page opens and the
 draft is not there yet, so the Commits count is a number on the Comments section too. `Fix comments N`, in the section header and in the Files toolbar, is the one fix launch.
 

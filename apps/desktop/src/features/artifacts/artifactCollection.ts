@@ -93,6 +93,14 @@ type KindParams = Readonly<{ agent: Agent }>;
 const generatedKindOf = ({ agent }: KindParams): GeneratedArtifactKind | null =>
   GENERATED_ARTIFACT_KINDS.find((kind) => kind === agent.kind) ?? null;
 
+type PendingParams = Readonly<{
+  agent: Agent;
+  produced: ReadonlySet<AgentId>;
+}>;
+
+export const isPendingGeneration = ({ agent, produced }: PendingParams): boolean =>
+  generatedKindOf({ agent }) !== null && agent.deletedAt == null && !produced.has(agent.id);
+
 type ProgressParams = Readonly<{
   agent: Agent;
   activeAgentIds: ReadonlySet<AgentId>;
@@ -138,7 +146,7 @@ export const resolveArtifactGenerations = ({
   const rows: Array<ArtifactGeneration> = [];
   for (const agent of agents) {
     const kind = generatedKindOf({ agent });
-    if (kind === null || agent.deletedAt != null || produced.has(agent.id)) {
+    if (kind === null || !isPendingGeneration({ agent, produced })) {
       continue;
     }
     const scouts =

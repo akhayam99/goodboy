@@ -58,7 +58,7 @@ const progressOf = ({ run, workflow, agents }: RunParams): string => {
   const total = workflow.steps.length;
   const settled = steps.filter((agent) => isAgentStatusSettled({ status: agent.status })).length;
   if (settled >= total) {
-    return `${total} of ${total} steps`;
+    return `${total} ${total === 1 ? 'step' : 'steps'}`;
   }
   return `Step ${Math.min(settled + 1, total)} of ${total}`;
 };

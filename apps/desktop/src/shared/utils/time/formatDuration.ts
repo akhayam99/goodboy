@@ -3,13 +3,13 @@ type Params = {
   readonly hasTenths?: boolean;
 };
 
-export const formatDuration = ({ durationMs, hasTenths = false }: Params): string => {
-  const safeMs = Math.max(0, Math.round(durationMs));
+export const formatDuration = ({ durationMs, hasTenths = false }: Params): string | null => {
+  const safeMs = Number.isFinite(durationMs) ? Math.max(0, Math.round(durationMs)) : 0;
+  if (safeMs < 1_000) {
+    return null;
+  }
   if (hasTenths && safeMs < 10_000) {
     return `${(Math.floor(safeMs / 100) / 10).toFixed(1)}s`;
-  }
-  if (safeMs < 1_000) {
-    return `${safeMs}ms`;
   }
   const seconds = Math.round(safeMs / 1_000);
   if (seconds < 60) {

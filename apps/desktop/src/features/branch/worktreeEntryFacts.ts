@@ -1,5 +1,6 @@
 import type { PullRequestPresentationState } from '../../shared/pullRequestPresentation';
 import type { BranchTab } from '../../store/slices/navigation/types';
+import { countSlotText } from '../../shared/utils/countSlotText';
 
 type WorktreeEntryTone = 'danger' | 'warning' | null;
 
@@ -41,7 +42,7 @@ const STATE_WORD: Readonly<Record<PullRequestPresentationState, string | null>> 
 };
 
 const countFactOf = ({ count }: CountParams): WorktreeEntryFact => ({
-  text: count === null ? null : String(count),
+  text: count === null ? null : (countSlotText({ count }) ?? ''),
   tone: null,
 });
 
@@ -76,5 +77,5 @@ export const worktreeEntryFactsOf = ({
   checks:
     checksFailed > 0
       ? { text: `${checksFailed} failed`, tone: 'danger' }
-      : { text: checks === null ? '' : String(checks), tone: null },
+      : { text: checks === null || checks === 0 ? '' : String(checks), tone: null },
 });

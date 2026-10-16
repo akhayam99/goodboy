@@ -29,12 +29,28 @@ describe('frameGeometryOf', () => {
     }
   });
 
-  it('opens a session page on its 44px header row and keeps the 40px band on the others', () => {
+  it('opens a session page, a sidebar door page and a closable overlay on its 44px header row', () => {
     expect(FRAME_PAGE_HEADER_INSET_PX + FRAME_TITLE_ROW_PX).toBe(44);
-    for (const page of ['overview', 'branch', 'runs', 'agents', 'questions'] as const) {
+    for (const page of [
+      'overview',
+      'branch',
+      'runs',
+      'agents',
+      'questions',
+      'inbox',
+      'chat',
+      'workflows',
+      'terminal',
+      'monitoring',
+      'notifications',
+      'guide',
+    ] as const) {
       expect(frameGeometryOf({ page }).bandHeight, page).toBe(FRAME_PAGE_HEADER_INSET_PX);
     }
-    for (const page of ['board', 'inbox', 'workflows', 'settings', 'monitoring'] as const) {
+  });
+
+  it('keeps the 40px band where the band still holds Close or a trail', () => {
+    for (const page of ['board', 'settings', 'impact', 'whatsNew'] as const) {
       expect(frameGeometryOf({ page }).bandHeight, page).toBe(FRAME_BAND_PX);
     }
     expect(FRAME_PAGES.every((page) => frameGeometryOf({ page }).titleRowHeight === 32)).toBe(true);

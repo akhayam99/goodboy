@@ -110,7 +110,7 @@ const primaryTailOf = ({
         verb,
       };
     case 'resume':
-      return { state: 'stopped', phrase: 'Paused by you', startedAt: null, verb };
+      return { state: 'stopped', phrase: 'Paused by you', startedAt: null, verb: null };
     case 'raise-cap':
       return { state: 'paused', phrase: 'Paused at the spend cap', startedAt: null, verb };
     case 'review-plan':

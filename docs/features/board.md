@@ -27,7 +27,7 @@ Finished work stays in view. **Done** and **archived** are lanes like the others
 
 ### Session card
 
-Read a task at a glance: its title on two lines, its project in gray, and one signal at the right. The signal is the first that applies: an open question, a failed check, the pull request in its state color (click it to open the pull request), or a running dot with the number of agents at work. Age, linked issues, agent count, cost, the pin and draft review comments wait in the card that opens when you rest the pointer on it. When one action waits on you, such as an open question, a round button on the card opens it, and the card menu is always visible.
+Read a task at a glance: its title on two lines, its project in gray, and one signal at the right. The signal is the first that applies: an open question, a failed check, the pull request in its state color (click it to open the pull request), or a running dot with the number of agents at work (the number shows from two on). Age, linked issues, agent count, cost, the pin and draft review comments wait in the card that opens when you rest the pointer on it. When one action waits on you, such as an open question, a round button on the card opens it, and the card menu is always visible.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-card-dark.webp">

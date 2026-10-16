@@ -35,7 +35,7 @@ const renderGrid = ({ onSelect }: RenderParams) =>
           isSelected={row.id === 'a'}
           onSelect={() => onSelect(row.id)}
           cells={[
-            <StateDot key="dot" state="running" label="Working" />,
+            <StateDot key="dot" state="running" label="Working" isLive />,
             row.role,
             row.title,
             row.time,
@@ -99,7 +99,47 @@ describe('ListGrid', () => {
     screen.getByText('test (payments-api)');
   });
 
-  it('names a group by its heading and puts its count in the last column', () => {
+  it('drops a column that hides when empty from the template when no row fills it', () => {
+    const columns: ReadonlyArray<ListGridColumn> = [
+      { key: 'title', width: 'fill', isTitle: true },
+      { key: 'port', width: 56, shouldHideWhenEmpty: true },
+      { key: 'time', width: 56, align: 'end' },
+    ];
+    render(
+      <ListGrid label="Scripts" columns={columns}>
+        <ListGridRow cells={['dev server', null, '2m']} />
+        <ListGridRow cells={['lint', '', '8s']} />
+      </ListGrid>,
+    );
+    const list = screen.getByRole('list', { name: 'Scripts' });
+    expect(list.style.gridTemplateColumns).toBe('0px minmax(0,1fr) 56px 0px');
+    expect(list.querySelectorAll('[data-list-grid-cell="port"]')).toHaveLength(0);
+    expect(list.querySelector('[data-list-grid-cell="title"]')?.className).toContain('col-start-2');
+  });
+
+  it('keeps a hiding column on every row as soon as one row fills it', () => {
+    const columns: ReadonlyArray<ListGridColumn> = [
+      { key: 'title', width: 'fill', isTitle: true },
+      { key: 'port', width: 56, shouldHideWhenEmpty: true },
+    ];
+    const { rerender } = render(
+      <ListGrid label="Scripts" columns={columns}>
+        <ListGridRow key="dev" cells={['dev server', null]} />
+        <ListGridRow key="api" cells={['api', ':4318']} />
+      </ListGrid>,
+    );
+    const list = screen.getByRole('list', { name: 'Scripts' });
+    expect(list.style.gridTemplateColumns).toBe('0px minmax(0,1fr) 56px 0px');
+    expect(list.querySelectorAll('[data-list-grid-cell="port"]')).toHaveLength(2);
+    rerender(
+      <ListGrid label="Scripts" columns={columns}>
+        <ListGridRow key="dev" cells={['dev server', null]} />
+      </ListGrid>,
+    );
+    expect(list.style.gridTemplateColumns).toBe('0px minmax(0,1fr) 0px');
+  });
+
+  it('names a group by its heading and puts its count right after the name', () => {
     render(
       <ListGrid label="Tasks" columns={COLUMNS} isGrouped>
         <ListGridGroup label="In progress" count={12}>
@@ -109,11 +149,12 @@ describe('ListGrid', () => {
     );
     const group = screen.getByRole('list', { name: 'In progress' });
     within(group).getByText('Ledger export times out');
-    expect(screen.getByText('12').className).toContain('col-start-[-3]');
+    const heading = screen.getByRole('heading', { name: 'In progress' });
+    expect(heading.nextElementSibling?.textContent).toBe('12');
     expect(screen.getByRole('list', { name: 'Tasks' }).className).toContain('gap-y-4');
   });
 
-  it('keeps a group action beside its name and the count alone in the last column', () => {
+  it('keeps the count beside the name and the group action after them', () => {
     render(
       <ListGrid label="Tasks" columns={COLUMNS} isGrouped>
         <ListGridGroup label="In progress" count={12} action={<button type="button">Open</button>}>
@@ -122,8 +163,29 @@ describe('ListGrid', () => {
       </ListGrid>,
     );
     const action = screen.getByRole('button', { name: 'Open' });
-    expect(action.closest('[class*="col-end-[-3]"]')).not.toBeNull();
-    expect(screen.getByText('12').textContent).toBe('12');
+    const count = screen.getByText('12');
+    expect(count.compareDocumentPosition(action) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(count.previousElementSibling?.textContent).toBe('In progress');
+  });
+
+  it('shows the count from two rows and puts the fold word right after it', () => {
+    const onToggle = vi.fn();
+    const { container } = render(
+      <ListGrid label="Tasks" columns={COLUMNS} isGrouped>
+        <ListGridGroup label="Starred" count={1}>
+          <ListGridRow cells={['', 'HBL-412', 'Ledger export times out', '2h']} />
+        </ListGridGroup>
+        <ListGridGroup label="Linear" count={411} fold={{ label: 'Show all', onToggle }}>
+          <ListGridRow cells={['', 'HBL-398', 'Settlement dates', '5d']} />
+        </ListGridGroup>
+      </ListGrid>,
+    );
+    const counts = Array.from(container.querySelectorAll('[data-list-grid-count]'));
+    expect(counts.map((count) => count.textContent)).toEqual(['411']);
+    const fold = screen.getByRole('button', { name: 'Show all' });
+    expect(counts[0]?.nextElementSibling).toBe(fold);
+    fireEvent.click(fold);
+    expect(onToggle).toHaveBeenCalledOnce();
   });
 
   it('draws a group with no name as rows alone, with no heading and no count', () => {
@@ -146,16 +208,36 @@ describe('ListGrid', () => {
 });
 
 describe('StateDot', () => {
-  it('names its state and pulses only while running', () => {
+  it('names its state and pulses only on the item the caller marks live', () => {
     render(
       <>
-        <StateDot state="running" label="Working" />
-        <StateDot state="needsYou" label="Needs you" />
+        <StateDot state="running" label="Working" isLive />
+        <StateDot state="running" label="2 running" />
+        <StateDot state="needsYou" label="Needs you" isLive />
       </>,
     );
     expect(screen.getByRole('img', { name: 'Working' }).className).toContain('animate-soft-pulse');
+    expect(screen.getByRole('img', { name: '2 running' }).className).not.toContain(
+      'animate-soft-pulse',
+    );
     expect(screen.getByRole('img', { name: 'Needs you' }).className).not.toContain(
       'animate-soft-pulse',
     );
+  });
+
+  it('draws idle and stopped as a ring with a transparent fill', () => {
+    render(
+      <>
+        <StateDot state="idle" label="Idle" />
+        <StateDot state="stopped" label="Stopped" />
+        <StateDot state="done" label="Done" />
+      </>,
+    );
+    for (const name of ['Idle', 'Stopped']) {
+      const dot = screen.getByRole('img', { name });
+      expect(dot.className).toContain('bg-transparent');
+      expect(dot.className).toContain('ring-1');
+    }
+    expect(screen.getByRole('img', { name: 'Done' }).className).toContain('bg-success');
   });
 });

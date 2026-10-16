@@ -4,7 +4,7 @@ import { Tooltip } from '@goodboy/ui';
 type Props = {
   readonly label: string;
   readonly glyph: ReactNode;
-  readonly word: string;
+  readonly word: string | null;
 };
 
 export const SignalWord = ({ label, glyph, word }: Props) => (
@@ -18,9 +18,11 @@ export const SignalWord = ({ label, glyph, word }: Props) => (
       <span aria-hidden className="inline-flex shrink-0 items-center">
         {glyph}
       </span>
-      <span aria-hidden className="truncate">
-        {word}
-      </span>
+      {word === null ? null : (
+        <span aria-hidden className="truncate">
+          {word}
+        </span>
+      )}
     </span>
   </Tooltip>
 );

@@ -24,6 +24,8 @@ const questionLabel = ({ count }: CountParams): string =>
 const runningLabel = ({ count }: CountParams): string =>
   count === 1 ? '1 agent running' : `${count} agents running`;
 
+const countWord = ({ count }: CountParams): string | null => (count > 1 ? String(count) : null);
+
 export const SessionSignal = ({ signal, onOpenRequest }: Props) => {
   switch (signal.kind) {
     case 'question':
@@ -33,7 +35,7 @@ export const SessionSignal = ({ signal, onOpenRequest }: Props) => {
           glyph={
             <CONCEPT_ICONS.questions size={ICON_SIZE.row} aria-hidden className="text-warning" />
           }
-          word={String(signal.count)}
+          word={countWord({ count: signal.count })}
         />
       );
     case 'checks-failed':
@@ -50,8 +52,8 @@ export const SessionSignal = ({ signal, onOpenRequest }: Props) => {
       return (
         <SignalWord
           label={runningLabel({ count: signal.count })}
-          glyph={<StateDot state="running" label={runningLabel({ count: signal.count })} />}
-          word={String(signal.count)}
+          glyph={<StateDot state="running" label={runningLabel({ count: signal.count })} isLive />}
+          word={countWord({ count: signal.count })}
         />
       );
     case 'request': {

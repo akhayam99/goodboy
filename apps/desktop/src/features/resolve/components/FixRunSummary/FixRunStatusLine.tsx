@@ -1,6 +1,7 @@
 import { StatusDot, WorkNode } from '@goodboy/ui';
 import type { ResolveAttempt } from '@goodboy/types';
 import { useNow } from '../../../../shared/hooks/useNow';
+import { joinFacts } from '../../../../shared/utils/joinFacts';
 import { formatDuration } from '../../../../shared/utils/time/formatDuration';
 import { fixRunModelLabel } from '../../fixRun';
 import type { FixRunStatus } from '../../fixRunStatus';
@@ -45,7 +46,7 @@ export const FixRunStatusLine = ({ attempt, status, shared }: Props) => {
       ) : (
         <WorkNode state="running" label={WORD[status]} mark={{ kind: 'dot' }} />
       )}
-      <span className="min-w-0 truncate">{parts.join(' · ')}</span>
+      <span className="min-w-0 truncate">{joinFacts({ facts: parts })}</span>
     </p>
   );
 };

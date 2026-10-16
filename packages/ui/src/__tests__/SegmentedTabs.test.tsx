@@ -23,6 +23,25 @@ describe('SegmentedTabs', () => {
     expect(screen.getByRole('tablist', { name: 'view' })).toBeDefined();
   });
 
+  it('hugs its tabs and puts a badge only on an unselected tab that has something', () => {
+    render(
+      <SegmentedTabs
+        ariaLabel="Sources"
+        options={[
+          { value: 'all', label: 'All', badge: '12' },
+          { value: 'github', label: 'GitHub', badge: '7' },
+          { value: 'linear', label: 'Linear', badge: 0 },
+        ]}
+        value="all"
+        onChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('tablist').className.split(' ')).toContain('w-fit');
+    expect(screen.getByRole('tab', { name: 'All' }).textContent).toBe('All');
+    expect(screen.getByRole('tab', { name: /GitHub/ }).textContent).toBe('GitHub7');
+    expect(screen.getByRole('tab', { name: 'Linear' }).textContent).toBe('Linear');
+  });
+
   it('changes the selected value on click', () => {
     const onChange = vi.fn();
     render(<SegmentedTabs ariaLabel="view" options={OPTIONS} value="first" onChange={onChange} />);

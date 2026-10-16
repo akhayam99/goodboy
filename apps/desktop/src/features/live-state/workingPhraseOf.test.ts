@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { formatTailClock } from './formatTailClock';
 import { workingPhraseOf, type LastTool } from './workingPhraseOf';
 
 const tool = ({ name, command, path }: LastTool): LastTool => ({ name, command, path });
@@ -35,12 +34,5 @@ describe('workingPhraseOf', () => {
 
   it('says the model writes when no tool ran yet, never the command text', () => {
     expect(workingPhraseOf({ tool: null, project: 'payments-api' })).toBe('Writing the answer');
-  });
-});
-
-describe('formatTailClock', () => {
-  it('reads m:ss under an hour and 1h 04m above', () => {
-    expect(formatTailClock({ elapsedMs: 72_000 })).toBe('1:12');
-    expect(formatTailClock({ elapsedMs: 3_840_000 })).toBe('1h 04m');
   });
 });

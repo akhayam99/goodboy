@@ -28,7 +28,44 @@ describe('TailLine', () => {
       />,
     );
     screen.getByText('Running pnpm in payments-api');
-    screen.getByText('1:12');
+    screen.getByText('1m 12s');
+  });
+
+  it('draws a needs-you tail in the warning glyph with its answer first and no clock', () => {
+    const { container } = render(
+      <TailLine
+        facts={{
+          state: 'needsYou',
+          phrase: 'Waiting for your answer on step 4',
+          startedAt: at({ msAgo: 72_000 }),
+          actions: [TAIL_ACTION.answer],
+        }}
+        onAction={() => undefined}
+      />,
+    );
+    expect(
+      container.querySelector('[data-tail-state="needsYou"] [aria-label="Needs you"]'),
+    ).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Answer' }).getAttribute('data-variant')).toBe(
+      'secondary',
+    );
+    expect(screen.queryByText('1m 12s')).toBeNull();
+  });
+
+  it('shows no clock in the first second', () => {
+    const { container } = render(
+      <TailLine
+        facts={{
+          state: 'working',
+          phrase: 'Reading the ledger export',
+          startedAt: at({ msAgo: 300 }),
+          actions: [],
+        }}
+        onAction={() => undefined}
+      />,
+    );
+    expect(container.querySelector('.tabular-nums')).toBeNull();
+    expect(container.textContent).not.toMatch(/ms|0s/);
   });
 
   it('runs the action the user pressed', async () => {
@@ -61,6 +98,6 @@ describe('TailLine', () => {
         onAction={() => undefined}
       />,
     );
-    expect(screen.queryByText('1:12')).toBeNull();
+    expect(screen.queryByText('1m 12s')).toBeNull();
   });
 });

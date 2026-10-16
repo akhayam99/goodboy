@@ -140,7 +140,8 @@ describe('the c09 orchestrated scenes', () => {
       ),
     ).toBeDefined();
     const queued = screen.getByRole('list', { name: 'Queued hints' });
-    expect(within(queued).getByText('Waits for the next decision')).toBeDefined();
+    expect(screen.getAllByText('Waits for the next decision')).toHaveLength(1);
+    expect(within(queued).queryByText('Waits for the next decision')).toBeNull();
     expect(within(queued).getByRole('button', { name: 'Remove' })).toBeDefined();
     expect(screen.getByPlaceholderText('Hint the orchestrator')).toBeDefined();
     const dock = nodeOf('[data-slot="pane-dock"]');

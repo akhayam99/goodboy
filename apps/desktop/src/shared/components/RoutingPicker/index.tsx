@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from 'react';
 import type { ShortcutId } from '../../keyboard/registry';
-import { ChevronDown, X } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { MODEL_CATALOGS } from '@goodboy/core';
-import { AnchoredPopover, cn, Tooltip, useDropdown, tintClasses, IconButton } from '@goodboy/ui';
+import { AnchoredPopover, cn, Tooltip, useDropdown, tintClasses } from '@goodboy/ui';
 import type { ProviderId, VerbosityLevel } from '@goodboy/types';
 import { TriggerLabel } from './TriggerLabel';
 import { AUTO_LABEL, AutoTriggerLabel } from './AutoTriggerLabel';
@@ -30,7 +30,6 @@ export type Props = {
   readonly onVerbosity?: (verbosity: VerbosityLevel) => void;
   readonly onReset?: () => void;
   readonly resetLabel?: string;
-  readonly hasTriggerReset?: boolean;
   readonly overridden?: boolean;
   readonly defaultSummary?: string;
   readonly variant?: 'field' | 'pill';
@@ -61,7 +60,6 @@ export const RoutingPicker = ({
   onVerbosity,
   onReset,
   resetLabel,
-  hasTriggerReset = true,
   overridden,
   defaultSummary,
   variant = 'field',
@@ -89,8 +87,6 @@ export const RoutingPicker = ({
   });
   const { open, close, toggle } = dropdown;
   const effortValue = effort.value ?? 'medium';
-  const resetCopy = resetLabel ?? 'reset to default';
-  const resetAriaLabel = resetLabel ?? 'Reset routing override';
   const routing = resolveRouting({
     providers: ROUTING_PICKER_CONSTANTS.providers,
     provider,
@@ -129,6 +125,7 @@ export const RoutingPicker = ({
           effort: recommendation.effort,
         })
       : null;
+  const isPinned = isOverridden && !isAuto;
   const summary =
     isAuto && autoSummary != null
       ? `${AUTO_LABEL}, now ${autoSummary}`
@@ -154,6 +151,7 @@ export const RoutingPicker = ({
       {...(verbosity != null && { verbosity })}
       {...(onVerbosity != null && { onVerbosity })}
       {...(onReset != null && { onReset })}
+      {...(resetLabel != null && { resetLabel })}
       {...(overridden != null && { overridden })}
       {...(defaultSummary != null && { defaultSummary })}
     />
@@ -182,17 +180,6 @@ export const RoutingPicker = ({
       anchorClassName={cn('flex items-center gap-1', variant === 'field' && 'w-full')}
       trigger={
         <>
-          {onReset != null && hasTriggerReset && isOverridden && !disabled && (
-            <IconButton
-              icon={X}
-              label={resetAriaLabel}
-              tooltip={defaultSummary != null ? `${resetCopy} (${defaultSummary})` : resetCopy}
-              size="xs"
-              iconSize={ICON_SIZE.mark}
-              onClick={onReset}
-              className="rounded-full"
-            />
-          )}
           <Tooltip
             content={
               disabled
@@ -210,7 +197,7 @@ export const RoutingPicker = ({
               disabled={disabled}
               aria-haspopup="dialog"
               aria-expanded={open}
-              aria-label={ariaLabel != null ? `${ariaLabel}: ${summary}` : summary}
+              aria-label={`${ariaLabel != null ? `${ariaLabel}: ` : ''}${summary}${isPinned ? ', pinned' : ''}`}
               className={cn(
                 'items-center gap-2 text-label transition-colors',
                 variant === 'pill'
@@ -220,26 +207,27 @@ export const RoutingPicker = ({
                   (open
                     ? cn('border-primary', tintClasses('primary').bgSoft)
                     : 'border-border-soft bg-subtle hover:border-border hover:bg-hover'),
-                variant === 'pill' &&
-                  (isOverridden
-                    ? cn(
-                        tintClasses('warning').bg,
-                        'ring-1',
-                        tintClasses('warning').ring,
-                        tintClasses('warning').hoverBg,
-                      )
-                    : 'bg-subtle hover:bg-hover'),
+                variant === 'pill' && 'bg-subtle hover:bg-hover',
                 disabled && 'cursor-not-allowed opacity-60',
               )}
             >
               <span className="flex min-w-0 flex-1 items-center gap-2">
                 {resolvedAuto?.label != null ? (
-                  <TriggerLabel provider={resolvedAuto.provider} label={resolvedAuto.label} />
+                  <TriggerLabel
+                    provider={resolvedAuto.provider}
+                    label={resolvedAuto.label}
+                    prefix={AUTO_LABEL}
+                  />
                 ) : isAuto ? (
                   <AutoTriggerLabel />
                 ) : (
                   <TriggerLabel provider={routing.provider} label={triggerLabel} />
                 )}
+                {isPinned ? (
+                  <span data-routing-pinned="" className="shrink-0 text-faint-foreground">
+                    · pinned
+                  </span>
+                ) : null}
                 {budget}
               </span>
               <ChevronDown

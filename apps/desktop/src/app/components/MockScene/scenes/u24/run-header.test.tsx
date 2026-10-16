@@ -39,11 +39,10 @@ const SCENE_IDS = [
   'run-header-archived',
 ] as const;
 
-const LIVE_IDS = ['run-header-held', 'run-header-paused', 'run-header-failed'] as const;
+const LIVE_IDS = ['run-header-held', 'run-header-failed'] as const;
 
 const TAIL_VERB_OF = {
   'run-header-held': 'Review plan',
-  'run-header-paused': 'Resume',
   'run-header-failed': 'Retry',
 } as const satisfies Record<(typeof LIVE_IDS)[number], string>;
 
@@ -122,6 +121,10 @@ describe('the run header scenes on the orchestrated document', () => {
     renderScene('run-header-paused');
 
     const bar = await header();
+    expect(within(tail()).getByText('Paused by you')).toBeDefined();
+    expect(within(tail()).queryByRole('button', { name: 'Resume' })).toBeNull();
+    expect(document.querySelectorAll('[data-hint-chip="queued"]')).toHaveLength(2);
+    expect(screen.getAllByText('Waits for the next decision')).toHaveLength(1);
     const verbs = bar.querySelector('[data-run-live-verbs]');
     expect(
       Array.from(verbs?.querySelectorAll('[data-run-verb]') ?? []).map((verb) =>

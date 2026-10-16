@@ -48,7 +48,7 @@ export const SessionPages = ({ session, pages, facts, sign, onOpened }: Props) =
               <span
                 data-page-value={page.id}
                 data-tone={slot.isWarning ? 'warning' : slot.isRunning ? 'running' : 'count'}
-                className="flex w-10 shrink-0 items-center justify-end gap-1 text-meta tabular-nums text-faint-foreground"
+                className="flex shrink-0 items-center justify-end gap-1 text-meta tabular-nums text-faint-foreground empty:hidden"
               >
                 {slot.isRunning ? <StatusDot tone="info" size="sm" /> : null}
                 {slot.isWarning ? <StatusDot tone="warning" size="sm" /> : null}

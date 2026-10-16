@@ -5,6 +5,7 @@ import type { ResolveAttempt } from '@goodboy/types';
 import { useTranscript } from '../../../../store/slices/transcripts/selectors';
 import { reduceTranscript } from '../../../chat/utils/transcript-items';
 import { useNow } from '../../../../shared/hooks/useNow';
+import { joinFacts } from '../../../../shared/utils/joinFacts';
 import { formatDuration } from '../../../../shared/utils/time/formatDuration';
 import { fixRunModelLabel } from '../../fixRun';
 import { LANE_QUEUED_SENTENCE } from '../../laneCopy';
@@ -46,7 +47,9 @@ export const WorkingRun = ({ attempt }: Props) => {
     >
       <h2 className="flex items-center gap-2 text-label text-foreground">
         <WorkNode state="running" label={FIX_RUN_THREAD_COPY.working} mark={{ kind: 'dot' }} />
-        {isWaiting ? FIX_RUN_THREAD_COPY.working : `${FIX_RUN_THREAD_COPY.working} · ${elapsed}`}
+        {isWaiting
+          ? FIX_RUN_THREAD_COPY.working
+          : joinFacts({ facts: [FIX_RUN_THREAD_COPY.working, elapsed] })}
       </h2>
       <p aria-live="polite" className="min-w-0 truncate text-body text-muted-foreground">
         {isWaiting ? LANE_QUEUED_SENTENCE : step}

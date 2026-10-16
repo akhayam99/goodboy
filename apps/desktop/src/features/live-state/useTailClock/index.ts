@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { IsoDateTime } from '@goodboy/types';
-import { formatTailClock } from '../formatTailClock';
+import { formatDuration } from '../../../shared/utils/time/formatDuration';
 
 type Params = {
   readonly startedAt: IsoDateTime | null;
@@ -22,5 +22,5 @@ export const useTailClock = ({ startedAt, isTicking }: Params): string | null =>
   if (!isTicking || startedAt === null) {
     return null;
   }
-  return formatTailClock({ elapsedMs: now - Date.parse(startedAt) });
+  return formatDuration({ durationMs: now - Date.parse(startedAt) });
 };

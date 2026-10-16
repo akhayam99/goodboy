@@ -39,10 +39,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'control',
   },
-  'apps/desktop/src/shared/components/RoutingPicker/index.tsx': {
-    count: 1,
-    reason: 'control',
-  },
   'apps/desktop/src/features/diff/lib/lineTone.ts': {
     count: 2,
     reason: 'diff',

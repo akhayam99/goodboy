@@ -45,6 +45,22 @@ const TAB_CLASSES = {
   sm: 'h-7 px-3',
 } as const satisfies Record<'xs' | 'sm', string>;
 
+type BadgeParams = {
+  readonly badge: ReactNode;
+  readonly isActive: boolean;
+};
+
+const isShownBadge = ({ badge, isActive }: BadgeParams): boolean => {
+  if (badge === null || badge === undefined || badge === false || badge === '') {
+    return false;
+  }
+  const isCount = typeof badge === 'string' || typeof badge === 'number';
+  if (!isCount) {
+    return true;
+  }
+  return !isActive && badge !== 0 && badge !== '0';
+};
+
 const GLYPH = {
   xs: ICON_SIZE.row,
   sm: ICON_SIZE.control,
@@ -88,7 +104,7 @@ export const SegmentedTabs = <T extends string>({
       className={cn(
         'gap-0.5 rounded-md border border-border-soft p-px',
         SEGMENTED_FRAME_CLASSES[step],
-        fill ? 'grid w-full' : 'inline-flex items-center',
+        fill ? 'grid w-full' : 'inline-flex w-fit items-center',
         className,
       )}
       style={gridStyle}
@@ -146,7 +162,7 @@ export const SegmentedTabs = <T extends string>({
               <span className="min-w-0">
                 <span className="block truncate">{option.label}</span>
               </span>
-              {option.badge != null ? (
+              {isShownBadge({ badge: option.badge, isActive }) ? (
                 typeof option.badge === 'string' ? (
                   <span className="rounded-md bg-fill px-2 py-0.5 text-eyebrow text-muted-foreground">
                     {option.badge}
