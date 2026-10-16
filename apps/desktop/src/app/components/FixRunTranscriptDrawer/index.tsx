@@ -8,6 +8,7 @@ import { fixRunStatusOf } from '../../../features/resolve/fixRunStatus';
 import { useReviewEntries } from '../../../features/resolve/components/ReviewFlow/useReviewEntries';
 import { FIX_RUN_COPY } from '../../../features/resolve/reviewFlowCopy';
 import { FixRunLead } from '../../../features/resolve/components/FixRunSummary/FixRunLead';
+import { TranscriptUsage } from './TranscriptUsage';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -31,8 +32,17 @@ export const FixRunTranscriptDrawer = ({ sessionId, agentId, onClose }: Props) =
     void loadResolveSession({ sessionId });
   }, [loadResolveSession, sessionId]);
 
+  const usage = <TranscriptUsage sessionId={sessionId} agentId={agentId} />;
+
   if (brief === null) {
-    return <AgentTranscriptDrawer sessionId={sessionId} agentId={agentId} onClose={onClose} />;
+    return (
+      <AgentTranscriptDrawer
+        sessionId={sessionId}
+        agentId={agentId}
+        detail={usage}
+        onClose={onClose}
+      />
+    );
   }
 
   const asking = fixRunAskingOf({ entries, batchThreadIds: brief.batchThreadIds });
@@ -41,6 +51,7 @@ export const FixRunTranscriptDrawer = ({ sessionId, agentId, onClose }: Props) =
     <AgentTranscriptDrawer
       sessionId={sessionId}
       agentId={agentId}
+      detail={usage}
       lead={<FixRunLead sessionId={sessionId} agentId={agentId} />}
       isLeadPreferred={status === 'ended' || asking.length > 0}
       leadAlertCount={asking.length}

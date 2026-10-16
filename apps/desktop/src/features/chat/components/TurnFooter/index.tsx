@@ -5,7 +5,7 @@ import {
   WorkNode,
   type WorkNodeState,
 } from '@goodboy/ui';
-import { contextTokensForUsage, inputTokensForUsage } from '@goodboy/core';
+import { inputTokensForUsage } from '@goodboy/core';
 import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import type { TurnOutcome } from '../../utils/turnOutcome';
@@ -14,7 +14,7 @@ import { contextWindowFor } from '../../../session/contextWindowFor';
 import { TranscriptShell } from '../TranscriptShell';
 import { useTurnFooter } from './useTurnFooter';
 import { TurnFooterDetail } from './TurnFooterDetail';
-import { UsageStatsRow } from './UsageStatsRow';
+import { TurnFooterSummary } from './TurnFooterSummary';
 
 type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'usage' }>;
@@ -81,11 +81,6 @@ export const TurnFooter = ({
   });
   const cachedPct = totalInput > 0 ? Math.round((data.cachedInputTokens / totalInput) * 100) : null;
   const contextWindow = data.model != null ? contextWindowFor(data.model) : null;
-  const contextTokens = contextTokensForUsage({ contextTokens: data.contextTokens ?? undefined });
-  const contextPct =
-    contextTokens != null && contextWindow != null && contextWindow > 0
-      ? Math.min(1, contextTokens / contextWindow)
-      : null;
 
   return (
     <TranscriptShell tone="neutral" variant="leftBorder" className="flex w-fit">
@@ -99,13 +94,7 @@ export const TurnFooter = ({
             aria-label="Turn detail"
             className="flex items-center gap-1 text-meta tabular-nums text-muted-foreground transition-opacity hover:opacity-80"
           >
-            <UsageStatsRow
-              data={data}
-              totalInput={totalInput}
-              cachedPct={cachedPct}
-              contextPct={contextPct}
-              duration={duration}
-            />
+            <TurnFooterSummary data={data} duration={duration} />
           </button>
         }
       >

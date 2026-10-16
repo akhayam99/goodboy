@@ -805,18 +805,6 @@ describe('moving across every place keeps one frame', () => {
       });
       await escape();
 
-      await click(screen.getByRole('tab', { name: 'Brief' }));
-      const briefLayers = (): RailLayers =>
-        sessionLayers({ body: shown('[data-slot="pane-body"]') });
-      expectOneRail({ place: 'Agent brief', layers: briefLayers(), rail: COLUMN_RAIL });
-      await openContextDrawer(sessionId);
-      expectOneRail({
-        place: 'Agent brief with a drawer',
-        layers: briefLayers(),
-        rail: COLUMN_RAIL,
-      });
-      await escape();
-
       act(() => {
         const state = useAppStore.getState();
         useAppStore.setState({

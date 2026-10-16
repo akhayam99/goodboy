@@ -72,7 +72,7 @@ describe('the queue scenes', () => {
       'primary',
     );
     expect(screen.getByRole('button', { name: 'Read now' }).getAttribute('data-variant')).toBe(
-      'ghost',
+      'quiet',
     );
   });
 

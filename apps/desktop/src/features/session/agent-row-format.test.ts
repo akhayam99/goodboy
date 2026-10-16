@@ -8,7 +8,8 @@ import type {
   TelemetryRecordId,
   TelemetryRecord,
 } from '@goodboy/types';
-import { computeLatestTelemetryByAgentId, formatCost, formatTokens } from './agent-row-format';
+import { formatTokens } from '@goodboy/ui';
+import { computeLatestTelemetryByAgentId } from './agent-row-format';
 
 describe('formatTokens', () => {
   it('renders raw count under 1k', () => {
@@ -26,27 +27,6 @@ describe('formatTokens', () => {
   it('renders decimal k below one million and decimal M at or above it', () => {
     expect(formatTokens(100_000)).toBe('100.0k');
     expect(formatTokens(1_234_567)).toBe('1.23M');
-  });
-});
-
-describe('formatCost', () => {
-  it('shows $0 for zero', () => {
-    expect(formatCost(0)).toBe('$0');
-  });
-
-  it('shows <$0.01 below the cent', () => {
-    expect(formatCost(0.0001)).toBe('<$0.01');
-    expect(formatCost(0.0099)).toBe('<$0.01');
-  });
-
-  it('shows 2 decimals from a cent up', () => {
-    expect(formatCost(0.012)).toBe('$0.01');
-    expect(formatCost(0.999)).toBe('$1.00');
-  });
-
-  it('shows 2 decimals at or above 1 dollar', () => {
-    expect(formatCost(1)).toBe('$1.00');
-    expect(formatCost(12.345)).toBe('$12.35');
   });
 });
 

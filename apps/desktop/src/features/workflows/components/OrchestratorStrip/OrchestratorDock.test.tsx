@@ -217,7 +217,7 @@ describe('OrchestratorDock', () => {
     const queue = screen.getByRole('button', { name: 'Queue' });
     const readNow = screen.getByRole('button', { name: 'Read now' });
     expect(queue.getAttribute('data-variant')).toBe('primary');
-    expect(readNow.getAttribute('data-variant')).toBe('ghost');
+    expect(readNow.getAttribute('data-variant')).toBe('quiet');
   });
 
   type QueuedHintParams = {

@@ -1,23 +1,59 @@
-import type { Session } from '@goodboy/types';
-import { useAppStore } from '../../../../../store';
+import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
+import { ProviderUsagePill } from '../../ProviderUsagePill';
+import { PROVIDER_LABEL } from '../../../../providers/providerLabel';
+import { modelLabel } from '../../../utils/chat-constants';
 import type { useTurnRouting } from '../hooks/useTurnRouting';
-import { ComposerAgentRoutingPicker } from './ComposerAgentRoutingPicker';
-import { ComposerRoutingPickerView } from './ComposerRoutingPickerView';
+
+type FullRouting = ReturnType<typeof useTurnRouting>;
+
+export type ComposerRouting = Pick<
+  FullRouting,
+  | 'effectiveProvider'
+  | 'effectiveModelId'
+  | 'effectiveEffort'
+  | 'verbosity'
+  | 'connectedProviderIds'
+  | 'allowOverride'
+  | 'isOverridden'
+  | 'referenceProvider'
+  | 'referenceModel'
+  | 'setVerbosity'
+  | 'onSelectRoute'
+  | 'onResetTurnOverride'
+>;
 
 type Props = {
-  readonly session: Session;
-  readonly routing: ReturnType<typeof useTurnRouting>;
+  readonly routing: ComposerRouting;
 };
 
-export const ComposerRoutingPicker = ({ session, routing }: Props) => {
-  const agent = useAppStore((state) => {
-    const agentId = state.selectedAgentId[session.id] ?? null;
-    return agentId === null
-      ? null
-      : ((state.sessionPhaseRuns[session.id] ?? []).find((run) => run.id === agentId) ?? null);
-  });
-  if (agent === null) {
-    return <ComposerRoutingPickerView routing={routing} header={null} />;
-  }
-  return <ComposerAgentRoutingPicker session={session} agent={agent} routing={routing} />;
+export const ComposerRoutingPicker = ({ routing }: Props) => {
+  const overrideDisabledTitle = !routing.allowOverride
+    ? 'this session was created without per-turn routing overrides'
+    : undefined;
+
+  return (
+    <RoutingPicker
+      variant="pill"
+      align="end"
+      ariaLabel="Model routing"
+      openEvent="goodboy:open-model-picker"
+      shortcut="session.model"
+      provider={routing.effectiveProvider}
+      model={routing.effectiveModelId}
+      effort={{ editable: true, value: routing.effectiveEffort }}
+      verbosity={routing.verbosity}
+      connectedProviders={routing.connectedProviderIds}
+      disabled={!routing.allowOverride}
+      disabledTitle={overrideDisabledTitle}
+      overridden={routing.isOverridden}
+      defaultSummary={`${PROVIDER_LABEL[routing.referenceProvider]} · ${modelLabel(
+        routing.referenceModel,
+        routing.referenceProvider,
+      )}`}
+      budget={<ProviderUsagePill provider={routing.effectiveProvider} />}
+      onChange={routing.onSelectRoute}
+      onVerbosity={routing.setVerbosity}
+      onReset={routing.onResetTurnOverride}
+    />
+  );
 };

@@ -29,7 +29,7 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('Scribe pull request text scenes', () => {
-  it('shows the text in the Brief while the engine pushes and opens the draft', async () => {
+  it('shows the text in the conversation while the engine pushes and opens the draft', async () => {
     render(
       <ToastProvider>
         <ScribeProposalCreatingScene />
@@ -37,7 +37,7 @@ describe('Scribe pull request text scenes', () => {
     );
 
     const brief = await screen.findByTestId('scribe-proposal');
-    expect(screen.getByRole('heading', { name: 'Pull request text' })).toBeDefined();
+    expect(brief.textContent).toContain('Pull request text');
     expect(brief.textContent).toContain('Guard settlement postings against retries');
     expect(brief.textContent).toContain('key each posting by its event id');
     expect(screen.getByText('Creating')).toBeDefined();
@@ -51,7 +51,7 @@ describe('Scribe pull request text scenes', () => {
       </ToastProvider>,
     );
 
-    const alert = await screen.findByRole('alert');
+    const alert = within(await screen.findByTestId('scribe-proposal')).getByRole('alert');
     expect(alert.textContent).toContain("Couldn't write the pull request text");
     expect(alert.textContent).not.toContain('Permission to harborline');
     fireEvent.click(within(alert).getByRole('button', { name: 'Details' }));
@@ -62,16 +62,17 @@ describe('Scribe pull request text scenes', () => {
     expect(screen.getByText('Guard settlement postings against retries')).toBeDefined();
   });
 
-  it('says Failed in the agent header too, not Done above a Failed section', async () => {
+  it('says Failed on the card once, with no Done anywhere and no state in the header', async () => {
     render(
       <ToastProvider>
         <ScribeProposalFailedScene />
       </ToastProvider>,
     );
 
-    await screen.findByRole('alert');
-    expect(screen.getAllByText('Failed').length).toBeGreaterThanOrEqual(2);
+    const card = await screen.findByTestId('scribe-proposal');
+    expect(within(card).getByText('Failed')).toBeDefined();
     expect(screen.queryByText('Done')).toBeNull();
+    expect(within(screen.getByTestId('agent-header-title-row')).queryByText('Failed')).toBeNull();
   });
 
   it('draws the same text as a card in the transcript, without the raw blocks', async () => {

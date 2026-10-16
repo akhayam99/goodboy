@@ -163,8 +163,7 @@ chat**, **Stopping**, **Stopped by you**, **Idle**, **Finished by you**. The
 children are not rows of the Overview; they live in the Work rail of the chat.
 
 Auto never finishes itself. A tree that rests after its agents settled (stored
-phase `done`) reads **Idle** in the row, the rail root and the chat header
-(`AgentAutoStatus`), never Done. **Mark finished** in the agent menu
+phase `done`) reads **Idle** in the row and the rail root, never Done. **Mark finished** in the agent menu
 (`agent.markAutoFinished`, undoable) moves a resting tree to the stored phase
 `finished` (m231) through `moveRestingAutoTree`: one write that needs a resting
 phase, no stop, no running turn and no open delegation, so a tree that started

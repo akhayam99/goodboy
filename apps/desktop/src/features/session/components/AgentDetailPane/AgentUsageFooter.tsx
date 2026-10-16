@@ -4,7 +4,7 @@ import { contextWindowFor } from '../../contextWindowFor';
 import { TurnFooterDetail } from '../../../chat/components/TurnFooter/TurnFooterDetail';
 import { UsageStatsRow } from '../../../chat/components/TurnFooter/UsageStatsRow';
 import type { TurnFooterData } from '../../../chat/components/TurnFooter/useTurnFooter';
-import type { AgentAggregate } from '../AgentMetrics';
+import type { AgentAggregate } from '../../agentAggregate';
 import type { ProviderContextUsage } from '../AgentTree/ContextWindowBar';
 
 type Props = {

@@ -1,9 +1,8 @@
 import { PaneShell } from '@goodboy/ui';
-import type { ReactNode } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
 import { CreateAgentPopover } from '../../CreateAgentPopover';
 import { createAgentEventName } from '../../../createAgentEventName';
-import { StandaloneAgentsLane } from '../../StandaloneAgentsLane';
+import { AgentsGrid } from '../../AgentsGrid';
 import { WorkflowAutorunToggle } from '../../../../workflows/components/WorkflowAutorunToggle';
 import { useAppStore } from '../../../../../store/store';
 import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
@@ -14,7 +13,7 @@ type Props = {
 };
 
 export const AgentsPane = ({ session, meta }: Props) => {
-  const sessionId = session.id as SessionId;
+  const sessionId: SessionId = session.id;
   const autoRun = useAppStore((s) => sessionById(s.sessions, sessionId)?.autoRun === true);
   const setSessionAutoRun = useAppStore((s) => s.setSessionAutoRun);
 
@@ -32,7 +31,7 @@ export const AgentsPane = ({ session, meta }: Props) => {
         </>
       }
     >
-      <StandaloneAgentsLane session={session} variant="lens" showCompleted />
+      <AgentsGrid session={session} />
     </PaneShell>
   );
 };

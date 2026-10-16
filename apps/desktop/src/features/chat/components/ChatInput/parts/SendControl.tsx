@@ -1,50 +1,30 @@
-import { ArrowUp, Square } from 'lucide-react';
-import { Button, cn, Tooltip, tintClasses } from '@goodboy/ui';
+import { ArrowUp } from 'lucide-react';
+import { Tooltip } from '@goodboy/ui';
 import { DeliveryActions } from '../../../../../shared/components/DeliveryActions';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { formatCombo, shortcutGlyphs } from '../../../../../shared/keyboard/registry';
 
 type Props = {
   readonly isRunning: boolean;
-  readonly isEmpty: boolean;
   readonly canSend: boolean;
-  readonly showsDeliveryChoice: boolean;
   readonly sendDisabledTitle?: string;
-  readonly onCancel: () => void;
   readonly onSend: () => void;
   readonly onSendNow: () => void;
 };
 
 export const SendControl = ({
   isRunning,
-  isEmpty,
   canSend,
-  showsDeliveryChoice,
   sendDisabledTitle,
-  onCancel,
   onSend,
   onSendNow,
 }: Props) => {
-  if (isRunning && isEmpty) {
-    return (
-      <Tooltip content="Stop the turn">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onCancel}
-          className={cn(tintClasses('danger').text, tintClasses('danger').hoverBg)}
-        >
-          <Square size={ICON_SIZE.row} aria-hidden fill="currentColor" />
-          Stop
-        </Button>
-      </Tooltip>
-    );
-  }
-
-  if (showsDeliveryChoice) {
+  if (isRunning) {
     return (
       <DeliveryActions
         canSend={canSend}
+        readNowLabel="Send now"
+        readNowHint="Stop the turn and read this now"
         queueKeys={formatCombo('Enter')}
         readNowKeys={shortcutGlyphs('composer.submit')}
         onQueue={onSend}

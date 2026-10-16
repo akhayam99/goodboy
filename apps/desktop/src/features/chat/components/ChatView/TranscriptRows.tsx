@@ -8,12 +8,15 @@ import type {
   ProviderRunId,
   SessionId,
 } from '@goodboy/types';
-import type { TranscriptRow } from '../../utils/cluster-operations';
+import type { ConversationRow } from '../../utils/conversationRows';
 import type { ThinkingContext } from '../../utils/thinking-context';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import type { TurnFooterInfo } from '../../utils/turnOutcome';
 import { OperationsCluster } from '../OperationsCluster';
+import { PlanChecklist } from '../PlanChecklist';
+import { TurnSummaryLine } from '../TurnSummaryLine';
 import { ThinkingIndicator } from '../ThinkingIndicator';
+import { ConversationTail } from '../ConversationTail';
 import { TranscriptCard } from '../TranscriptCards';
 import { OpenQuestionCluster } from './OpenQuestionCluster';
 import { BriefCard } from './BriefCard';
@@ -25,7 +28,7 @@ import { isWorkflowRailRow } from './workflowRailGroup';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 
 type Props = {
-  rows: ReadonlyArray<TranscriptRow>;
+  rows: ReadonlyArray<ConversationRow>;
   oqByTurnOrdinal: ReadonlyMap<number | null, ReadonlyArray<OpenQuestion>>;
   slackDrafts?: ReadonlyArray<IntegrationDraft>;
   sessionId: SessionId;
@@ -43,6 +46,8 @@ type Props = {
   turnFooters?: ReadonlyMap<ProviderRunId, TurnFooterInfo>;
   briefLabel?: string;
   insertions?: ReadonlyArray<TranscriptInsertion>;
+  onOpenTranscript?: () => void;
+  onStop?: () => void;
 };
 
 type VisibilityParams = {
@@ -68,7 +73,7 @@ const RUN_BEARING_KINDS = new Set<TranscriptItem['kind']>([
   'permission_decision',
 ]);
 
-const rowRunId = ({ row }: { readonly row: TranscriptRow }): ProviderRunId | null => {
+const rowRunId = ({ row }: { readonly row: ConversationRow }): ProviderRunId | null => {
   if (row.kind !== 'item' || !RUN_BEARING_KINDS.has(row.item.kind)) {
     return null;
   }
@@ -78,7 +83,7 @@ const rowRunId = ({ row }: { readonly row: TranscriptRow }): ProviderRunId | nul
 const lastRowIndexByRun = ({
   rows,
 }: {
-  readonly rows: ReadonlyArray<TranscriptRow>;
+  readonly rows: ReadonlyArray<ConversationRow>;
 }): ReadonlyMap<ProviderRunId, number> => {
   const byRun = new Map<ProviderRunId, number>();
   rows.forEach((row, index) => {
@@ -109,6 +114,8 @@ export const TranscriptRows = ({
   turnFooters,
   briefLabel,
   insertions = [],
+  onOpenTranscript,
+  onStop,
 }: Props) => {
   const out: ReactNode[] = [];
   const suggestions = mountSuggestionsByRun ?? new Map<ProviderRunId, ReactNode>();
@@ -240,7 +247,22 @@ export const TranscriptRows = ({
     flushRailGroup();
     out.push(
       <li key={row.key} style={visibilityStyle({ px: rowEstimatePx({ row }) })}>
-        {row.kind === 'operations' ? (
+        {row.kind === 'summary' ? (
+          <TurnSummaryLine
+            steps={row.steps}
+            sessionId={sessionId}
+            agentId={selectedAgentId}
+            workingDir={workingDir}
+            onOpenDiff={onOpenDiff}
+            onRefreshAuth={onRefreshAuth}
+            onRetryRun={onRetryRun}
+            retryingRunId={retryingRunId}
+            activeRunId={activeRunId ?? null}
+            {...(onOpenTranscript !== undefined && { onOpenTranscript })}
+          />
+        ) : row.kind === 'plan' ? (
+          <PlanChecklist checklist={row.checklist} isLive={activeRunId != null} />
+        ) : row.kind === 'operations' ? (
           <OperationsCluster
             items={row.items}
             sessionId={sessionId}
@@ -318,7 +340,15 @@ export const TranscriptRows = ({
       {out}
       {isThinking ? (
         <li>
-          <ThinkingIndicator context={thinkingContext} startedAt={thinkingStartedAt} />
+          {onStop === undefined ? (
+            <ThinkingIndicator context={thinkingContext} startedAt={thinkingStartedAt} />
+          ) : (
+            <ConversationTail
+              context={thinkingContext}
+              onStop={onStop}
+              startedAt={thinkingStartedAt}
+            />
+          )}
         </li>
       ) : null}
     </>

@@ -3,14 +3,13 @@ import { useInheritedPaneActions } from '@goodboy/ui';
 
 type Props = {
   readonly title: ReactNode;
-  readonly meta: ReactNode;
-  readonly tabs: ReactNode;
   readonly actions: ReactNode;
+  readonly meta?: ReactNode;
   readonly below?: ReactNode;
   readonly rootRef?: Ref<HTMLDivElement>;
 };
 
-export const AgentHeader = ({ title, meta, tabs, actions, below = null, rootRef }: Props) => {
+export const AgentHeader = ({ title, actions, meta = null, below = null, rootRef }: Props) => {
   const inheritedActions = useInheritedPaneActions();
   const hasActions = actions != null || inheritedActions != null;
   return (
@@ -29,19 +28,16 @@ export const AgentHeader = ({ title, meta, tabs, actions, below = null, rootRef 
             </div>
           ) : null}
         </div>
-        <div
-          data-testid="agent-header-meta"
-          className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1"
-        >
-          {meta}
-        </div>
+        {meta === null ? null : (
+          <div
+            data-testid="agent-header-meta"
+            className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1"
+          >
+            {meta}
+          </div>
+        )}
       </div>
       {below}
-      {tabs == null ? null : (
-        <div data-testid="agent-header-tabs" className="flex min-w-0 items-center">
-          {tabs}
-        </div>
-      )}
     </div>
   );
 };

@@ -40,7 +40,10 @@ export const composerView = ({
     ? ARCHIVED_SESSION_REASON
     : providerDisconnected
       ? 'Sign in to send a message'
-      : composerPlaceholder({ isRunning, firstMessagePrompt });
+      : composerPlaceholder({
+          firstMessagePrompt,
+          agentNoun: activeAgentKind != null ? AGENT_KIND_META[activeAgentKind].noun : null,
+        });
   const shouldFocusFirstMessage = isFirstTurnForAgent && !isBlocked;
 
   return {

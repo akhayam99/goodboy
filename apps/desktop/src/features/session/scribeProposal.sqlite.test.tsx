@@ -10,7 +10,6 @@ import {
 import { summarizerQueues } from '../../store/slices/turn/turnHelpers';
 import { ToastProvider } from '../../shared/components/Toast';
 import { AssistantText } from '../chat/components/TranscriptCards/AssistantText';
-import { AgentBriefPullRequestText } from './components/AgentDetailPane/AgentBriefPullRequestText';
 import {
   acceptCreate,
   askScribe,
@@ -86,22 +85,24 @@ const askAndSettle = async () => {
   await settleScribeWork({ useAppStore });
 };
 
-const briefOf = ({ agentId }: { readonly agentId: AgentId }) =>
-  render(<AgentBriefPullRequestText sessionId={sessionId} agentId={agentId} />);
+type CardParams = {
+  readonly agentId: AgentId;
+  readonly text?: string;
+};
 
-const cardOf = ({ agentId }: { readonly agentId: AgentId }) =>
+const cardOf = ({ agentId, text = PROPOSAL }: CardParams) =>
   render(
     <ToastProvider>
-      <AssistantText text={PROPOSAL} sessionId={sessionId} agentId={agentId} />
+      <AssistantText text={text} sessionId={sessionId} agentId={agentId} />
     </ToastProvider>,
   );
 
-describe('the Scribe Brief and transcript card when opening fails', () => {
+describe('the Scribe transcript card when opening fails', () => {
   it('shows the reason with the text kept, and opens the draft on Retry', async () => {
     rejectCreate({ stderr: 'GraphQL: Resource not accessible by personal access token' });
     await askAndSettle();
 
-    briefOf({ agentId: scribeAgentIdOf({ useAppStore }) });
+    cardOf({ agentId: scribeAgentIdOf({ useAppStore }) });
 
     expect(screen.getByText('Guard settlement postings')).toBeDefined();
     const alert = screen.getByRole('alert');
@@ -120,7 +121,7 @@ describe('the Scribe Brief and transcript card when opening fails', () => {
   });
 });
 
-describe('the Scribe Brief after a follow-up turn', () => {
+describe('the Scribe transcript card after a follow-up turn', () => {
   it('keeps the proposal when the answer brings no new text', async () => {
     await askAndSettle();
 
@@ -131,7 +132,7 @@ describe('the Scribe Brief after a follow-up turn', () => {
       content: "didn't you create the PR?",
     });
 
-    briefOf({ agentId: scribeAgentIdOf({ useAppStore }) });
+    cardOf({ agentId: scribeAgentIdOf({ useAppStore }) });
     expect(screen.getByText('Guard settlement postings')).toBeDefined();
     expect(screen.getByText('Retried batches no longer post twice.')).toBeDefined();
     expect(screen.getByText('Created #418')).toBeDefined();
@@ -141,27 +142,27 @@ describe('the Scribe Brief after a follow-up turn', () => {
   it('changes only what the follow-up rewrites', async () => {
     await askAndSettle();
 
+    const answer = '<<pr-body>>\nPostings are keyed by event id.\n<</pr-body>>';
     await followUpToScribe({
       useAppStore,
       sessionId,
-      answer: '<<pr-body>>\nPostings are keyed by event id.\n<</pr-body>>',
+      answer,
       content: 'shorter body please',
     });
 
-    briefOf({ agentId: scribeAgentIdOf({ useAppStore }) });
-    expect(screen.getByText('Guard settlement postings')).toBeDefined();
+    cardOf({ agentId: scribeAgentIdOf({ useAppStore }), text: answer });
     expect(screen.getByText('Postings are keyed by event id.')).toBeDefined();
     expect(screen.queryByText('Retried batches no longer post twice.')).toBeNull();
   });
 });
 
-describe('the Scribe Brief and transcript card after the app reloads', () => {
+describe('the Scribe transcript card after the app reloads', () => {
   it('still shows the proposal, and Create PR opens the draft from it', async () => {
     await askAndSettle();
     const agentId = await reloadScribeAgent({ useAppStore, sessionId });
     const created = createCalls().length;
 
-    briefOf({ agentId });
+    cardOf({ agentId });
 
     expect(await screen.findByText('Guard settlement postings')).toBeDefined();
     expect(screen.getByText('Retried batches no longer post twice.')).toBeDefined();

@@ -44,10 +44,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'log',
   },
-  'apps/desktop/src/features/session/components/AgentTree/ClusterChildRow.tsx': {
-    count: 1,
-    reason: 'row',
-  },
 };
 
 type ListParams = {

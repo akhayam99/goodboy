@@ -74,7 +74,9 @@ describe('the Auto chat scenes', () => {
     ).toBeDefined();
     expect(screen.queryByRole('complementary', { name: 'Work' })).toBeNull();
     expect(screen.queryByRole('article')).toBeNull();
-    expect(screen.getByText('Experimental')).toBeDefined();
+    expect(
+      within(screen.getByTestId('agent-header-title-row')).queryByText('Experimental'),
+    ).toBeNull();
   });
 
   it('auto-chat-delegating shows Auto and the Planner on one rail, one card and the wait strip', async () => {
