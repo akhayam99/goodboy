@@ -60,7 +60,7 @@ const pressed = (): ReadonlyArray<string> =>
   within(cluster())
     .getAllByRole('button')
     .filter((button) => button.getAttribute('aria-pressed') === 'true')
-    .map((button) => button.textContent ?? '');
+    .map((button) => button.getAttribute('aria-label') ?? button.textContent ?? '');
 
 describe('c03 session tools scenes', () => {
   it('registers every scene with the mock scene registry', () => {
@@ -86,7 +86,7 @@ describe('c03 session tools scenes', () => {
     expect(useAppStore.getState().drawer?.kind).toBe('terminal');
     expect(pressed()).toEqual(['Terminal']);
     expect(screen.getByRole('combobox', { name: 'Terminal folder' }).textContent).toBe(
-      'payments-api · hl/fix-webhook-idempotency',
+      'payments-api · hl/fix-duplicate-credit',
     );
   });
 
@@ -98,6 +98,10 @@ describe('c03 session tools scenes', () => {
     await mount('c03-panes-explore-file');
     expect(screen.getByRole('button', { name: 'Back to files' })).toBeDefined();
     expect(pressed()).toEqual(['Explore']);
+    expect(document.querySelector('[data-session-rail]')?.hasAttribute('data-rail-folded')).toBe(
+      true,
+    );
+    expect(document.querySelector('[data-column-layer="nav"]')).not.toBeNull();
   });
 
   it('opens Scripts and a script output with the way back', async () => {
@@ -151,5 +155,17 @@ describe('c03 session tools scenes', () => {
     expect(rail.getAttribute('data-session-rail')).toBe('worktree');
     expect(pressed()).toEqual(['Explore']);
     expect(within(cluster()).getAllByRole('button')).toHaveLength(5);
+  });
+
+  it.each([
+    ['c03-panes-ask', 'Ask'],
+    ['c03-panes-explore', 'Explore'],
+    ['c03-panes-context', 'Context'],
+    ['c03-panes-scripts', 'Scripts'],
+    ['c03-panes-folded', 'Ask'],
+  ] as const)('%s opens its pane, never the closed layout', async (name, label) => {
+    await mount(name);
+    expect(useAppStore.getState().drawer).not.toBeNull();
+    expect(pressed()).toEqual([label]);
   });
 });

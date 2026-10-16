@@ -14,7 +14,6 @@ import { selectDrawerPanel } from '../../../../store/slices/drawer/selectDrawerP
 import { AppTopBar } from '../../AppTopBar';
 import { ShellLeft } from '../../SideColumn/ShellLeft';
 import { SessionFrame } from '../../SessionRail/SessionFrame';
-import { useShellFolds } from '../../../hooks/useShellFolds';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { useAppStore, type LensKind } from '../../../../store';
 import { DEFAULT_PREFS } from '../../../../store/slices/session-view/types';
@@ -111,10 +110,9 @@ export const ShellFrame = ({
   hasOwnTrail = false,
 }: ShellFrameProps) => {
   const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
-  const folds = useShellFolds();
   const arrangement = shellArrangement({
     hasWorkspace: true,
-    isSidebarCollapsed: sidebar === 'collapsed' || folds.isMainNarrow,
+    isSidebarCollapsed: sidebar === 'collapsed',
   });
   const shell = useSceneShell({ arrangement });
 
@@ -123,7 +121,13 @@ export const ShellFrame = ({
       <AppShell
         studio={shell.studio}
         studioCoversLeft={arrangement.studioCoversLeft}
-        topBar={<AppTopBar onOpenSpend={noop} onOpenScript={noop} />}
+        topBar={
+          <AppTopBar
+            sidebar={{ isCollapsed: arrangement.isLeftRail, onToggle: noop }}
+            onOpenSpend={noop}
+            onOpenScript={noop}
+          />
+        }
         drawer={isDrawerOpen ? <DrawerHost /> : null}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={
@@ -133,7 +137,6 @@ export const ShellFrame = ({
             currentSessionId={session.id}
             isDraftShown={false}
             actions={shell.actions}
-            onToggle={noop}
             settingsSlotRef={shell.settingsSlotRef}
           />
         }

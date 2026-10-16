@@ -5,7 +5,6 @@ import { NoWorkspaceScreen } from '../../../AppEmptyState';
 import { KeepAliveWorkSurface } from '../../../KeepAliveWorkSurface';
 import { ShellLeft } from '../../../SideColumn/ShellLeft';
 import { SessionFrame } from '../../../SessionRail/SessionFrame';
-import { useShellFolds } from '../../../../hooks/useShellFolds';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
 import { useAppOverlays } from '../../../../hooks/useAppOverlays';
 import { useGoToBoard } from '../../../../hooks/useGoToBoard';
@@ -50,10 +49,9 @@ export const AppFrame = ({
   const [settingsSlot, setSettingsSlot] = useState<HTMLDivElement | null>(null);
   const isSettingsOpen = useAppStore((state) => state.appStudio?.kind === 'settings');
   const isLauncher = view === 'launcher';
-  const folds = useShellFolds();
   const arrangement = shellArrangement({
     hasWorkspace: currentWorkspace !== null,
-    isSidebarCollapsed: isMainCollapsed || (currentSession !== null && folds.isMainNarrow),
+    isSidebarCollapsed: isMainCollapsed,
     isSettingsOpen,
   });
   const overlays = useAppOverlays({
@@ -107,7 +105,16 @@ export const AppFrame = ({
   return (
     <>
       <AppShell
-        topBar={<AppTopBar onOpenSpend={overlays.openSpend} onOpenScript={noop} />}
+        topBar={
+          <AppTopBar
+            sidebar={{
+              isCollapsed: isMainCollapsed,
+              onToggle: hasLiveToggle ? () => setIsFoldPicked((isPicked) => !isPicked) : noop,
+            }}
+            onOpenSpend={overlays.openSpend}
+            onOpenScript={noop}
+          />
+        }
         leftSidebarCollapsed={arrangement.isLeftRail}
         leftSidebar={
           <ShellLeft
@@ -116,7 +123,6 @@ export const AppFrame = ({
             currentSessionId={currentSession?.id ?? null}
             isDraftShown={false}
             actions={actions}
-            onToggle={hasLiveToggle ? () => setIsFoldPicked((isPicked) => !isPicked) : noop}
             settingsSlotRef={setSettingsSlot}
           />
         }

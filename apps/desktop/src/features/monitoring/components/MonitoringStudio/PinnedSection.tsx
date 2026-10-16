@@ -1,6 +1,7 @@
 import type { MonitorProcess, PortRow } from '@goodboy/core';
 import { PinnedRow } from './PinnedRow';
 import { PortGroupList } from './PortGroupList';
+import { shownRowCount } from '../../shownRowCount';
 import { PortListSection } from './PortListSection';
 
 type Props = {
@@ -10,7 +11,7 @@ type Props = {
 };
 
 export const PinnedSection = ({ rows, processOf, now }: Props) => (
-  <PortListSection label="Pinned" count={rows.length}>
+  <PortListSection label="Pinned" count={shownRowCount({ rows })}>
     <PortGroupList
       rows={rows}
       processOf={processOf}

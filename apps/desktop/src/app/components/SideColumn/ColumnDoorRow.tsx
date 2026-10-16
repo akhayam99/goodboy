@@ -16,7 +16,7 @@ type Props = {
   readonly id: string;
   readonly icon: LucideIcon;
   readonly label: string;
-  readonly shortcut?: string;
+  readonly shortcut?: ShortcutId;
   readonly isCurrent: boolean;
   readonly signal?: DoorSignal | undefined;
   readonly create?: DoorCreate;
@@ -48,24 +48,16 @@ export const ColumnDoorRow = ({
       }}
       className={cn(
         PANE_RHYTHM.navRail.door,
-        'group flex w-full min-w-0 shrink-0 items-center gap-2 rounded-md text-row motion-safe:transition-colors',
+        'group flex w-full min-w-0 shrink-0 items-center gap-2 rounded-md text-ui motion-safe:transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
         isCurrent
           ? 'cursor-default bg-selected text-foreground'
           : 'text-muted-foreground hover:bg-hover hover:text-foreground',
       )}
     >
-      <Icon size={ICON_SIZE.control} aria-hidden className="shrink-0" />
+      <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0" />
       <span className="flex min-w-0 flex-1 items-center gap-2">
         <span className="truncate text-left">{label}</span>
-        {shortcut === undefined ? null : (
-          <span
-            aria-hidden
-            className="shrink-0 text-chip text-faint-foreground opacity-0 motion-safe:transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
-          >
-            {shortcut}
-          </span>
-        )}
       </span>
       <span data-door-slot="signal" className="flex w-5 shrink-0 items-center justify-end">
         {signal === undefined ? null : <DoorSignalMark signal={signal} />}
@@ -75,10 +67,10 @@ export const ColumnDoorRow = ({
   );
   return (
     <div data-column-door-row={id} className="group/door relative">
-      {signal === undefined ? (
+      {signal === undefined && shortcut === undefined ? (
         door
       ) : (
-        <Tooltip content={name} side="right">
+        <Tooltip content={name} side="right" {...(shortcut !== undefined && { shortcut })}>
           {door}
         </Tooltip>
       )}

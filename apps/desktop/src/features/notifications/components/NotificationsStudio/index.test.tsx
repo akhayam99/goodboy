@@ -80,6 +80,10 @@ const seedNotifications = ({ notifications }: { notifications: ReadonlyArray<Not
 
 const renderStudio = () => render(<NotificationsStudio onClose={vi.fn()} />);
 
+const deleteAll = (): void => {
+  fireEvent.click(screen.getByRole('button', { name: /^delete all$/i }));
+};
+
 const openFilterRail = (): HTMLElement => {
   const shown = screen.queryByRole('navigation', { name: 'Filter notifications' });
   if (shown !== null) {
@@ -174,7 +178,7 @@ describe('NotificationsStudio', () => {
     renderStudio();
 
     const rail = openFilterRail();
-    expect(within(rail).getByRole('button', { name: /errors 1/i })).toBeDefined();
+    expect(within(rail).getByRole('button', { name: 'Errors' })).toBeDefined();
     fireEvent.click(within(rail).getByRole('button', { name: /warnings/i }));
 
     expect(screen.getByText('Warning row')).toBeDefined();
@@ -232,8 +236,10 @@ describe('NotificationsStudio', () => {
     });
     renderStudio();
 
+    fireEvent.click(screen.getByRole('button', { name: 'Summarizer failed' }));
+    state.markNotificationRead.mockClear();
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /mark "summarizer failed" read/i }));
+      fireEvent.click(screen.getByRole('button', { name: 'Mark read' }));
     });
 
     expect(state.markNotificationRead).toHaveBeenCalledTimes(2);
@@ -250,6 +256,7 @@ describe('NotificationsStudio', () => {
     });
     renderStudio();
 
+    fireEvent.click(screen.getByRole('button', { name: 'Summarizer failed' }));
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /delete "summarizer failed"/i }));
     });
@@ -284,7 +291,7 @@ describe('NotificationsStudio', () => {
     expect(state.dismissNotificationGroup).toHaveBeenCalledWith({ ids: ['bottom'] });
   });
 
-  it('reserves the unread slot on every row and fills it only on unread rows', () => {
+  it('leads every row with the severity glyph alone and marks unread by the title weight', () => {
     seedNotifications({
       notifications: [
         buildNotification({ id: 'n1', title: 'New one', coalesceKey: 'a' }),
@@ -293,17 +300,14 @@ describe('NotificationsStudio', () => {
     });
     renderStudio();
 
-    const slots = ['New one', 'Seen one'].map((title) =>
-      screen
-        .getByRole('heading', { name: title })
-        .closest('li')
-        ?.querySelector('[data-unread-slot]'),
+    expect(screen.getByRole('heading', { name: 'New one' }).hasAttribute('data-unread')).toBe(true);
+    expect(screen.getByRole('heading', { name: 'Seen one' }).hasAttribute('data-unread')).toBe(
+      false,
     );
-    expect(slots.map((slot) => slot?.childElementCount)).toEqual([1, 0]);
-    expect(screen.getAllByRole('img', { name: 'Unread' })).toHaveLength(1);
+    expect(screen.queryByRole('img', { name: 'Unread' })).toBeNull();
   });
 
-  it('keeps the primary action and the row actions visible at rest', () => {
+  it('keeps the row verbs on the opened row, none at rest', () => {
     seedNotifications({
       notifications: [
         buildNotification({
@@ -319,12 +323,18 @@ describe('NotificationsStudio', () => {
     });
     renderStudio();
 
-    const slot = screen
-      .getByRole('button', { name: /delete "summarizer failed"/i })
-      .closest('span');
-    expect(slot?.className).not.toContain('opacity-0');
-    expect(slot?.className).not.toMatch(/(^|\s)hidden(\s|$)/);
-    expect(slot?.contains(screen.getByRole('button', { name: 'Retry' }))).toBe(false);
+    expect(screen.queryByRole('button', { name: /delete "summarizer failed"/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Summarizer failed' }));
+
+    const verbs = document.querySelector<HTMLElement>('[data-notification-verbs]');
+    if (verbs === null) {
+      throw new Error('the opened row has no verbs');
+    }
+    expect(within(verbs).getByRole('button', { name: 'Retry' })).toBeDefined();
+    expect(
+      within(verbs).getByRole('button', { name: /delete "summarizer failed"/i }),
+    ).toBeDefined();
   });
 
   it('offers older notifications and says how many are loaded', () => {
@@ -362,7 +372,7 @@ describe('NotificationsStudio', () => {
     });
     renderStudio();
 
-    fireEvent.click(screen.getByRole('button', { name: /^delete all$/i }));
+    deleteAll();
 
     const confirm = screen.getByRole('dialog', { name: 'Delete 2 notifications?' });
     expect(confirm.closest('[data-dropdown-portal]')).not.toBeNull();
@@ -386,7 +396,7 @@ describe('NotificationsStudio', () => {
     seedNotifications({ notifications: [buildNotification()] });
     renderStudio();
 
-    fireEvent.click(screen.getByRole('button', { name: /^delete all$/i }));
+    deleteAll();
 
     expect(screen.getByText(/Clears the log in every workspace/)).toBeDefined();
     state.notificationScope = 'workspace';
@@ -396,7 +406,7 @@ describe('NotificationsStudio', () => {
     seedNotifications({ notifications: [buildNotification()] });
     renderStudio();
 
-    fireEvent.click(screen.getByRole('button', { name: /^delete all$/i }));
+    deleteAll();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(screen.queryByRole('dialog')).toBeNull();

@@ -1,12 +1,11 @@
 import type { MouseEvent } from 'react';
 import { CloudOff } from 'lucide-react';
-import { cn, Skeleton, StateDot, Tooltip } from '@goodboy/ui';
+import { cn, StateDot, Tooltip } from '@goodboy/ui';
 import { PullRequestChip } from '../../../integrations/github/components/PullRequestChip';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { BoardSignal } from './boardSignalOf';
 import { SignalWord } from './SignalWord';
 
-const CHECKING_LABEL = 'Checking GitHub for a pull request';
 const UNREACHABLE_LABEL = 'Could not reach GitHub, will retry';
 
 type Props = {
@@ -87,13 +86,7 @@ export const SessionSignal = ({ signal, onOpenRequest }: Props) => {
       );
     }
     case 'request-pending':
-      return signal.fetchState === 'unknown' ? (
-        <Tooltip content={CHECKING_LABEL} side="top">
-          <span role="status" aria-label={CHECKING_LABEL} data-board-signal="">
-            <Skeleton className="size-3.5 rounded-full" />
-          </span>
-        </Tooltip>
-      ) : (
+      return signal.fetchState === 'unknown' ? null : (
         <Tooltip content={UNREACHABLE_LABEL} side="top">
           <span
             role="img"

@@ -1,4 +1,6 @@
 import { StatusDot } from '@goodboy/ui';
+import { useAppStore } from '../../../store';
+import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import type { Session } from '@goodboy/types';
 import { openSessionPage } from '../../../features/session/openSessionPage';
 import { pageSlotOf } from '../../../features/session/pageSlot';
@@ -7,7 +9,7 @@ import { currentSignOf } from '../../../features/workspace/components/SessionAct
 import { useCardPages } from '../../../features/workspace/hooks/useCardPages';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 import { RailButton } from '../SideColumn/RailButton';
-import { RailIdentityNode } from './RailIdentityNode';
+import { RailWorktrees } from './RailWorktrees';
 
 type Props = {
   readonly session: Session;
@@ -17,6 +19,9 @@ export const RailSessionLevel = ({ session }: Props) => {
   const sessionId = session.id;
   const { pages, facts } = useCardPages({ session });
   const pageLens = useSessionPageLens({ session });
+  const isBranchless = useAppStore((state) =>
+    isBranchlessSession({ branch: state.sessionBranches[sessionId] }),
+  );
   const sign = currentSignOf({
     activeLens: pageLens,
     pages,
@@ -25,7 +30,6 @@ export const RailSessionLevel = ({ session }: Props) => {
 
   return (
     <div data-rail-level="session" className="flex flex-col gap-1 px-2">
-      <RailIdentityNode session={session} />
       <div className="flex flex-col">
         {pages.map((page) => {
           const slot = pageSlotOf({ page: page.count, facts });
@@ -40,10 +44,10 @@ export const RailSessionLevel = ({ session }: Props) => {
               shortcut={page.shortcut}
               isCurrent={isCurrent}
               isPage
-              {...((slot.isRunning || slot.isWarning) && {
+              {...(slot.tone !== null && {
                 badge: (
                   <span aria-hidden className="absolute right-0.5 top-0.5 flex">
-                    <StatusDot tone={slot.isWarning ? 'warning' : 'info'} size="sm" />
+                    <StatusDot tone={slot.tone} size="sm" />
                   </span>
                 ),
               })}
@@ -52,6 +56,7 @@ export const RailSessionLevel = ({ session }: Props) => {
           );
         })}
       </div>
+      {isBranchless ? null : <RailWorktrees session={session} />}
     </div>
   );
 };

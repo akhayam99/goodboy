@@ -86,7 +86,7 @@ const landsOnSessionPage =
 
 export const FRAME_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'frame: the Board title sits under an empty band on the same 32px row',
+    name: 'frame: the Board title sits on one header row, no band above it',
     covers: ['navigate'],
     open: async () => {
       await clickButton(/^Sessions/);
@@ -96,7 +96,8 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
       const title = onlyH1({ scope: document });
       const row = titleRowOf(title);
       expect(row).not.toBeNull();
-      expect(row?.previousElementSibling?.getAttribute('data-slot')).toBe('board-band');
+      expect(row?.previousElementSibling).toBeNull();
+      expect(document.querySelector('[data-slot="board-band"]')).toBeNull();
       expect(frameGeometryOf({ page: 'board' }).titleCentreY).toBe(56);
     },
   },

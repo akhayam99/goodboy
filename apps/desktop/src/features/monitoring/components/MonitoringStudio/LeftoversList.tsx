@@ -1,4 +1,5 @@
-import { Button } from '@goodboy/ui';
+import { Button, StatusDot, cn } from '@goodboy/ui';
+import { PORT_GRID } from './portGrid';
 import { useAppStore } from '../../../../store';
 import { formatUptime } from '../../formatUptime';
 import type { LeftoverRow } from '../../leftoverRows';
@@ -17,14 +18,19 @@ export const LeftoversList = ({ rows, now }: Props) => {
   return (
     <div role="group" aria-label="Leftovers" className="flex flex-col gap-1">
       <div className="flex items-center justify-between gap-2 px-2">
-        <h3 className="text-label text-warning">Leftovers</h3>
+        <h3 className="flex items-center gap-1 text-label text-foreground">
+          Leftovers
+          {rows.length > 1 ? (
+            <span className="text-meta tabular-nums text-faint-foreground">{rows.length}</span>
+          ) : null}
+        </h3>
         <Button
           size="xs"
           variant="secondary"
           disabled={isStopping}
           onClick={() => void stopLeftovers({ pids })}
         >
-          {isStopping ? 'Stopping' : `Stop leftovers (${rows.length})`}
+          {isStopping ? 'Stopping' : 'Stop leftovers'}
         </Button>
       </div>
       <ul className="flex flex-col">
@@ -32,14 +38,19 @@ export const LeftoversList = ({ rows, now }: Props) => {
           <li
             key={row.spawnId}
             data-leftover-row={row.spawnId}
-            className="flex min-h-8 items-center gap-3 px-2 text-label"
+            className={cn(PORT_GRID, 'min-h-8 text-label')}
           >
-            <span className="min-w-0 flex-1 truncate text-muted-foreground">
-              <span className="text-foreground">{row.name}</span> · {row.startedBy}
-            </span>
-            <span className="tabular-nums text-muted-foreground">
+            <StatusDot tone="warning" size="md" />
+            <span />
+            <span className="min-w-0 truncate text-foreground">{row.name}</span>
+            <span className="min-w-0 truncate text-muted-foreground">{row.startedBy}</span>
+            <span />
+            <span className="text-right tabular-nums text-muted-foreground">
               {formatUptime({ startedAt: row.startedAt, now })}
             </span>
+            <span />
+            <span />
+            <span />
           </li>
         ))}
       </ul>

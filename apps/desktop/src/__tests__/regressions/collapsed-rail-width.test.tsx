@@ -82,7 +82,7 @@ describe('workspace tile and collapsed rail axis', () => {
     expect(COLUMN_RAIL).toContain(
       'className="flex h-full min-w-0 shrink-0 flex-col gap-1 pb-2 pt-1"',
     );
-    expect(COLUMN_RAIL).toContain('className="flex w-11 shrink-0 items-center justify-center"');
+    expect(COLUMN_RAIL).not.toContain('<ColumnToggleButton');
     expect(COLUMN_RAIL).toContain("cn('flex shrink-0 flex-col px-2', PANE_RHYTHM.navRail.doorGap)");
   });
 
@@ -90,14 +90,12 @@ describe('workspace tile and collapsed rail axis', () => {
     expect(RAIL_BUTTON).toContain("cn('h-7 w-full justify-start px-2', RAIL_BUTTON_BASE)");
     expect(RAIL_SESSION_LEVEL).toContain('className="flex flex-col gap-1 px-2"');
     expect(RAIL_SESSION_LEVEL).toContain('iconSize={ICON_SIZE.row}');
-    expect(RAIL_SESSION_LEVEL.indexOf('<RailIdentityNode')).toBeLessThan(
-      RAIL_SESSION_LEVEL.indexOf('<RailButton'),
-    );
+    expect(RAIL_SESSION_LEVEL).not.toContain('<RailIdentityNode');
   });
 
   it('draws a folded session tool as its open row without the word', () => {
     expect(TOOLS_GROUP).toContain('className="flex shrink-0 flex-col px-2"');
-    expect(TOOL_ROW).toContain('className="h-7 items-center gap-2 px-2 text-label"');
+    expect(TOOL_ROW).toContain('className="h-7 items-center gap-2 px-2 text-ui"');
     expect(TOOL_ICON).toContain('className="relative h-7 items-center px-2"');
     expect(TOOL_ROW).toContain('size={ICON_SIZE.row}');
     expect(TOOL_ICON).toContain('size={ICON_SIZE.row}');

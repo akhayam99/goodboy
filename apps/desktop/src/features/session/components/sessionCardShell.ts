@@ -1,31 +1,4 @@
-import { cn, tintClasses, type Tone } from '@goodboy/ui';
-import type { SessionAttentionReason, SessionStage } from '@goodboy/types';
-import { ATTENTION_REASON_META, STAGE_TONE } from '../session-stage';
-
-export type SessionTone = {
-  readonly tone: Tone;
-  readonly isBreathing: boolean;
-};
-
-type ToneParams = {
-  readonly stage: SessionStage;
-  readonly attention?: SessionAttentionReason | null;
-  readonly isRunning?: boolean;
-};
-
-export const sessionTone = ({
-  stage,
-  attention = null,
-  isRunning = false,
-}: ToneParams): SessionTone => {
-  if (stage === 'attention' && attention !== null) {
-    return { tone: ATTENTION_REASON_META[attention].tone, isBreathing: isRunning };
-  }
-  if (stage === 'review' && attention === 'pr-queued') {
-    return { tone: ATTENTION_REASON_META[attention].tone, isBreathing: false };
-  }
-  return { tone: STAGE_TONE[stage], isBreathing: stage === 'running' };
-};
+import { cn, tintClasses } from '@goodboy/ui';
 
 type ShellParams = {
   readonly selected?: boolean;

@@ -16,9 +16,26 @@ type Params = {
 
 const verbKey = (actionId: string): string => `verb:${actionId}`;
 
+const PROPER_NOUNS: ReadonlySet<string> = new Set([
+  'Linear',
+  'Sentry',
+  'Jira',
+  'Slack',
+  'GitHub',
+  'GitLab',
+  'Bitbucket',
+]);
+
+type NounParams = {
+  readonly noun: string;
+};
+
+const sentenceNoun = ({ noun }: NounParams): string =>
+  PROPER_NOUNS.has(noun) ? noun : `${noun.charAt(0).toLowerCase()}${noun.slice(1)}`;
+
 const verbLabel = ({ action }: VerbSelectParams): string =>
   action.group === 'open' && !action.label.includes(' ') && action.label !== 'Open'
-    ? `Open ${action.label}`
+    ? `Open ${sentenceNoun({ noun: action.label })}`
     : action.label;
 
 export const verbEntries = ({

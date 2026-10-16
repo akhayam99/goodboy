@@ -34,10 +34,6 @@ type Allowance = {
 };
 
 const ALLOWED: Readonly<Record<string, Allowance>> = {
-  'apps/desktop/src/app/components/SideColumn/ColumnDoorRow.tsx': {
-    count: 1,
-    reason: 'decorative: the aria-hidden shortcut hint of a door row; the row itself is the action',
-  },
   'apps/desktop/src/features/context/components/QuestionsTab/DelegateWaitingRow.tsx': {
     count: 1,
     reason: 'decorative: the aria-hidden chevron inside the row button that opens the delegate',

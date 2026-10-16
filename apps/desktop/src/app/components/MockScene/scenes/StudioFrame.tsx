@@ -33,7 +33,13 @@ export const StudioFrame = ({ target, main, columnPlace }: StudioFrameProps) => 
   return (
     <ToastProvider>
       <AppShell
-        topBar={<AppTopBar onOpenSpend={noop} onOpenScript={noop} />}
+        topBar={
+          <AppTopBar
+            sidebar={{ isCollapsed: arrangement.isLeftRail, onToggle: noop }}
+            onOpenSpend={noop}
+            onOpenScript={noop}
+          />
+        }
         leftSidebarCollapsed={arrangement.isLeftRail}
         leftSidebar={
           <ShellLeft
@@ -42,7 +48,6 @@ export const StudioFrame = ({ target, main, columnPlace }: StudioFrameProps) => 
             currentSessionId={null}
             isDraftShown={false}
             actions={shell.actions}
-            onToggle={noop}
             {...(isSettingsOpen ? {} : { placeOverride: place })}
             settingsSlotRef={shell.settingsSlotRef}
           />

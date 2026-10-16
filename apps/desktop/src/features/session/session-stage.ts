@@ -197,7 +197,7 @@ export const SESSION_STAGE_META: Record<SessionStage, SessionStageEntry> = {
   },
 };
 
-export const SESSION_STAGE_ICON: Record<SessionStage, LucideIcon> = {
+const SESSION_STAGE_ICON: Record<SessionStage, LucideIcon> = {
   attention: CONCEPT_ICONS.questions,
   running: CONCEPT_ICONS.sessions,
   review: Eye,

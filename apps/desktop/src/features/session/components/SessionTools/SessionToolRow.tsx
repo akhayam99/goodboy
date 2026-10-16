@@ -23,7 +23,7 @@ export const SessionToolRow = ({ tool, isOpen, signal, onToggle }: Props) => {
       tooltipSide="right"
       ariaLabel={signal === null ? tool.label : `${tool.label}, ${signal.note}`}
       onClick={onToggle}
-      className="h-7 items-center gap-2 px-2 text-label"
+      className="h-7 items-center gap-2 px-2 text-ui"
     >
       <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0" />
       <span className="min-w-0 flex-1 truncate">{tool.label}</span>

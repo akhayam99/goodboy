@@ -11,7 +11,7 @@ export const LevelLabel = ({ id, label, action }: Props) => (
     data-level-label={label}
     className="flex h-7 min-w-0 items-center justify-between gap-2 px-2"
   >
-    <h2 id={id} className="truncate text-meta text-faint-foreground">
+    <h2 id={id} className="truncate text-ui text-muted-foreground">
       {label}
     </h2>
     {action === undefined ? null : <div className="flex shrink-0 items-center">{action}</div>}

@@ -52,7 +52,7 @@ const mount = async (name: SceneName): Promise<void> => {
 };
 
 const sidebarToggle = (): HTMLElement => {
-  const toggle = document.querySelector<HTMLElement>('aside [data-sidebar-toggle]');
+  const toggle = document.querySelector<HTMLElement>('[data-top-bar] [data-sidebar-toggle]');
   if (toggle === null) {
     throw new Error('no sidebar toggle');
   }

@@ -137,12 +137,12 @@ describe('the column header and the terminal rows', () => {
     expect(document.querySelectorAll('[data-column-header]')).toHaveLength(1);
   });
 
-  it('shows no port, the process and its pid, and the place for a terminal row', async () => {
+  it('leaves the Port cell empty and shows the process, its pid and the place for a terminal row', async () => {
     await ready({ name: 'b-monitoring-busy' });
     const goodboy = layer({ name: 'Run by Goodboy' });
     const row = goodboy.querySelector('[data-started-row]');
 
-    expect(row?.textContent).toContain('no port');
+    expect(row?.textContent).not.toContain('no port');
     expect(row?.textContent).toContain('zsh');
     expect(row?.textContent).toContain('6301');
     expect(row?.textContent).not.toContain('Terminal · zsh');

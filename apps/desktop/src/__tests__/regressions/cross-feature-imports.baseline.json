@@ -99,7 +99,6 @@
     "workflows -> providers": 4,
     "workflows -> session": 5,
     "workflows -> workTreeModel": 1,
-    "workspace -> actions": 1,
     "workspace -> integrations": 2,
     "workspace -> session": 5,
     "workspace -> updater": 1,

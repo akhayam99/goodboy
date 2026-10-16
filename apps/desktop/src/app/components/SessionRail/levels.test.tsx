@@ -14,7 +14,7 @@ vi.mock('../../../shared/lib/db', async () =>
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { aWorkflowRun, anAgent } from '@goodboy/types/testing';
-import type { IsoDateTime, Session, StepId } from '@goodboy/types';
+import type { IsoDateTime, Session, StepId, Workflow, WorkflowId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -77,6 +77,33 @@ const other = sessionOf({
 });
 const openId = open.id;
 
+const WORKFLOW_ID: WorkflowId = brandedId<WorkflowId>({ value: 'workflow-ledger-export' });
+
+const workflowOf = (): Workflow => ({
+  id: WORKFLOW_ID,
+  workspaceId: harborline.id,
+  name: 'Fix flaky tests',
+  description: '',
+  steps: [
+    {
+      id: brandedId<StepId>({ value: 'step-1' }),
+      workflowId: WORKFLOW_ID,
+      ordinal: 0,
+      name: 'Implement',
+      promptPrefix: '',
+    },
+    {
+      id: brandedId<StepId>({ value: 'step-2' }),
+      workflowId: WORKFLOW_ID,
+      ordinal: 1,
+      name: 'Test',
+      promptPrefix: '',
+    },
+  ],
+  createdAt: brandedId<IsoDateTime>({ value: '2026-10-06T09:00:00.000Z' }),
+  updatedAt: brandedId<IsoDateTime>({ value: '2026-10-06T09:00:00.000Z' }),
+});
+
 type SeedParams = {
   readonly session?: Session;
   readonly isBranchless?: boolean;
@@ -104,9 +131,7 @@ const Shell = ({ place = null }: MountParams) => {
         workspaceId={harborline.id}
         currentSessionId={currentSessionId}
         place={place}
-        isCollapsed={false}
         actions={actions()}
-        onToggle={vi.fn()}
       />
       {current === null ? null : (
         <SessionFrame session={current}>
@@ -150,7 +175,7 @@ describe('the main sidebar beside the session rail', () => {
     const row = nav().querySelector(`[data-select-id="${openId}"]`);
     expect(row?.getAttribute('aria-current')).toBe('page');
     expect(levelOf()).toBe('session');
-    expect(within(sessionLayer()).getByText('Stop retried webhooks')).toBeDefined();
+    expect(within(sessionLayer()).queryByText('Stop retried webhooks')).toBeNull();
     expect(within(rail()).queryByRole('button', { name: 'Back to Sessions' })).toBeNull();
     expect(
       pages()
@@ -181,7 +206,8 @@ describe('the main sidebar beside the session rail', () => {
     expect(
       nav().querySelector(`[data-select-id="${other.id}"]`)?.getAttribute('aria-current'),
     ).toBe('page');
-    expect(within(sessionLayer()).getByText('Ledger export speedup')).toBeDefined();
+    expect(levelOf()).toBe('session');
+    expect(within(nav()).getAllByText('Ledger export speedup')).toHaveLength(1);
   });
 
   it('keeps the session level when Command [ is pressed in the rail on its top level', () => {
@@ -229,12 +255,14 @@ describe('the session level pages', () => {
     ).toBe(null);
   });
 
-  it('counts the runs in gray with a dot while one runs, the word in the tooltip', () => {
-    const first = aWorkflowRun({ ordinal: 0 });
-    const second = aWorkflowRun({ ordinal: 1 });
+  it('shows the running count beside the info dot while one of two runs runs, the total at rest', () => {
+    const workflow = workflowOf();
+    const first = aWorkflowRun({ ordinal: 0, workflowId: workflow.id });
+    const second = aWorkflowRun({ ordinal: 1, workflowId: workflow.id });
     const withRuns: Session = { ...open, workflowRuns: [first, second] };
     seed({ session: withRuns });
     useAppStore.setState({
+      sessionWorkflows: { [openId]: [workflow] },
       sessionPhaseRuns: {
         [openId]: [
           anAgent({
@@ -249,8 +277,11 @@ describe('the session level pages', () => {
     mountColumn();
 
     const slot = sessionLayer().querySelector('[data-page-value="runs"]');
-    expect(slot?.textContent).toBe('2');
-    expect(slot?.getAttribute('data-tone')).toBe('running');
+    expect(slot?.textContent).toBe('1');
+    expect(slot?.getAttribute('data-tone')).toBe('info');
+
+    act(() => useAppStore.setState({ sessionPhaseRuns: { [openId]: [] } }));
+    expect(sessionLayer().querySelector('[data-page-value="runs"]')?.textContent).toBe('2');
   });
 
   it('adds Questions last with a warning dot only while one is open', () => {
@@ -333,15 +364,78 @@ describe('the session level projects and linked work', () => {
     );
     expect(linked.getByRole('button', { name: 'Link work' })).toBeDefined();
   });
+
+  it('starts every linked title on one edge and cuts a long key in the middle', () => {
+    seed();
+    useAppStore.setState({
+      sessionExternalTasks: {
+        [openId]: [
+          {
+            sessionId: openId,
+            provider: 'sentry',
+            externalId: 'ext-sentry',
+            identifier: 'PAYMENTS-API-3F2',
+            title: 'DuplicateCreditError in applyWebhook',
+            url: 'https://sentry.io/acme/payments-api/issues/3F2',
+            createdAt: brandedId<IsoDateTime>({ value: '2026-10-05T09:00:00.000Z' }),
+          },
+        ],
+      },
+    });
+    mountColumn();
+
+    const key = sessionLayer().querySelector('[data-linked-key]');
+    expect(key?.textContent).toBe('PAYM…-3F2');
+  });
+
+  it('lists a pull request once: a worktree that owns it hides the same number from Linked', () => {
+    seed();
+    const payments = mountOf({ session: open, project: paymentsApi });
+    useAppStore.setState({
+      sessionProjectMounts: { [openId]: [payments] },
+      mountGithub: { [payments.mountId]: mountGithubOf({ mount: payments, number: 418 }) },
+      sessionGithub: {
+        [openId]: {
+          ...mountGithubOf({ mount: payments, number: 418 }),
+          pr: null,
+          linkedIssues: [
+            {
+              number: 418,
+              title: 'Retry webhook deliveries',
+              url: 'https://github.com/harborline/payments-api/issues/418',
+              closes: true,
+            },
+            {
+              number: 418,
+              title: 'Same number in another repository',
+              url: 'https://github.com/harborline/notify-relay/issues/418',
+              closes: false,
+            },
+          ],
+        },
+      },
+    });
+    stubStoryInvoke({
+      worktree_status: () => worktreeStatusOf({}),
+      worktree_remote_url: () => 'git@github.com:harborline/payments-api.git',
+      detect_editors: () => [],
+    });
+    mountColumn();
+
+    const linked = within(within(sessionLayer()).getByRole('group', { name: 'Linked' }));
+    expect(linked.getAllByRole('button', { name: 'Open issue #418' })).toHaveLength(1);
+    expect(linked.getByText('Same number in another repository')).toBeDefined();
+  });
 });
 
-describe('the identity row', () => {
-  it('renames inline from the title and keeps Rename, Pin, Refresh, Archive and Delete in its menu', () => {
+describe('the session menu on the rail top row', () => {
+  it('keeps Rename, Pin, Refresh, Archive and Delete, and renames the main sidebar row in place', () => {
     seed();
     mountColumn();
-    const identity = within(elementOf('[data-level-identity]', sessionLayer()));
+    expect(sessionLayer().querySelector('[data-level-identity]')).toBeNull();
+    const top = within(elementOf('[data-rail-top]', rail()));
 
-    fireEvent.click(identity.getByRole('button', { name: 'More session actions' }));
+    fireEvent.click(top.getByRole('button', { name: 'More session actions' }));
     for (const label of [
       'Rename',
       'Pin session',
@@ -351,14 +445,37 @@ describe('the identity row', () => {
     ]) {
       expect(screen.getByRole('menuitem', { name: new RegExp(`^${label}`) })).toBeDefined();
     }
-    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+    fireEvent.click(screen.getByRole('menuitem', { name: /^Rename/ }));
 
-    fireEvent.click(identity.getByRole('button', { name: 'Stop retried webhooks' }));
-    expect(screen.getByRole('textbox', { name: 'Session title' })).toBeDefined();
+    expect(within(nav()).getByDisplayValue('Stop retried webhooks')).toBeDefined();
+    expect(within(rail()).queryByRole('textbox', { name: 'Session title' })).toBeNull();
   });
 });
 
 describe('the folded session rail', () => {
+  it('draws one branch icon per worktree with its project, branch and state in the tooltip', () => {
+    seed();
+    const payments = mountOf({ session: open, project: paymentsApi });
+    const github = mountGithubOf({ mount: payments, number: 418 });
+    useAppStore.setState({
+      sessionProjectMounts: { [openId]: [payments] },
+      mountGithub: {
+        [payments.mountId]: {
+          ...github,
+          pr: github.pr === null ? null : { ...github.pr, checks: 'failure' },
+        },
+      },
+    });
+    stubStoryInvoke({ worktree_status: () => worktreeStatusOf({}), detect_editors: () => [] });
+    localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
+    mountColumn();
+
+    const icons = within(elementOf('[data-rail-worktrees]', rail())).getAllByRole('button');
+    expect(icons.map((icon) => icon.getAttribute('aria-label'))).toEqual([
+      `payments-api, goodboy/${openId}, A check failed`,
+    ]);
+  });
+
   it('folds to the page icons and back, and remembers the choice', () => {
     seed();
     const { unmount } = mountColumn();

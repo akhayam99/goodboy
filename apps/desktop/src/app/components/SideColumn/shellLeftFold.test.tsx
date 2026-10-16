@@ -59,7 +59,6 @@ const shell = ({ isCollapsed, variant = 'pinned' }: ShellParams) => (
     currentSessionId={null}
     isDraftShown={false}
     actions={actions()}
-    onToggle={vi.fn()}
     variant={variant}
   />
 );

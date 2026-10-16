@@ -18,7 +18,6 @@ import {
   useStageGroupedSessions,
 } from '../../../../store';
 import { PANE_RHYTHM } from '@goodboy/ui';
-import { EmptyBoardStages } from './EmptyBoardStages';
 import { useProjectGitStatuses } from '../../hooks/useProjectGitStatuses';
 import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import { useSelectionKeys } from '../../../../shared/hooks/useSelectionKeys';
@@ -35,7 +34,6 @@ import { useBoardNavigation } from './useBoardNavigation';
 import { useBoardSelection } from './useBoardSelection';
 import { SessionsHeader } from './SessionsHeader';
 import { SessionsList } from './SessionsList';
-import { HiddenByFilters } from './HiddenByFilters';
 import { SessionHoverCard } from '../SessionHoverCard';
 import { useHoverCardTarget } from '../SessionHoverCard/useHoverCardTarget';
 import { useClearSessionFilters } from '../SessionActivityBar/useClearSessionFilters';
@@ -235,6 +233,8 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
             archivedCount={archived.length}
             onArchivedShownChange={onArchivedShownChange}
             gitEntries={projectGitStatuses}
+            hiddenCount={pending || empty ? 0 : hiddenCount}
+            onClearFilters={clearFilters}
           />
         ) : null}
 
@@ -254,8 +254,9 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
         {!pending && hasProjects && empty && hasUsableProject && (
           <div className="flex flex-1 items-center justify-center">
             <EmptyState
-              illustration={<EmptyBoardStages />}
+              icon={CONCEPT_ICONS.sessions}
               title="No sessions yet"
+              description="A session holds one goal, its worktrees and its agents."
               action={
                 <Button
                   size="md"
@@ -330,14 +331,9 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
                   onOpen={nav.selectCard}
                 />
               )}
-              <HiddenByFilters count={hiddenCount} onClear={clearFilters} />
             </div>
           </ScrollFade>
         )}
-
-        {!pending && !empty && view === 'board' ? (
-          <HiddenByFilters count={hiddenCount} onClear={clearFilters} />
-        ) : null}
       </div>
 
       <SessionHoverCard

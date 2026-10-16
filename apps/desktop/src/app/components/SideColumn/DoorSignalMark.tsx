@@ -20,9 +20,5 @@ export const DoorSignalMark = ({ signal }: Props) => {
       </span>
     );
   }
-  return (
-    <span aria-hidden data-door-signal="dot" className="flex shrink-0">
-      <StatusDot tone="info" size="sm" />
-    </span>
-  );
+  return null;
 };

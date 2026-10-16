@@ -17,7 +17,7 @@ import type { StoryStore } from '../../store/storyHarness';
 import { clearSceneInvoke } from '../../test/sceneInvoke';
 import { MOCK_SCENES } from '../../app/components/MockScene';
 import { WORKSPACE_ID } from '../../app/components/MockScene/scenes/BoardScene';
-import { IdentityRow } from '../../app/components/SessionRail/SessionLevel/IdentityRow';
+import { SessionHoverCardBody } from '../../features/workspace/components/SessionHoverCard/SessionHoverCardBody';
 import { runObjectAction } from '../../features/actions/registry';
 import { TALK_ACTION_ID } from '../../features/actions/kinds/suggestion';
 import type { ActionEnv } from '../../features/actions/types';
@@ -236,19 +236,22 @@ describe('SPEC3 9.2 New session draft and the New forms, from the c10 page and d
     screen.getByRole('button', { name: 'Start Auto' });
   });
 
-  it('marks a title Goodboy wrote as Named by Goodboy on the identity row', async () => {
+  it('marks a title Goodboy wrote as Named by Goodboy on the session hover card', async () => {
     const session = aSession({ id: brandedId<SessionId>({ value: 'mock-c10-named' }) });
     useAppStore.setState({ sessions: [session], goodboyNamedSessionId: session.id });
     render(
       <ToastProvider>
-        <IdentityRow session={session} />
+        <SessionHoverCardBody
+          session={session}
+          isArchived={false}
+          onOpenAttention={() => undefined}
+          onOpenLegend={() => undefined}
+        />
       </ToastProvider>,
     );
-
-    fireEvent.focus(screen.getByRole('button', { name: session.goal }));
     await settle();
 
-    screen.getByText('Named by Goodboy. Click to rename');
+    screen.getByText(/Named by Goodboy/);
   });
 
   it('makes Orchestrate its own choice and keeps no mode switch in Run a workflow', async () => {

@@ -6,18 +6,16 @@ import {
   Tooltip,
   InlineMarkdown,
   inlineMarkdownText,
-  ToneBar,
 } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { useSessionSummary } from '../../../hooks/useSessionSummary';
 import { CardAction, CardActionSlot } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { sessionCardShell, sessionTone } from '../../../../session/components/sessionCardShell';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { sessionCardShell } from '../../../../session/components/sessionCardShell';
 import { sessionDisplayTitle } from '../../../../session/sessionTitle';
 import type { BoardNavigation } from '../useBoardNavigation';
 import { useDynamicActions } from './useDynamicActions';
-import { ObjectOverflowMenu } from '../../../../actions/components/ObjectOverflowMenu';
 import { useObjectMenuTrigger } from '../../../../actions/useObjectMenuTrigger';
 import { useRenameRequest } from '../../../../actions/useRenameRequest';
 import { sessionObjectKey } from '../../../../actions/kinds/session';
@@ -26,9 +24,6 @@ import { useSessionTitleRename } from '../../../../session/hooks/useSessionTitle
 import { SessionSignal } from '../SessionSignal';
 import { useSessionSignal } from '../useSessionSignal';
 import { projectLineOf } from '../projectLineOf';
-
-const RAIL_UNDER_CHECKBOX =
-  'group-hover/select-row:top-9 group-focus-within/select-row:top-9 group-data-[selecting=true]/select-list:top-9';
 
 type CardSelectionEvent = {
   readonly shiftKey: boolean;
@@ -74,7 +69,7 @@ export const StageBoardCard = memo(function StageBoardCard({
 }: StageBoardCardProps) {
   const id = session.id as SessionId;
   const summary = useSessionSummary({ session });
-  const { stage, attention, isRunning } = summary;
+  const { stage } = summary;
   const title = sessionDisplayTitle({ session, tasks: summary.tasks });
   const isArchived = archived === true;
   const signal = useSessionSignal({ session, isArchived });
@@ -113,8 +108,6 @@ export const StageBoardCard = memo(function StageBoardCard({
     return false;
   };
 
-  const tone = sessionTone({ stage, attention, isRunning });
-
   return (
     <article
       data-archived={archived || undefined}
@@ -130,16 +123,10 @@ export const StageBoardCard = memo(function StageBoardCard({
       }}
       className={cn(
         'group/session-card group/select-row grid h-24 shrink-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_1.25rem] gap-x-2 gap-y-1 p-3 text-left',
-        onToggleSelect === undefined ? 'pl-5' : 'pl-7',
+        onToggleSelect !== undefined && 'pl-7',
         sessionCardShell({ selected }),
       )}
     >
-      <ToneBar
-        tone={tone.tone}
-        density="card"
-        isBreathing={tone.isBreathing}
-        {...(onToggleSelect === undefined ? {} : { className: RAIL_UNDER_CHECKBOX })}
-      />
       {onToggleSelect !== undefined && (
         <SelectionCheckbox
           checked={selected === true}
@@ -204,12 +191,6 @@ export const StageBoardCard = memo(function StageBoardCard({
               onClick={() => onRestore?.(session)}
             />
           )}
-          <ObjectOverflowMenu
-            target={{ kind: 'session', sessionId: id }}
-            label="Session actions"
-            anchorKey={anchorKey}
-            trigger={<CONCEPT_ICONS.more size={ICON_SIZE.row} aria-hidden />}
-          />
         </CardActionSlot>
       </span>
 

@@ -1,19 +1,12 @@
 import { memo, useId } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
-import {
-  Input,
-  ROW_INTERACTIVE,
-  SelectionCheckbox,
-  TEXT_ROLE,
-  cn,
-  inlineMarkdownText,
-} from '@goodboy/ui';
+import { Input, ROW_INTERACTIVE, SelectionCheckbox, cn, inlineMarkdownText } from '@goodboy/ui';
 import { useSessionSummary } from '../../hooks/useSessionSummary';
 import { sessionRowTitle } from '../../../session/sessionTitle';
 import { SessionRowTitle } from '../SessionRowTitle';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { useRenameRequest } from '../../../actions/useRenameRequest';
-import { sessionObjectKey } from '../../../actions/kinds/session';
+import { SESSION_HEADER_ANCHOR, sessionObjectKey } from '../../../actions/kinds/session';
 import { sessionSelectionTarget } from '../../../actions/sessionSelectionTarget';
 import { useSessionTitleRename } from '../../../session/hooks/useSessionTitleRename';
 import { sessionNodeOf } from '../../../session/sessionNode';
@@ -37,7 +30,6 @@ type Props = {
   readonly isCurrent?: boolean;
   readonly isArchived?: boolean;
   readonly isSelected?: boolean;
-  readonly trailing?: string;
   readonly getSelectedIds: () => ReadonlyArray<SessionId>;
   readonly onClearSelection: () => void;
   readonly onModifierClick: (id: SessionId, event: SelectionClickEvent) => void;
@@ -53,7 +45,6 @@ const SessionActivityItemView = ({
   isCurrent = false,
   isArchived = false,
   isSelected = false,
-  trailing,
   getSelectedIds,
   onClearSelection,
   onModifierClick,
@@ -71,7 +62,7 @@ const SessionActivityItemView = ({
   const rename = useSessionTitleRename({ sessionId, currentTitle: session.goal });
   useRenameRequest({
     objectKey: sessionObjectKey({ sessionId }),
-    anchorKeys: [anchorKey],
+    anchorKeys: isActive ? [anchorKey, null, SESSION_HEADER_ANCHOR] : [anchorKey],
     onRename: rename.start,
   });
   const menu = useObjectMenuTrigger({
@@ -147,7 +138,7 @@ const SessionActivityItemView = ({
           onModifierClick(sessionId, event);
         }}
         className={cn(
-          'group/session-row relative flex h-7 w-full items-center gap-2 rounded-md px-2 text-left text-row',
+          'group/session-row relative flex h-7 w-full items-center gap-2 rounded-md px-2 text-left text-ui',
           ROW_INTERACTIVE,
           isCalm ? 'text-muted-foreground' : 'text-foreground',
           isActive && 'font-medium text-foreground',
@@ -160,14 +151,6 @@ const SessionActivityItemView = ({
           className="group-focus-within/select-row:invisible group-hover/select-row:invisible group-data-[selecting=true]/select-list:invisible"
         />
         <SessionRowTitle keys={keys} title={title} className="flex-1" titleClassName="truncate" />
-        {trailing === undefined ? null : (
-          <span
-            data-row-trailing=""
-            className={cn('shrink-0 text-meta font-normal tabular-nums', TEXT_ROLE.hint)}
-          >
-            {trailing}
-          </span>
-        )}
       </button>
       <span id={descriptionId} className="sr-only">
         {summary.description}

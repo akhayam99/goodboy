@@ -95,7 +95,6 @@ const railOf = ({
     workspaceId={scope === 'workspace' ? harborline.id : null}
     currentSessionId={currentSessionId}
     place={place}
-    onToggle={vi.fn()}
     actions={actions()}
   />
 );

@@ -139,40 +139,36 @@ const NAV: BoardNavigation = {
 };
 
 describe('every ⋯ menu and its right click list the same actions in the same order', () => {
-  it('board card', async () => {
+  it('board card: no ⋯ on the card, the right click holds the session menu', async () => {
     seedActionState({
       useAppStore,
       seed: { mounts: [mountFixture()], branch: 'hl/payout-export' },
     });
     const { container } = withMenus(<StageBoardCard session={sessionFixture()} nav={NAV} />);
-    const { fromOverflow, fromContext } = await overflowThenContext({
-      overflow: screen.getByRole('button', { name: 'Session actions' }),
-      context: container.querySelector('article') as HTMLElement,
-    });
-    expect(fromOverflow.length).toBeGreaterThan(5);
-    expect(fromContext).toEqual(fromOverflow);
+    expect(screen.queryByRole('button', { name: 'Session actions' })).toBeNull();
+    fireEvent.contextMenu(container.querySelector('article') as HTMLElement);
+    expect(menuLabels().length).toBeGreaterThan(5);
   });
 
-  it('board card: the ⋯ and the right click offer Pin session, then Unpin session once pinned', async () => {
+  it('board card: the right click offers Pin session, then Unpin session once pinned', async () => {
     seedActionState({
       useAppStore,
       seed: { mounts: [mountFixture()], branch: 'hl/payout-export' },
     });
     const { container } = withMenus(<StageBoardCard session={sessionFixture()} nav={NAV} />);
-    const overflow = screen.getByRole('button', { name: 'Session actions' });
     const context = container.querySelector('article') as HTMLElement;
 
-    const before = await overflowThenContext({ overflow, context });
-    expect(before.fromOverflow).toContain('Pin session');
-    expect(before.fromOverflow).not.toContain('Unpin session');
-    expect(before.fromContext).toEqual(before.fromOverflow);
+    fireEvent.contextMenu(context);
+    const before = menuLabels();
+    expect(before).toContain('Pin session');
+    expect(before).not.toContain('Unpin session');
     await closeMenus();
 
     act(() => useAppStore.setState({ sessionPins: { [WORKSPACE]: [{ id: SESSION, at: 1 }] } }));
-    const after = await overflowThenContext({ overflow, context });
-    expect(after.fromOverflow).toContain('Unpin session');
-    expect(after.fromOverflow).not.toContain('Pin session');
-    expect(after.fromContext).toEqual(after.fromOverflow);
+    fireEvent.contextMenu(context);
+    const after = menuLabels();
+    expect(after).toContain('Unpin session');
+    expect(after).not.toContain('Pin session');
   });
 
   it('diff file header', async () => {

@@ -68,9 +68,7 @@ export const SidebarNavColumnScene = ({
             workspaceId={seed.workspaceId}
             currentSessionId={seed.session.id}
             place={place}
-            isCollapsed={false}
             actions={ACTIONS}
-            onToggle={noop}
           />
         </div>
         {isSessionLevel ? <SessionRail session={current ?? seed.session} /> : null}
@@ -85,9 +83,7 @@ export const SidebarNavColumnScene = ({
           workspaceId={seed.workspaceId}
           currentSessionId={seed.session.id}
           place={place}
-          isCollapsed={false}
           actions={ACTIONS}
-          onToggle={noop}
         />
       </div>
     </div>

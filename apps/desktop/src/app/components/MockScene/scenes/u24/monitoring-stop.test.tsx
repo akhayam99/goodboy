@@ -45,7 +45,7 @@ describe('the leftovers scene', () => {
     expect(
       within(group).getByText(/started by an agent in Round refund totals to minor units/),
     ).toBeDefined();
-    expect(within(group).getByRole('button', { name: 'Stop leftovers (2)' })).toBeDefined();
+    expect(within(group).getByRole('button', { name: 'Stop leftovers' })).toBeDefined();
     expect(screen.getByText('Stopped 3 processes left by an earlier run')).toBeDefined();
   });
 });

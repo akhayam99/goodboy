@@ -1,13 +1,15 @@
+import { countSlotText } from '../../shared/utils/countSlotText';
 import { pageCountWordOf, type CountedPageId, type PageCountFacts } from './pageCountWord';
 
+type PageSlotTone = 'info' | 'warning';
+
 export type PageSlot = {
-  readonly count: number | null;
-  readonly isRunning: boolean;
-  readonly isWarning: boolean;
+  readonly text: string | null;
+  readonly tone: PageSlotTone | null;
   readonly fact: string | null;
 };
 
-const EMPTY_SLOT: PageSlot = { count: null, isRunning: false, isWarning: false, fact: null };
+const EMPTY_SLOT: PageSlot = { text: null, tone: null, fact: null };
 
 type CountParams = {
   readonly page: CountedPageId;
@@ -35,20 +37,27 @@ const countOf = ({ page, facts }: CountParams): number => {
   }
 };
 
-const isRunningOf = ({ page, facts }: CountParams): boolean => {
-  if (page === 'runs') {
-    return facts.runningRuns > 0;
-  }
-  if (page === 'orchestrated') {
-    return facts.runningOrchestratedRuns > 0;
-  }
-  if (page === 'agents') {
-    return facts.runningAgents > 0;
-  }
-  if (page === 'auto') {
-    return facts.workingAutoAgents > 0;
-  }
-  return false;
+type LiveCount = {
+  readonly tone: PageSlotTone;
+  readonly count: number;
+};
+
+const liveCountOf = ({ page, facts }: CountParams): LiveCount | null => {
+  const counts: Readonly<Record<CountedPageId, ReadonlyArray<LiveCount>>> = {
+    runs: [
+      { tone: 'warning', count: facts.waitingRuns },
+      { tone: 'info', count: facts.runningRuns },
+    ],
+    orchestrated: [
+      { tone: 'warning', count: facts.waitingOrchestratedRuns },
+      { tone: 'info', count: facts.runningOrchestratedRuns },
+    ],
+    agents: [{ tone: 'info', count: facts.runningAgents }],
+    auto: [{ tone: 'info', count: facts.workingAutoAgents }],
+    artifacts: [],
+    questions: [{ tone: 'warning', count: facts.openQuestions }],
+  };
+  return counts[page].find((live) => live.count > 0) ?? null;
 };
 
 type Params = {
@@ -60,14 +69,14 @@ export const pageSlotOf = ({ page, facts }: Params): PageSlot => {
   if (page === null) {
     return EMPTY_SLOT;
   }
-  const count = countOf({ page, facts });
-  if (count === 0) {
+  const total = countOf({ page, facts });
+  if (total === 0) {
     return EMPTY_SLOT;
   }
+  const live = liveCountOf({ page, facts });
   return {
-    count,
-    isRunning: isRunningOf({ page, facts }),
-    isWarning: page === 'questions',
+    text: countSlotText({ count: live === null ? total : live.count }),
+    tone: live === null ? null : live.tone,
     fact: pageCountWordOf({ page, facts }),
   };
 };

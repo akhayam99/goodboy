@@ -51,7 +51,6 @@ export const RailOrderScene = () => {
           workspaceId={seed.workspaceId}
           currentSessionId={currentSessionId}
           place={null}
-          onToggle={noop}
           actions={ACTIONS}
         />
       </div>

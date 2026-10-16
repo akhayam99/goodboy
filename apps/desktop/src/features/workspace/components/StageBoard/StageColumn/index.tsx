@@ -88,7 +88,7 @@ export const StageColumn = ({
       className={cn(
         'flex min-h-0 min-w-0 flex-col',
         PANE_RHYTHM.board.laneStack,
-        isHalf && (isEmpty ? 'flex-none' : 'flex-1 basis-0'),
+        isHalf && (isEmpty ? 'flex-none' : 'flex-initial'),
       )}
     >
       <div className="flex h-6 shrink-0 items-center">

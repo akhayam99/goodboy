@@ -32,7 +32,7 @@ export const NotificationRowDetail = ({ notifications }: Props) => {
   const hasActions = retryAction != null || canReport;
 
   return (
-    <div className="flex flex-col gap-2 pb-3 pl-13 pr-3">
+    <div className="flex flex-col gap-2 pb-3 pl-10 pr-3">
       {hasBody && (
         <p className="whitespace-pre-wrap break-words text-label text-muted-foreground">
           {latest.body}

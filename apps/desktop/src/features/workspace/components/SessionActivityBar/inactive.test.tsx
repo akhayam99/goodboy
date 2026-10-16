@@ -74,16 +74,11 @@ const agentOf = ({ session }: { readonly session: Session }): Agent => ({
 
 type Row = {
   readonly title: string;
-  readonly trailing: string | null;
 };
 
 const rowsOf = ({ root }: RootParams): ReadonlyArray<Row> =>
   Array.from(root.querySelectorAll<HTMLElement>('button[data-select-id]')).map((button) => ({
-    title:
-      button.querySelector('[data-row-trailing]')?.previousElementSibling?.textContent ??
-      button.lastElementChild?.textContent ??
-      '',
-    trailing: button.querySelector('[data-row-trailing]')?.textContent ?? null,
+    title: button.lastElementChild?.textContent ?? '',
   }));
 
 const inactiveGroup = (): HTMLElement | null => {
@@ -127,7 +122,7 @@ const seed = () => {
 };
 
 describe('the Inactive group of the session list', () => {
-  it('moves only the quiet sessions to a last Inactive group, newest first, with how long they slept', async () => {
+  it('moves only the quiet sessions to a last Inactive group, newest first, the age left to the hover card', async () => {
     seed();
     renderBar();
 
@@ -138,9 +133,10 @@ describe('the Inactive group of the session list', () => {
     }
     expect(group.textContent).toContain('Inactive2');
     expect(rowsOf({ root: group })).toEqual([
-      { title: 'Backfill the settlement dates', trailing: 'inactive 5d' },
-      { title: 'Write the notify-relay digest', trailing: 'inactive 9d' },
+      { title: 'Backfill the settlement dates' },
+      { title: 'Write the notify-relay digest' },
     ]);
+    expect(group.textContent).not.toMatch(/inactive \d|\d+d ago/);
     expect(titles().slice(-2)).toEqual([
       'Backfill the settlement dates',
       'Write the notify-relay digest',
@@ -148,7 +144,6 @@ describe('the Inactive group of the session list', () => {
     for (const kept of [pinned, asking, drafted, running, open, recent]) {
       expect(titles().indexOf(kept.goal)).toBeLessThan(titles().length - 2);
     }
-    expect(rowsOf({ root: document }).filter((row) => row.trailing !== null)).toHaveLength(2);
   });
 
   it('brings an inactive session back up the moment you open it', async () => {
@@ -163,10 +158,6 @@ describe('the Inactive group of the session list', () => {
         'Backfill the settlement dates',
       ]),
     );
-    expect(
-      rowsOf({ root: document }).find((row) => row.title === 'Write the notify-relay digest')
-        ?.trailing,
-    ).toBeNull();
   });
 
   it('brings an inactive session back up the moment an agent starts in it, and drops the group when none is left', async () => {
@@ -197,6 +188,5 @@ describe('the Inactive group of the session list', () => {
       });
     });
     expect(screen.queryByText('Inactive')).toBeNull();
-    expect(rowsOf({ root: document }).every((row) => row.trailing === null)).toBe(true);
   });
 });

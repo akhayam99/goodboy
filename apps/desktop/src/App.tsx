@@ -20,7 +20,6 @@ import { SessionRefreshBridge } from './features/session/components/SessionRefre
 import { SidebarPeekOverlay } from './features/workspace/components/SidebarPeekOverlay';
 import { ShellLeft } from './app/components/SideColumn/ShellLeft';
 import { SessionFrame } from './app/components/SessionRail/SessionFrame';
-import { useShellFolds } from './app/hooks/useShellFolds';
 import type { ColumnActions } from './app/components/SideColumn/columnDoors';
 import { useGoToBoard } from './app/hooks/useGoToBoard';
 import { useWindowPresence } from './features/workspace/hooks/useWindowPresence';
@@ -102,11 +101,7 @@ export const App = () => {
   const currentWorkspaceSessions = useSessions();
   const isDraftShown = useAppStore((s) => selectIsSessionDraftShown({ state: s }));
   const isSettingsOpen = useAppStore((s) => s.appStudio?.kind === 'settings');
-  const shellFolds = useShellFolds();
-  const sessionSidebar = useSessionSidebarVisibility({
-    hasSidebar: true,
-    isNarrow: currentSession !== null && shellFolds.isMainNarrow,
-  });
+  const sessionSidebar = useSessionSidebarVisibility({ hasSidebar: true });
   const [settingsColumnSlot, setSettingsColumnSlot] = useState<HTMLDivElement | null>(null);
   const [keepAliveIds, setKeepAliveIds] = useState<ReadonlyArray<SessionId>>([]);
   const isWorkspaceLauncherBranch = hasWorkspaces && currentWorkspace === null && isMainWindow();
@@ -294,6 +289,7 @@ export const App = () => {
         <AppShell
           topBar={
             <AppTopBar
+              sidebar={{ isCollapsed: sessionSidebar.isCollapsed, onToggle: sessionSidebar.toggle }}
               onOpenSpend={openSpend}
               onOpenScript={openScript}
               openProviderId={settingsProviderId}
@@ -307,7 +303,6 @@ export const App = () => {
               currentSessionId={currentSession?.id ?? null}
               isDraftShown={isDraftShown}
               actions={columnActions}
-              onToggle={sessionSidebar.toggle}
               settingsSlotRef={setSettingsColumnSlot}
             />
           }
@@ -331,7 +326,6 @@ export const App = () => {
                   currentSessionId={currentSession?.id ?? null}
                   isDraftShown={isDraftShown}
                   actions={columnActions}
-                  onToggle={sessionSidebar.toggle}
                   variant="peek"
                   onNavigate={sessionSidebar.closePeek}
                 />

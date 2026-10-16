@@ -36,7 +36,7 @@ export const SessionPages = ({ session, pages, facts, sign, onOpened }: Props) =
               ariaCurrent={isCurrent ? 'page' : undefined}
               {...(slot.fact !== null && { title: slot.fact })}
               onClick={() => openPage(page)}
-              className="h-7 items-center gap-2 px-2 text-label"
+              className="h-7 items-center gap-2 px-2 text-ui"
             >
               <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0" />
               <span className="flex min-w-0 flex-1 items-center gap-2">
@@ -47,12 +47,11 @@ export const SessionPages = ({ session, pages, facts, sign, onOpened }: Props) =
               </span>
               <span
                 data-page-value={page.id}
-                data-tone={slot.isWarning ? 'warning' : slot.isRunning ? 'running' : 'count'}
+                data-tone={slot.tone ?? 'count'}
                 className="flex shrink-0 items-center justify-end gap-1 text-meta tabular-nums text-faint-foreground empty:hidden"
               >
-                {slot.isRunning ? <StatusDot tone="info" size="sm" /> : null}
-                {slot.isWarning ? <StatusDot tone="warning" size="sm" /> : null}
-                {slot.count === null ? null : <span>{slot.count}</span>}
+                {slot.tone === null ? null : <StatusDot tone={slot.tone} size="sm" />}
+                {slot.text === null ? null : <span>{slot.text}</span>}
               </span>
             </SelectableRow>
           </li>

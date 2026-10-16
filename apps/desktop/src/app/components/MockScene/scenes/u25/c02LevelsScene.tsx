@@ -3,6 +3,8 @@ import type { IsoDateTime } from '@goodboy/types';
 import { useAppStore, useCurrentSession, type LensKind } from '../../../../../store';
 import { useSceneRailFold } from '../useSceneRailFold';
 import { SessionFrame } from '../../../SessionRail/SessionFrame';
+import { AppTopBar } from '../../../AppTopBar';
+import { SessionWorkspace } from '../../../../../features/session/components/SessionWorkspace';
 import { SideColumn } from '../../../SideColumn';
 import { ColumnRail } from '../../../SideColumn/ColumnRail';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
@@ -97,40 +99,42 @@ export const LevelsScene = ({ config }: Props) => {
   }
   const currentSessionId = place === 'board' ? null : seed.session.id;
   return (
-    <div data-shot className="flex h-screen min-h-0 bg-background">
-      <div className="h-full shrink-0 border-r border-border-soft">
-        {config.isMainFolded === true ? (
-          <ColumnRail
-            scope="workspace"
-            workspaceId={seed.workspaceId}
-            currentSessionId={currentSessionId}
-            place={place}
-            onToggle={noop}
-            actions={ACTIONS}
-          />
-        ) : (
-          <div className="h-full w-60">
-            <SideColumn
+    <div data-shot className="flex h-screen min-h-0 flex-col bg-background">
+      <AppTopBar
+        sidebar={{ isCollapsed: config.isMainFolded === true, onToggle: noop }}
+        onOpenSpend={noop}
+        onOpenScript={noop}
+      />
+      <div className="flex min-h-0 flex-1 bg-background">
+        <div className="h-full shrink-0 border-r border-border-soft">
+          {config.isMainFolded === true ? (
+            <ColumnRail
               scope="workspace"
               workspaceId={seed.workspaceId}
               currentSessionId={currentSessionId}
               place={place}
-              isCollapsed={false}
               actions={ACTIONS}
-              onToggle={noop}
             />
-          </div>
+          ) : (
+            <div className="h-full w-60">
+              <SideColumn
+                scope="workspace"
+                workspaceId={seed.workspaceId}
+                currentSessionId={currentSessionId}
+                place={place}
+                actions={ACTIONS}
+              />
+            </div>
+          )}
+        </div>
+        {currentSessionId === null || place !== null ? (
+          <main className="flex min-w-0 flex-1 flex-col gap-2 p-6" />
+        ) : (
+          <SessionFrame session={current ?? seed.session}>
+            <SessionWorkspace session={current ?? seed.session} isActive />
+          </SessionFrame>
         )}
       </div>
-      {currentSessionId === null || place !== null ? (
-        <main className="flex min-w-0 flex-1 flex-col gap-2 p-6" />
-      ) : (
-        <SessionFrame session={current ?? seed.session}>
-          <main className="flex h-full min-w-0 flex-col gap-2 p-6">
-            <h1 className="text-title text-foreground">{seed.session.goal}</h1>
-          </main>
-        </SessionFrame>
-      )}
     </div>
   );
 };

@@ -14,7 +14,7 @@ export type SessionTool = {
 export const SESSION_TOOLS: ReadonlyArray<SessionTool> = [
   {
     pane: 'ask',
-    icon: CONCEPT_ICONS.ask,
+    icon: CONCEPT_ICONS.chat,
     label: 'Ask',
     tooltip: 'Ask what is happening in this session',
     shortcut: 'ask.open',

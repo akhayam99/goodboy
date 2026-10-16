@@ -13,7 +13,6 @@ type Props = {
   readonly currentSessionId: SessionId | null;
   readonly isDraftShown: boolean;
   readonly actions: ColumnActions;
-  readonly onToggle: () => void;
   readonly variant?: 'pinned' | 'peek';
   readonly onNavigate?: () => void;
   readonly settingsSlotRef?: (node: HTMLDivElement | null) => void;
@@ -28,7 +27,6 @@ export const ShellLeft = ({
   currentSessionId,
   isDraftShown,
   actions,
-  onToggle,
   variant = 'pinned',
   onNavigate,
   settingsSlotRef,
@@ -37,16 +35,13 @@ export const ShellLeft = ({
   const storePlace = useColumnPlace();
   const place = placeOverride === undefined ? storePlace : placeOverride;
   const isPeek = variant === 'peek';
-  const isCollapsed = arrangement.leftSidebarCollapsed;
   const column = (
     <SideColumn
       scope={arrangement.columnScope}
       workspaceId={workspaceId}
       currentSessionId={currentSessionId}
       place={place}
-      isCollapsed={isCollapsed}
       actions={actions}
-      onToggle={onToggle}
       isPeek={isPeek}
       {...(onNavigate !== undefined && { onNavigate })}
       {...(!isPeek && settingsSlotRef !== undefined && { settingsSlotRef })}
@@ -66,7 +61,6 @@ export const ShellLeft = ({
           workspaceId={workspaceId}
           currentSessionId={currentSessionId}
           place={place}
-          onToggle={onToggle}
           actions={actions}
         />
       }

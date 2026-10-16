@@ -35,10 +35,12 @@ afterEach(() => {
 });
 
 const INACTIVE = [
-  { title: 'Write the notify-relay digest', trailing: 'inactive 4d' },
-  { title: 'Paginate the payments list', trailing: 'inactive 6d' },
-  { title: 'Move the ledger export to a queue', trailing: 'inactive 12d' },
+  { title: 'Write the notify-relay digest', age: '4d ago' },
+  { title: 'Paginate the payments list', age: '6d ago' },
+  { title: 'Move the ledger export to a queue', age: '12d ago' },
 ];
+
+const INACTIVE_ROWS = INACTIVE.map((row) => ({ title: row.title, trailing: null }));
 
 const STAYING = [
   'Reconcile the ledger export',
@@ -104,9 +106,9 @@ describe('the r1 inactive sessions scenes', () => {
 
     await waitFor(() => expect(within(sessionList()).getByText('Inactive')).toBeDefined());
     expect(sidebarInactive().textContent).toContain('Inactive3');
-    expect(sidebarRows({ root: sidebarInactive() })).toEqual(INACTIVE);
+    expect(sidebarRows({ root: sidebarInactive() })).toEqual(INACTIVE_ROWS);
     const rows = sidebarRows({ root: sessionList() });
-    expect(rows.slice(-3)).toEqual(INACTIVE);
+    expect(rows.slice(-3)).toEqual(INACTIVE_ROWS);
     expect(
       rows
         .slice(0, -3)
@@ -125,7 +127,7 @@ describe('the r1 inactive sessions scenes', () => {
       .map((button) => button.textContent ?? '')
       .filter((text) => text !== '');
     expect(headers.at(-1)).toBe('Inactive3');
-    expect(sidebarRows({ root: sidebarInactive() })).toEqual(INACTIVE);
+    expect(sidebarRows({ root: sidebarInactive() })).toEqual(INACTIVE_ROWS);
   });
 
   it('r1-inactive-list ends the Sessions list with an Inactive group whose last column says how long', async () => {
@@ -141,7 +143,7 @@ describe('the r1 inactive sessions scenes', () => {
       INACTIVE.map((row) => row.title),
     );
     for (const [index, row] of rows.entries()) {
-      expect(row.textContent).toContain(INACTIVE[index]?.trailing ?? '');
+      expect(row.textContent).toContain(INACTIVE[index]?.age ?? '');
     }
     expect(within(group).getByText('3')).toBeDefined();
   });

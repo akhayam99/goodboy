@@ -17,17 +17,31 @@ const trackWidths = (container: HTMLElement) =>
     (track) => (track.firstElementChild as HTMLElement).style.width,
   );
 
-const trackFills = (container: HTMLElement) =>
-  [...container.querySelectorAll('[data-limits-track]')].map(
-    (track) => (track.firstElementChild as HTMLElement).className,
-  );
-
 afterEach(() => {
   cleanup();
 });
 
 describe('LimitsBars', () => {
-  it('falls back to the weeklyModel window for the weekly track when there is no aggregate weekly window', () => {
+  it('draws one bar per provider, the tighter window, with no percent at or under 70%', () => {
+    const { container } = render(
+      <LimitsBars
+        state="normal"
+        isStale={false}
+        windows={[
+          window({ kind: 'fiveHour', status: 'ok', usedFraction: 0.1 }),
+          window({ kind: 'weekly', status: 'ok', usedFraction: 0.42 }),
+        ]}
+      />,
+    );
+
+    expect(trackWidths(container)).toEqual(['42%']);
+    expect(container.querySelector('[data-limits-track]')?.getAttribute('data-limits-track')).toBe(
+      'weekly',
+    );
+    expect(container.querySelector('[data-limits-percent]')).toBeNull();
+  });
+
+  it('reads the percent in gray once the tighter window passes 70%', () => {
     const { container } = render(
       <LimitsBars
         state="warning"
@@ -39,53 +53,23 @@ describe('LimitsBars', () => {
       />,
     );
 
-    expect(trackWidths(container)).toEqual(['10%', '82%']);
+    expect(trackWidths(container)).toEqual(['82%']);
+    expect(container.querySelector('[data-limits-percent]')?.textContent).toBe('82%');
   });
 
-  it('picks the worst weeklyModel window for the weekly track when several are present', () => {
+  it('takes a reached window as full, whatever its fraction says', () => {
     const { container } = render(
       <LimitsBars
         state="out"
         isStale={false}
         windows={[
           window({ kind: 'weeklyModel', model: 'Sonnet', status: 'ok', usedFraction: 0.3 }),
-          window({ kind: 'weeklyModel', model: 'Opus', status: 'reached', usedFraction: 1 }),
+          window({ kind: 'weeklyModel', model: 'Opus', status: 'reached', usedFraction: 0.9 }),
         ]}
       />,
     );
 
-    expect(trackWidths(container)).toEqual(['0%', '100%']);
-  });
-
-  it('gives each bar the tone of its own window, not the chip state shared by both tracks', () => {
-    const { container } = render(
-      <LimitsBars
-        state="out"
-        isStale={false}
-        windows={[
-          window({ kind: 'fiveHour', status: 'ok', usedFraction: 0.05 }),
-          window({ kind: 'weekly', status: 'reached', usedFraction: 1 }),
-        ]}
-      />,
-    );
-
-    const [fiveHourFill, weeklyFill] = trackFills(container);
-    expect(fiveHourFill).toContain('bg-muted-foreground');
-    expect(fiveHourFill).not.toContain('bg-danger');
-    expect(weeklyFill).toContain('bg-danger');
-  });
-
-  it('uses the neutral fill when a track has no matching window', () => {
-    const { container } = render(
-      <LimitsBars
-        state="warning"
-        isStale={false}
-        windows={[window({ kind: 'fiveHour', status: 'warning', usedFraction: 0.85 })]}
-      />,
-    );
-
-    const [fiveHourFill, weeklyFill] = trackFills(container);
-    expect(fiveHourFill).toContain('bg-warning');
-    expect(weeklyFill).toContain('bg-muted-foreground');
+    expect(trackWidths(container)).toEqual(['100%']);
+    expect(container.querySelector('[data-limits-percent]')?.textContent).toBe('100%');
   });
 });

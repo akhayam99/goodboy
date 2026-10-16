@@ -46,7 +46,13 @@ export const SessionHoverCardBody = ({
   const isPinned = useAppStore((state) =>
     (state.sessionPins?.[session.workspaceId] ?? EMPTY_ARRAY).some((pin) => pin.id === sessionId),
   );
+  const isNamedByGoodboy = useAppStore(
+    (state) => state.goodboyNamedSessionId === sessionId && session.titleUserEdited !== true,
+  );
   const draftCount = useReviewDraftCount({ sessionId });
+  const projectMounts = mounts.filter(
+    (mount, index) => mounts.findIndex((other) => other.projectId === mount.projectId) === index,
+  );
   const node = sessionNodeOf({ info: summary.info, isArchived });
   const { keys, title } = sessionRowTitle({ session, tasks: summary.tasks });
   const linked = getLinkedRequest({ pullRequest, mergeRequest });
@@ -56,6 +62,7 @@ export const SessionHoverCardBody = ({
   const draftWord = draftCount === 1 ? 'draft comment' : 'draft comments';
   const facts = [
     isPinned && !isArchived ? 'Pinned' : null,
+    isNamedByGoodboy ? 'Named by Goodboy' : null,
     summary.isAutorun ? NAMES.autopilot : null,
     `${summary.agentCount} ${agentWord}`,
     draftCount > 0 ? `${draftCount} ${draftWord}` : null,
@@ -96,7 +103,7 @@ export const SessionHoverCardBody = ({
       {summary.progress === null ? null : (
         <SessionProgress progress={summary.progress} tone={summary.tone} />
       )}
-      {request !== null || summary.tasks.length > 0 || mounts.length > 0 ? (
+      {request !== null || summary.tasks.length > 0 || projectMounts.length > 0 ? (
         <div className="flex flex-wrap gap-1">
           {request !== null && RequestIcon !== undefined ? (
             <Chip
@@ -113,7 +120,7 @@ export const SessionHoverCardBody = ({
               variant="compact"
             />
           ))}
-          {mounts.map((mount) => (
+          {projectMounts.map((mount) => (
             <Chip
               key={mount.mountId}
               tone="neutral"

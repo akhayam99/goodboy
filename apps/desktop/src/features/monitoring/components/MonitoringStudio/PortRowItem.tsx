@@ -15,7 +15,7 @@ type Props = {
 
 export const PortRowItem = ({ row, process, now, name, nameSlot, actions, isNested }: Props) =>
   row.state === 'free' ? (
-    <FreePortRow row={row} name={name} nameSlot={nameSlot} actions={actions} isNested={isNested} />
+    <FreePortRow row={row} name={name} nameSlot={nameSlot} actions={actions} />
   ) : (
     <PortRowView
       row={row}

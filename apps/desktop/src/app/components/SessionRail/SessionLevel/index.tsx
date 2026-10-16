@@ -6,7 +6,6 @@ import { useSessionPageLens } from '../../../../features/session/hooks/useSessio
 import { currentSignOf } from '../../../../features/workspace/components/SessionActivityBar/currentSign';
 import { SessionPages } from '../../../../features/workspace/components/SessionActivityBar/SessionPages';
 import { useCardPages } from '../../../../features/workspace/hooks/useCardPages';
-import { IdentityRow } from './IdentityRow';
 import { LevelLinked } from './LevelLinked';
 import { LevelProjects } from './LevelProjects';
 
@@ -30,9 +29,6 @@ export const SessionLevel = ({ session, isActive }: Props) => {
 
   return (
     <div data-session-level="" className="flex min-h-0 flex-1 flex-col gap-1">
-      <div className="shrink-0 px-2">
-        <IdentityRow session={session} />
-      </div>
       <ScrollFade className="min-h-0 flex-1">
         <div className="flex flex-col gap-4 px-2 pb-2">
           <SessionPages session={session} pages={pages} facts={facts} sign={sign} />
