@@ -91,7 +91,7 @@ export const TaskGroupRows = ({
   return (
     <ListGridGroup
       label={label}
-      isListbox
+      isListbox={records.length > 0}
       headingLevel={2}
       isSticky={isVirtual}
       action={

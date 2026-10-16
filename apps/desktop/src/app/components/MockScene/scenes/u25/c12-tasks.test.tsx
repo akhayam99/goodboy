@@ -16,6 +16,7 @@ import {
   resetStoryStore,
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
+import { runA11yCheck } from '../../../../../__tests__/a11y/utils';
 import { MOCK_SCENES } from '../..';
 import { U25_C12_TASK_SCENES } from './c12-tasks';
 
@@ -57,6 +58,26 @@ const groupNames = (): ReadonlyArray<string> =>
   Array.from(list().querySelectorAll('h2')).map((heading) => heading.textContent ?? '');
 
 describe('c12 task scenes', () => {
+  it.each(['c12-tasks-forme', 'c12-tasks-ratelimited', 'c12-issue-pane'] as const)(
+    '%s has no accessibility violation once drawn',
+    async (name) => {
+      const Scene = U25_C12_TASK_SCENES[name];
+      const { container } = render(
+        <ToastProvider>
+          <Scene />
+        </ToastProvider>,
+      );
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(SETTLE_MS);
+      });
+      vi.useRealTimers();
+
+      const { violations } = await runA11yCheck(container);
+
+      expect(violations.map((violation) => violation.id)).toEqual([]);
+    },
+  );
+
   it('registers every state in the scene registry', () => {
     for (const name of Object.keys(U25_C12_TASK_SCENES)) {
       expect(MOCK_SCENES[name]).toBeDefined();
