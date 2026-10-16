@@ -32,7 +32,7 @@ const { state } = vi.hoisted(() => ({
 
 vi.mock('../../../../store', () => {
   const useAppStore = <T,>(selector: (store: typeof state) => T) => selector(state);
-  Object.assign(useAppStore, { getState: () => state });
+  Object.assign(useAppStore, { getState: () => state, subscribe: () => () => undefined });
   return { useAppStore };
 });
 
@@ -81,7 +81,8 @@ const seedNotifications = ({ notifications }: { notifications: ReadonlyArray<Not
 const renderStudio = () => render(<NotificationsStudio onClose={vi.fn()} />);
 
 const deleteAll = (): void => {
-  fireEvent.click(screen.getByRole('button', { name: /^delete all$/i }));
+  fireEvent.click(screen.getByRole('button', { name: 'More notification actions' }));
+  fireEvent.click(screen.getByRole('menuitem', { name: 'Delete all' }));
 };
 
 const openFilterRail = (): HTMLElement => {
@@ -363,7 +364,16 @@ describe('NotificationsStudio', () => {
     renderStudio();
 
     expect(screen.queryByRole('button', { name: /mark all read/i })).toBeNull();
-    expect(screen.getByRole('button', { name: /^delete all$/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'More notification actions' })).toBeDefined();
+  });
+
+  it('keeps Delete all off the header, in the page menu', () => {
+    seedNotifications({ notifications: [buildNotification()] });
+    renderStudio();
+
+    expect(screen.queryByRole('button', { name: /^delete all$/i })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'More notification actions' }));
+    expect(screen.getByRole('menuitem', { name: 'Delete all' })).toBeDefined();
   });
 
   it('asks in a popover beside Delete all, not inside the title row', async () => {

@@ -16,6 +16,7 @@ import { NEW_FORM_KIND } from './kinds/newForm';
 import { TASK_LIST_KIND } from './kinds/taskList';
 import { RUN_STEP_KIND } from './kinds/runStep';
 import { WORKFLOW_LIST_KIND } from './kinds/workflowList';
+import { NOTIFICATIONS_KIND } from './kinds/notifications';
 import { PULL_REQUEST_KIND } from './kinds/pullRequest';
 import { MESSAGE_KIND } from './kinds/message';
 import { MOUNT_KIND } from './kinds/mount';
@@ -158,6 +159,8 @@ export const bindTarget = ({ state, target }: TargetParams): BoundObject | null 
       return bind({ definition: RUN_STEP_KIND, state, target });
     case 'workflowList':
       return bind({ definition: WORKFLOW_LIST_KIND, state, target });
+    case 'notifications':
+      return bind({ definition: NOTIFICATIONS_KIND, state, target });
     case 'link':
       return bind({ definition: LINK_KIND, state, target });
     case 'review':

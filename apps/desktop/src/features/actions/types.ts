@@ -25,6 +25,7 @@ import type { NewFormFacts } from './kinds/newForm';
 import type { TaskListFacts } from './kinds/taskList';
 import type { RunStepFacts } from './kinds/runStep';
 import type { WorkflowListFacts } from './kinds/workflowList';
+import type { NotificationsFacts } from './kinds/notifications';
 import type { AppStore } from '../../store/store';
 import type { ShowToast } from '../../shared/components/Toast';
 import type { ShortcutId } from '../../shared/keyboard/registry';
@@ -381,6 +382,11 @@ export type WorkflowListActionTarget = {
   readonly facts: WorkflowListFacts;
 };
 
+export type NotificationsActionTarget = {
+  readonly kind: 'notifications';
+  readonly facts: NotificationsFacts;
+};
+
 export type LinkActionTarget = {
   readonly kind: 'link';
   readonly href: string;
@@ -446,6 +452,7 @@ export type ObjectTarget =
   | TaskListActionTarget
   | RunStepActionTarget
   | WorkflowListActionTarget
+  | NotificationsActionTarget
   | LinkActionTarget
   | ReviewActionTarget
   | ReviewCommentActionTarget
