@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { ArchiveRestore } from 'lucide-react';
-import { IconButton, InteractiveRow, cn } from '@goodboy/ui';
+import { ICON_SIZE, IconButton, InteractiveRow, cn } from '@goodboy/ui';
 import type { ChatId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { ChatDeleteConfirm } from './ChatDeleteConfirm';
@@ -55,7 +55,7 @@ const ChatArchivedRowView = ({
             label={`Restore ${title}`}
             tooltip="Restore"
             variant="ghost"
-            iconSize={12}
+            iconSize={ICON_SIZE.row}
             onClick={() => onRestore(chatId)}
           />
           <ChatDeleteConfirm
@@ -69,7 +69,7 @@ const ChatArchivedRowView = ({
                 label={`Delete ${title}`}
                 tooltip="Delete"
                 variant="ghost"
-                iconSize={12}
+                iconSize={ICON_SIZE.row}
                 aria-haspopup="dialog"
                 onClick={arm}
               />

@@ -1,7 +1,7 @@
-import type { TranscriptRow } from '../../utils/cluster-operations';
+import type { ConversationRow } from '../../utils/conversationRows';
 
 type Params = {
-  readonly row: TranscriptRow;
+  readonly row: ConversationRow;
 };
 
 type TextParams = {
@@ -13,6 +13,8 @@ const DEFAULT_ROW_PX = 72;
 const OPERATION_ROW_PX = 32;
 const OPERATION_ROW_CAP = 12;
 const OPERATION_PADDING_PX = 16;
+const SUMMARY_ROW_PX = 32;
+const PLAN_ITEM_PX = 24;
 const USER_LINE_PX = 22;
 const USER_PADDING_PX = 40;
 const ASSISTANT_LINE_PX = 24;
@@ -29,6 +31,14 @@ const lineCountOf = ({ text, charsPerLine }: TextParams): number => {
 };
 
 export const rowEstimatePx = ({ row }: Params): number => {
+  if (row.kind === 'summary') {
+    return SUMMARY_ROW_PX;
+  }
+  if (row.kind === 'plan') {
+    return (
+      OPERATION_PADDING_PX + PLAN_ITEM_PX * Math.min(row.checklist.items.length, OPERATION_ROW_CAP)
+    );
+  }
   if (row.kind === 'operations') {
     return OPERATION_PADDING_PX + OPERATION_ROW_PX * Math.min(row.items.length, OPERATION_ROW_CAP);
   }

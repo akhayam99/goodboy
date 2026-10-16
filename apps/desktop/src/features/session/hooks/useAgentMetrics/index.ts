@@ -10,7 +10,7 @@ import type {
 } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { ProviderContextUsage } from '../../components/AgentTree/ContextWindowBar';
-import type { AgentAggregate } from '../../components/AgentMetrics';
+import type { AgentAggregate } from '../../agentAggregate';
 import { computeLatestTelemetryByAgentId } from '../../agent-row-format';
 
 export type AgentMetrics = {

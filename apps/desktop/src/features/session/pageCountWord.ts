@@ -40,8 +40,6 @@ const COUNT_WORD: Readonly<Record<CountedPageId, (facts: PageCountFacts) => stri
   questions: (facts) => (facts.openQuestions > 0 ? `${facts.openQuestions} open` : null),
 };
 
-export const COUNTED_PAGE_IDS = Object.keys(COUNT_WORD) as ReadonlyArray<CountedPageId>;
-
 type WordParams = {
   readonly page: CountedPageId;
   readonly facts: PageCountFacts;

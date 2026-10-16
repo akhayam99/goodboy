@@ -269,6 +269,7 @@ describe('batches, waiting text and composer line', () => {
       'Auto is reading the results',
     );
     expect(waitingTextOf({ view: aView({ phase: 'answering' }) })).toBeNull();
+    expect(waitingTextOf({ view: aView({ phase: 'deciding' }) })).toBe('Deciding what to do next');
     expect(waitingTextOf({ view: aView({ phase: 'done' }) })).toBeNull();
     expect(
       waitingTextOf({ view: aView({ phase: 'waiting', artifacts: [aPlanRow()] }) }),

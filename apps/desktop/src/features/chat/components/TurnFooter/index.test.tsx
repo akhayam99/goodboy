@@ -10,6 +10,7 @@ import type {
   TelemetryRecord,
 } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
+import { NAMES } from '../../../../shared/names';
 
 type ExecutedAgentRouting = { provider: string; model: string; effort: string | null };
 
@@ -54,7 +55,7 @@ const usageItem = (): Extract<TranscriptItem, { kind: 'usage' }> => ({
 });
 
 describe('TurnFooter', () => {
-  it('shows tokens, cached percentage and cost for a done turn', () => {
+  it('shows model, time and cost on the line, and tokens, cache and context in the detail', () => {
     store.sessionTelemetry = {
       [SESSION_ID]: [
         {
@@ -83,9 +84,15 @@ describe('TurnFooter', () => {
       />,
     );
     screen.getByText('42s');
-    screen.getByText(/in ·/);
+    screen.getByText('Opus 5');
     screen.getByText('~$0.12');
-    screen.getByText('47% cached');
+    expect(screen.queryByText(/in ·/)).toBeNull();
+    expect(screen.queryByText('47% cached')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Turn detail' }));
+    screen.getByText('Input');
+    screen.getByText('from cache');
+    screen.getByText('Output');
+    screen.getByText(NAMES.contextWindow);
   });
 
   it('never shows $0.00: hides the cost entry when it is unknown', () => {

@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import type { Agent, AgentId, OpenQuestion, OpenQuestionId, SessionId } from '@goodboy/types';
 import {
   canDelegateQuestion,
-  clipQuestionText,
   composeDelegateKickoff,
   delegateAgentName,
   delegateRowState,
@@ -48,7 +47,9 @@ describe('questionDelegate identity', () => {
   });
 
   it('flattens newlines when it clips', () => {
-    expect(clipQuestionText({ text: '  pick a\n  database  ' })).toBe('pick a database');
+    expect(delegateAgentName({ questionText: '  pick a\n  database  ' })).toBe(
+      'answer: pick a database',
+    );
   });
 });
 

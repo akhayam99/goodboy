@@ -57,7 +57,6 @@ export const RoutingLabel = ({
         data-testid={shown.isDiverged ? 'routing-divergence' : undefined}
         className={cn(
           'inline-flex min-w-0 items-center gap-1 text-meta',
-          muted && 'opacity-60',
           shown.isDiverged && DIVERGED_CLASS,
           className,
         )}
@@ -71,7 +70,10 @@ export const RoutingLabel = ({
         <span
           data-routing-part="name"
           data-model-id={model ?? undefined}
-          className="min-w-0 truncate font-sans font-medium text-foreground"
+          className={cn(
+            'min-w-0 truncate font-sans font-medium',
+            muted ? 'text-muted-foreground' : 'text-foreground',
+          )}
         >
           {routingNameText(shown.label)}
         </span>

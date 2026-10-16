@@ -1,33 +1,35 @@
 import { useEffect, useState } from 'react';
 import { WorkNode } from '@goodboy/ui';
+import type { IsoDateTime } from '@goodboy/types';
 import type { ThinkingContext } from '../../utils/thinking-context';
 import { useElapsedMs } from '../../hooks/useElapsedMs';
 import { formatDuration } from '../../../../shared/utils/time/formatDuration';
 
 type Props = {
   readonly context: ThinkingContext;
+  readonly startedAt?: IsoDateTime | null;
 };
 
 const PHRASES: Record<ThinkingContext, readonly string[]> = {
-  think: ['reasoning', 'planning', 'weighing options'],
-  search: ['searching', 'reading files', 'tracing references'],
-  edit: ['writing', 'editing', 'applying changes'],
-  run: ['running', 'executing', 'collecting output'],
+  think: ['Thinking it through', 'Planning the next step', 'Weighing the options'],
+  search: ['Searching the code', 'Reading the files', 'Tracing the references'],
+  edit: ['Writing the changes', 'Editing the files', 'Applying the changes'],
+  run: ['Running the command', 'Collecting the output'],
 };
 
 const ROTATE_MS = 2600;
 const SETTLE_AFTER_TICKS = 8;
-const SETTLED_PHRASE = 'still working';
+const SETTLED_PHRASE = 'Still working';
 
 const prefersReducedMotion = () =>
   typeof window !== 'undefined' &&
   typeof window.matchMedia === 'function' &&
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-export const ThinkingIndicator = ({ context }: Props) => {
+export const ThinkingIndicator = ({ context, startedAt = null }: Props) => {
   const [reduced] = useState(prefersReducedMotion);
   const [tick, setTick] = useState(0);
-  const elapsedMs = useElapsedMs({ running: true });
+  const elapsedMs = useElapsedMs({ running: true, startedAt });
 
   useEffect(() => {
     if (reduced) {

@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { Chip, IconButton } from '@goodboy/ui';
+import { Chip, ICON_SIZE, IconButton } from '@goodboy/ui';
 import { AgentKindChip } from '../../../../../shared/components/AgentKindChip';
 import type { AgentKind } from '../../../../session/agent-kind';
 import { QuestionPager, type QuestionPagerModel } from './QuestionPager';
@@ -35,7 +35,7 @@ export const QuestionCardTop = ({
         icon={X}
         label="Dismiss question"
         variant="ghost"
-        iconSize={14}
+        iconSize={ICON_SIZE.control}
         onClick={onDismiss}
       />
     )}

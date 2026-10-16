@@ -16,7 +16,8 @@ const BASELINE_FILE = 'scale-rules.baseline.json';
 const MONO_CODE_FILE = 'scale-rules.mono-code.json';
 
 const RULES = {
-  iconSize: /\bsize=\{\d+\}/g,
+  iconSize: /\b(?:size|iconSize)=\{\d+\}/g,
+  iconAlias: /\bconst [A-Z_]*ICON_SIZE = (?:10|12|14|18);/g,
   mono: /font-mono/g,
   uppercase: /uppercase[^'"`\n]*tracking-|tracking-[^'"`\n]*uppercase/g,
   gap: /(?<![\w-])(?:gap|space)-(?:x-|y-)?(?:5|7|10)(?![\w.-])/g,
@@ -108,6 +109,10 @@ describe('the scale rules for new code only ever shrink', () => {
     expect(count('iconSize', '<Bell size={ICON_SIZE.row} aria-hidden />')).toBe(0);
     expect(count('iconSize', '<DogMascot size={64} className="text-primary" />')).toBe(0);
     expect(count('iconSize', '<input size={40} />')).toBe(0);
+    expect(count('iconSize', '<IconButton icon={X} iconSize={11} />')).toBe(1);
+    expect(count('iconSize', '<IconButton icon={X} iconSize={ICON_SIZE.row} />')).toBe(0);
+    expect(count('iconAlias', 'const KIND_ICON_SIZE = 10;')).toBe(1);
+    expect(count('iconAlias', 'const KIND_ICON_SIZE = ICON_SIZE.mark;')).toBe(0);
     expect(count('mono', 'className="font-mono text-meta"')).toBe(1);
     expect(
       countRule({

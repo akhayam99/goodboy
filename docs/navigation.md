@@ -1141,15 +1141,15 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
   The first segment of a studio has no menu because studios change from the
   column. It is a button only when that studio has a start to return to.
 - **Every menu row has five slots**: lead, label with a faint second part,
-  meta, a state that is always a word (from `agentStateWord`, the same reading
-  `isAgentFinished` makes), and a check on the current row, which is there even
+  meta, a state that is always a word (the same reading `isAgentFinished`
+  makes), and a check on the current row, which is there even
   when it is the only row. The last segment opens its menu from the whole
   segment and always shows the chevron; an ancestor goes up by its name and
   opens its menu from a chevron that is always visible, faint, and doubles as
   the separator: every segment but the last ends with the same chevron slot,
   whether it has a menu or not, so the gaps are equal. Name and chevron light
   up as one chip on hover. Page icons take the tone of their concept
-  (`LENS_TONE`, linked tools keep their brand color). Widths are 300 (pages, scopes, sections), 380
+  (linked tools keep their brand color). Widths are 300 (pages, scopes, sections), 380
   (runs, steps, agents, artifacts, conversations, attempts) and 460 (branches);
   a filter appears from nine rows up. An action that breaks something (Stop
   this step) confirms inside the menu's action band with `InlineConfirm`;
@@ -1579,20 +1579,23 @@ opens `StudioPlace` `{ kind: 'terminal'; terminalId; sessionId; worktree }`in`Te
 `StudioShell`plus`StudioRailLayout surface="terminal"`. The rail does not fold, and its first
 child is `New terminal`, a split secondary control: the button opens a tab in the selected
 worktree, the chevron opens the picker. The picker (`NewTerminalMenu`, `terminalPickerClusters`)
-opens to the right of the chevron (`useDropdown`align`after`) in clusters: `Workspace folder`
-first, then one cluster per session with attached worktrees, headed by the session title with
-its linked tasks and diff (`TerminalGroupFacts`); a row is the project, the branch, the short
-worktree chip and the path on one line, and `Open project`opens the project settings. The
+opens to the right of the chevron (`useDropdown`align`after`) in clusters: `Workspace folder`first, then one cluster per session with attached worktrees, headed by the session title alone
+(issue chips and diff stat stay off this page, cut C3); a row is the project, the branch, the short
+worktree chip and the path on one line, and`Open project`opens the project settings. The
 `Workspace folder` row is named by the folder (`harborline`), since the cluster title says the
 rest; a worktree path keeps its project folder and its `gb-` folder whole (`pathTail`), and the
 head of the path truncates first.
 With no terminal at all the page has no rail: the empty state owns the single`New terminal`.
-The rail lists one group per session that has terminals, headed by the session title (a button
-that opens the session) with its tasks and diff, and inside it one row per worktree
-(`terminalWorktrees.ts`, key `<sessionId>#m:<mountId>`, or `#p:<cwd>`when no mount matches):
-project, short chip, branch and the number of terminals; the`Workspace folder` group comes last.
-Selecting a row shows its terminals as tabs (`TerminalTabStrip`) with a `+`that adds a tab in
-that worktree; the header carries`Open session`(absent for the workspace). A new terminal is
+The rail is one `ListGrid`named`Terminals`with one`ListGridGroup`per session that has
+terminals: the session title, a visible`Open session`beside it and the number of terminals in
+the last column; the`Workspace folder` group comes last and has no action. Inside a group, one
+28px row per worktree (`terminalWorktrees.ts`, key `<sessionId>#m:<mountId>`, or `#p:<cwd>`when
+no mount matches) on the shared columns: branch or folder icon, project and branch, the first
+port (hidden on the selected row, whose ports sit at the tab strip's right edge) and a running
+dot while a shell runs a process; the folder path and every port live in the row tooltip, never
+on screen (`TerminalWorktreeRow`). Selecting a row shows its terminals as tabs
+(`TerminalTabStrip`) with a `+`that adds a tab in that worktree. There is no terminal header:
+the tab strip's right end carries `TerminalStripActions`, a `⋯`with`Open session`and`Copy worktree path`(or`Copy folder path`) from the `terminalTab` kind of the action registry, a single word when only one applies. A new terminal is
 always a tab of its worktree, titled`shell`, then `shell 2` (`nextTerminalTitle`); a tab is
 renamed by double click, Enter saves, Esc cancels. When the shell exits, whatever the code, the
 tab closes and the studio selects a neighbour of the same worktree: the watch lives in the
@@ -2116,7 +2119,7 @@ pull request`) and Comments lists the session's notes. Every door to a pull
   restore from history, which reopens the drawer. The thread is the one the
   address named, or the first thread of the attempt. The drawer takes the
   saved drawer width, like Ask, and holds two tabs under its title, a
-  `SegmentedTabs` like Brief and Transcript on the agent page: Fix and
+  `SegmentedTabs`: Fix and
   Transcript (`FixRunTranscriptDrawer` in `app/components`, which hands
   `AgentTranscriptDrawer` a `lead`; a drawer without a `lead` has no tabs).
   Fix is the fix run summary at full height with its own scroll
@@ -2153,24 +2156,13 @@ pull request`) and Comments lists the session's notes. Every door to a pull
   never in the drawer. In Activity a fix run is one row, `Fix run · #318 · 9
 comments`; the Needs you row for the pull request calls `openReview` with the
   destination `{ kind: 'threads', mountId, threadIds: [first comment that waits
-on you] }`. Any other agent keeps its page, and its pane tab is part of the
-  address: `agentPlace({ sessionId, agentId, pane })` asks for `brief` or
-  `transcript`. The agent page opens on Brief from every door. Without a
-  `pane` the pane picks its tab (`agentOpenTab`: the `pane` of the address,
-  else the tab the user picked by hand on that agent, else Brief when the Brief has
-  something to show (an outcome, a latest reply, an open question, a plan or a subagent) and Transcript when it has
-  nothing yet, as for an agent that just started). A door asks
-  for `transcript` only when it targets a place inside the chat: a search hit
-  on a message, Message this agent, Open the agent from a message, and the
-  hint that points at the transcript. A door that targets the Brief, such as a
-  question the agent asked, passes `brief`. Starting an agent, following one
-  that was spawned, and opening a card, a notification or a row all pass no
-  `pane`. The `pane` rides in the place as the target `{ kind: 'agent', pane }`,
-  so the key `agentPane` is written only by the navigation slice, follows the
-  page like the other targets, and comes back with Back, Forward and a window
-  restore. Tab clicks inside the pane do not rewrite the address; they write
-  `agentTab` (`setAgentTab`), a map from agent to its last hand-picked tab, so
-  the choice is remembered for that agent only, never for every agent. The `threads` destination needs no
+on you] }`. Any other agent keeps its page, one conversation with no tabs
+  (`AgentDetailPane`): every door lands on it, and the `pane` an address may
+  still carry (`agentPlace({ sessionId, agentId, pane })`, kept in the place as
+  the target `{ kind: 'agent', pane }` and in `agentPane`) changes nothing on
+  the page. The full record opens beside it in the `transcript` drawer, from
+  **View transcript**, from "Open in transcript" under a turn's summary line,
+  and from a delegation line's **See more** for a child agent. The `threads` destination needs no
   mount and no pull request: Review focuses the first thread of the set it
   has, and the set stays in `reviewSelections[sessionId]`. The destination
   `{ kind: 'notes', threadIds }`, like a `threads` set made only of notes,
@@ -2266,23 +2258,15 @@ hl/ledger-rounding`, and with two or more mounts opens a menu grouped by
 - **A blocked action is re-routed, never hidden.** A blocked workflow advance
   gives the reason on the CTA and opens an inline confirm before anything
   starts. With auto-run off, nothing advances without a click.
-- **The Agent page always has its header.** Every agent page (the brief, the
-  planner, Scribe, a missing or loading agent) renders `AgentHeader`: title,
-  status line, Brief | Transcript, overflow. The model in the status line is
-  the model of the agent's last turn, then the choice saved for the agent (an
-  override, or its workflow step), else `Model unknown`; a running agent that
-  has not run yet and has a chosen model reads `Next turn: <model>`
-  (`useAgentHeaderRouting`). The composer names its model only when it differs
-  from the header's, as `Next turn`; while it matches, the chip stays quiet and
-  reads `Model`. Stop is a labelled ghost button, and the transcript's day
-  divider is left-aligned like the rows. A run past its usual time shows the
-  elapsed time in the warning tone with the reason in its tooltip, never the
-  words `longer than usual` in the header. On the Brief, the **Now** block names
-  what the agent does now (`agentNowState`): its tool or `writing` or `thinking`
-  while a turn runs, `Waiting on 2 subagents` while it waits on children, and
-  nothing at all when it is running with no turn and nothing to name, so it never
-  reads `ready` for a running agent. The usage footer drops the turn count when
-  the agent has no turn of its own to count, instead of reading `0 turns`.
+- **The Agent page always has its header.** Every agent page (the planner,
+  Scribe, a missing or loading agent) renders one header row: role chip, title,
+  provider mark, View transcript, overflow. The composer model chip always names
+  the model the next turn will use, with its provider mark, never a bare
+  `Model` word. Each turn footer shows the model chip, the duration and the
+  cost; tokens, cache share and context window sit in its detail popover. The
+  live tail phrase is present tense in sentence case (`Collecting the output`).
+  The transcript pane's usage footer drops the turn count when the agent has no
+  turn of its own to count, instead of reading `0 turns`.
 - **An Artifacts row has one visible action.** The state-driven primary
   (`Run plan`, `Approve`, `Stop`, from the plan rule) and the open control
   are all a row shows at rest. Edit, Open in browser and Copy source appear on

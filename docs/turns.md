@@ -88,7 +88,7 @@ database.
   does, and it is released again when the turn ends. A second Auto writer on a
   shared key does not fail: its turn waits in `acquireTurnWriteSet`. The agent
   reads "starting" with the note **Waiting for the writer** (`agentWriterWait`),
-  Stop and Read now cancel the wait, the poll is one second and wakes at once
+  the tail Stop and Send now cancel the wait, the poll is one second and wakes at once
   when this window releases, and after 30 minutes the turn answers
   `isWriterLeaseDenied` like a resolver does. Two Auto writers on different
   worktrees of one repo serialize on the metadata folder on purpose. A turn with
@@ -299,12 +299,18 @@ threadIds? })`), a hint on one comment (`continueResolveThreads`) and a
   message shows closed as "first message · older format", the original text
   clamped to 8 lines with Show all. No parser reads it. `reduceTranscript` makes
   the `handoff` item and `TranscriptRows` counts it as the first user turn.
-- The transcript is the record and the Brief is the dashboard. What the agent
-  received lives only in the handoff block; the Brief shows one line, "Sent by
-  Orchestrator · step 4", that switches to the Transcript tab with
-  the Ask section open (`requestHandoffOpen`). The Brief no longer carries the ask, Why this
-  step or Expected output, and the old kickoff cards and their text parsers
-  are gone.
+- The transcript drawer is the record and the agent page is one conversation.
+  What the agent received lives only in the handoff block at the top of the
+  conversation ("Sent by Orchestrator · step 4", opened in place). The old
+  kickoff cards and their text parsers are gone.
+- The conversation (`ChatView` `mode="conversation"`, rows from
+  `conversationRows`) keeps per turn the user message, one summary line for the
+  turn's tools (`turnSummary`, steps open inline), the final answer, app
+  notices and the turn footer. Narration before the last tool call, the live
+  turn and plan updates leave the center; a pending permission request stays
+  inline. The task list a `TodoWrite`, `update_plan` or `write_todos` call
+  writes is one checklist (`planChecklist`) in the turn that first wrote it.
+  `mode="record"` (the transcript drawer) keeps today's full rows.
 
 Claude and the opencode family resume the provider's own session when the
 agent's stored session belongs to the same provider. Cursor, Codex and
@@ -461,6 +467,62 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   `isStoppedByRestart` agent, never one you stopped and never a fan-out
   container while a child is unfinished (the children are resumed instead), skips an agent a second click
   is already resuming, and reports a failure only after trying the rest.
+- **An Auto child never gets a plain turn.** Continue, Resume and Resume all
+  on an agent Auto started go through Auto (`autoRetryRouteOf`): the stopped
+  notice offers **Retry through Auto**, which sends Auto "Retry the
+  Implementer that stopped: <task>" so the tree decides the retry and reads
+  its result. `resumeStoppedAgents` skips Auto children: the tree recovers its
+  own work after a restart. The child is found from the tree view, or from its
+  parent being the Auto root when the view has not loaded.
+- **The thinking line counts from the turn start and ends with the turn.** Its
+  clock reads `startedAt` of the running turn state, never the moment it
+  mounted, and it never shows after an `error`, `auth_required` or
+  `cli_too_old` item, even when the turn state was left `running` without a
+  `done` (`isTurnThinking`).
+
+## Live state at the tail
+
+The live state of an operation is said once, as the last line of the content
+the user reads: `TailLine` in `features/live-state/`. It knows no operation:
+it takes `TailFacts` (`state`, `phrase`, `startedAt`, `actions`) and draws the
+glyph, the phrase, the clock and the actions. Each operation has one adapter in
+`features/live-state/adapters/` that builds those facts from its owner of
+truth, and a header word or a rail row of the same host reads the same
+adapter.
+
+| Adapter              | Operation                               |
+| -------------------- | --------------------------------------- |
+| `agentTurnLive`      | a plain agent or chat turn              |
+| `autoTreeLive`       | Auto's tree phase and its root turn     |
+| `autoChildLive`      | a child Auto started                    |
+| `checkFixLive`       | a CI fix on one check                   |
+| `workflowRunLive`    | a preset run step                       |
+| `fixRunLive`         | a fix run on review comments            |
+| `cleanupLive`        | closing a merged worktree               |
+| `draftStartLive`     | starting a session from a draft         |
+| `processStopLive`    | stopping a process from Monitoring      |
+| `historyRewriteLive` | planning and applying a history rewrite |
+
+Rules the adapters hold, each with a test in `adapters.test.ts`:
+
+- The working phrase comes from the last tool event, never from model text and
+  never the command text: "Running pnpm in payments-api", "Reading export.ts",
+  "Searching the code", "Writing the answer" (`workingPhraseOf`).
+- The clock counts from the real start of the state (`startedAt` of the turn
+  or the step), `m:ss` under an hour and `1h 04m` above, and only `working`,
+  `waiting` and `queued` tick.
+- A state that waits for the user (`paused`, `failed`, `stopped`) puts its one
+  forward move first as a small secondary button; other actions are quiet text
+  actions.
+- Stop names its scope: Stop (a turn), Stop agent (a child or a fix), Stop
+  step (a run step), Stop Auto and its agents. Stopping offers no Stop.
+- A stopped or failed Auto child offers Retry through Auto, never Continue.
+- A finished turn draws no tail: it is read from its summary line.
+
+The terminal has no tail by design (its output is its tail), and dependency
+setup has no adapter until its state exists. Hosts move onto the adapters one
+by one; until then today's thinking line and Auto waiting line stay. Scenes
+`c01-tail-*` show every state.
 
 ## Turn events
 
@@ -550,6 +612,10 @@ map `listAgentTurnSpanRoutes` seeds from persisted spans on reload
 falls back to the item's own `ProviderUsage` numbers (no provider or model
 yet) until telemetry lands. A cost of exactly zero hides the cost entry
 instead of showing `$0.00`, because zero usually means unknown, not free.
+The line itself (`TurnFooterSummary`) carries only the provider mark, model,
+duration and cost; tokens, cache share and context window live in the
+detail popover (`TurnFooterDetail`) it opens. The transcript pane's
+agent total (`AgentUsageFooter`) keeps the full `UsageStatsRow`.
 
 `turnFootersFor` (`utils/turnOutcome.ts`) derives, per run that produced a
 `usage` item: `outcome` (`done`, `stopped` once a later run is active or
@@ -802,18 +868,20 @@ avoided on `SendControl`'s own buttons.
   themselves sit above the field, not in this row).
 - The right side is `RoutingPicker` (with a `budget` prop, `ProviderUsagePill`
   passed in rather than living beside it) then `SendControl` (`parts/`): the
-  same `ArrowUp` glyph as `ConversationComposer`, stop while a turn runs with
-  nothing to send, Read now/Queue (Queue primary) once there is something to deliver while a
-  turn runs.
+  same `ArrowUp` glyph as `ConversationComposer` while idle, and Send now/Queue
+  (Queue primary, both disabled until there is something to deliver) for as
+  long as a turn runs. Stop is not in the composer: it is the conversation
+  tail (`ConversationTail`) under the last turn.
 - `ChatInput/index.tsx` only composes. Its state lives in `hooks/use*` (agent
   selection, draft, queue, send, suggestions), its sections in `parts/`, and
   its derived flags in `composerView.ts`. It stays one component so the draft
   and pending nudges survive a re-render.
 - `composerPlaceholder` (`ChatInput/lib.ts`) replaces the old placeholder that
   advertised every prefix inline: a role's first turn gets its
-  `firstMessagePrompt`, otherwise `Message the agent` idle or `Queue a message`
-  while a turn runs. The agent's name is not repeated, the header already says
-  it. No prefix syntax appears in it.
+  `firstMessagePrompt`, otherwise `Message <role>` (`Message Implementer`),
+  idle or running, and `Message the agent` when the role is unknown. While a
+  turn runs, Queue (Enter) is the primary and Send now (⌘Enter) a quiet word
+  beside it. No prefix syntax appears in it.
 - Queued messages and the agent's own suggestion sit in a tray attached above
   the shell (`bg-muted`, rounded top corners) when either has something to
   show; a routing fallback or all-budgets-exceeded notice (`RoutingIndicator`)

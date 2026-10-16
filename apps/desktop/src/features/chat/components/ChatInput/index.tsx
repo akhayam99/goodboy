@@ -29,6 +29,8 @@ import { PromptField } from '../../../../shared/components/PromptField';
 import { PromptDropOverlay } from '../../../../shared/components/PromptField/PromptDropOverlay';
 import { ComposerToolbar } from './parts/ComposerToolbar';
 import { ComposerTray } from './parts/ComposerTray';
+import { autoTreeOfAgent } from '../../../auto/autoTreeOfAgent';
+import { useAutoTreeViews } from '../../../auto/useAutoTreeViews';
 
 type Props = {
   readonly session: Session;
@@ -41,12 +43,15 @@ export const ChatInput = ({
   providerDisconnected = false,
   placeholderOverride,
 }: Props) => {
-  const cancelCurrentTurn = useAppStore((s) => s.cancelCurrentTurn);
   const { selectedAgentId, activeAgentKind, sessionWorktree, isFirstTurnForAgent, isRunning } =
     useAgentSelection({ session });
   const isWaitingForWriter = useAppStore(
     (s) => selectedAgentId !== null && s.agentWriterWait[selectedAgentId] !== undefined,
   );
+  const autoViews = useAutoTreeViews({ sessionId: session.id });
+  const isAutoTreeMember =
+    selectedAgentId !== null &&
+    autoTreeOfAgent({ views: autoViews, agentId: selectedAgentId }) !== null;
 
   const { showToast } = useToast();
 
@@ -264,18 +269,14 @@ export const ChatInput = ({
               session={session}
               routing={routing}
               isBlocked={isBlocked}
+              hasPermissionPicker={!isAutoTreeMember}
               attachmentCount={attachments.length}
               fileInputRef={fileInputRef}
               onFileInputChange={onFileInputChange}
               onInsertPrefix={insertPrefix}
               isRunning={isRunning}
-              isEmpty={isEmpty}
               canSend={canSend}
-              showsDeliveryChoice={showsDeliveryChoice}
               sendDisabledTitle={sendDisabledTitle}
-              onCancel={() =>
-                void cancelCurrentTurn(session.id, selectedAgentId ?? undefined, 'user')
-              }
               onSend={() => void onSend()}
               onSendNow={() => void onSendNow()}
             />
@@ -289,7 +290,7 @@ export const ChatInput = ({
         ) : null}
         {showsDeliveryChoice ? (
           <p className="px-1 text-meta text-faint-foreground">
-            Queue waits for this turn to end. Read now stops the turn, keeps what it wrote, and
+            Queue waits for this turn to end. Send now stops the turn, keeps what it wrote, and
             continues with your message.
           </p>
         ) : null}

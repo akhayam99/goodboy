@@ -15,27 +15,24 @@ afterEach(() => {
 
 const base = {
   isRunning: false,
-  isEmpty: false,
   canSend: true,
-  showsDeliveryChoice: false,
-  onCancel: vi.fn(),
   onSend: vi.fn(),
   onSendNow: vi.fn(),
 };
 
 describe('SendControl', () => {
-  it('shows stop while a turn runs and the field is empty', () => {
-    const onCancel = vi.fn();
-    render(<SendControl {...base} isRunning isEmpty onCancel={onCancel} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
-    expect(onCancel).toHaveBeenCalledOnce();
+  it('keeps Send now visible while a turn runs, disabled until there is a draft', () => {
+    render(<SendControl {...base} isRunning canSend={false} />);
+    expect(screen.getByRole('button', { name: /^Send now/ }).hasAttribute('disabled')).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
   });
 
-  it('shows queue and send now once the turn runs with a draft to deliver', () => {
-    render(<SendControl {...base} isRunning showsDeliveryChoice />);
+  it('sends now with a draft while the turn runs', () => {
+    const onSendNow = vi.fn();
+    render(<SendControl {...base} isRunning onSendNow={onSendNow} />);
+    fireEvent.click(screen.getByRole('button', { name: /^Send now/ }));
+    expect(onSendNow).toHaveBeenCalledOnce();
     expect(screen.getByRole('button', { name: /^Queue/ })).toBeTruthy();
-    expect(screen.getByRole('button', { name: /^Read now/ })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
   });
 
   it('sends on click while idle with a draft', () => {
@@ -53,22 +50,22 @@ describe('SendControl', () => {
   });
 
   it('labels the delivery keys with the platform glyphs', () => {
-    render(<SendControl {...base} isRunning showsDeliveryChoice />);
+    render(<SendControl {...base} isRunning />);
     expect(screen.getByRole('button', { name: /^Queue/ }).textContent).toContain('↵');
-    expect(screen.getByRole('button', { name: /^Read now/ }).textContent).toContain('⌘↵');
+    expect(screen.getByRole('button', { name: /^Send now/ }).textContent).toContain('⌘↵');
     cleanup();
     platform.current = 'linux';
-    render(<SendControl {...base} isRunning showsDeliveryChoice />);
+    render(<SendControl {...base} isRunning />);
     expect(screen.getByRole('button', { name: /^Queue/ }).textContent).toContain('Enter');
-    expect(screen.getByRole('button', { name: /^Read now/ }).textContent).toContain('Ctrl+Enter');
+    expect(screen.getByRole('button', { name: /^Send now/ }).textContent).toContain('Ctrl+Enter');
   });
 
-  it('makes Queue the primary and Read now the quiet button, in that order', () => {
-    render(<SendControl {...base} isRunning showsDeliveryChoice />);
+  it('makes Queue the primary and Send now the quiet button, in that order', () => {
+    render(<SendControl {...base} isRunning />);
     const queue = screen.getByRole('button', { name: /^Queue/ });
-    const readNow = screen.getByRole('button', { name: /^Read now/ });
+    const sendNow = screen.getByRole('button', { name: /^Send now/ });
     expect(queue.getAttribute('data-variant')).toBe('primary');
-    expect(readNow.getAttribute('data-variant')).toBe('ghost');
-    expect(readNow.compareDocumentPosition(queue) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(sendNow.getAttribute('data-variant')).toBe('quiet');
+    expect(sendNow.compareDocumentPosition(queue) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

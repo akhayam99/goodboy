@@ -11,8 +11,6 @@ import { useOpenAgentQuestion } from '../context/hooks/useOpenAgentQuestion';
 import { openNotificationSession } from '../notifications/openNotificationSession';
 import { openSearchHit } from '../search/openSearchHit';
 import { useBoardNavigation } from '../workspace/components/StageBoard/useBoardNavigation';
-import { agentOpenTab } from './components/AgentDetailPane/agentOpenTab';
-import { isOpenAgentReveal } from '../../shared/utils/openAgentReveal';
 import type { Notification } from '@goodboy/db';
 
 vi.mock('@tauri-apps/api/core', async () =>
@@ -61,27 +59,11 @@ const seed = () => {
   });
 };
 
-type Landing = {
-  readonly agentId: AgentId | null;
-  readonly tab: 'brief' | 'transcript';
-};
-
-const landingOf = (revealed: ReadonlyArray<Event>): Landing => {
-  const state = useAppStore.getState();
-  const agentId = state.selectedAgentId[SESSION] ?? null;
-  const resolved = agentOpenTab({
-    requested: state.agentPane[SESSION] ?? null,
-    remembered: agentId === null ? null : (state.agentTab[agentId] ?? null),
-    hasBrief: true,
-  });
-  const isPlainReveal = revealed.some((event) => !isOpenAgentReveal(event));
-  return { agentId, tab: isPlainReveal ? 'transcript' : resolved };
-};
+const landedAgent = (): AgentId | null => useAppStore.getState().selectedAgentId[SESSION] ?? null;
 
 type Door = {
   readonly name: string;
   readonly open: (agentId: AgentId) => Promise<void> | void;
-  readonly lands: 'brief' | 'transcript';
 };
 
 const agentAction = (id: string) => {
@@ -144,7 +126,6 @@ const DOORS: ReadonlyArray<Door> = [
     open: async (agentId) => {
       await agentAction('agent.open').run({ facts: agentFacts(agentId), env, choice: null });
     },
-    lands: 'brief',
   },
   {
     name: 'a notification that points at an agent',
@@ -152,7 +133,6 @@ const DOORS: ReadonlyArray<Door> = [
       openNotificationSession({ notification: notificationFor(agentId) });
       await vi.waitFor(() => expect(useAppStore.getState().selectedAgentId[SESSION]).toBe(agentId));
     },
-    lands: 'brief',
   },
   {
     name: 'a question the agent asked',
@@ -160,14 +140,12 @@ const DOORS: ReadonlyArray<Door> = [
       const { result } = renderHook(() => useOpenAgentQuestion({ sessionId: SESSION }));
       result.current({ question: { id: QUESTION, createdByAgentId: agentId } });
     },
-    lands: 'brief',
   },
   {
     name: 'a search hit on an agent',
     open: async (agentId) => {
       await openSearchHit({ hit: messageHit(agentId, 'agent'), query: 'cap' });
     },
-    lands: 'brief',
   },
   {
     name: 'the Board card',
@@ -175,21 +153,18 @@ const DOORS: ReadonlyArray<Door> = [
       const { result } = renderHook(() => useBoardNavigation());
       result.current.openAgent(useAppStore.getState().sessions[0]!);
     },
-    lands: 'brief',
   },
   {
     name: 'Message this agent',
     open: async (agentId) => {
       await agentAction('agent.message').run({ facts: agentFacts(agentId), env, choice: null });
     },
-    lands: 'transcript',
   },
   {
     name: 'a search hit on a message',
     open: async (agentId) => {
       await openSearchHit({ hit: messageHit(agentId, 'message'), query: 'cap' });
     },
-    lands: 'transcript',
   },
   {
     name: 'Open the agent from a message',
@@ -201,71 +176,48 @@ const DOORS: ReadonlyArray<Door> = [
         choice: null,
       });
     },
-    lands: 'transcript',
   },
 ];
 
-const revealed: Array<Event> = [];
-const record = (event: Event) => revealed.push(event);
-
 beforeEach(() => {
   seed();
-  revealed.length = 0;
-  window.addEventListener('goodboy:reveal-chat', record);
   vi.useFakeTimers({ shouldAdvanceTime: true });
 });
 
 afterEach(() => {
-  window.removeEventListener('goodboy:reveal-chat', record);
   vi.useRealTimers();
   cleanup();
 });
 
-const through = async (door: Door, agentId: AgentId): Promise<Landing> => {
+type ThroughParams = {
+  readonly door: Door;
+  readonly agentId: AgentId;
+};
+
+const through = async ({ door, agentId }: ThroughParams): Promise<AgentId | null> => {
   await door.open(agentId);
   await act(async () => {
     await vi.advanceTimersByTimeAsync(120);
   });
-  return landingOf(revealed);
+  return landedAgent();
 };
 
 describe('every door into the agent page', () => {
   for (const door of DOORS) {
-    it(`lands on the ${door.lands} from ${door.name}`, async () => {
-      const landing = await through(door, BUILDER);
-
-      expect(landing.agentId).toBe(BUILDER);
-      expect(landing.tab).toBe(door.lands);
+    it(`lands on the one conversation from ${door.name}`, async () => {
+      expect(await through({ door, agentId: BUILDER })).toBe(BUILDER);
     });
   }
 
-  it('lands on the brief from a plain agent place, the form Runs, Activity, the run page, the Now chip, hover cards and crumbs use', () => {
+  it('lands on the conversation from a plain agent place, the form Runs, Activity, the run page, the Now chip, hover cards and crumbs use', () => {
     useAppStore.getState().navigate({ to: { at: 'agent', sessionId: SESSION, agentId: BUILDER } });
 
-    expect(landingOf([])).toEqual({ agentId: BUILDER, tab: 'brief' });
+    expect(landedAgent()).toBe(BUILDER);
   });
-});
 
-describe('the tab picked by hand', () => {
-  it('is remembered for that agent only, and every brief door honours it', async () => {
-    useAppStore.getState().setAgentTab({ agentId: BUILDER, pane: 'transcript' });
-
+  it('opens the agent a door names, never the one picked before', async () => {
     const door = DOORS[0]!;
-    expect((await through(door, BUILDER)).tab).toBe('transcript');
-    expect((await through(door, REVIEWER)).tab).toBe('brief');
-  });
-
-  it('never leaks into another agent when the first one is picked after the second', async () => {
-    const door = DOORS[0]!;
-    useAppStore.getState().setAgentTab({ agentId: REVIEWER, pane: 'transcript' });
-
-    expect((await through(door, BUILDER)).tab).toBe('brief');
-    expect((await through(door, REVIEWER)).tab).toBe('transcript');
-  });
-
-  it('gives way to a door that targets a place', async () => {
-    useAppStore.getState().setAgentTab({ agentId: BUILDER, pane: 'brief' });
-
-    expect((await through(DOORS[5]!, BUILDER)).tab).toBe('transcript');
+    expect(await through({ door, agentId: REVIEWER })).toBe(REVIEWER);
+    expect(await through({ door, agentId: BUILDER })).toBe(BUILDER);
   });
 });

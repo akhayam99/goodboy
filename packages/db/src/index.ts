@@ -171,6 +171,10 @@ export {
   updateGeneratedWorkflowRunTitle,
   updateUserWorkflowRunTitle,
 } from './queries/session-workflow';
+export {
+  listWorkspaceWorkflowRuns,
+  type WorkflowRunHistoryRow,
+} from './queries/workflow-run-history';
 export { insertMessage, listMessagesForAgent, listMessagesForSession } from './queries/message';
 export {
   insertGoalAttachment,

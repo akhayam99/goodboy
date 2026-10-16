@@ -1,28 +1,30 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { ScrollText } from 'lucide-react';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
-import { Chip, SegmentedTabs, PaneShell } from '@goodboy/ui';
+import { GhostActionButton, PaneShell } from '@goodboy/ui';
 import type { Agent, Session } from '@goodboy/types';
 import { ChatView } from '../../../chat/components/ChatView';
-import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
-import { TriggerSeparator } from '../../../../shared/components/RoutingPicker/TriggerSeparator';
-import { agentPlace, useAppStore, useExecutedAgentRouting } from '../../../../store';
-import { effectiveAgentStatus } from './agentNowState';
-import { agentOpenTab, type AgentTab } from './agentOpenTab';
-import { isOpenAgentReveal } from '../../../../shared/utils/openAgentReveal';
+import {
+  agentPlace,
+  useAppStore,
+  useExecutedAgentRouting,
+  useSessionAnsweredQuestions,
+  useSessionOpenQuestions,
+} from '../../../../store';
 import { classifyAgent } from '../../agent-kind';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
-import { AgentHeaderStatus } from './AgentHeaderStatus';
+import { AgentProviderMark } from './AgentProviderMark';
 import { AgentHeaderActions } from '../AgentHeaderActions';
-import { useAgentDetailWorkTime } from '../../hooks/useAgentDetailWorkTime';
 import { useAgentHeaderRouting } from '../../../../shared/hooks/useAgentHeaderRouting';
-import { AgentBrief } from './AgentBrief';
+import { isQuestionDelegate } from '../../../context/questionDelegate';
+import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
+import { AgentAnsweringFor } from './AgentAnsweringFor';
+import { AgentConversationEnd } from './AgentConversationEnd';
 import { AgentHeader } from './AgentHeader';
-import { AgentHeaderTime } from './AgentHeaderTime';
 import { AgentTitle } from './AgentTitle';
 import { AgentNextAction } from './AgentNextAction';
 import { AgentStoppedNotice } from './AgentStoppedNotice';
 import { RewriterFinishedNotice } from './RewriterFinishedNotice';
-import { useAgentHasBrief } from '../../hooks/useAgentHasBrief';
 import { useRewriterComposer } from '../../hooks/useRewriterComposer';
 import { AdoptedNotice } from '../../../auto/adopt/AdoptedNotice';
 import { MoveToAutoPanel } from '../../../auto/adopt/MoveToAutoPanel';
@@ -42,19 +44,8 @@ type Props = {
 
 const REWRITER_PLACEHOLDER = 'Tell History rewriter what to do next';
 
-const TABS = [
-  { value: 'brief', label: 'Brief' },
-  { value: 'transcript', label: 'Transcript' },
-] satisfies ReadonlyArray<{ readonly value: AgentTab; readonly label: string }>;
-
 export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context }: Props) => {
   const turnState = useAppStore((state) => state.agentTurnState[agent.id] ?? null);
-  const hasOpenQuestions = useAppStore((state) =>
-    (state.sessionOpenQuestions[session.id] ?? []).some(
-      (question) => question.createdByAgentId === agent.id,
-    ),
-  );
-  const status = effectiveAgentStatus({ agent, turnState });
   const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
   const kind = classifyAgent({ agent, override: kindOverride });
   const rewriter = useRewriterComposer({
@@ -70,34 +61,15 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
   const adoption = membership.adoption;
   const [isMoveOpen, setIsMoveOpen] = useState(false);
   const navigateTo = useAppStore((state) => state.navigate);
-  const requestedPane = useAppStore((state) => state.agentPane?.[session.id] ?? null);
-  const rememberedTab = useAppStore((state) => state.agentTab[agent.id] ?? null);
-  const setAgentTab = useAppStore((state) => state.setAgentTab);
-  const hasBrief = useAgentHasBrief({ session, agent });
-  const openTab = agentOpenTab({
-    requested: requestedPane,
-    remembered: rememberedTab,
-    hasBrief,
-  });
-  const openTabRef = useRef(openTab);
-  openTabRef.current = openTab;
-  const [tab, setTab] = useState<AgentTab>(openTab);
+  const openDrawer = useAppStore((state) => state.openDrawer);
+  const runs = useAppStore((state) => state.sessionPhaseRuns[session.id] ?? null);
   const providerOverride = useAppStore(
     (state) => state.agentProviderOverride[agent.id] ?? agent.providerOverride ?? null,
   );
   const executed = useExecutedAgentRouting({ agent });
   const routing = useAgentHeaderRouting({ session, agent });
-  const time = useAgentDetailWorkTime({
-    session,
-    agent,
-    kind,
-    status,
-    isWaitingOnYou: hasOpenQuestions,
-  });
-
-  useEffect(() => {
-    setTab(openTabRef.current);
-  }, [agent.id, requestedPane]);
+  const openQuestions = useSessionOpenQuestions(session.id);
+  const answeredQuestions = useSessionAnsweredQuestions(session.id);
 
   useEffect(() => {
     setIsMoveOpen(false);
@@ -113,19 +85,51 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
     return () => window.removeEventListener(MOVE_TO_AUTO_EVENT, open);
   }, [agent.id]);
 
-  useEffect(() => {
-    const reveal = (event: Event) =>
-      setTab(isOpenAgentReveal(event) ? openTabRef.current : 'transcript');
-    window.addEventListener('goodboy:reveal-chat', reveal);
-    return () => window.removeEventListener('goodboy:reveal-chat', reveal);
-  }, []);
+  const answeredQuestion = useMemo(() => {
+    if (!isQuestionDelegate({ agent })) {
+      return null;
+    }
+    return (
+      [...openQuestions, ...answeredQuestions].find(
+        (question) => question.id === agent.sourceThreadId,
+      ) ?? null
+    );
+  }, [agent, openQuestions, answeredQuestions]);
+  const asker = runs?.find((run) => run.id === agent.parentAgentId) ?? null;
 
-  const pickTab = (next: AgentTab) => {
-    setTab(next);
-    setAgentTab({ agentId: agent.id, pane: next });
-  };
+  const insertions = useMemo((): ReadonlyArray<TranscriptInsertion> => {
+    const leading: ReadonlyArray<TranscriptInsertion> =
+      answeredQuestion === null
+        ? []
+        : [
+            {
+              key: `answering-for-${agent.id}`,
+              beforeMs: 0,
+              node: (
+                <AgentAnsweringFor
+                  sessionId={session.id}
+                  question={answeredQuestion}
+                  asker={asker}
+                />
+              ),
+            },
+          ];
+    const hasEnd =
+      agent.status === 'completed' || (runs ?? []).some((run) => run.parentAgentId === agent.id);
+    const end: ReadonlyArray<TranscriptInsertion> = hasEnd
+      ? [
+          {
+            key: `conversation-end-${agent.id}`,
+            beforeMs: null,
+            node: <AgentConversationEnd session={session} agent={agent} />,
+          },
+        ]
+      : [];
+    return [...leading, ...(autoChat.insertions ?? []), ...end];
+  }, [agent, answeredQuestion, asker, autoChat.insertions, runs, session]);
 
-  const isTranscript = tab === 'transcript';
+  const openTranscript = () =>
+    openDrawer({ kind: 'transcript', sessionId: session.id, payload: { agentId: agent.id } });
   const headerMenu = useObjectMenuTrigger({
     target: { kind: 'agent', sessionId: session.id, agentId: agent.id },
     anchorKey: `agent-header:${agent.id}`,
@@ -138,6 +142,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
         agent={agent}
         executedProvider={executed?.provider ?? null}
         providerOverride={providerOverride}
+        isAutoChild={isAutoChild}
       />
       <AgentNextAction session={session} agent={agent} />
     </>
@@ -145,112 +150,83 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
 
   return (
     <PaneShell
-      scroll={isTranscript ? 'self' : 'body'}
-      lead={isTranscript ? lead : undefined}
+      scroll="self"
+      lead={lead}
       header={
         <AgentHeader
           title={
             <span
-              className="flex min-w-0"
+              className="flex min-w-0 items-center gap-2"
               onContextMenu={headerMenu.onContextMenu}
               onKeyDown={headerMenu.onKeyDown}
             >
+              <AgentKindChip kind={kind} />
               <AgentTitle agent={agent} sessionId={session.id} />
+              <AgentProviderMark provider={routing.provider} />
             </span>
           }
-          meta={
+          actions={
             <>
-              <AgentKindChip kind={kind} />
-              {kind === 'auto' ? (
-                <Chip tone="neutral" kind="state" shape="badge" label="Experimental" />
-              ) : null}
-              <AgentHeaderStatus
-                session={session}
-                agent={agent}
-                isResolver={kind === 'resolver'}
-                status={status}
+              <GhostActionButton
+                icon={ScrollText}
+                label="View transcript"
+                onClick={openTranscript}
               />
-              {time == null ? null : <AgentHeaderTime time={time} />}
-              <TriggerSeparator />
-              <RoutingLabel
-                provider={routing.provider}
-                model={routing.model}
-                effort={routing.effort}
-                planned={routing.planned}
-                isEffortObserved={routing.isEffortObserved}
-                prefix={routing.isNextTurn ? 'Next turn:' : undefined}
+              <AgentHeaderActions
+                key={agent.id}
+                agent={agent}
+                sessionId={session.id}
+                hasStateButton={false}
+                onDeleted={onBack}
               />
             </>
-          }
-          tabs={
-            <SegmentedTabs
-              ariaLabel="Agent sections"
-              options={TABS}
-              value={tab}
-              onChange={pickTab}
-              size="xs"
-            />
-          }
-          actions={
-            <AgentHeaderActions
-              key={agent.id}
-              agent={agent}
-              sessionId={session.id}
-              allowInterrupt
-              onDeleted={onBack}
-            />
           }
         />
       }
     >
-      {isTranscript ? (
-        <ChatView
-          session={session}
-          isActive={isChatActive}
-          topInset="tight"
-          hasComposer={!isRewriterFinished && !isAutoChild && adoption === null && !isMoveOpen}
-          composerPlaceholder={
-            rewriter?.isLive === true ? REWRITER_PLACEHOLDER : autoChat.composerPlaceholder
-          }
-          composerNotice={
-            isRewriterFinished ? (
-              <RewriterFinishedNotice sessionId={session.id} worktreePath={rewriter.worktreePath} />
-            ) : isMoveOpen && adoption === null ? (
-              <MoveToAutoPanel
-                sessionId={session.id}
-                agent={agent}
-                onClose={() => setIsMoveOpen(false)}
-              />
-            ) : adoption !== null ? (
-              <AdoptedNotice
-                sessionId={session.id}
-                agentId={agent.id}
-                isTurnLive={isTurnStateLive({ turnState })}
-                onOpenAuto={() =>
-                  navigateTo({
-                    to: agentPlace({ sessionId: session.id, agentId: adoption.autoAgentId }),
-                  })
-                }
-              />
-            ) : isAutoChild && autoRootAgentId !== null ? (
-              <AutoChildNotice
-                onOpenAuto={() =>
-                  navigateTo({
-                    to: agentPlace({ sessionId: session.id, agentId: autoRootAgentId }),
-                  })
-                }
-              />
-            ) : undefined
-          }
-          {...(autoChat.insertions !== undefined && { insertions: autoChat.insertions })}
-          {...(autoChat.composerLead !== undefined && { composerLead: autoChat.composerLead })}
-        />
-      ) : (
-        <>
-          {lead}
-          <AgentBrief session={session} agent={agent} time={time ?? null} />
-        </>
-      )}
+      <ChatView
+        session={session}
+        isActive={isChatActive}
+        topInset="tight"
+        mode="conversation"
+        onOpenTranscript={openTranscript}
+        hasComposer={!isRewriterFinished && !isAutoChild && adoption === null && !isMoveOpen}
+        composerPlaceholder={
+          rewriter?.isLive === true ? REWRITER_PLACEHOLDER : autoChat.composerPlaceholder
+        }
+        composerNotice={
+          isRewriterFinished ? (
+            <RewriterFinishedNotice sessionId={session.id} worktreePath={rewriter.worktreePath} />
+          ) : isMoveOpen && adoption === null ? (
+            <MoveToAutoPanel
+              sessionId={session.id}
+              agent={agent}
+              onClose={() => setIsMoveOpen(false)}
+            />
+          ) : adoption !== null ? (
+            <AdoptedNotice
+              sessionId={session.id}
+              agentId={agent.id}
+              isTurnLive={isTurnStateLive({ turnState })}
+              onOpenAuto={() =>
+                navigateTo({
+                  to: agentPlace({ sessionId: session.id, agentId: adoption.autoAgentId }),
+                })
+              }
+            />
+          ) : isAutoChild && autoRootAgentId !== null ? (
+            <AutoChildNotice
+              onOpenAuto={() =>
+                navigateTo({
+                  to: agentPlace({ sessionId: session.id, agentId: autoRootAgentId }),
+                })
+              }
+            />
+          ) : undefined
+        }
+        insertions={insertions}
+        {...(autoChat.composerLead !== undefined && { composerLead: autoChat.composerLead })}
+      />
     </PaneShell>
   );
 };

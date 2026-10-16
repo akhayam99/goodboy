@@ -15,6 +15,7 @@ const OWN_WIDTH_RULES = /\b(ResizeObserver|matchMedia|innerWidth|useMeasuredWidt
 const COLUMN_HOSTS = [
   join('app', 'components', 'StudioFrame', 'index.tsx'),
   join('features', 'inbox', 'components', 'InboxStudio', 'InboxStudioLayout.tsx'),
+  join('features', 'workflows', 'components', 'WorkflowsPanel', 'index.tsx'),
   join('features', 'workspace-chat', 'components', 'ChatRoom', 'index.tsx'),
 ];
 
@@ -80,7 +81,7 @@ describe('the one drawer rule', () => {
     ).toEqual([]);
   });
 
-  it('mounts DrawerColumn from AppShell and three known hosts only', () => {
+  it('mounts DrawerColumn from AppShell and the known studio pane hosts only', () => {
     const hostsOf = (sources: ReadonlyArray<Source>): string[] =>
       sources
         .filter(({ text }) => /<DrawerColumn\b/.test(text))

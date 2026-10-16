@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Plus, RotateCcw } from 'lucide-react';
-import { Button, ConfirmPopover, EmptyState } from '@goodboy/ui';
+import type { WorkflowRunHistoryRow } from '@goodboy/db';
+import { Button, ConfirmPopover, EmptyState, ListGrid } from '@goodboy/ui';
 import type { Workflow } from '@goodboy/types';
 import {
   CONCEPT_ICONS,
@@ -12,16 +13,20 @@ import {
   restorableBuiltins,
   type RestorableBuiltin,
 } from '../../../builtinWorkflowState';
+import { workflowRunsOf } from '../../../workflowRunsOf';
 import { WorkflowListRow } from './WorkflowListRow';
+import { WORKFLOW_LIST_COLUMNS } from './workflowListColumns';
 
 type Props = {
   readonly workflows: ReadonlyArray<Workflow>;
   readonly removedBuiltinIds: ReadonlySet<string>;
   readonly workspaceName: string | null;
   readonly isRestoring: boolean;
+  readonly runs: ReadonlyArray<WorkflowRunHistoryRow> | null;
   readonly tabs: ReactNode;
   readonly importControl: ReactNode;
   readonly onOpen: (workflow: Workflow) => void;
+  readonly onShowRuns: (workflow: Workflow) => void;
   readonly onNew: () => void;
   readonly onRestore: (slugs: ReadonlyArray<string>) => Promise<void>;
 };
@@ -39,9 +44,11 @@ export const WorkflowList = ({
   removedBuiltinIds,
   workspaceName,
   isRestoring,
+  runs,
   tabs,
   importControl,
   onOpen,
+  onShowRuns,
   onNew,
   onRestore,
 }: Props) => {
@@ -93,16 +100,18 @@ export const WorkflowList = ({
           description="Create one to chain several agents in a single session, or restore the built-in workflows."
         />
       ) : (
-        <ul aria-label="Workflows" className="flex flex-col">
+        <ListGrid label="Workflows" columns={WORKFLOW_LIST_COLUMNS}>
           {workflows.map((workflow) => (
             <WorkflowListRow
               key={workflow.id}
               workflow={workflow}
               builtin={builtinWorkflowState({ workflow })}
+              runs={runs === null ? null : workflowRunsOf({ runs, workflowId: workflow.id })}
               onOpen={() => onOpen(workflow)}
+              onShowRuns={() => onShowRuns(workflow)}
             />
           ))}
-        </ul>
+        </ListGrid>
       )}
     </div>
   );

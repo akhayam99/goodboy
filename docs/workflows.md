@@ -329,7 +329,7 @@ stays with the orchestrator for the rest of the run. It is marked as new, or
 with the step where the orchestrator first read it.
 
 - **Queue** is the primary button and waits until the next decision. You may queue several messages, edit or remove them until they are read, and they survive a reload. On a finished run, nothing starts by itself: the orchestrator card shows **Read 2 queued** (**Read queued message** for one), and one click starts one new turn with all of them in order. On a run you stopped the same button reads **Resume and read 2 queued**
-- **Read now** is the quiet button, and every composer with both (run and agent) uses the same pair, Read now then Queue. It restarts a decision that is in progress. If a step is running, it stops that step, keeps what it wrote, and decides again
+- **Read now** is the quiet button, and every composer with both uses the same pair, the quiet word then Queue (the agent composer says **Send now** and keeps it in view, disabled, while a turn runs with nothing to send). It restarts a decision that is in progress. If a step is running, it stops that step, keeps what it wrote, and decides again
 - The help sits in each button's tooltip, not in a sentence under the field. Read now says what it does in the state the run is in
 - The field is a message box: Enter queues, Shift+Enter adds a line, ⌘Enter reads now. **Preview** shows it as markdown, and the hint log reads it as markdown too
 - Paste, drop or attach images. They are saved as files of the run, so the next agent gets them, and the hint keeps their ids
@@ -451,15 +451,11 @@ sub-agents run oldest first, top to bottom, and a set inside a set folds on its
 own. `foldSettledSets` does this over the items of the run tree, so the
 activity feed and its stream builder are untouched.
 
-An agent's Brief draws its sub-agents with the same tree, under **Subagents**
-(`SubagentTree`, from `buildAgentTreeStream`). The agent sits on top
-with its ordinal in the run, for example `3`, and its sub-agents follow under
-it one column right, `3.1`, `3.2`, `3.3`, each with its own model, effort and
-spend. Sub-agents of an agent outside a workflow are numbered from `1`. The
-header counts them in words ("2 of 3 done"). An implementer split into parts
-shows no Outcome, because the tree already says what each part did. A planner
-shows no sub-agents, and delegates and follow-ups keep their own sections. This
-tree never folds a set and has no plan action.
+An agent's conversation says each sub-agent in one line at its end,
+**Delegated to** with the child's role and state and **See more**, which opens
+the child in the transcript drawer (`DelegationLines`). The run tree above stays
+the place that draws sub-agents with their tracks. A planner lists only its
+question delegates, and follow-ups keep their own row after the last answer.
 
 In the activity feed, an agent or step row leads with its role as a glyph and
 ends with the model that ran, then its duration with what it has spent under
@@ -513,13 +509,12 @@ How the numbers are measured is in [turns.md](turns.md#measured-time-and-estimat
 ### Next action
 
 When a run needs you, one **Next action** strip says what to do. It sits on
-the workflow run row and at the top of the agent detail body, right under the
-header that holds Brief and Transcript, so both tabs show the same strip and
-the transcript does not repeat it at the bottom. Opening an agent from Activity, Workflow, the board or
-a toast follows one rule (`agentOpenTab`): the agent opens on Brief, where the
-question, the summary and the subagents come first, unless the user picked the
-Transcript by hand on that agent before or the door points at a line in the chat.
-The Transcript stays pinned to the latest line. A resolver that is still
+the workflow run row and at the top of the agent detail body, right under its
+header, and the conversation does not repeat it at the bottom. Every door
+(Activity, Workflow, the board, a toast) opens the agent on its one
+conversation (`AgentDetailPane`, `ChatView` `mode="conversation"`); there is no
+Brief and no Transcript tab, and **View transcript** opens the full record in
+the `transcript` drawer. The conversation stays pinned to the latest line. A resolver that is still
 working shows its live line at the top of its Fix run. Orchestrated runs get the same strip, and the
 orchestrator strip carries no skip button of its own. It carries **Answer** when the run waits on a question
 ([The orchestrator strip](#the-orchestrator-strip)).

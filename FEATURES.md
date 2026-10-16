@@ -117,7 +117,7 @@ The board shows every session of a workspace in lanes by stage, so you see where
 
 [More on the board](docs/features/board.md)
 
-<a id="workflow-builder"></a><a id="orchestrated"></a><a id="preset-and-custom"></a><a id="built-in-workflows"></a><a id="saved-steps"></a><a id="model-per-step"></a><a id="when-to-ask"></a><a id="autonomy"></a><a id="pause-resume-and-skip"></a><a id="run-defaults"></a><a id="workflow-rules"></a><a id="spend-cap"></a><a id="chained-starts"></a><a id="workflow-run"></a><a id="hints-to-the-orchestrator"></a><a id="why-each-step-and-the-run-recap"></a><a id="step-handoff-summary"></a><a id="open-questions"></a><a id="let-an-agent-decide"></a><a id="import-workflows"></a>
+<a id="workflow-builder"></a><a id="orchestrated"></a><a id="preset-and-custom"></a><a id="built-in-workflows"></a><a id="runs-of-a-workflow"></a><a id="saved-steps"></a><a id="model-per-step"></a><a id="when-to-ask"></a><a id="autonomy"></a><a id="pause-resume-and-skip"></a><a id="run-defaults"></a><a id="workflow-rules"></a><a id="spend-cap"></a><a id="chained-starts"></a><a id="workflow-run"></a><a id="hints-to-the-orchestrator"></a><a id="why-each-step-and-the-run-recap"></a><a id="step-handoff-summary"></a><a id="open-questions"></a><a id="let-an-agent-decide"></a><a id="import-workflows"></a>
 
 ## Workflows
 

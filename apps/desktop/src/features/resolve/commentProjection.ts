@@ -1,4 +1,3 @@
-import type { Tone } from '@goodboy/ui';
 import type { ResolveAttempt } from '@goodboy/types';
 import type { RemoteView } from './reviewRemote';
 import type { ReviewCommentState } from './reviewCommentState';
@@ -47,19 +46,6 @@ type CountParams = {
 
 export const applyFixesLabel = ({ count }: CountParams): string =>
   count === 1 ? RESOLVE_VOCAB.applyFix : `Apply ${count} fixes`;
-
-export const RESOLVE_WORD_TONE: Readonly<Record<ResolveWord, Tone>> = {
-  open: 'neutral',
-  working: 'info',
-  question: 'warning',
-  to_review: 'warning',
-  push_failed: 'danger',
-  couldnt_fix: 'warning',
-  ready: 'success',
-  replied: 'neutral',
-  done: 'neutral',
-  left_open: 'neutral',
-};
 
 export const RESOLVE_GROUP_LABEL: Readonly<Record<Exclude<ResolveGroup, 'left_open'>, string>> = {
   needs_you: 'Needs you',

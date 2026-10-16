@@ -163,8 +163,7 @@ chat**, **Stopping**, **Stopped by you**, **Idle**, **Finished by you**. The
 children are not rows of the Overview; they live in the Work rail of the chat.
 
 Auto never finishes itself. A tree that rests after its agents settled (stored
-phase `done`) reads **Idle** in the row, the rail root and the chat header
-(`AgentAutoStatus`), never Done. **Mark finished** in the agent menu
+phase `done`) reads **Idle** in the row and the rail root, never Done. **Mark finished** in the agent menu
 (`agent.markAutoFinished`, undoable) moves a resting tree to the stored phase
 `finished` (m231) through `moveRestingAutoTree`: one write that needs a resting
 phase, no stop, no running turn and no open delegation, so a tree that started
@@ -217,9 +216,18 @@ writing to it reopens it to **Deciding**.
 - **While Auto waits.** A line above the composer says **Waiting for Implementer
   and Tester** with **Change approach** and **Stop**, and the composer says
   "Queued: Auto sees it with the next results". A plan that waits for approval
-  changes it to "Message Auto, or describe changes to plan v1".
+  changes it to "Message Auto, or describe changes to plan v1". In the
+  `deciding` phase with no root turn running the same line says **Deciding
+  what to do next**; while Auto's own turn runs the line hides and the
+  thinking line at the end of the transcript speaks instead, so the state is
+  said once.
 - **A child opened from a card** reads as Started by Auto. It can be read and
-  stopped there, has no composer, and **Open Auto** goes back.
+  stopped there, has no composer, and **Open Auto** goes back. When it
+  stopped, its notice offers **Retry through Auto**, which asks Auto to retry
+  it; it never runs a plain turn on the child (`docs/turns.md`, resume rules).
+- **No permission picker in the tree.** The composer of Auto and of its
+  children hides the session's permission mode picker: a tree member runs
+  with its role's access, not the session mode.
 
 ## Plans
 

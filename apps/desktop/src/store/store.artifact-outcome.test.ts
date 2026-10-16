@@ -20,8 +20,6 @@ import {
   importStore,
   type StoryStore,
 } from './storyHarness';
-import { agentStateWord } from '../features/session/agentStateWord';
-import { isAgentMissingArtifact } from '../features/artifacts/turnArtifactOutcome';
 import { buildTimelineGroups } from '../features/session/timeline/buildTimelineGroups';
 import { resolveAgentRowState } from '../features/workTreeModel/rowState';
 import { rowStateNode, rowStateTone } from '../features/workTreeModel/rowStateCopy';
@@ -138,20 +136,6 @@ const timelineRowState = () => {
   });
 };
 
-const stateWord = () => {
-  const agent = agentRow();
-  if (agent === undefined) {
-    throw new Error('no agent row');
-  }
-  return agentStateWord({
-    agent,
-    hasOpenQuestion: false,
-    isTurnLive: false,
-    hasActiveChild: false,
-    isMissingArtifact: isAgentMissingArtifact({ agent, kind: 'report', artifacts: artifacts() }),
-  });
-};
-
 describe('artifact outcome through the real store', () => {
   beforeEach(() => {
     resetStorySpies();
@@ -196,7 +180,6 @@ describe('artifact outcome through the real store', () => {
     expect(rowState.reason).toEqual({ kind: 'noArtifact' });
     expect(rowStateNode({ state: rowState })).toEqual({ state: 'approval', label: 'No artifact' });
     expect(rowStateTone({ state: rowState })).toBe('warning');
-    expect(stateWord()).toEqual({ word: 'No artifact', tone: 'warning', group: 'needs-you' });
     const events = useAppStore.getState().transcripts[AGENT_ID] ?? [];
     expect(events.some((event) => event.kind === 'artifact_capture_failed')).toBe(true);
   });
@@ -209,7 +192,7 @@ describe('artifact outcome through the real store', () => {
     expect(events).toContainEqual(
       expect.objectContaining({ kind: 'artifact_capture_failed', code: 'missing' }),
     );
-    expect(stateWord().word).toBe('No artifact');
+    expect(timelineRowState().reason).toEqual({ kind: 'noArtifact' });
   });
 
   it('goes green once the artifact is captured', async () => {
@@ -218,7 +201,6 @@ describe('artifact outcome through the real store', () => {
     await vi.waitFor(() => expect(agentRow()?.status).toBe('completed'));
     await vi.waitFor(() => expect(artifacts()).toHaveLength(1));
     expect(timelineRowState().phase).toBe('done');
-    expect(stateWord()).toEqual({ word: 'Done', tone: 'success', group: 'done' });
     const events = useAppStore.getState().transcripts[AGENT_ID] ?? [];
     expect(events.some((event) => event.kind === 'artifact_capture_failed')).toBe(false);
   });
@@ -235,7 +217,7 @@ describe('artifact outcome through the real store', () => {
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('disk full'));
     warn.mockRestore();
     expect(artifacts()).toEqual([]);
-    expect(stateWord().word).toBe('No artifact');
+    expect(timelineRowState().reason).toEqual({ kind: 'noArtifact' });
     const events = useAppStore.getState().transcripts[AGENT_ID] ?? [];
     expect(events.some((event) => event.kind === 'artifact_capture_failed')).toBe(true);
   });

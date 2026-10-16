@@ -45,7 +45,7 @@ type ClipParams = {
   readonly budget?: number;
 };
 
-export const clipQuestionText = ({ text, budget = NAME_BUDGET }: ClipParams): string => {
+const clipQuestionText = ({ text, budget = NAME_BUDGET }: ClipParams): string => {
   const flat = text.replace(/\s+/g, ' ').trim();
   if (flat.length <= budget) {
     return flat;

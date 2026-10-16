@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
-import { IconButton, useEscapeLayer } from '@goodboy/ui';
+import { ICON_SIZE, IconButton, useEscapeLayer } from '@goodboy/ui';
 
 type Props = {
   readonly src: string;
@@ -66,7 +66,7 @@ export const ImageLightbox = ({ src, alt, onClose, media = 'image' }: Props) => 
         icon={X}
         label="Close image preview"
         tooltip="Close image preview (esc)"
-        iconSize={18}
+        iconSize={ICON_SIZE.hero}
         onClick={requestClose}
         className={`absolute right-4 top-4 h-9 w-9 rounded-full bg-background p-0 text-foreground shadow-lg ring-1 ring-border-soft transition-all duration-180 ease-out hover:bg-background hover:text-foreground ${
           isVisible ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'

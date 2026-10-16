@@ -106,7 +106,7 @@ export const QueuedMessages = ({ items, canEdit, onEdit, onRemove, onSendNow }: 
               label="Remove from queue"
               tooltip={isSending ? 'Sending it now' : 'Remove from queue'}
               variant="ghost"
-              iconSize={11}
+              iconSize={ICON_SIZE.row}
               disabled={isSending}
               onClick={() => onRemove(item.id)}
             />

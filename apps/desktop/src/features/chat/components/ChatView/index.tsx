@@ -33,6 +33,7 @@ import {
 } from '../../../../store';
 import { reduceTranscript } from '../../utils/transcript-items';
 import { clusterOperations } from '../../utils/cluster-operations';
+import { conversationRows } from '../../utils/conversationRows';
 import { classifyThinkingContext } from '../../utils/thinking-context';
 import { permissionFor, toolStatus } from '../../utils/toolStatus';
 import { turnFootersFor } from '../../utils/turnOutcome';
@@ -57,6 +58,7 @@ import { missingAttachmentsMessage, readRetryAttachments } from './readRetryAtta
 import { useToast } from '../../../../shared/components/Toast';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { isReportedError } from '../../../../store/slices/notifications/reportedError';
+import { isTurnThinking } from '../../utils/isTurnThinking';
 
 type Props = {
   readonly session: Session;
@@ -69,7 +71,11 @@ type Props = {
   readonly briefLabel?: string;
   readonly insertions?: ReadonlyArray<TranscriptInsertion>;
   readonly composerLead?: ReactNode;
+  readonly mode?: ChatViewMode;
+  readonly onOpenTranscript?: () => void;
 };
+
+type ChatViewMode = 'conversation' | 'record';
 
 type RetrySource = {
   readonly content: string;
@@ -131,6 +137,8 @@ export const ChatView = ({
   briefLabel,
   insertions,
   composerLead,
+  mode = 'record',
+  onOpenTranscript,
 }: Props) => {
   const storedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null) as AgentId | null;
   const selectedAgentId = agentId === undefined ? storedAgentId : agentId;
@@ -147,7 +155,6 @@ export const ChatView = ({
   const deferredTagged = useDeferredValue(taggedItems);
   const transcriptStale = deferredTagged.agentId !== selectedAgentId;
   const deferredItems = deferredTagged.items;
-  const rows = useMemo(() => clusterOperations(deferredItems), [deferredItems]);
   const loading = useSessionLoading(session.id);
   const transcriptCached = useAppStore((s) =>
     selectedAgentId ? s.transcripts[selectedAgentId] !== undefined : true,
@@ -237,9 +244,19 @@ export const ChatView = ({
       ? turnStateForRun.runId
       : null;
   const turnFooters = useMemo(() => turnFootersFor({ items, activeRunId }), [items, activeRunId]);
+  const isConversation = mode === 'conversation';
+  const isTurnLive = activeRunId !== null;
+  const rows = useMemo(
+    () =>
+      isConversation
+        ? conversationRows({ items: deferredItems, isLive: isTurnLive })
+        : clusterOperations(deferredItems),
+    [deferredItems, isConversation, isTurnLive],
+  );
   const lastItem = items[items.length - 1];
   const lastRow = rows[rows.length - 1];
   const lastClusterRunning =
+    !isConversation &&
     lastRow?.kind === 'operations' &&
     lastRow.items.some(
       (i) =>
@@ -250,10 +267,17 @@ export const ChatView = ({
           permission: permissionFor({ items: lastRow.items, toolUseId: i.toolUseId }),
         }) === 'running',
     );
+  const cancelCurrentTurn = useAppStore((s) => s.cancelCurrentTurn);
+  const canStop = hasComposer && !isEnded && selectedAgentId != null;
   const isThinking =
-    agentKind === 'running' &&
-    (lastItem?.kind ?? 'user_text') !== 'assistant_text' &&
-    !lastClusterRunning;
+    isConversation || canStop
+      ? agentKind === 'running' || agentKind === 'starting'
+      : isTurnThinking({
+          isTurnRunning: agentKind === 'running',
+          lastItem,
+          isLastClusterRunning: lastClusterRunning,
+        });
+  const thinkingStartedAt = turnStateForRun.kind === 'running' ? turnStateForRun.startedAt : null;
   const thinkingContext = useMemo(() => classifyThinkingContext({ lastItem }), [lastItem]);
 
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
@@ -533,7 +557,8 @@ export const ChatView = ({
               </div>
             ) : deferredItems.length === 0 &&
               oqByTurnOrdinal.size === 0 &&
-              slackDrafts.length === 0 ? (
+              slackDrafts.length === 0 &&
+              (insertions ?? []).length === 0 ? (
               <div className="flex h-full items-center justify-center">
                 <ChatEmptyState
                   sessionId={session.id}
@@ -561,6 +586,7 @@ export const ChatView = ({
                     onOpenDiff={handleOpenDiff}
                     isThinking={isThinking}
                     thinkingContext={thinkingContext}
+                    thinkingStartedAt={thinkingStartedAt}
                     onRetryRun={(params) => void handleRetryRun(params)}
                     retryingRunId={retryingRunId}
                     mountSuggestionsByRun={mountSuggestionsByRun}
@@ -568,6 +594,11 @@ export const ChatView = ({
                     turnFooters={turnFooters}
                     briefLabel={briefLabel}
                     {...(insertions !== undefined && { insertions })}
+                    {...(onOpenTranscript !== undefined && { onOpenTranscript })}
+                    {...(canStop && {
+                      onStop: () =>
+                        void cancelCurrentTurn(session.id, selectedAgentId ?? undefined, 'user'),
+                    })}
                   />
                 </ChatImageLoaderProvider>
               </ul>

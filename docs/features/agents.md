@@ -27,7 +27,7 @@ Give each agent the job it is good at. Nine roles come with the app, **Scout**, 
 
 ### Agent header
 
-Read who an agent is before you read its transcript. The title, the **Brief** and **Transcript** tabs and the actions share one row, with role, status, time and model on a line under it. A new agent with nothing to show yet opens on the **Transcript**, any other on the **Brief**, and the header offers the next step, such as **Interrupt**, **Close** or **Reopen**.
+Find an agent, then read who it is before you read its work. **Agents** in a session lists its agents on one aligned grid, role, name, state, model with its provider and time, with finished ones under **Completed**; a row opens the agent, its other actions are in the right click menu, and **Start agent** in the header opens the start form. On the agent, its role, its name and the provider it runs on share one row with **View transcript** and its menu, which holds **Interrupt**, **Close** or **Reopen**, **Move to Auto**, **Change model**, the copy actions and **Delete agent**. The header never repeats the agent's state or model: the state is the line at the end of the conversation, and each turn names its model in its footer.
 
 ### What the agent received
 
@@ -42,7 +42,7 @@ Check exactly what an agent was told. The top of each chat shows the message and
 
 ### Agent transcript
 
-Follow one agent's work in order. The plan, report and wireframe it writes show as chips under its text, file edits group into **Operations** rows, and questions and permission cards appear in the flow where you answer them. A message you type shows once, as you wrote it. Text Goodboy writes for an agent (an Auto delivery, a delegated brief) never shows as yours: it sits in one collapsed row, **What Auto was told**, that you can open.
+Follow one agent's work as one conversation you can write in. Each finished turn says in one quiet line what it did ("Read 4 files, ran 8 commands (2 errors)"), and a click on the line opens its steps in place; then comes the answer, never the running commentary. An agent that keeps a task list shows it once, as a checklist that updates in place. The plan, report and wireframe it writes show as chips under its answer, questions and permission requests appear where you answer them, and each subagent is one line, **Delegated to** and its role, with **See more** opening it beside the conversation. **View transcript** opens the full record on the right: every turn, every tool call with its input and output, and what the agent was told. A message you type shows once, as you wrote it. Text Goodboy writes for an agent (an Auto delivery, a delegated brief) never shows as yours: it sits in one collapsed row, **What Auto was told**, that you can open.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-transcript-dark.webp">
@@ -57,7 +57,7 @@ When an agent recommends another role, its transcript shows **Agent suggests** w
 
 ### Queue or send now
 
-Keep talking while an agent works. **Enter** queues your message for its next turn, **⌘Enter** reads it now, interrupting the turn, and the queue survives a restart. A queued message stays saved until the provider accepts it, so a refused send puts it back and a crash does not lose it.
+Keep talking while an agent works. **Enter** queues your message for its next turn, and **Send now** (**⌘Enter**), in view beside **Queue** for as long as the turn runs, reads it now, interrupting the turn. The queue survives a restart. A queued message stays saved until the provider accepts it, so a refused send puts it back and a crash does not lose it.
 
 ### Message and document fields
 
@@ -65,11 +65,11 @@ Write to an agent the same way everywhere. Every message and document field take
 
 ### Stop and Continue
 
-Stop an agent without losing its work. Stopping keeps what it wrote and offers **Continue**. **Stop** waits until the process has exited; if it cannot stop the agent, the agent stays running with the error shown and a second press tries again. An agent that was working when you restart or update Goodboy picks up where it stopped, and **Resume all** brings back every one a restart stopped.
+Stop an agent without losing its work. **Stop** sits on the line at the end of the conversation that says what the agent is doing. Stopping keeps what it wrote and offers **Continue**. **Stop** waits until the process has exited; if it cannot stop the agent, the agent stays running with the error shown and a second press tries again. An agent that was working when you restart or update Goodboy picks up where it stopped, and **Resume all** brings back every one a restart stopped.
 
 ### Turn footer
 
-See what each turn cost: provider, model, duration, tokens, cache share, estimated cost and a context meter.
+See what each turn cost: the model with its provider mark, the duration and the estimated cost on the line, and tokens, cache share and context window in its detail.
 
 ### Tool call states
 
