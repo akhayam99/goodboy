@@ -10,6 +10,7 @@ type Props = {
   readonly readNowHint?: string;
   readonly queueTestId?: string;
   readonly readNowTestId?: string;
+  readonly readNowLabel?: string;
   readonly onQueue?: () => void;
   readonly onReadNow: () => void;
 };
@@ -37,6 +38,7 @@ export const DeliveryActions = ({
   readNowHint,
   queueTestId,
   readNowTestId,
+  readNowLabel = 'Read now',
   onQueue,
   onReadNow,
 }: Props) => (
@@ -52,7 +54,7 @@ export const DeliveryActions = ({
           data-testid={readNowTestId}
           onClick={onReadNow}
         >
-          Read now
+          {readNowLabel}
           {readNowKeys === undefined ? null : <KeyHint keys={readNowKeys} />}
         </Button>
       ),

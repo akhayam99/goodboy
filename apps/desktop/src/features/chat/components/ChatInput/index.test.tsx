@@ -341,15 +341,18 @@ describe('ChatInput, input wiring', () => {
         },
       });
 
-    it('offers Queue and Read now once there is text, with the helper line', async () => {
+    it('shows Send now at rest and enables it once there is text, with the helper line', async () => {
       const user = userEvent.setup();
       render(<ChatInput session={runningSession()} />);
 
-      expect(screen.queryByRole('button', { name: /^Read now/ })).toBeNull();
+      expect(screen.getByRole('button', { name: /^Send now/ }).hasAttribute('disabled')).toBe(true);
+      expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
       await user.type(screen.getByRole('textbox'), 'keep the flag');
 
       expect(screen.getByRole('button', { name: /^Queue/ })).toBeDefined();
-      expect(screen.getByRole('button', { name: /^Read now/ })).toBeDefined();
+      expect(screen.getByRole('button', { name: /^Send now/ }).hasAttribute('disabled')).toBe(
+        false,
+      );
       expect(screen.getByText(/Queue waits for this turn to end/)).toBeDefined();
     });
 
@@ -1286,12 +1289,10 @@ describe('ChatInput, composer flows', () => {
     expect(textarea.getAttribute('placeholder')).toBe(ARCHIVED_SESSION_REASON);
   });
 
-  it('cancels the running turn from the stop control', async () => {
-    const user = userEvent.setup();
+  it('leaves Stop to the conversation tail', () => {
     render(<ChatInput session={runningSession()} />);
 
-    await user.click(screen.getByRole('button', { name: 'Stop' }));
-
-    expect(cancelCurrentTurnMock).toHaveBeenCalledWith('session-1', 'agent-1', 'user');
+    expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
+    expect(cancelCurrentTurnMock).not.toHaveBeenCalled();
   });
 });

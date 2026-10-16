@@ -15,6 +15,7 @@ import { OperationsCluster } from '../OperationsCluster';
 import { PlanChecklist } from '../PlanChecklist';
 import { TurnSummaryLine } from '../TurnSummaryLine';
 import { ThinkingIndicator } from '../ThinkingIndicator';
+import { ConversationTail } from '../ConversationTail';
 import { TranscriptCard } from '../TranscriptCards';
 import { OpenQuestionCluster } from './OpenQuestionCluster';
 import { BriefCard } from './BriefCard';
@@ -43,6 +44,7 @@ type Props = {
   briefLabel?: string;
   insertions?: ReadonlyArray<TranscriptInsertion>;
   onOpenTranscript?: () => void;
+  onStop?: () => void;
 };
 
 type FlushParams = {
@@ -98,6 +100,7 @@ export const TranscriptRows = ({
   briefLabel,
   insertions = [],
   onOpenTranscript,
+  onStop,
 }: Props) => {
   const out: ReactNode[] = [];
   const suggestions = mountSuggestionsByRun ?? new Map<ProviderRunId, ReactNode>();
@@ -314,7 +317,11 @@ export const TranscriptRows = ({
       {out}
       {isThinking ? (
         <li>
-          <ThinkingIndicator context={thinkingContext} />
+          {onStop === undefined ? (
+            <ThinkingIndicator context={thinkingContext} />
+          ) : (
+            <ConversationTail context={thinkingContext} onStop={onStop} />
+          )}
         </li>
       ) : null}
     </>

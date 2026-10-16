@@ -266,10 +266,14 @@ export const ChatView = ({
           permission: permissionFor({ items: lastRow.items, toolUseId: i.toolUseId }),
         }) === 'running',
     );
+  const cancelCurrentTurn = useAppStore((s) => s.cancelCurrentTurn);
+  const canStop = hasComposer && !isEnded && selectedAgentId != null;
   const isThinking =
-    agentKind === 'running' &&
-    (isConversation ||
-      ((lastItem?.kind ?? 'user_text') !== 'assistant_text' && !lastClusterRunning));
+    isConversation || canStop
+      ? agentKind === 'running' || agentKind === 'starting'
+      : agentKind === 'running' &&
+        (lastItem?.kind ?? 'user_text') !== 'assistant_text' &&
+        !lastClusterRunning;
   const thinkingContext = useMemo(() => classifyThinkingContext({ lastItem }), [lastItem]);
 
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
@@ -582,6 +586,10 @@ export const ChatView = ({
                     briefLabel={briefLabel}
                     {...(insertions !== undefined && { insertions })}
                     {...(onOpenTranscript !== undefined && { onOpenTranscript })}
+                    {...(canStop && {
+                      onStop: () =>
+                        void cancelCurrentTurn(session.id, selectedAgentId ?? undefined, 'user'),
+                    })}
                   />
                 </ChatImageLoaderProvider>
               </ul>

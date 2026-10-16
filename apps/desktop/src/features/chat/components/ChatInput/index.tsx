@@ -41,7 +41,6 @@ export const ChatInput = ({
   providerDisconnected = false,
   placeholderOverride,
 }: Props) => {
-  const cancelCurrentTurn = useAppStore((s) => s.cancelCurrentTurn);
   const { selectedAgentId, activeAgentKind, sessionWorktree, isFirstTurnForAgent, isRunning } =
     useAgentSelection({ session });
   const isWaitingForWriter = useAppStore(
@@ -269,13 +268,8 @@ export const ChatInput = ({
               onFileInputChange={onFileInputChange}
               onInsertPrefix={insertPrefix}
               isRunning={isRunning}
-              isEmpty={isEmpty}
               canSend={canSend}
-              showsDeliveryChoice={showsDeliveryChoice}
               sendDisabledTitle={sendDisabledTitle}
-              onCancel={() =>
-                void cancelCurrentTurn(session.id, selectedAgentId ?? undefined, 'user')
-              }
               onSend={() => void onSend()}
               onSendNow={() => void onSendNow()}
             />
@@ -289,7 +283,7 @@ export const ChatInput = ({
         ) : null}
         {showsDeliveryChoice ? (
           <p className="px-1 text-meta text-faint-foreground">
-            Queue waits for this turn to end. Read now stops the turn, keeps what it wrote, and
+            Queue waits for this turn to end. Send now stops the turn, keeps what it wrote, and
             continues with your message.
           </p>
         ) : null}

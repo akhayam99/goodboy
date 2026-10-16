@@ -16,11 +16,8 @@ type Props = {
   readonly onFileInputChange: (event: ChangeEvent<HTMLInputElement>) => void;
   readonly onInsertPrefix: (symbol: string) => void;
   readonly isRunning: boolean;
-  readonly isEmpty: boolean;
   readonly canSend: boolean;
-  readonly showsDeliveryChoice: boolean;
   readonly sendDisabledTitle: string | undefined;
-  readonly onCancel: () => void;
   readonly onSend: () => void;
   readonly onSendNow: () => void;
 };
@@ -34,11 +31,8 @@ export const ComposerToolbar = ({
   onFileInputChange,
   onInsertPrefix,
   isRunning,
-  isEmpty,
   canSend,
-  showsDeliveryChoice,
   sendDisabledTitle,
-  onCancel,
   onSend,
   onSendNow,
 }: Props) => (
@@ -70,11 +64,8 @@ export const ComposerToolbar = ({
       <ComposerRoutingPicker session={session} routing={routing} />
       <SendControl
         isRunning={isRunning}
-        isEmpty={isEmpty}
         canSend={canSend}
-        showsDeliveryChoice={showsDeliveryChoice}
         sendDisabledTitle={sendDisabledTitle}
-        onCancel={onCancel}
         onSend={onSend}
         onSendNow={onSendNow}
       />
