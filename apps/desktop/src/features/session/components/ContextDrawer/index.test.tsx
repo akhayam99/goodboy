@@ -164,24 +164,20 @@ const renderDrawer = (
   );
 
 describe('ContextDrawer', () => {
-  it('orders its tabs Goal, Decisions, Summary and moves with the tab strip', () => {
+  it('reads as one scroll of Goal, Decisions, Summary and Learned, with no tabs and no count on them', () => {
     renderDrawer('summary');
 
-    const tabs = screen.getAllByRole('tab');
-    expect(tabs.map((tab) => tab.textContent)).toEqual([
-      'Goal',
-      'Decisions2',
-      'Summary',
-      'Learned',
-    ]);
-    fireEvent.click(tabs[1]!);
-    expect(store.openContextDrawer).toHaveBeenCalledWith({ sessionId: SID, tab: 'decisions' });
+    expect(screen.queryByRole('tablist')).toBeNull();
+    expect(
+      screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent),
+    ).toEqual(['Context', 'Goal', 'Decisions', 'Summary', 'Learned']);
   });
 
-  it('says which roles receive the open tab and lists them on demand', () => {
+  it('says which roles receive a section and lists them on demand', () => {
     renderDrawer('decisions');
 
-    const toggle = screen.getByRole('button', { name: /^Visible to/ });
+    const section = screen.getByRole('region', { name: 'Decisions' });
+    const toggle = within(section).getByRole('button', { name: /^Visible to/ });
     expect(toggle.textContent).toBe('Visible toAll roles except Scout, Docs');
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(toggle);
@@ -191,10 +187,11 @@ describe('ContextDrawer', () => {
     expect(screen.getByText('Agents only.').tagName).toBe('P');
   });
 
-  it('reads the Visible to line from the same map as the prompt, per tab', () => {
+  it('reads the Visible to line from the same map as the prompt, per section', () => {
     renderDrawer('summary');
 
-    expect(screen.getByRole('button', { name: /^Visible to/ }).textContent).toBe(
+    const section = screen.getByRole('region', { name: 'Summary' });
+    expect(within(section).getByRole('button', { name: /^Visible to/ }).textContent).toBe(
       'Visible toAll roles except Resolver',
     );
   });
@@ -211,8 +208,9 @@ describe('ContextDrawer', () => {
     };
     renderDrawer('learned');
 
-    expect(screen.getByRole('tab', { name: /Learned/ }).textContent).toBe('Learned1');
-    expect(screen.getByRole('button', { name: /^Visible to/ }).textContent).toBe(
+    const section = document.querySelector<HTMLElement>('[data-context-section="learned"]')!;
+    expect(within(section).getByRole('heading', { level: 2 }).textContent).toBe('Learned');
+    expect(within(section).getByRole('button', { name: /^Visible to/ }).textContent).toBe(
       'Visible toYou only',
     );
     const row = screen.getByRole('button', { name: /Why select! can drop/ });
@@ -233,7 +231,11 @@ describe('ContextDrawer', () => {
     store.settings = { 'context.roleMap': 'false' };
     renderDrawer('decisions');
 
-    expect(screen.queryByRole('button', { name: /^Visible to/ })).toBeNull();
+    expect(
+      within(screen.getByRole('region', { name: 'Decisions' })).queryByRole('button', {
+        name: /^Visible to/,
+      }),
+    ).toBeNull();
   });
 
   it('shows the summary as State, Next and Learned, without Problem', () => {
@@ -253,12 +255,13 @@ describe('ContextDrawer', () => {
     expect(store.markSessionContextSeen).toHaveBeenCalledTimes(2);
   });
 
-  it('dots the Decisions tab when they changed since the last look', () => {
+  it('says a change since the last look once, as its own group, with no dot on a heading', () => {
     store.sessionDecisionsBaseline = { [SID]: '2026-09-26T09:00:00.000Z' };
     store.sessionDecisions = { [SID]: [decision({ number: 1 })] };
     renderDrawer('summary');
 
-    expect(screen.getByRole('img', { name: 'Changed since you last looked' })).toBeDefined();
+    expect(screen.queryByRole('img', { name: 'Changed since you last looked' })).toBeNull();
+    expect(screen.getAllByText('Changed since you last looked')).toHaveLength(1);
   });
 
   it('numbers the decisions newest first and says who settled them', () => {
@@ -516,7 +519,11 @@ describe('ContextDrawer', () => {
     expect(screen.getByText('Key redeliveries by event id')).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Edit decision 1' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Remove decision 1' })).toBeNull();
-    expect(screen.getByText('Editing opens when the update finishes.')).toBeDefined();
+    expect(
+      within(screen.getByRole('region', { name: 'Decisions' })).getByText(
+        'Editing opens when the update finishes.',
+      ),
+    ).toBeDefined();
   });
 
   it('says why an empty tab is empty', () => {

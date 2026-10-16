@@ -37,7 +37,7 @@ describe('decision bylines', () => {
         replaces: 5,
         nowMs: NOW_MS,
       }),
-    ).toBe('Implementer · turn 14 · 1h · replaces 5');
+    ).toBe('Implementer · turn 14 · 1h ago · replaces 5');
   });
 
   it('keeps your own decisions to you and the age', () => {
@@ -48,7 +48,7 @@ describe('decision bylines', () => {
         replaces: null,
         nowMs: NOW_MS,
       }),
-    ).toBe('You · 1h');
+    ).toBe('You · 1h ago');
   });
 
   it('tells a replacement from a merge and a withdrawal', () => {

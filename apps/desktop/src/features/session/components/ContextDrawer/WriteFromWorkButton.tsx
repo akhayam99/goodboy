@@ -23,7 +23,13 @@ export const WriteFromWorkButton = ({ sessionId, isLocked }: Props) => {
     dispatchAfterNavigation({ name: writeGoalFromWorkEvent({ sessionId }) });
   };
   return (
-    <Button variant="ghost" size="sm" disabled={isLocked} onClick={writeFromWork}>
+    <Button
+      variant="ghost"
+      size="sm"
+      className="self-start"
+      disabled={isLocked}
+      onClick={writeFromWork}
+    >
       Write title and goal from linked work
     </Button>
   );
