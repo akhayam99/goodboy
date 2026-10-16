@@ -1,13 +1,12 @@
 import { useEffect } from 'react';
-import { AlertTriangle, Ellipsis } from 'lucide-react';
-import { OverflowMenu, StatusDot, type OverflowMenuItem } from '@goodboy/ui';
+import { Ellipsis } from 'lucide-react';
+import { StatusDot } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore, useSummarizerStatus } from '../../../../store';
 import { selectHasContextChange } from '../../../../store/slices/contextDrawer/selectHasContextChange';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { PaneClusterMenu } from '../../../actions/PaneClusterMenu';
 import type { ClusterPane } from '../../panes/clusterPane';
-import { togglePane } from '../../panes/togglePane';
 import { contextNoteOf } from './contextNote';
 
 type Props = {
@@ -38,31 +37,11 @@ export const PaneMoreMenu = ({ sessionId, openPane }: Props) => {
 
   const note = contextNoteOf({ status, hasChange });
   const hasSignal = note !== null;
-  const items: ReadonlyArray<OverflowMenuItem> = [
-    {
-      kind: 'item',
-      key: 'context',
-      label: 'Context',
-      icon: status === 'error' ? AlertTriangle : CONCEPT_ICONS.context,
-      ...(status === 'error' && { iconClassName: 'text-danger' }),
-      ...(note !== null && { description: note }),
-      hint: shortcutGlyphs('lens.context'),
-      onClick: () => togglePane({ sessionId, pane: 'context' }),
-    },
-    {
-      kind: 'item',
-      key: 'scripts',
-      label: 'Scripts',
-      icon: CONCEPT_ICONS.scripts,
-      hint: shortcutGlyphs('lens.scripts'),
-      onClick: () => togglePane({ sessionId, pane: 'scripts' }),
-    },
-  ];
   const isRareOpen = openPane === 'context' || openPane === 'scripts';
 
   return (
-    <OverflowMenu
-      items={items}
+    <PaneClusterMenu
+      facts={{ sessionId, hasContextFailed: status === 'error', contextNote: note }}
       label={hasSignal ? `More panes: ${note}` : 'More panes'}
       triggerClassName={isRareOpen ? 'bg-selected text-foreground' : undefined}
       trigger={

@@ -2,20 +2,22 @@ import { useShallow } from 'zustand/react/shallow';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
+import type { SessionDraftMount } from '../../../../store/slices/sessionDraft/startSessionFromDraft';
+import { projectById } from '../../../../store/slices/projects/projectIndex';
 import { ProjectPicker } from '../../../../shared/components/ProjectPicker';
 import { starredProjectsFirst } from '../../../../shared/utils/starredProjectsFirst';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly suggestedIds?: ReadonlyArray<ProjectId>;
-  readonly reason?: string | null;
+  readonly launch?: SessionDraftMount | null;
   readonly isDisabled?: boolean;
 };
 
 export const KickoffProjects = ({
   workspaceId,
   suggestedIds,
-  reason = null,
+  launch = null,
   isDisabled = false,
 }: Props) => {
   const projects = useAppStore(
@@ -33,6 +35,7 @@ export const KickoffProjects = ({
   if (projects.length === 0) {
     return null;
   }
+  const launchProject = launch === null ? null : (projectById(projects, launch.projectId) ?? null);
   return (
     <section aria-label="Projects" className="flex min-w-0 flex-col gap-2">
       <div className="flex min-w-0 items-baseline gap-2">
@@ -46,7 +49,9 @@ export const KickoffProjects = ({
         {...(suggestedIds !== undefined && { suggestedIds })}
         onChange={(next) => patchSessionDraft({ workspaceId, patch: { projectIds: next } })}
       />
-      {reason === null ? null : <p className="text-meta text-muted-foreground">{reason}</p>}
+      {launch === null || launchProject === null ? null : (
+        <p className="text-meta text-muted-foreground">{`In ${launchProject.name}, ${launch.reason}.`}</p>
+      )}
     </section>
   );
 };

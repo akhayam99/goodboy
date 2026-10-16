@@ -21,6 +21,9 @@ import type { ChatFacts } from './kinds/chat';
 import type { ChatsFacts } from './kinds/chats';
 import type { PortFacts } from './kinds/port';
 import type { TerminalTabFacts } from './kinds/terminalTab';
+import type { NewFormFacts } from './kinds/newForm';
+import type { PaneClusterFacts } from './kinds/paneCluster';
+import type { TaskListFacts } from './kinds/taskList';
 import type { AppStore } from '../../store/store';
 import type { ShowToast } from '../../shared/components/Toast';
 import type { ShortcutId } from '../../shared/keyboard/registry';
@@ -357,6 +360,21 @@ export type TerminalTabActionTarget = {
   readonly facts: TerminalTabFacts;
 };
 
+export type NewFormActionTarget = {
+  readonly kind: 'newForm';
+  readonly facts: NewFormFacts;
+};
+
+export type PaneClusterActionTarget = {
+  readonly kind: 'paneCluster';
+  readonly facts: PaneClusterFacts;
+};
+
+export type TaskListActionTarget = {
+  readonly kind: 'taskList';
+  readonly facts: TaskListFacts;
+};
+
 export type LinkActionTarget = {
   readonly kind: 'link';
   readonly href: string;
@@ -418,6 +436,9 @@ export type ObjectTarget =
   | ChatsActionTarget
   | PortActionTarget
   | TerminalTabActionTarget
+  | NewFormActionTarget
+  | PaneClusterActionTarget
+  | TaskListActionTarget
   | LinkActionTarget
   | ReviewActionTarget
   | ReviewCommentActionTarget

@@ -376,14 +376,15 @@ never exists on one surface only.
 
 - **Visible actions.** The primary action is a visible, labeled button.
   Frequent alternatives stay visible beside it or on the row they affect.
-  `⋯` holds copy and rare actions. A task chip opens the task; its unlink
-  control appears on pointer hover and keyboard focus, with no kebab.
+  `⋯` holds copy and rare actions. A linked task is one row of the session
+  level's Linked group (`LinkedTaskRow`): a click opens the task, a drag moves
+  it, and Unlink, Move to and Take off this branch sit in its right click
+  menu (Shift+F10), with no kebab and no hover control.
   Putting work on a branch is `Link work to this branch` (`mount.putTaskOnBranch`), on the
   Overview branch row and in the worktree level's `⋯`. Link work is the single entry
   for linking work to a session or workspace. Moving a task is one verb,
-  `Move to`: in the chip's menu (Shift+F10), in the focused issue's
-  `Linked to` row and in the palette; the x on a branch chip says what it
-  does (`Move to session`, or `Take off project / branch`).
+  `Move to`: in the linked row's menu (Shift+F10), in the focused issue's
+  `Linked to` row and in the palette.
 - **One order.** The registry and right click list Open, Act, Copy, then
   lifecycle and destructive verbs, with a rule between groups. Menus and
   visible controls use the same definitions and availability rules.
@@ -937,7 +938,7 @@ inside Ask the same chord is new chat, new terminal and Reset chat, see
 and the checklist open the `New session` draft (the `session-draft` place,
 address `new`). Nothing is written: no row in the database, the column or
 the board. The trail and the title say `New session`, the title is faint and
-cannot be renamed, and there is no `⋯`, no chip and no projects section. The
+cannot be renamed, and there is no `⋯` and no chip. The
 column's New session row stays selected while the draft is open. Each workspace
 keeps one draft in memory (`store/slices/sessionDraft/`), never on disk:
 leaving it keeps it intact, New brings it back, and the button shows a primary
@@ -949,8 +950,8 @@ once. With text Esc raises `Keep this draft?` under the line that describes the
 selected choice, inline and without a modal. It floats over the page, aligned
 to the column, so nothing below it moves (`SessionKickoff` takes it as its
 `notice`). It holds one action: `Keep draft` (or a second Esc) leaves and keeps
-the draft. `Discard draft` in the header shows only with
-content and empties it: `discardSessionDraft` clears the
+the draft. `Discard`, in the actions row at the end of every form
+(`useDraftDiscard`), shows only with content and empties it: `discardSessionDraft` clears the
 draft and both builder drafts of that workspace, then closes the page. Back
 returns to the draft like any other place. **Start blank** in the header (`startBlankSession`) is the way
 to start from the goal: it creates a session with no title and no goal slot
@@ -958,10 +959,17 @@ and lands on its normal Overview (`Untitled session`, `Add a goal`), where
 the goal, projects and work are added from the usual controls. Nothing is
 required first, and the draft stays for the next New.
 
-The draft asks one question, "How do you want to start?", with three choices
-on one row as compact tabs (`StartChoiceTabs`, `SegmentedTabs` pill variant) with
-**Discard draft** and **Start blank** (`SessionDraftActions`) at the end of the same
-row. One line under the row describes the selected choice (`startChoiceLine`, the
+The draft asks one question, "How do you want to start?", with four choices
+on one row as compact tabs (`StartChoiceTabs`, `SegmentedTabs` pill variant):
+Pick up a task, Run a workflow, Orchestrate and Ask an agent. **Start blank** sits
+in the page header. Run a workflow, Orchestrate and Ask an agent each hold
+**Projects** (`KickoffProjects` over the shared `ProjectPicker`): optional, a
+searchable multiple `Listbox` with the picked projects as removable chips under
+it, suggested projects first. The draft keeps them as `projectIds`; the first is
+the session's project and the rest are added with it (`additionalProjectIds`).
+When a picked issue maps to a project, the picker starts with it and one line
+under it names the project and the reason
+(`In payments-api, from GitHub repo harborline/payments-api.`). One line under the row describes the selected choice (`startChoiceLine`, the
 copy in `shared/lib/startCopy.ts` that the New drawer reads too): none sits under
 the other options. The page has no visible title, the trail names it (a screen
 reader heading stays, drawn by `PaneTitleRow` inside `sr-only`). The Run lane and the Agent block are the New drawer's, at
@@ -1037,14 +1045,17 @@ reach NW-230 anymore`. Pick up a task shows only the open starred issues,
   one request per tracker for Linear and Jira, one per project for GitLab,
   and one per issue for GitHub and Sentry, which have no batch endpoint for
   fetching by id.
-- **Run a workflow** is the workflow builder itself (`WorkflowBuilderView`
-  with a `kickoff` target), the same one Session > Workflows > Create opens:
-  title, goal card with Add files and Polish, the Orchestrated / Describe steps /
-  Pick a workflow switch, Can use, the plan preview with the orchestrator row or the
-  editable steps, guidance, Starts, when to ask, Spend cap and Start run with
-  its reason. Its goal field is the kickoff goal (`workflowGoal` in the
+- **Run a workflow** and **Orchestrate** are the workflow builder itself
+  (`WorkflowBuilderView` with a `kickoff` target and a fixed `mode`: `preset`
+  for Run a workflow, `dynamic` for Orchestrate; the choice is the mode, so
+  there is no mode switch and no remembered mode): title, goal card with Add
+  files and Polish, Projects, Can use, the preset with its editable steps and a
+  model per step or the orchestrator row, guidance, then one actions row with
+  Autonomy, Starts and Spend cap at the left and Discard, the estimate slot and
+  the primary (Start run, Start orchestration) at the right, with the start gate
+  reason under it. Its goal field is the kickoff goal (`workflowGoal` in the
   draft), the only one on screen. Its draft lives under `kickoff:<workspace>`
-  in `workflowDrafts`, so it survives leaving the kickoff, and Discard draft
+  in `workflowDrafts`, so it survives leaving the kickoff, and Discard
   clears it with the rest. Start run runs `startSessionFromDraft` with
   kind `workflow-run`: the session is created first, then the builder saves
   the workflow and attaches the run to it in the same action, and the view
@@ -1054,32 +1065,32 @@ reach NW-230 anymore`. Pick up a task shows only the open starred issues,
   the reopened draft shows it under Start run (the builder and the agent
   starts both read it), and the next Start clears it. One start per workspace
   runs at a time: a second click while one runs gets the same session, never a
-  second one. The orchestrated lane reserves the plan estimate slot above
-  Start run (`LaunchBar` `hasEstimateSlot`), so the late estimate does not
-  move the button under the pointer. Before a session exists the builder leaves out Use session goal, the
-  Discard button of its launch bar (the row's Discard draft does it), the
+  second one. The actions row reserves the estimate slot before the primary
+  (`LaunchBar`), so the late estimate does not move the button under the
+  pointer. Before a session exists the builder leaves out Use session goal, the
   title suggestion (the orchestrated title is generated after start, as in a
   session) and the worktree as the planner's working folder.
 - **Ask an agent** with the Auto experiment on (`useIsAutoOn`) is the
   Auto composer (`AutoStart`): one goal with files, one model chip, a **Spend cap** chip, **Start Auto**,
   no role list, no project field, no guidance. Its goal and model live in the
-  draft (`autoGoal`, `autoRouting`) and count as written for Discard draft. Start
+  draft (`autoGoal`, `autoRouting`) and count as written for Discard. Start
   first reads the stored setting (`useConfirmStartMode`): when it differs from the
   form on screen, another window changed it, so the form repaints for the stored
   mode, keeps the text (the goal moves between `autoGoal` and the legacy prompt
   field) and waits for a new Start click. Then it runs `startSessionFromDraft`
   kind `scout` with an Auto agent (`agentKind: 'auto'`), the goal as its prompt
   and the chosen routing. With the experiment off the choice is the next one.
-- **Ask an agent** (`AgentStart`) is the real chat composer's field: role,
-  model and project sit below it as chips (`AgentStartFields`), opening the
+- **Ask an agent** (`AgentStart`) is the real chat composer's field, then
+  Projects; role, model and project sit below it as chips (`AgentStartFields`), opening the
   same role grid and model picker `Start agent` uses. The role defaults to
   Scout every time, never the last one picked, because a habitual Implementer
   writes code you did not ask for. Scout alone can start with an empty field
   ("Start Scout on the whole project", which reads the project and changes
   nothing); every other role needs a prompt first. The model chip reads Auto
-  until pinned. The project chip only shows when the workspace has more than
-  one repo project; with one it is preselected with no chip, with none the
-  session starts with no project attached.
+  until pinned. The project chip lists the picked projects and only shows
+  with two or more; the one you pick moves first in `projectIds`, so the agent
+  works in it. With one repo project it is preselected with no chip, with none
+  the session starts with no project attached.
 
 Only the selected tab's panel, and only its primary, shows. The tabs
 preselect Pick up a task when a tracker has open issues and Run a workflow
@@ -1119,7 +1130,8 @@ activity yet show the plain overview with its actions.
   its lifecycle menu live on the session rail identity row. The header keeps the
   Overview actions as visible words (`OverviewPageActions`: Write title and
   goal from linked work, and Scripts in a branchless session), **New**
-  (`OverviewActions`, ⌘N on the Overview, opens the New drawer; filled only
+  (`OverviewActions`, ⌘N on the Overview, a menu from the `newForm` kind of
+  the action registry whose pick opens its form in the New drawer; filled only
   while nothing runs and Next holds no row) and, on an archived session,
   Restore. Context left the header for the cluster's more menu.
 
@@ -1127,8 +1139,8 @@ activity yet show the plain overview with its actions.
 
 One fixed group at the right of every session page header, the same on every
 page and in this order: **Ask** (⌘L), **Terminal** (⌘⌥T), **Explore** (⌘⌥X),
-then a visible `⋯` (`More panes`) holding **Context** (⌘⌥C) and **Scripts**
-(⌘⌥S). Each toggle is an icon and a word (`PaneToggle`, a quiet `xs`
+then a visible `⋯` (`More panes`, the `paneCluster` kind of the action
+registry) holding **Context** (⌘⌥C) and **Scripts** (⌘⌥S). Each toggle is an icon and a word (`PaneToggle`, a quiet `xs`
 `Button`); the open one is `bg-selected` and `aria-pressed`. The chord lives in
 the tooltip only. `PaneCluster` lives in `features/session/components/`.
 
@@ -1855,7 +1867,7 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   are shared primitives. Tasks uses the rows and the list keys but not the day
   grouping or a rail: its facets (source, show, type, project) sit in one Filter
   menu of the header, next to the For me and All switch, the search, Group by and
-  `⋯` (Refresh, Manage tools), and its rows are one `ListGrid` with a group per
+  `⋯` (Refresh, Manage tools: the `taskList` kind of the action registry), and its rows are one `ListGrid` with a group per
   source, status or project (`taskGroupsOf`), five rows each until Show all, and
   each group is its own listbox of options. J and K move a cursor through the
   rows on screen, and the record follows in the pane only once one is open.
@@ -2235,7 +2247,7 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   All issues; `Unlink from session` sits in the record's `⋯`, asks first and
   leaves an Undo toast. A `Placed on` property in the Links group shows
   `This session` or the branches; its value (`TaskPlacementMenu`) opens the
-  same `Move to` menu as the task chip, `This session` and one entry per open
+  same `Move to` menu as the linked task row, `This session` and one entry per open
   branch of the issue's project (`project · branch`, middle cut), the current
   placement checked. `IntegrationPane` hands both to every tracker through
   `RecordFrameContext` (`sessionVerbs`, `linkFacts`), so the loading and error

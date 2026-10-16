@@ -7,6 +7,9 @@ import { LINK_KIND } from './kinds/link';
 import { PLAN_PART_KIND } from './kinds/planPart';
 import { PORT_KIND } from './kinds/port';
 import { TERMINAL_TAB_KIND } from './kinds/terminalTab';
+import { NEW_FORM_KIND } from './kinds/newForm';
+import { PANE_CLUSTER_KIND } from './kinds/paneCluster';
+import { TASK_LIST_KIND } from './kinds/taskList';
 import { PROJECT_KIND } from './kinds/project';
 import { PULL_REQUEST_KIND } from './kinds/pullRequest';
 import { CHAT_KIND } from './kinds/chat';
@@ -53,6 +56,9 @@ const KINDS: ReadonlyArray<readonly [string, ReadonlyArray<AnyDefinition>]> = [
   ['diff', DIFF_KIND.actions],
   ['port', PORT_KIND.actions],
   ['terminalTab', TERMINAL_TAB_KIND.actions],
+  ['newForm', NEW_FORM_KIND.actions],
+  ['paneCluster', PANE_CLUSTER_KIND.actions],
+  ['taskList', TASK_LIST_KIND.actions],
   ['link', LINK_KIND.actions],
   ['review', REVIEW_KIND.actions],
   ['reviewComment', REVIEW_COMMENT_KIND.actions],

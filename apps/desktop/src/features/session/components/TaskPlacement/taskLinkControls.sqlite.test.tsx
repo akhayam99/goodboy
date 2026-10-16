@@ -11,7 +11,8 @@ import {
 } from '@testing-library/react';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { UndoToastBridge } from '../../../../app/components/UndoToastBridge';
-import { LinkedTaskChip } from '../../../../shared/components/LinkedTaskChip';
+import { LinkedTaskRow } from '../../../../app/components/SideColumn/SessionLevel/LinkedTaskRow';
+import { ObjectMenuProvider } from '../../../actions/components/ObjectMenuProvider';
 import { PutOnBranchPopover } from './PutOnBranchPopover';
 import { TASK_KIND } from '../../../actions/kinds/task';
 import type { ActionEnv } from '../../../actions/types';
@@ -96,22 +97,31 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-type RenderChipParams = {
-  readonly branch?: string | null;
+type RenderRowParams = {
+  readonly task?: SessionExternalTask;
+  readonly branches?: ReadonlyArray<string>;
 };
 
-const renderChip = ({ branch = null }: RenderChipParams = {}) => {
+const renderRow = ({
+  task = { ...TASK, scope: 'session', branch: undefined },
+  branches = [TASK.branch ?? '', 'hl/notify-retry'],
+}: RenderRowParams = {}) => {
   render(
     <ToastProvider>
       <UndoToastBridge />
-      <LinkedTaskChip
-        sessionId={SESSION_ID}
-        task={TASK}
-        branch={branch}
-        branches={branch === null ? [TASK.branch ?? '', 'hl/notify-retry'] : [branch]}
-      />
+      <ObjectMenuProvider>
+        <LinkedTaskRow sessionId={SESSION_ID} task={task} branches={branches} isShown={false} />
+      </ObjectMenuProvider>
     </ToastProvider>,
   );
+};
+
+const openRowMenu = () => {
+  fireEvent.contextMenu(screen.getByRole('button', { name: /^Open HBL-412/ }), {
+    clientX: 20,
+    clientY: 20,
+  });
+  return screen.getByRole('menu', { name: 'Task actions' });
 };
 
 const unlinkEvent = async (): Promise<TimelineStreamEntry> => {
@@ -159,7 +169,7 @@ describe('task link controls', () => {
 
   it('opens the task directly and has no overflow trigger', async () => {
     await seed();
-    renderChip();
+    renderRow();
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /^Open HBL-412/ }));
     });
@@ -170,30 +180,24 @@ describe('task link controls', () => {
     expect(screen.queryByRole('button', { name: 'Actions for HBL-412' })).toBeNull();
   });
 
-  it('reserves the trailing slot for the unlink, so the label is never covered by it', async () => {
+  it('is one control: the row names its branches and holds no unlink button', async () => {
     await seed();
-    renderChip();
+    renderRow();
 
     const open = screen.getByRole('button', { name: /^Open HBL-412/ });
-    const unlink = screen.getByRole('button', { name: 'Unlink HBL-412 from session' });
-    const slot = unlink.closest('[data-slot="unlink-slot"]');
-
-    expect(slot).not.toBeNull();
-    expect(slot?.className.split(' ')).toContain('size-4');
-    expect(slot?.contains(open)).toBe(false);
-    expect(unlink.getAttribute('data-size')).toBe('xs');
-    expect(open.textContent?.startsWith('HBL-412')).toBe(true);
-    await act(async () => {
-      fireEvent.click(unlink);
-    });
-    expect(await storedLinks()).toEqual([]);
+    expect(open.getAttribute('aria-label')).toBe('Open HBL-412 on 2 branches');
+    expect(open.textContent).toContain('HBL-412');
+    expect(open.textContent).toContain(TASK.title);
+    expect(screen.getAllByRole('button')).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: /^Unlink/ })).toBeNull();
   });
 
-  it('unlinks immediately without a confirmation and restores from the toast', async () => {
+  it('unlinks from the row menu without a confirmation and restores from the toast', async () => {
     await seed();
-    renderChip();
+    renderRow();
+    const menu = openRowMenu();
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Unlink HBL-412 from session' }));
+      fireEvent.click(within(menu).getByRole('menuitem', { name: 'Unlink from session' }));
     });
     expect(await storedLinks()).toEqual([]);
     expect(screen.queryByRole('dialog')).toBeNull();
@@ -204,12 +208,14 @@ describe('task link controls', () => {
     expect(await storedLinks()).toHaveLength(3);
   });
 
-  it('names the x on a sole branch placement Move to session and says the task is back', async () => {
+  it('moves a sole branch placement to the session from Move to and says the task is back', async () => {
     await useAppStore.getState().linkSessionExternalTask(SESSION_ID, TASK);
-    renderChip({ branch: TASK.branch });
-    expect(screen.queryByRole('button', { name: /^Unlink/ })).toBeNull();
+    renderRow({ task: TASK, branches: [TASK.branch ?? ''] });
+    const menu = openRowMenu();
+    fireEvent.click(within(menu).getByRole('menuitem', { name: /^Move to/ }));
+    const choices = screen.getByRole('menu', { name: 'Move to' });
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Move to session' }));
+      fireEvent.click(within(choices).getByRole('menuitemradio', { name: /This session/ }));
     });
     expect(await storedLinks()).toEqual([{ scope: 'session', branch: TASK.branch }]);
     screen.getByText('HBL-412 is on the session again');
@@ -219,7 +225,7 @@ describe('task link controls', () => {
     expect(await storedLinks()).toEqual([{ scope: 'branch', branch: TASK.branch }]);
   });
 
-  it('names the x Take off project and branch when the task has another placement', async () => {
+  it('takes the task off one branch when it has another placement', async () => {
     const project = aProject({ workspaceId: WORKSPACE_ID, name: 'payments-api' });
     const projectId = project.id;
     useAppStore.setState({ projects: [project] });
@@ -227,22 +233,10 @@ describe('task link controls', () => {
     await useAppStore
       .getState()
       .linkSessionExternalTask(SESSION_ID, { ...TASK, projectId, branch: 'hl/notify-retry' });
-    render(
-      <ToastProvider>
-        <UndoToastBridge />
-        <LinkedTaskChip
-          sessionId={SESSION_ID}
-          task={{ ...TASK, projectId }}
-          branch={TASK.branch ?? ''}
-          branches={[TASK.branch ?? '']}
-        />
-      </ToastProvider>,
-    );
-    expect(screen.queryByRole('button', { name: 'Move to session' })).toBeNull();
+    renderRow({ task: { ...TASK, projectId }, branches: [TASK.branch ?? ''] });
+    const menu = openRowMenu();
     await act(async () => {
-      fireEvent.click(
-        screen.getByRole('button', { name: `Take off payments-api / ${TASK.branch}` }),
-      );
+      fireEvent.click(within(menu).getByRole('menuitem', { name: 'Take off this branch' }));
     });
     expect(await storedLinks()).toEqual([{ scope: 'branch', branch: 'hl/notify-retry' }]);
     screen.getByText(`HBL-412 is off payments-api / ${TASK.branch}`);

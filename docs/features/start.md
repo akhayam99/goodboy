@@ -4,7 +4,9 @@ Begin from an issue, a workflow or a question. Everything starts as one draft, a
 
 ### How do you want to start?
 
-The **New session** draft has one compact selector with three choices: **Pick up a task**, **Run a workflow** and **Ask an agent**, and a line under it that says what the selected one does. **Discard draft** (once you wrote something) and **Start blank** sit at the end of the same row. Run a workflow and Ask an agent are the same form as in the **New** drawer, at page width, and a spend cap that is switched on needs an amount with a preset too. Esc closes the page and takes you back to where you were. If you wrote something, Esc asks whether to keep the draft or discard it, and keeping it leaves **New session** ready with your text. **Discard draft** throws it away and leaves the page.
+The **New session** draft has one compact selector with four choices: **Pick up a task**, **Run a workflow**, **Orchestrate** and **Ask an agent**, and a line under it that says what the selected one does. **Start blank** sits in the page header, and **Discard** sits next to the start button at the end of every form, once you wrote something. Run a workflow, Orchestrate and Ask an agent are the same forms as in the **New** menu of a session, at page width, and a spend cap that is switched on needs an amount with a preset too. Esc closes the page and takes you back to where you were. If you wrote something, Esc asks whether to keep the draft or discard it, and keeping it leaves **New session** ready with your text. **Discard** throws it away.
+
+**Projects** is optional. Search it by name, even with 50 projects in the workspace, and the projects you pick show as chips you can remove. A project the picked issue points to comes first and is already picked, with one line that says why, such as _In payments-api, from GitHub repo harborline/payments-api._
 
 ### Pick up a task, with a drafted brief
 
@@ -27,7 +29,7 @@ A pull request waiting on you in Tasks shows **Review pull request** in place of
 
 ### Run a workflow
 
-Write the goal, pick **Orchestrated**, **Describe steps** or **Pick a workflow**, and read the **Plan** you will run. Set when the run asks you and a **Spend cap**, then **Start run** creates the session and starts the run in one step. One click starts it, and the button stays where it is while the estimate loads. If the run cannot start, the page keeps everything you wrote and shows the reason under **Start run**; press it again to retry.
+Write the goal, pick a preset and read the **Plan** you will run, with a model on every step. **Orchestrate** is its own choice: the orchestrator picks each next step until the goal is done, with its model and your guidance. Set when the run asks you and a **Spend cap**, then **Start run** creates the session and starts the run in one step. One click starts it, and the button stays where it is while the estimate loads. If the run cannot start, the page keeps everything you wrote and shows the reason under **Start run**; press it again to retry.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/start-run-workflow-dark.webp">
@@ -38,7 +40,7 @@ Write the goal, pick **Orchestrated**, **Describe steps** or **Pick a workflow**
 
 ### Ask an agent
 
-Map an unfamiliar repo before you plan. **Scout** is the default role and only reads, so it changes nothing: type an area, a file or a question and press **Start Scout**. On a broad question it can split the search and merge the findings into one report.
+Map an unfamiliar repo before you plan. **Scout** is the default role and only reads, so it changes nothing: type an area, a file or a question and press **Start Scout**. With two or more projects picked, the project chip next to the model says which one the agent works in. On a broad question it can split the search and merge the findings into one report.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/start-ask-agent-dark.webp">
@@ -49,7 +51,7 @@ Map an unfamiliar repo before you plan. **Scout** is the default role and only r
 
 ### Start more work in a session
 
-**New** in a session opens one drawer with three tabs: **Run**, **Agent** and **Write**. **Run** takes a goal and plans the steps (Orchestrated, or a saved preset) with Autonomy (**Ask me**, **Balanced** or **Autopilot**), Starts and Spend cap at the end. **Agent** starts one role. **Write** drafts a report or a wireframe. The button is filled when nothing is running, blocked or waiting on a question, and neutral otherwise. A run you like can be kept from its page with **Save as preset**.
+**New** in a session opens a menu: **Run a workflow**, **Orchestrate**, **Start agent**, **Start Auto** (with the Auto experiment on), **Report** and **Wireframe**. Each opens its own form in the drawer. Run a workflow and Orchestrate end with Autonomy (**Ask me**, **Balanced** or **Autopilot**), Starts and Spend cap. Start agent starts one role. Report and Wireframe draft one from the session. The button is filled when nothing is running, blocked or waiting on a question, and neutral otherwise. A run you like can be kept from its page with **Save as preset**.
 
 ### Start blank
 

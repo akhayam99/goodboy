@@ -14,8 +14,6 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'branch header menu: its entries come from the pull request and diff kinds of the registry',
   'features/artifacts/components/ArtifactList/ArtifactNewMenu.tsx':
     'creation menu: picks the kind of artifact to create',
-  'features/session/components/SessionOverviewPane/OverviewActions/index.tsx':
-    'creation menu: picks the New form to open in the drawer',
   'features/integrations/linear/LinearAssigneeMenu.tsx':
     'property picker: sets the assignee value from the control that shows it',
   'features/integrations/linear/LinearStateMenu.tsx':
@@ -36,10 +34,6 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'artifact files from deleted sessions: storage keep and delete',
   'features/session/components/TaskPlacement/PutOnBranchPopover.tsx':
     'task picker: chooses a linked task for a branch, a value picker',
-  'features/session/components/PaneCluster/PaneMoreMenu.tsx':
-    'pane cluster chrome: opens the Context and Scripts panes, a pane is not an object in the map',
-  'features/inbox/components/InboxStudio/InboxListHeader.tsx':
-    'tasks list chrome: Refresh tasks and Manage tools, no task is the target',
   'features/session/components/SessionOverviewPane/SessionHeaderMenu.tsx':
     'Overview title row menu: the same hooks as the session actions, worded as the retired title row icons (Archive session, Delete session...), Refresh has no registry action',
 };
