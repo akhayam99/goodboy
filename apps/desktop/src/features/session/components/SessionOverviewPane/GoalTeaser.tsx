@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { Button, IconButton, Notice, Skeleton, inlineMarkdownText, Tooltip } from '@goodboy/ui';
+import { Button, IconButton, Notice, Skeleton, inlineMarkdownText } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore, useSessionLoading, useSessionSlots } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -107,16 +107,14 @@ export const GoalTeaser = ({ session }: Props) => {
   const text = inlineMarkdownText({ text: value }).replace(/\s+/g, ' ').trim();
 
   return (
-    <Tooltip content={text}>
-      <button
-        type="button"
-        onClick={open}
-        aria-label={`Goal: ${text}`}
-        className={`${ROW} w-full px-1 py-0.5`}
-      >
-        <span className="shrink-0 text-meta text-faint-foreground">Goal</span>
-        <span className="min-w-0 flex-1 truncate text-label text-muted-foreground">{text}</span>
-      </button>
-    </Tooltip>
+    <button
+      type="button"
+      onClick={open}
+      aria-label={`Goal: ${text}`}
+      data-overview-goal=""
+      className={`${ROW} w-full px-1 py-0.5`}
+    >
+      <span className="line-clamp-3 min-w-0 flex-1 text-body text-foreground">{text}</span>
+    </button>
   );
 };

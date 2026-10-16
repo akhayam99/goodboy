@@ -9,9 +9,9 @@ import {
   WAIT,
   branchTab,
   click,
-  clickFirstButton,
   findSection,
   lens,
+  openCrumb,
   settle,
   useAppStore,
 } from './harness';
@@ -95,7 +95,7 @@ const headerPart = (selector: string): HTMLElement => {
 };
 
 const openBranchOnComments = async (ctx: Ctx): Promise<void> => {
-  await clickFirstButton(/^Open PR #\d+ of /);
+  await openCrumb(/Branch/);
   await branchTab('pr')(ctx);
   await click(await findSection(/^Comments/));
   await branchTab('comments')(ctx);

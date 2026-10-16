@@ -12,7 +12,7 @@ import {
   branchTab,
   click,
   clickButton,
-  clickFirstButton,
+  openWorktreeEntry,
   heading,
   lens,
   openBranchFiles,
@@ -177,9 +177,9 @@ const SEARCH_JUMPS: ReadonlyArray<{
 
 export const CREATE_AND_SEARCH_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'mount row: changes to the mount diff',
-    covers: ['openMountDiff'],
-    open: () => clickFirstButton(/^View the changes of /),
+    name: 'worktree level: the Files entry opens the branch diff',
+    covers: ['lens:branch'],
+    open: () => openWorktreeEntry(/^Files/),
     lands: branchTab('files'),
   },
   ...(['Report', 'Wireframe'] as const).map((kind): Row => ({

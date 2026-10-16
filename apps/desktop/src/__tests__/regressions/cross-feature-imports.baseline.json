@@ -73,7 +73,7 @@
     "session -> context": 10,
     "session -> explore": 1,
     "session -> inbox": 1,
-    "session -> integrations": 13,
+    "session -> integrations": 12,
     "session -> providers": 5,
     "session -> reports": 1,
     "session -> resolve": 4,

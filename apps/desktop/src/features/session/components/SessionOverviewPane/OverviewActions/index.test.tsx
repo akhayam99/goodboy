@@ -120,6 +120,12 @@ describe('OverviewActions emphasis', () => {
     expect(variantOf()).toBe('primary');
   });
 
+  it('stays neutral on an idle session while Next holds the filled primary', () => {
+    render(<OverviewActions session={SESSION} hasNextLead />);
+
+    expect(variantOf()).toBe('secondary');
+  });
+
   it('is primary when every agent and run has finished', () => {
     useAppStore.setState({
       sessionPhaseRuns: { [SESSION_ID]: [agentIn('completed'), agentIn('stopped')] },

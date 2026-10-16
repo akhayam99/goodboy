@@ -195,7 +195,7 @@ const soloAgent = (index: number) => ({
 const totalRenders = () => renders.entry + renders.now + renders.day;
 
 const pane = ({ actions }: { readonly actions: ReactNode }) => (
-  <TimelinePane session={SESSION} actions={actions} />
+  <TimelinePane session={SESSION} lead={actions} />
 );
 
 beforeEach(() => {

@@ -6,7 +6,6 @@ import { describe, expect, it } from 'vitest';
 const FEATURES = join(__dirname, '..', '..', '..');
 
 const SECTIONS = [
-  { name: 'Projects', file: 'session/components/SessionOverviewPane/ProjectMountRows/index.tsx' },
   { name: 'Unassigned notes', file: 'session/components/SessionOverviewPane/UnassignedNotes.tsx' },
   { name: 'Next', file: 'suggestions/components/NextStepSlot/index.tsx' },
 ];

@@ -59,29 +59,7 @@ afterEach(() => {
 
 describe('the p-0251 scenes', () => {
   it('registers the scenes', () => {
-    expect(Object.keys(U25_P_0251_SCENES)).toEqual([
-      'mount-big-stats',
-      'ask-reset',
-      'context-mark-read',
-    ]);
-  });
-
-  it('mount-big-stats prints five digit counts whole, one stat per changed row', async () => {
-    const Scene = U25_P_0251_SCENES['mount-big-stats'];
-    render(
-      <ToastProvider>
-        <Scene />
-      </ToastProvider>,
-    );
-
-    await waitFor(() => expect(screen.getByText('+12842')).toBeDefined(), WAIT);
-    await waitFor(() => expect(screen.getByText('+99999')).toBeDefined(), WAIT);
-    const stats = screen.getAllByTestId('diff-stat').map((node) => node.textContent);
-    expect(stats).toContain('+12842-10406');
-    expect(stats).toContain('+99999-101');
-    const rows = screen.getAllByTestId('project-mount-row');
-    const row = rows.find((candidate) => within(candidate).queryByText('+99999') !== null);
-    expect(row).toBeDefined();
+    expect(Object.keys(U25_P_0251_SCENES)).toEqual(['ask-reset', 'context-mark-read']);
   });
 
   it('context-mark-read offers Mark as read in the changes section', async () => {

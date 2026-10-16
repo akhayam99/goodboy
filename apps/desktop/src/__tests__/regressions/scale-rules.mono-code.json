@@ -56,7 +56,6 @@
   "apps/desktop/src/features/session/components/DeleteSessionConfirm/index.tsx": "command",
   "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/LapProjectRow.tsx": "branch",
   "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/MountPreflightCard.tsx": "command",
-  "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/ProjectBranchChip.tsx": "branch",
   "apps/desktop/src/features/session/components/SessionOverviewPane/UnassignedNote.tsx": "path",
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/IntegrationPane/FocusedTaskBody.tsx": "identifier",
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/IntegrationPane/GithubTaskDetail.tsx": "identifier",

@@ -231,9 +231,6 @@ case: the run has no next step yet, `?approve=1` presses **Approve** on its own,
 and reopening the plan through **Review plan** shows **Approved** with no
 primary.
 
-`scenes/sceneReveal.ts` opens the completed mounts and keeps a mount row in
-its hover state, so the row actions show up in a still image.
-
 Scenes that set a state through query params (`&mode=`, `&v=`, `&open=`,
 `&view=`) live in `scenes/audit/`, one file per scene, and share the frame,
 settings and workspace seeds there. They are registered in `MOCK_SCENES` like

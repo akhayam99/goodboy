@@ -1552,7 +1552,8 @@ task up again in Goodboy.
 - **Autonomy** is the setting that decides how often a run stops for you.
   Its top choice is **Autopilot** (it was Autorun, Run on its own and When to ask).
 - **Needs you** is the one name for anything that waits on you: the top bar
-  group, the board column, the questions list and an agent in a mount row.
+  group, the board column, the questions list and the Overview section above
+  Next.
   The reason follows it ("Needs your answer in step 2"). "Waiting on you" is
   retired.
 - **Your job** is the About you field that lists what you do (it was Your
@@ -1642,7 +1643,7 @@ the Needs you row waits.
 
 A pull request has one state word, from `pullRequestKindOf` in
 `shared/pullRequestKind.ts`, and every surface that names it reads that
-function: the Overview mount rows, the Branch header and menus, the pull
+function: the Branch header and menus, the pull
 request pane and strip, the detail facts and the ask pack. The order is merged,
 closed, queued, approved, in review, draft. GitHub keeps `isDraft` true on a
 closed or merged draft, so the flag alone never makes a word: a closed or merged

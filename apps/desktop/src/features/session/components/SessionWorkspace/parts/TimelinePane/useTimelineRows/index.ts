@@ -375,13 +375,11 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
 
   const shownQuestions = useMemo(() => {
     const shown = new Set(shownQuestionIds({ items: stream.items }));
-    if (view === 'activity') {
-      for (const owner of owners) {
-        owner.questionIds.forEach((id) => shown.add(id));
-      }
+    for (const owner of owners) {
+      owner.questionIds.forEach((id) => shown.add(id));
     }
     return shown;
-  }, [owners, stream.items, view]);
+  }, [owners, stream.items]);
 
   const estimatedDetails = useMemo(() => {
     const details = new Map<string, DecisionChangeDetail>();

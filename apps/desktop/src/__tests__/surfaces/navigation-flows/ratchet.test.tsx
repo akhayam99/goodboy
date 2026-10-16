@@ -64,6 +64,8 @@ const EXEMPT: Readonly<Record<string, string>> = {
   openStorageArtifact:
     'storage rows list artifacts read from disk, which the bridge mock has none of',
   openScribePullRequest: 'the engine pushing and opening the pull request, not a page',
+  openMountRequest:
+    'the registry verb behind the pull request link of the retired Overview mount rows; the worktree level entry opens the page through navigate',
 };
 
 const CHROME_TARGET_CEILING = 24;

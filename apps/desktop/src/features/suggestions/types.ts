@@ -67,7 +67,7 @@ type SuggestionBase = {
   readonly targetKey: string | null;
 };
 
-export type CleanupWorktree = {
+type CleanupWorktree = {
   readonly mountId: MountId;
   readonly requestId: string;
   readonly branch: string;

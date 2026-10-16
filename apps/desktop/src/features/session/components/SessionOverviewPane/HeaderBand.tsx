@@ -9,9 +9,9 @@ type Props = {
 };
 
 export const HeaderBand = ({ session }: Props) => (
-  <div className="flex min-w-0 flex-col gap-2">
-    <ChatOriginRow session={session} />
+  <div className="flex min-w-0 flex-col gap-1">
     <GoalTeaser session={session} />
+    <ChatOriginRow session={session} />
     <SessionDropPill />
     <TaskDragLayer />
   </div>

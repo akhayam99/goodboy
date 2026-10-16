@@ -9,9 +9,9 @@ import {
   WAIT,
   branchTab,
   click,
-  clickFirstButton,
   findSection,
   getSection,
+  openCrumb,
   settle,
   useAppStore,
 } from './harness';
@@ -91,7 +91,7 @@ const addSecondBranch = ({ sessionId }: Ctx): void => {
 const paneHeading = (): string | null =>
   document.querySelector('[data-slot="pane-header"] h1')?.textContent ?? null;
 
-const openBranchPage = (): Promise<void> => clickFirstButton(/^Open PR #\d+ of /);
+const openBranchPage = (): Promise<void> => openCrumb(/Branch/);
 
 export const BRANCH_COLUMN_ROWS: ReadonlyArray<Row> = [
   {

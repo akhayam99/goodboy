@@ -49,16 +49,19 @@ const renderScene = ({ name }: RenderSceneParams) => {
   );
 };
 
-const goneRowOf = async () => {
-  await screen.findAllByTestId('project-mount-row', {}, WAIT);
-  await waitFor(() => expect(screen.getByText('Branch deleted')).toBeDefined(), WAIT);
-  const row = screen
-    .getAllByTestId('project-mount-row')
-    .find((candidate) => within(candidate).queryByText('Branch deleted') !== null);
-  if (row === undefined) {
-    throw new Error('no row says Branch deleted');
+const goneNotice = async (): Promise<HTMLElement> => {
+  const notices = await screen.findByRole('region', { name: 'Notices' }, WAIT);
+  await waitFor(
+    () => expect(within(notices).getByText('Its branch was deleted.')).toBeDefined(),
+    WAIT,
+  );
+  const notice = within(notices)
+    .getByText('Its branch was deleted.')
+    .closest<HTMLElement>('[data-closed-worktree]');
+  if (notice === null) {
+    throw new Error('no closed worktree notice says the branch was deleted');
   }
-  return row;
+  return notice;
 };
 
 describe('the gone branch scenes', () => {
@@ -66,23 +69,23 @@ describe('the gone branch scenes', () => {
     expect(Object.keys(U25_B_GONE_BRANCH_SCENES)).toEqual(['gone-branch', 'gone-branch-restore']);
   });
 
-  it('gone-branch says Branch deleted and offers Remove, never Reopen or Restore', async () => {
+  it('gone-branch says the branch was deleted in the notices and offers Remove, never Reopen or Restore', async () => {
     renderScene({ name: 'gone-branch' });
 
-    const row = await goneRowOf();
+    const notice = await goneNotice();
 
-    within(row).getByRole('button', { name: /^Remove for/ });
-    expect(within(row).queryByRole('button', { name: /^Reopen for/ })).toBeNull();
-    expect(within(row).queryByRole('button', { name: /^Restore branch for/ })).toBeNull();
+    within(notice).getByRole('button', { name: /^Remove for/ });
+    expect(within(notice).queryByRole('button', { name: /^Reopen for/ })).toBeNull();
+    expect(within(notice).queryByRole('button', { name: /^Restore branch for/ })).toBeNull();
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('gone-branch-restore offers Restore branch beside Remove', async () => {
     renderScene({ name: 'gone-branch-restore' });
 
-    const row = await goneRowOf();
+    const notice = await goneNotice();
 
-    within(row).getByRole('button', { name: /^Restore branch for/ });
-    within(row).getByRole('button', { name: /^Remove for/ });
+    within(notice).getByRole('button', { name: /^Restore branch for/ });
+    within(notice).getByRole('button', { name: /^Remove for/ });
   });
 });

@@ -9,10 +9,11 @@ import {
   branchTab,
   click,
   clickButton,
-  clickFirstButton,
   heading,
   lens,
   openBranchFiles,
+  openCrumb,
+  openWorktreeEntry,
   openPalette,
   settle,
   useAppStore,
@@ -79,18 +80,18 @@ const ownPage = (): Promise<void> => heading(/Stop retried webhooks/);
 
 export const BRANCH_PAGE_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'branch page from the mount row',
-    covers: ['openMountRequest', 'openReviewTarget'],
-    open: () => clickFirstButton(/^Open PR #\d+ of /),
+    name: 'branch page from the worktree row of the session level',
+    covers: ['lens:branch'],
+    open: () => openCrumb(/Branch/),
     lands: both(branchTab('pr'), ownPage),
   },
   {
-    name: 'mount row: comments to resolve open the Branch on its Comments',
-    covers: ['openReviewTarget', 'lens:branch'],
+    name: 'worktree level: the Comments entry opens the Branch on its Comments',
+    covers: ['lens:branch'],
     open: async (ctx) => {
       seedReviewComment(ctx);
       await settle();
-      await clickFirstButton(/^Open Comments for .+, 1 to resolve$/);
+      await openWorktreeEntry(/^Comments/);
     },
     lands: both(branchTab('comments'), worktreeMarked),
   },

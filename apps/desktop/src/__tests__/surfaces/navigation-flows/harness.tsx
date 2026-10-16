@@ -354,6 +354,28 @@ export const openCrumb = async (label: RegExp): Promise<void> => {
   );
 };
 
+const worktreeLevel = async (): Promise<HTMLElement> => {
+  await openCrumb(/Branch/);
+  await waitFor(() =>
+    expect(document.querySelector('[data-level-layer="worktree"]:not([inert])')).not.toBeNull(),
+  );
+  const level = document.querySelector<HTMLElement>('[data-level-layer="worktree"]:not([inert])');
+  if (level === null) {
+    throw new Error('the sidebar is not on a worktree level');
+  }
+  return level;
+};
+
+export const openWorktreeEntry = async (name: RegExp): Promise<void> => {
+  const level = within(await worktreeLevel());
+  await click(await level.findByRole('button', { name }, WAIT));
+};
+
+export const openWorktreeMenu = async (): Promise<void> => {
+  const level = within(await worktreeLevel());
+  await click(await level.findByRole('button', { name: / actions$/ }, WAIT));
+};
+
 export const openPalette = async (label: RegExp, query?: string): Promise<void> => {
   await clickButton(/^Search \(/);
   if (query !== undefined) {

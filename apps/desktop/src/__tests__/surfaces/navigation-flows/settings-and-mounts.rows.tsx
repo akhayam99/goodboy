@@ -8,7 +8,7 @@ import {
   branchTab,
   click,
   clickButton,
-  clickFirstButton,
+  openWorktreeMenu,
   heading,
   lens,
   openBranchFiles,
@@ -87,7 +87,7 @@ export const SETTINGS_AND_MOUNT_ROWS: ReadonlyArray<Row> = [
     name: 'mount row menu: scripts',
     covers: ['navigate', 'lens:scripts'],
     open: async () => {
-      await clickFirstButton(/ on .+ actions$/);
+      await openWorktreeMenu();
       await click(await screen.findByRole('menuitem', { name: /^Open scripts/ }));
     },
     lands: both(lens('scripts'), () => heading('Scripts')),
@@ -96,7 +96,7 @@ export const SETTINGS_AND_MOUNT_ROWS: ReadonlyArray<Row> = [
     name: 'mount row menu: terminal',
     covers: ['openMountTerminal'],
     open: async () => {
-      await clickFirstButton(/ on .+ actions$/);
+      await openWorktreeMenu();
       await click(await screen.findByRole('menuitem', { name: /^Open terminal/ }));
     },
     lands: async () => {

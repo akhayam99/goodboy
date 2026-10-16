@@ -40,7 +40,7 @@ const renderActivity = () =>
   render(
     <ToastProvider>
       <ObjectMenuProvider>
-        <TimelinePane session={SESSION} actions={null} />
+        <TimelinePane session={SESSION} />
       </ObjectMenuProvider>
     </ToastProvider>,
   );

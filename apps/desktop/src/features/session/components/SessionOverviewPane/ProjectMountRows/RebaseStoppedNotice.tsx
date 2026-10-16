@@ -7,7 +7,7 @@ import { worktreeAbortRebase } from '../../../../worktree/worktree';
 import { useRebaseAgent } from '../../../hooks/useRebaseAgent';
 import { ensure, worktreeStatusKey } from '../../../../../store/slices/worktreeStatuses/cache';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { rebaseStoppedBody } from './mountRowState';
+import { rebaseStoppedBody } from './rebaseStoppedBody';
 
 type Props = {
   readonly sessionId: SessionId;

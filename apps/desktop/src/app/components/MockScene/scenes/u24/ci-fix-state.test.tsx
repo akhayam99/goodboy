@@ -219,7 +219,10 @@ describe('CI fix state scenes', () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
     });
     const body = document.body.textContent ?? '';
-    expect(body).toContain('hl/fix-duplicate-credit');
+    const branches = Object.values(store.getState().sessionProjectMounts)
+      .flat()
+      .map((mount) => mount.branch);
+    expect(branches).toContain('hl/fix-duplicate-credit');
     expect(body).not.toContain('No project yet');
     const [title] = screen.getAllByText('CI fix · payments-api / test · #318');
     let row: HTMLElement | null = title?.parentElement ?? null;
@@ -347,7 +350,17 @@ describe('CI fix state scenes', () => {
         return { stdout: '', stderr: 'rejected: non-fast-forward', exitCode: 1 };
       }
       if (command === 'worktree_commits') {
-        return [];
+        return [
+          {
+            sha: '9e4c1a7d3b5f60718293a4b5c6d7e8f901234567',
+            shortSha: '9e4c1a7',
+            subject: 'Guard the retry against double credits',
+            author: 'Acme Dev',
+            timestamp: Math.floor(Date.now() / 1_000) + 3_600,
+            pushed: false,
+            parentSha: null,
+          },
+        ];
       }
       return null;
     });

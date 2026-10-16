@@ -226,8 +226,12 @@ When a lifecycle step must continue but a directory cannot go (dirty, locked,
 in use), cleanup records a `pending` proposal instead of deleting. Archiving a
 session never deletes either: it proposes cleanup for every mount still on
 disk. Deleting a directory is always a named user action (unmount, remove,
-detach). The user resolves a proposal inline: remove runs a normal unmount,
-keep settles it. Paths that
+detach). The user resolves a proposal from the Overview Next slot
+(`cleanupSuggestionOf`): one row `Remove the <project> worktree` with the reason
+and the size (`#418 merged · 412 MB`, or `Session archived`), or one row
+`Remove 2 merged worktrees` for several. `Remove worktree` asks first, then runs a
+normal unmount for each proposal in turn; `Not now` hides the row with Undo
+(the proposal stays pending, keyed by its request ids). Paths that
 outlive their row move to `retained_worktree_paths` and are probed later;
 anything a worktree scan finds that no row, retained path or unsettled
 operation owns is reported as an orphan.
@@ -297,34 +301,25 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
   adopts the observed branch on the existing mount; `fork` adopts it on the
   existing directory and creates a second mount for the recorded branch. An
   in-progress merge, rebase or cherry-pick is finished first.
-- **A stopped rebase says so under its row.** Only `rebase-merge/` or
-  `rebase-apply/` count, as git reads them. The Projects block shows a
+- **A stopped rebase says so in the Overview notices.** Only `rebase-merge/` or
+  `rebase-apply/` count, as git reads them. The Overview notices slot
+  (`OverviewNotices`, one `MountNotices` per open mount) shows a
   `Rebase stopped` notice with `Hand it to an agent` (a `Rebase on <base>`
   agent on that mount finishes it), `Open terminal`, and `Abort rebase`
   behind an inline confirm (`worktree_abort_rebase`, which refuses when no
   rebase is stopped).
-- **A row names its layers.** Each Projects row links the three code host
-  layers by name: `PR #318` with its state opens the pull request, the diff
-  stat (`useMountDiffStats`, read from `sessionWorktreeRecords`, which
-  `applyMountViews` rewrites on every mount change, so a branch attached or
-  forked while the session is open counts at once) opens the Diff,
-  and `N to resolve` (only while review comments of
-  that pull request wait) opens Review on them. `Rewrite history` sits in the
-  row menu.
-- **Finished rows move under `Show finished`.** A row is finished when its
-  request merged or closed, or when a pushed branch that tracks its own name has a
-  clean tree and nothing past the base. `classifyMountRows` in `mountRowModel.ts`
-  is the one place that decides, from the request first and the worktree status
-  second, so a row placed by its request never moves when its status arrives. Ancestry alone never decides it while
-  the mount links an open request (draft, open, approved or queued):
-  `isBranchMergedOf` takes `hasOpenRequest` and answers no, so such a row is
-  never under Show finished and never reads `Merged`. A worktree with nothing past
-  the base whose HEAD is not the open request's head sha reads `Not on the PR's
-commits` (`branchPresenceOf`, `openRequest`); on the request's head it reads
-  as any row. A merged request whose branch moved
-  past its `merged_head_sha` stays open instead and reads `Merged, then N
-new commits` (`checkMergedThen`, one git check per tip, kept in
-  `mergedThen` by mount).
+- **A worktree names its layers on its level.** The worktree level of the
+  sidebar holds the code host layers as entries: Pull request with its number,
+  Files with the diff count (`useMountDiffStats`, read from
+  `sessionWorktreeRecords`, which `applyMountViews` rewrites on every mount
+  change, so a branch attached or forked while the session is open counts at
+  once) and Comments while review comments wait. `Rewrite history` sits in the
+  identity row menu.
+- **Finished worktrees fold into `N finished`.** A row is finished when its
+  request merged or closed (`isCompletedRequest` in `buildMountRows`,
+  `mountRowModel.ts`); the session level folds those rows under one
+  `N finished` row per project. Ancestry never decides it, so a row never moves
+  when its worktree status arrives.
 - **A GitLab row reads the same facts as a GitHub one.** `refreshSessionMr`
   fills `mountGitlabMr` per mount and, for an open merge request only, reads it
   once more (`gitlab_get_mr`: the head pipeline and the merge status) with its
@@ -490,54 +485,48 @@ writing the row when git cannot confirm a worktree. A guard on an action the
 UI offers reads the rendered view, not a fresh DB row; otherwise it refuses an
 action the user can see, or allows one on a mount the user sees as gone.
 
-## Mount row
+## Worktree rows and the Overview notices
 
-Every row of every project shares one grid (each project group and its list
-are subgrids of it), so the columns line up down the whole section: branch,
-series part, distance to main, diff, state, action, menu. A column no row
-fills takes no width, and below a 36rem container the distance and diff cells
-empty out (the Changes lens still has the diff). The row's actions come from
-the `mount` kind of the action registry
-(`features/actions/kinds/mount.ts`). The action cell shows the one action
-the state calls for, picked by its `inline` slot: `Rebase on main` when main
-moved, `Push N commits` when commits wait on a branch with a pull request (`Force push N commits` once the branch diverged from origin: N counts the branch's own commits, and the tooltip says the two copies differ and force push replaces the online copy with lease; the verb is enabled and asks "Replace the online copy?" in a popover on the button, or "Replace the online copy and drop N commits?" with up to three subjects when `history_origin_ahead` (`onlyOnline`, read by `loadOnlyOnline` for the active session) found commits that exist only online (merge commits included; only bringing origin into a rewrite refuses a merge), then re-reads the origin and pushes only when every commit that exists only online is one the confirm listed (otherwise it shows "The online copy changed. Check again before force pushing." and pushes nothing; a confirm that said nothing was checked accepts only an empty list), with a lease on the origin sha it just read, and a stale lease shows that origin has new commits and nothing was pushed; a diverged branch with no own commits stays blocked),
-`Create PR` when the branch has commits and no pull request, `Close branch`
-once the pull request merged, `Reopen` on a closed row. A blocked action stays
-visible, disabled, with its reason in the tooltip. The row menu
-(`⋯`, also on right click) lists only the rare verbs of the worktree: the terminal, the editor (one submenu level
-of detected editors), scripts, Rewrite history, Switch branch,
-Start new turns here (only with two or more mounts) and the copies. It is not drawn when fewer than two would be left.
-The verbs of every day sit on the row: the state verb (Rebase, Push, Create PR), a quiet Close branch icon that asks in a `ConfirmPopover` (`MountConfirmAction`, from the action's own confirm), Reopen on a closed row (Remove from session sits in its `...` menu), and on a closed row whose branch was deleted locally and on origin the chip reads Branch deleted, Reopen gives way to Restore branch (only when Goodboy kept a saved copy of the branch) and a Remove button that also deletes the kept folder after the dirty-files guard (`checkMountBranchGone`, `removeGoneMount`, `restoreGoneBranch`), a failed Reopen whose cause cannot change (branch gone) shows no Retry and can be dismissed, and Close branch as text on a finished row. There are no hover-only icons
-on the row. When a rebase stops, the notice under the row brings the terminal
-and Abort rebase forward. Below a 28rem container New branch shows its icon
-only. The project row has no menu: `MountActionsMenu` is the quiet Remove from session icon, a `ConfirmPopover` anchored to it
-(`DetachConfirm`), and renders nothing when the project has no mount to remove.
+The Overview has no Projects section. A worktree is a one line row of the
+session level in the sidebar (`WorktreeRow`: branch, pull request number, the
+worst state as one dot) and drills into its worktree level, whose identity row
+menu holds the `mount` kind of the action registry
+(`features/actions/kinds/mount.ts`) and whose status line holds Rebase. The
+navigation rules live in [navigation.md](navigation.md#sidebar-levels).
 
-With two or more mounts, a row shows its presence (`MountPresence`): the
-state node of each agent whose turn runs, waits on an answer or needs you in
-that mount, at most three, then a count. A node opens that agent. There is no
-badge for the mount new turns start in; the chat header owns that choice.
+What a worktree asks the user to decide shows once, in the Overview notices
+slot (`OverviewNotices`, one `MountNotices` per open mount, the first lap
+`LapProjectRow` with Publish before any mount exists):
 
-The branch chip is the branch control: on a mounted repo row the whole chip
-opens the branch switcher, whose header copies the branch name. Where the
-branch cannot switch (unmounted rows, folder projects, a rebase in progress)
-the chip only shows the name, and with uncommitted changes it says why in its
-tooltip. Copy branch name lives in the row menu.
+- **A closed worktree** (`ClosedWorktreeNotice`) says the branch and project,
+  then `Its files are still on disk.`, `Its files were removed.` or, when its
+  branch was deleted locally and on origin, `Its branch was deleted.`
+  (`checkMountBranchGone`). Its buttons are the mount's `inline` registry verbs:
+  `Reopen`, `Restore branch` (only when Goodboy kept a saved copy,
+  `restoreGoneBranch`) and, for a deleted branch, `Remove`
+  (`removeGoneMount`, after the dirty-files guard). A verb with a confirm asks
+  in `ActionConfirmPanel` under the notice.
+- **A failed action** of that mount raises `MountActionFailureNotice`
+  (`danger`, `Couldn't <verb> <project>`, `Details`, `Retry`); a failure whose
+  cause cannot change shows no Retry and can be dismissed.
+- **A stopped rebase**, **foreign commits** on origin (`ForeignCommitsNotice`),
+  **a branch drift decision** (`MountBranchDecision`) and the **Also in** chip
+  of a branch another session holds (`AlsoInChip`).
 
-A branch row shows the tasks linked to that branch as chips (`LinkedTaskChip`, the
-`task` kind). The visible **Put on a branch** action opens an anchored picker for a linked
-task, with **Link work** for another task and **New branch for** to give a
-task its own branch. The same picker opens from **Link work to this branch** (the
-`mount.putTaskOnBranch` label in a mount menu), anchored under the identity row of the
-sidebar's worktree level. Every placement change goes through
-`moveSessionExternalTask` (`to` a session or a branch of the task's own
-project, `isCopy` keeps the source): it computes the next rows of that task and
-writes them once, so one Undo restores the exact rows, including removing a
-generated session row. `assignSessionExternalTask` and
-`takeOffSessionExternalTask` are thin callers of it. A task of another project
-is refused. The chip opens its task; its context menu (Shift+F10) holds
-**Move to**, and its hover or focus x reads **Move to session** when the branch
-is the only placement and **Take off project / branch** otherwise. `forkMount` takes `taskIdentifier` and `taskTitle` so a
-worktree made for a task is named `{prefix}/{task-id}-{slug}`. The session header,
-Board card and sidebar dedupe by provider and external id (`distinctTasks`); the
-branch is visible only under its row in the Projects card.
+The slot draws nothing when nothing is present.
+
+A worktree row of the session level is also a drop target for a linked task
+(`data-task-drop="branch"`): dragging a Linked row onto it moves the task to that
+branch, Alt copies (`useTaskDrag`, `useTaskDropState`). Every placement change
+goes through `moveSessionExternalTask` (`to` a session or a branch of the
+task's own project, `isCopy` keeps the source): it computes the next rows of that
+task and writes them once, so one Undo restores the exact rows, including
+removing a generated session row. `assignSessionExternalTask` and
+`takeOffSessionExternalTask` are thin callers of it. A task of another project is
+refused. **Link work to this branch** (the `mount.putTaskOnBranch` label in a
+mount menu) opens the put on a branch picker anchored under the identity row of
+the worktree level. `forkMount` takes `taskIdentifier` and `taskTitle` so a
+worktree made for a task is named `{prefix}/{task-id}-{slug}`. The Linked rows,
+the Board card and the sidebar dedupe by provider and external id
+(`distinctTasks`); a task only placed on a branch is a Linked row too, named
+`on <branch>`.
