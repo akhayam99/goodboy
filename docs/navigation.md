@@ -709,9 +709,9 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   fixed right-aligned slot from `worktreeEntryFactsOf`: `#418 Draft` or
   `None`, the comment count with a warning dot while one waits on you, the
   file count, `2 not pushed` or the commit count, `1 failed` with a danger dot
-  or the check count. Files is an accordion: picking it opens the changed file
-  tree (`ChangeTree`, the tree pane of `SessionDiffPane`) right under the row
-  and the diff fills the center; any other entry closes it. The entries are
+  or the check count. Files is a plain entry like the others: picking it opens
+  the diff page in the center, whose changed file list sits in its own rail on
+  the right of that page (see Branch page, Files), never in the session rail. The entries are
   the Branch page's own rail, portalled into the level (`worktreeLevelSlot`),
   so the page keeps one source for every number. ⌘[ in the rail and the
   back row go up one level each.
@@ -736,8 +736,8 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   level the back icon, then one ring per rail row with its role and state in
   the tooltip (`RailAutoLevel`); on level 1 one icon per page with its dot.
   ⌘B folds the column only, which shows New, the doors and the pinned session
-  nodes on every screen. The changed file tree needs the open rail; the diff
-  and its keys work without it.
+  nodes on every screen. Folding the session rail leaves the diff page's file
+  rail as it is.
 - **Level 2, a preset run.** Opening a run with a fixed step list (a saved
   workflow or Describe steps; `executionMode` not `dynamic`) drills the rail
   into it (`RunLevel`, `LevelStack` layer `run`). It reads: the back row
@@ -3098,7 +3098,8 @@ properties (Origin, Attempts, Fix commit) sit inline under the thread at every w
 actions of the comment sit in a 48px bar (`ReviewActionBar`) at the bottom of the thread column, outside the scrolling thread, so Apply fix is in view at 1440x900; `⋯` holds the transcript, Resolve without a reply, Open on the host and Copy link.
 Every Branch section sits on the 960px column (`PaneShell width="column"`, bodies in
 `PageColumn width="column"`), the header and Ask included, so nothing
-moves from one section to the next. The Comments section reads the width of its own pane
+moves from one section to the next, except that Files gives up the width of its file rail
+on the right and the column re-centres in what is left. The Comments section reads the width of its own pane
 (`branchLayoutOf`, so a wide sidebar, the rail or an open drawer narrows it): from 900px a
 300px list beside a wide thread; under 900px the list, then the thread, with no back link: the
 `Branch` crumb, with the thread's own crumb after it, is the way back to the list. The selected row stays selected on the way back.
@@ -3109,15 +3110,26 @@ unknown (`worktreeEntryFactsOf`). All three arrive without a visit: `BranchPage`
 the mount's history draft (`loadHistoryDraft`) once when the page opens and the
 draft is not there yet, so the Commits count is a number on the Comments section too. `Fix comments N`, in the section header and in the Files toolbar, is the one fix launch.
 
-**Files.** The branch against its base, on the column like every other section, with
-the change tree in the session rail, right under the Files entry (the accordion of the worktree level).
-`BranchRail` renders the Files group host (`data-slot="branch-rail-files"`) under the Files row
-only while Files is the entry, and `BranchPage` hands it to `SessionDiffPane` through `DiffRailContext`
-(`features/diff/diffRailHost.ts`); `SessionDiffPane` portals `ChangeTree` into it, so the
-tree and the diff still share one `useReviewState` and the keys stay in `useDiffKeys`. The tree
-never moves the column: no entry and no resize change the title, Ask or the diff's left
-edge. `F` and `/` focus the tree or the filter (`useTreeFocus`). The group reads the filter field (`/`) with the filter menu
-beside it (scope and grouping), the tree and `Next unviewed N` with the keyboard button;
+**Files.** The branch against its base, with the changed file list in a rail on the
+right of the Branch page, dedicated to the diff (`FileRail` in `features/diff/components`).
+`BranchPage` draws an empty slot (`data-slot="diff-file-rail"`) after the page column only
+while Files is the entry and hands it, with the page element, to `SessionDiffPane` through
+`DiffRailContext` (`features/diff/diffRailHost.ts`); `SessionDiffPane` portals the rail with
+`ChangeTree` into it, so the tree and the diff still share one `useReviewState` and the keys
+stay in `useDiffKeys`. Without a slot (a test, a scene of the pane alone) the rail sits beside
+the diff inside the pane. The rail runs the full height of the page, beside the header and the
+diff, so the column re-centres in the space left of it the way it slides for a right drawer.
+It opens at 320px, its left edge resizes it from 260 to 560 (`Resize the file list`, a double
+click resets it) and the width is kept in `goodboy:diff-file-rail-width:v1`. `Fold the file
+list` in its head folds it and `goodboy:diff-file-rail-folded:v1` remembers that; folded, the
+diff toolbar ends in `Files N`, which opens it again, and `F` or `/` open it too (`useFileRail`).
+The rail belongs to the page, not to the drawer slot: a side or reader drawer pushes or lies
+over the whole page (rail included) by the push rule of Drawers below. The rail docks while
+the page is 880px or wider (560 for the diff plus the rail); a narrower page (a pushing drawer,
+a small window) folds it without writing the saved choice, and `Files N`, `F` or `/` then open it
+over the right edge of the diff (`data-file-rail="overlay"`) until a pick, `Esc` or Fold
+closes it. The rail head reads `Next unviewed N`, the keyboard button and Fold, then the
+filter field (`/`) with the filter menu beside it (scope and grouping), then the tree;
 each file row keeps its viewed mark.
 The toolbar on the column (36 high, the diff scrolls under it) reads `Compared with main · All 5 commits ⌄`,
 then `Display ⌄` and `Fix comments N` (every open note and host thread, in every
@@ -3131,14 +3143,15 @@ carry them); a file row (28 high, 8 per level with a 1px guide) leads with the v
 toggle (a checkbox button, `Viewed: <name>`; an amber dot when the file changed after
 it was viewed; none on a merged or closed pull request), then the name (a rename shows
 `from <old path>` under it, a deleted file is struck through), a comment count chip whose
-tooltip names the kinds (`2 notes, 1 on GitHub`), `+N −N` only at a rail of 340 or more, and
-the status letter. A name too long for the rail keeps its first six characters and its last
+tooltip names the kinds (`2 notes, 1 on GitHub`), `+N −N` only at a rail of 300 or more, and
+the status letter. `+N` and `−N` sit in two fixed right-aligned columns (`Delta`), and a closed
+folder keeps the status letter's slot empty, so every count lines up down the list. A name too long for the rail keeps its first six characters and its last
 six with the extension chain (`Statem…ceCard.test.tsx`, `cutFileName`); the full name stays
 for a screen reader. A file or folder row has no tooltip: the full path is in the file header of the diff. The tree is a `tree`: Up and Down move
 its cursor, Home and End go to the ends, Right and Left open, close and climb, `Enter` jumps
 the diff and keeps focus in the tree, `Space` toggles viewed (or folds a folder) and `Esc`
-returns to the diff. A keyboard button beside `Next unviewed` at the foot of the tree
-carries the key hint in its tooltip and opens the full list.
+returns to the diff (and closes a rail that lies over it). A keyboard button beside
+`Next unviewed` at the head of the rail carries the key hint in its tooltip and opens the full list.
 Under the head a filter field (`/` and `T` focus it, `Esc` clears it) matches a
 subsequence of the path, and one filter menu beside the field (`Filter and group files`,
 tinted while a scope is on) holds `Show: All | Unviewed N | Commented N`, which narrows it

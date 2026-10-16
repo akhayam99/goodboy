@@ -175,12 +175,15 @@ describe('SPEC3 9.6 Branch page capabilities from the worktree level', () => {
     expect(screen.queryByRole('region', { name: 'Description' })).toBeNull();
   });
 
-  it('Files keeps the tree with its filter beside the diff', async () => {
+  it('Files keeps the tree with its filter in the file rail on the right of the diff', async () => {
     await mount('c04-worktree-files');
 
-    expect(level().getByRole('navigation', { name: 'Changed files' })).toBeDefined();
-    expect(level().getByRole('searchbox', { name: 'Filter files' })).toBeDefined();
-    expect(level().getByRole('button', { name: 'Filter and group files' })).toBeDefined();
+    const rail = within(screen.getByRole('complementary', { name: 'Files' }));
+    expect(rail.getByRole('navigation', { name: 'Changed files' })).toBeDefined();
+    expect(rail.getByRole('searchbox', { name: 'Filter files' })).toBeDefined();
+    expect(rail.getByRole('button', { name: 'Filter and group files' })).toBeDefined();
+    expect(rail.getByRole('button', { name: /^Next unviewed/ })).toBeDefined();
+    expect(level().queryByRole('navigation', { name: 'Changed files' })).toBeNull();
   });
 
   it('Commits and Checks open their bodies from their entries', async () => {

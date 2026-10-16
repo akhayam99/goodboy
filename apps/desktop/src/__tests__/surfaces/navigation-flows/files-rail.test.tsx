@@ -9,10 +9,35 @@ vi.mock('@tauri-apps/api/event', () => ({
 }));
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
-import { vi } from 'vitest';
+import { afterEach, beforeEach, vi } from 'vitest';
 import { installNavigationHooks, runNavigationRows, type BridgeArgs } from './harness';
 import { filesRailBridge } from './files-rail.runner';
 import { FILES_RAIL_ROWS } from './files-rail.rows';
 
+type ObserverCallback = (entries: ReadonlyArray<{ contentRect: { width: number } }>) => void;
+
+class BranchPaneWidth {
+  private readonly callback: ObserverCallback;
+  constructor(callback: ObserverCallback) {
+    this.callback = callback;
+  }
+  observe(target: Element) {
+    if (target.hasAttribute('data-branch-pane')) {
+      this.callback([{ contentRect: { width: target.getBoundingClientRect().width } }]);
+    }
+  }
+  unobserve() {}
+  disconnect() {}
+}
+
 installNavigationHooks();
+
+beforeEach(() => {
+  vi.stubGlobal('ResizeObserver', BranchPaneWidth);
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
 runNavigationRows({ rows: FILES_RAIL_ROWS });

@@ -1,20 +1,23 @@
-import { useCallback, useContext, useMemo, useRef, type ReactNode } from 'react';
+import { useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { PanelRightOpen } from 'lucide-react';
 import { Button, ErrorStrip, EmptyState, PageColumn, Skeleton, formatError } from '@goodboy/ui';
 import type { FileDiff, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectMountBaseBranch } from '../../../../store/slices/project-mounts/selectors';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { openFileInWorkspace } from '../../../../shared/lib/editor';
 import { resolveEditorBinary } from '../../../../shared/lib/editorSettings';
 import { DiffViewSelector } from '../../../permissions/components/DiffViewSelector';
 import { useDiffKeys } from '../../hooks/useDiffKeys';
+import { useFileRail } from '../../hooks/useFileRail';
 import { useReviewState } from '../../hooks/useReviewState';
 import type { SessionDiff } from '../../hooks/useSessionDiff';
 import { useTreeFocus } from '../../hooks/useTreeFocus';
 import { DiffRailContext } from '../../diffRailHost';
 import { nextUnviewedPath } from '../../lib/fileOrder';
 import { ChangeTree } from '../ChangeTree';
+import { FileRail } from '../FileRail';
 import { TreeLoading } from '../ChangeTree/TreeLoading';
 import { worktreeFileSides, type GrepMatch } from '../../../worktree/worktree';
 import { DiffView } from '../DiffView';
@@ -45,8 +48,15 @@ export const SessionDiffPane = ({
   );
 
   const filterRef = useRef<HTMLInputElement | null>(null);
-  const rail = useContext(DiffRailContext);
-  const panel = useTreeFocus({ host: rail.host, open: rail.open, dismiss: rail.dismiss });
+  const slots = useContext(DiffRailContext);
+  const [ownPage, setOwnPage] = useState<HTMLDivElement | null>(null);
+  const [railBody, setRailBody] = useState<HTMLDivElement | null>(null);
+  const rail = useFileRail({ page: slots.page ?? ownPage });
+  const panel = useTreeFocus({
+    host: rail.isShown ? railBody : null,
+    open: rail.open,
+    dismiss: rail.dismiss,
+  });
 
   const isEmpty = !diff.loading && diff.error === null && diff.files.length === 0;
   const hasTree = !diff.loading && diff.error === null && diff.files.length > 0;
@@ -211,6 +221,15 @@ export const SessionDiffPane = ({
       </PageColumn>
     );
 
+  const filesToggle =
+    rail.isShown || !hasTree ? null : (
+      <Button size="sm" variant="quiet" onClick={panel.focus}>
+        <PanelRightOpen size={ICON_SIZE.row} aria-hidden />
+        Files
+        <span className="tabular-nums text-faint-foreground">{review.allFiles.length}</span>
+      </Button>
+    );
+
   const body = diff.loading ? (
     <PageColumn className="flex flex-col gap-3">
       {[0, 1].map((index) => (
@@ -265,7 +284,12 @@ export const SessionDiffPane = ({
       columnWidth="full"
       identifierPeek={identifierPeek}
       toolbarStart={selector}
-      toolbarEnd={toolbarEnd}
+      toolbarEnd={
+        <>
+          {toolbarEnd}
+          {filesToggle}
+        </>
+      }
     />
   );
 
@@ -310,19 +334,32 @@ export const SessionDiffPane = ({
       onToggleViewed={toggleViewed}
       onNextUnviewed={nextUnviewed}
       onLeave={leaveTree}
+      onFold={rail.fold}
     />
   );
 
-  const railNode = diff.loading ? <TreeLoading /> : hasTree ? tree : null;
+  const railContent = diff.loading ? <TreeLoading /> : hasTree ? tree : null;
+  const railNode =
+    railContent === null || !rail.isShown ? null : (
+      <FileRail isOverlay={rail.isOverlay} bodyRef={setRailBody}>
+        {railContent}
+      </FileRail>
+    );
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-      {rail.host === null || railNode === null ? null : createPortal(railNode, rail.host)}
-      {showsDiff || isEmpty ? null : (
-        <PageColumn className="flex min-w-0 items-center gap-2 pb-3">{selector}</PageColumn>
-      )}
-      {metaNotice}
-      {body}
+    <div ref={setOwnPage} data-diff-pane="" className="relative flex min-h-0 min-w-0 flex-1">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        {showsDiff || isEmpty ? null : (
+          <PageColumn className="flex min-w-0 items-center gap-2 pb-3">{selector}</PageColumn>
+        )}
+        {metaNotice}
+        {body}
+      </div>
+      {railNode === null
+        ? null
+        : slots.slot === null
+          ? railNode
+          : createPortal(railNode, slots.slot)}
     </div>
   );
 };

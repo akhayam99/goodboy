@@ -15,6 +15,18 @@ const PR_BEHIND: WorktreeSceneConfig = {
 const PR_DRAFT: WorktreeSceneConfig = { variant: 'draft', level: 'worktree', tab: 'pr' };
 const NO_PR: WorktreeSceneConfig = { variant: 'none', level: 'worktree', tab: 'pr' };
 const FILES: WorktreeSceneConfig = { variant: 'github', level: 'worktree', tab: 'files' };
+const FILES_FOLDED: WorktreeSceneConfig = {
+  variant: 'github',
+  level: 'worktree',
+  tab: 'files',
+  fileRail: 'folded',
+};
+const FILES_NARROW: WorktreeSceneConfig = {
+  variant: 'github',
+  level: 'worktree',
+  tab: 'files',
+  fileRail: 'overlay',
+};
 const COMMENTS: WorktreeSceneConfig = { variant: 'github', level: 'worktree', tab: 'comments' };
 const CHECKS: WorktreeSceneConfig = { variant: 'merge-blocked', level: 'worktree', tab: 'checks' };
 const REBASING: WorktreeSceneConfig = {
@@ -42,6 +54,8 @@ export const U25_C04_WORKTREE_SCENES = {
   'c04-worktree-pr-draft': () => <WorktreeScene config={PR_DRAFT} />,
   'c04-worktree-no-pr': () => <WorktreeScene config={NO_PR} />,
   'c04-worktree-files': () => <WorktreeScene config={FILES} />,
+  'c04-worktree-files-folded': () => <WorktreeScene config={FILES_FOLDED} />,
+  'c04-worktree-files-narrow': () => <WorktreeScene config={FILES_NARROW} />,
   'c04-worktree-comments': () => <WorktreeScene config={COMMENTS} />,
   'c04-worktree-checks': () => <WorktreeScene config={CHECKS} />,
   'c04-worktree-rebasing': () => <WorktreeScene config={REBASING} />,
