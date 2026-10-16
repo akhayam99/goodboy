@@ -61,7 +61,7 @@ export const WorkflowHistoryList = ({ workflowName, runs, onOpenRun }: Props) =>
               cells={[
                 title,
                 <span className="flex items-center gap-2">
-                  <StateDot state={state.dot} label={state.label} />
+                  <StateDot state={state.dot} label={state.label} isLive />
                   {state.label}
                 </span>,
                 formatAge({ from: run.createdAt, now }),

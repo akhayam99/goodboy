@@ -579,7 +579,7 @@ describe('ExplorePane previews', () => {
       .queryAllByRole('button')
       .filter((button) => !header.contains(button));
     expect(body).toEqual([]);
-    expect(drawer.querySelectorAll('hr, [role="separator"]').length).toBe(1);
+    expect(drawer.querySelectorAll('hr, [role="separator"]').length).toBe(0);
   });
 
   it('toggles wrap for code and remembers the choice', async () => {

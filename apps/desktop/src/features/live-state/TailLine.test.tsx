@@ -31,6 +31,27 @@ describe('TailLine', () => {
     screen.getByText('1m 12s');
   });
 
+  it('draws a needs-you tail in the warning glyph with its answer first and no clock', () => {
+    const { container } = render(
+      <TailLine
+        facts={{
+          state: 'needsYou',
+          phrase: 'Waiting for your answer on step 4',
+          startedAt: at({ msAgo: 72_000 }),
+          actions: [TAIL_ACTION.answer],
+        }}
+        onAction={() => undefined}
+      />,
+    );
+    expect(
+      container.querySelector('[data-tail-state="needsYou"] [aria-label="Needs you"]'),
+    ).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Answer' }).getAttribute('data-variant')).toBe(
+      'secondary',
+    );
+    expect(screen.queryByText('1m 12s')).toBeNull();
+  });
+
   it('shows no clock in the first second', () => {
     const { container } = render(
       <TailLine

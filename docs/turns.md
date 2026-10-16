@@ -513,9 +513,15 @@ Rules the adapters hold, each with a test in `adapters.test.ts`:
   or the step) and reads like every other duration (`formatDuration`: "42s",
   "2m 37s", "1h 12m"), nothing in the first second, and only `working`,
   `waiting` and `queued` tick.
-- A state that waits for the user (`paused`, `failed`, `stopped`) puts its one
-  forward move first as a small secondary button; other actions are quiet text
-  actions.
+- A state that waits for the user (`needsYou`, `paused`, `failed`, `stopped`)
+  puts its one forward move first as a small secondary button; other actions
+  are quiet text actions. `needsYou` (an open question or an approval) draws the
+  warning question node, so "Waiting for your answer on step 4" reads in the
+  needs-you tone.
+- One glyph per state everywhere (`TailGlyph`): `working` and `queued` are the
+  running node (the ring with a pulsing dot the run tree uses), `waiting` an
+  info ring, `needsYou` the question node, `paused`, `failed` and `stopped`
+  their nodes, `idle` a gray dot.
 - Stop names its scope: Stop (a turn), Stop agent (a child or a fix), Stop
   step (a run step), Stop Auto and its agents. Stopping offers no Stop.
 - A stopped or failed Auto child offers Retry through Auto, never Continue.

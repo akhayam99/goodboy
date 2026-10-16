@@ -397,10 +397,12 @@ export const visible = async (role: string, name: RegExp | string): Promise<void
 
 export const heading = (name: RegExp | string): Promise<void> => visible('heading', name);
 
-export const band = async (title: string): Promise<void> => {
+export const studio = async (title: string): Promise<void> => {
   await waitFor(
     () =>
-      expect(document.querySelector(`[data-studio-band][aria-label="${title}"]`)).not.toBeNull(),
+      expect(
+        document.querySelector(`[data-studio-frame][data-studio-title="${title}"]`),
+      ).not.toBeNull(),
     WAIT,
   );
 };

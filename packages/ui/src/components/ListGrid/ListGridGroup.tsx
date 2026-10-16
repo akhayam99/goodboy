@@ -3,9 +3,15 @@ import { TEXT_ROLE } from '../../textRoles';
 import { cn } from '../../cn';
 import { FOCUS_RING } from '../../focusRing';
 
+export type ListGridGroupFold = {
+  readonly label: string;
+  readonly onToggle: () => void;
+};
+
 export type ListGridGroupProps = {
   readonly label?: string;
   readonly count?: number;
+  readonly fold?: ListGridGroupFold;
   readonly action?: ReactNode;
   readonly isListbox?: boolean;
   readonly activeDescendant?: string;
@@ -20,9 +26,12 @@ const HEADING_TAG = { 2: 'h2', 3: 'h3' } as const;
 
 const SUBGRID = 'col-span-full grid grid-cols-subgrid';
 
+const COUNT_FLOOR = 2;
+
 export const ListGridGroup = ({
   label,
   count,
+  fold,
   action,
   isListbox = false,
   activeDescendant,
@@ -49,13 +58,27 @@ export const ListGridGroup = ({
               >
                 {label}
               </Heading>
-              {count === undefined ? null : (
+              {count === undefined || count < COUNT_FLOOR ? null : (
                 <span
                   data-list-grid-count=""
                   className={cn('shrink-0 text-row tabular-nums', TEXT_ROLE.hint)}
                 >
                   {count}
                 </span>
+              )}
+              {fold === undefined ? null : (
+                <button
+                  type="button"
+                  data-list-grid-fold=""
+                  onClick={fold.onToggle}
+                  className={cn(
+                    'shrink-0 rounded-sm text-row hover:text-foreground',
+                    TEXT_ROLE.hint,
+                    FOCUS_RING,
+                  )}
+                >
+                  {fold.label}
+                </button>
               )}
             </div>
             {action === undefined || action === null ? null : (

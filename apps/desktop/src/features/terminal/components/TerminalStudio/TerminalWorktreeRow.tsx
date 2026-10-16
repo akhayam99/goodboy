@@ -61,7 +61,7 @@ export const TerminalWorktreeRow = ({ worktree, isSelected, isBusy, ports, onSel
           )}
         </>,
         portCellOf({ ports, isSelected }),
-        isBusy ? <StateDot state="running" label="Running a process" /> : '',
+        isBusy ? <StateDot state="running" label="Running a process" isLive /> : '',
       ]}
     />
   );
