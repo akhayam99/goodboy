@@ -10,6 +10,7 @@ import type { TailState } from '../../../live-state/tailFacts';
 import type { NextAction } from '../../../workflows/resolveNextAction';
 import type { RunPrimary } from '../../../workflows/runPrimaryOf';
 import { isWorkflowRunClosedByUser } from '../../../workflows/isWorkflowRunClosedByUser';
+import { stepNumberOf } from './stepNumberOf';
 
 export type RunTailVerb =
   | { readonly kind: 'primary'; readonly primary: RunPrimary }
@@ -51,13 +52,6 @@ type Params = {
 type StepParams = {
   readonly workflow: Workflow;
   readonly agent: Agent;
-};
-
-const stepNumberOf = ({ workflow, agent }: StepParams): number | null => {
-  const index = [...workflow.steps]
-    .sort((left, right) => left.ordinal - right.ordinal)
-    .findIndex((step) => step.id === agent.stepId);
-  return index < 0 ? null : index + 1;
 };
 
 type LabelParams = StepParams & {

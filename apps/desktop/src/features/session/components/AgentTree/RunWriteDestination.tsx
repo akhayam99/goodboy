@@ -14,5 +14,12 @@ export const RunWriteDestination = ({ sessionId }: Props) => {
   if (writableMountCount <= 1) {
     return null;
   }
-  return <WriteDestinationControl sessionId={sessionId} agentId={null} fallback="automatic" />;
+  return (
+    <WriteDestinationControl
+      sessionId={sessionId}
+      agentId={null}
+      fallback="automatic"
+      verb="Writes to"
+    />
+  );
 };

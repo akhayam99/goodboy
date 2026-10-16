@@ -161,8 +161,10 @@ describe('the c09 orchestrated scenes', () => {
       }),
     ).toBeDefined();
     const pane = nodeOf('[data-run-step-pane]');
+    expect(within(pane).queryByRole('button', { name: 'View transcript' })).toBeNull();
     fireEvent.click(within(pane).getByRole('button', { name: 'More actions' }));
     expect(screen.getByRole('menuitem', { name: 'Open full' })).toBeDefined();
+    expect(screen.getAllByRole('menuitem', { name: 'View transcript' })).toHaveLength(1);
     expect(screen.queryByPlaceholderText(/^Message/)).toBeNull();
     expect(screen.getByPlaceholderText('Hint the orchestrator')).toBeDefined();
     expect(tail().getAttribute('data-orchestrated-tail')).toBe('waiting');

@@ -7,6 +7,7 @@ import { leaveRunLevel } from '../../../workflows/leaveRunLevel';
 import { RunPageActions } from './RunPageActions';
 import { RunStepHeading } from './RunStepHeading';
 import { RunTail } from './RunTail';
+import { stepStopLabelOf } from './stepStopLabelOf';
 
 type Props = {
   readonly session: Session;
@@ -31,6 +32,7 @@ export const RunStepPage = ({ session, view, agent, isActive }: Props) => {
           <RunPageActions session={session} view={view} stepAgentId={stepAgent?.id ?? null} />
         ),
         tail: <RunTail session={session} view={view} selectedAgentId={agent.id} />,
+        stopLabel: stepStopLabelOf({ agent, stepAgent, workflow: view.workflow }),
       }}
     />
   );

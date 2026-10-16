@@ -423,16 +423,18 @@ and the center shows the selected entry (`PresetRunPage`, in
 `features/session/components/PresetRun`).
 
 - **Overview** (`RunOverviewPage`): the run title as the header with the run
-  `⋯`, the goal and its attachments (`RunGoal`), the write destination while 2
-  or more worktrees can be written (`RunWriteDestination`), **Create report**
+  `⋯`, the goal and its attachments (`RunGoal`), the write destination ("Writes
+  to ...") while 2 or more worktrees can be written (`RunWriteDestination`), **Create report**
   and **Create wireframe** on a finished run (`RunFinishedActions`), the step
   draft when **Add step** was asked for, then the run tail. An archived run
   shows **Restore** as its one header primary and reads dimmed.
 - **A step** (`RunStepPage`): the step's agent conversation, embedded
   (`AgentDetailPane` with a `runStep` frame). The header reads "Step 2 ·
-  Implementer" with the provider mark, then **View transcript** and the run
-  `⋯`. The agent's own menu stays on the right click of the title. No next
-  action card above the conversation and no Start chip above the composer.
+  Implementer" with the provider mark, then the run `⋯`. The agent's own menu
+  stays on the right click of the title. No next action card above the
+  conversation and no Start chip above the composer. The step's thinking line
+  ends in **Stop step 2**, not a bare Stop (`stepStopLabelOf`, through
+  `RunStepFrame.stopLabel`; the step pane passes it too).
 - **The run tail** (`RunTail`, phrases in `runTailOf`) speaks for the run at
   the end of the content, once: nothing while the step on screen runs (its
   own thinking line speaks), else "Step 2 · Implementer is working" with **Open

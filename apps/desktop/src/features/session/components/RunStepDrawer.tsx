@@ -11,6 +11,7 @@ import { agentKindPalette, classifyAgent, resolveRootAgent } from '../agent-kind
 import { stepHeadingOf } from './PresetRun/stepHeadingOf';
 import { AgentDetailPane } from './AgentDetailPane';
 import { RunStepHeading } from './PresetRun/RunStepHeading';
+import { stepStopLabelOf } from './PresetRun/stepStopLabelOf';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -88,6 +89,7 @@ export const RunStepDrawer = ({ sessionId, runId, agentId, onClose }: Props) => 
             </>
           ),
           tail: null,
+          stopLabel: stepStopLabelOf({ agent, stepAgent, workflow }),
         }}
       />
     </section>

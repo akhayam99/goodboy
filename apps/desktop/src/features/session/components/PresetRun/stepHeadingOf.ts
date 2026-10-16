@@ -1,4 +1,5 @@
 import type { Agent, Workflow } from '@goodboy/types';
+import { stepNumberOf } from './stepNumberOf';
 
 type Params = {
   readonly agent: Agent;
@@ -8,17 +9,12 @@ type Params = {
 };
 
 export const stepHeadingOf = ({ agent, stepAgent, workflow, role }: Params): string => {
-  const index =
-    stepAgent === null
-      ? -1
-      : [...workflow.steps]
-          .sort((left, right) => left.ordinal - right.ordinal)
-          .findIndex((step) => step.id === stepAgent.stepId);
-  if (index < 0) {
+  const number = stepAgent === null ? null : stepNumberOf({ workflow, agent: stepAgent });
+  if (stepAgent === null || number === null) {
     return `${role} · ${agent.name}`;
   }
-  if (stepAgent !== null && stepAgent.id !== agent.id) {
-    return `Step ${index + 1} · ${role} · ${agent.name}`;
+  if (stepAgent.id !== agent.id) {
+    return `Step ${number} · ${role} · ${agent.name}`;
   }
-  return `Step ${index + 1} · ${role}`;
+  return `Step ${number} · ${role}`;
 };

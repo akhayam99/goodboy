@@ -113,6 +113,11 @@ describe('the c08 preset run scenes', () => {
       'Step 2 · Implementer',
     );
     expect(document.querySelector('[data-run-tail]')).toBeNull();
+    const conversationTail = document.querySelector<HTMLElement>('[data-conversation-tail]');
+    if (conversationTail === null) {
+      throw new Error('no conversation tail');
+    }
+    expect(within(conversationTail).getByRole('button', { name: 'Stop step 2' })).toBeDefined();
   });
 
   it('c08-run-working-other points the tail at the step that works', async () => {
