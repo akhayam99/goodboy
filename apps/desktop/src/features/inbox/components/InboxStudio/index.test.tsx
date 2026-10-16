@@ -229,6 +229,7 @@ const linearIssue = record({
       url: '',
       state: { name: 'In Progress', type: 'started' },
       team: { key: 'ENG' },
+      assignee: { name: 'Mara Lindqvist' },
       updatedAt: '',
     },
     sessionId: null,
@@ -793,12 +794,13 @@ describe('InboxStudio', () => {
     expect(screen.queryByText('Ship the inbox')).toBeNull();
   });
 
-  it('keeps the page title Tasks whichever view is picked, and marks the view in the menu', () => {
+  it('titles the page with the open count, not Tasks again, and marks the view in the menu', () => {
     renderStudio();
 
     fireEvent.click(facet('Show', /^In progress/));
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Tasks' })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 1, name: /^\d+ open$/ })).toBeDefined();
+    expect(screen.queryByRole('heading', { level: 1, name: 'Tasks' })).toBeNull();
     expect(facet('Show', /^In progress/).getAttribute('aria-current')).toBe('true');
   });
 

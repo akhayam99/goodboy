@@ -1,5 +1,6 @@
 import type { ProjectId, SessionId } from '@goodboy/types';
 import type { InboxRecord, InboxState } from '../../../../../../features/inbox/types';
+import type { JiraUser } from '../../../../../../features/integrations/jira/client';
 import type { LinearIssue } from '../../../../../../features/integrations/linear/client';
 import { brandedId } from '../../../../../../features/history/testing/brandedId';
 import { sceneClock } from '../../../sceneClock';
@@ -66,6 +67,14 @@ type LinearParams = IndexParams & {
   readonly projectIds?: ReadonlyArray<ProjectId>;
 };
 
+const MARA: JiraUser = {
+  accountId: 'mock-c12-mara',
+  displayName: 'Mara Lindqvist',
+  emailAddress: null,
+  avatarUrls: null,
+  active: true,
+};
+
 export const LEDGER_ISSUE: LinearIssue = {
   id: 'mock-c12-linear-412',
   identifier: 'HBL-412',
@@ -81,7 +90,7 @@ export const LEDGER_ISSUE: LinearIssue = {
   team: { key: 'HBL' },
   priority: 2,
   priorityLabel: 'High',
-  assignee: { name: 'Mara Lindqvist' },
+  assignee: { name: MARA.displayName },
   creator: { name: 'Tomas Okafor' },
   project: { name: 'Ledger' },
   labels: {
@@ -143,6 +152,7 @@ const linearRecord = ({
     priority: (index % 4) + 1,
     priorityLabel: ['Urgent', 'High', 'Medium', 'Low'][index % 4] ?? 'Low',
     project: { name: 'Ledger' },
+    assignee: index % 40 === 0 ? { name: MARA.displayName } : null,
     updatedAt: isoAgo({ minutes }),
   };
   return {
@@ -222,7 +232,7 @@ const jiraRecord = ({ index, minutes }: RecordParams): InboxRecord => {
         statusCategory: 'new',
         issueType: 'Task',
         priority: 'Medium',
-        assignee: null,
+        assignee: index % 40 === 0 ? MARA : null,
         reporter: null,
         labels: [],
         created: isoAgo({ minutes: minutes + 600 }),
@@ -341,8 +351,8 @@ const tasksOf = ({
 
 export const WORKSPACE_TASKS = tasksOf({
   linear: 412,
-  github: 380,
-  jira: 120,
-  sentry: 64,
+  github: 12,
+  jira: 380,
+  sentry: 172,
   slack: 48,
 });

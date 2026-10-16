@@ -14,7 +14,7 @@ export const TaskFullPage = ({ onBack, children }: Props) => (
     <div className="flex h-10 shrink-0 items-center px-4">
       <Button variant="ghost" size="sm" aria-label={`Back to ${NAMES.tasks}`} onClick={onBack}>
         <ChevronLeft size={ICON_SIZE.row} aria-hidden />
-        {NAMES.tasks}
+        Back
       </Button>
     </div>
     <div className="mx-auto flex min-h-0 w-full max-w-[var(--measure-frame)] flex-1 flex-col">

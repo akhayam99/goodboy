@@ -1,11 +1,11 @@
 import type { FactSlot, ResolvedFact } from '../../../detail-fields/factTypes';
 
-type PropertyGroupName = 'Status' | 'Planning' | 'Links' | 'Details';
+type PropertyGroupName = 'State' | 'Planning' | 'Links' | 'Details';
 
 const GROUP_OF_SLOT = {
-  state: 'Status',
-  weight: 'Status',
-  person: 'Status',
+  state: 'State',
+  weight: 'State',
+  person: 'State',
   place: 'Planning',
   labels: 'Planning',
   links: 'Links',
@@ -13,7 +13,7 @@ const GROUP_OF_SLOT = {
   time: 'Details',
 } satisfies Record<FactSlot, PropertyGroupName>;
 
-const GROUP_ORDER: ReadonlyArray<PropertyGroupName> = ['Status', 'Planning', 'Links', 'Details'];
+const GROUP_ORDER: ReadonlyArray<PropertyGroupName> = ['State', 'Planning', 'Links', 'Details'];
 
 export type PropertyRowFacts = {
   readonly key: string;

@@ -18,7 +18,7 @@ Items come in groups, by source unless you pick **Group by** **Status**, **Proje
 
 Narrow the list from one **Filter** menu in the header: **Source** with its counts, **Show** (assigned to me, starred, in progress, with a session, closed), **Type** and **Project**. A tool that did not load, or is rate limited, says so in one gray line inside its group, and clicking it retries. **Refresh** and **Manage tools** sit in `⋯`.
 
-Click a row or press **Enter** to open it in the pane on the right, and move with **j** and **k** while the pane follows. **Enter** again starts from the open item. **Open full** in the pane shows it at full width; **Tasks** at the top goes back.
+Click a row or press **Enter** to open it in the pane on the right, and move with **j** and **k** while the pane follows. **Enter** again starts from the open item. **Open full** in the pane shows it at full width; **Back** at the top returns to the list.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-list-dark.webp">
@@ -97,7 +97,7 @@ See screenshots attached in Linear, Jira and GitHub inside Goodboy. Your key goe
 
 ### Records read the same way
 
-Read items from any tool the same way. The header holds the tool mark, the key and the star, with the start action, **Open full** and `⋯` (open in the tool, copy the link, refresh) beside them, and the title on its own line. Under it, the properties sit in named groups on one grid of labels and values: **Status** (status, priority, assignee), **Planning** (project, labels with their colors), **Links** (pull requests with their state, sessions) and **Details**. Values you can change, like the status or the assignee of a Linear issue, open their menu from the value.
+Read items from any tool the same way. The header holds the tool mark, the key and the star, with the start action, **Open full** and `⋯` (open in the tool, copy the link, refresh) beside them, and the title on its own line. Under it, the properties sit in named groups on one grid of labels and values: **State** (status, priority, assignee), **Planning** (project, labels with their colors), **Links** (pull requests with their state, sessions) and **Details**. Values you can change, like the status or the assignee of a Linear issue, open their menu from the value.
 
 ### Comment threads
 

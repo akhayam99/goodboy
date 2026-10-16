@@ -144,8 +144,7 @@ export const TasksStage = ({
   const list = (
     <PaneShell
       scroll="body"
-      title="Tasks"
-      meta={`${inScope.filter((record) => record.state !== 'done').length.toLocaleString('en-US')} open`}
+      title={`${inScope.filter((record) => record.state !== 'done').length.toLocaleString('en-US')} open`}
       actions={
         <InboxListHeader
           query={query}

@@ -1362,8 +1362,10 @@ Tasks is the workspace's queue of incoming work from every connected
 source: issues, pull and merge requests, Slack threads and Sentry errors, one
 record each, one line per record on the shared task grid (`taskColumns`:
 source, key, title, status glyph, priority, age). It opens on For me
-(`isForMeRecord`: assigned issues and pull requests, starred records, records
-linked to a session) and switches to All in the header; the choice and the
+(`isForMeRecord`: tracker issues with an assignee, pull requests, starred
+records, records linked to a session) and switches to All in the header. The
+page title is the open count, since the studio bar already names Tasks. The
+choice and the
 grouping are kept per workspace (`taskListViewStorage`). Records are grouped
 (`taskGroupsOf`) by source, by source and status word, by project or not at
 all, largest group first and newest first inside a group. A group shows five

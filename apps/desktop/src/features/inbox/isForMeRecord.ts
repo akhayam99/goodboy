@@ -8,9 +8,15 @@ type AssignedParams = {
 export const isAssignedRecord = ({ record }: AssignedParams): boolean => {
   switch (record.provider) {
     case 'github':
-    case 'linear':
-    case 'jira':
       return true;
+    case 'linear':
+      return (
+        record.payload.provider === 'linear' &&
+        record.payload.issue.assignee !== null &&
+        record.payload.issue.assignee !== undefined
+      );
+    case 'jira':
+      return record.payload.provider === 'jira' && record.payload.issue.assignee !== null;
     case 'gitlab':
       return record.kind === 'issue';
     case 'sentry':

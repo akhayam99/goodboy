@@ -160,7 +160,12 @@ const record = ({ provider, kind, identifier, title, state, ago, context }: Reco
     url: `https://example.invalid/${provider}/${identifier}`,
     context,
     ...(provider === 'sentry' ? { projectIds: [SCENE_PROJECT_ID] } : {}),
-    payload: { provider, kind, sessionId: null },
+    payload: {
+      provider,
+      kind,
+      issue: { assignee: { name: 'Robin V.', displayName: 'Robin V.' } },
+      sessionId: null,
+    },
   }) as unknown as InboxRecord;
 
 const SELECTED_RECORD: InboxRecord = {

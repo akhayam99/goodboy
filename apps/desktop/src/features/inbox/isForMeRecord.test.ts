@@ -59,16 +59,30 @@ const linear: InboxRecord = {
       url: '',
       state: { name: 'In progress', type: 'started' },
       team: { key: 'HBL' },
+      assignee: { name: 'Mara Lindqvist' },
       updatedAt: '',
     },
     sessionId: null,
   },
 };
 
+const unassignedLinear: InboxRecord =
+  linear.payload.provider === 'linear'
+    ? {
+        ...linear,
+        payload: { ...linear.payload, issue: { ...linear.payload.issue, assignee: null } },
+      }
+    : linear;
+
 describe('isForMeRecord', () => {
   it('counts an assigned tracker issue as mine', () => {
     expect(isAssignedRecord({ record: linear })).toBe(true);
     expect(isForMeRecord({ record: linear, isStarred: false })).toBe(true);
+  });
+
+  it('leaves an unassigned tracker issue out of For me', () => {
+    expect(isAssignedRecord({ record: unassignedLinear })).toBe(false);
+    expect(isForMeRecord({ record: unassignedLinear, isStarred: false })).toBe(false);
   });
 
   it('leaves an error nobody linked or starred out of For me', () => {

@@ -84,12 +84,13 @@ describe('c12 task scenes', () => {
     }
   });
 
-  it('opens For me with the starred issue and three tracker groups, capped at five', async () => {
+  it('opens For me on assigned issues only, three tracker groups capped at five', async () => {
     await mount('c12-tasks-forme');
 
-    expect(groupNames()).toEqual(['Starred', 'Linear', 'GitHub', 'Jira']);
+    expect(groupNames()).toEqual(['Starred', 'GitHub', 'Linear', 'Jira']);
     expect(screen.getByRole('tab', { name: 'For me' }).getAttribute('aria-selected')).toBe('true');
-    expect(screen.getByRole('button', { name: 'Show all 411' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Show all 11' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Show all 411' })).toBeNull();
     expect(within(list()).getAllByRole('option').length).toBeLessThanOrEqual(16);
   });
 
@@ -97,7 +98,7 @@ describe('c12 task scenes', () => {
     await mount('c12-tasks-all');
 
     expect(screen.getByText('1,024 open')).toBeDefined();
-    expect(groupNames()).toEqual(['Starred', 'Linear', 'GitHub', 'Jira', 'Sentry', 'Slack']);
+    expect(groupNames()).toEqual(['Starred', 'Linear', 'Jira', 'Sentry', 'Slack', 'GitHub']);
   });
 
   it('draws a window of the expanded Linear group and names the position', async () => {
@@ -132,7 +133,7 @@ describe('c12 task scenes', () => {
 
     const pane = screen.getByRole('complementary', { name: 'Task' });
     const properties = within(pane).getByRole('group', { name: 'Properties' });
-    expect(within(properties).getByRole('region', { name: 'Status' })).toBeDefined();
+    expect(within(properties).getByRole('region', { name: 'State' })).toBeDefined();
     expect(within(properties).getByRole('region', { name: 'Planning' })).toBeDefined();
     expect(within(properties).getByRole('region', { name: 'Links' })).toBeDefined();
     expect(within(pane).getByRole('button', { name: 'Open full' })).toBeDefined();

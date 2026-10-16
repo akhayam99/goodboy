@@ -521,8 +521,7 @@ export const InboxStudio = ({
   const list = (
     <PaneShell
       scroll="body"
-      title={NAMES.tasks}
-      meta={openCountWord({ records: inScope })}
+      title={openCountWord({ records: inScope })}
       actions={
         <InboxListHeader
           query={query}

@@ -2701,7 +2701,7 @@ record opens in the studio's `DrawerColumn` beside the list on the reader tier
 (`InboxStudioLayout` passes `sizing: 'reader'` through `useStudioDrawer`), with
 the same card and motion; a window too narrow for the list and the pane lifts
 the pane over the list. Open full in the pane header puts the record at the 720
-measure in place of the list (`TaskFullPage`), with Tasks at its top to go back.
+measure in place of the list (`TaskFullPage`), with Back at its top (named `Back to Tasks`) to return.
 Escape closes the record before the studio.
 
 `conversation` (payload `{ threadId }`) is the focused comment in Review. It
