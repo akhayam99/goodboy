@@ -122,7 +122,7 @@ describe('ListGrid', () => {
       </ListGrid>,
     );
     const action = screen.getByRole('button', { name: 'Open' });
-    expect(action.parentElement?.className).toContain('col-end-[-3]');
+    expect(action.closest('[class*="col-end-[-3]"]')).not.toBeNull();
     expect(screen.getByText('12').textContent).toBe('12');
   });
 });
