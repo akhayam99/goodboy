@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/core', async () => {
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -29,6 +29,24 @@ beforeEach(async () => {
 afterEach(() => {
   cleanup();
   clearSceneInvoke();
+});
+
+describe('the delivery transcript scene', () => {
+  it('shows the operator words as a bubble and the text built for Auto only on request', async () => {
+    const Scene = U25_CHAT_LONG_SCENES['transcript-delivery'];
+    const { container, findByText, queryByText } = render(
+      <ToastProvider>
+        <Scene />
+      </ToastProvider>,
+    );
+
+    await findByText('The dev server still fails: next: command not found.');
+    expect(queryByText(/STATE OF THIS CONVERSATION/)).toBeNull();
+    expect(container.textContent).not.toContain('Reserved 0.00 USD');
+
+    fireEvent.click(await findByText('What Auto was told'));
+    expect(container.textContent).toContain('STATE OF THIS CONVERSATION');
+  });
 });
 
 describe('the long transcript scene', () => {

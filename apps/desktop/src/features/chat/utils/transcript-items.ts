@@ -27,6 +27,7 @@ export type TranscriptItem =
       provider?: ProviderId;
       model?: string;
       sentVia?: UserTurnSentVia;
+      isOperatorEcho?: boolean;
       at: IsoDateTime;
     }
   | {
@@ -39,6 +40,7 @@ export type TranscriptItem =
       model?: string;
       at: IsoDateTime;
     }
+  | { kind: 'auto_delivery'; key: string; text: string; at: IsoDateTime }
   | { kind: 'assistant_text'; key: string; text: string }
   | {
       kind: 'artifact_block';
@@ -294,7 +296,26 @@ export const reduceTranscript = (
     flushText();
 
     switch (event.kind) {
+      case 'operator_text':
+        hasUserText = true;
+        items.push({
+          kind: 'user_text',
+          key: `user-${i}`,
+          text: event.text,
+          isOperatorEcho: true,
+          at: event.at,
+        });
+        break;
       case 'user_text':
+        if (event.deliveredBy === 'auto') {
+          items.push({
+            kind: 'auto_delivery',
+            key: `auto-delivery-${i}`,
+            text: event.text,
+            at: event.at,
+          });
+          break;
+        }
         if (isOpenQuestionAnswerText(event.text)) {
           items.push({ kind: 'oq_answer', key: `oq-answer-${i}` });
           break;

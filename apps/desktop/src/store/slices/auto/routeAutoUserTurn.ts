@@ -1,4 +1,13 @@
-import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
+import { brandId } from '@goodboy/types';
+import type {
+  Agent,
+  AgentId,
+  IsoDateTime,
+  ProviderRunId,
+  Session,
+  SessionId,
+  TurnEvent,
+} from '@goodboy/types';
 import type { ReportErrorParams } from '../notifications/reportError';
 import { currentAutoUserTurnPort } from '../../../features/auto/autoUserTurnPort';
 import { sessionById } from '../sessions/sessionIndex';
@@ -13,6 +22,7 @@ type AutoTurnState = Readonly<{
   >;
   selectedAgentId: Readonly<Record<SessionId, AgentId | null>>;
   reportError: (params: ReportErrorParams) => Promise<void>;
+  appendTurnEvent: (agentId: AgentId, sessionId: SessionId, event: TurnEvent) => void;
 }>;
 
 export type RouteAutoUserTurnParams = Readonly<{
@@ -81,6 +91,12 @@ export const routeAutoUserTurn = async ({
   if (result === 'lost') {
     return refuse({ get, input, message: AUTO_MESSAGE_LOST_MESSAGE });
   }
+  state.appendTurnEvent(agentId, input.sessionId, {
+    kind: 'operator_text',
+    runId: brandId<ProviderRunId>({ value: `operator-${crypto.randomUUID()}` }),
+    text: input.content,
+    at: brandId<IsoDateTime>({ value: new Date().toISOString() }),
+  });
   input.onStarted?.();
   return QUEUED;
 };

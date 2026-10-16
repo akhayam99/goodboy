@@ -472,6 +472,15 @@ behavior beyond rendering:
 - `permission_decision` carries the chosen `PermissionScope`, which decides
   whether a retry is offered: an `allow` at session scope or wider is, a
   one-use approval is not, because it cannot carry into a new run.
+- `user_text` with `deliveredBy: 'auto'` is text the app built for an agent
+  (Auto's deliveries and a child's first brief, origin `delegation`). Every
+  reader of the transcript still sees it (resume, the preamble, retry send it
+  again as written); only the chat draws it differently, as the collapsed row
+  `auto_delivery`.
+- `operator_text` is display only: the words a user typed to an Auto agent,
+  written when Auto takes the message. It is not a provider turn, so nothing
+  that resumes or counts turns reads it, and the question ordinals (which count
+  `user_text` events) ignore it (`isOperatorEcho` on the drawn bubble).
 - `step_transition` reports a workflow run advancing, with the context it
   carried forward.
 - `error` carries `retryable`; only a retryable error offers Retry in the

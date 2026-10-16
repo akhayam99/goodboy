@@ -183,9 +183,16 @@ export const TranscriptRows = ({
       userTurnOrdinal += 1;
       return;
     }
-    if (row.kind === 'item' && (row.item.kind === 'user_text' || row.item.kind === 'handoff')) {
-      flushOrdinal(userTurnOrdinal);
-      userTurnOrdinal += 1;
+    if (
+      row.kind === 'item' &&
+      (row.item.kind === 'user_text' ||
+        row.item.kind === 'handoff' ||
+        row.item.kind === 'auto_delivery')
+    ) {
+      if (!(row.item.kind === 'user_text' && row.item.isOperatorEcho === true)) {
+        flushOrdinal(userTurnOrdinal);
+        userTurnOrdinal += 1;
+      }
       const at = row.item.at;
       flushInsertions({ beforeMs: Date.parse(at) });
       const day = dayKey(at);
