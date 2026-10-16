@@ -1228,7 +1228,9 @@ A selected card is a fill plus a check: never a ring, a border and a wash
 together. A focus ring appears on keyboard focus (`focus-visible`) only.
 
 Rules for new and changed code (the migration of old code is the sweep's):
-icons use `ICON_SIZE` (mark 10, row 12, control 14, hero 18); mono is for
+icons use `ICON_SIZE` (mark 10, row 12, control 14, hero 18), on the icon and
+on an `iconSize` override alike, and a file never keeps its own alias of a step
+(`const KIND_ICON_SIZE = 10`): `scale-rules.test.ts` counts all three; mono is for
 branch, path, command, sha and code; money, counts and durations are sans with
 `tabular-nums`; rows sit on 24, 28, 32, 36, 40 and 48; gaps sit on 4, 8, 12, 16,
 24 and 32 (no `gap-5`, `gap-7`, `gap-10`); labels are sentence case, and a

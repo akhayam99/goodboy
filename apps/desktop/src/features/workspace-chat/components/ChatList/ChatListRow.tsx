@@ -1,6 +1,13 @@
 import { memo, useMemo, useState, type FocusEvent, type MouseEvent } from 'react';
 import { Pin, PinOff } from 'lucide-react';
-import { IconButton, InteractiveRow, SelectionCheckbox, StatusDot, cn } from '@goodboy/ui';
+import {
+  ICON_SIZE,
+  IconButton,
+  InteractiveRow,
+  SelectionCheckbox,
+  StatusDot,
+  cn,
+} from '@goodboy/ui';
 import type { ChatId, ChatModelUsed, EffortLevel, ProviderId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
@@ -216,7 +223,7 @@ const ChatListRowView = ({
                     label={isPinned ? `Unpin ${title}` : `Pin ${title}`}
                     tooltip={isPinned ? 'Unpin' : 'Pin'}
                     variant="ghost"
-                    iconSize={12}
+                    iconSize={ICON_SIZE.row}
                     onClick={() => onPin({ chatId, isPinned: !isPinned })}
                   />
                   <ObjectOverflowMenu
@@ -239,7 +246,7 @@ const ChatListRowView = ({
                           label={`Delete ${title}`}
                           tooltip="Delete"
                           variant="ghost"
-                          iconSize={12}
+                          iconSize={ICON_SIZE.row}
                           className="hover:text-danger"
                           aria-haspopup="dialog"
                           onClick={() => setIsConfirming(true)}
