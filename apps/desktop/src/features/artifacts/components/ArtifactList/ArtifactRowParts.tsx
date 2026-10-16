@@ -4,9 +4,10 @@ import { ARTIFACT_ROW_GRID } from './artifactRowGrid';
 
 type Props = {
   readonly parts: ReadonlyArray<ArtifactRowPart>;
+  readonly hasActionColumn: boolean;
 };
 
-export const ArtifactRowParts = ({ parts }: Props) => (
+export const ArtifactRowParts = ({ parts, hasActionColumn }: Props) => (
   <ul data-testid="artifact-row-parts" className="flex min-w-0 flex-col pb-1">
     {parts.map((part) => (
       <li
@@ -22,12 +23,11 @@ export const ArtifactRowParts = ({ parts }: Props) => (
         <TruncatedText className="min-w-0 flex-1 truncate text-muted-foreground">
           {part.title}
         </TruncatedText>
-        <span aria-hidden className={cn(ARTIFACT_ROW_GRID.kind, 'invisible')} />
-        <span className={cn(ARTIFACT_ROW_GRID.state, 'px-2 text-meta text-faint-foreground')}>
+        <span className={cn(ARTIFACT_ROW_GRID.state, 'text-meta text-faint-foreground')}>
           {part.nodeLabel}
         </span>
         <span aria-hidden className={cn(ARTIFACT_ROW_GRID.date, 'invisible')} />
-        <span aria-hidden className={ARTIFACT_ROW_GRID.tail} />
+        {hasActionColumn ? <span aria-hidden className={ARTIFACT_ROW_GRID.action} /> : null}
       </li>
     ))}
   </ul>

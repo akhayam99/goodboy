@@ -1,11 +1,13 @@
 import { useEffect } from 'react';
-import { ChevronDown, FileJson, Plus } from 'lucide-react';
+import { ChevronDown, FileJson, FolderOpen, Plus } from 'lucide-react';
 import { AnchoredPopover, Button, MenuItems, useDropdown } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ARTIFACT_KIND_CONCEPT } from '../../artifactPresentation';
 import { newArtifactEventName } from '../../newArtifactEventName';
+import { openArtifactsFolder } from '../../artifactMirror/artifactMirrorInvoke';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -14,6 +16,10 @@ type Props = {
 
 export const ArtifactNewMenu = ({ sessionId, onImportWireframe }: Props) => {
   const openArtifactCreation = useAppStore((state) => state.openArtifactCreation);
+  const workspaceSlug = useAppStore((state) => {
+    const workspaceId = sessionById(state.sessions, sessionId)?.workspaceId;
+    return state.workspaces.find((workspace) => workspace.id === workspaceId)?.slug ?? null;
+  });
   const dropdown = useDropdown({
     align: 'end',
     width: 'w-80 max-w-[calc(100vw-2rem)]',
@@ -82,6 +88,19 @@ export const ArtifactNewMenu = ({ sessionId, onImportWireframe }: Props) => {
             description: 'Import a .json spec',
             icon: FileJson,
             onClick: onImportWireframe,
+          },
+          { kind: 'separator', key: 'folder-separator' },
+          {
+            kind: 'item',
+            key: 'show-folder',
+            label: 'Show in Finder',
+            icon: FolderOpen,
+            disabled: workspaceSlug === null,
+            onClick: () => {
+              if (workspaceSlug !== null) {
+                void openArtifactsFolder({ workspaceSlug });
+              }
+            },
           },
         ]}
       />

@@ -285,7 +285,8 @@ describe('ArtifactStudio list', () => {
     };
     state.agentTurnState = { 'agent-report-2': { kind: 'running' } };
     renderStudio();
-    expect(screen.getByTestId('artifact-row-state').textContent).toContain('Running');
+    expect(screen.getByRole('heading', { level: 2, name: /^Running/ })).toBeDefined();
+    expect(screen.queryByTestId('artifact-row-state')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
     expect(state.stopArtifactGeneration).toHaveBeenCalledWith({
       sessionId: 'sess-1',

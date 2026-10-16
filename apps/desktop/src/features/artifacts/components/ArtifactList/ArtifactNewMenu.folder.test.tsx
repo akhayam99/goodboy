@@ -15,14 +15,14 @@ vi.mock('../../artifactMirror/artifactMirrorInvoke', () => ({
 }));
 
 import { useAppStore } from '../../../../store';
-import { ArtifactListFolderButton } from './ArtifactListFolderButton';
+import { ArtifactNewMenu } from './ArtifactNewMenu';
 
 const sessionId: SessionId = SESSION;
 const workspaceId: WorkspaceId = WORKSPACE;
 
 afterEach(cleanup);
 
-describe('ArtifactListFolderButton', () => {
+describe('ArtifactNewMenu folder item', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useAppStore.setState({
@@ -40,20 +40,27 @@ describe('ArtifactListFolderButton', () => {
     });
   });
 
-  it('shows the artifacts folder from a visible button, with no menu behind it', () => {
-    render(<ArtifactListFolderButton sessionId={sessionId} />);
+  const openMenu = () => {
+    render(<ArtifactNewMenu sessionId={sessionId} onImportWireframe={vi.fn()} />);
+    fireEvent.click(screen.getByTestId('artifact-new'));
+  };
 
-    expect(screen.queryByRole('button', { name: 'More' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Show in Finder' }));
+  it('shows the artifacts folder from the New menu, with no icon button in the header', () => {
+    openMenu();
+
+    expect(screen.queryByRole('button', { name: 'Show in Finder' })).toBeNull();
+    fireEvent.click(screen.getByRole('menuitem', { name: /Show in Finder/ }));
 
     expect(openSpy).toHaveBeenCalledWith({ workspaceSlug: 'harborline' });
-    expect(screen.queryByRole('menu')).toBeNull();
   });
 
   it('is disabled while the workspace is not known', () => {
     useAppStore.setState({ workspaces: [] });
-    render(<ArtifactListFolderButton sessionId={sessionId} />);
+    openMenu();
 
-    expect(screen.getByRole('button', { name: 'Show in Finder' })).toHaveProperty('disabled', true);
+    expect(screen.getByRole('menuitem', { name: /Show in Finder/ })).toHaveProperty(
+      'disabled',
+      true,
+    );
   });
 });

@@ -101,14 +101,12 @@ describe('the u23 list scenes', () => {
     expect(within(row).queryByText('Next turn:')).toBeNull();
   });
 
-  it('shows artifact rows with a kind column and one action, Delete only in the overflow', async () => {
+  it('shows artifact rows with no kind column and at most one action, Delete only on right click', async () => {
     renderScene('artifacts-rows');
 
     const list = await screen.findByTestId('artifact-list');
-    const kinds = within(list)
-      .getAllByTestId('artifact-row-kind')
-      .map((cell) => cell.textContent);
-    expect(kinds).toEqual(expect.arrayContaining(['Plan', 'Report', 'Wireframe']));
+    expect(within(list).queryAllByTestId('artifact-row-kind')).toEqual([]);
+    expect(within(list).queryAllByRole('button', { name: /^More for / })).toEqual([]);
     expect(
       within(list)
         .queryAllByRole('button', { name: /^Delete / })

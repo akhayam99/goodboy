@@ -43,6 +43,7 @@ import { insertArtifact, insertSession, insertWorkspace, markArtifactOpened } fr
 import type { AgentId, ArtifactId, ArtifactKind, SessionId, WorkspaceId } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 import { ToastProvider } from '../../../../shared/components/Toast';
+import { ObjectMenuProvider } from '../../../actions/components/ObjectMenuProvider';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   buildStoryWorkspace,
@@ -152,7 +153,9 @@ afterEach(cleanup);
 const mountList = () =>
   render(
     <ToastProvider>
-      <ArtifactStudio sessionId={SESSION_ID} />
+      <ObjectMenuProvider>
+        <ArtifactStudio sessionId={SESSION_ID} />
+      </ObjectMenuProvider>
     </ToastProvider>,
   );
 
@@ -168,8 +171,19 @@ const rowOf = (id: ArtifactId) => rowsNamed(id).find((node) => !isInDeleted(node
 
 const deletedRowOf = (id: ArtifactId) => rowsNamed(id).find(isInDeleted) ?? null;
 
+type PresentParams = {
+  readonly node: HTMLElement | null;
+};
+
+const present = ({ node }: PresentParams): HTMLElement => {
+  if (node === null) {
+    throw new Error('row missing');
+  }
+  return node;
+};
+
 const deleteFromMenu = ({ id }: { readonly id: ArtifactId }) => {
-  fireEvent.click(screen.getByRole('button', { name: `More for ${TITLES[id]}` }));
+  fireEvent.contextMenu(present({ node: rowOf(id) }));
   fireEvent.click(screen.getByRole('menuitem', { name: /^Delete\b/ }));
 };
 
@@ -183,30 +197,28 @@ describe('artifact list rows', () => {
     mountList();
     await waitFor(() => expect(rowOf(READY_PLAN)).not.toBeNull());
     expect(groupHeading(/^Ready 3$/)).toBeDefined();
-    expect(groupHeading(/^Consumed 1$/)).toBeDefined();
+    expect(groupHeading(/^Consumed$/)).toBeDefined();
     expect(screen.queryByRole('heading', { name: /^Ran\b/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Consumed\b/ })).toBeNull();
     expect(rowOf(RAN_PLAN)).not.toBeNull();
   });
 
-  it('shows the state of every row, Ready included, with New on a fresh unopened wireframe', async () => {
+  it('shows a state only where the group does not say it, with New on a fresh unopened wireframe', async () => {
     mountList();
     await waitFor(() => expect(rowOf(WIREFRAME)).not.toBeNull());
     const states = screen.getAllByTestId('artifact-row-state').map((node) => node.textContent);
-    expect(states).toEqual(expect.arrayContaining(['New', 'Ready', 'Ready to run1 part']));
+    expect(states).toEqual(expect.arrayContaining(['New', 'Ready to run']));
+    expect(states).not.toContain('Ready');
+    expect(states).not.toContain('Ran');
   });
 
-  it('puts the part count under the status and the kind in its own column', async () => {
+  it('keeps each state on one line and draws no kind column', async () => {
     mountList();
     await waitFor(() => expect(rowOf(READY_PLAN)).not.toBeNull());
     const frame = rowOf(READY_PLAN)?.closest('[data-testid="artifact-row-frame"]') as HTMLElement;
-    expect(within(frame).getByTestId('artifact-row-progress').textContent).toBe('1 part');
-    expect(within(frame).getByTestId('artifact-row-kind').textContent).toBe('Plan');
-    const wireframe = rowOf(WIREFRAME)?.closest(
-      '[data-testid="artifact-row-frame"]',
-    ) as HTMLElement;
-    expect(within(wireframe).queryByTestId('artifact-row-progress')).toBeNull();
-    expect(within(wireframe).getByTestId('artifact-row-kind').textContent).toBe('Wireframe');
+    expect(within(frame).queryByTestId('artifact-row-progress')).toBeNull();
+    expect(within(frame).queryByTestId('artifact-row-kind')).toBeNull();
+    expect(within(frame).getByTestId('artifact-row-state').textContent).toBe('Ready to run');
   });
 
   it('does not flag an old unopened artifact as New on the real database', async () => {
@@ -222,7 +234,7 @@ describe('artifact list rows', () => {
       rowOf(id)
         ?.closest('[data-testid="artifact-row-frame"]')
         ?.querySelector('[data-testid="artifact-row-state"]')?.textContent;
-    expect(stateOf(OLD_REPORT)).toBe('Ready');
+    expect(stateOf(OLD_REPORT)).toBeUndefined();
     expect(stateOf(WIREFRAME)).toBe('New');
   });
 
@@ -236,7 +248,7 @@ describe('artifact list rows', () => {
         sql: `SELECT status FROM session_artifacts WHERE id = '${REPORT}'`,
       }),
     ).toEqual([{ status: 'discarded' }]);
-    expect(groupHeading(/^Recently deleted 1$/)).toBeDefined();
+    expect(groupHeading(/^Recently deleted$/)).toBeDefined();
     expect(deletedRowOf(REPORT)).toBeNull();
     fireEvent.click(showTrash());
     expect(deletedRowOf(REPORT)).not.toBeNull();
@@ -249,7 +261,7 @@ describe('artifact list rows', () => {
     ).toEqual([{ status: 'active' }]);
   });
 
-  it('offers Delete permanently only inside Recently deleted', async () => {
+  it('offers Delete permanently only in the right click of a Recently deleted row', async () => {
     mountList();
     await waitFor(() => expect(rowOf(REPORT)).not.toBeNull());
     expect(screen.queryByRole('button', { name: 'Delete permanently' })).toBeNull();
@@ -257,9 +269,9 @@ describe('artifact list rows', () => {
     await waitFor(() => expect(rowOf(REPORT)).toBeNull());
     expect(screen.queryByRole('button', { name: 'Delete permanently' })).toBeNull();
     fireEvent.click(showTrash());
-    const deleted = within(screen.getByTestId('artifact-group-deleted'));
-    const forGood = await deleted.findByRole('button', { name: 'Delete permanently' });
-    fireEvent.click(forGood);
+    expect(screen.queryByRole('button', { name: 'Delete permanently' })).toBeNull();
+    fireEvent.contextMenu(present({ node: deletedRowOf(REPORT) }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: /^Delete permanently/ }));
     const panel = await screen.findByText(/for good\?/);
     expect(panel.textContent).toContain(TITLES[REPORT]);
     fireEvent.click(
