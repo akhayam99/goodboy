@@ -12,12 +12,13 @@ type Props = {
 
 const TICKING: ReadonlySet<TailState> = new Set(['working', 'waiting', 'queued']);
 
-const WAITS_FOR_YOU: ReadonlySet<TailState> = new Set(['paused', 'failed', 'stopped']);
+const WAITS_FOR_YOU: ReadonlySet<TailState> = new Set(['needsYou', 'paused', 'failed', 'stopped']);
 
 const PHRASE_CLASS = {
   working: 'motion-safe:text-shimmer text-foreground',
   queued: 'motion-safe:text-shimmer text-foreground',
   waiting: 'text-muted-foreground',
+  needsYou: 'text-foreground',
   paused: 'text-foreground',
   failed: 'text-foreground',
   stopped: 'text-muted-foreground',

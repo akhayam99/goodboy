@@ -1811,8 +1811,8 @@ screen with the green button, View > Exit Full Screen or Ctrl+⌘F.
 
 Utility studios (Tasks, Chat, Workflows, Terminal, Impact, Notifications, Changelog,
 the guide, pairing, Add workspace) render in the shell's studio slot, which
-covers the content area only, beside the column, as its own sheet with the
-studio band on top. The column stays live, so another door or a session row is
+covers the content area only, beside the column, as its own sheet; the page
+title is its one header (no title band). The column stays live, so another door or a session row is
 one click away. **Settings is the one studio that takes the column**, in
 both sidebar states: `shellArrangement` takes `isSettingsOpen` and returns
 `leftSlot: 'column'` with no peek, so a folded sidebar shows the column at its
@@ -1861,16 +1861,21 @@ one is open at a time.
   (Tasks, Notifications, Add workspace, Impact), `rail`
   (Settings) or `grid` (Workflows, Changelog, the guide, pairing). With no studio
   open, no frame node exists, so nothing covers the page.
-- **The band sits on the studio's column.** `StudioBand` draws its crumb and Close
-  inside a `PageColumn` of the studio's tier (`tier` in `STUDIO_META`): `column` for
-  Tasks, Workflows, Impact, the guide, What's new, Notifications, Add workspace and
-  Settings, so the crumb starts where the title starts and Close ends where the
-  column ends (at 1920 it no longer sits 330px outside it), and `full` only for
-  Chat and pairing, the rail-plus-detail studios aligned to the 24px gutter. While it
-  draws a band, the frame hands its body `UnderTrailContext`, so a studio title does
-  not add the 12px a bare page adds and sits where a session title does (centre 56px
-  under the pane top).
-- **Every studio draws the grid's title row.** Under the band each studio has one
+- **One title per page; the band holds no title.** `StudioBand` never draws a
+  crumb title, an icon or a subtitle; the page `h1` is the one title.
+  `STUDIO_META[kind].close` places Close: `none` for the sidebar door pages
+  (Tasks, Chat, Workflows, Terminal: no band, no Close, the top bar Back and
+  Escape leave them), `header` for Monitoring, Notifications and the guide
+  (`StudioFrame` passes Close through `PaneActionsContext`, so it is the last
+  action of the page title row), `band` for the rest (Settings over the window,
+  Impact, What's new, pairing, Add workspace), whose 40px band holds only Close
+  inside a `PageColumn` of the studio's tier. A band also appears when the body
+  claims it with a `StudioTrail` or passes a header accessory. While it draws a
+  band, the frame hands its body `UnderTrailContext`, so a studio title does not
+  add the 12px a bare page adds; a bandless page sits on the 12px header inset
+  (`frameGeometryOf`), like a session page. The frame root carries
+  `data-studio-title` for the journey tests.
+- **Every studio draws the grid's title row.** Each studio has one
   `h1` in the same 32px row as every page (`PaneTitleRow`, fixed `h-8`, the actions
   at its right, a long title truncates and never wraps the row): Tasks the view's name,
   Workflows `Workflows` with its tab strip under the title and `New workflow` as the

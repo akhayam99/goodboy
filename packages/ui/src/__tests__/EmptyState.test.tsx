@@ -78,7 +78,9 @@ describe('EmptyState layouts', () => {
       );
 
       expect(screen.getByText('Large state')).toBeTruthy();
-      expect(container.firstElementChild?.className).toContain('flex-col items-center');
+      expect(container.firstElementChild?.className).toContain('flex-col items-start');
+      expect(container.firstElementChild?.className).toContain('text-left');
+      expect(container.querySelector('svg')?.getAttribute('width')).toBe('18');
       expect(hasCircle(container)).toBe(false);
     },
   );
@@ -107,7 +109,7 @@ describe('EmptyState layouts', () => {
   it('renders a bordered state as a page without the border', () => {
     const { container } = render(<EmptyState icon={Inbox} bordered title="Bordered state" />);
 
-    expect(container.firstElementChild?.className).toContain('flex-col items-center');
+    expect(container.firstElementChild?.className).toContain('flex-col items-start');
     expect(container.innerHTML).not.toContain('border');
   });
 });

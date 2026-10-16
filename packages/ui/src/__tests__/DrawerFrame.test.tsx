@@ -39,6 +39,31 @@ describe('DrawerFrame', () => {
     expect(screen.getByText('payout.ts:13')).toBeDefined();
   });
 
+  it('draws one header with no divider under it, a meta line and the verb, menu, close order', () => {
+    const { container } = render(
+      <DrawerFrame
+        title="ledger-export.ts"
+        meta="src/exports · 4 KB"
+        action={<button type="button">Open in editor</button>}
+        menu={<button type="button">More</button>}
+        onClose={vi.fn()}
+      >
+        <p>export const run = () =&gt; undefined;</p>
+      </DrawerFrame>,
+    );
+
+    expect(container.querySelector('[role="separator"], hr')).toBeNull();
+    expect(screen.getByText('src/exports · 4 KB').hasAttribute('data-drawer-meta')).toBe(true);
+    expect(screen.getByRole('heading', { name: 'ledger-export.ts' }).className).toContain(
+      'min-w-24',
+    );
+    const verb = screen.getByRole('button', { name: 'Open in editor' });
+    const menu = screen.getByRole('button', { name: 'More' });
+    const close = screen.getByRole('button', { name: 'Close' });
+    expect(verb.compareDocumentPosition(menu)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(menu.compareDocumentPosition(close)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
   it('closes with Escape and with its close button', () => {
     const onClose = vi.fn();
     render(
