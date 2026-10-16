@@ -72,8 +72,8 @@ agents_of AS (
          SUM(CASE WHEN a.status = 'running' THEN 1 ELSE 0 END) AS running_steps,
          SUM(CASE WHEN a.status IN ('failed', 'blocked') THEN 1 ELSE 0 END) AS failed_steps,
          SUM(CASE WHEN a.status = 'stopped' THEN 1 ELSE 0 END) AS stopped_steps
-    FROM agents a
-   WHERE a.deleted_at IS NULL AND a.parent_agent_id IS NULL
+    FROM live_agents a
+   WHERE a.parent_agent_id IS NULL
      AND a.workflow_run_id IN (SELECT workflow_run_id FROM runs)
    GROUP BY a.workflow_run_id
 ),
@@ -81,7 +81,7 @@ run_ids AS (
   SELECT workflow_run_id, run_id FROM agent_turn_spans
    WHERE workflow_run_id IN (SELECT workflow_run_id FROM runs)
   UNION
-  SELECT workflow_run_id, provider_run_id AS run_id FROM agents
+  SELECT workflow_run_id, provider_run_id AS run_id FROM live_agents
    WHERE provider_run_id IS NOT NULL
      AND workflow_run_id IN (SELECT workflow_run_id FROM runs)
 ),
