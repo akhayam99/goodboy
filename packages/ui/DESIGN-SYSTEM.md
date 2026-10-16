@@ -1482,11 +1482,11 @@ There is no description line and no divider under the header: the text that
 teaches goes in the empty state, and the `ScrollFade` edge marks the seam.
 A detail that needs its own header row passes `HeaderBand` (also an `h1`, in the same
 fixed `h-8` row) through the custom `header` slot. The agent detail passes
-`AgentHeader` instead: the 32px title row with the one-line title (full name on hover)
-and the actions (lifecycle button, Delete as an icon with an anchored `ConfirmPopover`,
-the overflow menu), then one meta line with role, status, time and model, then the Brief
-and Transcript tabs (`SegmentedTabs` `xs`, 28px) on their own row, and the transcript
-under it starts 8px down (`ChatView` `topInset="tight"`). A page that must show a banner
+`AgentHeader` instead: one 32px title row with the role chip, the one-line title (full
+name on hover) and the provider mark, then the actions, **View transcript** and the
+overflow menu. No meta line, no state, no model and no tabs (the state is the
+conversation tail, the model sits in each turn footer), and the conversation under it
+starts 8px down (`ChatView` `topInset="tight"`, `mode="conversation"`). A page that must show a banner
 under its title (the first lap) receives it through `PaneBannerContext` and `PaneShell`
 draws it as the first body block on the column, once, so the title never moves. The session overview passes `headerRhythm="section"`, so the gap under its header is `PANE_RHYTHM.stack`, the same as between its body sections. Its `HeaderBand` holds the title, then one
 `Goal` line (an 11px faint label, the goal in muted text on one line with an

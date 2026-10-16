@@ -87,7 +87,7 @@ database.
   does, and it is released again when the turn ends. A second Auto writer on a
   shared key does not fail: its turn waits in `acquireTurnWriteSet`. The agent
   reads "starting" with the note **Waiting for the writer** (`agentWriterWait`),
-  Stop and Read now cancel the wait, the poll is one second and wakes at once
+  the tail Stop and Send now cancel the wait, the poll is one second and wakes at once
   when this window releases, and after 30 minutes the turn answers
   `isWriterLeaseDenied` like a resolver does. Two Auto writers on different
   worktrees of one repo serialize on the metadata folder on purpose. A turn with
@@ -298,12 +298,18 @@ threadIds? })`), a hint on one comment (`continueResolveThreads`) and a
   message shows closed as "first message · older format", the original text
   clamped to 8 lines with Show all. No parser reads it. `reduceTranscript` makes
   the `handoff` item and `TranscriptRows` counts it as the first user turn.
-- The transcript is the record and the Brief is the dashboard. What the agent
-  received lives only in the handoff block; the Brief shows one line, "Sent by
-  Orchestrator · step 4", that switches to the Transcript tab with
-  the Ask section open (`requestHandoffOpen`). The Brief no longer carries the ask, Why this
-  step or Expected output, and the old kickoff cards and their text parsers
-  are gone.
+- The transcript drawer is the record and the agent page is one conversation.
+  What the agent received lives only in the handoff block at the top of the
+  conversation ("Sent by Orchestrator · step 4", opened in place with
+  `requestHandoffOpen`). The old kickoff cards and their text parsers are gone.
+- The conversation (`ChatView` `mode="conversation"`, rows from
+  `conversationRows`) keeps per turn the user message, one summary line for the
+  turn's tools (`turnSummary`, steps open inline), the final answer, app
+  notices and the turn footer. Narration before the last tool call, the live
+  turn and plan updates leave the center; a pending permission request stays
+  inline. The task list a `TodoWrite`, `update_plan` or `write_todos` call
+  writes is one checklist (`planChecklist`) in the turn that first wrote it.
+  `mode="record"` (the transcript drawer) keeps today's full rows.
 
 Claude and the opencode family resume the provider's own session when the
 agent's stored session belongs to the same provider. Cursor, Codex and
@@ -769,9 +775,10 @@ avoided on `SendControl`'s own buttons.
   themselves sit above the field, not in this row).
 - The right side is `RoutingPicker` (with a `budget` prop, `ProviderUsagePill`
   passed in rather than living beside it) then `SendControl` (`parts/`): the
-  same `ArrowUp` glyph as `ConversationComposer`, stop while a turn runs with
-  nothing to send, Read now/Queue (Queue primary) once there is something to deliver while a
-  turn runs.
+  same `ArrowUp` glyph as `ConversationComposer` while idle, and Send now/Queue
+  (Queue primary, both disabled until there is something to deliver) for as
+  long as a turn runs. Stop is not in the composer: it is the conversation
+  tail (`ConversationTail`) under the last turn.
 - `ChatInput/index.tsx` only composes. Its state lives in `hooks/use*` (agent
   selection, draft, queue, send, suggestions), its sections in `parts/`, and
   its derived flags in `composerView.ts`. It stays one component so the draft

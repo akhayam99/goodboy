@@ -1137,7 +1137,7 @@
         },
         {
           "title": "Agent header",
-          "text": "Read who an agent is at a glance. Role, status, time and model sit on one line under the title.",
+          "text": "Read who an agent is at a glance. Its role, name and provider share one row with View transcript and its menu.",
           "group": "Agents",
           "also": "agent header"
         },
@@ -1149,13 +1149,13 @@
         },
         {
           "title": "Agent transcript",
-          "text": "Follow one agent's work in order. Plans and reports show as chips, file edits group together, and questions appear where you answer them.",
+          "text": "Follow one agent's work as one conversation. Each turn says in one line what it did, then its answer; View transcript shows every tool call.",
           "group": "Agents",
           "main": true
         },
         {
           "title": "Queue or send now",
-          "text": "Keep talking while an agent works. Enter queues your message for its next turn, and ⌘Enter sends it now.",
+          "text": "Keep talking while an agent works. Enter queues your message for its next turn, and Send now, in view while it works, sends it now.",
           "group": "Agents",
           "also": "queue or send now",
           "shown": true
