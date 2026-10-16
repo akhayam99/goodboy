@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Play } from 'lucide-react';
 import { parseHiddenModels } from '@goodboy/core';
 import { useShallow } from 'zustand/react/shallow';
-import { Button, DrawerColumn, PageColumn, Tooltip } from '@goodboy/ui';
+import { DrawerColumn, PageColumn } from '@goodboy/ui';
 import type {
   ChatId,
   ChatMessage,
@@ -11,8 +10,6 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { NAMES } from '../../../../shared/names';
 import { sessionPlace, useAppStore } from '../../../../store';
 import { useChatSessions } from '../../hooks/useChatSessions';
 import { chatSuggestions } from '../../chatSuggestions';
@@ -161,9 +158,6 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => 
   };
 
   const shown = messages ?? NO_MESSAGES;
-  const canStartWork = shown.some(
-    (message) => message.role === 'assistant' && message.status === 'done',
-  );
   const openWork = (anchorMessageId: ChatMessageId | null): void =>
     setWork((current) => ({ anchorMessageId, key: (current?.key ?? 0) + 1 }));
   const openSession = (sessionId: SessionId): void => navigate({ to: sessionPlace({ sessionId }) });
@@ -205,34 +199,14 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => 
       <ChatHeader
         title={chat?.title ?? NEW_CHAT_HEADING}
         sessions={
-          linked.stage === null ? null : (
+          linked.stage === null || linked.entries.length < 2 ? null : (
             <ChatSessionsChip entries={linked.entries} stage={linked.stage} onOpen={openSession} />
           )
         }
-        action={
-          chat === null ? null : (
-            <>
-              <Tooltip content={NAMES.startWorkFromChat} side="bottom">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  disabled={!canStartWork}
-                  aria-label={NAMES.startWorkFromChat}
-                  aria-expanded={work !== null}
-                  className="shrink-0 whitespace-nowrap"
-                  onClick={() => openWork(null)}
-                >
-                  <Play size={ICON_SIZE.row} aria-hidden />
-                  <span className="@max-xl/chat:hidden">{NAMES.startWorkFromChat}</span>
-                </Button>
-              </Tooltip>
-              <ChatHeaderDelete chat={chat} onRemoved={onRemoved} />
-            </>
-          )
-        }
+        action={chat === null ? null : <ChatHeaderDelete chat={chat} onRemoved={onRemoved} />}
       />
       {isEmpty ? (
-        <PageColumn className="flex min-h-0 flex-1 flex-col">
+        <PageColumn width="measure" className="flex min-h-0 flex-1 flex-col">
           <ChatEmpty
             workspaceName={workspaceName}
             projectNames={projectNames}
@@ -258,7 +232,9 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => 
             drafts={drafts}
           />
           <div className="shrink-0 pb-4 pt-2">
-            <PageColumn className="flex flex-col gap-2">{composer}</PageColumn>
+            <PageColumn width="measure" className="flex flex-col gap-2">
+              {composer}
+            </PageColumn>
           </div>
         </>
       )}

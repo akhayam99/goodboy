@@ -21,7 +21,11 @@ export type AskButton =
 
 export type AskButtonFacts = {
   readonly openQuestions: ReadonlyArray<{ readonly id: OpenQuestionId; readonly number: number }>;
-  readonly messageableAgents: ReadonlyArray<{ readonly id: AgentId; readonly name: string }>;
+  readonly messageableAgents: ReadonlyArray<{
+    readonly id: AgentId;
+    readonly name: string;
+    readonly noun: string;
+  }>;
   readonly readyCount: number;
 };
 
@@ -74,7 +78,7 @@ export const askButtons = ({ answer, facts }: Params): ReadonlyArray<AskButton> 
     buttons.push({
       kind: 'tell',
       key: `tell:${agent.id}`,
-      label: `Tell ${agent.name}…`,
+      label: `Message ${agent.noun}…`,
       agentId: agent.id,
       prefill:
         suggested?.kind === 'agent' && suggested.agentId === agent.id

@@ -120,6 +120,7 @@ const {
     agentEffortOverride: {},
     agentKindOverride: {},
     agentRunHistory: {},
+    transcripts: {},
     agentDraft: {},
     agentAttachments: {},
     agentQueue: {},

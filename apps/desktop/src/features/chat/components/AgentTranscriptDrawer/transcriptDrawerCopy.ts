@@ -1,5 +1,4 @@
 import type { Agent } from '@goodboy/types';
-import { agentDisplayName } from '../../../../shared/utils/agentDisplayName';
 
 export const TRANSCRIPT_DRAWER_COPY = {
   title: 'Transcript',
@@ -13,7 +12,7 @@ export const TRANSCRIPT_DRAWER_COPY = {
   send: 'Send',
   sendFailed: "Couldn't send the message",
   replyLabel: ({ name }: { readonly name: string }) => `Message to ${name}`,
-  replyPlaceholder: ({ name }: { readonly name: string }) => `Write to ${name}`,
+  replyPlaceholder: ({ name }: { readonly name: string }) => `Message ${name}`,
 } as const;
 
 export const agentTranscriptTitle = ({
@@ -21,6 +20,4 @@ export const agentTranscriptTitle = ({
 }: {
   readonly agent: Pick<Agent, 'name' | 'kind'>;
 }): string =>
-  agent.kind === 'resolver'
-    ? TRANSCRIPT_DRAWER_COPY.fixRun
-    : agentDisplayName({ name: agent.name, kind: agent.kind ?? '' });
+  agent.kind === 'resolver' ? TRANSCRIPT_DRAWER_COPY.fixRun : TRANSCRIPT_DRAWER_COPY.title;

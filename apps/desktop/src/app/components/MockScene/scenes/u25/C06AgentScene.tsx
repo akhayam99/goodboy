@@ -3,6 +3,7 @@ import type { Agent } from '@goodboy/types';
 import { AgentDetailPane } from '../../../../../features/session/components/AgentDetailPane';
 import { FixRunTranscriptDrawer } from '../../../FixRunTranscriptDrawer';
 import { PageSheet } from '../PageSheet';
+import { useSceneClicks } from '../audit/useSceneClicks';
 import {
   C06_AGENT_ID,
   C06_SESSION,
@@ -15,12 +16,27 @@ type Props = {
   readonly state: C06State;
   readonly isTranscriptOpen?: boolean;
   readonly isStepsOpen?: boolean;
+  readonly clicks?: ReadonlyArray<string>;
 };
+
+const NO_CLICKS: ReadonlyArray<string> = [];
 
 const EXPAND_DELAY_MS = 200;
 
-export const C06AgentScene = ({ state, isTranscriptOpen = false, isStepsOpen = false }: Props) => {
+export const C06AgentScene = ({
+  state,
+  isTranscriptOpen = false,
+  isStepsOpen = false,
+  clicks = NO_CLICKS,
+}: Props) => {
   const [agent, setAgent] = useState<Agent | null>(null);
+  useSceneClicks({
+    isReady: agent !== null,
+    labels: clicks,
+    selector: 'button',
+    match: 'prefix',
+    intervalMs: 400,
+  });
 
   useEffect(() => {
     setAgent(seedC06({ state }));
@@ -31,9 +47,7 @@ export const C06AgentScene = ({ state, isTranscriptOpen = false, isStepsOpen = f
       return;
     }
     const timer = window.setTimeout(() => {
-      const lines = document.querySelectorAll<HTMLButtonElement>(
-        '[data-turn-steps] button[aria-expanded]',
-      );
+      const lines = document.querySelectorAll<HTMLButtonElement>('[data-turn-steps] button');
       lines[lines.length - 1]?.click();
     }, EXPAND_DELAY_MS);
     return () => window.clearTimeout(timer);

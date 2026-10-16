@@ -9,6 +9,7 @@ import { AutoProjectAsk } from '../AutoProjectAsk';
 import { AutoTail } from '../AutoTail';
 import { projectAskOf } from '../projectAskOf';
 import { batchesOf } from '../batchesOf';
+import { mergedBatchesOf } from '../mergedBatchesOf';
 import { composerPlaceholderOf } from '../composerPlaceholderOf';
 import { useAutoTreeActions } from '../useAutoTreeActions';
 
@@ -34,20 +35,22 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
     if (view === null) {
       return undefined;
     }
-    const lines = batchesOf({ view }).map((batch): TranscriptInsertion => ({
-      key: batch.key,
-      beforeMs: batch.beforeMs,
-      node: (
-        <AutoDelegationLines
-          sessionId={session.id}
-          view={view}
-          delegations={batch.delegations}
-          agents={agents}
-          onOpenChild={openChild}
-          onOpenArtifact={openArtifact}
-        />
-      ),
-    }));
+    const lines = mergedBatchesOf({ batches: batchesOf({ view }) }).map(
+      (batch): TranscriptInsertion => ({
+        key: batch.key,
+        beforeMs: batch.beforeMs,
+        node: (
+          <AutoDelegationLines
+            sessionId={session.id}
+            view={view}
+            delegations={batch.delegations}
+            agents={agents}
+            onOpenChild={openChild}
+            onOpenArtifact={openArtifact}
+          />
+        ),
+      }),
+    );
     const ask = projectAskOf({ view });
     const tail: TranscriptInsertion = {
       key: `auto-tail-${view.tree.id}`,

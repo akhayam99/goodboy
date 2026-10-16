@@ -1,4 +1,14 @@
-import { CircleCheck, CircleDot, Copy, MessageSquare, OctagonX, Cpu, Tag } from 'lucide-react';
+import {
+  CircleCheck,
+  CircleDot,
+  Copy,
+  MessageSquare,
+  OctagonX,
+  Cpu,
+  Pencil,
+  ScrollText,
+  Tag,
+} from 'lucide-react';
 import { AUTO_GATES, isAdoptableKind, parseHiddenModels, visibleCatalog } from '@goodboy/core';
 import type { Agent, AgentStatus, ProviderId, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
@@ -20,6 +30,8 @@ import {
 } from '../../session/agent-lifecycle';
 import { lastReplyOf } from '../../session/lastReplyOf';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
+import { agentObjectKey } from '../agentObjectKey';
+import { RENAME_REQUEST_EVENT, requestRename } from '../renameRequest';
 import { OPEN_AGENT_INTENT } from '../../../shared/utils/openAgentReveal';
 import type { ActionEnv, AgentActionTarget, ObjectKindDefinition } from '../types';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
@@ -147,6 +159,39 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
         dispatchAfterNavigation({
           name: 'goodboy:reveal-chat',
           detail: { intent: OPEN_AGENT_INTENT },
+        });
+      },
+    },
+    {
+      id: 'agent.rename',
+      label: 'Rename',
+      icon: Pencil,
+      group: 'act',
+      when: ({ facts }) => !facts.isWorkflowStep,
+      run: ({ facts, env }) => {
+        const objectKey = agentObjectKey({ agentId: facts.agent.id });
+        if (requestRename({ objectKey, anchorKey: env.anchorKey })) {
+          return;
+        }
+        openAgent({ env, facts });
+        dispatchAfterNavigation({
+          name: RENAME_REQUEST_EVENT,
+          detail: { objectKey, anchorKey: `agent-header:${facts.agent.id}` },
+        });
+      },
+    },
+    {
+      id: 'agent.transcript',
+      label: 'View transcript',
+      icon: ScrollText,
+      group: 'open',
+      when: ({ facts }) => classifyAgent({ agent: facts.agent, override: null }) === 'auto',
+      run: ({ facts, env }) => {
+        openAgent({ env, facts });
+        env.getState().openDrawer({
+          kind: 'transcript',
+          sessionId: facts.sessionId,
+          payload: { agentId: facts.agent.id },
         });
       },
     },

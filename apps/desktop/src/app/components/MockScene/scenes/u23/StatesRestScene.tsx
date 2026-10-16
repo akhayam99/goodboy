@@ -69,15 +69,21 @@ export const StatesRestScene = ({ kind }: Props) => {
   return (
     <main className="flex h-screen min-w-0 flex-col bg-background p-6 text-foreground">
       {kind === 'chat-loading' ? (
-        <ChatList
-          workspaceId={WORKSPACE_ID}
-          chats={[]}
-          selectedId={null}
-          onSelect={NOOP}
-          onNew={NOOP}
-          onArchived={NOOP}
-          onDeleted={NOOP}
-        />
+        <div className="flex min-h-0 flex-1 gap-6">
+          <aside aria-label="Chat list" className="flex w-72 shrink-0 flex-col">
+            <ChatList
+              workspaceId={WORKSPACE_ID}
+              chats={[]}
+              selectedId={null}
+              onSelect={NOOP}
+              onArchived={NOOP}
+              onDeleted={NOOP}
+            />
+          </aside>
+          <section aria-label="New chat" className="flex min-w-0 flex-1 flex-col">
+            <h1 className="text-title text-foreground">New chat</h1>
+          </section>
+        </div>
       ) : null}
       {kind === 'artifacts-loading' ? (
         <ArtifactList

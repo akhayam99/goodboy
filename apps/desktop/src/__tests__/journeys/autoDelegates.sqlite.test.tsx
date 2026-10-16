@@ -333,7 +333,7 @@ describe('journey: Auto delegates and a child finishes', () => {
     const working = await showRail(view);
     expect(working).toHaveLength(2);
     expect(working[0]).toContain('Auto');
-    expect(working[0]).toContain('Waiting');
+    expect(working[0]).toContain('Running');
     expect(working[1]).toContain('Scout');
     expect(working[1]).toContain('Running');
     expect(autoPrompts).toHaveLength(1);

@@ -1,6 +1,6 @@
 import type { AutoDelegation } from '@goodboy/db';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
-import { Button, WorkNode } from '@goodboy/ui';
+import { Button, TruncatedText } from '@goodboy/ui';
 import { AgentKindChip } from '../../../shared/components/AgentKindChip';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { artifactLinksOf } from './artifactLinksOf';
@@ -9,7 +9,6 @@ import { cardTitleOf } from './cardTitleOf';
 import { confirmLineOf } from './confirmLineOf';
 import { delegationCardOf } from './delegationCardOf';
 import { DelegationConfirmRow } from './DelegationConfirmRow';
-import { delegationNodeOf } from './railRowsOf';
 import { revisionWordOf } from './revisionWordOf';
 import { useDelegationDecision } from './useDelegationDecision';
 
@@ -46,26 +45,20 @@ export const AutoDelegationLines = ({
         return (
           <li key={delegation.id} data-delegation={delegation.id} className="flex flex-col gap-2">
             <span className="flex h-7 min-w-0 items-center gap-2 text-label">
-              <span className="flex size-5 shrink-0 items-center justify-center">
-                <WorkNode
-                  size="sm"
-                  state={delegationNodeOf({ card })}
-                  mark={{ kind: 'dot' }}
-                  label={card.status.word}
-                />
-              </span>
-              <span className="shrink-0 text-muted-foreground">Delegated to</span>
               <AgentKindChip kind={card.role} />
+              <TruncatedText className="min-w-0 truncate text-foreground" tooltip={title}>
+                {card.task ?? title}
+              </TruncatedText>
               {revision === null ? null : (
-                <span className="min-w-0 truncate text-muted-foreground">{revision}</span>
+                <span className="shrink-0 text-muted-foreground">{revision}</span>
               )}
               <Button
                 variant="quiet"
                 size="xs"
-                aria-label={`See more about ${title}`}
+                aria-label={`Open ${card.task ?? title}`}
                 onClick={() => onOpenChild(card.childAgentId)}
               >
-                See more
+                Open
               </Button>
             </span>
             {delegation.state === 'awaiting_confirm' ? (

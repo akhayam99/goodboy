@@ -1,14 +1,8 @@
-import { Markdown, MetaRow, PANE_RHYTHM, Tooltip } from '@goodboy/ui';
-import type {
-  AgentId,
-  MessageAttachment,
-  ProviderId,
-  SessionId,
-  UserTurnSentVia,
-} from '@goodboy/types';
-import { PROVIDER_BRAND } from '../../../providers/components/provider-brand';
-import { modelLabel } from '../../utils/chat-constants';
-import { PROVIDER_LABEL } from '../../../providers/providerLabel';
+import { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
+import { Markdown, MetaRow, PANE_RHYTHM } from '@goodboy/ui';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import type { AgentId, MessageAttachment, SessionId, UserTurnSentVia } from '@goodboy/types';
 import { readAttachment } from '../../turn';
 import { AttachmentChip } from '../../../attachments/components/AttachmentChip';
 import { useAttachmentThumbnail } from '../../../attachments/hooks/useAttachmentThumbnail';
@@ -17,7 +11,6 @@ import { CopyButton } from '@goodboy/ui';
 import { formatClock } from '../../../../shared/utils/time/formatClock';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { ClampedText } from '../../../../shared/components/ClampedText';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type MessageAttachmentChipProps = {
   readonly attachment: MessageAttachment;
@@ -53,12 +46,11 @@ type Props = {
   text: string;
   at: string;
   attachments?: ReadonlyArray<MessageAttachment>;
-  provider?: ProviderId;
-  model?: string;
   sentVia?: UserTurnSentVia;
   workingDir?: string | null;
   sessionId?: SessionId | null;
   agentId?: AgentId | null;
+  isBrief?: boolean;
 };
 
 const SENT_VIA_LABEL: Record<UserTurnSentVia, string> = {
@@ -70,18 +62,39 @@ export const UserText = ({
   text,
   at,
   attachments,
-  provider,
-  model,
   sentVia,
   workingDir = null,
   sessionId = null,
   agentId = null,
+  isBrief = false,
 }: Props) => {
   const atts = attachments ?? [];
+  const [isBriefOpen, setIsBriefOpen] = useState(false);
   const menu = useObjectMenuTrigger({
     target: { kind: 'message', text, sessionId, agentId },
     anchorKey: null,
   });
+  const firstLine =
+    text
+      .split('\n')
+      .map((line) => line.trim())
+      .find((line) => line !== '') ?? '';
+  if (isBrief && !isBriefOpen && firstLine !== '') {
+    return (
+      <div className="flex min-w-0 justify-end">
+        <button
+          type="button"
+          aria-expanded={false}
+          onClick={() => setIsBriefOpen(true)}
+          onContextMenu={menu.onContextMenu}
+          className="flex min-w-0 max-w-full items-center gap-1 rounded-lg bg-elevated px-3 py-1 text-label text-muted-foreground ring-1 ring-border-soft hover:text-foreground"
+        >
+          <span className="min-w-0 truncate">Asked: {firstLine}</span>
+          <ChevronDown size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+        </button>
+      </div>
+    );
+  }
   return (
     <TranscriptShell
       onContextMenu={menu.onContextMenu}
@@ -104,7 +117,6 @@ export const UserText = ({
       <div className="flex items-center justify-end gap-2">
         <MetaRow
           items={[
-            provider ? <ProviderFootnote key="provider" provider={provider} model={model} /> : null,
             sentVia ? <span key="sent-via">{SENT_VIA_LABEL[sentVia]}</span> : null,
             <span key="time" className="tabular-nums">
               {formatClock({ at })}
@@ -121,23 +133,5 @@ export const UserText = ({
         )}
       </div>
     </TranscriptShell>
-  );
-};
-
-type ProviderFootnoteProps = {
-  provider: ProviderId;
-  model?: string;
-};
-
-const ProviderFootnote = ({ provider, model }: ProviderFootnoteProps) => {
-  const Icon = PROVIDER_BRAND[provider].icon;
-  const label = PROVIDER_LABEL[provider];
-  return (
-    <Tooltip content={`Sent to ${label}${model ? ` · ${modelLabel(model, provider)}` : ''}`}>
-      <span className="inline-flex items-center gap-1">
-        <Icon size={ICON_SIZE.row} className="text-muted-foreground" aria-hidden />
-        <span>{label}</span>
-      </span>
-    </Tooltip>
   );
 };

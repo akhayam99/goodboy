@@ -1134,7 +1134,7 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   Opening the chat, or archiving it, clears the mark. `unreadChatIds` lives in
   the chats slice and is saved in `localStorage` (`chat-unread:v1`), so it
   survives a reload without a migration.
-- **Start work from chat.** The button drafts a brief (title, goal, what we know,
+- **Start work from chat.** The button under a finished answer (the room header holds only delete) drafts a brief (title, goal, what we know,
   files, projects) with one `summarize_session` call through `runAuxOneShot`
   with no tools and no working folder (`summarizeChatForWork.ts`). **Drafted
   by** picks the model that writes it: a `RoutingPicker` pill limited to chat

@@ -1,52 +1,107 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { Agent, AgentId, SessionId } from '@goodboy/types';
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
+vi.mock('../../../../shared/lib/db', async () =>
+  (await import('../../../../store/storyHarness')).dbLibModuleMock(),
+);
 
-const state = vi.hoisted(() => ({
-  renameAgent: vi.fn(async () => undefined),
-  sessionResolveAttempts: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
-}));
-
-vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (value: typeof state) => T) => selector(state),
-}));
-
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { brandId, type AgentId, type ResolveAttempt, type SessionId } from '@goodboy/types';
+import { anAgent } from '@goodboy/types/testing';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+} from '../../../../store/storyHarness';
+import { requestRename } from '../../../actions/renameRequest';
+import { agentObjectKey } from '../../../actions/agentObjectKey';
 import { AgentTitle } from './AgentTitle';
 
-const sessionId = 'session-1' as SessionId;
-const agent = {
-  id: 'agent-1' as AgentId,
+const sessionId = brandId<SessionId>({ value: 'session-1' });
+const agentId = brandId<AgentId>({ value: 'agent-1' });
+const agent = anAgent({
+  id: agentId,
   sessionId,
-  ordinal: 0,
   name: 'Implement chat',
   status: 'completed',
   kind: 'implementer',
-} as Agent;
+});
+
+type AttemptParams = {
+  readonly id: string;
+  readonly threadIds: ReadonlyArray<string>;
+  readonly createdAt: number;
+};
+
+const anAttempt = ({ id, threadIds, createdAt }: AttemptParams): ResolveAttempt => ({
+  id,
+  sessionId,
+  agentId,
+  prNumber: 318,
+  threadIds,
+  provider: 'anthropic',
+  model: 'claude-sonnet-5-5',
+  effort: null,
+  instructions: null,
+  phase: 'running',
+  mountTarget: null,
+  startedAt: null,
+  endedAt: null,
+  error: null,
+  createdAt,
+  batchId: null,
+  copyPath: null,
+  launchChoice: null,
+});
+
+let useAppStore: Awaited<ReturnType<typeof importStore>>;
+const renameAgent = vi.fn(async () => undefined);
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+  renameAgent.mockClear();
+  useAppStore.setState({ renameAgent });
+});
 
 afterEach(cleanup);
 
-beforeEach(() => {
-  state.renameAgent.mockClear();
-  state.sessionResolveAttempts = {};
-});
+const askToRename = () =>
+  act(() => {
+    requestRename({
+      objectKey: agentObjectKey({ agentId }),
+      anchorKey: `agent-header:${agentId}`,
+    });
+  });
 
 describe('AgentTitle', () => {
-  it('reads the agent name until someone asks to change it', () => {
+  it('reads the agent name with no rename icon beside it', () => {
     render(<AgentTitle agent={agent} sessionId={sessionId} />);
 
     expect(screen.getByText('Implement chat')).toBeDefined();
     expect(screen.queryByRole('textbox')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Rename agent' })).toBeNull();
   });
 
   it('names an automatic fix run title by its pull request and comments, as the Activity row does', () => {
-    state.sessionResolveAttempts = {
-      [sessionId]: [
-        { agentId: 'agent-1', prNumber: 318, threadIds: ['t1', 't2'], createdAt: 1 },
-        { agentId: 'agent-1', prNumber: 318, threadIds: ['t3'], createdAt: 2 },
-      ],
-    };
+    useAppStore.setState({
+      sessionResolveAttempts: {
+        [sessionId]: [
+          anAttempt({ id: 'a1', threadIds: ['t1', 't2'], createdAt: 1 }),
+          anAttempt({ id: 'a2', threadIds: ['t3'], createdAt: 2 }),
+        ],
+      },
+    });
     render(
       <AgentTitle
         agent={{ ...agent, kind: 'resolver', name: 'Resolve: 3 review comments' }}
@@ -58,24 +113,23 @@ describe('AgentTitle', () => {
     expect(screen.queryByText(/^Resolve:/)).toBeNull();
   });
 
-  it('keeps a title the owner gave to a fix run', () => {
-    state.sessionResolveAttempts = {
-      [sessionId]: [{ agentId: 'agent-1', prNumber: 318, threadIds: ['t1'], createdAt: 1 }],
-    };
+  it('titles an agent named after its role with its brief, so the role is not said twice', () => {
     render(
       <AgentTitle
-        agent={{ ...agent, kind: 'resolver', name: 'Webhook retry pass' }}
+        agent={{ ...agent, kind: 'planner', name: 'Planner' }}
         sessionId={sessionId}
+        brief="Plan the ledger-core retry window"
       />,
     );
 
-    expect(screen.getByText('Webhook retry pass')).toBeDefined();
+    expect(screen.getByText('Plan the ledger-core retry window')).toBeDefined();
+    expect(screen.queryByText('Planner')).toBeNull();
   });
 
-  it('opens the field from the rename affordance', () => {
+  it('opens the field when the header menu asks to rename', () => {
     render(<AgentTitle agent={agent} sessionId={sessionId} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Rename agent' }));
+    askToRename();
 
     expect(screen.getByRole('textbox')).toBeDefined();
   });
@@ -90,24 +144,24 @@ describe('AgentTitle', () => {
 
   it('saves the new name on Enter', async () => {
     render(<AgentTitle agent={agent} sessionId={sessionId} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Rename agent' }));
+    askToRename();
 
     const field = screen.getByRole('textbox');
     fireEvent.change(field, { target: { value: 'Ship the chat dock' } });
     fireEvent.keyDown(field, { key: 'Enter' });
-    await vi.waitFor(() => expect(state.renameAgent).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(renameAgent).toHaveBeenCalledTimes(1));
 
-    expect(state.renameAgent).toHaveBeenCalledWith(sessionId, 'agent-1', 'Ship the chat dock');
+    expect(renameAgent).toHaveBeenCalledWith(sessionId, 'agent-1', 'Ship the chat dock');
   });
 
   it('refuses an empty name and leaves the agent alone', () => {
     render(<AgentTitle agent={agent} sessionId={sessionId} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Rename agent' }));
+    askToRename();
 
     const field = screen.getByRole('textbox');
     fireEvent.change(field, { target: { value: '   ' } });
     fireEvent.keyDown(field, { key: 'Enter' });
 
-    expect(state.renameAgent).not.toHaveBeenCalled();
+    expect(renameAgent).not.toHaveBeenCalled();
   });
 });

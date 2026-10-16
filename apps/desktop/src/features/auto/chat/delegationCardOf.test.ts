@@ -67,10 +67,10 @@ describe('delegationCardOf', () => {
       }).status.word;
 
     expect(wordOf('accepted')).toBe('Queued');
-    expect(wordOf('awaiting_confirm')).toBe('Needs your OK');
+    expect(wordOf('awaiting_confirm')).toBe('Needs you');
     expect(wordOf('starting')).toBe('Starting');
     expect(wordOf('running')).toBe('Running');
-    expect(wordOf('paused')).toBe('Waiting for an answer');
+    expect(wordOf('paused')).toBe('Needs you');
     expect(wordOf('settled', 'completed')).toBe('Done');
     expect(wordOf('settled', 'failed')).toBe('Failed');
     expect(wordOf('settled', 'blocked')).toBe('Blocked');
@@ -282,9 +282,7 @@ describe('batches, waiting text and composer line', () => {
       delegations: [aDelegation({ key: 'b', role: 'implementer', state: 'running' })],
     });
 
-    expect(composerPlaceholderOf({ view: waiting })).toBe(
-      'Queued: Auto sees it with the next results',
-    );
+    expect(composerPlaceholderOf({ view: waiting })).toBe('Message Auto');
     expect(
       composerPlaceholderOf({
         view: aView({ phase: 'waiting', artifacts: [aPlanRow({ revision: 2 })] }),

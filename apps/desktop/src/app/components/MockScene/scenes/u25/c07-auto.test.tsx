@@ -83,8 +83,7 @@ describe('c07 Auto scenes', () => {
     const rail = within(level).getByRole('list', { name: 'Work' });
     expect(within(rail).getAllByRole('listitem')).toHaveLength(4);
     const foot = within(level).getByRole('region', { name: 'Limit' });
-    expect(within(foot).getByRole('button', { name: 'Limit $10.00' })).toBeDefined();
-    expect(within(foot).getByText('$5.23 left')).toBeDefined();
+    expect(within(foot).getByRole('button', { name: 'Limit $10.00 · $5.23 left' })).toBeDefined();
   });
 
   it('c07-auto-working puts the task on line 2 of a rail row and the model in its tooltip', async () => {
@@ -109,12 +108,15 @@ describe('c07 Auto scenes', () => {
   it('c07-auto-working keeps the center lean: no role chip, bare delegation lines, one tail', async () => {
     mount({ id: 'c07-auto-working' });
 
-    await screen.findByRole('button', { name: 'See more about Implementer' }, WAIT);
+    await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
     const title = screen.getByTestId('agent-header-title-row');
     expect(within(title).queryByText('Auto agent')).toBeNull();
     expect(within(title).queryByText('Experimental')).toBeNull();
     expect(screen.queryByRole('article')).toBeNull();
-    expect(screen.getAllByText('Delegated to').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Delegated to')).toBeNull();
+    for (const lines of screen.getAllByRole('list', { name: 'Delegations' })) {
+      expect(within(lines).queryByText('Running')).toBeNull();
+    }
     expect(document.querySelectorAll('[data-auto-tail]')).toHaveLength(1);
     const tail = document.querySelector<HTMLElement>('[data-auto-tail]');
     expect(tail?.textContent).toContain('Waiting for Implementer and Tester');
@@ -130,12 +132,11 @@ describe('c07 Auto scenes', () => {
     expect(document.querySelector('[data-auto-tail]')).toBeNull();
   });
 
-  it('c07-auto-idle offers Mark finished in the header and says Idle on the tail', async () => {
+  it('c07-auto-idle offers Mark finished in the header and draws no tail', async () => {
     mount({ id: 'c07-auto-idle' });
 
     expect(await screen.findByRole('button', { name: 'Mark finished' }, WAIT)).toBeDefined();
-    const tail = document.querySelector<HTMLElement>('[data-auto-tail]');
-    expect(tail?.textContent).toContain('Idle');
+    expect(document.querySelector('[data-auto-tail]')).toBeNull();
   });
 
   it('c07-auto-child opens the Implementer in the pane with its why, its tail and a composer', async () => {
@@ -159,8 +160,14 @@ describe('c07 Auto scenes', () => {
   it('a rail row and a delegation line open the child pane; the Auto row closes it', async () => {
     mount({ id: 'c07-auto-working' });
 
-    await screen.findByRole('button', { name: 'See more about Tester' }, WAIT);
-    fireEvent.click(screen.getByRole('button', { name: 'See more about Tester' }));
+    const lists = await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
+    const tester = lists
+      .flatMap((list) => within(list).getAllByRole('listitem'))
+      .find((line) => within(line).queryByText('Tester') !== null);
+    if (tester === undefined) {
+      throw new Error('no Tester line');
+    }
+    fireEvent.click(within(tester).getByRole('button', { name: /^Open / }));
     expect(await screen.findByPlaceholderText('Message Tester', undefined, WAIT)).toBeDefined();
 
     fireEvent.click(within(shownLayer()).getByRole('button', { name: 'Show Implementer' }));
@@ -202,9 +209,12 @@ describe('c07 Auto scenes', () => {
     const list = screen.getByRole('list', { name: 'Projects' });
     const boxes = within(list).getAllByRole('checkbox');
     expect(boxes.length).toBeGreaterThan(1);
+    expect(screen.getByText('In this session')).toBeDefined();
+    expect(screen.queryByText(/, in this session/)).toBeNull();
     const actions = list.closest('[data-placement]')?.querySelector('[data-slot="form-actions"]');
     expect(actions?.textContent).toContain('Discard request');
-    expect(actions?.textContent).toContain('Another project...');
+    fireEvent.click(screen.getByRole('button', { name: 'Another project…' }));
+    expect(screen.getByRole('textbox', { name: 'Type a project name' })).toBeDefined();
     expect(list.compareDocumentPosition(actions ?? list) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
@@ -216,9 +226,6 @@ describe('c07 Auto scenes', () => {
     expect(screen.getByRole('button', { name: /^Use / })).toHaveProperty('disabled', false);
     fireEvent.click(boxes[1] ?? list);
     expect(screen.getByRole('button', { name: 'Use both' })).toBeDefined();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Another project...' }));
-    expect(screen.getByRole('textbox', { name: 'Type a project name' })).toBeDefined();
   });
 
   it('No project, just answer tells Auto through its door and collapses the ask', async () => {
@@ -260,8 +267,28 @@ describe('c07 Auto scenes', () => {
     expect(within(tail).getByRole('button', { name: 'Raise to $20.00' })).toBeDefined();
     fireEvent.click(within(tail).getByRole('button', { name: 'Change limit' }));
     expect(
-      await screen.findByRole('dialog', { name: 'Limit for this conversation' }, WAIT),
+      await screen.findByRole('dialog', { name: 'Limit for this Auto run' }, WAIT),
     ).toBeDefined();
+  });
+
+  it('c07-auto-limit-popover lists spent, reserved and turns under one Limit title', async () => {
+    mount({ id: 'c07-auto-limit-popover' });
+
+    const popover = await screen.findByRole('dialog', { name: 'Limit for this Auto run' }, WAIT);
+    expect(within(popover).getByText('Spent')).toBeDefined();
+    expect(within(popover).getByText('Reserved')).toBeDefined();
+    expect(within(popover).getByText('Turns')).toBeDefined();
+    expect(within(popover).getByRole('button', { name: 'No limit' })).toBeDefined();
+  });
+
+  it('c07-auto-working titles the Auto root with its goal and keeps View transcript in the menu', async () => {
+    mount({ id: 'c07-auto-working' });
+
+    const title = await screen.findByTestId('agent-header-title-row', undefined, WAIT);
+    expect(within(title).queryByText(/^Auto$/)).toBeNull();
+    expect(within(title).queryByRole('button', { name: 'View transcript' })).toBeNull();
+    fireEvent.click(within(title).getByRole('button', { name: 'More agent actions' }));
+    expect(await screen.findByRole('menuitem', { name: 'View transcript' }, WAIT)).toBeDefined();
   });
 
   it('goes back to the session level with Auto agents selected, and drills in again', async () => {
@@ -328,7 +355,8 @@ describe('c07 Auto scenes', () => {
     const rows = within(list).getAllByRole('button');
     expect(rows).toHaveLength(2);
     expect(within(list).getByText('Idle')).toBeDefined();
-    expect(within(list).getByText('Finished')).toBeDefined();
+    expect(within(list).getByText('Done')).toBeDefined();
+    expect(within(list).queryByText('Finished')).toBeNull();
     expect(levelStack().dataset.levelStack).toBe('session');
 
     fireEvent.click(rows[0] ?? list);

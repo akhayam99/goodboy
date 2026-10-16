@@ -63,8 +63,8 @@ Agents page and **Ask an agent** on the New session page open the role grid
   opencode family, see Providers), with the route the workspace picks for the role.
   **Start Auto** says why it is off when no such provider is connected, also when only
   opencode, OpenRouter or Moonshot is.
-- The **Spend cap** chip proposes 5 USD, or shows the budget of the session when
-  there is one. The first start stores the cap for the workspace
+- The **Limit** chip proposes 5 USD, or shows the budget of the session when
+  there is one ("Limit for this Auto run" in its popover). The first start stores the cap for the workspace
   (`auto.treeLimitUsd.<workspace id>`, compare and swap), so the next start is
   not asked again; a person can change it from the chip.
 - A Next card that starts a role gets **Talk it through with Auto** as the last
@@ -150,7 +150,7 @@ left to the plain turn.
 An Auto tree is one row, like any agent row: its state in the row word and the
 cost of the whole tree. The word follows the tree phase:
 **Deciding what to do**, **Starting agents**, **Waiting for Implementer and
-Tester**, **Needs your approval**, **Reading the results**, **Blocked, open the
+Tester**, **Needs you**, **Reading the results**, **Blocked, open the
 chat**, **Stopping**, **Stopped by you**, **Idle**, **Finished by you**. The
 children are not rows of the Overview; they live in the Work rail, the session rail's
 Auto level.
@@ -176,10 +176,14 @@ writing to it reopens it to **Deciding**.
   its state is said once, on the tail. One spine runs from ring edge
   to ring edge in the tone of the ring it reaches: green when done, blue when
   working, dashed when queued. The rail is always there: while Auto has no
-  child it shows Auto alone ("Ready" before a tree exists) and "No agents
-  started yet". The foot is one line, **Limit $10.00 · $5.23 left** (No cap:
-  **No cap · $3.82 spent**), from `autoBudgetOf`; Spent and Reserved are in
-  the limit popover.
+  child it shows Auto alone ("Idle" before a tree exists) and "No agents
+  started yet". Every state word is gray beside its toned node and comes from
+  one word map (`autoTreeWordOf` for Auto, `delegationCardOf` for a child):
+  **Needs you**, **Running**, **Idle** (gray dot), **Done** (green check),
+  **Stopped**; the Auto agents list reads the same words. The foot is one
+  button holding the line, **Limit $10.00 · $5.23 left** (no limit:
+  **No limit · $3.82 spent**, nothing left: **Limit reached**), from
+  `autoBudgetOf`; Spent, Reserved and turns are in the limit popover.
 - **Changing the limit.** The **Limit** in the rail foot is a button. Its popover
   offers $5, $10, $20 or a custom amount (at most 2 decimals) and applies it on
   **Set limit**, also while the tree runs. An amount under spent plus reserved
@@ -192,46 +196,49 @@ writing to it reopens it to **Deciding**.
   turn keeps its next step, then drives the tree, so a tree paused at the limit
   resumes after a raise. The cap changes only this conversation; the workspace
   cap stays the start value of the next one.
-- **No cap.** The popover also offers **No cap**, stored as a NULL `cap_usd`
-  (m231), never a sentinel. The foot then reads **No cap** with what is spent
+- **No limit.** The popover also offers **No limit**, stored as a NULL `cap_usd`
+  (m231), never a sentinel. The foot then reads **No limit** with what is spent
   and no **Left**, and the prompt line says "no cap" and
   never prints a left. The root turn claim and child admission pass a NULL cap
   (`autoBudgetCoversSql`), and the gates read it as unbounded
   (`autoRemainingForGates`); the per attempt ceilings still apply, so one child
-  never runs unbounded. While a session budget exists, No cap is off and says the
+  never runs unbounded. While a session budget exists, No limit is off and says the
   session budget sets the limit. A tree is only created with a number; NULL
   comes only from this choice.
 - **The page.** The header is the goal as the title and the provider mark, with
   no role, Experimental or state chip; **Mark finished** shows there as a
-  word only while Auto rests (the registry verb `agent.markAutoFinished`, left
-  out of the `⋯` then so it is said once), next to **View transcript** and `⋯`.
+  word only while Auto rests and its own turn is not running (the registry verb
+  `agent.markAutoFinished`, left out of the `⋯` then so it is said once), next
+  to `⋯`, which holds **View transcript** (`agent.transcript`) and **Rename**.
 - **Delegation lines.** Each delegation is one bare line in the conversation
-  (`AutoDelegationLines`): the child's node, **Delegated to**, its role chip and
-  **See more**. A revision is the same producer with "revising v2", then "v2
+  (`AutoDelegationLines`): its role chip, the task Auto gave and **Open**; the
+  lines after one reply share one list (`mergedBatchesOf`). A revision is the same producer with "revising v2", then "v2
   ready". The child's state word is on its rail row, never on the line; its
   reason, model, reserved amount and result are in its pane. Lines read the
   delegation, attempt and agent rows, never the message text, so a reload draws
   the same lines. A revise that waits for an OK carries **Confirm** and
-  **Cancel** under its line, and a plan that waits for approval carries the
+  **Cancel** under its line ("Revise <plan> to v2?"), and a plan that waits for approval carries the
   ask **Plan v1 needs your approval** with the plan title (opens the plan),
   **Ask for changes** and **Approve plan** (`AutoPlanAsk`, the same
-  `useAutoPlanApproval` the plan drawer uses).
+  `useAutoPlanApproval` the plan drawer uses). While the plan is revised the ask
+  settles to one quiet line, "Plan v1 · changes asked".
 - **Where a line sits.** A batch goes before the first message sent after it
   settled, and an open batch goes at the end.
 - **The tail.** Auto's state is said once, on the tail at the end of the
   conversation (`AutoTail`, phrases from `autoTreeLive`): **Waiting for
   Implementer and Tester** with **Change approach** and **Stop Auto and its
-  agents**, **Starting agents**, **Reading the results**, **Deciding what to do
+  agents** (just **Stop** while no child exists), **Starting agents**, **Reading the results**, **Deciding what to do
   next**, a refused hand over in the user voice, **Paused at the limit: $4.80
   of $5.00** with **Raise to $10** and **Change limit** (opens the limit
   popover of the rail foot), **Blocked, open the chat** with **View
-  transcript**, **Idle**, and **Finished. Write to reopen.**. While Auto's own
-  turn runs, the thinking line of the conversation speaks instead, and while a
-  plan waits for approval the ask is the state. The composer says "Queued: Auto
-  sees it with the next results" while Auto waits, or "Message Auto, or
-  describe changes to plan v1".
+  transcript**. A resting or finished tree draws no tail: the rail says Idle or
+  Done and **Mark finished** is in the header. While Auto's own turn runs, the
+  thinking line of the conversation speaks instead, and while a plan waits for
+  approval the ask is the state. The composer says "Message Auto" while Auto
+  waits, or "Message Auto, or describe changes to plan v1", and shows **Ask
+  first** like any agent composer.
 - **A child opens in the pane** (drawer kind `auto-child`, `AutoChildPane`)
-  from its rail row or its line's **See more**, so Auto's conversation stays in
+  from its rail row or its line's **Open**, so Auto's conversation stays in
   view; another child swaps in place, the Auto row of the rail closes it, Esc
   closes it, and its rail row is the selected one. The pane title is the task
   Auto gave it (the role when the task is missing); on top, why Auto chose that role, the model it runs on with its

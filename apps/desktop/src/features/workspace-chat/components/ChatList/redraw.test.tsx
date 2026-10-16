@@ -87,7 +87,6 @@ const Harness = () => {
         chats={chats}
         selectedId={null}
         onSelect={vi.fn()}
-        onNew={vi.fn()}
         onArchived={vi.fn()}
         onDeleted={vi.fn()}
       />

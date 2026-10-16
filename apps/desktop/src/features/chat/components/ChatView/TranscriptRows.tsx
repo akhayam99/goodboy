@@ -15,6 +15,7 @@ import type { TurnFooterInfo } from '../../utils/turnOutcome';
 import { OperationsCluster } from '../OperationsCluster';
 import { PlanChecklist } from '../PlanChecklist';
 import { TurnSummaryLine } from '../TurnSummaryLine';
+import type { OpenTranscriptAt } from '../../openTranscriptAt';
 import { ThinkingIndicator } from '../ThinkingIndicator';
 import { ConversationTail } from '../ConversationTail';
 import { TranscriptCard } from '../TranscriptCards';
@@ -46,9 +47,24 @@ type Props = {
   turnFooters?: ReadonlyMap<ProviderRunId, TurnFooterInfo>;
   briefLabel?: string;
   insertions?: ReadonlyArray<TranscriptInsertion>;
-  onOpenTranscript?: () => void;
+  onOpenTranscript?: OpenTranscriptAt;
   onStop?: () => void;
+  isStepsOnly?: boolean;
+  waitingFor?: string | null;
+  stopLabel?: string;
 };
+
+const STEPS_ONLY_HIDDEN = new Set<TranscriptItem['kind']>(['assistant_text', 'usage']);
+
+type HeadingParams = {
+  readonly text: string;
+};
+
+const turnHeadingOf = ({ text }: HeadingParams): string =>
+  text
+    .split('\n')
+    .map((line) => line.trim())
+    .find((line) => line !== '') ?? 'Turn';
 
 type VisibilityParams = {
   readonly px: number;
@@ -116,6 +132,9 @@ export const TranscriptRows = ({
   insertions = [],
   onOpenTranscript,
   onStop,
+  isStepsOnly = false,
+  waitingFor = null,
+  stopLabel,
 }: Props) => {
   const out: ReactNode[] = [];
   const suggestions = mountSuggestionsByRun ?? new Map<ProviderRunId, ReactNode>();
@@ -151,6 +170,10 @@ export const TranscriptRows = ({
   const todayKey = dayKey(new Date().toISOString());
   let lastDay: string | null = null;
   let userTurnOrdinal = 0;
+  let turnIndex = -1;
+  const firstAnswerIndex = rows.findIndex(
+    (row) => row.kind === 'summary' || (row.kind === 'item' && row.item.kind === 'assistant_text'),
+  );
   let railGroup: Array<ReactNode> = [];
   let railGroupKey: string | null = null;
 
@@ -174,7 +197,7 @@ export const TranscriptRows = ({
   const flushOrdinal = (ordinal: number) => {
     flushRailGroup();
     const cards = oqByTurnOrdinal.get(ordinal);
-    if (!cards || cards.length === 0) {
+    if (isStepsOnly || !cards || cards.length === 0) {
       return;
     }
     out.push(
@@ -217,14 +240,29 @@ export const TranscriptRows = ({
               data-align="start"
               className="flex justify-start"
             >
-              <span className="rounded-full border border-border-soft bg-background px-2 py-0.5 text-eyebrow text-muted-foreground">
-                {formatDayLabel(at)}
-              </span>
+              <span className="text-meta text-muted-foreground">{formatDayLabel(at)}</span>
             </li>,
           );
         }
         lastDay = day;
       }
+      if (!(row.item.kind === 'user_text' && row.item.isOperatorEcho === true)) {
+        turnIndex += 1;
+      }
+      if (isStepsOnly && row !== briefRow) {
+        flushRailGroup();
+        out.push(
+          <li key={row.key} data-turn-heading={turnIndex}>
+            <p className="truncate text-label text-muted-foreground">
+              {turnHeadingOf({ text: row.item.text })}
+            </p>
+          </li>,
+        );
+        return;
+      }
+    }
+    if (isStepsOnly && row.kind === 'item' && STEPS_ONLY_HIDDEN.has(row.item.kind)) {
+      return;
     }
     if (row.kind === 'item' && isWorkflowRailRow({ row })) {
       railGroupKey = railGroupKey ?? row.key;
@@ -250,14 +288,7 @@ export const TranscriptRows = ({
         {row.kind === 'summary' ? (
           <TurnSummaryLine
             steps={row.steps}
-            sessionId={sessionId}
-            agentId={selectedAgentId}
-            workingDir={workingDir}
-            onOpenDiff={onOpenDiff}
-            onRefreshAuth={onRefreshAuth}
-            onRetryRun={onRetryRun}
-            retryingRunId={retryingRunId}
-            activeRunId={activeRunId ?? null}
+            turn={Math.max(0, turnIndex)}
             {...(onOpenTranscript !== undefined && { onOpenTranscript })}
           />
         ) : row.kind === 'plan' ? (
@@ -265,6 +296,7 @@ export const TranscriptRows = ({
         ) : row.kind === 'operations' ? (
           <OperationsCluster
             items={row.items}
+            isInitiallyOpen={isStepsOnly}
             sessionId={sessionId}
             agentId={selectedAgentId}
             workingDir={workingDir}
@@ -298,6 +330,11 @@ export const TranscriptRows = ({
                 ? (turnFooters?.get(row.item.runId)?.startedAt ?? null)
                 : undefined
             }
+            isBrief={
+              (row.item.kind === 'user_text' || row.item.kind === 'handoff') &&
+              turnIndex === 0 &&
+              firstAnswerIndex > idx
+            }
           />
         )}
       </li>,
@@ -321,7 +358,7 @@ export const TranscriptRows = ({
     out.push(<li key={`mount-suggestion-${runId}`}>{node}</li>);
   }
   const tailCards = oqByTurnOrdinal.get(null);
-  if (tailCards != null && tailCards.length > 0) {
+  if (!isStepsOnly && tailCards != null && tailCards.length > 0) {
     out.push(
       <li key="oq-tail">
         <OpenQuestionCluster questions={tailCards} sessionId={sessionId} />
@@ -347,6 +384,8 @@ export const TranscriptRows = ({
               context={thinkingContext}
               onStop={onStop}
               startedAt={thinkingStartedAt}
+              waitingFor={waitingFor}
+              {...(stopLabel !== undefined && { stopLabel })}
             />
           )}
         </li>

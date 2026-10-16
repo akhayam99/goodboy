@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { capTextOf, type AutoBudgetFacts } from '@goodboy/core';
+import { type AutoBudgetFacts } from '@goodboy/core';
+import { capLabelOf } from './capLabelOf';
 import { AutoTreeLimitPopover } from './AutoTreeLimitPopover';
 import type { AutoTreeCapSave } from './useAutoTreeCap';
 import { AUTO_LIMIT_COPY } from './autoLimitCopy';
@@ -21,8 +22,8 @@ type RenderParams = {
 
 const renderPopover = ({ onSave, facts = CAPPED, isFromSession = false }: RenderParams) => {
   render(<AutoTreeLimitPopover facts={facts} isFromSession={isFromSession} onSave={onSave} />);
-  fireEvent.click(screen.getByRole('button', { name: capTextOf({ facts }) }));
-  return screen.getByRole('dialog', { name: 'Limit for this conversation' });
+  fireEvent.click(screen.getByRole('button', { name: capLabelOf({ facts }) }));
+  return screen.getByRole('dialog', { name: 'Limit for this Auto run' });
 };
 
 describe('AutoTreeLimitPopover', () => {
@@ -84,18 +85,18 @@ describe('AutoTreeLimitPopover', () => {
     expect(onSave).toHaveBeenCalledTimes(2);
   });
 
-  it('sets No cap and sends a missing cap', async () => {
+  it('sets No limit and sends a missing cap', async () => {
     const onSave = vi.fn().mockResolvedValue(null);
     renderPopover({ onSave });
 
-    fireEvent.click(screen.getByRole('button', { name: 'No cap' }));
+    fireEvent.click(screen.getByRole('button', { name: 'No limit' }));
     fireEvent.click(screen.getByRole('button', { name: 'Set limit' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     expect(onSave).toHaveBeenCalledWith({ expectedCapUsd: 5, capUsd: null });
   });
 
-  it('reads No cap on the trigger and can put a limit back', async () => {
+  it('reads No limit on the trigger and can put a limit back', async () => {
     const onSave = vi.fn().mockResolvedValue(null);
     renderPopover({
       onSave,
@@ -108,13 +109,11 @@ describe('AutoTreeLimitPopover', () => {
     await waitFor(() => expect(onSave).toHaveBeenCalledWith({ expectedCapUsd: null, capUsd: 10 }));
   });
 
-  it('keeps No cap off while a session budget sets the limit', () => {
+  it('keeps No limit off while a session budget sets the limit', () => {
     renderPopover({ onSave: vi.fn(), isFromSession: true });
 
-    expect(screen.getByRole('button', { name: 'No cap' }).hasAttribute('disabled')).toBe(true);
-    expect(
-      screen.getByText('The session budget sets this limit, so it keeps a cap.'),
-    ).toBeDefined();
+    expect(screen.getByRole('button', { name: 'No limit' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByText('The session budget sets this limit, so it keeps one.')).toBeDefined();
   });
 
   it('says when another window changed the limit first', async () => {

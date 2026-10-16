@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/core', async () => {
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
@@ -51,6 +51,9 @@ describe('the u25 transcript width scene', () => {
 
     const reply = screen.getByText(/The retry path in notify-relay posts the credit twice/);
     expect(reply.closest('[class*="--measure"]')).toBeNull();
+    fireEvent.click(
+      screen.getByRole('button', { name: /^Asked: Resume the Acme payments-api fix/ }),
+    );
     const userCard = screen
       .getByText(/Resume the Acme payments-api fix/)
       .closest(`[class*="${PANE_RHYTHM.message.user}"]`);

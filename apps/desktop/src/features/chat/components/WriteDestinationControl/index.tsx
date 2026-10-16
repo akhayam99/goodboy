@@ -23,11 +23,17 @@ type Props = {
   readonly sessionId: SessionId;
   readonly agentId: AgentId | null;
   readonly fallback?: 'automatic';
+  readonly verb?: string;
 };
 
 const REACH_LIST = new Intl.ListFormat('en', { type: 'conjunction' });
 
-export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props) => {
+export const WriteDestinationControl = ({
+  sessionId,
+  agentId,
+  fallback,
+  verb = 'Starts in',
+}: Props) => {
   const { next, candidates, running, diverges, isAutomatic } = useWriteDestination({
     sessionId,
     agentId,
@@ -93,13 +99,13 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
   const reachSentence =
     reachNames.length === 0 ? '' : ` Can also write in ${REACH_LIST.format(reachNames)}.`;
 
-  const primaryVerb = running === null ? 'Starts in' : 'Running in';
+  const primaryVerb = running === null ? verb : 'Running in';
   const primaryTarget =
     running === null ? (next.kind === 'scratch' ? 'session folder' : nextLabel) : runningLabel;
 
   const primaryTitle =
     running === null
-      ? `Starts in ${nextDetail}.${isAutomatic ? ' Picked automatically.' : ''}${reachSentence}`
+      ? `${verb} ${nextDetail}.${isAutomatic ? ' Picked automatically.' : ''}${reachSentence}`
       : diverges
         ? `This turn runs in ${runningDetail}. New turns start in ${nextDetail}.`
         : `This turn runs in ${nextDetail}. New turns start there too.${reachSentence}`;

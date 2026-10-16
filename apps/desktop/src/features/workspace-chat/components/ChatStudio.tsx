@@ -101,7 +101,6 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
                 chats={chats}
                 selectedId={activeChat?.id ?? null}
                 onSelect={select}
-                onNew={() => select(null)}
                 onArchived={(archivedIds) => leave({ removedIds: archivedIds })}
                 onDeleted={(deletedIds) => leave({ removedIds: deletedIds })}
               />

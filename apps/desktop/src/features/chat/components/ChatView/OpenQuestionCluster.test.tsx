@@ -197,7 +197,7 @@ describe('OpenQuestionCluster', () => {
       makeQuestion({ id: 'oq-9', text: 'Old question?', status: 'answered', userAnswer: 'yes' }),
       dbQuestion,
     ]);
-    screen.getByText('answered');
+    screen.getByText('Answered');
     screen.getByRole('heading', { name: 'Use Postgres or SQLite?' });
   });
 

@@ -134,7 +134,7 @@ const ENTRIES: ReadonlyArray<Entry> = [
   },
   {
     kind: 'transcript',
-    region: 'Resolve retries',
+    region: 'Transcript',
     seed: seedSession,
     drawer: { kind: 'transcript', sessionId: SESSION, payload: { agentId: AGENT } },
   },

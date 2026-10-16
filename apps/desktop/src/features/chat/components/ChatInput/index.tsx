@@ -49,9 +49,9 @@ export const ChatInput = ({
     (s) => selectedAgentId !== null && s.agentWriterWait[selectedAgentId] !== undefined,
   );
   const autoViews = useAutoTreeViews({ sessionId: session.id });
-  const isAutoTreeMember =
+  const isAutoChild =
     selectedAgentId !== null &&
-    autoTreeOfAgent({ views: autoViews, agentId: selectedAgentId }) !== null;
+    autoTreeOfAgent({ views: autoViews, agentId: selectedAgentId })?.kind === 'child';
 
   const { showToast } = useToast();
 
@@ -269,7 +269,7 @@ export const ChatInput = ({
               session={session}
               routing={routing}
               isBlocked={isBlocked}
-              hasPermissionPicker={!isAutoTreeMember}
+              hasPermissionPicker={!isAutoChild}
               attachmentCount={attachments.length}
               fileInputRef={fileInputRef}
               onFileInputChange={onFileInputChange}

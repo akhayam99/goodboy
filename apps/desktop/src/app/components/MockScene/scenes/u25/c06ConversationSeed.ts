@@ -437,6 +437,7 @@ export const seedC06 = ({ state }: StateParams): Agent => {
     sessions: [C06_SESSION],
     currentSessionId: C06_SESSION_ID,
     selectedAgentId: { [C06_SESSION_ID]: C06_AGENT_ID },
+    activeLens: { [C06_SESSION_ID]: 'agents' },
     sessionPhaseRuns: { [C06_SESSION_ID]: [agent, ...children, ...OTHERS] },
     sessionTelemetry: {
       [C06_SESSION_ID]: [

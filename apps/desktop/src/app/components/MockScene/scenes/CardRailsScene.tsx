@@ -216,12 +216,7 @@ export const CardRailsScene = () => {
           />
         </Row>
         <Row label="your message">
-          <UserText
-            text="Ship the rail treatment everywhere, no tinted card fills."
-            at={NOW}
-            provider="anthropic"
-            model="claude-opus-5"
-          />
+          <UserText text="Ship the rail treatment everywhere, no tinted card fills." at={NOW} />
         </Row>
       </PageColumn>
     </main>

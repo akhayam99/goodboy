@@ -40,22 +40,13 @@ describe('formatDayLabel', () => {
     expect(formatDayLabel('nope')).toBe('');
   });
 
-  it('labels the current day as "today"', () => {
-    expect(formatDayLabel(new Date(2026, 4, 15, 9, 0, 0).toISOString())).toBe('today');
+  it('labels a day of this year with its month and day only', () => {
+    expect(formatDayLabel(new Date(2026, 4, 15, 9, 0, 0).toISOString())).toBe('May 15');
+    expect(formatDayLabel(new Date(2026, 2, 1, 9, 0, 0).toISOString())).toBe('Mar 1');
   });
 
-  it('labels the prior day as "yesterday"', () => {
-    expect(formatDayLabel(new Date(2026, 4, 14, 9, 0, 0).toISOString())).toBe('yesterday');
-  });
-
-  it('labels a day earlier this week with a lowercase English weekday', () => {
-    const iso = new Date(2026, 4, 12, 9, 0, 0).toISOString();
-    expect(formatDayLabel(iso)).toBe('tuesday');
-  });
-
-  it('labels an older day with a lowercase English short date', () => {
-    const label = formatDayLabel(new Date(2026, 2, 1, 9, 0, 0).toISOString());
-    expect(label).toBe('mar 1, 2026');
+  it('adds the year to a day of another year', () => {
+    expect(formatDayLabel(new Date(2025, 8, 27, 9, 0, 0).toISOString())).toBe('Sep 27, 2025');
   });
 
   it('pins the Intl locale to en-US for both branches', () => {

@@ -23,6 +23,7 @@ vi.mock('../../activeChatBackend', () => ({
   ),
 }));
 
+import { ObjectMenuProvider } from '../../../actions/components/ObjectMenuProvider';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { ChatId, ChatSummary } from '@goodboy/types';
@@ -85,7 +86,6 @@ const Harness = ({ onSelect, onArchived, onDeleted }: HarnessProps) => {
         chats={chats}
         selectedId={null}
         onSelect={onSelect}
-        onNew={vi.fn()}
         onArchived={onArchived}
         onDeleted={onDeleted}
       />
@@ -100,7 +100,11 @@ const renderList = async () => {
   const onSelect = vi.fn();
   const onArchived = vi.fn();
   const onDeleted = vi.fn();
-  render(<Harness onSelect={onSelect} onArchived={onArchived} onDeleted={onDeleted} />);
+  render(
+    <ObjectMenuProvider>
+      <Harness onSelect={onSelect} onArchived={onArchived} onDeleted={onDeleted} />
+    </ObjectMenuProvider>,
+  );
   await act(async () => undefined);
   return { onSelect, onArchived, onDeleted };
 };
@@ -355,9 +359,7 @@ describe('ChatList selection', () => {
 });
 
 const pickDelete = async (): Promise<HTMLElement> => {
-  fireEvent.click(
-    within(rowOf('lunch')).getByRole('button', { name: `More actions for ${TITLES.lunch}` }),
-  );
+  fireEvent.contextMenu(within(rowOf('lunch')).getByRole('button', { name: TITLES.lunch ?? '' }));
   fireEvent.click(await screen.findByRole('menuitem', { name: /Delete/ }));
   const panel = (await screen.findByText('Delete chat?')).closest('[data-menu-panel]');
   if (!(panel instanceof HTMLElement)) {
@@ -375,9 +377,7 @@ describe('ChatList delete on the row', () => {
         within(rowOf(seed.key)).queryByRole('button', { name: `Delete ${seed.title}` }),
       ).toBeNull();
     }
-    fireEvent.click(
-      within(rowOf('lunch')).getByRole('button', { name: `More actions for ${TITLES.lunch}` }),
-    );
+    fireEvent.contextMenu(within(rowOf('lunch')).getByRole('button', { name: TITLES.lunch ?? '' }));
     expect(await screen.findByRole('menuitem', { name: /Delete/ })).toBeDefined();
   });
 

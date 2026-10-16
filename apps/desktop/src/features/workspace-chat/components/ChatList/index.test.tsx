@@ -23,6 +23,7 @@ vi.mock('../../activeChatBackend', () => ({
   ),
 }));
 
+import { ObjectMenuProvider } from '../../../actions/components/ObjectMenuProvider';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type {
@@ -94,7 +95,6 @@ const Harness = ({ onSelect, onArchived, onDeleted }: HarnessProps) => {
         chats={chats}
         selectedId={null}
         onSelect={onSelect}
-        onNew={vi.fn()}
         onArchived={onArchived}
         onDeleted={onDeleted}
       />
@@ -109,7 +109,11 @@ const renderList = async (seeds: ReadonlyArray<ChatSeed> = SEEDS) => {
   const onSelect = vi.fn();
   const onArchived = vi.fn();
   const onDeleted = vi.fn();
-  render(<Harness onSelect={onSelect} onArchived={onArchived} onDeleted={onDeleted} />);
+  render(
+    <ObjectMenuProvider>
+      <Harness onSelect={onSelect} onArchived={onArchived} onDeleted={onDeleted} />
+    </ObjectMenuProvider>,
+  );
   await act(async () => undefined);
   return { onSelect, onArchived, onDeleted };
 };
@@ -161,36 +165,32 @@ describe('ChatList', () => {
     expect(within(rowOf('lunch')).queryByRole('img', { name: /Answering|New reply/ })).toBeNull();
   });
 
-  it('dims idle chats and shows how long they have been quiet', async () => {
+  it('dims idle chats and leaves their age to the Idle group', async () => {
     await renderList();
 
     expect(rowOf('lunch').getAttribute('data-idle')).toBe('true');
-    expect(rowOf('lunch').textContent?.replaceAll('\u00a0', ' ')).toContain('idle 9d');
+    expect(rowOf('lunch').textContent).not.toMatch(/idle \d+d|ago/);
   });
 
   it('keeps the age in one non-wrapping token', async () => {
     await renderList();
 
-    const age = within(rowOf('lunch')).getByText('idle 9d');
-    expect(age.textContent).toBe('idle\u00a09d');
-    expect(age.textContent?.includes(' ')).toBe(false);
-    expect(ageTokenOf({ time: 'idle 14d' })).toBe('idle\u00a014d');
-    expect(ageTokenOf({ time: '09:41' })).toBe('09:41');
+    expect(ageTokenOf({ time: '14d ago' })).toBe('14d\u00a0ago');
+    expect(ageTokenOf({ time: 'just now' })).toBe('just\u00a0now');
   });
 
-  it('keeps the row actions in a menu visible at rest, with Delete inside it', async () => {
+  it('draws no actions on a row; right click opens its menu, with Delete inside it', async () => {
     await renderList();
     const row = rowOf('lunch');
 
     expect(
       within(row).queryByRole('button', { name: 'Delete Lunch ideas near the office' }),
     ).toBeNull();
-    const more = within(row).getByRole('button', {
-      name: 'More actions for Lunch ideas near the office',
-    });
-    expect(more.tabIndex).not.toBe(-1);
+    expect(
+      within(row).queryByRole('button', { name: 'More actions for Lunch ideas near the office' }),
+    ).toBeNull();
 
-    fireEvent.click(more);
+    fireEvent.contextMenu(within(row).getByRole('button', { name: 'Lunch ideas near the office' }));
 
     expect(await screen.findByRole('menuitem', { name: /Delete/ })).toBeDefined();
   });
@@ -232,9 +232,9 @@ describe('ChatList', () => {
 
   describe('row menu', () => {
     const openMenu = (title: string) =>
-      fireEvent.click(screen.getByRole('button', { name: `More actions for ${title}` }));
+      fireEvent.contextMenu(screen.getByRole('button', { name: title }));
 
-    it('opens from the more button with the five actions', async () => {
+    it('opens on right click with the five actions', async () => {
       await renderList();
 
       openMenu('Where is the consent step?');
@@ -322,10 +322,8 @@ describe('ChatList', () => {
 
       fireEvent.click(await screen.findByRole('button', { name: /Archived · 2/ }));
       expect(screen.getByRole('button', { name: 'Northwind invoice export format' })).toBeDefined();
-      expect(screen.queryByRole('button', { name: 'New chat' })).toBeNull();
-
       fireEvent.click(screen.getByRole('button', { name: 'Chats' }));
-      expect(screen.getByRole('button', { name: 'New chat' })).toBeDefined();
+      expect(screen.getByRole('textbox', { name: 'Search chats' })).toBeDefined();
     });
 
     it('restores one chat', async () => {
@@ -411,8 +409,15 @@ describe('ChatList', () => {
         }),
       );
 
-      expect(within(rowOf('consent')).getByText('session')).toBeDefined();
-      expect(within(rowOf('lunch')).queryByText('session')).toBeNull();
+      expect(
+        within(rowOf('consent')).getByRole('button', {
+          name: 'Open the session Ask for consent again',
+        }),
+      ).toBeDefined();
+      expect(within(rowOf('consent')).queryByText('session')).toBeNull();
+      expect(
+        within(rowOf('lunch')).queryByRole('button', { name: /^Open the session/ }),
+      ).toBeNull();
     });
 
     it('counts several sessions', async () => {
@@ -426,7 +431,8 @@ describe('ChatList', () => {
         }),
       );
 
-      expect(within(rowOf('consent')).getByText('2 sessions')).toBeDefined();
+      expect(within(rowOf('consent')).getByText('2')).toBeDefined();
+      expect(within(rowOf('consent')).queryByText('2 sessions')).toBeNull();
     });
 
     it('ignores links to deleted or missing sessions', async () => {
@@ -440,66 +446,17 @@ describe('ChatList', () => {
         }),
       );
 
-      expect(within(rowOf('consent')).queryByText(/session/)).toBeNull();
+      expect(
+        within(rowOf('consent')).queryByRole('button', { name: /^Open the session/ }),
+      ).toBeNull();
     });
   });
 
-  describe('model on every row', () => {
-    const CLAUDE = { provider: 'anthropic', model: 'sonnet-5' } as const;
-    const CODEX = { provider: 'codex', model: 'gpt-5.6-sol' } as const;
-    const MODELS: ReadonlyArray<ChatSeed> = [
-      { key: 'solo', title: 'One model only', ageMs: MINUTE, ...CLAUDE, effort: 'medium' },
-      {
-        key: 'mixed',
-        title: 'Two models over time',
-        ageMs: 2 * MINUTE,
-        ...CODEX,
-        effort: 'high',
-        used: [CLAUDE, CODEX],
-      },
-      { key: 'plain', title: 'No effort set', ageMs: 3 * MINUTE, ...CLAUDE, effort: null },
-    ];
+  it('draws no model and no provider mark on a row, the room carries them', async () => {
+    await renderList();
 
-    const modelOf = (key: string): HTMLElement =>
-      within(rowOf(key)).getByRole('img', { name: /messages?$/ });
-
-    it('shows the model of a chat that used only one, by name with its effort', async () => {
-      await renderList(MODELS);
-
-      const solo = modelOf('solo');
-      const name = chatModelLabel(CLAUDE);
-      expect(solo.getAttribute('aria-label')).toBe(`${name} · Medium · 2 messages`);
-      expect(within(solo).getByText(`${name} · Medium`)).toBeDefined();
-      expect(solo.querySelectorAll('svg')).toHaveLength(1);
-    });
-
-    it('drops the effort from the name when the chat has none', async () => {
-      await renderList(MODELS);
-
-      expect(within(modelOf('plain')).getByText(chatModelLabel(CLAUDE))).toBeDefined();
-    });
-
-    it('names the current model first, then the others it used, with one glyph per provider', async () => {
-      await renderList(MODELS);
-
-      const mixed = modelOf('mixed');
-      expect(mixed.getAttribute('aria-label')).toBe(
-        `${chatModelLabel(CODEX)} · High · Also used ${chatModelLabel(CLAUDE)} · 4 messages`,
-      );
-      expect(mixed.querySelectorAll('svg')).toHaveLength(2);
-      expect(within(mixed).getByText(`${chatModelLabel(CODEX)} · High`)).toBeDefined();
-    });
-
-    it('keeps the model on a chat that has not answered yet', async () => {
-      await renderList([
-        { key: 'fresh', title: 'Fresh chat', ageMs: MINUTE, ...CLAUDE, effort: 'low', used: [] },
-      ]);
-
-      const fresh = within(rowOf('fresh')).getByRole('img', {
-        name: `${chatModelLabel(CLAUDE)} · Low`,
-      });
-      expect(fresh.querySelectorAll('svg')).toHaveLength(1);
-    });
+    expect(within(rowOf('consent')).queryByRole('img', { name: /messages?$/ })).toBeNull();
+    expect(rowOf('consent').querySelectorAll('svg')).toHaveLength(0);
   });
 });
 
@@ -515,9 +472,9 @@ describe('ChatList initial read states', () => {
     expect(screen.queryByRole('status', { name: 'Loading chats' })).toBeNull();
   });
 
-  it('leaves the empty first-run state to the page and keeps one New chat button', async () => {
+  it('leaves the empty first-run state and the New chat verb to the page and the sidebar', async () => {
     await renderList([]);
-    screen.getByRole('button', { name: 'New chat' });
+    expect(screen.queryByRole('button', { name: 'New chat' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'No chats yet' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Start a chat' })).toBeNull();
     expect(screen.queryByRole('status', { name: 'Loading chats' })).toBeNull();

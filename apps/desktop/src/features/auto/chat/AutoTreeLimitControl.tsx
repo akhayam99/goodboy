@@ -9,9 +9,17 @@ type Props = {
   readonly sessionId: SessionId;
   readonly treeId: AutoTreeId;
   readonly facts: AutoBudgetFacts;
+  readonly triggerText?: string;
+  readonly turns?: number | null;
 };
 
-export const AutoTreeLimitControl = ({ sessionId, treeId, facts }: Props) => {
+export const AutoTreeLimitControl = ({
+  sessionId,
+  treeId,
+  facts,
+  triggerText,
+  turns = null,
+}: Props) => {
   const save = useAutoTreeCap({ sessionId, treeId });
   const hasSessionBudget = useAppStore(
     (state) => (state.sessionBudgets[sessionId]?.softCapUsd ?? null) !== null,
@@ -19,6 +27,8 @@ export const AutoTreeLimitControl = ({ sessionId, treeId, facts }: Props) => {
   return (
     <AutoTreeLimitPopover
       facts={facts}
+      {...(triggerText !== undefined && { triggerText })}
+      turns={turns}
       isFromSession={hasSessionBudget}
       openEvent={autoLimitOpenEvent({ treeId })}
       onSave={save}

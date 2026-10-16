@@ -9,10 +9,10 @@ const DAY = 24 * 60 * 60 * 1000;
 const at = (ms: number): IsoDateTime => new Date(ms).toISOString() as IsoDateTime;
 
 describe('chatRowTime', () => {
-  it('counts idle days once a chat has gone quiet for a week', () => {
+  it('shows no age on a chat that went quiet, its Idle group already says it', () => {
     expect(
       chatRowTime({ chat: { lastActivityAt: at(NOW - 9 * DAY), pinnedAt: null }, now: NOW }),
-    ).toBe('idle 9d');
+    ).toBe('');
   });
 
   it('never calls a pinned chat idle', () => {
@@ -20,12 +20,12 @@ describe('chatRowTime', () => {
       chat: { lastActivityAt: at(NOW - 9 * DAY), pinnedAt: at(NOW - 10 * DAY) },
       now: NOW,
     });
-    expect(label.startsWith('idle')).toBe(false);
+    expect(label).toBe('9d ago');
   });
 
-  it('shows the clock for a chat active today', () => {
+  it('reads a recent chat as an age', () => {
     expect(
-      chatRowTime({ chat: { lastActivityAt: at(NOW - 60_000), pinnedAt: null }, now: NOW }),
-    ).toMatch(/\d{2}.\d{2}/);
+      chatRowTime({ chat: { lastActivityAt: at(NOW - 4 * 60_000), pinnedAt: null }, now: NOW }),
+    ).toBe('4m ago');
   });
 });

@@ -849,7 +849,7 @@ describe('moving across every place keeps one frame', () => {
       expectOneRail({
         place: 'Chat',
         layers: { header: shown('header h1'), composer: shown('textarea') },
-        rail: COLUMN_RAIL,
+        rail: MEASURE_RAIL,
       });
 
       await click(door('settings'));

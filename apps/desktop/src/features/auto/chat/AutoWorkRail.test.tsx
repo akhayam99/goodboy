@@ -51,7 +51,7 @@ describe('railRowsOf', () => {
     });
 
     expect(rows.map((row) => [row.label, row.node, row.word])).toEqual([
-      ['Auto', 'running', 'Waiting'],
+      ['Auto', 'running', 'Running'],
       ['Planner', 'done', 'Done'],
       ['Implementer', 'running', 'Running'],
       ['Tester', 'queued', 'Queued'],
@@ -83,7 +83,7 @@ describe('railRowsOf', () => {
     expect(rows[1]?.word).toBe('Running');
   });
 
-  it('puts Needs your approval on Auto while a plan waits', () => {
+  it('puts Needs you on Auto while a plan waits, in gray beside a warning node', () => {
     const view = aView({
       phase: 'waiting',
       artifacts: [aPlanRow()],
@@ -94,25 +94,25 @@ describe('railRowsOf', () => {
 
     const [root] = railRowsOf({ view, agents: [], rootRouting: ROOT_ROUTING });
 
-    expect(root).toMatchObject({ node: 'approval', word: 'Needs your approval', tone: 'warning' });
+    expect(root).toMatchObject({ node: 'approval', word: 'Needs you', tone: 'neutral' });
   });
 
-  it('says Ready for an Auto that only answers, Idle when it rests and Finished once closed', () => {
+  it('says Running while Auto answers, Idle with a gray node when it rests and Done once closed', () => {
     expect(railRowsOf({ view: aView(), agents: [], rootRouting: ROOT_ROUTING })[0]?.word).toBe(
-      'Ready',
+      'Running',
     );
     const idle = railRowsOf({
       view: aView({ phase: 'done' }),
       agents: [],
       rootRouting: ROOT_ROUTING,
     })[0];
-    expect(idle).toMatchObject({ word: 'Idle', node: 'ready' });
+    expect(idle).toMatchObject({ word: 'Idle', node: 'queued' });
     const finished = railRowsOf({
       view: aView({ phase: 'finished' }),
       agents: [],
       rootRouting: ROOT_ROUTING,
     })[0];
-    expect(finished).toMatchObject({ word: 'Finished', node: 'finished' });
+    expect(finished).toMatchObject({ word: 'Done', node: 'done' });
   });
 });
 

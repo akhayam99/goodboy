@@ -20,17 +20,6 @@ type Props = {
 const ROOT_INDENT = 36;
 const CHILD_INDENT = 48;
 
-const WORD_TONE_CLASS = {
-  neutral: 'text-muted-foreground',
-  info: 'text-info',
-  warning: 'text-warning',
-  danger: 'text-danger',
-  success: 'text-success',
-  primary: 'text-primary',
-  merged: 'text-muted-foreground',
-  draft: 'text-muted-foreground',
-} as const;
-
 type TipParams = {
   readonly row: RailRow;
 };
@@ -79,7 +68,7 @@ export const AutoWorkRailRow = ({ row, isSelected, onOpen }: Props) => (
         >
           <AgentKindChip kind={row.role} density="glyph" isDecorative />
           <span className="min-w-0 flex-1 truncate text-label text-foreground">{row.label}</span>
-          <span className={cn('shrink-0 text-label', WORD_TONE_CLASS[row.tone])}>{row.word}</span>
+          <span className="shrink-0 text-label text-muted-foreground">{row.word}</span>
         </span>
         <span className="flex h-5 min-w-0 items-center gap-2">
           {row.task === null ? (

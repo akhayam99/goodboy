@@ -10,9 +10,10 @@ type Props = {
   readonly sessionId: SessionId | null;
   readonly agentId: AgentId | null;
   readonly workingDir: string | null;
+  readonly isBrief?: boolean;
 };
 
-export const HandoffBlock = ({ item, sessionId, agentId, workingDir }: Props) => {
+export const HandoffBlock = ({ item, sessionId, agentId, workingDir, isBrief = false }: Props) => {
   const state = useAgentHandoff({ agentId: item.handoffId });
 
   if (state.status === 'loading') {
@@ -24,9 +25,8 @@ export const HandoffBlock = ({ item, sessionId, agentId, workingDir }: Props) =>
         text={item.text}
         at={item.at}
         attachments={item.attachments}
-        provider={item.provider}
-        model={item.model}
         workingDir={workingDir}
+        isBrief={isBrief}
       />
     );
   }
@@ -39,9 +39,8 @@ export const HandoffBlock = ({ item, sessionId, agentId, workingDir }: Props) =>
           text={askBody ?? item.text}
           at={item.at}
           attachments={item.attachments}
-          provider={item.provider}
-          model={item.model}
           workingDir={workingDir}
+          isBrief={isBrief}
         />
       </div>
     );

@@ -1,6 +1,5 @@
 import { brandId, type ArtifactId, type SessionId } from '@goodboy/types';
 import { Button, Notice } from '@goodboy/ui';
-import { PLAN_REVISING_REASON } from '../../plans/planRevising';
 import { useAutoPlanApproval } from '../plan/useAutoPlanApproval';
 import type { ArtifactLinkModel } from './artifactLinksOf';
 import { focusAgentComposer } from './focusAgentComposer';
@@ -20,6 +19,21 @@ export const AutoPlanAsk = ({ sessionId, link, onOpen }: Props) => {
     return null;
   }
   const isRevising = model.approval.state === 'revising';
+  if (isRevising) {
+    return (
+      <p className="flex min-w-0 items-center gap-2 text-ui text-muted-foreground">
+        <Button
+          variant="quiet"
+          size="xs"
+          aria-label={`Open plan ${link.title}`}
+          onClick={() => onOpen(link.artifactId)}
+        >
+          Plan v{model.version}
+        </Button>
+        <span>· changes asked</span>
+      </p>
+    );
+  }
   return (
     <Notice
       tone="warning"
@@ -49,10 +63,9 @@ export const AutoPlanAsk = ({ sessionId, link, onOpen }: Props) => {
           </Button>
           <Button
             size="sm"
-            disabled={isRevising || model.isBusy}
+            disabled={model.isBusy}
             isBusy={model.isBusy}
             busyLabel="Approving"
-            title={isRevising ? PLAN_REVISING_REASON : undefined}
             onClick={() => void model.approve()}
           >
             Approve plan

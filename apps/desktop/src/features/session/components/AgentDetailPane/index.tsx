@@ -10,8 +10,14 @@ import {
   useExecutedAgentRouting,
   useSessionAnsweredQuestions,
   useSessionOpenQuestions,
+  useTranscript,
 } from '../../../../store';
-import { classifyAgent } from '../../agent-kind';
+import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
+import { AGENT_KIND_META, classifyAgent } from '../../agent-kind';
+import { executedRoutingOf } from '../../../auto/executedRoutingOf';
+import { agentHeadingOf } from './agentHeadingOf';
+import { briefLineOf } from './briefLineOf';
+import type { OpenTranscriptAt } from '../../../chat/openTranscriptAt';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { AgentProviderMark } from './AgentProviderMark';
 import { AgentHeaderActions } from '../AgentHeaderActions';
@@ -39,6 +45,7 @@ type RunStepFrame = {
   readonly heading: ReactNode;
   readonly actions: ReactNode;
   readonly tail: ReactNode;
+  readonly stopLabel?: string;
 };
 
 type Props = {
@@ -80,8 +87,16 @@ export const AgentDetailPane = ({
   const membership = useAutoMembership({ sessionId: session.id, agentId: agent.id });
   const adoption = membership.adoption;
   const [isMoveOpen, setIsMoveOpen] = useState(false);
+  const [hasNextAction, setHasNextAction] = useState(false);
   const navigateTo = useAppStore((state) => state.navigate);
   const openDrawer = useAppStore((state) => state.openDrawer);
+  const toggleDrawer = useAppStore((state) => state.toggleDrawer);
+  const isTranscriptOpen = useAppStore((state) => {
+    const drawer = selectOpenDrawer(state);
+    return drawer?.kind === 'transcript' && drawer.payload.agentId === agent.id;
+  });
+  const events = useTranscript(agent.id);
+  const brief = useMemo(() => briefLineOf({ events }), [events]);
   const runs = useAppStore((state) => state.sessionPhaseRuns[session.id] ?? null);
   const providerOverride = useAppStore(
     (state) => state.agentProviderOverride[agent.id] ?? agent.providerOverride ?? null,
@@ -153,23 +168,33 @@ export const AgentDetailPane = ({
     return [...leading, ...(autoChat.insertions ?? []), ...end, ...tail];
   }, [agent, answeredQuestion, asker, autoChat.insertions, isAutoRoot, runs, session, runStep]);
 
-  const openTranscript = () =>
-    openDrawer({ kind: 'transcript', sessionId: session.id, payload: { agentId: agent.id } });
+  const openTranscript: OpenTranscriptAt = ({ turn }) =>
+    openDrawer({ kind: 'transcript', sessionId: session.id, payload: { agentId: agent.id, turn } });
+  const toggleTranscript = () =>
+    toggleDrawer({ kind: 'transcript', sessionId: session.id, payload: { agentId: agent.id } });
+  const heading = agentHeadingOf({ name: agent.name, kind, brief });
+  const isChipShown = !isAutoRoot && heading !== AGENT_KIND_META[kind].noun;
+  const shownRouting = executedRoutingOf({ executed, fallback: routing });
   const headerMenu = useObjectMenuTrigger({
     target: { kind: 'agent', sessionId: session.id, agentId: agent.id },
     anchorKey: `agent-header:${agent.id}`,
   });
+  const isInWorkflowRun = runStep !== undefined || hasNextAction;
   const lead = (
     <>
       {context}
-      <AgentStoppedNotice
-        session={session}
-        agent={agent}
-        executedProvider={executed?.provider ?? null}
-        providerOverride={providerOverride}
-        isAutoChild={isAutoChild}
-      />
-      {runStep === undefined ? <AgentNextAction session={session} agent={agent} /> : null}
+      {isInWorkflowRun ? null : (
+        <AgentStoppedNotice
+          session={session}
+          agent={agent}
+          executedProvider={executed?.provider ?? null}
+          providerOverride={providerOverride}
+          isAutoChild={isAutoChild}
+        />
+      )}
+      {runStep === undefined ? (
+        <AgentNextAction session={session} agent={agent} onShownChange={setHasNextAction} />
+      ) : null}
     </>
   );
 
@@ -187,13 +212,13 @@ export const AgentDetailPane = ({
             >
               {runStep === undefined ? (
                 <>
-                  {isAutoRoot ? null : <AgentKindChip kind={kind} />}
-                  <AgentTitle agent={agent} sessionId={session.id} />
+                  {isChipShown ? <AgentKindChip kind={kind} /> : null}
+                  <AgentTitle agent={agent} sessionId={session.id} brief={brief} />
                 </>
               ) : (
                 runStep.heading
               )}
-              <AgentProviderMark provider={routing.provider} />
+              <AgentProviderMark provider={shownRouting.provider} />
             </span>
           }
           actions={
@@ -201,11 +226,14 @@ export const AgentDetailPane = ({
               {isAutoRoot ? (
                 <AutoMarkFinishedButton sessionId={session.id} agentId={agent.id} />
               ) : null}
-              <GhostActionButton
-                icon={ScrollText}
-                label="View transcript"
-                onClick={openTranscript}
-              />
+              {isAutoRoot || runStep !== undefined ? null : (
+                <GhostActionButton
+                  icon={ScrollText}
+                  label={isTranscriptOpen ? 'Hide transcript' : 'View transcript'}
+                  pressed={isTranscriptOpen}
+                  onClick={toggleTranscript}
+                />
+              )}
               {runStep === undefined ? (
                 <AgentHeaderActions
                   key={agent.id}
@@ -231,6 +259,7 @@ export const AgentDetailPane = ({
         mode="conversation"
         onOpenTranscript={openTranscript}
         hasAdvanceRow={runStep === undefined}
+        {...(runStep?.stopLabel !== undefined && { stopLabel: runStep.stopLabel })}
         hasComposer={!isPinned && !isRewriterFinished && adoption === null && !isMoveOpen}
         composerPlaceholder={
           rewriter?.isLive === true ? REWRITER_PLACEHOLDER : autoChat.composerPlaceholder

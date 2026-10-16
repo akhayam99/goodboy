@@ -55,10 +55,10 @@ function request(toolUseId: string): TranscriptItem {
 afterEach(cleanup);
 
 describe('OperationsCluster', () => {
-  it('renders collapsed with a count and hides children', () => {
+  it('renders collapsed with no eyebrow or count badge and hides children', () => {
     render(<OperationsCluster items={[tool('a'), tool('b')]} />);
-    screen.getByText('operations');
-    screen.getByText('2');
+    expect(screen.queryByText('operations')).toBeNull();
+    expect(screen.queryByText('2')).toBeNull();
     expect(screen.queryByTestId('card')).toBeNull();
     expect(screen.getByRole('button').getAttribute('aria-expanded')).toBe('false');
   });
@@ -91,9 +91,14 @@ describe('OperationsCluster', () => {
     screen.getByText('grep');
   });
 
-  it('shows grouped tool-name summary when all ended and no errors', () => {
+  it('says what the steps did in the words of the turn summary when all ended', () => {
     render(<OperationsCluster items={[tool('a'), tool('c'), tool('b')]} />);
-    screen.getByText('2 read · 1 grep');
+    screen.getByText('Read 2 files, searched the code');
+  });
+
+  it('opens on its steps when the transcript pane asks for it', () => {
+    render(<OperationsCluster items={[tool('a'), tool('b')]} isInitiallyOpen />);
+    expect(screen.getAllByTestId('card')).toHaveLength(2);
   });
 
   it('aria-label uses singular "item" for single item', () => {
@@ -116,11 +121,6 @@ describe('OperationsCluster', () => {
     const label = screen.getByRole('button').getAttribute('aria-label')!;
     expect(label).toContain('1 succeeded');
     expect(label).toContain('1 failed');
-  });
-
-  it('renders count badge with correct number', () => {
-    render(<OperationsCluster items={[tool('a')]} />);
-    screen.getByText('1');
   });
 
   it('carries state on the icon and drops the rail once the cluster is neutral', () => {

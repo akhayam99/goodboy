@@ -22,7 +22,7 @@ export const AutoLimitChip = ({ usd, isFromSession, isDisabled, onChange }: Prop
       <Chip
         tone="neutral"
         kind="reference"
-        label={`Spend cap ${formatUsd(usd)}`}
+        label={`Limit ${formatUsd(usd)}`}
         title="From the budget of this session"
       />
     );
@@ -32,14 +32,14 @@ export const AutoLimitChip = ({ usd, isFromSession, isDisabled, onChange }: Prop
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
-      ariaLabel="Spend cap for this conversation"
+      ariaLabel="Limit for this Auto run"
       className="flex flex-col gap-3 p-3"
       trigger={
         <Chip
           tone="neutral"
           kind="reference"
           as="button"
-          label={`Spend cap ${formatUsd(usd)}`}
+          label={`Limit ${formatUsd(usd)}`}
           expanded={isOpen}
           hasPopup="dialog"
           disabled={isDisabled}
@@ -51,11 +51,11 @@ export const AutoLimitChip = ({ usd, isFromSession, isDisabled, onChange }: Prop
       }
     >
       <label htmlFor={INPUT_ID} className="text-label text-foreground">
-        Spend cap for this conversation
+        Limit for this Auto run
       </label>
       <p className="text-meta text-muted-foreground">
         The most Auto and the agents it starts may spend. Auto stops starting work when it is spent.
-        Other conversations in this workspace start from the same cap.
+        Other Auto runs in this workspace start from the same limit.
       </p>
       <Input
         id={INPUT_ID}
@@ -81,7 +81,7 @@ export const AutoLimitChip = ({ usd, isFromSession, isDisabled, onChange }: Prop
             }
           }}
         >
-          Use this cap
+          Use this limit
         </Button>
       </div>
     </AnchoredPopover>

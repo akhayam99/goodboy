@@ -2,7 +2,8 @@ import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Band, Markdown } from '@goodboy/ui';
 import type { Agent, Session, TurnState } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore, useTranscript } from '../../../../store';
+import { lastReplyOf } from '../../lastReplyOf';
 import { selectSpawnedChildren } from '../../../../shared/utils/spawnedChildren';
 import { isQuestionDelegate } from '../../../context/questionDelegate';
 import { useAgentOutcome } from '../../../../shared/hooks/useAgentOutcome';
@@ -61,7 +62,9 @@ export const AgentConversationEnd = ({ session, agent }: Props) => {
       .filter((child) => kind !== 'planner' || isQuestionDelegate({ agent: child }));
   }, [children, followUps, kind]);
   const outcome = useAgentOutcome({ agent });
-  const isRecordedOutcome = !outcome.isFromReply && outcome.text !== '';
+  const events = useTranscript(agent.id);
+  const hasClosingReply = useMemo(() => lastReplyOf({ events }) !== null, [events]);
+  const isRecordedOutcome = !outcome.isFromReply && outcome.text !== '' && !hasClosingReply;
 
   return (
     <div className="flex min-w-0 flex-col gap-3">
