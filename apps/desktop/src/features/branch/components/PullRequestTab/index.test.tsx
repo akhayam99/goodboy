@@ -235,34 +235,6 @@ describe('the description', () => {
   });
 });
 
-describe('the branch row', () => {
-  it('says how far behind the base the branch is and offers the rebase', async () => {
-    behindMain = 3;
-    await show();
-
-    const row = (await screen.findByText('3 behind main')).parentElement as HTMLElement;
-    expect(within(row).getByRole('button', { name: 'Rebase on main' })).toBeDefined();
-  });
-
-  it('says nothing about the distance when the pull request targets another base than the one measured', async () => {
-    behindMain = 3;
-    await show();
-    const row = (await screen.findByText('3 behind main')).parentElement as HTMLElement;
-    const [first] = useAppStore.getState().sessionProjectMounts[SESSION.id] ?? [];
-    if (first === undefined) {
-      throw new Error('the scene seeds a mount');
-    }
-    act(() => {
-      useAppStore.setState({
-        sessionProjectMounts: { [SESSION.id]: [{ ...first, baseBranch: 'release' }] },
-      });
-    });
-
-    await waitFor(() => expect(screen.queryByText('3 behind main')).toBeNull());
-    expect(row.isConnected).toBe(false);
-  });
-});
-
 describe('the reviewers', () => {
   it('lists the collaborators who do not review yet and requests the one picked', async () => {
     await show();
@@ -296,11 +268,11 @@ describe('the keys', () => {
 
   it('leaves the title alone on E while Comments is the section', async () => {
     await show();
-    fireEvent.click(
-      within(screen.getByRole('navigation', { name: 'Sections' })).getByRole('button', {
-        name: /^Comments/,
-      }),
-    );
+    act(() => {
+      useAppStore.setState((state) => ({
+        branchTab: { ...state.branchTab, [SESSION.id]: 'comments' },
+      }));
+    });
 
     fireEvent.keyDown(window, { code: 'KeyE', key: 'e' });
 
@@ -334,27 +306,56 @@ describe('the Overview grid', () => {
   };
 
   it.each(['github', 'draft', 'merged'] as const)(
-    'puts the description and the activity first and the properties last in the %s state',
+    'puts the property block first and the description and the activity under it in the %s state',
     async (variant) => {
       await show({ variant });
 
       const children = [...grid().children];
       expect(children).toHaveLength(2);
-      expect(children[0]?.contains(description())).toBe(true);
-      expect(children[1]).toBe(screen.getByRole('complementary', { name: 'Properties' }));
+      expect(children[0]).toBe(screen.getByRole('group', { name: 'Properties' }));
+      expect(children[1]?.contains(description())).toBe(true);
     },
   );
 
-  it('lists Reviewers, Checks, Linked issues and Base as the properties, and no Status or Files changed', async () => {
+  it('groups the properties as State, People and Links, with no Rebase among them', async () => {
     await show();
 
-    const properties = screen.getByRole('complementary', { name: 'Properties' });
-    const labels = within(properties)
-      .getAllByRole('region')
-      .map((block) => block.getAttribute('aria-label'));
-    expect(labels).toEqual(['Reviewers', 'Checks', 'Linked issues', 'Base']);
-    expect(within(properties).queryByRole('region', { name: 'Status' })).toBeNull();
-    expect(within(properties).queryByRole('region', { name: 'Files changed' })).toBeNull();
+    const properties = screen.getByRole('group', { name: 'Properties' });
+    const groups = [...properties.querySelectorAll('[data-property-group]')].map((group) => [
+      group.getAttribute('data-property-group'),
+      [...group.querySelectorAll('section')].map((field) => field.getAttribute('aria-label')),
+    ]);
+    expect(groups[0]).toEqual(['state', ['State', 'Base', 'Checks', 'Readiness']]);
+    expect(groups[1]?.[0]).toBe('people');
+    expect(groups[1]?.[1]).toContain('Reviewers');
+    expect(groups[2]?.[0]).toBe('links');
+    expect(within(properties).queryByRole('button', { name: /Rebase/ })).toBeNull();
+  });
+
+  it('says the readiness in words and the queue of a queued pull request', async () => {
+    await show();
+    act(() => {
+      useAppStore.setState((state) => {
+        const current = state.sessionGithub[SESSION.id];
+        if (current === undefined || current.pr === null) {
+          return state;
+        }
+        return {
+          sessionGithub: {
+            ...state.sessionGithub,
+            [SESSION.id]: {
+              ...current,
+              pr: { ...current.pr, state: 'queued', isDraft: false, mergeQueue: { position: 3 } },
+            },
+          },
+        };
+      });
+    });
+
+    expect((await screen.findByTestId('branch-queue-line')).textContent).toBe(
+      'Queued to merge, 3rd in line',
+    );
+    expect(screen.getByTestId('pr-readiness').textContent).not.toBe('');
   });
 
   it('writes the checks on one line and opens the Checks section from it', async () => {

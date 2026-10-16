@@ -230,7 +230,9 @@ export const CREATE_AND_SEARCH_ROWS: ReadonlyArray<Row> = [
     covers: ['goToHistory'],
     open: async () => {
       await openBranchFiles();
-      fireEvent.contextMenu(await screen.findByRole('button', { name: /^Back(?! to Sessions$)/ }));
+      fireEvent.contextMenu(
+        await screen.findByRole('button', { name: /^Back(?! to Sessions$| to session )/ }),
+      );
       await settle();
       const entries = await screen.findAllByRole('menuitemradio');
       const target = entries.find((entry) => entry.getAttribute('aria-checked') !== 'true');

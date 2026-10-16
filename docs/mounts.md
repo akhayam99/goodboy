@@ -527,7 +527,9 @@ tooltip. Copy branch name lives in the row menu.
 A branch row shows the tasks linked to that branch as chips (`LinkedTaskChip`, the
 `task` kind). The visible **Put on a branch** action opens an anchored picker for a linked
 task, with **Link work** for another task and **New branch for** to give a
-task its own branch. Every placement change goes through
+task its own branch. The same picker opens from **Link work to this branch** (the
+`mount.putTaskOnBranch` label in a mount menu), anchored under the identity row of the
+sidebar's worktree level. Every placement change goes through
 `moveSessionExternalTask` (`to` a session or a branch of the task's own
 project, `isCopy` keeps the source): it computes the next rows of that task and
 writes them once, so one Undo restores the exact rows, including removing a

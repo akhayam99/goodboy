@@ -23,9 +23,8 @@ const SECOND_PATH = '/work/cascade-second-branch';
 const trailBands = (): number => document.querySelectorAll('main [data-slot="trail-bar"]').length;
 
 const currentWorktree = (): string =>
-  document.querySelector(
-    '[data-level-layer="session"]:not([inert]) [aria-labelledby="level-projects-label"] [aria-current="page"]',
-  )?.textContent ?? '';
+  document.querySelector('[data-level-layer="worktree"]:not([inert]) [data-worktree-identity]')
+    ?.textContent ?? '';
 
 const headerColumn = (): string | null =>
   document
@@ -101,12 +100,12 @@ export const BRANCH_COLUMN_ROWS: ReadonlyArray<Row> = [
     open: async (ctx) => {
       await openBranchPage();
       await branchTab('pr')(ctx);
-      for (const name of [/^Overview/, /^Comments/, /^Files/, /^Commits/, /^Checks/]) {
+      for (const name of [/^Pull request/, /^Comments/, /^Files/, /^Commits/, /^Checks/]) {
         await visitTab(name);
         expect(trailBands()).toBe(0);
         expect(headerColumn()).toBe('column');
       }
-      for (const name of [/^Overview/, /^Comments/, /^Files/, /^Commits/]) {
+      for (const name of [/^Pull request/, /^Comments/, /^Files/, /^Commits/]) {
         await visitTab(name);
         expect(bodyColumns().length).toBeGreaterThan(0);
         expect(bodyColumns().every((width) => width === 'column')).toBe(true);

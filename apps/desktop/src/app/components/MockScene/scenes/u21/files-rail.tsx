@@ -14,6 +14,7 @@ import {
   POST_CREDIT_PATH,
 } from '../brand/contextDiffPatch';
 import { DiffStage } from '../brand/DiffStage';
+import { WorktreeSceneColumn } from '../WorktreeSceneColumn';
 
 const PINNED_SIDEBAR_PX = 244;
 const DOCKED_PANE_PX = 1920 - PINNED_SIDEBAR_PX;
@@ -71,7 +72,9 @@ const FilesRailScene = ({ paneWidth }: Props) => {
         <StudioBandContext.Provider value={null}>
           <div className="relative min-h-0 flex-1">
             <div className="absolute inset-0 z-0">
-              <DiffStage centerNote={false} />
+              <WorktreeSceneColumn>
+                <DiffStage centerNote={false} />
+              </WorktreeSceneColumn>
             </div>
           </div>
         </StudioBandContext.Provider>

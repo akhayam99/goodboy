@@ -409,7 +409,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     id: 'pullRequest.edit',
     open: async () => {
       await press('lens.pr')();
-      expect((await findSection(/^Overview/)).getAttribute('aria-current')).toBe('page');
+      expect((await findSection(/^Pull request/)).getAttribute('aria-current')).toBe('page');
       await pressed('pullRequest.edit', document.body);
     },
     lands: async () =>
@@ -1324,9 +1324,12 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
     lands: async () => {
       expect(await activeTreeFile()).toContain('notify.ts');
       await visible('navigation', 'Changed files');
+      const tree = within(screen.getByRole('navigation', { name: 'Changed files' }));
       expect(
-        within(await findSection(/^Files/)).getByRole('img', { name: '1 of 3 viewed' }),
-      ).toBeDefined();
+        tree
+          .getAllByRole('button', { name: /^Viewed: / })
+          .filter((toggle) => toggle.getAttribute('aria-pressed') === 'true'),
+      ).toHaveLength(1);
     },
   }),
   keyRow({

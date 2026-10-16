@@ -365,15 +365,15 @@ export const ChangeTree = ({
           })}
         </ul>
       </ScrollFade>
-      <div className="flex shrink-0 items-center px-2 pb-1">
+      <div className="flex shrink-0 items-center justify-between px-2 pb-2">
         <Button size="xs" variant="quiet" disabled={unviewedCount === 0} onClick={onNextUnviewed}>
           Next unviewed
           {unviewedCount === 0 ? null : (
             <span className="tabular-nums text-faint-foreground">{unviewedCount}</span>
           )}
         </Button>
+        <KeyHints />
       </div>
-      <KeyHints />
     </nav>
   );
 };

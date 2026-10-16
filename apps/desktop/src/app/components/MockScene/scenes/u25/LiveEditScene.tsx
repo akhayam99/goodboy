@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Session } from '@goodboy/types';
 import { BranchPage } from '../../../../../features/branch/components/BranchPage';
+import { WorktreeSceneColumn } from '../WorktreeSceneColumn';
 import { useAppStore } from '../../../../../store';
 import { seedLiveHistory } from '../../../../../features/history/testing/seedLiveHistory';
 import { A_REBASE_MOUNT_ID } from '../../../../../features/history/testing/aRebaseRun';
@@ -238,7 +239,9 @@ export const LiveEditScene = ({ mode }: Props) => {
   }
   return (
     <div className="flex h-screen flex-col bg-background">
-      <BranchPage session={session} workingDir="/w/payments-api" />
+      <WorktreeSceneColumn>
+        <BranchPage session={session} workingDir="/w/payments-api" />
+      </WorktreeSceneColumn>
     </div>
   );
 };

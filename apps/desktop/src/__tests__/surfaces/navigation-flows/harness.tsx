@@ -296,16 +296,30 @@ export const click = async (element: HTMLElement): Promise<void> => {
 
 const backRow = (): HTMLElement | null =>
   document.querySelector<HTMLElement>(
-    '[data-level-layer="session"]:not([inert]) [data-level-back] button',
+    '[data-level-layer]:not([data-level-layer="workspace"]):not([inert]) [data-level-back] button',
   );
 
+const LEVELS_ABOVE = 2;
+
 export const clickButton = async (name: RegExp | string): Promise<void> => {
-  const [visible] = screen.queryAllByRole('button', { name });
-  const back = backRow();
-  if (visible === undefined && back !== null) {
+  for (let step = 0; step < LEVELS_ABOVE; step += 1) {
+    const [visible] = screen.queryAllByRole('button', { name });
+    const back = backRow();
+    if (visible !== undefined || back === null) {
+      break;
+    }
     await click(back);
   }
   await click(await screen.findByRole('button', { name }));
+};
+
+const leaveWorktreeLevel = async (): Promise<void> => {
+  const back = document.querySelector<HTMLElement>(
+    '[data-level-layer="worktree"]:not([inert]) [data-level-back] button',
+  );
+  if (back !== null) {
+    await click(back);
+  }
 };
 
 export const clickFirstButton = async (name: RegExp): Promise<void> => {
@@ -314,6 +328,7 @@ export const clickFirstButton = async (name: RegExp): Promise<void> => {
 };
 
 const sessionLevel = async (): Promise<HTMLElement> => {
+  await leaveWorktreeLevel();
   await waitFor(() =>
     expect(document.querySelector('[data-level-layer="session"]:not([inert])')).not.toBeNull(),
   );
@@ -399,7 +414,7 @@ export const pane = (name: PaneName) => async (ctx: Ctx) => {
 type BranchTabName = 'pr' | 'comments' | 'files' | 'commits' | 'checks';
 
 const BRANCH_TAB_LABEL: Readonly<Record<BranchTabName, RegExp>> = {
-  pr: /^Overview/,
+  pr: /^Pull request/,
   comments: /^Comments/,
   files: /^Files/,
   commits: /^Commits/,
@@ -407,13 +422,14 @@ const BRANCH_TAB_LABEL: Readonly<Record<BranchTabName, RegExp>> = {
 };
 
 export const getSection = (name: RegExp): HTMLElement =>
-  within(screen.getByRole('navigation', { name: 'Sections' })).getByRole('button', { name });
+  within(screen.getByRole('navigation', { name: 'Worktree' })).getByRole('button', { name });
 
 export const sectionLabels = (): ReadonlyArray<string> =>
-  within(screen.getByRole('navigation', { name: 'Sections' }))
-    .getAllByRole('button')
-    .filter((button) => button.closest('[data-slot="branch-rail-files"]') === null)
-    .map((button) => (button.textContent ?? '').replace(/[\d/-]+$/, '').trim());
+  [
+    ...screen
+      .getByRole('navigation', { name: 'Worktree' })
+      .querySelectorAll<HTMLElement>('[data-entry-label]'),
+  ].map((label) => label.textContent ?? '');
 
 export const findSection = (name: RegExp): Promise<HTMLElement> =>
   waitFor(() => getSection(name), WAIT);

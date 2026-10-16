@@ -9,6 +9,7 @@ const COLUMN_ROOT = join(SRC, 'app', 'components', 'SideColumn');
 
 const SESSION_LEVEL_PAGES: ReadonlySet<string> = new Set([
   'app/components/SideColumn/RailSessionLevel.tsx',
+  'app/components/SideColumn/RailWorktreeLevel.tsx',
 ]);
 
 const INTERNAL_MOVES = /\b(setActiveLens|setCurrentSession|selectAgent)\b/;

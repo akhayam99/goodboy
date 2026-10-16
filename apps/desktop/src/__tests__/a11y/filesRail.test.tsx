@@ -57,7 +57,7 @@ describe('a11y, the sections rail in each mode', () => {
 
   it('has no violation as an overlay over the page', async () => {
     const container = mount({ scene: 'branch-overlay-rail', paneWidth: 700 });
-    await screen.findByRole('navigation', { name: 'Sections' }, WAIT);
+    await screen.findByRole('navigation', { name: 'Worktree' }, WAIT);
 
     expect(await violationsOf(container)).toEqual([]);
   });

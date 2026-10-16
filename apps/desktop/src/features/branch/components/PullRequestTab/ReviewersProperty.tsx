@@ -14,7 +14,7 @@ import { useAppStore } from '../../../../store';
 import { PR_REQUEST_REVIEW_EVENT, pullRequestEventName } from '../../../actions/kinds/pullRequest';
 import { ReviewerPicker } from '../../../../shared/components/ReviewerPicker';
 import { ReviewStateIcon } from './ReviewStateIcon';
-import { PropertyBlock } from '../../../../shared/components/PropertyBlock';
+import { PropertyField } from './PropertyField';
 
 export type ReviewerRequest =
   | { readonly kind: 'hidden' }
@@ -99,7 +99,7 @@ export const ReviewersProperty = ({
     ) : null;
 
   return (
-    <PropertyBlock label="Reviewers" action={action}>
+    <PropertyField label="Reviewers" action={action}>
       {reviewers.length === 0 ? (
         <EmptyLine>None requested</EmptyLine>
       ) : (
@@ -124,6 +124,6 @@ export const ReviewersProperty = ({
       {request.kind === 'disabled' && (
         <p className="text-meta text-faint-foreground">{request.reason}</p>
       )}
-    </PropertyBlock>
+    </PropertyField>
   );
 };

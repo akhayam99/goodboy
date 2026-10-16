@@ -118,7 +118,7 @@ describe('the u24 rebase job scenes', () => {
     const region = await screen.findByRole('region', { name: 'Rebase job' }, { timeout: 4_000 });
 
     expect(region.textContent).toContain('History rewriter is merging webhook.ts in a copy');
-    expect(sectionRow(/^Overview/).getAttribute('aria-current')).toBe('page');
+    expect(sectionRow(/^Pull request/).getAttribute('aria-current')).toBe('page');
   });
 
   it('draws the Activity rows from the jobs', async () => {

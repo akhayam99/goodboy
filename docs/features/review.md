@@ -83,7 +83,9 @@ Review your own diff before anyone else does. Leave notes on lines or whole file
 
 ### Pull request on the Branch page
 
-The **Overview** section is the pull request. Rename it, edit the description, ask for reviewers and read in plain words whether it can merge, such as **Ready to merge** or **Blocked: 2 checks failing**. **Merge** offers only the ways the host allows, and on GitLab the page uses GitLab's words, such as **MR !42**.
+Click a worktree under **Projects** in a session and the sidebar steps into it: the project and the branch on top, a status line with **Rebase** while the branch is behind, then **Pull request**, **Comments**, **Files**, **Commits** and **Checks** with their counts. **‹** goes back to the session.
+
+The **Pull request** entry is the pull request. Its properties come first, grouped as state, people and links: the state and number, the base, the checks, and in plain words whether it can merge, such as **Ready to merge** or **Blocked: 2 checks failing**. Rename it, edit the description and ask for reviewers there. **Merge** offers only the ways the host allows, and on GitLab the page uses GitLab's words, such as **Merge request** and **MR !42**.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-pr-page-dark.webp">
@@ -106,7 +108,7 @@ A description Goodboy wrote is updated after a history push, so it keeps matchin
 
 ### Read the code
 
-Read the branch against its base in the **Files** section, unified or split, with a file tree that tracks what you marked **Viewed**. Quote lines into a note, or choose **Ask agent** to send them to an agent with your question. The Branch header refreshes after a local commit edit and offers **Force push**, **Mark ready for review** or **Merge** as appropriate.
+Read the branch against its base in **Files**, unified or split. The file tree opens in the sidebar right under **Files** and tracks what you marked **Viewed**; picking another entry folds it away. Quote lines into a note, or choose **Ask agent** to send them to an agent with your question. The Branch header refreshes after a local commit edit and offers **Force push**, **Mark ready for review** or **Merge** as appropriate.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-diff-dark.webp">

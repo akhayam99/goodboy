@@ -99,7 +99,6 @@ branch-narrow
 branch-nopr
 branch-nopr-notes
 branch-open
-branch-overlay-rail
 branch-pr-bitbucket
 branch-pr-bitbucket-denied
 branch-pr-bitbucket-merge
@@ -181,6 +180,16 @@ c03-panes-more
 c03-panes-script-output
 c03-panes-scripts
 c03-panes-terminal
+c04-session-worktrees
+c04-worktree-checks
+c04-worktree-comments
+c04-worktree-files
+c04-worktree-folded
+c04-worktree-menu
+c04-worktree-no-pr
+c04-worktree-pr-behind
+c04-worktree-pr-draft
+c04-worktree-rebasing
 c06-agent-delegating
 c06-agent-failed
 c06-agent-finished

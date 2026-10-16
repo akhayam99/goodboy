@@ -14,6 +14,7 @@ export type SelectableRowProps = {
   readonly id?: string;
   readonly role?: 'option';
   readonly ariaSelected?: boolean;
+  readonly isExpanded?: boolean;
   readonly tabIndex?: number;
   readonly className?: string;
 };
@@ -34,6 +35,7 @@ export const SelectableRow = ({
   id,
   role,
   ariaSelected,
+  isExpanded,
   tabIndex,
   className,
 }: SelectableRowProps) => {
@@ -47,6 +49,7 @@ export const SelectableRow = ({
         aria-label={ariaLabel}
         role={role}
         aria-selected={ariaSelected}
+        aria-expanded={isExpanded}
         tabIndex={tabIndex}
         onClick={onClick}
         className={cn(ROW_CLASSES, className)}

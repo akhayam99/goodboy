@@ -57,17 +57,17 @@ describe('the gitlab page scenes', () => {
   it('branch-pr-gitlab says merge request, MR and the number with the host nouns', async () => {
     draw({ name: 'branch-pr-gitlab' });
 
-    expect((await findSectionRow(/^Overview/)).getAttribute('aria-current')).toBe('page');
+    expect((await findSectionRow(/^Merge request/)).getAttribute('aria-current')).toBe('page');
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
       'Stop retried webhooks posting a second credit',
     );
-    expect(screen.getByText(/MR !42/)).toBeDefined();
+    expect(screen.getAllByText(/MR !42/).length).toBeGreaterThan(0);
     expect(screen.queryByText(/pull request/i)).toBeNull();
   });
 
   it('branch-pr-gitlab reads reviewers, approvals and the pipeline from GitLab', async () => {
     draw({ name: 'branch-pr-gitlab' });
-    const side = within(await screen.findByRole('complementary', { name: 'Properties' }));
+    const side = within(await screen.findByRole('group', { name: 'Properties' }));
 
     expect(await side.findByText('kenji-w')).toBeDefined();
     expect(side.getByText('Approved')).toBeDefined();

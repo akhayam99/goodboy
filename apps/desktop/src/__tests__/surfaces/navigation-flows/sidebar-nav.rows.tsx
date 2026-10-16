@@ -174,6 +174,7 @@ export const SIDEBAR_NAV_ROWS: ReadonlyArray<Row> = [
         () => expect(useAppStore.getState().branchTab[ctx.sessionId]).toBe('commits'),
         WAIT,
       );
+      await clickButton(/^Back to session /);
       const projects = within(within(sessionLevel()).getByRole('group', { name: 'Projects' }));
       await click(projects.getByRole('button', { name: new RegExp(SECOND_BRANCH) }));
       await settle(8);
@@ -189,9 +190,10 @@ export const SIDEBAR_NAV_ROWS: ReadonlyArray<Row> = [
       );
       expect(state.branchThreadId[ctx.sessionId] ?? null).toBeNull();
       await waitFor(() => {
-        const signs = levelSigns();
-        expect(signs).toHaveLength(1);
-        expect(signs[0]?.textContent ?? '').toContain(SECOND_BRANCH);
+        const identity = document.querySelector(
+          '[data-level-layer="worktree"]:not([inert]) [data-worktree-identity]',
+        );
+        expect(identity?.textContent ?? '').toContain(SECOND_BRANCH);
       }, WAIT);
     },
   },

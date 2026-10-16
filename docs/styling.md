@@ -236,10 +236,9 @@ Five rules:
    close control.
 5. **First-time states centre in the body**, in one `EmptyState` layout.
 
-The Branch page is a split page: its rail lists the sections the state has and its detail holds the
-crumb band and one 960 column (`SessionWorkspace` hands the band to `BranchPage` through
-`StudioBandContext`, and `BranchDetail` draws it first). Under 780 the rail leaves and a
-`Sections` button at the left of the crumb band opens it as an overlay.
+The Branch page is one detail on one 960 column; its sections are the entries of the sidebar's
+worktree level, so the page has no rail of its own (`BranchDetail` draws the studio band first
+when a host hands one through `StudioBandContext`).
 
 Centring lives in `PageColumn` alone (`mx-auto` on `column` and `measure`, none
 on `full`). No view centres itself. Sub-pages follow the same tiers as their
@@ -308,12 +307,11 @@ the message. A user or injected card keeps a fixed 48px start gap
 (`PANE_RHYTHM.message.user`) in the agent transcript, Chat, the Ask panel and
 the fix run drawer.
 
-**The Branch page** is a split page: a rail of sections, always docked from a page of 780, and one
-detail whose header, trail, Ask button and every section body share the 960px column, so nothing
-moves from one section to the next. Files puts its file tree in the rail, under the sections and outside the
-column, so the diff keeps the column; under 780 the rail opens over the detail from a
-`Sections` button. The Overview is one grid of a 640 main column and a 296 properties column in
-every state. Comments puts the list and the thread side by
+**The Branch page** is one detail whose header, Ask button and every section body share the 960px
+column, so nothing moves from one section to the next. Its sections are the worktree level's
+entries in the sidebar; Files opens its file tree under the Files entry, outside the column, so
+the diff keeps the column. The Pull request entry is one column: a label 96 property block in
+three groups, then the description and the activity. Comments puts the list and the thread side by
 side from 900px, the thread's properties inline under it at every width. Both
 read the width of their own pane (`branchLayoutOf`), so a wide sidebar or an
 open drawer narrows them.

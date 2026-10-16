@@ -98,7 +98,7 @@ export const PULL_REQUEST_PAGE_ROWS: ReadonlyArray<Row> = [
       branchTab('pr'),
       () => heading(/Stop retried webhooks/),
       async () => {
-        expect(sectionLabels()[0]).toBe('Overview');
+        expect(sectionLabels()[0]).toBe('Pull request');
         expect(sectionLabels()).toHaveLength(5);
       },
     ),
@@ -135,7 +135,7 @@ export const PULL_REQUEST_PAGE_ROWS: ReadonlyArray<Row> = [
     },
     lands: async (ctx) => {
       await branchTab('files')(ctx);
-      await click(await findSection(/^Overview/));
+      await click(await findSection(/^Pull request/));
       await branchTab('pr')(ctx);
       expect(
         await screen.findByRole('textbox', { name: 'Pull request title' }, WAIT),

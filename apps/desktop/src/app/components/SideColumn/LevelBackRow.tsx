@@ -4,14 +4,15 @@ import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
   readonly label: string;
+  readonly spokenLabel?: string;
   readonly onBack: () => void;
 };
 
-export const LevelBackRow = ({ label, onBack }: Props) => (
+export const LevelBackRow = ({ label, spokenLabel = label, onBack }: Props) => (
   <div data-level-back="">
     <SelectableRow
       selected={false}
-      ariaLabel={`Back to ${label}`}
+      ariaLabel={`Back to ${spokenLabel}`}
       title={`Back to ${label}`}
       onClick={onBack}
       className="h-7 items-center gap-1 px-2 text-label"

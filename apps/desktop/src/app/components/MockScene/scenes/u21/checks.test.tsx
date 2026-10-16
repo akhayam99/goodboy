@@ -82,8 +82,8 @@ describe('the checks scenes', () => {
   it('branch-checks-no-pr lands on Overview and the rail has no Checks without a pull request', async () => {
     draw({ name: 'branch-checks-no-pr' });
 
-    const rail = within(await screen.findByRole('navigation', { name: 'Sections' }));
-    expect(rail.getByRole('button', { name: /^Overview/ }).getAttribute('aria-current')).toBe(
+    const rail = within(await screen.findByRole('navigation', { name: 'Worktree' }));
+    expect(rail.getByRole('button', { name: /^Pull request/ }).getAttribute('aria-current')).toBe(
       'page',
     );
     expect(rail.queryByRole('button', { name: /^Checks/ })).toBeNull();

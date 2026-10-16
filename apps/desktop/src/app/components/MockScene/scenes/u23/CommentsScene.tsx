@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BranchPage } from '../../../../../features/branch/components/BranchPage';
+import { WorktreeSceneColumn } from '../WorktreeSceneColumn';
 import { SESSION } from '../resolveSeed';
 import { WORKSPACE_SIBLINGS, seedWorkspaceChrome } from '../audit/workspaceChrome';
 import { WorkspaceFrame } from '../audit/WorkspaceFrame';
@@ -32,7 +33,7 @@ export const CommentsScene = ({ variant }: Props) => {
 
   return (
     <main className="h-screen overflow-hidden bg-background text-foreground">
-      <div className="mx-auto h-full">{page}</div>
+      <WorktreeSceneColumn>{page}</WorktreeSceneColumn>
     </main>
   );
 };

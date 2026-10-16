@@ -11,7 +11,7 @@ describe('screenLabel', () => {
     [`s/${SESSION_ID}`, 'Session'],
     [`s/${SESSION_ID}/review`, 'Session › Comments'],
     [`s/${SESSION_ID}/review/t/thread-9`, 'Session › Comments'],
-    [`s/${SESSION_ID}/branch/pr`, 'Session › Branch › Overview'],
+    [`s/${SESSION_ID}/branch/pr`, 'Session › Branch › Pull request'],
     [`s/${SESSION_ID}/branch/comments`, 'Session › Branch › Comments'],
     [
       `s/${SESSION_ID}/branch/files:/Users/rowan/harborline@commit:fc2f0899#src/App.tsx`,

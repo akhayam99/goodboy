@@ -7,6 +7,7 @@ import type {
   SessionProjectMount,
 } from '@goodboy/types';
 import { BranchPage } from '../../../../../features/branch/components/BranchPage';
+import { WorktreeSceneColumn } from '../WorktreeSceneColumn';
 import { useAppStore } from '../../../../../store';
 import type { MountGithubState } from '../../../../../store/types';
 import { handlersFor } from '../brand/DiffStage';
@@ -234,7 +235,9 @@ const BranchU21Scene = ({ variant }: Props) => {
 
   return (
     <main className="h-screen overflow-hidden bg-background text-foreground">
-      <BranchPage session={SESSION} workingDir={FIX_PATH} />
+      <WorktreeSceneColumn session={SESSION}>
+        <BranchPage session={SESSION} workingDir={FIX_PATH} />
+      </WorktreeSceneColumn>
     </main>
   );
 };

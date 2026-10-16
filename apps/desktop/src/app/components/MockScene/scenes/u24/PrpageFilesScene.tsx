@@ -3,6 +3,7 @@ import { UnderTrailContext } from '@goodboy/ui';
 import type { DiffComment, PrComment, ResolveQueueItemWithThread } from '@goodboy/types';
 import type { BranchTab } from '../../../../../store/slices/navigation/types';
 import { BranchPage } from '../../../../../features/branch/components/BranchPage';
+import { WorktreeSceneColumn } from '../WorktreeSceneColumn';
 import { StudioBandContext } from '../../../../../shared/components/StudioShell/studioBandContext';
 import { STORAGE_KEYS } from '../../../../../shared/lib/storage-keys';
 import { useAppStore } from '../../../../../store';
@@ -193,7 +194,9 @@ export const PrpageFilesScene = ({ variant, stageWidth }: Props) => {
     >
       <UnderTrailContext.Provider value>
         <StudioBandContext.Provider value={null}>
-          <BranchPage session={SESSION} workingDir={PR_PAGE_WORKTREE} />
+          <WorktreeSceneColumn>
+            <BranchPage session={SESSION} workingDir={PR_PAGE_WORKTREE} />
+          </WorktreeSceneColumn>
         </StudioBandContext.Provider>
       </UnderTrailContext.Provider>
     </main>
