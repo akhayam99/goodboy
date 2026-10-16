@@ -2,7 +2,7 @@ type Params = {
   readonly key: string;
 };
 
-const MAX_CHARS = 10;
+const MAX_CHARS = 9;
 
 export const linkedKeyText = ({ key }: Params): string => {
   if (key.length <= MAX_CHARS) {

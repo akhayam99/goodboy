@@ -385,7 +385,7 @@ describe('the session level projects and linked work', () => {
     mountColumn();
 
     const key = sessionLayer().querySelector('[data-linked-key]');
-    expect(key?.textContent).toBe('PAYME…-3F2');
+    expect(key?.textContent).toBe('PAYM…-3F2');
   });
 
   it('lists a pull request once: a worktree that owns it hides the same number from Linked', () => {
