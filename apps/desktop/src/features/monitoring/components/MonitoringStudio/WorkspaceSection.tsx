@@ -2,6 +2,7 @@ import type { MonitorProcess, PortRow } from '@goodboy/core';
 import { portLabel } from '../../portLabel';
 import { portRowName } from '../../portRowName';
 import { PortGroupList } from './PortGroupList';
+import { shownRowCount } from '../../shownRowCount';
 import { PortListSection } from './PortListSection';
 import { PortRowItem } from './PortRowItem';
 import { PortRowMenu } from '../../../actions/PortRowMenu';
@@ -13,7 +14,7 @@ type Props = {
 };
 
 export const WorkspaceSection = ({ rows, processOf, now }: Props) => (
-  <PortListSection label="From workspace" count={rows.length}>
+  <PortListSection label="From workspace" count={shownRowCount({ rows })}>
     <PortGroupList
       rows={rows}
       processOf={processOf}

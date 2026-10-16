@@ -7,7 +7,10 @@ type Params = {
   readonly now: number;
 };
 
-export const summaryMeta = ({ summary, takenAt, now }: Params): string => {
+export const summaryMeta = ({ summary, takenAt, now }: Params): string | null => {
+  if (summary.total === 0) {
+    return null;
+  }
   const counts = `${summary.inUse} of ${summary.total} tracked ports in use`;
   if (takenAt === null) {
     return counts;

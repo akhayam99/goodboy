@@ -9,19 +9,17 @@ type Props = {
   readonly name: string;
   readonly nameSlot?: ReactNode;
   readonly actions?: ReactNode;
-  readonly isNested?: boolean;
 };
 
-export const FreePortRow = ({ row, name, nameSlot, actions, isNested = false }: Props) => (
+export const FreePortRow = ({ row, name, nameSlot, actions }: Props) => (
   <li
     data-port-row={row.port}
     className={cn('group/row', PORT_GRID, 'min-h-8 text-label text-faint-foreground')}
   >
-    {isNested ? null : <StatusDot tone="neutral" size="md" className="opacity-40" />}
-    <span className={cn('tabular-nums', isNested && 'col-span-2 pl-8')}>:{row.port}</span>
+    <StatusDot tone="neutral" size="md" className="opacity-40" title="Free" ariaLabel="Free" />
+    <span className="tabular-nums">:{row.port}</span>
     {nameSlot ?? <span className="min-w-0 truncate">{name}</span>}
-    <span>Free</span>
-    <span className="col-span-4" />
+    <span className="col-span-5" />
     <ActionsCell actions={actions} />
   </li>
 );

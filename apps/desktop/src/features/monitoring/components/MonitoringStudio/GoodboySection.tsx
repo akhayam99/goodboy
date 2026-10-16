@@ -1,6 +1,7 @@
 import type { MonitorProcess, PortRow } from '@goodboy/core';
 import { portLabel } from '../../portLabel';
 import { portRowName } from '../../portRowName';
+import { shownRowCount } from '../../shownRowCount';
 import type { LeftoverRow } from '../../leftoverRows';
 import type { StartedRow } from '../../startedByGoodboy';
 import { LeftoversList } from './LeftoversList';
@@ -36,7 +37,7 @@ export const GoodboySection = ({
   processOf,
   now,
 }: Props) => (
-  <PortListSection label="Run by Goodboy" count={rows.length + processes.length}>
+  <PortListSection label="Run by Goodboy" count={shownRowCount({ rows }) + processes.length}>
     {sweptCount > 0 ? (
       <p role="status" className="px-2 text-meta text-faint-foreground">
         {sweptLine({ count: sweptCount })}
