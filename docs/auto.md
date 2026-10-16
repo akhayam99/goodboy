@@ -227,7 +227,12 @@ cannot join without one): diagnosing a failure goes to an Investigator, tests to
 about code to Docs, code changes and their commits to an Implementer, the pull request to a
 Scribe, a failing check to a CI fixer, the commit history of the branch to a Rewriter. Scribe, CI
 fixer and Rewriter are writers (m232 widens the role CHECK of `auto_delegations`; Rust
-`WRITER_ROLES` holds them). It names the `mount` field of a
+`WRITER_ROLES` holds them). A Scribe child writes `<<pr-title>>` and `<<pr-body>>` and never runs
+gh: when it ends completed, `finishAttempt` calls the `publishScribePullRequest` port, which goes
+through `resumeScribePullRequest` and `openScribePullRequest`, the path the Branch page uses
+(draft, the repository's base, never a second request when the branch already has one). The
+result Auto reads starts with "Pull request #421 is open: <url>"; a failure fails the delegation
+with the reason, and a retry of the same child opens it once. It names the `mount` field of a
 child and the MOUNTS line it is filled from. Auto keeps its read tools and answers questions
 itself; when it reports what happens next it describes a hand over and names the role ("I asked
 an implementer to reinstall the dependencies"), never an action of its own. The brief of every
