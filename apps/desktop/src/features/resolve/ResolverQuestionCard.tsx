@@ -112,9 +112,9 @@ export const ResolverQuestionCard = ({ sessionId, row }: Props) => {
         >
           {FIX_RUN_QUESTION_COPY.continue}
         </Button>
-        <span className="text-meta text-muted-foreground">
-          {isRunning ? FIX_RUN_QUESTION_COPY.isWorking : FIX_RUN_QUESTION_COPY.hint}
-        </span>
+        {isRunning ? (
+          <span className="text-meta text-muted-foreground">{FIX_RUN_QUESTION_COPY.isWorking}</span>
+        ) : null}
       </div>
       {error !== null && (
         <p role="alert" className="text-meta text-danger">

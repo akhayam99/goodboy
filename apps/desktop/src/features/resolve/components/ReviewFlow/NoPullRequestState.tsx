@@ -16,8 +16,10 @@ export const NoPullRequestState = ({ sessionId }: Props) => {
   const createAction = create.actions.find((action) => action.id === CREATE_ACTION_ID);
   return (
     <EmptyState
+      size="page"
       icon={GitPullRequest}
       title="No pull request yet"
+      description="Comments arrive once the pull request exists."
       action={
         <Button
           size="sm"

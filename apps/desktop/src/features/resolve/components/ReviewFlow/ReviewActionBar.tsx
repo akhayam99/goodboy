@@ -21,6 +21,7 @@ type Props = {
   readonly entry: ReviewEntry;
   readonly push: ReviewPush;
   readonly hasRunLine: boolean;
+  readonly extra?: ReactNode;
   readonly binding: Pick<
     ReviewCommentBinding,
     'compose' | 'isEditingReply' | 'pendingActionId' | 'isSubmitting' | 'onRun'
@@ -65,6 +66,7 @@ export const ReviewActionBar = ({
   entry,
   push: reviewPush,
   hasRunLine,
+  extra = null,
   binding,
 }: Props) => {
   const { threadId, row, state } = entry;
@@ -122,7 +124,7 @@ export const ReviewActionBar = ({
     }
     return true;
   });
-  if (!isIdle || (items.length === 0 && actions.length === 0)) {
+  if (!isIdle || (items.length === 0 && actions.length === 0 && extra === null)) {
     return null;
   }
   const shown = items.map((item) => idOf(item));
@@ -260,6 +262,7 @@ export const ReviewActionBar = ({
       className="flex h-12 min-w-0 shrink-0 items-center gap-2 bg-background"
     >
       {items.map((item) => render(item))}
+      {extra}
       <span className="ml-auto flex shrink-0 items-center">
         <ThreadOverflowMenu target={target} label={BAR_COPY.more} omit={shown} />
       </span>

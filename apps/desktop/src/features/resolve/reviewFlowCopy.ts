@@ -121,7 +121,7 @@ export const decidedNote = ({
     case 'replied':
       return 'Reply only. It goes out with the next push. No code change.';
     case 'skipped':
-      return `Left open on ${provider}. You skipped it. The thread stays open there.`;
+      return `Skipped, stays open on ${provider}.`;
     case 'pushed':
       return sentToHost({ provider, sha, canResolve });
     case 'resolved':
@@ -151,7 +151,6 @@ export const FIX_RUN_QUESTION_COPY = {
   options: 'Answer',
   other: 'Or tell it something else',
   continue: 'Continue the fix run',
-  hint: 'Continues the same run, in the same copy of the branch.',
   answered: 'You answered:',
   isWorking: 'The run is still working. Continue once it stops.',
 } as const;

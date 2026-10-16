@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import type { ResolveAttempt, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { conversationSha } from '../../resolve/conversationAgentResult';
@@ -13,6 +12,8 @@ type Props = {
 
 const EMPTY_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
 
+const MIN_ATTEMPTS = 2;
+
 export const ThreadProperties = ({ sessionId, entry }: Props) => {
   const { threadId, row } = entry;
   const attempts = useAppStore((s) => s.sessionResolveAttempts[sessionId] ?? EMPTY_ATTEMPTS);
@@ -21,15 +22,20 @@ export const ThreadProperties = ({ sessionId, entry }: Props) => {
     [attempts, threadId],
   );
   const sha = conversationSha({ row });
-  const origin = REVIEW_SOURCE_LABEL[row.thread.sourceKind ?? 'github'];
+  const isNote = row.thread.originKind === 'diff_comment';
+  if (!isNote && attemptCount < MIN_ATTEMPTS && sha === null) {
+    return null;
+  }
   return (
     <div
       role="group"
       aria-label="Comment properties"
       className="flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1"
     >
-      <ThreadPropertyRow label="Origin">{origin}</ThreadPropertyRow>
-      {attemptCount > 0 && <ThreadPropertyRow label="Attempts">{attemptCount}</ThreadPropertyRow>}
+      {isNote ? <ThreadPropertyRow label="Origin">Note on this machine</ThreadPropertyRow> : null}
+      {attemptCount < MIN_ATTEMPTS ? null : (
+        <ThreadPropertyRow label="Attempts">{attemptCount}</ThreadPropertyRow>
+      )}
       {sha !== null && (
         <ThreadPropertyRow label="Fix">
           <span className="font-mono">{sha.slice(0, 7)}</span>

@@ -148,9 +148,7 @@ describe('the u23 comments scenes', () => {
     const left = within(list()).getByRole('region', { name: 'Left open on GitHub' });
     expect(within(left).getAllByRole('listitem')).toHaveLength(1);
     expect(left.querySelector('[aria-expanded]')).toBeNull();
-    expect(
-      screen.getByText('Left open on GitHub. You skipped it. The thread stays open there.'),
-    ).toBeDefined();
+    expect(screen.getByText('Skipped, stays open on GitHub.')).toBeDefined();
     expect(within(bar()).getByRole('button', { name: /^Undo skip/ })).toBeDefined();
   });
 

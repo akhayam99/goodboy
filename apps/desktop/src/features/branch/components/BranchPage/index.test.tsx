@@ -629,19 +629,15 @@ describe('Branch page Comments', () => {
 
     expect(screen.queryByRole('navigation', { name: 'Comments' })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Comments$/ })).toBeNull();
-    expect(screen.getAllByRole('group', { name: 'Comment properties' })).toHaveLength(1);
     expect(screen.queryByRole('complementary', { name: 'Thread details' })).toBeNull();
   });
 
-  it('shows the list and the thread on a base pane, with the properties inside the thread', async () => {
+  it('shows the list and the thread on a base pane, with no property that only repeats the host', async () => {
     await mountAt({ width: 950, threadId: EXPANDED_THREAD_ID });
 
     screen.getByRole('navigation', { name: 'Comments' });
     expect(screen.queryByRole('button', { name: /^Comments$/ })).toBeNull();
-    const groups = screen.getAllByRole('group', { name: 'Comment properties' });
-    expect(groups).toHaveLength(1);
-    expect(within(groups[0] as HTMLElement).queryByText('State')).toBeNull();
-    within(groups[0] as HTMLElement).getByText('Origin');
+    expect(screen.queryByRole('group', { name: 'Comment properties' })).toBeNull();
     expect(screen.queryByRole('complementary', { name: 'Thread details' })).toBeNull();
   });
 
@@ -649,7 +645,6 @@ describe('Branch page Comments', () => {
     await mountAt({ width: 1279, threadId: EXPANDED_THREAD_ID });
 
     expect(screen.queryByRole('complementary', { name: 'Thread details' })).toBeNull();
-    expect(screen.getAllByRole('group', { name: 'Comment properties' })).toHaveLength(1);
   });
 
   it('keeps the properties inline under the thread on the widest panes, with no margin rail', async () => {
@@ -658,9 +653,7 @@ describe('Branch page Comments', () => {
 
       screen.getByRole('navigation', { name: 'Comments' });
       expect(screen.queryByRole('complementary', { name: 'Thread details' })).toBeNull();
-      const groups = screen.getAllByRole('group', { name: 'Comment properties' });
-      expect(groups).toHaveLength(1);
-      within(groups[0] as HTMLElement).getByText('Origin');
+      expect(screen.queryByText('Origin')).toBeNull();
       cleanup();
       vi.restoreAllMocks();
     }

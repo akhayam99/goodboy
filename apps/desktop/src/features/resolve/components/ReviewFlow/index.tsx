@@ -7,7 +7,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from 'react';
-import { AlertTriangle, MessageSquare } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, MessageSquare } from 'lucide-react';
 import {
   Button,
   EmptyState,
@@ -531,10 +531,9 @@ export const ReviewFlow = ({ session, push }: Props) => {
     if (shownEntries.length === 0) {
       return (
         <EmptyState
-          size="section"
+          size="page"
           icon={MessageSquare}
-          tone="neutral"
-          title={commentState === 'resolved' ? 'No resolved comments' : 'No open comments here'}
+          title={commentState === 'resolved' ? 'No resolved comments' : 'No open comments'}
         />
       );
     }
@@ -592,6 +591,21 @@ export const ReviewFlow = ({ session, push }: Props) => {
         )}
         {isRightShown && (
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+            {isSingle ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                data-review-back=""
+                className="w-fit shrink-0 text-muted-foreground"
+                onClick={() => {
+                  setIsAnswering(false);
+                  navigate({ to: branchPlace({ sessionId }), mode: 'replace' });
+                }}
+              >
+                <ChevronLeft size={ICON_SIZE.row} aria-hidden />
+                {`${shownEntries.length} ${shownEntries.length === 1 ? 'comment' : 'comments'}`}
+              </Button>
+            ) : null}
             <ScrollFade
               className="min-h-0 min-w-0 flex-1"
               viewportClassName="pb-8 pr-4"
@@ -631,9 +645,6 @@ export const ReviewFlow = ({ session, push }: Props) => {
                       onStartOver={() => void controller.startOver(focused.threadId)}
                     />
                     <ThreadProperties sessionId={sessionId} entry={focused} />
-                    {focused.row.thread.originKind === 'diff_comment' ? (
-                      <NoteThreadActions sessionId={sessionId} entry={focused} />
-                    ) : null}
                   </div>
                 </div>
               )}
@@ -645,6 +656,11 @@ export const ReviewFlow = ({ session, push }: Props) => {
                 entry={focused}
                 push={push}
                 hasRunLine={run !== null && run.threadIds.includes(focused.threadId)}
+                extra={
+                  focused.row.thread.originKind === 'diff_comment' ? (
+                    <NoteThreadActions sessionId={sessionId} entry={focused} />
+                  ) : null
+                }
                 binding={controller.bind(focused.threadId)}
               />
             )}

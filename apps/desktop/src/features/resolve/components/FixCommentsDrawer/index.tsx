@@ -91,7 +91,12 @@ export const FixCommentsDrawer = ({ sessionId, focusThreadId, threadIds, onClose
     () => explicit ?? new Set(open.map((entry) => entry.threadId)),
     [explicit, open],
   );
-  const shown = useMemo(() => filteredEntries({ entries: listed, filter }), [filter, listed]);
+  const noteCount = listed.filter((entry) => isNoteEntry({ entry })).length;
+  const isSourceMixed = noteCount > 0 && noteCount < listed.length;
+  const shown = useMemo(
+    () => filteredEntries({ entries: listed, filter: isSourceMixed ? filter : 'all' }),
+    [filter, isSourceMixed, listed],
+  );
   const shownFixable = useMemo(() => shown.filter((entry) => entry.isFixable), [shown]);
   const entryById = useMemo(
     () => new Map(listed.map((entry) => [entry.threadId, entry] as const)),
@@ -187,13 +192,15 @@ export const FixCommentsDrawer = ({ sessionId, focusThreadId, threadIds, onClose
               ) : undefined
             }
           />
-          <SegmentedTabs
-            ariaLabel={FIX_COMMENTS_LABEL.filters}
-            size="xs"
-            options={filterOptions}
-            value={filter}
-            onChange={setFilter}
-          />
+          {isSourceMixed ? (
+            <SegmentedTabs
+              ariaLabel={FIX_COMMENTS_LABEL.filters}
+              size="xs"
+              options={filterOptions}
+              value={filter}
+              onChange={setFilter}
+            />
+          ) : null}
           {groups.length === 0 ? (
             <p className="text-body text-muted-foreground">{FIX_COMMENTS_LABEL.empty}</p>
           ) : (
@@ -221,6 +228,7 @@ export const FixCommentsDrawer = ({ sessionId, focusThreadId, threadIds, onClose
                               <FixCommentRow
                                 entry={entry}
                                 isIncluded={picked.has(entry.threadId)}
+                                isSourceShown={isSourceMixed}
                                 onToggle={() => toggle(entry.threadId)}
                               />
                             )}
