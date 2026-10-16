@@ -7,6 +7,7 @@ import { NAMES } from '../../../../../shared/names';
 type Props = {
   readonly controls: ReactNode;
   readonly estimate?: ReactNode;
+  readonly hasEstimateSlot?: boolean;
   readonly reason: string | null;
   readonly isStartDisabled: boolean;
   readonly isStarting: boolean;
@@ -21,6 +22,7 @@ const START_REASON_ID = 'workflow-start-reason';
 export const LaunchBar = ({
   controls,
   estimate = null,
+  hasEstimateSlot = false,
   reason,
   isStartDisabled,
   isStarting,
@@ -30,7 +32,11 @@ export const LaunchBar = ({
   onStart,
 }: Props) => (
   <div className="flex min-w-0 flex-col gap-2">
-    {estimate === null ? null : <div className="flex justify-end">{estimate}</div>}
+    {hasEstimateSlot ? (
+      <div className="flex min-h-6 items-center justify-end" data-testid="launch-estimate-slot">
+        {estimate}
+      </div>
+    ) : null}
     <FormActions leading={controls} reason={reason} reasonId={START_REASON_ID}>
       {canDiscard && onDiscard !== undefined ? (
         <Button
