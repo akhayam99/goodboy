@@ -3308,11 +3308,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/inbox/components/InboxStudio/InboxRow.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/inbox/components/InboxStudio/InboxRow.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 2
@@ -3320,12 +3315,7 @@
   },
   "apps/desktop/src/features/inbox/components/InboxStudio/InboxStarredGroup.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
-    }
-  },
-  "apps/desktop/src/features/inbox/components/InboxStudio/StarredSnapshotRow.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
+      "count": 4
     }
   },
   "apps/desktop/src/features/inbox/components/InboxStudio/index.reply.test.tsx": {
@@ -3823,16 +3813,6 @@
   "apps/desktop/src/features/integrations/issueCode/classifyLookupError.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
-    }
-  },
-  "apps/desktop/src/features/integrations/issueCode/lookupCopy.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
-    }
-  },
-  "apps/desktop/src/features/integrations/issueCode/lookupCopy.ts": {
-    "@typescript-eslint/switch-exhaustiveness-check": {
-      "count": 1
     }
   },
   "apps/desktop/src/features/integrations/issueCode/lookupIssueByCode.test.ts": {
@@ -5693,11 +5673,6 @@
   "apps/desktop/src/features/session/components/SessionOverviewPane/ChatOriginRow.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 13
-    }
-  },
-  "apps/desktop/src/features/session/components/SessionOverviewPane/ContextChip.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
     }
   },
   "apps/desktop/src/features/session/components/SessionOverviewPane/HeaderBand.test.tsx": {

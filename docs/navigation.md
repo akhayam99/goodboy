@@ -1781,24 +1781,24 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   Enter) or from its own Mark read.
   The rail rows (`packages/ui` `FacetRail`), the list keys
   (`shared/hooks/useListKeys`) and the day grouping (`shared/utils/groupByDay`)
-  are shared primitives. Tasks uses all three: its facets filter by view,
-  type, source and project (one pick per section, a tool that did not load says so
-  in its row) from a page rail docked beside the list (surface `inbox`, 288px,
-  the search field at its top), and the title stays Tasks, so Tasks is the rail,
-  the list and the record beside it, never a second navigation column; its
-  one-line rows are grouped by the same days in time order, and
-  J and K move a cursor, and the record follows beside the list only once one is
-  open. Tasks opens with a quiet cursor on its first row (`data-cursor`, the hover
-  fill, `aria-selected="false"`) and no drawer, so those keys act at once and
-  nothing opens by itself; a click, Enter or a record asked for on open
-  (`initialRecordKey`) opens the drawer (`aria-selected="true"`, `bg-selected`).
-  Enter opens the launch popover on the cursor row (⌘↵ in the panel launches) or
-  the session once one is linked, O opens the record in its tool, R opens the
-  record and focuses the reply box when the record has one (a Sentry issue has
-  none: the rail drops Reply and R does nothing there, `recordCanReply`), S stars
-  or unstars, / focuses the search, and Escape in the search leaves the field.
-  Escape closes the drawer first and keeps the cursor; a second Escape closes
-  the studio.
+  are shared primitives. Tasks uses the rows and the list keys but not the day
+  grouping or a rail: its facets (source, show, type, project) sit in one Filter
+  menu of the header, next to the For me and All switch, the search, Group by and
+  `⋯` (Refresh, Manage tools), and its rows are one `ListGrid` with a group per
+  source, status or project (`taskGroupsOf`), five rows each until Show all, and
+  each group is its own listbox of options. J and K move a cursor through the
+  rows on screen, and the record follows in the pane only once one is open.
+  Tasks opens with a quiet cursor on its first row (`data-cursor`,
+  `aria-selected="false"`) and no pane, so those keys act at once and nothing
+  opens by itself; a click, Enter or a record asked for on open
+  (`initialRecordKey`) opens the pane (`aria-selected="true"`, `bg-selected`).
+  Enter on the row the pane already shows opens its launch popover (⌘↵ in the
+  panel launches) or the session once one is linked, O opens the record in its
+  tool, R opens the record and focuses the reply box when the record has one (a
+  Sentry issue has none, so R does nothing there, `recordCanReply`), S stars or
+  unstars, / focuses the search, and Escape in the search leaves the field.
+  Escape closes the pane, or the full page, first and keeps the cursor; a second
+  Escape closes the studio.
 - **A list that belongs to the page sits in the page.** Chat's list of chats,
   Changelog's releases and the guide's chapters are content beside their
   detail, not a second navigation column: `StudioRailLayout` with
@@ -2159,12 +2159,15 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   `Mark all seen` is a ghost button in the Activity header and shows only
   while an agent is unseen; a waiting question is answered from its Needs you row, never from a
   second `Answer` on the timeline row.
-- **The focused issue page says where the issue lives.** Under the page
-  header (All issues, Unlink) a `Linked to` row (`w-28` label, muted) shows
-  `This session` or the branches; its value opens the same `Move to` menu as
-  the task chip, `This session` and one entry per open branch of the issue's
-  project (`project · branch`, middle cut), the current placement checked.
-  `LinkedToRow` draws it once for every tracker, not inside each detail.
+- **The focused issue page says where the issue lives.** The page header holds
+  All issues; `Unlink from session` sits in the record's `⋯`, asks first and
+  leaves an Undo toast. A `Placed on` property in the Links group shows
+  `This session` or the branches; its value (`TaskPlacementMenu`) opens the
+  same `Move to` menu as the task chip, `This session` and one entry per open
+  branch of the issue's project (`project · branch`, middle cut), the current
+  placement checked. `IntegrationPane` hands both to every tracker through
+  `RecordFrameContext` (`sessionVerbs`, `linkFacts`), so the loading and error
+  states show the placement too.
 - **A step chat is one explicit click**, never an automatic redirect.
 - **A lens-wide toggle is its own row**, never inside an empty state's action
   slot.
@@ -2749,10 +2752,13 @@ tab last used; the drawer header switches between the two. It also closes when t
 artifact changes. While it is open, Escape closes the drawer before it takes the
 artifact back to the list.
 
-A studio covers the whole window grid, so it cannot use that column. Tasks
-record opens in the same `DrawerColumn` beside the list, after the filter rail
-(`InboxStudioLayout`), with the same width, card and motion. Escape closes the
-record before the studio.
+A studio covers the whole window grid, so it cannot use that column. A Tasks
+record opens in the studio's `DrawerColumn` beside the list on the reader tier
+(`InboxStudioLayout` passes `sizing: 'reader'` through `useStudioDrawer`), with
+the same card and motion; a window too narrow for the list and the pane lifts
+the pane over the list. Open full in the pane header puts the record at the 720
+measure in place of the list (`TaskFullPage`), with Back at its top (named `Back to Tasks`) to return.
+Escape closes the record before the studio.
 
 `conversation` (payload `{ threadId }`) is the focused comment in Review. It
 rides the drawer slot of the location, so Back from the Diff or from the

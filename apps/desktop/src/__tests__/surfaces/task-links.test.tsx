@@ -417,6 +417,8 @@ const InboxItem = ({ record, workspaceId }: InboxItemProps) => {
         onRefresh={() => undefined}
         onClose={() => undefined}
         onDeselect={() => undefined}
+        onOpenFull={null}
+        star={null}
         launchFocusRequest={0}
       />
     </section>

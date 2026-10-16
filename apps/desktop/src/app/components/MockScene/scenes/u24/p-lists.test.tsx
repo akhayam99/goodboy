@@ -76,10 +76,10 @@ describe('the list scenes', () => {
   it('tasks-cursor shows a quiet cursor on the first row and no drawer', async () => {
     mount({ name: 'tasks-cursor' });
 
-    await screen.findByRole('listbox', { name: 'Task items' }, WAIT);
-    const cursors = document.querySelectorAll('[data-inbox-key][data-cursor]');
+    await screen.findByRole('list', { name: 'Task items' }, WAIT);
+    const cursors = document.querySelectorAll('[data-row-key][data-cursor]');
     expect(cursors).toHaveLength(1);
-    expect(document.querySelectorAll('[data-inbox-key][data-selected="true"]')).toHaveLength(0);
+    expect(document.querySelectorAll('[data-row-key][data-selected="true"]')).toHaveLength(0);
     expect(screen.queryByText(/Seen on 14 orders/)).toBeNull();
   });
 });

@@ -375,7 +375,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
     expect(menuLabels()).toEqual(registry);
   });
 
-  it('record header: the ⋯ plus its Open in tool button make the right click list', async () => {
+  it('record header: the ⋯ holds Open in tool, and the right click lists the same', async () => {
     withMenus(
       <RecordHeader
         provider="gitlab"
@@ -420,8 +420,8 @@ describe('every ⋯ menu and its right click list the same actions in the same o
       overflow: screen.getByRole('button', { name: 'More actions for !87' }),
       context: screen.getByRole('heading', { level: 1 }),
     });
-    expect(fromContext.filter((label) => label !== 'Open in GitLab')).toEqual(fromOverflow);
-    expect(fromContext[0]).toBe('Open in GitLab');
+    expect(fromContext).toEqual(fromOverflow);
+    expect(fromOverflow[0]).toBe('Open in GitLab');
   });
 
   it('commit row: the ⋯, the right click and Cmd+K on the focused row list the same actions in the same order', async () => {

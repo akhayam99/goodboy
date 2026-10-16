@@ -298,10 +298,11 @@ a suggested script offers `Pin`.
 
 Tasks rows lead with the tool's brand glyph, never a kind icon. The kind icons
 live on the Type facets in `InboxFacetRail.tsx`: `issue` `CircleDot`, pull
-requests `GitPullRequest`, `thread` `MessagesSquare`, `error` `Bug`. The state
-column draws `InboxStateLabel`: `open` `Circle`, `active` `Contrast`, `done`
-`CircleCheck`, `alert` `TriangleAlert`, each in the state tone, always next to
-the tool's own state word.
+requests `GitPullRequest`, `thread` `MessagesSquare`, `error` `Bug`. The 16px
+status column of a Tasks row draws the glyph of `INBOX_STATE_PRESENTATION`
+alone, named by the tool's own state word: `open` `Circle`, `active` `Contrast`,
+`done` `CircleCheck`, `alert` `TriangleAlert`, each in the state tone. The issue
+pane writes the word next to the same glyph.
 
 ## Search results
 

@@ -7,6 +7,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { openUrl } from '../../../../../../shared/lib/editor';
+import { RecordProperties } from '../../../../../../shared/components/StudioDetail/RecordProperties';
 import { ExternalTaskChip } from '../../../../../integrations/components/ExternalTaskChip';
 import { useSessionRepo } from '../../../../../../store/slices/worktrees/useSessionRepo';
 import { LinearTaskDetail } from './LinearTaskDetail';
@@ -62,6 +63,7 @@ export const FocusedTaskBody = ({
       title={task.title}
       meta={<span className="font-mono">{task.identifier}</span>}
     >
+      <RecordProperties facts={[]} />
       <ExternalTaskChip
         task={task}
         appearance="row"

@@ -23,6 +23,7 @@ export const STORAGE_PREFIXES = {
   sessionFilters: `${PREFIX}session-filters:`,
   cursorMaxMode: `${PREFIX}cursor-max-mode:`,
   inboxKindFilter: `${PREFIX}inbox-kind-filter:`,
+  taskListView: `${PREFIX}task-list-view:v1:`,
   artifactDrafts: `${PREFIX}artifact-drafts:`,
   workflowBuilderMode: `${PREFIX}workflow-builder-mode:`,
   newDrawerTab: `${PREFIX}new-drawer-tab:`,

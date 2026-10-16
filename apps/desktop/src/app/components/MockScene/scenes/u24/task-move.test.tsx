@@ -78,10 +78,11 @@ describe('the task move scenes', () => {
     expect(screen.getByRole('menu', { name: 'Task actions' })).toBeDefined();
   });
 
-  it('taskmove-issuepage shows Linked to with the branch the issue sits on, under the issue header', async () => {
+  it('taskmove-issuepage shows Placed on with the branch the issue sits on, in the Links group', async () => {
     await mount('taskmove-issuepage');
 
-    expect(screen.getByText('Linked to')).toBeDefined();
+    expect(screen.getByText('Placed on')).toBeDefined();
+    expect(screen.queryByText('Linked to')).toBeNull();
     expect(
       screen.getByRole('button', { name: 'Move NW-142 from api · feat/create-orders-endpoint' }),
     ).toBeDefined();

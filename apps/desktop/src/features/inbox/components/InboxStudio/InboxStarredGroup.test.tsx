@@ -1,14 +1,11 @@
-// @vitest-environment happy-dom
-
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { ListGrid } from '@goodboy/ui';
 import type { IsoDateTime, StarredIssue, WorkspaceId } from '@goodboy/types';
 import type { InboxRecord } from '../../types';
-
-const { openUrl } = vi.hoisted(() => ({ openUrl: vi.fn() }));
-vi.mock('../../../../shared/lib/editor', () => ({ openUrl }));
-
+import type { StarredRow } from '../../useInboxStars';
 import { InboxStarredGroup } from './InboxStarredGroup';
+import { TASK_COLUMNS } from './taskColumns';
 
 afterEach(cleanup);
 
@@ -19,7 +16,7 @@ const issue = (patch: Partial<StarredIssue>): StarredIssue => ({
   identifier: 'NW-142',
   container: null,
   title: 'Reconcile the payout ledger',
-  url: 'https://northwind.atlassian.net/browse/NW-142',
+  url: 'https://example.invalid/jira/NW-142',
   state: 'open',
   stateLabel: 'In Progress',
   starredAt: '2026-09-20T10:00:00.000Z' as IsoDateTime,
@@ -27,119 +24,89 @@ const issue = (patch: Partial<StarredIssue>): StarredIssue => ({
   ...patch,
 });
 
-const record = {
-  key: 'jira:issue:j-142',
-  provider: 'jira',
-  kind: 'issue',
-  identifier: 'NW-142',
-  title: 'Reconcile the payout ledger',
-  state: 'open',
-  stateLabel: 'In Progress',
-  updatedAt: '2026-09-25T10:00:00Z',
-  url: 'https://northwind.atlassian.net/browse/NW-142',
-  context: 'Task',
-  payload: { provider: 'jira', kind: 'issue', sessionId: null, issue: {} },
-} as unknown as InboxRecord;
+const record = (key: string, identifier: string): InboxRecord =>
+  ({
+    key,
+    provider: 'jira',
+    kind: 'issue',
+    identifier,
+    title: `Reconcile the payout ledger ${identifier}`,
+    state: 'open',
+    stateLabel: 'In Progress',
+    updatedAt: '2026-09-25T10:00:00Z',
+    url: '',
+    context: 'Task',
+    payload: { provider: 'jira', kind: 'issue', sessionId: null, issue: {} },
+  }) as unknown as InboxRecord;
 
-const handlers = () => ({
+type RenderParams = {
+  readonly rows: ReadonlyArray<StarredRow>;
+  readonly records: ReadonlyArray<InboxRecord>;
+  readonly unstarredCount?: number;
+};
+
+const on = {
+  onExpand: vi.fn(),
+  onCollapse: vi.fn(),
   onSelect: vi.fn(),
+  onActivate: vi.fn(),
   onUnstar: vi.fn(),
   onUnstarClosed: vi.fn(),
   onUndoUnstar: vi.fn(),
-});
+};
+
+const renderGroup = ({ rows, records, unstarredCount = 0 }: RenderParams) =>
+  render(
+    <ListGrid label="Task items" columns={TASK_COLUMNS} isGrouped>
+      <InboxStarredGroup
+        rows={rows}
+        records={records}
+        isExpanded={false}
+        selectedKey={null}
+        cursorKey={null}
+        unstarredCount={unstarredCount}
+        {...on}
+      />
+    </ListGrid>,
+  );
 
 describe('InboxStarredGroup', () => {
-  it('lists starred issues with a lit star and unstars from it', () => {
-    const on = handlers();
-    render(
-      <InboxStarredGroup
-        rows={[{ issue: issue({}), record }]}
-        selectedKey={null}
-        unstarredCount={0}
-        {...on}
-      />,
-    );
+  it('lists starred records first under one Starred label with their count', () => {
+    renderGroup({
+      rows: [{ issue: issue({}), record: record('jira:issue:j-142', 'NW-142') }],
+      records: [record('jira:issue:j-142', 'NW-142')],
+    });
 
-    expect(screen.getByText('Starred')).toBeDefined();
-    const star = screen.getByRole('button', { name: 'Star NW-142' });
-    expect(star.getAttribute('aria-pressed')).toBe('true');
-    fireEvent.click(star);
-    expect(on.onUnstar).toHaveBeenCalled();
+    expect(screen.getByRole('heading', { name: 'Starred' })).toBeDefined();
+    expect(screen.getByRole('option', { name: /NW-142/ })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Unstar closed' })).toBeNull();
   });
 
   it('offers Unstar closed once one is closed, then Undo', () => {
-    const on = handlers();
-    const { rerender } = render(
-      <InboxStarredGroup
-        rows={[
-          { issue: issue({}), record },
-          {
-            issue: issue({ externalId: 'j-44', identifier: 'OPS-44', state: 'done' }),
-            record: null,
-          },
-        ]}
-        selectedKey={null}
-        unstarredCount={0}
-        {...on}
-      />,
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Unstar closed' }));
-    expect(on.onUnstarClosed).toHaveBeenCalled();
+    const rows = [
+      { issue: issue({}), record: record('jira:issue:j-142', 'NW-142') },
+      { issue: issue({ externalId: 'j-44', identifier: 'OPS-44', state: 'done' }), record: null },
+    ];
+    const view = renderGroup({ rows, records: [record('jira:issue:j-142', 'NW-142')] });
 
-    rerender(
-      <InboxStarredGroup
-        rows={[{ issue: issue({}), record }]}
-        selectedKey={null}
-        unstarredCount={1}
-        {...on}
-      />,
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'Unstar closed' }));
+    expect(on.onUnstarClosed).toHaveBeenCalledOnce();
+
+    view.unmount();
+    renderGroup({ rows: rows.slice(0, 1), records: [], unstarredCount: 1 });
+
     expect(screen.getByText('Unstarred 1 closed issue')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
-    expect(on.onUndoUnstar).toHaveBeenCalled();
+    expect(on.onUndoUnstar).toHaveBeenCalledOnce();
   });
 
-  it('says when a starred issue cannot be reached anymore, from the last copy', () => {
-    render(
-      <InboxStarredGroup
-        rows={[{ issue: issue({ identifier: 'NW-230', state: 'missing' }), record: null }]}
-        selectedKey={null}
-        unstarredCount={0}
-        {...handlers()}
-      />,
+  it('caps a long starred list at five rows', () => {
+    const records = Array.from({ length: 7 }, (_, index) =>
+      record(`jira:issue:${index}`, `NW-${index}`),
     );
+    renderGroup({ rows: [], records });
 
-    expect(screen.getByText("Can't reach NW-230 anymore")).toBeDefined();
-    expect(screen.getByText('Reconcile the payout ledger')).toBeDefined();
-  });
-
-  it('opens the detail panel from the snapshot, not the tool URL, for a star not refreshed yet', () => {
-    const on = handlers();
-    const { container } = render(
-      <InboxStarredGroup
-        rows={[{ issue: issue({}), record: null }]}
-        selectedKey={null}
-        unstarredCount={0}
-        {...on}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: 'NW-142 Reconcile the payout ledger' }));
-
-    expect(openUrl).not.toHaveBeenCalled();
-    expect(on.onSelect).toHaveBeenCalledTimes(1);
-    const [selected] = on.onSelect.mock.calls[0] as [InboxRecord];
-    expect(selected.identifier).toBe('NW-142');
-    expect(selected.title).toBe('Reconcile the payout ledger');
-    expect(selected.provider).toBe('jira');
-
-    const open = container.querySelector('.lucide-arrow-up-right')?.closest('button') ?? null;
-    expect(open).not.toBeNull();
-    if (open === null) {
-      return;
-    }
-    fireEvent.click(open);
-    expect(openUrl).toHaveBeenCalledWith('https://northwind.atlassian.net/browse/NW-142');
+    expect(screen.getAllByRole('option')).toHaveLength(5);
+    expect(screen.getByRole('button', { name: 'Show all 7' })).toBeDefined();
   });
 });

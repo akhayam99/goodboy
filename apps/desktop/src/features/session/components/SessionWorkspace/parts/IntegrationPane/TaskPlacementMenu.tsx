@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { ChevronDown } from 'lucide-react';
-import { cn, PANE_RHYTHM } from '@goodboy/ui';
 import type { SessionExternalTask, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
 import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
@@ -32,7 +31,7 @@ const placementOf = ({ rows, choices }: PlacementParams): string => {
   return [...new Set(held)].join(', ');
 };
 
-export const LinkedToRow = ({ sessionId, task }: Props) => {
+export const TaskPlacementMenu = ({ sessionId, task }: Props) => {
   const rows = useAppStore(
     useShallow((state) =>
       (state.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY).filter(
@@ -59,28 +58,25 @@ export const LinkedToRow = ({ sessionId, task }: Props) => {
     return null;
   }
   return (
-    <div className={cn('flex min-h-9 shrink-0 items-center gap-3', PANE_RHYTHM.detail.band)}>
-      <span className="w-28 shrink-0 text-label text-muted-foreground">Linked to</span>
-      <ObjectChoiceMenu
-        target={{
-          kind: 'task',
-          sessionId,
-          provider: task.provider,
-          externalId: task.externalId,
-          projectId: task.projectId ?? null,
-          branch: null,
-        }}
-        actionId="task.moveTo"
-        label={`Move ${task.identifier} from ${placement}`}
-        tooltip="Move to"
-        leadingCurrent="This session"
-        anchorClassName="min-w-0"
-        triggerClassName="h-6 w-auto max-w-full gap-1 px-2 text-label text-foreground"
-        fallback={<span className="min-w-0 truncate text-label text-foreground">{placement}</span>}
-      >
-        <span className="min-w-0 truncate">{placement}</span>
-        <ChevronDown size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-      </ObjectChoiceMenu>
-    </div>
+    <ObjectChoiceMenu
+      target={{
+        kind: 'task',
+        sessionId,
+        provider: task.provider,
+        externalId: task.externalId,
+        projectId: task.projectId ?? null,
+        branch: null,
+      }}
+      actionId="task.moveTo"
+      label={`Move ${task.identifier} from ${placement}`}
+      tooltip="Move to"
+      leadingCurrent="This session"
+      anchorClassName="min-w-0"
+      triggerClassName="w-auto max-w-full gap-1 px-2 text-ui text-foreground"
+      fallback={<span className="min-w-0 truncate text-ui text-foreground">{placement}</span>}
+    >
+      <span className="min-w-0 truncate">{placement}</span>
+      <ChevronDown size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+    </ObjectChoiceMenu>
   );
 };

@@ -389,7 +389,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Tasks',
-        desc: 'Issues, pull requests, threads and errors from your connected tools in one list, grouped by day. Paste a code like HBL-412 or a link to open any issue. Sentry errors, and GitHub or GitLab items when several projects live on that host, filter by project. View, Type, Source and Project sit in a rail beside the list, which folds into one Filters button in a narrow window, and Tasks opens with nothing open beside the list.',
+        desc: 'Issues, pull requests, threads and errors from your connected tools in one list. It opens on For me: what is assigned to you, starred or linked to your sessions. Groups by source, status or project show five rows each and Show all. Paste a code like HBL-412 or a link to open any issue. One Filter menu in the header narrows by source, what to show, type and project. A row opens in the pane on the right, and Open full shows it at full width.',
       },
       {
         term: 'Start from anything',

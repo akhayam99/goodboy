@@ -7,10 +7,9 @@ import { WorkflowsPane } from '../../../../../features/session/components/Sessio
 import { NeedsYouBlock } from '../../../../../features/session/components/SessionWorkspace/parts/TimelinePane/NeedsYouBlock';
 import type { NeedsYouOwner } from '../../../../../features/session/timeline/needsYou';
 import { ArtifactStudio } from '../../../../../features/artifacts/components/ArtifactStudio';
-import {
-  InboxList,
-  type InboxLoadFailure,
-} from '../../../../../features/inbox/components/InboxStudio/InboxList';
+import { InboxList } from '../../../../../features/inbox/components/InboxStudio/InboxList';
+import { TaskGroupRows } from '../../../../../features/inbox/components/InboxStudio/TaskGroupRows';
+import { sourceFailureLine } from '../../../../../features/inbox/sourceFailureLine';
 import { ScriptsPanel } from '../../../../../features/scripts/components/ScriptsPanel';
 import { useAppStore, type LensKind } from '../../../../../store';
 import { sceneClock } from '../../sceneClock';
@@ -122,9 +121,21 @@ const StateScene = ({
   return <ShellFrame session={SESSION} main={children} />;
 };
 
-const INBOX_FAILURE: InboxLoadFailure = {
-  provider: 'sentry',
-  message: 'The token was refused (401).',
+const INBOX_FAILURE = {
+  key: 'failure:sentry',
+  text: sourceFailureLine({ name: 'Sentry', message: 'The token was refused (401).' }),
+  onClick: noop,
+};
+
+const NO_GROUP_HANDLERS = {
+  selectedKey: null,
+  cursorKey: null,
+  onExpand: noop,
+  onCollapse: noop,
+  onSelect: noop,
+  onActivate: noop,
+  starOf: () => undefined,
+  onToggleStar: noop,
 };
 
 const NEEDS_YOU_OWNERS: ReadonlyArray<NeedsYouOwner> = [
@@ -201,18 +212,17 @@ export const U21_STATES_SCENES: Readonly<Record<string, ComponentType>> = {
     <StateScene lens="plans">
       <PaneShell title="Tasks">
         <InboxList
-          days={[]}
           totalCount={0}
+          visibleCount={0}
           connectedCount={1}
+          failureCount={0}
           isLoading={false}
-          failures={[]}
           hasFiltersActive={false}
-          selectedKey={null}
-          onSelect={noop}
-          onRetry={noop}
           onOpenSettings={noop}
           onClearFilters={noop}
-        />
+        >
+          {null}
+        </InboxList>
       </PaneShell>
     </StateScene>
   ),
@@ -220,18 +230,24 @@ export const U21_STATES_SCENES: Readonly<Record<string, ComponentType>> = {
     <StateScene lens="plans">
       <PaneShell title="Tasks">
         <InboxList
-          days={[]}
           totalCount={0}
+          visibleCount={0}
           connectedCount={1}
+          failureCount={1}
           isLoading={false}
-          failures={[INBOX_FAILURE]}
           hasFiltersActive={false}
-          selectedKey={null}
-          onSelect={noop}
-          onRetry={noop}
           onOpenSettings={noop}
           onClearFilters={noop}
-        />
+        >
+          <TaskGroupRows
+            label="Sentry"
+            records={[]}
+            isExpanded={false}
+            canCollapse={false}
+            lines={[INBOX_FAILURE]}
+            {...NO_GROUP_HANDLERS}
+          />
+        </InboxList>
       </PaneShell>
     </StateScene>
   ),

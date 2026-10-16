@@ -18,7 +18,7 @@ describe('RecordProperties', () => {
       />,
     );
 
-    const items = within(screen.getByRole('list', { name: 'Properties' })).getAllByRole('listitem');
+    const items = within(screen.getByRole('group', { name: 'Properties' })).getAllByRole('term');
     expect(items.map((item) => item.getAttribute('data-fact-slot'))).toEqual(['weight', 'place']);
     expect(screen.getByText('Priority')).toBeTruthy();
     expect(screen.getByText('High')).toBeTruthy();
@@ -29,7 +29,7 @@ describe('RecordProperties', () => {
   it('draws nothing when the record has no properties', () => {
     render(<RecordProperties facts={[]} />);
 
-    expect(screen.queryByRole('list', { name: 'Properties' })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Properties' })).toBeNull();
   });
 
   it('still renders the value when the fact carries a hint', () => {

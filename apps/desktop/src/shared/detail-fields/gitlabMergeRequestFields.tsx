@@ -30,7 +30,7 @@ export const gitlabMergeRequestFields: FactRegistry<GitlabMergeRequestFacts> = {
       : { key: 'author', label: 'Author', icon: UserRound, node: entity.mr.author.name },
   place: ({ entity }) => ({
     key: 'branches',
-    label: 'Source and target branch',
+    label: 'Branches',
     icon: GitBranch,
     node: (
       <span className="font-mono">{`${entity.mr.sourceBranch} → ${entity.mr.targetBranch}`}</span>

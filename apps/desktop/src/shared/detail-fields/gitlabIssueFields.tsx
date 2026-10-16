@@ -15,7 +15,7 @@ export const gitlabIssueFields: FactRegistry<GitlabIssue> = {
     const milestone = entity.milestone?.title ?? null;
     return {
       key: 'place',
-      label: 'Project and milestone',
+      label: 'Project',
       icon: FolderGit2,
       node: milestone == null ? project : `${project} › ${milestone}`,
     };
@@ -23,7 +23,7 @@ export const gitlabIssueFields: FactRegistry<GitlabIssue> = {
   labels: ({ entity }) =>
     entity.labels.map((label) => ({
       key: `label-${label}`,
-      label: 'Label',
+      label: 'Labels',
       icon: Tag,
       node: label,
     })),

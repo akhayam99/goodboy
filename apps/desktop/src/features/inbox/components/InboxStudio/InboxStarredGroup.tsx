@@ -1,91 +1,84 @@
-import { Button, Eyebrow } from '@goodboy/ui';
-import { placeholderRecordOf } from '../../../integrations/starred/placeholderRecordOf';
+import { Button } from '@goodboy/ui';
 import type { InboxRecord } from '../../types';
 import type { StarredRow } from '../../useInboxStars';
-import { InboxRow } from './InboxRow';
-import { StarredSnapshotRow } from './StarredSnapshotRow';
+import { TaskGroupRows } from './TaskGroupRows';
 
 type Props = {
   readonly rows: ReadonlyArray<StarredRow>;
+  readonly records: ReadonlyArray<InboxRecord>;
+  readonly isExpanded: boolean;
   readonly selectedKey: string | null;
-  readonly cursorKey?: string | null;
+  readonly cursorKey: string | null;
   readonly unstarredCount: number;
+  readonly onExpand: () => void;
+  readonly onCollapse: () => void;
   readonly onSelect: (record: InboxRecord) => void;
-  readonly onActivate?: (record: InboxRecord) => void;
-  readonly onUnstar: (row: StarredRow) => void;
+  readonly onActivate: (record: InboxRecord) => void;
+  readonly onUnstar: (record: InboxRecord) => void;
   readonly onUnstarClosed: () => void;
   readonly onUndoUnstar: () => void;
 };
 
+const STARRED = () => true;
+
 export const InboxStarredGroup = ({
   rows,
+  records,
+  isExpanded,
   selectedKey,
   cursorKey,
   unstarredCount,
+  onExpand,
+  onCollapse,
   onSelect,
   onActivate,
   onUnstar,
   onUnstarClosed,
   onUndoUnstar,
 }: Props) => {
-  if (rows.length === 0 && unstarredCount === 0) {
+  if (records.length === 0 && unstarredCount === 0) {
     return null;
   }
   const hasClosed = rows.some((row) => row.issue.state === 'done');
-  return (
-    <section aria-label="Starred" className="flex flex-col gap-0.5 pb-2">
-      <div className="flex items-center gap-2 px-3 pb-1">
-        <Eyebrow label="Starred" />
-        <span className="text-meta tabular-nums text-faint-foreground">{rows.length}</span>
-        <span className="flex-1" />
-        {unstarredCount > 0 ? (
-          <>
-            <span className="text-meta text-muted-foreground">
-              {unstarredCount === 1
-                ? 'Unstarred 1 closed issue'
-                : `Unstarred ${unstarredCount} closed issues`}
-            </span>
-            <Button variant="ghost" size="sm" onClick={onUndoUnstar}>
-              Undo
-            </Button>
-          </>
-        ) : hasClosed ? (
-          <Button variant="ghost" size="sm" onClick={onUnstarClosed}>
-            Unstar closed
+  const action = (() => {
+    if (unstarredCount > 0) {
+      return (
+        <>
+          <span>
+            {unstarredCount === 1
+              ? 'Unstarred 1 closed issue'
+              : `Unstarred ${unstarredCount} closed issues`}
+          </span>
+          <Button variant="ghost" size="xs" onClick={onUndoUnstar}>
+            Undo
           </Button>
-        ) : null}
-      </div>
-      {rows.map((row) => {
-        if (row.record !== null) {
-          return (
-            <InboxRow
-              key={row.record.key}
-              record={row.record}
-              selected={selectedKey === row.record.key}
-              isCursor={cursorKey === row.record.key}
-              onSelect={onSelect}
-              onActivate={onActivate}
-              isStarred
-              onToggleStar={() => onUnstar(row)}
-            />
-          );
-        }
-        const placeholder = placeholderRecordOf(row.issue);
-        if (placeholder === null) {
-          return null;
-        }
-        return (
-          <StarredSnapshotRow
-            key={`${row.issue.provider}:${row.issue.externalId}`}
-            issue={row.issue}
-            recordKey={placeholder.key}
-            selected={selectedKey === placeholder.key}
-            isCursor={cursorKey === placeholder.key}
-            onSelect={() => onSelect(placeholder)}
-            onUnstar={() => onUnstar(row)}
-          />
-        );
-      })}
-    </section>
+        </>
+      );
+    }
+    if (hasClosed) {
+      return (
+        <Button variant="ghost" size="xs" onClick={onUnstarClosed}>
+          Unstar closed
+        </Button>
+      );
+    }
+    return undefined;
+  })();
+  return (
+    <TaskGroupRows
+      label="Starred"
+      records={records}
+      isExpanded={isExpanded}
+      canCollapse
+      action={action}
+      selectedKey={selectedKey}
+      cursorKey={cursorKey}
+      onExpand={onExpand}
+      onCollapse={onCollapse}
+      onSelect={onSelect}
+      onActivate={onActivate}
+      starOf={STARRED}
+      onToggleStar={onUnstar}
+    />
   );
 };

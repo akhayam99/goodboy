@@ -1,3 +1,4 @@
+import { RecordProperties } from '../../../../../../shared/components/StudioDetail/RecordProperties';
 import type { SessionExternalTask, WorkspaceId } from '@goodboy/types';
 import { ErrorStrip, PaneShell } from '@goodboy/ui';
 import { RecordDetailSkeleton } from '../../../../../../shared/components/StudioDetail/RecordDetailSkeleton';
@@ -35,6 +36,7 @@ export const GithubTaskDetail = ({ workspaceId, rootPath, task, issueNumber }: P
         title={task?.title ?? `#${resolvedIssueNumber}`}
         meta={<span className="font-mono">{task?.identifier ?? `#${resolvedIssueNumber}`}</span>}
       >
+        <RecordProperties facts={[]} />
         <ErrorStrip label="the GitHub issue" error={new Error(error)} onRetry={refetch} />
       </PaneShell>
     );

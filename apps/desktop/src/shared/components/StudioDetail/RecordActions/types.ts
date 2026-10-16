@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
+import type { ResolvedFact } from '../../../detail-fields/factTypes';
 
 type RecordVerbConfirm = {
   readonly title: string;
@@ -26,11 +27,19 @@ export type RecordVerbs = {
   readonly destructive: ReadonlyArray<RecordVerb>;
 };
 
+export type RecordStar = {
+  readonly isStarred: boolean;
+  readonly onToggle: () => void;
+};
+
 export type RecordFrame = {
   readonly primary: ReactNode;
   readonly sessionVerbs: ReadonlyArray<RecordVerb>;
   readonly onRefresh: (() => void) | null;
   readonly onClose: (() => void) | null;
+  readonly onOpenFull?: (() => void) | null;
+  readonly star?: RecordStar | null;
+  readonly linkFacts?: ReadonlyArray<ResolvedFact>;
 };
 
 export const NO_RECORD_VERBS: RecordVerbs = { secondary: [], overflow: [], destructive: [] };

@@ -214,6 +214,17 @@ c11-sessions-list
 c11-sessions-list-filtered
 c11-sessions-list-grouped
 c11-sessions-repos-attention
+c12-issue-edit
+c12-issue-full
+c12-issue-github
+c12-issue-pane
+c12-issue-sentry
+c12-tasks-all
+c12-tasks-expanded
+c12-tasks-filter
+c12-tasks-forme
+c12-tasks-lookup
+c12-tasks-ratelimited
 c13-terminal
 c13-terminal-empty
 c13-terminal-menu

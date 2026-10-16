@@ -39,6 +39,7 @@ const h = vi.hoisted(() => ({
   toggleStar: vi.fn<(record: InboxRecord) => Promise<void>>(async () => undefined),
   orderCalls: 0,
   stars: null as unknown,
+  projects: new Array<never>(),
 }));
 
 vi.mock('../../../../shared/components/StudioShell', () => ({
@@ -116,6 +117,7 @@ vi.mock('../../useInboxRecords', () => ({
     },
     errors: h.errors,
     connected: h.connected,
+    projects: h.projects,
     refetch: h.refetch,
   }),
 }));
@@ -124,15 +126,18 @@ vi.mock('./InboxDetail', () => ({
   InboxDetail: ({
     record,
     onDeselect,
+    onOpenFull,
     launchFocusRequest,
   }: {
     record: InboxRecord;
-    onDeselect: () => void;
+    onDeselect: (() => void) | null;
+    onOpenFull: (() => void) | null;
     launchFocusRequest: number;
   }) => (
     <div data-testid="detail" data-launch-request={launchFocusRequest}>
       {record.identifier}
-      <button type="button" data-testid="detail-deselect" onClick={onDeselect} />
+      <button type="button" data-testid="detail-deselect" onClick={onDeselect ?? undefined} />
+      <button type="button" data-testid="detail-open-full" onClick={onOpenFull ?? undefined} />
       <textarea aria-label="Comment" />
     </div>
   ),
@@ -224,6 +229,7 @@ const linearIssue = record({
       url: '',
       state: { name: 'In Progress', type: 'started' },
       team: { key: 'ENG' },
+      assignee: { name: 'Mara Lindqvist' },
       updatedAt: '',
     },
     sessionId: null,
@@ -298,20 +304,20 @@ const renderStudio = (overrides: Partial<Parameters<typeof InboxStudio>[0]> = {}
 const detailText = (): string => screen.queryByTestId('detail')?.textContent ?? 'none';
 
 const cursorKeys = (): ReadonlyArray<string> =>
-  Array.from(document.querySelectorAll('[data-inbox-key][data-cursor]')).map(
-    (row) => row.getAttribute('data-inbox-key') ?? '',
+  Array.from(document.querySelectorAll('[data-row-key][data-cursor]')).map(
+    (row) => row.getAttribute('data-row-key') ?? '',
   );
 
 const rowOrder = (): ReadonlyArray<string> =>
-  within(screen.getByRole('listbox', { name: 'Task items' }))
+  within(screen.getByRole('list', { name: 'Task items' }))
     .getAllByRole('option')
-    .map((option) => option.textContent ?? '');
+    .map((option) => option.getAttribute('aria-label') ?? '');
 
 const openFilters = (): void => {
   if (screen.queryByRole('navigation', { name: 'Filter tasks' }) !== null) {
     return;
   }
-  fireEvent.click(screen.getByRole('button', { name: /^Filters/ }));
+  fireEvent.click(screen.getByRole('button', { name: /^Filter(,|$)/ }));
 };
 
 const facet = (section: string, name: RegExp) => {
@@ -328,8 +334,15 @@ const press = (id: ShortcutId, target?: Element) =>
 
 const openRow = (name: RegExp): HTMLElement => screen.getByRole('option', { name });
 
+const VIEW_KEY = 'goodboy:task-list-view:v1:workspace-1';
+
+const saveView = (view: { readonly scope: 'for-me' | 'all'; readonly groupBy: string }): void => {
+  localStorage.setItem(VIEW_KEY, JSON.stringify(view));
+};
+
 beforeEach(() => {
   localStorage.clear();
+  saveView({ scope: 'all', groupBy: 'none' });
   h.records = [sentryError, linearIssue, slackThread, githubIssue];
   h.isLoading = false;
   h.connected = ALL_PROVIDERS;
@@ -353,20 +366,6 @@ afterEach(() => {
   localStorage.clear();
   vi.unstubAllGlobals();
 });
-
-const stubPaneWidth = (width: number): void => {
-  class StubObserver {
-    private readonly callback: (entries: ReadonlyArray<{ contentRect: { width: number } }>) => void;
-    constructor(callback: (entries: ReadonlyArray<{ contentRect: { width: number } }>) => void) {
-      this.callback = callback;
-    }
-    observe() {
-      this.callback([{ contentRect: { width } }]);
-    }
-    disconnect() {}
-  }
-  vi.stubGlobal('ResizeObserver', StubObserver);
-};
 
 describe('InboxStudio', () => {
   it('names its close control after the Tasks page', () => {
@@ -440,13 +439,9 @@ describe('InboxStudio', () => {
     expect(detailText()).toBe('none');
     const first = openRow(/TypeError boom/);
     expect(first.getAttribute('aria-selected')).toBe('false');
-    expect(first.closest('[data-inbox-key]')?.getAttribute('data-cursor')).toBe('true');
-    expect(
-      openRow(/Ship the inbox/)
-        .closest('[data-inbox-key]')
-        ?.hasAttribute('data-cursor'),
-    ).toBe(false);
-    expect(document.querySelectorAll('[data-inbox-key][data-selected="true"]')).toHaveLength(0);
+    expect(first?.getAttribute('data-cursor')).toBe('true');
+    expect(openRow(/Ship the inbox/)?.hasAttribute('data-cursor')).toBe(false);
+    expect(document.querySelectorAll('[data-row-key][data-selected="true"]')).toHaveLength(0);
   });
 
   it('opens the drawer on a click, with the row selected', () => {
@@ -540,15 +535,19 @@ describe('InboxStudio', () => {
     expect(detailText()).toBe('ENG-1');
   });
 
-  it('opens the cursor row and launches on Enter', () => {
+  it('opens the cursor row in the pane on Enter, and starts from it on a second Enter', () => {
     renderStudio();
     expect(screen.queryByTestId('detail')).toBeNull();
 
     press('list.open');
 
     expect(detailText()).toBe('GBY-1');
-    expect(screen.getByTestId('detail').getAttribute('data-launch-request')).toBe('1');
+    expect(screen.getByTestId('detail').getAttribute('data-launch-request')).toBe('0');
     expect(openRow(/TypeError boom/).getAttribute('aria-selected')).toBe('true');
+
+    press('list.open');
+
+    expect(screen.getByTestId('detail').getAttribute('data-launch-request')).toBe('1');
   });
 
   it('opens the row the cursor moved to on Enter', () => {
@@ -589,6 +588,7 @@ describe('InboxStudio', () => {
 
     press('list.open', openRow(/ping the team/));
     expect(screen.getByTestId('detail').getAttribute('data-launch-request')).toBe('1');
+    expect(detailText()).toBe('#eng');
   });
 
   it('leaves the keys to the search field while typing in it', () => {
@@ -641,14 +641,11 @@ describe('InboxStudio', () => {
     expect(h.toggleStar.mock.calls[0]?.[0]).toMatchObject({ identifier: 'GBY-1' });
   });
 
-  it('stars the selected row on s with the focus on a star button', () => {
+  it('keeps rows free of buttons: no star or open control appears on a row', () => {
     renderStudio();
-    const star = screen.getByRole('button', { name: 'Star GBY-1' });
-    star.focus();
 
-    press('list.star', star);
-
-    expect(h.toggleStar).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Star GBY-1' })).toBeNull();
+    expect(document.querySelector('[data-open-in-tool]')).toBeNull();
   });
 
   it('closes the detail on Escape before the studio, and keeps the cursor', () => {
@@ -755,7 +752,7 @@ describe('InboxStudio', () => {
 
     renderStudio();
 
-    fireEvent.click(facet('View', /Has a session/));
+    fireEvent.click(facet('Show', /Has a session/));
 
     expect(screen.getByText('RangeError boom')).toBeDefined();
     expect(screen.queryByText('TypeError boom')).toBeNull();
@@ -797,90 +794,153 @@ describe('InboxStudio', () => {
     expect(screen.queryByText('Ship the inbox')).toBeNull();
   });
 
-  it('docks the facets in a rail beside the list, with no Filters button', () => {
+  it('titles the page with the open count, not Tasks again, and marks the view in the menu', () => {
     renderStudio();
 
-    const rail = screen.getByRole('complementary', { name: 'Task filters' });
-    expect(within(rail).getByRole('navigation', { name: 'Filter tasks' })).toBeDefined();
-    expect(within(rail).getByRole('searchbox', { name: 'Search tasks' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: /^Filters/ })).toBeNull();
-    expect(screen.queryByRole('dialog', { name: 'Task filters' })).toBeNull();
+    fireEvent.click(facet('Show', /^In progress/));
+
+    expect(screen.getByRole('heading', { level: 1, name: /^\d+ open$/ })).toBeDefined();
+    expect(screen.queryByRole('heading', { level: 1, name: 'Tasks' })).toBeNull();
+    expect(facet('Show', /^In progress/).getAttribute('aria-current')).toBe('true');
   });
 
-  it('keeps the page title Tasks whichever view is picked, and names the view in the rail', () => {
-    renderStudio();
-
-    fireEvent.click(facet('View', /^In progress/));
-
-    expect(screen.getByRole('heading', { level: 1, name: 'Tasks' })).toBeDefined();
-    expect(facet('View', /^In progress/).getAttribute('aria-current')).toBe('true');
-  });
-
-  it('reads the rail width saved under the inbox key', () => {
-    localStorage.setItem('goodboy:studio-rail-width:inbox:v1', '340');
-
-    renderStudio();
-
-    expect(
-      screen.getByRole('separator', { name: 'Resize task filters' }).getAttribute('aria-valuenow'),
-    ).toBe('340');
-  });
-
-  it('keeps counts and filtering the same when the facets sit in the rail', () => {
-    renderStudio();
-
-    fireEvent.click(facet('Type', /Errors/));
-
-    expect(facet('Type', /Errors/).textContent).toContain('1');
-    expect(screen.getByText('TypeError boom')).toBeDefined();
-    expect(screen.queryByText('Ship the inbox')).toBeNull();
-  });
-
-  it('folds the rail under 880 into one Filters button that opens the same facets', () => {
-    stubPaneWidth(800);
-
+  it('filters from one Filter menu in the header and counts the active filters on it', () => {
     renderStudio();
 
     expect(screen.queryByRole('complementary', { name: 'Task filters' })).toBeNull();
-    const button = screen.getByRole('button', { name: 'Filters' });
-    expect(screen.getByRole('searchbox', { name: 'Search tasks' })).toBeDefined();
+    fireEvent.click(facet('Source', /GitHub/));
 
-    fireEvent.click(button);
-
-    const popover = screen.getByRole('dialog', { name: 'Task filters' });
-    fireEvent.click(within(popover).getByRole('button', { name: /GitHub/ }));
-    expect(screen.getByRole('button', { name: 'Filters, 1 active' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Filter, 1 active' })).toBeDefined();
     expect(screen.getByText('Fix the flaky test')).toBeDefined();
     expect(screen.queryByText('Ship the inbox')).toBeNull();
   });
 
-  it('folds the rail from its first row, remembers it, and docks it again', () => {
-    const first = renderStudio();
+  it('says how many items are open in the header', () => {
+    h.records = [sentryError, linearIssue, { ...githubIssue, state: 'done' }];
 
-    fireEvent.click(screen.getByRole('button', { name: 'Fold the rail' }));
-
-    expect(screen.queryByRole('complementary', { name: 'Task filters' })).toBeNull();
-    expect(localStorage.getItem('goodboy:studio-rail-folded:inbox:v1')).toBe('1');
-    expect(screen.getByRole('button', { name: 'Filters' })).toBeDefined();
-
-    first.unmount();
     renderStudio();
 
-    expect(screen.queryByRole('complementary', { name: 'Task filters' })).toBeNull();
+    expect(screen.getByText('2 open')).toBeDefined();
+  });
+});
 
-    fireEvent.click(screen.getByRole('button', { name: 'Dock the filters' }));
+const groupNames = (): ReadonlyArray<string> =>
+  Array.from(screen.getByRole('list', { name: 'Task items' }).querySelectorAll('h2')).map(
+    (heading) => heading.textContent ?? '',
+  );
 
-    expect(screen.getByRole('complementary', { name: 'Task filters' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: /^Filters/ })).toBeNull();
+const linearMany = (count: number): ReadonlyArray<InboxRecord> =>
+  Array.from({ length: count }, (_, index) => ({
+    ...linearIssue,
+    key: `linear:issue:many-${index}`,
+    identifier: `HBL-${100 + index}`,
+    title: `Ledger task ${index}`,
+    updatedAt: new Date(Date.UTC(2026, 7, 3, 10, 0, 0) - index * 60_000).toISOString(),
+  }));
+
+describe('InboxStudio at scale', () => {
+  it('opens on For me: assigned issues and linked work, not every error and thread', () => {
+    localStorage.removeItem(VIEW_KEY);
+    h.records = [sentryError, linkedSentryError, linearIssue, slackThread, githubIssue];
+
+    renderStudio();
+
+    expect(screen.getByRole('tab', { name: 'For me' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByText('RangeError boom')).toBeDefined();
+    expect(screen.getByText('Ship the inbox')).toBeDefined();
+    expect(screen.queryByText('TypeError boom')).toBeNull();
+    expect(screen.queryByText('ping the team')).toBeNull();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'All' }));
+
+    expect(screen.getByText('TypeError boom')).toBeDefined();
+    expect(JSON.parse(localStorage.getItem(VIEW_KEY) ?? '')).toEqual({
+      scope: 'all',
+      groupBy: 'source',
+    });
   });
 
-  it('cannot dock a rail the pane has no room for', () => {
-    localStorage.setItem('goodboy:studio-rail-folded:inbox:v1', '1');
-    stubPaneWidth(800);
+  it('groups by source, largest first, and caps a group at five rows with Show all', () => {
+    saveView({ scope: 'all', groupBy: 'source' });
+    h.records = [...linearMany(7), githubIssue, sentryError];
 
     renderStudio();
 
-    expect(screen.queryByRole('button', { name: 'Dock the filters' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Filters' })).toBeDefined();
+    expect(groupNames()).toEqual(['Linear', 'GitHub', 'Sentry']);
+    expect(screen.queryByText('Ledger task 5')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show all 7' }));
+
+    expect(screen.getByText('Ledger task 6')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Show fewer' }));
+    expect(screen.queryByText('Ledger task 6')).toBeNull();
+  });
+
+  it('regroups by status from the Group by menu and keeps the choice', () => {
+    saveView({ scope: 'all', groupBy: 'source' });
+
+    renderStudio();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Group by' }));
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Status' }));
+
+    expect(groupNames()).toContain('Linear · Open');
+    expect(JSON.parse(localStorage.getItem(VIEW_KEY) ?? '')).toMatchObject({ groupBy: 'status' });
+  });
+
+  it('draws only a window of a large expanded group and names the position', () => {
+    saveView({ scope: 'all', groupBy: 'source' });
+    h.records = [...linearMany(300)];
+
+    renderStudio();
+    fireEvent.click(screen.getByRole('button', { name: 'Show all 300' }));
+
+    expect(screen.getAllByRole('option').length).toBeLessThan(300);
+    expect(screen.getByText('1 of 300')).toBeDefined();
+
+    for (let step = 0; step < 41; step += 1) {
+      press('list.next');
+    }
+
+    expect(screen.getByText('42 of 300')).toBeDefined();
+    expect(cursorKeys()).toEqual(['linear:issue:many-41']);
+  });
+
+  it('moves j and k through the shown rows only, so a capped group never hides the cursor', () => {
+    saveView({ scope: 'all', groupBy: 'source' });
+    h.records = [...linearMany(7), githubIssue];
+
+    renderStudio();
+    for (let step = 0; step < 5; step += 1) {
+      press('list.next');
+    }
+
+    expect(cursorKeys()).toEqual([githubIssue.key]);
+  });
+
+  it('opens the pane item full size and goes back to the list', () => {
+    renderStudio();
+    fireEvent.click(openRow(/Ship the inbox/));
+
+    fireEvent.click(screen.getByTestId('detail-open-full'));
+
+    expect(screen.queryByRole('list', { name: 'Task items' })).toBeNull();
+    expect(detailText()).toBe('ENG-1');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back to Tasks' }));
+
+    expect(screen.getByRole('list', { name: 'Task items' })).toBeDefined();
+    expect(detailText()).toBe('none');
+  });
+
+  it('puts a source that did not load in its group as one line with retry', () => {
+    saveView({ scope: 'all', groupBy: 'source' });
+    h.errors = { ...h.errors, jira: 'Jira answered 429: rate limited' };
+
+    renderStudio();
+
+    expect(groupNames()).toContain('Jira');
+    fireEvent.click(screen.getByRole('button', { name: 'Jira is rate limited. Retry' }));
+    expect(h.refetch).toHaveBeenCalledTimes(1);
   });
 });

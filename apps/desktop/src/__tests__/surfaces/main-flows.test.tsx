@@ -202,6 +202,8 @@ describe('main flows on the real store', () => {
         onRefresh={() => undefined}
         onClose={() => undefined}
         onDeselect={() => undefined}
+        onOpenFull={null}
+        star={null}
         launchFocusRequest={0}
       />,
     );

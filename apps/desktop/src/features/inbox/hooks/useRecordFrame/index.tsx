@@ -27,7 +27,7 @@ type Params = {
   readonly launchRequest: number;
   readonly onLaunched: () => void;
   readonly onRefresh: () => void;
-  readonly onClose: () => void;
+  readonly onClose: (() => void) | null;
 };
 
 export const useRecordFrame = ({

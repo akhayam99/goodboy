@@ -84,11 +84,12 @@ describe('the navigation scenes', () => {
     expect(MOCK_SCENES.railorder).toBe(U24_P_NAV_SCENES.railorder);
   });
 
-  it('integration-issue-focused holds All issues and Unlink, and no link action', async () => {
+  it('integration-issue-focused holds All issues, keeps Unlink in the menu, and no link action', async () => {
     await mount('integration-issue-focused');
 
     expect(screen.getByRole('button', { name: 'All issues' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Unlink NW-142' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Unlink NW-142' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'More actions for NW-142' })).toBeDefined();
     expect(within(mainPane()).queryByRole('button', { name: /^Link/ })).toBeNull();
   });
 

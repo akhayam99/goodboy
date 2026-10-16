@@ -157,6 +157,16 @@ state is a `StateDot` or a glyph in a 16px column.
   column; an `action` (one visible control, such as the `Open session` arrow on a Terminal
   page group) sits right after the name and never takes the count's column; a
   grouped grid (`isGrouped`) spaces its groups 16px apart, never with a divider.
+  `headingLevel` is 3 by default and 2 on a page whose title is the only heading
+  above the groups.
+- A list with a keyboard cursor (Tasks) makes each group its own listbox
+  (`isListbox`, `activeDescendant`) and its rows options (`isOption`,
+  `isCursor` marks the cursor with `data-cursor` and the hover fill). What is not
+  a row stays outside the listbox: `lead` holds the lines above the rows, `foot`
+  the lines under them, and `isSticky` keeps the group label on top while a long
+  group scrolls.
+- `ListGridLine` is a one-line gray note across the grid, a button when it has
+  `onClick` ("Show all 38", "Linear is rate limited. Retry").
 
 `StateDot` is the one state mark of a list or a sidebar slot: a 6px
 `StatusDot` named by its state word (the tooltip and the accessible name),

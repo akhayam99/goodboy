@@ -12,7 +12,13 @@ Agents on any provider can read and act on the tools you connected, without hold
 
 ### Tasks
 
-Work from one list instead of seven tabs. Issues, Slack threads, Sentry errors and your pull and merge requests sit together, grouped by day. Narrow it by **View**, **Type**, **Source** and **Project**, move with **j** and **k**, and press **Enter** to open a row.
+Work from one list instead of seven tabs. Issues, Slack threads, Sentry errors and your pull and merge requests sit together, and the header says how many are open. Tasks opens on **For me**: issues assigned to you, what you starred and what is linked to your sessions. **All** next to it shows everything your tools sent.
+
+Items come in groups, by source unless you pick **Group by** **Status**, **Project** or **None**. Each group shows its first five rows and **Show all 38**; an expanded group draws only the rows on screen and names where you are ("41 of 312"), so a thousand open items never scroll forever. Every row has the same columns: source, key, title, status, priority and age. Rows carry no buttons: the row is the button.
+
+Narrow the list from one **Filter** menu in the header: **Source** with its counts, **Show** (assigned to me, starred, in progress, with a session, closed), **Type** and **Project**. A tool that did not load, or is rate limited, says so in one gray line inside its group, and clicking it retries. **Refresh** and **Manage tools** sit in `⋯`.
+
+Click a row or press **Enter** to open it in the pane on the right, and move with **j** and **k** while the pane follows. **Enter** again starts from the open item. **Open full** in the pane shows it at full width; **Back** at the top returns to the list.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-list-dark.webp">
@@ -34,7 +40,7 @@ Paste `HBL-412`, `#318` or a link in the search box and open the issue, even whe
 
 ### Starred issues
 
-Star an issue to keep it on top of Tasks and of **Pick up a task**. Stars belong to the workspace, not to one session.
+Star an issue from the star next to its key in the pane, or press **s** on its row, to keep it in the **Starred** group on top of Tasks and of **Pick up a task**. Stars belong to the workspace, not to one session.
 
 ### Start from any item
 
@@ -91,7 +97,7 @@ See screenshots attached in Linear, Jira and GitHub inside Goodboy. Your key goe
 
 ### Records read the same way
 
-Read items from any tool the same way: one list of labels and values, with who opened them and when.
+Read items from any tool the same way. The header holds the tool mark, the key and the star, with the start action, **Open full** and `⋯` (open in the tool, copy the link, refresh) beside them, and the title on its own line. Under it, the properties sit in named groups on one grid of labels and values: **State** (status, priority, assignee), **Planning** (project, labels with their colors), **Links** (pull requests with their state, sessions) and **Details**. Values you can change, like the status or the assignee of a Linear issue, open their menu from the value.
 
 ### Comment threads
 

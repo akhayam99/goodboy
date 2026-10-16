@@ -1,4 +1,5 @@
 import type { ProjectId } from '@goodboy/types';
+import { isAssignedRecord } from './isForMeRecord';
 import { recordSessionId } from './recordSessionId';
 import type { InboxKind, InboxProvider, InboxRecord } from './types';
 
@@ -23,10 +24,12 @@ export const INBOX_KIND_PROVIDERS: Record<InboxTypeFacet, ReadonlyArray<InboxPro
   error: ['sentry'],
 };
 
-export type InboxView = 'all' | 'in-progress' | 'with-session' | 'closed';
+export type InboxView = 'all' | 'assigned' | 'starred' | 'in-progress' | 'with-session' | 'closed';
 
 export const INBOX_VIEWS: ReadonlyArray<InboxView> = [
   'all',
+  'assigned',
+  'starred',
   'in-progress',
   'with-session',
   'closed',
@@ -105,15 +108,24 @@ export const matchesKindFilter = ({ kind, filter }: MatchesKindParams): boolean 
   }
 };
 
+type IsStarredRecord = (record: InboxRecord) => boolean;
+
+const NEVER_STARRED: IsStarredRecord = () => false;
+
 type MatchesViewParams = {
   readonly record: InboxRecord;
   readonly view: InboxView;
+  readonly isStarred: IsStarredRecord;
 };
 
-const matchesView = ({ record, view }: MatchesViewParams): boolean => {
+const matchesView = ({ record, view, isStarred }: MatchesViewParams): boolean => {
   switch (view) {
     case 'all':
       return true;
+    case 'assigned':
+      return isAssignedRecord({ record });
+    case 'starred':
+      return isStarred(record);
     case 'in-progress':
       return record.state === 'active';
     case 'with-session':
@@ -147,10 +159,11 @@ export const matchesSearch = ({ record, query }: MatchesSearchParams): boolean =
 type MatchesFiltersParams = {
   readonly record: InboxRecord;
   readonly filters: InboxFilters;
+  readonly isStarred: IsStarredRecord;
 };
 
-const matchesFilters = ({ record, filters }: MatchesFiltersParams): boolean =>
-  matchesView({ record, view: filters.view }) &&
+const matchesFilters = ({ record, filters, isStarred }: MatchesFiltersParams): boolean =>
+  matchesView({ record, view: filters.view, isStarred }) &&
   matchesKindFilter({ kind: record.kind, filter: filters.kind }) &&
   (filters.source == null || record.provider === filters.source) &&
   matchesProject({ record, project: filters.project });
@@ -159,15 +172,17 @@ type FilterRecordsParams = {
   readonly records: ReadonlyArray<InboxRecord>;
   readonly query: string;
   readonly filters: InboxFilters;
+  readonly isStarred?: IsStarredRecord;
 };
 
 export const filterInboxRecords = ({
   records,
   query,
   filters,
+  isStarred = NEVER_STARRED,
 }: FilterRecordsParams): ReadonlyArray<InboxRecord> =>
   records.filter(
-    (record) => matchesFilters({ record, filters }) && matchesSearch({ record, query }),
+    (record) => matchesFilters({ record, filters, isStarred }) && matchesSearch({ record, query }),
   );
 
 export type InboxFacetCounts = {
@@ -182,6 +197,7 @@ type FacetCountsParams = {
   readonly records: ReadonlyArray<InboxRecord>;
   readonly query: string;
   readonly filters: InboxFilters;
+  readonly isStarred?: IsStarredRecord;
 };
 
 type SourceCountsParams = {
@@ -208,27 +224,30 @@ export const inboxFacetCounts = ({
   records,
   query,
   filters,
+  isStarred = NEVER_STARRED,
 }: FacetCountsParams): InboxFacetCounts => {
   const searched = records.filter((record) => matchesSearch({ record, query }));
   const forView = searched.filter((record) =>
-    matchesFilters({ record, filters: { ...filters, view: 'all' } }),
+    matchesFilters({ record, filters: { ...filters, view: 'all' }, isStarred }),
   );
   const forKind = searched.filter((record) =>
-    matchesFilters({ record, filters: { ...filters, kind: 'all' } }),
+    matchesFilters({ record, filters: { ...filters, kind: 'all' }, isStarred }),
   );
   const forSource = searched.filter((record) =>
-    matchesFilters({ record, filters: { ...filters, source: null } }),
+    matchesFilters({ record, filters: { ...filters, source: null }, isStarred }),
   );
   const forProject = searched.filter((record) =>
-    matchesFilters({ record, filters: { ...filters, project: null } }),
+    matchesFilters({ record, filters: { ...filters, project: null }, isStarred }),
   );
   const viewCount = (view: InboxView): number =>
-    forView.filter((record) => matchesView({ record, view })).length;
+    forView.filter((record) => matchesView({ record, view, isStarred })).length;
   const kindCount = (filter: InboxTypeFacet): number =>
     forKind.filter((record) => matchesKindFilter({ kind: record.kind, filter })).length;
   return {
     view: {
       all: viewCount('all'),
+      assigned: viewCount('assigned'),
+      starred: viewCount('starred'),
       'in-progress': viewCount('in-progress'),
       'with-session': viewCount('with-session'),
       closed: viewCount('closed'),

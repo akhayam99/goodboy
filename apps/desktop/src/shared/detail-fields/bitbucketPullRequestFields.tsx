@@ -10,7 +10,7 @@ export const bitbucketPullRequestFields: FactRegistry<BitbucketPullRequest> = {
       : { key: 'author', label: 'Author', icon: UserRound, node: entity.author.displayName },
   place: ({ entity }) => ({
     key: 'branches',
-    label: 'Source and target branch',
+    label: 'Branches',
     icon: GitBranch,
     node: (
       <span className="font-mono">{`${entity.sourceBranch} → ${entity.destinationBranch}`}</span>

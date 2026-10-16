@@ -28,14 +28,14 @@ export const jiraIssueFields: FactRegistry<JiraIssue> = {
   }),
   place: ({ entity }) => ({
     key: 'type',
-    label: 'Issue type',
+    label: 'Type',
     icon: Shapes,
     node: entity.issueType,
   }),
   labels: ({ entity }) =>
     entity.labels.map((label) => ({
       key: `label-${label}`,
-      label: 'Label',
+      label: 'Labels',
       icon: Tag,
       node: label,
     })),

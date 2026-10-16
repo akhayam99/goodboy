@@ -41,7 +41,7 @@ export const slackThreadFields: FactRegistry<SlackThreadProperties> = {
         },
   measure: ({ entity }) => ({
     key: 'replies',
-    label: 'Replies and people',
+    label: 'Replies',
     icon: MessagesSquare,
     node: measureOf({ replyCount: entity.replyCount, people: entity.participants.length }),
   }),

@@ -297,6 +297,8 @@ export { ListGridRow } from './components/ListGrid/ListGridRow';
 export type { ListGridRowProps } from './components/ListGrid/ListGridRow';
 export { ListGridGroup } from './components/ListGrid/ListGridGroup';
 export type { ListGridGroupProps } from './components/ListGrid/ListGridGroup';
+export { ListGridLine } from './components/ListGrid/ListGridLine';
+export type { ListGridLineProps } from './components/ListGrid/ListGridLine';
 export type { ListGridColumn } from './components/ListGrid/listGridTemplate';
 export { Switch } from './components/Switch';
 export type { SwitchProps } from './components/Switch';
