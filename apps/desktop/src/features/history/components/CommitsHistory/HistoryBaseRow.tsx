@@ -38,7 +38,6 @@ export const HistoryBaseRow = ({
   onRebase,
 }: Props) => {
   const reportError = useAppStore((state) => state.reportError);
-  const behind = graph?.behind ?? 0;
   const [chosen, setChosen] = useState<string | null>(null);
   const [branches, setBranches] = useState<ReadonlyArray<string>>([]);
   const headingRef = useRef<HTMLSpanElement | null>(null);
@@ -74,7 +73,9 @@ export const HistoryBaseRow = ({
         return;
       }
       heading.scrollIntoView({ block: 'center' });
-      heading.parentElement?.querySelector<HTMLElement>('[data-base-rebase]')?.focus();
+      const own = heading.parentElement?.querySelector<HTMLElement>('[data-base-rebase]') ?? null;
+      const rail = document.querySelector<HTMLElement>('[data-worktree-verb="mount.rebase"]');
+      (own ?? rail)?.focus();
     };
     window.addEventListener(name, onFocus);
     return () => window.removeEventListener(name, onFocus);
@@ -83,23 +84,18 @@ export const HistoryBaseRow = ({
   const options = [...new Set([baseBranch, ...branches])].map((name) =>
     branchPickerOption({ name }),
   );
-  const canRebase = isInteractive && !isDone && (behind > 0 || isOtherBase);
-  const headingText = isDone
-    ? 'Your branch starts here'
-    : behind > 0
-      ? `${behind} new ${behind === 1 ? 'commit' : 'commits'} on ${baseBranch}`
-      : "Your branch starts on today's main";
-  const summary =
-    graph === null
-      ? `${baseBranch} · merge base`
-      : `${baseBranch} at ${graph.mergeBase.subject}, ${forkAge}`;
-  const rebaseLabel = isOtherBase ? `Rebase onto ${target}` : 'Rebase onto latest';
+  const canRebase = isInteractive && !isDone && isOtherBase;
+  const headingText = isDone ? 'Your branch starts here' : `Based on ${baseBranch}`;
+  const summary = graph === null ? null : `${graph.mergeBase.subject}, ${forkAge}`;
+  const rebaseLabel = `Rebase onto ${target}`;
 
   return (
     <>
       <span ref={headingRef} className="shrink-0 text-foreground">
         {headingText}
       </span>
+      <span className="shrink-0 text-code tabular-nums">{baseSha.slice(0, 7)}</span>
+      {summary === null ? null : <span className="min-w-0 flex-1 truncate">{summary}</span>}
       {options.length >= 2 && !isDone ? (
         <Listbox
           ariaLabel="Rebase onto branch"
@@ -112,11 +108,15 @@ export const HistoryBaseRow = ({
           value={target}
           options={options}
           onChange={(next) => setChosen(next === baseBranch ? null : next)}
-          valueLabel={<span className="truncate text-code">{`${ownBranch} → ${target}`}</span>}
+          valueLabel={
+            isOtherBase ? (
+              <span className="truncate text-code">{target}</span>
+            ) : (
+              <span className="truncate">Other base</span>
+            )
+          }
         />
       ) : null}
-      <span className="shrink-0 text-code tabular-nums">{baseSha.slice(0, 7)}</span>
-      <span className="min-w-0 flex-1 truncate">{summary}</span>
       {canRebase ? (
         <ConfirmPopover
           role="primary"

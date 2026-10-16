@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/core', async () => {
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, waitFor, cleanup, render, screen } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -100,17 +100,42 @@ const BANNER_TEXT: Readonly<Record<RebaseJobSceneState, ReadonlyArray<string>>> 
   failed: ["Couldn't rebase payments-api on main", "Couldn't reach origin: connection reset."],
 };
 
+const RAIL_STATES = [
+  'checking',
+  'replaying',
+  'checking-result',
+  'moving',
+  'updating-online',
+] satisfies ReadonlyArray<RebaseJobSceneState>;
+
+const RAIL_ONLY: ReadonlySet<RebaseJobSceneState> = new Set(RAIL_STATES);
+
 describe('the u24 rebase job scenes', () => {
-  it.each(SCENE_STATES)('shows the %s state under the Branch header', async (state) => {
+  it.each(RAIL_STATES)('leaves the %s state to the worktree status line', async (state) => {
     renderScene({ name: 'branch-rebase-job', query: `state=${state}` });
 
-    const region = await screen.findByLabelText('Rebase job', undefined, { timeout: 4_000 });
+    await waitFor(() => expect(document.querySelector('[data-worktree-status]')).not.toBeNull(), {
+      timeout: 4_000,
+    });
     await waitForSettledReads();
 
-    for (const text of BANNER_TEXT[state]) {
-      expect(region.textContent).toContain(text);
-    }
+    expect(screen.queryByRole('region', { name: 'Rebase job' })).toBeNull();
+    expect(document.querySelector('[data-worktree-status]')?.textContent).toContain('Rebasing');
   });
+
+  it.each(SCENE_STATES.filter((state) => !RAIL_ONLY.has(state)))(
+    'shows the %s state under the Branch header',
+    async (state) => {
+      renderScene({ name: 'branch-rebase-job', query: `state=${state}` });
+
+      const region = await screen.findByLabelText('Rebase job', undefined, { timeout: 4_000 });
+      await waitForSettledReads();
+
+      for (const text of BANNER_TEXT[state]) {
+        expect(region.textContent).toContain(text);
+      }
+    },
+  );
 
   it('keeps the banner on the Overview section too', async () => {
     renderScene({ name: 'branch-rebase-job', query: 'state=merging&tab=pr' });

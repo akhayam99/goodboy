@@ -1,6 +1,6 @@
 import { NAMES } from '../../shared/names';
 import type { LucideIcon } from 'lucide-react';
-import { ArrowUp, GitBranch, GitMerge, RotateCcw, RotateCw, Send } from 'lucide-react';
+import { ArrowUp, GitMerge, RotateCcw, RotateCw, Send } from 'lucide-react';
 import type { PullRequestPresentationState } from '../../shared/pullRequestPresentation';
 import type { ResolvedAction } from '../actions/types';
 
@@ -138,9 +138,8 @@ const secondaryOf = ({ diff, review, hasPullRequest, state }: Params): BranchPri
 };
 
 const primaryOf = ({ diff, pullRequest, state }: Params): BranchPrimary | null => {
-  const resume = find(diff, 'diff.continueRebase');
-  if (resume !== null) {
-    return fromAction({ source: 'diff', action: resume, icon: GitBranch });
+  if (find(diff, 'diff.continueRebase') !== null) {
+    return null;
   }
   if (state === 'draft') {
     const ready = find(pullRequest, 'pullRequest.markReady');
@@ -191,9 +190,5 @@ export const BRANCH_MENU_PULL_REQUEST: ReadonlyArray<string> = [
 export const BRANCH_MENU_DIFF: ReadonlyArray<string> = [
   'diff.push',
   'diff.changeBase',
-  'diff.openTerminal',
-  'diff.openInEditor',
-  'diff.copyBranch',
   'diff.copyPatch',
-  'diff.abortRebase',
 ];

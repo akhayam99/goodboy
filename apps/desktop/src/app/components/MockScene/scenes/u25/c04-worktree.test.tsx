@@ -184,7 +184,7 @@ describe('the c04 worktree level scenes', () => {
     await mount('c04-worktree-rebasing');
 
     const line = within(worktreeLayer()).getByRole('status');
-    expect(line.textContent).toContain('Rebasing on main');
+    expect(line.textContent).toContain('Rebasing · 1 conflict');
     expect(within(worktreeLayer()).getByRole('button', { name: 'Abort rebase' })).toBeDefined();
   });
 

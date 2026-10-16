@@ -53,7 +53,7 @@ describe('the u24 commits scenes', () => {
     await screen.findByRole('list', { name: 'Commits' }, { timeout: 4_000 });
     await settle();
 
-    expect(screen.getByText('15 new commits on main')).toBeDefined();
+    expect(screen.getByText('Based on main')).toBeDefined();
     expect(screen.queryByText(/is here now/)).toBeNull();
     expect(
       screen.getByText('Drag a commit to move it, drop it on another to fold it in.'),

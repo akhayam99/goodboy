@@ -52,6 +52,7 @@ import type { BranchReviewCounts } from '../../branchPrimary';
 import { useBranchControls } from '../../hooks/useBranchControls';
 import { pullRequestStateWordOf } from '../../pullRequestStateWordOf';
 import { BranchStateChip } from './BranchStateChip';
+import { BRANCH_MENU_DIFF } from '../../branchPrimary';
 import { BranchSwitcher } from './BranchSwitcher';
 import { BranchHeader } from './index';
 
@@ -640,14 +641,18 @@ describe('BranchHeader actions by state', () => {
     expect(primary.compareDocumentPosition(more) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it('keeps Abort rebase in Branch actions while a rebase stopped, never as a header button', () => {
+  it('keeps Abort rebase off the header and its menu while a rebase stopped, the status line owns it', () => {
     withMountPr();
     status = statusOf({ changed: 3, inProgress: 'rebase' });
     renderHeader({ pr: PR });
 
     expect(screen.queryByRole('button', { name: 'Abort rebase' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Branch actions' }));
-    expect(screen.getByRole('menuitem', { name: /Abort rebase/ })).toBeDefined();
+    expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(0);
+    const more = screen.queryByRole('button', { name: 'Branch actions' });
+    if (more !== null) {
+      fireEvent.click(more);
+    }
+    expect(screen.queryByRole('menuitem', { name: /Abort rebase/ })).toBeNull();
   });
 
   it('offers no Rebase in the header while behind, the worktree status line owns it', () => {
@@ -707,15 +712,19 @@ describe('BranchHeader action row', () => {
 });
 
 describe('BranchHeader overflow', () => {
-  it('holds the rare lifecycle and branch actions, and no Rewrite or Restore', () => {
+  it('holds the pull request verbs and Change base, never a worktree verb of the identity menu', () => {
+    expect(BRANCH_MENU_DIFF).toEqual(['diff.push', 'diff.changeBase', 'diff.copyPatch']);
     withMountPr();
-    status = statusOf({});
+    status = statusOf({ changed: 3 });
     renderHeader({ pr: PR });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Branch actions' }));
-    const labels = screen.getAllByRole('menuitem').map((item) => item.textContent ?? '');
-    expect(labels.some((label) => label.startsWith('Change base branch'))).toBe(true);
-    expect(labels.some((label) => label.startsWith('Copy branch name'))).toBe(true);
+    const more = screen.queryByRole('button', { name: 'Branch actions' });
+    if (more !== null) {
+      fireEvent.click(more);
+    }
+    const labels = screen.queryAllByRole('menuitem').map((item) => item.textContent ?? '');
+    expect(labels.some((label) => label.startsWith('Copy branch name'))).toBe(false);
+    expect(labels.some((label) => label.startsWith('Open terminal'))).toBe(false);
     expect(labels.some((label) => /Rewrite history|Restore a backup/.test(label))).toBe(false);
   });
 });

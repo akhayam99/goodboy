@@ -1,5 +1,6 @@
 import { ChevronLeft, type LucideIcon } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
+import { StatusDot } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { branchPlace } from '../../../store/slices/navigation/place';
@@ -9,6 +10,7 @@ import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcon
 import { branchTabsOf, resolveBranchTab } from '../../../features/branch/branchTabs';
 import { useBranchIdentity } from '../../../features/branch/hooks/useBranchIdentity';
 import { useBranchTab } from '../../../features/branch/hooks/useBranchTab';
+import { useWorktreeEntryFacts } from '../../../features/branch/hooks/useWorktreeEntryFacts';
 import { openLens } from '../../../features/session/openLens';
 import { sessionTitle } from '../../../features/session/sessionTitle';
 import { RailButton } from '../SideColumn/RailButton';
@@ -32,6 +34,7 @@ export const RailWorktreeLevel = ({ session }: Props) => {
   const scope = useAppStore(useShallow((state) => branchScopeOf({ state, sessionId })));
   const navigate = useAppStore((state) => state.navigate);
   const tab = resolveBranchTab({ tab: storedTab, scope });
+  const facts = useWorktreeEntryFacts({ sessionId });
 
   return (
     <div data-rail-level="worktree" className="flex flex-col px-2">
@@ -45,24 +48,36 @@ export const RailWorktreeLevel = ({ session }: Props) => {
         isPage
         onSelect={() => openLens({ sessionId, lens: null })}
       />
-      {branchTabsOf(scope).map((entry) => (
-        <RailButton
-          key={entry.id}
-          id={`worktree-${entry.id}`}
-          icon={ENTRY_ICON[entry.id]}
-          iconSize={ICON_SIZE.row}
-          label={entry.label}
-          {...(entry.shortcut !== null && { shortcut: entry.shortcut })}
-          isCurrent={tab === entry.id}
-          isPage
-          onSelect={() =>
-            navigate({
-              to: branchPlace({ sessionId, mountPath: identity.mountPath, tab: entry.id }),
-              mode: 'replace',
-            })
-          }
-        />
-      ))}
+      {branchTabsOf(scope).map((entry) => {
+        const fact = facts?.[entry.id] ?? null;
+        const word = fact === null ? null : (fact.tooltip ?? fact.text);
+        return (
+          <RailButton
+            key={entry.id}
+            id={`worktree-${entry.id}`}
+            icon={ENTRY_ICON[entry.id]}
+            iconSize={ICON_SIZE.row}
+            label={word === null ? entry.label : `${entry.label}, ${word}`}
+            {...(entry.shortcut !== null && { shortcut: entry.shortcut })}
+            isCurrent={tab === entry.id}
+            isPage
+            {...(fact !== null &&
+              fact.tone !== null && {
+                badge: (
+                  <span aria-hidden className="absolute right-0.5 top-0.5 flex">
+                    <StatusDot tone={fact.tone} size="sm" />
+                  </span>
+                ),
+              })}
+            onSelect={() =>
+              navigate({
+                to: branchPlace({ sessionId, mountPath: identity.mountPath, tab: entry.id }),
+                mode: 'replace',
+              })
+            }
+          />
+        );
+      })}
     </div>
   );
 };

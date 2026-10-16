@@ -146,8 +146,8 @@ describe('live Commits page', () => {
     expect(screen.getByRole('list', { name: 'Commits' }).children.length).toBe(7);
     expect(screen.queryByRole('heading', { name: /After Apply|Planned changes/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Apply|Reset all/ })).toBeNull();
-    screen.getByText(`${LEDGER_GRAPH.behind} new commits on main`);
-    screen.getByRole('button', { name: 'Rebase onto latest' });
+    screen.getByText('Based on main');
+    expect(screen.queryByRole('button', { name: 'Rebase onto latest' })).toBeNull();
   });
   it('starts with Undo and Redo visibly disabled', async () => {
     await mountPage();

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
 import { PageColumn, PaneShell, ScrollFade } from '@goodboy/ui';
@@ -40,6 +40,7 @@ import { notPushedCountOf } from '../../../history/notPushedCountOf';
 import { commentsCountOf } from '../../../resolve/commentsCountOf';
 import { requestNounLabel } from '../../requestNounLabel';
 import { worktreeEntryFactsOf } from '../../worktreeEntryFacts';
+import { worktreeEntryFactsBus } from '../../worktreeEntryFactsBus';
 import { BranchChecks } from '../BranchChecks';
 import { BranchCommits } from '../BranchCommits';
 import { BranchFiles } from '../BranchFiles';
@@ -373,6 +374,16 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     checks: checksRuns,
     checksUnreadReason,
   });
+  const factsKey = JSON.stringify(entryFacts);
+  const latestFacts = useRef(entryFacts);
+  latestFacts.current = entryFacts;
+  useEffect(() => {
+    if (!isActive) {
+      return;
+    }
+    worktreeEntryFactsBus.publish({ sessionId, facts: latestFacts.current });
+  }, [factsKey, isActive, sessionId]);
+  useEffect(() => () => worktreeEntryFactsBus.clear({ sessionId }), [sessionId]);
   const railNode = <BranchRail tabs={tabs} current={tab} facts={entryFacts} onSelect={selectTab} />;
   const railSlot = useMemo<DiffRailHost>(() => ({ slot: fileSlot, page }), [fileSlot, page]);
 
