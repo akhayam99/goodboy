@@ -11,19 +11,21 @@
   (needs you / running / in review / building / done). You reach chat, diff,
   terminal and open-in-IDE from the cards. You never land on them. Every
   capability stays one step away.
-- **The Sessions page frame.** The header has the pane title grade (`Sessions`
-  alone, no total: each lane carries its own count), then on the right at most
-  three controls: the repo pill, only while a repository needs attention ("2
-  repos need attention", `RepoAttentionPill` over `repoNeedsAttention`, opening
-  today's repository popover whole), the **Board** and **List** switch
+- **The Sessions page frame.** The header is one 44px row, no band above it,
+  with the pane title grade (`Sessions` alone, no total: each lane carries its
+  own count), then on the right: "N hidden · Clear" while a filter hides
+  sessions (`HiddenByFilters`, one place for Board and List), the **Board** and
+  **List** switch
   (`SessionViewPrefs.pageView`, kept per workspace in the session view prefs,
   a version 3 record without it reads Board), and **Filter sessions**
-  (`SessionFilterPopover`). On the Board the filter holds Project and Sort, plus
-  a Repositories line with Check origin while every repository is fine; the
-  List adds Status, Archive and Group. New session is not here: it is the first
-  row of the column. Nothing else sits on that line, and no
-  row sits under it. A filter that hides sessions says "N hidden by filters"
-  with Clear under the lanes or the list. The List is one `ListGrid` with 32px
+  (`SessionFilterPopover`). Its icon carries one 6px dot: neutral while a filter
+  is on, warning while a repository needs attention (`repoNeedsAttention`). On
+  the Board the filter holds Project and Sort, plus a Repositories footer
+  (`RepoStatusSection`): Check origin while every repository is fine, else the
+  "2 repos need attention" pill (`RepoAttentionPill`) that opens the repository
+  popover whole; the List adds Status, Archive and Group. New session is not
+  here: it is the first row of the column. Nothing else sits on that line, and
+  no row sits under it. The List is one `ListGrid` with 32px
   rows on the 960 list measure: state node 28 (glyph 16, so the title sits 24
   after it), title led by its issue key in mono when there is one, project 128,
   signal 96, updated 56, right aligned; it follows the filter's sort and
@@ -47,14 +49,16 @@
   folded, and no lane caps its cards. Selection covers every lane in lane order:
   Select all, Shift ranges and the lasso run across Done and Archived too. Lane
   labels are sentence case in the neutral grade with the count in gray, never
-  the stage color. Cards are a fixed 96px: a goal of up to two lines (the full
-  goal in the tooltip) is the card's one button, the quick action and the
-  lifecycle menu sit visible at its right, and the bottom line holds the project
+  the stage color. Cards are a fixed 96px and neutral, no colored side bar (the
+  lane names the state): a goal of up to two lines (the full goal in the
+  tooltip) is the card's one button, the quick action sits at its right, the
+  lifecycle menu is the right click and Shift F10, and the bottom line holds the project
   in gray (`projectLineOf`, "payments-api +1" for several) and one signal at the
   right (`boardSignalOf`, the same one the List row shows): an open question,
   else a failed check, else the pull request token in its state color (a click
   opens the pull request), else a running dot with the count of running agents
-  (`runningAgentCountOf`), else the Checking GitHub mark. The question and
+  (`runningAgentCountOf`), else nothing while GitHub has not answered (no
+  skeleton per card) and the offline cloud when it could not be reached. The question and
   running glyphs carry their number from two on; one is the glyph alone, since
   the state node already says it. An archived card shows
   only its pull request. Age, issue chips, agent count, cost, the pin, Auto and
@@ -534,8 +538,8 @@ that opened it.
 **The column** (`app/components/SideColumn/`) is on every screen with a
 workspace, in the same shape everywhere: the toggle on the traffic-light axis,
 the doors Board
-(⌘⇧H), Tasks, Chat, Workflows and Terminal (⌃`) as one 28px row each (icon and word, the
-shortcut on hover); Chat ends in a plus (`DoorCreateButton`, New chat, ⌘⇧N, always a
+(⌘⇧H), Tasks, Chat, Workflows and Terminal (⌃`) as one 28px row each (row icon and word in
+`text-ui`, the sidebar's one row role; the shortcut in the tooltip, nothing appears on hover); Chat ends in a plus (`DoorCreateButton`, New chat, ⌘⇧N, always a
 new chat, never the last one) and Terminal in a plus (New terminal in the workspace folder),
 both always visible; one separator
 (`h-px bg-border-soft`) with the same gap above and below; the Sessions list
@@ -545,9 +549,10 @@ draft waits) and whose group headers carry no top margin: the list's one gap (`l
 doors' gap) spaces the groups; then at the foot Settings (⌘,), the Goodboy row
 and a bug icon that opens the report sheet. Every door row has one trailing grid
 (`ColumnDoorRow`): a 20px signal slot right aligned, then a 24px action slot reserved on every
-row (the plus sits in it on Chat and Terminal), so counts and dots share one edge. A count means
-things running or in use, in the info tone and hidden at zero; a dot means attention without a
-number. Chat counts the running chats, and with none running shows a primary dot for a new reply.
+row (the plus sits in it on Chat and Terminal). A running door draws no dot: what runs is in its
+tooltip and accessible name, so unread (primary) and running never share a hue in one column; a
+dot means attention without a number. Chat with none running shows a primary dot for a new reply.
+The folded column draws the same marks, and its New session icon is as neutral as the open row.
 Terminal counts the terminal tabs still alive, all owners, and Monitoring counts the pinned ports
 and the ports Goodboy started that are in use; a pinned port that is down swaps Monitoring's count
 for a warning dot. The door's accessible name carries the fact (`Chat, unread`, `Terminal, 2 running`,
@@ -625,15 +630,16 @@ hide animation or overlay can move it.
   unfolding either column is one move that keeps every icon in place
   (`FoldLayers`, [styling.md](styling.md#the-window-grid)): the width eases, the
   words fade, and the 44px rail's icons sit on the open rows' lines.
-- **At narrow widths the column folds first, then the session rail.** While a
-  session is open, `shellFoldsOf` (read through `useShellFolds`) takes the
-  window width, the saved column and rail widths and the open pane's track,
-  and folds the column to its rail once the page would get less than 720px
-  (`SESSION_PAGE_MIN`), then the session rail too if the page is still short.
-  The saved choices are untouched: ⌘B or the rail toggle opens a column folded
-  this way for as long as the window stays narrow. With no session open
-  nothing folds by itself. At 1440 a side pane folds the column and keeps the
-  rail; at 1280 it folds both; with no pane both stay open at 1280 and 1440.
+- **The main sidebar never folds by itself; a pane folds by its tier.** Only
+  its toggle folds the column: the one toggle sits in the top bar, left of Back
+  and Forward (`ColumnToggleButton` in `AppTopBar`, ⌘B), and no pane and no
+  window width folds it. `shellFoldsOf` (read through `useShellFolds`) reads the
+  open pane's tier: a reader tier pane (720: a file, a diff, a document, New)
+  folds the session rail to its 44px icons while it is open; a side tier pane
+  (416: Ask, Terminal, Explore, Context, Scripts) folds nothing. The saved
+  choices are untouched, and the rail toggle opens a rail folded this way for
+  as long as the pane stays open. The session rail keeps its own toggle at the
+  left of its top row.
 - **The overlay slots sit inside the grid, not above it.** The peek spans the
   work row, so it can hover over main without taking layout space. The studio
   slot covers the content area only (`studioCoversLeft={false}`), as its own
@@ -672,11 +678,16 @@ deeper level shows, and the hidden ones are `inert`. The rail is 240px by
 default and resizes from 200 to 400 (`goodboy:session-rail-width:v1`); its
 rows are the column's rows (28px, `SelectableRow`, the same type roles).
 
-- **Level 1 reads top to bottom:** the identity row
-  (`SessionLevel/IdentityRow`: the session node, the title, which renames
-  inline on click, and a visible `⋯` with Rename, Pin, Refresh, Archive and
-  Delete), the pages, then Projects and Linked. It has no back row: the column
-  beside it is the way to another place. Only one level shows, so a session
+- **Level 1 reads top to bottom:** the pages, then Projects and Linked. The
+  session level has no identity row: the selected main sidebar row is the
+  session's identity (its title and state node) and the page h1 names the
+  entry. The rail's top row holds the rail toggle at the left and the session
+  `⋯` at the right (`SessionLevel/SessionLevelMenu`: Rename, Pin, Refresh,
+  Archive, Delete). Rename edits the main sidebar row in place (the active row
+  answers the `session-header` rename request); with the sidebar folded it
+  edits in the rail top row. A title Goodboy wrote reads "Named by Goodboy" on
+  the session hover card. It has no back row: the column beside it is the way
+  to another place. Only one level shows, so a session
   never carries a nested card in the workspace list.
 - **The pages** come from one registry (`features/session/pageRegistry.ts`):
   Overview, File versions in a branchless session only, Runs, Agents, Auto
@@ -685,8 +696,11 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
   Agents lists standalone agents only; an Auto agent lives under Auto agents
   (`isAgentsPageKind`, `agentHomeLens` sends it to the `auto` lens). A page row ends in one
   right-aligned slot as wide as its content, so a label never truncates for an
-  empty slot: the count in tabular gray, a 6px info dot before it while
-  something runs, a warning dot on Questions. The count word
+  empty slot: the count in tabular gray (`countSlotText`), at rest the total;
+  while something runs the number beside the 6px info dot is the running
+  count, and a run that waits on you or failed puts the warning dot first with
+  its own count (the dot of `runRowFactsOf`, the one the Runs row draws); a
+  warning dot on Questions. The count word
   ("1 running", "4 artifacts") is the row's tooltip. A list page repeats no
   count under its title: Orchestrated, Agents, Artifacts and a tracker list
   (Linear, Jira and the rest) carry their counts on their group rows or filter
@@ -695,15 +709,20 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
   its flyout read the same function; the Artifacts count is
   `liveArtifactCountOf`, pinned equal to the page's All tab.
 - **Projects** lists each mounted project as a label row and its worktrees
-  under it at the same left edge (`SessionLevel/WorktreeRow`): branch icon,
-  mono branch, pull request number right aligned (a row with no pull request
-  gives its branch the room), then the worst
+  under it at the same left edge, no indent (`SessionLevel/WorktreeRow`):
+  branch icon, mono branch cut in the middle so the distinguishing tail stays
+  (`BranchName`), pull request number right aligned at its content width (a
+  row with no pull request gives its branch the room), then the worst
   state as one 6px dot in the last column (`worktreeRowStateOf`: danger for a
   failed check; warning for conflicts, a running rebase, behind its base, a
   branch decision waiting, comments waiting on you; none when fine), named in
   its tooltip and in the row's accessible name. Merged and closed worktrees
-  fold into one row `2 finished` under their project (`FinishedWorktrees`),
-  which opens them in place. A worktree row drills into the worktree level
+  fold into one row `2 finished ›` under their project (`FinishedWorktrees`,
+  the chevron right after the text), which opens them in place. Folded, the
+  rail draws one branch icon per worktree under the page icons
+  (`RailWorktrees`), its tooltip "project, branch, worst state" and the worst
+  state dot on its corner (`useWorktreeRowState`, shared with the open row); the
+  folded rail never draws the session node. A worktree row drills into the worktree level
   (level 2) on its landing entry. The label carries one quiet text item,
   `+ Add` (`LevelAddTrigger`, the quiet `xs` button: no border, no fill at
   rest, so the rail stays light), opening `LevelAddMenu`: Add project, Add
@@ -734,7 +753,10 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   so the page keeps one source for every number. ⌘[ in the rail and the
   back row go up one level each.
 - **Linked** lists the session's linked work, one row per item: provider
-  mark, key in mono, title. The row opens the item; its right-click menu holds
+  mark, key in one 72px mono column cut in the middle (`LinkedKey`, the full
+  key in the tooltip) so every title starts on one edge, title. A GitHub pull
+  request a worktree row of the session already owns is not listed again
+  (`githubRefOf`, same owner/repo and number). The row opens the item; its right-click menu holds
   Unlink and Move. The label carries the same quiet `+ Add` item
   (`LevelAddTrigger`, named Link work), opening Link work (L). Every label row
   of the session level uses this one item, never a bordered chip.
@@ -751,7 +773,9 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   `LevelStack`, the rail holds one fixed group (`SessionTools`, a group named
   `Session tools`): **Ask** (⌘L), **Terminal** (⌘⌥T), **Explore** (⌘⌥X),
   **Context** (⌘⌥C) and **Scripts** (⌘⌥S), one 28px row each with its icon,
-  its word and the 40px right slot, the chord in the tooltip. The open one is
+  its word and the 40px right slot, the chord in the tooltip; Ask uses the chat
+  bubble glyph. The slot's dot is static: info while the summary runs, danger
+  when it failed, primary when the context changed since you looked. The open one is
   `bg-selected` and `aria-pressed` (`openPaneOf`), and a row toggles its pane
   (see The session tools). The group is the same on level 1, on a worktree,
   on a run and on Auto: only the part above it drills.
@@ -760,7 +784,8 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   (`SessionRailIcons`): on level 2 the back icon, then one icon per worktree
   entry (`RailWorktreeLevel`) or per run step (`RailRunLevel`); on the Auto
   level the back icon, then one ring per rail row with its role and state in
-  the tooltip (`RailAutoLevel`); on level 1 one icon per page with its dot. On
+  the tooltip (`RailAutoLevel`); on level 1 one icon per page with its dot,
+  then one branch icon per worktree. On
   every level the tools follow at the bottom as five icons
   (`SessionToolIcon`), each named by its word in its tooltip and accessible
   name, the Context dot on its corner.
@@ -839,7 +864,9 @@ the stage word with its reason when the reason adds a fact (under needs you, the
 words of the winning reason, then each other reason that holds on its own line),
 the run progress
 (`Implement · 3 of 5`, counted from the steps that started, never estimated),
-the pull request with its checks, the linked task chips, the project chips, the
+the pull request with its checks (the state word only for Draft, Merged or
+Closed: the stage line already says In review), the linked task chips, one chip
+per project, the
 agent count, the spend and the age, and one ghost action, **Open what needs
 you**, when the session needs you. That action lands where the Now chip lands
 (`attentionPlace`). Moving to another row swaps the card at once, with no second
@@ -849,10 +876,11 @@ say the same things in the same words. The board card keeps one signal and
 hands the rest of the summary to the hover card; the session header keeps its
 chips.
 
-**The user chooses what the list shows and in what order.** The Sessions header
-holds one funnel button, **Filter sessions** (`SessionFilterPopover`), with the
-count of active filters as a small badge; the Sessions page header holds the
-same button. Its
+**The user chooses what the list shows and in what order.** The sidebar list
+has no "Sessions" eyebrow (the Sessions door already names it): its first row
+holds one funnel button at the right, **Filter sessions**
+(`SessionFilterPopover`), with a neutral 6px dot while a filter is on; the
+Sessions page header holds the same button. Its
 popover is a labelled dialog, not a menu of menus. Status lists Needs you,
 Running, In review, Building and Done with their counts (`statusFilter` in the
 prefs). Project lists the projects of the sessions with their counts and shows
@@ -866,8 +894,8 @@ an empty status filter); nothing goes to the database.
 
 A filter never hides a pinned session or the open session
 (`withExemptSessions`, `filterSessionsByStatus`). When filters hide other
-sessions, one quiet line under the list reads "N hidden by filters" with a
-ghost **Clear**; a list that filters out everything says "No sessions match".
+sessions, one quiet line under the list reads "N hidden" with a ghost
+**Clear**; a list that filters out everything says "No sessions match".
 
 By default the sessions that need you sit on top, the one that has waited longest
 first, and the rest follow their last activity (`activityKeyOf`: the later of
@@ -911,13 +939,14 @@ function for every listed session on a one minute clock (`useNow`) and keeps
 the same map while no session crosses the line; `splitInactiveSessions` then
 pulls the inactive sessions out of every group, drops a group it leaves empty
 and appends one group with the key `inactive`, newest activity first,
-whatever the sort. The sidebar draws it last as **Inactive** with its count,
-after the fold, never folded; in a grouped list it is a toggle like the
-others, open by default. Each row shows "inactive 5d" (`inactiveWords`, the
-span from `formatSpan`) in the trailing slot in hint text. The List view of the
+whatever the sort. The sidebar draws it last as **Inactive** with its count
+from two, after the fold, never folded; in a grouped list it is a toggle like
+the others, open by default. Its rows show the title alone: the label already
+says Inactive, and the age lives on the hover card. The List view of the
 Sessions page uses the same model: a flat list becomes an unnamed group
-followed by **Inactive**, and the last column of an inactive row reads the same
-words in place of the age. A change to any input recomputes at once, so
+followed by **Inactive**, and the last column of an inactive row reads its age
+in the same form as every other row ("4d ago", `inactiveWords` over
+`formatAge`). A change to any input recomputes at once, so
 opening, an agent starting, a new reply, a draft or a pull request event puts
 the row straight back in the list. `⌘⇧[` and `⌘⇧]` walk the Inactive rows too.
 
@@ -927,9 +956,12 @@ every other menu of a session), shown for a live session only, one at a time
 by whether it is pinned. Pinned sessions form a **Pinned** group above
 everything, in the order they were pinned (oldest first), under every sort,
 group, project filter and fold: a pinned session shows once, under Pinned, and
-leaves its own group, the group's count and the fold's count. In a grouped list
-the Pinned header is a toggle like the others; in a flat list it is a label
-and the rest of the list reads **Other sessions**. Archiving a pinned session
+leaves its own group and the fold's count; a stage group still counts its
+pinned members, so the sidebar and the List say one number per stage. In a
+grouped list the Pinned header is a toggle like the others; in a flat list it
+is a label and the rest of the list reads **Sessions**. Pinned and Sessions
+carry no count (the "Show N more" foot does); stage and project groups show
+their count from two, in sentence case words from `stageWord`. Archiving a pinned session
 hides it with the archive; the pin is kept, so Restore and Undo bring it back
 under Pinned. Pins are stored per workspace in the `settings` table (key
 `sessions.pinned.<workspace id>`, a JSON list of `{ id, at }`), written by
@@ -1499,16 +1531,22 @@ covered.
   top-level agent (`landOnSession.ts`) so the brief waits in that agent's
   composer draft (`agentDraft`); a session without an agent opens on its
   overview with nothing drafted.
+- Left of Back and Forward: the main sidebar toggle (`ColumnToggleButton`, ⌘B), the one
+  toggle of the column; the column itself has no toggle row.
 - Right, in this order: the Now chip (needs you, running, scripts, each
-  only when above zero), Limits, today's spend and the bell. There is no storage chip:
+  only when above zero, from `deriveSessionStage` so needs you wins over running; its dots are
+  static, and its tooltip names the unit: "1 session needs you, 2 sessions running"), Limits,
+  today's spend (hidden until the first cent today) and the bell (a 6px dot at its corner,
+  primary when unread, warning when an unread item carries an action; the count is the Unread
+  tab badge in its popover). There is no storage chip:
   a control that appears when a threshold is crossed breaks the rule above,
   and "Free 7 GB" read as free disk, not what can go. The "N GB can go" line
   lives on the Storage row of the Settings rail. Now opens one popover grouped by those
   three, and a group with no rows is not drawn. A script row moves to its
   session and opens that run's output in the right drawer. `Limits`: one chip per connected plan provider (Claude, Codex,
   Gemini, Cursor), in the provider order, with providers that report nothing
-  last. The order never follows state. At rest a chip is its glyph and a bar of
-  the provider's most used window; the number shows from 80%, `Out` with the
+  last. The order never follows state. At rest a chip is its glyph and one bar of
+  the provider's tighter window; the percent shows in tabular gray above 70%, `Out` with the
   reset day at 100%, a clock marks data older than 30 minutes or a window that
   reset since, and a dashed track means no data. The card tooltip always
   carries every window, its percentage and its reset. A click on any chip, or
@@ -1540,12 +1578,12 @@ viewport, so app zoom takes the same path as a narrow window:
 The traffic lights, identity, the movement cluster, the command center, the
 needs-you count, the spend figure, the first Limits chip and the bell
 never hide. A Limits chip is
-the provider glyph and two bars, with no card, label or number around it; the
-percentage lives in its tooltip and its accessible name. A provider with no
+the provider glyph and one bar, the percent beside it only above 70%; every
+window lives in its tooltip and its accessible name. A provider with no
 figures yet draws no chip. The Limits chips past the ones that fit, and the
 providers with no figures, are the only overflow: a `+N providers` chip (`+1
-provider`, never a bare number) takes the tone of the worst hidden provider and
-lists them. It stays visible at every bar width. No other control moves into an
+provider`, never a bare number; with no chip shown it reads `Limits`) takes the
+tone of the worst hidden provider and lists them. It stays visible at every bar width. No other control moves into an
 overflow menu. `chrome-labels` sits below the 1024px minimum window, so words
 only drop under zoom.
 
@@ -1940,22 +1978,24 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
 - **Notifications have one row and one scope.** `NotificationRow` draws a
   group in the popover (`compact`, one line, eight rows at most, Unread or
   All) and in the studio (`cozy`, opens in place with the body, the older
-  members and Report this). Both lead with a fixed unread slot that holds
-  a primary dot on unread rows and stays empty on read ones, so every title
-  keeps one left edge; unread titles are also bold and read rows recede. In the
-  studio the time owns a fixed column and Mark read and Delete sit in their own
-  last column, visible at rest, so the row never changes width. The facets (view, severity,
+  members and Report this). Both lead with the severity glyph alone: unread is
+  the title weight (500 in foreground), read rows recede, and no second leading
+  dot. In the studio the time owns the last fixed column; the row's action,
+  Mark read and Delete live on the opened row (one line of buttons under it), so
+  the row never changes width and no row carries a wall of icons. The facets (view, severity,
   source and the workspace scope) are a page rail docked beside the list, in
   Chat's frame (`StudioRailLayout`, `placement="page"`, surface `notifications`,
   288px), with counts that come from SQL (`countNotifications`), so they stay
-  true past the loaded page; Load older pages with a cursor. The title is
+  true past the loaded page; a facet count shows from two, a zero facet is dimmed
+  with no number. The rail holds no key legend: the keys are in the tooltips and
+  the Keyboard chapter of the Guide. Load older pages with a cursor. The page has
+  no subtitle and the day groups no count. The title is
   Notifications whichever view is picked. Both surfaces default to this workspace: a row belongs to
   its own workspace, or its session's, and a row with neither is app-wide and
   shows in every workspace. Mark all read and Delete all act on that same scope.
   The studio header draws them through `HeaderActions`: the shared `FilterButton`
-  only while the rail is folded, then the ghost `Mark all read` (only while something is unread), then the ghost danger
-  `Delete all`, which opens a `ConfirmPopover` anchored to it, aligned to its end
-  edge, titled with the scope's count ("Delete 7 notifications?") and naming the
+  only while the rail is folded, then the ghost `Mark all read` (only while something is unread), then the page `⋯`
+  (`NotificationsPageMenu`) holding `Delete all…`, which opens a `ConfirmPopover` anchored to it, titled with the scope's count ("Delete 7 notifications?") and naming the
   workspace or "every workspace"; it never swaps the title row. A row's Delete acts
   at once and pushes "Notification deleted" with Undo (`dismissNotificationGroup`
   re-inserts the rows through `insertNotification`; ⌘Z works too).
@@ -2691,8 +2731,8 @@ centred column slides with it: the card grows leftward from the window edge,
 its content held at its final width on that edge so nothing reflows, and the
 content fades in once there is room; over the page it slides in 200ms; a new kind in
 an open drawer fades its content in 120ms. It never writes the sidebar
-preference: a pane that leaves a session page under 720px folds the column,
-then the session rail, only while it is open (`shellFoldsOf`, see Surfaces).
+preference: a pane folds nothing but the session rail, and only a reader tier
+pane does that (`shellFoldsOf`, see Surfaces).
 
 **Closing never moves the page behind a drawer.** `DrawerColumn` remembers the
 last mode the drawer was open in (`useDrawerExit`). Closed from pushing, the
