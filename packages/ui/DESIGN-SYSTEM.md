@@ -1419,26 +1419,26 @@ without reading a class.
 ## Notices
 
 `Notice` is the one shape for an error, a warning, an info line or a success
-that sits in the page. Its tone lives only in one inner line and in the icon.
-The surface stays neutral, the title is `foreground` and the body is
-`muted-foreground`. Tone never colors the text or fills the surface.
+that sits in the page. Its tone lives only in the 16px icon. The surface stays
+neutral, the title is `foreground` and the body is `muted-foreground`. Tone
+never colors the text, fills the surface or draws a line.
 
 - **Tone**: `danger` (`CircleAlert`), `warning` (`TriangleAlert`), `info`
-  (`Info`), `success` (`CircleCheck`).
-- **The tone line is inner.** `inline`, `banner` and `floating` draw a
-  `ToneBar` at `card` density inside the padding: 3px wide, 6px from the left
-  edge, spanning the content box (top and bottom equal to the padding) with a
-  minimum height of 16px, so a title-only notice gets a line as tall as its
-  title. The icon stays beside it: a tone line and a tone icon on a neutral
-  surface. No outer edge, ring or tinted fill, on any card. `transcript` is
-  the one exception: it keeps a 2px edge at the left of its transparent
-  surface, because there it is a quote rail, not a card.
+  (`Info`), `success` (`CircleCheck`), always at 16px.
+- **No tone line, no border.** `inline` and `banner` sit on `bg-subtle`,
+  `rounded-md`, 12px padding, with no border, no ring, no `ToneBar` and no
+  side rail: a side line on a rounded box is the debt the design system
+  retires, and the icon already says the tone. `transcript` is the one
+  exception: it keeps a 2px edge at the left of its transparent surface,
+  because there it is a quote rail, not a box. `floating` (toasts) takes the
+  one floating surface, `FLOATING_SURFACE`, like every other level 4 layer.
   `tone-edges-are-inner-lines.test.ts` counts `border-l-2` next to a tone
   class per file, and its allowance only shrinks.
 - **Placement** changes the surface and padding, never the anatomy.
   `transcript` is transparent with no border, `inline` and `banner` sit on
-  `bg-subtle` with `border-border-soft`, `floating` sits on `bg-floating` with
-  a shadow.
+  `bg-subtle`, `floating` sits on `FLOATING_SURFACE`.
+- **One notice per state, one primary.** A state that already has a notice on
+  the screen never gets a second box saying it again.
 - **Title names the action** that failed ("Couldn't load pull requests"). The
   body states the cause in plain words. Raw output (stderr, exit codes, paths,
   URLs) goes in `detail`, which renders behind a Details disclosure in
@@ -1588,7 +1588,21 @@ page has one of four frame types in `PAGE_FRAME` (column 1008, reader 768, stage
 band is the first child of the detail, never over the rail. Inside
 a session the band is the `TrailBar`, and in a studio `StudioFrame` draws it inside a
 `PageColumn` of the studio's tier and hands its body `UnderTrailContext`, so the header
-adds no top padding; outside both, a bare page keeps 12px above. The Board has an
+adds no top padding; outside both, a bare page keeps 12px above.
+
+**One title per page, no studio title band.** The studio band never draws a
+title, a crumb of its own, an icon or a subtitle: the page `h1` is the one
+title. `STUDIO_META[kind].close` says where Close lives. A sidebar door page
+(`none`: Tasks, Chat, Workflows, Terminal) has no band and no Close; the top bar
+Back and Escape leave it. A closable overlay (`header`: Monitoring,
+Notifications, Guide) has no band either: `StudioFrame` hands its Close button
+to the page through `PaneActionsContext`, so `PaneShell` draws it as the last
+action of the title row. The other overlays (`band`: Settings over the window,
+Impact, What's new, Pair device, Add workspace) keep a 40px band that holds only
+Close. A band also appears when the body hands it a trail (`StudioTrail`, the
+workflow editor and the Settings crumbs) or a header accessory, and only then is
+the body `UnderTrailContext`. The bandless pages sit on the 12px header inset in
+`frameGeometryOf`, like a session page. The Board has an
 empty 40px band above its title row to land on the same 56px. Optional `tabs` sit on
 their own row under the meta line, at the column's left. A glyph never indents the
 title: `PaneShell` has no `icon`, `glyph` or `tone`, the concept lives in the crumb. The

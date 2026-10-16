@@ -6,7 +6,7 @@ import {
   type Row,
   WAIT,
   settle,
-  band,
+  studio,
   branchTab,
   both,
   click,
@@ -118,14 +118,14 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     covers: ['openStudio', 'studio:chat', 'palette:Chat'],
     door: 'palette',
     open: () => openPalette(/^Chat$/),
-    lands: () => band('Chat'),
+    lands: () => studio('Chat'),
   },
   {
     name: 'palette: Terminal',
     covers: ['studio:terminal', 'palette:Terminal'],
     door: 'palette',
     open: () => openPalette(/^Terminal$/),
-    lands: () => band('Terminal'),
+    lands: () => studio('Terminal'),
   },
   {
     name: 'palette: New terminal in this session',
@@ -277,7 +277,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^Tasks$/),
     lands: both(
-      () => band('Tasks'),
+      () => studio('Tasks'),
       () => heading(/^[\d,]+ open$/),
     ),
   },
@@ -287,7 +287,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^Workflows$/),
     lands: both(
-      () => band('Workflows'),
+      () => studio('Workflows'),
       () => visible('button', 'New workflow'),
     ),
   },
@@ -297,7 +297,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^Run defaults/, 'run defaults'),
     lands: both(
-      () => band('Workflows'),
+      () => studio('Workflows'),
       () => heading('Run defaults'),
     ),
   },
@@ -306,7 +306,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     covers: ['openStudio', 'studio:impact', 'palette:Impact'],
     door: 'palette',
     open: () => openPalette(/^Impact$/),
-    lands: () => band('Impact'),
+    lands: () => studio('Impact'),
   },
   {
     name: 'palette: Impact: Spend',
@@ -314,7 +314,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^Impact: Spend/, 'impact spend'),
     lands: both(
-      () => band('Impact'),
+      () => studio('Impact'),
       () => heading('Spend'),
     ),
   },
@@ -324,7 +324,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^What's new/),
     lands: both(
-      () => band("What's new"),
+      () => studio("What's new"),
       () => heading(/^Goodboy \d/),
     ),
   },
@@ -334,7 +334,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^Notifications/),
     lands: both(
-      () => band('Notifications'),
+      () => studio('Notifications'),
       () => heading('Notifications'),
     ),
   },
@@ -363,7 +363,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     covers: ['openStudio', 'studio:chat', 'palette:New chat'],
     door: 'palette',
     open: () => openPalette(/^New chat/),
-    lands: () => band('Chat'),
+    lands: () => studio('Chat'),
   },
   {
     name: 'palette: New session',
@@ -449,7 +449,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     covers: ['openStudio', 'studio:companion', 'palette:Pair your iPhone'],
     door: 'palette',
     open: () => openPalette(/^Pair your iPhone/),
-    lands: () => band('Pair device'),
+    lands: () => studio('Pair device'),
   },
   {
     name: 'palette: Report a bug',
@@ -468,7 +468,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     covers: ['openStudio', 'studio:guide', 'palette:Guide'],
     door: 'palette',
     open: () => openPalette(/^Guide/),
-    lands: () => band('Guide'),
+    lands: () => studio('Guide'),
   },
   {
     name: 'palette verb: Rename',
