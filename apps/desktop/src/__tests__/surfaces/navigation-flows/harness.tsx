@@ -52,6 +52,7 @@ const STATUS: WorktreeStatus = {
 const BRIDGE: Readonly<Record<string, unknown>> = {
   worktree_commits: COMMITS,
   worktree_diff: '',
+  checkout_update_base: { base: 'main', checkoutBranch: 'main', commitsPulled: 2 },
   worktree_changed_files: {
     paths: ['src/importer.ts'],
     additions: 12,

@@ -217,6 +217,25 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
       ),
   },
   {
+    name: 'palette: Pull main in all linked repos pulls every repo and says so',
+    covers: ['palette:Pull main in all linked repos'],
+    seed: 'pr',
+    open: () => openPalette(/^Pull main in all linked repos/, 'pull main'),
+    lands: async () => {
+      expect(await screen.findByText('Updated 3 repos', {}, WAIT)).toBeDefined();
+    },
+  },
+  ...['payments-api', 'notify-relay', 'ledger-core'].map((repo): Row => ({
+    name: `palette: Pull the default branch in ${repo} pulls that repo only`,
+    covers: [`palette:Pull the default branch in ${repo}`],
+    seed: 'pr',
+    open: () => openPalette(new RegExp(`^Pull the default branch in ${repo}`), `pull ${repo}`),
+    lands: async () => {
+      expect(await screen.findByText('Updated 1 repo', {}, WAIT)).toBeDefined();
+      expect(screen.getByText(new RegExp(`^${repo}: main updated`))).toBeDefined();
+    },
+  })),
+  {
     name: 'palette: Start a run lists the workflows and asks before it starts anything',
     covers: ['palette:Start a run'],
     open: async () => {
