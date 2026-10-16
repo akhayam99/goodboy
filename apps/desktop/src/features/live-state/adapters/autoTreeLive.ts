@@ -28,7 +28,10 @@ type ViewParams = {
 
 const pausedAtLimit = ({ view }: ViewParams): TailFacts | null => {
   const budget = view.budget;
-  if (budget === null || Math.round(budget.remainingUsd * 100) > 0) {
+  if (budget === null || budget.capUsd === null || budget.remainingUsd === null) {
+    return null;
+  }
+  if (Math.round(budget.remainingUsd * 100) > 0) {
     return null;
   }
   const used = formatUsd(budget.spentUsd + budget.reservedUsd);

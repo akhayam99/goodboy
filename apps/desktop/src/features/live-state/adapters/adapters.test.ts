@@ -119,6 +119,15 @@ describe('autoTreeLive', () => {
     expect(idsOf(facts)).toEqual(['raiseLimit', 'changeLimit']);
   });
 
+  it('never pauses a tree that has no limit', () => {
+    const view = {
+      ...aView({ phase: 'waiting' }),
+      budget: { capUsd: null, spentUsd: 9, reservedUsd: 1, remainingUsd: null, hasEstimate: false },
+    };
+    const facts = autoTreeLive({ ...base, view, rootTurn: null });
+    expect(facts?.state).not.toBe('paused');
+  });
+
   it('lets the root turn speak while it runs, with the Auto stop', () => {
     const facts = autoTreeLive({ ...base, view: aView({ phase: 'answering' }), rootTurn: RUNNING });
     expect(facts?.startedAt).toBe(STARTED);
