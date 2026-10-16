@@ -550,6 +550,35 @@ export const setAutoTreeCapIfUnchanged = async ({
   return { kind: 'below_used', usedUsd: spend.settledUsd + spend.reservedUsd };
 };
 
+export const AUTO_RESTING_PHASES = ['answering', 'done', 'finished'] as const;
+
+export type AutoRestingPhase = (typeof AUTO_RESTING_PHASES)[number];
+
+type MoveRestingParams = {
+  readonly db: Database;
+  readonly treeId: AutoTreeId;
+  readonly from: AutoRestingPhase;
+  readonly to: AutoRestingPhase;
+  readonly nowMs: number;
+};
+
+export const moveRestingAutoTree = async ({
+  db,
+  treeId,
+  from,
+  to,
+  nowMs,
+}: MoveRestingParams): Promise<boolean> => {
+  const result = await db.execute(
+    `UPDATE auto_trees SET phase = ?, phase_rev = phase_rev + 1, updated_at = ?
+     WHERE id = ? AND phase = ? AND stop_state = 'none' AND active_run_id IS NULL
+       AND NOT EXISTS (SELECT 1 FROM auto_delegations
+         WHERE tree_id = auto_trees.id AND state <> 'settled')`,
+    [to, nowMs, treeId, from],
+  );
+  return result.rowsAffected === 1;
+};
+
 type GrantAutoTreeParams = {
   readonly db: Database;
   readonly treeId: AutoTreeId;

@@ -148,8 +148,18 @@ An Auto tree is one row, like any agent row: its state in the row word and the
 cost of the whole tree. The word follows the tree phase:
 **Deciding what to do**, **Starting agents**, **Waiting for Implementer and
 Tester**, **Needs your approval**, **Reading the results**, **Blocked, open the
-chat**, **Stopping**, **Stopped by you**. The children are not rows of the
-Overview; they live in the Work rail of the chat.
+chat**, **Stopping**, **Stopped by you**, **Idle**, **Finished by you**. The
+children are not rows of the Overview; they live in the Work rail of the chat.
+
+Auto never finishes itself. A tree that rests after its agents settled (stored
+phase `done`) reads **Idle** in the row, the rail root and the chat header
+(`AgentAutoStatus`), never Done. **Mark finished** in the agent menu
+(`agent.markAutoFinished`, undoable) moves a resting tree to the stored phase
+`finished` (m231) through `moveRestingAutoTree`: one write that needs a resting
+phase, no stop, no running turn and no open delegation, so a tree that started
+working again refuses with "Auto is working again. Mark it finished once it
+rests." A finished tree is left out of recovery and takes only user messages:
+writing to it reopens it to **Deciding**.
 
 ## The chat
 
@@ -238,7 +248,9 @@ capability token and no allow rule. It decides by ending its final reply with at
   derived from the run when missing; `children` is the spec `parseDelegateSpec` validates).
 - `answer` answers the question of a child (`delegation`, `question`, `text`).
 - `finish` says the work is done (`summary`). It is refused while an agent is open or a result
-  waits.
+  waits. It stores nothing: the tree still rests as Idle until the user marks it finished. The
+  prompt asks Auto to suggest **Mark finished** and to send `finish` only when the user asked to
+  close.
 - No block is a plain answer to the user.
 
 `parseAutoBlock` (`packages/core/src/auto/autoBlock.ts`) reads only the settled text of a turn that

@@ -53,6 +53,7 @@ describe('the Auto chat scenes', () => {
       'auto-chat-confirm',
       'auto-chat-delegating',
       'auto-chat-done',
+      'auto-chat-finished',
       'auto-chat-nocap',
       'auto-chat-plan',
       'auto-chat-revising',
@@ -182,6 +183,27 @@ describe('the Auto chat scenes', () => {
     expect(screen.getByText('3 files changed')).toBeDefined();
     expect(screen.getByText('keeps the balance after two attempts')).toBeDefined();
     expect(within(rail()).getByText('Spent $0.53')).toBeDefined();
+  });
+
+  it('auto-chat-done says Idle in the header and the rail and offers Mark finished', async () => {
+    mount({ id: 'auto-chat-done' });
+
+    await screen.findByRole('article', { name: 'Reviewer delegation' }, WAIT);
+    expect(within(rail()).getByText('Idle')).toBeDefined();
+    expect(screen.getAllByText('Idle').length).toBeGreaterThanOrEqual(2);
+    fireEvent.click(screen.getByRole('button', { name: 'More agent actions' }));
+    expect(await screen.findByRole('menuitem', { name: /Mark finished/ }, WAIT)).toBeDefined();
+  });
+
+  it('auto-chat-finished says Finished and no longer offers Mark finished', async () => {
+    mount({ id: 'auto-chat-finished' });
+
+    await screen.findByRole('article', { name: 'Reviewer delegation' }, WAIT);
+    expect(within(rail()).getByText('Finished')).toBeDefined();
+    expect(screen.getAllByText('Finished').length).toBeGreaterThanOrEqual(2);
+    fireEvent.click(screen.getByRole('button', { name: 'More agent actions' }));
+    await screen.findAllByRole('menuitem', undefined, WAIT);
+    expect(screen.queryByRole('menuitem', { name: /Mark finished/ })).toBeNull();
   });
 
   it('auto-chat-child reads the Planner started by Auto, with no composer', async () => {

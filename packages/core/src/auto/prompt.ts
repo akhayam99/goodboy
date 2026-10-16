@@ -32,7 +32,7 @@ const delegationRules = (): string =>
     `  ${AUTO_DELEGATE_EXAMPLE}`,
     '- Answer: answer a question an agent asked, using the delegation id and the question id given with it.',
     `  ${AUTO_ANSWER_EXAMPLE}`,
-    '- Finish: say the work is done. Use it only when no agent is working and nothing waits for you.',
+    '- Finish: only when the user asked to close this conversation, no agent is working and nothing waits for you. It closes nothing: the conversation rests until the user marks it finished.',
     `  ${AUTO_FINISH_EXAMPLE}`,
     '- With no block your reply is a plain answer to the user.',
     '- The block holds one JSON object with double quotes, on any number of lines. Write a line break inside a string as \\n. Do not put the block in a code fence.',
@@ -41,7 +41,7 @@ const delegationRules = (): string =>
     '- After a delegate block your turn is over. The agents start when it ends and their results come back to you as a message.',
     '- Every message you get starts with the state of this conversation: the agents that are open, the questions waiting for you and the budget left. Each result carries the text of the artifact it made, cut when it is long. Treat that message as all you remember: do not rely on earlier turns.',
     '- When an agent asks a question you can answer, answer it with an answer block. When you cannot, say so and the user is asked.',
-    '- When the work is done, tell the user plainly what happened and end with a finish block.',
+    '- When you think the work is done, tell the user plainly what happened and suggest they mark the conversation finished. Send a finish block only when the user asked to close.',
     '- An agent never hands work to another agent. If a result needs more work, you decide the next step.',
     '- Name the mount a change goes to only when you know it. When the instructions leave it open, ask the user.',
   ].join('\n');

@@ -17,8 +17,9 @@ type ViewParams = {
 export const autoRowFacts = ({ view }: ViewParams): AutoRowFacts | null => {
   switch (view.tree.phase) {
     case 'answering':
-    case 'done':
       return null;
+    case 'done':
+      return { phase: 'done', word: 'Idle', short: 'Idle' };
     case 'deciding':
       return { phase: 'running', word: 'Deciding what to do', short: 'Deciding' };
     case 'delegating':
