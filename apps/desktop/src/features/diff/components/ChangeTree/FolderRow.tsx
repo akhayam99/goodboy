@@ -1,5 +1,5 @@
 import { ChevronRight } from 'lucide-react';
-import { ROW_INTERACTIVE, cn } from '@goodboy/ui';
+import { ROW_INTERACTIVE, Tooltip, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ViewedRing } from '../../../../shared/components/ViewedRing';
 import type { TreeRow } from '../../lib/changeTree';
@@ -17,6 +17,7 @@ type Props = {
   readonly isCursor: boolean;
   readonly isTreeFocused: boolean;
   readonly viewedCount: number;
+  readonly hasDelta: boolean;
   readonly onToggle: () => void;
 };
 
@@ -28,6 +29,7 @@ export const FolderRow = ({
   isCursor,
   isTreeFocused,
   viewedCount,
+  hasDelta,
   onToggle,
 }: Props) => {
   return (
@@ -62,7 +64,12 @@ export const FolderRow = ({
           )}
         />
         <ViewedRing viewed={viewedCount} total={row.fileCount} />
-        <span className="min-w-0 flex-1 truncate">{row.label}</span>
+        <Tooltip
+          content={`${row.fileCount} ${row.fileCount === 1 ? 'file' : 'files'}`}
+          anchorClassName="min-w-0 flex-1"
+        >
+          <span className="block min-w-0 truncate">{row.label}</span>
+        </Tooltip>
         {isMarked ? (
           <span
             role="img"
@@ -70,14 +77,8 @@ export const FolderRow = ({
             className="size-1.5 shrink-0 rounded-full bg-primary"
           />
         ) : null}
-        {isOpen ? null : (
+        {isOpen || !hasDelta ? null : (
           <>
-            <span
-              data-tone="muted"
-              className="shrink-0 text-meta tabular-nums text-faint-foreground"
-            >
-              {row.fileCount}
-            </span>
             <Delta additions={row.additions} deletions={row.deletions} isMuted />
             <span aria-hidden className="w-3 shrink-0" />
           </>

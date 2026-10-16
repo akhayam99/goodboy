@@ -373,7 +373,7 @@ describe('SessionDiffPane with the file rail folded', () => {
 
     expect(screen.queryByRole('complementary', { name: 'Files' })).toBeNull();
     expect(localStorage.getItem(FOLDED_KEY)).toBe('1');
-    expect(toolbarFiles()?.textContent).toBe('Files2');
+    expect(toolbarFiles()?.textContent).toBe('Files');
 
     cleanup();
     renderPane({ diff: diffOf(FILES) });

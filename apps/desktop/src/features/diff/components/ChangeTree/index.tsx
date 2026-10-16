@@ -351,6 +351,7 @@ export const ChangeTree = ({
                   isCursor={isCursor}
                   isTreeFocused={isTreeFocused}
                   viewedCount={row.paths.filter((path) => states.get(path) === 'viewed').length}
+                  hasDelta={hasDelta}
                   onToggle={() => {
                     setCursorId(row.id);
                     onToggleFolder(row.id);

@@ -1,6 +1,5 @@
 import { useState, type RefObject } from 'react';
 import { SearchField, useEscapeLayer } from '@goodboy/ui';
-import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import type { TreeGroup } from '../../lib/changeTree';
 import { FilterMenu, type Show } from './FilterMenu';
 
@@ -71,11 +70,6 @@ export const TreeHead = ({
           clearLabel="Clear filter"
           data-diff-filter=""
           className="min-w-0 flex-1"
-          hint={
-            <kbd className="shrink-0 font-sans text-chip text-faint-foreground">
-              {shortcutGlyphs('diff.focusFilter')}
-            </kbd>
-          }
         />
         <FilterMenu
           show={showNow()}

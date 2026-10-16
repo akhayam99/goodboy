@@ -13,10 +13,10 @@ export const Delta = ({ additions, deletions, isMuted = false }: Props) => (
     className="grid shrink-0 grid-cols-[2.5rem_2.5rem] text-right text-meta tabular-nums"
   >
     <span className={cn('truncate', isMuted ? 'text-faint-foreground' : 'text-success')}>
-      +{additions}
+      {additions === 0 ? '' : `+${additions}`}
     </span>
     <span className={cn('truncate', isMuted ? 'text-faint-foreground' : 'text-danger')}>
-      −{deletions}
+      {deletions === 0 ? '' : `−${deletions}`}
     </span>
   </span>
 );

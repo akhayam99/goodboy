@@ -313,6 +313,10 @@ describe('a note in Files', () => {
   });
 });
 
+const openFileMenu = (): void => {
+  fireEvent.click(screen.getByRole('button', { name: /^More for / }));
+};
+
 describe('the file header', () => {
   const headerOf = (): HTMLElement => {
     const header = document.querySelector<HTMLElement>('[data-slot="diff-file-header"]');
@@ -336,11 +340,16 @@ describe('the file header', () => {
     const header = headerOf();
     expect(header.style.height).toBe('44px');
     expect(within(header).getByRole('checkbox', { name: 'Viewed' })).toBeDefined();
-    for (const name of ['Comment', 'Open in editor', 'Show whole file']) {
-      expect(within(header).getByRole('button', { name }).getAttribute('data-size')).toBe('sm');
+    expect(within(header).getByRole('button', { name: 'Comment' }).getAttribute('data-size')).toBe(
+      'sm',
+    );
+    for (const name of ['Open in editor', 'Show whole file', 'Copy path']) {
+      expect(within(header).queryByRole('button', { name })).toBeNull();
     }
-    expect(within(header).getByRole('button', { name: 'Copy path' })).toBeDefined();
-    expect(within(header).queryByRole('button', { name: /^More actions for/ })).toBeNull();
+    openFileMenu();
+    for (const name of ['Open in editor', 'Show whole file', 'Copy path']) {
+      expect(screen.getByRole('menuitem', { name })).toBeDefined();
+    }
   });
 
   it('counts the open threads of both kinds in the Comment tooltip and not the resolved ones', async () => {
@@ -410,7 +419,8 @@ describe('the file header', () => {
     }));
     render(<DiffView files={[FILE]} loadFileSides={loadFileSides} />);
 
-    fireEvent.click(within(headerOf()).getByRole('button', { name: 'Show whole file' }));
+    openFileMenu();
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Show whole file' }));
 
     await waitFor(() => expect(loadFileSides).toHaveBeenCalledWith(FILE));
   });
@@ -419,7 +429,8 @@ describe('the file header', () => {
     const onShowWhole = vi.fn();
     render(<DiffView files={[FILE]} loadFileSides={vi.fn()} fileActions={{ onShowWhole }} />);
 
-    fireEvent.click(within(headerOf()).getByRole('button', { name: 'Show whole file' }));
+    openFileMenu();
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Show whole file' }));
 
     expect(onShowWhole).toHaveBeenCalledWith(FILE);
   });
@@ -428,28 +439,19 @@ describe('the file header', () => {
     const onOpenInEditor = vi.fn();
     render(<DiffView files={[FILE]} fileActions={{ onOpenInEditor }} />);
 
-    fireEvent.click(within(headerOf()).getByRole('button', { name: 'Open in editor' }));
+    openFileMenu();
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Open in editor' }));
 
     expect(onOpenInEditor).toHaveBeenCalledWith(FILE.path);
     expect(screen.queryByRole('button', { name: 'Open in a drawer' })).toBeNull();
   });
 
-  it('copies the path from its icon and confirms it', async () => {
-    const writeText = vi.fn(async () => undefined);
-    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
-    vi.useFakeTimers();
-    render(<DiffView files={[FILE]} />);
+  it('keeps Copy path in the file menu', () => {
+    render(<DiffView files={[FILE]} fileActions={{ onOpenInEditor: vi.fn() }} />);
 
-    await act(async () => {
-      fireEvent.click(within(headerOf()).getByRole('button', { name: 'Copy path' }));
-    });
-    fireEvent.mouseEnter(within(headerOf()).getByRole('button', { name: 'Copy path' }));
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(600);
-    });
+    openFileMenu();
 
-    expect(writeText).toHaveBeenCalledWith(FILE.path);
-    expect(screen.getByRole('tooltip').textContent).toBe('Copied');
+    expect(screen.getByRole('menuitem', { name: 'Copy path' })).toBeDefined();
   });
 
   it('offers no Viewed and no Comment on a read only change', () => {
@@ -465,7 +467,8 @@ describe('the file header', () => {
 
     expect(within(headerOf()).queryByRole('checkbox', { name: 'Viewed' })).toBeNull();
     expect(within(headerOf()).queryByRole('button', { name: /^Comment/ })).toBeNull();
-    expect(within(headerOf()).getByRole('button', { name: 'Copy path' })).toBeDefined();
+    openFileMenu();
+    expect(screen.getByRole('menuitem', { name: 'Copy path' })).toBeDefined();
   });
 });
 

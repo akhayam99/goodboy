@@ -1,10 +1,20 @@
-import { ChevronRight, ExternalLink, FileText, MessageSquare } from 'lucide-react';
-import { Checkbox, CopyButton, IconButton, Tooltip, cn, tintClasses } from '@goodboy/ui';
+import { ChevronRight } from 'lucide-react';
+import {
+  Button,
+  Checkbox,
+  OverflowMenu,
+  Tooltip,
+  cn,
+  tintClasses,
+  type OverflowMenuItem,
+} from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { STATUS_LETTER, STATUS_TONE, STATUS_WORD, splitPath } from '../../lib/fileStatus';
 import type { ViewedState } from '../../lib/reviewedFiles';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
+import { useActionEnv } from '../../../actions/useActionEnv';
+import { useObjectActions } from '../../../actions/useObjectActions';
 import type { DiffFileActionTarget } from '../../../actions/types';
 
 type Props = {
@@ -22,6 +32,8 @@ type Props = {
 const STALE_TIP = 'Changed since you viewed it';
 
 const FILE_HEADER_PX = 44;
+
+const MIN_MENU_ITEMS = 2;
 
 export const FileHeader = ({
   file,
@@ -43,6 +55,15 @@ export const FileHeader = ({
     facts: { path: file.path, onOpenInEditor, onShowWhole },
   };
   const menu = useObjectMenuTrigger({ target, anchorKey: `diff-file:${file.path}` });
+  const env = useActionEnv({ origin: 'overflow', anchorKey: `diff-file:${file.path}` });
+  const { actions, run } = useObjectActions({ target, env });
+  const items: ReadonlyArray<OverflowMenuItem> = actions.map((action) => ({
+    kind: 'item',
+    key: action.id,
+    label: action.label,
+    icon: action.icon,
+    onClick: () => void run({ actionId: action.id }),
+  }));
   const pathTip =
     file.status === 'renamed' && file.oldPath !== undefined ? (
       <span className="flex flex-col gap-0.5 text-code">
@@ -123,26 +144,17 @@ export const FileHeader = ({
         </Tooltip>
       )}
       {onCommentOnFile === null ? null : (
-        <IconButton
-          icon={MessageSquare}
-          label="Comment"
-          tooltip={commentCount > 0 ? `Comment, ${commentCount} open` : 'Comment'}
-          data-file-comment-trigger=""
-          onClick={onCommentOnFile}
-        />
+        <Tooltip
+          content={commentCount > 0 ? `Comment, ${commentCount} open` : 'Comment'}
+          anchorClassName="shrink-0"
+        >
+          <Button size="sm" variant="ghost" data-file-comment-trigger="" onClick={onCommentOnFile}>
+            Comment
+          </Button>
+        </Tooltip>
       )}
-      {onOpenInEditor === null ? null : (
-        <IconButton icon={ExternalLink} label="Open in editor" onClick={onOpenInEditor} />
-      )}
-      <CopyButton
-        presentation="icon"
-        label="Copy path"
-        size={ICON_SIZE.control}
-        className="size-7 justify-center"
-        value={file.path}
-      />
-      {onShowWhole === null ? null : (
-        <IconButton icon={FileText} label="Show whole file" onClick={onShowWhole} />
+      {items.length < MIN_MENU_ITEMS ? null : (
+        <OverflowMenu items={items} label={`More for ${name}`} align="right" />
       )}
     </div>
   );

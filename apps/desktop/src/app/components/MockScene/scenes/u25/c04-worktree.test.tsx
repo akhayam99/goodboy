@@ -138,7 +138,7 @@ describe('the c04 worktree level scenes', () => {
     expect(within(rail).getByRole('navigation', { name: 'Changed files' })).toBeDefined();
   });
 
-  it('c04-worktree-files-folded folds the file list and offers Files N in the diff toolbar', async () => {
+  it('c04-worktree-files-folded folds the file list and offers Files in the diff toolbar', async () => {
     await mount('c04-worktree-files-folded');
 
     expect(screen.queryByRole('complementary', { name: 'Files' })).toBeNull();
@@ -146,7 +146,7 @@ describe('the c04 worktree level scenes', () => {
     if (toolbar === null) {
       throw new Error('the folded scene draws no diff toolbar');
     }
-    expect(within(toolbar).getByRole('button', { name: /^Files\s?\d+$/ })).toBeDefined();
+    expect(within(toolbar).getByRole('button', { name: /^Files$/ })).toBeDefined();
   });
 
   it('c04-worktree-files-narrow opens the file list over the diff of a narrow page', async () => {

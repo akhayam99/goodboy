@@ -107,9 +107,7 @@ export const GapRow = ({
               variant="ghost"
               onClick={() => reveal({ index: gap.index, direction: 'all' })}
             >
-              {gap.count === null
-                ? 'Show all remaining lines'
-                : `Show all ${gap.count} hidden lines`}
+              {gap.count === null ? 'Show all lines' : `Show ${gap.count} lines`}
             </Button>
           </>
         )}
