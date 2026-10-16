@@ -26,7 +26,7 @@ import {
 import { NotificationRow } from '../NotificationRow';
 import { NotificationFacetRail } from './NotificationFacetRail';
 import { NotificationsSkeleton } from './NotificationsSkeleton';
-import { NotificationsPageMenu } from './NotificationsPageMenu';
+import { NotificationsToolbar } from './NotificationsToolbar';
 
 type Props = {
   readonly onClose: () => void;
@@ -181,13 +181,13 @@ export const NotificationsStudio = ({ onClose }: Props) => {
                           />
                         ) : null
                       }
-                      overflow={
+                      button={
                         notifications.length > 0 ? (
-                          <NotificationsPageMenu
+                          <NotificationsToolbar
                             unreadCount={counts.unread}
-                            onMarkAllRead={() => void markNotificationsRead()}
                             totalCount={counts.total}
                             workspaceName={scope === 'workspace' ? workspaceName : null}
+                            onMarkAllRead={() => void markNotificationsRead()}
                             onDeleteAll={async () => {
                               await clearNotifications();
                               setSelectedKey(null);

@@ -5,11 +5,7 @@ import { SESSION_ID } from '../activityRunSeed';
 import { InboxScene } from '../InboxScene';
 import { NotificationsScene } from '../audit/NotificationsScene';
 
-const DELETE_ALL_CLICKS: ReadonlyArray<string> = [
-  'Open all',
-  'More notification actions',
-  'Delete all',
-];
+const DELETE_ALL_CLICKS: ReadonlyArray<string> = ['Open all', 'Delete all'];
 
 const UNSEEN_AGENT_ID = 'mock-run-agent-banner-copy' as AgentId;
 

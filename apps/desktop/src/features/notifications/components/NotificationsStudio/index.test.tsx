@@ -80,13 +80,8 @@ const seedNotifications = ({ notifications }: { notifications: ReadonlyArray<Not
 
 const renderStudio = () => render(<NotificationsStudio onClose={vi.fn()} />);
 
-const openPageMenu = (): void => {
-  fireEvent.click(screen.getByRole('button', { name: 'More notification actions' }));
-};
-
 const deleteAll = (): void => {
-  openPageMenu();
-  fireEvent.click(screen.getByRole('menuitem', { name: /^Delete all/ }));
+  fireEvent.click(screen.getByRole('button', { name: /^delete all$/i }));
 };
 
 const openFilterRail = (): HTMLElement => {
@@ -354,28 +349,24 @@ describe('NotificationsStudio', () => {
     expect(state.loadOlderNotifications).toHaveBeenCalledOnce();
   });
 
-  it('marks everything read from the page menu', () => {
+  it('marks everything read from the header', () => {
     seedNotifications({ notifications: [buildNotification()] });
     renderStudio();
 
-    openPageMenu();
-    fireEvent.click(screen.getByRole('menuitem', { name: /mark all read/i }));
+    fireEvent.click(screen.getByRole('button', { name: /mark all read/i }));
 
     expect(state.markNotificationsRead).toHaveBeenCalledOnce();
   });
 
-  it('disables Mark all read once nothing is unread, and keeps Delete all in the page menu', () => {
+  it('hides Mark all read once nothing is unread', () => {
     seedNotifications({ notifications: [buildNotification({ read: true })] });
     renderStudio();
 
-    openPageMenu();
-    expect(screen.getByRole('menuitem', { name: /mark all read/i }).hasAttribute('disabled')).toBe(
-      true,
-    );
-    expect(screen.getByRole('menuitem', { name: /^Delete all/ })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /mark all read/i })).toBeNull();
+    expect(screen.getByRole('button', { name: /^delete all$/i })).toBeDefined();
   });
 
-  it('asks in a popover from the page menu, not inside the title row', async () => {
+  it('asks in a popover beside Delete all, not inside the title row', async () => {
     seedNotifications({
       notifications: [buildNotification({ id: 'a' }), buildNotification({ id: 'b', read: true })],
     });

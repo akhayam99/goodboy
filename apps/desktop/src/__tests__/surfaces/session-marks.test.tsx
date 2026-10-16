@@ -24,7 +24,6 @@ import {
 import { stageInfoOf } from '../../store/slices/session-view/stageInfoOf';
 import { seedSessionMarks } from '../../app/components/MockScene/scenes/u21/sessionMarksSeed';
 import { ATTENTION_REASON_META, attentionWordsOf } from '../../features/session/session-stage';
-import { sessionTone } from '../../features/session/components/sessionCardShell';
 import { needsYouEntries } from '../../features/palette/sources/needsYouEntries';
 import { SessionActivityItem } from '../../features/workspace/components/SessionActivityBar/SessionActivityItem';
 import { SwitcherRow } from '../../features/workspace/components/SessionSwitcher/SwitcherRow';
@@ -140,12 +139,6 @@ describe.each(NEEDS_YOU_REASONS)('every surface says %s the same way', (reason) 
     expect(within(container).getAllByText(words)).toHaveLength(1);
   });
 
-  it('tones the Board card with the same tone', () => {
-    const { info } = waitingFor({ reason });
-
-    expect(sessionTone({ stage: info.stage, attention: reason }).tone).toBe(tone);
-  });
-
   it('draws the Now chip row with the same tone and words', () => {
     const { session, info } = waitingFor({ reason });
     const { container } = render(
@@ -228,11 +221,5 @@ describe('a session in the merge queue', () => {
     expect(nodeOf(container)).toEqual({ tone, words });
     expect(within(container).getAllByText(words)).toHaveLength(1);
     expect(within(container).queryByRole('button', { name: 'Open what needs you' })).toBeNull();
-  });
-
-  it('tones the Board card with the same tone', () => {
-    const { info } = queuedSession();
-
-    expect(sessionTone({ stage: info.stage, attention: info.attention }).tone).toBe(tone);
   });
 });

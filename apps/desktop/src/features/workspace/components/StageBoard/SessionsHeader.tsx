@@ -37,7 +37,7 @@ export const SessionsHeader = ({
   <div data-slot="board-header" className="flex shrink-0 flex-col">
     <div
       data-slot="pane-title-row"
-      className="flex h-10 shrink-0 items-center justify-between gap-4"
+      className="flex h-8 shrink-0 items-center justify-between gap-4"
     >
       <h1 className="min-w-0 truncate text-title text-foreground">Sessions</h1>
       <span className="flex shrink-0 items-center gap-2">

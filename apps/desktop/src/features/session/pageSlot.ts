@@ -1,7 +1,7 @@
 import { countSlotText } from '../../shared/utils/countSlotText';
 import { pageCountWordOf, type CountedPageId, type PageCountFacts } from './pageCountWord';
 
-export type PageSlotTone = 'info' | 'warning';
+type PageSlotTone = 'info' | 'warning';
 
 export type PageSlot = {
   readonly text: string | null;
