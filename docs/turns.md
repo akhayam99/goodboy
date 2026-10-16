@@ -546,6 +546,10 @@ map `listAgentTurnSpanRoutes` seeds from persisted spans on reload
 falls back to the item's own `ProviderUsage` numbers (no provider or model
 yet) until telemetry lands. A cost of exactly zero hides the cost entry
 instead of showing `$0.00`, because zero usually means unknown, not free.
+The line itself (`TurnFooterSummary`) carries only the provider mark, model,
+duration and cost; tokens, cache share and context window live in the
+detail popover (`TurnFooterDetail`) it opens. The transcript pane's
+agent total (`AgentUsageFooter`) keeps the full `UsageStatsRow`.
 
 `turnFootersFor` (`utils/turnOutcome.ts`) derives, per run that produced a
 `usage` item: `outcome` (`done`, `stopped` once a later run is active or
@@ -785,9 +789,10 @@ avoided on `SendControl`'s own buttons.
   and pending nudges survive a re-render.
 - `composerPlaceholder` (`ChatInput/lib.ts`) replaces the old placeholder that
   advertised every prefix inline: a role's first turn gets its
-  `firstMessagePrompt`, otherwise `Message the agent` idle or `Queue a message`
-  while a turn runs. The agent's name is not repeated, the header already says
-  it. No prefix syntax appears in it.
+  `firstMessagePrompt`, otherwise `Message <role>` (`Message Implementer`),
+  idle or running, and `Message the agent` when the role is unknown. While a
+  turn runs, Queue (Enter) is the primary and Send now (⌘Enter) a quiet word
+  beside it. No prefix syntax appears in it.
 - Queued messages and the agent's own suggestion sit in a tray attached above
   the shell (`bg-muted`, rounded top corners) when either has something to
   show; a routing fallback or all-budgets-exceeded notice (`RoutingIndicator`)

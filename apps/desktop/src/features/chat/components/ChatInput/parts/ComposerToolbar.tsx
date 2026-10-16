@@ -61,7 +61,7 @@ export const ComposerToolbar = ({
       onChange={onFileInputChange}
     />
     <div className="flex items-center gap-2">
-      <ComposerRoutingPicker session={session} routing={routing} />
+      <ComposerRoutingPicker routing={routing} />
       <SendControl
         isRunning={isRunning}
         canSend={canSend}

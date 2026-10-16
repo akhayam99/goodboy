@@ -452,12 +452,12 @@ describe('HandoffBlock', () => {
     screen.getByRole('button', { name: 'Plan' });
   });
 
-  it('shows an agent spawned before handoffs were stored in the older format', () => {
+  it('shows the first message of an agent spawned before handoffs were stored as a user bubble', () => {
     renderBlock({ handoffId: null });
 
-    const row = screen.getByTestId('handoff-older-format');
-    expect(row.textContent).toContain('First message');
-    expect(row.textContent).toContain('Older format');
+    screen.getByText('Backfill the settled batches behind a flag.');
+    expect(screen.queryByText('First message')).toBeNull();
+    expect(screen.queryByText('Older format')).toBeNull();
     expect(loadAgentHandoff).not.toHaveBeenCalled();
   });
 

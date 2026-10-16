@@ -65,7 +65,7 @@ describe('SendControl', () => {
     const queue = screen.getByRole('button', { name: /^Queue/ });
     const sendNow = screen.getByRole('button', { name: /^Send now/ });
     expect(queue.getAttribute('data-variant')).toBe('primary');
-    expect(sendNow.getAttribute('data-variant')).toBe('ghost');
+    expect(sendNow.getAttribute('data-variant')).toBe('quiet');
     expect(sendNow.compareDocumentPosition(queue) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

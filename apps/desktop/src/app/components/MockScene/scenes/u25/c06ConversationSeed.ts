@@ -79,7 +79,10 @@ type AgentParams = {
   readonly startedMinute: string;
   readonly completedMinute?: string;
   readonly parentAgentId?: AgentId;
+  readonly model?: string;
 };
+
+const C06_MODEL = 'claude-sonnet-5-5';
 
 const agentOf = ({
   id,
@@ -90,6 +93,7 @@ const agentOf = ({
   startedMinute,
   completedMinute,
   parentAgentId,
+  model = C06_MODEL,
 }: AgentParams): Agent => ({
   id,
   sessionId: C06_SESSION_ID,
@@ -97,6 +101,9 @@ const agentOf = ({
   name,
   status,
   kind,
+  providerOverride: 'anthropic',
+  modelOverride: model,
+  effort: 'high',
   startedAt: at(startedMinute),
   ...(completedMinute === undefined ? {} : { completedAt: at(completedMinute) }),
   ...(parentAgentId === undefined ? {} : { parentAgentId }),
@@ -159,6 +166,7 @@ const OTHERS: ReadonlyArray<Agent> = [
     ordinal: 3,
     startedMinute: '01:00',
     completedMinute: '04:20',
+    model: 'claude-opus-5',
   }),
 ];
 
@@ -432,8 +440,8 @@ export const seedC06 = ({ state }: StateParams): Agent => {
     sessionPhaseRuns: { [C06_SESSION_ID]: [agent, ...children, ...OTHERS] },
     sessionTelemetry: {
       [C06_SESSION_ID]: [
-        telemetryOf({ runId: RUN_ONE, model: 'claude-opus-5' }),
-        telemetryOf({ runId: RUN_TWO, model: 'claude-opus-5' }),
+        telemetryOf({ runId: RUN_ONE, model: C06_MODEL }),
+        telemetryOf({ runId: RUN_TWO, model: C06_MODEL }),
       ],
     },
     agentRunHistory: { [C06_AGENT_ID]: [RUN_ONE, RUN_TWO] },

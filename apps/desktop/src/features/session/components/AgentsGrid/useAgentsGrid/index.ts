@@ -5,7 +5,6 @@ import { EMPTY_ARRAY, useAppStore, useSessionLoading, agentPlace } from '../../.
 import { classifyAgent, isStandaloneAgent, type AgentKind } from '../../../agent-kind';
 import { isAgentFinished } from '../../../agent-lifecycle';
 import { useAgentLifecycleSignals } from '../../../hooks/useAgentLifecycleSignals';
-import { useAgentMetrics } from '../../../hooks/useAgentMetrics';
 import { openAgentRevealEvent } from '../../../../../shared/utils/openAgentReveal';
 
 type Params = {
@@ -33,7 +32,6 @@ export const useAgentsGrid = ({ session }: Params) => {
   const selectedAgentId = useAppStore((state) => state.selectedAgentId[sessionId] ?? null);
   const navigate = useAppStore((state) => state.navigate);
   const loading = useSessionLoading(sessionId);
-  const metrics = useAgentMetrics({ sessionId });
   const signals = useAgentLifecycleSignals({ sessionId });
 
   const childrenByParentId = useMemo(() => {
@@ -103,7 +101,6 @@ export const useAgentsGrid = ({ session }: Params) => {
     agentKindOverride,
     completedAgents,
     isAgentsLoading: loading.agents,
-    metrics,
     onPickAgent,
     standaloneAgents,
   };

@@ -75,7 +75,7 @@ describe('the c06 conversation scenes', () => {
     expect(within(row).getByRole('button', { name: 'View transcript' })).toBeDefined();
     expect(within(row).getByRole('button', { name: 'More agent actions' })).toBeDefined();
     expect(within(row).queryByText('Running')).toBeNull();
-    expect(within(row).queryByText('Opus 5')).toBeNull();
+    expect(within(row).queryByText('Sonnet 5.5')).toBeNull();
     expect(screen.queryByRole('tab')).toBeNull();
   });
 
@@ -188,6 +188,54 @@ describe('the c06 conversation scenes', () => {
     act(() => useAppStore.setState({ selectedAgentId: {} }));
     fireEvent.click(first);
     expect(useAppStore.getState().selectedAgentId[C06_SESSION_ID]).toBe(C06_AGENT_ID);
+  });
+
+  it('c06-agent-working keeps the turn footer to model, time and cost', async () => {
+    await mount({ name: 'c06-agent-working' });
+
+    const footer = screen.getAllByRole('button', { name: 'Turn detail' })[0]!;
+    expect(footer.textContent).toContain('Sonnet 5.5');
+    expect(footer.textContent).not.toMatch(/ in · /);
+    expect(footer.textContent).not.toContain('cached');
+    expect(footer.textContent).not.toContain('%');
+  });
+
+  it('c06-agent-working opens on the first message as a user bubble, no eyebrow', async () => {
+    await mount({ name: 'c06-agent-working' });
+
+    expect(screen.queryByText('First message')).toBeNull();
+    expect(screen.queryByText('Older format')).toBeNull();
+  });
+
+  it('c06-agent-working composer names the agent, the next model and one primary', async () => {
+    await mount({ name: 'c06-agent-working' });
+
+    const box = screen.getByRole('textbox');
+    expect(box.getAttribute('placeholder') ?? box.getAttribute('aria-placeholder')).toBe(
+      'Message Implementer',
+    );
+    const chip = screen.getByRole('button', { name: /^Model routing:/ });
+    expect(chip.textContent).toContain('Sonnet 5.5');
+    expect(chip.textContent).not.toMatch(/^Model/);
+    expect(screen.queryByRole('button', { name: 'Reset routing override' })).toBeNull();
+    expect(screen.getByRole('button', { name: /^Queue/ })).toBeDefined();
+  });
+
+  it('c06-agent-working tail speaks in sentence case', async () => {
+    await mount({ name: 'c06-agent-working' });
+
+    const tail = document.querySelector<HTMLElement>('[data-conversation-tail]')!;
+    expect(tail.textContent).toMatch(/^[A-Z]/);
+  });
+
+  it('c06-agents-list shows a model on every row', async () => {
+    await mount({ name: 'c06-agents-list' });
+
+    const models = document.querySelectorAll<HTMLElement>('[data-agent-model]');
+    expect(models.length).toBe(2);
+    for (const cell of models) {
+      expect((cell.textContent ?? '').length).toBeGreaterThan(0);
+    }
   });
 
   it('c06-agents-empty says it in one line with the header Start agent', async () => {

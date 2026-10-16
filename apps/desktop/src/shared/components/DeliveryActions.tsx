@@ -49,7 +49,7 @@ export const DeliveryActions = ({
         <Button
           type="button"
           size="sm"
-          variant="ghost"
+          variant="quiet"
           disabled={canSend === false}
           data-testid={readNowTestId}
           onClick={onReadNow}

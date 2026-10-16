@@ -2403,19 +2403,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/chat/components/ChatInput/parts/ComposerRoutingPicker.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/features/chat/components/ChatInput/parts/ComposerRoutingPickerView.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/chat/components/ChatInput/parts/QueuedMessages.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
@@ -2528,11 +2515,6 @@
     }
   },
   "apps/desktop/src/features/chat/components/HandoffBlock/HandoffAsSent.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/features/chat/components/HandoffBlock/HandoffOlderFormat.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 2
     }

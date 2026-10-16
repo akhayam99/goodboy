@@ -1,4 +1,4 @@
-import type { Agent, TelemetryRecord } from '@goodboy/types';
+import type { Agent, Session } from '@goodboy/types';
 import { cn, ROW_INTERACTIVE, TruncatedText } from '@goodboy/ui';
 import { modelLabel } from '../../../chat/utils/chat-constants';
 import { agentKindPalette, type AgentKind } from '../../agent-kind';
@@ -6,6 +6,7 @@ import { describeAgentStatus } from '../../agent-status';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { ProviderGlyph } from '../../../../shared/components/RoutingPicker/ProviderGlyph';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { useAgentHeaderRouting } from '../../../../shared/hooks/useAgentHeaderRouting';
 import { providerIdOf } from '../../../../shared/utils/providerIdOf';
 import { formatDuration } from '../../../../shared/utils/time/formatDuration';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
@@ -13,9 +14,9 @@ import { AgentStatusIcon } from '../AgentCard/AgentStatusIcon';
 import { AGENTS_GRID_COLUMNS } from './agentsGridColumns';
 
 type Props = {
+  readonly session: Session;
   readonly run: Agent;
   readonly kind: AgentKind;
-  readonly telemetry: TelemetryRecord | null;
   readonly nowMs: number;
   readonly isMuted: boolean;
   readonly onOpen: () => void;
@@ -34,13 +35,14 @@ const durationOf = ({ run, nowMs }: DurationParams): string | null => {
   return formatDuration({ durationMs: endMs - Date.parse(run.startedAt) });
 };
 
-export const AgentsGridRow = ({ run, kind, telemetry, nowMs, isMuted, onOpen }: Props) => {
+export const AgentsGridRow = ({ session, run, kind, nowMs, isMuted, onOpen }: Props) => {
   const menu = useObjectMenuTrigger({
     target: { kind: 'agent', sessionId: run.sessionId, agentId: run.id },
     anchorKey: `agent:${run.id}`,
   });
-  const provider = providerIdOf({ value: telemetry?.provider ?? null });
-  const model = telemetry === null ? null : modelLabel(telemetry.model, provider);
+  const routing = useAgentHeaderRouting({ session, agent: run });
+  const provider = providerIdOf({ value: routing.provider });
+  const model = routing.model === null ? null : modelLabel(routing.model, provider);
   const duration = durationOf({ run, nowMs });
 
   return (
@@ -65,7 +67,7 @@ export const AgentsGridRow = ({ run, kind, telemetry, nowMs, isMuted, onOpen }: 
           <AgentStatusIcon status={run.status} />
           <span className="truncate">{describeAgentStatus({ status: run.status }).label}</span>
         </span>
-        <span className="flex min-w-0 items-center gap-2 text-muted-foreground">
+        <span data-agent-model className="flex min-w-0 items-center gap-2 text-muted-foreground">
           {provider === null ? null : <ProviderGlyph id={provider} size={ICON_SIZE.row} />}
           <span className="truncate">{model}</span>
         </span>

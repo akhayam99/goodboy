@@ -35,9 +35,9 @@ export const AgentsGrid = ({ session }: Props) => {
       {rows.map((run) => (
         <AgentsGridRow
           key={run.id}
+          session={session}
           run={run}
           kind={classifyAgent({ agent: run, override: lane.agentKindOverride[run.id] ?? null })}
-          telemetry={lane.metrics.latestTelemetryByAgentId.get(run.id) ?? null}
           nowMs={nowMs}
           isMuted={isMuted}
           onOpen={() => lane.onPickAgent(run.id)}

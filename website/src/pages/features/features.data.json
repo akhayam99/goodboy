@@ -1169,7 +1169,7 @@
         },
         {
           "title": "Turn footer",
-          "text": "See what each turn cost: provider, model, duration, tokens, cache share, estimated cost and a context meter.",
+          "text": "See what each turn cost: the model with its provider mark, the duration and the estimated cost on the line, and tokens, cache share and context window in its detail.",
           "group": "Agents",
           "also": "turn footer"
         },

@@ -82,12 +82,12 @@ describe('the u23 list scenes', () => {
     expect(screen.queryByTestId('agent-header-meta')).toBeNull();
   });
 
-  it('keeps the composer model chip quiet while it matches the header', async () => {
+  it('names the next turn model on the composer chip, never a bare Model word', async () => {
     renderScene('agent-finished-model');
 
     const trigger = await screen.findByRole('button', { name: /^Model routing:/ });
-    expect(trigger.textContent).toContain('Model');
-    expect(trigger.textContent).not.toContain('Opus 5');
+    expect(trigger.textContent).toContain('Opus 5');
+    expect(trigger.textContent).not.toMatch(/^Model/);
   });
 
   it('puts Stop as a word on the tail of a running agent, never in the header', async () => {

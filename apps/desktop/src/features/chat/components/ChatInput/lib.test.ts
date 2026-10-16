@@ -87,26 +87,26 @@ describe('composerPlaceholder', () => {
   it('leads with the first-message prompt over any other state', () => {
     expect(
       composerPlaceholder({
-        isRunning: true,
         firstMessagePrompt: 'What should Scout look into?',
+        agentNoun: 'Scout',
       }),
     ).toBe('What should Scout look into?');
   });
 
-  it('says the same thing for every agent once a first message exists', () => {
-    expect(composerPlaceholder({ isRunning: false, firstMessagePrompt: null })).toBe(
+  it('names the agent once a first message exists, running or not', () => {
+    expect(composerPlaceholder({ firstMessagePrompt: null, agentNoun: 'Implementer' })).toBe(
+      'Message Implementer',
+    );
+  });
+
+  it('falls back to the agent when no role is known', () => {
+    expect(composerPlaceholder({ firstMessagePrompt: null, agentNoun: null })).toBe(
       'Message the agent',
     );
   });
 
-  it('asks to queue a message while the turn runs', () => {
-    expect(composerPlaceholder({ isRunning: true, firstMessagePrompt: null })).toBe(
-      'Queue a message',
-    );
-  });
-
   it('never carries prefix syntax, learned from the + menu instead', () => {
-    const placeholder = composerPlaceholder({ isRunning: false, firstMessagePrompt: null });
+    const placeholder = composerPlaceholder({ firstMessagePrompt: null, agentNoun: null });
     for (const prefix of CHAT_PREFIXES) {
       expect(placeholder).not.toContain(prefix.symbol);
     }

@@ -69,7 +69,7 @@ Stop an agent without losing its work. **Stop** sits on the line at the end of t
 
 ### Turn footer
 
-See what each turn cost: provider, model, duration, tokens, cache share, estimated cost and a context meter.
+See what each turn cost: the model with its provider mark, the duration and the estimated cost on the line, and tokens, cache share and context window in its detail.
 
 ### Tool call states
 

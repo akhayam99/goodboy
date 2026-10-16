@@ -18,18 +18,21 @@ export const CHAT_PREFIX_RE = new RegExp(
 );
 
 type ComposerPlaceholderParams = {
-  readonly isRunning: boolean;
   readonly firstMessagePrompt: string | null;
+  readonly agentNoun: string | null;
 };
 
 export const composerPlaceholder = ({
-  isRunning,
   firstMessagePrompt,
+  agentNoun,
 }: ComposerPlaceholderParams): string => {
   if (firstMessagePrompt !== null) {
     return firstMessagePrompt;
   }
-  return isRunning ? 'Queue a message' : 'Message the agent';
+  if (agentNoun !== null) {
+    return `Message ${agentNoun}`;
+  }
+  return 'Message the agent';
 };
 
 export const VALID_PROVIDERS = [

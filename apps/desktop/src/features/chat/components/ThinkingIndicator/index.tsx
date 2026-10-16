@@ -9,15 +9,15 @@ type Props = {
 };
 
 const PHRASES: Record<ThinkingContext, readonly string[]> = {
-  think: ['reasoning', 'planning', 'weighing options'],
-  search: ['searching', 'reading files', 'tracing references'],
-  edit: ['writing', 'editing', 'applying changes'],
-  run: ['running', 'executing', 'collecting output'],
+  think: ['Thinking it through', 'Planning the next step', 'Weighing the options'],
+  search: ['Searching the code', 'Reading the files', 'Tracing the references'],
+  edit: ['Writing the changes', 'Editing the files', 'Applying the changes'],
+  run: ['Running the command', 'Collecting the output'],
 };
 
 const ROTATE_MS = 2600;
 const SETTLE_AFTER_TICKS = 8;
-const SETTLED_PHRASE = 'still working';
+const SETTLED_PHRASE = 'Still working';
 
 const prefersReducedMotion = () =>
   typeof window !== 'undefined' &&
