@@ -35,6 +35,18 @@ export const PANE_RHYTHM = {
     door: 'h-7 px-2',
     doorGap: 'gap-1',
   },
+  property: {
+    group: 'flex flex-col gap-1',
+    grid: 'grid grid-cols-[88px_minmax(0,1fr)] items-start gap-x-2 gap-y-1',
+    label: 'flex h-7 items-center pl-2',
+    value: 'flex min-h-7 min-w-0 flex-wrap items-center gap-x-2 gap-y-1 px-2',
+    groupGap: 'gap-6',
+  },
+  tree: {
+    row: 'min-h-12',
+    line: 'h-7',
+    meta: 'h-5',
+  },
   board: {
     pad: 'px-6 pb-5',
     laneGap: 'gap-3',

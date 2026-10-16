@@ -1,9 +1,9 @@
 import type { WorkNodeState } from '@goodboy/ui';
 
-export const RAIL_ROW_HEIGHT = 56;
+export const RAIL_ROW_HEIGHT = 48;
 export const RAIL_NODE_SIZE = 20;
 export const RAIL_NODE_CENTER_X = 16;
-export const RAIL_NODE_CENTER_Y = 18;
+export const RAIL_NODE_CENTER_Y = 14;
 
 type SpineStroke = Readonly<{
   stroke: string;

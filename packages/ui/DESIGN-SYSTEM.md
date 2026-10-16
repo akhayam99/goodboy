@@ -262,7 +262,14 @@ no baseline lists it. `spacing-grid.test.ts`
 reads `paneRhythm.ts`, `timelineRhythm.ts` and `workMetaSpec.ts` and fails on a
 half step, or on a row height outside 24, 28, 32, 36, 40 and 48. A one-line rail
 row is `navRail.row` (32px), a two-line one `navRail.rowTwo` (48px). A session
-row in the left column is 28px, and so are the pages nested under it.
+row in the left column is 28px, and so are the pages nested under it. A tree
+row (the Auto work rail, a run's step tree) is two lines in 48px:
+`PANE_RHYTHM.tree.line` (28, the node sits on its centre) then
+`PANE_RHYTHM.tree.meta` (20); the work rail reads them from `railSpec.ts`. A
+property list is `PANE_RHYTHM.property`: an 88px label column and a value
+column, the label and the value's first line both 28px so their centres match,
+a wrapping value flowing below, groups 24px apart. `spacing-grid.test.ts`
+holds the work rail, the tree row and the property grid on the scale.
 
 The Sessions block shares one left edge and one gap. The `Sessions` eyebrow
 (`sessionList.headerInset`, 16px), the door icons (`navRail.inset` plus
