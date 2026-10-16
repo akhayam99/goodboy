@@ -185,7 +185,7 @@ const agentsOf = ({ place, agents }: AgentsParams): ReadonlyArray<Agent> => {
 };
 
 export const seedC07 = ({ state, place, pane, hasImages = false }: C07Seed): void => {
-  const { navigate, openExternalTaskLens } = useAppStore.getState();
+  const { navigate, openExternalTaskLens } = useAppStore.getInitialState();
   seedActivityRunScene();
   const scene = autoSceneOf({ state });
   useAppStore.setState((current) => ({

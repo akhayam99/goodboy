@@ -659,7 +659,9 @@ and the hidden one is `inert`.
   children (`useIsOnAutoAgent`) unless the user went back: the back row and ⌘[
   write `sidebar-level: session` (`pickSidebarLevel`), which keeps the Auto
   chat in the center with Auto agents selected; a click on Auto agents drills
-  in again.
+  in again. The Agents key (`lens.agents`) pressed again on Agents opens Auto
+  agents while it shows (`isAutoAgentsShown`), and pressed on Auto agents goes
+  back to the Overview.
 
 The tools (Scripts, Terminal, Explore) and the linked records keep their
 lenses for now and stay in the palette.
