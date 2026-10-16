@@ -39,7 +39,9 @@ describe('ModelsGroup', () => {
     const total = MODEL_CATALOGS.anthropic.length;
     expect(screen.getByText(`Showing ${total - 3} of ${total}`)).toBeDefined();
     const opus = within(screen.getByRole('group', { name: 'Opus versions' }));
-    expect(opus.getByRole('button', { name: '4.6' }).getAttribute('aria-pressed')).toBe('false');
+    expect(
+      opus.getByRole('button', { name: 'Hidden in the picker 4.6' }).getAttribute('aria-pressed'),
+    ).toBe('false');
     expect(opus.getByRole('button', { name: '5.5' }).getAttribute('aria-pressed')).toBe('true');
   });
 
@@ -80,7 +82,7 @@ describe('ModelsGroup', () => {
 
     expect(
       screen.getByText(
-        'Hidden models are not used by agents or the orchestrator, except where a task setting names one.',
+        'A version with an eye is hidden. Hidden models are not used by agents or the orchestrator, except where a task setting names one.',
       ),
     ).toBeDefined();
   });

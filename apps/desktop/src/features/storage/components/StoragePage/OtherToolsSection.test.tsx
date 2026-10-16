@@ -105,7 +105,7 @@ describe('OtherToolsSection', () => {
       { request: { codexThreadIds: ['thread-ledger'], cursorChatIds: ['chat-relay'] } },
     ]);
     within(section).getByText('4,405 sessions');
-    within(section).getByText('312 MB from Goodboy sessions');
+    within(section).getByText('312 MB from Goodboy');
     expect(within(section).queryByText('Cursor')).toBeNull();
     expect(useAppStore.getState().storageOtherTools.status).toBe('ready');
   });

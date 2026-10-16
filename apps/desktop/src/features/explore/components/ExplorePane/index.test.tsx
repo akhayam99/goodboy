@@ -569,9 +569,12 @@ describe('ExplorePane previews', () => {
     }
     const inHeader = within(header);
     expect(inHeader.getByRole('button', { name: 'Open' })).toBeDefined();
-    expect(inHeader.getByRole('button', { name: 'More on page.tsx' })).toBeDefined();
+    expect(inHeader.getByRole('button', { name: 'Wrap lines' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
+    expect(inHeader.getByRole('button', { name: 'Actions for page.tsx' })).toBeDefined();
     expect(inHeader.getByRole('button', { name: 'Close' })).toBeDefined();
-    expect(inHeader.getAllByRole('button')).toHaveLength(3);
+    expect(inHeader.queryByRole('button', { name: 'Copy path' })).toBeNull();
     const body = within(drawer)
       .queryAllByRole('button')
       .filter((button) => !header.contains(button));
@@ -585,12 +588,12 @@ describe('ExplorePane previews', () => {
     mount();
 
     fireEvent.click(await rowNamed('page.tsx'));
-    fireEvent.click(await screen.findByRole('button', { name: 'More on page.tsx' }));
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'Wrap lines' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Wrap lines' }));
 
+    expect(screen.getByRole('button', { name: 'Wrap lines' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
     expect(localStorage.getItem('goodboy:explore-wrap:v1')).toBe('true');
-    fireEvent.click(screen.getByRole('button', { name: 'More on page.tsx' }));
-    expect(await screen.findByRole('menuitem', { name: 'Stop wrapping lines' })).toBeDefined();
   });
 
   it('offers Preview and Source for markdown and no wrap button on prose', async () => {

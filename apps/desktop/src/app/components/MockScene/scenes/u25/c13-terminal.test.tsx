@@ -61,7 +61,7 @@ describe('c13 terminal scenes', () => {
   it('lists one group per session with its row count from two, the workspace folder last', async () => {
     await renderScene('c13-terminal');
 
-    const headings = within(grid()).getAllByRole('heading', { level: 3 });
+    const headings = within(grid()).getAllByRole('heading', { level: 2 });
     expect(headings.map((heading) => heading.textContent)).toEqual([
       'Ledger export speed up',
       'Northwind webhook retries',

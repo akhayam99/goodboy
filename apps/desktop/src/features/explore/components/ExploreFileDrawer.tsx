@@ -1,20 +1,19 @@
 import { useState, type ReactNode } from 'react';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, WrapText } from 'lucide-react';
 import {
   Button,
-  CopyButton,
   DrawerFrame,
-  OverflowMenu,
+  IconButton,
   SegmentedTabs,
   Tooltip,
   type DrawerBack,
-  type OverflowMenuItem,
 } from '@goodboy/ui';
+import { ExploreFileMenu } from '../../actions/ExploreFileMenu';
+import { exploreFileTargetOf } from '../exploreFileTarget';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { selectMountForPath } from '../../../store/slices/project-mounts/selectors';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
-import { useCopyText } from '../../../shared/hooks/useCopyText';
 import type { ExploreEntry } from '../explore';
 import type { ExploreOpenFailure } from '../openFailure';
 import { fileGlyphOf } from '../fileGlyph';
@@ -51,16 +50,6 @@ const PREVIEW_OPTION = { value: 'preview', label: 'Preview' } as const satisfies
 const SOURCE_OPTION = { value: 'source', label: 'Source' } as const satisfies ViewOption;
 const CHANGES_OPTION = { value: 'changes', label: 'Changes' } as const satisfies ViewOption;
 
-const joinPath = ({ root, relPath }: { readonly root: string; readonly relPath: string }) => {
-  if (relPath === '') {
-    return root;
-  }
-  if (root.endsWith('/') || root.endsWith('\\')) {
-    return `${root}${relPath}`;
-  }
-  return `${root}/${relPath}`;
-};
-
 export const ExploreFileDrawer = ({
   sessionId,
   sessionDir,
@@ -73,7 +62,6 @@ export const ExploreFileDrawer = ({
   const previewState = useExplorePreview({ sessionDir, entry });
   const exploreOpen = useExploreOpen({ sessionId, sessionDir });
   const wrap = useExploreWrap();
-  const copyText = useCopyText();
   const [openFailure, setOpenFailure] = useState<ExploreOpenFailure | null>(null);
   const [view, setView] = useState<DrawerView>(line === undefined ? 'preview' : 'source');
   const [seenLine, setSeenLine] = useState(line);
@@ -121,28 +109,18 @@ export const ExploreFileDrawer = ({
   };
 
   const hasToolbar = hasViewSwitch || openFailure !== null;
-  const filePath = joinPath({ root: sessionDir, relPath: entry.relPath });
-  const menuItems: ReadonlyArray<OverflowMenuItem> = [
-    ...(hasChanges
-      ? [{ kind: 'item' as const, key: 'files', label: 'Open in Files', onClick: openInFiles }]
-      : []),
-    {
-      kind: 'item',
-      key: 'copy',
-      label: 'Copy path',
-      onClick: () => void copyText({ text: filePath }),
+  const menuTarget = exploreFileTargetOf({
+    sessionId,
+    sessionDir,
+    entry,
+    openAction: null,
+    onAsk: null,
+    onOpen: open,
+    onReveal: () => {
+      void exploreOpen.run({ entry, isReveal: true }).then(setOpenFailure);
     },
-    ...(isWrapShown
-      ? [
-          {
-            kind: 'item' as const,
-            key: 'wrap',
-            label: wrap.isWrapped ? 'Stop wrapping lines' : 'Wrap lines',
-            onClick: wrap.toggle,
-          },
-        ]
-      : []),
-  ];
+    onOpenInFiles: hasChanges ? openInFiles : null,
+  });
 
   return (
     <DrawerFrame
@@ -164,17 +142,15 @@ export const ExploreFileDrawer = ({
               {openAction.label}
             </Button>
           </Tooltip>
-          {menuItems.length > 1 ? (
-            <OverflowMenu label={`More on ${entry.name}`} items={menuItems} />
-          ) : (
-            <CopyButton
-              presentation="icon"
-              label="Copy path"
-              size={ICON_SIZE.control}
-              className="size-7 justify-center"
-              value={filePath}
+          {isWrapShown ? (
+            <IconButton
+              icon={WrapText}
+              label="Wrap lines"
+              aria-pressed={wrap.isWrapped}
+              onClick={wrap.toggle}
             />
-          )}
+          ) : null}
+          <ExploreFileMenu target={menuTarget} />
         </>
       }
       toolbar={

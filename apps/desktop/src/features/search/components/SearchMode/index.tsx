@@ -312,6 +312,7 @@ export const SearchMode = ({
                 optionId={optionId({ id: hit.docId })}
                 isSelected={selected?.id === hit.docId}
                 isBlocked={searchHitTarget({ hit }).kind === 'blocked'}
+                isSessionScoped={scope.kind === 'session'}
                 onHover={setSelectedId}
                 onOpen={openById}
               />

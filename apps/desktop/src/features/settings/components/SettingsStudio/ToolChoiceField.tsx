@@ -1,12 +1,10 @@
 import type { ReactNode } from 'react';
-import { FieldRow, Listbox, SegmentedTabs } from '@goodboy/ui';
-
-const SEGMENTED_CHOICE_MAX = 4;
+import { FieldRow, Listbox } from '@goodboy/ui';
 
 export type ToolChoice = {
   readonly value: string;
   readonly label: string;
-  readonly mark: ReactNode;
+  readonly mark?: ReactNode;
 };
 
 type Props = {
@@ -19,30 +17,20 @@ type Props = {
 
 export const ToolChoiceField = ({ label, help, value, choices, onChange }: Props) => (
   <FieldRow label={label} help={help}>
-    {choices.length <= SEGMENTED_CHOICE_MAX ? (
-      <SegmentedTabs
-        size="sm"
-        value={value}
-        options={choices.map((choice) => ({
-          value: choice.value,
-          label: choice.label,
-          glyph: choice.mark,
-        }))}
-        onChange={onChange}
-        ariaLabel={label}
-      />
-    ) : (
-      <Listbox
-        size="sm"
-        value={value}
-        options={choices.map((choice) => ({
-          value: choice.value,
-          label: choice.label,
-          leading: choice.mark,
-        }))}
-        onChange={onChange}
-        ariaLabel={label}
-      />
-    )}
+    <Listbox
+      size="sm"
+      value={value}
+      options={choices.map((choice) => ({
+        value: choice.value,
+        label: choice.label,
+        ...(choice.mark === undefined ? {} : { leading: choice.mark }),
+      }))}
+      onChange={onChange}
+      ariaLabel={label}
+      {...(choices.length < 2 && {
+        disabled: true,
+        disabledReason: `Goodboy found only ${choices[0]?.label ?? 'one choice'} on this computer`,
+      })}
+    />
   </FieldRow>
 );

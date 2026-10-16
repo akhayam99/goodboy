@@ -7,7 +7,6 @@ import {
 } from '../../../../store/slices/storage/classifyStorageFolder';
 import type { StorageFilter, StorageScope } from '../../../../store/slices/storage/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { useSelectionKeys } from '../../../../shared/hooks/useSelectionKeys';
 import { groupStorageFolders } from '../../groupStorageFolders';
 import { useStorageSummary } from '../../useStorageSummary';
@@ -25,6 +24,13 @@ const EMPTY_COPY = {
 } as const satisfies Record<StorageFilter, string>;
 
 const FolderIcon = CONCEPT_ICONS.worktree;
+
+type BadgeParams = {
+  readonly count: number;
+};
+
+const badgeOf = ({ count }: BadgeParams): { readonly badge?: number } =>
+  count > 0 ? { badge: count } : {};
 
 type Props = {
   readonly scope: StorageScope;
@@ -59,11 +65,10 @@ export const WorktreeSection = ({ scope }: Props) => {
     () => groupStorageFolders({ folders, roots, filter, scope, now }),
     [folders, roots, filter, scope, now],
   );
-  const shownBytes = groups.reduce((sum, group) => sum + group.bytes, 0);
   const options: ReadonlyArray<SegmentedTabOption<StorageFilter>> = [
-    { value: 'review', label: 'To review', badge: summary.review.count },
-    { value: 'in-use', label: 'In use', badge: summary.inUse.count },
-    { value: 'kept', label: 'Kept', badge: summary.kept.count },
+    { value: 'review', label: 'To review', ...badgeOf({ count: summary.review.count }) },
+    { value: 'in-use', label: 'In use', ...badgeOf({ count: summary.inUse.count }) },
+    { value: 'kept', label: 'Kept', ...badgeOf({ count: summary.kept.count }) },
   ];
   const suggested = groups
     .flatMap((group) => group.folders)
@@ -128,7 +133,7 @@ export const WorktreeSection = ({ scope }: Props) => {
       className="group/select-list flex flex-col gap-2"
     >
       <SectionHeader
-        label={`Worktrees · ${formatBytes({ bytes: shownBytes })}`}
+        label="Worktrees"
         icon={<FolderIcon size={ICON_SIZE.row} aria-hidden />}
         hint="Checkout folders of sessions that are archived, deleted or gone. Branches always stay in the repository."
         action={

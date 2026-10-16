@@ -676,7 +676,7 @@ describe('⌘K lists the same set as the registry, in the order of the state', (
       })?.resolve() ?? []
     )
       .filter((action) => action.blockedReason === null)
-      .map((action) => action.label.replace(/^Open /, ''));
+      .map((action) => action.label.replace(/^Open /, '').toLowerCase());
     render(
       <ToastProvider>
         <PaletteOverlay onClose={vi.fn()} />
@@ -684,12 +684,18 @@ describe('⌘K lists the same set as the registry, in the order of the state', (
     );
     const firstScreen = optionLabels().filter((label) => !GOTO_LABELS.has(label));
     fireEvent.mouseDown(screen.getByRole('option', { name: 'All actions for this session' }));
-    const level = optionLabels().map((label) => label.replace(/^Open /, '').replace(/…$/, ''));
+    const level = optionLabels().map((label) =>
+      label
+        .replace(/^Open /, '')
+        .replace(/…$/, '')
+        .toLowerCase(),
+    );
 
     expect([...level].sort()).toEqual([...registry].sort());
     expect(firstScreen.some((label) => label === 'Rename')).toBe(true);
     expect(
-      firstScreen.filter((label) => registry.includes(label.replace(/^Open /, ''))).length,
+      firstScreen.filter((label) => registry.includes(label.replace(/^Open /, '').toLowerCase()))
+        .length,
     ).toBeLessThanOrEqual(8);
   });
 

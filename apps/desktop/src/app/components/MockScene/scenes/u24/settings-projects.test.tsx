@@ -87,11 +87,11 @@ describe('the settings projects scenes', () => {
     expect(within(notice).getByRole('button', { name: 'Retry' })).toBeDefined();
   });
 
-  it('nostar draws one Projects heading and the star hint', async () => {
+  it('nostar draws the one group of projects with no label', async () => {
     mount({ id: 'settings-projects-nostar' });
 
-    await screen.findByText('Star the ones you use most.', undefined, WAIT);
-    expect(screen.getByRole('heading', { name: 'Projects', level: 2 })).toBeDefined();
+    await screen.findAllByRole('button', { name: /^Edit / }, WAIT);
+    expect(screen.queryByRole('heading', { name: 'Projects', level: 2 })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Starred' })).toBeNull();
   });
 

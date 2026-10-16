@@ -1,28 +1,22 @@
 import type { Session, SessionId } from '@goodboy/types';
-import { formatUsd } from '@goodboy/ui';
-import {
-  EMPTY_ARRAY,
-  useAppStore,
-  useSessionCost,
-  useSessionStageInfo,
-  useWorkspaces,
-} from '../../../../store';
+import { EMPTY_ARRAY, useAppStore, useSessionStageInfo, useWorkspaces } from '../../../../store';
 import { describeSessionStage } from '../../../session/session-stage';
 import { sessionTitle } from '../../../session/sessionTitle';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
+import { joinFacts } from '../../../../shared/utils/joinFacts';
 import { PreviewFacts } from './PreviewFacts';
 import { PreviewHeader } from './PreviewHeader';
 import { useNow } from '../../../../shared/hooks/useNow';
 
 type Props = {
   readonly session: Session;
+  readonly subject: string | null;
 };
 
-export const SessionPreview = ({ session }: Props) => {
+export const SessionPreview = ({ session, subject }: Props) => {
   const now = useNow(30_000);
   const sessionId = session.id as SessionId;
   const stage = describeSessionStage(useSessionStageInfo(session));
-  const cost = useSessionCost(sessionId);
   const mount = useAppStore((s) => s.sessionProjectMounts[sessionId]?.[0] ?? null);
   const branch = useAppStore((s) => s.sessionBranches[sessionId] ?? null);
   const agentCount = useAppStore(
@@ -31,16 +25,24 @@ export const SessionPreview = ({ session }: Props) => {
         .length,
   );
   const pr = useAppStore((s) => s.sessionGithub[sessionId]?.pr ?? null);
-  const workspace = useWorkspaces().find((candidate) => candidate.id === session.workspaceId);
+  const workspaces = useWorkspaces();
+  const workspace = workspaces.find((candidate) => candidate.id === session.workspaceId);
   const shownBranch = branch !== null && branch.trim() !== '' ? branch : (mount?.branch ?? null);
+  const title = sessionTitle({ session });
+  const isNamedByScope = subject === title;
   return (
     <div className="flex flex-col gap-4">
-      <PreviewHeader
-        title={sessionTitle({ session })}
-        subtitle={[workspace?.name, `updated ${formatAge({ from: session.updatedAt, now })}`]
-          .filter((part) => part !== undefined && part !== '')
-          .join(' · ')}
-      />
+      {isNamedByScope ? null : (
+        <PreviewHeader
+          title={title}
+          subtitle={joinFacts({
+            facts: [
+              workspaces.length > 1 ? workspace?.name : null,
+              formatAge({ from: session.updatedAt, now }),
+            ],
+          })}
+        />
+      )}
       <PreviewFacts
         facts={[
           {
@@ -51,9 +53,8 @@ export const SessionPreview = ({ session }: Props) => {
           ...(shownBranch === null
             ? []
             : [{ label: 'Branch', value: <span className="text-code">{shownBranch}</span> }]),
-          { label: 'Agents', value: String(agentCount) },
-          { label: 'Spend', value: formatUsd(cost) },
-          { label: 'Pull request', value: pr === null ? 'none yet' : `#${pr.number} ${pr.state}` },
+          ...(agentCount === 0 ? [] : [{ label: 'Agents', value: String(agentCount) }]),
+          ...(pr === null ? [] : [{ label: 'Pull request', value: `#${pr.number} ${pr.state}` }]),
         ]}
       />
     </div>

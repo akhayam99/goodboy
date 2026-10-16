@@ -1,3 +1,4 @@
+import { AGENT_KIND_META, classifyAgent } from '../../session/agent-kind';
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, Session, SessionId } from '@goodboy/types';
@@ -31,6 +32,7 @@ type Params = {
 type PaletteLiveAgent = {
   readonly target: AgentActionTarget;
   readonly name: string;
+  readonly role: string;
 };
 
 export type SessionPalette = {
@@ -139,6 +141,7 @@ export const useSessionPalette = ({ session }: Params): SessionPalette => {
         : {
             target: { kind: 'agent', sessionId, agentId: liveAgent.id },
             name: liveAgent.name ?? 'agent',
+            role: AGENT_KIND_META[classifyAgent({ agent: liveAgent, override: null })].noun,
           },
     pullRequest: prNumber === null ? null : { kind: 'pullRequest', sessionId, prNumber },
     task:

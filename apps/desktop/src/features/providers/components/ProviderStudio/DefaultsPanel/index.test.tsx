@@ -377,12 +377,13 @@ describe('DefaultsPanel', () => {
     };
     render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
 
-    const shape = /^[A-Za-z0-9. ]+·(Minimal|Low|Medium|High|Very high|Max)(\+\d)?$/;
+    const shape = /^[A-Za-z0-9. ]+(\+\d)?$/;
     const auto = roleSummary('Planner');
     const pinned = roleSummary('Reviewer');
     expect(auto.textContent).toMatch(shape);
     expect(pinned.textContent).toMatch(shape);
-    expect(pinned.textContent).toBe('Opus 5.5·High+1');
+    expect(pinned.textContent).toBe('Opus 5.5+1');
+    expect(roleRow('Reviewer').querySelector('[data-role-effort]')?.textContent).toBe('High');
     expect(auto.textContent).not.toContain('+');
     expect(auto.querySelectorAll('svg')).toHaveLength(1);
     expect(pinned.querySelectorAll('svg')).toHaveLength(1);
@@ -463,7 +464,8 @@ describe('DefaultsPanel', () => {
     };
     render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
 
-    expect(roleSummary('Planner').textContent).toBe('Opus 5.5·Low+1');
+    expect(roleSummary('Planner').textContent).toBe('Opus 5.5+1');
+    expect(roleRow('Planner').querySelector('[data-role-effort]')?.textContent).toBe('Low');
   });
 
   it('reads an old pin and fallback as a set of two and shows it on the row', () => {
@@ -482,7 +484,8 @@ describe('DefaultsPanel', () => {
     };
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    expect(roleSummary('Planner').textContent).toBe('Opus 5·High+1');
+    expect(roleSummary('Planner').textContent).toBe('Opus 5+1');
+    expect(roleRow('Planner').querySelector('[data-role-effort]')?.textContent).toBe('High');
     fireEvent.click(roleRow('Planner'));
     const chips = within(screen.getByRole('list', { name: 'Planner models' })).getAllByRole(
       'group',
@@ -886,7 +889,7 @@ describe('DefaultsPanel', () => {
       expect(roleRow('Scout').textContent).toContain('Auto');
       expect(screen.getAllByText('Pinned')).toHaveLength(2);
       expect(
-        screen.getByText(/^Pinned Opus 5\.5 is skipped: Claude is Off\. Using /),
+        screen.getByRole('img', { name: /^Pinned Opus 5\.5 is skipped: Claude is Off\. Using / }),
       ).toBeDefined();
       expect(
         screen.getByText(/^Pinned Haiku 4\.5 is skipped: Claude is Off\. Using /),
@@ -905,7 +908,7 @@ describe('DefaultsPanel', () => {
     };
     render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
 
-    expect(screen.getByText('Model settings 1 project had are saved')).toBeDefined();
+    expect(screen.getByText('Saved model settings from 1 project no longer apply.')).toBeDefined();
   });
 
   it('keeps the saved-models notice away when no project had model settings', () => {
@@ -913,6 +916,6 @@ describe('DefaultsPanel', () => {
     state.savedProjectModels = {};
     render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
 
-    expect(screen.queryByText(/had are saved/)).toBeNull();
+    expect(screen.queryByText(/no longer apply/)).toBeNull();
   });
 });

@@ -20,7 +20,7 @@ export const TerminalGroupSection = ({
 }: Props) => {
   const rowCount = group.worktrees.length;
   return (
-    <ListGridGroup label={group.title} {...(rowCount > 1 && { count: rowCount })}>
+    <ListGridGroup label={group.title} headingLevel={2} {...(rowCount > 1 && { count: rowCount })}>
       {group.worktrees.map((worktree) => (
         <TerminalWorktreeRow
           key={worktree.key}

@@ -56,8 +56,8 @@ describe('the Explore file scenes', () => {
     expect((await within(drawer).findAllByText(/roundPosting/, {}, WAIT)).length).toBeGreaterThan(
       0,
     );
-    fireEvent.click(within(drawer).getByRole('button', { name: 'More on rounding.ts' }));
-    expect(screen.getByRole('menuitem', { name: 'Wrap lines' })).toBeDefined();
+    expect(within(drawer).getByRole('button', { name: 'Wrap lines' })).toBeDefined();
+    fireEvent.click(within(drawer).getByRole('button', { name: 'Actions for rounding.ts' }));
     expect(screen.getByRole('menuitem', { name: 'Copy path' })).toBeDefined();
     expect(within(drawer).getByText('842 B', { exact: false })).toBeDefined();
   });

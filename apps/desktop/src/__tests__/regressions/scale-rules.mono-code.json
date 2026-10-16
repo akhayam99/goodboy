@@ -70,7 +70,6 @@
   "apps/desktop/src/features/settings/components/SettingsStudio/ReplyTemplateField.tsx": "code",
   "apps/desktop/src/features/settings/components/SettingsStudio/SecurityFindingRow.tsx": "identifier",
   "apps/desktop/src/features/settings/components/SettingsStudio/SecurityFindingsSection.tsx": "identifier",
-  "apps/desktop/src/features/settings/components/SettingsStudio/ToolMark.tsx": "glyph",
   "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceDefaultsGrid.tsx": "code",
   "apps/desktop/src/features/storage/components/BranchesPage/DeletedBranchRow.tsx": "branch",
   "apps/desktop/src/features/storage/components/BranchesSection/BranchRow.tsx": "branch",

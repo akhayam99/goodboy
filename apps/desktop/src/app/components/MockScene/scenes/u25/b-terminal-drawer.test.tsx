@@ -221,7 +221,7 @@ describe('the terminal drawer scenes', () => {
     await settle();
 
     const terminals = screen.getByRole('list', { name: 'Terminals' });
-    const headings = within(terminals).getAllByRole('heading', { level: 3 });
+    const headings = within(terminals).getAllByRole('heading', { level: 2 });
     expect(headings.map((heading) => heading.textContent)).toEqual([
       'Stop retried webhooks posting a second credit',
       'Workspace folder',

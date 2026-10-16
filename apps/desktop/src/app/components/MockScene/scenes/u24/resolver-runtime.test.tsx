@@ -67,8 +67,7 @@ describe('the resolver runtime scenes', () => {
   it('models-saved-project says the saved settings no longer apply and lists both projects', async () => {
     await mount('models-saved-project');
 
-    expect(screen.getByText('Model settings 2 projects had are saved')).toBeDefined();
-    expect(screen.getByText('They no longer apply.')).toBeDefined();
+    expect(screen.getByText('Saved model settings from 2 projects no longer apply.')).toBeDefined();
 
     fireEvent.click(screen.getByRole('button', { name: 'Show' }));
 

@@ -3,15 +3,11 @@ import { Inbox } from 'lucide-react';
 import { describe, expect, it } from 'vitest';
 import type { SessionId } from '@goodboy/types';
 import type { PaletteEntry } from '../../types';
-import {
-  PALETTE_MIN_HEIGHT_PX,
-  paletteBodyLayoutOf,
-  previewFactCountOf,
-} from './paletteBodyLayout';
+import { PALETTE_MIN_HEIGHT_PX, hasOwnPreviewOf, paletteBodyLayoutOf } from './paletteBodyLayout';
 
 const entry = (patch: Partial<PaletteEntry>): PaletteEntry => ({
   key: 'entry',
-  label: 'Ask in Chat',
+  label: 'Ask in chat',
   kind: 'goto',
   group: 'action',
   icon: Inbox,
@@ -38,21 +34,19 @@ describe('paletteBodyLayoutOf', () => {
   });
 });
 
-describe('previewFactCountOf', () => {
-  it('counts nothing for a bare entry, so the pane hides', () => {
-    expect(previewFactCountOf({ entry: entry({}), subject: null })).toBe(0);
+describe('hasOwnPreviewOf', () => {
+  it('hides the pane for a plain command, even with a tag, a detail or a shortcut', () => {
+    expect(hasOwnPreviewOf({ entry: entry({}) })).toBe(false);
+    expect(hasOwnPreviewOf({ entry: entry({ tag: 'Session' }) })).toBe(false);
+    expect(hasOwnPreviewOf({ entry: entry({ detail: 'payments-api' }) })).toBe(false);
+    expect(hasOwnPreviewOf({ entry: entry({ shortcut: 'palette.open' }) })).toBe(false);
+    expect(hasOwnPreviewOf({ entry: entry({ kind: 'verb' }) })).toBe(false);
   });
 
-  it('counts a target, a tag, a detail, a shortcut and a verb subject', () => {
+  it('shows the pane for an entry with facts of its own', () => {
     const target = { kind: 'session', sessionId: 's-1' as SessionId } as const;
 
-    expect(previewFactCountOf({ entry: entry({ target }), subject: null })).toBe(1);
-    expect(previewFactCountOf({ entry: entry({ tag: 'Session' }), subject: null })).toBe(1);
-    expect(previewFactCountOf({ entry: entry({ detail: 'payments-api' }), subject: null })).toBe(1);
-    expect(previewFactCountOf({ entry: entry({ shortcut: 'palette.open' }), subject: null })).toBe(
-      1,
-    );
-    expect(previewFactCountOf({ entry: entry({ kind: 'verb' }), subject: 'Harborline' })).toBe(1);
-    expect(previewFactCountOf({ entry: entry({ kind: 'verb' }), subject: null })).toBe(0);
+    expect(hasOwnPreviewOf({ entry: entry({ target }) })).toBe(true);
+    expect(hasOwnPreviewOf({ entry: entry({ kind: 'artifact' }) })).toBe(true);
   });
 });

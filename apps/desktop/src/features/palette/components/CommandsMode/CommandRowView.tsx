@@ -1,5 +1,5 @@
 import { ChevronRight } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { KeyHint, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import type { CommandRow } from '../../commandList';
@@ -88,9 +88,9 @@ export const CommandRowView = ({ row, id, isSelected, onHover, onRun }: Props) =
         )}
       </span>
       {item.shortcut !== undefined ? (
-        <kbd className="shrink-0 text-chip text-faint-foreground">
-          {shortcutGlyphs(item.shortcut)}
-        </kbd>
+        <span className="shrink-0">
+          <KeyHint keys={shortcutGlyphs(item.shortcut)} />
+        </span>
       ) : item.tag !== undefined ? (
         <span className="shrink-0 text-label text-faint-foreground">{item.tag}</span>
       ) : null}

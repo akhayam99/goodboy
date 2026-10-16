@@ -9,7 +9,7 @@ import {
 } from '../../../../store/slices/storage/classifyStorageFolder';
 import type { StorageFolder, StorageFolderStatus } from '../../../../store/slices/storage/types';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
-import { formatSpan } from '../../../../shared/utils/time/formatSpan';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { folderStatusLabel, folderWhyLine, localCommitsNote } from '../../storageCopy';
 import { FolderNode } from './FolderNode';
 import { FolderRemoveConfirm, type RemoveIntent } from './FolderRemoveConfirm';
@@ -21,7 +21,6 @@ type Props = {
   readonly folder: StorageFolder;
   readonly now: number;
   readonly suggestAfterDays: number;
-  readonly isSelecting: boolean;
   readonly isSelected: boolean;
   readonly isRemoving: boolean;
   readonly isMeasuring: boolean;
@@ -43,7 +42,6 @@ export const WorktreeRow = ({
   folder,
   now,
   suggestAfterDays,
-  isSelecting,
   isSelected,
   isRemoving,
   isMeasuring,
@@ -118,18 +116,16 @@ export const WorktreeRow = ({
           )}
         </span>
         <span className={cn(STORAGE_COLUMN.age, 'text-meta text-muted-foreground')}>
-          {formatSpan({ from: lastChange, to: now })}
+          {formatAge({ from: lastChange, now })}
         </span>
         <span className={cn(STORAGE_COLUMN.status, 'text-meta', STATUS_TONE[status])}>
-          {statusLabel}
+          {status === 'safe' && !isRemoving ? null : statusLabel}
         </span>
         <WorktreeRowActions
           folder={folder}
           status={status}
-          isBusy={isRemoving || isSelecting}
           target={actions.target}
           onEditor={actions.onEditor}
-          onRemove={setIntent}
         />
         <FolderRemoveConfirm folder={folder} intent={intent} onClose={() => setIntent(null)} />
       </div>

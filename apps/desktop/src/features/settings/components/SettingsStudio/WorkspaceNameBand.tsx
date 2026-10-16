@@ -54,7 +54,7 @@ export const WorkspaceNameBand = ({ workspaceId }: Props) => {
   };
 
   return (
-    <FieldRow label="Name">
+    <FieldRow label="Workspace name">
       <Input
         type="text"
         value={draft}

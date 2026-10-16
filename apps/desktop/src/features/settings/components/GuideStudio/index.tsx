@@ -25,10 +25,23 @@ export const GuideStudio = ({ onClose }: Props) => {
     chapters.find((chapter) => chapter.id === activeId)?.id ?? chapters[0]?.id ?? null;
 
   const jump = (id: string) => {
-    suppressUntilRef.current = Date.now() + 700;
+    suppressUntilRef.current = Number.POSITIVE_INFINITY;
     setActiveId(id);
     scrollToRef.current(id);
   };
+
+  useEffect(() => {
+    const release = () => {
+      suppressUntilRef.current = 0;
+    };
+    const options = { passive: true } as const;
+    window.addEventListener('wheel', release, options);
+    window.addEventListener('touchmove', release, options);
+    return () => {
+      window.removeEventListener('wheel', release);
+      window.removeEventListener('touchmove', release);
+    };
+  }, []);
 
   useEffect(() => {
     const requested = peekGuideChapter();

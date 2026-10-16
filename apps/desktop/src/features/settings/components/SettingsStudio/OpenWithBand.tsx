@@ -10,7 +10,6 @@ import {
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ToolChoiceField, type ToolChoice } from './ToolChoiceField';
-import { ToolMark } from './ToolMark';
 
 const BROWSER_LABELS: Readonly<Record<string, string>> = {
   safari: 'Safari',
@@ -76,7 +75,6 @@ export const OpenWithBand = () => {
   const editorChoices: ReadonlyArray<ToolChoice> = editors.map((editor) => ({
     value: editor.binary,
     label: editor.label,
-    mark: <ToolMark name={editor.label} />,
   }));
 
   const isBrowserMissing =
@@ -90,7 +88,6 @@ export const OpenWithBand = () => {
     ...browsers.map((browser) => ({
       value: browser.id,
       label: browser.label,
-      mark: <ToolMark name={browser.label} />,
     })),
   ];
 

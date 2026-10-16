@@ -124,7 +124,8 @@ describe('UsageGroup', () => {
 
   it('tells a provider without limits apart from one still waiting for a turn', () => {
     render(<UsageGroup providerId="cursor" billing="plan" planLabel={null} />);
-    screen.getByText("Cursor doesn't share usage with other apps.");
+    screen.getByText('Cursor does not share usage.');
+    expect(screen.queryByRole('button', { name: 'Open in Impact' })).toBeNull();
     expect(screen.queryByText(/plan covers this/)).toBeNull();
     cleanup();
 

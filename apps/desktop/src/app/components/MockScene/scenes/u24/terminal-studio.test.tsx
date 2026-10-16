@@ -93,7 +93,7 @@ describe('the terminal studio scenes', () => {
     await settle();
 
     const groups = within(terminalsGrid())
-      .getAllByRole('heading', { level: 3 })
+      .getAllByRole('heading', { level: 2 })
       .map((heading) => heading.textContent);
     expect(groups).toEqual([PAYMENTS_SESSION, NOTIFY_SESSION, 'Workspace folder']);
   });
@@ -104,7 +104,7 @@ describe('the terminal studio scenes', () => {
 
     expect(within(groupNamed(PAYMENTS_SESSION)).getAllByRole('listitem')).toHaveLength(2);
     const counts = within(terminalsGrid())
-      .getAllByRole('heading', { level: 3 })
+      .getAllByRole('heading', { level: 2 })
       .map(
         (heading) => heading.closest('li')?.querySelector('[data-list-grid-count]')?.textContent,
       );

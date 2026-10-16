@@ -29,9 +29,6 @@ const withDetour = ({ body, detour }: DetourParams): string | null => {
   return body === null ? sentence : `${body} ${sentence}`;
 };
 
-const windowPhrase = ({ chip }: Pick<Params, 'chip'>): string =>
-  chip.window?.kind === 'fiveHour' ? 'The 5-hour window' : 'The week';
-
 export const usageNotice = ({ chip, nowMs, detour }: Params): UsageNotice | null => {
   const label = PROVIDER_LABEL[chip.providerId];
   const reset = chip.resetsAt === null ? null : formatLimitReset({ iso: chip.resetsAt, nowMs });
@@ -40,7 +37,7 @@ export const usageNotice = ({ chip, nowMs, detour }: Params): UsageNotice | null
       return {
         tone: 'warning',
         title: `${label} is about to run out.`,
-        body: reset === null ? null : `${windowPhrase({ chip })} resets at ${reset}.`,
+        body: null,
       };
     case 'out':
       return {
