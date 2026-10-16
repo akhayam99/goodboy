@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type {
   Agent,
   AgentId,
@@ -161,12 +161,24 @@ describe('QuestionsPane', () => {
 
   it('lists what waits on you and opens the first question', () => {
     setup();
-    expect(screen.getByTestId('pane-shell').getAttribute('data-meta')).toBe(
-      '3 waiting · 1 blocking',
-    );
-    screen.getByText('Needs you');
+    expect(screen.getByTestId('pane-shell').getAttribute('data-meta')).toBeNull();
+    expect(screen.queryByText('Needs you')).toBeNull();
     row('Which events should be retried?');
     expect(detailHeading().textContent).toBe('Which queue should retries run on?');
+  });
+
+  it('marks a blocking ask with one dot in its own cell and names the asker in the detail only', () => {
+    setup();
+    const rowBox = (name: string) => row(name).parentElement!;
+    const blocking = rowBox('Which queue should retries run on?');
+    const quiet = rowBox('Which events should be retried?');
+
+    expect(within(blocking).getByRole('img', { name: 'Blocking' })).toBeDefined();
+    expect(within(quiet).queryByRole('img', { name: 'Blocking' })).toBeNull();
+    expect(quiet.querySelector('[data-question-blocking-cell]')).not.toBeNull();
+    expect(within(blocking).queryByText(/Planner/)).toBeNull();
+    expect(within(screen.getByRole('article')).getAllByText('Planner').length).toBeGreaterThan(0);
+    expect(screen.queryByText(/1 of 2/)).toBeNull();
   });
 
   it('opens the question picked in the list', () => {
@@ -212,17 +224,14 @@ describe('QuestionsPane', () => {
     );
   });
 
-  it('keeps answered questions folded until asked for, then shows what was sent', () => {
+  it('keeps answered questions open and last, then shows what was sent', () => {
     const answered = question('a1', 'Which branch should the fix land on?', 'reviewer', {
       status: 'answered',
       userAnswer: 'main',
       answeredAt: NOW,
     });
     setup({ answered: [answered] });
-    expect(
-      screen.queryByRole('button', { name: 'Which branch should the fix land on?' }),
-    ).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /Answered/ }));
+    expect(screen.queryByRole('button', { name: /^Answered/ })).toBeNull();
     fireEvent.click(row('Which branch should the fix land on?'));
     screen.getByText('Answered · sent to Reviewer');
   });
@@ -256,8 +265,6 @@ describe('QuestionsPane', () => {
     } as Partial<Agent>);
     setup({ agents: [PLANNER, REVIEWER, delegate] });
     screen.getByText('With an agent');
-    expect(screen.getByTestId('pane-shell').getAttribute('data-meta')).toBe(
-      '2 waiting · 1 blocking',
-    );
+    expect(screen.getByTestId('pane-shell').getAttribute('data-meta')).toBeNull();
   });
 });

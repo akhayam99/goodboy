@@ -9,10 +9,6 @@ import {
   useSessionOpenQuestions,
 } from '../../../../../store';
 import { LiveQuestionCard } from '../../../../context/components/QuestionsTab/LiveQuestionCard';
-import {
-  askerOf,
-  askerQuestions,
-} from '../../../../context/components/QuestionsTab/askerQuestions';
 import { useOpenQuestions } from '../../../../context/components/QuestionsTab/useOpenQuestions';
 import type { AgentKind } from '../../../agent-kind';
 import { ContextLoadFailure } from '../../ContextDrawer/ContextLoadFailure';
@@ -32,19 +28,6 @@ type QuestionsPaneProps = {
 };
 
 const NO_KIND_OVERRIDES: Readonly<Record<AgentId, AgentKind>> = {};
-
-const paneMeta = ({
-  waiting,
-  blocking,
-}: {
-  readonly waiting: number;
-  readonly blocking: number;
-}): string | undefined => {
-  if (waiting === 0) {
-    return undefined;
-  }
-  return blocking > 0 ? `${waiting} waiting · ${blocking} blocking` : `${waiting} waiting`;
-};
 
 export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
   const sessionId = session.id as SessionId;
@@ -67,7 +50,6 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
   const focusedQuestionId = useOpenQuestions((s) => s.focusedQuestionId);
   const clearFocusedQuestion = useOpenQuestions((s) => s.clearFocusedQuestion);
   const [selectedId, setSelectedId] = useState<OpenQuestionId | null>(null);
-  const [isAnsweredOpen, setIsAnsweredOpen] = useState(false);
 
   const loadQuestions = useCallback(() => {
     void loadSessionOpenQuestions(sessionId);
@@ -84,11 +66,8 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
     () => buildQuestionsLens({ open, answered, agents, staged, dismissed }),
     [open, answered, agents, staged, dismissed],
   );
-  const rows = useMemo(
-    () => visibleQuestionRows({ model, isAnsweredOpen }),
-    [model, isAnsweredOpen],
-  );
   const allRows = useMemo(() => visibleQuestionRows({ model, isAnsweredOpen: true }), [model]);
+  const rows = allRows;
 
   useEffect(() => {
     if (focusedQuestionId == null || !openLoaded) {
@@ -199,40 +178,19 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
   }
 
   const question = selectedRow?.question ?? null;
-  const group =
-    question === null || selectedRow?.kind === 'answered' || selectedRow?.kind === 'dismissed'
-      ? []
-      : askerQuestions({ questions: model.answerable, askerId: askerOf(question) });
-  const position = question === null ? -1 : group.findIndex((q) => q.id === question.id);
-  const pager =
-    group.length < 2 || position === -1
-      ? null
-      : {
-          index: position,
-          doneFlags: group.map((q) => staged.includes(q.id)),
-          onPrevious: () => setSelectedId(group[position - 1]?.id ?? null),
-          onNext: () => setSelectedId(group[position + 1]?.id ?? null),
-        };
-
   return (
-    <PaneShell
-      title="Questions"
-      meta={paneMeta({ waiting: model.waiting.length, blocking: model.blockingCount })}
-      scroll="self"
-    >
+    <PaneShell title="Questions" scroll="self">
       <PageColumn className="flex min-h-0 flex-1 flex-col pb-5">
         <div
           onKeyDown={handleKeyDown}
-          className="grid min-h-0 flex-1 grid-cols-[18rem_minmax(0,1fr)] @max-[56rem]:grid-cols-[15rem_minmax(0,1fr)]"
+          className="grid min-h-0 flex-1 grid-cols-[18rem_minmax(0,1fr)] gap-x-6 @max-[56rem]:grid-cols-[15rem_minmax(0,1fr)]"
         >
-          <div className="flex min-h-0 flex-col border-r border-border-soft">
+          <div className="flex min-h-0 flex-col">
             <QuestionsQueue
               model={model}
               agents={agents}
               kindOverrides={kindOverrides}
               selectedId={effectiveId}
-              isAnsweredOpen={isAnsweredOpen}
-              onToggleAnswered={() => setIsAnsweredOpen((value) => !value)}
               onSelect={setSelectedId}
               onUndo={handleUndoRow}
             />
@@ -244,14 +202,13 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
                 <EmptyLine className="text-heading text-foreground">No questions</EmptyLine>
               </div>
             ) : (
-              <div className="px-6 py-6">
+              <div className="py-2">
                 <LiveQuestionCard
                   key={question.id}
                   question={question}
                   sessionId={sessionId}
                   variant="full"
                   autoFocus
-                  pager={pager}
                   settled={
                     selectedRow.kind === 'answered' || selectedRow.kind === 'dismissed'
                       ? selectedRow.kind
