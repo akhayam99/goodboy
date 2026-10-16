@@ -154,6 +154,7 @@ describe('the c10 New session scenes', () => {
     const listbox = screen.getByRole('listbox', { name: 'Project' });
     expect(within(listbox).getAllByRole('option')).toHaveLength(1);
     expect(within(listbox).getByRole('option', { name: /payments-api/ })).toBeDefined();
+    expect(within(listbox).queryAllByText(/^(Suggested|All projects)$/).length).toBeGreaterThan(0);
     expect(pickedNames()).toEqual(['Remove payments-api', 'Remove ledger-core']);
   });
 

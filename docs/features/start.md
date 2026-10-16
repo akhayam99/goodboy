@@ -6,7 +6,7 @@ Begin from an issue, a workflow or a question. Everything starts as one draft, a
 
 The **New session** draft has one compact selector with four choices: **Pick up a task**, **Run a workflow**, **Orchestrate** and **Ask an agent**, and a line under it that says what the selected one does. **Start blank** sits in the page header, and **Discard** sits next to the start button at the end of every form, once you wrote something. Run a workflow, Orchestrate and Ask an agent are the same forms as in the **New** menu of a session, at page width, and a spend cap that is switched on needs an amount with a preset too. Esc closes the page and takes you back to where you were. If you wrote something, Esc asks whether to keep the draft or discard it, and keeping it leaves **New session** ready with your text. **Discard** throws it away.
 
-**Projects** is optional. Search it by name, even with 50 projects in the workspace, and the projects you pick show as chips you can remove. A project the picked issue points to comes first and is already picked, with one line that says why, such as _In payments-api, from GitHub repo harborline/payments-api._
+**Projects** is optional. Search it by name, even with 50 projects in the workspace, and the projects you pick show as chips you can remove. The list opens on Suggested (the issue's project, the ones you used last, then starred ones, five at most) and then All projects by name. With nothing picked it says _No project yet. Goodboy adds one when an agent needs it._ A project the picked issue points to comes first and is already picked, with one line that says why, such as _In payments-api, from GitHub repo harborline/payments-api._
 
 ### Pick up a task, with a drafted brief
 

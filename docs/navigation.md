@@ -965,7 +965,11 @@ Pick up a task, Run a workflow, Orchestrate and Ask an agent. **Start blank** si
 in the page header. Run a workflow, Orchestrate and Ask an agent each hold
 **Projects** (`KickoffProjects` over the shared `ProjectPicker`): optional, a
 searchable multiple `Listbox` with the picked projects as removable chips under
-it, suggested projects first. The draft keeps them as `projectIds`; the first is
+it, in two groups (`projectPickerGroups`): "Suggested" holds at most five (the
+picked issue's project, then the most recently used, then starred ones) and
+"All projects" lists the rest by name with the base branch at the right. With
+no project picked the line under it reads `No project yet. Goodboy adds one
+when an agent needs it.` (mounts stay lazy). The draft keeps them as `projectIds`; the first is
 the session's project and the rest are added with it (`additionalProjectIds`).
 When a picked issue maps to a project, the picker starts with it and one line
 under it names the project and the reason

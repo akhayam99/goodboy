@@ -81,7 +81,7 @@ one-line **description**. Both live on the project row in workspace settings.
 - Every agent's project list puts starred projects first, marks them, shows each
   description next to the name, and says to look in starred projects first when
   a request names no project. The planner and the orchestrator get the same list
-- Project pickers and the Activity project filter put starred projects on top
+- Project pickers and the Activity project filter put starred projects on top; the New session picker lists them in its Suggested group after the issue's project and the most recently used
 - A star never changes what an agent may mount or write
 
 A repo project needs a working git setup before a session can make a worktree

@@ -2,7 +2,8 @@ import { useMemo } from 'react';
 import { X } from 'lucide-react';
 import { Chip, Listbox, type ListboxOption } from '@goodboy/ui';
 import type { Project, ProjectId } from '@goodboy/types';
-import { ICON_SIZE, projectGlyph } from './conceptIcons';
+import { ICON_SIZE, projectGlyph } from '../conceptIcons';
+import { projectPickerGroups } from './projectPickerGroups';
 
 type Props = {
   readonly projects: ReadonlyArray<Project>;
@@ -10,6 +11,11 @@ type Props = {
   readonly suggestedIds?: ReadonlyArray<ProjectId>;
   readonly isDisabled?: boolean;
   readonly onChange: (projectIds: ReadonlyArray<ProjectId>) => void;
+};
+
+type OptionParams = {
+  readonly project: Project;
+  readonly group: 'Suggested' | 'All projects';
 };
 
 const NO_SUGGESTIONS: ReadonlyArray<ProjectId> = [];
@@ -22,16 +28,23 @@ export const ProjectPicker = ({
   onChange,
 }: Props) => {
   const options = useMemo((): ReadonlyArray<ListboxOption<ProjectId>> => {
-    const suggested = projects.filter((project) => suggestedIds.includes(project.id));
-    const rest = projects.filter((project) => !suggestedIds.includes(project.id));
-    return [...suggested, ...rest].map((project) => {
+    const { suggested, all } = projectPickerGroups({ projects, suggestedIds });
+    const optionOf = ({ project, group }: OptionParams): ListboxOption<ProjectId> => {
       const Glyph = projectGlyph({ kind: project.kind });
+      const baseBranch = project.baseBranch ?? '';
+      const hasBaseBranch = group === 'All projects' && baseBranch !== '';
       return {
         value: project.id,
         label: project.name,
+        group,
         leading: <Glyph size={ICON_SIZE.row} aria-hidden />,
+        ...(hasBaseBranch && { meta: baseBranch }),
       };
-    });
+    };
+    return [
+      ...suggested.map((project) => optionOf({ project, group: 'Suggested' })),
+      ...all.map((project) => optionOf({ project, group: 'All projects' })),
+    ];
   }, [projects, suggestedIds]);
   const picked = value.flatMap((id) => projects.filter((project) => project.id === id));
   return (
