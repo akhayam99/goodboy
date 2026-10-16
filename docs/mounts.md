@@ -309,7 +309,7 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
   behind an inline confirm (`worktree_abort_rebase`, which refuses when no
   rebase is stopped).
 - **A worktree names its layers on its level.** The worktree level of the
-  sidebar holds the code host layers as entries: Pull request with its number,
+  session rail holds the code host layers as entries: Pull request with its number,
   Files with the diff count (`useMountDiffStats`, read from
   `sessionWorktreeRecords`, which `applyMountViews` rewrites on every mount
   change, so a branch attached or forked while the session is open counts at
@@ -488,11 +488,11 @@ action the user can see, or allows one on a mount the user sees as gone.
 ## Worktree rows and the Overview notices
 
 The Overview has no Projects section. A worktree is a one line row of the
-session level in the sidebar (`WorktreeRow`: branch, pull request number, the
+session level in the session rail (`WorktreeRow`: branch, pull request number, the
 worst state as one dot) and drills into its worktree level, whose identity row
 menu holds the `mount` kind of the action registry
 (`features/actions/kinds/mount.ts`) and whose status line holds Rebase. The
-navigation rules live in [navigation.md](navigation.md#sidebar-levels).
+navigation rules live in [navigation.md](navigation.md#session-rail).
 
 What a worktree asks the user to decide shows once, in the Overview notices
 slot (`OverviewNotices`, one `MountNotices` per open mount, the first lap

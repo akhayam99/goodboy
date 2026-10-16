@@ -21,7 +21,7 @@
   (`SessionFilterPopover`). On the Board the filter holds Project and Sort, plus
   a Repositories line with Check origin while every repository is fine; the
   List adds Status, Archive and Group. New session is not here: it is the first
-  row of the sidebar's workspace level. Nothing else sits on that line, and no
+  row of the column. Nothing else sits on that line, and no
   row sits under it. A filter that hides sessions says "N hidden by filters"
   with Clear under the lanes or the list. The List is one `ListGrid` with 32px
   rows on the 960 list measure: state node 28 (glyph 16, so the title sits 24
@@ -74,8 +74,7 @@
   reads like a figure, not a place you work in. The spend chip is state that
   opens the studio that owns that number, on Impact's Spend tab, and the Limits
   chips open the Providers menu. The bar never edits a record in place.
-- **The column holds every door, one level at a time.** At the workspace
-  level New session comes first, then the doors Sessions (the board, ⌘⇧H),
+- **The column holds every door and never changes level.** New session comes first, then the doors Sessions (the board, ⌘⇧H),
   Tasks, Chat, Workflows and Terminal; Chat and Terminal each end in a plus
   (New chat, New terminal) that is always visible. No separator: the Pinned and
   Sessions lists follow, and Settings and the Goodboy row sit at the foot. A
@@ -83,8 +82,9 @@
   its tooltip and accessible name, never a colored number. Monitoring is not a
   door: it is the top bar signal (`MonitoringSignal`), an `activity` icon with a
   dot while ports are in use and the words "Pinned port down" when a pinned
-  port is free. Inside a session the column shows the session level (see
-  Sidebar levels). The column is on every screen with a workspace: the board, a
+  port is free. Inside a session the column stays the same and marks the open
+  session's row; the session's own levels live in the session rail at the left
+  of the page (see Session rail). The column is on every screen with a workspace: the board, a
   session, the draft and every studio but Settings, which swaps the column's
   content (see Studios).
 - **One home per thing.** Say a thing must exist in state A and can exist in
@@ -134,7 +134,8 @@
   open, or Board on the board, takes `bg-selected` with `cursor-default` and
   `aria-current="page"`, in the column and on the rail alike. Every door reads it from one place (`columnPlaceOf`, through
   `useColumnPlace`), so at most one door carries it; inside a session no door
-  does, because the session level's page row is the sign (see Sidebar levels). A popover trigger (the
+  does: the open session's row is the column's sign and the current page row is
+  the session rail's (see Session rail), one sign per navigation column. A popover trigger (the
   Limits chips, the Goodboy row) is never selected: it only reports
   `aria-expanded`. A button's label, `aria-label` and tooltip name the same word
   (`Workflows`, `Chat`); the hover hint adds only the shortcut.
@@ -516,12 +517,15 @@ plus main. There is no footer. **There is one app layout and every surface fills
 its slots.** The board, the session and the studios do not define their own
 frames. A surface that needs a different frame changes the shared one instead of
 forking a second (`app/shellArrangement`, which every shell mount, the app and
-the mock scenes alike, reads). **Two navigation columns at once is not the IA.
-A page rail is not one: filters or a list that belong to the page sit beside
-the detail, on the page background. The right drawer is context, never
-navigation.** A session draws one full-width
-pane, and its navigation lives in the left column. The right drawer holds
-reference material beside the page and closes with the pane that opened it.
+the mock scenes alike, reads). **The column never changes; a session adds one
+rail of its own.** The column is the workspace's navigation and looks the same
+on every screen. Inside a session the session rail (see Session rail) sits at
+the left of the page, inside the content sheet on the page background, and
+holds the levels that drill (session, worktree, run, Auto). No other surface
+adds a navigation column: filters or a list that belong to a page sit beside
+the detail as a page rail. The right drawer is context, never navigation. The
+right drawer holds reference material beside the page and closes with the pane
+that opened it.
 
 **The column** (`app/components/SideColumn/`) is on every screen with a
 workspace, in the same shape everywhere: the toggle on the traffic-light axis,
@@ -598,11 +602,23 @@ hide animation or overlay can move it.
   pinned sessions as 28px node buttons (see the rail paragraph below), then
   Settings, the bug and the Goodboy mark at the bottom. It works at rail width
   because it holds doors and a few marks, not the list; the sessions list comes
-  back through the peek. Hiding a column
+  back through the peek. The session rail has the same one reduced state: its
+  own toggle folds it to a 44px strip of the current level's icons
+  (`SessionRailIcons`), remembered apart from the column
+  (`goodboy:session-rail-collapsed:v1`). Hiding a column
   outright sets it and its handle to zero width and marks the aside `inert`: a
   zero-width column that still takes focus is a keyboard trap. The shell
   primitive can lay out more reduced states than the product uses. Which one a
   column gets is decided here, not by what the primitive offers.
+- **At narrow widths the column folds first, then the session rail.** While a
+  session is open, `shellFoldsOf` (read through `useShellFolds`) takes the
+  window width, the saved column and rail widths and the open pane's track,
+  and folds the column to its rail once the page would get less than 720px
+  (`SESSION_PAGE_MIN`), then the session rail too if the page is still short.
+  The saved choices are untouched: ⌘B or the rail toggle opens a column folded
+  this way for as long as the window stays narrow. With no session open
+  nothing folds by itself. At 1440 a side pane folds the column and keeps the
+  rail; at 1280 it folds both; with no pane both stay open at 1280 and 1440.
 - **The overlay slots sit inside the grid, not above it.** The peek spans the
   work row, so it can hover over main without taking layout space. The studio
   slot covers the content area only (`studioCoversLeft={false}`), as its own
@@ -614,7 +630,7 @@ hide animation or overlay can move it.
 mounts editors and takes a title.
 
 **The Projects group of the session level shows which projects a session has
-materialized.** It lives in the sidebar, not on the Overview, and always has
+materialized.** It lives in the session rail, not on the Overview, and always has
 the Add action, even before the first mount. Each mounted project is a label
 row with its worktrees as one line rows under it; merged and closed ones fold
 into `N finished`. Sessions are created lazily on the workspace
@@ -622,22 +638,29 @@ into `N finished`. Sessions are created lazily on the workspace
 session's footprint grows. What a worktree asks the user to decide shows in the
 Overview notices slot ([mounts.md](mounts.md#worktree-rows-and-the-overview-notices)).
 
-## Sidebar levels
+## Session rail
 
-**The sidebar shows one level at a time.** Level 0 is the workspace: New
-session, the doors, then the Pinned and Sessions lists. Level 1 is a session.
-Clicking a session row drills the sidebar into it: the level slides left over
-180ms (`LevelStack`, instant under reduced motion), the session opens on its
-Overview and the center shows it. The level host is `SideColumn`
-(`app/components/SideColumn`); both levels stay mounted, so the workspace
-level keeps its scroll and its selection while the session level is on screen,
-and the hidden one is `inert`.
+**The column never changes level; the session rail does.** The column always
+shows the workspace: New session, the doors, then the Pinned and Sessions
+lists. Clicking a session row selects that row, opens the session on its
+Overview and shows its session rail at the left of the page, inside the
+content sheet. The rail holds the levels that drill: level 1 is the session,
+level 2 a worktree, a preset run or Auto. A drill and its back slide the
+rail's levels over 180ms (`LevelStack`, instant under reduced motion); the
+column never moves. The host is `SessionRail` (`app/components/SessionRail`),
+mounted once for the open session by `SessionFrame` beside the kept-alive
+session pages, its level read by `useSessionRailLevel`. Every level stays
+mounted, so the session level keeps its scroll and its selection while a
+deeper level shows, and the hidden ones are `inert`. The rail is 240px by
+default and resizes from 200 to 400 (`goodboy:session-rail-width:v1`); its
+rows are the column's rows (28px, `SelectableRow`, the same type roles).
 
-- **Level 1 reads top to bottom:** the back row `‹ Sessions` (`LevelBackRow`),
-  the identity row (`SessionLevel/IdentityRow`: the session node, the title,
-  which renames inline on click, and a visible `⋯` with Rename, Pin, Refresh,
-  Archive and Delete), the pages, then Projects and Linked. Only one level
-  shows, so a session never carries a nested card in the workspace list.
+- **Level 1 reads top to bottom:** the identity row
+  (`SessionLevel/IdentityRow`: the session node, the title, which renames
+  inline on click, and a visible `⋯` with Rename, Pin, Refresh, Archive and
+  Delete), the pages, then Projects and Linked. It has no back row: the column
+  beside it is the way to another place. Only one level shows, so a session
+  never carries a nested card in the workspace list.
 - **The pages** come from one registry (`features/session/pageRegistry.ts`):
   Overview, File versions in a branchless session only, Runs, Agents, Auto
   agents (with a neutral Experimental chip, only while Auto is on or the
@@ -663,8 +686,8 @@ and the hidden one is `inert`.
   each repo project of the session; each opens today's popover
   (`MountProjectAction`, `NewBranchMountAction`) anchored under the label.
 - **Level 2, the worktree.** Showing the Branch lens is being on level 2
-  (`useSidebarLevel` reads `activeLens === 'branch'`, so history, links and
-  keys drill the sidebar without extra state). It reads: the back row
+  (`useSessionRailLevel` reads `activeLens === 'branch'`, so history, links and
+  keys drill the rail without extra state). It reads: the back row
   `‹ <session title>` (named `Back to session <title>`), which opens the
   session's Overview; the identity row (`WorktreeLevel/WorktreeIdentityRow`:
   the project name in gray, then the mono branch with the chevron of today's
@@ -683,30 +706,31 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   tree (`ChangeTree`, the tree pane of `SessionDiffPane`) right under the row
   and the diff fills the center; any other entry closes it. The entries are
   the Branch page's own rail, portalled into the level (`worktreeLevelSlot`),
-  so the page keeps one source for every number. ⌘[ in the sidebar and the
+  so the page keeps one source for every number. ⌘[ in the rail and the
   back row go up one level each.
 - **Linked** lists the session's linked work, one row per item: provider
   mark, key in mono, title. The row opens the item; its right-click menu holds
   Unlink and Move. The label carries Link work (L).
-- **Back.** The back row goes back to level 0 without changing the center:
-  the session stays open and its row stays selected. ⌘[ does the same while
-  focus is in the sidebar; anywhere else ⌘[ is the top bar Back. The level is
-  part of the history entry (`focus.selection['sidebar-level']`, set by
-  `leaveSessionLevel`), so Back and Forward restore it, and any move into the
-  session (a row click, a page key, a link from the palette, a notification)
-  starts a fresh entry on level 1. A studio over the session (Tasks, Chat,
-  Workflows, Terminal, Monitoring, Impact) shows level 0 with its door
-  selected and the session row unselected (`useSidebarLevel`).
-- **Folded (⌘B, 44px).** The rail shows the current level as icons with right
-  tooltips: on level 2 the back icon, then one icon per worktree entry
-  (`RailWorktreeLevel`) or per run step (`RailRunLevel`); on the Auto level
-  the back icon, then one ring per rail row with its role and state in the
-  tooltip (`RailAutoLevel`); on level 1 the back icon first, then one icon per
-  page with its dot; on level 0 New, the doors and the pinned session nodes.
-  The changed file tree needs the open sidebar (or its peek); the diff and its
-  keys work without it.
+- **Back.** On level 2 the back row goes up to level 1, and so does ⌘[ while
+  focus is in the rail; on level 1 ⌘[ in the rail does nothing, and anywhere
+  else ⌘[ is the top bar Back. Leaving the Auto level is part of the history
+  entry (`focus.selection['sidebar-level']`, written by `pickRailLevel`), so
+  Back and Forward restore it, and any move into the session (a row click, a
+  page key, a link from the palette, a notification) starts a fresh entry. A
+  studio over the session (Tasks, Chat, Workflows, Terminal, Monitoring,
+  Impact) covers the page and its rail; the column selects that studio's door
+  and leaves the session row unselected.
+- **Folded (44px).** The rail's own toggle (`SessionRailToggle`, Fold session
+  rail) folds it to the current level as icons with right tooltips
+  (`SessionRailIcons`): on level 2 the back icon, then one icon per worktree
+  entry (`RailWorktreeLevel`) or per run step (`RailRunLevel`); on the Auto
+  level the back icon, then one ring per rail row with its role and state in
+  the tooltip (`RailAutoLevel`); on level 1 one icon per page with its dot.
+  ⌘B folds the column only, which shows New, the doors and the pinned session
+  nodes on every screen. The changed file tree needs the open rail; the diff
+  and its keys work without it.
 - **Level 2, a preset run.** Opening a run with a fixed step list (a saved
-  workflow or Describe steps; `executionMode` not `dynamic`) drills the sidebar
+  workflow or Describe steps; `executionMode` not `dynamic`) drills the rail
   into it (`RunLevel`, `LevelStack` layer `run`). It reads: the back row
   `‹ Runs`, the identity row (the run's state dot from `runRowFactsOf`, the
   run title, which renames inline on click), **Overview**, the steps as the
@@ -718,9 +742,9 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   from one function, `presetRunFocusOf`: the selected agent belongs to a
   preset run (any link to a step lands here, the deepest level that holds it),
   or the Runs page has a preset run focused. Back (the back row, or ⌘[ in the
-  sidebar) calls `leaveRunLevel`: the Runs list, session level, a new history
+  rail) calls `leaveRunLevel`: the Runs list, session level, a new history
   entry. Esc on the run Overview does the same. An orchestrated run does not
-  drill: the sidebar stays on the session level with **Orchestrated** selected
+  drill: the rail stays on the session level with **Orchestrated** selected
   and the center shows its document
   ([The orchestrated document](workflows.md#the-orchestrated-document)).
 - **Orchestrated** is its own session page (lens `orchestrated`, after Runs,
@@ -732,17 +756,17 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   the document opens the step in the pane (drawer kind `run-step`), never the
   center.
 - **The Auto level (level 2).** Auto agents opens the session's only Auto
-  conversation and drills the sidebar into it (`openAutoAgents`); with none or
+  conversation and drills the rail into it (`openAutoAgents`); with none or
   several it opens the Auto agents page (`AutoAgentsPane`: one grid row per
   conversation with its state word, then Start Auto while Auto is on), and a
-  row there drills in. The Auto level (`SideColumn/AutoLevel`) reads: the back
+  row there drills in. The Auto level (`SessionRail/AutoLevel`) reads: the back
   row `‹ <session title>`, the Work rail exactly as the chat had it (Auto
   first, then each child with its state word, queued children on the dashed
   spine), the empty state "No agents started yet" while Auto has no child, and
   the foot "Limit $10.00 · $5.23 left" (`AutoLimitFoot`; the limit opens the
   limit popover). It shows while the center is an Auto agent or one of its
   children (`useIsOnAutoAgent`) unless the user went back: the back row and ⌘[
-  write `sidebar-level: session` (`pickSidebarLevel`), which keeps the Auto
+  write `sidebar-level: session` (`pickRailLevel`), which keeps the Auto
   chat in the center with Auto agents selected; a click on Auto agents drills
   in again. The Agents key (`lens.agents`) pressed again on Agents opens Auto
   agents while it shows (`isAutoAgentsShown`), and pressed on Auto agents goes
@@ -842,16 +866,15 @@ switcher's Pinned section. **Move up** and **Move down** (`session.pinnedUp`,
 while it can move; `movePin` swaps the `at` of two neighbours and goes through
 the same compare and swap. Dragging is not built.
 
-**The session level carries one current sign.** `currentSignOf`
+**The session level of the rail carries one current sign.** `currentSignOf`
 (`SessionActivityBar/currentSign.ts`) returns a page id, `session` or
 `remembered`. A page with an entry (Overview, File versions, Runs, Agents,
 Artifacts, and Questions while one is open) takes `bg-selected` and
 `aria-current="page"`; on the Branch page the worktree row of the shown mount
-(`useBranchIdentity`) takes it instead. On the workspace level the open session
-row takes the sign while its page is on screen. While a studio (Tasks, Chat,
-Workflows, Terminal, Impact) sits over the session the sidebar shows the
-workspace level with that studio's door selected and the session row in medium
-weight with no fill. A worktree row click goes through `switchBranchMount` and
+(`useBranchIdentity`) takes it instead. In the column the open session row
+takes the sign while its page is on screen. While a studio (Tasks, Chat,
+Workflows, Terminal, Impact) sits over the session the column selects that
+studio's door and shows the session row in medium weight with no fill. A worktree row click goes through `switchBranchMount` and
 lands on the landing tab of that branch (`branchLandingTabOf`), never on the
 tab, thread or diff focus of the branch it leaves.
 
@@ -1077,13 +1100,14 @@ activity yet show the plain overview with its actions.
 
 ## Breadcrumbs
 
-- **A session page has no trail.** The path is the sidebar back row
-  (`‹ Sessions`, see Sidebar levels) and history is the top bar Back. Each
+- **A session page has no trail.** The path is the column's selected session
+  row and the session rail's back row (see Session rail), and history is the
+  top bar Back. Each
   session page opens with one 44px header row from `PaneShell`: the page
   title (Overview, Runs, Agents), the page actions, then the pane actions at
   the far right. No crumb row, no second title row. A deeper object (a run,
   an artifact, a child agent) goes back to its list from its page row in the
-  sidebar, from Esc (Up) or from the top bar Back. The crumb menus are gone
+  session rail, from Esc (Up) or from the top bar Back. The crumb menus are gone
   (cut C1).
 - **The header's right end holds the pane cluster.** `SessionWorkspace`
   hands `PaneCluster` to every `PaneShell` title row through
@@ -1092,7 +1116,7 @@ activity yet show the plain overview with its actions.
   visible session (`useAskOpenShortcut` in `SessionWorkspace`), not by the
   button, so two mounted panes never bind it twice.
 - **The Overview header** reads `Overview`. The session title, its rename and
-  its lifecycle menu live on the sidebar identity row. The header keeps the
+  its lifecycle menu live on the session rail identity row. The header keeps the
   Overview actions as visible words (`OverviewPageActions`: Write title and
   goal from linked work, and Scripts in a branchless session), **New**
   (`OverviewActions`, ⌘N on the Overview, opens the New drawer; filled only
@@ -1548,7 +1572,7 @@ ticks when an agent finishes a turn, not when a session row exists.
 Auto is described in [auto.md](auto.md); this is where it sits. Settings, App,
 General ends with the band **Experiments** (`ExperimentsBand`), drawn only
 while the release gate is open. The Work rail of an Auto agent, and of each
-child of an Auto tree, is the sidebar's Auto level (see Sidebar levels), never
+child of an Auto tree, is the session rail's Auto level (see Session rail), never
 a second rail beside the chat. The chat of an Auto agent gets its delegation lines and its
 tail through the `insertions` prop of `ChatView` (`useAutoChat`). The
 plan drawer swaps its toolbar for `AutoPlanToolbar` when the plan belongs to an
@@ -2096,7 +2120,8 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   comfortable rows.
 - **Master-detail is not the dual-sidebar anti-pattern.** A narrow list rail
   beside a detail panel is fine. "no left panel and right panel at once" is
-  about two sidebars on either side of the content, which the app does not do.
+  about two sidebars on either side of the content, which the app does not do:
+  the column and the session rail both sit on the left.
 - **Disconnecting is scoped.** A connected integration studio can disconnect
   from its own header. That clears the workspace credential, never a
   system-level session. A workspace running on the system `gh` CLI has nothing
@@ -2200,7 +2225,7 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   `Not now`) and the first lap Publish. Needs you follows, then Next (up to
   three rows, the first one's verb the only filled button on the page), then
   Activity. Projects, Linked work, Artifacts and Add project live on the
-  sidebar session level. Next and Unassigned notes open with `SectionHeader`
+  session rail's session level. Next and Unassigned notes open with `SectionHeader`
   at level 2, and Needs you opens with the same eyebrow. The cost chip sits at
   the right of the Activity header.
   `Mark all seen` is a ghost button in the Activity header and shows only
@@ -2549,8 +2574,9 @@ Pushing has no scrim and nothing is inert. Closed, the
 aside is 0px wide and `inert`. Opening and closing move the track in 180ms
 ease-out (none under reduced motion), and the centred column slides with it
 while the card slides 8px in; over the page it slides in 200ms; a new kind in
-an open drawer fades its content in 120ms. It never touches the sidebar
-preference: the page does not fold the sidebar to keep a drawer pushing.
+an open drawer fades its content in 120ms. It never writes the sidebar
+preference: a pane that leaves a session page under 720px folds the column,
+then the session rail, only while it is open (`shellFoldsOf`, see Surfaces).
 
 **Closing never moves the page behind a drawer.** `DrawerColumn` remembers the
 last mode the drawer was open in (`useDrawerExit`). Closed from pushing, the
@@ -2849,12 +2875,12 @@ Files tab, Write review, the Bitbucket pull request changes and the
 Rust side runs git with `core.quotepath=false` and `parseUnifiedDiff` reads
 quoted headers, so a name with accents is its own file.
 
-**Frame.** The Branch page is the center of the worktree level (Sidebar
-levels, level 2): one detail with no rail of its own. Its sections are the
+**Frame.** The Branch page is the center of the worktree level (Session
+rail, level 2): one detail with no rail of its own. Its sections are the
 level's entries; `BranchPage` renders them (`BranchRail`) through a portal
 into the slot the level registers (`worktreeLevelSlot`,
 `useWorktreeLevelSlot`), so the counts stay computed once by the page. A host
-with no sidebar (a scene, a test with no slot) shows the page alone. The
+with no session rail (a scene, a test with no slot) shows the page alone. The
 header, the banners and every section body sit on the 960px column of the
 detail; nothing moves from one section to the next.
 
@@ -3058,7 +3084,7 @@ the mount's history draft (`loadHistoryDraft`) once when the page opens and the
 draft is not there yet, so the Commits count is a number on the Comments section too. `Fix comments N`, in the section header and in the Files toolbar, is the one fix launch.
 
 **Files.** The branch against its base, on the column like every other section, with
-the change tree in the sidebar, right under the Files entry (the accordion of the worktree level).
+the change tree in the session rail, right under the Files entry (the accordion of the worktree level).
 `BranchRail` renders the Files group host (`data-slot="branch-rail-files"`) under the Files row
 only while Files is the entry, and `BranchPage` hands it to `SessionDiffPane` through `DiffRailContext`
 (`features/diff/diffRailHost.ts`); `SessionDiffPane` portals `ChangeTree` into it, so the

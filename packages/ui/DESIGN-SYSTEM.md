@@ -1492,11 +1492,13 @@ page (Settings in the default shell) draws no band (`hasBand={false}`) and gives
 its page the band's 40px as top padding, so the title row lands where a session
 page's does under its trail.
 
-**A session has its own sidebar level, not a card.** The workspace list keeps
-every session a flat row; the open one is set in medium weight and takes
-`bg-selected` while its page is on screen. Its pages, projects and linked work
-live on the session level of the sidebar (`SideColumn/SessionLevel`), which
-replaces the list with a 180ms slide, so no card nests inside the list. A page
+**A session has its own rail, not a card.** The workspace list keeps every
+session a flat row and never changes level; the open one is set in medium
+weight and takes `bg-selected` while its page is on screen. Its pages, projects
+and linked work live on the session level of the session rail
+(`SessionRail/SessionLevel`), at the left of the page on the page background
+with the column's row recipe, and its deeper levels slide in there over 180ms,
+so no card nests inside the list. A page
 entry ends in one fixed 40px right-aligned slot: the count in tabular gray and
 a 6px dot for running (info) or open questions (warning).
 

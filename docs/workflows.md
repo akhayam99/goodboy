@@ -264,7 +264,7 @@ providers it may pick from with **Can use**.
 ### The orchestrated document
 
 An orchestrated run is a goal carried to its end, so its steps are the
-progress you watch, not places you go: the sidebar stays on the session level
+progress you watch, not places you go: the session rail stays on the session level
 with **Orchestrated** selected and the center is one document
 (`OrchestratedRunPage`, in `features/session/components/OrchestratedRun`),
 read top to bottom at the conversation measure:
@@ -391,7 +391,7 @@ to the list (`parentPlace`).
 ## The preset run level
 
 A preset run is a recipe the user advances, so its steps are navigation: the
-sidebar drills into the run ([Sidebar levels](navigation.md#sidebar-levels))
+session rail drills into the run ([Session rail](navigation.md#session-rail))
 and the center shows the selected entry (`PresetRunPage`, in
 `features/session/components/PresetRun`).
 
@@ -421,7 +421,7 @@ and the center shows the selected entry (`PresetRunPage`, in
   `choices` item), **Skip step N** for the selected step while it has not
   finished (asks first, `skipStepDescription`), Copy run summary, Save as
   preset, **Stop run** (asks first), Archive run, Delete run.
-- **Add step** in the sidebar opens the Overview and asks `WorkflowAddStep`
+- **Add step** in the session rail opens the Overview and asks `WorkflowAddStep`
   to open its draft there (`requestRunAddStep`, after the navigation settles).
 
 ## How a run advances

@@ -258,7 +258,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Left column',
-        desc: 'New session comes first, then the doors Sessions, Tasks, Chat, Workflows and Terminal. A + on Chat and on Terminal starts a new chat or terminal, and a dot on a door says something runs or is unread. Your sessions follow, then Settings, the Goodboy row and the bug report button. The Goodboy row opens a menu with the Guide. ⌘B folds it into icons. Monitoring is the pulse icon in the top bar.',
+        desc: 'New session comes first, then the doors Sessions, Tasks, Chat, Workflows and Terminal. A + on Chat and on Terminal starts a new chat or terminal, and a dot on a door says something runs or is unread. Your sessions follow, then Settings, the Goodboy row and the bug report button. The Goodboy row opens a menu with the Guide. It looks the same on every screen, and in a session it marks the open session row. ⌘B folds it into icons, and it folds by itself when a narrow window leaves the page too little room. Monitoring is the pulse icon in the top bar.',
       },
       {
         term: 'Session rows',
@@ -270,11 +270,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Inside a session',
-        desc: "Click a session and the sidebar steps into it. ‹ Sessions at the top goes back, and ⌘[ does too while the sidebar has focus. Under it sit the session's name, which you click to rename, and its menu, then its pages with their counts: Overview, Runs, Agents, Auto agents while Auto is on, Artifacts, and Questions while one waits. Projects lists each branch with its pull request number, and Linked lists the work linked to the session.",
+        desc: "Click a session and its row stays selected in the left column while the session rail opens at the left of the page. At its top sit the session's name, which you click to rename, and its menu, then its pages with their counts: Overview, Runs, Agents, Auto agents while Auto is on, Artifacts, and Questions while one waits. Projects lists each branch with its pull request number, and Linked lists the work linked to the session. A branch, a run or Auto steps the rail one level in, and the back row at its top, or ⌘[ while the rail has focus, steps out. The button at the top of the rail folds it into icons.",
       },
       {
         term: 'Inside Auto',
-        desc: "Open Auto agents and the sidebar steps into Auto: Auto, then every agent it started with its state, and the limit at the foot. A row opens that agent beside the chat, where you can read it and write to it; Auto sees what you tell it. ‹ and the session's name go back.",
+        desc: "Open Auto agents and the session rail steps into Auto: Auto, then every agent it started with its state, and the limit at the foot. A row opens that agent beside the chat, where you can read it and write to it; Auto sees what you tell it. ‹ and the session's name go back.",
       },
       {
         term: 'Ask in a session',
@@ -309,7 +309,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Overview',
-        desc: 'The Overview reads top to bottom: the goal, then anything a worktree needs you to decide (a closed worktree with Reopen, a failed action with Retry, a stopped rebase, a branch that moved), then Needs you, Next and Activity. Projects and linked work live in the sidebar.',
+        desc: 'The Overview reads top to bottom: the goal, then anything a worktree needs you to decide (a closed worktree with Reopen, a failed action with Retry, a stopped rebase, a branch that moved), then Needs you, Next and Activity. Projects and linked work live in the session rail.',
       },
       {
         term: 'Next steps',
@@ -317,7 +317,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Run page',
-        desc: 'Opening a run with a fixed list of steps moves the sidebar into it: back to Runs, the run title, Overview, every step in order with its sub-agents, Add step, and the limit with what it spent at the foot. The center shows the step you pick as its conversation, and the line at its end says what the run waits for with the one button that moves it on, such as Start step 3, Review plan or Raise spend cap. Pause run, Autonomy, Skip step and Stop run sit in the run menu. An orchestrated run stays under Orchestrated as one page: the goal, one checklist of its steps and what is left, the line that says what the orchestrator does now and why, and the hint box at the bottom.',
+        desc: 'Opening a run with a fixed list of steps moves the session rail into it: back to Runs, the run title, Overview, every step in order with its sub-agents, Add step, and the limit with what it spent at the foot. The center shows the step you pick as its conversation, and the line at its end says what the run waits for with the one button that moves it on, such as Start step 3, Review plan or Raise spend cap. Pause run, Autonomy, Skip step and Stop run sit in the run menu. An orchestrated run stays under Orchestrated as one page: the goal, one checklist of its steps and what is left, the line that says what the orchestrator does now and why, and the hint box at the bottom.',
       },
       {
         term: 'Agent suggests',
@@ -401,7 +401,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Task links',
-        desc: 'A task chip opens the task. Move to, Unlink, Stop tracking and Take off this branch act at once and show an Undo toast, and ⌘Z undoes the last one when focus is not in a text field. The Log keeps the event with Re-link. Drag a Linked row onto a worktree row of the sidebar to move it there (Alt copies), or use Link work to this branch in the worktree menu.',
+        desc: 'A task chip opens the task. Move to, Unlink, Stop tracking and Take off this branch act at once and show an Undo toast, and ⌘Z undoes the last one when focus is not in a text field. The Log keeps the event with Re-link. Drag a Linked row onto a worktree row of the session rail to move it there (Alt copies), or use Link work to this branch in the worktree menu.',
       },
       {
         term: 'Slack',
@@ -432,7 +432,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Branch page',
-        desc: 'One page per branch. Click a worktree under Projects and the sidebar steps into it: the project, the branch with a chevron that switches branches or starts a new one, a menu of the worktree actions, a status line with Rebase while the branch is behind, then Pull request, Comments, Files, Commits and Checks with their counts, only the ones that make sense: with no pull request it shows Pull request, Files and Commits, and Comments once a note exists. Every section sits on one centred column. It opens the same way from the palette, a notification, a chat card or the board. The back row at the top of the sidebar returns to the session, and Back walks your history.',
+        desc: 'One page per branch. Click a worktree under Projects and the session rail steps into it: the project, the branch with a chevron that switches branches or starts a new one, a menu of the worktree actions, a status line with Rebase while the branch is behind, then Pull request, Comments, Files, Commits and Checks with their counts, only the ones that make sense: with no pull request it shows Pull request, Files and Commits, and Comments once a note exists. Every section sits on one centred column. It opens the same way from the palette, a notification, a chat card or the board. The back row at the top of the session rail returns to the session, and Back walks your history.',
       },
       {
         term: 'Pull request',
@@ -448,7 +448,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Files',
-        desc: 'The changed files as a tree that opens in the sidebar right under Files and folds away when you pick another entry, beside the code, which reads as one diff in the order of the tree, with a ring on each folder that fills as you mark files Viewed, a filter, Unviewed and With notes. Display holds Unified, Split and Wrap long lines. Show more lines opens the context around a change, up to the whole file, and a double click on a name shows where it is defined and used. Comment on a line or on a whole file with Comment on file, or quote a line into a note or a question for an agent. J and K move between files, V marks one viewed, / filters, and ⌘⇧B hides the tree. Write review, in the header of the pull request, takes line comments, the verdict and a summary, sent with Approve, Request changes or Submit comments.',
+        desc: 'The changed files as a tree that opens in the session rail right under Files and folds away when you pick another entry, beside the code, which reads as one diff in the order of the tree, with a ring on each folder that fills as you mark files Viewed, a filter, Unviewed and With notes. Display holds Unified, Split and Wrap long lines. Show more lines opens the context around a change, up to the whole file, and a double click on a name shows where it is defined and used. Comment on a line or on a whole file with Comment on file, or quote a line into a note or a question for an agent. J and K move between files, V marks one viewed, / filters, and ⌘⇧B hides the tree. Write review, in the header of the pull request, takes line comments, the verdict and a summary, sent with Approve, Request changes or Submit comments.',
       },
       {
         term: 'Notes',

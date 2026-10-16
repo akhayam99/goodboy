@@ -170,7 +170,7 @@ cost of the whole tree. The word follows the tree phase:
 **Deciding what to do**, **Starting agents**, **Waiting for Implementer and
 Tester**, **Needs your approval**, **Reading the results**, **Blocked, open the
 chat**, **Stopping**, **Stopped by you**, **Idle**, **Finished by you**. The
-children are not rows of the Overview; they live in the Work rail, the sidebar's
+children are not rows of the Overview; they live in the Work rail, the session rail's
 Auto level.
 
 Auto never finishes itself. A tree that rests after its agents settled (stored
@@ -184,9 +184,9 @@ writing to it reopens it to **Deciding**.
 
 ## The chat
 
-- **Work rail.** The Work rail is the sidebar's Auto level
-  ([navigation.md](navigation.md), Sidebar levels): opening Auto agents, an Auto
-  agent or one of its children drills the sidebar into it, with the back row
+- **Work rail.** The Work rail is the session rail's Auto level
+  ([navigation.md](navigation.md#session-rail)): opening Auto agents, an Auto
+  agent or one of its children drills the session rail into it, with the back row
   `‹ <session title>` on top. Auto comes first, then one row per child, all
   expanded and with no group row. A row has the role, the name and state on the
   first line, the task Auto gave and the time on the second, with the model in
