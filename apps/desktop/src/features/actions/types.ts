@@ -23,6 +23,8 @@ import type { PortFacts } from './kinds/port';
 import type { TerminalTabFacts } from './kinds/terminalTab';
 import type { NewFormFacts } from './kinds/newForm';
 import type { TaskListFacts } from './kinds/taskList';
+import type { RunStepFacts } from './kinds/runStep';
+import type { WorkflowListFacts } from './kinds/workflowList';
 import type { AppStore } from '../../store/store';
 import type { ShowToast } from '../../shared/components/Toast';
 import type { ShortcutId } from '../../shared/keyboard/registry';
@@ -369,6 +371,16 @@ export type TaskListActionTarget = {
   readonly facts: TaskListFacts;
 };
 
+export type RunStepActionTarget = {
+  readonly kind: 'runStep';
+  readonly facts: RunStepFacts;
+};
+
+export type WorkflowListActionTarget = {
+  readonly kind: 'workflowList';
+  readonly facts: WorkflowListFacts;
+};
+
 export type LinkActionTarget = {
   readonly kind: 'link';
   readonly href: string;
@@ -432,6 +444,8 @@ export type ObjectTarget =
   | TerminalTabActionTarget
   | NewFormActionTarget
   | TaskListActionTarget
+  | RunStepActionTarget
+  | WorkflowListActionTarget
   | LinkActionTarget
   | ReviewActionTarget
   | ReviewCommentActionTarget

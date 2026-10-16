@@ -1,9 +1,10 @@
-import { ScrollText, SquareArrowOutUpRight, X } from 'lucide-react';
-import { IconButton, OverflowMenu, PANE_RHYTHM, cn } from '@goodboy/ui';
+import { X } from 'lucide-react';
+import { IconButton, PANE_RHYTHM, cn } from '@goodboy/ui';
 import type { AgentId, SessionId, WorkflowRunId } from '@goodboy/types';
-import { agentPlace, EMPTY_ARRAY, useAppStore } from '../../../store';
+import { EMPTY_ARRAY, useAppStore } from '../../../store';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { RunStepMenu } from '../../actions/RunStepMenu';
 import { decisionEntries } from '../../workflows/decisionEntries';
 import { ORCHESTRATED_COPY } from '../../workflows/orchestratedCopy';
 import { agentKindPalette, classifyAgent, resolveRootAgent } from '../agent-kind';
@@ -24,8 +25,6 @@ export const RunStepDrawer = ({ sessionId, runId, agentId, onClose }: Props) => 
   const workflows = useAppStore((state) => state.sessionWorkflows[sessionId] ?? EMPTY_ARRAY);
   const kindOverride = useAppStore((state) => state.agentKindOverride);
   const isActive = useAppStore((state) => state.currentSessionId === sessionId);
-  const navigate = useAppStore((state) => state.navigate);
-  const openDrawer = useAppStore((state) => state.openDrawer);
   const agent = agents.find((candidate) => candidate.id === agentId) ?? null;
   const run = session?.workflowRuns.find((candidate) => candidate.id === runId) ?? null;
   const workflow = workflows.find((candidate) => candidate.id === run?.workflowId) ?? null;
@@ -84,28 +83,7 @@ export const RunStepDrawer = ({ sessionId, runId, agentId, onClose }: Props) => 
           heading: <RunStepHeading agent={agent} stepAgent={stepAgent} workflow={workflow} />,
           actions: (
             <>
-              <OverflowMenu
-                items={[
-                  {
-                    kind: 'item',
-                    key: 'transcript',
-                    label: 'View transcript',
-                    icon: ScrollText,
-                    onClick: () =>
-                      openDrawer({ kind: 'transcript', sessionId, payload: { agentId } }),
-                  },
-                  {
-                    kind: 'item',
-                    key: 'open-full',
-                    label: 'Open full',
-                    icon: SquareArrowOutUpRight,
-                    onClick: () => {
-                      onClose();
-                      navigate({ to: agentPlace({ sessionId, agentId }) });
-                    },
-                  },
-                ]}
-              />
+              <RunStepMenu facts={{ sessionId, agentId, onLeave: onClose }} />
               {close}
             </>
           ),

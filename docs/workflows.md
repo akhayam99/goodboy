@@ -103,8 +103,8 @@ later generated title never replaces it, and the preset keeps its own name.
 A workflow you are still building stays there when you switch sessions. It
 goes away once you create it or discard it. **Workflow Studio** is where you
 keep presets. Its home is one list: **New workflow**, then a page `⋯` with
-**Import workflows…** and **Restore built-in workflows…** (with nothing to
-restore, **Import** stays a plain button). Each row opens its workflow; its
+**Import workflows…** and **Restore built-in workflows…** (the `workflowList`
+kind of the action registry; with nothing to restore, **Import** stays a plain button). Each row opens its workflow; its
 last cell is a link, "3 runs" or "No runs", that opens the runs pane. The role
 column names the roles in gray ("Scout, Implementer +1"). **Import** lists the custom presets of every
 other workspace, grouped by workspace, and copies all the checked ones at once.
@@ -305,7 +305,8 @@ read top to bottom at the conversation measure:
   `run-step`, `RunStepDrawer`): the step conversation (`AgentDetailPane`,
   pinned to that agent) under the reason the orchestrator gave for it when that
   reason is not the latest decision (the latest sits under the tail), with
-  **View transcript** and **Open full** in its `⋯`. The page keeps the one composer; you
+  **View transcript** and **Open full** in its `⋯` (the `runStep` kind of the
+  action registry). The page keeps the one composer; you
   talk to the step from **Open full**.
 - **Tail** (`OrchestratedTail`, phrases and verbs in `orchestratedTailOf`).
   The thinking line speaks the phase of `resolveOrchestratorState` once, at the

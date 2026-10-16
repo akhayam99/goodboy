@@ -1,13 +1,14 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { Download, Plus, RotateCcw } from 'lucide-react';
+import { Plus, RotateCcw } from 'lucide-react';
 import type { WorkflowRunHistoryRow } from '@goodboy/db';
-import { Button, ConfirmPopover, EmptyState, ListGrid, OverflowMenu } from '@goodboy/ui';
+import { Button, ConfirmPopover, EmptyState, ListGrid } from '@goodboy/ui';
 import type { Workflow } from '@goodboy/types';
 import {
   CONCEPT_ICONS,
   CONCEPT_TONE,
   ICON_SIZE,
 } from '../../../../../shared/components/conceptIcons';
+import { WorkflowListMenu } from '../../../../actions/WorkflowListMenu';
 import {
   builtinWorkflowState,
   restorableBuiltins,
@@ -91,24 +92,12 @@ export const WorkflowList = ({
             trigger={() =>
               renderImport({
                 renderTrigger: ({ onToggle }) => (
-                  <OverflowMenu
-                    label="More workflow actions"
-                    items={[
-                      {
-                        kind: 'item',
-                        key: 'import',
-                        label: 'Import workflows\u2026',
-                        icon: Download,
-                        onClick: onToggle,
-                      },
-                      {
-                        kind: 'item',
-                        key: 'restore',
-                        label: 'Restore built-in workflows\u2026',
-                        icon: RotateCcw,
-                        onClick: () => setIsConfirmingRestore(true),
-                      },
-                    ]}
+                  <WorkflowListMenu
+                    facts={{
+                      canRestore: hasRestorable,
+                      onImport: onToggle,
+                      onRestore: () => setIsConfirmingRestore(true),
+                    }}
                   />
                 ),
               })

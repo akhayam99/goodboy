@@ -9,6 +9,8 @@ import { PORT_KIND } from './kinds/port';
 import { TERMINAL_TAB_KIND } from './kinds/terminalTab';
 import { NEW_FORM_KIND } from './kinds/newForm';
 import { TASK_LIST_KIND } from './kinds/taskList';
+import { RUN_STEP_KIND } from './kinds/runStep';
+import { WORKFLOW_LIST_KIND } from './kinds/workflowList';
 import { PROJECT_KIND } from './kinds/project';
 import { PULL_REQUEST_KIND } from './kinds/pullRequest';
 import { CHAT_KIND } from './kinds/chat';
@@ -57,6 +59,8 @@ const KINDS: ReadonlyArray<readonly [string, ReadonlyArray<AnyDefinition>]> = [
   ['terminalTab', TERMINAL_TAB_KIND.actions],
   ['newForm', NEW_FORM_KIND.actions],
   ['taskList', TASK_LIST_KIND.actions],
+  ['runStep', RUN_STEP_KIND.actions],
+  ['workflowList', WORKFLOW_LIST_KIND.actions],
   ['link', LINK_KIND.actions],
   ['review', REVIEW_KIND.actions],
   ['reviewComment', REVIEW_COMMENT_KIND.actions],
