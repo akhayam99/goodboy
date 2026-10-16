@@ -24,6 +24,7 @@ mod slug;
 mod snapshot;
 mod status;
 mod types;
+mod update_base;
 
 pub(crate) use base::*;
 pub(crate) use branch_name::branch_name_problem;
@@ -51,3 +52,4 @@ pub(crate) use slug::*;
 pub(crate) use snapshot::*;
 pub(crate) use status::*;
 pub(crate) use types::*;
+pub(crate) use update_base::*;

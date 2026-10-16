@@ -27,7 +27,7 @@ A pull request waiting on you in Tasks shows **Review pull request** in place of
 
 ### Run a workflow
 
-Write the goal, pick **Orchestrated**, **Describe steps** or **Pick a workflow**, and read the **Plan** you will run. Set when the run asks you and a **Spend cap**, then **Start run** creates the session and starts the run in one step.
+Write the goal, pick **Orchestrated**, **Describe steps** or **Pick a workflow**, and read the **Plan** you will run. Set when the run asks you and a **Spend cap**, then **Start run** creates the session and starts the run in one step. One click starts it, and the button stays where it is while the estimate loads. If the run cannot start, the page keeps everything you wrote and shows the reason under **Start run**; press it again to retry.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/start-run-workflow-dark.webp">

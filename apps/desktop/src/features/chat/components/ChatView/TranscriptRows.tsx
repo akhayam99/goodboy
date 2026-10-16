@@ -1,5 +1,5 @@
 import type { RetryRunParams } from '../../retryRun';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import type {
   AgentId,
   IntegrationDraft,
@@ -19,6 +19,7 @@ import { BriefCard } from './BriefCard';
 import { SlackDraftCard } from './SlackDraftCard';
 import { dayKey, formatDayLabel } from './lib';
 import { planBlockVersions } from './planBlockVersions';
+import { rowEstimatePx } from './rowEstimatePx';
 import { isWorkflowRailRow } from './workflowRailGroup';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 
@@ -41,6 +42,17 @@ type Props = {
   briefLabel?: string;
   insertions?: ReadonlyArray<TranscriptInsertion>;
 };
+
+type VisibilityParams = {
+  readonly px: number;
+};
+
+const RAIL_ROW_PX = 56;
+
+const visibilityStyle = ({ px }: VisibilityParams): CSSProperties => ({
+  contentVisibility: 'auto',
+  containIntrinsicSize: `auto ${px}px`,
+});
 
 type FlushParams = {
   readonly beforeMs: number | null;
@@ -139,7 +151,8 @@ export const TranscriptRows = ({
     out.push(
       <li
         key={`workflow-rail-${railGroupKey}`}
-        className="flex flex-col [contain-intrinsic-size:auto_80px] [content-visibility:auto]"
+        className="flex flex-col"
+        style={visibilityStyle({ px: RAIL_ROW_PX * railGroup.length })}
       >
         {railGroup}
       </li>,
@@ -170,9 +183,16 @@ export const TranscriptRows = ({
       userTurnOrdinal += 1;
       return;
     }
-    if (row.kind === 'item' && (row.item.kind === 'user_text' || row.item.kind === 'handoff')) {
-      flushOrdinal(userTurnOrdinal);
-      userTurnOrdinal += 1;
+    if (
+      row.kind === 'item' &&
+      (row.item.kind === 'user_text' ||
+        row.item.kind === 'handoff' ||
+        row.item.kind === 'auto_delivery')
+    ) {
+      if (!(row.item.kind === 'user_text' && row.item.isOperatorEcho === true)) {
+        flushOrdinal(userTurnOrdinal);
+        userTurnOrdinal += 1;
+      }
       const at = row.item.at;
       flushInsertions({ beforeMs: Date.parse(at) });
       const day = dayKey(at);
@@ -182,7 +202,7 @@ export const TranscriptRows = ({
         if (!isLeadingToday) {
           out.push(
             <li
-              key={`day-${day}-${idx}`}
+              key={`day-${day}-${row.key}`}
               data-testid="transcript-day"
               data-align="start"
               className="flex justify-start"
@@ -216,7 +236,7 @@ export const TranscriptRows = ({
     }
     flushRailGroup();
     out.push(
-      <li key={row.key} className="[content-visibility:auto] [contain-intrinsic-size:auto_80px]">
+      <li key={row.key} style={visibilityStyle({ px: rowEstimatePx({ row }) })}>
         {row.kind === 'operations' ? (
           <OperationsCluster
             items={row.items}

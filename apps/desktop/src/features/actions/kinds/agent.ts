@@ -9,6 +9,9 @@ import { SETTING_AUTO_EXPERIMENT, SETTING_HIDDEN_MODELS } from '../../settings/s
 import { MOVE_TO_AUTO_EVENT, moveToAutoDetail } from '../../auto/adopt/moveToAutoEvent';
 import { autoExperimentSettings } from '../../auto/autoExperimentSettings';
 import { autoMembershipOf } from '../../auto/autoMembershipOf';
+import { autoRestOf, type AutoRest } from '../../auto/autoRestOf';
+import { moveAutoRestingPhase } from '../../auto/moveAutoRestingPhase';
+import { tauriDatabase } from '../../../shared/lib/db';
 import { detachFromAuto } from '../../auto/detachFromAuto';
 import { isAutoStartEnabled } from '../../auto/isAutoStartEnabled';
 import { classifyAgent } from '../../session/agent-kind';
@@ -42,6 +45,7 @@ export type AgentFacts = {
   readonly isAutoOn: boolean;
   readonly canMoveToAuto: boolean;
   readonly isAdopted: boolean;
+  readonly autoRest: AutoRest | null;
 };
 
 const NO_MOUNT_REASON = 'This session has no project yet';
@@ -109,6 +113,10 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
         agent.stepId == null &&
         !membership.isMember,
       isAdopted: membership.adoption !== null,
+      autoRest: autoRestOf({
+        views: state.autoTreeViews[target.sessionId] ?? [],
+        agentId: agent.id,
+      }),
     };
   },
   actions: [
@@ -222,6 +230,55 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
           sessionId: facts.sessionId,
         });
         return 'unchanged';
+      },
+    },
+    {
+      id: 'agent.markAutoFinished',
+      label: 'Mark finished',
+      icon: CircleCheck,
+      group: 'act',
+      isUndoable: true,
+      description: () => 'Closes this Auto conversation. Write to reopen it.',
+      when: ({ facts }) => facts.autoRest !== null && facts.autoRest.phase !== 'finished',
+      run: async ({ facts, env }) => {
+        const rest = facts.autoRest;
+        if (rest === null || rest.phase === 'finished') {
+          return 'unchanged';
+        }
+        const from = rest.phase;
+        try {
+          await moveAutoRestingPhase({
+            db: tauriDatabase,
+            treeId: rest.treeId,
+            from,
+            to: 'finished',
+            nowMs: Date.now(),
+          });
+        } catch (error) {
+          await env.getState().reportError({
+            title: "Couldn't mark Auto finished",
+            error,
+            sessionId: facts.sessionId,
+          });
+          return 'unchanged';
+        }
+        await env.getState().loadAutoTrees({ sessionId: facts.sessionId });
+        env.getState().undoable({
+          showToast: env.showToast,
+          title: 'Auto finished',
+          message: 'Write to Auto to reopen it.',
+          undo: async () => {
+            await moveAutoRestingPhase({
+              db: tauriDatabase,
+              treeId: rest.treeId,
+              from: 'finished',
+              to: from,
+              nowMs: Date.now(),
+            });
+            await env.getState().loadAutoTrees({ sessionId: facts.sessionId });
+          },
+        });
+        return 'done';
       },
     },
     {

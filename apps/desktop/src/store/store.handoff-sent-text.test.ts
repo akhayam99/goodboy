@@ -320,4 +320,37 @@ describe('text sent to the CLI at spawn', () => {
       './__prompts__/handoff-new-agent-message.system.txt',
     );
   });
+
+  it('marks text Auto delivers as delivered by Auto, and leaves a typed message unmarked', async () => {
+    await routeTo({ provider: 'codex', model: 'gpt-5.6-terra' });
+    useAppStore.setState({ currentWorkspaceId: WS_ID, phaseTemplates: {} });
+    const { session } = await useAppStore.getState().createSession({
+      workspaceId: WS_ID,
+      goal: 'Which services read the per-line totals',
+      branchPrefix: 'nw',
+    });
+    const agentId = await useAppStore
+      .getState()
+      .spawnAgent(session.id, { name: 'Scout', kindOverride: 'scout' });
+    await settle();
+
+    await useAppStore.getState().sendTurn({
+      sessionId: session.id,
+      agentId,
+      content: 'STATE OF THIS CONVERSATION\nSpent 3.82 USD. Left 1.18 USD.',
+      origin: 'delegation',
+    });
+    await useAppStore.getState().sendTurn({
+      sessionId: session.id,
+      agentId,
+      content: 'Which two?',
+      origin: 'operator',
+    });
+
+    const userTexts = (useAppStore.getState().transcripts[agentId] ?? []).flatMap((event) =>
+      event.kind === 'user_text' ? [event] : [],
+    );
+    expect(userTexts.map((event) => event.deliveredBy)).toEqual(['auto', undefined]);
+    expect(userTexts[0]?.text).toContain('STATE OF THIS CONVERSATION');
+  });
 });

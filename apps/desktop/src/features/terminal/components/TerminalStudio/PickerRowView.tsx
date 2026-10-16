@@ -7,14 +7,20 @@ import { WorktreeChip } from '../WorktreeChip';
 
 type Props = {
   readonly row: PickerRow;
+  readonly isActive: boolean;
   readonly onPick: () => void;
   readonly onOpenProject: () => void;
 };
 
-export const PickerRowView = ({ row, onPick, onOpenProject }: Props) => {
+export const PickerRowView = ({ row, isActive, onPick, onOpenProject }: Props) => {
   const Icon = row.kind === 'workspace' ? Folder : GitBranch;
   return (
-    <div className="group flex min-w-0 items-center gap-1 rounded-md hover:bg-hover focus-within:bg-hover">
+    <div
+      className={cn(
+        'group flex min-w-0 items-center gap-1 rounded-md hover:bg-hover focus-within:bg-hover',
+        isActive && 'bg-hover',
+      )}
+    >
       <button
         type="button"
         role="menuitem"

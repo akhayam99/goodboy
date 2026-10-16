@@ -360,6 +360,7 @@ pub fn run() {
             thread_git::worktree_locate_fix,
             thread_git::worktree_origin_commits_touching,
             worktree::checkout_fast_forward,
+            worktree::checkout_update_base,
             worktree::worktree_list_local_branches,
             worktree::worktree_list_branch_names,
             worktree::worktree_repo_default_base_branch,

@@ -97,14 +97,22 @@ describe('railRowsOf', () => {
     expect(root).toMatchObject({ node: 'approval', word: 'Needs your approval', tone: 'warning' });
   });
 
-  it('says Ready for an Auto that only answers and Done when the tree is done', () => {
+  it('says Ready for an Auto that only answers, Idle when it rests and Finished once closed', () => {
     expect(railRowsOf({ view: aView(), agents: [], rootRouting: ROOT_ROUTING })[0]?.word).toBe(
       'Ready',
     );
-    expect(
-      railRowsOf({ view: aView({ phase: 'done' }), agents: [], rootRouting: ROOT_ROUTING })[0]
-        ?.word,
-    ).toBe('Done');
+    const idle = railRowsOf({
+      view: aView({ phase: 'done' }),
+      agents: [],
+      rootRouting: ROOT_ROUTING,
+    })[0];
+    expect(idle).toMatchObject({ word: 'Idle', node: 'ready' });
+    const finished = railRowsOf({
+      view: aView({ phase: 'finished' }),
+      agents: [],
+      rootRouting: ROOT_ROUTING,
+    })[0];
+    expect(finished).toMatchObject({ word: 'Finished', node: 'finished' });
   });
 });
 
@@ -123,6 +131,7 @@ const renderRail = ({
     <AutoWorkRail
       rows={railRowsOf({ view: WORKING, agents: [], rootRouting: ROOT_ROUTING })}
       budget={WORKING.budget}
+      limitControl={null}
       selectedAgentId={FIXTURE_ROOT}
       isCollapsed={isCollapsed}
       onToggleCollapsed={onToggle}

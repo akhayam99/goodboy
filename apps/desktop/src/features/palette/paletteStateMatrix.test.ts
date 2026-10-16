@@ -55,6 +55,7 @@ const AGENT: AgentFacts = {
   isAutoOn: false,
   canMoveToAuto: true,
   isAdopted: false,
+  autoRest: null,
 };
 
 type ViewParams<F> = {

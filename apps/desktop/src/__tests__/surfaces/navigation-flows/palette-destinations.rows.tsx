@@ -128,16 +128,14 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: () => band('Terminal'),
   },
   {
-    name: 'palette: New terminal',
-    covers: ['studio:terminal', 'palette:New terminal'],
+    name: 'palette: New terminal in this session',
+    covers: ['palette:New terminal'],
     door: 'palette',
-    open: () => openPalette(/^New terminal$/, 'new terminal'),
+    open: () => openPalette(/^New terminal in this session$/, 'new terminal'),
     lands: async () => {
-      await band('Terminal');
-      await waitFor(
-        () => expect(document.querySelectorAll('[data-terminal-tab]')).toHaveLength(1),
-        WAIT,
-      );
+      await screen.findByRole('button', { name: 'Open on Terminal page' }, WAIT);
+      expect(useAppStore.getState().drawer?.kind).toBe('terminal');
+      expect(useAppStore.getState().appStudio).toBeNull();
     },
   },
   {
@@ -218,6 +216,25 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
         WAIT,
       ),
   },
+  {
+    name: 'palette: Pull main in all linked repos pulls every repo and says so',
+    covers: ['palette:Pull main in all linked repos'],
+    seed: 'pr',
+    open: () => openPalette(/^Pull main in all linked repos/, 'pull main'),
+    lands: async () => {
+      expect(await screen.findByText('Updated 3 repos', {}, WAIT)).toBeDefined();
+    },
+  },
+  ...['payments-api', 'notify-relay', 'ledger-core'].map((repo): Row => ({
+    name: `palette: Pull the default branch in ${repo} pulls that repo only`,
+    covers: [`palette:Pull the default branch in ${repo}`],
+    seed: 'pr',
+    open: () => openPalette(new RegExp(`^Pull the default branch in ${repo}`), `pull ${repo}`),
+    lands: async () => {
+      expect(await screen.findByText('Updated 1 repo', {}, WAIT)).toBeDefined();
+      expect(screen.getByText(new RegExp(`^${repo}: main updated`))).toBeDefined();
+    },
+  })),
   {
     name: 'palette: Start a run lists the workflows and asks before it starts anything',
     covers: ['palette:Start a run'],

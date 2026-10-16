@@ -136,7 +136,18 @@ A message typed in the composer of an Auto agent is not a plain turn either. The
 store's `sendTurn` hands an operator message for the root of an Auto tree to the
 runtime (`routeAutoUserTurn`), which creates the tree if it is missing and
 queues the text as a `user` outbox row; Auto reads it with the next delivery.
-Approving a plan is the same path ("Approved plan v1."). A message the runtime
+Approving a plan is the same path ("Approved plan v1."). Once the runtime has
+taken a message, `routeAutoUserTurn` writes the user's own words to the
+transcript as an `operator_text` event, so the bubble appears once at queue
+time and never depends on the delivery. The delivery text Auto builds for its
+own agent (the ledger, the budget line, the results, "MESSAGES FROM THE USER")
+is stored with `deliveredBy: 'auto'` on its `user_text` event, set in
+`startTurnRun` when the turn's origin is `delegation` (the root's deliveries
+and a child's first brief). The transcript draws such an event as one collapsed
+row, **What Auto was told**, never as a user bubble; opening it shows the text
+as sent. A transcript written before this change has no origin on its events, so
+its delivery text still renders as a bubble: there is no text sniffing. A
+message the runtime
 cannot take, or one with files, is refused with "Auto didn't get your message"
 and the composer keeps its text. A turn that is not an operator message, a
 child, or an Auto agent in a window with no runtime (the main window owns it) is
@@ -148,8 +159,18 @@ An Auto tree is one row, like any agent row: its state in the row word and the
 cost of the whole tree. The word follows the tree phase:
 **Deciding what to do**, **Starting agents**, **Waiting for Implementer and
 Tester**, **Needs your approval**, **Reading the results**, **Blocked, open the
-chat**, **Stopping**, **Stopped by you**. The children are not rows of the
-Overview; they live in the Work rail of the chat.
+chat**, **Stopping**, **Stopped by you**, **Idle**, **Finished by you**. The
+children are not rows of the Overview; they live in the Work rail of the chat.
+
+Auto never finishes itself. A tree that rests after its agents settled (stored
+phase `done`) reads **Idle** in the row, the rail root and the chat header
+(`AgentAutoStatus`), never Done. **Mark finished** in the agent menu
+(`agent.markAutoFinished`, undoable) moves a resting tree to the stored phase
+`finished` (m231) through `moveRestingAutoTree`: one write that needs a resting
+phase, no stop, no running turn and no open delegation, so a tree that started
+working again refuses with "Auto is working again. Mark it finished once it
+rests." A finished tree is left out of recovery and takes only user messages:
+writing to it reopens it to **Deciding**.
 
 ## The chat
 
@@ -159,8 +180,29 @@ Overview; they live in the Work rail of the chat.
   line, the model and time on the second. One spine runs from ring edge to ring
   edge in the tone of the ring it reaches: green when done, blue when working,
   dashed when queued. The foot is the tree budget, **Spent**, **Reserved** and
-  **Left** from `treeSpend`. The rail can fold to a strip of rings, and it is
-  not drawn for an Auto that only answers.
+  **Left** from `treeSpend`, read through `autoBudgetOf`. The rail can fold to a
+  strip of rings, and it is not drawn for an Auto that only answers.
+- **Changing the limit.** The **Limit** in the rail foot is a button. Its popover
+  offers $5, $10, $20 or a custom amount (at most 2 decimals) and applies it on
+  **Set limit**, also while the tree runs. An amount under spent plus reserved
+  shows "The limit must cover spent and reserved usage." and cannot be set.
+  `setAutoTreeCap` (`store/slices/auto/setAutoTreeCap.ts`) writes it in one
+  statement that compares the cap it read and checks spent plus reserved in the
+  same write, so a reservation cannot slip in between; a lost compare says "The
+  limit changed in another window." and a failed save keeps the popover open with
+  "Could not save the limit. Try again." It leaves `phase_rev` alone, so a running
+  turn keeps its next step, then drives the tree, so a tree paused at the limit
+  resumes after a raise. The cap changes only this conversation; the workspace
+  cap stays the start value of the next one.
+- **No cap.** The popover also offers **No cap**, stored as a NULL `cap_usd`
+  (m231), never a sentinel. The foot then reads **No cap** with **Spent** and
+  **Reserved** and no bar or **Left**, and the prompt line says "no cap" and
+  never prints a left. The root turn claim and child admission pass a NULL cap
+  (`autoBudgetCoversSql`), and the gates read it as unbounded
+  (`autoRemainingForGates`); the per attempt ceilings still apply, so one child
+  never runs unbounded. While a session budget exists, No cap is off and says the
+  session budget sets the limit. A tree is only created with a number; NULL
+  comes only from this choice.
 - **Delegation cards.** Each delegation is a card in the transcript: role, model
   and effort, a live time, one state, Auto's reason, a note when the app changed
   the model it asked for, **Reserved up to** while it works, and when it
@@ -188,7 +230,8 @@ is a compare and swap on the version the drawer shows, then Auto is told once
 ("Approved plan v1."). A newer version, a revise in progress, a used plan or a
 discarded one refuse it with a sentence and the drawer stays open. A second
 click, or a second window, on an approved version does not tell Auto again.
-Auto cannot start a writer role (Implementer, Tester, Docs) on a plan that is not
+Auto cannot start a writer role (Implementer, Tester, Docs, Scribe, CI fixer,
+Rewriter) on a plan that is not
 approved. The policy is `isAutoPlanApprovalRequired`: the runtime reads the
 stored setting `agents.autoPlanApproval` on every tick, and approval is required
 unless the stored value is exactly `false`. There is no screen for that setting
@@ -217,8 +260,28 @@ capability token and no allow rule. It decides by ending its final reply with at
   derived from the run when missing; `children` is the spec `parseDelegateSpec` validates).
 - `answer` answers the question of a child (`delegation`, `question`, `text`).
 - `finish` says the work is done (`summary`). It is refused while an agent is open or a result
-  waits.
+  waits. It stores nothing: the tree still rests as Idle until the user marks it finished. The
+  prompt asks Auto to suggest **Mark finished** and to send `finish` only when the user asked to
+  close.
 - No block is a plain answer to the user.
+
+The system prompt (`packages/core/src/auto/prompt.ts`) carries the role list and a routing table,
+**WHICH ROLE FOR WHICH WORK**, generated from `AUTO_ROLE_WHEN` (one line per Auto role, so a role
+cannot join without one): diagnosing a failure goes to an Investigator, tests to a Tester, text
+about code to Docs, code changes and their commits to an Implementer, the pull request to a
+Scribe, a failing check to a CI fixer, the commit history of the branch to a Rewriter. Scribe, CI
+fixer and Rewriter are writers (m232 widens the role CHECK of `auto_delegations`; Rust
+`WRITER_ROLES` holds them). A Scribe child writes `<<pr-title>>` and `<<pr-body>>` and never runs
+gh: when it ends completed, `finishAttempt` calls the `publishScribePullRequest` port, which goes
+through `resumeScribePullRequest` and `openScribePullRequest`, the path the Branch page uses
+(draft, the repository's base, never a second request when the branch already has one). The
+result Auto reads starts with "Pull request #421 is open: <url>"; a failure fails the delegation
+with the reason, and a retry of the same child opens it once. It names the `mount` field of a
+child and the MOUNTS line it is filled from. Auto keeps its read tools and answers questions
+itself; when it reports what happens next it describes a hand over and names the role ("I asked
+an implementer to reinstall the dependencies"), never an action of its own. The brief of every
+writer child carries `AUTO_DEPENDENCIES_RULE`: install missing dependencies with the project's
+package manager in its own mount, never link or copy `node_modules` from another checkout.
 
 `parseAutoBlock` (`packages/core/src/auto/autoBlock.ts`) reads only the settled text of a turn that
 ended ok: it takes the last complete block, strips code fences, escapes raw line breaks in strings
@@ -230,9 +293,18 @@ same text admit once (the admission guards and the request id replay do the rest
 What Auto cannot say comes back as a message, not as a reply inside the turn. A refused spec, a
 budget or limit refusal and a block that does not parse become a `refusal` row in the outbox,
 delivered with the next turn under REFUSED, NOT DONE; such a turn counts as no progress, so
-`noProgressStreak` bounds retries. The refusal counters (`refusals_used`, the limit on refusals)
+`noProgressStreak` bounds retries. A refusal row keeps the action, the code and the roles of the
+refused children; while it is pending for the current generation, `readAutoTreeViews` reads it as
+`pendingRefusal` and the wait strip says it in the user voice (`refusalNoticeOf`, reasons from
+`AUTO_REFUSAL_USER_REASON`): "Auto tried to start an Implementer. Not started: more than one
+project fits and it did not say which. Auto is choosing again." Once Auto's next turn takes the
+row, the line goes, and an admitted retry draws its delegation card. The mount of a child
+(`pickAutoMount`): a named mount wins; a reader without one works in the tree's primary mount; a
+writer without one goes to the only usable mount, is refused `mount_ambiguous` when more than
+one fits (Auto never guesses a write) and `mount_missing` when none does. The refusal counters (`refusals_used`, the limit on refusals)
 move once per generation and run, so a duplicate settle of the same turn cannot spend the limit twice. Every delivery starts with a digest of the tree (open agents
-with role, state and age, questions waiting, the budget) and carries the artifact text of each
+with role, state and age, questions waiting, the budget, and a `MOUNTS:` line listing each usable
+mount as `id (project, branch)` from `buildMountsLine`) and carries the artifact text of each
 result, cut when long, so a provider that does not resume sessions still has its memory. The
 `<<auto>>` block is hidden in the transcript like the other markers; the delegation cards show
 what it did. See [query-bridge.md](query-bridge.md) for the bridge Auto does not use.
@@ -261,4 +333,11 @@ The screens read the registry through the `auto-view` slice
 (`loadAutoTrees`), which polls every 2 seconds while a session has an Auto
 agent or a tree that is not finished. Nothing pushes tree changes to a window
 yet. The numbers on screen come from the budget function the prompt and the
-admission use, so they agree.
+admission use, so they agree. What is left has one SQL formula
+(`autoRemainingUsdSql`, read by `readAutoTreeSpend` and by every admission
+check) and one JS formula (`autoTreeSpendOf` in core, used by seeds, fixtures
+and the delivery line); nothing else subtracts. The budget line of a delivery
+is built before the claim reserves the turn's 0.50 USD, so it counts that
+reservation itself and names it ("Reserved 0.50 USD, of which 0.50 USD for this
+answer. Left 0.68 USD."): the Left Auto reads equals the rail's Left while that
+turn runs. A delivery retried after a failed start reuses its stored text.

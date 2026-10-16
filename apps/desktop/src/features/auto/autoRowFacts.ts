@@ -17,8 +17,9 @@ type ViewParams = {
 export const autoRowFacts = ({ view }: ViewParams): AutoRowFacts | null => {
   switch (view.tree.phase) {
     case 'answering':
-    case 'done':
       return null;
+    case 'done':
+      return { phase: 'done', word: 'Idle', short: 'Idle' };
     case 'deciding':
       return { phase: 'running', word: 'Deciding what to do', short: 'Deciding' };
     case 'delegating':
@@ -42,6 +43,8 @@ export const autoRowFacts = ({ view }: ViewParams): AutoRowFacts | null => {
       return { phase: 'running', word: 'Stopping', short: 'Stopping' };
     case 'stopped':
       return { phase: 'closed', word: 'Stopped by you', short: 'Stopped' };
+    case 'finished':
+      return { phase: 'closed', word: 'Finished by you', short: 'Finished' };
     default: {
       const exhaustive: never = view.tree.phase;
       return exhaustive;

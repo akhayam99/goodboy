@@ -104,7 +104,10 @@ describe('m230 auto registry', () => {
     const olderBuild = migrations.filter((migration) => migration.version <= 229);
     const failure = await migrate(db, olderBuild).catch((error: unknown) => error);
     expect(failure).toBeInstanceOf(DatabaseFromNewerBuildError);
-    expect(failure).toMatchObject({ unknownVersions: [230], highestKnownVersion: 229 });
+    expect(failure).toMatchObject({
+      unknownVersions: expect.arrayContaining([230]),
+      highestKnownVersion: 229,
+    });
     expect(await autoTables(db)).toEqual([...TABLES].sort());
   });
 });

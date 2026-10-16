@@ -1,6 +1,7 @@
 import type {
   AgentId,
   IsoDateTime,
+  MountId,
   ProviderRunId,
   SessionId,
   StepDefId,
@@ -152,6 +153,7 @@ export type Agent = Readonly<{
   sourceThreadIds?: ReadonlyArray<string>;
   sourceCommentUrl?: string;
   sourceKind?: AgentSourceKind;
+  mountId?: MountId;
   domains?: ReadonlyArray<string>;
   routingLock?: WorkflowRoutingLock | null;
   routingDecision?: WorkflowRoutingDecision | null;

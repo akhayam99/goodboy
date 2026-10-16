@@ -6,6 +6,7 @@ import type {
   AgentId,
   ImplementationCluster,
   IsoDateTime,
+  MountId,
   PlanId,
   PlanWithCount,
   PrComment,
@@ -65,6 +66,7 @@ vi.mock('../workflows/clusterImplementation', async (importOriginal) => {
 });
 
 import { spawnAgent } from './spawnAgent';
+import { brandedId } from '../../../features/history/testing/brandedId';
 import { kindRouting, type AgentKind } from '../../../features/session/agent-kind';
 import { beginSessionCreation, endSessionCreation } from '../session-view/sessionCreation';
 import type { SetFn } from '../../slice-types';
@@ -493,6 +495,25 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
 
     expect(sendTurn).toHaveBeenCalledTimes(1);
     expect(sendTurn.mock.calls[0]?.[0]?.mountId).toBe('mount-web');
+  });
+
+  it('stores the mount on the agent row it spawns', async () => {
+    const { spawn } = buildHarness([]);
+
+    await spawn(SESSION_ID, {
+      name: 'CI fix',
+      mountId: brandedId<MountId>({ value: 'mount-web' }),
+    });
+
+    expect(invokeAgentInsertSpy.mock.calls[0]?.[0]).toMatchObject({ mountId: 'mount-web' });
+  });
+
+  it('stores no mount on the row of an agent spawned without one', async () => {
+    const { spawn } = buildHarness([]);
+
+    await spawn(SESSION_ID, { name: 'Scout' });
+
+    expect(invokeAgentInsertSpy.mock.calls[0]?.[0]).not.toHaveProperty('mountId');
   });
 
   it('logs a kickoff that fails before the transcript can show it', async () => {

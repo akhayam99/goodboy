@@ -85,6 +85,7 @@ export type BuilderKickoff = {
   readonly goal: string;
   readonly goalPlaceholder: string;
   readonly primaryLabel?: string;
+  readonly startError?: string | null;
   readonly onGoalChange: (goal: string) => void;
   readonly start: (run: (session: Session) => Promise<void>) => Promise<void>;
 };
@@ -1019,15 +1020,22 @@ export const WorkflowBuilderView = (props: Props) => {
     </div>
   );
 
+  const storedStartError = kickoff?.startError ?? null;
+  const shownError: BuilderError | null =
+    error ??
+    (storedStartError === null
+      ? null
+      : { title: "Couldn't start the run", message: storedStartError });
+
   const footer = (
     <div className="flex flex-col gap-3">
-      {error === null ? null : (
+      {shownError === null ? null : (
         <Notice
           tone="danger"
           placement="inline"
           role="alert"
-          title={error.title}
-          body={error.message}
+          title={shownError.title}
+          body={shownError.message}
         />
       )}
       <FromRulesRow
@@ -1039,6 +1047,7 @@ export const WorkflowBuilderView = (props: Props) => {
       />
       <LaunchBar
         controls={launchControls}
+        hasEstimateSlot={mode === 'dynamic'}
         estimate={
           mode === 'dynamic' && estimates?.total != null ? (
             <PlanEstimateChip total={estimates.total} />

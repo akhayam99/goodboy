@@ -74,4 +74,46 @@ describe('useScrollPin', () => {
     expect(result.current.pinned).toBe(false);
     expect(box.scrollTop).toBe(100);
   });
+
+  it('never pulls an unpinned reader down when new rows arrive', () => {
+    const box = { scrollHeight: 1000, scrollTop: 0, clientHeight: 500 };
+    const { result, rerender } = open(box);
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    act(() => result.current.onUserScroll());
+    box.scrollTop = 120;
+    act(() => result.current.onScroll());
+    expect(result.current.pinned).toBe(false);
+
+    box.scrollHeight = 2200;
+    rerender({ items: 2 });
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    expect(box.scrollTop).toBe(120);
+    expect(result.current.pinned).toBe(false);
+  });
+
+  it('pins again once the reader returns to the bottom', () => {
+    const box = { scrollHeight: 1000, scrollTop: 0, clientHeight: 500 };
+    const { result, rerender } = open(box);
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    act(() => result.current.onUserScroll());
+    box.scrollTop = 120;
+    act(() => result.current.onScroll());
+    box.scrollTop = 490;
+    act(() => result.current.onScroll());
+    expect(result.current.pinned).toBe(true);
+
+    box.scrollHeight = 1600;
+    rerender({ items: 3 });
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(box.scrollTop).toBe(1100);
+  });
 });

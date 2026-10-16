@@ -7,6 +7,13 @@ export type AutoTreeView = Readonly<{
   delegations: ReadonlyArray<AutoDelegation>;
   artifacts: ReadonlyArray<AutoArtifactLedgerRow>;
   budget: AutoBudgetFacts | null;
+  pendingRefusal: AutoPendingRefusal | null;
+}>;
+
+export type AutoPendingRefusal = Readonly<{
+  action: string;
+  code: string;
+  roles: ReadonlyArray<string>;
 }>;
 
 export type AutoViewState = {

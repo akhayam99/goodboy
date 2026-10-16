@@ -4,6 +4,7 @@ import type { Tone } from '@goodboy/ui';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import type { AgentKind } from '../../session/agent-kind';
 import { autoRowFacts } from '../autoRowFacts';
+import { isAutoTreeActive } from '../autoTreePhases';
 import { delegationCardOf, type DelegationCardModel } from './delegationCardOf';
 
 export type RailRow = Readonly<{
@@ -67,7 +68,8 @@ const ROOT_NODE_BY_PHASE: Readonly<Record<AutoTreeView['tree']['phase'], WorkNod
   delegating: 'running',
   waiting: 'running',
   merging: 'running',
-  done: 'done',
+  done: 'ready',
+  finished: 'finished',
   blocked: 'alert',
   stopping: 'running',
   stopped: 'stopped',
@@ -87,7 +89,7 @@ type WordParams = {
 
 const rootWordOf = ({ view, facts, isApproval }: WordParams): string => {
   if (facts === null) {
-    return view.tree.phase === 'done' ? 'Done' : 'Ready';
+    return 'Ready';
   }
   return isApproval ? facts.word : facts.short;
 };
@@ -131,7 +133,7 @@ const rootRowOf = ({ view, agent, routing }: RootParams): RailRow => {
     model: routing.model,
     effort: routing.effort,
     startedAtMs: startedAtOf({ agent }),
-    endedAtMs: view.tree.phase === 'done' ? view.tree.updatedAt : null,
+    endedAtMs: isAutoTreeActive({ phase: view.tree.phase }) ? null : view.tree.updatedAt,
     isLive,
   };
 };

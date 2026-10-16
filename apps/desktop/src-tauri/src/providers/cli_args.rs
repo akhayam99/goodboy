@@ -292,7 +292,14 @@ pub(crate) enum RoleAccess {
 }
 
 const READ_ONLY_ROLES: &[&str] = &["scout", "planner", "investigator", "reviewer", "auto"];
-const WRITER_ROLES: &[&str] = &["implementer", "tester", "docs"];
+const WRITER_ROLES: &[&str] = &[
+    "implementer",
+    "tester",
+    "docs",
+    "scribe",
+    "ci-fixer",
+    "rewriter",
+];
 const READ_ONLY_CLAUDE_TOOLS: &str = "Read,Grep,Glob";
 const NATIVE_SUBAGENT_TOOLS: &[&str] = &["Task", "Agent"];
 const READ_ONLY_DENIED_TOOLS: &[&str] = &["Bash", "Edit", "Write", "MultiEdit", "NotebookEdit"];
@@ -901,6 +908,30 @@ mod tests {
         assert!(agy.contains(&"--sandbox".to_string()));
         let opencode = turn_args("opencode", &args);
         assert_eq!(value_after(&opencode, "--agent").as_deref(), Some("plan"));
+    }
+
+    #[test]
+    fn the_writer_roles_match_the_auto_writer_roles_of_core() {
+        let source = include_str!("../../../../../packages/core/src/auto/roles.ts");
+        let start = source
+            .find("AUTO_WRITER_ROLES = [")
+            .expect("AUTO_WRITER_ROLES in core");
+        let end = start + source[start..].find(']').expect("end of the list");
+        let mut core: Vec<&str> = source[start..end].split('\'').skip(1).step_by(2).collect();
+        let mut rust: Vec<&str> = WRITER_ROLES.to_vec();
+        core.sort_unstable();
+        rust.sort_unstable();
+        assert_eq!(core, rust);
+        for role in ["scribe", "ci-fixer", "rewriter"] {
+            assert_eq!(role_access(role), Some(RoleAccess::Writer));
+            let args = spawn_args("acceptEdits", Some(role), &[], &[], &[]);
+            let argv = turn_args("claude", &args);
+            assert_eq!(value_after(&argv, "--tools"), None);
+            assert_ne!(
+                value_after(&argv, "--permission-mode").as_deref(),
+                Some("plan")
+            );
+        }
     }
 
     #[test]

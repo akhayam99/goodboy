@@ -165,9 +165,13 @@ export {
   type AutoTreeLimitKey,
 } from './auto/limits';
 export {
-  autoBudgetFacts,
+  autoBudgetOf,
   autoBudgetLabel,
   autoBudgetPromptLine,
+  autoBudgetUsedUsd,
+  autoRemainingForGates,
+  autoTreeSpendOf,
+  capTextOf,
   type AutoBudgetFacts,
 } from './auto/budget';
 export {
@@ -199,6 +203,7 @@ export {
   isAutoLimitRefusal,
   type AutoRefusalCode,
 } from './auto/refusals';
+export { AUTO_REFUSAL_USER_REASON, autoRefusalUserReason } from './auto/refusalUserReason';
 export { AUTO_SYSTEM_PROMPT, autoRoleCatalog, buildAutoSystemPrompt } from './auto/prompt';
 export {
   parseRevisionFromTurn,
@@ -325,6 +330,7 @@ export {
   type PickMountParams,
   type PickableMount,
 } from './auto/mountPick';
+export { buildMountsLine } from './auto/mountsLine';
 export {
   ADOPTION_DEFAULT_INSTRUCTION,
   ADOPTION_REFUSAL_TEXT,
@@ -342,6 +348,7 @@ export {
 export {
   AUTO_DELEGATION_ROLES,
   AUTO_ROLE_ARTIFACT,
+  AUTO_ROLE_WHEN,
   AUTO_WRITER_ROLES,
   isAutoWriterRole,
   parseAutoDelegationRole,

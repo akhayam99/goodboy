@@ -2,6 +2,7 @@ import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { isAutoPlanAwaitingApproval } from '../isAutoPlanAwaitingApproval';
 import { joinNouns } from '../joinNouns';
 import { openRoleNouns } from '../openRoleNouns';
+import { refusalNoticeOf } from './refusalNoticeOf';
 
 type Params = {
   readonly view: AutoTreeView;
@@ -11,6 +12,9 @@ export const waitingTextOf = ({ view }: Params): string | null => {
   const phase = view.tree.phase;
   if (phase !== 'delegating' && phase !== 'waiting' && phase !== 'merging') {
     return null;
+  }
+  if (view.pendingRefusal !== null) {
+    return refusalNoticeOf({ refusal: view.pendingRefusal });
   }
   if (isAutoPlanAwaitingApproval({ view })) {
     return null;

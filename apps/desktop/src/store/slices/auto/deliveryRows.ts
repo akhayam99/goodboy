@@ -22,6 +22,8 @@ const isKindAllowed = ({ phase, kind }: KindAllowedParams): boolean => {
       return true;
     case 'waiting':
       return kind === 'question' || kind === 'refusal';
+    case 'finished':
+      return kind === 'user';
     case 'deciding':
     case 'delegating':
     case 'stopping':

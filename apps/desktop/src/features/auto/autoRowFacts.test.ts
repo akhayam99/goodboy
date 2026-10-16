@@ -10,9 +10,17 @@ import { withoutAutoChildren } from './withoutAutoChildren';
 const factsOf = (phase: AutoPhase) => autoRowFacts({ view: aView({ phase }) });
 
 describe('autoRowFacts', () => {
-  it('leaves an answering or finished tree to the agent row', () => {
+  it('leaves an answering tree to the agent row', () => {
     expect(factsOf('answering')).toBeNull();
-    expect(factsOf('done')).toBeNull();
+  });
+
+  it('says Idle when the work rests and Finished only for a tree the user closed', () => {
+    expect(factsOf('done')).toEqual({ phase: 'done', word: 'Idle', short: 'Idle' });
+    expect(factsOf('finished')).toEqual({
+      phase: 'closed',
+      word: 'Finished by you',
+      short: 'Finished',
+    });
   });
 
   it('names the roles it waits for, each once, and drops the settled ones', () => {

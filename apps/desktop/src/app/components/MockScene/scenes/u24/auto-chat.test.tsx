@@ -6,7 +6,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -53,7 +53,10 @@ describe('the Auto chat scenes', () => {
       'auto-chat-confirm',
       'auto-chat-delegating',
       'auto-chat-done',
+      'auto-chat-finished',
+      'auto-chat-nocap',
       'auto-chat-plan',
+      'auto-chat-refused',
       'auto-chat-revising',
       'auto-chat-working',
       'auto-overview-row',
@@ -122,6 +125,37 @@ describe('the Auto chat scenes', () => {
     expect(within(budget).getByText('Left $5.23')).toBeDefined();
   });
 
+  it('auto-chat-working opens the limit popover from the rail foot', async () => {
+    mount({ id: 'auto-chat-working' });
+
+    await screen.findByRole('article', { name: 'Implementer delegation' }, WAIT);
+    const budget = within(rail()).getByRole('region', { name: 'Tree budget' });
+    fireEvent.click(within(budget).getByRole('button', { name: 'Limit $10.00' }));
+
+    const popover = screen.getByRole('dialog', { name: 'Limit for this conversation' });
+    expect(within(popover).getByRole('button', { name: '$10' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    fireEvent.click(within(popover).getByRole('button', { name: 'Custom' }));
+    fireEvent.change(within(popover).getByLabelText('Custom limit in dollars'), {
+      target: { value: '4' },
+    });
+    expect(
+      within(popover).getByText('The limit must cover spent and reserved usage.'),
+    ).toBeDefined();
+  });
+
+  it('auto-chat-nocap reads No cap in the foot with spent and reserved and no left', async () => {
+    mount({ id: 'auto-chat-nocap' });
+
+    await screen.findByRole('article', { name: 'Implementer delegation' }, WAIT);
+    const budget = within(rail()).getByRole('region', { name: 'Tree budget' });
+    expect(within(budget).getByRole('button', { name: 'No cap' })).toBeDefined();
+    expect(within(budget).getByText('Spent $0.27')).toBeDefined();
+    expect(within(budget).getByText('Reserved $4.50')).toBeDefined();
+    expect(within(budget).queryByText(/^Left/)).toBeNull();
+  });
+
   it('auto-chat-revising shows the revision on the same Planner', async () => {
     mount({ id: 'auto-chat-revising' });
 
@@ -141,6 +175,19 @@ describe('the Auto chat scenes', () => {
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDefined();
   });
 
+  it('auto-chat-refused says which agent was not started and why, in the wait strip', async () => {
+    mount({ id: 'auto-chat-refused' });
+
+    const notice = await screen.findByText(
+      'Auto tried to start an Implementer. Not started: more than one project fits and it did not say which. Auto is choosing again.',
+      undefined,
+      WAIT,
+    );
+    expect(notice.closest('[role="status"]')).not.toBeNull();
+    expect(screen.queryByText('Auto is reading the results')).toBeNull();
+    expect(screen.queryByRole('article')).toBeNull();
+  });
+
   it('auto-chat-done lists every child as done and has no wait strip', async () => {
     mount({ id: 'auto-chat-done' });
 
@@ -150,6 +197,27 @@ describe('the Auto chat scenes', () => {
     expect(screen.getByText('3 files changed')).toBeDefined();
     expect(screen.getByText('keeps the balance after two attempts')).toBeDefined();
     expect(within(rail()).getByText('Spent $0.53')).toBeDefined();
+  });
+
+  it('auto-chat-done says Idle in the header and the rail and offers Mark finished', async () => {
+    mount({ id: 'auto-chat-done' });
+
+    await screen.findByRole('article', { name: 'Reviewer delegation' }, WAIT);
+    expect(within(rail()).getByText('Idle')).toBeDefined();
+    expect(screen.getAllByText('Idle').length).toBeGreaterThanOrEqual(2);
+    fireEvent.click(screen.getByRole('button', { name: 'More agent actions' }));
+    expect(await screen.findByRole('menuitem', { name: /Mark finished/ }, WAIT)).toBeDefined();
+  });
+
+  it('auto-chat-finished says Finished and no longer offers Mark finished', async () => {
+    mount({ id: 'auto-chat-finished' });
+
+    await screen.findByRole('article', { name: 'Reviewer delegation' }, WAIT);
+    expect(within(rail()).getByText('Finished')).toBeDefined();
+    expect(screen.getAllByText('Finished').length).toBeGreaterThanOrEqual(2);
+    fireEvent.click(screen.getByRole('button', { name: 'More agent actions' }));
+    await screen.findAllByRole('menuitem', undefined, WAIT);
+    expect(screen.queryByRole('menuitem', { name: /Mark finished/ })).toBeNull();
   });
 
   it('auto-chat-child reads the Planner started by Auto, with no composer', async () => {

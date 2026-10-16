@@ -29,13 +29,15 @@ type HarnessParams = {
 
 const harness = ({ agents }: HarnessParams) => {
   const reportError = vi.fn(async () => undefined);
+  const appendTurnEvent = vi.fn<AutoTurnState['appendTurnEvent']>();
   const state: AutoTurnState = {
     sessions: [{ id: SESSION, workspaceId: WORKSPACE }],
     sessionPhaseRuns: { [SESSION]: agents },
     selectedAgentId: { [SESSION]: AUTO_AGENT },
     reportError,
+    appendTurnEvent,
   };
-  return { reportError, get: () => state };
+  return { reportError, appendTurnEvent, get: () => state };
 };
 
 const inputOf = (overrides: Partial<SendTurnInput> = {}): SendTurnInput => ({
@@ -81,13 +83,31 @@ describe('a message typed to an Auto agent', () => {
     expect(port).toHaveBeenCalledWith(expect.objectContaining({ agentId: AUTO_AGENT }));
   });
 
+  it('is written once as the user own words after Auto took it', async () => {
+    registerAutoUserTurnPort({ port: vi.fn<AutoUserTurnPort>(async () => 'queued') });
+    const { get, appendTurnEvent } = harness({ agents: [autoRow] });
+
+    await routeAutoUserTurn({ get, input: inputOf() });
+
+    expect(appendTurnEvent).toHaveBeenCalledTimes(1);
+    expect(appendTurnEvent).toHaveBeenCalledWith(
+      AUTO_AGENT,
+      SESSION,
+      expect.objectContaining({
+        kind: 'operator_text',
+        text: 'Also cover the notify-relay retries',
+      }),
+    );
+  });
+
   it('is refused out loud when Auto lost it, and no turn is started', async () => {
     registerAutoUserTurnPort({ port: vi.fn<AutoUserTurnPort>(async () => 'lost') });
-    const { get, reportError } = harness({ agents: [autoRow] });
+    const { get, reportError, appendTurnEvent } = harness({ agents: [autoRow] });
 
     await expect(routeAutoUserTurn({ get, input: inputOf() })).rejects.toThrow(
       AUTO_MESSAGE_LOST_MESSAGE,
     );
+    expect(appendTurnEvent).not.toHaveBeenCalled();
 
     expect(reportError).toHaveBeenCalledWith(
       expect.objectContaining({ title: "Auto didn't get your message", sessionId: SESSION }),

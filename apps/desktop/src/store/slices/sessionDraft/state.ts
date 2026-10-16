@@ -18,6 +18,8 @@ export type SessionDraft = {
   readonly agentRouting: AgentKindRouting | null;
   readonly autoGoal: string;
   readonly autoRouting: AgentKindRouting | null;
+  readonly isStarting: boolean;
+  readonly startError: string | null;
 };
 
 export const EMPTY_SESSION_DRAFT: SessionDraft = {
@@ -34,6 +36,8 @@ export const EMPTY_SESSION_DRAFT: SessionDraft = {
   agentRouting: null,
   autoGoal: '',
   autoRouting: null,
+  isStarting: false,
+  startError: null,
 };
 
 export type SessionDraftState = {

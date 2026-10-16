@@ -65,6 +65,7 @@ const rows = [
 const input = {
   ledgerBlock: 'Artifacts in this tree: None yet.',
   budgetLine: 'Budget for this conversation: 5.00 USD.',
+  mountsLine: 'MOUNTS: mount-ledger (ledger-core, branch ak/ledger).',
   digestBlock: 'STATE OF THIS CONVERSATION\nNo agent is open.',
   artifactsBlock: '',
   rows,
@@ -77,6 +78,7 @@ describe('the message that delivers stored rows to Auto', () => {
     const order = [
       'Artifacts in this tree',
       'Budget for this conversation',
+      'MOUNTS: mount-ledger (ledger-core, branch ak/ledger).',
       'RESULTS FROM YOUR AGENTS',
       'QUESTIONS FROM YOUR AGENTS',
       'MESSAGES FROM THE USER, OLDEST FIRST',

@@ -221,9 +221,13 @@ describe('a block that cannot be applied', () => {
     expect(await delegationsOf(world)).toHaveLength(0);
     const refusals = await refusalsOf(world);
     expect(refusals).toHaveLength(1);
-    expect(refusals[0]?.payload).toMatchObject({ action: 'delegate', code: 'mount_missing' });
+    expect(refusals[0]?.payload).toMatchObject({
+      action: 'delegate',
+      code: 'mount_ambiguous',
+      roles: ['implementer'],
+    });
     const second = world.state.ports.autoTurns[1];
-    expect(second?.text).toContain('your delegate block was refused (mount_missing)');
+    expect(second?.text).toContain('your delegate block was refused (mount_ambiguous)');
     expect(second?.text).toContain('mount-ledger-core');
     const accepted = (await refusalsOf(world))[0];
     expect(accepted?.state).toBe('accepted');

@@ -3,6 +3,7 @@ import type { Agent, Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../store';
 import { autoTreeOfAgent } from '../autoTreeOfAgent';
 import { useAutoTrees } from '../useAutoTrees';
+import { AutoTreeLimitControl } from './AutoTreeLimitControl';
 import { AutoWorkRail } from './AutoWorkRail';
 import { railRowsOf } from './railRowsOf';
 import { useAutoTreeActions } from './useAutoTreeActions';
@@ -45,6 +46,15 @@ export const AutoWorkRailHost = ({ session, agent, children }: Props) => {
       <AutoWorkRail
         rows={rows}
         budget={tree.view.budget}
+        limitControl={
+          tree.view.budget === null ? null : (
+            <AutoTreeLimitControl
+              sessionId={session.id}
+              treeId={tree.view.tree.id}
+              facts={tree.view.budget}
+            />
+          )
+        }
         selectedAgentId={agent.id}
         isCollapsed={isCollapsed}
         onToggleCollapsed={() => setIsCollapsed((isNow) => !isNow)}

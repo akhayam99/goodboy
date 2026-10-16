@@ -739,6 +739,7 @@ export {
 export {
   AUTO_RESERVATION_OWNER_KINDS,
   AUTO_USD_EPSILON,
+  autoBudgetCoversSql,
   autoRemainingUsdSql,
   autoReservedUsdSql,
   autoSettledUsdSql,
@@ -773,6 +774,10 @@ export {
   recordAutoRefusal,
   releaseAutoTree,
   setAutoTreeCapIfUnchanged,
+  moveRestingAutoTree,
+  AUTO_RESTING_PHASES,
+  type AutoRestingPhase,
+  type SetAutoTreeCapOutcome,
   type AutoPhase,
   type AutoStopState,
   type AutoTree,

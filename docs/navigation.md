@@ -129,7 +129,12 @@ closes it. It has a mode slot (`PALETTE_MODES` in
 `features/palette/paletteModes.ts`): each mode draws its own input row
 (`PaletteInputRow`) and body, the overlay keeps the query and the scope, ⇥
 moves to the next mode with the same text, and `openPalette({ mode, query })`
-opens it on a mode. Commands is the first mode.
+opens it on a mode. Commands is the first mode. Its repo rows
+(`sources/repoEntries.ts`) pull the base branch of the linked repos through
+`checkout_update_base`; each row and each toast line names the branch it
+updates and where the checkout stays. Inside a session, New terminal reads
+"New terminal in this session" and opens a fresh tab in the session terminal
+drawer instead of the Terminal page.
 
 - **Scope first.** It opens on a scope chip that names the surface you can see:
   the focused commit row on the Commits tab, else the focused row of the Explore
@@ -912,7 +917,14 @@ reach NW-230 anymore`. Pick up a task shows only the open starred issues,
   kind `workflow-run`: the session is created first, then the builder saves
   the workflow and attaches the run to it in the same action, and the view
   lands on the run. A failure removes the half-created session and keeps the
-  draft. Before a session exists the builder leaves out Use session goal, the
+  draft, and the reason is stored on the draft (`startError`, with `isStarting`
+  while it runs), because the page that clicked Start is unmounted by then:
+  the reopened draft shows it under Start run (the builder and the agent
+  starts both read it), and the next Start clears it. One start per workspace
+  runs at a time: a second click while one runs gets the same session, never a
+  second one. The orchestrated lane reserves the plan estimate slot above
+  Start run (`LaunchBar` `hasEstimateSlot`), so the late estimate does not
+  move the button under the pointer. Before a session exists the builder leaves out Use session goal, the
   Discard button of its launch bar (the row's Discard draft does it), the
   title suggestion (the orchestrated title is generated after start, as in a
   session) and the worktree as the planner's working folder.

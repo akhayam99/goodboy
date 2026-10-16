@@ -311,8 +311,12 @@ fails silently at runtime.
   is the release that turns the experiment on.
 - `AUTO_DELEGATION_ROLES` (`packages/core/src/auto/roles.ts`) and the
   `READ_ONLY_ROLES` and `WRITER_ROLES` of `providers/cli_args.rs` name the same
-  seven roles in two languages, and no test ties them. `READ_ONLY_ROLES` also
-  holds `auto`, which is not a delegation role. Change one, change the other.
+  ten roles in two languages. `the_writer_roles_match_the_auto_writer_roles_of_core`
+  reads `AUTO_WRITER_ROLES` out of the TypeScript file and fails when the two
+  writer lists differ; the read only list has no such test. `READ_ONLY_ROLES`
+  also holds `auto`, which is not a delegation role. A role missing from both
+  Rust lists runs read only. The role CHECK of `auto_delegations` (m232) is the
+  third copy: a new Auto role needs a table rebuild. Change one, change all.
   A role id outside the TypeScript list is rejected by
   `parseAutoDelegationRole`, never passed through `normalizeAgentRole`, which
   would turn it into the Generalist.
@@ -402,7 +406,14 @@ fails silently at runtime.
   old URL still listed is "running", never "still fails". An agent carries no
   mount id: `checkTargetOf` ties an analyst to its mount through
   `selectCheckMount`, which matches the analyzed URL against the pull requests
-  and check runs of each mount.
+  and check runs of each mount. Agents started since m233 also store
+  `agents.mount_id`, set to NULL when the worktree row is removed. The Activity
+  row of a CI fix agent resolves its mount through `ciFixMountOf`: the stored
+  mount while it is still attached, then `selectCheckMount`, then the one
+  attached mount whose `repoSlug` is the repo in the job URL, then the session's
+  only attached mount, else it opens the chat. Older agents have no stored
+  mount, and two mounts of one repo cannot be told apart by the URL, so that row
+  opens the chat.
 
 - The CI fix roles are `ci-debugger` and `ci-fixer`, stored as their own kind.
   An older version stored `debugger` and `implementer` on the same agents, and
@@ -446,6 +457,10 @@ fails silently at runtime.
   `origin: 'operator'` expecting the plain path; a delivery uses `origin: 'delegation'`.
 - `auto_*` money columns are REAL dollars. Compare them through
   `autoRemainingUsdSql` and `AUTO_USD_EPSILON`, not with `===`.
+- m232 rebuilds `auto_delegations` with `PRAGMA foreign_keys = OFF` around the
+  drop: without it, dropping the table cascades into `auto_attempts`. Any later
+  rebuild of an `auto_*` table follows the same procedure and its test counts
+  the child rows before and after.
 - The sql of m230 is pinned by hash in `registry.test.ts`. While the release is
   unshipped, a change to it needs the new hash pasted there; once shipped, it
   is immutable.

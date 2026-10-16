@@ -55,7 +55,8 @@ export const addTerminalTab = (set: SetFn, get: GetFn) => {
   return ({ owner, cwd }: AddParams): TerminalTabId => {
     const key = terminalOwnerKey({ owner });
     const tabs = get().terminalTabs[key] ?? [];
-    const id = terminalTabIdOf({ owner, ordinal: nextOrdinal({ tabs }) });
+    const ordinal = Math.max(nextOrdinal({ tabs }), (get().terminalOrdinals[key] ?? 0) + 1);
+    const id = terminalTabIdOf({ owner, ordinal });
     const draft: TerminalTab = {
       id,
       owner,
@@ -78,6 +79,7 @@ export const addTerminalTab = (set: SetFn, get: GetFn) => {
     };
     set((s) => ({
       terminalTabs: { ...s.terminalTabs, [key]: [...tabs, tab] },
+      terminalOrdinals: { ...s.terminalOrdinals, [key]: ordinal },
       activeTerminalTab: { ...s.activeTerminalTab, [key]: id },
       terminalWorktreeActive: { ...s.terminalWorktreeActive, [worktree]: id },
     }));

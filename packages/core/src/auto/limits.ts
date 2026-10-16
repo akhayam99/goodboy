@@ -11,6 +11,9 @@ export const AUTO_ATTEMPT_CEILING_USD = {
   docs: 0.5,
   tester: 1.5,
   implementer: 3,
+  scribe: 0.5,
+  'ci-fixer': 1.5,
+  rewriter: 1.5,
 } as const satisfies Readonly<Record<AutoDelegationRole, number>>;
 
 export const AUTO_TURN_CEILING_USD = 0.5;

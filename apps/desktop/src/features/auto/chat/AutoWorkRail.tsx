@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import type { AutoBudgetFacts } from '@goodboy/core';
 import { IconButton, ScrollFade, WorkNode, Tooltip, cn } from '@goodboy/ui';
@@ -16,6 +17,7 @@ import {
 type Props = {
   readonly rows: ReadonlyArray<RailRow>;
   readonly budget: AutoBudgetFacts | null;
+  readonly limitControl: ReactNode | null;
   readonly selectedAgentId: AgentId | null;
   readonly isCollapsed: boolean;
   readonly onToggleCollapsed: () => void;
@@ -28,6 +30,7 @@ const STRIP_WIDTH = 56;
 export const AutoWorkRail = ({
   rows,
   budget,
+  limitControl,
   selectedAgentId,
   isCollapsed,
   onToggleCollapsed,
@@ -108,6 +111,8 @@ export const AutoWorkRail = ({
         )}
       </div>
     </ScrollFade>
-    {isCollapsed || budget === null ? null : <AutoTreeBudget facts={budget} />}
+    {isCollapsed || budget === null ? null : (
+      <AutoTreeBudget facts={budget} limitControl={limitControl} />
+    )}
   </aside>
 );

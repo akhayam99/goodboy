@@ -2,13 +2,13 @@ import {
   AUTO_BLOCK_TEXT,
   AUTO_OUTBOX_CLAIM_MS,
   AUTO_TURN_CEILING_USD,
+  autoRemainingForGates,
   storedDeliveryOf,
   turnGate,
 } from '@goodboy/core';
 import {
-  AUTO_USD_EPSILON,
   acceptAutoOutboxStatement,
-  autoRemainingUsdSql,
+  autoBudgetCoversSql,
   autoTreePhaseStatement,
   claimAutoOutboxStatement,
   getAutoTree,
@@ -122,7 +122,7 @@ const claimStatements = ({
     }),
     {
       sql: `SELECT 1 FROM auto_trees
-        WHERE id = ? AND ${autoRemainingUsdSql({ treeRef: 'auto_trees.id' })} + ${AUTO_USD_EPSILON} >= ?`,
+        WHERE id = ? AND ${autoBudgetCoversSql({ treeRef: 'auto_trees.id' })}`,
       params: [tree.id, AUTO_TURN_CEILING_USD],
       abortWhen: 'noRows',
       abortCode: ABORT_BUDGET,
@@ -246,7 +246,7 @@ export const deliverNext = async ({
     noProgressStreak: tree.noProgressStreak,
     hardDeadlineAt: tree.hardDeadlineAt,
     nowMs: ctx.now(),
-    remainingUsd: spend?.remainingUsd ?? 0,
+    remainingUsd: autoRemainingForGates({ spend }),
   });
   if (gate !== null) {
     return blockTree({ ctx, tree, reason: AUTO_BLOCK_TEXT[gate] });
@@ -255,7 +255,13 @@ export const deliverNext = async ({
   const text =
     stored !== null && stored.rowIds.length === rows.length
       ? stored.text
-      : await buildDeliveryMessage({ db: ctx.db, tree, rows, nowMs: ctx.now() });
+      : await buildDeliveryMessage({
+          db: ctx.db,
+          tree,
+          rows,
+          mounts: await ctx.ports.loadMounts({ sessionId: tree.sessionId }),
+          nowMs: ctx.now(),
+        });
   const runId = ctx.ports.newId();
   const claimed = await ctx.db.transaction({
     statements: claimStatements({ ctx, tree, rows, runId, text }),

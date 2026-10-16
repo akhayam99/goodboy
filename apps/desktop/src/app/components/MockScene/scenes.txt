@@ -1,6 +1,7 @@
 activity
 activity-check-chain
 activity-check-fixed-local
+activity-ci-fix-unloaded
 activity-empty
 activity-groups
 activity-jobs
@@ -40,7 +41,10 @@ auto-chat-child
 auto-chat-confirm
 auto-chat-delegating
 auto-chat-done
+auto-chat-finished
+auto-chat-nocap
 auto-chat-plan
+auto-chat-refused
 auto-chat-revising
 auto-chat-working
 auto-move-moved
@@ -582,6 +586,8 @@ topbar-theme-dark
 topbar-theme-light
 topbar-theme-system
 transcript
+transcript-delivery
+transcript-long
 transcript-mount
 transcript-width
 turn-override-off

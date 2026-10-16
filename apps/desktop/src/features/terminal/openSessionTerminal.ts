@@ -10,12 +10,19 @@ type OpenParams = {
   readonly sessionId: SessionId;
   readonly cwd: string | null;
   readonly prefill?: string;
+  readonly isFresh?: boolean;
 };
 
-export const openSessionTerminal = ({ state, sessionId, cwd, prefill }: OpenParams): void => {
+export const openSessionTerminal = ({
+  state,
+  sessionId,
+  cwd,
+  prefill,
+  isFresh = false,
+}: OpenParams): void => {
   const owner = sessionTerminalOwner({ sessionId });
   const reusable =
-    prefill === undefined
+    prefill === undefined && !isFresh
       ? (state.terminalTabs[terminalOwnerKey({ owner })] ?? []).find(
           (tab) => tab.cwd === cwd && tab.status !== 'exited' && tab.openError === undefined,
         )
