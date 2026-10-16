@@ -4,7 +4,6 @@ import type { Tone } from '@goodboy/ui';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import type { AgentKind } from '../../session/agent-kind';
 import { autoTreeWordOf } from '../autoTreeWordOf';
-import { isAutoTreeActive } from '../autoTreePhases';
 import { delegationCardOf, type DelegationCardModel } from './delegationCardOf';
 
 export type RailRow = Readonly<{
@@ -20,8 +19,6 @@ export type RailRow = Readonly<{
   provider: string | null;
   model: string | null;
   effort: string | null;
-  startedAtMs: number | null;
-  endedAtMs: number | null;
   isLive: boolean;
 }>;
 
@@ -65,21 +62,11 @@ const delegationNodeOf = ({ card }: NodeParams): WorkNodeState => {
 
 type RootParams = {
   readonly view: AutoTreeView;
-  readonly agent: Agent | null;
   readonly routing: RailRouting;
   readonly rootTurn: TurnState | null;
 };
 
-type StartParams = {
-  readonly agent: Agent | null;
-};
-
-const startedAtOf = ({ agent }: StartParams): number | null => {
-  const parsed = agent?.startedAt == null ? Number.NaN : Date.parse(agent.startedAt);
-  return Number.isNaN(parsed) ? null : parsed;
-};
-
-const rootRowOf = ({ view, agent, routing, rootTurn }: RootParams): RailRow => {
+const rootRowOf = ({ view, routing, rootTurn }: RootParams): RailRow => {
   const state = autoTreeWordOf({ view, rootTurn });
   return {
     id: view.tree.rootAgentId,
@@ -94,8 +81,6 @@ const rootRowOf = ({ view, agent, routing, rootTurn }: RootParams): RailRow => {
     provider: routing.provider,
     model: routing.model,
     effort: routing.effort,
-    startedAtMs: startedAtOf({ agent }),
-    endedAtMs: isAutoTreeActive({ phase: view.tree.phase }) ? null : view.tree.updatedAt,
     isLive: state.isLive,
   };
 };
@@ -117,8 +102,6 @@ export const restingRootRowOf = ({ agentId, provider, model, effort }: RestingPa
   provider,
   model,
   effort,
-  startedAtMs: null,
-  endedAtMs: null,
   isLive: false,
 });
 
@@ -128,7 +111,6 @@ export const railRowsOf = ({
   rootRouting,
   rootTurn = null,
 }: RowParams): ReadonlyArray<RailRow> => {
-  const rootAgent = agents.find((agent) => agent.id === view.tree.rootAgentId) ?? null;
   const latestByChild = new Map<string, DelegationCardModel>();
   for (const delegation of view.delegations) {
     if (delegation.isAdopted) {
@@ -150,9 +132,7 @@ export const railRowsOf = ({
     provider: card.provider,
     model: card.model,
     effort: card.effort,
-    startedAtMs: card.startedAtMs,
-    endedAtMs: card.endedAtMs,
     isLive: card.status.isLive,
   }));
-  return [rootRowOf({ view, agent: rootAgent, routing: rootRouting, rootTurn }), ...children];
+  return [rootRowOf({ view, routing: rootRouting, rootTurn }), ...children];
 };

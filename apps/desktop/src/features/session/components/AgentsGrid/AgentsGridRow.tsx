@@ -1,3 +1,4 @@
+import { useContext } from 'react';
 import type { Agent, Session } from '@goodboy/types';
 import { cn, ROW_INTERACTIVE, TruncatedText } from '@goodboy/ui';
 import { modelLabel } from '../../../chat/utils/chat-constants';
@@ -8,7 +9,8 @@ import { ProviderGlyph } from '../../../../shared/components/RoutingPicker/Provi
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useAgentHeaderRouting } from '../../../../shared/hooks/useAgentHeaderRouting';
 import { providerIdOf } from '../../../../shared/utils/providerIdOf';
-import { formatDuration } from '../../../../shared/utils/time/formatDuration';
+import { agentActiveClock } from '../../../workTreeModel/agentWorkTime';
+import { WorkTimeContext } from '../../../workTreeModel/workTimeSource';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { AgentStatusIcon } from '../AgentCard/AgentStatusIcon';
 import { AGENTS_GRID_COLUMNS } from './agentsGridColumns';
@@ -17,25 +19,12 @@ type Props = {
   readonly session: Session;
   readonly run: Agent;
   readonly kind: AgentKind;
-  readonly nowMs: number;
   readonly isMuted: boolean;
   readonly onOpen: () => void;
 };
 
-type DurationParams = {
-  readonly run: Agent;
-  readonly nowMs: number;
-};
-
-const durationOf = ({ run, nowMs }: DurationParams): string | null => {
-  if (run.startedAt == null) {
-    return null;
-  }
-  const endMs = run.completedAt == null ? nowMs : Date.parse(run.completedAt);
-  return formatDuration({ durationMs: endMs - Date.parse(run.startedAt) });
-};
-
-export const AgentsGridRow = ({ session, run, kind, nowMs, isMuted, onOpen }: Props) => {
+export const AgentsGridRow = ({ session, run, kind, isMuted, onOpen }: Props) => {
+  const source = useContext(WorkTimeContext);
   const menu = useObjectMenuTrigger({
     target: { kind: 'agent', sessionId: run.sessionId, agentId: run.id },
     anchorKey: `agent:${run.id}`,
@@ -43,7 +32,15 @@ export const AgentsGridRow = ({ session, run, kind, nowMs, isMuted, onOpen }: Pr
   const routing = useAgentHeaderRouting({ session, agent: run });
   const provider = providerIdOf({ value: routing.provider });
   const model = routing.model === null ? null : modelLabel(routing.model, provider);
-  const duration = durationOf({ run, nowMs });
+  const duration =
+    source === null
+      ? null
+      : agentActiveClock({
+          agentId: run.id,
+          unit: 'turn',
+          isRunning: run.status === 'running',
+          source,
+        });
 
   return (
     <li>

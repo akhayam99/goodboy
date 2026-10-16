@@ -9,6 +9,7 @@ import { useAutoTrees } from '../../../auto/useAutoTrees';
 import { useIsAutoOn } from '../../../auto/useIsAutoOn';
 import { AutoComposer } from '../AutoComposer';
 import { AutoTreeRow } from './AutoTreeRow';
+import { RunWorkTime } from '../AgentTree/RunWorkTime';
 
 type Props = {
   readonly session: Session;
@@ -61,22 +62,24 @@ export const AutoAgentsPane = ({ session }: Props) => {
   };
 
   return (
-    <PaneShell title="Auto agents">
-      <div className="flex min-w-0 flex-col gap-6">
-        {rows.length === 0 ? null : (
-          <ul aria-label="Auto agents" className="flex flex-col">
-            {rows.map(({ agent, row }) => (
-              <AutoTreeRow key={agent.id} agent={agent} row={row} onOpen={() => open(agent.id)} />
-            ))}
-          </ul>
-        )}
-        {isAutoOn ? (
-          <section aria-label="Start Auto" className="flex min-w-0 flex-col gap-3">
-            <p className="text-prose text-muted-foreground">{START_HINT}</p>
-            <AutoComposer sessionId={sessionId} onDone={() => undefined} />
-          </section>
-        ) : null}
-      </div>
-    </PaneShell>
+    <RunWorkTime sessionId={sessionId} workspaceId={session.workspaceId}>
+      <PaneShell title="Auto agents">
+        <div className="flex min-w-0 flex-col gap-6">
+          {rows.length === 0 ? null : (
+            <ul aria-label="Auto agents" className="flex flex-col">
+              {rows.map(({ agent, row }) => (
+                <AutoTreeRow key={agent.id} agent={agent} row={row} onOpen={() => open(agent.id)} />
+              ))}
+            </ul>
+          )}
+          {isAutoOn ? (
+            <section aria-label="Start Auto" className="flex min-w-0 flex-col gap-3">
+              <p className="text-prose text-muted-foreground">{START_HINT}</p>
+              <AutoComposer sessionId={sessionId} onDone={() => undefined} />
+            </section>
+          ) : null}
+        </div>
+      </PaneShell>
+    </RunWorkTime>
   );
 };

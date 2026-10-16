@@ -260,6 +260,7 @@ export const AgentDetailPane = ({
         onOpenTranscript={openTranscript}
         hasAdvanceRow={runStep === undefined}
         {...(runStep?.stopLabel !== undefined && { stopLabel: runStep.stopLabel })}
+        {...(runStep !== undefined && agent.stepId != null && { clockStepAgentId: agent.id })}
         hasComposer={!isPinned && !isRewriterFinished && adoption === null && !isMoveOpen}
         composerPlaceholder={
           rewriter?.isLive === true ? REWRITER_PLACEHOLDER : autoChat.composerPlaceholder

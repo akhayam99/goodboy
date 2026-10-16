@@ -83,11 +83,7 @@ export const AutoWorkRailRow = ({ row, isSelected, onOpen }: Props) => (
               {row.task}
             </span>
           )}
-          <DelegationClock
-            startedAtMs={row.startedAtMs}
-            endedAtMs={row.endedAtMs}
-            isLive={row.isLive}
-          />
+          <DelegationClock agentId={row.agentId} isLive={row.isLive} />
         </span>
       </button>
     </Tooltip>

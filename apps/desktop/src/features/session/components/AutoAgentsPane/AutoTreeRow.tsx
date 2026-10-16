@@ -44,11 +44,7 @@ export const AutoTreeRow = ({ agent, row, onOpen }: Props) => {
           <RoutingLabel provider={row.provider} model={row.model} muted />
         </span>
         <span className="text-right">
-          <DelegationClock
-            startedAtMs={row.startedAtMs}
-            endedAtMs={row.endedAtMs}
-            isLive={row.isLive}
-          />
+          <DelegationClock agentId={row.agentId} isLive={row.isLive} />
         </span>
       </button>
     </li>

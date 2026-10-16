@@ -10,6 +10,7 @@ import { ORCHESTRATED_COPY } from '../../workflows/orchestratedCopy';
 import { agentKindPalette, classifyAgent, resolveRootAgent } from '../agent-kind';
 import { stepHeadingOf } from './PresetRun/stepHeadingOf';
 import { AgentDetailPane } from './AgentDetailPane';
+import { RunWorkTime } from './AgentTree/RunWorkTime';
 import { RunStepHeading } from './PresetRun/RunStepHeading';
 import { stepStopLabelOf } from './PresetRun/stepStopLabelOf';
 
@@ -62,36 +63,38 @@ export const RunStepDrawer = ({ sessionId, runId, agentId, onClose }: Props) => 
   }).label;
 
   return (
-    <section
-      aria-label={stepHeadingOf({ agent, stepAgent, workflow, role })}
-      data-run-step-pane={agent.id}
-      className="flex h-full min-h-0 min-w-0 flex-col"
-    >
-      <AgentDetailPane
-        session={session}
-        agent={agent}
-        isChatActive={isActive}
-        isPinned
-        onBack={onClose}
-        context={
-          reason === '' ? null : (
-            <p data-step-reason="" className="text-ui text-muted-foreground">
-              {ORCHESTRATED_COPY.why({ reason })}
-            </p>
-          )
-        }
-        runStep={{
-          heading: <RunStepHeading agent={agent} stepAgent={stepAgent} workflow={workflow} />,
-          actions: (
-            <>
-              <RunStepMenu facts={{ sessionId, agentId, onLeave: onClose }} />
-              {close}
-            </>
-          ),
-          tail: null,
-          stopLabel: stepStopLabelOf({ agent, stepAgent, workflow }),
-        }}
-      />
-    </section>
+    <RunWorkTime sessionId={sessionId} workspaceId={session.workspaceId}>
+      <section
+        aria-label={stepHeadingOf({ agent, stepAgent, workflow, role })}
+        data-run-step-pane={agent.id}
+        className="flex h-full min-h-0 min-w-0 flex-col"
+      >
+        <AgentDetailPane
+          session={session}
+          agent={agent}
+          isChatActive={isActive}
+          isPinned
+          onBack={onClose}
+          context={
+            reason === '' ? null : (
+              <p data-step-reason="" className="text-ui text-muted-foreground">
+                {ORCHESTRATED_COPY.why({ reason })}
+              </p>
+            )
+          }
+          runStep={{
+            heading: <RunStepHeading agent={agent} stepAgent={stepAgent} workflow={workflow} />,
+            actions: (
+              <>
+                <RunStepMenu facts={{ sessionId, agentId, onLeave: onClose }} />
+                {close}
+              </>
+            ),
+            tail: null,
+            stopLabel: stepStopLabelOf({ agent, stepAgent, workflow }),
+          }}
+        />
+      </section>
+    </RunWorkTime>
   );
 };

@@ -78,6 +78,7 @@ type Props = {
   readonly onOpenTranscript?: OpenTranscriptAt;
   readonly hasAdvanceRow?: boolean;
   readonly stopLabel?: string;
+  readonly clockStepAgentId?: AgentId;
 };
 
 type ChatViewMode = 'conversation' | 'record' | 'steps';
@@ -146,6 +147,7 @@ export const ChatView = ({
   onOpenTranscript,
   hasAdvanceRow = true,
   stopLabel,
+  clockStepAgentId,
 }: Props) => {
   const storedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null) as AgentId | null;
   const selectedAgentId = agentId === undefined ? storedAgentId : agentId;
@@ -609,6 +611,7 @@ export const ChatView = ({
                     isStepsOnly={mode === 'steps'}
                     waitingFor={waitingFor}
                     {...(stopLabel !== undefined && { stopLabel })}
+                    {...(clockStepAgentId !== undefined && { clockStepAgentId })}
                     {...(canStop && {
                       onStop: () =>
                         void cancelCurrentTurn(session.id, selectedAgentId ?? undefined, 'user'),

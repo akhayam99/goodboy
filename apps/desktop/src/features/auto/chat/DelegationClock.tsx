@@ -1,21 +1,26 @@
-import { formatDuration } from '../../../shared/utils/time/formatDuration';
-import { useNow } from '../../../shared/hooks/useNow';
+import { useContext } from 'react';
+import type { AgentId } from '@goodboy/types';
+import { agentActiveClock } from '../../workTreeModel/agentWorkTime';
+import { WorkTimeContext } from '../../workTreeModel/workTimeSource';
 
 type Props = {
-  readonly startedAtMs: number | null;
-  readonly endedAtMs: number | null;
+  readonly agentId: AgentId;
   readonly isLive: boolean;
 };
 
-export const DelegationClock = ({ startedAtMs, endedAtMs, isLive }: Props) => {
-  const now = useNow(1_000, isLive && startedAtMs !== null);
-  if (startedAtMs === null) {
+export const DelegationClock = ({ agentId, isLive }: Props) => {
+  const source = useContext(WorkTimeContext);
+  const clock =
+    source === null ? null : agentActiveClock({ agentId, unit: 'step', isRunning: isLive, source });
+  if (clock === null) {
     return null;
   }
-  const end = isLive || endedAtMs === null ? now : endedAtMs;
-  const duration = formatDuration({ durationMs: Math.max(0, end - startedAtMs) });
-  if (duration === null) {
-    return null;
-  }
-  return <span className="shrink-0 text-meta tabular-nums text-faint-foreground">{duration}</span>;
+  return (
+    <span
+      data-delegation-clock=""
+      className="shrink-0 text-meta tabular-nums text-faint-foreground"
+    >
+      {clock}
+    </span>
+  );
 };

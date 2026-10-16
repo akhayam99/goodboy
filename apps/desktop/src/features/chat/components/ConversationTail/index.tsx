@@ -1,4 +1,4 @@
-import type { IsoDateTime } from '@goodboy/types';
+import type { AgentId, IsoDateTime } from '@goodboy/types';
 import type { ThinkingContext } from '../../utils/thinking-context';
 import { useThinkingPhrase } from '../../hooks/useThinkingPhrase';
 import { TailLine } from '../../../live-state/TailLine';
@@ -10,6 +10,7 @@ type Props = {
   readonly startedAt?: IsoDateTime | null;
   readonly waitingFor?: string | null;
   readonly stopLabel?: string;
+  readonly stepAgentId?: AgentId | null;
 };
 
 export const ConversationTail = ({
@@ -18,6 +19,7 @@ export const ConversationTail = ({
   startedAt = null,
   waitingFor = null,
   stopLabel = TAIL_ACTION.stop.label,
+  stepAgentId = null,
 }: Props) => {
   const thinking = useThinkingPhrase({ context });
   const isWaiting = waitingFor !== null && context === 'think';
@@ -28,6 +30,7 @@ export const ConversationTail = ({
           state: isWaiting ? 'waiting' : 'working',
           phrase: isWaiting ? `Waiting for ${waitingFor}` : thinking,
           startedAt,
+          stepAgentId,
           actions: [{ ...TAIL_ACTION.stop, label: stopLabel }],
         }}
         onAction={onStop}

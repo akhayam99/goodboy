@@ -49,8 +49,6 @@ describe('delegationCardOf', () => {
       status: { word: 'Running', isLive: true },
       isOpen: true,
       ceilingUsd: 3,
-      startedAtMs: FIXTURE_NOW,
-      endedAtMs: null,
       result: null,
     });
     expect(card.reason).toContain('idempotency');
@@ -110,7 +108,6 @@ describe('delegationCardOf', () => {
         revision: 1,
       },
     ]);
-    expect(card.endedAtMs).toBe(FIXTURE_NOW + 60_000);
     expect(card.isOpen).toBe(false);
   });
 

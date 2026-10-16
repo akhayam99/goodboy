@@ -52,6 +52,7 @@ type Props = {
   isStepsOnly?: boolean;
   waitingFor?: string | null;
   stopLabel?: string;
+  clockStepAgentId?: AgentId;
 };
 
 const STEPS_ONLY_HIDDEN = new Set<TranscriptItem['kind']>(['assistant_text', 'usage']);
@@ -135,6 +136,7 @@ export const TranscriptRows = ({
   isStepsOnly = false,
   waitingFor = null,
   stopLabel,
+  clockStepAgentId,
 }: Props) => {
   const out: ReactNode[] = [];
   const suggestions = mountSuggestionsByRun ?? new Map<ProviderRunId, ReactNode>();
@@ -386,6 +388,7 @@ export const TranscriptRows = ({
               startedAt={thinkingStartedAt}
               waitingFor={waitingFor}
               {...(stopLabel !== undefined && { stopLabel })}
+              {...(clockStepAgentId !== undefined && { stepAgentId: clockStepAgentId })}
             />
           )}
         </li>

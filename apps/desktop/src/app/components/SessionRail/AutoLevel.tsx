@@ -3,6 +3,7 @@ import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { sessionTitle } from '../../../features/session/sessionTitle';
 import { AutoWorkRail } from '../../../features/auto/chat/AutoWorkRail';
+import { WorkTimeProvider } from '../../../features/workTreeModel/components/WorkTimeProvider';
 import { useAutoTreeActions } from '../../../features/auto/chat/useAutoTreeActions';
 import { AutoLimitFoot } from '../../../features/auto/level/AutoLimitFoot';
 import { useAutoLevel } from '../../../features/auto/level/useAutoLevel';
@@ -29,11 +30,13 @@ export const AutoLevel = ({ session }: Props) => {
       </div>
       <ScrollFade className="min-h-0 flex-1">
         <div className="flex flex-col gap-2 px-2 pb-2">
-          <AutoWorkRail
-            rows={level.rows}
-            selectedAgentId={level.shownAgentId}
-            onOpen={actions.openRow}
-          />
+          <WorkTimeProvider sessionId={session.id} workspaceId={session.workspaceId}>
+            <AutoWorkRail
+              rows={level.rows}
+              selectedAgentId={level.shownAgentId}
+              onOpen={actions.openRow}
+            />
+          </WorkTimeProvider>
           {hasChildren ? null : <EmptyLine className="px-2">No agents started yet</EmptyLine>}
         </div>
       </ScrollFade>
