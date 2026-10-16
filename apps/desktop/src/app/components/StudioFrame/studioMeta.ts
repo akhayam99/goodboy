@@ -6,7 +6,7 @@ import type { StudioKind } from '../../../store';
 
 export type StudioSkeletonLayout = 'list' | 'rail' | 'grid';
 
-export type StudioCloseHome = 'none' | 'header' | 'band';
+type StudioCloseHome = 'none' | 'header' | 'band';
 
 type StudioMeta = {
   readonly icon: LucideIcon;

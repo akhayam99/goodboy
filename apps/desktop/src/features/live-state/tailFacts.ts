@@ -1,6 +1,7 @@
 import type { IsoDateTime } from '@goodboy/types';
 
-export type TailState = 'working' | 'waiting' | 'queued' | 'paused' | 'failed' | 'stopped' | 'idle';
+export type TailState =
+  'working' | 'waiting' | 'queued' | 'needsYou' | 'paused' | 'failed' | 'stopped' | 'idle';
 
 export type TailActionId =
   | 'stop'

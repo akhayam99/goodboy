@@ -1,14 +1,13 @@
-import { cn, OverlayHeader, PageColumn, SHEET_CLASSES } from '@goodboy/ui';
+import { cn, PageColumn, PaneActionsContext, SHEET_CLASSES } from '@goodboy/ui';
 import { useStudioOverlay } from '../../hooks/useStudioOverlay';
 import { closeLabelOf } from './closeLabelOf';
+import { HeaderCloseButton } from './HeaderCloseButton';
+import { StudioCloseButton } from './StudioCloseButton';
+import { useHeaderCloseClaim } from './useHeaderCloseClaim';
 import type { StudioShellProps } from './types';
 
 export const DetachedStudio = ({
-  icon: Icon,
-  tone,
-  glyph,
   title,
-  subtitle,
   closeLabel,
   headerAccessory,
   onClose,
@@ -17,51 +16,53 @@ export const DetachedStudio = ({
   children,
 }: StudioShellProps) => {
   const { closing, requestClose } = useStudioOverlay({ onClose, isEscapeEnabled });
+  const headerCloseClaim = useHeaderCloseClaim();
+  const label = closeLabelOf({ title, closeLabel });
+  const isSlot = variant === 'slot';
+  const hasAccessory = headerAccessory !== undefined && headerAccessory !== null;
+  const isBandClose = !isSlot && !headerCloseClaim.isClaimed;
 
   return (
     <div
-      {...(variant === 'slot' ? {} : { 'data-studio-overlay': '' })}
+      {...(isSlot ? {} : { 'data-studio-overlay': '' })}
       className={cn(
-        variant === 'slot'
+        isSlot
           ? 'relative h-full w-full flex flex-col bg-chrome'
           : variant === 'viewport'
             ? 'fixed inset-0 z-studio flex flex-col bg-chrome'
             : 'relative flex h-full w-full min-h-0 flex-col bg-chrome',
-        variant !== 'slot' &&
-          (closing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in'),
+        !isSlot && (closing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in'),
       )}
     >
-      {variant === 'slot' ? (
-        headerAccessory != null ? (
-          <PageColumn className="flex shrink-0 items-center justify-end pb-2">
+      {hasAccessory || isBandClose ? (
+        <header aria-label={title} data-studio-band="" className="h-10 shrink-0">
+          <PageColumn className="flex h-full items-center justify-end gap-3">
             {headerAccessory}
+            {isBandClose ? <StudioCloseButton label={label} onClose={requestClose} /> : null}
           </PageColumn>
-        ) : null
-      ) : (
-        <>
-          <OverlayHeader
-            icon={Icon}
-            {...(tone != null && { tone })}
-            glyph={glyph}
-            title={title}
-            {...(subtitle !== undefined && { subtitle })}
-            onClose={requestClose}
-            closeLabel={closeLabelOf({ title, closeLabel })}
-            variant="fullscreen"
-          >
-            {headerAccessory}
-          </OverlayHeader>
-        </>
-      )}
+        </header>
+      ) : null}
 
       <div
         className={cn(
           'flex min-h-0 flex-1 bg-background',
-          variant !== 'slot' && SHEET_CLASSES.flush,
-          variant !== 'slot' && 'has-[[data-studio-rail]]:border-y-0',
+          !isSlot && SHEET_CLASSES.flush,
+          !isSlot && 'has-[[data-studio-rail]]:border-y-0',
         )}
       >
-        {children(requestClose)}
+        <PaneActionsContext.Provider
+          value={
+            isSlot ? null : (
+              <HeaderCloseButton
+                label={label}
+                onClose={requestClose}
+                onClaim={headerCloseClaim.claim}
+              />
+            )
+          }
+        >
+          {children(requestClose)}
+        </PaneActionsContext.Provider>
       </div>
     </div>
   );

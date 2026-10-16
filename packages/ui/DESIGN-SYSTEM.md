@@ -1189,7 +1189,10 @@ rows with this meta, so a step and its sub-agents read the same wherever they
 appear. Headers, cards, tables and the queue use the inline `RoutingLabel`. `RoutingLabel` says
 the effort only when it is not the default Medium ("Sonnet 5.5 · High", plain
 "Sonnet 5.5" at Medium), unless the effort diverged from the plan; its
-tooltip always reads the whole route.
+tooltip always reads the whole route. The picker trigger draws the provider mark in its brand color, reads "Auto ·
+Sonnet 5.5" while Auto resolves the route (`autoTrigger="resolved"`), and says
+a verbosity only when it is not
+Normal ("Verbose", "Terse"), and a pinned route as "· pinned" in gray.
 
 ### The plan in the workflow builder
 

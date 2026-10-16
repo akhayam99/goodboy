@@ -40,7 +40,7 @@ describe('GuideStudio', () => {
   it('lists every chapter in the rail, grouped along the life of a task', () => {
     render(<GuideStudio onClose={vi.fn()} />);
 
-    expect(screen.getByRole('banner', { name: /guide/i })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 1, name: 'Guide' })).toBeDefined();
     const nav = within(rail());
     expect(nav.getByText('Start here')).toBeDefined();
     expect(nav.getByText('Life of a task')).toBeDefined();
