@@ -232,20 +232,74 @@ describe('TimelinePane, row renders', () => {
     expect(screen.getAllByTestId('timeline-lane-hit').length).toBeGreaterThan(0);
   });
 
-  it('indents a step by exactly one lane column and keeps its label next to its marker', () => {
+  it('draws every row on one lane gutter so no lane ever reaches the step number', () => {
     const view = render(pane({ actions: null }));
-    const railWidthOf = (label: string): number => {
-      const row = Array.from(view.container.querySelectorAll('[data-row-id]')).find((candidate) =>
-        candidate.textContent?.includes(label),
-      );
-      const rail = row?.children[1];
+    const rows = Array.from(view.container.querySelectorAll('[data-row-id]'));
+    const widths = rows.map((row) => {
+      const rail = row.children[1];
       return rail instanceof HTMLElement ? Number.parseFloat(rail.style.width) : Number.NaN;
-    };
-    const solo = railWidthOf('Solo 0');
-    const step = railWidthOf('Step 1');
+    });
+    const gutter = RAIL_SPINE_X + RAIL_LANE_OFFSET + RAIL_MARKER_RADIUS;
+    const laneXs = Array.from(view.container.querySelectorAll('svg line')).map((line) =>
+      Number.parseFloat(line.getAttribute('x1') ?? 'NaN'),
+    );
 
-    expect(solo).toBe(RAIL_SPINE_X + RAIL_MARKER_RADIUS + RAIL_LABEL_GAP - RAIL_CONTENT_PAD);
-    expect(step - solo).toBe(RAIL_LANE_OFFSET);
+    expect(new Set(widths)).toEqual(new Set([gutter + RAIL_LABEL_GAP - RAIL_CONTENT_PAD]));
+    expect(laneXs.length).toBeGreaterThan(0);
+    expect(laneXs.every((x) => x < gutter)).toBe(true);
+  });
+
+  it('keeps the gutter when a folded group with a deeper lane opens', () => {
+    const lead = {
+      id: 'lead',
+      sessionId: 'session-1',
+      ordinal: 500,
+      name: 'Implement the banner',
+      status: 'completed',
+      startedAt: '2026-08-21T10:00:00.000Z',
+      completedAt: '2026-08-21T10:20:00.000Z',
+    };
+    const children = [1, 2, 3].map((index) => ({
+      id: `sub-${index}`,
+      sessionId: 'session-1',
+      ordinal: 500 + index,
+      name: `Scout part ${index}`,
+      parentAgentId: 'lead',
+      status: 'completed',
+      startedAt: `2026-08-21T10:0${index}:00.000Z`,
+      completedAt: `2026-08-21T10:0${index}:30.000Z`,
+    }));
+    attachedRuns.list = [];
+    storeState.sessionPhaseRuns = { 'session-1': [lead, ...children] };
+    const view = render(pane({ actions: null }));
+    const widths = (): ReadonlySet<number> =>
+      new Set(
+        Array.from(view.container.querySelectorAll('[data-row-id]')).map((row) => {
+          const rail = row.children[1];
+          return rail instanceof HTMLElement ? Number.parseFloat(rail.style.width) : Number.NaN;
+        }),
+      );
+    const before = widths();
+
+    fireEvent.click(screen.getByRole('button', { name: /3 subagents/ }));
+
+    expect(before.size).toBe(1);
+    expect([...before][0]).toBeGreaterThan(
+      RAIL_SPINE_X + RAIL_MARKER_RADIUS + RAIL_LABEL_GAP - RAIL_CONTENT_PAD,
+    );
+    expect(widths()).toEqual(before);
+  });
+
+  it('puts the step number in one right aligned slot after the gutter', () => {
+    const view = render(pane({ actions: null }));
+    const ordinals = Array.from(view.container.querySelectorAll('[data-timeline-ordinal]'));
+
+    expect(ordinals.length).toBeGreaterThan(0);
+    expect(
+      ordinals.every(
+        (slot) => slot.className.includes('w-7') && slot.className.includes('text-right'),
+      ),
+    ).toBe(true);
   });
 
   it('opens the run page from its lane', () => {
