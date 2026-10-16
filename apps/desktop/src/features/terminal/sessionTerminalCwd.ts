@@ -11,7 +11,7 @@ export const sessionTerminalCwd = ({
 }: Params): string | null => {
   const [first] = mountPaths;
   if (first === undefined) {
-    return null;
+    return activePath;
   }
   if (mountPaths.length === 1) {
     return first;

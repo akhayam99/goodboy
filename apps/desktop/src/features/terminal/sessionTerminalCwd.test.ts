@@ -5,9 +5,12 @@ const PAYMENTS = '/work/harborline/payments-api-export';
 const LEDGER = '/work/harborline/ledger-core-payout';
 
 describe('sessionTerminalCwd', () => {
-  it('has no worktree to open on when the session has none', () => {
+  it('falls back to the active mount when no worktree is on disk, else has none', () => {
     expect(sessionTerminalCwd({ mountPaths: [], remembered: PAYMENTS, activePath: null })).toBe(
       null,
+    );
+    expect(sessionTerminalCwd({ mountPaths: [], remembered: null, activePath: LEDGER })).toBe(
+      LEDGER,
     );
   });
 
