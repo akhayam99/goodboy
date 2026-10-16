@@ -1,4 +1,5 @@
-import { Button, ListGridGroup } from '@goodboy/ui';
+import { ArrowUpRight } from 'lucide-react';
+import { IconButton, ListGridGroup } from '@goodboy/ui';
 import { useOpenSession } from '../../../../shared/hooks/useOpenSession';
 import type { TerminalGroup, TerminalWorktree } from '../../terminalWorktrees';
 import { worktreePorts } from '../../worktreePorts';
@@ -28,14 +29,12 @@ export const TerminalGroupSection = ({
       count={count}
       action={
         sessionId === null ? null : (
-          <Button
+          <IconButton
+            icon={ArrowUpRight}
             size="xs"
-            variant="quiet"
-            aria-label={`Open session ${group.title}`}
+            label={`Open session ${group.title}`}
             onClick={() => openSession({ sessionId })}
-          >
-            Open session
-          </Button>
+          />
         )
       }
     >

@@ -1566,7 +1566,7 @@ rest; a worktree path keeps its project folder and its `gb-` folder whole (`path
 head of the path truncates first.
 With no terminal at all the page has no rail: the empty state owns the single`New terminal`.
 The rail is one `ListGrid`named`Terminals`with one`ListGridGroup`per session that has
-terminals: the session title, a visible`Open session`beside it and the number of terminals in
+terminals: the session title, a visible arrow button (`Open session`) beside it and the number of terminals in
 the last column; the`Workspace folder` group comes last and has no action. Inside a group, one
 28px row per worktree (`terminalWorktrees.ts`, key `<sessionId>#m:<mountId>`, or `#p:<cwd>`when
 no mount matches) on the shared columns: branch or folder icon, project and branch, the first
