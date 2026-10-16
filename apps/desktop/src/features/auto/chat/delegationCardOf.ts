@@ -20,6 +20,7 @@ export type DelegationCardModel = Readonly<{
   provider: string | null;
   model: string | null;
   effort: string | null;
+  task: string | null;
   reason: string | null;
   routingNote: string | null;
   status: DelegationStatus;
@@ -118,6 +119,7 @@ export const delegationCardOf = ({ delegation, childAgent }: Params): Delegation
     provider: textField({ source: delegation.routing, key: 'provider' }),
     model,
     effort: textField({ source: delegation.routing, key: 'effort' }),
+    task: textField({ source: delegation.request, key: 'task' }),
     reason: textField({ source: delegation.request, key: 'reason' }),
     routingNote: routingNoteOf({ routing: delegation.routing, model }),
     status,

@@ -68,7 +68,7 @@ describe('autoRowFacts', () => {
     expect(factsOf('merging')).toEqual({
       phase: 'running',
       word: 'Reading the results',
-      short: 'Merging',
+      short: 'Reading',
     });
     expect(factsOf('blocked')).toEqual({
       phase: 'waiting',

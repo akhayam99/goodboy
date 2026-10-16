@@ -79,12 +79,16 @@ describe('SPEC3 9.5 Auto: every capability keeps a home in the 0.27.0 Auto', () 
     expect(within(entry).getByText('Experimental')).toBeDefined();
   });
 
-  it('Work rail model and time on line 2: the rail row of each child', async () => {
+  it('Work rail model and time: the task on line 2, the model in the row tooltip', async () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-working'] });
 
     const level = await autoLevel();
     const implementer = within(level).getByRole('button', { name: 'Show Implementer' });
-    expect(implementer.textContent).toContain('Sonnet 5.5');
+    expect(implementer.textContent).toContain('Post one credit per retry');
+    fireEvent.mouseEnter(implementer);
+    expect((await screen.findByRole('tooltip', undefined, WAIT)).textContent).toContain(
+      'Sonnet 5.5',
+    );
   });
 
   it('Rail foot Spent, Reserved, Left: the foot says the left, the popover the rest', async () => {

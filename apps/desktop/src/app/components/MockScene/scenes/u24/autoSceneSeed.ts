@@ -82,6 +82,7 @@ type DelegationParams = {
   readonly role: string;
   readonly state: AutoDelegation['state'];
   readonly batch: string;
+  readonly task: string;
   readonly reason: string;
   readonly model: string;
   readonly effort: string;
@@ -98,6 +99,7 @@ const delegationOf = ({
   role,
   state,
   batch,
+  task,
   reason,
   model,
   effort,
@@ -117,7 +119,7 @@ const delegationOf = ({
   childAgentId: childId,
   firstAttemptId: brandId({ value: `mock-auto-attempt-${key}` }),
   role,
-  request: { task: `work for ${role}`, reason },
+  request: { task, reason },
   target: { mountName: 'payments-api' },
   routing: {
     provider: 'anthropic',
@@ -183,6 +185,7 @@ const REVIEWER_RESULT = {
 const plannerDone = (): AutoDelegation =>
   delegationOf({
     key: 'planner',
+    task: 'Plan the fix for the second credit on a ledger retry.',
     childId: PLANNER_ID,
     role: 'planner',
     state: 'settled',
@@ -203,6 +206,7 @@ type BatchTwoParams = {
 const batchTwo = ({ implementerState }: BatchTwoParams): ReadonlyArray<AutoDelegation> => [
   delegationOf({
     key: 'implementer',
+    task: 'Post one credit per retry in postCredit and applyCredit.',
     childId: IMPLEMENTER_ID,
     role: 'implementer',
     state: implementerState,
@@ -216,6 +220,7 @@ const batchTwo = ({ implementerState }: BatchTwoParams): ReadonlyArray<AutoDeleg
   }),
   delegationOf({
     key: 'tester',
+    task: 'Test the retry path with a timeout on the first attempt.',
     childId: TESTER_ID,
     role: 'tester',
     state: implementerState === 'settled' ? 'settled' : 'accepted',
@@ -232,6 +237,7 @@ const batchTwo = ({ implementerState }: BatchTwoParams): ReadonlyArray<AutoDeleg
 const reviewerDone = (): AutoDelegation =>
   delegationOf({
     key: 'reviewer',
+    task: 'Review the retry fix before you push.',
     childId: REVIEWER_ID,
     role: 'reviewer',
     state: 'settled',
@@ -252,6 +258,7 @@ type ReviseParams = {
 const revise = ({ state }: ReviseParams): AutoDelegation =>
   delegationOf({
     key: 'planner-revise',
+    task: 'Revise the plan for two simultaneous webhooks.',
     childId: PLANNER_ID,
     role: 'planner',
     state,

@@ -87,6 +87,25 @@ describe('c07 Auto scenes', () => {
     expect(within(foot).getByText('$5.23 left')).toBeDefined();
   });
 
+  it('c07-auto-working puts the task on line 2 of a rail row and the model in its tooltip', async () => {
+    mount({ id: 'c07-auto-working' });
+
+    await waitFor(() => expect(levelStack().dataset.levelStack).toBe('auto'), WAIT);
+    const rail = within(shownLayer()).getByRole('list', { name: 'Work' });
+    const implementer = within(rail).getByRole('button', { name: 'Show Implementer' });
+    expect(
+      within(implementer).getByText('Post one credit per retry in postCredit and applyCredit.'),
+    ).toBeDefined();
+    expect(within(implementer).queryByText('Sonnet 5.5')).toBeNull();
+    const auto = within(rail).getByRole('button', { name: 'Show Auto' });
+    expect(within(auto).getByText('Opus 5.5')).toBeDefined();
+
+    fireEvent.mouseEnter(implementer);
+    expect((await screen.findByRole('tooltip', undefined, WAIT)).textContent).toContain(
+      'Implementer · Running',
+    );
+  });
+
   it('c07-auto-working keeps the center lean: no role chip, bare delegation lines, one tail', async () => {
     mount({ id: 'c07-auto-working' });
 
@@ -127,6 +146,10 @@ describe('c07 Auto scenes', () => {
     expect(screen.getByPlaceholderText('Message Implementer')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Open full' })).toBeDefined();
     expect(screen.getByText(/Reserved up to \$3\.00/)).toBeDefined();
+    expect(screen.queryByText('Implementer · Implementer')).toBeNull();
+    expect(
+      screen.getAllByText('Post one credit per retry in postCredit and applyCredit.').length,
+    ).toBeGreaterThan(1);
     const current = within(shownLayer())
       .getAllByRole('listitem')
       .filter((item) => item.getAttribute('aria-current') === 'true');
@@ -179,6 +202,12 @@ describe('c07 Auto scenes', () => {
     const list = screen.getByRole('list', { name: 'Projects' });
     const boxes = within(list).getAllByRole('checkbox');
     expect(boxes.length).toBeGreaterThan(1);
+    const actions = list.closest('[data-placement]')?.querySelector('[data-slot="form-actions"]');
+    expect(actions?.textContent).toContain('Discard request');
+    expect(actions?.textContent).toContain('Another project...');
+    expect(list.compareDocumentPosition(actions ?? list) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
     expect(screen.getByRole('button', { name: 'Choose a project' })).toHaveProperty(
       'disabled',
       true,

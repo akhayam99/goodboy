@@ -36,7 +36,7 @@ export const autoRowFacts = ({ view }: ViewParams): AutoRowFacts | null => {
       };
     }
     case 'merging':
-      return { phase: 'running', word: 'Reading the results', short: 'Merging' };
+      return { phase: 'running', word: 'Reading the results', short: 'Reading' };
     case 'blocked':
       return { phase: 'waiting', word: 'Blocked, open the chat', short: 'Blocked' };
     case 'stopping':

@@ -1,4 +1,4 @@
-import { EmptyState, ScrollFade } from '@goodboy/ui';
+import { EmptyLine, ScrollFade } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { sessionTitle } from '../../../features/session/sessionTitle';
@@ -6,7 +6,6 @@ import { AutoWorkRail } from '../../../features/auto/chat/AutoWorkRail';
 import { useAutoTreeActions } from '../../../features/auto/chat/useAutoTreeActions';
 import { AutoLimitFoot } from '../../../features/auto/level/AutoLimitFoot';
 import { useAutoLevel } from '../../../features/auto/level/useAutoLevel';
-import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { LevelBackRow } from './LevelBackRow';
 
 type Props = {
@@ -35,14 +34,7 @@ export const AutoLevel = ({ session }: Props) => {
             selectedAgentId={level.shownAgentId}
             onOpen={actions.openRow}
           />
-          {hasChildren ? null : (
-            <EmptyState
-              size="section"
-              icon={CONCEPT_ICONS.agents}
-              title="No agents started yet"
-              description="Auto starts agents here when a task needs them."
-            />
-          )}
+          {hasChildren ? null : <EmptyLine className="px-2">No agents started yet</EmptyLine>}
         </div>
       </ScrollFade>
       {view === null || view.budget === null ? null : (

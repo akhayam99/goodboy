@@ -69,10 +69,9 @@ export const AutoChildPane = ({ sessionId, agentId, onClose }: Props) => {
     );
   }
 
-  const title = cardTitleOf({ card });
   return (
     <DrawerFrame
-      title={`${title} · ${agent.name}`}
+      title={card.task ?? cardTitleOf({ card })}
       icon={CONCEPT_ICONS.agents}
       scroll="self"
       onClose={onClose}

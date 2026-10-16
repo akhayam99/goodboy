@@ -13,6 +13,7 @@ export type RailRow = Readonly<{
   kind: 'root' | 'child';
   role: AgentKind;
   label: string;
+  task: string | null;
   node: WorkNodeState;
   word: string;
   tone: Tone;
@@ -126,6 +127,7 @@ const rootRowOf = ({ view, agent, routing }: RootParams): RailRow => {
     kind: 'root',
     role: 'auto',
     label: 'Auto',
+    task: null,
     node,
     word: rootWordOf({ view, facts, isApproval }),
     tone: rootToneOf({ node, isLive }),
@@ -148,6 +150,7 @@ export const restingRootRowOf = ({ agentId, provider, model, effort }: RestingPa
   kind: 'root',
   role: 'auto',
   label: 'Auto',
+  task: null,
   node: 'ready',
   word: 'Ready',
   tone: 'neutral',
@@ -175,6 +178,7 @@ export const railRowsOf = ({ view, agents, rootRouting }: RowParams): ReadonlyAr
     kind: 'child',
     role: card.role,
     label: card.roleLabel,
+    task: card.task,
     node: delegationNodeOf({ card }),
     word: card.status.word,
     tone: card.status.tone,

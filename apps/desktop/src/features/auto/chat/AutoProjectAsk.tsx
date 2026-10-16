@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Button, Checkbox, Input, Notice, formatError } from '@goodboy/ui';
+import { Button, Checkbox, FormActions, Input, Notice, formatError } from '@goodboy/ui';
 import type { AgentId, ProjectId, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../store';
 import { isReportedError } from '../../../store/slices/notifications/reportedError';
@@ -28,8 +28,6 @@ type Answered = Readonly<{
 const ANOTHER_LINE = 'Not in this session. A worktree is created from main.';
 
 const JUST_ANSWER = 'No project, just answer';
-
-const CHAT_HINT = 'Or reply in the chat.';
 
 type ReplyParams = {
   readonly content: string;
@@ -171,59 +169,61 @@ export const AutoProjectAsk = ({ sessionId, rootAgentId, ask }: Props) => {
               disabled={isBusy}
               onChange={(event) => setQuery(event.target.value)}
             />
-          ) : (
-            <Button variant="quiet" size="xs" onClick={() => setIsAnotherOpen(true)}>
-              Another project...
-            </Button>
-          )}
-          {error === null ? null : <p className="text-ui text-danger">{error}</p>}
-          <p className="text-ui text-faint-foreground">{CHAT_HINT}</p>
+          ) : null}
         </div>
       }
-      actions={
-        <>
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={isBusy}
-            onClick={() =>
-              void run({
-                label: 'Discard request',
-                work: () =>
-                  reply({ content: 'Discard that request. Start nothing.', word: 'Discarded' }),
-              })
-            }
-          >
-            Discard request
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={isBusy}
-            onClick={() =>
-              void run({
-                label: 'No project',
-                work: () =>
-                  reply({
-                    content: 'No project, just answer in the chat.',
-                    word: 'Answered: no project',
-                  }),
-              })
-            }
-          >
-            {JUST_ANSWER}
-          </Button>
-          <Button
-            size="sm"
-            disabled={answer.message === null || isBusy}
-            isBusy={isBusy}
-            busyLabel={busy ?? answer.label}
-            onClick={() => void use()}
-          >
-            {answer.label}
-          </Button>
-        </>
-      }
-    />
+    >
+      <FormActions
+        error={error}
+        leading={
+          isAnotherOpen ? null : (
+            <Button variant="quiet" size="sm" onClick={() => setIsAnotherOpen(true)}>
+              Another project...
+            </Button>
+          )
+        }
+      >
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={isBusy}
+          onClick={() =>
+            void run({
+              label: 'Discard request',
+              work: () =>
+                reply({ content: 'Discard that request. Start nothing.', word: 'Discarded' }),
+            })
+          }
+        >
+          Discard request
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={isBusy}
+          onClick={() =>
+            void run({
+              label: 'No project',
+              work: () =>
+                reply({
+                  content: 'No project, just answer in the chat.',
+                  word: 'Answered: no project',
+                }),
+            })
+          }
+        >
+          {JUST_ANSWER}
+        </Button>
+        <Button
+          size="sm"
+          disabled={answer.message === null || isBusy}
+          isBusy={isBusy}
+          busyLabel={busy ?? answer.label}
+          onClick={() => void use()}
+        >
+          {answer.label}
+        </Button>
+      </FormActions>
+    </Notice>
   );
 };

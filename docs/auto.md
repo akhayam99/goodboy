@@ -189,7 +189,9 @@ writing to it reopens it to **Deciding**.
   agent or one of its children drills the sidebar into it, with the back row
   `‹ <session title>` on top. Auto comes first, then one row per child, all
   expanded and with no group row. A row has the role, the name and state on the
-  first line, the model and time on the second. One spine runs from ring edge
+  first line, the task Auto gave and the time on the second, with the model in
+  the row's tooltip. Auto's own row keeps its model on the second line, since
+  its state is said once, on the tail. One spine runs from ring edge
   to ring edge in the tone of the ring it reaches: green when done, blue when
   working, dashed when queued. The rail is always there: while Auto has no
   child it shows Auto alone ("Ready" before a tree exists) and "No agents
@@ -249,8 +251,8 @@ writing to it reopens it to **Deciding**.
 - **A child opens in the pane** (drawer kind `auto-child`, `AutoChildPane`)
   from its rail row or its line's **See more**, so Auto's conversation stays in
   view; another child swaps in place, the Auto row of the rail closes it, Esc
-  closes it, and its rail row is the selected one. The pane title is the role
-  and the task; on top, why Auto chose that role, the model it runs on with its
+  closes it, and its rail row is the selected one. The pane title is the task
+  Auto gave it (the role when the task is missing); on top, why Auto chose that role, the model it runs on with its
   provider, **Reserved up to** while it works and the note when the app changed
   the model (`AutoChildBrief`); then the child's conversation; at the end what
   came back (summary, files changed, checks with their source, open questions,
@@ -354,8 +356,8 @@ should the Implementer work?" lists the session's projects with their branch, **
 project...** opens a filter over the workspace's other projects ("Not in this session. A worktree
 is created from main."), and the primary follows the choice (**Choose a project** disabled, **Use
 payments-api**, **Use both**, **Use 3 projects**) next to **No project, just answer** and
-**Discard request**, with "Or reply in the chat." The composer reads "Pick a project, or write to
-Auto". The answer is a message to Auto through
+**Discard request**, one action row under the list. The composer reads "Pick a project, or write
+to Auto", so a reply in the chat answers too. The answer is a message to Auto through
 `sendTurn` ("Use payments-api and ledger-core: start one Implementer per project."); a project not
 in the session is mounted first (`ensureProjectMounted`, the button says "Creating a worktree for
 notify-relay from main"), and a failure keeps the ask with the reason. The ask then collapses to
