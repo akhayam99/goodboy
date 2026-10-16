@@ -15,7 +15,11 @@ import { selectDrawerSizing } from '../../../store/slices/drawer/selectDrawerSiz
 import { STORAGE_KEYS } from '../../../shared/lib/storage-keys';
 import { shellFoldsOf, type ShellFolds } from '../../shellArrangement/shellFoldsOf';
 
-const widthOf = (node: Element): number | null => {
+type WidthParams = {
+  readonly node: Element;
+};
+
+const widthOf = ({ node }: WidthParams): number | null => {
   const width = node.getBoundingClientRect().width;
   return width > 0 ? width : null;
 };
@@ -27,9 +31,9 @@ const useWindowWidth = (): number | null => {
       return;
     }
     const root = document.documentElement;
-    const observer = new ResizeObserver(() => setWidth(widthOf(root)));
+    const observer = new ResizeObserver(() => setWidth(widthOf({ node: root })));
     observer.observe(root);
-    setWidth(widthOf(root));
+    setWidth(widthOf({ node: root }));
     return () => observer.disconnect();
   }, []);
   return width;
