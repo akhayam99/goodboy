@@ -1,4 +1,5 @@
 import type { EffortLevel, ProviderId } from '@goodboy/types';
+import { joinFacts } from '../../utils/joinFacts';
 import { getModelProvider, modelCatalogKey } from '@goodboy/core';
 import { PROVIDER_BRAND } from '../../../features/providers/components/provider-brand';
 import { EFFORT_LABEL, modelLabel } from '../../../features/chat/utils/chat-constants';
@@ -150,11 +151,13 @@ export const routingLabelModel = ({
         ? null
         : effortSegment(labelOf({ provider: resolved, model, effort: plannedEffortLevel })),
   });
-  const route = [
-    ...(resolved != null ? [PROVIDER_LABEL[resolved]] : []),
-    routingNameText(label),
-    ...label.detail,
-  ].join(' · ');
+  const route = joinFacts({
+    facts: [
+      resolved != null ? PROVIDER_LABEL[resolved] : null,
+      routingNameText(label),
+      ...label.detail,
+    ],
+  });
   return {
     provider: resolved,
     label,

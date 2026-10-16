@@ -510,7 +510,8 @@ Rules the adapters hold, each with a test in `adapters.test.ts`:
   never the command text: "Running pnpm in payments-api", "Reading export.ts",
   "Searching the code", "Writing the answer" (`workingPhraseOf`).
 - The clock counts from the real start of the state (`startedAt` of the turn
-  or the step), `m:ss` under an hour and `1h 04m` above, and only `working`,
+  or the step) and reads like every other duration (`formatDuration`: "42s",
+  "2m 37s", "1h 12m"), nothing in the first second, and only `working`,
   `waiting` and `queued` tick.
 - A state that waits for the user (`paused`, `failed`, `stopped`) puts its one
   forward move first as a small secondary button; other actions are quiet text

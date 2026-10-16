@@ -99,6 +99,46 @@ describe('ListGrid', () => {
     screen.getByText('test (payments-api)');
   });
 
+  it('drops a column that hides when empty from the template when no row fills it', () => {
+    const columns: ReadonlyArray<ListGridColumn> = [
+      { key: 'title', width: 'fill', isTitle: true },
+      { key: 'port', width: 56, shouldHideWhenEmpty: true },
+      { key: 'time', width: 56, align: 'end' },
+    ];
+    render(
+      <ListGrid label="Scripts" columns={columns}>
+        <ListGridRow cells={['dev server', null, '2m']} />
+        <ListGridRow cells={['lint', '', '8s']} />
+      </ListGrid>,
+    );
+    const list = screen.getByRole('list', { name: 'Scripts' });
+    expect(list.style.gridTemplateColumns).toBe('0px minmax(0,1fr) 56px 0px');
+    expect(list.querySelectorAll('[data-list-grid-cell="port"]')).toHaveLength(0);
+    expect(list.querySelector('[data-list-grid-cell="title"]')?.className).toContain('col-start-2');
+  });
+
+  it('keeps a hiding column on every row as soon as one row fills it', () => {
+    const columns: ReadonlyArray<ListGridColumn> = [
+      { key: 'title', width: 'fill', isTitle: true },
+      { key: 'port', width: 56, shouldHideWhenEmpty: true },
+    ];
+    const { rerender } = render(
+      <ListGrid label="Scripts" columns={columns}>
+        <ListGridRow key="dev" cells={['dev server', null]} />
+        <ListGridRow key="api" cells={['api', ':4318']} />
+      </ListGrid>,
+    );
+    const list = screen.getByRole('list', { name: 'Scripts' });
+    expect(list.style.gridTemplateColumns).toBe('0px minmax(0,1fr) 56px 0px');
+    expect(list.querySelectorAll('[data-list-grid-cell="port"]')).toHaveLength(2);
+    rerender(
+      <ListGrid label="Scripts" columns={columns}>
+        <ListGridRow key="dev" cells={['dev server', null]} />
+      </ListGrid>,
+    );
+    expect(list.style.gridTemplateColumns).toBe('0px minmax(0,1fr) 0px');
+  });
+
   it('names a group by its heading and puts its count right after the name', () => {
     render(
       <ListGrid label="Tasks" columns={COLUMNS} isGrouped>

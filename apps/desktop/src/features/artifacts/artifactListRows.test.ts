@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_WORKFLOW_RULES,
+  brandId,
   type Agent,
   type AgentId,
   type ArtifactId,
@@ -334,7 +335,10 @@ describe('buildArtifactListRows', () => {
 
   it('filters by kind and counts only what is not deleted', () => {
     const rows = build({
-      plans: [plan({}), plan({ id: 'plan-2' as ArtifactId, status: 'discarded' })],
+      plans: [
+        plan({}),
+        plan({ id: brandId<ArtifactId>({ value: 'plan-2' }), status: 'discarded' }),
+      ],
       artifacts: [report({})],
       generations: [generation({})],
     });
@@ -355,8 +359,14 @@ describe('buildArtifactListRows', () => {
       deletedAt: '2026-09-14T18:00:00.000Z' as IsoDateTime,
     });
     const agents = [wireframeAgent, producedAgent, deletedAgent];
-    const plans = [plan({}), plan({ id: 'plan-2' as ArtifactId, status: 'discarded' })];
-    const artifacts = [report({}), report({ id: 'report-2' as ArtifactId, status: 'discarded' })];
+    const plans = [
+      plan({}),
+      plan({ id: brandId<ArtifactId>({ value: 'plan-2' }), status: 'discarded' }),
+    ];
+    const artifacts = [
+      report({}),
+      report({ id: brandId<ArtifactId>({ value: 'report-2' }), status: 'discarded' }),
+    ];
     const generations = resolveArtifactGenerations({
       agents,
       artifacts,

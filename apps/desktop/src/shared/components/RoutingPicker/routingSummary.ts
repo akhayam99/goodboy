@@ -1,3 +1,4 @@
+import { joinFacts } from '../../utils/joinFacts';
 import type {
   CatalogModel,
   EffortLevel,
@@ -84,7 +85,7 @@ export const routingTriggerLabel = ({
 export const routingNameText = (label: RoutingTriggerLabel): string => label.name.join(' ');
 
 export const routingSummary = ({ provider, label }: SummaryParams): string =>
-  [PROVIDER_LABEL[provider], routingNameText(label), ...label.detail].join(' · ');
+  joinFacts({ facts: [PROVIDER_LABEL[provider], routingNameText(label), ...label.detail] });
 
 type LabelPartsParams = {
   readonly provider: ProviderId;
@@ -142,5 +143,5 @@ export const routingLabelParts = ({
 
 export const routingShortText = ({ provider, model, effort = null }: LabelPartsParams): string => {
   const label = routingLabelParts({ provider, model, effort });
-  return [routingNameText(label), ...label.detail].join(' · ');
+  return joinFacts({ facts: [routingNameText(label), ...label.detail] });
 };

@@ -31,7 +31,7 @@ describe('c01 tail scenes', () => {
     const Scene = U25_C01_TAIL_SCENES['c01-tail-working'];
     render(<Scene />);
     screen.getByText('Running pnpm in payments-api');
-    screen.getByText(/^\d+:\d\d$/);
+    screen.getByText(/^\d+[hms]( \d+[ms])?$/);
     screen.getByRole('button', { name: 'Stop' });
   });
 

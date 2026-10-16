@@ -28,7 +28,23 @@ describe('TailLine', () => {
       />,
     );
     screen.getByText('Running pnpm in payments-api');
-    screen.getByText('1:12');
+    screen.getByText('1m 12s');
+  });
+
+  it('shows no clock in the first second', () => {
+    const { container } = render(
+      <TailLine
+        facts={{
+          state: 'working',
+          phrase: 'Reading the ledger export',
+          startedAt: at({ msAgo: 300 }),
+          actions: [],
+        }}
+        onAction={() => undefined}
+      />,
+    );
+    expect(container.querySelector('.tabular-nums')).toBeNull();
+    expect(container.textContent).not.toMatch(/ms|0s/);
   });
 
   it('runs the action the user pressed', async () => {
@@ -61,6 +77,6 @@ describe('TailLine', () => {
         onAction={() => undefined}
       />,
     );
-    expect(screen.queryByText('1:12')).toBeNull();
+    expect(screen.queryByText('1m 12s')).toBeNull();
   });
 });

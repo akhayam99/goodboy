@@ -2,6 +2,7 @@ import type { KeyboardEvent, ReactNode } from 'react';
 import { cn } from '../../cn';
 import { ListGridColumnsContext } from './ListGridColumnsContext';
 import { listGridTemplate, type ListGridColumn } from './listGridTemplate';
+import { useFilledColumns } from './useFilledColumns';
 
 export type ListGridProps = {
   readonly label: string;
@@ -39,16 +40,21 @@ export const ListGrid = ({
   isGrouped = false,
   children,
   className,
-}: ListGridProps) => (
-  <ListGridColumnsContext.Provider value={columns}>
-    <ul
-      aria-label={label}
-      data-list-grid=""
-      onKeyDown={moveFocus}
-      style={{ gridTemplateColumns: `0px ${listGridTemplate({ columns })} 0px` }}
-      className={cn('grid min-w-0 gap-x-3 text-ui', isGrouped ? 'gap-y-4' : 'gap-y-0', className)}
-    >
-      {children}
-    </ul>
-  </ListGridColumnsContext.Provider>
-);
+}: ListGridProps) => {
+  const value = useFilledColumns({ columns });
+  return (
+    <ListGridColumnsContext.Provider value={value}>
+      <ul
+        aria-label={label}
+        data-list-grid=""
+        onKeyDown={moveFocus}
+        style={{
+          gridTemplateColumns: `0px ${listGridTemplate({ columns, hiddenKeys: value.hiddenKeys })} 0px`,
+        }}
+        className={cn('grid min-w-0 gap-x-3 text-ui', isGrouped ? 'gap-y-4' : 'gap-y-0', className)}
+      >
+        {children}
+      </ul>
+    </ListGridColumnsContext.Provider>
+  );
+};

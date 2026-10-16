@@ -146,13 +146,18 @@ own and no pill whose width varies: a role is a plain word in a fixed column, a
 state is a `StateDot` or a glyph in a 16px column.
 
 - `align: 'end'` with `isNumeric` right aligns a number in tabular figures, so
-  1:12 and 12:40 end on one edge.
+  "1m 12s" and "12m 40s" end on one edge.
 - `isTitle` marks the `fill` column: foreground, `text-row`. Other columns read
   muted, or `tone: 'hint'` for ids and ages.
 - A row with `onSelect` is one button: the row is the action, it carries no
   buttons of its own and nothing appears on hover. `isSelected` sets
   `data-selected` and `aria-current`. Up and Down move focus between rows.
 - `rowHeight` is 32 by default and 28 in the sidebar.
+- `shouldHideWhenEmpty` on a column drops it from the template, its cells and its
+  gap, while no mounted row fills it (a cell of `null`, `undefined`, `false` or
+  `''` is empty). As soon as one row fills it, every row keeps the cell, empty
+  where it has nothing, so the column stays on one x. Unknown is an empty cell,
+  never "0 B", "-" or "no port".
 - `ListGridGroup` names a group in sentence case with its count right after
   the name, like a Board lane and a sidebar group (a count alone in the last
   column read as a value of the row below); an `action` (one visible control,
@@ -180,6 +185,28 @@ next to a door lives in the dot's tooltip, never as colored text.
 
 Scenes `c01-grid-list`, `c01-grid-groups`, `c01-grid-dots` and `c01-grid-type`
 show the grid, its groups, every dot and the two size specimen.
+
+### Counts, fact lines and durations
+
+Three helpers in `apps/desktop/src/shared/utils/` own how a number, a fact line
+and a duration read, so no surface writes its own rule.
+
+- `countSlotText({ count, isBesideGlyph })` is the text of every sidebar slot
+  and tab badge. It returns the grouped number ("12", "1,024") from 1, or from 2
+  when `isBesideGlyph` says a glyph beside it already means one (a session
+  signal "?", a running node, an unread dot). It returns `null` at 0, while
+  loading and when the read is unknown or denied: the slot draws nothing, never
+  "-", "0", "None" or a skeleton glyph, and the reason lives in the tooltip.
+- `joinFacts({ facts })` joins a fact line with the one " · " separator. It
+  trims each part and skips `null`, `undefined`, `false` and empty parts, so a
+  line never shows a doubled or dangling separator ("Limit $3.00 · $1.12
+  spent"). It returns `''` when nothing is left.
+- `formatDuration({ durationMs })` (`time/formatDuration.ts`) is the one
+  duration, live and done: "42s", "2m 37s", "1h 12m". It returns `null` under
+  one second, so nothing shows before the first second and "ms" never shows. The
+  clock form "2:37" is gone: `useTailClock` in `features/live-state` ticks once
+  a second over the thing's own `startedAt` and formats through
+  `formatDuration`, returning `null` in the first second.
 
 ## Type scale
 
