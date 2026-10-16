@@ -219,8 +219,9 @@ With the rule off nothing changes. Workspaces that existed before 0.16.0 start
 with it off (m217); new workspaces start with it on. The switch is the
 **Send new steps to the provider with the most room** option of the policy popover in
 Settings > Providers & models, with one sentence under it: with it off, "New
-steps follow the provider order."; with it on, where the next step goes and,
-when a provider is passed, how full it is (`nextStepPick`, `spreadSentence`).
+steps follow the provider order."; with it on and a provider passed, where the
+next step goes and how full the passed one is, and otherwise that steps of one
+run can land on different providers (`nextStepPick`, `spreadSentence`).
 The Run defaults tab only links there.
 
 The builder opens filled from the rules and shows them in one **From your

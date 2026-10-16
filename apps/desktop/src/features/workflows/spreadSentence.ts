@@ -20,7 +20,7 @@ export const spreadSentence = ({ canSpread, spread, pick }: Params): string => {
       return `${pick.reason.passed} is at its limit, so new steps go to ${pick.name} first.`;
     case 'first-in-order':
     case 'most-room':
-      return 'New steps go to the provider with the most room.';
+      return 'Steps of one run can land on different providers.';
     default: {
       const unreachable: never = pick.reason;
       return unreachable;
