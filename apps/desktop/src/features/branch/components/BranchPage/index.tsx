@@ -398,7 +398,11 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
               sessionId={sessionId}
               host={host}
               pr={pr}
-              fallbackTitle={identity.label}
+              fallbackTitle={
+                tab === 'pr'
+                  ? `New ${requestLabel.toLowerCase()}`
+                  : (tabs.find((entry) => entry.id === tab)?.label ?? identity.label)
+              }
               controls={controls}
               isPushBusy={isPushBusy}
               isPrimaryYielding={isPrimaryYielding}

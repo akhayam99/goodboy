@@ -93,10 +93,7 @@ export const ReviewTextCard = ({
           }
         />
       )}
-      <div className="flex min-w-0 items-center justify-between gap-3">
-        <div className="min-w-0 flex-1">{children}</div>
-        <span className="shrink-0 text-meta text-faint-foreground">Markdown</span>
-      </div>
+      <div className="flex min-w-0 items-center gap-3">{children}</div>
     </section>
   );
 };

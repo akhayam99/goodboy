@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { X } from 'lucide-react';
-import { Button, IconButton, cn, tintClasses } from '@goodboy/ui';
+import { Button, IconButton, Notice } from '@goodboy/ui';
 import type { ActionControls } from '../../useActionControls';
 
 type Props = {
@@ -57,18 +57,25 @@ export const ActionStatusLine = ({
         </div>
       )}
       {controls.failure !== null && (
-        <div role="alert" className="flex min-w-0 items-center gap-2">
-          <p className={cn('min-w-0 text-right', tintClasses('danger').text)}>
-            {failed === null ? '' : `${failed.label}: `}
-            {controls.failure.message}
-          </p>
-          {failureActions}
-          <Button size="sm" variant="ghost" onClick={controls.retry}>
-            Retry
-          </Button>
+        <div className="flex w-full min-w-0 flex-col gap-2 self-stretch text-left">
+          <Notice
+            tone="danger"
+            placement="inline"
+            role="alert"
+            title={failed === null ? "Couldn't finish" : `${failed.label} failed`}
+            body={controls.failure.message}
+            actions={
+              <>
+                {failureActions}
+                <Button size="sm" variant="secondary" onClick={controls.retry}>
+                  Retry
+                </Button>
+              </>
+            }
+          />
+          {failureHint}
         </div>
       )}
-      {controls.failure !== null && failureHint}
     </div>
   );
 };
