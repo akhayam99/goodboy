@@ -70,7 +70,7 @@
     "session -> branch": 1,
     "session -> budget": 1,
     "session -> chat": 5,
-    "session -> context": 9,
+    "session -> context": 8,
     "session -> inbox": 1,
     "session -> integrations": 11,
     "session -> providers": 2,

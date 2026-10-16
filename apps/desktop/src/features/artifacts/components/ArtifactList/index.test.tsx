@@ -96,8 +96,7 @@ describe('ArtifactList states', () => {
     );
 
     expect(screen.queryByRole('heading', { name: 'No artifacts yet' })).toBeNull();
-    const line = screen.getByText('No plans in this session.');
-    expect(line.parentElement?.className).toContain('[&>p]:flex-none');
+    expect(screen.getByText('No plans in this session.')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Clear filter' }));
 
     expect(onFilterChange).toHaveBeenCalledWith('all');

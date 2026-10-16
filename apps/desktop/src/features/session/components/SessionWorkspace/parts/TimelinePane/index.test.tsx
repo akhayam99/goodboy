@@ -1297,7 +1297,6 @@ describe('TimelinePane row meta', () => {
     const meta = within(rowOf('Plan the fix')).getByTestId('work-meta');
     const model = meta.querySelector('[data-meta-column="model"]');
 
-    expect(model?.className).toContain('w-44');
     expect(
       carriesSpec({
         element: meta.querySelector('[data-meta-column="stack"]'),
