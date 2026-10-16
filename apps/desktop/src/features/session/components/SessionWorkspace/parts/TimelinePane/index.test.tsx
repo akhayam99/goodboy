@@ -1297,7 +1297,7 @@ describe('TimelinePane row meta', () => {
     const meta = within(rowOf('Plan the fix')).getByTestId('work-meta');
     const model = meta.querySelector('[data-meta-column="model"]');
 
-    expect(carriesSpec({ element: model ?? null, spec: WORK_META_COLUMN.modelInline })).toBe(true);
+    expect(model?.className).toContain('w-44');
     expect(
       carriesSpec({
         element: meta.querySelector('[data-meta-column="stack"]'),
@@ -1533,9 +1533,9 @@ describe('TimelinePane row meta', () => {
       expect(wide).toContain('6m 40s');
       expect(wide).not.toContain('$0.62');
 
-      const glyphsOnly = seen(630);
-      expect(glyphsOnly).not.toContain('Opus 4.5');
-      expect(glyphsOnly).toContain('6m 40s');
+      const measure = seen(630);
+      expect(measure).toContain('Opus 4.5');
+      expect(measure).toContain('6m 40s');
 
       const timeOnly = seen(560);
       expect(timeOnly).toContain('6m 40s');

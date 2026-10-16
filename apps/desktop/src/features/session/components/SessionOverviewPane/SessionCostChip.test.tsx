@@ -91,10 +91,11 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('SessionCostChip', () => {
-  it('shows the spend from the start, before anything is spent', () => {
+  it('reads Limit, never $0, before anything is spent', () => {
     render(<SessionCostChip sessionId={SID} />);
 
-    expect(spendChip().textContent).toBe('$0');
+    expect(spendChip().textContent).toBe('Limit');
+    expect(spendChip().textContent).not.toContain('$0');
     expect(spendChip().getAttribute('data-level')).toBe('free');
     expect(store.loadSessionBudget).toHaveBeenCalledWith(SID);
   });

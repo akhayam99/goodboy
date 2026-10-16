@@ -138,7 +138,7 @@ describe('TimelineModelCell', () => {
     ).toEqual(['moonshot', 'anthropic']);
   });
 
-  it('keeps only the glyphs under 640px and hands the name to assistive tech', () => {
+  it('keeps the model name on a 720 column and leaves the cell under 500px', () => {
     const { container } = render(
       <TimelineModelCell
         summary={{ name: 'Sonnet 5.5', detail: null, providers: ['anthropic'] }}
@@ -149,12 +149,12 @@ describe('TimelineModelCell', () => {
       throw new Error('no cell rendered');
     }
 
-    expect(visibleTextAt({ root: cell, width: 700 })).toBe('Sonnet 5.5');
-    expect(visibleTextAt({ root: cell, width: 600 })).toBe('');
+    expect(visibleTextAt({ root: cell, width: 600 })).toBe('Sonnet 5.5');
+    expect(visibleTextAt({ root: cell, width: 460 })).toBe('');
     expect(screen.getByText('Sonnet 5.5')).toBeDefined();
   });
 
-  it('puts the effort on the model line and hides both under 640px', () => {
+  it('puts the effort on the model line and hides both under 500px', () => {
     const { container } = render(
       <TimelineModelCell
         summary={{ name: 'Opus 5.5', detail: 'High', providers: ['anthropic'] }}
@@ -169,8 +169,8 @@ describe('TimelineModelCell', () => {
     );
 
     expect(lines).toEqual(['Opus 5.5', 'High']);
-    expect(visibleTextAt({ root: cell, width: 700 })).toBe('Opus 5.5·High');
-    expect(visibleTextAt({ root: cell, width: 600 })).toBe('');
+    expect(visibleTextAt({ root: cell, width: 600 })).toBe('Opus 5.5·High');
+    expect(visibleTextAt({ root: cell, width: 460 })).toBe('');
   });
 
   it('names where a fallback chain started on the second line', () => {
