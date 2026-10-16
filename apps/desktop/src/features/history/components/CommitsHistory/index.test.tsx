@@ -268,7 +268,7 @@ describe('CommitsHistory toolbar', () => {
     const actions = seed({});
     render(<CommitsHistory sessionId={SESSION_ID} worktreePath="/w/payments" />);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Show previous versions (1)' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Previous versions 1' }));
 
     expect(actions.openDrawer).toHaveBeenCalledWith({
       kind: 'history-versions',
@@ -358,13 +358,13 @@ describe('CommitsHistory', () => {
     expect(lastItems(actions)).toEqual(moveAbove({ items: BASE, sha: d, anchor: b }));
   });
 
-  it('builds the row buttons and the row menu from the commit actions', () => {
+  it('builds the row menu from the commit actions, no icon buttons on the row', () => {
     const actions = setup();
     const taking = within(row(d));
-    expect(taking.getByRole('button', { name: 'Rename' })).toBeDefined();
-    expect(taking.getByRole('button', { name: 'Fold down' })).toBeDefined();
-    expect(taking.getByRole('button', { name: /More for/ })).toBeDefined();
-    fireEvent.click(within(row(b)).getByRole('button', { name: 'Remove' }));
+    expect(taking.queryByRole('button', { name: 'Rename' })).toBeNull();
+    expect(taking.queryByRole('button', { name: 'Fold down' })).toBeNull();
+    fireEvent.click(within(row(b)).getByRole('button', { name: /More for/ }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /^Remove/ }));
     expect(lastItems(actions)).toEqual(setVerb({ items: BASE, sha: b, verb: 'drop' }));
   });
 
@@ -510,7 +510,7 @@ describe('CommitsHistory initial read states', () => {
 
   it('shows the branch empty state after a successful empty read', () => {
     setup({ commits: [] });
-    screen.getByText('No commits yet on this branch');
+    screen.getByText('No commits yet');
     expect(screen.queryByRole('status', { name: 'Loading commits' })).toBeNull();
   });
 

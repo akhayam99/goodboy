@@ -79,7 +79,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     covers: ['openRewriteHistory'],
     open: async () => {
       await openDiffHistory();
-      await clickButton(/^Show previous versions/);
+      await clickButton(/^Previous versions/);
     },
     lands: () => visible('region', 'Previous versions'),
   },

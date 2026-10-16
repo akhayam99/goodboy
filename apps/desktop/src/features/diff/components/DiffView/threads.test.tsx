@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { FileDiff } from '@goodboy/types';
 import { CommentThread } from './CommentThread';
+import type { ReactElement } from 'react';
+import { ObjectMenuProvider } from '../../../actions/components/ObjectMenuProvider';
 import { DiffView } from '.';
 import type { DiffComments, DiffThread } from './types';
 
@@ -117,7 +119,7 @@ const hostCard = (): HTMLElement =>
 
 describe('a note and a host thread on one file', () => {
   it('draw different chips and are both reachable by role', () => {
-    render(<DiffView files={[FILE]} comments={commentsWith([NOTE, HOST])} />);
+    renderWithMenu(<DiffView files={[FILE]} comments={commentsWith([NOTE, HOST])} />);
 
     expect(within(noteCard()).getByText('Note')).toBeDefined();
     expect(within(hostCard()).getByText('On GitHub')).toBeDefined();
@@ -127,7 +129,7 @@ describe('a note and a host thread on one file', () => {
   });
 
   it('give a note Edit, Close and Delete and no Reply, Resolve or Open in Comments', () => {
-    render(<DiffView files={[FILE]} comments={commentsWith([NOTE])} />);
+    renderWithMenu(<DiffView files={[FILE]} comments={commentsWith([NOTE])} />);
 
     const card = noteCard();
     for (const name of ['Edit', 'Close note', 'Delete']) {
@@ -139,7 +141,7 @@ describe('a note and a host thread on one file', () => {
   });
 
   it('give a host thread Reply, Resolve and Open in Comments and no Edit, Close or Delete', () => {
-    render(<DiffView files={[FILE]} comments={commentsWith([HOST])} />);
+    renderWithMenu(<DiffView files={[FILE]} comments={commentsWith([HOST])} />);
 
     const card = hostCard();
     for (const name of ['Reply', 'Resolve', 'Open in Comments']) {
@@ -151,7 +153,7 @@ describe('a note and a host thread on one file', () => {
   });
 
   it('say how many replies a host thread has and show them', () => {
-    render(<DiffView files={[FILE]} comments={commentsWith([HOST])} />);
+    renderWithMenu(<DiffView files={[FILE]} comments={commentsWith([HOST])} />);
 
     const card = hostCard();
     expect(within(card).getByText('2 replies')).toBeDefined();
@@ -164,7 +166,7 @@ describe('a note and a host thread on one file', () => {
 describe('a host thread in Files', () => {
   it('posts a reply through the reply verb and closes its composer', async () => {
     const comments = commentsWith([HOST]);
-    render(<DiffView files={[FILE]} comments={comments} />);
+    renderWithMenu(<DiffView files={[FILE]} comments={comments} />);
 
     fireEvent.click(within(hostCard()).getByRole('button', { name: 'Reply' }));
     const box = screen.getByRole('textbox', { name: 'Reply to Priya Nair' });
@@ -181,7 +183,7 @@ describe('a host thread in Files', () => {
     const onReply = vi.fn(async () => {
       throw new Error('GitHub refused the reply');
     });
-    render(<DiffView files={[FILE]} comments={commentsWith([HOST], { onReply })} />);
+    renderWithMenu(<DiffView files={[FILE]} comments={commentsWith([HOST], { onReply })} />);
 
     fireEvent.click(within(hostCard()).getByRole('button', { name: 'Reply' }));
     const box = screen.getByRole('textbox', { name: 'Reply to Priya Nair' });
@@ -194,7 +196,7 @@ describe('a host thread in Files', () => {
 
   it('resolves through the resolve verb', async () => {
     const comments = commentsWith([HOST]);
-    render(<DiffView files={[FILE]} comments={comments} />);
+    renderWithMenu(<DiffView files={[FILE]} comments={comments} />);
 
     fireEvent.click(within(hostCard()).getByRole('button', { name: 'Resolve' }));
 
@@ -203,7 +205,7 @@ describe('a host thread in Files', () => {
 
   it('opens its thread in Comments', () => {
     const comments = commentsWith([HOST]);
-    render(<DiffView files={[FILE]} comments={comments} />);
+    renderWithMenu(<DiffView files={[FILE]} comments={comments} />);
 
     fireEvent.click(within(hostCard()).getByRole('button', { name: 'Open in Comments' }));
 
@@ -211,7 +213,7 @@ describe('a host thread in Files', () => {
   });
 
   it('offers no Reply when the host cannot take one, and no Resolve when it cannot resolve', () => {
-    render(
+    renderWithMenu(
       <DiffView
         files={[FILE]}
         comments={commentsWith([{ ...HOST, canReply: false, canResolve: false }])}
@@ -224,7 +226,7 @@ describe('a host thread in Files', () => {
   });
 
   it('names a resolved thread by its host and keeps it to one line', () => {
-    render(
+    renderWithMenu(
       <DiffView
         files={[FILE]}
         comments={commentsWith([{ ...HOST, isResolved: true, statusLabel: 'Resolved' }])}
@@ -237,7 +239,7 @@ describe('a host thread in Files', () => {
   });
 
   it('draws read only: no Reply, no Resolve, no Delete, the link to Comments stays', () => {
-    render(<DiffView files={[FILE]} comments={commentsWith([NOTE, HOST])} isReadOnly />);
+    renderWithMenu(<DiffView files={[FILE]} comments={commentsWith([NOTE, HOST])} isReadOnly />);
 
     expect(screen.queryByRole('button', { name: 'Reply' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Resolve' })).toBeNull();
@@ -250,7 +252,7 @@ describe('a host thread in Files', () => {
 describe('a note in Files', () => {
   it('edits its text through the edit verb', () => {
     const comments = commentsWith([NOTE]);
-    render(<DiffView files={[FILE]} comments={comments} />);
+    renderWithMenu(<DiffView files={[FILE]} comments={comments} />);
 
     fireEvent.click(within(noteCard()).getByRole('button', { name: 'Edit' }));
     const box = screen.getByRole('textbox', { name: 'Edit note' });
@@ -262,7 +264,7 @@ describe('a note in Files', () => {
 
   it('closes the editor once the edit is saved', async () => {
     const comments = commentsWith([NOTE]);
-    render(<DiffView files={[FILE]} comments={comments} />);
+    renderWithMenu(<DiffView files={[FILE]} comments={comments} />);
 
     fireEvent.click(within(noteCard()).getByRole('button', { name: 'Edit' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Edit note' }), {
@@ -277,7 +279,7 @@ describe('a note in Files', () => {
     const onEdit = vi.fn(async () => {
       throw new Error('Database is locked');
     });
-    render(<DiffView files={[FILE]} comments={commentsWith([NOTE], { onEdit })} />);
+    renderWithMenu(<DiffView files={[FILE]} comments={commentsWith([NOTE], { onEdit })} />);
 
     fireEvent.click(within(noteCard()).getByRole('button', { name: 'Edit' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Edit note' }), {
@@ -307,11 +309,13 @@ describe('a note in Files', () => {
   });
 
   it('carries no per thread fix control', () => {
-    render(<DiffView files={[FILE]} comments={commentsWith([NOTE, HOST])} />);
+    renderWithMenu(<DiffView files={[FILE]} comments={commentsWith([NOTE, HOST])} />);
 
     expect(screen.queryByRole('button', { name: /^Fix/ })).toBeNull();
   });
 });
+
+const renderWithMenu = (ui: ReactElement) => render(<ObjectMenuProvider>{ui}</ObjectMenuProvider>);
 
 const openFileMenu = (): void => {
   fireEvent.click(screen.getByRole('button', { name: /^More for / }));
@@ -327,7 +331,7 @@ describe('the file header', () => {
   };
 
   it('is 44 high and shows Viewed and the four file actions as icons at rest, each a 28 control', () => {
-    render(
+    renderWithMenu(
       <DiffView
         files={[FILE]}
         comments={commentsWith([NOTE, HOST])}
@@ -354,7 +358,7 @@ describe('the file header', () => {
 
   it('counts the open threads of both kinds in the Comment tooltip and not the resolved ones', async () => {
     vi.useFakeTimers();
-    render(
+    renderWithMenu(
       <DiffView
         files={[FILE]}
         comments={commentsWith([
@@ -375,7 +379,7 @@ describe('the file header', () => {
 
   it('leaves the path to a real tooltip and carries no native title', async () => {
     vi.useFakeTimers();
-    render(<DiffView files={[FILE]} />);
+    renderWithMenu(<DiffView files={[FILE]} />);
     expect(headerOf().querySelector('[title]')).toBeNull();
 
     fireEvent.mouseEnter(within(headerOf()).getByText('LedgerRow.tsx'));
@@ -387,7 +391,7 @@ describe('the file header', () => {
   });
 
   it('keeps the file name whole and the folders in front of it', () => {
-    render(<DiffView files={[FILE]} />);
+    renderWithMenu(<DiffView files={[FILE]} />);
 
     const header = headerOf();
     expect(within(header).getByText('LedgerRow.tsx')).toBeDefined();
@@ -397,7 +401,7 @@ describe('the file header', () => {
   it('folds the file when Viewed is checked and shows an amber dot when it went stale', async () => {
     vi.useFakeTimers();
     const onToggle = vi.fn();
-    render(<DiffView files={[FILE]} viewed={{ stateOf: () => 'stale', onToggle }} />);
+    renderWithMenu(<DiffView files={[FILE]} viewed={{ stateOf: () => 'stale', onToggle }} />);
 
     const box = within(headerOf()).getByRole('checkbox', { name: 'Viewed' });
     expect(box.matches(':checked')).toBe(false);
@@ -417,7 +421,7 @@ describe('the file header', () => {
       new: 'a\nb\nc',
       isTooLarge: false,
     }));
-    render(<DiffView files={[FILE]} loadFileSides={loadFileSides} />);
+    renderWithMenu(<DiffView files={[FILE]} loadFileSides={loadFileSides} />);
 
     openFileMenu();
     fireEvent.click(screen.getByRole('menuitem', { name: 'Show whole file' }));
@@ -427,7 +431,9 @@ describe('the file header', () => {
 
   it('hands the file to the page from the Show whole file icon', () => {
     const onShowWhole = vi.fn();
-    render(<DiffView files={[FILE]} loadFileSides={vi.fn()} fileActions={{ onShowWhole }} />);
+    renderWithMenu(
+      <DiffView files={[FILE]} loadFileSides={vi.fn()} fileActions={{ onShowWhole }} />,
+    );
 
     openFileMenu();
     fireEvent.click(screen.getByRole('menuitem', { name: 'Show whole file' }));
@@ -437,7 +443,7 @@ describe('the file header', () => {
 
   it('opens the file in the editor from its icon and has no Open in a drawer', () => {
     const onOpenInEditor = vi.fn();
-    render(<DiffView files={[FILE]} fileActions={{ onOpenInEditor }} />);
+    renderWithMenu(<DiffView files={[FILE]} fileActions={{ onOpenInEditor }} />);
 
     openFileMenu();
     fireEvent.click(screen.getByRole('menuitem', { name: 'Open in editor' }));
@@ -447,7 +453,7 @@ describe('the file header', () => {
   });
 
   it('keeps Copy path in the file menu', () => {
-    render(<DiffView files={[FILE]} fileActions={{ onOpenInEditor: vi.fn() }} />);
+    renderWithMenu(<DiffView files={[FILE]} fileActions={{ onOpenInEditor: vi.fn() }} />);
 
     openFileMenu();
 
@@ -455,7 +461,7 @@ describe('the file header', () => {
   });
 
   it('offers no Viewed and no Comment on a read only change', () => {
-    render(
+    renderWithMenu(
       <DiffView
         files={[FILE]}
         comments={commentsWith([NOTE])}
@@ -476,7 +482,7 @@ describe('landing on a thread', () => {
   it('scrolls the card of the thread into view once its file is open, and says it did', async () => {
     const onFocusHandled = vi.fn();
     const comments = commentsWith([NOTE, HOST]);
-    const { rerender } = render(<DiffView files={[FILE]} comments={comments} />);
+    const { rerender } = renderWithMenu(<DiffView files={[FILE]} comments={comments} />);
 
     rerender(
       <DiffView
@@ -496,7 +502,9 @@ describe('landing on a thread', () => {
   it('opens a file the reader had closed to land on the thread inside it', async () => {
     const comments = commentsWith([NOTE]);
     const viewed = { stateOf: () => 'viewed' as const, onToggle: vi.fn() };
-    const { rerender } = render(<DiffView files={[FILE]} comments={comments} viewed={viewed} />);
+    const { rerender } = renderWithMenu(
+      <DiffView files={[FILE]} comments={comments} viewed={viewed} />,
+    );
     expect(screen.queryByRole('article', { name: /^Note from You/ })).toBeNull();
 
     rerender(

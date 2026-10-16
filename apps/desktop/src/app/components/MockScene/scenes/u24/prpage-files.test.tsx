@@ -6,6 +6,7 @@ vi.mock('@tauri-apps/api/core', async () => {
 });
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
+import { ObjectMenuProvider } from '../../../../../features/actions/components/ObjectMenuProvider';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
@@ -41,9 +42,11 @@ type Name = keyof typeof U24_PRPAGE_FILES_SCENES;
 const renderScene = ({ name }: { readonly name: Name }) => {
   const Scene = U24_PRPAGE_FILES_SCENES[name];
   return render(
-    <ToastProvider>
-      <Scene />
-    </ToastProvider>,
+    <ObjectMenuProvider>
+      <ToastProvider>
+        <Scene />
+      </ToastProvider>
+    </ObjectMenuProvider>,
   );
 };
 

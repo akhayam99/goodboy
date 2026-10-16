@@ -74,7 +74,7 @@ describe('the u24 commits scenes', () => {
 
     expect(screen.queryByRole('heading', { name: 'Planned changes' })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Apply/ })).toBeNull();
-    screen.getByRole('button', { name: 'Undo commit edit' });
+    expect(screen.queryByRole('button', { name: 'Undo commit edit' })).toBeNull();
   });
 
   it('keeps the single column on a 1920 stage', async () => {

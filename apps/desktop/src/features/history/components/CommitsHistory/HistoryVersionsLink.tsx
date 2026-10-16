@@ -8,7 +8,7 @@ type Props = {
 export const HistoryVersionsLink = ({ count, onOpen }: Props) => (
   <div className="flex px-2">
     <Button size="sm" variant="quiet" onClick={onOpen}>
-      {`Show previous versions (${count})`}
+      {`Previous versions ${count}`}
     </Button>
   </div>
 );

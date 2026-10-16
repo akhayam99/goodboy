@@ -4,6 +4,7 @@ vi.mock('@tauri-apps/api/core', async () => {
 });
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
+import { ObjectMenuProvider } from '../../../../../features/actions/components/ObjectMenuProvider';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
@@ -73,9 +74,11 @@ describe('the rebase review scene', () => {
   });
   it('puts Open in editor and Copy path in the menu of each file header', async () => {
     render(
-      <ToastProvider>
-        <RebaseReviewScene />
-      </ToastProvider>,
+      <ObjectMenuProvider>
+        <ToastProvider>
+          <RebaseReviewScene />
+        </ToastProvider>
+      </ObjectMenuProvider>,
     );
     const collapse = await screen.findByRole('button', { name: 'Collapse webhook.ts' });
     const header = collapse.closest<HTMLElement>('[data-slot="diff-file-header"]');
