@@ -8,23 +8,27 @@ import { MountProjectList } from './MountProjectList';
 import { starredProjectsFirst } from '../../../../../shared/utils/starredProjectsFirst';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { isProjectInFirstLap } from '../../../../../store/slices/bootstrap/firstLap';
+import { openWorkspaceProjects } from './openWorkspaceProjects';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly workspaceId: WorkspaceId;
-  readonly presentation?: 'icon' | 'button';
+  readonly presentation?: 'icon' | 'button' | 'anchor';
+  readonly openEvent?: string;
 };
 
-const openWorkspaceProjects = () => {
-  window.dispatchEvent(
-    new CustomEvent('goodboy:open-settings', {
-      detail: { scope: 'workspace', section: 'projects' },
-    }),
-  );
-};
-
-export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'icon' }: Props) => {
-  const dropdown = useDropdown({ align: 'end', width: 'w-80', expectedHeight: 320 });
+export const MountProjectAction = ({
+  sessionId,
+  workspaceId,
+  presentation = 'icon',
+  openEvent,
+}: Props) => {
+  const dropdown = useDropdown({
+    align: presentation === 'anchor' ? 'start' : 'end',
+    width: 'w-80',
+    expectedHeight: 320,
+    ...(openEvent !== undefined && { openEvent }),
+  });
   const [isComplete, setIsComplete] = useState(false);
   const availableProjects = useAppStore(
     useShallow((state) => {
@@ -53,7 +57,9 @@ export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'ico
       ariaLabel={label}
       anchorClassName="shrink-0"
       trigger={
-        presentation === 'icon' ? (
+        presentation === 'anchor' ? (
+          <span aria-hidden className="block h-0 w-px" />
+        ) : presentation === 'icon' ? (
           <IconButton
             size="xs"
             variant="ghost"

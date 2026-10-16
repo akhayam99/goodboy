@@ -618,9 +618,18 @@ and the hidden one is `inert`.
   one function, `pageSlotOf` over `usePageCountFacts`, and the folded rail and
   its flyout read the same function.
 - **Projects** lists each mounted project as a label row and its worktrees
-  under it at the same left edge: branch icon, mono branch, pull request
-  number in a fixed 48px column. A worktree row drills into the worktree
-  level (level 2) on its landing entry. The label carries Add project.
+  under it at the same left edge (`SessionLevel/WorktreeRow`): branch icon,
+  mono branch, pull request number in a fixed 48px column, then the worst
+  state as one 6px dot in the last column (`worktreeRowStateOf`: danger for a
+  failed check; warning for conflicts, a running rebase, behind its base, a
+  branch decision waiting, comments waiting on you; none when fine), named in
+  its tooltip and in the row's accessible name. Merged and closed worktrees
+  fold into one row `2 finished` under their project (`FinishedWorktrees`),
+  which opens them in place. A worktree row drills into the worktree level
+  (level 2) on its landing entry. The label carries one word, `Add`
+  (`LevelAddMenu`): Add project, Add workspace project, and `New branch in`
+  each repo project of the session; each opens today's popover
+  (`MountProjectAction`, `NewBranchMountAction`) anchored under the label.
 - **Level 2, the worktree.** Showing the Branch lens is being on level 2
   (`useSidebarLevel` reads `activeLens === 'branch'`, so history, links and
   keys drill the sidebar without extra state). It reads: the back row

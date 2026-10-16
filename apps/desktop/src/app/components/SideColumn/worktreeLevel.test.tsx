@@ -13,7 +13,7 @@ vi.mock('../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { WorktreeStatus } from '@goodboy/types';
+import type { MountId, PullRequestState, WorktreeStatus } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -27,6 +27,8 @@ import { ToastProvider } from '../../../shared/components/Toast';
 import { worktreeStatusOf } from '../../../test/worktreeStatusOf';
 import {
   harborline,
+  ledgerCore,
+  mountGithubOf,
   mountOf,
   paymentsApi,
   seedColumn,
@@ -128,6 +130,41 @@ const worktreeLayer = (): HTMLElement => {
   }
   return layer;
 };
+
+const ledgerMount = mountOf({ session, project: ledgerCore });
+
+const seedTwoProjects = ({ status }: SeedParams) => {
+  seed({ status });
+  useAppStore.setState({
+    sessionProjectMounts: { [sessionId]: [mount, ledgerMount] },
+    mountGithub: {
+      [mount.mountId]: mountGithubOf({ mount, number: 418 }),
+      [ledgerMount.mountId]: mountGithubOf({ mount: ledgerMount, number: 77 }),
+    },
+  });
+  useAppStore.getState().navigate({ to: sessionPlace({ sessionId }) });
+};
+
+type PatchParams = {
+  readonly mountId: MountId;
+  readonly patch: Partial<PullRequestState>;
+};
+
+const patchRequest = ({ mountId, patch }: PatchParams) => {
+  const current = useAppStore.getState().mountGithub[mountId];
+  if (current === undefined || current.pr === null) {
+    throw new Error('the mount has no pull request');
+  }
+  useAppStore.setState((state) => ({
+    mountGithub: {
+      ...state.mountGithub,
+      [mountId]: { ...current, pr: { ...current.pr, ...patch } },
+    },
+  }));
+};
+
+const projectRows = (name: string): HTMLElement =>
+  screen.getByRole('list', { name: `${name} worktrees` });
 
 const statusLine = (): HTMLElement => {
   const line = worktreeLayer().querySelector<HTMLElement>('[data-worktree-status]');
@@ -242,5 +279,69 @@ describe('the worktree level', () => {
     await settle();
 
     expect(screen.getByRole('group', { name: 'Abort the rebase?' })).toBeDefined();
+  });
+});
+
+describe('the worktree rows of the session level', () => {
+  it('lists each worktree under its project with its number and no dot while it is fine', async () => {
+    seedTwoProjects({ status: worktreeStatusOf({}) });
+    await mountColumn();
+
+    const row = within(projectRows('payments-api')).getByRole('button');
+    expect(row.textContent).toBe(`${mount.branch}#418`);
+    expect(row.querySelector('[data-worktree-dot] [data-tone]')).toBeNull();
+    expect(within(projectRows('ledger-core')).getByRole('button').textContent).toContain('#77');
+  });
+
+  it('draws the worst state as one dot named in the row, a failed check above being behind', async () => {
+    seedTwoProjects({ status: worktreeStatusOf({ behind: 3 }) });
+    patchRequest({ mountId: mount.mountId, patch: { checks: 'failure' } });
+    await mountColumn();
+
+    await waitFor(() =>
+      expect(
+        within(projectRows('ledger-core')).getByRole('button').getAttribute('aria-label'),
+      ).toContain('3 behind main'),
+    );
+    expect(
+      within(projectRows('payments-api')).getByRole('button').getAttribute('aria-label'),
+    ).toContain('A check failed');
+  });
+
+  it('folds the finished worktrees of a project into one count row that opens them', async () => {
+    seedTwoProjects({ status: worktreeStatusOf({}) });
+    patchRequest({ mountId: ledgerMount.mountId, patch: { state: 'merged' } });
+    await mountColumn();
+
+    const fold = within(projectRows('ledger-core')).getByRole('button', {
+      name: '1 finished in ledger-core',
+    });
+    expect(fold.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByRole('list', { name: 'ledger-core finished worktrees' })).toBeNull();
+
+    fireEvent.click(fold);
+
+    const finished = screen.getByRole('list', { name: 'ledger-core finished worktrees' });
+    expect(within(finished).getByRole('button').textContent).toContain(ledgerMount.branch);
+  });
+
+  it('adds from one Add word: a project, a workspace project or a new branch in each repo', async () => {
+    seedTwoProjects({ status: worktreeStatusOf({}) });
+    await mountColumn();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add to this session' }));
+    const labels = screen.getAllByRole('menuitem').map((item) => item.textContent ?? '');
+    expect(labels).toEqual([
+      'Add project',
+      'Add workspace project',
+      'New branch in payments-api',
+      'New branch in ledger-core',
+    ]);
+
+    fireEvent.click(screen.getByRole('menuitem', { name: 'New branch in ledger-core' }));
+    await settle();
+    await settle();
+
+    expect(await screen.findByRole('dialog', { name: 'New branch in ledger-core' })).toBeDefined();
   });
 });

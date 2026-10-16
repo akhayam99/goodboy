@@ -21,8 +21,9 @@ type Props = {
   readonly sessionId: SessionId;
   readonly projectId: ProjectId;
   readonly projectName: string;
-  readonly presentation?: 'icon' | 'button';
+  readonly presentation?: 'icon' | 'button' | 'anchor';
   readonly triggerClassName?: string;
+  readonly openEvent?: string;
 };
 
 export const NewBranchMountAction = ({
@@ -31,8 +32,14 @@ export const NewBranchMountAction = ({
   projectName,
   presentation = 'button',
   triggerClassName,
+  openEvent,
 }: Props) => {
-  const dropdown = useDropdown({ align: 'end', width: 'w-80', expectedHeight: 240 });
+  const dropdown = useDropdown({
+    align: presentation === 'anchor' ? 'start' : 'end',
+    width: 'w-80',
+    expectedHeight: 240,
+    ...(openEvent !== undefined && { openEvent }),
+  });
   const forkMount = useAppStore((state) => state.forkMount);
   const reportError = useAppStore((state) => state.reportError);
   const project = useAppStore((state) => selectProjectById(state, projectId));
@@ -72,24 +79,28 @@ export const NewBranchMountAction = ({
       role="dialog"
       ariaLabel={`${NAMES.newBranch} in ${projectName}`}
       trigger={
-        <Tooltip content={`Add another line of work on ${projectName}, on its own branch`}>
-          <button
-            type="button"
-            aria-label={`${NAMES.newBranch} in ${projectName}`}
-            aria-haspopup="dialog"
-            aria-expanded={dropdown.open}
-            onClick={() => dropdown.toggle()}
-            className={cn(
-              triggerClassName ??
-                'inline-flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-chip text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-            )}
-          >
-            <GitFork size={ICON_SIZE.row} aria-hidden />
-            {presentation === 'button' ? (
-              <span className="@max-md:hidden">{NAMES.newBranch}</span>
-            ) : null}
-          </button>
-        </Tooltip>
+        presentation === 'anchor' ? (
+          <span aria-hidden className="block h-0 w-px" />
+        ) : (
+          <Tooltip content={`Add another line of work on ${projectName}, on its own branch`}>
+            <button
+              type="button"
+              aria-label={`${NAMES.newBranch} in ${projectName}`}
+              aria-haspopup="dialog"
+              aria-expanded={dropdown.open}
+              onClick={() => dropdown.toggle()}
+              className={cn(
+                triggerClassName ??
+                  'inline-flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-chip text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+              )}
+            >
+              <GitFork size={ICON_SIZE.row} aria-hidden />
+              {presentation === 'button' ? (
+                <span className="@max-md:hidden">{NAMES.newBranch}</span>
+              ) : null}
+            </button>
+          </Tooltip>
+        )
       }
     >
       <div className="flex flex-col gap-3 p-3">
