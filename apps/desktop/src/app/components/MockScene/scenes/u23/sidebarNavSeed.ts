@@ -38,7 +38,6 @@ export type SidebarNavConfig = {
   readonly lens: LensKind | null;
   readonly branches: number;
   readonly hasPullRequest: boolean;
-  readonly isFolded: boolean;
   readonly pinCount: number;
   readonly hasDraft: boolean;
   readonly hasQuestion: boolean;
@@ -49,7 +48,6 @@ export const SIDEBAR_NAV_DEFAULTS: SidebarNavConfig = {
   lens: null,
   branches: 1,
   hasPullRequest: false,
-  isFolded: false,
   pinCount: 0,
   hasDraft: false,
   hasQuestion: false,
@@ -205,7 +203,6 @@ export const seedSidebarNav = (config: SidebarNavConfig): SidebarNavSeed => {
           })),
         }
       : state.sessionWorktreeRecords,
-    sessionPagesFolded: config.isFolded ? { [session.id]: true } : {},
     sessionPins: {
       [session.workspaceId]: pinned.map((entry, index) => ({
         id: entry.id as SessionId,

@@ -67,18 +67,16 @@ describe('the side column signal scenes', () => {
     }
   });
 
-  it('side-signals-running names 2 running terminals and 3 ports in use', async () => {
+  it('side-signals-running names 2 running terminals', async () => {
     await mount({ name: 'side-signals-running' });
 
     expect(screen.getByRole('button', { name: 'Terminal, 2 running' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Monitoring, 3 in use' })).toBeDefined();
   });
 
   it('side-signals-idle shows nothing on the rows', async () => {
     await mount({ name: 'side-signals-idle' });
 
     expect(screen.getByRole('button', { name: 'Terminal' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Monitoring' })).toBeDefined();
     expect(document.querySelector('[data-door-signal]')).toBeNull();
   });
 

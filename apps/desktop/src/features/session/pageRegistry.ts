@@ -9,7 +9,7 @@ import type { CountedPageId } from './pageCountWord';
 
 type PageId =
   | 'overview'
-  | 'branch'
+  | 'files'
   | 'runs'
   | 'agents'
   | 'artifacts'
@@ -68,25 +68,13 @@ const OVERVIEW_PAGE: Page = {
   currentLenses: [null],
 };
 
-const BRANCH_PAGE: Page = {
-  id: 'branch',
-  label: LENS_LABEL.branch,
-  icon: LENS_ICON.branch,
-  tint: 'branch',
-  shortcut: 'lens.review',
-  count: 'branch',
-  group: 'work',
-  lens: 'review',
-  currentLenses: ['branch', 'review', 'pr', 'files'],
-};
-
 const FILE_VERSIONS_PAGE: Page = {
-  id: 'branch',
+  id: 'files',
   label: lensLabelFor({ lens: 'files', isBranchless: true }),
   icon: LENS_ICON.files,
   tint: 'files',
   shortcut: 'lens.files',
-  count: 'branch',
+  count: null,
   group: 'work',
   lens: 'files',
   currentLenses: ['files'],
@@ -168,7 +156,7 @@ type ColumnParams = {
 
 export const columnPagesOf = ({ isBranchless }: ColumnParams): ReadonlyArray<Page> => [
   OVERVIEW_PAGE,
-  isBranchless ? FILE_VERSIONS_PAGE : BRANCH_PAGE,
+  ...(isBranchless ? [FILE_VERSIONS_PAGE] : []),
   ...WORK_AFTER_BRANCH,
 ];
 

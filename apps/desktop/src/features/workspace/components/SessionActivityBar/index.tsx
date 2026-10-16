@@ -35,8 +35,6 @@ import { SessionFilterPopover } from './SessionFilterPopover';
 import { useClearSessionFilters } from './useClearSessionFilters';
 import { SessionActivityItem } from './SessionActivityItem';
 import { SessionGroupHeader } from './SessionGroupHeader';
-import { OpenSessionCard } from './OpenSessionCard';
-import { NewSessionRow } from './NewSessionRow';
 
 const SUB_ROW_INSET = 'pl-7';
 const SELECTION_VERB_IDS = ['sessions.archive', 'sessions.restore', 'sessions.delete'];
@@ -51,7 +49,6 @@ type Props = {
   isStudioOver?: boolean;
   onSelectSession: (id: SessionId) => void;
   onArchivedTabOpen?: () => void;
-  onNavigate?: () => void;
 };
 
 type OpenAttention = {
@@ -67,7 +64,6 @@ export const SessionActivityBar = ({
   isStudioOver = false,
   onSelectSession,
   onArchivedTabOpen,
-  onNavigate,
 }: Props) => {
   const toggleSessionGroup = useAppStore((s) => s.toggleSessionGroup);
   const setSessionViewPrefs = useAppStore((s) => s.setSessionViewPrefs);
@@ -247,15 +243,11 @@ export const SessionActivityBar = ({
     };
     return (
       <li key={session.id} className="flex flex-col">
-        {isActive && !isArchived ? (
-          <OpenSessionCard {...rowProps} hasStudioOver={isStudioOver} />
-        ) : (
-          <SessionActivityItem
-            {...rowProps}
-            isActive={isActive}
-            sign={isActive ? 'session' : null}
-          />
-        )}
+        <SessionActivityItem
+          {...rowProps}
+          isActive={isActive}
+          isCurrent={isActive && !isStudioOver}
+        />
       </li>
     );
   };
@@ -274,13 +266,6 @@ export const SessionActivityBar = ({
           sessions={filterSessions}
           archivedCount={archivedSessions.length}
           onArchivedShownChange={setArchivedShown}
-        />
-      </div>
-
-      <div className={cn('shrink-0', PANE_RHYTHM.navRail.inset)}>
-        <NewSessionRow
-          workspaceId={workspaceId}
-          {...(onNavigate !== undefined && { onNavigate })}
         />
       </div>
 

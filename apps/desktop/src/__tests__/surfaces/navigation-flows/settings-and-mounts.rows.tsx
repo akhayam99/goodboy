@@ -116,7 +116,7 @@ export const SETTINGS_AND_MOUNT_ROWS: ReadonlyArray<Row> = [
     covers: ['back'],
     open: async () => {
       await openBranchFiles();
-      await clickButton(/^Back/);
+      await clickButton(/^Back(?! to Sessions$)/);
     },
     lands: lens(null),
   },
@@ -125,7 +125,7 @@ export const SETTINGS_AND_MOUNT_ROWS: ReadonlyArray<Row> = [
     covers: ['back', 'forward'],
     open: async () => {
       await openBranchFiles();
-      await clickButton(/^Back/);
+      await clickButton(/^Back(?! to Sessions$)/);
       await clickButton(/^Forward/);
     },
     lands: branchTab('files'),

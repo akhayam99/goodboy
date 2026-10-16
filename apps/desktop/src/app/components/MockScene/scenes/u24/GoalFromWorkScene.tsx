@@ -4,8 +4,7 @@ import type { Session, SessionExternalTask } from '@goodboy/types';
 import { useAppStore } from '../../../../../store/store';
 import { GoalTeaser } from '../../../../../features/session/components/SessionOverviewPane/GoalTeaser';
 import { GoalFromWorkCard } from '../../../../../features/session/components/SessionOverviewPane/GoalFromWorkCard';
-import { SessionHeaderMenu } from '../../../../../features/session/components/SessionOverviewPane/SessionHeaderMenu';
-import { LinkedWorkChips } from '../../../../../features/session/components/SessionOverviewPane/LinkedWorkChips';
+import { OverviewPageActions } from '../../../../../features/session/components/SessionOverviewPane/OverviewPageActions';
 import type { IssueBriefSource } from '../../../../../store/slices/issue-briefs/types';
 import { SESSION, seedWorkflowScene } from '../workflowSeed';
 import { sceneClock } from '../../sceneClock';
@@ -112,7 +111,7 @@ export const GoalFromWorkScene = ({ variant }: Props) => {
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
             <h1 className="min-w-0 flex-1 text-title">{session.goal}</h1>
-            <SessionHeaderMenu session={session} onDelete={noop} />
+            <OverviewPageActions session={session} />
           </div>
           {variant === 'hint' ? (
             <GoalTeaser session={session} />
@@ -133,7 +132,6 @@ export const GoalFromWorkScene = ({ variant }: Props) => {
               onUsed={noop}
             />
           )}
-          <LinkedWorkChips sessionId={session.id} onSelectLens={noop} />
         </div>
       </PageColumn>
     </main>

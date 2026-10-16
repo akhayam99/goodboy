@@ -411,7 +411,10 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
           expect(state.openSessionDraftWorkspaceId).toBeNull();
         }, WAIT);
       },
-      () => visible('button', /^Untitled session$/),
+      async () =>
+        expect(
+          (await screen.findAllByRole('button', { name: /^Untitled session$/ }, WAIT)).length,
+        ).toBeGreaterThan(0),
       async () => expect(await screen.findByTestId('context-chip')).toBeDefined(),
     ),
   },

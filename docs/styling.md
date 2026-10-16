@@ -288,7 +288,7 @@ and the test asserts it centres `column` and `measure` and not `full`), `PANE_RH
 `DIFF_CAPPED_COLUMN_CLASS` and `max-w-xl` to `max-w-7xl` (with a narrow list
 for cards that still use `max-w-xl`), and on a lens the session workspace
 mounts without `PaneShell`, or a root that draws a crumb of its own. The
-session trail lives only in `TrailBar`, a 40px band above every layer; the
+session has no trail band (the path is the sidebar back row), and the
 panes under it start with their title.
 
 Detail views (an agent, a pull request, an issue from any tracker, a Review

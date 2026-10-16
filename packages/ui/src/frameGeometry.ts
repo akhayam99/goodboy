@@ -111,13 +111,32 @@ type FramePageParams = {
   readonly page: FramePage;
 };
 
+export const FRAME_PAGE_HEADER_INSET_PX = 12;
+
+const SESSION_PAGES: ReadonlySet<FramePage> = new Set<FramePage>([
+  'overview',
+  'branch',
+  'runs',
+  'run',
+  'agents',
+  'agent',
+  'questions',
+  'scripts',
+  'artifacts',
+  'explore',
+  'plan',
+  'report',
+  'wireframe',
+]);
+
 export const frameGeometryOf = ({ page }: FramePageParams): FrameGeometry => {
   const type = PAGE_FRAME[page];
+  const bandHeight = SESSION_PAGES.has(page) ? FRAME_PAGE_HEADER_INSET_PX : FRAME_BAND_PX;
   return {
     type,
-    bandHeight: FRAME_BAND_PX,
+    bandHeight,
     titleRowHeight: FRAME_TITLE_ROW_PX,
-    titleCentreY: FRAME_TITLE_CENTRE_PX,
+    titleCentreY: bandHeight + FRAME_TITLE_ROW_PX / 2,
     drawerRowHeight: FRAME_DRAWER_ROW_PX,
     titleLeft: TITLE_LEFT_OF[type],
   };

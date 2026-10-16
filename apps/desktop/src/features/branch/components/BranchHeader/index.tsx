@@ -1,5 +1,12 @@
 import { ArrowRight, ChevronUp } from 'lucide-react';
-import { Button, HeaderActions, HeaderBand, Notice, Tooltip } from '@goodboy/ui';
+import {
+  Button,
+  HeaderActions,
+  HeaderBand,
+  Notice,
+  Tooltip,
+  useInheritedPaneActions,
+} from '@goodboy/ui';
 import { PULL_REQUEST_NOUNS } from '@goodboy/core';
 import type { PullRequestHost, PullRequestState, SessionId } from '@goodboy/types';
 import { useNow } from '../../../../shared/hooks/useNow';
@@ -75,6 +82,7 @@ export const BranchHeader = ({
   commitCount,
   onMutated,
 }: Props) => {
+  const inheritedActions = useInheritedPaneActions();
   const { primary, secondary } = controls;
   const titleEdit = usePullRequestTitleEdit({
     sessionId,
@@ -224,36 +232,39 @@ export const BranchHeader = ({
           </div>
         }
         actions={
-          <HeaderActions
-            secondary={
-              secondary === null
-                ? null
-                : buttonOf({ action: secondary, slot: 'secondary', variant: 'secondary' })
-            }
-            button={
-              abort === null ? null : (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  disabled={abort.blockedReason !== null}
-                  onClick={() => controls.diffControls.trigger({ actionId: abort.id })}
-                >
-                  {abort.shortLabel}
-                </Button>
-              )
-            }
-            primary={
-              primary === null
-                ? null
-                : buttonOf({ action: primary, slot: 'primary', variant: primaryVariant })
-            }
-            overflow={
-              <BranchOverflow
-                diffControls={controls.diffControls}
-                pullRequestControls={controls.pullRequestControls}
-              />
-            }
-          />
+          <div className="flex min-w-0 items-center gap-2">
+            <HeaderActions
+              secondary={
+                secondary === null
+                  ? null
+                  : buttonOf({ action: secondary, slot: 'secondary', variant: 'secondary' })
+              }
+              button={
+                abort === null ? null : (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={abort.blockedReason !== null}
+                    onClick={() => controls.diffControls.trigger({ actionId: abort.id })}
+                  >
+                    {abort.shortLabel}
+                  </Button>
+                )
+              }
+              primary={
+                primary === null
+                  ? null
+                  : buttonOf({ action: primary, slot: 'primary', variant: primaryVariant })
+              }
+              overflow={
+                <BranchOverflow
+                  diffControls={controls.diffControls}
+                  pullRequestControls={controls.pullRequestControls}
+                />
+              }
+            />
+            {inheritedActions}
+          </div>
         }
       />
       {titleEdit.error !== null && (

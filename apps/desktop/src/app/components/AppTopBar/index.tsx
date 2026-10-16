@@ -4,6 +4,7 @@ import { WorkspaceIdentityRow } from '../../../features/workspace/components/Wor
 import type { RunningScript } from '../../../features/scripts/hooks/useRunningScripts';
 import { CommandCenter } from './CommandCenter';
 import { LimitsStrip } from './LimitsStrip';
+import { MonitoringSignal } from './MonitoringSignal';
 import { NowChip } from './NowChip';
 import { NavCluster } from './NavCluster';
 import { SpendButton } from './SpendButton';
@@ -37,6 +38,8 @@ export const AppTopBar = ({ onOpenSpend, onOpenScript, openProviderId = null }: 
         <NowChip onOpenScript={onOpenScript} />
 
         <LimitsStrip openProviderId={openProviderId} />
+
+        <MonitoringSignal />
 
         <SpendButton onOpenSpend={onOpenSpend} />
 

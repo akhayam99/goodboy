@@ -39,7 +39,7 @@ export const lintTsConfig = ({ files, tsconfigRootDir }) =>
 const UNTYPED_TWINS = [
   'apps/desktop/src/features/branch/hooks/useBranchIdentity/index.test.tsx',
   'apps/desktop/src/features/resolve/notes/useBranchNotes/index.test.tsx',
-  'apps/desktop/src/features/session/hooks/usePageSummaries/index.test.tsx',
+  'apps/desktop/src/features/session/hooks/usePageCountFacts/index.test.tsx',
   'packages/ui/src/__tests__/useDropdown.test.tsx',
 ];
 

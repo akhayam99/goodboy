@@ -59,8 +59,6 @@ describe('currentSignOf', () => {
     const pages = cardPages(true);
     expect(currentSignOf({ activeLens: null, pages, hasStudioOver: false })).toBe('overview');
     expect(currentSignOf({ activeLens: 'workflows', pages, hasStudioOver: false })).toBe('runs');
-    expect(currentSignOf({ activeLens: 'files', pages, hasStudioOver: false })).toBe('branch');
-    expect(currentSignOf({ activeLens: 'pr', pages, hasStudioOver: false })).toBe('branch');
     expect(currentSignOf({ activeLens: 'questions', pages, hasStudioOver: false })).toBe(
       'questions',
     );

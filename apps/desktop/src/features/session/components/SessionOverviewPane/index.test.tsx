@@ -7,7 +7,8 @@ vi.mock('@tauri-apps/api/event', async () =>
   (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
 );
 vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
-vi.mock('./HeaderBand', () => ({ HeaderBand: () => <h1>Overview title</h1> }));
+vi.mock('./HeaderBand', () => ({ HeaderBand: () => <p>Overview goal</p> }));
+vi.mock('./OverviewHeaderActions', () => ({ OverviewHeaderActions: () => null }));
 vi.mock('./ProjectMountRows', () => ({
   ProjectMountRows: () => <section aria-label="Projects" />,
 }));

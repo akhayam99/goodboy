@@ -150,7 +150,7 @@ const SURFACES = [
   'features/resolve/components/ReviewFlow/index.tsx',
   'features/resolve/fixRun.ts',
   'features/actions/kinds/review.ts',
-  'features/session/hooks/usePageSummaries/index.ts',
+  'features/session/hooks/usePageCountFacts/index.ts',
   'features/session/timeline/resolveActivity.ts',
   'features/suggestions/useSessionSuggestions/index.ts',
   'features/suggestions/useSuggestionActions/index.ts',

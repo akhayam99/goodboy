@@ -16,7 +16,6 @@ import {
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import { ObjectMenuProvider } from '../../../../../features/actions/components/ObjectMenuProvider';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
-import { SessionCardScene } from './SessionCardScene';
 import { SessionPinnedScene } from './SessionPinnedScene';
 
 beforeAll(async () => {
@@ -68,7 +67,7 @@ describe('the pinned sessions scene', () => {
     expect(
       await screen.findByRole('heading', {
         level: 1,
-        name: 'Add idempotency keys to payments-api',
+        name: 'Overview',
       }),
     ).toBeDefined();
     expect(screen.queryByRole('status', { name: 'Loading session overview' })).toBeNull();
@@ -156,44 +155,16 @@ describe('the pinned sessions scene', () => {
     ]);
   });
 
-  it('folds one project group away and keeps the open session in its card', async () => {
+  it('folds one project group away and keeps the open session row selected in its group', async () => {
     await mount();
 
     expect(
       screen.getByRole('button', { name: /^notify-relay/ }).getAttribute('aria-expanded'),
     ).toBe('false');
     expect(rowTitles(groupOf(/^notify-relay/))).toEqual([]);
-    const cards = sessionList().querySelectorAll('[data-session-card]');
-    expect(cards).toHaveLength(1);
-    expect(groupOf(/^payments-api/).contains(cards[0] ?? null)).toBe(true);
-  });
-});
-
-describe('the session card scene', () => {
-  it('wraps the open session and its five pages in one card and leaves the others flat', async () => {
-    render(
-      <ToastProvider>
-        <SessionCardScene />
-      </ToastProvider>,
-    );
-    await waitFor(() => expect(document.querySelector('[data-session-card]')).not.toBeNull());
-
-    const cards = sessionList().querySelectorAll<HTMLElement>('[data-session-card]');
-    expect(cards).toHaveLength(1);
-    const card = within(cards[0] as HTMLElement);
-    expect(card.getByRole('button', { name: /^Add POST \/orders[^,]*$/ })).toBeDefined();
-    const pages = card
-      .getAllByRole('button')
-      .filter((button) => button.closest('ul[aria-label="Pages"]'));
-    expect(pages.map((page) => page.textContent?.replace(/\d.*$/, '').trim())).toEqual([
-      'Overview',
-      'Branch',
-      'Runs',
-      'Agents',
-      'Artifacts',
-    ]);
-    expect(pages.filter((page) => page.getAttribute('aria-current') === 'page')).toHaveLength(1);
-    const flat = rowTitles(sessionList()).length - 1;
-    expect(flat).toBeGreaterThan(0);
+    expect(sessionList().querySelectorAll('[data-session-card]')).toHaveLength(0);
+    const current = sessionList().querySelectorAll('[aria-current="page"]');
+    expect(current).toHaveLength(1);
+    expect(groupOf(/^payments-api/).contains(current[0] ?? null)).toBe(true);
   });
 });

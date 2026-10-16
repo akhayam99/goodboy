@@ -6,7 +6,14 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import { cn, CountToggle, formatError, PaneShell, PaneActionsContext } from '@goodboy/ui';
+import {
+  cn,
+  CountToggle,
+  formatError,
+  PaneShell,
+  PaneActionsContext,
+  useInheritedPaneActions,
+} from '@goodboy/ui';
 import { EmptyState } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
 import { selectSessionById } from '../../../../../../store/slices/sessions/selectSessionById';
@@ -85,6 +92,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
   const [unlinkError, setUnlinkError] = useState<string | null>(null);
   const [isUnlinking, setIsUnlinking] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const inheritedActions = useInheritedPaneActions();
   const externalTasks = useAppStore(
     (state) => state.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY,
   );
@@ -174,6 +182,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
               disabled={isUnlinking}
               onClick={() => void handleUnlink({ task: focusedTask })}
             />
+            {inheritedActions}
           </div>
         }
       >

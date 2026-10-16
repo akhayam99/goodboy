@@ -1,126 +1,55 @@
-import { SelectableRow, cn, tintClasses } from '@goodboy/ui';
+import { SelectableRow, StatusDot } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useMountDiffStats } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { lensIconClass } from '../../../session/lens-labels';
-import { openLens } from '../../../session/openLens';
-import { DiffStat } from '../../../../shared/components/DiffStat';
-import { isRunningWord, type PageSummaries } from '../../../session/pageCountWord';
-import { singleBranchName } from '../../../session/singleBranchName';
-import { sumMountDiffStats } from '../../../session/sumMountDiffStats';
-import { splitBranchLabel } from '../../../../shared/utils/branchLabel';
+import { openSessionPage } from '../../../session/openSessionPage';
+import type { PageCountFacts } from '../../../session/pageCountWord';
 import type { Page } from '../../../session/pageRegistry';
-import { pageSummaryOf } from '../../../session/trail/menus/pageMenu';
-import { BranchRows } from './BranchRows';
+import { pageSlotOf } from '../../../session/pageSlot';
 import type { CurrentSign } from './currentSign';
 
 type Props = {
   readonly session: Session;
   readonly pages: ReadonlyArray<Page>;
-  readonly summaries: PageSummaries;
+  readonly facts: PageCountFacts;
   readonly sign: CurrentSign;
-  readonly hasBranchRows?: boolean;
   readonly onOpened?: () => void;
 };
 
-const iconClassOf = ({ page }: { readonly page: Page }): string =>
-  page.tint === null ? 'text-muted-foreground' : lensIconClass({ lens: page.tint });
-
-type ToneParams = {
-  readonly isWarning: boolean;
-  readonly isRunning: boolean;
-};
-
-const valueToneOf = ({ isWarning, isRunning }: ToneParams): string => {
-  if (isWarning) {
-    return 'needs-you';
-  }
-  return isRunning ? 'running' : 'count';
-};
-
-export const SessionPages = ({
-  session,
-  pages,
-  summaries,
-  sign,
-  hasBranchRows = true,
-  onOpened,
-}: Props) => {
+export const SessionPages = ({ session, pages, facts, sign, onOpened }: Props) => {
   const sessionId = session.id as SessionId;
-  const mountCount = useAppStore((state) => state.sessionProjectMounts?.[sessionId]?.length ?? 0);
-  const branchName = useAppStore((state) =>
-    singleBranchName({
-      mounts: state.sessionProjectMounts?.[sessionId] ?? EMPTY_ARRAY,
-      sessionBranch: state.sessionBranches[sessionId] ?? null,
-    }),
-  );
-  const diff = sumMountDiffStats({ stats: useMountDiffStats(sessionId) });
 
   const openPage = (page: Page) => {
-    openLens({ sessionId, lens: page.lens });
-    const state = useAppStore.getState();
-    state.setFocusedArtifactId(sessionId, null);
-    state.setFocusedWorkflowRun(sessionId, null);
+    openSessionPage({ sessionId, page });
     onOpened?.();
   };
 
   return (
-    <ul
-      aria-label="Pages"
-      className="flex flex-col motion-safe:animate-nav-step-in"
-      data-testid="session-pages"
-    >
+    <ul aria-label="Pages" className="flex flex-col" data-testid="session-pages">
       {pages.map((page) => {
         const Icon = page.icon;
         const isCurrent = sign === page.id;
-        const count = pageSummaryOf({ summaries, page });
-        const isWarning = page.id === 'questions';
-        const isRunning = page.id === 'runs' && count !== null && isRunningWord({ word: count });
-        const isBranchName = page.id === 'branch' && count !== null && count === branchName;
-        const { head, tail } = splitBranchLabel({ branch: isBranchName ? count : '' });
-        const hasDiff =
-          page.id === 'branch' && mountCount < 2 && (diff.additions > 0 || diff.deletions > 0);
+        const slot = pageSlotOf({ page: page.count, facts });
         return (
           <li key={page.id}>
             <SelectableRow
               selected={isCurrent}
               ariaCurrent={isCurrent ? 'page' : undefined}
+              {...(slot.fact !== null && { title: slot.fact })}
               onClick={() => openPage(page)}
               className="h-7 items-center gap-2 px-2 text-label"
             >
-              <Icon
-                size={ICON_SIZE.row}
-                aria-hidden
-                className={cn('box-content shrink-0 p-px', iconClassOf({ page }))}
-              />
+              <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0" />
               <span className="min-w-0 flex-1 truncate">{page.label}</span>
-              {count === null ? null : (
-                <span
-                  data-page-value={page.id}
-                  data-tone={valueToneOf({ isWarning, isRunning })}
-                  className={cn(
-                    'flex min-w-0 items-center justify-end',
-                    isBranchName ? 'max-w-[60%] text-code' : 'shrink-0 text-meta tabular-nums',
-                    isWarning && 'text-warning',
-                    isRunning && tintClasses('info').text,
-                    !isWarning && !isRunning && 'text-faint-foreground',
-                  )}
-                >
-                  {isBranchName ? (
-                    <>
-                      <span className="truncate">{head}</span>
-                      {tail === '' ? null : <span className="shrink-0">{tail}</span>}
-                    </>
-                  ) : (
-                    count
-                  )}
-                </span>
-              )}
-              {hasDiff ? <DiffStat additions={diff.additions} deletions={diff.deletions} /> : null}
+              <span
+                data-page-value={page.id}
+                data-tone={slot.isWarning ? 'warning' : slot.isRunning ? 'running' : 'count'}
+                className="flex w-10 shrink-0 items-center justify-end gap-1 text-meta tabular-nums text-faint-foreground"
+              >
+                {slot.isRunning ? <StatusDot tone="info" size="sm" /> : null}
+                {slot.isWarning ? <StatusDot tone="warning" size="sm" /> : null}
+                {slot.count === null ? null : <span>{slot.count}</span>}
+              </span>
             </SelectableRow>
-            {hasBranchRows && page.id === 'branch' && isCurrent && mountCount > 1 ? (
-              <BranchRows sessionId={sessionId} />
-            ) : null}
           </li>
         );
       })}
