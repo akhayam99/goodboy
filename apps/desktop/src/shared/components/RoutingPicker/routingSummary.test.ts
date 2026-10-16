@@ -18,7 +18,26 @@ const catalogModel = ({ provider, key }: FindParams): CatalogModel => {
   return model;
 };
 
+type VerbosityParams = {
+  readonly verbosity: 'normal' | 'brief';
+};
+
 describe('routingSummary', () => {
+  it('hides the default verbosity and names one that changed', () => {
+    const labelOf = ({ verbosity }: VerbosityParams) =>
+      routingTriggerLabel({
+        model: null,
+        modelId: 'claude-opus-4-1',
+        selection: { key: 'claude-opus-4-1' },
+        effort: 'high',
+        showEffort: true,
+        verbosity,
+      });
+    expect(labelOf({ verbosity: 'normal' }).detail).toEqual(['High']);
+    expect(labelOf({ verbosity: 'brief' }).detail).toHaveLength(2);
+    expect(labelOf({ verbosity: 'brief' }).detail).not.toContain('Normal');
+  });
+
   it('humanizes a model the catalog does not carry', () => {
     const label = routingTriggerLabel({
       model: null,
