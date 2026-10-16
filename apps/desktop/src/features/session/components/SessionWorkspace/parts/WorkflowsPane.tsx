@@ -36,7 +36,6 @@ export const WorkflowsPane = ({ session, isActive = true }: Props) => {
   return (
     <PaneShell
       title={NAMES.runs}
-      meta={hasRuns ? attachedRuns.length : undefined}
       actions={hasRuns ? <WorkflowAttachButton sessionId={sessionId} placement="header" /> : null}
     >
       {hasRuns ? (

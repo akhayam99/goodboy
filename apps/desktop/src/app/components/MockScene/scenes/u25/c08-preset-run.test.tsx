@@ -81,6 +81,7 @@ describe('the c08 preset run scenes', () => {
     await mount('c08-runs');
 
     expect(levelOf()).toBe('session');
+    expect(document.querySelector('[data-slot="pane-meta"]')).toBeNull();
     const grid = screen.getByRole('list', { name: 'Runs' });
     expect(within(grid).getByRole('heading', { name: 'In progress' })).toBeDefined();
     expect(within(grid).getByRole('heading', { name: 'Finished' })).toBeDefined();

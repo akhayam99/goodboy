@@ -166,12 +166,15 @@ const QUESTION: OpenQuestion = {
 };
 
 describe('SPEC3 9.4 run rows stay reachable from the preset run level', () => {
-  it('Runs list: active and Finished groups with the count in the header', async () => {
+  it('Runs list: active and Finished groups each carry their count', async () => {
     await mount('c08-runs');
     const grid = within(screen.getByRole('list', { name: 'Runs' }));
-    expect(grid.getByRole('heading', { name: 'In progress' })).toBeDefined();
-    expect(grid.getByRole('heading', { name: 'Finished' })).toBeDefined();
-    expect(nodeOf('[data-slot="pane-header"]').textContent).toMatch(/4$/);
+    const countOf = (label: string) =>
+      grid.getByRole('heading', { name: label }).parentElement?.nextElementSibling?.textContent;
+    expect(countOf('In progress')).toBe('2');
+    expect(countOf('Finished')).toBe('1');
+    expect(countOf('Archived')).toBe('1');
+    expect(document.querySelector('[data-slot="pane-meta"]')).toBeNull();
   });
 
   it('Queued manual run: the list says it waits, its tail starts it', async () => {
