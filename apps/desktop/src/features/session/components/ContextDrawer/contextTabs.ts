@@ -4,13 +4,6 @@ export type ContextSlotKey = 'goal' | 'decisions' | 'last_output_summary';
 
 export type ContextSlotTab = Exclude<ContextDrawerTab, 'learned'>;
 
-export const CONTEXT_TABS: ReadonlyArray<ContextDrawerTab> = [
-  'goal',
-  'decisions',
-  'summary',
-  'learned',
-];
-
 export const CONTEXT_TAB_LABEL: Readonly<Record<ContextDrawerTab, string>> = {
   goal: 'Goal',
   decisions: 'Decisions',

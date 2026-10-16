@@ -78,8 +78,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     { count: 1, reason: 'debt' },
   'apps/desktop/src/features/session/components/SessionWorkspace/parts/FileVersionsPane/index.tsx':
     { count: 1, reason: 'debt' },
-  'apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/TimelineDayRule.tsx':
-    { count: 1, reason: 'chrome' },
   'apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitDetail.tsx': {
     count: 2,
     reason: 'debt',

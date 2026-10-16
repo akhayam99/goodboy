@@ -692,8 +692,8 @@ the PDF. Goodboy also keeps a copy of every artifact on disk, under the
 workspace folder described in
 [architecture.md](architecture.md#on-disk-data-layout): the Details panel
 shows its path under **File**, with **Open in browser** and **Show in
-Finder** next to it. The lens header also has **Show in Finder**, a button, for
-the whole workspace folder at once. Every write to a plan, report or
+Finder** next to it. The **New** menu of the lens header ends with **Show in
+Finder** for the whole workspace folder at once. Every write to a plan, report or
 wireframe keeps its own row in `artifact_revisions`
 ([architecture.md](architecture.md#on-disk-data-layout)): the Details panel
 lists them newest first once there is more than one, names who wrote each

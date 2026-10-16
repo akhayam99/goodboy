@@ -4,7 +4,6 @@ import type { Session, SessionExternalTask } from '@goodboy/types';
 import { useAppStore } from '../../../../../store/store';
 import { GoalTeaser } from '../../../../../features/session/components/SessionOverviewPane/GoalTeaser';
 import { GoalFromWorkCard } from '../../../../../features/session/components/SessionOverviewPane/GoalFromWorkCard';
-import { OverviewPageActions } from '../../../../../features/session/components/SessionOverviewPane/OverviewPageActions';
 import type { IssueBriefSource } from '../../../../../store/slices/issue-briefs/types';
 import { SESSION, seedWorkflowScene } from '../workflowSeed';
 import { sceneClock } from '../../sceneClock';
@@ -109,10 +108,7 @@ export const GoalFromWorkScene = ({ variant }: Props) => {
     <main className="flex min-h-screen flex-col gap-4 bg-background text-foreground">
       <PageColumn>
         <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            <h1 className="min-w-0 flex-1 text-title">{session.goal}</h1>
-            <OverviewPageActions session={session} />
-          </div>
+          <h1 className="min-w-0 text-title">{session.goal}</h1>
           {variant === 'hint' ? (
             <GoalTeaser session={session} />
           ) : (

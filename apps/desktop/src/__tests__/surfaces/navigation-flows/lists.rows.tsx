@@ -1,5 +1,5 @@
 import { expect } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import type { AgentId, ArtifactId, IsoDateTime, ReportArtifact, SessionId } from '@goodboy/types';
 import {
   type BridgeArgs,
@@ -98,7 +98,12 @@ export const LISTS_ROWS: ReadonlyArray<Row> = [
     lands: async () => {
       expect(screen.queryByRole('button', { name: `Delete ${REPORT_TITLE}` })).toBeNull();
 
-      await clickButton(`More for ${REPORT_TITLE}`);
+      const row = await screen.findByRole('button', {
+        name: new RegExp(`^Report ${REPORT_TITLE}`),
+      });
+      act(() => {
+        fireEvent.contextMenu(row);
+      });
       await click(await screen.findByRole('menuitem', { name: /^Delete\b/ }));
       await waitFor(() => expect(rowTitled(REPORT_TITLE)).toBeNull(), WAIT);
 

@@ -104,8 +104,8 @@ describe('needsYouOwners', () => {
       events: [],
     });
 
-    expect(owners.map((owner) => [owner.id, owner.kind, owner.text])).toEqual([
-      ['run:1', 'run', 'Retry policy for payments-api · 2 questions'],
+    expect(owners.map((owner) => [owner.id, owner.kind, owner.text, owner.where])).toEqual([
+      ['run:1', 'run', 'Which retry cap for cap?', 'Retry policy for payments-api'],
     ]);
     expect(owners[0]?.question?.id).toBe('cap');
   });
@@ -123,8 +123,8 @@ describe('needsYouOwners', () => {
       events: [],
     });
 
-    expect(owners.map((owner) => [owner.id, owner.text])).toEqual([
-      ['agent:solo', 'Step solo · 1 question'],
+    expect(owners.map((owner) => [owner.id, owner.text, owner.where])).toEqual([
+      ['agent:solo', 'Which retry cap for cap?', 'Step solo'],
     ]);
   });
 
@@ -163,11 +163,11 @@ describe('needsYouOwners', () => {
     const owners = needsYouOwners({ items: [], entries: [open, answered], events: [] });
 
     expect(owners.map((owner) => [owner.id, owner.kind, owner.text])).toEqual([
-      ['question:cap', 'question', 'Question · Which retry cap for cap?'],
+      ['question:cap', 'question', 'Which retry cap for cap?'],
     ]);
   });
 
-  it('keeps a stopped rebase with its repeats and drops it once a later outcome settled it', () => {
+  it('keeps a stopped rebase without its repeat count and drops it once a later outcome settled it', () => {
     const stopped = event({
       id: 'ev-1',
       kind: 'history_stopped',
@@ -192,7 +192,7 @@ describe('needsYouOwners', () => {
     const settled = needsYouOwners({ items: [stopRow], entries: [], events: [stopped, rewritten] });
 
     expect(open.map((owner) => [owner.kind, owner.text])).toEqual([
-      ['rebase', 'Rebase of feat/export stopped ×2'],
+      ['rebase', 'Rebase of feat/export stopped'],
     ]);
     expect(settled).toEqual([]);
   });
@@ -312,9 +312,7 @@ describe('needsYouOwners', () => {
         resolveFactsByAgentId: new Map([one.facts]),
       });
 
-      expect(owners.map((owner) => owner.text)).toEqual([
-        '#318 · 6 need you · 5 to review · 1 question',
-      ]);
+      expect(owners.map((owner) => owner.text)).toEqual(['#318 · 5 to review · 1 question']);
       expect(owners[0]?.kind).toBe('fixRun');
     });
 
@@ -388,8 +386,8 @@ describe('needsYouOwners', () => {
       });
 
       expect(owners.map((owner) => owner.text)).toEqual([
-        "#318 · 6 need you · 4 to review · 2 couldn't fix",
-        "#402 · 2 need you · 2 couldn't fix",
+        "#318 · 4 to review · 2 couldn't fix",
+        "#402 · 2 couldn't fix",
       ]);
       expect(owners[0]?.owed?.target?.threadId).toBe('t1');
     });

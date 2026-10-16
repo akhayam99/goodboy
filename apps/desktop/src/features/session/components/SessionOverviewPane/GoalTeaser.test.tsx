@@ -21,11 +21,9 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { GoalTeaser } from './GoalTeaser';
-import { ToastProvider } from '../../../../shared/components/Toast';
 import { GoalTab } from '../ContextDrawer/GoalTab';
 import { bindTarget, runObjectAction } from '../../../actions/registry';
 import type { ActionEnv } from '../../../actions/types';
-import { OverviewPageActions } from './OverviewPageActions';
 
 let store: StoryStore;
 const session = aSession({ goal: 'Untitled session' });
@@ -360,17 +358,6 @@ describe('GoalTeaser on the real store', () => {
     expect(screen.getByText('Write the title and goal from HL-204 and 5 more?')).toBeDefined();
     await ready();
     expect(screen.getByText('Based on the first five linked issues.')).toBeDefined();
-  });
-  it('shows the action as a word in the Overview header when it is the only one', () => {
-    store.setState({ sessionExternalTasks: { [session.id]: TASKS } });
-    render(
-      <ToastProvider>
-        <OverviewPageActions session={session} />
-      </ToastProvider>,
-    );
-    expect(
-      screen.getByRole('button', { name: 'Write title and goal from linked work' }),
-    ).toBeDefined();
   });
   it('starts the proposal through the Goal tab button', async () => {
     store.setState({ sessionExternalTasks: { [session.id]: TASKS } });

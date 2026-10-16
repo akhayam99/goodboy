@@ -17,7 +17,6 @@ import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
 import type { TimelineOpenTarget } from '../../../../hooks/useTimelineOpen';
 import { railColumnX, type RailRow } from '../../../../../workTreeModel/railGeometry';
 import { TIMELINE_RHYTHM } from '../../../../../workTreeModel/timelineRhythm';
-import { rowStateTone } from '../../../../../workTreeModel/rowStateCopy';
 import { eventMatches } from '../../../../../../shared/keyboard/dispatcher';
 import { SHORTCUTS } from '../../../../../../shared/keyboard/registry';
 import { ActionColumnContext } from './ActionColumnContext';
@@ -97,11 +96,6 @@ export const TimelineStreamRow = ({
     hasUnread: item.hasUnread,
   });
   const boxHeight = TIMELINE_RHYTHM.grade[item.grade].height;
-  const isWaiting =
-    item.rowState.phase === 'waiting' &&
-    item.rowState.ask?.kind !== 'reviewComment' &&
-    item.rowState.ask?.kind !== 'groupChild' &&
-    rowStateTone({ state: item.rowState }) === 'warning';
   const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
     card.handlers.onKeyDown(event);
     if (event.defaultPrevented) {
@@ -128,8 +122,7 @@ export const TimelineStreamRow = ({
   const contentClassName = cn(
     'flex min-w-0 flex-1 items-center gap-2 rounded-md pl-2 pr-2 text-left',
     openTarget == null ? null : ROW_INTERACTIVE,
-    isWaiting && tintClasses('warning').bgSoft,
-    !isWaiting && item.hasUnread && tintClasses('primary').bgSoft,
+    item.hasUnread && tintClasses('primary').bgSoft,
   );
   const content = (
     <>

@@ -29,10 +29,10 @@ describe('ArtifactScoutList', () => {
     const reason = screen.getByTestId('artifact-scout-reason');
     const summary = entry.firstElementChild;
 
-    expect(reason.textContent).toBe(REASON);
+    expect(reason.textContent).toBe(`${REASON.charAt(0).toUpperCase()}${REASON.slice(1)}`);
     expect(summary?.contains(reason)).toBe(false);
-    expect(summary?.textContent).toContain('screens and routes');
-    expect(summary?.textContent).toContain('done · 14s · 8 of 11 claims verified');
+    expect(summary?.textContent).toContain('Screens and routes');
+    expect(summary?.textContent).toContain('Done · 14s · 8 of 11 claims verified');
     expect(entry.className).toContain('flex-col');
   });
 
@@ -40,7 +40,9 @@ describe('ArtifactScoutList', () => {
     render(<ArtifactScoutList rows={[row]} emptyLine="nothing read anything" />);
     const reason = screen.getByTestId('artifact-scout-reason');
     expect(reason.getAttribute('title')).toBeNull();
-    expect(tooltipTextOf({ element: asCutText({ element: reason }) })).toBe(REASON);
+    expect(tooltipTextOf({ element: asCutText({ element: reason }) })).toBe(
+      `${REASON.charAt(0).toUpperCase()}${REASON.slice(1)}`,
+    );
     expect(reason.className).toContain('truncate');
   });
 
@@ -61,13 +63,13 @@ describe('ArtifactScoutList', () => {
       />,
     );
     expect(screen.queryByTestId('artifact-scout-reason')).toBeNull();
-    expect(screen.getByTestId('artifact-scout-row').textContent).toContain('screens and routes');
+    expect(screen.getByTestId('artifact-scout-row').textContent).toContain('Screens and routes');
   });
 
   it('says the session read no repository when there is no scout at all', () => {
     render(<ArtifactScoutList rows={[]} emptyLine="no scout read a repository for this one" />);
     expect(screen.getByTestId('artifact-scouts-empty').textContent).toBe(
-      'no scout read a repository for this one',
+      'No scout read a repository for this one',
     );
     expect(screen.queryByTestId('artifact-scouts')).toBeNull();
   });

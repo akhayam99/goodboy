@@ -8,7 +8,6 @@ import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 import {
   ACTIVITY_VIEWS,
   ACTIVITY_VIEW_LABEL,
-  entriesOfView,
   type ActivityView,
 } from '../../../../timeline/activityView';
 import { countRowIdOf } from '../../../../timeline/buildTimelineStream';
@@ -86,16 +85,6 @@ export const TimelinePane = ({ session, lead = null, onShownQuestionsChange }: P
   const hasUnreadAgents = rows.unreadAgentIds.size > 0;
   const isLoading = !rows.isLoaded && entries.length === 0;
   const isSearching = view === 'log' && query.trim() !== '';
-  const hasLogEntries = useMemo(
-    () =>
-      entriesOfView({
-        entries,
-        events: rows.events,
-        view: 'log',
-        liveAgentIds: rows.liveAgentIds,
-      }).length > 0,
-    [entries, rows.events, rows.liveAgentIds],
-  );
 
   return (
     <ActionColumnContext.Provider value={hasActionColumn}>
@@ -132,13 +121,7 @@ export const TimelinePane = ({ session, lead = null, onShownQuestionsChange }: P
         {isLoading ? (
           <TimelineSkeleton />
         ) : viewEntries.length === 0 ? (
-          <TimelineEmpty
-            view={view}
-            isSearching={isSearching}
-            hasLogEntries={hasLogEntries}
-            onSeeLog={() => setView('log')}
-            onClearSearch={() => setQuery('')}
-          />
+          <TimelineEmpty view={view} isSearching={isSearching} onClearSearch={() => setQuery('')} />
         ) : (
           <div className="flex flex-col gap-1">
             <WorkTimeProvider sessionId={sessionId} workspaceId={session.workspaceId}>

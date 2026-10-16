@@ -1,7 +1,5 @@
-import { ChevronRight } from 'lucide-react';
 import type { Agent, AgentId, OpenQuestionId } from '@goodboy/types';
-import { cn, Eyebrow, ScrollFade } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { Eyebrow, ScrollFade } from '@goodboy/ui';
 import { NAMES } from '../../../../../shared/names';
 import { formatAge } from '../../../../../shared/utils/time/formatAge';
 import { classifyAgent, type AgentKind } from '../../../agent-kind';
@@ -14,8 +12,6 @@ type Props = {
   readonly agents: ReadonlyArray<Agent>;
   readonly kindOverrides: Readonly<Record<AgentId, AgentKind>>;
   readonly selectedId: OpenQuestionId | null;
-  readonly isAnsweredOpen: boolean;
-  readonly onToggleAnswered: () => void;
   readonly onSelect: (id: OpenQuestionId) => void;
   readonly onUndo: (row: QuestionRow) => void;
 };
@@ -25,8 +21,6 @@ export const QuestionsQueue = ({
   agents,
   kindOverrides,
   selectedId,
-  isAnsweredOpen,
-  onToggleAnswered,
   onSelect,
   onUndo,
 }: Props) => {
@@ -39,61 +33,43 @@ export const QuestionsQueue = ({
         key={row.question.id}
         row={row}
         isSelected={row.question.id === selectedId}
-        askerName={asker?.name ?? null}
         askerKind={
           asker === null
             ? null
             : classifyAgent({ agent: asker, override: kindOverrides[asker.id] ?? null })
         }
-        age={formatAge({ from: row.question.createdAt, now }).replace(/ ago$/, '')}
+        age={formatAge({ from: row.question.createdAt, now })}
         onSelect={() => onSelect(row.question.id)}
         onUndo={row.kind === 'staged' || row.kind === 'dismissed' ? () => onUndo(row) : null}
       />
     );
   };
-  const answeredCount = model.answered.length + model.recent.length;
+  const answered = [...model.recent, ...model.answered];
+  const groups = [
+    { key: 'waiting', label: NAMES.needsYou, rows: model.waiting },
+    { key: 'delegated', label: 'With an agent', rows: model.delegated },
+    { key: 'answered', label: 'Answered', rows: answered },
+  ].filter((group) => group.rows.length > 0);
+  const hasLabels = groups.length > 1;
 
   return (
     <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
-      <section aria-label="Questions" className="flex flex-col gap-1 px-2 pb-3">
-        {model.waiting.length > 0 && (
-          <div className="flex flex-col gap-0.5">
-            <span className="flex items-center gap-2 px-3 pb-1 pt-2">
-              <Eyebrow label={NAMES.needsYou} />
-              <span className="text-chip text-faint-foreground">{model.waiting.length}</span>
-            </span>
-            {model.waiting.map(renderRow)}
+      <section aria-label="Questions" className="flex flex-col gap-3 pb-3">
+        {groups.map((group) => (
+          <div key={group.key} className="flex flex-col gap-0.5">
+            {hasLabels ? (
+              <span className="flex h-7 items-center gap-2 px-3">
+                <Eyebrow label={group.label} />
+                {group.rows.length > 1 ? (
+                  <span className="text-chip tabular-nums text-faint-foreground">
+                    {group.rows.length}
+                  </span>
+                ) : null}
+              </span>
+            ) : null}
+            {group.rows.map(renderRow)}
           </div>
-        )}
-        {model.delegated.length > 0 && (
-          <div className="flex flex-col gap-0.5">
-            <span className="flex items-center gap-2 px-3 pb-1 pt-2">
-              <Eyebrow label="With an agent" />
-              <span className="text-chip text-faint-foreground">{model.delegated.length}</span>
-            </span>
-            {model.delegated.map(renderRow)}
-          </div>
-        )}
-        {answeredCount > 0 && (
-          <div className="flex flex-col gap-0.5">
-            <button
-              type="button"
-              aria-expanded={isAnsweredOpen}
-              onClick={onToggleAnswered}
-              className="flex items-center gap-2 rounded-md px-3 pb-1 pt-2 text-faint-foreground hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-            >
-              <ChevronRight
-                size={ICON_SIZE.row}
-                aria-hidden
-                className={cn('motion-safe:transition-transform', isAnsweredOpen && 'rotate-90')}
-              />
-              <Eyebrow label="Answered" />
-              <span className="text-chip">{answeredCount}</span>
-            </button>
-            {model.recent.map(renderRow)}
-            {isAnsweredOpen && model.answered.map(renderRow)}
-          </div>
-        )}
+        ))}
       </section>
     </ScrollFade>
   );

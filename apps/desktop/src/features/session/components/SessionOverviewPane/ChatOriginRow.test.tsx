@@ -110,13 +110,13 @@ describe('ChatOriginRow', () => {
     expect(buttons[0]?.textContent).not.toMatch(/·/);
   });
 
-  it('says Fed by chat only when no chat started the session', () => {
+  it('says From chat also when the chat only fed the session', () => {
     useAppStore.setState({
       chatLinks: { ['chat-rounding' as ChatId]: [linkOf('chat-rounding', 'add')] },
     });
     render(<ChatOriginRow session={SESSION} />);
 
-    expect(screen.getByRole('button').textContent).toBe('Fed by chat: Ledger rounding');
+    expect(screen.getByRole('button').textContent).toBe('From chat: Ledger rounding');
   });
 
   it('keeps the other chats in a popover behind +1 more', () => {
@@ -131,7 +131,7 @@ describe('ChatOriginRow', () => {
     expect(screen.queryByText(/Ledger rounding/)).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: '+1 more' }));
     const popover = screen.getByRole('dialog', { name: 'Other chats' });
-    fireEvent.click(within(popover).getByRole('button', { name: 'Fed by chat: Ledger rounding' }));
+    fireEvent.click(within(popover).getByRole('button', { name: 'From chat: Ledger rounding' }));
 
     expect(useAppStore.getState().appStudio).toEqual({ kind: 'chat', chatId: 'chat-rounding' });
   });

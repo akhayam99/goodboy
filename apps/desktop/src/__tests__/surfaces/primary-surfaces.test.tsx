@@ -370,7 +370,7 @@ describe('primary surfaces mount on real store selectors', () => {
   });
 
   it.each(['goal', 'decisions', 'summary'] as const)(
-    'opens the %s tab of the context drawer',
+    'opens the context drawer at its %s section',
     async (tab) => {
       const sessionId = seedSessionWithMounts({ useAppStore });
 
@@ -381,8 +381,10 @@ describe('primary surfaces mount on real store selectors', () => {
       });
 
       expect(
-        screen.getByRole('tab', { name: CONTEXT_TAB_LABEL[tab] }).getAttribute('aria-selected'),
-      ).toBe('true');
+        screen
+          .getByRole('region', { name: CONTEXT_TAB_LABEL[tab] })
+          .getAttribute('data-context-section'),
+      ).toBe(tab);
       expectNoRenderLoop();
     },
   );

@@ -40,8 +40,8 @@ const reasonSentence = ({ reason }: ReasonParams): string | null => {
       return null;
     case 'budget':
       return reason.limitUsd == null
-        ? 'Paused at the spend cap'
-        : `Paused at the ${formatUsd(reason.limitUsd)} spend cap`;
+        ? 'Paused at the limit'
+        : `Paused at the ${formatUsd(reason.limitUsd)} limit`;
     case 'failed':
       return 'Failed';
     case 'blocked':
@@ -107,7 +107,7 @@ const reasonShortSentence = ({ reason }: ReasonParams): string | null => {
     case 'openQuestions':
       return null;
     case 'budget':
-      return 'At spend cap';
+      return 'At the limit';
     case 'paused':
       return 'Paused';
     case 'planReady':

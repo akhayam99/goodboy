@@ -25,6 +25,10 @@ type Props = {
   readonly sessionId: SessionId;
 };
 
+const MIN_SHOWN_USD = 0.005;
+
+const UNSPENT_LABEL = 'Limit';
+
 type EditRequestParams = {
   readonly event: Event;
   readonly sessionId: SessionId;
@@ -74,6 +78,8 @@ export const SessionCostChip = ({ sessionId }: Props) => {
   );
   const presentation = sessionSpendPresentation({ totalUsd: spend.totalUsd, limit });
   const fill = Math.min(presentation.ratio ?? 0, 1) * 100;
+  const isUnspent = limit === null && spend.totalUsd < MIN_SHOWN_USD;
+  const shownLabel = isUnspent ? UNSPENT_LABEL : presentation.label;
 
   useEffect(() => {
     const previous = previousTotalRef.current;
@@ -140,7 +146,11 @@ export const SessionCostChip = ({ sessionId }: Props) => {
       className="flex max-h-[32rem] flex-col bg-subtle"
       trigger={
         <Tooltip
-          content={`${formatUsdPrecise(spend.totalUsd)} spent in this session`}
+          content={
+            isUnspent
+              ? 'Nothing spent in this session yet. Set a limit'
+              : `${formatUsdPrecise(spend.totalUsd)} spent in this session`
+          }
           isSuppressed={open}
         >
           <button
@@ -149,7 +159,7 @@ export const SessionCostChip = ({ sessionId }: Props) => {
             onClick={toggle}
             aria-haspopup="dialog"
             aria-expanded={open}
-            aria-label={`Spend ${presentation.label}`}
+            aria-label={`Spend ${shownLabel}`}
             data-level={presentation.level}
             className={cn(
               chipClasses({
@@ -163,7 +173,7 @@ export const SessionCostChip = ({ sessionId }: Props) => {
           >
             {glyph}
             <span key={tick} className={tick > 0 ? 'cost-tick' : undefined}>
-              {presentation.label}
+              {shownLabel}
             </span>
             {presentation.ratio === null ? null : (
               <span

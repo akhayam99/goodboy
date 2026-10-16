@@ -75,11 +75,9 @@ describe('the plan owner scene', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Review plan' }));
 
-    const chip = await screen.findByTestId('artifact-state-chip');
-    expect(chip.textContent).toContain('Approved');
-    expect(screen.getByTestId('plan-drawer-reason').textContent).toContain(
-      'The run is choosing the next step',
-    );
+    const reason = await screen.findByTestId('plan-drawer-reason');
+    expect(screen.queryByTestId('artifact-state-chip')).toBeNull();
+    expect(reason.textContent).toContain('The run is choosing the next step');
     expect(screen.queryByTestId('plan-primary')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Run plan' })).toBeNull();
   });

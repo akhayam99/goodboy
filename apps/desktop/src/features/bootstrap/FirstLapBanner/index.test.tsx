@@ -10,7 +10,7 @@ vi.mock('@goodboy/db', async () => (await import('../../../store/storyHarness'))
 vi.mock('../hooks/useBootstrapWatch', () => ({ useBootstrapWatch: () => undefined }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import type { BootstrapPhase, RemoteProbe, WorkspaceGitStatus } from '@goodboy/types';
 import { aProject, aSession, TEST_NOW } from '@goodboy/types/testing';
 import {
@@ -94,16 +94,10 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('FirstLapBanner', () => {
-  it('says where the session works in one notice and leaves Publish to the Projects row', () => {
+  it('leaves an unpublished first lap to the Overview notice, with no banner of its own', () => {
     const { container } = render(<FirstLapBanner sessionId={session.id} />);
 
-    const notice = container.querySelector('[data-placement]');
-    expect(notice?.getAttribute('data-tone')).toBe('info');
-    expect(container.firstElementChild).toBe(notice?.parentElement);
-    expect(
-      screen.getAllByText('Your work is in the project folder. Nothing is published yet.'),
-    ).toHaveLength(1);
-    expect(screen.queryByText('Nothing is published yet.')).toBeNull();
+    expect(container.textContent).toBe('');
     expect(screen.queryByRole('button', { name: 'Publish' })).toBeNull();
   });
 
@@ -115,34 +109,6 @@ describe('FirstLapBanner', () => {
     screen.getByRole('button', { name: 'Move my work' });
     expect(screen.queryByText(/Your work is in the project folder/)).toBeNull();
     expect(container.querySelectorAll('[data-placement]')).toHaveLength(1);
-  });
-
-  it('holds a placeholder while it checks a remote it has not read yet', () => {
-    seed({ hasRemote: true });
-    render(<FirstLapBanner sessionId={session.id} />);
-
-    screen.getByRole('status', { name: 'Checking the remote' });
-    expect(screen.queryByText("Couldn't check the remote")).toBeNull();
-  });
-
-  it('says it cannot check the remote as a notice, and tries again on demand', async () => {
-    seed({ hasRemote: true, probe: { kind: 'unreachable', reason: 'offline' } });
-    render(<FirstLapBanner sessionId={session.id} />);
-
-    screen.getByText("Couldn't check the remote");
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
-    });
-
-    await waitFor(() => screen.getByRole('button', { name: 'Move my work' }));
-    expect(screen.queryByText("Couldn't check the remote")).toBeNull();
-  });
-
-  it('stays quiet about the remote when the project has none', () => {
-    seed({ probe: { kind: 'unreachable', reason: 'offline' } });
-    render(<FirstLapBanner sessionId={session.id} />);
-
-    expect(screen.queryByText("Couldn't check the remote")).toBeNull();
   });
 
   it('resumes an interrupted move once and opens bootstrap when it finishes', async () => {

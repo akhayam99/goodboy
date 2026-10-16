@@ -3,15 +3,14 @@ import { MetaRow, SectionHeader, Skeleton, cn, PaneShell } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useSessionOpenQuestions } from '../../../../store';
 import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
+import { RelativeTime } from '../../../../shared/components/RelativeTime';
+import { ProviderGlyph } from '../../../../shared/components/RoutingPicker/ProviderGlyph';
 import { OpenQuestionCluster } from '../../../chat/components/ChatView/OpenQuestionCluster';
 import { modelLabel } from '../../../chat/utils/chat-constants';
-import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import type { ArtifactGeneration } from '../../artifactCollection';
-import { generationStateOf } from '../../artifactStateOf';
 import { ArtifactScouts } from '../ArtifactStudio/ArtifactScouts';
 import { ArtifactShellActions } from './ArtifactShellActions';
 import { ArtifactShellHeader } from './ArtifactShellHeader';
-import { ArtifactStateChip } from './ArtifactStateChip';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -30,7 +29,6 @@ export const ArtifactGenerationShell = ({ sessionId, generation }: Props) => {
       ),
     [sessionQuestions, generation.agentId],
   );
-  const provider = generation.provider === null ? null : PROVIDER_LABEL[generation.provider];
 
   return (
     <PaneShell
@@ -38,7 +36,7 @@ export const ArtifactGenerationShell = ({ sessionId, generation }: Props) => {
         <ArtifactShellHeader
           kind={generation.kind}
           title={generation.title}
-          chip={<ArtifactStateChip state={generationStateOf({ generation })} />}
+          chip={null}
           actions={
             <ArtifactShellActions
               target={{ kind: 'artifact', sessionId, subject: { kind: 'generation', generation } }}
@@ -47,13 +45,20 @@ export const ArtifactGenerationShell = ({ sessionId, generation }: Props) => {
           meta={
             <MetaRow
               items={[
-                provider === null ? null : <span key="provider">{provider}</span>,
                 generation.model === null ? null : (
-                  <span key="model">{modelLabel(generation.model, generation.provider)}</span>
+                  <span key="model" className="inline-flex items-center gap-1">
+                    {generation.provider === null ? null : (
+                      <ProviderGlyph id={generation.provider} />
+                    )}
+                    {modelLabel(generation.model, generation.provider)}
+                  </span>
                 ),
                 generation.startedAt === null ? null : (
                   <span key="started" className="tabular-nums">
-                    {formatDateTime({ at: generation.startedAt })}
+                    <RelativeTime
+                      iso={generation.startedAt}
+                      title={formatDateTime({ at: generation.startedAt, hasYear: true })}
+                    />
                   </span>
                 ),
               ]}

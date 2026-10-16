@@ -22,6 +22,7 @@ export const GoalAttachmentsStrip = ({ owner }: { readonly owner: GoalAttachment
   });
 
   const ownerType = owner.type;
+  const isReadOnly = ownerType === 'workflow_run';
   const ownerId = owner.id;
   useEffect(() => {
     void loadGoalAttachments({ type: ownerType, id: ownerId });
@@ -43,7 +44,7 @@ export const GoalAttachmentsStrip = ({ owner }: { readonly owner: GoalAttachment
             key={att.id}
             attachment={att}
             workingDir={workingDir}
-            onRemove={() => void removeGoalAttachment(owner, att.id)}
+            onRemove={isReadOnly ? null : () => void removeGoalAttachment(owner, att.id)}
           />
         ))}
       </div>
@@ -58,7 +59,7 @@ const GoalAttachmentChip = ({
 }: {
   readonly attachment: GoalAttachment;
   readonly workingDir: string | null;
-  readonly onRemove: () => void;
+  readonly onRemove: (() => void) | null;
 }) => {
   const thumbnail = useAttachmentThumbnail({
     kind: attachment.kind,
@@ -71,10 +72,10 @@ const GoalAttachmentChip = ({
     <AttachmentChip
       fileName={attachment.fileName}
       mimeType={attachment.mimeType}
-      thumbnail={attachment.kind === 'image' ? thumbnail : undefined}
+      thumbnail={attachment.kind === 'image' && onRemove !== null ? thumbnail : undefined}
       preview={thumbnail.status === 'ready' ? { src: thumbnail.src } : undefined}
       title={`${attachment.fileName}\nread by: ${readers}`}
-      onRemove={onRemove}
+      {...(onRemove === null ? {} : { onRemove })}
     />
   );
 };

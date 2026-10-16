@@ -10,6 +10,13 @@ type Props = {
   readonly label?: string;
 };
 
+type QuoteTextParams = {
+  readonly comment: ArtifactComment | undefined;
+};
+
+const quoteTextOf = ({ comment }: QuoteTextParams): string | null =>
+  comment === undefined || comment.anchor.kind !== 'quote' ? null : comment.anchor.text;
+
 export const CommentThread = ({ comments, isComposing, label }: Props) => {
   const api = usePlanCommentsApi();
   if (api === null || (comments.length === 0 && !isComposing)) {
@@ -21,10 +28,11 @@ export const CommentThread = ({ comments, isComposing, label }: Props) => {
       {label === undefined ? null : (
         <span className="text-meta text-faint-foreground">{label}</span>
       )}
-      {comments.map((comment) => (
+      {comments.map((comment, index) => (
         <CommentCard
           key={comment.id}
           comment={comment}
+          isQuoteShown={quoteTextOf({ comment }) !== quoteTextOf({ comment: comments[index - 1] })}
           revision={api.revision}
           onEdit={api.edit}
           onRemove={api.remove}

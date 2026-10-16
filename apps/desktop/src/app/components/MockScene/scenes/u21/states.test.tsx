@@ -76,7 +76,8 @@ describe('the u21 page-state scenes', () => {
     expect(
       await screen.findByRole('heading', { level: 2, name: 'No artifacts yet' }),
     ).toBeDefined();
-    expect(screen.getByRole('button', { name: 'New artifact' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'New artifact' })).toBeNull();
+    expect(screen.getByTestId('artifact-new')).toBeDefined();
   });
 
   it('shows Artifacts filtered to nothing and clears the filter', async () => {
@@ -110,13 +111,13 @@ describe('the u21 page-state scenes', () => {
   it('shows Activity with no runs or agents and points to the log that holds the branch facts', async () => {
     renderScene('activity-empty');
 
-    expect(await screen.findByText('No runs or agents yet')).toBeDefined();
+    expect(await screen.findByText('Nothing ran yet')).toBeDefined();
     expect(screen.queryByText('Nothing yet')).toBeNull();
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'See Log' }));
+      fireEvent.click(screen.getByRole('tab', { name: 'Log' }));
     });
 
-    expect(screen.queryByText('No runs or agents yet')).toBeNull();
+    expect(screen.queryByText('Nothing ran yet')).toBeNull();
     expect(screen.queryByText('No log entries yet')).toBeNull();
   });
 
@@ -156,6 +157,6 @@ describe('the u21 page-state scenes', () => {
 
     const card = await screen.findByRole('region', { name: 'Needs you' });
     expect(within(card).getAllByRole('button')).toHaveLength(2);
-    expect(within(card).getAllByTestId('tone-bar')).toHaveLength(1);
+    expect(within(card).queryByTestId('tone-bar')).toBeNull();
   });
 });

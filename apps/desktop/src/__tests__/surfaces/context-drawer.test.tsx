@@ -121,11 +121,8 @@ describe('Context drawer change marks', () => {
     expect(seenAt()).not.toBe(before);
     expect(dot()).toBeNull();
     const drawer = screen.getByRole('region', { name: 'Context' });
-    expect(
-      within(drawer)
-        .getByRole('tab', { name: /Decisions/ })
-        .getAttribute('aria-selected'),
-    ).toBe('true');
+    expect(within(drawer).queryByRole('tab', { name: /Decisions/ })).toBeNull();
+    expect(within(drawer).getByRole('region', { name: 'Decisions' })).toBeDefined();
     const changed = within(drawer).getByRole('region', { name: 'Changed since you last looked' });
     const labels = within(changed)
       .getAllByRole('button', { name: /: decision \d+$/ })
@@ -175,7 +172,7 @@ const persistSeenAt = () => {
 };
 
 describe('Context drawer mark as read', () => {
-  it('clears the changes section and the tab dot without closing the drawer', async () => {
+  it('clears the changes section without closing the drawer, the signal said once', async () => {
     const writes = persistSeenAt();
     renderSurface();
     await settle();
@@ -183,9 +180,7 @@ describe('Context drawer mark as read', () => {
     await settle();
     const drawer = screen.getByRole('region', { name: 'Context' });
     expect(changesRegion()).not.toBeNull();
-    expect(
-      within(drawer).getByRole('img', { name: 'Changed since you last looked' }),
-    ).toBeDefined();
+    expect(within(drawer).queryByRole('img', { name: 'Changed since you last looked' })).toBeNull();
 
     fireEvent.click(within(changesRegion()!).getByRole('button', { name: 'Mark as read' }));
 
@@ -266,7 +261,8 @@ describe('Context drawer summary', () => {
     await settle();
 
     const drawer = screen.getByRole('region', { name: 'Context' });
-    const sections = within(drawer)
+    const summary = within(drawer).getByRole('region', { name: 'Summary' });
+    const sections = within(summary)
       .getAllByRole('heading', { level: 3 })
       .map((heading) => heading.textContent);
     expect(sections).toEqual(['State4', 'Next3', 'Open questions1', 'Learned2']);

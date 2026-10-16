@@ -11,6 +11,7 @@ type Props = {
   readonly openPartsIds: ReadonlySet<string>;
   readonly onTogglePartsOf: (rowId: string) => void;
   readonly onOpenRow: (row: Row) => void;
+  readonly hasActionColumn: boolean;
 };
 
 const SHOW_BUTTON =
@@ -23,6 +24,7 @@ export const ArtifactListGroup = ({
   openPartsIds,
   onTogglePartsOf,
   onOpenRow,
+  hasActionColumn,
 }: Props) => {
   const headingId = useId();
   const listId = useId();
@@ -38,7 +40,9 @@ export const ArtifactListGroup = ({
       <div className="flex h-7 min-w-0 items-center gap-2">
         <h2 id={headingId} className="flex items-center gap-2 text-label text-muted-foreground">
           {ARTIFACT_GROUP_LABEL[group]}
-          <span className="tabular-nums text-faint-foreground">{rows.length}</span>
+          {rows.length > 1 ? (
+            <span className="tabular-nums text-faint-foreground">{rows.length}</span>
+          ) : null}
         </h2>
         {isTrash ? (
           <button
@@ -67,6 +71,7 @@ export const ArtifactListGroup = ({
                 isPartsOpen={openPartsIds.has(row.id)}
                 onTogglePartsOf={onTogglePartsOf}
                 onOpenRow={onOpenRow}
+                hasActionColumn={hasActionColumn}
               />
             </li>
           ))}

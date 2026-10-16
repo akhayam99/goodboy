@@ -424,7 +424,7 @@ describe('NextStepRow', () => {
     expect(tileClasses).toContain('bg-current/12');
   });
 
-  it('puts an icon on every primary button, the role icon or the suggestion icon', () => {
+  it('puts the label alone on every primary button, the tile carries the glyph', () => {
     const withRole: SuggestionActions = {
       primary: {
         label: 'Analyze',
@@ -448,7 +448,7 @@ describe('NextStepRow', () => {
         onNotNow={vi.fn()}
       />,
     );
-    expect(screen.getByRole('button', { name: 'Analyze' }).querySelector('svg')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Analyze' }).querySelector('svg')).toBeNull();
 
     view.rerender(
       <NextStepRow
@@ -459,7 +459,7 @@ describe('NextStepRow', () => {
         onNotNow={vi.fn()}
       />,
     );
-    expect(screen.getByRole('button', { name: 'Push' }).querySelector('svg')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Push' }).querySelector('svg')).toBeNull();
   });
 
   it('previews the role of an alternative on the tile while it is hovered or focused', () => {

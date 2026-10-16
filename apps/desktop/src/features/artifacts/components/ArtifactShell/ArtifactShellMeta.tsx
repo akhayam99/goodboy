@@ -4,25 +4,21 @@ import { RelativeTime } from '../../../../shared/components/RelativeTime';
 import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { planConsumerLabel, resolvePlanConsumer } from '../../../../shared/utils/planConsumer';
 import { modelLabel } from '../../../chat/utils/chat-constants';
+import type { ArtifactState } from '../../artifactStateOf';
+import { ArtifactStateWord } from './ArtifactStateWord';
 
 type Props = {
   readonly artifact: SessionArtifact;
   readonly plan: PlanWithCount | null;
   readonly agents: ReadonlyArray<Agent>;
+  readonly state: ArtifactState | null;
   readonly onOpenAgent: (agent: Agent) => void;
-  readonly onOpenDetails: () => void;
 };
 
 const LINK_CLASS =
   'min-w-0 truncate text-foreground underline decoration-border-soft underline-offset-3 hover:decoration-foreground';
 
-export const ArtifactShellMeta = ({
-  artifact,
-  plan,
-  agents,
-  onOpenAgent,
-  onOpenDetails,
-}: Props) => {
+export const ArtifactShellMeta = ({ artifact, plan, agents, state, onOpenAgent }: Props) => {
   const creator = agents.find((agent) => agent.id === artifact.agentId) ?? null;
   const lastConsumer = plan?.lastConsumer ?? null;
   const consumer =
@@ -38,6 +34,7 @@ export const ArtifactShellMeta = ({
   return (
     <MetaRow
       items={[
+        state === null ? null : <ArtifactStateWord key="state" state={state} />,
         creator === null ? (
           <span key="creator">an agent that is gone</span>
         ) : (
@@ -52,7 +49,7 @@ export const ArtifactShellMeta = ({
           </button>
         ),
         model === null ? null : <span key="model">{modelLabel(model)}</span>,
-        <span key="revision">rev {artifact.revision}</span>,
+        artifact.kind === 'wireframe' ? null : <span key="revision">rev {artifact.revision}</span>,
         <span key="created" className="tabular-nums">
           <RelativeTime
             iso={artifact.createdAt}
@@ -64,15 +61,6 @@ export const ArtifactShellMeta = ({
             {planConsumerLabel({ name: consumer.name, count: plan.consumptionCount })}
           </span>
         ),
-        <button
-          key="sources"
-          type="button"
-          className={LINK_CLASS}
-          onClick={onOpenDetails}
-          data-testid="artifact-built-from-link"
-        >
-          where it came from
-        </button>,
       ]}
     />
   );

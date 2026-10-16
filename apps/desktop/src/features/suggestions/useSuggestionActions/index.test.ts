@@ -247,7 +247,7 @@ describe('useSuggestionActions', () => {
       },
     });
 
-    expect(actions.primary?.label).toBe('Fix 3');
+    expect(actions.primary?.label).toBe('Fix');
     expect(actions.primary?.runsOn).toBeUndefined();
     await actions.primary?.run();
 

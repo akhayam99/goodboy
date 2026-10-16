@@ -62,7 +62,7 @@ describe('the p-0251 scenes', () => {
     expect(Object.keys(U25_P_0251_SCENES)).toEqual(['ask-reset', 'context-mark-read']);
   });
 
-  it('context-mark-read offers Mark as read in the changes section', async () => {
+  it('context-mark-read shows the decisions once read, with no changes group left', async () => {
     clearSceneInvoke();
     const Scene = U25_P_0251_SCENES['context-mark-read'];
     render(
@@ -71,12 +71,9 @@ describe('the p-0251 scenes', () => {
       </ToastProvider>,
     );
 
-    const changes = await screen.findByRole(
-      'region',
-      { name: 'Changed since you last looked' },
-      WAIT,
-    );
-    within(changes).getByRole('button', { name: 'Mark as read' });
+    await screen.findByRole('region', { name: 'Decisions' }, WAIT);
+    expect(screen.queryByRole('region', { name: 'Changed since you last looked' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Mark as read' })).toBeNull();
   });
 
   it('ask-reset shows a two turn chat with Reset chat in the header', async () => {

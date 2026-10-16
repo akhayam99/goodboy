@@ -72,7 +72,7 @@ describe('the u23 overview scenes', () => {
       within(popover)
         .getAllByRole('button')
         .map((button) => button.textContent),
-    ).toEqual(['Fed by chat: Ledger rounding', 'Fed by chat: Relay backoff notes']);
+    ).toEqual(['From chat: Ledger rounding', 'From chat: Relay backoff notes']);
     fireEvent.keyDown(popover, { key: 'Escape' });
   });
 });

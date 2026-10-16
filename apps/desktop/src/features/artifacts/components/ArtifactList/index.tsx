@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react';
-import { Button, EmptyLine, EmptyState, PaneShell, Notice, SkeletonRow } from '@goodboy/ui';
+import { Button, EmptyLine, EmptyState, PaneShell, Notice } from '@goodboy/ui';
 import type { ArtifactId, SessionId } from '@goodboy/types';
 import { WireframeImportNotice } from '../../../wireframes/components/WireframeImportNotice';
 import { useWireframeImport } from '../../../wireframes/useWireframeImport';
@@ -12,10 +12,9 @@ import {
   type ArtifactListCounts,
   type ArtifactListRow as Row,
 } from '../../artifactListRows';
-import { newArtifactEventName } from '../../newArtifactEventName';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { ArtifactFilterTabs } from '../ArtifactStudio/ArtifactFilterTabs';
-import { ArtifactListFolderButton } from './ArtifactListFolderButton';
+import { ArtifactListSkeleton } from './ArtifactListSkeleton';
 import { ArtifactListGroup } from './ArtifactListGroup';
 import { ArtifactNewMenu } from './ArtifactNewMenu';
 import { useArtifactParts } from './useArtifactParts';
@@ -74,17 +73,20 @@ export const ArtifactList = ({
   });
   const { openPartsIds, toggleParts } = useArtifactParts();
   const groups = useMemo(() => groupArtifactRows({ rows }), [rows]);
-  const openNewMenu = () => window.dispatchEvent(new CustomEvent(newArtifactEventName(sessionId)));
+  const hasActionColumn = rows.some(
+    (row) => row.group === 'needs' || row.group === 'deleted' || row.target.kind === 'generation',
+  );
 
   return (
     <PaneShell
       header={
         <div className="flex min-h-8 min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
           <h1 className="min-w-0 truncate text-title text-foreground">Artifacts</h1>
-          <ArtifactFilterTabs value={filter} counts={counts} onChange={onFilterChange} />
+          {counts.all === 0 ? null : (
+            <ArtifactFilterTabs value={filter} counts={counts} onChange={onFilterChange} />
+          )}
           <div className="ml-auto flex shrink-0 items-center gap-1">
             <ArtifactNewMenu sessionId={sessionId} onImportWireframe={importer.pick} />
-            <ArtifactListFolderButton sessionId={sessionId} />
           </div>
         </div>
       }
@@ -111,11 +113,7 @@ export const ArtifactList = ({
           </span>
         ) : null}
         {loadState === 'loading' ? (
-          <div aria-busy="true" className="flex flex-col gap-3">
-            {[0, 1, 2].map((index) => (
-              <SkeletonRow key={index} label="Loading artifacts" />
-            ))}
-          </div>
+          <ArtifactListSkeleton />
         ) : loadState === 'error' ? (
           <Notice
             tone="danger"
@@ -135,14 +133,10 @@ export const ArtifactList = ({
             icon={CONCEPT_ICONS.artifacts}
             title="No artifacts yet"
             description="Plans, reports and wireframes made in this session are kept here."
-            action={
-              <Button variant="primary" size="sm" onClick={openNewMenu}>
-                New artifact
-              </Button>
-            }
           />
         ) : rows.length === 0 ? (
           <EmptyLine
+            className="[&>p]:flex-none"
             action={
               filter === 'all' ? undefined : (
                 <Button variant="ghost" size="xs" onClick={() => onFilterChange('all')}>
@@ -164,6 +158,7 @@ export const ArtifactList = ({
                 openPartsIds={openPartsIds}
                 onTogglePartsOf={toggleParts}
                 onOpenRow={onOpen}
+                hasActionColumn={hasActionColumn}
               />
             ))}
           </div>

@@ -43,11 +43,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 2,
     reason: 'diff',
   },
-  'apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/TimelineStreamRow.tsx':
-    {
-      count: 1,
-      reason: 'debt',
-    },
 };
 
 type ListParams = {

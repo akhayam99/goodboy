@@ -8,7 +8,7 @@ type Props = {
 };
 
 export const WorkTimeCell = ({ time, cost = null, note = null }: Props) => {
-  if (time === null) {
+  if (time === null || time.label === '') {
     return null;
   }
   const isLeft = time.label.endsWith(TIME_LEFT_SUFFIX);

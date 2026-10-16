@@ -107,13 +107,21 @@ describe('SPEC3 9.3 Overview capabilities from the c05 Overview', () => {
     screen.getByRole('button', { name: /From chat: Payments retry design/ });
   });
 
-  it('keeps Write title and goal from linked work in the header and Context in the session tools', async () => {
+  it('keeps Write title and goal from linked work in the Context pane, opened from the session tools', async () => {
     await mountScene({ name: 'c05-overview-merged-next' });
 
-    header().getByRole('button', { name: 'Write title and goal from linked work' });
-    within(screen.getByRole('group', { name: 'Session tools' })).getByRole('button', {
-      name: /^Context/,
-    });
+    expect(
+      header().queryByRole('button', { name: 'Write title and goal from linked work' }),
+    ).toBeNull();
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Session tools' })).getByRole('button', {
+        name: /^Context/,
+      }),
+    );
+    await advance();
+
+    await advance();
+    screen.getByRole('button', { name: 'Write title and goal from linked work' });
   });
 
   it('turns a mount cleanup proposal into a Next row with Remove worktree and an undoable Not now', async () => {
@@ -219,7 +227,8 @@ describe('SPEC3 9.3 Overview capabilities from the c05 Overview', () => {
     await mountScene({ name: 'c05-overview-archived' });
 
     header().getByRole('button', { name: /Restore/ });
-    expect(header().getByRole('button', { name: 'New' }).closest('fieldset')?.disabled).toBe(true);
+    expect(header().queryByRole('button', { name: 'New' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Next' })).toBeNull();
   });
 
   it('keeps the move of a task onto a branch by drag, now onto a worktree row of the sidebar', async () => {

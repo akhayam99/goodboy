@@ -145,7 +145,7 @@ export const PlanProse = ({ text, section, hasLead = true, measure = 'reading' }
           <CommentThread
             comments={placed.orphans}
             isComposing={isComposingOrphan}
-            label="On text the planner changed"
+            label="Your notes on changed text"
           />
         </div>
       )}

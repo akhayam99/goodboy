@@ -688,7 +688,7 @@
   },
   "apps/desktop/src/app/components/MockScene/scenes/MountsScene.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 23
+      "count": 21
     },
     "react-hooks/exhaustive-deps": {
       "count": 1
@@ -1831,7 +1831,7 @@
   },
   "apps/desktop/src/features/artifacts/components/ArtifactStudio/artifactRows.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 11
+      "count": 10
     }
   },
   "apps/desktop/src/features/artifacts/components/ArtifactStudio/artifactRowsPerf.test.tsx": {
@@ -2882,11 +2882,6 @@
     },
     "@typescript-eslint/naming-convention": {
       "count": 12
-    }
-  },
-  "apps/desktop/src/features/context/components/ContextPanel/strips/GoalAttachmentsStrip.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
     }
   },
   "apps/desktop/src/features/context/components/ContextPanel/strips/GoalAttachmentsStrip.tsx": {
@@ -5892,7 +5887,7 @@
       "count": 1
     },
     "@typescript-eslint/naming-convention": {
-      "count": 3
+      "count": 2
     }
   },
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/SlotHistoryPanel.tsx": {

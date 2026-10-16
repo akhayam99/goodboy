@@ -430,6 +430,8 @@ const railOf = (element: Element | null): string => {
 
 const COLUMN_RAIL = 'column mx-auto max-w-[var(--column-frame)]';
 
+const MEASURE_RAIL = 'measure mx-auto max-w-[var(--measure-frame)]';
+
 const placeRoot = (): Element => {
   const root =
     document.querySelector('[data-studio-slot]') ??
@@ -716,7 +718,7 @@ describe('moving across every place keeps one frame', () => {
   );
 
   it(
-    'keeps the centred column at the same x across Overview, Runs, Agents, Artifacts and Settings, drawer or not',
+    'keeps the centred column at the same x across Runs, Agents, Artifacts and Settings, the Overview on its measure, drawer or not',
     async () => {
       const { sessionId } = await boot({ seed: 'pr' });
       seedShipAFix();
@@ -762,10 +764,19 @@ describe('moving across every place keeps one frame', () => {
       };
 
       const atRest = await walk(false);
-      expect(new Set(atRest).size, 'the trail column keeps one shape without a drawer').toBe(1);
+      expect(atRest[0], 'the Overview sits on the 720 measure').toContain(
+        'max-w-[var(--measure-frame)]',
+      );
+      expect(
+        new Set(atRest.slice(1)).size,
+        'the trail column keeps one shape without a drawer',
+      ).toBe(1);
       const withDrawer = await walk(true);
-      expect(new Set(withDrawer).size, 'the trail column keeps one shape with a drawer').toBe(1);
-      expect(withDrawer[0], 'a drawer slides the column, it does not reshape it').toBe(atRest[0]);
+      expect(
+        new Set(withDrawer.slice(1)).size,
+        'the trail column keeps one shape with a drawer',
+      ).toBe(1);
+      expect(withDrawer, 'a drawer slides the column, it does not reshape it').toEqual(atRest);
 
       door('settings').focus();
       await click(door('settings'));
@@ -791,12 +802,12 @@ describe('moving across every place keeps one frame', () => {
       const overviewLayers = (): RailLayers =>
         sessionLayers({ body: shown('[data-slot="pane-body"]') });
       expect(currentPage()).toBe('Overview');
-      expectOneRail({ place: 'Overview', layers: overviewLayers(), rail: COLUMN_RAIL });
+      expectOneRail({ place: 'Overview', layers: overviewLayers(), rail: MEASURE_RAIL });
       await openContextDrawer(sessionId);
       expectOneRail({
         place: 'Overview with a drawer',
         layers: overviewLayers(),
-        rail: COLUMN_RAIL,
+        rail: MEASURE_RAIL,
       });
       await escape();
 

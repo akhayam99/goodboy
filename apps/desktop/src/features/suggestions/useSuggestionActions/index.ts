@@ -20,7 +20,7 @@ import { showsRunsOn } from '../../session/showsRunsOn';
 import { REBASE_FAILURE_TITLE, useRebaseBranch } from '../../session/hooks/useRebaseBranch';
 import { useWorktreeStatuses } from '../../session/hooks/useWorktreeStatuses';
 import { useAdvanceWorkflowAgent } from '../../workflows/useAdvanceWorkflowAgent';
-import { fixLabel } from '../../resolve/reviewLaunchCopy';
+import { REVIEW_LAUNCH_LABEL } from '../../resolve/reviewLaunchCopy';
 import { prLifecycleFailureTitle } from '../../review/prLifecycle';
 import { requestReview } from '../../review/reviewRequest';
 import { useFixableThreadIds } from '../../resolve/useFixableThreadIds';
@@ -209,7 +209,7 @@ export const useSuggestionActions = ({
     if (suggestion.kind === 'resolve-threads') {
       return {
         primary: {
-          label: fixLabel({ count: threadIds.length }),
+          label: REVIEW_LAUNCH_LABEL.fix,
           isDisabled: false,
           failureTitle: "The fix panel didn't open",
           run: openFixPanel,

@@ -4,7 +4,7 @@ import { useAppStore } from '../../../../store';
 import { useLapProject } from '../../../bootstrap/useLapProject';
 import { useWorktreeStatusSnapshot } from '../../hooks/useWorktreeStatuses';
 import { worktreeStatusTargetsOf } from '../../hooks/useWorktreeStatuses/targets';
-import { LapProjectRow } from './ProjectMountRows/LapProjectRow';
+import { LapPublishNotice } from './ProjectMountRows/LapPublishNotice';
 import { useMountRows } from './ProjectMountRows/useMountRows';
 import { MountNotices } from './MountNotices';
 
@@ -31,7 +31,7 @@ export const OverviewNotices = ({ session }: Props) => {
       className="flex min-w-0 flex-col gap-2 empty:hidden"
     >
       {lap.project !== null && lap.stage !== null && groups.length === 0 ? (
-        <LapProjectRow sessionId={sessionId} project={lap.project} stage={lap.stage} />
+        <LapPublishNotice sessionId={sessionId} project={lap.project} stage={lap.stage} />
       ) : null}
       {rows.map((row) => (
         <MountNotices

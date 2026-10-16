@@ -11,10 +11,7 @@ type Props = {
   readonly session: Session;
 };
 
-const KIND_LABEL = {
-  new: 'From chat',
-  add: 'Fed by chat',
-} as const;
+const FROM_CHAT = 'From chat';
 
 type PrimaryParams = {
   readonly origins: ReadonlyArray<ChatOrigin>;
@@ -26,7 +23,7 @@ const primaryOriginOf = ({ origins }: PrimaryParams): ChatOrigin | null => {
 };
 
 const labelOf = ({ origin }: { readonly origin: ChatOrigin }): string =>
-  `${KIND_LABEL[origin.kind]}: ${origin.title}`;
+  `${FROM_CHAT}: ${origin.title}`;
 
 export const ChatOriginRow = ({ session }: Props) => {
   const { id: sessionId, workspaceId } = session;
@@ -76,7 +73,7 @@ export const ChatOriginRow = ({ session }: Props) => {
           )}
         >
           <CONCEPT_ICONS.chat size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-          <span className="shrink-0">{`${KIND_LABEL[primary.kind]}: `}</span>
+          <span className="shrink-0">{`${FROM_CHAT}: `}</span>
           <span className="min-w-0 truncate">{primary.title}</span>
         </button>
       </Tooltip>

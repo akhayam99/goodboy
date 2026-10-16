@@ -258,8 +258,8 @@ describe('TimelinePane mount rows', () => {
 
     expect(screen.queryByRole('button', { name: 'Copy path' })).toBeNull();
     expect(screen.queryByText('Nothing yet')).toBeNull();
-    expect(screen.getByText('No runs or agents yet')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'See Log' }));
+    expect(screen.getByText('Nothing ran yet')).toBeDefined();
+    fireEvent.click(screen.getByRole('tab', { name: 'Log' }));
     expect(screen.getByRole('button', { name: 'Copy path' })).toBeDefined();
   });
 });
@@ -448,12 +448,12 @@ describe('TimelinePane on an empty session', () => {
   it('keeps the empty hint, with no kickoff', () => {
     renderEmptySession();
 
-    expect(screen.getByText('No runs or agents yet')).toBeDefined();
+    expect(screen.getByText('Nothing ran yet')).toBeDefined();
     expect(screen.queryByText(/Nothing yet/)).toBeNull();
     expect(screen.queryByRole('region', { name: 'Kickoff' })).toBeNull();
   });
 
-  it('hides See Log while the log has nothing in it', () => {
+  it('offers no second way to the log beside the Log tab', () => {
     renderEmptySession();
 
     expect(screen.queryByRole('button', { name: 'See Log' })).toBeNull();
@@ -473,12 +473,12 @@ describe('TimelinePane on an empty session', () => {
     };
     render(<TimelinePane session={SESSION} />);
 
-    expect(screen.getByText('No runs or agents yet')).toBeDefined();
+    expect(screen.getByText('Nothing ran yet')).toBeDefined();
     expect(screen.queryByText(/Nothing yet/)).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'See Log' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Log' }));
 
     expect(screen.getByText(/Webhook redelivery/)).toBeDefined();
-    expect(screen.queryByText('No runs or agents yet')).toBeNull();
+    expect(screen.queryByText('Nothing ran yet')).toBeNull();
   });
 
   it('says the log is empty once Log is open', () => {
@@ -494,7 +494,7 @@ describe('TimelinePane loading', () => {
   it('holds a timeline skeleton until the session events resolve', () => {
     render(<TimelinePane session={SESSION} />);
 
-    expect(screen.queryByText('No runs or agents yet')).toBeNull();
+    expect(screen.queryByText('Nothing ran yet')).toBeNull();
     expect(screen.getByRole('status', { name: 'Loading the timeline' })).not.toBeNull();
   });
 
@@ -504,7 +504,7 @@ describe('TimelinePane loading', () => {
     render(<TimelinePane session={SESSION} />);
 
     expect(screen.queryByRole('status', { name: 'Loading the timeline' })).toBeNull();
-    expect(screen.getByText('No runs or agents yet')).toBeDefined();
+    expect(screen.getByText('Nothing ran yet')).toBeDefined();
   });
 
   it('holds a timeline skeleton until the agents collection loads', () => {
@@ -609,7 +609,7 @@ describe('TimelinePane questions', () => {
     render(<TimelinePane session={SESSION} />);
 
     const block = screen.getByRole('region', { name: 'Needs you' });
-    expect(within(block).getByText(/Question · Which database should we use\?/)).toBeDefined();
+    expect(within(block).getByText('Which database should we use?')).toBeDefined();
     expect(screen.queryByText('1 question answered')).toBeNull();
 
     openLog();
@@ -719,7 +719,8 @@ describe('TimelinePane run waiting on an answer', () => {
     const block = screen.getByRole('region', { name: 'Needs you' });
 
     expect(within(block).getAllByTestId('needs-you-owner')).toHaveLength(1);
-    expect(within(block).getByText('Retry failed checkout payments · 1 question')).toBeDefined();
+    expect(within(block).getByText('Retry on 5xx only?')).toBeDefined();
+    expect(within(block).getByText('Retry failed checkout payments')).toBeDefined();
     expect(screen.queryByText(/Question: Retry on 5xx only\?/)).toBeNull();
   });
 
@@ -757,7 +758,7 @@ describe('TimelinePane run waiting on an answer', () => {
       (element.getAttribute('class') ?? '').includes('warning'),
     );
 
-  it('marks one waiting agent once, on its own row, and keeps its two questions quiet', () => {
+  it('says the wait once in Needs you: the agent row keeps its marker, no word and no tint', () => {
     attachedRuns.list = [RUN];
     storeState.sessionPhaseRuns = { 'session-1': [STEP] };
     questions.open = [STEP_QUESTION, SECOND_STEP_QUESTION];
@@ -771,10 +772,10 @@ describe('TimelinePane run waiting on an answer', () => {
     const block = screen.getByRole('region', { name: 'Needs you' });
     const amber = amberElementsOf({ root: activity }).filter((element) => !block.contains(element));
 
-    expect(within(block).getByText('Retry failed checkout payments · 2 questions')).toBeDefined();
-    expect(within(agentRow).getByText('Needs you')).toBeDefined();
-    expect(amber.length).toBeGreaterThan(0);
+    expect(within(block).getByText('Retry on 5xx only?')).toBeDefined();
+    expect(within(agentRow).queryByText('Needs you')).toBeNull();
     expect(amber.every((element) => agentRow.contains(element))).toBe(true);
+    expect(agentRow.querySelector('[class*="bg-warning"]')).toBeNull();
   });
 
   it('answers from the Needs you card only: the agent row has no second Answer', () => {
@@ -1260,7 +1261,7 @@ describe('TimelinePane row meta', () => {
     ]);
   });
 
-  it('shows the model that ran on the right of a finished step, with its cost under the time', () => {
+  it('shows the model that ran on the right of a finished step, with its cost in the time tooltip only', () => {
     render(<TimelinePane session={SESSION} />);
     const row = rowOf('Plan the fix');
     const meta = within(row).getByTestId('work-meta');
@@ -1268,9 +1269,8 @@ describe('TimelinePane row meta', () => {
 
     expect(model?.querySelector('[data-routing-part="name"]')?.textContent).toBe('Opus 4.5');
     expect(model?.querySelector('[data-provider="anthropic"]')).not.toBeNull();
-    expect(
-      meta.querySelector('[data-meta-column="stack"] [data-meta-column="cost"]')?.textContent,
-    ).toBe('$0.62');
+    expect(meta.querySelector('[data-meta-column="cost"]')).toBeNull();
+    expect(meta.textContent).not.toContain('$0.62');
     expect(meta.querySelector('[data-meta-column="routing"]')).toBeNull();
   });
 
@@ -1297,7 +1297,6 @@ describe('TimelinePane row meta', () => {
     const meta = within(rowOf('Plan the fix')).getByTestId('work-meta');
     const model = meta.querySelector('[data-meta-column="model"]');
 
-    expect(carriesSpec({ element: model ?? null, spec: WORK_META_COLUMN.model })).toBe(true);
     expect(
       carriesSpec({
         element: meta.querySelector('[data-meta-column="stack"]'),
@@ -1395,12 +1394,12 @@ describe('TimelinePane row meta', () => {
     expect(screen.getByRole('button', { name: /Planner.*Opus 4\.5, High/ })).toBeDefined();
   });
 
-  it('puts the run row on the same columns, with the total spend and no step counter', () => {
+  it('puts the run row on the same columns, with no spend and no step counter', () => {
     render(<TimelinePane session={SESSION} />);
     const meta = within(rowOf('Ship the checkout fix')).getByTestId('work-meta');
 
     expect(meta.querySelector('[data-meta-column="model"]')).not.toBeNull();
-    expect(within(meta).getByText('$0.62')).toBeDefined();
+    expect(within(meta).queryByText('$0.62')).toBeNull();
     expect(meta.textContent).not.toContain('Step 1 of 2');
   });
 
@@ -1513,7 +1512,7 @@ describe('TimelinePane row meta', () => {
       expect(time.textContent).toBe('6m 40s');
     });
 
-    it('lets the cost, then the time go before the title', () => {
+    it('lets the time go before the title, and never draws the cost', () => {
       storeState.sessionTurnSpans = { 'session-1': [span('agent-plan', 0, 6 * MINUTE + 40_000)] };
       storeState.workspaceDurationHistory = {
         'ws-1': {
@@ -1531,16 +1530,14 @@ describe('TimelinePane row meta', () => {
       expect(wide).toContain('Plan the fix');
       expect(wide).toContain('Opus 4.5');
       expect(wide).toContain('6m 40s');
-      expect(wide).toContain('$0.62');
+      expect(wide).not.toContain('$0.62');
 
-      const glyphsOnly = seen(630);
-      expect(glyphsOnly).not.toContain('Opus 4.5');
-      expect(glyphsOnly).toContain('6m 40s');
-      expect(glyphsOnly).toContain('$0.62');
+      const measure = seen(630);
+      expect(measure).toContain('Opus 4.5');
+      expect(measure).toContain('6m 40s');
 
-      const noCost = seen(560);
-      expect(noCost).not.toContain('$0.62');
-      expect(noCost).toContain('6m 40s');
+      const timeOnly = seen(560);
+      expect(timeOnly).toContain('6m 40s');
 
       const narrow = seen(460);
       expect(narrow).not.toContain('6m 40s');
@@ -1775,7 +1772,8 @@ describe('TimelinePane fix run', () => {
 
     const owners = screen.getAllByTestId('needs-you-owner');
     expect(owners).toHaveLength(1);
-    expect(owners[0]?.textContent).toContain('#318 · 2 need you · 1 to review · 1 question');
+    expect(owners[0]?.textContent).toContain('#318 · 1 to review · 1 question');
+    expect(owners[0]?.textContent).not.toContain('need you');
   });
 });
 
@@ -2023,7 +2021,7 @@ describe('TimelinePane finished run', () => {
     expect(countRow().getAttribute('aria-expanded')).toBe('false');
     const meta = within(runRow()).getByTestId('work-meta');
     expect(meta.textContent).not.toContain('models');
-    expect(within(meta).getByText('$1.50')).toBeDefined();
+    expect(within(meta).queryByText('$1.50')).toBeNull();
     expect(within(meta).getByText('2m')).toBeDefined();
 
     fireEvent.click(countRow());
@@ -2083,14 +2081,13 @@ describe('TimelinePane finished run', () => {
     expect(within(runRow()).getByText('Refund keys').textContent).toBe('Refund keys');
   });
 
-  it('lets the cost and the time of a finished run go before its title gives way', () => {
+  it('lets the time of a finished run go before its title gives way, with no cost on the row', () => {
     storeState.sessionPhaseRuns = { 'session-1': agentsWith({ last: 'completed' }) };
     render(<TimelinePane session={SESSION} />);
     const row = runRow();
 
     expect(visibleTextAt({ root: row, width: 900 })).not.toContain('2 models');
-    expect(visibleTextAt({ root: row, width: 700 })).toContain('$1.50');
-    expect(visibleTextAt({ root: row, width: 560 })).not.toContain('$1.50');
+    expect(visibleTextAt({ root: row, width: 900 })).not.toContain('$1.50');
     const narrow = visibleTextAt({ root: row, width: 460 });
     expect(narrow).not.toContain('2m');
     expect(narrow).toContain('Refund keys');

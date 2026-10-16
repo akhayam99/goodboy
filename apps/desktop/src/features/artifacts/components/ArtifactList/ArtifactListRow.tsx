@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { Button, IconButton, InteractiveRow, Tooltip, cn } from '@goodboy/ui';
+import { Button, InteractiveRow, Tooltip, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import type { ArtifactListRow as Row } from '../../artifactListRows';
 import type { ArtifactState } from '../../artifactStateOf';
@@ -9,7 +9,6 @@ import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { RelativeTime } from '../../../../shared/components/RelativeTime';
 import { useAppStore } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { ArtifactOverflowMenu } from '../ArtifactShell/ArtifactOverflowMenu';
 import type { ActionControls } from '../../../actions/useActionControls';
 import { useActionControls } from '../../../actions/useActionControls';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
@@ -26,13 +25,8 @@ type Props = {
   readonly isPartsOpen: boolean;
   readonly onTogglePartsOf: (rowId: string) => void;
   readonly onOpenRow: (row: Row) => void;
+  readonly hasActionColumn: boolean;
 };
-
-const HOVER_ACTION_IDS = [
-  'artifact.edit',
-  'artifact.openInBrowser',
-  'artifact.copySource',
-] as const;
 
 const PRIMARY_FALLBACK_IDS = ['artifact.stop', 'artifact.retry'] as const;
 
@@ -43,21 +37,6 @@ const findAction = ({
   readonly actions: ReadonlyArray<ResolvedAction>;
   readonly id: string;
 }): ResolvedAction | null => actions.find((action) => action.id === id) ?? null;
-
-const hoverActionsOf = ({
-  row,
-  actions,
-}: {
-  readonly row: Row;
-  readonly actions: ReadonlyArray<ResolvedAction>;
-}): ReadonlyArray<ResolvedAction> =>
-  HOVER_ACTION_IDS.flatMap((id) => {
-    const action = findAction({ actions, id });
-    if (action === null || (id === 'artifact.openInBrowser' && row.kind !== 'wireframe')) {
-      return [];
-    }
-    return [action];
-  });
 
 const primaryOf = ({
   row,
@@ -94,17 +73,35 @@ const targetOf = ({
       : { kind: 'stored', artifactId: row.target.artifactId, isPlanRunning: row.isPlanRunning },
 });
 
-const progressStateOf = ({ row }: { readonly row: Row }): ArtifactState | null => {
-  if (row.state === null) {
+const GROUP_SAYS_IT: ReadonlySet<ArtifactState['key']> = new Set([
+  'needs',
+  'running',
+  'available',
+  'ran',
+  'deleted',
+]);
+
+type ShownStateParams = {
+  readonly row: Row;
+};
+
+const shownStateOf = ({ row }: ShownStateParams): ArtifactState | null => {
+  if (row.state === null || GROUP_SAYS_IT.has(row.state.key)) {
     return null;
   }
-  const isKindDetail = row.state.detail === ARTIFACT_KIND_MARKER_LABEL[row.kind];
-  return isKindDetail ? { ...row.state, detail: null } : row.state;
+  return row.state;
 };
 
 const RUN_PLAN_ACTION_ID = 'artifact.runPlan';
 
-const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow }: Props) => {
+const RowComponent = ({
+  row,
+  sessionId,
+  isPartsOpen,
+  onTogglePartsOf,
+  onOpenRow,
+  hasActionColumn,
+}: Props) => {
   const target = useMemo(() => targetOf({ row, sessionId }), [row, sessionId]);
   const planId =
     row.target.kind === 'artifact' && row.kind === 'plan' ? row.target.artifactId : null;
@@ -124,16 +121,13 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
   const restoreAction = isDeleted
     ? findAction({ actions: controls.actions, id: 'artifact.restore' })
     : null;
-  const permanentAction = isDeleted
-    ? findAction({ actions: controls.actions, id: 'artifact.deletePermanently' })
-    : null;
-  const primary = isDeleted ? null : primaryOf({ row, controls });
+  const hasOwnVerb = row.group === 'needs' || row.target.kind === 'generation';
+  const primary = hasOwnVerb ? primaryOf({ row, controls }) : null;
   const isFilled =
     primary !== null &&
     primary.slot === 'primary' &&
     !(primary.id === RUN_PLAN_ACTION_ID && hasUnsentComments);
-  const state = progressStateOf({ row });
-  const hover = isDeleted ? [] : hoverActionsOf({ row, actions: controls.actions });
+  const state = shownStateOf({ row });
   const at = row.deletedAt ?? row.at;
   const atTitle =
     at === null
@@ -188,82 +182,39 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
             {row.title}
           </span>
         </Tooltip>
-        <span data-testid="artifact-row-kind" className={ARTIFACT_ROW_GRID.kind}>
-          {ARTIFACT_KIND_MARKER_LABEL[row.kind]}
-        </span>
         <span className={cn(ARTIFACT_ROW_GRID.state, row.isFaint && 'opacity-80')}>
           {state === null ? null : <ArtifactStateBadge state={state} />}
         </span>
         <span data-testid="artifact-row-time" className={ARTIFACT_ROW_GRID.date}>
           {at === null ? null : <RelativeTime iso={at} title={atTitle} />}
         </span>
-        {isDeleted ? (
-          <span className={ARTIFACT_ROW_GRID.deletedTail}>
-            <span className={ARTIFACT_ROW_GRID.restore}>
-              {restoreAction === null ? null : (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  isBusy={controls.pendingId === restoreAction.id}
-                  onClick={() => controls.trigger({ actionId: restoreAction.id })}
-                >
-                  Restore
-                </Button>
-              )}
-            </span>
-            <span className={ARTIFACT_ROW_GRID.deleted}>
-              {permanentAction === null ? null : (
-                <Button
-                  size="sm"
-                  variant="ghost-danger"
-                  isBusy={controls.pendingId === permanentAction.id}
-                  onClick={() => controls.trigger({ actionId: permanentAction.id })}
-                >
-                  Delete permanently
-                </Button>
-              )}
-            </span>
+        {hasActionColumn ? (
+          <span data-testid="artifact-row-action" className={ARTIFACT_ROW_GRID.action}>
+            {restoreAction === null ? null : (
+              <Button
+                size="sm"
+                variant="secondary"
+                isBusy={controls.pendingId === restoreAction.id}
+                onClick={() => controls.trigger({ actionId: restoreAction.id })}
+              >
+                Restore
+              </Button>
+            )}
+            {primary === null ? null : (
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={primary.blockedReason !== null}
+                isBusy={controls.pendingId === primary.id}
+                title={primary.blockedReason ?? primary.description ?? undefined}
+                data-filled={isFilled ? 'true' : 'false'}
+                onClick={() => controls.trigger({ actionId: primary.id })}
+              >
+                {primary.shortLabel}
+              </Button>
+            )}
           </span>
-        ) : (
-          <span className={ARTIFACT_ROW_GRID.tail}>
-            <span className={ARTIFACT_ROW_GRID.primary}>
-              {primary === null ? null : (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  disabled={primary.blockedReason !== null}
-                  isBusy={controls.pendingId === primary.id}
-                  title={primary.blockedReason ?? primary.description ?? undefined}
-                  data-filled={isFilled ? 'true' : 'false'}
-                  onClick={() => controls.trigger({ actionId: primary.id })}
-                >
-                  {primary.shortLabel}
-                </Button>
-              )}
-            </span>
-            <span data-row-secondary="" className={ARTIFACT_ROW_GRID.secondary}>
-              {hover.map((action) => (
-                <IconButton
-                  key={action.id}
-                  icon={action.icon}
-                  iconSize={ICON_SIZE.control}
-                  label={action.label}
-                  tooltip={action.blockedReason ?? action.label}
-                  variant="ghost"
-                  disabled={action.blockedReason !== null}
-                  onClick={() => controls.trigger({ actionId: action.id })}
-                />
-              ))}
-            </span>
-            <span className={ARTIFACT_ROW_GRID.menu}>
-              <ArtifactOverflowMenu
-                target={target}
-                anchorKey={anchorKey}
-                label={`More for ${row.title}`}
-              />
-            </span>
-          </span>
-        )}
+        ) : null}
       </InteractiveRow>
       <ArtifactRowConfirm controls={controls} />
       {controls.failure === null ? null : (
@@ -271,7 +222,9 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
           {controls.failure.message}
         </p>
       )}
-      {hasParts && isPartsOpen ? <ArtifactRowParts parts={row.parts} /> : null}
+      {hasParts && isPartsOpen ? (
+        <ArtifactRowParts parts={row.parts} hasActionColumn={hasActionColumn} />
+      ) : null}
     </div>
   );
 };
