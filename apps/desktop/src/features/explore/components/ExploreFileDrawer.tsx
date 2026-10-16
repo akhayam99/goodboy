@@ -1,18 +1,20 @@
 import { useState, type ReactNode } from 'react';
-import { ArrowUpRight, ExternalLink, WrapText } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import {
   Button,
   CopyButton,
   DrawerFrame,
-  IconButton,
+  OverflowMenu,
   SegmentedTabs,
   Tooltip,
   type DrawerBack,
+  type OverflowMenuItem,
 } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { selectMountForPath } from '../../../store/slices/project-mounts/selectors';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { useCopyText } from '../../../shared/hooks/useCopyText';
 import type { ExploreEntry } from '../explore';
 import type { ExploreOpenFailure } from '../openFailure';
 import { fileGlyphOf } from '../fileGlyph';
@@ -71,6 +73,7 @@ export const ExploreFileDrawer = ({
   const previewState = useExplorePreview({ sessionDir, entry });
   const exploreOpen = useExploreOpen({ sessionId, sessionDir });
   const wrap = useExploreWrap();
+  const copyText = useCopyText();
   const [openFailure, setOpenFailure] = useState<ExploreOpenFailure | null>(null);
   const [view, setView] = useState<DrawerView>(line === undefined ? 'preview' : 'source');
   const [seenLine, setSeenLine] = useState(line);
@@ -118,6 +121,28 @@ export const ExploreFileDrawer = ({
   };
 
   const hasToolbar = hasViewSwitch || openFailure !== null;
+  const filePath = joinPath({ root: sessionDir, relPath: entry.relPath });
+  const menuItems: ReadonlyArray<OverflowMenuItem> = [
+    ...(hasChanges
+      ? [{ kind: 'item' as const, key: 'files', label: 'Open in Files', onClick: openInFiles }]
+      : []),
+    {
+      kind: 'item',
+      key: 'copy',
+      label: 'Copy path',
+      onClick: () => void copyText({ text: filePath }),
+    },
+    ...(isWrapShown
+      ? [
+          {
+            kind: 'item' as const,
+            key: 'wrap',
+            label: wrap.isWrapped ? 'Stop wrapping lines' : 'Wrap lines',
+            onClick: wrap.toggle,
+          },
+        ]
+      : []),
+  ];
 
   return (
     <DrawerFrame
@@ -129,12 +154,6 @@ export const ExploreFileDrawer = ({
       scroll="self"
       action={
         <>
-          {isChangesView ? (
-            <Button variant="ghost" size="sm" onClick={openInFiles}>
-              Open in Files
-              <ArrowUpRight size={ICON_SIZE.row} aria-hidden />
-            </Button>
-          ) : null}
           <Tooltip content={openAction.tooltip}>
             <Button size="sm" variant="secondary" onClick={open}>
               {openAction.editor === null ? (
@@ -145,34 +164,32 @@ export const ExploreFileDrawer = ({
               {openAction.label}
             </Button>
           </Tooltip>
-          <CopyButton
-            presentation="icon"
-            label="Copy path"
-            size={ICON_SIZE.control}
-            className="size-7 justify-center"
-            value={joinPath({ root: sessionDir, relPath: entry.relPath })}
-          />
-          {isWrapShown ? (
-            <IconButton
-              icon={WrapText}
-              label="Wrap lines"
-              aria-pressed={wrap.isWrapped}
-              onClick={wrap.toggle}
+          {menuItems.length > 1 ? (
+            <OverflowMenu label={`More on ${entry.name}`} items={menuItems} />
+          ) : (
+            <CopyButton
+              presentation="icon"
+              label="Copy path"
+              size={ICON_SIZE.control}
+              className="size-7 justify-center"
+              value={filePath}
             />
-          ) : null}
+          )}
         </>
       }
       toolbar={
         hasToolbar ? (
           <>
             {hasViewSwitch ? (
-              <SegmentedTabs
-                size="xs"
-                ariaLabel="File view"
-                options={viewOptions}
-                value={isChangesView ? 'changes' : previewView}
-                onChange={setView}
-              />
+              <div className="flex">
+                <SegmentedTabs
+                  size="xs"
+                  ariaLabel="File view"
+                  options={viewOptions}
+                  value={isChangesView ? 'changes' : previewView}
+                  onChange={setView}
+                />
+              </div>
             ) : null}
             {openFailure === null ? null : <ExploreOpenError failure={openFailure} />}
           </>

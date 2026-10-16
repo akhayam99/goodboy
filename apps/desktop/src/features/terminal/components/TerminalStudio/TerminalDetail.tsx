@@ -2,6 +2,7 @@ import { EmptyState, Button } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import type { TerminalStudioModel } from '../../hooks/useTerminalStudioModel';
 import { displayCwd } from '../../terminalTargets';
+import { ChangeFolderPicker } from './ChangeFolderPicker';
 import { LocationRow } from './LocationRow';
 import { TerminalPane } from './TerminalPane';
 import { TerminalStripActions } from './TerminalStripActions';
@@ -34,13 +35,11 @@ export const TerminalDetail = ({ model, isActive }: Props) => {
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col gap-1">
       <h2 className="sr-only">{`Terminal on ${worktree.projectName}`}</h2>
-      <LocationRow
-        cwd={displayCwd({ cwd: selected.cwd, folder: model.folder, home: model.home })}
-        branch={worktree.branch}
-        targets={model.targets}
-        isIdle={isIdle}
-        onChangeDirectory={model.changeDirectory}
-      />
+      {worktree.kind === 'mount' ? null : (
+        <LocationRow
+          cwd={displayCwd({ cwd: selected.cwd, folder: model.folder, home: model.home })}
+        />
+      )}
       <TerminalTabStrip
         label={worktree.projectName}
         tabs={model.tabs}
@@ -53,6 +52,13 @@ export const TerminalDetail = ({ model, isActive }: Props) => {
         onRename={model.renameTab}
         onNew={model.openDefault}
         isShortcutEnabled={isActive}
+        folderAction={
+          <ChangeFolderPicker
+            targets={model.targets}
+            isIdle={isIdle}
+            onChangeDirectory={model.changeDirectory}
+          />
+        }
         actions={<TerminalStripActions worktree={worktree} />}
       />
       <div data-terminal-body="" className="flex min-h-0 flex-1 flex-col px-3">

@@ -86,7 +86,7 @@ describe('c03 session tools scenes', () => {
     expect(useAppStore.getState().drawer?.kind).toBe('terminal');
     expect(pressed()).toEqual(['Terminal']);
     expect(screen.getByRole('combobox', { name: 'Terminal folder' }).textContent).toBe(
-      'hl/fix-webhook-idempotency',
+      'payments-api · hl/fix-webhook-idempotency',
     );
   });
 

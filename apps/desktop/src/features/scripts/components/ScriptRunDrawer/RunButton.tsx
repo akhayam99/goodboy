@@ -6,12 +6,18 @@ type Props = {
   readonly canRun: boolean;
   readonly blockedReason: string;
   readonly label: string;
+  readonly isPrimary: boolean;
   readonly onRun: () => void;
 };
 
-export const RunButton = ({ canRun, blockedReason, label, onRun }: Props) => {
+export const RunButton = ({ canRun, blockedReason, label, isPrimary, onRun }: Props) => {
   const button = (
-    <Button variant="secondary" size="sm" onClick={onRun} disabled={!canRun}>
+    <Button
+      variant={isPrimary ? 'primary' : 'secondary'}
+      size="sm"
+      onClick={onRun}
+      disabled={!canRun}
+    >
       <Play size={ICON_SIZE.row} aria-hidden />
       {label}
     </Button>

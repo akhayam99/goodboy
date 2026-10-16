@@ -16,7 +16,11 @@ export const ScriptBand = ({ label, scope, count, hint, action, children }: Prop
       label={label}
       hint={hint}
       action={action}
-      meta={<span className="text-meta tabular-nums text-faint-foreground">{count}</span>}
+      meta={
+        count > 1 ? (
+          <span className="text-meta tabular-nums text-faint-foreground">{count}</span>
+        ) : undefined
+      }
       className="px-2"
     />
     <div className="flex flex-col gap-0.5">{children}</div>

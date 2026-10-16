@@ -1,4 +1,4 @@
-import { formatAdaptiveAge } from '../../../../shared/utils/time/formatAdaptiveAge';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { formatDuration } from '../../../../shared/utils/time/formatDuration';
 import type { ScriptRunRecord } from '../../scripts';
 
@@ -6,7 +6,7 @@ type LastRunGlyph = 'running' | 'passed' | 'failed' | 'stopped';
 
 export type LastRun = {
   readonly glyph: LastRunGlyph;
-  readonly word: string;
+  readonly word: string | null;
   readonly detail: string | null;
 };
 
@@ -22,12 +22,12 @@ export const describeLastRun = ({ record, now }: Params): LastRun | null => {
   if (record.status === 'pending') {
     return {
       glyph: 'running',
-      word: 'Running',
+      word: null,
       detail: formatDuration({ durationMs: now - record.startedAt }),
     };
   }
   const finishedAt = record.completedAt ?? record.startedAt;
-  const age = formatAdaptiveAge({ at: finishedAt, now });
+  const age = formatAge({ from: finishedAt, now });
   if (record.status === 'cancelled') {
     return { glyph: 'stopped', word: 'Stopped', detail: age };
   }
@@ -42,13 +42,10 @@ export const describeLastRun = ({ record, now }: Params): LastRun | null => {
   const duration =
     record.completedAt === undefined
       ? null
-      : formatDuration({
-          durationMs: record.completedAt - record.startedAt,
-          hasTenths: true,
-        });
+      : formatDuration({ durationMs: record.completedAt - record.startedAt });
   return {
     glyph: 'passed',
-    word: duration ?? 'Passed',
+    word: duration,
     detail: age,
   };
 };

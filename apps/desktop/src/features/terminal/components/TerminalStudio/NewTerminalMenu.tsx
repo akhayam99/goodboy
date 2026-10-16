@@ -10,7 +10,6 @@ import {
   useDropdown,
 } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { useAppStore } from '../../../../store';
 import { filterPickerClusters } from '../../filterPickerClusters';
 import { pickerRowCount } from '../../pickerRowCount';
 import type { PickerCluster } from '../../terminalPickerClusters';
@@ -30,7 +29,6 @@ const PICKER_EXPECTED_HEIGHT = 420;
 const PICKER_MAX_WIDTH = 520;
 
 export const NewTerminalMenu = ({ clusters, onNew, onOpenAt }: Props) => {
-  const switchStudio = useAppStore((state) => state.switchStudio);
   const [query, setQuery] = useState('');
   const [isFilterFocused, setIsFilterFocused] = useState(false);
   const filterRef = useRef<HTMLInputElement>(null);
@@ -57,13 +55,6 @@ export const NewTerminalMenu = ({ clusters, onNew, onOpenAt }: Props) => {
   const pick = (target: TerminalTarget): void => {
     dropdown.close();
     onOpenAt(target);
-  };
-
-  const openProject = (): void => {
-    dropdown.close();
-    switchStudio({
-      studio: { kind: 'settings', focus: { scope: 'workspace', section: 'projects' } },
-    });
   };
 
   const handleFilterKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
@@ -131,7 +122,6 @@ export const NewTerminalMenu = ({ clusters, onNew, onOpenAt }: Props) => {
                   cluster={cluster}
                   activeKey={activeKey}
                   onPick={pick}
-                  onOpenProject={openProject}
                 />
               ))}
             </div>

@@ -25,6 +25,7 @@ type Props = {
   readonly onRename: (params: RenameParams) => Promise<void>;
   readonly onNew: () => void;
   readonly isShortcutEnabled?: boolean;
+  readonly folderAction?: ReactNode;
   readonly actions?: ReactNode;
 };
 
@@ -42,6 +43,7 @@ export const TerminalTabStrip = ({
   onRename,
   onNew,
   isShortcutEnabled = true,
+  folderAction = null,
   actions = null,
 }: Props) => {
   const portsByTerminal = useTerminalPorts();
@@ -139,6 +141,7 @@ export const TerminalTabStrip = ({
       />
       <span className="flex-1" />
       <div className="flex shrink-0 items-center gap-1">
+        {folderAction}
         {selectedPorts.map((port) => (
           <PortChip key={port} port={port} />
         ))}

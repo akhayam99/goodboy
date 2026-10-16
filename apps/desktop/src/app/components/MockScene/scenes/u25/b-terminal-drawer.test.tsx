@@ -84,7 +84,7 @@ describe('the terminal drawer scenes', () => {
     expect(after.map((tab) => tab.id)).toEqual(before.map((tab) => tab.id));
     expect(drawer?.kind === 'terminal' ? drawer.payload.terminalId : null).toMatch(/::t2$/);
     expect(screen.getByRole('combobox', { name: 'Terminal folder' }).textContent).toBe(
-      'hl/surface-retry-state',
+      'notify-relay · hl/surface-retry-state',
     );
   });
 
@@ -95,9 +95,10 @@ describe('the terminal drawer scenes', () => {
     const drawer = screen.getByRole('region', { name: 'Terminal' });
     expect(within(drawer).queryByTestId('worktree-chip')).toBeNull();
     expect(within(drawer).getByRole('combobox', { name: 'Terminal folder' }).textContent).toBe(
-      'hl/fix-webhook-idempotency',
+      'payments-api · hl/fix-webhook-idempotency',
     );
-    expect(within(drawer).queryByRole('heading', { name: 'Terminal' })).toBeNull();
+    expect(within(drawer).getByRole('heading', { name: 'Terminal' })).toBeDefined();
+    expect(within(drawer).queryByRole('combobox', { name: 'New terminal in' })).toBeNull();
     expect(within(drawer).getByRole('button', { name: 'Open on Terminal page' })).toBeDefined();
     expect(within(drawer).getByRole('button', { name: 'Close' })).toBeDefined();
     expect(within(drawer).getByRole('button', { name: 'New tab on payments-api' })).toBeDefined();
@@ -114,7 +115,7 @@ describe('the terminal drawer scenes', () => {
 
     const drawer = screen.getByRole('region', { name: 'Terminal' });
     const picker = within(drawer).getByRole('combobox', { name: 'Terminal folder' });
-    expect(picker.textContent).toBe('hl/fix-webhook-idempotency');
+    expect(picker.textContent).toBe('payments-api · hl/fix-webhook-idempotency');
     expect(picker.textContent).not.toContain('gb-7k2q9x');
     const header = drawer.querySelector('[data-drawer-header-row]');
     expect(
@@ -230,7 +231,7 @@ describe('the terminal drawer scenes', () => {
     });
     expect(within(session).getAllByRole('listitem')).toHaveLength(2);
     expect(headings[0]?.closest('li')?.querySelector('[data-list-grid-count]')?.textContent).toBe(
-      '3',
+      '2',
     );
   });
 });

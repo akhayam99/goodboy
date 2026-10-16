@@ -35,8 +35,7 @@ export const ScriptRunDock = ({ status, exitCode, elapsedMs, output }: Props) =>
   }
 
   const Glyph = status === 'ok' ? Check : status === 'error' ? X : Square;
-  const duration =
-    elapsedMs === null ? null : formatDuration({ durationMs: elapsedMs, hasTenths: true });
+  const duration = elapsedMs === null ? null : formatDuration({ durationMs: elapsedMs });
 
   return (
     <div className="flex items-center gap-2">
@@ -50,9 +49,7 @@ export const ScriptRunDock = ({ status, exitCode, elapsedMs, output }: Props) =>
             status === 'error' && 'text-danger',
           )}
         />
-        <span className={cn(status === 'error' && 'text-danger')}>
-          {outcomeLabel({ status, exitCode })}
-        </span>
+        <span>{outcomeLabel({ status, exitCode })}</span>
         {duration === null ? null : <span>· {duration}</span>}
       </span>
       <Button

@@ -39,7 +39,10 @@ export const TerminalStudioBody = ({ model, isActive }: Props) => {
     model.newTab();
   };
   return (
-    <div onKeyDown={handleKeyDown} className="flex h-full min-h-0 min-w-0 flex-1">
+    <div onKeyDown={handleKeyDown} className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
+      <div data-slot="pane-title-row" className="flex h-10 shrink-0 items-center px-4">
+        <h1 className="min-w-0 truncate text-title text-foreground">Terminal</h1>
+      </div>
       <StudioRailLayout
         railLabel="Terminals"
         railWidth="standard"

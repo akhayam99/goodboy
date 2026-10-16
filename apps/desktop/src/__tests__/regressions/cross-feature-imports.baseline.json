@@ -59,7 +59,6 @@
     "review -> actions": 1,
     "review -> diff": 2,
     "review -> integrations": 4,
-    "scripts -> actions": 1,
     "scripts -> session": 2,
     "search -> context": 1,
     "search -> inbox": 1,

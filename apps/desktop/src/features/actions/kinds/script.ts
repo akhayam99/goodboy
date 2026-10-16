@@ -1,4 +1,15 @@
-import { Copy, CopyPlus, Pencil, Play, Save, ScrollText, Square, Trash2 } from 'lucide-react';
+import {
+  Copy,
+  CopyPlus,
+  Pencil,
+  Pin,
+  Play,
+  RotateCw,
+  Save,
+  ScrollText,
+  Square,
+  Trash2,
+} from 'lucide-react';
 import type { ObjectKindDefinition, ScriptActionTarget } from '../types';
 
 export type ScriptFacts = {
@@ -13,6 +24,13 @@ export type ScriptFacts = {
   readonly onDuplicate: (() => void) | null;
   readonly onSaveAs: (() => void) | null;
   readonly onDelete: (() => Promise<void>) | null;
+  readonly onRestart?: () => void;
+  readonly pin?: ScriptPinFacts;
+};
+
+export type ScriptPinFacts = {
+  readonly isPinned: boolean;
+  readonly onToggle: () => void;
 };
 
 export const SCRIPT_KIND: ObjectKindDefinition<ScriptActionTarget, ScriptFacts> = {
@@ -43,6 +61,22 @@ export const SCRIPT_KIND: ObjectKindDefinition<ScriptActionTarget, ScriptFacts> 
       group: 'act',
       when: ({ facts }) => facts.isRunning,
       run: ({ facts }) => facts.onStop(),
+    },
+    {
+      id: 'script.restart',
+      label: 'Restart',
+      icon: RotateCw,
+      group: 'act',
+      when: ({ facts }) => facts.isRunning && facts.onRestart !== undefined,
+      run: ({ facts }) => facts.onRestart?.(),
+    },
+    {
+      id: 'script.pin',
+      label: ({ facts }) => (facts.pin?.isPinned === true ? 'Unpin' : 'Pin'),
+      icon: Pin,
+      group: 'act',
+      when: ({ facts }) => facts.pin !== undefined,
+      run: ({ facts }) => facts.pin?.onToggle(),
     },
     {
       id: 'script.edit',

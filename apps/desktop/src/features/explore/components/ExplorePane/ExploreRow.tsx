@@ -130,7 +130,7 @@ export const ExploreRow = ({
         data-slot="explore-size"
         className="w-14 shrink-0 text-right text-meta tabular-nums text-faint-foreground @max-[520px]:hidden"
       >
-        {entry.isDir ? '' : formatBytes({ bytes: entry.sizeBytes })}
+        {entry.isDir || entry.sizeBytes === null ? '' : formatBytes({ bytes: entry.sizeBytes })}
       </span>
       <span
         data-slot="explore-age"
@@ -138,14 +138,13 @@ export const ExploreRow = ({
       >
         {age}
       </span>
-      {isDeleted ? null : (
-        <ExploreRowActions
-          sessionId={sessionId}
-          target={target}
-          isAskOpen={isAskOpen}
-          onAskClosed={onAskClosed}
-        />
-      )}
+      <ExploreRowActions
+        sessionId={sessionId}
+        target={target}
+        isMenuShown={isSelected && !isDeleted}
+        isAskOpen={isAskOpen && !isDeleted}
+        onAskClosed={onAskClosed}
+      />
     </div>
   );
 };
