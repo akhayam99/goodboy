@@ -10,7 +10,7 @@ type Props = {
 };
 
 export const TerminalStripActions = ({ worktree }: Props) => {
-  const copyText = useCopyText();
+  const copy = useCopyText();
   const openSession = useOpenSession();
   const { path, sessionId } = worktree;
   const isWorkspace = worktree.kind === 'workspace';
@@ -25,7 +25,7 @@ export const TerminalStripActions = ({ worktree }: Props) => {
   }
   if (path !== null) {
     return (
-      <Button size="xs" variant="quiet" onClick={() => void copyText({ text: path })}>
+      <Button size="xs" variant="quiet" onClick={() => void copy({ text: path })}>
         {isWorkspace ? 'Copy folder path' : 'Copy worktree path'}
       </Button>
     );
