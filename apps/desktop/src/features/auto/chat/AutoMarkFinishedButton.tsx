@@ -1,6 +1,8 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import { Button } from '@goodboy/ui';
+import { useAppStore } from '../../../store';
 import { useActionControls } from '../../actions/useActionControls';
+import { isTurnStateLive } from '../../session/agent-lifecycle';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -15,8 +17,11 @@ export const AutoMarkFinishedButton = ({ sessionId, agentId }: Props) => {
     anchorKey: `auto-mark-finished:${agentId}`,
     scopeKey: agentId,
   });
+  const isTurnLive = useAppStore((state) =>
+    isTurnStateLive({ turnState: state.agentTurnState[agentId] }),
+  );
   const action = controls.actions.find((candidate) => candidate.id === MARK_FINISHED);
-  if (action === undefined) {
+  if (action === undefined || isTurnLive) {
     return null;
   }
   const isPending = controls.pendingId === MARK_FINISHED;

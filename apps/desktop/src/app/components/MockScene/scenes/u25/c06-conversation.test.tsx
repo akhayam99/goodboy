@@ -71,7 +71,10 @@ describe('the c06 conversation scenes', () => {
 
     const row = titleRow();
     expect(within(row).getByText('Reinstall dependencies in payments-api')).toBeDefined();
-    expect(within(row).getByTestId('agent-header-provider').textContent).toContain('Claude');
+    const mark = within(row).getByTestId('agent-header-provider');
+    expect(mark.getAttribute('aria-label')).toBe('Claude');
+    expect(mark.textContent).toBe('');
+    expect(within(row).queryByRole('button', { name: 'Rename agent' })).toBeNull();
     expect(within(row).getByRole('button', { name: 'View transcript' })).toBeDefined();
     expect(within(row).getByRole('button', { name: 'More agent actions' })).toBeDefined();
     expect(within(row).queryByText('Running')).toBeNull();

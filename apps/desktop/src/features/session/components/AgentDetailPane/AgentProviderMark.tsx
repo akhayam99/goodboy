@@ -1,3 +1,4 @@
+import { Tooltip } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ProviderGlyph } from '../../../../shared/components/RoutingPicker/ProviderGlyph';
 import { providerIdOf } from '../../../../shared/utils/providerIdOf';
@@ -13,12 +14,15 @@ export const AgentProviderMark = ({ provider }: Props) => {
     return null;
   }
   return (
-    <span
-      data-testid="agent-header-provider"
-      className="flex shrink-0 items-center gap-1 text-label text-muted-foreground"
-    >
-      <ProviderGlyph id={id} size={ICON_SIZE.row} />
-      {PROVIDER_LABEL[id]}
-    </span>
+    <Tooltip content={PROVIDER_LABEL[id]}>
+      <span
+        data-testid="agent-header-provider"
+        role="img"
+        aria-label={PROVIDER_LABEL[id]}
+        className="flex shrink-0 items-center"
+      >
+        <ProviderGlyph id={id} size={ICON_SIZE.row} />
+      </span>
+    </Tooltip>
   );
 };

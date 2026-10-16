@@ -5532,11 +5532,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/session/components/AgentDetailPane/AgentTitle.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
-    }
-  },
   "apps/desktop/src/features/session/components/AgentDetailPane/agentNowState.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 8

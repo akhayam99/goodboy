@@ -10,8 +10,13 @@ import {
   useExecutedAgentRouting,
   useSessionAnsweredQuestions,
   useSessionOpenQuestions,
+  useTranscript,
 } from '../../../../store';
-import { classifyAgent } from '../../agent-kind';
+import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
+import { AGENT_KIND_META, classifyAgent } from '../../agent-kind';
+import { executedRoutingOf } from '../../../auto/executedRoutingOf';
+import { agentHeadingOf } from './agentHeadingOf';
+import { briefLineOf } from './briefLineOf';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { AgentProviderMark } from './AgentProviderMark';
 import { AgentHeaderActions } from '../AgentHeaderActions';
@@ -82,6 +87,13 @@ export const AgentDetailPane = ({
   const [isMoveOpen, setIsMoveOpen] = useState(false);
   const navigateTo = useAppStore((state) => state.navigate);
   const openDrawer = useAppStore((state) => state.openDrawer);
+  const toggleDrawer = useAppStore((state) => state.toggleDrawer);
+  const isTranscriptOpen = useAppStore((state) => {
+    const drawer = selectOpenDrawer(state);
+    return drawer?.kind === 'transcript' && drawer.payload.agentId === agent.id;
+  });
+  const events = useTranscript(agent.id);
+  const brief = useMemo(() => briefLineOf({ events }), [events]);
   const runs = useAppStore((state) => state.sessionPhaseRuns[session.id] ?? null);
   const providerOverride = useAppStore(
     (state) => state.agentProviderOverride[agent.id] ?? agent.providerOverride ?? null,
@@ -155,6 +167,11 @@ export const AgentDetailPane = ({
 
   const openTranscript = () =>
     openDrawer({ kind: 'transcript', sessionId: session.id, payload: { agentId: agent.id } });
+  const toggleTranscript = () =>
+    toggleDrawer({ kind: 'transcript', sessionId: session.id, payload: { agentId: agent.id } });
+  const heading = agentHeadingOf({ name: agent.name, kind, brief });
+  const isChipShown = !isAutoRoot && heading !== AGENT_KIND_META[kind].noun;
+  const shownRouting = executedRoutingOf({ executed, fallback: routing });
   const headerMenu = useObjectMenuTrigger({
     target: { kind: 'agent', sessionId: session.id, agentId: agent.id },
     anchorKey: `agent-header:${agent.id}`,
@@ -187,13 +204,13 @@ export const AgentDetailPane = ({
             >
               {runStep === undefined ? (
                 <>
-                  {isAutoRoot ? null : <AgentKindChip kind={kind} />}
-                  <AgentTitle agent={agent} sessionId={session.id} />
+                  {isChipShown ? <AgentKindChip kind={kind} /> : null}
+                  <AgentTitle agent={agent} sessionId={session.id} brief={brief} />
                 </>
               ) : (
                 runStep.heading
               )}
-              <AgentProviderMark provider={routing.provider} />
+              <AgentProviderMark provider={shownRouting.provider} />
             </span>
           }
           actions={
@@ -201,11 +218,14 @@ export const AgentDetailPane = ({
               {isAutoRoot ? (
                 <AutoMarkFinishedButton sessionId={session.id} agentId={agent.id} />
               ) : null}
-              <GhostActionButton
-                icon={ScrollText}
-                label="View transcript"
-                onClick={openTranscript}
-              />
+              {isAutoRoot ? null : (
+                <GhostActionButton
+                  icon={ScrollText}
+                  label={isTranscriptOpen ? 'Hide transcript' : 'View transcript'}
+                  pressed={isTranscriptOpen}
+                  onClick={toggleTranscript}
+                />
+              )}
               {runStep === undefined ? (
                 <AgentHeaderActions
                   key={agent.id}
