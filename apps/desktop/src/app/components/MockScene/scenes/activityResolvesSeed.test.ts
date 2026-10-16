@@ -135,7 +135,7 @@ describe('activity resolves scene', () => {
     }).filter((owner) => owner.kind === 'fixRun');
 
     expect(owners).toHaveLength(1);
-    expect(owners[0]?.text).toBe("#318 · 5 need you · 3 to review · 2 couldn't fix");
+    expect(owners[0]?.text).toBe("#318 · 3 to review · 2 couldn't fix");
     expect(owners[0]?.owed?.target?.rank).toBe(2);
   });
 
