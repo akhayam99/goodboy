@@ -96,10 +96,12 @@ describe('LimitsStrip', () => {
     render(<LimitsStrip />);
 
     expect(chipButtons()).toEqual([]);
-    expect(screen.getAllByRole('button', { name: '4 more providers' }).length).toBeGreaterThan(0);
+    const overflow = screen.getAllByRole('button', { name: 'Provider limits' });
+    expect(overflow.length).toBeGreaterThan(0);
+    expect(overflow[0]?.textContent).toBe('Limits');
   });
 
-  it('shows only the icon and bars, the number stays in the label', () => {
+  it('shows the icon and one bar, the percent only above 70%, every window in the label', () => {
     store.providerLimits = {
       anthropic: limits({}),
       codex: limits({
@@ -122,12 +124,12 @@ describe('LimitsStrip', () => {
     const [claude, codex] = chipButtons();
     expect(claude?.textContent).toBe('');
     expect(claude?.getAttribute('aria-label')).toContain('Claude Max · 47% of the week used');
-    expect(codex?.textContent).toBe('');
+    expect(codex?.textContent).toBe('82%');
     expect(codex?.getAttribute('data-limits-state')).toBe('warning');
     expect(codex?.getAttribute('aria-label')).toContain('Codex is about to run out');
   });
 
-  it('stacks the 5-hour bar over the weekly bar in one chip', () => {
+  it('draws one bar per chip, the tighter of the 5-hour and the weekly window', () => {
     store.providerLimits = {
       anthropic: limits({
         status: 'warning',
@@ -153,15 +155,11 @@ describe('LimitsStrip', () => {
 
     const [claude] = chipButtons();
     const tracks = [...(claude?.querySelectorAll('[data-limits-track]') ?? [])];
-    expect(tracks.map((track) => track.getAttribute('data-limits-track'))).toEqual([
-      'fiveHour',
-      'weekly',
-    ]);
+    expect(tracks.map((track) => track.getAttribute('data-limits-track'))).toEqual(['weekly']);
     expect(tracks.map((track) => (track.firstElementChild as HTMLElement).style.width)).toEqual([
-      '4%',
       '94%',
     ]);
-    expect(claude?.textContent).toBe('');
+    expect(claude?.textContent).toBe('94%');
   });
 
   it('fills the bar when the provider stopped and says out only in the label', () => {
@@ -187,7 +185,7 @@ describe('LimitsStrip', () => {
     );
     const weekly = codex?.querySelector('[data-limits-track="weekly"]')
       ?.firstElementChild as HTMLElement;
-    expect(codex?.textContent).toBe('');
+    expect(codex?.textContent).toBe('100%');
     expect(weekly.style.width).toBe('100%');
     expect(codex?.getAttribute('aria-label')).toContain('Codex is out for the week');
   });

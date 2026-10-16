@@ -1,5 +1,4 @@
-import { cn, DogMascot, Eyebrow } from '@goodboy/ui';
-import { ONBOARDING_STEPS } from '../../../features/onboarding/onboarding-store';
+import { DogMascot, Eyebrow } from '@goodboy/ui';
 import type { OnboardingProgress } from '../../../features/onboarding/hooks/useOnboardingProgress';
 import { useAppStore } from '../../../store';
 import { useRunningAgentCount } from '../../../features/updater/hooks/useRunningAgentCount';
@@ -44,17 +43,6 @@ export const GoodboyChipLabel = ({
   if (state === 'setup') {
     return (
       <>
-        <span aria-hidden className="flex items-center gap-0.5">
-          {ONBOARDING_STEPS.map((step) => (
-            <span
-              key={step.id}
-              className={cn(
-                'size-1.5 rounded-full',
-                progress.completed.has(step.id) ? 'bg-primary' : 'bg-idle',
-              )}
-            />
-          ))}
-        </span>
         <span className="font-semibold text-foreground">Setup</span>
         <span className="tabular-nums text-faint-foreground">
           {progress.completedCount} of {progress.totalCount}

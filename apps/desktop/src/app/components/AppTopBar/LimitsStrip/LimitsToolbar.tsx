@@ -87,6 +87,7 @@ export const LimitsToolbar = ({ chips, nowMs, pressedId, onOpen }: Props) => {
             hidden={[...withData.slice(step.shown), ...noData]}
             nowMs={nowMs}
             className={step.className}
+            hasShownChips={withData.length > 0}
             onOpen={onOpen}
           />
         ),

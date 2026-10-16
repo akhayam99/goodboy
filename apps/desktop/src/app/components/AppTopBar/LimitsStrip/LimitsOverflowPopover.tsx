@@ -22,6 +22,7 @@ type Props = {
   readonly hidden: ReadonlyArray<LimitsChip>;
   readonly nowMs: number;
   readonly className?: string;
+  readonly hasShownChips: boolean;
   readonly onOpen: (chip: LimitsChip) => void;
 };
 
@@ -47,7 +48,13 @@ const rowValue = ({ chip, nowMs }: ValueParams): string => {
   return [used, reset].filter((part) => part !== '').join(' · ');
 };
 
-export const LimitsOverflowPopover = ({ hidden, nowMs, className, onOpen }: Props) => {
+export const LimitsOverflowPopover = ({
+  hidden,
+  nowMs,
+  className,
+  hasShownChips,
+  onOpen,
+}: Props) => {
   const dropdown = useDropdown({
     align: 'end',
     width: 'w-80',
@@ -57,7 +64,7 @@ export const LimitsOverflowPopover = ({ hidden, nowMs, className, onOpen }: Prop
   const { open: isOpen, close, toggle } = dropdown;
   const worst = worstLimitsChip({ chips: hidden });
   const noun = hidden.length === 1 ? 'provider' : 'providers';
-  const label = `${hidden.length} more ${noun}`;
+  const label = hasShownChips ? `${hidden.length} more ${noun}` : 'Provider limits';
 
   return (
     <AnchoredPopover
@@ -81,9 +88,7 @@ export const LimitsOverflowPopover = ({ hidden, nowMs, className, onOpen }: Prop
             isOpen ? 'bg-muted' : 'hover:bg-hover',
           )}
         >
-          <span>
-            +{hidden.length} {noun}
-          </span>
+          <span>{hasShownChips ? `+${hidden.length} ${noun}` : 'Limits'}</span>
           {worst === null ? null : (
             <TriangleAlert
               size={ICON_SIZE.mark}

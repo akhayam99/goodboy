@@ -51,15 +51,16 @@ describe('every control in the top bar is 28 high with a 6px radius', () => {
     expect(sourceOf({ path: 'app/components/AppTopBar/index.tsx' })).toContain('h-9');
   });
 
-  it('keeps the bell badge inside the bell box, not on its edge', () => {
+  it('marks unread with a 6px dot inside the bell box, never a colored count', () => {
     const bell = sourceOf({
       path: 'features/notifications/components/NotificationCenter/index.tsx',
     });
-    const badge = bell.split('\n').find((line) => line.includes('bg-warning'));
+    const dot = bell.split('\n').find((line) => line.includes('data-bell-dot'));
+    const box = bell.split('\n').find((line) => line.includes('absolute right-1 top-1'));
 
-    expect(badge).toBeDefined();
-    expect(NEGATIVE_OFFSET.test(badge ?? '')).toBe(false);
-    expect(badge).toContain('right-0.5');
-    expect(badge).toContain('top-0.5');
+    expect(dot).toBeDefined();
+    expect(box).toBeDefined();
+    expect(NEGATIVE_OFFSET.test(box ?? '')).toBe(false);
+    expect(bell).not.toContain('bg-warning');
   });
 });
