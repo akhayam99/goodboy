@@ -60,7 +60,9 @@ export const LevelLinked = ({ session, isActive }: Props) => {
         id={LABEL_ID}
         label="Linked"
         {...(!isArchived && {
-          action: <LinkIssueAction session={session} isShortcutOn={isActive && isOverview} />,
+          action: (
+            <LinkIssueAction session={session} isShortcutOn={isActive && isOverview} look="level" />
+          ),
         })}
       />
       <ul aria-label="Linked work" className="flex flex-col">

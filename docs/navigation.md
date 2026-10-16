@@ -682,8 +682,10 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
   its tooltip and in the row's accessible name. Merged and closed worktrees
   fold into one row `2 finished` under their project (`FinishedWorktrees`),
   which opens them in place. A worktree row drills into the worktree level
-  (level 2) on its landing entry. The label carries one word, `Add`
-  (`LevelAddMenu`): Add project, Add workspace project, and `New branch in`
+  (level 2) on its landing entry. The label carries one quiet text item,
+  `+ Add` (`LevelAddTrigger`, the quiet `xs` button: no border, no fill at
+  rest, so the rail stays light), opening `LevelAddMenu`: Add project, Add
+  workspace project, and `New branch in`
   each repo project of the session; each opens today's popover
   (`MountProjectAction`, `NewBranchMountAction`) anchored under the label.
 - **Level 2, the worktree.** Showing the Branch lens is being on level 2
@@ -711,7 +713,9 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   back row go up one level each.
 - **Linked** lists the session's linked work, one row per item: provider
   mark, key in mono, title. The row opens the item; its right-click menu holds
-  Unlink and Move. The label carries Link work (L).
+  Unlink and Move. The label carries the same quiet `+ Add` item
+  (`LevelAddTrigger`, named Link work), opening Link work (L). Every label row
+  of the session level uses this one item, never a bordered chip.
 - **Back.** On level 2 the back row goes up to level 1, and so does ⌘[ while
   focus is in the rail; on level 1 ⌘[ in the rail does nothing, and anywhere
   else ⌘[ is the top bar Back. Leaving the Auto level is part of the history

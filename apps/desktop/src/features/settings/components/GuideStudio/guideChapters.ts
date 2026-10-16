@@ -443,7 +443,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Start from anything',
-        desc: 'Start from an issue, a Slack thread or an error, with the brief already drafted, or Review pull request on one waiting for you. Link to a session attaches the item to one you already have, and Link work on a session, or L, searches your trackers from there. Link a task to the session and pick whether merging closes it, or press Star it on a tracker issue to keep it in Tasks, Starred.',
+        desc: 'Start from an issue, a Slack thread or an error, with the brief already drafted, or Review pull request on one waiting for you. Link to a session attaches the item to one you already have, and + Add next to Linked in the session rail, or L, searches your trackers from there. Link a task to the session and pick whether merging closes it, or press Star it on a tracker issue to keep it in Tasks, Starred.',
       },
       {
         term: 'Task links',

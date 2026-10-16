@@ -5,15 +5,24 @@ import type { Session, SessionExternalTaskProvider } from '@goodboy/types';
 import { linkIssueEventName } from '../../../actions/kinds/session';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { LevelAddTrigger } from '../../../../shared/components/LevelAddTrigger';
 import { LinkWorkPanel } from './LinkWorkPanel';
 
 type Props = {
   readonly session: Session;
   readonly initialSource?: SessionExternalTaskProvider;
   readonly isShortcutOn?: boolean;
+  readonly look?: 'chip' | 'level';
 };
 
-export const LinkIssueAction = ({ session, initialSource, isShortcutOn = true }: Props) => {
+const LABEL = 'Link work';
+
+export const LinkIssueAction = ({
+  session,
+  initialSource,
+  isShortcutOn = true,
+  look = 'chip',
+}: Props) => {
   const [initialQuery, setInitialQuery] = useState('');
   const dropdown = useDropdown({
     align: 'end',
@@ -53,11 +62,16 @@ export const LinkIssueAction = ({ session, initialSource, isShortcutOn = true }:
     isShortcutOn && !isOpen,
   );
 
+  const openFresh = () => {
+    setInitialQuery('');
+    toggle();
+  };
+
   return (
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
-      ariaLabel="Link work"
+      ariaLabel={LABEL}
       className="overflow-hidden p-0"
       trigger={
         <Tooltip
@@ -65,21 +79,22 @@ export const LinkIssueAction = ({ session, initialSource, isShortcutOn = true }:
           shortcut="session.linkWork"
           isSuppressed={isOpen}
         >
-          <Chip
-            as="button"
-            tone="neutral"
-            shape="badge"
-            kind="reference"
-            ariaLabel="Link work"
-            hasPopup="dialog"
-            expanded={isOpen}
-            onClick={() => {
-              setInitialQuery('');
-              toggle();
-            }}
-            icon={<Plus size={ICON_SIZE.row} aria-hidden />}
-            label="Link work"
-          />
+          {look === 'level' ? (
+            <LevelAddTrigger ariaLabel={LABEL} isExpanded={isOpen} onClick={openFresh} />
+          ) : (
+            <Chip
+              as="button"
+              tone="neutral"
+              shape="badge"
+              kind="reference"
+              ariaLabel={LABEL}
+              hasPopup="dialog"
+              expanded={isOpen}
+              onClick={openFresh}
+              icon={<Plus size={ICON_SIZE.row} aria-hidden />}
+              label={LABEL}
+            />
+          )}
         </Tooltip>
       }
     >

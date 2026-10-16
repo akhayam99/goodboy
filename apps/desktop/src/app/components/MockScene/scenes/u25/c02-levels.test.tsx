@@ -112,6 +112,17 @@ describe('the c02 sidebar and session rail scenes', () => {
     const projects = within(level.getByRole('group', { name: 'Projects' }));
     expect(projects.getByText('#331')).toBeDefined();
     expect(within(level.getByRole('group', { name: 'Linked' })).getByText('NW-142')).toBeDefined();
+    const adds = [
+      projects.getByRole('button', { name: 'Add to this session' }),
+      within(level.getByRole('group', { name: 'Linked' })).getByRole('button', {
+        name: 'Link work',
+      }),
+    ];
+    for (const add of adds) {
+      expect(add.textContent).toBe('Add');
+      expect(add.getAttribute('data-variant')).toBe('quiet');
+      expect(add.className).not.toMatch(/\bborder-border/);
+    }
   });
 
   it('c02-level-session-agents marks Agents as the one current entry', async () => {

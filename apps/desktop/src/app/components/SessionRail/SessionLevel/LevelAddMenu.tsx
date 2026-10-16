@@ -1,8 +1,9 @@
-import { FolderPlus, GitFork, Plus, Settings2, type LucideIcon } from 'lucide-react';
-import { AnchoredPopover, Button, Chip, useDropdown } from '@goodboy/ui';
+import { FolderPlus, GitFork, Settings2, type LucideIcon } from 'lucide-react';
+import { AnchoredPopover, Button, useDropdown } from '@goodboy/ui';
 import type { ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { NAMES } from '../../../../shared/names';
+import { LevelAddTrigger } from '../../../../shared/components/LevelAddTrigger';
 import { dispatchAfterNavigation } from '../../../../features/actions/dispatchAfterNavigation';
 import { MountProjectAction } from '../../../../features/session/components/SessionOverviewPane/ProjectMountRows/MountProjectAction';
 import { NewBranchMountAction } from '../../../../features/session/components/SessionOverviewPane/ProjectMountRows/NewBranchMountAction';
@@ -64,17 +65,10 @@ export const LevelAddMenu = ({ sessionId, workspaceId, projects }: Props) => {
         ariaLabel={PANEL_LABEL}
         anchorClassName="shrink-0"
         trigger={
-          <Chip
-            as="button"
-            tone="neutral"
-            shape="badge"
-            kind="reference"
+          <LevelAddTrigger
             ariaLabel={PANEL_LABEL}
-            hasPopup="dialog"
-            expanded={dropdown.open}
+            isExpanded={dropdown.open}
             onClick={dropdown.toggle}
-            icon={<Plus size={ICON_SIZE.row} aria-hidden />}
-            label="Add"
           />
         }
       >
