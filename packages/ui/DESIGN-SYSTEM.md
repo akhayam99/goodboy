@@ -153,9 +153,11 @@ state is a `StateDot` or a glyph in a 16px column.
   buttons of its own and nothing appears on hover. `isSelected` sets
   `data-selected` and `aria-current`. Up and Down move focus between rows.
 - `rowHeight` is 32 by default and 28 in the sidebar.
-- `ListGridGroup` names a group in sentence case with its count in the last
-  column; an `action` (one visible control, such as the `Open session` arrow on a Terminal
-  page group) sits right after the name and never takes the count's column; a
+- `ListGridGroup` names a group in sentence case with its count right after
+  the name, like a Board lane and a sidebar group (a count alone in the last
+  column read as a value of the row below); an `action` (one visible control,
+  such as the `Open session` arrow on a Terminal page group) sits at the end of
+  the heading row; a
   grouped grid (`isGrouped`) spaces its groups 16px apart, never with a divider.
   `headingLevel` is 3 by default and 2 on a page whose title is the only heading
   above the groups. A group with no `label` draws its rows alone, with no heading

@@ -99,7 +99,7 @@ describe('ListGrid', () => {
     screen.getByText('test (payments-api)');
   });
 
-  it('names a group by its heading and puts its count in the last column', () => {
+  it('names a group by its heading and puts its count right after the name', () => {
     render(
       <ListGrid label="Tasks" columns={COLUMNS} isGrouped>
         <ListGridGroup label="In progress" count={12}>
@@ -109,11 +109,12 @@ describe('ListGrid', () => {
     );
     const group = screen.getByRole('list', { name: 'In progress' });
     within(group).getByText('Ledger export times out');
-    expect(screen.getByText('12').className).toContain('col-start-[-3]');
+    const heading = screen.getByRole('heading', { name: 'In progress' });
+    expect(heading.nextElementSibling?.textContent).toBe('12');
     expect(screen.getByRole('list', { name: 'Tasks' }).className).toContain('gap-y-4');
   });
 
-  it('keeps a group action beside its name and the count alone in the last column', () => {
+  it('keeps the count beside the name and the group action after them', () => {
     render(
       <ListGrid label="Tasks" columns={COLUMNS} isGrouped>
         <ListGridGroup label="In progress" count={12} action={<button type="button">Open</button>}>
@@ -122,8 +123,9 @@ describe('ListGrid', () => {
       </ListGrid>,
     );
     const action = screen.getByRole('button', { name: 'Open' });
-    expect(action.closest('[class*="col-end-[-3]"]')).not.toBeNull();
-    expect(screen.getByText('12').textContent).toBe('12');
+    const count = screen.getByText('12');
+    expect(count.compareDocumentPosition(action) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(count.previousElementSibling?.textContent).toBe('In progress');
   });
 
   it('draws a group with no name as rows alone, with no heading and no count', () => {

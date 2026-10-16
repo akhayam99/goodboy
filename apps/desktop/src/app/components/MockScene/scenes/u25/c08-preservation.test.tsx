@@ -205,7 +205,7 @@ describe('SPEC3 9.4 run rows stay reachable from the preset run level', () => {
     await mount('c08-runs');
     const grid = within(screen.getByRole('list', { name: 'Runs' }));
     const countOf = (label: string) =>
-      grid.getByRole('heading', { name: label }).parentElement?.nextElementSibling?.textContent;
+      grid.getByRole('heading', { name: label }).nextElementSibling?.textContent;
     expect(countOf('In progress')).toBe('2');
     expect(countOf('Finished')).toBe('1');
     expect(countOf('Archived')).toBe('1');

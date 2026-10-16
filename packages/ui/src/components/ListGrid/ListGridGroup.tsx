@@ -41,28 +41,29 @@ export const ListGridGroup = ({
           data-list-grid-group-label=""
           className={cn(SUBGRID, 'h-7 items-center', isSticky && 'sticky top-0 z-10 bg-background')}
         >
-          <div className="col-start-2 col-end-[-3] flex min-w-0 items-center gap-3">
-            <Heading
-              id={headingId}
-              className={cn('min-w-0 flex-1 truncate text-row', TEXT_ROLE.secondary)}
-            >
-              {label}
-            </Heading>
+          <div className="col-start-2 col-end-[-1] flex min-w-0 items-center gap-3">
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+              <Heading
+                id={headingId}
+                className={cn('min-w-0 truncate text-row', TEXT_ROLE.secondary)}
+              >
+                {label}
+              </Heading>
+              {count === undefined ? null : (
+                <span
+                  data-list-grid-count=""
+                  className={cn('shrink-0 text-row tabular-nums', TEXT_ROLE.hint)}
+                >
+                  {count}
+                </span>
+              )}
+            </div>
             {action === undefined || action === null ? null : (
               <span className={cn('flex shrink-0 items-center gap-2 tabular-nums', TEXT_ROLE.hint)}>
                 {action}
               </span>
             )}
           </div>
-          <span
-            data-list-grid-count=""
-            className={cn(
-              'col-start-[-3] col-end-[-2] flex items-center justify-end tabular-nums',
-              TEXT_ROLE.hint,
-            )}
-          >
-            {count === undefined ? null : count}
-          </span>
         </div>
       )}
       {lead === undefined || lead === null ? null : <ul className={SUBGRID}>{lead}</ul>}
