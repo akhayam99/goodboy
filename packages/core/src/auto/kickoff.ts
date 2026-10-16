@@ -13,6 +13,12 @@ export const AUTO_DEFAULT_DONE_WHEN = {
   reviewer:
     'A verdict (approve or changes needed) with findings ordered by severity, on the named snapshot.',
   docs: 'The documentation change is made and nothing else changed.',
+  scribe:
+    'The pull request title and description are written from the diff of the branch. Goodboy opens or updates the pull request from them.',
+  'ci-fixer':
+    'The failing check passes locally, or its failure is explained, and the fix is committed. Nothing is pushed.',
+  rewriter:
+    'The commits of the branch are rewritten as asked, the final tree is unchanged unless the task says otherwise, and nothing is pushed.',
 } as const satisfies Readonly<Record<AutoDelegationRole, string>>;
 
 const artifactBlock = (kind: 'plan' | 'report'): string =>
@@ -26,6 +32,10 @@ export const AUTO_DEFAULT_EXPECTED = {
   tester: 'A short text summary and the results of the tests you ran.',
   reviewer: artifactBlock('report'),
   docs: 'A short text summary and the results of the checks you ran.',
+  scribe:
+    'The pull request text in one `<<pr-title>>...<</pr-title>>` block and one `<<pr-body>>...<</pr-body>>` block. Do not run gh or git push: Goodboy opens the pull request.',
+  'ci-fixer': 'A short text summary, the commit you made and the checks you ran.',
+  rewriter: 'The new commit list (sha and subject) and the checks you ran.',
 } as const satisfies Readonly<Record<AutoDelegationRole, string>>;
 
 export const AUTO_DEPENDENCIES_RULE =

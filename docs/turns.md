@@ -76,7 +76,8 @@ database.
   worktree. The lease is bound to the child process in Rust and released when
   that process exits.
 - **Auto writers hold their write set; today's agents do not.** A turn sent
-  with a writer `confinedRole` (implementer, tester, docs: the turns of an Auto
+  with a writer `confinedRole` (implementer, tester, docs, scribe, ci-fixer,
+  rewriter: the turns of an Auto
   tree, set by the Auto units) takes one lease over its write set before it
   spawns: its working folder, the sibling mounts of the session and the common
   metadata folder of each repo, the same list `turnWriteSet` hands to the CLI as

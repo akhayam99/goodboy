@@ -36,7 +36,7 @@ describe('autoRoleCatalog', () => {
   });
 
   it('names no role outside the closed list', () => {
-    for (const role of ['custom', 'report', 'wireframe', 'resolver', 'rewriter', 'scribe']) {
+    for (const role of ['custom', 'report', 'wireframe', 'resolver', 'ci-debugger']) {
       expect(autoRoleCatalog()).not.toContain(`- ${role} (`);
     }
   });
@@ -119,7 +119,9 @@ describe('buildAutoSystemPrompt', () => {
       expect(table).toContain(`- To ${AUTO_ROLE_WHEN[role]}: ${role}.`);
     }
     expect(AUTO_ROLE_WHEN.investigator).toContain('diagnose a failure');
-    expect(AUTO_ROLE_WHEN.implementer).toContain('git work');
+    expect(AUTO_ROLE_WHEN.scribe).toContain('pull request');
+    expect(AUTO_ROLE_WHEN['ci-fixer']).toContain('failing check');
+    expect(AUTO_ROLE_WHEN.rewriter).toContain('commit history');
   });
 
   it('asks for hand overs that name the role, never for actions of its own', () => {

@@ -188,7 +188,8 @@ is a compare and swap on the version the drawer shows, then Auto is told once
 ("Approved plan v1."). A newer version, a revise in progress, a used plan or a
 discarded one refuse it with a sentence and the drawer stays open. A second
 click, or a second window, on an approved version does not tell Auto again.
-Auto cannot start a writer role (Implementer, Tester, Docs) on a plan that is not
+Auto cannot start a writer role (Implementer, Tester, Docs, Scribe, CI fixer,
+Rewriter) on a plan that is not
 approved. The policy is `isAutoPlanApprovalRequired`: the runtime reads the
 stored setting `agents.autoPlanApproval` on every tick, and approval is required
 unless the stored value is exactly `false`. There is no screen for that setting
@@ -223,7 +224,10 @@ capability token and no allow rule. It decides by ending its final reply with at
 The system prompt (`packages/core/src/auto/prompt.ts`) carries the role list and a routing table,
 **WHICH ROLE FOR WHICH WORK**, generated from `AUTO_ROLE_WHEN` (one line per Auto role, so a role
 cannot join without one): diagnosing a failure goes to an Investigator, tests to a Tester, text
-about code to Docs, git work on the branch to an Implementer. It names the `mount` field of a
+about code to Docs, code changes and their commits to an Implementer, the pull request to a
+Scribe, a failing check to a CI fixer, the commit history of the branch to a Rewriter. Scribe, CI
+fixer and Rewriter are writers (m232 widens the role CHECK of `auto_delegations`; Rust
+`WRITER_ROLES` holds them). It names the `mount` field of a
 child and the MOUNTS line it is filled from. Auto keeps its read tools and answers questions
 itself; when it reports what happens next it describes a hand over and names the role ("I asked
 an implementer to reinstall the dependencies"), never an action of its own. The brief of every

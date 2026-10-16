@@ -171,6 +171,29 @@ describe('the delegate command', () => {
     expect(await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE })).toHaveLength(0);
   });
 
+  it('admits a Scribe, a CI fixer and a Rewriter as writers on the mount they name', async () => {
+    const state = await setup();
+    const outcome = await run(
+      state,
+      delegateCommand({
+        children: ['scribe', 'ci-fixer', 'rewriter'].map((role) => ({
+          role,
+          task: `${role} work on ledger-core`,
+          reason: 'the role for this work',
+          mount: 'mount-ledger-core',
+        })),
+      }),
+    );
+    expect(outcome.isOk).toBe(true);
+    const rows = await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE });
+    expect(rows.map((row) => row.role)).toEqual(['scribe', 'ci-fixer', 'rewriter']);
+    for (const row of rows) {
+      expect(row.target).toMatchObject({ mountId: 'mount-ledger-core', mountSource: 'named' });
+      expect(String(row.request['kickoff'])).toContain('You change files, only in the mount');
+    }
+    expect(String(rows[0]?.request['kickoff'])).toContain('<<pr-title>>');
+  });
+
   it('starts a reader without a mount on the captured primary mount', async () => {
     const state = await setup();
     await run(

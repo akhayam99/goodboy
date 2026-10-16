@@ -8,6 +8,9 @@ export const AUTO_DELEGATION_ROLES = [
   'implementer',
   'tester',
   'docs',
+  'scribe',
+  'ci-fixer',
+  'rewriter',
 ] as const satisfies ReadonlyArray<AgentRole>;
 
 export type AutoDelegationRole = (typeof AUTO_DELEGATION_ROLES)[number];
@@ -16,6 +19,9 @@ export const AUTO_WRITER_ROLES = [
   'implementer',
   'tester',
   'docs',
+  'scribe',
+  'ci-fixer',
+  'rewriter',
 ] as const satisfies ReadonlyArray<AutoDelegationRole>;
 
 export type AutoWriterRole = (typeof AUTO_WRITER_ROLES)[number];
@@ -30,6 +36,9 @@ export const AUTO_ROLE_ARTIFACT = {
   implementer: null,
   tester: null,
   docs: null,
+  scribe: null,
+  'ci-fixer': null,
+  rewriter: null,
 } as const satisfies Readonly<Record<AutoDelegationRole, AutoArtifactKind | null>>;
 
 export const AUTO_ROLE_WHEN = {
@@ -38,10 +47,14 @@ export const AUTO_ROLE_WHEN = {
   planner: 'turn a request into steps with risks and checks before anything changes',
   investigator: 'diagnose a failure, a crash or a wrong result and find its cause',
   reviewer: 'judge a change that already exists and list what is wrong with it',
-  implementer:
-    'change code, run git work on the branch (commits, a rebase, reinstalling dependencies) or fix what an investigator found',
+  implementer: 'change code, commit it, reinstall dependencies or fix what an investigator found',
   tester: 'write or fix tests for a named behavior',
-  docs: 'write text about the code: documentation, a README, a changelog',
+  docs: 'write documentation, a README or a changelog in the repository',
+  scribe:
+    'write the pull request of the branch and open it, as a draft unless the user asks otherwise',
+  'ci-fixer': 'make a failing check of the branch pass and commit the fix, never push',
+  rewriter:
+    'rewrite or tidy the commit history of the branch: squash, reword, reorder or split commits',
 } as const satisfies Readonly<Record<AutoDelegationRole, string>>;
 
 type ParseAutoDelegationRoleParams = {
