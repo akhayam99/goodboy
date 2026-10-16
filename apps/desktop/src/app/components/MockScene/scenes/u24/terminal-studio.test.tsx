@@ -108,7 +108,7 @@ describe('the terminal studio scenes', () => {
       .map(
         (heading) => heading.closest('li')?.querySelector('[data-list-grid-count]')?.textContent,
       );
-    expect(counts).toEqual(['3', '1', '1']);
+    expect(counts).toEqual(['3', undefined, undefined]);
   });
 
   it('shows the first port as quiet text on a row that is not selected, and the ports at the right of the tab strip', async () => {

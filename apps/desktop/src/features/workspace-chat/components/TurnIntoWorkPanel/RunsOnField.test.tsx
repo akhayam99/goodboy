@@ -63,6 +63,8 @@ describe('RunsOnField', () => {
       />,
     );
 
+    expect(screen.queryByRole('button', { name: 'Use default' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /pinned/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Use default' }));
 
     expect(onChange).toHaveBeenCalledWith(null);

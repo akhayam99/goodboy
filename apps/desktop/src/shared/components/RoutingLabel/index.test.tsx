@@ -32,6 +32,16 @@ describe('RoutingLabel', () => {
     expect(partOf(container, 'detail')).toBe('High');
   });
 
+  it('says the effort only when it is not the default Medium, the tooltip keeps it', () => {
+    const { container } = render(
+      <RoutingLabel provider="anthropic" model="claude-sonnet-5" effort="medium" />,
+    );
+
+    expect(partOf(container, 'name')).toBe('Sonnet 5');
+    expect(partOf(container, 'detail')).toBeNull();
+    expect(container.textContent).not.toContain('Medium');
+  });
+
   it('names the codex variant as part of the model, like the picker trigger', () => {
     const { container } = render(
       <RoutingLabel provider="codex" model="gpt-5.6-sol" effort="high" />,

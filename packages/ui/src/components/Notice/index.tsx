@@ -3,8 +3,8 @@ import { ChevronRight, CircleAlert, CircleCheck, Info, TriangleAlert } from 'luc
 import { cn } from '../../cn';
 import { FOCUS_RING } from '../../focusRing';
 import { ICON_SIZE } from '../../iconSize';
+import { FLOATING_SURFACE } from '../../floatingSurface';
 import { tintClasses } from '../../tint';
-import { ToneBar } from '../ToneBar';
 
 export type NoticeTone = 'danger' | 'warning' | 'info' | 'success';
 
@@ -32,9 +32,9 @@ const TONE_ICON = {
 
 const PLACEMENT_SURFACE = {
   transcript: 'bg-transparent py-2 pl-4 pr-3',
-  inline: 'rounded-lg border border-border-soft bg-subtle py-3 pl-4 pr-3',
-  banner: 'rounded-lg border border-border-soft bg-subtle py-3 pl-4 pr-3',
-  floating: 'rounded-lg border border-border-soft bg-floating py-3 pl-4 pr-3 shadow-lg',
+  inline: 'rounded-md bg-subtle p-3',
+  banner: 'rounded-md bg-subtle p-3',
+  floating: cn(FLOATING_SURFACE, 'p-3'),
 } as const satisfies Record<NoticePlacement, string>;
 
 const PLACEMENT_TITLE = {
@@ -44,12 +44,7 @@ const PLACEMENT_TITLE = {
   floating: 'text-body',
 } as const satisfies Record<NoticePlacement, string>;
 
-const PLACEMENT_ICON_SIZE = {
-  transcript: 14,
-  inline: 14,
-  banner: 14,
-  floating: 16,
-} as const satisfies Record<NoticePlacement, number>;
+const NOTICE_ICON_PX = 16;
 
 type HasContentParams = {
   readonly node: ReactNode;
@@ -94,9 +89,7 @@ export const Notice = ({
           data-notice-rail
           className={cn('absolute inset-y-0 left-0 w-0.5', tint.dot)}
         />
-      ) : (
-        <ToneBar tone={tone} density="card" />
-      )}
+      ) : null}
       <div
         data-notice-layout
         className={cn(
@@ -105,10 +98,10 @@ export const Notice = ({
         )}
       >
         <Icon
-          size={PLACEMENT_ICON_SIZE[placement]}
+          size={NOTICE_ICON_PX}
           aria-hidden
           {...(iconTestId !== undefined ? { 'data-testid': iconTestId } : {})}
-          className={cn('shrink-0', !isTitleOnly && 'mt-px', tint.icon)}
+          className={cn('shrink-0', !isTitleOnly && 'mt-0.5', tint.icon)}
         />
         <div className="flex min-w-0 flex-col items-start gap-1">
           <p

@@ -42,7 +42,7 @@ describe('the frames scenes', () => {
   });
 
   it.each(['frames-guide-rail', 'frames-guide-pinned'] as const)(
-    'draws the %s crumb in the detail, first under the sheet top beside the rail',
+    'draws the %s title first in the detail with Close in its header, beside the rail',
     async (id) => {
       const Scene = U24_FRAMES_SCENES[id];
       const { container } = render(
@@ -51,10 +51,15 @@ describe('the frames scenes', () => {
         </ToastProvider>,
       );
 
-      const band = await screen.findByRole('banner', { name: 'Guide' });
+      const title = await screen.findByRole('heading', { level: 1, name: 'Guide' });
       const detail = container.querySelector<HTMLElement>('[data-studio-detail]');
-      expect(detail?.firstElementChild).toBe(band);
-      expect(screen.getByRole('navigation', { name: 'Guide chapters' }).contains(band)).toBe(false);
+      expect(container.querySelector('[data-studio-band]')).toBeNull();
+      expect(detail?.contains(title)).toBe(true);
+      const header = title.closest('[data-slot="pane-header"]');
+      expect(header?.contains(screen.getByRole('button', { name: 'Close guide' }))).toBe(true);
+      expect(screen.getByRole('navigation', { name: 'Guide chapters' }).contains(title)).toBe(
+        false,
+      );
     },
   );
 });

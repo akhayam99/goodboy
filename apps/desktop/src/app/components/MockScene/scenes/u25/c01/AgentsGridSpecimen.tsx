@@ -69,7 +69,7 @@ export const AgentsGridSpecimen = () => {
           isSelected={agent.id === selected}
           onSelect={() => setSelected(agent.id)}
           cells={[
-            <StateDot key="dot" state={agent.state} label={agent.word} />,
+            <StateDot key="dot" state={agent.state} label={agent.word} isLive />,
             agent.role,
             agent.title,
             agent.word,

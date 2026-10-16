@@ -3,6 +3,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { Settings } from 'lucide-react';
+import { PaneShell } from '@goodboy/ui';
 import { StudioShell } from './index';
 
 afterEach(cleanup);
@@ -51,18 +52,26 @@ describe('StudioShell variant rendering', () => {
 });
 
 describe('StudioShell header', () => {
-  it('renders the title and its subtitle', () => {
+  it('draws no title, icon or subtitle of its own: the page h1 is the one title', () => {
     render(<StudioShell {...defaults}>{() => <p>body</p>}</StudioShell>);
-    expect(screen.getByText('Test Studio')).toBeDefined();
-    expect(screen.getByText('acme')).toBeDefined();
+    expect(screen.queryByText('Test Studio')).toBeNull();
+    expect(screen.queryByText('acme')).toBeNull();
+    expect(document.querySelector('svg.lucide-settings')).toBeNull();
   });
 
-  it('renders the header icon bare', () => {
-    render(<StudioShell {...defaults}>{() => <p>body</p>}</StudioShell>);
-    const header = screen.getByText('Test Studio').closest('header');
-    const icon = header?.querySelector('svg.lucide-settings');
-    expect(icon?.getAttribute('width')).toBe('18');
-    expect(icon?.parentElement).toBe(header);
+  it('moves Close into the page header when the body draws one', () => {
+    render(
+      <StudioShell {...defaults}>
+        {() => (
+          <PaneShell title="Test Studio">
+            <p>body</p>
+          </PaneShell>
+        )}
+      </StudioShell>,
+    );
+    const header = document.querySelector('[data-slot="pane-header"]');
+    expect(header?.contains(screen.getByRole('button', { name: 'close test studio' }))).toBe(true);
+    expect(document.querySelector('[data-studio-band]')).toBeNull();
   });
 
   it('renders close button with correct aria-label', () => {
@@ -138,15 +147,15 @@ describe('StudioShell animation classes', () => {
   });
 });
 
-describe('StudioShell subtitle', () => {
-  it('renders no subtitle line when none is given', () => {
+describe('StudioShell band', () => {
+  it('keeps a band with Close alone when the body draws no page header', () => {
     render(
       <StudioShell icon={Settings} title="Changelog" closeLabel="close" onClose={() => undefined}>
         {() => <p>body</p>}
       </StudioShell>,
     );
     const header = screen.getByRole('banner', { name: 'Changelog' });
-    expect(header.textContent?.replace(/\s+/g, '')).toBe('ChangelogClose');
+    expect(header.textContent?.replace(/\s+/g, '')).toBe('Close');
   });
 });
 

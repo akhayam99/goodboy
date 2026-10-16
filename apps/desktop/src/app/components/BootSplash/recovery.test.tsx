@@ -20,10 +20,10 @@ describe('BootSplash recovery controls', () => {
     expect(retries).toEqual([1]);
   });
 
-  it('draws the error tone as one inner line inside the alert', () => {
+  it('draws the error tone in the icon alone, with no tone line inside the alert', () => {
     render(<BootSplash phase="error" error="db migration failed" onRetry={() => undefined} />);
 
-    expect(within(screen.getByRole('alert')).getAllByTestId('tone-bar')).toHaveLength(1);
+    expect(within(screen.getByRole('alert')).queryByTestId('tone-bar')).toBeNull();
   });
 
   it('offers no skip affordance while detecting agents', () => {

@@ -5,7 +5,6 @@ import { cn } from '../cn';
 import { useEscapeLayer } from '../useEscapeLayer';
 import { lastFocusedElement } from '../useLastFocused';
 import { Button } from './Button';
-import { Divider } from './Divider';
 import { IconButton } from './IconButton';
 import { ScrollFade } from './ScrollFade';
 import { FRAME_DRAWER_INSET_PX, FRAME_DRAWER_ROW_PX } from '../frameGeometry';
@@ -22,7 +21,9 @@ export type DrawerFrameProps = {
   readonly icon?: LucideIcon;
   readonly iconClassName?: string;
   readonly count?: ReactNode;
+  readonly meta?: ReactNode;
   readonly action?: ReactNode;
+  readonly menu?: ReactNode;
   readonly toolbar?: ReactNode;
   readonly back?: DrawerBack;
   readonly closeLabel?: string;
@@ -31,6 +32,10 @@ export type DrawerFrameProps = {
   readonly scroll?: 'frame' | 'self';
   readonly children: ReactNode;
 };
+
+const HEADER_INSET_PX = 16;
+
+const META_INSET_WITH_ICON_PX = HEADER_INSET_PX + ICON_SIZE.control + 8;
 
 const FIELD_SELECTOR = 'textarea, input, [contenteditable="true"]';
 
@@ -66,7 +71,9 @@ export const DrawerFrame = ({
   icon: Icon,
   iconClassName,
   count,
+  meta,
   action,
+  menu,
   toolbar,
   back,
   closeLabel = 'Close',
@@ -114,17 +121,21 @@ export const DrawerFrame = ({
       <div className={cn('flex min-w-0 flex-1 gap-2', hasToolbar ? 'items-start' : 'items-center')}>
         {Icon == null ? null : (
           <span className="flex h-5 shrink-0 items-center">
-            <Icon size={ICON_SIZE.control} aria-hidden className={iconClassName} />
+            <Icon
+              size={ICON_SIZE.control}
+              aria-hidden
+              className={cn('text-muted-foreground', iconClassName)}
+            />
           </span>
         )}
         {titleContent != null ? (
-          <div className="flex h-5 min-w-0 items-center text-heading text-foreground">
+          <div className="flex h-5 min-w-24 items-center text-heading text-foreground">
             {titleContent}
           </div>
         ) : (
           <h2
             className={cn(
-              'min-w-0 text-heading text-foreground',
+              'min-w-24 text-heading text-foreground',
               hasToolbar ? 'line-clamp-2' : 'truncate',
             )}
           >
@@ -139,6 +150,7 @@ export const DrawerFrame = ({
       </div>
       <div className={cn('flex shrink-0 items-center gap-1', hasToolbar && 'h-5')}>
         {action}
+        {menu}
         <IconButton icon={X} label={closeLabel} variant="ghost" onClick={onClose} />
       </div>
     </>
@@ -166,13 +178,21 @@ export const DrawerFrame = ({
         >
           {titleRow}
         </div>
+        {meta == null ? null : (
+          <p
+            data-drawer-meta=""
+            style={{ paddingLeft: Icon == null ? HEADER_INSET_PX : META_INSET_WITH_ICON_PX }}
+            className="min-w-0 truncate pr-2 text-meta text-muted-foreground"
+          >
+            {meta}
+          </p>
+        )}
         {hasToolbar ? (
           <div data-drawer-toolbar="" className="flex min-w-0 flex-col gap-2 px-4">
             {toolbar}
           </div>
         ) : null}
       </header>
-      <Divider />
       {back === undefined ? null : (
         <div data-drawer-back="" className="flex shrink-0 px-2 pt-2">
           <Button variant="quiet" size="xs" onClick={back.onBack}>
