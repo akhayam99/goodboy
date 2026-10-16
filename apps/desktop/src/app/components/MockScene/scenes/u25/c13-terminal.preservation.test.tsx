@@ -63,7 +63,7 @@ describe('SPEC3 9.8 Terminal page rows stay reachable from the new list', () => 
     expect(within(grid()).queryByText('HBL-412')).toBeNull();
     expect(within(grid()).queryByText(/\+117/)).toBeNull();
     const heading = within(grid()).getByRole('heading', { name: 'Ledger export speed up' });
-    expect(heading.closest('li')?.querySelector('.tabular-nums')?.textContent).toBe('4');
+    expect(heading.closest('li')?.querySelector('[data-list-grid-count]')?.textContent).toBe('4');
   });
 
   it('moves the header facts to the tab strip menu', async () => {

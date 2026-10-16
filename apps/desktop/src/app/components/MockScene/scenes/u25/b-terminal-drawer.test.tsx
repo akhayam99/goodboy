@@ -229,6 +229,8 @@ describe('the terminal drawer scenes', () => {
       name: 'Stop retried webhooks posting a second credit',
     });
     expect(within(session).getAllByRole('listitem')).toHaveLength(2);
-    expect(headings[0]?.closest('li')?.querySelector('.tabular-nums')?.textContent).toBe('3');
+    expect(headings[0]?.closest('li')?.querySelector('[data-list-grid-count]')?.textContent).toBe(
+      '3',
+    );
   });
 });

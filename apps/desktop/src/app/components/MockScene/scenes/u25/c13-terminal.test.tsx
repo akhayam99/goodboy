@@ -68,7 +68,7 @@ describe('c13 terminal scenes', () => {
       'Workspace folder',
     ]);
     const counts = headings.map(
-      (heading) => heading.closest('li')?.querySelector('.tabular-nums')?.textContent,
+      (heading) => heading.closest('li')?.querySelector('[data-list-grid-count]')?.textContent,
     );
     expect(counts).toEqual(['4', '1', '1']);
   });

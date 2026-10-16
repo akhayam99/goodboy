@@ -105,7 +105,9 @@ describe('the terminal studio scenes', () => {
     expect(within(groupNamed(PAYMENTS_SESSION)).getAllByRole('listitem')).toHaveLength(2);
     const counts = within(terminalsGrid())
       .getAllByRole('heading', { level: 3 })
-      .map((heading) => heading.closest('li')?.querySelector('.tabular-nums')?.textContent);
+      .map(
+        (heading) => heading.closest('li')?.querySelector('[data-list-grid-count]')?.textContent,
+      );
     expect(counts).toEqual(['3', '1', '1']);
   });
 

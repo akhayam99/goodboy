@@ -54,6 +54,7 @@ export const ListGridGroup = ({
           )}
         </div>
         <span
+          data-list-grid-count=""
           className={cn(
             'col-start-[-3] col-end-[-2] flex items-center justify-end tabular-nums',
             TEXT_ROLE.hint,
