@@ -1,0 +1,159 @@
+// @vitest-environment happy-dom
+
+vi.mock('@tauri-apps/api/core', async () => {
+  const { sceneInvoke } = await import('../../../../../test/sceneInvoke');
+  return { invoke: vi.fn((command: string, args?: unknown) => sceneInvoke({ command, args })) };
+});
+vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
+
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+} from '../../../../../store/storyHarness';
+import { ToastProvider } from '../../../../../shared/components/Toast';
+import { ObjectMenuProvider } from '../../../../../features/actions/components/ObjectMenuProvider';
+import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
+import { MOCK_SCENES } from '../..';
+import { U25_R1_INACTIVE_SCENES } from './r1-inactive';
+
+type SceneName = keyof typeof U25_R1_INACTIVE_SCENES;
+
+beforeAll(async () => {
+  await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+});
+
+afterEach(() => {
+  cleanup();
+  clearSceneInvoke();
+});
+
+const INACTIVE = [
+  { title: 'Write the notify-relay digest', trailing: 'inactive 4d' },
+  { title: 'Paginate the payments list', trailing: 'inactive 6d' },
+  { title: 'Move the ledger export to a queue', trailing: 'inactive 12d' },
+];
+
+const STAYING = [
+  'Reconcile the ledger export',
+  'Stop notify-relay posting a webhook twice',
+  'Stop notify-relay retries on a 409',
+  'Add idempotency keys to payments-api',
+  'Tune the payments rate limiter',
+  'Backfill the settlement dates',
+];
+
+const mount = async (name: SceneName): Promise<void> => {
+  const Scene = U25_R1_INACTIVE_SCENES[name];
+  render(
+    <ToastProvider>
+      <ObjectMenuProvider>
+        <Scene />
+      </ObjectMenuProvider>
+    </ToastProvider>,
+  );
+  await waitFor(() => expect(document.querySelector('[data-column-sessions]')).not.toBeNull());
+  expect(screen.queryByText('Something went wrong')).toBeNull();
+};
+
+const sessionList = (): HTMLElement => {
+  const list = document.querySelector('[data-column-sessions]');
+  if (!(list instanceof HTMLElement)) {
+    throw new Error('the scene has no sessions list');
+  }
+  return list;
+};
+
+type RootParams = {
+  readonly root: ParentNode;
+};
+
+const sidebarRows = ({ root }: RootParams) =>
+  Array.from(root.querySelectorAll<HTMLElement>('button[data-select-id]')).map((button) => {
+    const trailing = button.querySelector('[data-row-trailing]');
+    return {
+      title: (trailing?.previousElementSibling ?? button.lastElementChild)?.textContent ?? '',
+      trailing: trailing?.textContent ?? null,
+    };
+  });
+
+const sidebarInactive = () => {
+  const header = within(sessionList()).getByText('Inactive');
+  const group = header.closest('div.flex.flex-col');
+  if (group === null) {
+    throw new Error('the Inactive header has no group');
+  }
+  return group;
+};
+
+describe('the r1 inactive sessions scenes', () => {
+  it('are registered under their keys', () => {
+    for (const name of Object.keys(U25_R1_INACTIVE_SCENES)) {
+      expect(MOCK_SCENES[name], name).toBeDefined();
+    }
+  });
+
+  it('r1-inactive-sidebar closes the list with Inactive 3, newest first, and keeps every busy session above it', async () => {
+    await mount('r1-inactive-sidebar');
+
+    await waitFor(() => expect(within(sessionList()).getByText('Inactive')).toBeDefined());
+    expect(sidebarInactive().textContent).toContain('Inactive3');
+    expect(sidebarRows({ root: sidebarInactive() })).toEqual(INACTIVE);
+    const rows = sidebarRows({ root: sessionList() });
+    expect(rows.slice(-3)).toEqual(INACTIVE);
+    expect(
+      rows
+        .slice(0, -3)
+        .map((row) => row.title)
+        .sort(),
+    ).toEqual([...STAYING].sort());
+    expect(rows.slice(0, -3).every((row) => row.trailing === null)).toBe(true);
+  });
+
+  it('r1-inactive-sidebar-grouped ends the project groups with a foldable Inactive group', async () => {
+    await mount('r1-inactive-sidebar-grouped');
+
+    const header = await within(sessionList()).findByRole('button', { name: /^Inactive/ });
+    expect(header.getAttribute('aria-expanded')).toBe('true');
+    const headers = Array.from(sessionList().querySelectorAll('button[aria-expanded]'))
+      .map((button) => button.textContent ?? '')
+      .filter((text) => text !== '');
+    expect(headers.at(-1)).toBe('Inactive3');
+    expect(sidebarRows({ root: sidebarInactive() })).toEqual(INACTIVE);
+  });
+
+  it('r1-inactive-list ends the Sessions list with an Inactive group whose last column says how long', async () => {
+    await mount('r1-inactive-list');
+
+    const heading = await screen.findByRole('heading', { level: 2, name: 'Inactive' });
+    const group = heading.closest('li');
+    if (group === null) {
+      throw new Error('the Inactive heading has no group');
+    }
+    const rows = within(group).getAllByRole('button');
+    expect(rows.map((row) => row.getAttribute('aria-label'))).toEqual(
+      INACTIVE.map((row) => row.title),
+    );
+    for (const [index, row] of rows.entries()) {
+      expect(row.textContent).toContain(INACTIVE[index]?.trailing ?? '');
+    }
+    expect(within(group).getByText('3')).toBeDefined();
+  });
+
+  it('r1-inactive-list-grouped keeps the stage groups and adds Inactive last', async () => {
+    await mount('r1-inactive-list-grouped');
+
+    await screen.findByRole('heading', { level: 2, name: 'Inactive' });
+    const headings = screen
+      .getAllByRole('heading', { level: 2 })
+      .map((heading) => heading.textContent);
+    expect(headings.at(-1)).toBe('Inactive');
+    expect(headings.length).toBeGreaterThan(1);
+  });
+});

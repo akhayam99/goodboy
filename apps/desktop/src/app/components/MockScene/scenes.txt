@@ -556,6 +556,10 @@ questions-empty
 queue-composer-primary
 queue-read-finished
 queue-stopped-resume
+r1-inactive-list
+r1-inactive-list-grouped
+r1-inactive-sidebar
+r1-inactive-sidebar-grouped
 rail-draft-dot
 rail-flyout
 rail-pinned
