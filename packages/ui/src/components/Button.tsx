@@ -16,7 +16,7 @@ export type ButtonProps = Omit<ComponentProps<'button'>, 'type'> & {
 
 export const BUTTON_VARIANT_CLASSES = {
   primary:
-    'bg-primary text-on-tone hover:bg-primary/90 disabled:bg-fill disabled:text-disabled-foreground',
+    'bg-primary text-on-tone hover:bg-primary/90 disabled:bg-fill disabled:text-disabled-foreground [&_svg]:text-current',
   secondary:
     'bg-fill text-foreground hover:bg-hover border-border disabled:bg-fill disabled:text-disabled-foreground',
   ghost:
@@ -24,9 +24,9 @@ export const BUTTON_VARIANT_CLASSES = {
   quiet:
     'border-0 text-muted-foreground hover:bg-hover hover:text-foreground disabled:bg-transparent disabled:text-disabled-foreground',
   danger:
-    'bg-danger text-on-tone hover:bg-danger/90 disabled:bg-fill disabled:text-disabled-foreground',
+    'bg-danger text-on-tone hover:bg-danger/90 disabled:bg-fill disabled:text-disabled-foreground [&_svg]:text-current',
   'ghost-danger':
-    'border-0 text-danger hover:bg-danger/10 disabled:bg-transparent disabled:text-disabled-foreground',
+    'border-0 text-danger hover:bg-danger/10 disabled:bg-transparent disabled:text-disabled-foreground [&_svg]:text-current',
 } as const satisfies Record<ButtonVariant, string>;
 
 export const BUTTON_SIZE_CLASSES = {

@@ -465,6 +465,13 @@ Eight tones (`success`, `info`, `warning`, `danger`, `primary`, `merged`,
 hand-write `bg-warning/10`. Every solid semantic fill uses the shared `on-tone`
 text colour.
 
+An icon inside a solid fill, a `primary` or `danger` button or a `ghost-danger`
+button takes the label colour (`[&_svg]:text-current` in `tintClasses(tone).solid`
+and `BUTTON_VARIANT_CLASSES`), so a toned icon passed in never draws a dim tint
+on the fill. `ButtonIconColor.test.tsx` pins it per variant and per tone; the
+`on-tone` contrast on every tone in both themes is pinned by
+`token-contrast-floor.test.ts`.
+
 ### Identity palettes
 
 Identity colour names an object instead of describing its state. Two workflows

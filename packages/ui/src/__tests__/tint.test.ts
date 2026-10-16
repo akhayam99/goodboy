@@ -22,7 +22,7 @@ describe('tintClasses', () => {
     expect(tint.hoverBg).toBe('hover:bg-hover');
     expect(tint.hoverRing).toMatch(/^hover:ring-\S+\/60$/);
     expect(tint.hoverBgSoft).toMatch(/^hover:bg-\S+\/5$/);
-    expect(tint.solid).toMatch(/^bg-\S+ text-on-tone$/);
+    expect(tint.solid).toMatch(/^bg-\S+ text-on-tone \[&_svg\]:text-current$/);
     expect(tint.rail).toBe(`border-l-${tone}`);
   });
 
@@ -53,7 +53,7 @@ describe('tintClasses', () => {
       text: 'text-draft',
       icon: 'text-draft',
       dot: 'bg-draft',
-      solid: 'bg-draft text-on-tone',
+      solid: 'bg-draft text-on-tone [&_svg]:text-current',
     });
   });
 });

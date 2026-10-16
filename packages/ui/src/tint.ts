@@ -36,7 +36,7 @@ const TINT: Record<Tone, TintClasses> = {
     text: 'text-success',
     icon: 'text-success',
     dot: 'bg-success',
-    solid: 'bg-success text-on-tone',
+    solid: 'bg-success text-on-tone [&_svg]:text-current',
     rail: 'border-l-success',
   },
   info: {
@@ -54,7 +54,7 @@ const TINT: Record<Tone, TintClasses> = {
     text: 'text-info',
     icon: 'text-info',
     dot: 'bg-info',
-    solid: 'bg-info text-on-tone',
+    solid: 'bg-info text-on-tone [&_svg]:text-current',
     rail: 'border-l-info',
   },
   warning: {
@@ -72,7 +72,7 @@ const TINT: Record<Tone, TintClasses> = {
     text: 'text-warning',
     icon: 'text-warning',
     dot: 'bg-warning',
-    solid: 'bg-warning text-on-tone',
+    solid: 'bg-warning text-on-tone [&_svg]:text-current',
     rail: 'border-l-warning',
   },
   danger: {
@@ -90,7 +90,7 @@ const TINT: Record<Tone, TintClasses> = {
     text: 'text-danger',
     icon: 'text-danger',
     dot: 'bg-danger',
-    solid: 'bg-danger text-on-tone',
+    solid: 'bg-danger text-on-tone [&_svg]:text-current',
     rail: 'border-l-danger',
   },
   primary: {
@@ -108,7 +108,7 @@ const TINT: Record<Tone, TintClasses> = {
     text: 'text-primary',
     icon: 'text-primary',
     dot: 'bg-primary',
-    solid: 'bg-primary text-on-tone',
+    solid: 'bg-primary text-on-tone [&_svg]:text-current',
     rail: 'border-l-primary',
   },
   merged: {
@@ -126,7 +126,7 @@ const TINT: Record<Tone, TintClasses> = {
     text: 'text-merged',
     icon: 'text-merged',
     dot: 'bg-merged',
-    solid: 'bg-merged text-on-tone',
+    solid: 'bg-merged text-on-tone [&_svg]:text-current',
     rail: 'border-l-merged',
   },
   draft: {
@@ -144,7 +144,7 @@ const TINT: Record<Tone, TintClasses> = {
     text: 'text-draft',
     icon: 'text-draft',
     dot: 'bg-draft',
-    solid: 'bg-draft text-on-tone',
+    solid: 'bg-draft text-on-tone [&_svg]:text-current',
     rail: 'border-l-draft',
   },
   neutral: {
