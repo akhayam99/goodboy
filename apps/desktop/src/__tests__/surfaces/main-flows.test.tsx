@@ -156,7 +156,9 @@ describe('main flows on the real store', () => {
       start: expect.objectContaining({ kind: 'scout' }),
     });
     const projectId = useAppStore.getState().projects[0]?.id ?? null;
-    expect(useAppStore.getState().sessionDrafts[SETTINGS_WORKSPACE.id]?.projectId).toBe(projectId);
+    expect(useAppStore.getState().sessionDrafts[SETTINGS_WORKSPACE.id]?.projectIds).toEqual(
+      projectId === null ? [] : [projectId],
+    );
     expectNoRenderLoop();
   });
 

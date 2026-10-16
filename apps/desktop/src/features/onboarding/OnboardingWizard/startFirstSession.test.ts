@@ -53,7 +53,7 @@ describe('startFirstScout', () => {
       prompt: 'Find one small bug',
     });
 
-    expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.projectId).toBe(PROJECT_ID);
+    expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.projectIds).toEqual([PROJECT_ID]);
     expect(started).toEqual([
       {
         workspaceId: WORKSPACE_ID,
@@ -74,9 +74,9 @@ describe('handOffFirstSession', () => {
     handOffFirstSession({ workspaceId: WORKSPACE_ID, projectId: PROJECT_ID, choice: 'workflow' });
 
     const draft = useAppStore.getState().sessionDrafts[WORKSPACE_ID];
-    expect({ choice: draft?.choice, projectId: draft?.projectId }).toEqual({
+    expect({ choice: draft?.choice, projectIds: draft?.projectIds }).toEqual({
       choice: 'workflow',
-      projectId: PROJECT_ID,
+      projectIds: [PROJECT_ID],
     });
     expect(useAppStore.getState().openSessionDraftWorkspaceId).toBe(WORKSPACE_ID);
   });

@@ -460,24 +460,24 @@ describe('SessionKickoff', () => {
 
     await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
     expect(store().getState().sessionDrafts).toMatchObject({
-      [WORKSPACE_ID]: { projectId: 'project-ledger-core' },
+      [WORKSPACE_ID]: { projectIds: ['project-ledger-core'] },
     });
   });
 
-  it('shows a project chip and lets you pick when the workspace has more than one', () => {
+  it('shows the project picker and lets you add a project when the workspace has more than one', async () => {
     store().setState({
       projects: [project({}), project({ id: 'project-northwind' as ProjectId, name: 'northwind' })],
     });
     renderKickoff();
     fireEvent.click(tab('Ask an agent'));
 
-    expect(screen.getByRole('button', { name: 'Project: ledger-core' })).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Project: ledger-core' }));
+    expect(await screen.findByRole('button', { name: 'Remove ledger-core' })).toBeDefined();
+    fireEvent.click(screen.getByRole('combobox', { name: 'Project' }));
     fireEvent.click(screen.getByRole('option', { name: 'northwind' }));
 
-    expect(screen.getByRole('button', { name: 'Project: northwind' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Remove northwind' })).toBeDefined();
     expect(store().getState().sessionDrafts).toMatchObject({
-      [WORKSPACE_ID]: { projectId: 'project-northwind' },
+      [WORKSPACE_ID]: { projectIds: ['project-ledger-core', 'project-northwind'] },
     });
   });
 
@@ -706,7 +706,8 @@ describe('SessionKickoff', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: /#7/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Pick #7' }));
 
-    expect(screen.getByText('In ledger-core, from GitHub repo acme/ledger-core.')).toBeDefined();
+    expect(await screen.findByText('from GitHub repo acme/ledger-core')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Remove ledger-core' })).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Start from #7' }));
 
     await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
@@ -743,7 +744,8 @@ describe('SessionKickoff', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: /LEDGER-API-4/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Pick LEDGER-API-4' }));
 
-    expect(screen.getByText('In ledger-core, from Sentry project ledger-api.')).toBeDefined();
+    expect(await screen.findByText('from Sentry project ledger-api')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Remove ledger-core' })).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Start from LEDGER-API-4' }));
 
     await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
