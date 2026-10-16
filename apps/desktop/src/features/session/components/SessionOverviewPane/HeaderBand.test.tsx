@@ -23,7 +23,6 @@ import {
 
 vi.mock('./ArchivedRestore', () => ({ ArchivedRestore: () => <button>Restore</button> }));
 vi.mock('./ChatOriginRow', () => ({ ChatOriginRow: () => null }));
-vi.mock('./ContextChip', () => ({ ContextChip: () => <span>Context</span> }));
 vi.mock('./GoalTeaser', () => ({
   GoalTeaser: () => <button type="button">Goal: Keep the ledger balanced</button>,
 }));
@@ -67,9 +66,9 @@ describe('the Overview header', () => {
     expect(screen.queryAllByRole('separator')).toHaveLength(0);
   });
 
-  it('keeps Context and the Overview menu as page actions, and Restore while archived', () => {
+  it('leaves Context to the pane cluster, and shows Restore only while archived', () => {
     const { unmount } = render(<OverviewHeaderActions session={session} />);
-    screen.getByText('Context');
+    expect(screen.queryByText('Context')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Restore' })).toBeNull();
     unmount();
 

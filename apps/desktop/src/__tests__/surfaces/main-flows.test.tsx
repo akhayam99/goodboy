@@ -271,7 +271,8 @@ describe('main flows on the real store', () => {
       </>,
     );
     expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
-    fireEvent.click(screen.getByTestId('context-chip'));
+    fireEvent.click(screen.getByRole('button', { name: /^More panes/ }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: /^Context/ }));
     await settle();
 
     expect(useAppStore.getState().drawer).toEqual(

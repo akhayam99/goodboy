@@ -247,7 +247,7 @@ const expectCentredColumns = (): void => {
 };
 
 const expectAskInColumn = (): void => {
-  const ask = shown('[data-testid="ask-trail-button"]');
+  const ask = shown('[data-testid="pane-toggle-ask"]');
   const row = ask?.closest<HTMLElement>('[data-slot="pane-header"]') ?? null;
   expect(row, 'the Ask button sits at the end of the page header row').not.toBeNull();
   expect(row?.closest('[data-page-column]')).not.toBeNull();
@@ -457,7 +457,7 @@ const expectOneRail = ({
 
 const sessionLayers = (extra: RailLayers): RailLayers => ({
   header: shown('[data-slot="pane-header"]'),
-  ask: shown('[data-testid="ask-trail-button"]'),
+  ask: shown('[data-testid="pane-toggle-ask"]'),
   ...extra,
 });
 

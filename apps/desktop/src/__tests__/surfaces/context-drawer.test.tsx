@@ -24,7 +24,7 @@ import {
 } from '../../store/storyHarness';
 import { nowIso } from '../../store/slices/project-mounts/nowIso';
 import { DrawerHost } from '../../app/components/DrawerHost';
-import { ContextChip } from '../../features/session/components/SessionOverviewPane/ContextChip';
+import { PaneCluster } from '../../features/session/components/PaneCluster';
 import {
   SESSION_ID,
   seedActivityRunScene,
@@ -49,7 +49,7 @@ afterEach(() => {
 const renderSurface = () =>
   render(
     <>
-      <ContextChip sessionId={SESSION_ID} />
+      <PaneCluster sessionId={SESSION_ID} />
       <DrawerHost />
     </>,
   );
@@ -60,7 +60,12 @@ const settle = async (): Promise<void> => {
   });
 };
 
-const dot = () => screen.queryByTestId('context-change-dot');
+const dot = () => screen.queryByTestId('pane-more-signal');
+
+const openContext = async (): Promise<void> => {
+  fireEvent.click(screen.getByRole('button', { name: /^More panes/ }));
+  fireEvent.click(await screen.findByRole('menuitem', { name: /^Context/ }));
+};
 
 const seenAt = (): string | null | undefined =>
   useAppStore.getState().sessionContextSeenAt[SESSION_ID];
@@ -78,7 +83,6 @@ describe('Context drawer change marks', () => {
     await settle();
 
     expect(dot()).toBeNull();
-    expect(screen.getByTestId('context-chip').textContent).toBe('Context');
 
     const template = ledger()[0]!;
     const arrived = new Date().toISOString() as IsoDateTime;
@@ -104,7 +108,6 @@ describe('Context drawer change marks', () => {
     });
 
     expect(dot()).not.toBeNull();
-    expect(screen.getByTestId('context-chip').textContent).toBe('Context');
   });
 
   it('marks it seen on open and lists what was added, removed and reworded', async () => {
@@ -113,7 +116,7 @@ describe('Context drawer change marks', () => {
     await settle();
     expect(dot()).not.toBeNull();
 
-    fireEvent.click(screen.getByTestId('context-chip'));
+    await openContext();
     await settle();
 
     expect(seenAt()).not.toBe(before);
@@ -140,15 +143,15 @@ describe('Context drawer change marks', () => {
     renderSurface();
     await settle();
 
-    fireEvent.click(screen.getByTestId('context-chip'));
+    await openContext();
     await settle();
-    fireEvent.click(screen.getByTestId('context-chip'));
+    await openContext();
     await settle();
 
     expect(screen.queryByRole('region', { name: 'Context' })).toBeNull();
     expect(dot()).toBeNull();
 
-    fireEvent.click(screen.getByTestId('context-chip'));
+    await openContext();
     await settle();
 
     const drawer = screen.getByRole('region', { name: 'Context' });
@@ -177,7 +180,7 @@ describe('Context drawer mark as read', () => {
     const writes = persistSeenAt();
     renderSurface();
     await settle();
-    fireEvent.click(screen.getByTestId('context-chip'));
+    await openContext();
     await settle();
     const drawer = screen.getByRole('region', { name: 'Context' });
     expect(changesRegion()).not.toBeNull();
@@ -201,7 +204,7 @@ describe('Context drawer mark as read', () => {
     persistSeenAt();
     renderSurface();
     await settle();
-    fireEvent.click(screen.getByTestId('context-chip'));
+    await openContext();
     await settle();
     fireEvent.click(within(changesRegion()!).getByRole('button', { name: 'Mark as read' }));
     await waitFor(() => expect(changesRegion()).toBeNull());
@@ -240,7 +243,7 @@ describe('Context drawer mark as read', () => {
         : new Promise<never>(() => undefined);
     renderSurface();
     await settle();
-    fireEvent.click(screen.getByTestId('context-chip'));
+    await openContext();
     await settle();
 
     fireEvent.click(within(changesRegion()!).getByRole('button', { name: 'Mark as read' }));

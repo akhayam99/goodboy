@@ -103,7 +103,7 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
     },
     lands: async (ctx) => {
       await lens(null)(ctx);
-      expect(await screen.findByTestId('context-chip')).toBeDefined();
+      expect(await screen.findByRole('heading', { level: 1, name: 'Overview' })).toBeDefined();
       await waitFor(() => expectOnGrid({ page: 'overview', isStudio: false }), WAIT);
     },
   },

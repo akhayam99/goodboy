@@ -1,4 +1,4 @@
-import { useEffect, type KeyboardEvent } from 'react';
+import { useEffect, useMemo, type KeyboardEvent } from 'react';
 import { ArrowUpRight, ChevronDown } from 'lucide-react';
 import { DrawerFrame, IconButton } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
@@ -6,16 +6,20 @@ import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptI
 import { eventMatches } from '../../../../shared/keyboard/dispatcher';
 import { SHORTCUTS } from '../../../../shared/keyboard/registry';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
+import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { useAppStore } from '../../../../store';
+import { workspaceTerminalOwner } from '../../../../store/slices/terminal/terminalOwner';
 import { useTerminalStudioModel } from '../../hooks/useTerminalStudioModel';
+import { openSessionFolderTerminal } from '../../openSessionFolderTerminal';
 import { openSessionTerminal } from '../../openSessionTerminal';
 import { openTerminalOnPage } from '../../openTerminalOnPage';
 import { TERMINAL_PICKER_EVENTS } from '../../terminalPickerEvents';
 import type { TerminalTarget } from '../../terminalTargets';
+import { allWorktrees } from '../../terminalWorktrees';
 import { TargetPicker } from '../TerminalStudio/TargetPicker';
 import { TerminalPane } from '../TerminalStudio/TerminalPane';
 import { TerminalTabStrip } from '../TerminalStudio/TerminalTabStrip';
-import { WorktreeChip } from '../WorktreeChip';
+import { TerminalScopePicker } from './TerminalScopePicker';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -35,7 +39,22 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
     scope: 'session',
     onSelect: keepSelection,
   });
-  const { worktree, selected, targets } = model;
+  const isBranchless = useAppStore((state) =>
+    isBranchlessSession({ branch: state.sessionBranches[sessionId] }),
+  );
+  const reportError = useAppStore((state) => state.reportError);
+  const { worktree, selected, groups, busyIds, targets } = model;
+  const busyPaths = useMemo(
+    () =>
+      new Set(
+        allWorktrees({ groups }).flatMap((candidate) =>
+          candidate.path !== null && candidate.tabs.some((tab) => busyIds.has(tab.id))
+            ? [candidate.path]
+            : [],
+        ),
+      ),
+    [groups, busyIds],
+  );
   const isGone = worktree === null || worktree.key !== worktreeKey || selected === null;
   const hasPicker = targets.length > 1;
 
@@ -77,12 +96,38 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
   if (isGone) {
     return null;
   }
+
+  const pickTarget = (target: TerminalTarget) => {
+    const state = useAppStore.getState();
+    openSessionTerminal({
+      state,
+      sessionId,
+      cwd: target.path,
+      ...(target.kind === 'workspace' && { owner: workspaceTerminalOwner({ workspaceId }) }),
+    });
+  };
+
+  const pickSessionFolder = () => {
+    void openSessionFolderTerminal({ sessionId }).catch((error: unknown) =>
+      reportError({ title: "Couldn't open the terminal", error, sessionId }),
+    );
+  };
+
   return (
     <DrawerFrame
-      title={worktree.projectName}
+      title="Terminal"
       icon={CONCEPT_ICONS.terminal}
       iconClassName="text-faint-foreground"
-      count={worktree.folder === null ? null : <WorktreeChip folder={worktree.folder} />}
+      titleContent={
+        <TerminalScopePicker
+          worktree={worktree}
+          targets={targets}
+          isBranchless={isBranchless}
+          busyPaths={busyPaths}
+          onPickTarget={pickTarget}
+          onPickSessionFolder={pickSessionFolder}
+        />
+      }
       action={
         <div className="flex items-center gap-1">
           {hasPicker ? (

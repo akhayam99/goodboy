@@ -71,7 +71,6 @@
     "session -> budget": 1,
     "session -> chat": 5,
     "session -> context": 9,
-    "session -> explore": 1,
     "session -> inbox": 1,
     "session -> integrations": 13,
     "session -> providers": 4,

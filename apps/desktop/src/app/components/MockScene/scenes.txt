@@ -172,6 +172,15 @@ c02-level-session-agents
 c02-level-studio-over
 c02-level-workspace
 c02-shell-overview
+c03-panes-ask
+c03-panes-closed
+c03-panes-context
+c03-panes-explore
+c03-panes-explore-file
+c03-panes-more
+c03-panes-script-output
+c03-panes-scripts
+c03-panes-terminal
 c06-agent-delegating
 c06-agent-failed
 c06-agent-finished

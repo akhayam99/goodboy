@@ -11,6 +11,7 @@ import {
   clickFirstButton,
   heading,
   lens,
+  pane,
   openBranchFiles,
   useAppStore,
   visible,
@@ -85,12 +86,12 @@ export const SETTINGS_AND_MOUNT_ROWS: ReadonlyArray<Row> = [
   },
   {
     name: 'mount row menu: scripts',
-    covers: ['navigate', 'lens:scripts'],
+    covers: ['openDrawer', 'lens:scripts'],
     open: async () => {
       await clickFirstButton(/ on .+ actions$/);
       await click(await screen.findByRole('menuitem', { name: /^Open scripts/ }));
     },
-    lands: both(lens('scripts'), () => heading('Scripts')),
+    lands: pane('Scripts'),
   },
   {
     name: 'mount row menu: terminal',

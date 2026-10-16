@@ -14,7 +14,7 @@ import { selectDrawerPanel } from '../../../../store/slices/drawer/selectDrawerP
 import { AppTopBar } from '../../AppTopBar';
 import { ShellLeft } from '../../SideColumn/ShellLeft';
 import { ToastProvider } from '../../../../shared/components/Toast';
-import { AskTrailButton } from '../../../../features/session/ask/components/AskTrailButton';
+import { PaneCluster } from '../../../../features/session/components/PaneCluster';
 import { useAppStore, type LensKind } from '../../../../store';
 import { DEFAULT_PREFS } from '../../../../store/slices/session-view/types';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
@@ -140,7 +140,7 @@ export const ShellFrame = ({
             main
           ) : (
             <div className="@container flex h-full w-full min-w-0 flex-col">
-              <PaneActionsContext.Provider value={<AskTrailButton sessionId={session.id} />}>
+              <PaneActionsContext.Provider value={<PaneCluster sessionId={session.id} />}>
                 <div className="min-h-0 flex-1">{main}</div>
               </PaneActionsContext.Provider>
             </div>

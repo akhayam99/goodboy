@@ -1,22 +1,30 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { X } from 'lucide-react';
+import { ArrowLeft, X } from 'lucide-react';
 import { cn } from '../cn';
 import { useEscapeLayer } from '../useEscapeLayer';
 import { lastFocusedElement } from '../useLastFocused';
+import { Button } from './Button';
 import { Divider } from './Divider';
 import { IconButton } from './IconButton';
 import { ScrollFade } from './ScrollFade';
 import { FRAME_DRAWER_INSET_PX, FRAME_DRAWER_ROW_PX } from '../frameGeometry';
 import { ICON_SIZE } from '../iconSize';
 
+export type DrawerBack = {
+  readonly label: string;
+  readonly onBack: () => void;
+};
+
 export type DrawerFrameProps = {
   readonly title: string;
+  readonly titleContent?: ReactNode;
   readonly icon?: LucideIcon;
   readonly iconClassName?: string;
   readonly count?: ReactNode;
   readonly action?: ReactNode;
   readonly toolbar?: ReactNode;
+  readonly back?: DrawerBack;
   readonly closeLabel?: string;
   readonly onClose: () => void;
   readonly dock?: ReactNode;
@@ -54,11 +62,13 @@ const hasDraft = (element: HTMLElement): boolean => {
 
 export const DrawerFrame = ({
   title,
+  titleContent,
   icon: Icon,
   iconClassName,
   count,
   action,
   toolbar,
+  back,
   closeLabel = 'Close',
   onClose,
   dock,
@@ -107,14 +117,20 @@ export const DrawerFrame = ({
             <Icon size={ICON_SIZE.control} aria-hidden className={iconClassName} />
           </span>
         )}
-        <h2
-          className={cn(
-            'min-w-0 text-heading text-foreground',
-            hasToolbar ? 'line-clamp-2' : 'truncate',
-          )}
-        >
-          {title}
-        </h2>
+        {titleContent != null ? (
+          <div className="flex h-5 min-w-0 items-center text-heading text-foreground">
+            {titleContent}
+          </div>
+        ) : (
+          <h2
+            className={cn(
+              'min-w-0 text-heading text-foreground',
+              hasToolbar ? 'line-clamp-2' : 'truncate',
+            )}
+          >
+            {title}
+          </h2>
+        )}
         {count != null ? (
           <span className="flex h-5 min-w-0 shrink-[4] items-center text-meta tabular-nums text-muted-foreground">
             {count}
@@ -157,6 +173,14 @@ export const DrawerFrame = ({
         ) : null}
       </header>
       <Divider />
+      {back === undefined ? null : (
+        <div data-drawer-back="" className="flex shrink-0 px-2 pt-2">
+          <Button variant="quiet" size="xs" onClick={back.onBack}>
+            <ArrowLeft size={ICON_SIZE.row} aria-hidden />
+            {back.label}
+          </Button>
+        </div>
+      )}
       {scroll === 'self' ? (
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">{children}</div>
       ) : (

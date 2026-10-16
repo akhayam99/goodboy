@@ -380,6 +380,22 @@ export const lens = (lensName: string | null) => async (ctx: Ctx) => {
   );
 };
 
+type PaneName = 'Explore' | 'Scripts';
+
+const PANE_KIND: Readonly<Record<PaneName, string>> = {
+  Explore: 'explore',
+  Scripts: 'scripts',
+};
+
+export const pane = (name: PaneName) => async (ctx: Ctx) => {
+  await waitFor(() => {
+    const drawer = useAppStore.getState().drawer;
+    expect(drawer?.kind).toBe(PANE_KIND[name]);
+    expect(drawer?.sessionId).toBe(ctx.sessionId);
+  }, WAIT);
+  await visible('region', name);
+};
+
 type BranchTabName = 'pr' | 'comments' | 'files' | 'commits' | 'checks';
 
 const BRANCH_TAB_LABEL: Readonly<Record<BranchTabName, RegExp>> = {
@@ -451,7 +467,7 @@ type LensRow = {
 };
 
 const overviewLands = async (): Promise<void> =>
-  expect(await screen.findByTestId('context-chip')).toBeDefined();
+  expect(await screen.findByRole('heading', { level: 1, name: 'Overview' })).toBeDefined();
 
 export const CRUMB_ROWS: ReadonlyArray<LensRow> = [
   { label: 'Overview', lens: null, lands: overviewLands },

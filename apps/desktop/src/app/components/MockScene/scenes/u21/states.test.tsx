@@ -95,7 +95,7 @@ describe('the u21 page-state scenes', () => {
   it('shows the Scripts first-time state with its one primary', async () => {
     renderScene('scripts-empty');
 
-    expect(await screen.findByRole('heading', { level: 2, name: 'No scripts yet' })).toBeDefined();
+    expect(await screen.findByRole('heading', { level: 3, name: 'No scripts yet' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
   });
 

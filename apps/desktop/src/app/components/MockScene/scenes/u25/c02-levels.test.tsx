@@ -151,7 +151,7 @@ describe('the c02 sidebar level scenes', () => {
     await mount('c02-shell-overview');
 
     expect(screen.getByRole('heading', { name: 'Overview', level: 1 })).toBeDefined();
-    expect(screen.getAllByTestId('ask-trail-button').length).toBeGreaterThan(0);
+    expect(screen.getAllByTestId('pane-toggle-ask').length).toBeGreaterThan(0);
     expect(document.querySelector('[data-slot="trail-bar"]')).toBeNull();
   });
 });

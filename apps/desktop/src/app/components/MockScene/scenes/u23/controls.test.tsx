@@ -167,15 +167,15 @@ describe('controls fields', () => {
 });
 
 describe('controls hints', () => {
-  it('reads Ask and Search the same way: the word, then the chord as bare text', () => {
+  it('reads the pane cluster as words and keeps the chord bare on Search', () => {
     renderScene('controls-hints');
 
-    const row = rowOf('Ask and Search side by side');
-    const ask = within(row).getByTestId('ask-trail-button');
+    const row = rowOf('Pane cluster and Search side by side');
+    const ask = within(row).getByTestId('pane-toggle-ask');
     const search = within(row).getByRole('button', { name: /^Search \(/ });
-    expect(ask.querySelector('kbd')?.getAttribute('data-look')).toBe('inline');
+    expect(ask.textContent).toBe('Ask');
+    expect(ask.querySelector('kbd')).toBeNull();
     expect(search.querySelector('kbd')?.getAttribute('data-look')).toBe('inline');
-    expect(ask.querySelector('kbd')?.textContent).toBe(shortcutGlyphs('ask.open'));
     expect(search.querySelector('kbd')?.textContent).toBe(shortcutGlyphs('palette.open'));
   });
 

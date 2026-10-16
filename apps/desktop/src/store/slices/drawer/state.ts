@@ -41,6 +41,7 @@ export type DrawerContent =
         readonly sessionDir: string;
         readonly entry: ExploreEntry;
         readonly line?: number;
+        readonly from?: 'explore';
       };
     }
   | {
@@ -57,7 +58,19 @@ export type DrawerContent =
     }
   | {
       readonly kind: 'scriptRun';
-      readonly payload: { readonly scriptKey: string; readonly mountId: MountId | null };
+      readonly payload: {
+        readonly scriptKey: string;
+        readonly mountId: MountId | null;
+        readonly from?: 'scripts';
+      };
+    }
+  | {
+      readonly kind: 'explore';
+      readonly payload: null;
+    }
+  | {
+      readonly kind: 'scripts';
+      readonly payload: null;
     }
   | {
       readonly kind: 'conversation';

@@ -46,7 +46,11 @@ export const ScriptsLiveStage = ({ variant }: Props) => {
         data-testid={`scripts-live-${variant}`}
         className="h-screen overflow-hidden bg-background p-4 text-foreground"
       >
-        <ScriptsPanel workspaceId={SCRIPTS_LIVE_WORKSPACE_ID} sessionId={SCRIPTS_LIVE_SESSION_ID} />
+        <ScriptsPanel
+          workspaceId={SCRIPTS_LIVE_WORKSPACE_ID}
+          sessionId={SCRIPTS_LIVE_SESSION_ID}
+          onClose={() => undefined}
+        />
       </main>
     </ToastProvider>
   );

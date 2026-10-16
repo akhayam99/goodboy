@@ -34,8 +34,7 @@ export type ShortcutScope =
   | 'activityRow'
   | 'scripts'
   | 'workspace'
-  | 'codeSession'
-  | 'exploreSession';
+  | 'codeSession';
 
 export const SHORTCUT_SCOPE_LABEL: Readonly<Record<ShortcutScope, string>> = {
   list: 'In the Tasks and Notifications lists',
@@ -56,7 +55,6 @@ export const SHORTCUT_SCOPE_LABEL: Readonly<Record<ShortcutScope, string>> = {
   scripts: 'On the Scripts page',
   workspace: 'With a workspace open',
   codeSession: 'In a session with a branch',
-  exploreSession: 'In an explore session',
 };
 
 export type ShortcutFamily = 'workspace-digit';
@@ -315,7 +313,6 @@ export const SHORTCUTS = {
     label: 'Session terminal',
     plane: 'lens',
     group: 'session',
-    scope: 'codeSession',
   },
   'session.archive': {
     combo: 'cmd+shift+KeyA',
@@ -393,7 +390,6 @@ export const SHORTCUTS = {
     label: 'Explore',
     plane: 'lens',
     group: 'views',
-    scope: 'exploreSession',
   },
   'lens.plans': { combo: 'cmd+alt+KeyP', label: NAMES.artifacts, plane: 'lens', group: 'views' },
   'lens.scripts': { combo: 'cmd+alt+KeyS', label: NAMES.scripts, plane: 'lens', group: 'views' },

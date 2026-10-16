@@ -7,6 +7,7 @@ import { reattachTerminalTabs } from './reattachTerminalTabs';
 import { renameTerminalTab } from './renameTerminalTab';
 import { setActiveTerminalTab } from './setActiveTerminalTab';
 import { setTerminalPrefill } from './setTerminalPrefill';
+import { rememberTerminalScope } from './rememberTerminalScope';
 import { setTerminalSelection } from './setTerminalSelection';
 import { setTerminalTabStatus } from './setTerminalTabStatus';
 import { setTerminalWorkspaceFolder } from './setTerminalWorkspaceFolder';
@@ -25,6 +26,7 @@ export const createTerminalSlice = ({ set, get }: SliceDeps) => {
     setTerminalSelection: setTerminalSelection(set, get),
     setTerminalTabStatus: setTerminalTabStatus(set, get),
     setTerminalPrefill: setTerminalPrefill({ set }),
+    rememberTerminalScope: rememberTerminalScope({ set }),
     closeSessionTerminals: closeSessionTerminals(set, get),
   };
 };
