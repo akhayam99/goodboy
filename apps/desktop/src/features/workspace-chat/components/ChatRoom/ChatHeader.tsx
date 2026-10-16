@@ -9,7 +9,7 @@ type Props = {
 
 export const ChatHeader = ({ title, sessions = null, action = null }: Props) => (
   <header className="shrink-0 pb-3">
-    <PageColumn className="flex h-8 min-w-0 items-center gap-2">
+    <PageColumn width="measure" className="flex h-8 min-w-0 items-center gap-2">
       <TruncatedText as="h1" className="min-w-0 text-title text-foreground">
         {title}
       </TruncatedText>

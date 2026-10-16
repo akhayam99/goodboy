@@ -157,8 +157,10 @@ describe('SPEC3 9.4 agent rows stay reachable from the one conversation', () => 
   it('Agents page list and counts: the grid lists running and finished agents', async () => {
     await mount({ name: 'c06-agents-list' });
 
-    expect(screen.getByRole('list', { name: 'Agents' })).toBeDefined();
-    expect(screen.getByText('Completed')).toBeDefined();
+    const list = screen.getByRole('list', { name: 'Agents' });
+    expect(within(list).getAllByText('Done').length).toBeGreaterThan(0);
+    expect(within(list).getAllByText('Running').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Completed')).toBeNull();
   });
 
   it('Start agent popover: the Agents header opens the start form on click only', async () => {

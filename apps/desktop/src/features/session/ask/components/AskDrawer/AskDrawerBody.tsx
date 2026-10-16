@@ -15,7 +15,7 @@ import { useAskRightNow } from '../../hooks/useAskRightNow';
 import { AskComposer } from './AskComposer';
 import { AskEarlier } from './AskEarlier';
 import { AskPlanView } from './AskPlanView';
-import { AskRightNow } from './AskRightNow';
+import { AskSuggestions } from './AskSuggestions';
 import { AskTurn } from './AskTurn';
 
 type Props = {
@@ -44,7 +44,6 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
   const rightNow = useAskRightNow({ session });
   const facts = useAskActionFacts({ sessionId });
   const [insideId, setInsideId] = useState<ArtifactId | null>(null);
-  const [isRightNowOpen, setIsRightNowOpen] = useState(false);
   const endRef = useRef<HTMLDivElement | null>(null);
   const onOpen = useAskChipOpen({ sessionId, onOpenInside: setInsideId });
   const turns = useMemo(() => askTurnsOf({ messages }), [messages]);
@@ -72,7 +71,6 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
       return;
     }
     setInsideId(null);
-    setIsRightNowOpen(false);
     newAskThread({ sessionId });
     requestAskFocus();
   }, [isAnyStreaming, newAskThread, sessionId]);
@@ -112,13 +110,12 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
         <AskPlanView sessionId={sessionId} artifactId={insideId} onBack={() => setInsideId(null)} />
       ) : (
         <div data-testid="ask-thread" className="flex min-w-0 flex-col gap-4">
-          <AskRightNow
-            lines={rightNow.lines}
-            suggestions={turns.length === 0 ? rightNow.suggestions : []}
-            isFolded={turns.length > 0 && !isRightNowOpen}
-            onUnfold={() => setIsRightNowOpen(true)}
-            onAsk={(question) => void ask(question)}
-          />
+          {turns.length === 0 && rightNow.suggestions.length > 0 ? (
+            <AskSuggestions
+              suggestions={rightNow.suggestions}
+              onAsk={(question) => void ask(question)}
+            />
+          ) : null}
           {turns.length === 0 ? (
             <AskEarlier
               threads={earlier}

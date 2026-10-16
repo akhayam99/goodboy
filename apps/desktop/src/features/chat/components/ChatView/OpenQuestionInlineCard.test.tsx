@@ -71,7 +71,7 @@ describe('OpenQuestionInlineCard', () => {
     screen.getByText('Postgres');
   });
 
-  it('keeps an answered question on the shared question tone', () => {
+  it('settles an answered question to a neutral row with no warning rail', () => {
     const answered: OpenQuestion = {
       ...baseQuestion,
       status: 'answered',
@@ -81,9 +81,10 @@ describe('OpenQuestionInlineCard', () => {
 
     render(<OpenQuestionInlineCard question={answered} sessionId={'sess-1' as never} />);
 
-    const disclosure = screen.getByRole('button').closest('.border-l-2') as HTMLElement;
-    expect(disclosure.className).toContain(tintClasses(CONCEPT_TONE.questions).border);
-    expect(disclosure.className).not.toContain(tintClasses('success').border);
+    expect(screen.getByRole('button').closest('.border-l-2')).toBeNull();
+    expect(
+      document.querySelector(`.${tintClasses(CONCEPT_TONE.questions).border.split(' ')[0]}`),
+    ).toBeNull();
   });
 
   it('collapses a settled question to a single row until it is expanded', () => {

@@ -1,9 +1,8 @@
 import { memo, useMemo, useState, type MouseEvent } from 'react';
 import { InteractiveRow, SelectionCheckbox, StatusDot, cn } from '@goodboy/ui';
-import type { ChatId, ChatModelUsed, EffortLevel, ProviderId } from '@goodboy/types';
+import type { ChatId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { sessionPlace } from '../../../../store/slices/navigation/place';
-import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
 import { chatSelectionTarget } from '../../../actions/chatSelectionTarget';
 import { chatObjectKey } from '../../../actions/kinds/chat';
 import type { ObjectTarget } from '../../../actions/types';
@@ -11,7 +10,6 @@ import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { useRenameRequest } from '../../../actions/useRenameRequest';
 import { useChatSessionMarker } from '../../hooks/useChatSessionMarker';
 import { ageTokenOf } from './ageToken';
-import { ChatModelGlyphs } from './ChatModelGlyphs';
 import { ChatRenameInput } from './ChatRenameInput';
 import { ChatSessionMark } from './ChatSessionMark';
 
@@ -37,11 +35,6 @@ type Props = {
   readonly time: string;
   readonly isIdle: boolean;
   readonly isPinned: boolean;
-  readonly models: ReadonlyArray<ChatModelUsed>;
-  readonly provider: ProviderId;
-  readonly model: string;
-  readonly effort: EffortLevel | null;
-  readonly messageCount: number;
   readonly isSelected: boolean;
   readonly isChecked: boolean;
   readonly selection: ChatRowSelection;
@@ -63,11 +56,6 @@ const ChatListRowView = ({
   time,
   isIdle,
   isPinned,
-  models,
-  provider,
-  model,
-  effort,
-  messageCount,
   isSelected,
   isChecked,
   selection,
@@ -193,11 +181,6 @@ const ChatListRowView = ({
                 <span className="whitespace-nowrap text-meta tabular-nums text-faint-foreground">
                   {ageTokenOf({ time })}
                 </span>
-                <ObjectOverflowMenu
-                  target={target}
-                  label={`More actions for ${title}`}
-                  anchorKey={anchorKey}
-                />
               </span>
             </>
           )}
@@ -212,20 +195,13 @@ const ChatListRowView = ({
             <span className="truncate">Enter saves · Esc cancels</span>
           ) : (
             <>
+              <span className="min-w-0 flex-1 truncate">{snippet}</span>
               {marker === null ? null : (
                 <ChatSessionMark
                   marker={marker}
                   onOpen={(sessionId) => navigate({ to: sessionPlace({ sessionId }) })}
                 />
               )}
-              <span className="min-w-0 flex-1 truncate">{snippet}</span>
-              <ChatModelGlyphs
-                models={models}
-                provider={provider}
-                model={model}
-                effort={effort}
-                messageCount={messageCount}
-              />
             </>
           )}
         </span>

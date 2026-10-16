@@ -71,7 +71,7 @@ export const AgentsGridRow = ({ session, run, kind, nowMs, isMuted, onOpen }: Pr
           {provider === null ? null : <ProviderGlyph id={provider} size={ICON_SIZE.row} />}
           <span className="truncate">{model}</span>
         </span>
-        <span className="text-right text-meta text-faint-foreground">{duration}</span>
+        <span className="text-right text-meta tabular-nums text-faint-foreground">{duration}</span>
       </button>
     </li>
   );

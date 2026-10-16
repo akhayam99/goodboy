@@ -178,11 +178,11 @@ describe('the Chat door', () => {
     await waitFor(() => expect(openedChat()).toBe(chatIdOf({ key: 'consent' })));
   });
 
-  it('opens a new chat after New chat, then leaving and coming back', async () => {
+  it('opens a new chat from the sidebar add, then leaving and coming back', async () => {
     await renderStudio();
     expect(openedChat()).toBe(chatIdOf({ key: 'consent' }));
 
-    fireEvent.click(screen.getByRole('button', { name: /^New chat/ }));
+    act(() => useAppStore.getState().amendStudio({ studio: { kind: 'chat', chatId: null } }));
     expect(openedChat()).toBeNull();
 
     await leaveForBoard();

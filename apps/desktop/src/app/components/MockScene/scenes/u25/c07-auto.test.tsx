@@ -274,6 +274,26 @@ describe('c07 Auto scenes', () => {
     ).toBeDefined();
   });
 
+  it('c07-auto-limit-popover lists spent, reserved and turns under one Limit title', async () => {
+    mount({ id: 'c07-auto-limit-popover' });
+
+    const popover = await screen.findByRole('dialog', { name: 'Limit for this Auto run' }, WAIT);
+    expect(within(popover).getByText('Spent')).toBeDefined();
+    expect(within(popover).getByText('Reserved')).toBeDefined();
+    expect(within(popover).getByText('Turns')).toBeDefined();
+    expect(within(popover).getByRole('button', { name: 'No limit' })).toBeDefined();
+  });
+
+  it('c07-auto-working titles the Auto root with its goal and keeps View transcript in the menu', async () => {
+    mount({ id: 'c07-auto-working' });
+
+    const title = await screen.findByTestId('agent-header-title-row', undefined, WAIT);
+    expect(within(title).queryByText(/^Auto$/)).toBeNull();
+    expect(within(title).queryByRole('button', { name: 'View transcript' })).toBeNull();
+    fireEvent.click(within(title).getByRole('button', { name: 'More agent actions' }));
+    expect(await screen.findByRole('menuitem', { name: 'View transcript' }, WAIT)).toBeDefined();
+  });
+
   it('goes back to the session level with Auto agents selected, and drills in again', async () => {
     mount({ id: 'c07-auto-working' });
 

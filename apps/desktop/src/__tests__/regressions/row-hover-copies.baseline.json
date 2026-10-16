@@ -13,7 +13,6 @@
   "features/resolve/components/FixRunSummary/index.tsx": 1,
   "features/resolve/components/ReviewFlow/AnswersPanel/AnswerCard.tsx": 1,
   "features/resolve/components/ReviewFlow/ReviewComment.tsx": 1,
-  "features/session/ask/components/AskDrawer/AskRightNow.tsx": 1,
   "features/session/components/ContextDrawer/DecisionsSection.tsx": 2,
   "features/session/components/SessionNavSidebar/parts/SidebarToggleButton.tsx": 1,
   "features/session/components/SessionOverviewPane/GoalTeaser.tsx": 1,

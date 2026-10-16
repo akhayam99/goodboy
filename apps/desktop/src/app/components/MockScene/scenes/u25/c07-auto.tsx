@@ -13,6 +13,7 @@ const PROJECT: C07Seed = { state: 'refused', place: 'auto' };
 const CHILD: C07Seed = { state: 'working', place: 'auto', pane: 'implementer' };
 const CHILD_DONE: C07Seed = { state: 'done', place: 'auto', pane: 'tester' };
 const CAPPED: C07Seed = { state: 'working', place: 'auto', isCapped: true };
+const LIMIT_CLICKS: ReadonlyArray<string> = ['Limit $'];
 const IMAGES: C07Seed = { state: 'working', place: 'auto', pane: 'implementer', hasImages: true };
 
 export const U25_C07_AUTO_SCENES = {
@@ -29,4 +30,5 @@ export const U25_C07_AUTO_SCENES = {
   'c07-auto-child-done': () => <C07AutoFrame seed={CHILD_DONE} />,
   'c07-auto-images': () => <C07AutoFrame seed={IMAGES} />,
   'c07-auto-capped': () => <C07AutoFrame seed={CAPPED} />,
+  'c07-auto-limit-popover': () => <C07AutoFrame seed={WORKING} clicks={LIMIT_CLICKS} />,
 } satisfies Readonly<Record<string, ComponentType>>;

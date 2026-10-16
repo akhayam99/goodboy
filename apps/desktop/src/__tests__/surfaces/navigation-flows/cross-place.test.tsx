@@ -430,6 +430,8 @@ const railOf = (element: Element | null): string => {
 
 const COLUMN_RAIL = 'column mx-auto max-w-[var(--column-frame)]';
 
+const MEASURE_RAIL = 'measure mx-auto max-w-[var(--measure-frame)]';
+
 const placeRoot = (): Element => {
   const root =
     document.querySelector('[data-studio-slot]') ??
@@ -838,7 +840,7 @@ describe('moving across every place keeps one frame', () => {
       expectOneRail({
         place: 'Chat',
         layers: { header: shown('header h1'), composer: shown('textarea') },
-        rail: COLUMN_RAIL,
+        rail: MEASURE_RAIL,
       });
 
       await click(door('settings'));

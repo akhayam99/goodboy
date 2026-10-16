@@ -22,7 +22,6 @@
   "apps/desktop/src/features/search/components/SearchMode/SearchChipPill.tsx": 1,
   "apps/desktop/src/features/session/ask/components/AskDrawer/AskEarlier.tsx": 1,
   "apps/desktop/src/features/session/ask/components/AskDrawer/AskPlanView.tsx": 1,
-  "apps/desktop/src/features/session/ask/components/AskDrawer/AskRightNow.tsx": 1,
   "apps/desktop/src/features/session/ask/components/AskTrailButton.tsx": 1,
   "apps/desktop/src/features/session/components/AgentDetailPane/AgentMuchLonger.tsx": 1,
   "apps/desktop/src/features/session/components/AgentDetailPane/AgentTitle.tsx": 1,

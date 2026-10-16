@@ -253,6 +253,32 @@ describe('the c06 conversation scenes', () => {
     }
   });
 
+  it('c06-agent-menu holds Rename in the header menu, the title has no rename icon', async () => {
+    await mount({ name: 'c06-agent-menu' });
+
+    expect(screen.getByRole('menuitem', { name: 'Rename' })).toBeDefined();
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Rename' }));
+    expect(screen.getByRole('textbox', { name: 'Rename agent' })).toBeDefined();
+  });
+
+  it('c06-turn-detail opens the turn popover with the cost the footer line leaves out', async () => {
+    await mount({ name: 'c06-turn-detail' });
+
+    expect(screen.getByText('Cost')).toBeDefined();
+    expect(screen.getByText('Input')).toBeDefined();
+    expect(screen.getByText(/estimated at API prices/)).toBeDefined();
+  });
+
+  it('c06-agent-transcript toggles the header verb to a pressed Hide transcript', async () => {
+    await mount({ name: 'c06-agent-finished' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'View transcript' }));
+    const hide = screen.getByRole('button', { name: 'Hide transcript' });
+    expect(hide.getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(hide);
+    expect(useAppStore.getState().drawer).toBeNull();
+  });
+
   it('c06-agents-empty says it in one line with the header Start agent', async () => {
     await mount({ name: 'c06-agents-empty' });
 

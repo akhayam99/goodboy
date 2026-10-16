@@ -200,12 +200,14 @@ c05-overview-running
 c06-agent-delegating
 c06-agent-failed
 c06-agent-finished
+c06-agent-menu
 c06-agent-permission
 c06-agent-steps
 c06-agent-transcript
 c06-agent-working
 c06-agents-empty
 c06-agents-list
+c06-turn-detail
 c07-auto-answering
 c07-auto-capped
 c07-auto-child
@@ -213,6 +215,7 @@ c07-auto-child-done
 c07-auto-folded
 c07-auto-idle
 c07-auto-images
+c07-auto-limit-popover
 c07-auto-list
 c07-auto-plan
 c07-auto-project

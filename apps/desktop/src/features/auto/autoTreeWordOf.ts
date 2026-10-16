@@ -41,17 +41,15 @@ export const autoTreeWordOf = ({ view, rootTurn }: Params): AutoTreeWord => {
   if (phase === 'blocked') {
     return { word: 'Needs you', node: 'alert', isLive: false };
   }
+  const isRootTurnLive = rootTurn?.kind === 'running' || rootTurn?.kind === 'starting';
+  if (phase === 'done') {
+    return isRootTurnLive ? RUNNING : { word: 'Idle', node: 'closed', isLive: false };
+  }
   if (projectAskOf({ view }) !== null || isAutoPlanAwaitingApproval({ view })) {
     return NEEDS_YOU;
   }
-  if (phase !== 'done' && isPausedAtLimit({ view })) {
+  if (isPausedAtLimit({ view })) {
     return NEEDS_YOU;
-  }
-  if (rootTurn?.kind === 'running' || rootTurn?.kind === 'starting') {
-    return RUNNING;
-  }
-  if (phase === 'done') {
-    return { word: 'Idle', node: 'closed', isLive: false };
   }
   return RUNNING;
 };

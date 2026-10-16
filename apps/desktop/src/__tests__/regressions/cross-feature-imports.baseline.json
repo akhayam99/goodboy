@@ -103,8 +103,7 @@
     "workspace -> actions": 1,
     "workspace -> integrations": 2,
     "workspace -> session": 5,
-    "workspace -> updater": 1,
-    "workspace-chat -> actions": 1
+    "workspace -> updater": 1
   },
   "shellImportsByFile": {
     "features/actions/components/ObjectMenuProvider/index.tsx": 1,
