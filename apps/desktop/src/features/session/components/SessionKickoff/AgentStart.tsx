@@ -145,7 +145,12 @@ export const AgentStart = ({ workspaceId }: Props) => {
           onProjectChange={(next) => patchSessionDraft({ workspaceId, patch: { projectId: next } })}
         />
       </div>
-      <StartFooter note="Scout only reads. It changes nothing." error={error}>
+      <StartFooter
+        workspaceId={workspaceId}
+        note={isScout ? 'Scout only reads. It changes nothing.' : null}
+        error={error}
+        isStarting={isStarting}
+      >
         <Button
           size="sm"
           disabled={!canStart || isStarting}

@@ -53,15 +53,17 @@ describe('the New session page scenes', () => {
     }
   });
 
-  it('new-session-page-run draws the Run lane with the line, no Use session goal and one Start run', async () => {
+  it('new-session-page-run draws Orchestrate with its line, no Use session goal and one Start orchestration', async () => {
     mount({ id: 'new-session-page-run' });
 
     expect(await screen.findByRole('textbox', { name: 'Goal' }, WAIT)).toBeDefined();
-    expect(screen.getByText('Several agents work through your goal, step by step.')).toBeDefined();
-    expect(screen.getByText('Likely steps')).toBeDefined();
+    expect(
+      screen.getByText('The orchestrator picks each next step until the goal is done.'),
+    ).toBeDefined();
+    expect(screen.queryByText('Likely steps')).toBeNull();
     expect(screen.queryByRole('button', { name: /use session goal/i })).toBeNull();
-    expect(screen.getAllByRole('button', { name: 'Start run' })).toHaveLength(1);
-    expect(screen.getByRole('button', { name: 'Discard draft' })).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'Start orchestration' })).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Discard' })).toBeDefined();
     expect(screen.getByRole('button', { name: /start blank/i })).toBeDefined();
   });
 
@@ -92,7 +94,7 @@ describe('the New session page scenes', () => {
       screen.getByText('Auto answers, or hands the work to the roles it picks.'),
     ).toBeDefined();
     expect(screen.queryByText('It may not work well yet.')).toBeNull();
-    expect(screen.queryByText('Experimental')).toBeNull();
+    expect(screen.getByText('Experimental')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Start Auto' })).toBeDefined();
   });
 });

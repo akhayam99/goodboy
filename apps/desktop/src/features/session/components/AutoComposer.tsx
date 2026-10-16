@@ -15,18 +15,11 @@ import { AutoComposerView } from './AutoComposerView';
 type Props = {
   readonly sessionId: SessionId;
   readonly actionsHost?: HTMLElement | null;
-  readonly action?: HTMLElement | null;
   readonly footerClassName?: string;
   readonly onDone: () => void;
 };
 
-export const AutoComposer = ({
-  sessionId,
-  actionsHost,
-  action,
-  footerClassName,
-  onDone,
-}: Props) => {
+export const AutoComposer = ({ sessionId, actionsHost, footerClassName, onDone }: Props) => {
   const goal = useAppStore((state) => state.newDrawerDrafts[sessionId]?.autoGoal ?? '');
   const setGoal = useAppStore((state) => state.setNewDrawerAutoGoal);
   const connected = useAppStore(
@@ -83,7 +76,6 @@ export const AutoComposer = ({
       isStarting={isStarting}
       error={error}
       {...(actionsHost !== undefined && { actionsHost })}
-      {...(action !== undefined && { action })}
       {...(footerClassName !== undefined && { footerClassName })}
       onGoalChange={(next) => setGoal({ sessionId, goal: next })}
       onSubmit={() => void submit()}

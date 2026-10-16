@@ -7108,7 +7108,7 @@
   },
   "apps/desktop/src/features/workflows/components/WorkflowBuilderView/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 20
+      "count": 19
     },
     "@typescript-eslint/naming-convention": {
       "count": 2

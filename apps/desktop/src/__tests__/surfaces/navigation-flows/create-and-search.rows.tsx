@@ -194,17 +194,21 @@ export const CREATE_AND_SEARCH_ROWS: ReadonlyArray<Row> = [
       await settle();
     },
     lands: async () => {
-      const drawer = await screen.findByRole('region', { name: 'New' });
-      expect(within(drawer).getByRole('tab', { name: kind, selected: true })).toBeDefined();
+      const drawer = await screen.findByRole('region', { name: kind });
+      expect(within(drawer).getByTestId('artifact-brief')).toBeDefined();
     },
   })),
   {
-    name: 'overview: New opens the drawer on its Run tab',
+    name: 'overview: New opens its menu, and Run a workflow opens that form in the drawer',
     covers: ['overview.new'],
-    open: () => clickButton(/^New$/),
+    open: async () => {
+      await clickButton(/^New$/);
+      fireEvent.click(await screen.findByRole('menuitem', { name: 'Run a workflow' }));
+      await settle();
+    },
     lands: async () => {
-      const drawer = await screen.findByRole('region', { name: 'New' });
-      expect(within(drawer).getByRole('tab', { name: 'Run', selected: true })).toBeDefined();
+      const drawer = await screen.findByRole('region', { name: 'Run a workflow' });
+      expect(within(drawer).getByRole('textbox', { name: 'Goal' })).toBeDefined();
     },
   },
   {

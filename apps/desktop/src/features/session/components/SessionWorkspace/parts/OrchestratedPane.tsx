@@ -20,7 +20,7 @@ export const OrchestratedPane = ({ session }: Props) => {
       {hasRuns ? (
         <RunsGrid session={session} attachedRuns={orchestratedRuns} label={NAMES.orchestrated} />
       ) : (
-        <OrchestrateStart sessionId={session.id} workspaceId={session.workspaceId} />
+        <OrchestrateStart sessionId={session.id} />
       )}
     </PaneShell>
   );

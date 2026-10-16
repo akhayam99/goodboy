@@ -17,6 +17,7 @@ import {
   type Workspace,
 } from '@goodboy/types';
 import { aSession, aWorkspace, EMPTY_OVERRIDES } from '@goodboy/types/testing';
+import type { Mode } from '../../../../store/slices/workflowDrafts/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -61,10 +62,14 @@ const seedRules = (rules: WorkflowRules) => {
   });
 };
 
-const openBuilder = () =>
+type OpenBuilderParams = {
+  readonly mode?: Mode;
+};
+
+const openBuilder = ({ mode = 'dynamic' }: OpenBuilderParams = {}) =>
   render(
     <ToastProvider>
-      <WorkflowBuilderView session={SESSION} onClose={() => undefined} />
+      <WorkflowBuilderView mode={mode} session={SESSION} onClose={() => undefined} />
     </ToastProvider>,
   );
 
@@ -171,9 +176,8 @@ describe('WorkflowBuilderView and the workflow rules', () => {
 
   it('sends the guidance of a preset run to the roles that write code', () => {
     seedRules({ ...RULES, standingGuidance: GUIDANCE });
-    openBuilder();
+    openBuilder({ mode: 'preset' });
 
-    fireEvent.click(screen.getByRole('tab', { name: /^preset$/i }));
     fireEvent.click(
       within(screen.getByRole('region', { name: 'Guidance' })).getByRole('button', {
         name: 'Edit',
@@ -206,7 +210,7 @@ describe('WorkflowBuilderView and the workflow rules', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'Goal' }), {
       target: { value: 'Add backoff to the payments-api retry worker' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Start run' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start orchestration' }));
 
     await waitFor(() => expect(attach).toHaveBeenCalledOnce());
     expect(autonomyChip().getAttribute('aria-label')).toBe('Autonomy: Balanced');

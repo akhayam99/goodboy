@@ -11,6 +11,7 @@ const pickLabel = ({ identifier }: IdentifierParams): string => `Pick ${identifi
 
 export const TASK_LINE = 'Start from an issue in your tracker.';
 export const RUN_LINE = 'Several agents work through your goal, step by step.';
+export const ORCHESTRATE_LINE = 'The orchestrator picks each next step until the goal is done.';
 export const AGENT_LINE = 'One agent in the role you pick.';
 export const AUTO_AGENT_LINE = 'Auto answers, or hands the work to the roles it picks.';
 

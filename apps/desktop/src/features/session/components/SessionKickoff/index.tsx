@@ -3,7 +3,6 @@ import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
 import { useIsAutoOn } from '../../../auto/useIsAutoOn';
-import { SessionDraftActions } from '../SessionDraftPane/SessionDraftActions';
 import { useKickoffIssues } from './useKickoffIssues';
 import { preselectStartChoice, startChoiceLine, type StartChoice } from './startChoice';
 import { StartChoiceTabs } from './StartChoiceTabs';
@@ -48,10 +47,7 @@ export const SessionKickoff = ({ workspaceId, isAuto, notice }: Props) => {
   return (
     <section ref={sectionRef} aria-label="Kickoff" className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <div className="flex min-w-0 items-center justify-between gap-3">
-          <StartChoiceTabs ariaLabel={KICKOFF_QUESTION} value={choice} onChange={pick} />
-          <SessionDraftActions workspaceId={workspaceId} />
-        </div>
+        <StartChoiceTabs ariaLabel={KICKOFF_QUESTION} value={choice} onChange={pick} />
         <div className="relative">
           <p className="text-label text-muted-foreground">
             {startChoiceLine({ choice, isAuto: isAutoOn })}
@@ -65,7 +61,10 @@ export const SessionKickoff = ({ workspaceId, isAuto, notice }: Props) => {
       </div>
       <div ref={bodyRef} className="flex flex-col px-0.5">
         {choice === 'task' ? <TaskStart workspaceId={workspaceId} issues={issues} /> : null}
-        {choice === 'workflow' ? <WorkflowStart workspaceId={workspaceId} /> : null}
+        {choice === 'workflow' ? <WorkflowStart workspaceId={workspaceId} mode="preset" /> : null}
+        {choice === 'orchestrate' ? (
+          <WorkflowStart workspaceId={workspaceId} mode="dynamic" />
+        ) : null}
         {choice === 'scout' && isAutoOn ? <AutoStart workspaceId={workspaceId} /> : null}
         {choice === 'scout' && !isAutoOn ? <AgentStart workspaceId={workspaceId} /> : null}
       </div>

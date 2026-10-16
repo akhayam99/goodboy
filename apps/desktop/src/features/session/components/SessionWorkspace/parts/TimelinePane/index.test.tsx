@@ -91,6 +91,9 @@ const { storeState, diffStats, unread, questions, agentsLoaded, attachedRuns, re
       openMountDiff: vi.fn(),
       closeWorkflowRun: vi.fn(async () => undefined),
       requestOpenQuestionScroll: vi.fn(),
+      settings: {},
+      loadSetting: vi.fn(async () => undefined),
+      reportError: vi.fn(async () => undefined),
     },
   }));
 

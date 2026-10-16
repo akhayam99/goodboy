@@ -1,4 +1,4 @@
-import { Button, FormActions } from '@goodboy/ui';
+import { Button, Chip, FormActions } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { Docked } from '../../../shared/components/Docked';
 import { PromptField } from '../../../shared/components/PromptField';
@@ -24,7 +24,7 @@ type Props = {
   readonly isStarting: boolean;
   readonly error: string | null;
   readonly actionsHost?: HTMLElement | null;
-  readonly action?: HTMLElement | null;
+  readonly hasExperimentalChip?: boolean;
   readonly footerClassName?: string;
   readonly onGoalChange: (goal: string) => void;
   readonly onSubmit: () => void;
@@ -55,7 +55,7 @@ export const AutoComposerView = ({
   isStarting,
   error,
   actionsHost,
-  action,
+  hasExperimentalChip = false,
   footerClassName,
   onGoalChange,
   onSubmit,
@@ -105,29 +105,32 @@ export const AutoComposerView = ({
             onReset={choice.reset}
             onChange={choice.pick}
           />
-          {limit === undefined ? null : (
-            <AutoLimitChip
-              usd={limit.usd}
-              isFromSession={limit.isFromSession}
-              isDisabled={isStarting}
-              onChange={limit.change}
-            />
-          )}
+          <div className="flex shrink-0 items-center gap-2">
+            {limit === undefined ? null : (
+              <AutoLimitChip
+                usd={limit.usd}
+                isFromSession={limit.isFromSession}
+                isDisabled={isStarting}
+                onChange={limit.change}
+              />
+            )}
+            {hasExperimentalChip ? (
+              <Chip tone="neutral" kind="state" shape="badge" label="Experimental" />
+            ) : null}
+          </div>
         </div>
       </section>
-      {hasGoal && onDiscard !== undefined ? (
-        <Docked node={action}>
-          <Button variant="ghost" size="sm" disabled={isStarting} onClick={onDiscard}>
-            Discard draft
-          </Button>
-        </Docked>
-      ) : null}
       <Docked node={actionsHost}>
         <FormActions
           {...(footerClassName !== undefined && { className: footerClassName })}
           error={error}
           reason={startReason({ hasProvider, hasGoal })}
         >
+          {hasGoal && onDiscard !== undefined ? (
+            <Button variant="ghost" size="sm" disabled={isStarting} onClick={onDiscard}>
+              Discard
+            </Button>
+          ) : null}
           <Button
             size="md"
             onClick={onSubmit}

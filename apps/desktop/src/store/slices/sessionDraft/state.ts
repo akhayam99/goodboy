@@ -2,7 +2,7 @@ import type { ProjectId, SessionId, WorkflowId, WorkspaceId } from '@goodboy/typ
 import type { IssueCandidate } from '../../../features/integrations/fetchIssueCandidates';
 import type { AgentKind, AgentKindRouting } from '../../../features/session/agent-kind';
 
-export type StartChoice = 'task' | 'workflow' | 'scout';
+export type StartChoice = 'task' | 'workflow' | 'orchestrate' | 'scout';
 
 export type SessionDraft = {
   readonly choice: StartChoice | null;

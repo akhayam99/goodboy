@@ -24,8 +24,6 @@ export const STORAGE_PREFIXES = {
   cursorMaxMode: `${PREFIX}cursor-max-mode:`,
   inboxKindFilter: `${PREFIX}inbox-kind-filter:`,
   artifactDrafts: `${PREFIX}artifact-drafts:`,
-  workflowBuilderMode: `${PREFIX}workflow-builder-mode:`,
-  newDrawerTab: `${PREFIX}new-drawer-tab:`,
   scriptsGroupsCollapsed: `${PREFIX}scripts-groups-collapsed:v1:`,
   scriptsPackagesCollapsed: `${PREFIX}scripts-packages-collapsed:v1:`,
   turnCursor: `${PREFIX}turn-cursor:`,

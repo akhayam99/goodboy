@@ -118,9 +118,9 @@ const ENTRIES: ReadonlyArray<Entry> = [
   },
   {
     kind: 'new',
-    region: 'New',
+    region: 'Run a workflow',
     seed: seedSession,
-    drawer: { kind: 'new', sessionId: SESSION, payload: null },
+    drawer: { kind: 'new', sessionId: SESSION, payload: { form: 'run' } },
   },
   {
     kind: 'context',

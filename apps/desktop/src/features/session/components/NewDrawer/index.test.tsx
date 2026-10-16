@@ -61,7 +61,6 @@ import {
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import type { NewDrawerPayload } from '../../../../store/slices/drawer/state';
-import { readLastNewTab } from '../../newDrawerTab';
 
 let useAppStore: StoryStore;
 let NewDrawer: typeof import('./index').NewDrawer;
@@ -124,26 +123,17 @@ afterEach(() => {
 });
 
 type OpenParams = {
-  readonly payload?: NewDrawerPayload | null;
+  readonly payload?: NewDrawerPayload;
   readonly onClose?: () => void;
 };
 
-const openDrawer = ({ payload = null, onClose = vi.fn() }: OpenParams = {}) =>
-  render(
-    <ToastProvider>
-      <NewDrawer
-        sessionId={SESSION_ID}
-        payload={payload}
-        writePanel={WritePanel}
-        onClose={onClose}
-      />
-    </ToastProvider>,
-  );
+const drawerWith = ({ payload = { form: 'orchestrate' }, onClose = vi.fn() }: OpenParams = {}) => (
+  <ToastProvider>
+    <NewDrawer sessionId={SESSION_ID} payload={payload} writePanel={WritePanel} onClose={onClose} />
+  </ToastProvider>
+);
 
-const tab = (name: string) =>
-  within(screen.getByRole('tablist', { name: 'What to start' })).getByRole('tab', { name });
-
-const isSelected = (name: string) => tab(name).getAttribute('aria-selected') === 'true';
+const openDrawer = (params: OpenParams = {}) => render(drawerWith(params));
 
 const textAreaOf = (element: HTMLElement): HTMLTextAreaElement => {
   if (!(element instanceof HTMLTextAreaElement)) {
@@ -169,53 +159,35 @@ const elementOf = (element: Element | null): HTMLElement => {
 const goalBox = () => textAreaOf(screen.getByRole('textbox', { name: 'Goal' }));
 
 describe('NewDrawer (shell)', () => {
-  it('opens on Run, names the three tabs and says what Run does on one line', () => {
+  it('opens one form, titled by it, with no tab bar and one line that says what it does', () => {
     openDrawer();
 
-    expect(screen.getByRole('region', { name: 'New' })).toBeDefined();
-    expect(['Run', 'Agent', 'Write'].map(isSelected)).toEqual([true, false, false]);
-    expect(screen.getByText('Several agents work through your goal, step by step.')).toBeDefined();
+    expect(screen.getByRole('region', { name: 'Orchestrate' })).toBeDefined();
+    expect(screen.queryByRole('tablist', { name: 'What to start' })).toBeNull();
+    expect(
+      screen.getByText('The orchestrator picks each next step until the goal is done.'),
+    ).toBeDefined();
   });
 
-  it('draws only Discard draft and the close button in the header, with no chord label', () => {
+  it('draws only the close button in the header, and Discard in the actions row', () => {
     openDrawer();
     const header = elementOf(document.querySelector('[data-drawer-header]'));
 
     expect(within(header).queryByText(/⌘/)).toBeNull();
-    expect(within(header).queryByRole('button', { name: /discard draft/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^discard$/i })).toBeNull();
     fireEvent.change(goalBox(), { target: { value: 'Stop retried webhooks' } });
-    expect(within(header).getByRole('button', { name: /discard draft/i })).toBeDefined();
+    expect(within(header).queryByRole('button', { name: /discard/i })).toBeNull();
+    const footer = elementOf(document.querySelector('[data-slot="form-actions"]'));
+    expect(within(footer).getByRole('button', { name: /^discard$/i })).toBeDefined();
     expect(within(header).getByRole('button', { name: 'Close' })).toBeDefined();
   });
 
-  it('remembers the last tab per workspace', () => {
-    const first = openDrawer();
-    fireEvent.click(tab('Agent'));
-    expect(readLastNewTab({ workspaceId: WORKSPACE_ID })).toBe('agent');
-    first.unmount();
+  it('follows a later entry while open', () => {
+    const view = openDrawer({ payload: { form: 'wireframe' } });
+    expect(screen.getByRole('region', { name: 'Wireframe' })).toBeDefined();
 
-    openDrawer();
-    expect(isSelected('Agent')).toBe(true);
-  });
-
-  it('opens on the tab an entry asks for, and follows a later entry while open', () => {
-    const view = openDrawer({ payload: { tab: 'write', writeKind: 'wireframe' } });
-    expect(isSelected('Write')).toBe(true);
-    expect(screen.getByRole('tab', { name: 'Wireframe' }).getAttribute('aria-selected')).toBe(
-      'true',
-    );
-
-    view.rerender(
-      <ToastProvider>
-        <NewDrawer
-          sessionId={SESSION_ID}
-          payload={{ tab: 'run' }}
-          writePanel={WritePanel}
-          onClose={vi.fn()}
-        />
-      </ToastProvider>,
-    );
-    expect(isSelected('Run')).toBe(true);
+    view.rerender(drawerWith({ payload: { form: 'run' } }));
+    expect(screen.getByRole('region', { name: 'Run a workflow' })).toBeDefined();
   });
 
   it('closes on Escape, the way every drawer does', () => {
@@ -259,15 +231,14 @@ describe('NewDrawer (Run)', () => {
     openDrawer();
 
     expect(goalBox()).toBeDefined();
-    expect(screen.getByRole('tab', { name: 'Orchestrate' })).toBeDefined();
-    expect(screen.getByRole('region', { name: 'Plan' })).toBeDefined();
+    expect(screen.getByRole('region', { name: 'Orchestrator' })).toBeDefined();
     const footer = elementOf(document.querySelector('[data-slot="form-actions"]'));
     expect(within(footer).getByRole('button', { name: /^Autonomy:/ })).toBeDefined();
     expect(within(footer).getByRole('button', { name: /^Starts:/ })).toBeDefined();
     expect(within(footer).getByRole('button', { name: /^Spend cap:/ })).toBeDefined();
-    expect(buttonOf(within(footer).getByRole('button', { name: /start run/i })).disabled).toBe(
-      true,
-    );
+    expect(
+      buttonOf(within(footer).getByRole('button', { name: 'Start orchestration' })).disabled,
+    ).toBe(true);
     expect(within(footer).getByText('Set a goal to start')).toBeDefined();
   });
 
@@ -297,7 +268,7 @@ describe('NewDrawer (Run)', () => {
     openDrawer({ onClose });
     fireEvent.change(goalBox(), { target: { value: 'Stop retried webhooks' } });
 
-    fireEvent.click(screen.getByRole('button', { name: /start run/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start orchestration' }));
 
     await waitFor(() => expect(attach).toHaveBeenCalledOnce());
     expect(attach.mock.calls[0]?.[0]).toBe(SESSION_ID);
@@ -311,7 +282,7 @@ describe('NewDrawer (Run)', () => {
 
 describe('NewDrawer (Agent, experiment off)', () => {
   it('is the agent start of today, with Generalist picked and no message field', () => {
-    openDrawer({ payload: { tab: 'agent' } });
+    openDrawer({ payload: { form: 'agent' } });
 
     expect(screen.getByText('One agent in the role you pick.')).toBeDefined();
     expect(screen.getByText('Generalist')).toBeDefined();
@@ -324,7 +295,7 @@ describe('NewDrawer (Agent, experiment off)', () => {
   });
 
   it('keeps the hidden roles out of the picker', () => {
-    openDrawer({ payload: { tab: 'agent' } });
+    openDrawer({ payload: { form: 'agent' } });
 
     for (const hidden of ['Reviewer', 'Resolver', 'Rewriter', 'Scribe', 'Report', 'Wireframe']) {
       expect(screen.queryByRole('button', { name: hidden })).toBeNull();
@@ -335,7 +306,7 @@ describe('NewDrawer (Agent, experiment off)', () => {
 
   it('opens the picked role in its chat, on the same routing the popover gave', async () => {
     const onClose = vi.fn();
-    openDrawer({ payload: { tab: 'agent' }, onClose });
+    openDrawer({ payload: { form: 'agent' }, onClose });
     fireEvent.click(screen.getByRole('button', { name: 'Scout' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Open Scout' }));
@@ -349,7 +320,7 @@ describe('NewDrawer (Agent, experiment off)', () => {
   });
 
   it('offers the Suggested routing when Routing opens', () => {
-    openDrawer({ payload: { tab: 'agent' } });
+    openDrawer({ payload: { form: 'agent' } });
 
     fireEvent.click(screen.getByRole('button', { name: /^Agent routing:/ }));
 
@@ -359,7 +330,7 @@ describe('NewDrawer (Agent, experiment off)', () => {
   it('shows why inline and stays open when the agent cannot start', async () => {
     spawnAgent.mockRejectedValue(new Error('provider offline'));
     const onClose = vi.fn();
-    openDrawer({ payload: { tab: 'agent' }, onClose });
+    openDrawer({ payload: { form: 'agent' }, onClose });
 
     fireEvent.click(screen.getByRole('button', { name: 'Open Generalist' }));
 
@@ -374,7 +345,7 @@ describe('NewDrawer (Agent, experiment on)', () => {
   });
 
   it('is the Auto composer: a goal, one model chip and Start Auto, with no roles or guidance', () => {
-    openDrawer({ payload: { tab: 'agent' } });
+    openDrawer({ payload: { form: 'agent' } });
 
     expect(
       screen.getByText('Auto answers, or hands the work to the roles it picks.'),
@@ -391,7 +362,7 @@ describe('NewDrawer (Agent, experiment on)', () => {
 
   it('keeps Start Auto disabled and says why when no provider is connected', () => {
     useAppStore.setState({ providers: [{ ...connected('anthropic'), connection: 'missing' }] });
-    openDrawer({ payload: { tab: 'agent' } });
+    openDrawer({ payload: { form: 'agent' } });
     fireEvent.change(screen.getByRole('textbox', { name: 'Describe the work' }), {
       target: { value: 'Find why webhooks retry' },
     });
@@ -411,7 +382,7 @@ describe('NewDrawer (Agent, experiment on)', () => {
         connected('moonshot'),
       ],
     });
-    openDrawer({ payload: { tab: 'agent' } });
+    openDrawer({ payload: { form: 'agent' } });
     fireEvent.change(screen.getByRole('textbox', { name: 'Describe the work' }), {
       target: { value: 'Find why webhooks retry' },
     });
@@ -432,7 +403,7 @@ describe('NewDrawer (Agent, experiment on)', () => {
         },
       ],
     });
-    openDrawer({ payload: { tab: 'agent' } });
+    openDrawer({ payload: { form: 'agent' } });
     fireEvent.change(screen.getByRole('textbox', { name: 'Describe the work' }), {
       target: { value: 'Find why webhooks retry' },
     });
@@ -444,7 +415,7 @@ describe('NewDrawer (Agent, experiment on)', () => {
   });
 
   it('keeps Start Auto disabled until a goal is written', () => {
-    openDrawer({ payload: { tab: 'agent' } });
+    openDrawer({ payload: { form: 'agent' } });
     const start = () => buttonOf(screen.getByRole('button', { name: 'Start Auto' }));
 
     expect(start().disabled).toBe(true);
@@ -457,18 +428,18 @@ describe('NewDrawer (Agent, experiment on)', () => {
   });
 
   it('keeps the goal in memory when the experiment is turned off', () => {
-    const view = openDrawer({ payload: { tab: 'agent' } });
+    const view = openDrawer({ payload: { form: 'agent' } });
     fireEvent.change(screen.getByRole('textbox', { name: 'Describe the work' }), {
       target: { value: 'Find why webhooks retry' },
     });
     view.unmount();
     experiment.isOn = false;
 
-    openDrawer({ payload: { tab: 'agent' } });
+    openDrawer({ payload: { form: 'agent' } });
     expect(screen.queryByRole('textbox')).toBeNull();
     cleanup();
     experiment.isOn = true;
-    openDrawer({ payload: { tab: 'agent' } });
+    openDrawer({ payload: { form: 'agent' } });
 
     expect(textAreaOf(screen.getByRole('textbox', { name: 'Describe the work' })).value).toBe(
       'Find why webhooks retry',
@@ -480,7 +451,7 @@ describe('NewDrawer (Agent, experiment on)', () => {
 
   it('starts Auto with the goal and clears the draft', async () => {
     const onClose = vi.fn();
-    openDrawer({ payload: { tab: 'agent' }, onClose });
+    openDrawer({ payload: { form: 'agent' }, onClose });
     fireEvent.change(screen.getByRole('textbox', { name: 'Describe the work' }), {
       target: { value: 'Find why webhooks retry' },
     });
@@ -500,27 +471,28 @@ describe('NewDrawer (Agent, experiment on)', () => {
     expect(useAppStore.getState().newDrawerDrafts[SESSION_ID]).toBeUndefined();
   });
 
-  it('discards the draft from the header', () => {
-    openDrawer({ payload: { tab: 'agent' } });
+  it('discards the draft from the actions row', () => {
+    openDrawer({ payload: { form: 'agent' } });
     fireEvent.change(screen.getByRole('textbox', { name: 'Describe the work' }), {
       target: { value: 'Find why webhooks retry' },
     });
+    const footer = elementOf(document.querySelector('[data-slot="form-actions"]'));
 
-    fireEvent.click(screen.getByRole('button', { name: /discard draft/i }));
+    fireEvent.click(within(footer).getByRole('button', { name: /^discard$/i }));
 
     expect(textAreaOf(screen.getByRole('textbox', { name: 'Describe the work' })).value).toBe('');
     expect(useAppStore.getState().newDrawerDrafts[SESSION_ID]).toBeUndefined();
   });
 
-  it('keeps a separate draft for Run and for Agent', () => {
-    openDrawer();
+  it('keeps a separate draft for Orchestrate and for Start agent', () => {
+    const view = openDrawer();
     fireEvent.change(goalBox(), { target: { value: 'the run goal' } });
-    fireEvent.click(tab('Agent'));
+    view.rerender(drawerWith({ payload: { form: 'agent' } }));
     expect(textAreaOf(screen.getByRole('textbox', { name: 'Describe the work' })).value).toBe('');
     fireEvent.change(screen.getByRole('textbox', { name: 'Describe the work' }), {
       target: { value: 'the agent goal' },
     });
-    fireEvent.click(tab('Run'));
+    view.rerender(drawerWith({ payload: { form: 'orchestrate' } }));
 
     expect(goalBox().value).toBe('the run goal');
     act(() => undefined);
@@ -528,31 +500,30 @@ describe('NewDrawer (Agent, experiment on)', () => {
 });
 
 describe('NewDrawer (Write)', () => {
-  it('writes a report by default, with every field the page had', () => {
-    openDrawer({ payload: { tab: 'write' } });
+  it('writes a report with every field the page had, and no format tabs', () => {
+    openDrawer({ payload: { form: 'report' } });
 
-    expect(screen.getByText('A report or a wireframe, written from this session.')).toBeDefined();
-    expect(isSelected('Write')).toBe(true);
-    expect(screen.getByRole('tab', { name: 'Report' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByText('A report written from this session.')).toBeDefined();
+    expect(screen.queryByRole('tablist', { name: 'Write format' })).toBeNull();
     expect(screen.getByTestId('artifact-brief')).toBeDefined();
     expect(screen.getByText('Included context')).toBeDefined();
     expect(screen.queryByRole('button', { name: /^add guidance/i })).toBeNull();
   });
 
-  it('switches to the wireframe fields and back without losing the report draft', () => {
-    openDrawer({ payload: { tab: 'write' } });
+  it('opens the wireframe form and back without losing the report draft', () => {
+    const view = openDrawer({ payload: { form: 'report' } });
     fireEvent.change(screen.getByTestId('artifact-brief'), { target: { value: 'the rounding' } });
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Wireframe' }));
-    expect(screen.getByTestId('artifact-brief')).toBeDefined();
-    fireEvent.click(screen.getByRole('tab', { name: 'Report' }));
+    view.rerender(drawerWith({ payload: { form: 'wireframe' } }));
+    expect(screen.getByText('A wireframe drawn from this session.')).toBeDefined();
+    view.rerender(drawerWith({ payload: { form: 'report' } }));
 
     expect(textAreaOf(screen.getByTestId('artifact-brief')).value).toBe('the rounding');
   });
 
   it('shows the note a retry carries', () => {
     openDrawer({
-      payload: { tab: 'write', writeKind: 'report', note: 'Retrying the last report' },
+      payload: { form: 'report', note: 'Retrying the last report' },
     });
 
     expect(screen.getByTestId('artifact-creation-note').textContent).toBe(

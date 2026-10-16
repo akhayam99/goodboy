@@ -33,7 +33,7 @@ export const openArtifactCreation = (set: SetFn, get: GetFn) => {
     get().openDrawer({
       kind: 'new',
       sessionId,
-      payload: { tab: 'write', writeKind: kind, ...(note !== null && { note }) },
+      payload: { form: kind, ...(note !== null && { note }) },
     });
   };
 };

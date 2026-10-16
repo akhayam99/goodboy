@@ -9,7 +9,7 @@ import type { WritePanelProps } from '../../../artifacts/writePanelProps';
 
 type Props = {
   readonly sessionId: SessionId;
-  readonly payload: NewDrawerPayload | null;
+  readonly payload: NewDrawerPayload;
   readonly writePanel: ComponentType<WritePanelProps>;
   readonly onClose: () => void;
 };

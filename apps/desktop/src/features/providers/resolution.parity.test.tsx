@@ -162,10 +162,9 @@ describe.each([
 
     render(
       <ToastProvider>
-        <WorkflowBuilderView session={SESSION} onClose={vi.fn()} />
+        <WorkflowBuilderView mode="dynamic" session={SESSION} onClose={vi.fn()} />
       </ToastProvider>,
     );
-    fireEvent.click(screen.getByRole('tab', { name: /orchestrate/i }));
     const builder = screen.getByRole('button', { name: /^Orchestrator routing:/ });
     expect(builder.getAttribute('aria-label')).toContain(expected);
   });

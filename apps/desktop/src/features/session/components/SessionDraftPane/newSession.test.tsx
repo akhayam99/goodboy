@@ -51,7 +51,6 @@ import {
 import type { AppStore } from '../../../../store/store';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { WritePanel } from '../../../artifacts/components/WritePanel';
-import { writeLastWorkflowMode } from '../../../workflows/components/WorkflowBuilderView/lastWorkflowMode';
 import { sessionPlace } from '../../../../store/slices/navigation/place';
 import {
   WORKSPACE_ID,
@@ -131,7 +130,6 @@ beforeEach(async () => {
     createSession,
     spawnAgent,
   });
-  writeLastWorkflowMode({ workspaceId: WORKSPACE_ID, mode: 'dynamic' });
 });
 
 afterEach(() => {
@@ -146,7 +144,7 @@ const settle = async (): Promise<void> => {
 };
 
 type OpenPageParams = {
-  readonly choice: 'task' | 'workflow' | 'scout';
+  readonly choice: 'task' | 'workflow' | 'orchestrate' | 'scout';
 };
 
 const openPage = async ({ choice }: OpenPageParams): Promise<void> => {
@@ -170,7 +168,7 @@ const textBox = (name: string): HTMLTextAreaElement => {
 };
 
 const startButton = (): HTMLButtonElement => {
-  const element = screen.getByRole('button', { name: /start run/i });
+  const element = screen.getByRole('button', { name: /start (run|orchestration)/i });
   if (!(element instanceof HTMLButtonElement)) {
     throw new Error('Expected a button');
   }
@@ -190,6 +188,7 @@ describe('New session page, selector', () => {
     expect(tabs.getAllByRole('tab').map((node) => node.textContent)).toEqual([
       'Pick up a task',
       'Run a workflow',
+      'Orchestrate',
       'Ask an agent',
     ]);
     expect(screen.getByText('Several agents work through your goal, step by step.')).toBeDefined();
@@ -203,16 +202,15 @@ describe('New session page, selector', () => {
     expect(screen.getByText('Start from an issue in your tracker.')).toBeDefined();
   });
 
-  it('keeps Start blank in the header and shows Discard draft only once something is written', async () => {
+  it('keeps Start blank in the header and Discard in the actions row once something is written', async () => {
     await openPage({ choice: 'workflow' });
 
     expect(screen.getByRole('button', { name: /start blank/i })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Discard draft' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Discard' })).toBeNull();
 
     fireEvent.change(textBox('Goal'), { target: { value: GOAL } });
 
-    expect(screen.getAllByRole('button', { name: 'Discard draft' })).toHaveLength(1);
-    expect(screen.queryByRole('button', { name: 'Discard workflow draft' })).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Discard' })).toHaveLength(1);
   });
 });
 
@@ -222,7 +220,7 @@ describe('New session page, Run lane', () => {
       <ToastProvider>
         <NewDrawer
           sessionId={cameFrom.id}
-          payload={{ tab: 'run' }}
+          payload={{ form: 'orchestrate' }}
           writePanel={WritePanel}
           onClose={vi.fn()}
         />
@@ -236,7 +234,7 @@ describe('New session page, Run lane', () => {
     attach.mockClear();
     await settle();
 
-    await openPage({ choice: 'workflow' });
+    await openPage({ choice: 'orchestrate' });
     fireEvent.change(textBox('Goal'), { target: { value: GOAL } });
     fireEvent.click(startButton());
     await waitFor(() => expect(attach).toHaveBeenCalledOnce());
@@ -249,7 +247,6 @@ describe('New session page, Run lane', () => {
   });
 
   it('blocks the start with Preset when the spend cap is switched on and left empty', async () => {
-    writeLastWorkflowMode({ workspaceId: WORKSPACE_ID, mode: 'preset' });
     await openPage({ choice: 'workflow' });
     fireEvent.change(textBox('Goal'), { target: { value: GOAL } });
     fireEvent.click(screen.getByRole('button', { name: /^preset:/i }));
@@ -268,7 +265,6 @@ describe('New session page, Run lane', () => {
   });
 
   it('carries a valid spend cap onto a started preset', async () => {
-    writeLastWorkflowMode({ workspaceId: WORKSPACE_ID, mode: 'preset' });
     await openPage({ choice: 'workflow' });
     fireEvent.change(textBox('Goal'), { target: { value: GOAL } });
     fireEvent.click(screen.getByRole('button', { name: /^preset:/i }));
@@ -345,7 +341,7 @@ describe('New session page, Agent (experiment on)', () => {
       screen.getByText('Auto answers, or hands the work to the roles it picks.'),
     ).toBeDefined();
     expect(screen.getByRole('region', { name: 'Auto' })).toBeDefined();
-    expect(screen.queryByText('Experimental')).toBeNull();
+    expect(screen.getByText('Experimental')).toBeDefined();
     expect(screen.queryByText('It may not work well yet.')).toBeNull();
     expect(screen.getByRole('button', { name: /auto model/i })).toBeDefined();
     expect(screen.queryByRole('combobox', { name: /project/i })).toBeNull();
@@ -396,10 +392,10 @@ describe('New session page, Agent (experiment on)', () => {
 
   it('counts the Auto goal as a draft, so Discard draft appears and clears it', async () => {
     await openPage({ choice: 'scout' });
-    expect(screen.queryByRole('button', { name: 'Discard draft' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Discard' })).toBeNull();
 
     fireEvent.change(textBox('Describe the work'), { target: { value: GOAL } });
-    fireEvent.click(screen.getByRole('button', { name: 'Discard draft' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
     await settle();
 
     expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]).toBeUndefined();
