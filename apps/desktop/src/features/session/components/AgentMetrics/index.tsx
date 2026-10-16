@@ -68,7 +68,7 @@ export const AgentMetrics = ({
 
   return (
     <div className="flex min-w-0 flex-col gap-0.5">
-      <div data-testid="agent-metrics-inline" className={cn('flex min-w-0', muted && 'opacity-60')}>
+      <div data-testid="agent-metrics-inline" className="flex min-w-0">
         <MetaRow
           className={cn(
             'min-w-0 text-muted-foreground',

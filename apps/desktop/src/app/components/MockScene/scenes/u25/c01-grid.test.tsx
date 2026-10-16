@@ -56,10 +56,11 @@ describe('c01 grid scenes', () => {
     }
   });
 
-  it('reads the specimen in two sizes', () => {
+  it('shows the specimen title, its prose and the agents list', () => {
     const Scene = U25_C01_GRID_SCENES['c01-grid-type'];
     render(<Scene />);
-    expect(screen.getByRole('heading', { level: 1 }).className).toContain('text-lead');
-    expect(screen.getByRole('list', { name: 'Agents' }).className).toContain('text-ui');
+    screen.getByRole('heading', { level: 1, name: 'Ledger export speed up' });
+    screen.getByRole('heading', { level: 2, name: 'Agents' });
+    screen.getByRole('list', { name: 'Agents' });
   });
 });

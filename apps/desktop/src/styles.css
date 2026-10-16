@@ -35,7 +35,7 @@
   --color-floating: oklch(0.3 0.011 255);
   --color-fill: oklch(1 0 0 / 0.06);
   --color-idle: oklch(0.58 0.01 255);
-  --color-muted-foreground: oklch(0.77 0.015 255);
+  --color-muted-foreground: oklch(0.79 0.015 255);
   --color-faint-foreground: oklch(0.68 0.012 255);
   --color-disabled-foreground: oklch(0.58 0.01 255);
   --color-border-strong: oklch(0.7 0.012 255);
@@ -661,6 +661,12 @@ body {
 
 .tabular {
   font-variant-numeric: tabular-nums;
+}
+
+@layer utilities {
+  [data-selected='true'] .text-faint-foreground {
+    color: var(--color-muted-foreground);
+  }
 }
 
 @utility text-eyebrow {

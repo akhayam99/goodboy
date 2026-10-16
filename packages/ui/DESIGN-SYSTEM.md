@@ -100,8 +100,21 @@ selected is 13% and 12%, so a selected row always reads above a hovered one.
 A selected row has one treatment everywhere: `bg-selected`, foreground text and
 medium weight, driven by `data-selected` (`selectedRow.ts`, used by
 `SelectableRow` and `RailCard isSelected`). `SegmentedTabs` follows it too: a
-hairline track, `bg-selected` on the active segment, no raised pill. It has
-three sizes: `xs` (28px strip, for a header row that also holds the title and
+hairline track, `bg-selected` on the active segment, no raised pill.
+
+A selected row adds no hover wash on top of `bg-selected`
+(`data-[selected=true]:hover:bg-selected`), and faint text inside it reads as
+muted (`[data-selected='true'] .text-faint-foreground` in `styles.css`), so
+every line of a selected row clears 4.5:1 on every surface step in both themes.
+A tinted chip keeps its rest fill at hover and draws its ring stronger
+(`hoverRing`); a tone's `hoverBg` is the neutral `bg-hover` overlay, never a
+stronger tint, because a 20% tint under tone text fell under 4.5:1. Text never
+takes an `opacity-*` step: a quiet model label is the muted variant of
+`RoutingLabel` (name in `muted-foreground`, provider mark in its color). The
+composed cases (tint, selected row) live in `token-contrast-floor.test.ts`,
+Composed contrast.
+
+`SegmentedTabs` has three sizes: `xs` (28px strip, for a header row that also holds the title and
 actions), `sm` (36px) and `md`; the tablist carries `data-size` so a test can
 check it against its neighbours. No ring and no primary tint mark a
 selection; the focus ring stays the only ring, so focus and selection read
