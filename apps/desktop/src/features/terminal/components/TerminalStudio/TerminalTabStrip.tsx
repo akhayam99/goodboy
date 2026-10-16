@@ -1,8 +1,10 @@
-import { useId, useRef, type KeyboardEvent } from 'react';
+import { useId, useRef, useState, type KeyboardEvent } from 'react';
 import { Plus } from 'lucide-react';
 import { IconButton, ScrollFade } from '@goodboy/ui';
 import { useTerminalPorts } from '../../../monitoring/useTerminalPorts';
 import type { TerminalTab } from '../../../../shared/types/terminal';
+import { isOverlayOpen } from '../../../../shared/keyboard/isOverlayOpen';
+import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import { TerminalTabItem } from './TerminalTabItem';
 
 type RenameParams = {
@@ -21,6 +23,7 @@ type Props = {
   readonly onRestart: (tab: TerminalTab) => void;
   readonly onRename: (params: RenameParams) => Promise<void>;
   readonly onNew: () => void;
+  readonly isShortcutEnabled?: boolean;
 };
 
 const NO_PORTS: ReadonlyArray<number> = [];
@@ -36,11 +39,33 @@ export const TerminalTabStrip = ({
   onRestart,
   onRename,
   onNew,
+  isShortcutEnabled = true,
 }: Props) => {
   const portsByTerminal = useTerminalPorts();
   const listRef = useRef<HTMLDivElement | null>(null);
   const stripId = useId();
+  const [armedId, setArmedId] = useState<string | null>(null);
   const domIdOf = (tab: TerminalTab): string => `${stripId}-${tab.id}`;
+
+  useShortcut(
+    'terminal.closeTab',
+    () => {
+      if (isOverlayOpen({})) {
+        return false;
+      }
+      const tab = tabs.find((candidate) => candidate.id === selectedId);
+      if (tab === undefined) {
+        return false;
+      }
+      if (tab.status !== 'exited' && busyIds.has(tab.id)) {
+        setArmedId(tab.id);
+        return;
+      }
+      onClose(tab);
+    },
+    isShortcutEnabled,
+    { canDecline: true },
+  );
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
@@ -90,7 +115,10 @@ export const TerminalTabStrip = ({
               isBusy={busyIds.has(tab.id)}
               command={commandOf(tab)}
               ports={portsByTerminal.get(tab.id) ?? NO_PORTS}
+              isArmed={armedId === tab.id}
               onSelect={() => onSelect(tab)}
+              onArm={() => setArmedId(tab.id)}
+              onDisarm={() => setArmedId(null)}
               onClose={() => onClose(tab)}
               onRestart={() => onRestart(tab)}
               onRename={(title) => onRename({ tab, title })}

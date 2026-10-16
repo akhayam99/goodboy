@@ -12,7 +12,10 @@ type Props = {
   readonly isBusy: boolean;
   readonly command: string | null;
   readonly ports: ReadonlyArray<number>;
+  readonly isArmed: boolean;
   readonly onSelect: () => void;
+  readonly onArm: () => void;
+  readonly onDisarm: () => void;
   readonly onClose: () => void;
   readonly onRestart: () => void;
   readonly onRename: (title: string) => Promise<void>;
@@ -25,7 +28,10 @@ export const TerminalTabItem = ({
   isBusy,
   command,
   ports,
+  isArmed,
   onSelect,
+  onArm,
+  onDisarm,
   onClose,
   onRestart,
   onRename,
@@ -65,7 +71,15 @@ export const TerminalTabItem = ({
       {isExited ? (
         <IconButton icon={RotateCcw} label={`Restart ${tab.title}`} size="xs" onClick={onRestart} />
       ) : null}
-      <CloseTerminal name={tab.title} isBusy={isBusyNow} command={command} onClose={onClose} />
+      <CloseTerminal
+        name={tab.title}
+        isBusy={isBusyNow}
+        isArmed={isArmed}
+        command={command}
+        onClose={onClose}
+        onArm={onArm}
+        onDisarm={onDisarm}
+      />
     </div>
   );
 };

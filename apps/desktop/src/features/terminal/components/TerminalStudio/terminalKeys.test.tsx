@@ -93,6 +93,7 @@ beforeEach(async () => {
   await resetStoryStore();
   stubStoryInvoke({
     terminal_open: null,
+    terminal_close: null,
     terminal_list_live: [],
     db_select: [],
     monitor_snapshot: { listeners: [], processes: [], takenAt: 0, isPlatformSupported: true },
@@ -184,6 +185,23 @@ describe('the terminal keys inside the session drawer', () => {
 
     expect(tabCount()).toBe(2);
     expect(screen.queryByRole('combobox', { name: 'Search' })).toBeNull();
+  });
+
+  it('closes the last tab on cmd+w and then the drawer', () => {
+    const onClose = vi.fn();
+    render(
+      <TerminalDrawerBody
+        workspaceId={WORKSPACE_ID}
+        sessionId={SESSION_ID}
+        worktreeKey={WORKTREE_KEY}
+        onClose={onClose}
+      />,
+    );
+
+    fireEvent.keyDown(window, { code: 'KeyW', metaKey: true });
+
+    expect(tabCount()).toBe(0);
+    expect(onClose).toHaveBeenCalled();
   });
 
   it('opens the picker on cmd+n and never starts a session', () => {

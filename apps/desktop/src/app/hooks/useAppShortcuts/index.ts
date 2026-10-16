@@ -22,6 +22,8 @@ import type { OpenPaletteParams } from '../../../features/palette/paletteModeTyp
 import type { ContextDrawerTab } from '../../../store/slices/drawer/state';
 import type { BranchTab } from '../../../store/slices/navigation/types';
 import { useMouseHistoryButtons } from '../useMouseHistoryButtons';
+import { useCloseMenuEvent } from '../useCloseMenuEvent';
+import { closeCurrentLevel } from './closeCurrentLevel';
 import { useGoToBoard } from '../useGoToBoard';
 import { useSessionNavigation } from '../useSessionNavigation';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
@@ -194,6 +196,8 @@ export const useAppShortcuts = ({
   useShortcut('session.next', () => navigateSession({ delta: 1 }));
   useShortcut('session.board', goToBoard);
   useShortcut('terminal.studio', openTerminalStudio);
+  useShortcut('app.close', () => closeCurrentLevel({}));
+  useCloseMenuEvent();
 
   useShortcut('lens.overview', () => goToLens({ kind: null }));
   useShortcut('lens.context', () => toggleContext({}));
