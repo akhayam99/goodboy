@@ -55,7 +55,7 @@ export const linearIssueFields: FactRegistry<LinearIssue> = {
   }),
   place: ({ entity }) => ({
     key: 'place',
-    label: 'Team and project',
+    label: 'Project',
     icon: FolderKanban,
     node:
       entity.project?.name == null
@@ -65,14 +65,14 @@ export const linearIssueFields: FactRegistry<LinearIssue> = {
   labels: ({ entity }) =>
     (entity.labels?.nodes ?? []).map((label) => ({
       key: `label-${label.name}`,
-      label: 'Label',
+      label: 'Labels',
       icon: null,
       node: <LinearLabelChip label={label} />,
     })),
   links: ({ entity }) =>
     issuePullRequests(entity).map((pr) => ({
       key: `pr-${pr.number}`,
-      label: 'Linked pull request',
+      label: 'PRs',
       icon: GitPullRequest,
       node: <LinkedPrChip pr={pr} />,
     })),

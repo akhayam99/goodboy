@@ -57,30 +57,28 @@ describe('the rail scenes', () => {
     expect(MOCK_SCENES['notifications-rail']).toBe(U24_RAILS_SCENES['notifications-rail']);
   });
 
-  it('tasks-rail docks the facets and the search beside the list', async () => {
+  it('tasks-rail now keeps the filters in one Filter menu of the header, with no rail', async () => {
     mount({ name: 'tasks-rail' });
 
-    const rail = await screen.findByRole('complementary', { name: 'Task filters' }, WAIT);
-    expect(within(rail).getByRole('navigation', { name: 'Filter tasks' })).toBeDefined();
-    expect(within(rail).getByRole('searchbox', { name: 'Search tasks' })).toBeDefined();
+    await screen.findByRole('button', { name: 'Filter' }, WAIT);
+    expect(screen.getByRole('searchbox', { name: 'Search tasks' })).toBeDefined();
     expect(screen.getByRole('heading', { level: 1, name: 'Tasks' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: /^Filters/ })).toBeNull();
+    expect(screen.queryByRole('complementary', { name: 'Task filters' })).toBeNull();
   });
 
-  it('tasks-rail-open keeps the rail while a record is open in the drawer', async () => {
+  it('tasks-rail-open opens the record in the pane beside the list', async () => {
     mount({ name: 'tasks-rail-open' });
 
-    await screen.findByRole('complementary', { name: 'Task filters' }, WAIT);
+    await screen.findByRole('button', { name: 'Filter' }, WAIT);
     const drawer = screen.getByRole('complementary', { name: 'Task' });
     expect(drawer.getAttribute('data-drawer-mode')).not.toBe('closed');
   });
 
-  it('tasks-rail-folded shows the Filters button and no rail', async () => {
+  it('tasks-rail-folded shows the same header Filter menu, since no rail folds anymore', async () => {
     mount({ name: 'tasks-rail-folded' });
 
-    await screen.findByRole('button', { name: 'Filters' }, WAIT);
-    expect(screen.queryByRole('complementary', { name: 'Task filters' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Dock the filters' })).toBeDefined();
+    await screen.findByRole('button', { name: 'Filter' }, WAIT);
+    expect(screen.queryByRole('button', { name: 'Dock the filters' })).toBeNull();
   });
 
   it('notifications-rail docks View, Severity, Source and the workspace scope', async () => {

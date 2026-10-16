@@ -53,7 +53,7 @@ describe('the Tasks drawer split scene', () => {
   });
 
   it('stands the record drawer beside the page container inside the studio, band included', async () => {
-    stubColumnWidth(1200);
+    stubColumnWidth(1600);
     const Scene = U24_DRAWERS_TASKS_SCENES['drawer-split-tasks'];
     const { container } = render(
       <ToastProvider>

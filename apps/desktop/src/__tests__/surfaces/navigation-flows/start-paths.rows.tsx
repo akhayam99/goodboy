@@ -150,10 +150,10 @@ const installFakes = ({ sessionId }: Ctx): void => {
 };
 
 const inboxRowButton = (identifier: string): HTMLElement => {
-  const row = Array.from(document.querySelectorAll<HTMLElement>('[data-inbox-key]')).find(
+  const row = Array.from(document.querySelectorAll<HTMLElement>('[data-row-key]')).find(
     (candidate) => candidate.textContent?.includes(identifier),
   );
-  const button = row?.querySelector('button') ?? null;
+  const button = row ?? null;
   if (button === null) {
     throw new Error(`the inbox lists no ${identifier}`);
   }
@@ -164,7 +164,7 @@ const openTasksAndStart = async (ctx: Ctx): Promise<void> => {
   installFakes(ctx);
   clicks = 0;
   await clickButton('Tasks');
-  await visible('region', 'Starred');
+  await visible('listbox', 'Starred');
   counted(inboxRowButton('HBL-415'));
   await settle();
   counted(await screen.findByRole('button', { name: /^Start from HBL-415/ }, WAIT));

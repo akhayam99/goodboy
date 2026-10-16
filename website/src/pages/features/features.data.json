@@ -856,7 +856,7 @@
         },
         {
           "title": "Tasks",
-          "text": "Work from one list instead of seven tabs. Issues, Slack threads, Sentry errors and pull requests sit together, grouped by day. Filters sit in a rail beside the list.",
+          "text": "Work from one list instead of seven tabs. Issues, Slack threads, Sentry errors and pull requests sit together in groups of five that open on demand. It starts on what is yours, and one Filter menu narrows the rest.",
           "group": "Tasks and your tools",
           "main": true
         },

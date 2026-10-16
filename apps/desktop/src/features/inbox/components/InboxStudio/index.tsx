@@ -7,9 +7,9 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { useListKeys } from '../../../../shared/hooks/useListKeys';
 import { openUrl } from '../../../../shared/lib/editor';
-import { groupByDay } from '../../../../shared/utils/groupByDay';
 import { useAppStore, useSessionById, type InboxStudioFocus } from '../../../../store';
 import { useWorkspaceIssueLookup } from '../../../integrations/hooks/useWorkspaceIssueLookup';
+import { integrationLabel } from '../../../integrations/components/IntegrationGlyph';
 import { placeholderRecordOf } from '../../../integrations/starred/placeholderRecordOf';
 import { recordSessionId } from '../../recordSessionId';
 import { recordCanReply } from '../../recordCanReply';
@@ -17,6 +17,11 @@ import { useInboxRecords } from '../../useInboxRecords';
 import { attachLinkedSession } from '../../attachLinkedSession';
 import { useInboxLinkedSessions } from '../../useInboxLinkedSessions';
 import { orderInboxRecords } from '../../orderInboxRecords';
+import { isForMeRecord } from '../../isForMeRecord';
+import { shownTaskRecords } from '../../shownTaskRecords';
+import { sourceFailureLine } from '../../sourceFailureLine';
+import { taskGroupsOf, type TaskGroup } from '../../taskGroups';
+import { readTaskListView, writeTaskListView, type TaskListView } from '../../taskListViewStorage';
 import { INBOX_PROVIDERS, type InboxKind, type InboxProvider, type InboxRecord } from '../../types';
 import {
   NO_INBOX_FILTERS,
@@ -29,14 +34,18 @@ import {
 import { readInboxFilters, writeInboxFilters } from '../../kindFilterStorage';
 import { InboxDetail } from './InboxDetail';
 import { InboxFacetRail } from './InboxFacetRail';
-import { InboxList, type InboxLoadFailure } from './InboxList';
+import { InboxList } from './InboxList';
 import { InboxListHeader } from './InboxListHeader';
 import { InboxLookupGroup } from './InboxLookupGroup';
 import { InboxStarredGroup } from './InboxStarredGroup';
+import { TaskFullPage } from './TaskFullPage';
+import { TaskGroupRows, type TaskLine } from './TaskGroupRows';
 import { useInboxStars } from '../../useInboxStars';
 import { InboxStudioLayout } from './InboxStudioLayout';
 
 const REPLY_FOCUS_FRAMES = 30;
+
+const STARRED_GROUP_KEY = 'starred';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -91,19 +100,22 @@ const initialFilters = ({
   };
 };
 
-type SummaryParams = {
-  readonly total: number;
-  readonly visible: number;
-  readonly withSession: number;
+type InitialViewParams = {
+  readonly workspaceId: WorkspaceId;
+  readonly isDeepLinked: boolean;
 };
 
-const summary = ({ total, visible, withSession }: SummaryParams): string => {
-  if (visible !== total) {
-    return `${visible} of ${total}`;
-  }
-  const items = `${total} ${total === 1 ? 'item' : 'items'}`;
-  return withSession === 0 ? items : `${items}, ${withSession} with a session`;
+const initialView = ({ workspaceId, isDeepLinked }: InitialViewParams): TaskListView => {
+  const stored = readTaskListView({ workspaceId });
+  return isDeepLinked ? { ...stored, scope: 'all' } : stored;
 };
+
+type OpenCountParams = {
+  readonly records: ReadonlyArray<InboxRecord>;
+};
+
+const openCountWord = ({ records }: OpenCountParams): string =>
+  `${records.filter((record) => record.state !== 'done').length.toLocaleString('en-US')} open`;
 
 export const InboxStudio = ({
   workspaceId,
@@ -136,7 +148,15 @@ export const InboxStudio = ({
   const [filters, setFilters] = useState<InboxFilters>(() =>
     initialFilters({ workspaceId, initialKind, initialProvider }),
   );
+  const [view, setView] = useState<TaskListView>(() =>
+    initialView({
+      workspaceId,
+      isDeepLinked: initialRecordKey !== null || initialSessionId !== null,
+    }),
+  );
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [openKey, setOpenKey] = useState<string | null>(initialRecordKey);
+  const [fullKey, setFullKey] = useState<string | null>(null);
   const [cursorKey, setCursorKey] = useState<string | null>(initialRecordKey);
   const [sessionFilter, setSessionFilter] = useState<SessionId | null>(initialSessionId);
   const [launchFocusRequest, setLaunchFocusRequest] = useState(0);
@@ -149,6 +169,12 @@ export const InboxStudio = ({
   useEffect(() => {
     writeInboxFilters({ workspaceId, kind: filters.kind, source: filters.source });
   }, [workspaceId, filters.kind, filters.source]);
+
+  const changeView = (next: TaskListView): void => {
+    setView(next);
+    setExpandedKey(null);
+    writeTaskListView({ workspaceId, view: next });
+  };
 
   const onFocusChangeRef = useRef(onFocusChange);
   onFocusChangeRef.current = onFocusChange;
@@ -181,18 +207,27 @@ export const InboxStudio = ({
   const stars = useInboxStars({ workspaceId, records });
   const { isStarred, canStar, toggle: toggleStar } = stars;
   const [unstarredClosed, setUnstarredClosed] = useState<ReadonlyArray<StarredIssue>>([]);
-  const days = useMemo(
+  const inScope = useMemo(
     () =>
-      groupByDay({
-        items: orderInboxRecords({
-          records: filterInboxRecords({ records: scopedRecords, query, filters }).filter(
-            (record) => !isStarred(record),
-          ),
-        }),
-        timestampOf: (record) => record.updatedAt,
-        now: new Date(),
+      view.scope === 'all'
+        ? scopedRecords
+        : scopedRecords.filter((record) => isForMeRecord({ record, isStarred: isStarred(record) })),
+    [scopedRecords, view.scope, isStarred],
+  );
+  const projectNames = useMemo(
+    () => Object.fromEntries(projects.map((project) => [project.id, project.name] as const)),
+    [projects],
+  );
+  const groups = useMemo(
+    () =>
+      taskGroupsOf({
+        records: filterInboxRecords({ records: inScope, query, filters, isStarred }).filter(
+          (record) => !isStarred(record),
+        ),
+        groupBy: view.groupBy,
+        projectNames,
       }),
-    [scopedRecords, query, filters, isStarred],
+    [inScope, query, filters, isStarred, view.groupBy, projectNames],
   );
   const starredRows = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -201,30 +236,38 @@ export const InboxStudio = ({
         ? needle === '' ||
           row.issue.identifier.toLowerCase().includes(needle) ||
           row.issue.title.toLowerCase().includes(needle)
-        : filterInboxRecords({ records: [row.record], query, filters }).length > 0,
+        : filterInboxRecords({ records: [row.record], query, filters, isStarred }).length > 0,
     );
-  }, [stars.rows, query, filters]);
+  }, [stars.rows, query, filters, isStarred]);
   const starredRecords = useMemo(
     () =>
-      starredRows.flatMap((row) => {
-        if (row.record !== null) {
-          return [row.record];
-        }
-        const placeholder = placeholderRecordOf(row.issue);
-        return placeholder === null
-          ? []
-          : [attachLinkedSession({ record: placeholder, linked: linkedSessions })];
+      orderInboxRecords({
+        records: starredRows.flatMap((row) => {
+          if (row.record !== null) {
+            return [row.record];
+          }
+          const placeholder = placeholderRecordOf(row.issue);
+          return placeholder === null
+            ? []
+            : [attachLinkedSession({ record: placeholder, linked: linkedSessions })];
+        }),
       }),
     [starredRows, linkedSessions],
   );
-  const orderedRecords = useMemo(
-    () => [...starredRecords, ...days.flatMap((day) => day.items)],
-    [starredRecords, days],
+  const isGroupExpanded = (group: TaskGroup): boolean =>
+    view.groupBy === 'none' || expandedKey === group.key;
+  const shownStarred = shownTaskRecords({
+    records: starredRecords,
+    isExpanded: expandedKey === STARRED_GROUP_KEY,
+  });
+  const shownGroups = groups.map((group) =>
+    shownTaskRecords({ records: group.records, isExpanded: isGroupExpanded(group) }),
   );
-  const orderedKeys = useMemo(() => orderedRecords.map((record) => record.key), [orderedRecords]);
+  const orderedRecords = [...shownStarred, ...shownGroups.flat()];
+  const allListed = [...starredRecords, ...groups.flatMap((group) => group.records)];
   const counts = useMemo(
-    () => inboxFacetCounts({ records: scopedRecords, query, filters }),
-    [scopedRecords, query, filters],
+    () => inboxFacetCounts({ records: inScope, query, filters, isStarred }),
+    [inScope, query, filters, isStarred],
   );
 
   const workspaceName = useAppStore(
@@ -248,18 +291,24 @@ export const InboxStudio = ({
         : [],
     [lookup.state, linkedSessions],
   );
+  const orderedKeys = [...lookupRecords, ...orderedRecords].map((record) => record.key);
 
-  const openRecord =
-    scopedRecords.find((record) => record.key === openKey) ??
-    starredRecords.find((record) => record.key === openKey) ??
-    lookupRecords.find((record) => record.key === openKey) ??
-    null;
+  const recordByKey = (key: string | null): InboxRecord | null =>
+    key === null
+      ? null
+      : (scopedRecords.find((record) => record.key === key) ??
+        starredRecords.find((record) => record.key === key) ??
+        lookupRecords.find((record) => record.key === key) ??
+        null);
+  const openRecord = recordByKey(openKey);
+  const fullRecord = recordByKey(fullKey);
   const activeCursorKey = cursorKey ?? orderedKeys[0] ?? null;
   const cursorRecord =
     openRecord?.key === activeCursorKey
       ? openRecord
-      : ([...orderedRecords, ...lookupRecords].find((record) => record.key === activeCursorKey) ??
-        null);
+      : ([...orderedRecords, ...lookupRecords, ...allListed].find(
+          (record) => record.key === activeCursorKey,
+        ) ?? null);
   const canReply = recordCanReply({ record: cursorRecord });
 
   const starOf = (record: InboxRecord): boolean | undefined =>
@@ -290,12 +339,17 @@ export const InboxStudio = ({
     setOpenKey(null);
   };
 
-  useEscapeLayer(deselect, openRecord != null);
+  const closeFull = (): void => {
+    setFullKey(null);
+  };
+
+  useEscapeLayer(deselect, openRecord != null && fullRecord == null);
+  useEscapeLayer(closeFull, fullRecord != null);
 
   const scrollToKey = useCallback((key: string): void => {
     requestAnimationFrame(() => {
       document
-        .querySelector(`[data-inbox-key="${CSS.escape(key)}"]`)
+        .querySelector(`[data-row-key="${CSS.escape(key)}"]`)
         ?.scrollIntoView({ block: 'nearest' });
     });
   }, []);
@@ -318,7 +372,18 @@ export const InboxStudio = ({
     [scrollToKey],
   );
 
+  const openKeyRef = useRef(openKey);
+  openKeyRef.current = openKey;
   const activate = useCallback((key: string): void => {
+    setCursorKey(key);
+    if (openKeyRef.current !== key) {
+      setOpenKey(key);
+      return;
+    }
+    setShouldLaunch(true);
+  }, []);
+
+  const launch = useCallback((key: string): void => {
     setCursorKey(key);
     setOpenKey(key);
     setShouldLaunch(true);
@@ -334,7 +399,14 @@ export const InboxStudio = ({
 
   const selectRecord = useCallback((record: InboxRecord) => openKeyed(record.key), [openKeyed]);
 
-  const activateRecord = useCallback((record: InboxRecord) => activate(record.key), [activate]);
+  const launchRecord = useCallback((record: InboxRecord) => launch(record.key), [launch]);
+
+  const toggleRecordStar = useCallback(
+    (record: InboxRecord) => {
+      void toggleStar(record);
+    },
+    [toggleStar],
+  );
 
   const orderedRecordsRef = useRef(orderedRecords);
   orderedRecordsRef.current = orderedRecords;
@@ -386,7 +458,7 @@ export const InboxStudio = ({
   }, []);
 
   useListKeys({
-    keys: orderedKeys,
+    keys: fullRecord === null ? orderedKeys : [],
     selectedKey: activeCursorKey,
     onSelect: moveCursor,
     onActivate: activate,
@@ -405,10 +477,22 @@ export const InboxStudio = ({
   const hasFiltersActive =
     query.trim() !== '' || activeFilterCount({ filters }) > 0 || sessionFilter != null;
 
-  const failures: ReadonlyArray<InboxLoadFailure> = INBOX_PROVIDERS.flatMap((provider) => {
-    const message = errors[provider];
-    return message == null ? [] : [{ provider, message }];
+  const failingProviders = INBOX_PROVIDERS.filter((provider) => errors[provider] != null);
+  const failureLineOf = (provider: InboxProvider): TaskLine => ({
+    key: `failure:${provider}`,
+    text: sourceFailureLine({
+      name: integrationLabel({ provider }),
+      message: errors[provider] ?? '',
+    }),
+    onClick: refetch,
   });
+  const isSourceGrouped = view.groupBy === 'source';
+  const failedSourceGroups = isSourceGrouped
+    ? failingProviders.filter(
+        (provider) => !groups.some((group) => group.key === `source:${provider}`),
+      )
+    : [];
+  const looseFailures = isSourceGrouped ? [] : failingProviders.map(failureLineOf);
 
   const openSettings = () => openToolSettings({});
 
@@ -420,103 +504,176 @@ export const InboxStudio = ({
       loading={loading}
       errors={errors}
       projects={projects}
-      canReply={canReply}
       onFiltersChange={setFilters}
       onClearFilters={clearFilters}
     />
   );
 
-  const headerParams = {
-    query,
-    onQueryChange: setQuery,
-    searchRef,
-    sessionLabel: sessionFilterLabel,
-    onClearSession: () => setSessionFilter(null),
-    isRefreshing: isLoading,
-    onRefresh: refetch,
-    activeFilterCount: activeFilterCount({ filters }),
-    facets,
+  const groupHandlers = {
+    selectedKey: openKey,
+    cursorKey: activeCursorKey,
+    onSelect: selectRecord,
+    onActivate: launchRecord,
+    starOf,
+    onToggleStar: toggleRecordStar,
   };
+
+  const list = (
+    <PaneShell
+      scroll="body"
+      title={NAMES.tasks}
+      meta={openCountWord({ records: inScope })}
+      actions={
+        <InboxListHeader
+          query={query}
+          onQueryChange={setQuery}
+          searchRef={searchRef}
+          sessionLabel={sessionFilterLabel}
+          onClearSession={() => setSessionFilter(null)}
+          scope={view.scope}
+          onScopeChange={(scope) => changeView({ ...view, scope })}
+          groupBy={view.groupBy}
+          onGroupBy={(groupBy) => changeView({ ...view, groupBy })}
+          isRefreshing={isLoading}
+          onRefresh={refetch}
+          onManageTools={openSettings}
+          activeFilterCount={activeFilterCount({ filters })}
+          facets={facets}
+        />
+      }
+    >
+      <InboxList
+        totalCount={scopedRecords.length}
+        visibleCount={allListed.length + lookupRecords.length}
+        connectedCount={connected.length}
+        failureCount={failingProviders.length}
+        isLoading={isLoading}
+        hasFiltersActive={hasFiltersActive}
+        onOpenSettings={openSettings}
+        onClearFilters={clearFilters}
+      >
+        <InboxLookupGroup
+          lookup={lookup}
+          workspaceName={workspaceName}
+          selectedKey={openKey}
+          cursorKey={activeCursorKey}
+          onSelect={(hit) => openKeyed(hit.record.key)}
+          onActivate={launchRecord}
+          starOf={starOf}
+          onToggleStar={(record) => void toggleStar(record)}
+        />
+        {looseFailures.length > 0 ? (
+          <TaskGroupRows
+            label="Didn't load"
+            records={[]}
+            isExpanded={false}
+            canCollapse={false}
+            lines={looseFailures}
+            onExpand={() => undefined}
+            onCollapse={() => undefined}
+            {...groupHandlers}
+          />
+        ) : null}
+        <InboxStarredGroup
+          rows={starredRows}
+          records={starredRecords}
+          isExpanded={expandedKey === STARRED_GROUP_KEY}
+          selectedKey={openKey}
+          cursorKey={activeCursorKey}
+          unstarredCount={unstarredClosed.length}
+          onExpand={() => setExpandedKey(STARRED_GROUP_KEY)}
+          onCollapse={() => setExpandedKey(null)}
+          onSelect={selectRecord}
+          onActivate={launchRecord}
+          onUnstar={(record) => {
+            const row = stars.rows.find(
+              (candidate) =>
+                candidate.record?.key === record.key ||
+                placeholderRecordOf(candidate.issue)?.key === record.key,
+            );
+            if (row === undefined) {
+              return;
+            }
+            void unstarIssue({
+              workspaceId,
+              provider: row.issue.provider,
+              externalId: row.issue.externalId,
+            });
+          }}
+          onUnstarClosed={() => void unstarClosed()}
+          onUndoUnstar={() => void undoUnstarClosed()}
+        />
+        {groups.map((group) => {
+          const provider = group.key.startsWith('source:')
+            ? failingProviders.find((candidate) => group.key === `source:${candidate}`)
+            : undefined;
+          return (
+            <TaskGroupRows
+              key={group.key}
+              label={group.label}
+              records={group.records}
+              isExpanded={isGroupExpanded(group)}
+              canCollapse={view.groupBy !== 'none'}
+              lines={provider === undefined ? [] : [failureLineOf(provider)]}
+              onExpand={() => setExpandedKey(group.key)}
+              onCollapse={() => setExpandedKey(null)}
+              {...groupHandlers}
+            />
+          );
+        })}
+        {failedSourceGroups.map((provider) => (
+          <TaskGroupRows
+            key={`source:${provider}`}
+            label={integrationLabel({ provider })}
+            records={[]}
+            isExpanded={false}
+            canCollapse={false}
+            lines={[failureLineOf(provider)]}
+            onExpand={() => undefined}
+            onCollapse={() => undefined}
+            {...groupHandlers}
+          />
+        ))}
+      </InboxList>
+    </PaneShell>
+  );
+
+  const fullPage = (requestClose: () => void) =>
+    fullRecord === null ? null : (
+      <TaskFullPage onBack={closeFull}>
+        <InboxDetail
+          record={fullRecord}
+          workspaceId={workspaceId}
+          rootPath={rootPath}
+          errors={errors}
+          onRefresh={refetch}
+          onClose={requestClose}
+          onDeselect={null}
+          onOpenFull={null}
+          star={
+            canStar(fullRecord)
+              ? { isStarred: isStarred(fullRecord), onToggle: () => void toggleStar(fullRecord) }
+              : null
+          }
+          launchFocusRequest={0}
+        />
+      </TaskFullPage>
+    );
 
   return (
     <StudioShell
       icon={CONCEPT_ICONS.inbox}
       tone={CONCEPT_TONE.inbox}
       title={NAMES.tasks}
-      isEscapeEnabled={openRecord == null}
+      isEscapeEnabled={openRecord == null && fullRecord == null}
       onClose={onClose}
     >
       {(requestClose) => (
         <InboxStudioLayout
-          rail={facets}
-          railHeader={<InboxListHeader {...headerParams} isRailCollapsed={false} isSearchOnly />}
-          list={({ isRailCollapsed, onDock }) => (
-            <PaneShell
-              scroll="body"
-              title={NAMES.tasks}
-              meta={summary({
-                total: scopedRecords.length,
-                visible: orderedRecords.length,
-                withSession: scopedRecords.filter((record) => recordSessionId({ record }) != null)
-                  .length,
-              })}
-              actions={
-                <InboxListHeader
-                  {...headerParams}
-                  isRailCollapsed={isRailCollapsed}
-                  onDock={onDock}
-                />
-              }
-            >
-              <InboxLookupGroup
-                lookup={lookup}
-                workspaceName={workspaceName}
-                selectedKey={openKey}
-                cursorKey={activeCursorKey}
-                onSelect={(hit) => openKeyed(hit.record.key)}
-                onActivate={activateRecord}
-                starOf={starOf}
-                onToggleStar={toggleStar}
-              />
-              <InboxStarredGroup
-                rows={starredRows}
-                selectedKey={openKey}
-                cursorKey={activeCursorKey}
-                unstarredCount={unstarredClosed.length}
-                onSelect={selectRecord}
-                onActivate={activateRecord}
-                onUnstar={(row) =>
-                  void unstarIssue({
-                    workspaceId,
-                    provider: row.issue.provider,
-                    externalId: row.issue.externalId,
-                  })
-                }
-                onUnstarClosed={() => void unstarClosed()}
-                onUndoUnstar={() => void undoUnstarClosed()}
-              />
-              <InboxList
-                days={days}
-                starOf={starOf}
-                totalCount={scopedRecords.length}
-                connectedCount={connected.length}
-                isLoading={isLoading}
-                failures={failures}
-                hasFiltersActive={hasFiltersActive}
-                selectedKey={openKey}
-                cursorKey={activeCursorKey}
-                onSelect={selectRecord}
-                onActivate={activateRecord}
-                onToggleStar={toggleStar}
-                onRetry={refetch}
-                onOpenSettings={openSettings}
-                onClearFilters={clearFilters}
-              />
-            </PaneShell>
-          )}
+          main={fullPage(requestClose) ?? list}
           drawerRef={detailRef}
           drawer={
-            openRecord == null ? null : (
+            openRecord == null || fullRecord !== null ? null : (
               <InboxDetail
                 record={openRecord}
                 workspaceId={workspaceId}
@@ -525,6 +682,18 @@ export const InboxStudio = ({
                 onRefresh={refetch}
                 onClose={requestClose}
                 onDeselect={deselect}
+                onOpenFull={() => {
+                  setFullKey(openRecord.key);
+                  setOpenKey(null);
+                }}
+                star={
+                  canStar(openRecord)
+                    ? {
+                        isStarred: isStarred(openRecord),
+                        onToggle: () => void toggleStar(openRecord),
+                      }
+                    : null
+                }
                 launchFocusRequest={launchFocusRequest}
               />
             )

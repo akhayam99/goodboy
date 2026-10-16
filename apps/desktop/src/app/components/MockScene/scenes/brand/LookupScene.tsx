@@ -1,5 +1,3 @@
-import { PaneShell } from '@goodboy/ui';
-import { useEffect, useRef, useState } from 'react';
 import { mockSceneIpc } from '../mockSceneIpc';
 import type {
   GithubIssue,
@@ -7,26 +5,13 @@ import type {
   IntegrationBindingId,
   IntegrationCredentialId,
 } from '@goodboy/types';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
-import { StudioShell } from '../../../../../shared/components/StudioShell';
-import { groupByDay } from '../../../../../shared/utils/groupByDay';
 import { InboxDetail } from '../../../../../features/inbox/components/InboxStudio/InboxDetail';
-import { InboxFacetRail } from '../../../../../features/inbox/components/InboxStudio/InboxFacetRail';
-import { InboxList } from '../../../../../features/inbox/components/InboxStudio/InboxList';
-import { InboxListHeader } from '../../../../../features/inbox/components/InboxStudio/InboxListHeader';
 import { InboxLookupGroup } from '../../../../../features/inbox/components/InboxStudio/InboxLookupGroup';
-import { InboxStarredGroup } from '../../../../../features/inbox/components/InboxStudio/InboxStarredGroup';
-import { InboxStudioLayout } from '../../../../../features/inbox/components/InboxStudio/InboxStudioLayout';
 import { adaptLinearIssues } from '../../../../../features/inbox/adapters/linear';
 import { adaptSentryIssues } from '../../../../../features/inbox/adapters/sentry';
 import { adaptSlackThreads } from '../../../../../features/inbox/adapters/slack';
 import { adaptGithubIssues } from '../../../../../features/inbox/adapters/github';
-import {
-  NO_INBOX_FILTERS,
-  filterInboxRecords,
-  inboxFacetCounts,
-} from '../../../../../features/inbox/kindFilter';
-import { orderInboxRecords } from '../../../../../features/inbox/orderInboxRecords';
+import { NO_INBOX_FILTERS, filterInboxRecords } from '../../../../../features/inbox/kindFilter';
 import type { InboxProvider, InboxRecord } from '../../../../../features/inbox/types';
 import type { StarredRow } from '../../../../../features/inbox/useInboxStars';
 import { buildIssueGroups as buildLinearGroups } from '../../../../../features/integrations/linear/LinearStudio/useLinearIssues';
@@ -38,9 +23,8 @@ import type { SentryIssue } from '../../../../../features/integrations/sentry/cl
 import { linearIssueCandidate } from '../../../../../features/integrations/issueCandidateOf';
 import type { WorkspaceIssueLookup } from '../../../../../features/integrations/hooks/useWorkspaceIssueLookup';
 import { useAppStore } from '../../../../../store';
-import { WORKSPACE_ID, seedBoardScene } from '../BoardScene';
-import { StudioFrame } from '../StudioFrame';
-import { seedStudioChrome } from '../shellChrome';
+import { WORKSPACE_ID } from '../BoardScene';
+import { TasksStage } from '../u25/c12/TasksStage';
 import { BRAND_PEOPLE, BRAND_PROJECTS, BRAND_SESSION, BRAND_WORKSPACE_NAME } from './canon';
 import { HBL_398, HBL_412, kickoffIsoAgo, linearBindingOf } from './kickoffIssues';
 import { SLACK_HEAD, SLACK_ONCALL_CHANNEL } from './slackThread';
@@ -403,127 +387,53 @@ const installIpc = (): void => {
   });
 };
 
+const seedLookup = (): void => {
+  installIpc();
+  useAppStore.setState({
+    workspaceIntegrations: {
+      [WORKSPACE_ID]: [linearBindingOf({ workspaceId: WORKSPACE_ID }), SENTRY_BINDING],
+    },
+  });
+};
+
+const STARRED_RECORDS = STARRED.flatMap((row) => (row.record === null ? [] : [row.record]));
+
 export const BrandLookupScene = () => {
-  const [isReady, setIsReady] = useState(false);
-  const searchRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    installIpc();
-    seedBoardScene();
-    seedStudioChrome();
-    useAppStore.setState({
-      workspaceIntegrations: {
-        [WORKSPACE_ID]: [linearBindingOf({ workspaceId: WORKSPACE_ID }), SENTRY_BINDING],
-      },
-    });
-    setIsReady(true);
-  }, []);
-
-  if (!isReady || LOOKUP_RECORD === undefined) {
+  if (LOOKUP_RECORD === undefined) {
     return null;
   }
-
-  const facets = (
-    <InboxFacetRail
-      filters={NO_INBOX_FILTERS}
-      counts={inboxFacetCounts({ records: COUNTED, query: '', filters: NO_INBOX_FILTERS })}
-      connected={CONNECTED}
-      loading={NOT_LOADING}
-      errors={NO_ERRORS}
-      onFiltersChange={noop}
-      onClearFilters={noop}
-    />
-  );
-
-  const header = {
-    query: QUERY,
-    onQueryChange: noop,
-    searchRef,
-    sessionLabel: null,
-    onClearSession: noop,
-    isRefreshing: false,
-    onRefresh: noop,
-    activeFilterCount: 0,
-    facets,
-  };
-
   return (
-    <StudioFrame
-      target={{ place: 'inbox', tool: null }}
-      main={
-        <StudioShell
-          icon={CONCEPT_ICONS.inbox}
-          tone={CONCEPT_TONE.inbox}
-          title="Tasks"
-          closeLabel="Close tasks"
+    <TasksStage
+      records={[...VISIBLE, ...STARRED_RECORDS]}
+      scope="all"
+      groupBy="source"
+      query={QUERY}
+      connected={CONNECTED}
+      starredKeys={STARRED_RECORDS.map((record) => record.key)}
+      selectedKey={LOOKUP_RECORD.key}
+      cursorKey={LOOKUP_RECORD.key}
+      onSeed={seedLookup}
+      lookup={
+        <InboxLookupGroup
+          lookup={LOOKUP}
+          workspaceName={BRAND_WORKSPACE_NAME}
+          selectedKey={LOOKUP_RECORD.key}
+          onSelect={noop}
+        />
+      }
+      drawer={
+        <InboxDetail
+          record={LOOKUP_RECORD}
+          workspaceId={WORKSPACE_ID}
+          rootPath={BRAND_PROJECTS.payments.rootPath}
+          errors={NO_ERRORS}
+          onRefresh={noop}
           onClose={noop}
-        >
-          {() => (
-            <InboxStudioLayout
-              rail={facets}
-              railHeader={<InboxListHeader {...header} isRailCollapsed={false} isSearchOnly />}
-              list={({ isRailCollapsed, onDock }) => (
-                <PaneShell
-                  scroll="body"
-                  title="Tasks"
-                  meta={`${VISIBLE.length + STARRED.length} of ${COUNTED.length}`}
-                  actions={
-                    <InboxListHeader
-                      {...header}
-                      isRailCollapsed={isRailCollapsed}
-                      onDock={onDock}
-                    />
-                  }
-                >
-                  <InboxLookupGroup
-                    lookup={LOOKUP}
-                    workspaceName={BRAND_WORKSPACE_NAME}
-                    selectedKey={LOOKUP_RECORD.key}
-                    onSelect={noop}
-                  />
-                  <InboxStarredGroup
-                    rows={STARRED}
-                    selectedKey={LOOKUP_RECORD.key}
-                    unstarredCount={0}
-                    onSelect={noop}
-                    onUnstar={noop}
-                    onUnstarClosed={noop}
-                    onUndoUnstar={noop}
-                  />
-                  <InboxList
-                    days={groupByDay({
-                      items: orderInboxRecords({ records: VISIBLE }),
-                      timestampOf: (item) => item.updatedAt,
-                      now: new Date(),
-                    })}
-                    totalCount={COUNTED.length}
-                    connectedCount={CONNECTED.length}
-                    isLoading={false}
-                    failures={[]}
-                    hasFiltersActive
-                    selectedKey={LOOKUP_RECORD.key}
-                    onSelect={noop}
-                    onRetry={noop}
-                    onOpenSettings={noop}
-                    onClearFilters={noop}
-                  />
-                </PaneShell>
-              )}
-              drawer={
-                <InboxDetail
-                  record={LOOKUP_RECORD}
-                  workspaceId={WORKSPACE_ID}
-                  rootPath={BRAND_PROJECTS.payments.rootPath}
-                  errors={NO_ERRORS}
-                  onRefresh={noop}
-                  onClose={noop}
-                  onDeselect={noop}
-                  launchFocusRequest={0}
-                />
-              }
-            />
-          )}
-        </StudioShell>
+          onDeselect={noop}
+          onOpenFull={noop}
+          star={null}
+          launchFocusRequest={0}
+        />
       }
     />
   );

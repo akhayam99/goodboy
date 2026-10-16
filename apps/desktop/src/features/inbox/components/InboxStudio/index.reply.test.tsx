@@ -109,12 +109,9 @@ afterEach(() => {
   cleanup();
 });
 
-const keyHints = (): string =>
-  screen.getByRole('navigation', { name: 'Filter tasks' }).textContent ?? '';
-
 const selectedKeys = (): ReadonlyArray<string> =>
-  Array.from(document.querySelectorAll('[data-inbox-key][data-selected="true"]')).map(
-    (row) => row.getAttribute('data-inbox-key') ?? '',
+  Array.from(document.querySelectorAll('[data-row-key][data-selected="true"]')).map(
+    (row) => row.getAttribute('data-row-key') ?? '',
   );
 
 const openRecord = async ({
@@ -157,8 +154,6 @@ describe('Reply in the inbox', () => {
   it('is not offered on a Sentry issue, and R does nothing there', async () => {
     await openRecord({ key: 'sentry:error:sentry-3f2', fetchedBy: 'sentry_fetch_issue' });
 
-    expect(keyHints()).toContain('Star');
-    expect(keyHints()).not.toContain('Reply');
     const event = await pressReply();
     expect(event.defaultPrevented).toBe(false);
     expect(document.activeElement?.tagName).not.toBe('TEXTAREA');
@@ -167,7 +162,6 @@ describe('Reply in the inbox', () => {
   it('is offered on a GitHub issue, and R lands in its composer', async () => {
     await openRecord({ key: 'github:issue:payments-api#57', fetchedBy: 'gh_run' });
 
-    expect(keyHints()).toContain('Reply');
     const event = await pressReply();
     expect(event.defaultPrevented).toBe(true);
     await waitFor(() => expect(document.activeElement?.tagName).toBe('TEXTAREA'));

@@ -462,15 +462,15 @@ const seedInbox = async (): Promise<void> => {
     starredIssues: { [workspaceId]: [0, 1, 2].map(starredIssue) },
   });
   await clickButton('Tasks');
-  await visible('region', 'Starred');
+  await visible('listbox', 'Starred');
 };
 
 const inboxRows = (): ReadonlyArray<HTMLElement> =>
-  Array.from(document.querySelectorAll<HTMLElement>('[data-inbox-key]'));
+  Array.from(document.querySelectorAll<HTMLElement>('[data-row-key]'));
 
 const inboxRowButton = (identifier: string): HTMLElement => {
   const row = inboxRows().find((candidate) => candidate.textContent?.includes(identifier));
-  const button = row?.querySelector('button') ?? null;
+  const button = row ?? null;
   if (button === null) {
     throw new Error(`the inbox lists no ${identifier}`);
   }
@@ -694,7 +694,10 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
   }),
   keyRow({
     id: 'list.open',
-    open: inboxKey('list.open'),
+    open: async (ctx) => {
+      await inboxKey('list.open')(ctx);
+      await pressed('list.open', document.body);
+    },
     lands: () => visible('region', 'Brief from HBL-501'),
   }),
   keyRow({

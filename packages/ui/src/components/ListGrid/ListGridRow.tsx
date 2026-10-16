@@ -1,4 +1,4 @@
-import { useContext, type ReactNode } from 'react';
+import { useContext, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import { cn } from '../../cn';
 import { OptionalTooltip } from '../OptionalTooltip';
 import { ROW_INTERACTIVE } from '../../rowInteractive';
@@ -14,6 +14,12 @@ export type ListGridRowProps = {
   readonly ariaLabel?: string;
   readonly tooltip?: ReactNode;
   readonly rowHeight?: 28 | 32;
+  readonly isOption?: boolean;
+  readonly isCursor?: boolean;
+  readonly optionId?: string;
+  readonly rowKey?: string;
+  readonly onContextMenu?: (event: MouseEvent<HTMLElement>) => void;
+  readonly onKeyDown?: (event: KeyboardEvent<HTMLElement>) => void;
 };
 
 type ToneParams = {
@@ -55,6 +61,12 @@ export const ListGridRow = ({
   ariaLabel,
   tooltip,
   rowHeight = 32,
+  isOption = false,
+  isCursor = false,
+  optionId,
+  rowKey,
+  onContextMenu,
+  onKeyDown,
 }: ListGridRowProps) => {
   const columns = useContext(ListGridColumnsContext);
   const body = cells.map((cell, index) => (
@@ -70,24 +82,38 @@ export const ListGridRow = ({
     'col-span-full grid grid-cols-subgrid items-center rounded-md text-left',
     HEIGHT_CLASS[rowHeight],
   );
+  const itemRole = isOption ? 'presentation' : undefined;
   if (onSelect === undefined) {
     return (
-      <li className="col-span-full grid grid-cols-subgrid">
+      <li role={itemRole} className="col-span-full grid grid-cols-subgrid">
         <div className={rowClass}>{body}</div>
       </li>
     );
   }
   return (
-    <li className="col-span-full grid grid-cols-subgrid">
+    <li role={itemRole} className="col-span-full grid grid-cols-subgrid">
       <OptionalTooltip content={tooltip}>
         <button
           type="button"
+          id={optionId}
+          role={isOption ? 'option' : undefined}
+          tabIndex={isOption ? -1 : undefined}
           data-list-grid-row=""
+          data-row-key={rowKey}
           data-selected={isSelected}
-          aria-current={isSelected ? 'true' : undefined}
+          data-cursor={isCursor ? true : undefined}
+          aria-selected={isOption ? isSelected : undefined}
+          aria-current={!isOption && isSelected ? 'true' : undefined}
           aria-label={ariaLabel}
           onClick={onSelect}
-          className={cn(rowClass, ROW_INTERACTIVE, SELECTED_ROW_CLASSES)}
+          onContextMenu={onContextMenu}
+          onKeyDown={onKeyDown}
+          className={cn(
+            rowClass,
+            ROW_INTERACTIVE,
+            SELECTED_ROW_CLASSES,
+            isCursor && !isSelected && 'bg-hover',
+          )}
         >
           {body}
         </button>

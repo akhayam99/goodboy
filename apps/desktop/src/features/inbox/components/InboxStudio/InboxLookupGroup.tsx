@@ -1,13 +1,9 @@
-import { Eyebrow, WorkNode } from '@goodboy/ui';
+import { ListGridGroup, ListGridLine } from '@goodboy/ui';
 import type { WorkspaceIssueLookup } from '../../../integrations/hooks/useWorkspaceIssueLookup';
 import type { LookupHit } from '../../../integrations/issueCode/lookupIssueByCode';
-import {
-  lookingUpText,
-  lookupHitSecondLine,
-  lookupStatuses,
-} from '../../../integrations/issueCode/lookupCopy';
+import { lookingUpText, lookupStatuses } from '../../../integrations/issueCode/lookupCopy';
 import { openToolSettings } from '../../../integrations/openToolSettings';
-import { InboxRow } from './InboxRow';
+import { InboxRow, inboxOptionId } from './InboxRow';
 import type { InboxRecord } from '../../types';
 import { LookupStatusRow } from './LookupStatusRow';
 
@@ -42,54 +38,53 @@ export const InboxLookupGroup = ({
   if (state.status === 'done' && hits.length === 0 && statuses.length === 0) {
     return null;
   }
+  const cursorHit = hits.find((hit) => hit.record.key === cursorKey);
   return (
-    <section aria-label="Not in Tasks" className="flex flex-col gap-0.5 pb-2">
-      <div className="px-3 py-1">
-        <Eyebrow label="Not in Tasks" />
-      </div>
-      {state.status === 'loading' ? (
-        <div className="flex h-8 items-center gap-3 px-3 text-label text-muted-foreground">
-          <WorkNode size="sm" state="running" mark={{ kind: 'dot' }} label="Looking up" />
-          {lookingUpText({ code, providers: lookup.loadingProviders })}
-        </div>
-      ) : null}
-      {hits.map((hit) => {
-        const secondLine = lookupHitSecondLine(hit.record);
-        return (
-          <div key={hit.record.key} className="flex flex-col">
-            <InboxRow
-              record={hit.record}
-              selected={selectedKey === hit.record.key}
-              isCursor={cursorKey === hit.record.key}
-              onSelect={() => onSelect(hit)}
-              onActivate={onActivate}
-              isStarred={starOf?.(hit.record)}
-              onToggleStar={onToggleStar}
-            />
-            {secondLine === '' ? null : (
-              <span className="h-4 truncate pl-[122px] text-meta text-faint-foreground">
-                {secondLine}
-              </span>
-            )}
-          </div>
-        );
-      })}
-      {statuses.map((status) => (
-        <LookupStatusRow
-          key={status.key}
-          status={status}
-          retryAt={status.key.endsWith(':rate-limited') ? lookup.retryAt : null}
-          onAction={(chosen) => {
-            if (chosen.action?.kind === 'retry') {
-              lookup.retry();
-              return;
-            }
-            if (chosen.action?.kind === 'open-integrations') {
-              openToolSettings({ tool: chosen.action.provider });
-            }
-          }}
+    <ListGridGroup
+      label="Not in Tasks"
+      isListbox
+      headingLevel={2}
+      {...(cursorHit === undefined
+        ? {}
+        : { activeDescendant: inboxOptionId({ key: cursorHit.record.key }) })}
+      lead={
+        state.status === 'loading' ? (
+          <ListGridLine>{lookingUpText({ code, providers: lookup.loadingProviders })}</ListGridLine>
+        ) : null
+      }
+      foot={
+        statuses.length === 0
+          ? null
+          : statuses.map((status) => (
+              <LookupStatusRow
+                key={status.key}
+                status={status}
+                retryAt={status.key.endsWith(':rate-limited') ? lookup.retryAt : null}
+                onAction={(chosen) => {
+                  if (chosen.action?.kind === 'retry') {
+                    lookup.retry();
+                    return;
+                  }
+                  if (chosen.action?.kind === 'open-integrations') {
+                    openToolSettings({ tool: chosen.action.provider });
+                  }
+                }}
+              />
+            ))
+      }
+    >
+      {hits.map((hit) => (
+        <InboxRow
+          key={hit.record.key}
+          record={hit.record}
+          selected={selectedKey === hit.record.key}
+          isCursor={cursorKey === hit.record.key}
+          onSelect={() => onSelect(hit)}
+          onActivate={onActivate}
+          isStarred={starOf?.(hit.record)}
+          onToggleStar={onToggleStar}
         />
       ))}
-    </section>
+    </ListGridGroup>
   );
 };

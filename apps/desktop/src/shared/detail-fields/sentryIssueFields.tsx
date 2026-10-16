@@ -74,7 +74,7 @@ export const sentryIssueFields: FactRegistry<SentryIssueProperties> = {
     })),
   measure: ({ entity }) => ({
     key: 'events',
-    label: 'Events and users',
+    label: 'Events',
     icon: Activity,
     node: measureOf({ count: entity.count, userCount: entity.userCount }),
   }),

@@ -180,6 +180,7 @@ export const StudioFrame = ({
             resizeLabel={drawerSpec?.resizeLabel ?? 'Resize side panel'}
             {...(drawerSpec?.drawerKey !== undefined && { drawerKey: drawerSpec.drawerKey })}
             {...(drawerSpec?.drawerRef !== undefined && { drawerRef: drawerSpec.drawerRef })}
+            {...(drawerSpec?.sizing !== undefined && { sizing: drawerSpec.sizing })}
           />
         ) : (
           framed

@@ -1360,14 +1360,22 @@ token on Sentry. A key saved for another workspace can be picked instead.
 
 Tasks is the workspace's queue of incoming work from every connected
 source: issues, pull and merge requests, Slack threads and Sentry errors, one
-record each, one line per record. Records are grouped by day (today,
-yesterday, this week, older) and ordered by time only, newest first. A facet
-rail filters them by view (all, in progress, has a session, closed), by type
-and by source, one pick per section, with counts; only the types a connected
-tool can produce show. A tool that did not load says so in its source row and
-in one notice above the list. The state column uses the tool's own word, the
-same one the record shows. A record opens in a drawer beside the list, with the
-same header, facts and sections for every tool, and the source's own actions. From it you start a session, link it to an existing session of
+record each, one line per record on the shared task grid (`taskColumns`:
+source, key, title, status glyph, priority, age). It opens on For me
+(`isForMeRecord`: assigned issues and pull requests, starred records, records
+linked to a session) and switches to All in the header; the choice and the
+grouping are kept per workspace (`taskListViewStorage`). Records are grouped
+(`taskGroupsOf`) by source, by source and status word, by project or not at
+all, largest group first and newest first inside a group. A group shows five
+rows and Show all; an expanded group of 60 rows or more draws only a window
+(`useVirtualRows`, 32px rows) and names the cursor position. One Filter menu in
+the header holds the facets: source, show (assigned, starred, in progress, has a
+session, closed), type and project, one pick per section, with counts; only the
+types a connected tool can produce show. A tool that did not load says so in its
+source row of the menu and in one gray line inside its group that retries. A
+record opens in the reader pane beside the list, and Open full shows it at the
+720 measure in place of the list, with the same header, grouped properties and
+sections for every tool, and the source's own actions. From it you start a session, link it to an existing session of
 the workspace with Link to a session, or open the session already linked to it.
 A record shows its session whichever way the link was made: launched from the
 Tasks, picked there, or linked from the session's own link button, by search or

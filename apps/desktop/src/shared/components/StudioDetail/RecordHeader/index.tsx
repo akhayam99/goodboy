@@ -1,20 +1,17 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { ArrowUpRight, X } from 'lucide-react';
-import { IconButton, useInheritedPaneActions } from '@goodboy/ui';
+import { X } from 'lucide-react';
+import { Button, IconButton, StarToggle, useInheritedPaneActions } from '@goodboy/ui';
 import {
   IntegrationGlyph,
   integrationLabel,
   type IntegrationGlyphProvider,
 } from '../../../../features/integrations/components/IntegrationGlyph';
-import { openUrl } from '../../../lib/editor';
 import { ICON_SIZE } from '../../conceptIcons';
 import { RecordActions } from '../RecordActions';
 import { NO_RECORD_VERBS, type RecordFrame, type RecordVerbs } from '../RecordActions/types';
 import { ObjectOverflowMenu } from '../../../../features/actions/components/ObjectOverflowMenu';
 import { useObjectMenuTrigger } from '../../../../features/actions/useObjectMenuTrigger';
 import type { RecordActionTarget } from '../../../../features/actions/types';
-
-const RECORD_HEADER_OMISSIONS: ReadonlyArray<string> = ['record.openInProvider'];
 
 type ExternalRef = {
   readonly url: string;
@@ -50,6 +47,8 @@ export const RecordHeader = ({
   const hostLabel = integrationLabel({ provider });
   const armed = verbs.secondary.find((verb) => verb.key === armedKey) ?? null;
   const inheritedActions = useInheritedPaneActions();
+  const star = frame?.star ?? null;
+  const onOpenFull = frame?.onOpenFull ?? null;
   const target: RecordActionTarget = {
     kind: 'record',
     facts: {
@@ -79,27 +78,30 @@ export const RecordHeader = ({
     <div data-slot="record-header" className="flex min-w-0 flex-col gap-2">
       <div className="flex h-7 min-w-0 items-center gap-2">
         <IntegrationGlyph provider={provider} size="xs" useBrandColor />
-        <span className="shrink-0 font-mono text-meta tabular-nums text-muted-foreground">
-          {identifier}
-        </span>
+        <span className="shrink-0 font-mono text-ui text-muted-foreground">{identifier}</span>
+        {star === null ? null : (
+          <StarToggle
+            isStarred={star.isStarred}
+            label={`Star ${identifier}`}
+            tooltip={star.isStarred ? 'Unstar' : 'Star to keep it at the top'}
+            onToggle={star.onToggle}
+            className="size-6"
+          />
+        )}
         {state}
         <span className="min-w-0 flex-1" />
         {inheritedActions}
-        {externalRef != null ? (
-          <IconButton
-            icon={ArrowUpRight}
-            variant="ghost"
-            iconSize={ICON_SIZE.control}
-            label={`Open in ${hostLabel}`}
-            onClick={() => void openUrl(externalRef.url)}
-          />
-        ) : null}
+        {frame?.primary ?? null}
+        {onOpenFull === null ? null : (
+          <Button variant="ghost" size="sm" onClick={onOpenFull}>
+            Open full
+          </Button>
+        )}
         <ObjectOverflowMenu
           target={target}
           label={`More actions for ${identifier}`}
           anchorKey={`record-header:${identifier}`}
           size="control"
-          omit={RECORD_HEADER_OMISSIONS}
         />
         {frame?.onClose != null ? (
           <IconButton
@@ -111,15 +113,15 @@ export const RecordHeader = ({
           />
         ) : null}
       </div>
-      <h1 onContextMenu={menu.onContextMenu} className="line-clamp-3 text-title text-foreground">
+      <h1 onContextMenu={menu.onContextMenu} className="text-lead text-foreground">
         {title}
       </h1>
       {byline == null ? null : (
-        <div className="truncate text-meta text-faint-foreground">{byline}</div>
+        <div className="truncate text-ui text-faint-foreground">{byline}</div>
       )}
       {facts}
       <RecordActions
-        primary={frame?.primary ?? null}
+        primary={null}
         secondary={verbs.secondary}
         armed={armed}
         onArm={setArmedKey}

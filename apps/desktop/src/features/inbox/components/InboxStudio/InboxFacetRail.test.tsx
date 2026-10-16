@@ -16,7 +16,7 @@ const NONE: Readonly<Record<InboxProvider, number>> = {
 };
 
 const COUNTS: InboxFacetCounts = {
-  view: { all: 7, 'in-progress': 2, 'with-session': 1, closed: 0 },
+  view: { all: 7, assigned: 5, starred: 1, 'in-progress': 2, 'with-session': 1, closed: 0 },
   kind: { issue: 5, 'pr-mr': 0, thread: 0, error: 2 },
   source: { ...NONE, github: 5, sentry: 2 },
   project: () => 0,
@@ -127,11 +127,16 @@ describe('InboxFacetRail', () => {
     expect(onClearFilters).toHaveBeenCalledOnce();
   });
 
-  it('lists the inbox keys', () => {
+  it('leads with the sources, then shows assigned and starred items, with no key list', () => {
     renderRail();
 
-    expect(screen.getByText('Launch or open session')).toBeDefined();
-    expect(screen.getByText('Open in the tool')).toBeDefined();
+    const groups = within(screen.getByRole('navigation', { name: 'Filter tasks' }))
+      .getAllByRole('group')
+      .map((group) => group.getAttribute('aria-label'));
+    expect(groups.slice(0, 2)).toEqual(['Source', 'Show']);
+    expect(within(section('Show')).getByRole('button', { name: /Assigned to me/ })).toBeDefined();
+    expect(within(section('Show')).getByRole('button', { name: /Starred/ })).toBeDefined();
+    expect(screen.queryByText('Launch or open session')).toBeNull();
   });
 
   it('filters by project when the workspace has several', () => {

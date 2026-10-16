@@ -6,21 +6,20 @@ import {
   GitPullRequest,
   Inbox,
   MessagesSquare,
+  Star,
   TriangleAlert,
+  UserRound,
   type LucideIcon,
 } from 'lucide-react';
 import type { Project } from '@goodboy/types';
-import { StatusDot, FacetRail, FacetKeyHints, FacetRow, FacetSection } from '@goodboy/ui';
+import { Button, StatusDot, FacetRail, FacetRow, FacetSection } from '@goodboy/ui';
 import { NAMES } from '../../../../shared/names';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { keyHintsOf } from '../../../../shared/keyboard/keyHints';
-import type { ShortcutId } from '../../../../shared/keyboard/registry';
 import {
   IntegrationGlyph,
   integrationLabel,
 } from '../../../integrations/components/IntegrationGlyph';
 import {
-  INBOX_VIEWS,
   activeFilterCount,
   visibleTypeFacets,
   type InboxFacetCounts,
@@ -39,7 +38,6 @@ type Props = {
   readonly loading: Readonly<Record<InboxProvider, boolean>>;
   readonly errors: Readonly<Record<InboxProvider, string | null>>;
   readonly projects?: ReadonlyArray<Project>;
-  readonly canReply?: boolean;
   readonly onFiltersChange: (filters: InboxFilters) => void;
   readonly onClearFilters: () => void;
 };
@@ -51,10 +49,20 @@ type Presentation = {
 
 const VIEW_PRESENTATION = {
   all: { label: 'All', icon: Inbox },
+  assigned: { label: 'Assigned to me', icon: UserRound },
+  starred: { label: 'Starred', icon: Star },
   'in-progress': { label: 'In progress', icon: Contrast },
   'with-session': { label: NAMES.hasASession, icon: CONCEPT_ICONS.sessions },
   closed: { label: 'Closed', icon: CircleCheck },
 } satisfies Record<InboxView, Presentation>;
+
+const SHOWN_VIEWS: ReadonlyArray<Exclude<InboxView, 'all'>> = [
+  'assigned',
+  'starred',
+  'in-progress',
+  'with-session',
+  'closed',
+];
 
 const TYPE_PRESENTATION = {
   issue: { label: 'Issues', icon: CircleDot },
@@ -62,18 +70,6 @@ const TYPE_PRESENTATION = {
   thread: { label: 'Threads', icon: MessagesSquare },
   error: { label: 'Errors', icon: Bug },
 } satisfies Record<InboxTypeFacet, Presentation>;
-
-const INBOX_KEY_SPECS: ReadonlyArray<{
-  readonly ids: ReadonlyArray<ShortcutId>;
-  readonly label: string;
-}> = [
-  { ids: ['list.next', 'list.previous'], label: 'Next or previous' },
-  { ids: ['list.open'], label: 'Launch or open session' },
-  { ids: ['list.openInTool'], label: 'Open in the tool' },
-  { ids: ['list.reply'], label: 'Reply' },
-  { ids: ['list.star'], label: 'Star' },
-  { ids: ['list.search'], label: 'Search' },
-];
 
 type SourceTrailingParams = {
   readonly isLoading: boolean;
@@ -102,7 +98,6 @@ export const InboxFacetRail = ({
   loading,
   errors,
   projects = [],
-  canReply = true,
   onFiltersChange,
   onClearFilters,
 }: Props) => {
@@ -123,37 +118,6 @@ export const InboxFacetRail = ({
 
   return (
     <FacetRail ariaLabel="Filter tasks">
-      <FacetSection label="View">
-        {INBOX_VIEWS.map((view) => (
-          <FacetRow
-            key={view}
-            icon={VIEW_PRESENTATION[view].icon}
-            label={VIEW_PRESENTATION[view].label}
-            count={counts.view[view]}
-            isSelected={filters.view === view}
-            onClick={() =>
-              change({
-                ...filters,
-                view: filters.view === view && view !== 'all' ? 'all' : view,
-              })
-            }
-          />
-        ))}
-      </FacetSection>
-      {types.length > 0 ? (
-        <FacetSection label="Type">
-          {types.map((type) => (
-            <FacetRow
-              key={type}
-              icon={TYPE_PRESENTATION[type].icon}
-              label={TYPE_PRESENTATION[type].label}
-              count={counts.kind[type]}
-              isSelected={filters.kind === type}
-              onClick={() => change({ ...filters, kind: filters.kind === type ? 'all' : type })}
-            />
-          ))}
-        </FacetSection>
-      ) : null}
       {sources.length > 0 ? (
         <FacetSection label="Source">
           {sources.map((provider) => (
@@ -177,6 +141,32 @@ export const InboxFacetRail = ({
           ))}
         </FacetSection>
       ) : null}
+      <FacetSection label="Show">
+        {SHOWN_VIEWS.map((view) => (
+          <FacetRow
+            key={view}
+            icon={VIEW_PRESENTATION[view].icon}
+            label={VIEW_PRESENTATION[view].label}
+            count={counts.view[view]}
+            isSelected={filters.view === view}
+            onClick={() => change({ ...filters, view: filters.view === view ? 'all' : view })}
+          />
+        ))}
+      </FacetSection>
+      {types.length > 0 ? (
+        <FacetSection label="Type">
+          {types.map((type) => (
+            <FacetRow
+              key={type}
+              icon={TYPE_PRESENTATION[type].icon}
+              label={TYPE_PRESENTATION[type].label}
+              count={counts.kind[type]}
+              isSelected={filters.kind === type}
+              onClick={() => change({ ...filters, kind: filters.kind === type ? 'all' : type })}
+            />
+          ))}
+        </FacetSection>
+      ) : null}
       {isProjectFacetShown ? (
         <InboxProjectFacets
           projects={projects}
@@ -186,21 +176,12 @@ export const InboxFacetRail = ({
           onFiltersChange={change}
         />
       ) : null}
-      <FacetKeyHints
-        hints={keyHintsOf(
-          canReply
-            ? INBOX_KEY_SPECS
-            : INBOX_KEY_SPECS.filter((spec) => !spec.ids.includes('list.reply')),
-        )}
-      />
       {hasActiveFilter ? (
-        <button
-          type="button"
-          onClick={onClearFilters}
-          className="self-start rounded-md px-2 py-1 text-chip text-muted-foreground hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-        >
-          Clear filters
-        </button>
+        <div className="flex px-2">
+          <Button variant="ghost" size="xs" onClick={onClearFilters}>
+            Clear filters
+          </Button>
+        </div>
       ) : null}
     </FacetRail>
   );

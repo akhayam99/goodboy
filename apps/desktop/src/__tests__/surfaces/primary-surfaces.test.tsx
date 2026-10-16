@@ -265,6 +265,8 @@ describe('primary surfaces mount on real store selectors', () => {
           onRefresh={() => undefined}
           onClose={() => undefined}
           onDeselect={() => undefined}
+          onOpenFull={null}
+          star={null}
           launchFocusRequest={0}
         />
       ),
@@ -287,6 +289,8 @@ describe('primary surfaces mount on real store selectors', () => {
           onRefresh={() => undefined}
           onClose={() => undefined}
           onDeselect={() => undefined}
+          onOpenFull={null}
+          star={null}
           launchFocusRequest={0}
         />
       ),

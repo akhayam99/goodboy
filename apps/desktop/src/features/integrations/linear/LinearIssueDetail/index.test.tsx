@@ -166,10 +166,10 @@ describe('LinearIssueDetail', () => {
   it('renders the facts in the canonical slot order, once', () => {
     render(<LinearIssueDetail issue={ISSUE} workspaceId={'workspace-1' as WorkspaceId} />);
 
-    const facts = screen.getByRole('list', { name: 'Properties' });
+    const facts = screen.getByRole('group', { name: 'Properties' });
     expect(
       within(facts)
-        .getAllByRole('listitem')
+        .getAllByRole('term')
         .map((item) => item.getAttribute('data-fact-slot')),
     ).toEqual(['state', 'weight', 'person', 'place', 'labels']);
     expect(screen.getByText('In Progress')).toBeDefined();
