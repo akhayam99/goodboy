@@ -12885,11 +12885,6 @@
       "count": 1
     }
   },
-  "packages/core/src/orchestrator/runSummary.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "packages/core/src/pathological-input.perf.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1

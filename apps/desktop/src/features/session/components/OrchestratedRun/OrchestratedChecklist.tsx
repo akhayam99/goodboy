@@ -77,7 +77,13 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
         <OrchestratedPlanRow kind="next" label={ORCHESTRATED_COPY.nextStep} slotWidth={slotWidth} />
       ) : null}
       {checklist.left.map((item) => (
-        <OrchestratedPlanRow key={`left-${item}`} kind="left" label={item} slotWidth={slotWidth} />
+        <OrchestratedPlanRow
+          key={`left-${item.text}`}
+          kind="left"
+          label={item.text}
+          role={item.role}
+          slotWidth={slotWidth}
+        />
       ))}
     </>
   );

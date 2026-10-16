@@ -393,7 +393,10 @@ the chrome (between top bar or footer groups), a pane's fixed header against its
 scrolling body (the chat composer in a `PaneShell` dock, the `DrawerFrame`
 header, the comment action bar under the Branch thread), and inside a
 floating surface (popover, palette) the seam between its header or input and
-its list, at most one per side.
+its list, at most one per side. A page whose dock reads as the end of its
+document (the orchestrated run, its queued hints over the composer) passes
+`dockEdge="space"` to `PaneShell`: no divider, the composer's own surface and
+the dock's padding separate it.
 
 Inside content, separation comes from gap (the `gap-3/4/6/8` scale), from
 a band (`Band`, `bg-fill` inside its parent), or from a label

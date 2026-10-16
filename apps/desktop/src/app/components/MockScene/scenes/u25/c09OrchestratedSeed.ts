@@ -173,7 +173,10 @@ const hintsOf = ({ state }: StateParams): ReadonlyArray<OrchestratorHint> => {
 
 const SUMMARY_RUNNING = JSON.stringify({
   done: ['Found one query per row in the export', 'Batched the row reads in payments-api'],
-  left: ['Prove the batching on 12,000 rows', 'Stream rows to CSV'],
+  left: [
+    { text: 'Prove the batching on 12,000 rows', role: 'tester' },
+    { text: 'Stream rows to CSV', role: 'implementer' },
+  ],
 });
 
 const SUMMARY_DONE = JSON.stringify({

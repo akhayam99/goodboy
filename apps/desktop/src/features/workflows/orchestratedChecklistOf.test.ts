@@ -33,7 +33,11 @@ const hintOf = ({ key, step }: HintParams): OrchestratorHint => ({
 
 const FIRST = stepOf({ key: 'first', ordinal: 0 });
 const SECOND = stepOf({ key: 'second', ordinal: 1 });
-const SUMMARY = { done: ['Found the slow query'], left: ['Stream rows to CSV'] };
+const SUMMARY = {
+  done: ['Found the slow query'],
+  left: ['Prove the batching', 'Stream rows to CSV'],
+  leftRoles: { 'Prove the batching': 'tester' },
+} satisfies Parameters<typeof orchestratedChecklistOf>[0]['summary'];
 
 describe('orchestratedChecklistOf', () => {
   it('puts a read hint before the step that read it, once per step', () => {
@@ -70,7 +74,10 @@ describe('orchestratedChecklistOf', () => {
       isDeciding: false,
       isDone: false,
     });
-    expect(live.left).toEqual(['Stream rows to CSV']);
+    expect(live.left).toEqual([
+      { text: 'Prove the batching', role: 'tester' },
+      { text: 'Stream rows to CSV', role: null },
+    ]);
     const done = orchestratedChecklistOf({
       agents: [FIRST],
       hints: [],

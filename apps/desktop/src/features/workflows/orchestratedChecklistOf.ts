@@ -1,8 +1,14 @@
-import type { Agent, AgentId, OrchestratorHint } from '@goodboy/types';
+import type { Agent, AgentId, AgentRole, OrchestratorHint } from '@goodboy/types';
 
 type Summary = {
   readonly done: ReadonlyArray<string>;
   readonly left: ReadonlyArray<string>;
+  readonly leftRoles: Readonly<Partial<Record<string, AgentRole>>>;
+};
+
+export type OrchestratedPlannedItem = {
+  readonly text: string;
+  readonly role: AgentRole | null;
 };
 
 type Params = {
@@ -16,7 +22,7 @@ type Params = {
 export type OrchestratedChecklist = {
   readonly readHintsBefore: ReadonlyMap<AgentId, ReadonlyArray<number>>;
   readonly trailingHintSteps: ReadonlyArray<number>;
-  readonly left: ReadonlyArray<string>;
+  readonly left: ReadonlyArray<OrchestratedPlannedItem>;
   readonly isNextShown: boolean;
 };
 
@@ -50,7 +56,10 @@ export const orchestratedChecklistOf = ({
   return {
     readHintsBefore,
     trailingHintSteps,
-    left: isDone ? [] : (summary?.left ?? []),
+    left:
+      isDone || summary === null
+        ? []
+        : summary.left.map((text) => ({ text, role: summary.leftRoles[text] ?? null })),
     isNextShown: isDeciding,
   };
 };

@@ -31,6 +31,9 @@ export const OrchestratedRunPage = ({ session, run, workflow }: Props) => {
     anchorKey: `workflow-run-title:${run.id}`,
     viewing: { kind: 'workflowRun', id: run.id },
   });
+  const composer = view.isDiscarded ? null : (
+    <OrchestratedComposer sessionId={sessionId} run={run} agents={view.agents} />
+  );
 
   return (
     <RunWorkTime sessionId={sessionId} workspaceId={session.workspaceId}>
@@ -53,11 +56,8 @@ export const OrchestratedRunPage = ({ session, run, workflow }: Props) => {
         }
         headerRhythm="section"
         animationClassName="motion-safe:animate-fade-in"
-        {...(view.isDiscarded
-          ? {}
-          : {
-              dock: <OrchestratedComposer sessionId={sessionId} run={run} agents={view.agents} />,
-            })}
+        dock={composer}
+        dockEdge="space"
       >
         <article
           data-orchestrated-run={run.id}

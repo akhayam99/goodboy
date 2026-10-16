@@ -273,9 +273,11 @@ read top to bottom at the conversation measure:
   The right click on the title lists the same items. An archived run shows
   **Restore** and reads dimmed, with no composer.
 - **Goal** (`OrchestratedGoal`). The goal as prose, then one gray facts line
-  (`OrchestratedFacts`): "Autonomy Balanced · Can use Claude, Codex · Limit
+  (`OrchestratedFacts`): "Balanced · Can use Claude, Codex · Limit
   $3.00 · $1.12 spent", and the time left while the run lives
-  (`useRunTimeLeft`). **Limit** opens `RunSpendLimitPopover`. The workflow's
+  (`useRunTimeLeft`). The autonomy word is today's run autonomy menu
+  (`OrchestratedAutonomyMenu`: Ask me, Balanced, Autopilot, each hint in its
+  tooltip), shown while the run lives. **Limit** opens `RunSpendLimitPopover`. The workflow's
   process text and the run's standing guidance sit behind **Show guidance**;
   the goal attachments follow. The write destination shows under it while 2 or
   more worktrees can be written.
@@ -286,7 +288,11 @@ read top to bottom at the conversation measure:
   hint, read at step 4" before the step whose decision read it, a dashed row
   "Next step, not decided yet" while the orchestrator chooses, then the recap's
   **Left** items as dashed rows, so the plan and the progress are one list
-  (`orchestratedChecklistOf`). A row opens the step in the pane (drawer kind
+  (`orchestratedChecklistOf`). A Left entry the orchestrator planned for a
+  role (`{"text": ..., "role": "tester"}` in the run summary, kept in
+  `leftRoles`; an unknown role is dropped) shows that role's glyph and word in
+  the same role column as the decided steps; a plain string entry leaves the
+  column empty. A row opens the step in the pane (drawer kind
   `run-step`, `RunStepDrawer`): the step conversation (`AgentDetailPane`,
   pinned to that agent) under the reason the orchestrator gave for it, with
   **View transcript** and **Open full**. The page keeps the one composer; you

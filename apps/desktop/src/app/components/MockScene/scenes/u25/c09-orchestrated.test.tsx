@@ -100,7 +100,20 @@ describe('the c09 orchestrated scenes', () => {
     expect(screen.getByRole('heading', { name: 'Speed up the export end to end' })).toBeDefined();
     expect(screen.getByText(/times out over 10k rows/)).toBeDefined();
     const facts = nodeOf('[data-orchestrated-facts]');
-    expect(facts.textContent).toContain('Autonomy Balanced');
+    const autonomy = within(facts).getByRole('button', { name: 'Autonomy: Balanced' });
+    expect(autonomy.textContent).toBe('Balanced');
+    act(() => {
+      autonomy.click();
+    });
+    const autonomyMenu = screen.getByRole('menu', { name: 'Autonomy' });
+    expect(
+      within(autonomyMenu)
+        .getAllByRole('menuitemradio')
+        .map((item) => item.textContent),
+    ).toEqual(['Ask me', 'Balanced', 'Autopilot']);
+    act(() => {
+      autonomy.click();
+    });
     expect(facts.textContent).toContain('Can use Claude, Codex');
     expect(facts.textContent).toContain('Limit $3.00');
     const rows = within(checklist());
@@ -108,7 +121,14 @@ describe('the c09 orchestrated scenes', () => {
     expect(rows.getByText('Run the 12k export benchmark')).toBeDefined();
     expect(rows.getByText('Time the export five times')).toBeDefined();
     expect(rows.getByText('Your hint, read at step 3')).toBeDefined();
-    expect(rows.getByText('Stream rows to CSV')).toBeDefined();
+    const planned = [...checklist().querySelectorAll<HTMLElement>('[data-plan-row="left"]')];
+    expect(
+      planned.map((row) => row.querySelector('[data-checklist-cell="role"]')?.textContent ?? null),
+    ).toEqual(['Tester', 'Implementer']);
+    expect(planned.map((row) => row.textContent)).toEqual([
+      'TesterProve the batching on 12,000 rows',
+      'ImplementerStream rows to CSV',
+    ]);
     expect(tail().getAttribute('data-orchestrated-tail')).toBe('waiting');
     expect(within(tail()).getByText(/^Waiting on step 3/)).toBeDefined();
     expect(within(tail()).getByRole('button', { name: 'Stop step 3' })).toBeDefined();
@@ -121,6 +141,9 @@ describe('the c09 orchestrated scenes', () => {
     expect(within(queued).getByText('Waits for the next decision')).toBeDefined();
     expect(within(queued).getByRole('button', { name: 'Remove' })).toBeDefined();
     expect(screen.getByPlaceholderText('Hint the orchestrator')).toBeDefined();
+    const dock = nodeOf('[data-slot="pane-dock"]');
+    expect(dock.getAttribute('data-dock-edge')).toBe('space');
+    expect(dock.previousElementSibling?.getAttribute('role') ?? null).not.toBe('separator');
     expect(screen.queryByTestId('orchestrator-strip')).toBeNull();
   });
 
