@@ -33,8 +33,10 @@ The row above the provider chips is one component with two meanings.
 - **Configuring surfaces** (Models, the workflow builder, the Studio) call it
   **Auto**. Saving Auto means "follow the ladder", not a model. The closed
   trigger reads `Auto` and the open row says what Auto picks right now
-  (`Now: Claude · Sonnet 5.5 · Medium`). A pinned trigger shows the model and an
-  x back to Auto. The row under a Models page label and the run page and builder
+  (`Now: Claude · Sonnet 5.5 · Medium`). A pinned trigger shows the model then
+  "· pinned" in gray, in the same chip style as any other trigger (no tint, no
+  bare x); going back to Auto is the reset row inside the popover, labelled by
+  the caller's `resetLabel` ("Back to Auto", "Use default"). The row under a Models page label and the run page and builder
   orchestrator pills read that answer from `useResolution`, so they name the same
   model; when a pin is skipped, the row's muted line says why through
   `explainResolution` (see `docs/providers.md`, Defaults internals). The background

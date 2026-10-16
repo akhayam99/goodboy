@@ -244,9 +244,10 @@ draws at; a test fails when the two disagree.
 
 Five rules:
 
-1. **Crumb, title and first body edge share one x.** In a split page the crumb band moves
-   into the detail (`StudioDetail`, first child of the detail) and the rail starts at the top of
-   the sheet, so the crumb never sits over the rail. A split studio wraps its detail in
+1. **Band, title and first body edge share one x.** In a split page a studio band (drawn
+   only when it holds Close, a trail or an accessory) moves into the detail (`StudioDetail`,
+   first child of the detail) and the rail starts at the top of the sheet, so it never sits
+   over the rail. A split studio wraps its detail in
    `StudioDetail`; `StudioFrame` hands it the band through `StudioBandContext`.
 2. **One page rail.** Every split page uses `StudioRailLayout` with `railWidth="standard"`
    (288, resizable 220 to 420). No page draws a second rail column.

@@ -70,7 +70,7 @@ export const TasksGridSpecimen = () => (
             key={row.key}
             onSelect={() => undefined}
             cells={[
-              <StateDot key="dot" state={row.state} label={group.label} />,
+              <StateDot key="dot" state={row.state} label={group.label} isLive />,
               row.key,
               row.title,
               row.updated,

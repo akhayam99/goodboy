@@ -113,7 +113,14 @@ type FramePageParams = {
 
 export const FRAME_PAGE_HEADER_INSET_PX = 12;
 
-const SESSION_PAGES: ReadonlySet<FramePage> = new Set<FramePage>([
+const HEADER_INSET_PAGES: ReadonlySet<FramePage> = new Set<FramePage>([
+  'inbox',
+  'chat',
+  'workflows',
+  'terminal',
+  'monitoring',
+  'notifications',
+  'guide',
   'overview',
   'branch',
   'runs',
@@ -131,7 +138,7 @@ const SESSION_PAGES: ReadonlySet<FramePage> = new Set<FramePage>([
 
 export const frameGeometryOf = ({ page }: FramePageParams): FrameGeometry => {
   const type = PAGE_FRAME[page];
-  const bandHeight = SESSION_PAGES.has(page) ? FRAME_PAGE_HEADER_INSET_PX : FRAME_BAND_PX;
+  const bandHeight = HEADER_INSET_PAGES.has(page) ? FRAME_PAGE_HEADER_INSET_PX : FRAME_BAND_PX;
   return {
     type,
     bandHeight,

@@ -24,7 +24,7 @@ export const DotsGridSpecimen = () => (
     {DOTS.map((dot) => (
       <ListGridRow
         key={dot.state}
-        cells={[<StateDot key="dot" state={dot.state} label={dot.label} />, dot.label]}
+        cells={[<StateDot key="dot" state={dot.state} label={dot.label} isLive />, dot.label]}
       />
     ))}
   </ListGrid>

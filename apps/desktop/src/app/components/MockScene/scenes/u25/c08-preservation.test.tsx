@@ -201,14 +201,14 @@ const QUESTION: OpenQuestion = {
 };
 
 describe('SPEC3 9.4 run rows stay reachable from the preset run level', () => {
-  it('Runs list: active and Finished groups each carry their count', async () => {
+  it('Runs list: a group carries its count from two rows', async () => {
     await mount('c08-runs');
     const grid = within(screen.getByRole('list', { name: 'Runs' }));
     const countOf = (label: string) =>
       grid.getByRole('heading', { name: label }).nextElementSibling?.textContent;
     expect(countOf('In progress')).toBe('2');
-    expect(countOf('Finished')).toBe('1');
-    expect(countOf('Archived')).toBe('1');
+    expect(countOf('Finished')).toBeUndefined();
+    expect(countOf('Archived')).toBeUndefined();
     expect(document.querySelector('[data-slot="pane-meta"]')).toBeNull();
   });
 

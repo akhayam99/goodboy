@@ -117,7 +117,6 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
         overridden={pinned != null}
         defaultSummary={`${automatic.providerId} ${automatic.model}`}
         onReset={() => void setWorkflowOrchestratorRouting(sessionId, run.id, null)}
-        hasTriggerReset={false}
         onChange={(route) => {
           if (route.provider === '') {
             return;

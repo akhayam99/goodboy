@@ -59,7 +59,7 @@ export const WorkflowHistoryList = ({ workflowName, runs, onOpenRun }: Props) =>
               tooltip={`${title} · ${state.label}`}
               onSelect={() => onOpenRun(run)}
               cells={[
-                <StateDot state={state.dot} label={state.label} />,
+                <StateDot state={state.dot} label={state.label} isLive />,
                 title,
                 run.costUsd > 0 ? formatUsd(run.costUsd) : '',
                 formatAge({ from: run.createdAt, now }),
