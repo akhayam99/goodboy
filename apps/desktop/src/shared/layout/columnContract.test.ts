@@ -138,7 +138,6 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
   },
   PaneShell: { kind: 'helper', files: [] },
   StudioBandContext: { kind: 'helper', files: [] },
-  PaneCluster: { kind: 'helper', files: [] },
   FirstLapBanner: {
     kind: 'banner',
     files: [
@@ -296,11 +295,11 @@ describe('content column contract', () => {
     expect(centred).toEqual([]);
   });
 
-  it('hands the pane cluster to the page header through the pane actions, with no trail band', () => {
+  it('keeps the session tools out of the page header, with no trail band', () => {
     const source = read(WORKSPACE);
 
-    expect(source).toContain('<PaneActionsContext.Provider value={showLens ? panes : null}>');
-    expect(source).toMatch(/const panes = <PaneCluster sessionId=\{sessionId\} \/>;/);
+    expect(source).not.toContain('PaneActionsContext');
+    expect(source).not.toContain('PaneCluster');
     expect(source).not.toContain('TrailBar');
   });
 

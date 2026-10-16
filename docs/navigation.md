@@ -576,14 +576,19 @@ the confirm holds the one filled button. A plan drawer reads
 `[Edit] [Approve] [...]`; Approve reads Approving until the approval resolves,
 then closes the drawer on any page and raises one toast, and a plan whose run
 was approved reads Approved with no primary until the run starts the step. The
-run pages (the preset run level and the orchestrated document) hold only the
-run `⋯` in their header while the run lives; the verbs of `runPrimaryOf`
+run pages (the preset run level and the orchestrated document) hold **Pause
+run** and **Stop run** (asks first) as visible words in their header while the
+run lives (`RunLiveVerbs`, the `workflowRun` registry's own `when`: Pause while
+a step is in flight and the run is not paused, Stop while the run is closable),
+then the run `⋯`; the verbs of `runPrimaryOf`
 (**Review plan**, **Answer**, **Resume**, **Continue the run**, **Retry**,
 **Raise spend cap**, **Decide next step**, **Start step 2**, **Start run**)
 sit on the run tail, and an archived run shows **Restore** as its one header
-primary. The `⋯` holds View diff, Pause run, Step routing (orchestrated),
-Autonomy, Skip step N, Save as preset, Copy run summary, **Stop run** (asks
-first), Archive run and Delete run, never **Approve plan**.
+primary. The `⋯` holds View diff, Step routing (orchestrated), Autonomy, Skip
+step N, Save as preset, Copy run summary, Archive run and Delete run, never
+**Approve plan**, **Pause run** or **Stop run**. A failed Pause or Stop leaves
+the run as it was, reports the error and keeps the word, so pressing it again
+is the retry.
 The title is the only h1 of the page; the trail says `Session > Runs > Run`, the
 Runs crumb or Esc goes back to the list, and no chevron on the page does.
 Scripts reads `[search] [New script]`. A page with no actions draws no `...`.
@@ -721,12 +726,23 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   studio over the session (Tasks, Chat, Workflows, Terminal, Monitoring,
   Impact) covers the page and its rail; the column selects that studio's door
   and leaves the session row unselected.
+- **The tools sit at the foot and never drill.** Below the levels, outside
+  `LevelStack`, the rail holds one fixed group (`SessionTools`, a group named
+  `Session tools`): **Ask** (⌘L), **Terminal** (⌘⌥T), **Explore** (⌘⌥X),
+  **Context** (⌘⌥C) and **Scripts** (⌘⌥S), one 28px row each with its icon,
+  its word and the 40px right slot, the chord in the tooltip. The open one is
+  `bg-selected` and `aria-pressed` (`openPaneOf`), and a row toggles its pane
+  (see The session tools). The group is the same on level 1, on a worktree,
+  on a run and on Auto: only the part above it drills.
 - **Folded (44px).** The rail's own toggle (`SessionRailToggle`, Fold session
   rail) folds it to the current level as icons with right tooltips
   (`SessionRailIcons`): on level 2 the back icon, then one icon per worktree
   entry (`RailWorktreeLevel`) or per run step (`RailRunLevel`); on the Auto
   level the back icon, then one ring per rail row with its role and state in
-  the tooltip (`RailAutoLevel`); on level 1 one icon per page with its dot.
+  the tooltip (`RailAutoLevel`); on level 1 one icon per page with its dot. On
+  every level the tools follow at the bottom as five icons
+  (`SessionToolIcon`), each named by its word in its tooltip and accessible
+  name, the Context dot on its corner.
   ⌘B folds the column only, which shows New, the doors and the pinned session
   nodes on every screen. The changed file tree needs the open rail; the diff
   and its keys work without it.
@@ -773,8 +789,9 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   agents while it shows (`isAutoAgentsShown`), and pressed on Auto agents goes
   back to the Overview.
 
-The tools (Terminal, Explore, Scripts) are panes, not pages: they open from
-the pane cluster at the right of every session header (see The pane cluster).
+The tools (Ask, Terminal, Explore, Context, Scripts) are panes, not pages:
+they open from the foot of the session rail (see The session tools), never
+from a page header.
 The linked records keep their lenses for now and stay in the palette.
 
 **A sidebar row says the name and the state, and the hover card and the board
@@ -1119,17 +1136,20 @@ activity yet show the plain overview with its actions.
   row and the session rail's back row (see Session rail), and history is the
   top bar Back. Each
   session page opens with one 44px header row from `PaneShell`: the page
-  title (Overview, Runs, Agents), the page actions, then the pane actions at
-  the far right. No crumb row, no second title row. A deeper object (a run,
+  title (Overview, Runs, Agents), then the page actions and at most one `⋯`,
+  the page menu. No crumb row, no second title row, no tool toggles. A deeper object (a run,
   an artifact, a child agent) goes back to its list from its page row in the
   session rail, from Esc (Up) or from the top bar Back. The crumb menus are gone
   (cut C1).
-- **The header's right end holds the pane cluster.** `SessionWorkspace`
-  hands `PaneCluster` to every `PaneShell` title row through
-  `PaneActionsContext` (see The pane cluster). ⌘L (`ask.open`, app plane)
-  opens Ask or, when it is open, focuses its box; the key is bound once per
-  visible session (`useAskOpenShortcut` in `SessionWorkspace`), not by the
-  button, so two mounted panes never bind it twice.
+- **The header holds only its page.** `SessionWorkspace` hands no actions
+  to the page headers: the session tools live at the foot of the session rail
+  (see The session tools), so no header carries a second `⋯` (pinned by
+  `scene-primaries.test.tsx`). `PaneActionsContext` stays for a page that
+  lends its own action to a nested header (the issue detail's back word).
+  ⌘L (`ask.open`, app plane) opens Ask or, when it is open, focuses its box;
+  the key is bound once per visible session (`useAskOpenShortcut` in
+  `SessionWorkspace`), not by the row, so two mounted pages never bind it
+  twice.
 - **The Overview header** reads `Overview`. The session title, its rename and
   its lifecycle menu live on the session rail identity row. The header keeps the
   Overview actions as visible words (`OverviewPageActions`: Write title and
@@ -1137,16 +1157,26 @@ activity yet show the plain overview with its actions.
   (`OverviewActions`, ⌘N on the Overview, a menu from the `newForm` kind of
   the action registry whose pick opens its form in the New drawer; filled only
   while nothing runs and Next holds no row) and, on an archived session,
-  Restore. Context left the header for the cluster's more menu.
+  Restore. Context lives in the session tools.
 
-## The pane cluster
+## The session tools
 
-One fixed group at the right of every session page header, the same on every
-page and in this order: **Ask** (⌘L), **Terminal** (⌘⌥T), **Explore** (⌘⌥X),
-then a visible `⋯` (`More panes`, the `paneCluster` kind of the action
-registry) holding **Context** (⌘⌥C) and **Scripts** (⌘⌥S). Each toggle is an icon and a word (`PaneToggle`, a quiet `xs`
-`Button`); the open one is `bg-selected` and `aria-pressed`. The chord lives in
-the tooltip only. `PaneCluster` lives in `features/session/components/`.
+One fixed group at the foot of the session rail, the same on every level and
+in this order: **Ask** (⌘L), **Terminal** (⌘⌥T), **Explore** (⌘⌥X),
+**Context** (⌘⌥C) and **Scripts** (⌘⌥S) (`SESSION_TOOLS`). Each is one row
+with an icon and a word (`SessionToolRow`), or an icon with its word in the
+tooltip on the folded rail (`SessionToolIcon`); the open one is `bg-selected`
+and `aria-pressed`. The chord lives in the tooltip only. There is no menu: the
+old `More panes` `⋯` is gone, so a page header never shows a second `⋯`.
+`SessionTools` lives in `features/session/components/`, mounted by
+`SessionRail`.
+
+- **Outside a session there is no tools group.** The workspace pages (the
+  board, the studios) already hold the two tools that make sense there as
+  column doors: **Terminal** (with New terminal on its plus) and **Chat**
+  (with New chat), the workspace conversation that answers what Ask answers
+  for one session. Ask, Explore, Context and Scripts read one session, so they
+  exist only inside one, and ⌘L is bound only while a session is visible.
 
 - **One pane at a time.** Every toggle goes through `togglePane`
   (`features/session/panes/`): pressing the open pane's toggle closes it,
@@ -1163,10 +1193,12 @@ the tooltip only. `PaneCluster` lives in `features/session/components/`.
   `openScriptsPane` the project to scope to (Open scripts). `openLens` sends
   the old `explore` and `scripts` lenses to the panes, so the palette, toasts
   and stored notifications (`open-lens` scripts) still land.
-- **Context signals ride on `⋯`.** A dot on the more button marks decisions
-  changed since the last look or a running summary (info) or a failed summary (danger); the
-  Context row says why. The cluster loads the seen marker and the decisions
-  once, as the old chip did.
+- **Context signals ride on its row.** A 6px dot in the Context row's right
+  slot (on the folded icon, its corner) marks decisions changed since the last
+  look (info), a running summary (info, pulsing) or a failed summary (danger)
+  (`useToolSignal`, over `contextNoteOf`); the row's tooltip and accessible
+  name say why. The group loads the seen marker and the decisions once, as
+  the old chip did.
 - **Stored pages map to panes.** `withoutRemovedPages` sends a stored
   `explore` or `scripts` page to the Overview with that pane open, and drops
   a stored `terminal` page.
@@ -2375,7 +2407,7 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
 - **The switcher and the palette list only destinations the session can
   use.** One function feeds both. Context is a drawer, not a destination: the
   palette offers **Show context** (⌘⌥C) and neither lists a Context page.
-  Explore is always listed, opens as a pane (see The pane cluster), and
+  Explore is always listed, opens as a pane (see The session tools), and
   browses one project of the session at a time as a tree (`role="tree"`). A
   project chip under the title (`ExploreProjectChip`) names it, `ledger-core ·
 hl/ledger-rounding`, and with two or more mounts opens a menu grouped by

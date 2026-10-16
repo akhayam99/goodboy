@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { mockIPC } from '@tauri-apps/api/mocks';
+import { mockSceneIpc } from '../mockSceneIpc';
 import { ExplorePane } from '../../../../../features/explore/components/ExplorePane';
 import { ShellFrame, seedShellChrome } from '../shellChrome';
 import { SESSION, SESSION_ID, seedArtifactScene } from '../artifactSeed';
@@ -250,7 +250,7 @@ export const ExploreScene = (props: Props) => {
 
   useEffect(() => {
     let changedCalls = 0;
-    mockIPC((cmd, payload) => {
+    mockSceneIpc((cmd, payload) => {
       if (cmd === 'worktree_changed_files') {
         changedCalls += 1;
         if (changes === 'none') {

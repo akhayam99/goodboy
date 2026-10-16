@@ -1,5 +1,4 @@
 import type { ReactNode, Ref } from 'react';
-import { useInheritedPaneActions } from '@goodboy/ui';
 
 type Props = {
   readonly title: ReactNode;
@@ -10,8 +9,6 @@ type Props = {
 };
 
 export const AgentHeader = ({ title, actions, meta = null, below = null, rootRef }: Props) => {
-  const inheritedActions = useInheritedPaneActions();
-  const hasActions = actions != null || inheritedActions != null;
   return (
     <div ref={rootRef} className="flex min-w-0 flex-col gap-2">
       <div className="flex min-w-0 flex-col gap-1">
@@ -21,11 +18,8 @@ export const AgentHeader = ({ title, actions, meta = null, below = null, rootRef
           className="flex h-8 min-w-0 items-center justify-between gap-4"
         >
           <h1 className="flex min-w-0 flex-1 truncate text-title text-foreground">{title}</h1>
-          {hasActions ? (
-            <div className="flex shrink-0 items-center gap-2">
-              {actions}
-              {inheritedActions}
-            </div>
+          {actions != null ? (
+            <div className="flex shrink-0 items-center gap-2">{actions}</div>
           ) : null}
         </div>
         {meta === null ? null : (

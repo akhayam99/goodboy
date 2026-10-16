@@ -84,16 +84,13 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: () => visible('region', 'Previous versions'),
   },
   {
-    name: 'context drawer from the pane cluster',
+    name: 'context drawer from the session tools',
     covers: ['openContextDrawer', 'drawer:context'],
-    open: async () => {
-      await click(await screen.findByRole('button', { name: /^More panes/ }));
-      await click(await screen.findByRole('menuitem', { name: /^Context/ }));
-    },
+    open: async () => click(await screen.findByTestId('pane-toggle-context')),
     lands: () => visible('region', 'Context'),
   },
   {
-    name: 'Ask drawer from the trail band',
+    name: 'Ask drawer from the session tools',
     covers: ['openAsk', 'drawer:ask'],
     open: async () => click(await screen.findByTestId('pane-toggle-ask')),
     lands: () => visible('region', 'Ask'),
@@ -435,7 +432,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
         expect(
           (await screen.findAllByRole('button', { name: /^Untitled session$/ }, WAIT)).length,
         ).toBeGreaterThan(0),
-      async () => expect((await screen.findAllByTestId('pane-cluster')).length).toBeGreaterThan(0),
+      async () => expect(await screen.findByTestId('session-tools')).toBeDefined(),
     ),
   },
   {

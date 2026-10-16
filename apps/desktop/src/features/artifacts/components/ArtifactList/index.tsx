@@ -1,13 +1,5 @@
 import { useMemo, useRef } from 'react';
-import {
-  Button,
-  EmptyLine,
-  EmptyState,
-  PaneShell,
-  Notice,
-  SkeletonRow,
-  useInheritedPaneActions,
-} from '@goodboy/ui';
+import { Button, EmptyLine, EmptyState, PaneShell, Notice, SkeletonRow } from '@goodboy/ui';
 import type { ArtifactId, SessionId } from '@goodboy/types';
 import { WireframeImportNotice } from '../../../wireframes/components/WireframeImportNotice';
 import { useWireframeImport } from '../../../wireframes/useWireframeImport';
@@ -82,7 +74,6 @@ export const ArtifactList = ({
   });
   const { closedGroups, openPartsIds, toggleGroup, toggleParts } = useArtifactGroups({ rows });
   const groups = useMemo(() => groupArtifactRows({ rows }), [rows]);
-  const inheritedActions = useInheritedPaneActions();
   const openNewMenu = () => window.dispatchEvent(new CustomEvent(newArtifactEventName(sessionId)));
 
   return (
@@ -101,7 +92,6 @@ export const ArtifactList = ({
           <div className="ml-auto flex shrink-0 items-center gap-1">
             <ArtifactNewMenu sessionId={sessionId} onImportWireframe={importer.pick} />
             <ArtifactListFolderButton sessionId={sessionId} />
-            {inheritedActions}
           </div>
         </div>
       }

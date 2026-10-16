@@ -121,7 +121,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Pinned scripts',
-        desc: 'Pin a script per project from Scripts, in the More panes menu of a session, or from the card of the project on Projects. It holds across worktrees and shows under $ in the palette. A project with nothing pinned shows Suggested scripts with a Pin on each.',
+        desc: 'Pin a script per project from Scripts, at the foot of the session rail, or from the card of the project on Projects. It holds across worktrees and shows under $ in the palette. A project with nothing pinned shows Suggested scripts with a Pin on each.',
       },
       {
         term: 'Monitoring',
@@ -277,7 +277,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     group: 'task',
     title: 'Sidebar, session rail and panes',
     concept: 'workspace',
-    lead: 'Three places hold everything you move through. The sidebar stays on the workspace, the session rail drills inside one session, and the panes open beside the page.',
+    lead: 'Three places hold everything you move through. The sidebar stays on the workspace, the session rail drills inside one session and keeps its tools at the foot, and the panes open beside the page.',
     points: [
       {
         term: 'Sidebar',
@@ -305,11 +305,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Fold the rail',
-        desc: 'Fold session rail, the button at the top of the rail, shrinks it to the icons of the current level, and Show session rail brings it back. It keeps its own setting, apart from the sidebar. In a narrow window the sidebar folds first and then the rail, so the page keeps room to work; open one by hand and it stays open until the window grows.',
+        desc: 'Fold session rail, the button at the top of the rail, shrinks it to the icons of the current level with the tools at the foot, and Show session rail brings it back. It keeps its own setting, apart from the sidebar. In a narrow window the sidebar folds first and then the rail, so the page keeps room to work; open one by hand and it stays open until the window grows.',
       },
       {
-        term: 'Panes',
-        desc: 'At the right of every session header sit Ask, Terminal and Explore, then ⋯, More panes, which holds Context and Scripts. A pane opens beside the page, one at a time: press its button again, or Esc, to close it, and another button replaces it. A dot on More panes says the context is updating or changed since you last looked, and a red dot says it could not update.',
+        term: 'Session tools',
+        desc: 'The foot of the session rail holds Ask, Terminal, Explore, Context and Scripts, one row each, and they stay the same while the rail steps into a branch, a run or Auto. A tool opens as a pane beside the page, one at a time: press its row again, or Esc, to close it, and another row replaces it. A dot on Context says the context is updating or changed since you last looked, and a red dot says it could not update. Page headers keep only the actions of the page and one ⋯. Outside a session, the Terminal and Chat doors of the sidebar take their place.',
       },
       {
         term: 'Ask',
@@ -355,7 +355,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Run page',
-        desc: 'Opening a run with a fixed list of steps moves the session rail into it: back to Runs, the run title, Overview, every step in order with its sub-agents, Add step, and the limit with what it spent at the foot. The center shows the step you pick as its conversation, and the line at its end says what the run waits for with the one button that moves it on, such as Start step 3, Review plan or Raise spend cap. Pause run, Autonomy, Skip step and Stop run sit in the run menu. An orchestrated run does not step the rail in: it stays on Orchestrated as one page.',
+        desc: 'Opening a run with a fixed list of steps moves the session rail into it: back to Runs, the run title, Overview, every step in order with its sub-agents, Add step, and the limit with what it spent at the foot. The center shows the step you pick as its conversation, and the line at its end says what the run waits for with the one button that moves it on, such as Start step 3, Review plan or Raise spend cap. Pause run and Stop run sit in the run header, and Autonomy and Skip step in the run menu. An orchestrated run does not step the rail in: it stays on Orchestrated as one page.',
       },
       {
         term: 'Agent suggests',
@@ -383,7 +383,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Pause and resume',
-        desc: 'Pause lets the step in flight finish and starts nothing new. Resume picks up where the run was, Skip step cancels the step that is running, and Stop run ends it now. A step quiet for 15 minutes offers Ask it to continue.',
+        desc: 'Pause lets the step in flight finish and starts nothing new. Resume picks up where the run was, Skip step cancels the step that is running, and Stop run ends it now. Pause run and Stop run sit as buttons in the run header while the run lives, and Stop run asks first. A step quiet for 15 minutes offers Ask it to continue.',
       },
       {
         term: 'Autonomy',
@@ -413,7 +413,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Context pane',
-        desc: 'Open Context from More panes in any session header, or with ⌘⌥C, to see the goal, decisions and summary, and Copy context. A dot on More panes means something changed since you last looked, and those changes come first, with Mark as read on the Decisions list. Context updates, at the top, shows the last update with its model and cost, and Update now queues one. Learned lists what agents explained about your topics, for you only, with Dismiss and Undo.',
+        desc: 'Open Context from the foot of the session rail, or with ⌘⌥C, to see the goal, decisions and summary, and Copy context. A dot on Context means something changed since you last looked, and those changes come first, with Mark as read on the Decisions list. Context updates, at the top, shows the last update with its model and cost, and Update now queues one. Learned lists what agents explained about your topics, for you only, with Dismiss and Undo.',
       },
       {
         term: 'Visible to',

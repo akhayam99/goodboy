@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { AppShell, PaneActionsContext } from '@goodboy/ui';
+import { AppShell } from '@goodboy/ui';
 import type {
   IsoDateTime,
   ProviderRunId,
@@ -16,7 +16,6 @@ import { ShellLeft } from '../../SideColumn/ShellLeft';
 import { SessionFrame } from '../../SessionRail/SessionFrame';
 import { useShellFolds } from '../../../hooks/useShellFolds';
 import { ToastProvider } from '../../../../shared/components/Toast';
-import { PaneCluster } from '../../../../features/session/components/PaneCluster';
 import { useAppStore, type LensKind } from '../../../../store';
 import { DEFAULT_PREFS } from '../../../../store/slices/session-view/types';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
@@ -144,9 +143,7 @@ export const ShellFrame = ({
               main
             ) : (
               <div className="@container flex h-full w-full min-w-0 flex-col">
-                <PaneActionsContext.Provider value={<PaneCluster sessionId={session.id} />}>
-                  <div className="min-h-0 flex-1">{main}</div>
-                </PaneActionsContext.Provider>
+                <div className="min-h-0 flex-1">{main}</div>
               </div>
             )}
           </SessionFrame>

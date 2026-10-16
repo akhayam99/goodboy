@@ -9,5 +9,6 @@ export const U25_C03_PANE_SCENES = {
   'c03-panes-scripts': () => <PanesScene state="scripts" />,
   'c03-panes-script-output': () => <PanesScene state="script-output" />,
   'c03-panes-context': () => <PanesScene state="context" />,
-  'c03-panes-more': () => <PanesScene state="more" />,
+  'c03-panes-folded': () => <PanesScene state="folded" />,
+  'c03-panes-drilled': () => <PanesScene state="drilled" />,
 };

@@ -1,5 +1,5 @@
 import type { MountId } from '@goodboy/types';
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import type { TerminalTab, TerminalTabId } from '../../../../../shared/types/terminal';
 import { brandedId } from '../../../../../features/history/testing/brandedId';
 import { togglePane } from '../../../../../features/session/panes/togglePane';
@@ -9,15 +9,16 @@ import { sessionTerminalOwner } from '../../../../../store/slices/terminal/termi
 import { ActivityRunScene } from '../ActivityRunScene';
 import { SESSION_ID } from '../activityRunSeed';
 import { mockSceneIpc } from '../mockSceneIpc';
+import { useSceneRailFold } from '../useSceneRailFold';
 import { shellPromptLines, terminalSnapshotAnswer } from '../terminalSceneOutput';
 
-export type PanesSceneState = ClusterPane | 'closed' | 'more' | 'explore-file' | 'script-output';
+export type PanesSceneState =
+  ClusterPane | 'closed' | 'folded' | 'drilled' | 'explore-file' | 'script-output';
 
 const PAYMENTS = '~/code/harborline/payments-api/.goodboy/worktrees/gb-7k2q9x';
 const RELAY = '~/code/harborline/notify-relay/.goodboy/worktrees/gb-2p6w0z';
 const SHELL = brandedId<TerminalTabId>({ value: `${SESSION_ID}::t1` });
 const RELAY_SHELL = brandedId<TerminalTabId>({ value: `${SESSION_ID}::t2` });
-const OPEN_MENU_DELAY_MS = 50;
 const PAYMENTS_MOUNT = brandedId<MountId>({ value: 'mock-run-mount-payments' });
 const RELAY_MOUNT = brandedId<MountId>({ value: 'mock-run-mount-console' });
 
@@ -63,7 +64,18 @@ type SeedParams = {
 
 const openState = ({ state }: SeedParams): void => {
   const store = useAppStore.getState();
-  if (state === 'closed' || state === 'more') {
+  if (state === 'closed') {
+    return;
+  }
+  if (state === 'folded') {
+    togglePane({ sessionId: SESSION_ID, pane: 'ask' });
+    return;
+  }
+  if (state === 'drilled') {
+    useAppStore.setState((current) => ({
+      activeLens: { ...current.activeLens, [SESSION_ID]: 'branch' },
+    }));
+    togglePane({ sessionId: SESSION_ID, pane: 'explore' });
     return;
   }
   if (state === 'explore-file') {
@@ -106,16 +118,7 @@ type Props = {
 
 export const PanesScene = ({ state }: Props) => {
   const seed = useCallback(() => openState({ state }), [state]);
-
-  useEffect(() => {
-    if (state !== 'more') {
-      return;
-    }
-    const timer = window.setTimeout(() => {
-      document.querySelector<HTMLButtonElement>('[aria-label^="More panes"]')?.click();
-    }, OPEN_MENU_DELAY_MS);
-    return () => window.clearTimeout(timer);
-  }, [state]);
+  useSceneRailFold({ isFolded: state === 'folded' });
 
   return <ActivityRunScene onSeeded={seed} isPageFollowed />;
 };

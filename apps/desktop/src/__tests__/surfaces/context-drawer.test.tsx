@@ -24,7 +24,7 @@ import {
 } from '../../store/storyHarness';
 import { nowIso } from '../../store/slices/project-mounts/nowIso';
 import { DrawerHost } from '../../app/components/DrawerHost';
-import { PaneCluster } from '../../features/session/components/PaneCluster';
+import { SessionTools } from '../../features/session/components/SessionTools';
 import {
   SESSION_ID,
   seedActivityRunScene,
@@ -49,7 +49,7 @@ afterEach(() => {
 const renderSurface = () =>
   render(
     <>
-      <PaneCluster sessionId={SESSION_ID} />
+      <SessionTools sessionId={SESSION_ID} isFolded={false} />
       <DrawerHost />
     </>,
   );
@@ -60,11 +60,10 @@ const settle = async (): Promise<void> => {
   });
 };
 
-const dot = () => screen.queryByTestId('pane-more-signal');
+const dot = () => screen.queryByTestId('tool-signal');
 
 const openContext = async (): Promise<void> => {
-  fireEvent.click(screen.getByRole('button', { name: /^More panes/ }));
-  fireEvent.click(await screen.findByRole('menuitem', { name: /^Context/ }));
+  fireEvent.click(await screen.findByTestId('pane-toggle-context'));
 };
 
 const seenAt = (): string | null | undefined =>

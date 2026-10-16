@@ -19,7 +19,7 @@ A **⌘⌥** key opens each view, **⌘1** to **⌘9** switch workspaces, **⌘[
 
 ### Script drawer
 
-Pin the scripts you use and run them from the session. The Scripts pane (in the `⋯` of the pane cluster, ⌘⌥S) groups them into **Services** (dev servers and watchers) and **Tasks**, with **Stop** and **Restart** on a service. A script's live output replaces the list in the pane, with **Run again**, **Copy output** and **Back to scripts**.
+Pin the scripts you use and run them from the session. The Scripts pane (at the foot of the session rail, ⌘⌥S) groups them into **Services** (dev servers and watchers) and **Tasks**, with **Stop** and **Restart** on a service. A script's live output replaces the list in the pane, with **Run again**, **Copy output** and **Back to scripts**.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-script-drawer-dark.webp">

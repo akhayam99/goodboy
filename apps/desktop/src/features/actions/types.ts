@@ -22,7 +22,6 @@ import type { ChatsFacts } from './kinds/chats';
 import type { PortFacts } from './kinds/port';
 import type { TerminalTabFacts } from './kinds/terminalTab';
 import type { NewFormFacts } from './kinds/newForm';
-import type { PaneClusterFacts } from './kinds/paneCluster';
 import type { TaskListFacts } from './kinds/taskList';
 import type { AppStore } from '../../store/store';
 import type { ShowToast } from '../../shared/components/Toast';
@@ -365,11 +364,6 @@ export type NewFormActionTarget = {
   readonly facts: NewFormFacts;
 };
 
-export type PaneClusterActionTarget = {
-  readonly kind: 'paneCluster';
-  readonly facts: PaneClusterFacts;
-};
-
 export type TaskListActionTarget = {
   readonly kind: 'taskList';
   readonly facts: TaskListFacts;
@@ -437,7 +431,6 @@ export type ObjectTarget =
   | PortActionTarget
   | TerminalTabActionTarget
   | NewFormActionTarget
-  | PaneClusterActionTarget
   | TaskListActionTarget
   | LinkActionTarget
   | ReviewActionTarget

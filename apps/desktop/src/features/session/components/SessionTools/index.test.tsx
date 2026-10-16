@@ -21,7 +21,7 @@ import {
   SESSION_ID,
   seedActivityRunScene,
 } from '../../../../app/components/MockScene/scenes/activityRunSeed';
-import { PaneCluster } from '.';
+import { SessionTools } from '.';
 
 let useAppStore: StoryStore;
 
@@ -38,10 +38,14 @@ afterEach(() => {
   cleanup();
 });
 
-const renderCluster = () =>
+type RenderParams = {
+  readonly isFolded?: boolean;
+};
+
+const renderCluster = ({ isFolded = false }: RenderParams = {}) =>
   render(
     <ToastProvider>
-      <PaneCluster sessionId={SESSION_ID} />
+      <SessionTools sessionId={SESSION_ID} isFolded={isFolded} />
       <DrawerHost />
     </ToastProvider>,
   );
@@ -52,7 +56,8 @@ const settle = async (): Promise<void> => {
   });
 };
 
-const toggle = (name: 'ask' | 'terminal' | 'explore') => screen.getByTestId(`pane-toggle-${name}`);
+const toggle = (name: 'ask' | 'terminal' | 'explore' | 'context' | 'scripts') =>
+  screen.getByTestId(`pane-toggle-${name}`);
 
 const drawerKind = () => useAppStore.getState().drawer?.kind ?? null;
 
@@ -64,16 +69,66 @@ const README: ExploreEntry = {
   modifiedAt: null,
 };
 
-describe('PaneCluster', () => {
-  it('shows Ask, Terminal, Explore and the more menu in that order, as words', () => {
+describe('SessionTools', () => {
+  it('shows Ask, Terminal, Explore, Context and Scripts in that order, as words, with no menu', () => {
     renderCluster();
 
-    const cluster = screen.getByRole('group', { name: 'Panes' });
-    const words = within(cluster)
+    const group = screen.getByRole('group', { name: 'Session tools' });
+    const words = within(group)
       .getAllByRole('button')
       .map((button) => button.textContent);
-    expect(words.slice(0, 3)).toEqual(['Ask', 'Terminal', 'Explore']);
-    expect(within(cluster).getByRole('button', { name: /^More panes/ })).toBeDefined();
+    expect(words).toEqual(['Ask', 'Terminal', 'Explore', 'Context', 'Scripts']);
+    expect(within(group).queryByRole('button', { name: /^More/ })).toBeNull();
+  });
+
+  it('folds to icons named by their word, the open one pressed', async () => {
+    renderCluster({ isFolded: true });
+
+    const group = screen.getByRole('group', { name: 'Session tools' });
+    const names = within(group)
+      .getAllByRole('button')
+      .map((button) => button.getAttribute('aria-label')?.split(',')[0]);
+    expect(names).toEqual(['Ask', 'Terminal', 'Explore', 'Context', 'Scripts']);
+    expect(
+      within(group)
+        .getAllByRole('button')
+        .every((button) => button.textContent === ''),
+    ).toBe(true);
+
+    fireEvent.click(toggle('scripts'));
+    await settle();
+    expect(drawerKind()).toBe('scripts');
+    expect(toggle('scripts').getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('marks Context with a pulsing dot while the summary runs and a danger dot when it failed', async () => {
+    const seed = (status: 'running' | 'error') =>
+      act(() => {
+        useAppStore.setState((state) => ({
+          summarizerStatus: {
+            ...state.summarizerStatus,
+            [SESSION_ID]: {
+              status,
+              lastUpdate: null,
+              error: null,
+              lastUsage: null,
+              lastAttempt: null,
+            },
+          },
+        }));
+      });
+    renderCluster();
+
+    seed('running');
+    expect(screen.getByTestId('tool-signal').getAttribute('data-signal')).toBe('running');
+    expect(toggle('context').getAttribute('aria-label')).toBe('Context, Updating context');
+
+    seed('error');
+    expect(screen.getByTestId('tool-signal').getAttribute('data-signal')).toBe('error');
+    expect(toggle('context').getAttribute('aria-label')).toBe(
+      "Context, Couldn't update the context. Open to retry.",
+    );
+    expect(toggle('ask').getAttribute('aria-label')).toBe('Ask');
   });
 
   it('opens one pane at a time: a second toggle replaces the first', async () => {
@@ -103,19 +158,19 @@ describe('PaneCluster', () => {
     expect(drawerKind()).toBeNull();
   });
 
-  it('opens Context and Scripts from the more menu', async () => {
+  it('opens Context and Scripts from their own rows', async () => {
     renderCluster();
 
-    fireEvent.click(screen.getByRole('button', { name: /^More panes/ }));
-    fireEvent.click(await screen.findByRole('menuitem', { name: /^Scripts/ }));
+    fireEvent.click(toggle('scripts'));
     await settle();
     expect(drawerKind()).toBe('scripts');
     expect(screen.getByRole('region', { name: 'Scripts' })).toBeDefined();
 
-    fireEvent.click(screen.getByRole('button', { name: /^More panes/ }));
-    fireEvent.click(await screen.findByRole('menuitem', { name: /^Context/ }));
+    fireEvent.click(toggle('context'));
     await settle();
     expect(drawerKind()).toBe('context');
+    expect(toggle('context').getAttribute('aria-pressed')).toBe('true');
+    expect(toggle('scripts').getAttribute('aria-pressed')).toBe('false');
   });
 
   it('keeps Explore lit on a file it opened and walks back to the files', async () => {

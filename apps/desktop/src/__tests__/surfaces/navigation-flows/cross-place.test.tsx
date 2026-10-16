@@ -246,11 +246,10 @@ const expectCentredColumns = (): void => {
   }
 };
 
-const expectAskInColumn = (): void => {
+const expectAskInRail = (): void => {
   const ask = shown('[data-testid="pane-toggle-ask"]');
-  const row = ask?.closest<HTMLElement>('[data-slot="pane-header"]') ?? null;
-  expect(row, 'the Ask button sits at the end of the page header row').not.toBeNull();
-  expect(row?.closest('[data-page-column]')).not.toBeNull();
+  expect(ask?.closest('nav[aria-label="Session"]'), 'Ask sits in the session rail').not.toBeNull();
+  expect(ask?.closest('[data-slot="pane-header"]') ?? null).toBeNull();
   expect(document.querySelector('main [data-slot="trail-bar"]')).toBeNull();
 };
 
@@ -467,7 +466,6 @@ const expectOneRail = ({
 
 const sessionLayers = (extra: RailLayers): RailLayers => ({
   header: shown('[data-slot="pane-header"]'),
-  ask: shown('[data-testid="pane-toggle-ask"]'),
   ...extra,
 });
 
@@ -751,7 +749,7 @@ describe('moving across every place keeps one frame', () => {
             expect(openDrawerKind(), `${page} opens the drawer`).toBe('context');
           }
           expectCentredColumns();
-          expectAskInColumn();
+          expectAskInRail();
           for (const shape of columnTiers()) {
             expect(['column', 'measure'], `${page} centres its column`).toContain(shape);
           }
@@ -878,7 +876,7 @@ describe('moving across every place keeps one frame', () => {
         expectPlace({ session: sessionId, lens, studio: null, doors: [] });
         expect(currentPage()).toBe(page);
         expectCentredColumns();
-        expectAskInColumn();
+        expectAskInRail();
         if (lens === 'branch') {
           expect(leftEdge().columns).not.toContain('full');
         }

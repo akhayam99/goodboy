@@ -1,4 +1,5 @@
 import { OptionalTooltip } from './OptionalTooltip';
+import type { TooltipSide } from './Tooltip';
 import type { AriaAttributes, ReactNode } from 'react';
 import { cn } from '../cn';
 import { ROW_INTERACTIVE } from '../rowInteractive';
@@ -11,6 +12,10 @@ export type SelectableRowProps = {
   readonly ariaCurrent?: AriaAttributes['aria-current'];
   readonly ariaLabel?: string;
   readonly title?: string;
+  readonly shortcut?: string;
+  readonly tooltipSide?: TooltipSide;
+  readonly isPressed?: boolean;
+  readonly testId?: string;
   readonly id?: string;
   readonly role?: 'option';
   readonly ariaSelected?: boolean;
@@ -32,6 +37,10 @@ export const SelectableRow = ({
   ariaCurrent,
   ariaLabel,
   title,
+  shortcut,
+  tooltipSide,
+  isPressed,
+  testId,
   id,
   role,
   ariaSelected,
@@ -40,12 +49,14 @@ export const SelectableRow = ({
   className,
 }: SelectableRowProps) => {
   return (
-    <OptionalTooltip content={title}>
+    <OptionalTooltip content={title} shortcut={shortcut} side={tooltipSide}>
       <button
         type="button"
         id={id}
+        data-testid={testId}
         data-selected={selected}
         aria-current={ariaCurrent}
+        aria-pressed={isPressed}
         aria-label={ariaLabel}
         role={role}
         aria-selected={ariaSelected}

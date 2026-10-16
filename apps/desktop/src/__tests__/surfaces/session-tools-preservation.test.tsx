@@ -27,6 +27,7 @@ import { ToastProvider } from '../../shared/components/Toast';
 import { KeepAliveWorkSurface } from '../../app/components/KeepAliveWorkSurface';
 import { DrawerHost } from '../../app/components/DrawerHost';
 import { openLens } from '../../features/session/openLens';
+import { SessionTools } from '../../features/session/components/SessionTools';
 import { seedSessionWithMounts } from '../helpers/seedSessionWithMounts';
 
 let useAppStore: StoryStore;
@@ -56,6 +57,7 @@ type MountParams = {
 const mountSession = async ({ sessionId }: MountParams): Promise<void> => {
   render(
     <ToastProvider>
+      <SessionTools sessionId={sessionId} isFolded={false} />
       <KeepAliveWorkSurface sessionId={sessionId} isActive />
       <DrawerHost />
     </ToastProvider>,
@@ -63,32 +65,22 @@ const mountSession = async ({ sessionId }: MountParams): Promise<void> => {
   await settle();
 };
 
-const visibleCluster = (): HTMLElement => {
-  const shown = screen
-    .getAllByRole('group', { name: 'Panes' })
-    .filter((group) => group.closest('[inert]') === null);
-  const [first] = shown;
-  if (first === undefined) {
-    throw new Error('no visible pane cluster');
-  }
-  return first;
-};
+const tools = (): HTMLElement => screen.getByRole('group', { name: 'Session tools' });
 
 const press = async (name: RegExp | string): Promise<void> => {
-  fireEvent.click(within(visibleCluster()).getByRole('button', { name }));
+  fireEvent.click(within(tools()).getByRole('button', { name }));
   await settle();
 };
 
-const pickMore = async (name: RegExp): Promise<void> => {
-  await press(/^More panes/);
-  fireEvent.click(await screen.findByRole('menuitem', { name }));
-  await settle();
-};
+const paneToggles = (): ReadonlyArray<Element> =>
+  [...document.querySelectorAll('[data-slot="pane-title-row"]')].flatMap((row) => [
+    ...row.querySelectorAll('[data-testid^="pane-toggle-"]'),
+  ]);
 
 const drawerKind = (): string | null => useAppStore.getState().drawer?.kind ?? null;
 
-describe('SPEC3 section 9 rows reachable from the pane cluster', () => {
-  it('9.4 Ask beside any page: the cluster sits on the Overview and on Agents', async () => {
+describe('SPEC3 section 9 rows reachable from the session tools', () => {
+  it('9.4 Ask beside any page: the tools stay the same on the Overview and on Agents', async () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
     await mountSession({ sessionId });
 
@@ -99,14 +91,15 @@ describe('SPEC3 section 9 rows reachable from the pane cluster', () => {
       useAppStore.getState().navigate({ to: sessionPlace({ sessionId, lens: 'agents' }) });
     });
     await settle();
-    expect(within(visibleCluster()).getByRole('button', { name: 'Ask' })).toBeDefined();
+    expect(within(tools()).getByRole('button', { name: 'Ask' })).toBeDefined();
+    expect(paneToggles()).toEqual([]);
   });
 
-  it('9.3 Context drawer from the old chip: the more menu opens it', async () => {
+  it('9.3 Context drawer from the old chip: the Context row opens it', async () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
     await mountSession({ sessionId });
 
-    await pickMore(/^Context/);
+    await press(/^Context/);
 
     expect(useAppStore.getState().drawer).toMatchObject({ kind: 'context', sessionId });
   });
@@ -143,11 +136,11 @@ describe('SPEC3 section 9 rows reachable from the pane cluster', () => {
     expect(screen.getByRole('region', { name: 'Explore' })).toBeDefined();
   });
 
-  it('9.8 Scripts lens: the more menu, the palette and the Open scripts toast reach the pane', async () => {
+  it('9.8 Scripts lens: the Scripts row, the palette and the Open scripts toast reach the pane', async () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
     await mountSession({ sessionId });
 
-    await pickMore(/^Scripts/);
+    await press(/^Scripts/);
     expect(drawerKind()).toBe('scripts');
     expect(screen.getByRole('region', { name: 'Scripts' })).toBeDefined();
 

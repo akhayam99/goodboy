@@ -27,6 +27,7 @@ import { branchPlace, sessionPlace } from '../../store/slices/navigation/place';
 import { ToastProvider } from '../../shared/components/Toast';
 import { KeepAliveWorkSurface } from '../../app/components/KeepAliveWorkSurface';
 import { DrawerHost } from '../../app/components/DrawerHost';
+import { SessionTools } from '../../features/session/components/SessionTools';
 import {
   EXPANDED_THREAD_ID,
   SESSION as RESOLVE_SESSION,
@@ -271,18 +272,18 @@ describe('main flows on the real store', () => {
     expectNoRenderLoop();
   });
 
-  it('opens and closes the context drawer from the overview chip', async () => {
+  it('opens and closes the context drawer from the session tools', async () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
 
     await mountFlow(
       <>
+        <SessionTools sessionId={sessionId} isFolded={false} />
         <KeepAliveWorkSurface sessionId={sessionId} isActive />
         <DrawerHost />
       </>,
     );
     expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /^More panes/ }));
-    fireEvent.click(await screen.findByRole('menuitem', { name: /^Context/ }));
+    fireEvent.click(screen.getByTestId('pane-toggle-context'));
     await settle();
 
     expect(useAppStore.getState().drawer).toEqual(

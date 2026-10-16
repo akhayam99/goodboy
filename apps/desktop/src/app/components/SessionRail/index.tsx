@@ -12,6 +12,7 @@ import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { STORAGE_KEYS } from '../../../shared/lib/storage-keys';
 import { openLens } from '../../../features/session/openLens';
+import { SessionTools } from '../../../features/session/components/SessionTools';
 import { leaveRunLevel } from '../../../features/workflows/leaveRunLevel';
 import { useColumnPlace } from '../../hooks/useColumnPlace';
 import { useShellFolds } from '../../hooks/useShellFolds';
@@ -86,10 +87,16 @@ export const SessionRail = ({ session }: Props) => {
         <SessionRailToggle isFolded={fold.isFolded} onToggle={fold.toggle} />
       </div>
       {fold.isFolded ? (
-        <SessionRailIcons session={session} level={level} />
+        <>
+          <div className="flex min-h-0 flex-1 flex-col items-center overflow-hidden">
+            <SessionRailIcons session={session} level={level} />
+          </div>
+          <SessionTools sessionId={sessionId} isFolded />
+        </>
       ) : (
         <>
           <SessionRailLevels session={session} level={level} isStudioOver={isStudioOver} />
+          <SessionTools sessionId={sessionId} isFolded={false} />
           <div className="absolute inset-y-0 -right-1 z-10 flex">
             <ResizeHandle {...resizable.handleProps} ariaLabel="Resize session rail" drawsEdge />
           </div>
