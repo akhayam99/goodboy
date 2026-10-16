@@ -12,6 +12,7 @@ import { TASK_LIST_KIND } from './kinds/taskList';
 import { RUN_STEP_KIND } from './kinds/runStep';
 import { WORKFLOW_LIST_KIND } from './kinds/workflowList';
 import { NOTIFICATIONS_KIND } from './kinds/notifications';
+import { PROJECT_ASK_KIND } from './kinds/projectAsk';
 import { PROJECT_KIND } from './kinds/project';
 import { PULL_REQUEST_KIND } from './kinds/pullRequest';
 import { CHAT_KIND } from './kinds/chat';
@@ -63,6 +64,7 @@ const KINDS: ReadonlyArray<readonly [string, ReadonlyArray<AnyDefinition>]> = [
   ['runStep', RUN_STEP_KIND.actions],
   ['workflowList', WORKFLOW_LIST_KIND.actions],
   ['notifications', NOTIFICATIONS_KIND.actions],
+  ['projectAsk', PROJECT_ASK_KIND.actions],
   ['link', LINK_KIND.actions],
   ['review', REVIEW_KIND.actions],
   ['reviewComment', REVIEW_COMMENT_KIND.actions],

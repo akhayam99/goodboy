@@ -26,6 +26,7 @@ import type { TaskListFacts } from './kinds/taskList';
 import type { RunStepFacts } from './kinds/runStep';
 import type { WorkflowListFacts } from './kinds/workflowList';
 import type { NotificationsFacts } from './kinds/notifications';
+import type { ProjectAskFacts } from './kinds/projectAsk';
 import type { AppStore } from '../../store/store';
 import type { ShowToast } from '../../shared/components/Toast';
 import type { ShortcutId } from '../../shared/keyboard/registry';
@@ -387,6 +388,11 @@ export type NotificationsActionTarget = {
   readonly facts: NotificationsFacts;
 };
 
+export type ProjectAskActionTarget = {
+  readonly kind: 'projectAsk';
+  readonly facts: ProjectAskFacts;
+};
+
 export type LinkActionTarget = {
   readonly kind: 'link';
   readonly href: string;
@@ -453,6 +459,7 @@ export type ObjectTarget =
   | RunStepActionTarget
   | WorkflowListActionTarget
   | NotificationsActionTarget
+  | ProjectAskActionTarget
   | LinkActionTarget
   | ReviewActionTarget
   | ReviewCommentActionTarget

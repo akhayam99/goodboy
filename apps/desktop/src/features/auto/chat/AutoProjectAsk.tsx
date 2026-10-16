@@ -6,6 +6,7 @@ import { isReportedError } from '../../../store/slices/notifications/reportedErr
 import { projectById } from '../../../store/slices/projects/projectIndex';
 import { projectAnswerOf, type ProjectPick } from './projectAnswerOf';
 import type { ProjectAsk } from './projectAskOf';
+import { ProjectAskMenu } from '../../actions/ProjectAskMenu';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -185,20 +186,17 @@ export const AutoProjectAsk = ({ sessionId, rootAgentId, ask }: Props) => {
                 Another project…
               </Button>
             )}
-            <Button
-              variant="quiet"
-              size="sm"
-              disabled={isBusy}
-              onClick={() =>
-                void run({
-                  label: 'Discard request',
-                  work: () =>
-                    reply({ content: 'Discard that request. Start nothing.', word: 'Discarded' }),
-                })
-              }
-            >
-              Discard request
-            </Button>
+            <ProjectAskMenu
+              facts={{
+                isBusy,
+                onDiscard: () =>
+                  void run({
+                    label: 'Discard request',
+                    work: () =>
+                      reply({ content: 'Discard that request. Start nothing.', word: 'Discarded' }),
+                  }),
+              }}
+            />
           </span>
         }
       >
