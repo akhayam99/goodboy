@@ -121,6 +121,38 @@ step. The Settings navigation does not use it: its rows are one 28px line of
 icon and word (`SettingsNavRow` in the desktop app), a 6px `StatusDot` at the
 end names a row that needs attention, and the sentence lives on the page.
 
+## List grid
+
+Every list of records (agents, runs, tasks, checks, worktrees, sessions in the
+List view) is one `ListGrid`: a single CSS grid whose rows are `subgrid` rows,
+so every cell of a column starts and ends on the same x on every row. The
+caller declares its columns once (`ListGridColumn`: a fixed width in px, or
+`fill` for the one title column), and the grid adds a zero edge track on each
+side so the column gap is also the row's inner inset. Rows hold no flex of their
+own and no pill whose width varies: a role is a plain word in a fixed column, a
+state is a `StateDot` or a glyph in a 16px column.
+
+- `align: 'end'` with `isNumeric` right aligns a number in tabular figures, so
+  1:12 and 12:40 end on one edge.
+- `isTitle` marks the `fill` column: foreground, `text-row`. Other columns read
+  muted, or `tone: 'hint'` for ids and ages.
+- A row with `onSelect` is one button: the row is the action, it carries no
+  buttons of its own and nothing appears on hover. `isSelected` sets
+  `data-selected` and `aria-current`. Up and Down move focus between rows.
+- `rowHeight` is 32 by default and 28 in the sidebar.
+- `ListGridGroup` names a group in sentence case with its count in the last
+  column; a grouped grid (`isGrouped`) spaces its groups 16px apart, never with
+  a divider.
+
+`StateDot` is the one state mark of a list or a sidebar slot: a 6px
+`StatusDot` named by its state word (the tooltip and the accessible name),
+`running` (info, pulses under `motion-safe`), `needsYou` (warning), `failed`
+(danger), `unread` (primary), `done` (success) and `idle` (neutral). A count
+next to a door lives in the dot's tooltip, never as colored text.
+
+Scenes `c01-grid-list`, `c01-grid-groups`, `c01-grid-dots` and `c01-grid-type`
+show the grid, its groups, every dot and the two size specimen.
+
 ## Type scale
 
 Features name a **type role**, never a size, a leading, a weight and a
@@ -161,7 +193,8 @@ stylesheet loads, and the exported report embeds the same file as a data URI.
 | `text-chip`    | 11/16, 500, tabular       | the label inside a chip, a badge, a key cap, a count pill                              |
 | `text-code`    | mono 12/18                | branch, path, command, inline code                                                     |
 | `text-ui`      | 13/20                     | every line of a two size surface that is not its title or prose                        |
-| `text-read`    | 15/24                     | the title and the prose of a two size surface                                          |
+| `text-read`    | 15/24                     | the prose of a two size surface                                                        |
+| `text-lead`    | 15/24, 500                | the title of a two size surface                                                        |
 | `document`     | 15/25                     | the report document body (screen and file); a reading exception, not a `--text-*` role |
 
 Mono is for code: a branch, a path, a command, a sha and code. Money, counts,
@@ -180,10 +213,10 @@ outside `ArtifactDocument`.
 ### Two sizes per region
 
 A surface rebuilt for 0.27.0 reads in two sizes and two weights. The sidebar
-is 13 throughout. The page is 15 for its title and its prose (`text-read`) and
-13 for everything else (`text-ui`): list cells, labels, times, counts, state
-words. Weight is 400 or 500 (`font-medium` for a title, a row's name and a
-selected row). Hierarchy comes from the three grays of the text hierarchy, never
+is 13 throughout. The page is 15 for its title (`text-lead`) and its prose
+(`text-read`) and 13 for everything else: list cells, labels, times, counts,
+state words (`text-ui`, or `text-row` for a row's name and a group label).
+Weight is 400 or 500 and comes with the role, never a `font-*` utility. Hierarchy comes from the three grays of the text hierarchy, never
 from a third size. A branch or a path in such a surface is `text-ui font-mono`,
 listed in `scale-rules.mono-code.json` like any other code. Every list built on
 `ListGrid` is a two size surface, and `two-size-type.test.ts` fails when a file
@@ -192,8 +225,8 @@ surfaces that have not moved yet; a surface moves whole, never half.
 
 A role with no weight inherits one: `text-label font-medium` is a control label
 at 500, `text-chip` a chip. Weights are 400, 500 and 600, and
-600 belongs to display, title, heading and eyebrow. `text-row` and `text-chip`
-carry 500 themselves, so a weight utility next to a role is redundant, and
+600 belongs to display, title and heading. `text-row`, `text-lead`, `text-chip`
+and `text-eyebrow` carry 500 themselves, so a weight utility next to a role is redundant, and
 `forbidden-patterns.test.ts` counts it (`role-weight-override`). Tracking lives only inside
 the roles. A leading utility still composes with a role
 (`text-chip leading-none` for a one-line badge), because the role reads
