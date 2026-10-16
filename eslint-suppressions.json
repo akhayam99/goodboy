@@ -500,7 +500,7 @@
   },
   "apps/desktop/src/app/components/AppTopBar/LimitsStrip/LimitsBars.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
+      "count": 2
     }
   },
   "apps/desktop/src/app/components/AppTopBar/LimitsStrip/LimitsTooltip.test.tsx": {
@@ -697,11 +697,6 @@
   "apps/desktop/src/app/components/MockScene/scenes/PlannerTranscriptScene.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 9
-    }
-  },
-  "apps/desktop/src/app/components/MockScene/scenes/ProvidersScene.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
     }
   },
   "apps/desktop/src/app/components/MockScene/scenes/RunsOnScene.tsx": {
@@ -8175,17 +8170,9 @@
       "count": 2
     }
   },
-  "apps/desktop/src/shared/components/ProjectLinkList/ProjectRowActions.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/shared/components/ProjectLinkList/ProjectRowEditor.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 2
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
     }
   },
   "apps/desktop/src/shared/components/ProjectLinkList/ProjectStarToggle.tsx": {
