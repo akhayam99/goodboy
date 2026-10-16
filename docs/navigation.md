@@ -123,7 +123,12 @@ closes it. It has a mode slot (`PALETTE_MODES` in
 `features/palette/paletteModes.ts`): each mode draws its own input row
 (`PaletteInputRow`) and body, the overlay keeps the query and the scope, ⇥
 moves to the next mode with the same text, and `openPalette({ mode, query })`
-opens it on a mode. Commands is the first mode.
+opens it on a mode. Commands is the first mode. Its repo rows
+(`sources/repoEntries.ts`) pull the base branch of the linked repos through
+`checkout_update_base`; each row and each toast line names the branch it
+updates and where the checkout stays. Inside a session, New terminal reads
+"New terminal in this session" and opens a fresh tab in the session terminal
+drawer instead of the Terminal page.
 
 - **Scope first.** It opens on a scope chip that names the surface you can see:
   the focused commit row on the Commits tab, else the focused row of the Explore

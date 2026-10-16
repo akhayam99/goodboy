@@ -56,7 +56,7 @@ Jump between workspaces and projects from one search. Disconnecting a workspace 
 
 ### Repo status across projects
 
-See which repos are behind, uncommitted or diverged from the **N repos** popover in the board header. **Update** brings the safe ones up to date together, fast-forward only, and leaves the rest to you.
+See which repos are behind, uncommitted or diverged from the **N repos** popover in the board header. **Update** brings the safe ones up to date together, fast-forward only, and leaves the rest to you. ⌘K **Pull main in all linked repos** and **Pull <branch> in <repo>** update each repo's base branch (the project's base branch, else the remote default branch) without switching: a checkout on a feature branch stays there while the local base branch fast-forwards, a checkout on the base branch fast-forwards as **Update** does, and a base branch that would not fast-forward or is checked out in another worktree is skipped. A toast lists each repo with its branch and the title counts updated, skipped and failed.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-repo-status-dark.webp">

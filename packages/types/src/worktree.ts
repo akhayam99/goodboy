@@ -50,6 +50,12 @@ export type FastForwardResult = {
   readonly commitsPulled: number;
 };
 
+export type BaseUpdateResult = {
+  readonly base: string;
+  readonly checkoutBranch: string | null;
+  readonly commitsPulled: number;
+};
+
 export type WorktreeDiffScope = 'unstaged' | 'staged' | 'all';
 
 export type WorktreeInspection =

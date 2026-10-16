@@ -52,6 +52,7 @@ export const TerminalDetail = ({ model, isActive }: Props) => {
         onRestart={model.restartTab}
         onRename={model.renameTab}
         onNew={model.openDefault}
+        isShortcutEnabled={isActive}
       />
       <div data-terminal-body="" className="flex min-h-0 flex-1 flex-col px-3">
         <TerminalPane key={selected.id} tab={selected} isActive={isActive} />

@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { nextSessionId, nextWorkspaceId } from '@goodboy/types/testing';
+import { aSession, nextSessionId, nextWorkspaceId } from '@goodboy/types/testing';
 import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../store/storyHarness';
 import type { StoryStore } from '../../store/storyHarness';
 
@@ -79,6 +79,20 @@ describe('openSessionTerminal', () => {
     expect(store.getState().drawer?.kind).toBe('terminal');
   });
 
+  it('adds a tab at a worktree that already has a running terminal when fresh is asked', async () => {
+    const { openSessionTerminal } = await import('./openSessionTerminal');
+
+    openSessionTerminal({ state: store.getState(), sessionId: SESSION_ID, cwd: '/wt/ledger-core' });
+    openSessionTerminal({
+      state: store.getState(),
+      sessionId: SESSION_ID,
+      cwd: '/wt/ledger-core',
+      isFresh: true,
+    });
+
+    expect(store.getState().terminalTabs[SESSION_ID]).toHaveLength(2);
+  });
+
   it('starts a fresh terminal when the old one at that worktree has exited', async () => {
     const { openSessionTerminal } = await import('./openSessionTerminal');
 
@@ -103,7 +117,7 @@ describe('toggleSessionTerminal', () => {
     });
 
     toggleSessionTerminal({});
-    expect(store.getState().drawer?.kind).toBe('terminal');
+    await vi.waitFor(() => expect(store.getState().drawer?.kind).toBe('terminal'));
     expect(store.getState().terminalTabs[SESSION_ID]).toHaveLength(1);
 
     toggleSessionTerminal({});
@@ -111,14 +125,33 @@ describe('toggleSessionTerminal', () => {
     expect(store.getState().terminalTabs[SESSION_ID]).toHaveLength(1);
   });
 
-  it('does nothing on a session without a branch', async () => {
+  it('opens the drawer on the workspace folder of a session without a branch', async () => {
     const { toggleSessionTerminal } = await import('./toggleSessionTerminal');
     store.setState({
+      sessions: [aSession({ id: OTHER_SESSION_ID, workspaceId: WORKSPACE_ID })],
       currentSessionId: OTHER_SESSION_ID,
       sessionBranches: { [OTHER_SESSION_ID]: '' },
+      terminalFolderOverrides: { [WORKSPACE_ID]: '/work/harborline' },
     });
 
     toggleSessionTerminal({});
+    await vi.waitFor(() => expect(store.getState().drawer?.kind).toBe('terminal'));
+
+    expect(store.getState().terminalTabs[OTHER_SESSION_ID]?.[0]?.cwd).toBe('/work/harborline');
+  });
+
+  it('drops the open when the session changed while the folder loaded', async () => {
+    const { toggleSessionTerminal } = await import('./toggleSessionTerminal');
+    store.setState({
+      sessions: [aSession({ id: OTHER_SESSION_ID, workspaceId: WORKSPACE_ID })],
+      currentSessionId: OTHER_SESSION_ID,
+      sessionBranches: { [OTHER_SESSION_ID]: '' },
+      terminalFolderOverrides: { [WORKSPACE_ID]: '/work/harborline' },
+    });
+
+    toggleSessionTerminal({});
+    store.setState({ currentSessionId: SESSION_ID });
+    await new Promise((resolve) => setTimeout(resolve, 20));
 
     expect(store.getState().drawer).toBeNull();
   });

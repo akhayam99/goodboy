@@ -4,6 +4,8 @@ import { eventMatches } from '../../../../shared/keyboard/dispatcher';
 import { SHORTCUTS } from '../../../../shared/keyboard/registry';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import type { TerminalStudioModel } from '../../hooks/useTerminalStudioModel';
+import { pickerRowCount } from '../../pickerRowCount';
+import { TERMINAL_PICKER_EVENTS } from '../../terminalPickerEvents';
 import { TerminalDetail } from './TerminalDetail';
 import { TerminalRail } from './TerminalRail';
 
@@ -13,7 +15,19 @@ type Props = {
 };
 
 export const TerminalStudioBody = ({ model, isActive }: Props) => {
-  useShortcut('terminal.newHere', model.openDefault, isActive);
+  const hasPicker =
+    model.groups.length > 0 && pickerRowCount({ clusters: model.pickerClusters }) > 1;
+  useShortcut(
+    'terminal.newHere',
+    () => {
+      if (hasPicker) {
+        window.dispatchEvent(new CustomEvent(TERMINAL_PICKER_EVENTS.page));
+        return;
+      }
+      model.openDefault();
+    },
+    isActive,
+  );
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     if (
       !isActive ||
