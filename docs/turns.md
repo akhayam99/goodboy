@@ -473,6 +473,50 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   `cli_too_old` item, even when the turn state was left `running` without a
   `done` (`isTurnThinking`).
 
+## Live state at the tail
+
+The live state of an operation is said once, as the last line of the content
+the user reads: `TailLine` in `features/live-state/`. It knows no operation:
+it takes `TailFacts` (`state`, `phrase`, `startedAt`, `actions`) and draws the
+glyph, the phrase, the clock and the actions. Each operation has one adapter in
+`features/live-state/adapters/` that builds those facts from its owner of
+truth, and a header word or a rail row of the same host reads the same
+adapter.
+
+| Adapter              | Operation                               |
+| -------------------- | --------------------------------------- |
+| `agentTurnLive`      | a plain agent or chat turn              |
+| `autoTreeLive`       | Auto's tree phase and its root turn     |
+| `autoChildLive`      | a child Auto started                    |
+| `checkFixLive`       | a CI fix on one check                   |
+| `workflowRunLive`    | a preset run step                       |
+| `fixRunLive`         | a fix run on review comments            |
+| `cleanupLive`        | closing a merged worktree               |
+| `draftStartLive`     | starting a session from a draft         |
+| `processStopLive`    | stopping a process from Monitoring      |
+| `historyRewriteLive` | planning and applying a history rewrite |
+
+Rules the adapters hold, each with a test in `adapters.test.ts`:
+
+- The working phrase comes from the last tool event, never from model text and
+  never the command text: "Running pnpm in payments-api", "Reading export.ts",
+  "Searching the code", "Writing the answer" (`workingPhraseOf`).
+- The clock counts from the real start of the state (`startedAt` of the turn
+  or the step), `m:ss` under an hour and `1h 04m` above, and only `working`,
+  `waiting` and `queued` tick.
+- A state that waits for the user (`paused`, `failed`, `stopped`) puts its one
+  forward move first as a small secondary button; other actions are quiet text
+  actions.
+- Stop names its scope: Stop (a turn), Stop agent (a child or a fix), Stop
+  step (a run step), Stop Auto and its agents. Stopping offers no Stop.
+- A stopped or failed Auto child offers Retry through Auto, never Continue.
+- A finished turn draws no tail: it is read from its summary line.
+
+The terminal has no tail by design (its output is its tail), and dependency
+setup has no adapter until its state exists. Hosts move onto the adapters one
+by one; until then today's thinking line and Auto waiting line stay. Scenes
+`c01-tail-*` show every state.
+
 ## Turn events
 
 `TurnEvent` and `ProviderUsage` live in `@goodboy/types`, so the core parsers

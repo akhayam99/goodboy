@@ -146,6 +146,14 @@ c01-grid-dots
 c01-grid-groups
 c01-grid-list
 c01-grid-type
+c01-tail-cleanup
+c01-tail-failed
+c01-tail-paused
+c01-tail-queued
+c01-tail-run
+c01-tail-stopped
+c01-tail-waiting
+c01-tail-working
 card-rails
 changelog
 chat-empty-noprojects
