@@ -41,7 +41,7 @@ export const RunsGridRow = ({
       ariaLabel={`Open ${name}, ${facts.word}`}
       onSelect={onOpen}
       cells={[
-        <StateDot state={facts.dot} label={facts.word} />,
+        <StateDot state={facts.dot} label={facts.word} isLive />,
         name,
         facts.word,
         facts.progress,

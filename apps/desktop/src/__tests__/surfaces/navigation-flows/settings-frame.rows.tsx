@@ -11,7 +11,7 @@ import {
   type Ctx,
   type Row,
   WAIT,
-  band,
+  studio,
   both,
   click,
   clickButton,

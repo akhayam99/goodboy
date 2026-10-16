@@ -58,7 +58,7 @@ describe('c13 terminal scenes', () => {
     }
   });
 
-  it('lists one group per session with its terminal count, the workspace folder last', async () => {
+  it('lists one group per session with its terminal count from two, the workspace folder last', async () => {
     await renderScene('c13-terminal');
 
     const headings = within(grid()).getAllByRole('heading', { level: 3 });
@@ -70,7 +70,7 @@ describe('c13 terminal scenes', () => {
     const counts = headings.map(
       (heading) => heading.closest('li')?.querySelector('[data-list-grid-count]')?.textContent,
     );
-    expect(counts).toEqual(['4', '1', '1']);
+    expect(counts).toEqual(['4', undefined, undefined]);
   });
 
   it('draws one line per worktree with a running dot and no facts of the session', async () => {

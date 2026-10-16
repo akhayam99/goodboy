@@ -21,8 +21,8 @@ type Size = Layout;
 const HEADING_TAG = { 2: 'h2', 3: 'h3' } as const;
 
 const PAGE_CLASSES = {
-  root: 'flex flex-col items-center gap-4 px-6 py-10 text-center',
-  content: 'flex flex-col items-center gap-1',
+  root: 'flex flex-col items-start gap-3 py-6 text-left',
+  content: 'flex flex-col items-start gap-1',
   title: 'text-heading text-foreground',
   description: 'max-w-sm text-prose text-muted-foreground',
 } as const;
