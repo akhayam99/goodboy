@@ -65,13 +65,6 @@ const h = vi.hoisted(() => ({
   sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
 }));
 
-vi.mock('../../../auto/useConfirmStartMode', () => ({
-  useConfirmStartMode:
-    () =>
-    async ({ isShown }: { readonly isShown: boolean }) =>
-      !isShown,
-}));
-
 vi.mock('../../../auto/useIsAutoOn', () => ({
   useIsAutoOn: () => false,
 }));

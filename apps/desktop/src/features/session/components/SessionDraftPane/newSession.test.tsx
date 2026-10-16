@@ -12,13 +12,6 @@ vi.mock('../../../auto/useIsAutoOn', () => ({
   useIsAutoOn: () => experiment.isOn,
 }));
 
-vi.mock('../../../auto/useConfirmStartMode', () => ({
-  useConfirmStartMode:
-    () =>
-    async ({ isShown }: { readonly isShown: boolean }) =>
-      experiment.isOn === isShown,
-}));
-
 vi.mock('../../../auto/useAutoTreeLimit', () => ({
   useAutoTreeLimit: () => ({
     usd: 5,

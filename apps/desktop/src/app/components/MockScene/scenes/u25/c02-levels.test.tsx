@@ -122,7 +122,7 @@ describe('the c02 sidebar and session rail scenes', () => {
     for (const add of adds) {
       expect(add.textContent).toBe('Add');
       expect(add.getAttribute('data-variant')).toBe('quiet');
-      expect(add.className).not.toMatch(/\bborder-border/);
+      expect(add.hasAttribute('data-level-add')).toBe(true);
     }
   });
 
