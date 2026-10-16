@@ -59,8 +59,8 @@ describe('the notice of a refused hand over', () => {
     expect(waitingTextOf({ view: aView({ phase: 'merging' }) })).toBe(
       'Auto is reading the results',
     );
-    expect(
-      waitingTextOf({ view: aView({ phase: 'deciding', pendingRefusal: refusal }) }),
-    ).toBeNull();
+    expect(waitingTextOf({ view: aView({ phase: 'deciding', pendingRefusal: refusal }) })).toBe(
+      'Deciding what to do next',
+    );
   });
 });

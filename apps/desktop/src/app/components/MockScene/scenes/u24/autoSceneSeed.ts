@@ -476,7 +476,7 @@ export const autoSceneOf = ({ state }: SceneParams): AutoSceneData => {
         }),
         agents: [root('running'), planner('running')],
         events: first,
-        rootTurn: { kind: 'running', runId: RUN_ONE, startedAt: at({ time: '12:04:00' }) },
+        rootTurn: IDLE,
         hasPlanArtifact: false,
       };
     case 'plan':
@@ -523,7 +523,7 @@ export const autoSceneOf = ({ state }: SceneParams): AutoSceneData => {
           }),
         ],
         events: [...first, ...second, ...approved],
-        rootTurn: { kind: 'running', runId: RUN_THREE, startedAt: at({ time: '12:09:00' }) },
+        rootTurn: IDLE,
         hasPlanArtifact: true,
       };
     case 'revising':

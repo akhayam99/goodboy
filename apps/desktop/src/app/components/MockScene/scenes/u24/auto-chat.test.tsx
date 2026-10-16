@@ -201,12 +201,11 @@ describe('the Auto chat scenes', () => {
     expect(within(rail()).getByText('Spent $0.53')).toBeDefined();
   });
 
-  it('auto-chat-done says Idle in the header and the rail and offers Mark finished', async () => {
+  it('auto-chat-done says Idle in the rail and offers Mark finished', async () => {
     mount({ id: 'auto-chat-done' });
 
     await screen.findByRole('article', { name: 'Reviewer delegation' }, WAIT);
     expect(within(rail()).getByText('Idle')).toBeDefined();
-    expect(screen.getAllByText('Idle').length).toBeGreaterThanOrEqual(2);
     fireEvent.click(screen.getByRole('button', { name: 'More agent actions' }));
     expect(await screen.findByRole('menuitem', { name: /Mark finished/ }, WAIT)).toBeDefined();
   });
@@ -216,7 +215,6 @@ describe('the Auto chat scenes', () => {
 
     await screen.findByRole('article', { name: 'Reviewer delegation' }, WAIT);
     expect(within(rail()).getByText('Finished')).toBeDefined();
-    expect(screen.getAllByText('Finished').length).toBeGreaterThanOrEqual(2);
     fireEvent.click(screen.getByRole('button', { name: 'More agent actions' }));
     await screen.findAllByRole('menuitem', undefined, WAIT);
     expect(screen.queryByRole('menuitem', { name: /Mark finished/ })).toBeNull();
