@@ -11,7 +11,7 @@ const VIEW: PullRequestView = {
   url: 'https://github.com/harborline/payments-api/pull/318',
   state: 'open',
   isDraft: false,
-  author: { login: 'nadia-p', name: 'Nadia Petrova', avatarUrl: null },
+  author: { login: 'nadia-p', name: 'Harborline Dev', avatarUrl: null },
   baseBranch: 'main',
   headBranch: 'hl/fix-duplicate-credit',
   headSha: 'a41c9e2b7d3',

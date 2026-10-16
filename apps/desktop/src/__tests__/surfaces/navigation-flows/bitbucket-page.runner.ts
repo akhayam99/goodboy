@@ -25,7 +25,7 @@ const NADIA = {
   uuid: '{nadia-uuid}',
   accountId: null,
   nickname: 'nadia-p',
-  displayName: 'Nadia Petrova',
+  displayName: 'Harborline Dev',
   avatarUrl: null,
 };
 
@@ -75,7 +75,7 @@ const pullRequest = () => ({
         uuid: '{kenji-uuid}',
         accountId: null,
         nickname: 'kenji-w',
-        displayName: 'Kenji Watanabe',
+        displayName: 'Acme Lead',
         avatarUrl: null,
       },
       role: 'REVIEWER',

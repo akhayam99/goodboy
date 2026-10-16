@@ -22,8 +22,8 @@ const BASE_MR: Mr = {
   createdAt: '2026-09-04T08:00:00Z',
   sha: 'a41c9e2b7d3f',
   mergedAt: null,
-  author: { id: 3, username: 'nadia-p', name: 'Nadia Petrova', avatarUrl: null },
-  reviewers: [{ id: 7, username: 'kenji-w', name: 'Kenji Watanabe', avatarUrl: null }],
+  author: { id: 3, username: 'nadia-p', name: 'Harborline Dev', avatarUrl: null },
+  reviewers: [{ id: 7, username: 'kenji-w', name: 'Acme Lead', avatarUrl: null }],
   headPipeline: { id: 9001, status: 'success', webUrl: null },
 };
 
@@ -32,7 +32,7 @@ const APPROVALS = {
   approvalsLeft: 0,
   userHasApproved: false,
   userCanApprove: true,
-  approvedBy: [{ user: { id: 7, username: 'kenji-w', name: 'Kenji Watanabe', avatarUrl: null } }],
+  approvedBy: [{ user: { id: 7, username: 'kenji-w', name: 'Acme Lead', avatarUrl: null } }],
 };
 
 const CHECKS = {

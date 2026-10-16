@@ -295,7 +295,7 @@ const viewOf = ({ shape }: { readonly shape: Shape }): PullRequestView | null =>
     url: pr.url,
     state: pr.state,
     isDraft: pr.isDraft,
-    author: { login: 'nadia-p', name: 'Nadia Petrova', avatarUrl: null },
+    author: { login: 'nadia-p', name: 'Harborline Dev', avatarUrl: null },
     baseBranch: pr.baseBranch,
     headBranch: pr.headBranch,
     headSha: 'a41c9e2b7d3',

@@ -24,6 +24,7 @@ import { ArtifactStudio } from '../../../../features/artifacts/components/Artifa
 import type { ScriptGroup, ScriptRunRecord } from '../../../../features/scripts/scripts';
 import { discoveredScriptId } from '../../../../features/scripts/scripts';
 import { useAppStore } from '../../../../store';
+import { branchPlace } from '../../../../store/slices/navigation/place';
 import type { DiscoveredScriptScan } from '../../../../store/slices/scripts/state';
 import { ShellFrame, seedShellChrome } from './shellChrome';
 import {
@@ -926,6 +927,10 @@ export const ResolvePublishBlockedScene = () => {
 
   useEffect(() => {
     seedReviewScene({ preview: BLOCKED_PREVIEW });
+    useAppStore.getState().navigate({
+      to: branchPlace({ sessionId: RESOLVE_SESSION.id, tab: 'comments' }),
+      mode: 'replace',
+    });
     setIsReady(true);
   }, []);
 

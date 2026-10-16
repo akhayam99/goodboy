@@ -62,7 +62,7 @@ const HOST: DiffThread = {
   anchor: { side: 'new', lineNumber: 12 },
   body: 'This adds a line to every row. Is that intended?',
   tone: 'neutral',
-  author: 'Priya Nair',
+  author: 'Cascadia Ops',
   authorAvatarUrl: null,
   isAgent: false,
   source: 'host',
@@ -72,7 +72,7 @@ const HOST: DiffThread = {
   isResolved: false,
   replies: [
     { id: 'r1', author: 'Maya Ortiz', body: 'Yes, the credit note needs the extra line.' },
-    { id: 'r2', author: 'Priya Nair', body: 'Fine, add it to the story then.' },
+    { id: 'r2', author: 'Cascadia Ops', body: 'Fine, add it to the story then.' },
   ],
   canReply: true,
   canResolve: true,
@@ -115,7 +115,7 @@ afterEach(() => {
 const noteCard = (): HTMLElement => screen.getByRole('article', { name: /^Note from You/ });
 
 const hostCard = (): HTMLElement =>
-  screen.getByRole('article', { name: /^On GitHub from Priya Nair/ });
+  screen.getByRole('article', { name: /^On GitHub from Cascadia Ops/ });
 
 describe('a note and a host thread on one file', () => {
   it('draw different chips and are both reachable by role', () => {
@@ -169,7 +169,7 @@ describe('a host thread in Files', () => {
     renderWithMenu(<DiffView files={[FILE]} comments={comments} />);
 
     fireEvent.click(within(hostCard()).getByRole('button', { name: 'Reply' }));
-    const box = screen.getByRole('textbox', { name: 'Reply to Priya Nair' });
+    const box = screen.getByRole('textbox', { name: 'Reply to Cascadia Ops' });
     fireEvent.change(box, { target: { value: 'Done in 9e4c1a7' } });
     fireEvent.keyDown(box, { key: 'Enter', metaKey: true });
 
@@ -186,12 +186,12 @@ describe('a host thread in Files', () => {
     renderWithMenu(<DiffView files={[FILE]} comments={commentsWith([HOST], { onReply })} />);
 
     fireEvent.click(within(hostCard()).getByRole('button', { name: 'Reply' }));
-    const box = screen.getByRole('textbox', { name: 'Reply to Priya Nair' });
+    const box = screen.getByRole('textbox', { name: 'Reply to Cascadia Ops' });
     fireEvent.change(box, { target: { value: 'Done' } });
     fireEvent.keyDown(box, { key: 'Enter', metaKey: true });
 
     expect((await screen.findByRole('alert')).textContent).toContain('GitHub refused the reply');
-    expect(screen.getByRole('textbox', { name: 'Reply to Priya Nair' })).toBeDefined();
+    expect(screen.getByRole('textbox', { name: 'Reply to Cascadia Ops' })).toBeDefined();
   });
 
   it('resolves through the resolve verb', async () => {
@@ -233,7 +233,7 @@ describe('a host thread in Files', () => {
       />,
     );
 
-    const card = screen.getByRole('article', { name: /^On GitHub from Priya Nair, resolved/ });
+    const card = screen.getByRole('article', { name: /^On GitHub from Cascadia Ops, resolved/ });
     expect(card.getAttribute('data-thread-state')).toBe('resolved');
     expect(within(card).getByText('Resolved')).toBeDefined();
   });

@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BranchPage } from '../../../../../features/branch/components/BranchPage';
+import { useAppStore } from '../../../../../store';
+import { branchPlace } from '../../../../../store/slices/navigation/place';
 import { WorktreeSceneColumn } from '../WorktreeSceneColumn';
 import { SESSION } from '../resolveSeed';
 import { WORKSPACE_SIBLINGS, seedWorkspaceChrome } from '../audit/workspaceChrome';
@@ -17,6 +19,10 @@ export const CommentsScene = ({ variant }: Props) => {
     seedCommentsScene({ variant });
     if (variant === 'push-failed') {
       seedWorkspaceChrome({ session: SESSION, siblings: WORKSPACE_SIBLINGS });
+      useAppStore.getState().navigate({
+        to: branchPlace({ sessionId: SESSION.id, tab: 'comments' }),
+        mode: 'replace',
+      });
     }
     setIsReady(true);
   }, [variant]);
