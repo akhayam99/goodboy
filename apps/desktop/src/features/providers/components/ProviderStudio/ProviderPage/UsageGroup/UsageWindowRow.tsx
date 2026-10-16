@@ -3,7 +3,7 @@ import { cn } from '@goodboy/ui';
 import { formatLimitReset, formatTimeUntil } from '../../../../limits/formatLimitReset';
 import { formatUsedPercent } from '../../../../limits/formatUsedPercent';
 import { limitWindowLabel } from '../../../../limits/limitWindowLabel';
-import { WINDOW_TONE_FILL, WINDOW_TONE_TEXT, windowTone } from '../../../../limits/windowTone';
+import { WINDOW_TONE_FILL, windowTone } from '../../../../limits/windowTone';
 
 type Props = {
   readonly window: ProviderLimitWindow;
@@ -38,7 +38,7 @@ export const UsageWindowRow = ({ window, siblings, nowMs }: Props) => {
           />
         )}
       </span>
-      <span className={cn('tabular-nums', WINDOW_TONE_TEXT[tone])}>
+      <span className="tabular-nums text-muted-foreground">
         {window.usedFraction === null
           ? 'Within limits'
           : `${formatUsedPercent({ usedFraction: window.usedFraction })} used`}

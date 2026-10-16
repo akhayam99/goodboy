@@ -21,10 +21,15 @@ type AttemptParams = {
 };
 
 const removeIntentOf = ({
+  folder,
   status,
 }: {
+  readonly folder: StorageFolder;
   readonly status: StorageFolderStatus;
 }): WorktreeRemoveIntent | null => {
+  if (status === 'safe' && folder.origin !== 'in-use') {
+    return 'safe';
+  }
   if (status === 'dirty' || status === 'unavailable') {
     return 'force';
   }
@@ -51,7 +56,7 @@ export const useWorktreeActionTarget = ({ folder, status, onRemove }: Params) =>
       path: folder.path,
       isInUse: folder.origin === 'in-use',
       isKept: storageFolderBucket({ folder, now: Date.now() }) === 'kept',
-      removeIntent: removeIntentOf({ status }),
+      removeIntent: removeIntentOf({ folder, status }),
       onReveal: () =>
         attempt({
           title: "Couldn't show this folder",

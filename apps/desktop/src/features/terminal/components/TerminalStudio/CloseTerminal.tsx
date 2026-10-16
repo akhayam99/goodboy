@@ -44,9 +44,9 @@ export const CloseTerminal = ({
     <ConfirmPopover
       role="danger"
       icon={<TerminalSquare size={ICON_SIZE.row} aria-hidden />}
-      title={
-        command === null ? 'A command is running. Close it?' : `${command} is running. Close it?`
-      }
+      title={`${name} is running. Close it?`}
+      {...(command !== null && command !== name && { description: command })}
+      align="start"
       confirmLabel="Close"
       cancelLabel="Keep"
       isOpen={isArmed}

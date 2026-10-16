@@ -12,6 +12,7 @@ export type ExploreFileFacts = {
   readonly onAsk: (() => void) | null;
   readonly onOpen: (() => void) | null;
   readonly onReveal: (() => void) | null;
+  readonly onOpenInFiles?: (() => void) | null;
 };
 
 export const EXPLORE_FILE_KIND: ObjectKindDefinition<ExploreFileActionTarget, ExploreFileFacts> = {
@@ -28,6 +29,14 @@ export const EXPLORE_FILE_KIND: ObjectKindDefinition<ExploreFileActionTarget, Ex
         facts.editorLabel === null ? 'Open with the default app' : `Open in ${facts.editorLabel}`,
       when: ({ facts }) => facts.openLabel !== null && facts.onOpen !== null,
       run: ({ facts }) => facts.onOpen?.(),
+    },
+    {
+      id: 'exploreFile.openInFiles',
+      label: 'Open in Files',
+      icon: CONCEPT_ICONS.diff,
+      group: 'open',
+      when: ({ facts }) => facts.onOpenInFiles != null,
+      run: ({ facts }) => facts.onOpenInFiles?.(),
     },
     {
       id: 'exploreFile.reveal',

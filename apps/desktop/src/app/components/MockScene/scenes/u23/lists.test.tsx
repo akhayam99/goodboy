@@ -133,7 +133,7 @@ describe('the u23 list scenes', () => {
     expect(within(list).queryByRole('heading', { name: /^Ran\b/ })).toBeNull();
   });
 
-  it('keeps Run and Stop visible on one right edge and the overflow on hover', async () => {
+  it('keeps Run and Stop visible on one right edge and no overflow on the rows', async () => {
     renderScene('scripts-rows');
 
     const stops = await screen.findAllByRole('button', { name: /^Stop / });
@@ -143,8 +143,7 @@ describe('the u23 list scenes', () => {
     }
     const run = screen.getAllByRole('button', { name: /^Run / })[0]!;
     expect(run.closest('[data-row-secondary]')).toBeNull();
-    const more = screen.getAllByRole('button', { name: /^More for / })[0]!;
-    expect(more.closest('[data-row-secondary=""]')).not.toBeNull();
+    expect(screen.queryAllByRole('button', { name: /^More for / })).toHaveLength(0);
     expect(screen.getAllByRole('button', { name: /scripts again$/ })).toHaveLength(1);
   });
 
@@ -153,7 +152,7 @@ describe('the u23 list scenes', () => {
     renderScene('scripts-empty-group');
     await settle();
 
-    expect(screen.getByRole('region', { name: /^Suggested of /u })).toBeDefined();
+    expect(screen.queryByRole('region', { name: /^Suggested of /u })).toBeNull();
     expect(screen.queryByText(/Settings/)).toBeNull();
     const picker = screen.getByRole('region', { name: 'Scripts of northwind-storefront' });
     expect(within(picker).getAllByRole('button', { name: /^Pin / }).length).toBeGreaterThan(0);
@@ -167,7 +166,9 @@ describe('the u23 list scenes', () => {
     });
     expect(open).toBeDefined();
     fireEvent.click(open);
-    expect(open.getAttribute('aria-expanded')).toBe('true');
+    expect(
+      await screen.findByRole('region', { name: 'Scripts of northwind-storefront' }),
+    ).toBeDefined();
   });
 });
 

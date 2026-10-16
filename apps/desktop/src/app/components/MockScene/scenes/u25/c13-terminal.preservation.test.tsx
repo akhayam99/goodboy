@@ -47,23 +47,21 @@ const renderTerminal = async (): Promise<void> => {
 const grid = (): HTMLElement => screen.getByRole('list', { name: 'Terminals' });
 
 describe('SPEC3 9.8 Terminal page rows stay reachable from the new list', () => {
-  it('keeps Open session for a session group, beside its name', async () => {
+  it('keeps Open session for a session group in the tab strip menu, not on the label', async () => {
     await renderTerminal();
 
-    const group = within(grid()).getByRole('list', { name: 'Ledger export speed up' });
-    const head = group.closest('li');
-    expect(
-      within(head ?? grid()).getByRole('button', { name: 'Open session Ledger export speed up' }),
-    ).toBeDefined();
+    expect(within(grid()).queryByRole('button', { name: /^Open session / })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'More on payments-api' }));
+    expect(screen.getByRole('menuitem', { name: 'Open session' })).toBeDefined();
   });
 
-  it('drops the group facts (cut C3) and moves the terminal count to the group', async () => {
+  it('drops the group facts (cut C3) and counts the rows of the group beside its label', async () => {
     await renderTerminal();
 
     expect(within(grid()).queryByText('HBL-412')).toBeNull();
     expect(within(grid()).queryByText(/\+117/)).toBeNull();
     const heading = within(grid()).getByRole('heading', { name: 'Ledger export speed up' });
-    expect(heading.closest('li')?.querySelector('[data-list-grid-count]')?.textContent).toBe('4');
+    expect(heading.closest('li')?.querySelector('[data-list-grid-count]')?.textContent).toBe('2');
   });
 
   it('moves the header facts to the tab strip menu', async () => {

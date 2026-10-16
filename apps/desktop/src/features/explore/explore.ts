@@ -4,7 +4,7 @@ export type ExploreEntry = {
   readonly name: string;
   readonly relPath: string;
   readonly isDir: boolean;
-  readonly sizeBytes: number;
+  readonly sizeBytes: number | null;
   readonly modifiedAt: string | null;
 };
 

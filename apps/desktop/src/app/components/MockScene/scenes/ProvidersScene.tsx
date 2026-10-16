@@ -1,12 +1,8 @@
-import { useEffect, useState } from 'react';
-import type { IsoDateTime, OverrideSettings, WorkspaceId } from '@goodboy/types';
-import { SettingsStudio } from '../../../../features/settings/components/SettingsStudio';
+import type { IsoDateTime, OverrideSettings } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
-import { StudioFrame } from './StudioFrame';
-import { mockWorkspace, seedStudioChrome } from './shellChrome';
-
-const WORKSPACE_ID = 'mock-providers-workspace-cascadia' as WorkspaceId;
+import { SettingsFrame } from './audit/SettingsFrame';
+import { SETTINGS_WORKSPACE } from './audit/settingsSeed';
 
 const CAPABILITIES = {
   models: [],
@@ -119,44 +115,14 @@ const WORKSPACE_OVERRIDES: OverrideSettings = {
   defaultBranchTemplate: null,
 };
 
-const WORKSPACE = mockWorkspace({ id: WORKSPACE_ID, name: 'Cascadia' });
-
 const seedProvidersScene = (): void => {
-  seedStudioChrome();
   useAppStore.setState({
-    workspaces: [WORKSPACE],
-    currentWorkspaceId: WORKSPACE_ID,
-    sessions: [],
     providers: PROVIDERS,
-    workspaceOverrides: { [WORKSPACE_ID]: WORKSPACE_OVERRIDES },
+    workspaceOverrides: { [SETTINGS_WORKSPACE.id]: WORKSPACE_OVERRIDES },
     refreshProviders: async () => undefined,
   });
 };
 
-export const ProvidersScene = () => {
-  const [isReady, setIsReady] = useState(false);
-
-  useEffect(() => {
-    seedProvidersScene();
-    setIsReady(true);
-  }, []);
-
-  if (!isReady) {
-    return null;
-  }
-
-  return (
-    <StudioFrame
-      target={{ place: 'settings', tool: null }}
-      main={(columnSlot) => (
-        <SettingsStudio
-          currentWorkspace={WORKSPACE}
-          focus={{ scope: 'providers' }}
-          onScopeChange={() => undefined}
-          onClose={() => undefined}
-          columnSlot={columnSlot}
-        />
-      )}
-    />
-  );
-};
+export const ProvidersScene = () => (
+  <SettingsFrame focus={{ scope: 'providers' }} seed={seedProvidersScene} />
+);

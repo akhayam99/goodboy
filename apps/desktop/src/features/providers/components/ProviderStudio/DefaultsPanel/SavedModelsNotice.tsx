@@ -38,8 +38,7 @@ export const SavedModelsNotice = ({ workspaceId }: Props) => {
       tone="info"
       placement="inline"
       role="status"
-      title={`Model settings ${pluralize(entries.length, 'project')} had are saved`}
-      body="They no longer apply."
+      title={`Saved model settings from ${pluralize(entries.length, 'project')} no longer apply.`}
       actions={
         <Button
           variant="ghost"

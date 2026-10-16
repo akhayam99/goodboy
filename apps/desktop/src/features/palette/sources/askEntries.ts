@@ -10,7 +10,7 @@ export const ASK_KEYS: ReadonlySet<string> = new Set([ASK_SESSION_KEY, ASK_IN_CH
 
 const ASK_SESSION_LABEL = 'Ask about this session';
 
-const ASK_IN_CHAT_LABEL = 'Ask in Chat';
+const ASK_IN_CHAT_LABEL = 'Ask in chat';
 
 type Params = {
   readonly query: string;

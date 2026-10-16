@@ -74,6 +74,7 @@ export const ScriptRunDrawer = ({ sessionId, scriptKey, mountId, back, onClose }
       canRun={scriptRun.canRun}
       blockedReason={blockedReason}
       label={record === null ? 'Run' : 'Run again'}
+      isPrimary={record === null}
       onRun={scriptRun.run}
     />
   );
@@ -81,6 +82,7 @@ export const ScriptRunDrawer = ({ sessionId, scriptKey, mountId, back, onClose }
   return (
     <DrawerFrame
       title={title}
+      {...(resolved !== null && { count: resolved.group.projectName })}
       icon={SquareTerminal}
       iconClassName="text-faint-foreground"
       action={action}
@@ -101,8 +103,7 @@ export const ScriptRunDrawer = ({ sessionId, scriptKey, mountId, back, onClose }
         <ScriptRunMeta
           status={scriptRun.status}
           elapsedMs={scriptRun.elapsedMs}
-          projectName={resolved?.group.projectName ?? null}
-          branch={resolved?.group.branch ?? null}
+          branch={resolved === null || resolved.group.branch === '' ? null : resolved.group.branch}
         />
         {command === null ? null : <ScriptCommandDisclosure command={command} />}
         <ScriptRunLog

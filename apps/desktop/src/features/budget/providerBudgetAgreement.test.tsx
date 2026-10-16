@@ -145,7 +145,7 @@ describe.each(SCENARIOS)('$pctUsed% of the cap spent', ({ spentUsd, pctUsed }) =
   });
 
   it('shows the same percentage on the provider page', async () => {
-    render(<SpendInGoodboy providerId="anthropic" />);
+    render(<SpendInGoodboy providerId="anthropic" hasImpactLink />);
 
     await waitFor(() => expect(screen.getByText(new RegExp(`${pctUsed}% used`))).toBeDefined());
   });

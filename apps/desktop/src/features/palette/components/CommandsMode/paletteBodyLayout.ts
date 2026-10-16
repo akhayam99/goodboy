@@ -16,21 +16,13 @@ export const paletteBodyLayoutOf = ({ hasPreview }: LayoutParams): Layout => ({
   previewShown: hasPreview,
 });
 
-type FactParams = {
+type PreviewParams = {
   readonly entry: PaletteEntry;
-  readonly subject: string | null;
 };
 
-export const previewFactCountOf = ({ entry, subject }: FactParams): number => {
-  const facts = [
-    entry.target !== undefined,
-    entry.kind === 'artifact',
-    entry.kind === 'verb'
-      ? subject !== null
-      : (entry.tag ?? '') !== '' || (entry.detail ?? '') !== '',
-    entry.shortcut !== undefined,
-    entry.action?.blockedReason != null,
-    entry.action?.confirm != null,
-  ];
-  return facts.reduce((count, isFact) => (isFact ? count + 1 : count), 0);
-};
+const OWN_FACT_KINDS: ReadonlySet<string> = new Set(['session', 'agent', 'artifact']);
+
+export const hasOwnPreviewOf = ({ entry }: PreviewParams): boolean =>
+  OWN_FACT_KINDS.has(entry.kind) ||
+  entry.action?.blockedReason != null ||
+  entry.action?.confirm != null;

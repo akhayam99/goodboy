@@ -58,10 +58,10 @@ describe('c13 terminal scenes', () => {
     }
   });
 
-  it('lists one group per session with its terminal count from two, the workspace folder last', async () => {
+  it('lists one group per session with its row count from two, the workspace folder last', async () => {
     await renderScene('c13-terminal');
 
-    const headings = within(grid()).getAllByRole('heading', { level: 3 });
+    const headings = within(grid()).getAllByRole('heading', { level: 2 });
     expect(headings.map((heading) => heading.textContent)).toEqual([
       'Ledger export speed up',
       'Northwind webhook retries',
@@ -70,7 +70,7 @@ describe('c13 terminal scenes', () => {
     const counts = headings.map(
       (heading) => heading.closest('li')?.querySelector('[data-list-grid-count]')?.textContent,
     );
-    expect(counts).toEqual(['4', undefined, undefined]);
+    expect(counts).toEqual(['2', undefined, undefined]);
   });
 
   it('draws one line per worktree with a running dot and no facts of the session', async () => {
@@ -101,23 +101,24 @@ describe('c13 terminal scenes', () => {
     expect(screen.getByRole('menuitem', { name: 'Open session' })).toBeDefined();
   });
 
-  it('gives the workspace folder a single Copy folder path and no Open session', async () => {
+  it('gives the workspace folder the same strip menu with Copy folder path and no Open session', async () => {
     await renderScene('c13-terminal-workspace');
     await settle(400);
 
-    expect(screen.getByRole('button', { name: 'Copy folder path' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: /^More on/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Copy folder path' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /^More on/ }));
+    expect(screen.getByRole('menuitem', { name: 'Copy folder path' })).toBeDefined();
+    expect(screen.queryByRole('menuitem', { name: 'Open session' })).toBeNull();
     expect(within(grid()).queryByRole('button', { name: /^Open session Workspace/ })).toBeNull();
   });
 
-  it('opens the session from the action beside its group', async () => {
+  it('opens the session from the tab strip menu', async () => {
     const navigate = vi.fn();
     store.setState({ navigate });
     await renderScene('c13-terminal');
 
-    fireEvent.click(
-      within(grid()).getByRole('button', { name: 'Open session Ledger export speed up' }),
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'More on payments-api' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Open session' }));
 
     expect(navigate).toHaveBeenCalledWith({
       to: expect.objectContaining({ at: 'session', sessionId: 'mock-c13-session-ledger-export' }),

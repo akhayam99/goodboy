@@ -87,7 +87,7 @@ describe('ProviderAttentionNotice', () => {
     render(<ProviderAttentionNotice providerId="anthropic" />);
 
     screen.getByText('Claude is about to run out.');
-    screen.getByText('The 5-hour window resets at 14:30.');
+    expect(screen.queryByText(/resets at/)).toBeNull();
     expect(document.querySelector('[data-tone="warning"][data-placement="inline"]')).not.toBeNull();
   });
 

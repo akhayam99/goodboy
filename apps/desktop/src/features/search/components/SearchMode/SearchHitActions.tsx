@@ -4,6 +4,7 @@ import { useActionEnv } from '../../../actions/useActionEnv';
 import { useObjectActions } from '../../../actions/useObjectActions';
 import { toMenuEntries } from '../../../actions/toMenuEntries';
 import type { ObjectTarget } from '../../../actions/types';
+import { relatedHitActions } from '../../relatedHitActions';
 
 type Props = {
   readonly target: ObjectTarget;
@@ -13,7 +14,8 @@ type Props = {
 export const SearchHitActions = ({ target, onDone }: Props) => {
   const env = useActionEnv({ origin: 'palette' });
   const { noun, actions, run } = useObjectActions({ target, env });
-  const entries = useMemo(() => toMenuEntries({ actions, env, run }), [actions, env, run]);
+  const related = useMemo(() => relatedHitActions({ actions }), [actions]);
+  const entries = useMemo(() => toMenuEntries({ actions: related, env, run }), [related, env, run]);
   if (entries.length === 0) {
     return null;
   }

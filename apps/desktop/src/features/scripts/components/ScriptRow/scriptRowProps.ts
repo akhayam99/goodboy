@@ -10,13 +10,10 @@ export type ScriptRowProps = {
   readonly isSelected: boolean;
   readonly blockedReason: string | null;
   readonly target: ScriptActionTarget;
-  readonly isPinned: boolean;
   readonly expectedPort: number | null;
   readonly portHolder: string | null;
   readonly facts: ScriptLiveFacts | null;
-  readonly onTogglePin: () => void;
   readonly onOpen: (script: RunnableScript) => void;
   readonly onRun: (script: RunnableScript) => void;
   readonly onStop: (script: RunnableScript) => void;
-  readonly onRestart: (script: RunnableScript) => void;
 };

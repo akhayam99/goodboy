@@ -224,7 +224,7 @@ drawer instead of the Terminal page.
 - **Typing still finds everything.** The Next rows, the run verbs, the verbs of
   the session's pull request and the old names (`Stop workflow`, `Run workflow`,
   `Back to board`, `Open settings`) answer to a query wherever the state ranked
-  them. A lone `Ask in Chat` row stays first for free text.
+  them. A lone `Ask in chat` row stays first for free text.
 - **Verbs come from the action registry** (`features/actions/`) and follow its
   state rules. A verb whose `when` is false never shows. A blocked verb shows
   only when searched by name (every word a word prefix of its label), dimmed
@@ -241,8 +241,10 @@ drawer instead of the Terminal page.
   Backspace goes back. A verb with choices, such as Change model, opens them as
   a level. Copy worktree path copies at once when the session has one
   worktree; with several it opens them as a level (name, branch and path), and
-  ⌘↵ copies every path, one per line. A preview pane describes the highlighted
-  row.
+  ⌘↵ copies every path, one per line. A preview pane shows only for a row with
+  facts of its own (a session, an agent, an artifact, a blocked verb or one that
+  asks first); a plain command takes the full width, and the hint line says
+  ↵ Run or ↵ Open.
 - **An agent, a run or a pull request in scope keeps its session's verbs.** They
   follow under "For this session", ranked by the session state, so Copy
   worktree path stays one search away. A session verb with the same label as a
@@ -255,13 +257,15 @@ In the composer, `$` lists the scripts of the session's mounted projects
 `composer.json` scripts pinned for the project, by category. The Scripts pane
 lists the same set in two bands per project: **Services** (category `dev`, or a
 script named `start`, `serve`, `watch` or `preview`, decided by `isService`) and
-**Tasks** (the rest), each with a count. A running service row shows the last
-output line, uptime, CPU and memory (the monitor snapshot for the run's pid,
-polled only while the lens is open), its port as a link once a listener owned by
-the run exists, and **Stop** and **Restart**; an idle one shows its expected
+**Tasks** (the rest), each with a count from two, on one grid: glyph, name,
+a fixed meta cell and one **Run** or **Stop** glyph. A running service row shows
+the last output line, its uptime (CPU and memory, the monitor snapshot for the
+run's pid polled only while the lens is open, in the tooltip) and its port as a
+link once a listener owned by the run exists; an idle one shows its expected
 port as a chip, or `:5005 in use` in warning when another worktree holds it.
-A task row shows a result glyph, its duration and age, and the last line of a
-failure. A project with nothing pinned shows a dimmed **Suggested** band (its
+A task row shows a result glyph, its duration and age in gray, and the last
+line of a failure. **Pin**, **Restart** and the rest are in the row's right
+click menu. A project with nothing pinned shows a dimmed **Suggested** band (its
 root `dev`, `build`, `test`, `lint` and `typecheck`, first match each) with a
 **Pin** on every row. Scripts that are not pinned stay on the workspace Projects
 page in Settings, where they are pinned. A row's sublabel names its package (the

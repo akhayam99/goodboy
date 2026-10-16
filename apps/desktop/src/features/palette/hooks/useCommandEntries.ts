@@ -454,7 +454,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     const pullRepos = (repos: ReadonlyArray<Project>): void => {
       showToast({
         kind: 'info',
-        title: `Pulling in ${repos.length} ${repos.length === 1 ? 'repo' : 'repos'}...`,
+        title: `Pulling in ${repos.length} ${repos.length === 1 ? 'repo' : 'repos'}…`,
         message: repos.map((repo) => repo.name).join(', '),
         dedupeKey: 'pull-base',
       });

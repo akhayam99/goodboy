@@ -3,7 +3,7 @@ import type { ObjectKindDefinition, WorktreeActionTarget } from '../types';
 
 export const KEEP_DAYS = 30;
 
-export type WorktreeRemoveIntent = 'force' | 'untracked';
+export type WorktreeRemoveIntent = 'safe' | 'force' | 'untracked';
 
 export type WorktreeFacts = {
   readonly path: string;

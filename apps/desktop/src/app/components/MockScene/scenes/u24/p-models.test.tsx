@@ -67,21 +67,24 @@ describe('the Models page scenes', () => {
   it('modelswilluse shows the saved project settings, the skipped pins and the page line', async () => {
     await mount('modelswilluse');
 
-    expect(screen.getByText('Model settings 1 project had are saved')).toBeDefined();
-    expect(screen.getByText('They no longer apply.')).toBeDefined();
+    expect(screen.getByText('Saved model settings from 1 project no longer apply.')).toBeDefined();
     expect(
       screen.getByText(
         'With Codex as the only provider, 7 of 11 agents use a pin that cannot run. Auto picks apply.',
       ),
     ).toBeDefined();
     expect(screen.getByRole('button', { name: 'Back to Auto for those 7' })).toBeDefined();
-    expect(screen.getAllByText(/^Pinned Opus 5\.5 is skipped: Claude is Off\./).length).toBe(7);
+    expect(
+      screen.getAllByRole('img', { name: /^Pinned Opus 5\.5 is skipped: Claude is Off\./ }).length,
+    ).toBe(7);
+    expect(screen.queryByText(/^Pinned Opus 5\.5 is skipped/)).toBeNull();
+    expect(screen.queryByRole('button', { name: /Reset all/ })).toBeNull();
   });
 
   it('modelswilluse-cleared drops the notice and keeps the rows as they were', async () => {
     await mount('modelswilluse-cleared');
 
-    expect(screen.queryByText(/had are saved/)).toBeNull();
+    expect(screen.queryByText(/no longer apply/)).toBeNull();
     expect(screen.getByRole('button', { name: 'Back to Auto for those 7' })).toBeDefined();
   });
 

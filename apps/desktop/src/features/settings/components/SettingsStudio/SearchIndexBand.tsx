@@ -6,6 +6,20 @@ import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptI
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { searchProgressLabel } from '../../../search/components/SearchMode/searchProgressLabel';
 
+type SizeParams = {
+  readonly status: { readonly bytes: number; readonly docs: number } | null;
+};
+
+const sizeLineOf = ({ status }: SizeParams): string => {
+  if (status === null) {
+    return 'Reading the index';
+  }
+  if (status.docs === 0) {
+    return 'Empty, fills as you work';
+  }
+  return `${formatBytes({ bytes: status.bytes })} for ${status.docs.toLocaleString()} items`;
+};
+
 type ExcludedParams = {
   readonly next: ReadonlyArray<ProjectId>;
 };
@@ -32,10 +46,7 @@ export const SearchIndexBand = () => {
   );
   const excluded = status?.excludedProjectIds ?? [];
   const progress = searchProgressLabel({ status });
-  const size =
-    status === null
-      ? 'Reading the index'
-      : `${formatBytes({ bytes: status.bytes })} for ${status.docs.toLocaleString()} items`;
+  const size = sizeLineOf({ status });
 
   const changeExcluded = async ({ next }: ExcludedParams) => {
     const added = next.filter((id) => !excluded.includes(id));

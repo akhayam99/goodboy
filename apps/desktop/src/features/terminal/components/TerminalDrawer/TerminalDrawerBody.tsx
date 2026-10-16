@@ -1,5 +1,5 @@
 import { useEffect, useMemo, type KeyboardEvent } from 'react';
-import { ArrowUpRight, ChevronDown } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import { DrawerFrame, IconButton } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -16,7 +16,6 @@ import { openTerminalOnPage } from '../../openTerminalOnPage';
 import { TERMINAL_PICKER_EVENTS } from '../../terminalPickerEvents';
 import type { TerminalTarget } from '../../terminalTargets';
 import { allWorktrees } from '../../terminalWorktrees';
-import { TargetPicker } from '../TerminalStudio/TargetPicker';
 import { TerminalPane } from '../TerminalStudio/TerminalPane';
 import { TerminalTabStrip } from '../TerminalStudio/TerminalTabStrip';
 import { TerminalScopePicker } from './TerminalScopePicker';
@@ -57,15 +56,6 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
   );
   const isGone = worktree === null || worktree.key !== worktreeKey || selected === null;
   const hasPicker = targets.length > 1;
-
-  const openOn = (target: TerminalTarget): void => {
-    openSessionTerminal({
-      state: useAppStore.getState(),
-      sessionId,
-      cwd: target.path,
-      isFresh: true,
-    });
-  };
 
   useShortcut(
     'terminal.newHere',
@@ -119,34 +109,26 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
       icon={CONCEPT_ICONS.terminal}
       iconClassName="text-faint-foreground"
       titleContent={
-        <TerminalScopePicker
-          worktree={worktree}
-          targets={targets}
-          isBranchless={isBranchless}
-          busyPaths={busyPaths}
-          onPickTarget={pickTarget}
-          onPickSessionFolder={pickSessionFolder}
-        />
+        <span className="flex w-full min-w-0 items-center gap-2 overflow-hidden">
+          <h2 className="shrink-0 text-heading text-foreground">Terminal</h2>
+          <TerminalScopePicker
+            worktree={worktree}
+            targets={targets}
+            isBranchless={isBranchless}
+            busyPaths={busyPaths}
+            onPickTarget={pickTarget}
+            onPickSessionFolder={pickSessionFolder}
+          />
+        </span>
       }
       action={
-        <div className="flex items-center gap-1">
-          {hasPicker ? (
-            <TargetPicker
-              targets={targets}
-              label="New terminal in"
-              valueLabel={<ChevronDown size={ICON_SIZE.control} aria-hidden />}
-              openEvent={TERMINAL_PICKER_EVENTS.drawer}
-              onPick={openOn}
-            />
-          ) : null}
-          <IconButton
-            icon={ArrowUpRight}
-            label="Open on Terminal page"
-            tooltip="Open on Terminal page"
-            iconSize={ICON_SIZE.control}
-            onClick={() => openTerminalOnPage({ terminalId: selected.id, sessionId })}
-          />
-        </div>
+        <IconButton
+          icon={ArrowUpRight}
+          label="Open on Terminal page"
+          tooltip="Open on Terminal page"
+          iconSize={ICON_SIZE.control}
+          onClick={() => openTerminalOnPage({ terminalId: selected.id, sessionId })}
+        />
       }
       onClose={onClose}
       scroll="self"

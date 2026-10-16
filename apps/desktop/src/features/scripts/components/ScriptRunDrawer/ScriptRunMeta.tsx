@@ -1,33 +1,29 @@
-import { StatusDot, cn } from '@goodboy/ui';
+import { StatusDot } from '@goodboy/ui';
+import { joinFacts } from '../../../../shared/utils/joinFacts';
 import { formatDuration } from '../../../../shared/utils/time/formatDuration';
 import type { ScriptRunStatus } from '../../scripts';
-import { SCRIPT_RUN_PRESENTATION } from '../../scriptRunPresentation';
 
 type Props = {
   readonly status: ScriptRunStatus;
   readonly elapsedMs: number | null;
-  readonly projectName: string | null;
   readonly branch: string | null;
 };
 
-export const ScriptRunMeta = ({ status, elapsedMs, projectName, branch }: Props) => {
-  const presentation = SCRIPT_RUN_PRESENTATION[status];
+export const ScriptRunMeta = ({ status, elapsedMs, branch }: Props) => {
   const isRunning = status === 'pending';
-  const parts = [
-    elapsedMs === null ? null : formatDuration({ durationMs: elapsedMs, hasTenths: !isRunning }),
-    projectName,
-    branch === '' ? null : branch,
-  ].filter((part): part is string => part !== null);
-
+  const facts = joinFacts({
+    facts: [
+      isRunning && elapsedMs !== null ? formatDuration({ durationMs: elapsedMs }) : null,
+      branch,
+    ],
+  });
+  if (facts === '' && !isRunning) {
+    return null;
+  }
   return (
-    <p className="flex shrink-0 items-center gap-1 text-meta text-muted-foreground">
-      {isRunning ? <StatusDot tone="info" size="sm" pulsing /> : null}
-      <span className={cn(isRunning && presentation.textClass)}>{presentation.statusLabel}</span>
-      {parts.map((part) => (
-        <span key={part} className="truncate">
-          · {part}
-        </span>
-      ))}
+    <p className="flex shrink-0 items-center gap-2 text-meta tabular-nums text-muted-foreground">
+      {isRunning ? <StatusDot tone="info" size="sm" pulsing ariaLabel="Running" /> : null}
+      <span className="truncate">{facts}</span>
     </p>
   );
 };

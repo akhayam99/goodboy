@@ -56,7 +56,7 @@ export const SettingsRail = ({
               label={group.label}
               isActiveGroup={isActive}
               status={
-                group.tone === undefined
+                group.tone === undefined || isActive
                   ? null
                   : { tone: group.tone, label: group.attention ?? null }
               }

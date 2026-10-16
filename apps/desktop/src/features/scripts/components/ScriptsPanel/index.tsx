@@ -82,9 +82,6 @@ const recordFor = ({ runs, group, script }: RecordParams): ScriptRunRecord | nul
   return record.mountId === group.mountId ? record : null;
 };
 
-const plural = ({ count, word }: { readonly count: number; readonly word: string }) =>
-  `${count} ${count === 1 ? word : `${word}s`}`;
-
 export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
   const { groups } = useSessionScripts({ sessionId, workspaceId, shouldScan: true });
   const saved = useAppStore((state) => state.projectScripts[workspaceId] ?? EMPTY_ARRAY);
@@ -137,10 +134,6 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
     [runs],
   );
   const now = useNow(runningCount > 0 ? 1_000 : 30_000);
-  const projectCount = useMemo(
-    () => new Set(groups.map((group) => group.projectId)).size,
-    [groups],
-  );
   const unmounted = useMemo<ReadonlyArray<UnmountedScriptsEntry>>(() => {
     const mounted = new Set(groups.map((group) => group.projectId));
     return workspaceProjects.flatMap((project) => {
@@ -340,6 +333,11 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
                 })
             : null,
         onDelete: savedId === null ? null : () => onDelete({ savedId }),
+        onRestart: () => void onRestart({ group, script }),
+        pin: {
+          isPinned: isPinned({ group, script }),
+          onToggle: () => togglePin({ group, script }),
+        },
       },
     };
   };
@@ -501,12 +499,9 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
         }
         blockedReason={group.isReady ? null : `${group.projectName} is still preparing`}
         target={targetFor({ group, script })}
-        isPinned={isPinned({ group, script })}
-        onTogglePin={() => togglePin({ group, script })}
         onOpen={() => onOpen({ group, script })}
         onRun={() => onRun({ group, script })}
         onStop={() => onStop({ script })}
-        onRestart={() => void onRestart({ group, script })}
       />
     );
   };
@@ -607,7 +602,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
             {renderScripts({ group, scripts: tasks, band: 'tasks' })}
           </ScriptBand>
         )}
-        {group.suggested.length === 0 ? null : (
+        {group.suggested.length === 0 || pickerMountId === group.mountId ? null : (
           <ScriptBand
             label="Suggested"
             scope={groupScope}
@@ -643,13 +638,6 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
     );
   };
 
-  const meta = [
-    plural({ count: projectCount, word: 'project' }),
-    runningCount > 0 ? `${runningCount} running` : null,
-  ]
-    .filter((part): part is string => part !== null)
-    .join(' · ');
-
   const newScriptAction =
     groups.length === 0 || activeGroup === null ? null : (
       <DiscardDraftConfirm
@@ -676,7 +664,6 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
             <ScriptGroupSection
               key={group.mountId}
               group={group}
-              count={group.scripts.length}
               isCollapsed={isCollapsed}
               isRefreshing={scans?.[group.worktreePath]?.status === 'loading'}
               editor={isNewHere ? editorNode : null}
@@ -729,7 +716,6 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
       title="Scripts"
       icon={CONCEPT_ICONS.scripts}
       iconClassName="text-faint-foreground"
-      count={groups.length === 0 ? null : meta}
       action={newScriptAction}
       toolbar={
         groups.length === 0 ? null : <ScriptsFilterInput value={query} onChange={setQuery} />

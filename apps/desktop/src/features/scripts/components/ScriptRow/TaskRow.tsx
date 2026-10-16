@@ -1,10 +1,12 @@
-import { Check, Circle, Play, Square, X } from 'lucide-react';
-import { IconButton, InteractiveRow, StatusDot, Tooltip, cn } from '@goodboy/ui';
+import { Check, Circle, Square, X } from 'lucide-react';
+import { InteractiveRow, StatusDot, Tooltip } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { joinFacts } from '../../../../shared/utils/joinFacts';
 import { lastOutputLine } from '../../lastOutputLine';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { describeLastRun } from './describeLastRun';
-import { RowActions } from './RowActions';
+import { RunToggle } from './RunToggle';
+import { SCRIPT_ROW_CELL } from './scriptRowCells';
 import type { ScriptRowProps } from './scriptRowProps';
 
 const runsInLabel = ({ script }: Pick<ScriptRowProps, 'script'>): string =>
@@ -19,8 +21,6 @@ export const TaskRow = ({
   isSelected,
   blockedReason,
   target,
-  isPinned,
-  onTogglePin,
   onOpen,
   onRun,
   onStop,
@@ -30,6 +30,8 @@ export const TaskRow = ({
   const isFailed = lastRun?.glyph === 'failed';
   const failedLine = isFailed ? lastOutputLine({ output: record?.result?.stdout }) : null;
   const menu = useObjectMenuTrigger({ target, anchorKey: `script:${script.key}` });
+  const meta =
+    lastRun === null ? (blockedReason ?? '') : joinFacts({ facts: [lastRun.word, lastRun.detail] });
 
   return (
     <InteractiveRow
@@ -41,7 +43,7 @@ export const TaskRow = ({
       dataAttributes={{ 'data-script-key': script.key }}
       className="flex min-h-8 items-center gap-2 px-2"
     >
-      <span aria-hidden className="flex size-5 shrink-0 items-center justify-center">
+      <span aria-hidden className={SCRIPT_ROW_CELL.glyph}>
         {lastRun?.glyph === 'running' ? <StatusDot tone="info" size="sm" pulsing /> : null}
         {lastRun?.glyph === 'passed' ? (
           <Check size={ICON_SIZE.row} className="text-success" />
@@ -59,49 +61,19 @@ export const TaskRow = ({
           <span className="truncate text-row text-foreground">{script.name}</span>
         </Tooltip>
         {failedLine === null ? null : (
-          <span className="truncate text-code text-danger">{failedLine}</span>
+          <span className="truncate text-code text-faint-foreground">{failedLine}</span>
         )}
       </span>
-      <span
-        className={cn(
-          'shrink-0 truncate text-meta tabular-nums',
-          isFailed ? 'text-danger' : 'text-muted-foreground',
-        )}
-      >
-        {lastRun === null
-          ? (blockedReason ?? '')
-          : [lastRun.word, lastRun.detail].filter((part) => part !== null).join(' · ')}
+      <span data-slot="script-meta" className={SCRIPT_ROW_CELL.meta}>
+        {meta === '' ? null : <span className="truncate">{meta}</span>}
       </span>
-      <RowActions
+      <RunToggle
         name={script.name}
-        scriptKey={script.key}
-        target={target}
-        isPinned={isPinned}
-        onTogglePin={onTogglePin}
+        isRunning={isRunning}
+        blockedReason={blockedReason}
+        onRun={() => onRun(script)}
+        onStop={() => onStop(script)}
       />
-      <span className="flex w-7 shrink-0 items-center justify-center">
-        {isRunning ? (
-          <IconButton
-            size="xs"
-            variant="ghost"
-            icon={Square}
-            iconSize={ICON_SIZE.row}
-            label={`Stop ${script.name}`}
-            onClick={() => onStop(script)}
-          />
-        ) : (
-          <IconButton
-            size="xs"
-            variant="ghost"
-            icon={Play}
-            iconSize={ICON_SIZE.row}
-            label={`Run ${script.name}`}
-            tooltip={blockedReason ?? undefined}
-            disabled={blockedReason !== null}
-            onClick={() => onRun(script)}
-          />
-        )}
-      </span>
     </InteractiveRow>
   );
 };

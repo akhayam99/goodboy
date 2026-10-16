@@ -4,7 +4,7 @@ Free disk space and clean up branches, with what is safe to remove spelled out. 
 
 ### Worktree folders
 
-Free disk space from the checkout folders of archived, deleted or gone sessions. **Worktrees** lists each with its size and whether it is safe to remove, and **Remove 3 safe folders in Harborline** clears them together. Folders with changes, running agents or a process inside are skipped, with the reason.
+Free disk space from the checkout folders of archived, deleted or gone sessions. **Worktrees** lists each with its size and a check glyph when it is safe to remove (the reason is in its tooltip); **Remove** for one folder sits in its **⋯**, and **Remove 3 safe folders in Harborline** clears them together. Folders with changes, running agents or a process inside are skipped, with the reason.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/storage-worktrees-dark.webp">

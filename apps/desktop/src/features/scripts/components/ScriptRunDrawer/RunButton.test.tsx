@@ -13,7 +13,13 @@ describe('RunButton', () => {
   it('runs when it can', () => {
     const onRun = vi.fn();
     render(
-      <RunButton canRun blockedReason="ledger-core is still preparing" label="Run" onRun={onRun} />,
+      <RunButton
+        canRun
+        blockedReason="ledger-core is still preparing"
+        label="Run"
+        isPrimary
+        onRun={onRun}
+      />,
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Run' }));
@@ -28,6 +34,7 @@ describe('RunButton', () => {
         canRun={false}
         blockedReason="ledger-core is still preparing"
         label="Run again"
+        isPrimary={false}
         onRun={vi.fn()}
       />,
     );

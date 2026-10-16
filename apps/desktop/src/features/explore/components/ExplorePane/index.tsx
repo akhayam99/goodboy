@@ -298,7 +298,9 @@ export const ExplorePane = ({ sessionId, onClose }: Props) => {
       }
       onClose={onClose}
     >
-      <div className="flex min-h-0 flex-1 flex-col px-2 py-2">{renderBody()}</div>
+      <div className="flex min-h-0 w-full max-w-[960px] flex-1 flex-col px-2 py-2">
+        {renderBody()}
+      </div>
     </DrawerFrame>
   );
 };

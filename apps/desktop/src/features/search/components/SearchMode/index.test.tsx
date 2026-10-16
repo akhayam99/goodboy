@@ -26,6 +26,7 @@ vi.mock('../../../integrations/hooks/useWorkspaceIssueLookup', () => ({
 import { useAppStore } from '../../../../store';
 import { bindTarget } from '../../../actions/registry';
 import { ToastProvider } from '../../../../shared/components/Toast';
+import { relatedHitActions } from '../../relatedHitActions';
 import { SearchMode } from './index';
 
 const WORKSPACE = 'ws-harborline' as WorkspaceId;
@@ -261,7 +262,7 @@ describe('search mode', () => {
     expect(navigate).not.toHaveBeenCalled();
   });
 
-  it('shows exactly the registry actions of a session in the preview', async () => {
+  it('shows at most two related registry actions of a session, none destructive', async () => {
     await renderMode();
     fireEvent.change(input(), { target: { value: 'payout' } });
     await flush();
@@ -274,15 +275,16 @@ describe('search mode', () => {
       bindTarget({
         state: useAppStore.getState(),
         target: { kind: 'session', sessionId: SESSION },
-      })
-        ?.resolve()
-        .map((action) => action.label) ?? [];
-    expect(expected.length).toBeGreaterThan(0);
-    expect(shown).toHaveLength(expected.length);
-    expect(shown.every((label, index) => label.startsWith(expected[index] ?? '\u0000'))).toBe(true);
+      })?.resolve() ?? [];
+    const related = relatedHitActions({ actions: expected }).map((action) => action.label);
+    expect(related.length).toBeGreaterThan(0);
+    expect(related.length).toBeLessThanOrEqual(2);
+    expect(shown).toHaveLength(related.length);
+    expect(shown.every((label, index) => label.startsWith(related[index] ?? '\u0000'))).toBe(true);
+    expect(shown.some((label) => label.startsWith('Delete'))).toBe(false);
   });
 
-  it('shows the registry actions of a plan, in its current state', async () => {
+  it('shows the related registry actions of a plan, in its current state', async () => {
     await renderMode();
     fireEvent.change(input(), { target: { value: 'settlement' } });
     await flush();
@@ -301,12 +303,11 @@ describe('search mode', () => {
           sessionId: SESSION,
           subject: { kind: 'stored', artifactId: 'plan-1' as ArtifactId, isPlanRunning: false },
         },
-      })
-        ?.resolve()
-        .map((action) => action.label) ?? [];
-    expect(expected).toContain('Run plan');
-    expect(shown).toHaveLength(expected.length);
-    expect(shown.every((label, index) => label.startsWith(expected[index] ?? '\u0000'))).toBe(true);
+      })?.resolve() ?? [];
+    const related = relatedHitActions({ actions: expected }).map((action) => action.label);
+    expect(related).toContain('Run plan');
+    expect(shown).toHaveLength(related.length);
+    expect(shown.every((label, index) => label.startsWith(related[index] ?? '\u0000'))).toBe(true);
   });
 
   it('switches to commands with the same text on Tab', async () => {

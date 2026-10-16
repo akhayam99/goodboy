@@ -121,7 +121,7 @@ type RowActionParams = RowMenuParams & {
 };
 
 const openRowMenu = async ({ row }: RowMenuParams): Promise<ReadonlyArray<string>> => {
-  fireEvent.click(within(row).getByRole('button', { name: /^Actions for / }));
+  fireEvent.contextMenu(row);
   const items = await screen.findAllByRole('menuitem');
   return items.map((item) => item.getAttribute('data-menu-label') ?? item.textContent ?? '');
 };
@@ -504,8 +504,10 @@ describe('ExplorePane keys', () => {
   it('ignores a key typed on a button inside the row', async () => {
     seed();
     mount();
+    h.reads.push({ type: 'text', text: '{}', truncated: false });
     const file = await rowNamed('package.json');
-    const more = within(file).getByRole('button', { name: 'Actions for package.json' });
+    fireEvent.click(file);
+    const more = await within(file).findByRole('button', { name: 'Actions for package.json' });
 
     fireEvent.keyDown(more, { key: 'ArrowDown' });
 
@@ -567,11 +569,12 @@ describe('ExplorePane previews', () => {
     }
     const inHeader = within(header);
     expect(inHeader.getByRole('button', { name: 'Open' })).toBeDefined();
-    expect(inHeader.getByRole('button', { name: 'Copy path' })).toBeDefined();
     expect(inHeader.getByRole('button', { name: 'Wrap lines' }).getAttribute('aria-pressed')).toBe(
       'false',
     );
+    expect(inHeader.getByRole('button', { name: 'Actions for page.tsx' })).toBeDefined();
     expect(inHeader.getByRole('button', { name: 'Close' })).toBeDefined();
+    expect(inHeader.queryByRole('button', { name: 'Copy path' })).toBeNull();
     const body = within(drawer)
       .queryAllByRole('button')
       .filter((button) => !header.contains(button));
@@ -636,15 +639,15 @@ describe('ExplorePane previews', () => {
 describe('ExplorePane row actions', () => {
   const listOne = (relPath: string) => list({ relPath: '', entries: [entry({ relPath })] });
 
-  it('keeps the actions on every row in a visible menu, focusable and working', async () => {
+  it('shows the row menu button only on the selected row, focusable and working', async () => {
     listOne('notes.txt');
     mount();
     const row = await rowNamed('notes.txt');
-    const more = within(row).getByRole('button', { name: 'Actions for notes.txt' });
-
-    more.focus();
-    expect(document.activeElement).toBe(more);
-    await pickRowAction({ row, item: /Show in Finder/ });
+    expect(within(row).queryByRole('button', { name: 'Actions for notes.txt' })).toBeNull();
+    h.reads.push({ type: 'text', text: 'notes', truncated: false });
+    fireEvent.click(row);
+    fireEvent.click(await within(row).findByRole('button', { name: 'Actions for notes.txt' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: /Show in Finder/ }));
 
     await waitFor(() =>
       expect(callsTo('explore_open')).toContainEqual([
@@ -719,7 +722,8 @@ describe('ExplorePane row actions', () => {
     fireEvent.mouseDown(document.body);
 
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-    expect(screen.getByRole('button', { name: 'Actions for notes.txt' })).toBeDefined();
+    fireEvent.contextMenu(await rowNamed('notes.txt'));
+    expect(await screen.findByRole('menuitem', { name: /Ask an agent/ })).toBeDefined();
   });
 
   it('spawns from a file with the selected model and a prompt that includes ask and path', async () => {

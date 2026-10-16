@@ -1,5 +1,5 @@
 import { RotateCcw } from 'lucide-react';
-import { Chip, IconButton, StatusDot, cn } from '@goodboy/ui';
+import { Chip, IconButton, StateDot, cn } from '@goodboy/ui';
 import type { TerminalTab } from '../../../../shared/types/terminal';
 import { CloseTerminal } from './CloseTerminal';
 import { TerminalRowName } from './TerminalRowName';
@@ -49,9 +49,7 @@ export const TerminalTabItem = ({
         isSelected && 'bg-selected text-foreground',
       )}
     >
-      {isBusyNow ? (
-        <StatusDot tone="warning" size="sm" pulsing role="status" ariaLabel="Busy" />
-      ) : null}
+      {isBusyNow ? <StateDot state="running" label="Running a process" isLive /> : null}
       <TerminalRowName
         id={domId}
         name={tab.title}

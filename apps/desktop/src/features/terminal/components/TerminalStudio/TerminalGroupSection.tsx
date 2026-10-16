@@ -1,6 +1,4 @@
-import { ArrowUpRight } from 'lucide-react';
-import { IconButton, ListGridGroup } from '@goodboy/ui';
-import { useOpenSession } from '../../../../shared/hooks/useOpenSession';
+import { ListGridGroup } from '@goodboy/ui';
 import type { TerminalGroup, TerminalWorktree } from '../../terminalWorktrees';
 import { worktreePorts } from '../../worktreePorts';
 import { TerminalWorktreeRow } from './TerminalWorktreeRow';
@@ -20,24 +18,9 @@ export const TerminalGroupSection = ({
   portsByTerminal,
   onSelect,
 }: Props) => {
-  const openSession = useOpenSession();
-  const { sessionId } = group;
-  const count = group.worktrees.reduce((total, worktree) => total + worktree.tabs.length, 0);
+  const rowCount = group.worktrees.length;
   return (
-    <ListGridGroup
-      label={group.title}
-      count={count}
-      action={
-        sessionId === null ? null : (
-          <IconButton
-            icon={ArrowUpRight}
-            size="xs"
-            label={`Open session ${group.title}`}
-            onClick={() => openSession({ sessionId })}
-          />
-        )
-      }
-    >
+    <ListGridGroup label={group.title} headingLevel={2} {...(rowCount > 1 && { count: rowCount })}>
       {group.worktrees.map((worktree) => (
         <TerminalWorktreeRow
           key={worktree.key}

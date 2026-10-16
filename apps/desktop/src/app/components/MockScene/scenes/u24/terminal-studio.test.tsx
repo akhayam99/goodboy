@@ -93,22 +93,22 @@ describe('the terminal studio scenes', () => {
     await settle();
 
     const groups = within(terminalsGrid())
-      .getAllByRole('heading', { level: 3 })
+      .getAllByRole('heading', { level: 2 })
       .map((heading) => heading.textContent);
     expect(groups).toEqual([PAYMENTS_SESSION, NOTIFY_SESSION, 'Workspace folder']);
   });
 
-  it('draws one row per worktree and counts the terminals of each group', async () => {
+  it('draws one row per worktree and counts the rows of a group from two', async () => {
     renderScene('terminal-studio');
     await settle();
 
     expect(within(groupNamed(PAYMENTS_SESSION)).getAllByRole('listitem')).toHaveLength(2);
     const counts = within(terminalsGrid())
-      .getAllByRole('heading', { level: 3 })
+      .getAllByRole('heading', { level: 2 })
       .map(
         (heading) => heading.closest('li')?.querySelector('[data-list-grid-count]')?.textContent,
       );
-    expect(counts).toEqual(['3', undefined, undefined]);
+    expect(counts).toEqual(['2', undefined, undefined]);
   });
 
   it('shows the first port as quiet text on a row that is not selected, and the ports at the right of the tab strip', async () => {
@@ -215,10 +215,11 @@ describe('the terminal studio scenes', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Close dev server' }));
 
-    expect(await screen.findByText('pnpm dev is running. Close it?')).toBeDefined();
+    expect(await screen.findByText('dev server is running. Close it?')).toBeDefined();
+    expect(screen.getByText('pnpm dev')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Keep' }));
     await settle();
-    expect(screen.queryByText('pnpm dev is running. Close it?')).toBeNull();
+    expect(screen.queryByText('dev server is running. Close it?')).toBeNull();
     expect(store.getState().terminalTabs['mock-u24-session-ledger']).toHaveLength(3);
   });
 
@@ -271,23 +272,21 @@ describe('the terminal studio scenes', () => {
     expect(ledger.map((tab) => tab.status)).toEqual(['running']);
   });
 
-  it('shows the cwd of the selected terminal in the location row', async () => {
+  it('shows no path line on a worktree scope, only on a plain folder', async () => {
     renderScene('terminal-studio');
     await settle();
 
-    expect(screen.getAllByText(/gb-7k2q9x/).length).toBeGreaterThan(0);
+    expect(screen.queryAllByText(/gb-7k2q9x/)).toHaveLength(0);
+    fireEvent.click(within(groupNamed('Workspace folder')).getByRole('button'));
+    await settle();
+    expect(screen.getAllByText('harborline').length).toBeGreaterThan(1);
   });
 
-  it('offers Open session beside each session group and in the tab strip menu', async () => {
+  it('offers Open session once, in the tab strip menu, never on the group label', async () => {
     renderScene('terminal-studio');
     await settle();
 
-    expect(
-      within(terminalsGrid()).getByRole('button', { name: `Open session ${PAYMENTS_SESSION}` }),
-    ).toBeDefined();
-    expect(
-      within(terminalsGrid()).queryByRole('button', { name: /^Open session Workspace/ }),
-    ).toBeNull();
+    expect(within(terminalsGrid()).queryByRole('button', { name: /^Open session / })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'More on payments-api' }));
     expect(screen.getByRole('menuitem', { name: 'Open session' })).toBeDefined();
     expect(screen.getByRole('menuitem', { name: 'Copy worktree path' })).toBeDefined();
@@ -303,7 +302,8 @@ describe('the terminal studio scenes', () => {
       .getAllByRole('group')
       .map((group) => group.getAttribute('aria-label'));
     expect(clusters).toEqual(['Workspace folder', PAYMENTS_SESSION, NOTIFY_SESSION]);
-    expect(within(menu).getAllByRole('menuitem', { name: /^Open project/ })).toHaveLength(3);
+    expect(within(menu).queryAllByRole('menuitem', { name: /^Open project/ })).toHaveLength(0);
+    expect(within(menu).queryByTestId('worktree-chip')).toBeNull();
     expect(within(menu).queryByText('Main checkout')).toBeNull();
   });
 
@@ -327,12 +327,14 @@ describe('the terminal studio scenes', () => {
     });
   });
 
-  it('offers cd only while the shell is idle', async () => {
+  it('offers Change folder in the strip, disabled while the shell runs a command', async () => {
     renderScene('terminal-studio');
     await settle();
-    expect(
-      screen.queryByRole('combobox', { name: 'Change directory in this terminal' }),
-    ).toBeNull();
+    const busy = screen.getByRole('combobox', { name: 'Change directory in this terminal' });
+    expect(busy.textContent).toContain('Change folder');
+    expect(busy.hasAttribute('disabled') || busy.getAttribute('aria-disabled') === 'true').toBe(
+      true,
+    );
 
     fireEvent.click(within(groupNamed('Workspace folder')).getByRole('button'));
     await settle();

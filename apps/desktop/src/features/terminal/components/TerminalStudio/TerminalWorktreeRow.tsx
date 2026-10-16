@@ -53,7 +53,7 @@ export const TerminalWorktreeRow = ({ worktree, isSelected, isBusy, ports, onSel
       cells={[
         <Icon size={ICON_SIZE.row} aria-hidden className={TEXT_ROLE.hint} />,
         <>
-          <span className="min-w-0 truncate">{worktree.projectName}</span>
+          <span className="min-w-0 max-w-[50%] shrink-0 truncate">{worktree.projectName}</span>
           {worktree.branch === null ? null : (
             <span className={cn('min-w-0 flex-1 truncate font-mono text-ui', TEXT_ROLE.hint)}>
               {worktree.branch}

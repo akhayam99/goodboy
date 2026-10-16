@@ -1,14 +1,15 @@
 import { useState, type ReactNode } from 'react';
-import { ArrowUpRight, ExternalLink, WrapText } from 'lucide-react';
+import { ExternalLink, WrapText } from 'lucide-react';
 import {
   Button,
-  CopyButton,
   DrawerFrame,
   IconButton,
   SegmentedTabs,
   Tooltip,
   type DrawerBack,
 } from '@goodboy/ui';
+import { ExploreFileMenu } from '../../actions/ExploreFileMenu';
+import { exploreFileTargetOf } from '../exploreFileTarget';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { selectMountForPath } from '../../../store/slices/project-mounts/selectors';
@@ -48,16 +49,6 @@ type ViewOption = { readonly value: DrawerView; readonly label: string };
 const PREVIEW_OPTION = { value: 'preview', label: 'Preview' } as const satisfies ViewOption;
 const SOURCE_OPTION = { value: 'source', label: 'Source' } as const satisfies ViewOption;
 const CHANGES_OPTION = { value: 'changes', label: 'Changes' } as const satisfies ViewOption;
-
-const joinPath = ({ root, relPath }: { readonly root: string; readonly relPath: string }) => {
-  if (relPath === '') {
-    return root;
-  }
-  if (root.endsWith('/') || root.endsWith('\\')) {
-    return `${root}${relPath}`;
-  }
-  return `${root}/${relPath}`;
-};
 
 export const ExploreFileDrawer = ({
   sessionId,
@@ -118,6 +109,18 @@ export const ExploreFileDrawer = ({
   };
 
   const hasToolbar = hasViewSwitch || openFailure !== null;
+  const menuTarget = exploreFileTargetOf({
+    sessionId,
+    sessionDir,
+    entry,
+    openAction: null,
+    onAsk: null,
+    onOpen: open,
+    onReveal: () => {
+      void exploreOpen.run({ entry, isReveal: true }).then(setOpenFailure);
+    },
+    onOpenInFiles: hasChanges ? openInFiles : null,
+  });
 
   return (
     <DrawerFrame
@@ -129,12 +132,6 @@ export const ExploreFileDrawer = ({
       scroll="self"
       action={
         <>
-          {isChangesView ? (
-            <Button variant="ghost" size="sm" onClick={openInFiles}>
-              Open in Files
-              <ArrowUpRight size={ICON_SIZE.row} aria-hidden />
-            </Button>
-          ) : null}
           <Tooltip content={openAction.tooltip}>
             <Button size="sm" variant="secondary" onClick={open}>
               {openAction.editor === null ? (
@@ -145,13 +142,6 @@ export const ExploreFileDrawer = ({
               {openAction.label}
             </Button>
           </Tooltip>
-          <CopyButton
-            presentation="icon"
-            label="Copy path"
-            size={ICON_SIZE.control}
-            className="size-7 justify-center"
-            value={joinPath({ root: sessionDir, relPath: entry.relPath })}
-          />
           {isWrapShown ? (
             <IconButton
               icon={WrapText}
@@ -160,19 +150,22 @@ export const ExploreFileDrawer = ({
               onClick={wrap.toggle}
             />
           ) : null}
+          <ExploreFileMenu target={menuTarget} />
         </>
       }
       toolbar={
         hasToolbar ? (
           <>
             {hasViewSwitch ? (
-              <SegmentedTabs
-                size="xs"
-                ariaLabel="File view"
-                options={viewOptions}
-                value={isChangesView ? 'changes' : previewView}
-                onChange={setView}
-              />
+              <div className="flex">
+                <SegmentedTabs
+                  size="xs"
+                  ariaLabel="File view"
+                  options={viewOptions}
+                  value={isChangesView ? 'changes' : previewView}
+                  onChange={setView}
+                />
+              </div>
             ) : null}
             {openFailure === null ? null : <ExploreOpenError failure={openFailure} />}
           </>

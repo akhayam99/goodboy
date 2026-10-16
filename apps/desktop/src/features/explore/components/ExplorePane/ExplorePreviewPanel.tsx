@@ -1,11 +1,10 @@
 import { useState, type ReactNode } from 'react';
-import { Button, Markdown, ScrollFade, Skeleton, EmptyState } from '@goodboy/ui';
+import { Button, Markdown, Notice, ScrollFade, Skeleton } from '@goodboy/ui';
 import { ImageLightbox } from '../../../../shared/components/ImageLightbox';
 import { type ExploreEntry } from '../../explore';
 import type { ExplorePreviewState } from '../../hooks/useExplorePreview';
 import type { ExplorePreviewKind } from '../../previewKindOf';
 import { ExplorePathLine } from './ExplorePathLine';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { SourceView } from '../../../../shared/components/SourceView';
 
 export type ExplorePreviewView = 'preview' | 'source';
@@ -52,12 +51,17 @@ export const ExplorePreviewPanel = ({
     if (previewState.status === 'error') {
       return (
         <div className="px-4 pb-3">
-          <EmptyState
-            size="section"
-            icon={CONCEPT_ICONS.errors}
-            tone={CONCEPT_TONE.errors}
+          <Notice
+            tone="danger"
+            placement="inline"
+            role="alert"
             title="Couldn't read this file"
-            description={previewState.message}
+            detail={previewState.message}
+            actions={
+              <Button size="sm" variant="secondary" onClick={previewState.retry}>
+                Retry
+              </Button>
+            }
           />
         </div>
       );

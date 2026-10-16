@@ -42,7 +42,7 @@ import { useObjectActions } from '../../../actions/useObjectActions';
 import { sessionTitle } from '../../../session/sessionTitle';
 import type { PaletteModeProps } from '../../paletteModeTypes';
 import { verbEntries, type VerbSelectParams } from '../../sources/verbEntries';
-import { paletteBodyLayoutOf, previewFactCountOf } from './paletteBodyLayout';
+import { hasOwnPreviewOf, paletteBodyLayoutOf } from './paletteBodyLayout';
 import { liveAgentVerbs, sessionOwnFirst } from '../../sources/liveAgentEntries';
 import { runRow, runSection } from '../../sources/runEntries';
 import {
@@ -246,7 +246,8 @@ export const CommandsBody = ({
               select: ({ action }: VerbSelectParams) =>
                 runVerb({ target: liveTarget, actionId: action.id }),
             }),
-            name: activePalette.liveAgent.name,
+            name: activePalette.liveAgent.role,
+            title: activePalette.liveAgent.name,
           }),
     [liveTarget, liveActions.actions, liveActions.noun, activePalette?.liveAgent, runVerb],
   );
@@ -487,7 +488,7 @@ export const CommandsBody = ({
 
   const subject = level?.title ?? scopeInfo?.title ?? null;
   const layout = paletteBodyLayoutOf({
-    hasPreview: selected !== null && previewFactCountOf({ entry: selected.item, subject }) >= 1,
+    hasPreview: selected !== null && hasOwnPreviewOf({ entry: selected.item }),
   });
   const allChoice = levelChoices.find((entry) => entry.key.endsWith(`:${ALL_CHOICES_ID}`)) ?? null;
 

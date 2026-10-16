@@ -13,16 +13,17 @@ type Props = {
   readonly optionId: string;
   readonly isSelected: boolean;
   readonly isBlocked: boolean;
+  readonly isSessionScoped: boolean;
   readonly onHover: (docId: string) => void;
   readonly onOpen: (docId: string) => void;
 };
 
 export const SearchResultRow = memo(
-  ({ hit, optionId, isSelected, isBlocked, onHover, onOpen }: Props) => {
+  ({ hit, optionId, isSelected, isBlocked, isSessionScoped, onHover, onOpen }: Props) => {
     const now = useNow(30_000);
     const meta = SEARCH_KIND_META[hit.kind];
     const Icon = meta.icon;
-    const crumb = hitCrumb({ hit });
+    const crumb = hitCrumb({ hit, isSessionScoped });
     return (
       <li
         id={optionId}

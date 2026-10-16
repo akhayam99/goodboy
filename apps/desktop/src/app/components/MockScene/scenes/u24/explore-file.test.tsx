@@ -57,7 +57,8 @@ describe('the Explore file scenes', () => {
       0,
     );
     expect(within(drawer).getByRole('button', { name: 'Wrap lines' })).toBeDefined();
-    expect(within(drawer).getByRole('button', { name: 'Copy path' })).toBeDefined();
+    fireEvent.click(within(drawer).getByRole('button', { name: 'Actions for rounding.ts' }));
+    expect(screen.getByRole('menuitem', { name: 'Copy path' })).toBeDefined();
     expect(within(drawer).getByText('842 B', { exact: false })).toBeDefined();
   });
 

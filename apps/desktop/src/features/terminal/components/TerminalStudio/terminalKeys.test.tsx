@@ -217,15 +217,17 @@ describe('the terminal keys inside the session drawer', () => {
     expect(tabCount()).toBe(1);
   });
 
-  it('opens a fresh tab in the drawer on the workspace folder from the picker', () => {
+  it('moves the drawer to the workspace folder from the one scope picker', () => {
     mountDrawer();
 
     fireEvent.keyDown(document.body, { code: 'KeyN', metaKey: true });
     fireEvent.click(screen.getByRole('option', { name: /Workspace folder/ }));
 
-    const tabs = store.getState().terminalTabs[SESSION_ID] ?? [];
-    expect(tabs).toHaveLength(2);
-    expect(tabs[1]?.cwd).toBe('/work');
+    const cwds = Object.values(store.getState().terminalTabs)
+      .flat()
+      .map((tab) => tab.cwd);
+    expect(cwds).toContain('/work');
     expect(store.getState().drawer?.kind).toBe('terminal');
+    expect(screen.queryByRole('combobox', { name: 'New terminal in' })).toBeNull();
   });
 });

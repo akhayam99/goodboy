@@ -1,4 +1,5 @@
-import { Listbox, StatusDot, type ListboxOption } from '@goodboy/ui';
+import { Listbox, StatusDot, TEXT_ROLE, type ListboxOption } from '@goodboy/ui';
+import { TERMINAL_PICKER_EVENTS } from '../../terminalPickerEvents';
 import type { TerminalTarget } from '../../terminalTargets';
 import type { TerminalWorktree } from '../../terminalWorktrees';
 import { scopeLabelOf } from './terminalScope';
@@ -45,10 +46,22 @@ export const TerminalScopePicker = ({
       trigger="quiet"
       size="sm"
       ariaLabel="Terminal folder"
+      openEvent={TERMINAL_PICKER_EVENTS.drawer}
+      searchable
       valueLabel={
-        <span className={label.isMono ? 'truncate font-mono' : 'truncate'}>{label.place}</span>
+        <span className="flex min-w-0 items-center gap-1 text-ui">
+          {label.project === null ? null : (
+            <span className={`shrink-0 whitespace-pre ${TEXT_ROLE.secondary}`}>
+              {`${label.project} · `}
+            </span>
+          )}
+          <span className={label.isMono ? 'min-w-0 truncate font-mono' : 'min-w-0 truncate'}>
+            {label.place}
+          </span>
+        </span>
       }
       align="start"
+      anchorClassName="min-w-0"
       popupWidth="content"
       onChange={(key) => {
         if (key === SESSION_FOLDER_KEY) {

@@ -224,10 +224,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
         expectedPort={null}
         portHolder={null}
         facts={null}
-        onRestart={vi.fn()}
         blockedReason={null}
-        isPinned={false}
-        onTogglePin={vi.fn()}
         onOpen={vi.fn()}
         onRun={vi.fn()}
         onStop={vi.fn()}
@@ -245,16 +242,14 @@ describe('every ⋯ menu and its right click list the same actions in the same o
             onDuplicate: null,
             onSaveAs: vi.fn(),
             onDelete: null,
+            pin: { isPinned: false, onToggle: vi.fn() },
           },
         }}
       />,
     );
-    const { fromOverflow, fromContext } = await overflowThenContext({
-      overflow: screen.getByRole('button', { name: 'More for dev' }),
-      context: screen.getByRole('button', { name: 'Show dev output' }),
-    });
-    expect(fromOverflow).toEqual(['Show output', 'Run', 'Save as script', 'Copy command']);
-    expect(fromContext).toEqual(fromOverflow);
+    expect(screen.queryByRole('button', { name: 'More for dev' })).toBeNull();
+    fireEvent.contextMenu(screen.getByRole('button', { name: 'Show dev output' }));
+    expect(menuLabels()).toEqual(['Show output', 'Run', 'Pin', 'Save as script', 'Copy command']);
   });
 
   it('artifact viewer header: the ⋯ and the right click list every action, buttons included, in registry order', async () => {
@@ -527,7 +522,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
 });
 
 describe('an Explore row lists the same verbs on its buttons, its right click and ⌘K', () => {
-  it('file row: the visible menu is the right click, and ⌘K on the focused row lists them all', async () => {
+  it('selected file row: its one menu is the right click, and ⌘K on the focused row lists them all', async () => {
     seedActionState({ useAppStore, seed: {} });
     withMenus(
       <ExploreTree
@@ -549,7 +544,7 @@ describe('an Explore row lists the same verbs on its buttons, its right click an
           errorByPath: {},
         }}
         expanded={{}}
-        selectedRelPath={null}
+        selectedRelPath="src/rounding.ts"
         changes={NO_EXPLORE_CHANGES}
         now={Date.parse('2026-09-14T16:40:00Z')}
         onSetExpanded={vi.fn()}
@@ -680,7 +675,7 @@ describe('⌘K lists the same set as the registry, in the order of the state', (
       })?.resolve() ?? []
     )
       .filter((action) => action.blockedReason === null)
-      .map((action) => action.label.replace(/^Open /, ''));
+      .map((action) => action.label.replace(/^Open /, '').toLowerCase());
     render(
       <ToastProvider>
         <PaletteOverlay onClose={vi.fn()} />
@@ -688,12 +683,18 @@ describe('⌘K lists the same set as the registry, in the order of the state', (
     );
     const firstScreen = optionLabels().filter((label) => !GOTO_LABELS.has(label));
     fireEvent.mouseDown(screen.getByRole('option', { name: 'All actions for this session' }));
-    const level = optionLabels().map((label) => label.replace(/^Open /, '').replace(/…$/, ''));
+    const level = optionLabels().map((label) =>
+      label
+        .replace(/^Open /, '')
+        .replace(/…$/, '')
+        .toLowerCase(),
+    );
 
     expect([...level].sort()).toEqual([...registry].sort());
     expect(firstScreen.some((label) => label === 'Rename')).toBe(true);
     expect(
-      firstScreen.filter((label) => registry.includes(label.replace(/^Open /, ''))).length,
+      firstScreen.filter((label) => registry.includes(label.replace(/^Open /, '').toLowerCase()))
+        .length,
     ).toBeLessThanOrEqual(8);
   });
 
