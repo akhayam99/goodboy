@@ -106,7 +106,6 @@ const { store, hooks } = vi.hoisted(() => ({
     loadSessionPlans: vi.fn(async () => undefined),
   } as Store,
   hooks: {
-    agentHome: 'workflows' as LensKind,
     openQuestions: [] as ReadonlyArray<{ readonly createdByAgentId?: string }>,
     answeredQuestions: [] as ReadonlyArray<{ readonly createdByAgentId?: string }>,
     agentsLaneMounts: 0,
@@ -250,9 +249,6 @@ vi.mock('../SessionOverviewPane/LinkIssueAction', () => ({
     </button>
   ),
 }));
-vi.mock('../../hooks/useSelectedAgentHome', () => ({
-  useSelectedAgentHome: () => hooks.agentHome,
-}));
 import { SessionWorkspace } from './index';
 
 const trailBands = (): number => document.querySelectorAll('[data-slot="trail-bar"]').length;
@@ -294,7 +290,6 @@ beforeEach(() => {
   store.up.mockReset();
   store.loadPhaseRunsForSession.mockClear();
   store.loadSessionPlans.mockClear();
-  hooks.agentHome = 'workflows';
   hooks.openQuestions = [];
   hooks.answeredQuestions = [];
   hooks.agentsLaneMounts = 0;
@@ -343,7 +338,6 @@ describe('SessionWorkspace agent overlay', () => {
     store.activeLens = { [SESSION_ID]: 'review' };
     store.selectedAgentId = { [SESSION_ID]: standaloneResolver.id };
     store.sessionPhaseRuns = { [SESSION_ID]: [standaloneResolver] };
-    hooks.agentHome = 'review';
 
     render(<SessionWorkspace session={session} isActive />);
 
@@ -368,7 +362,6 @@ describe('SessionWorkspace agent overlay', () => {
         },
       ],
     };
-    hooks.agentHome = 'agents';
     const workflowSession = aSession({
       ...session,
       workflowRuns: [
@@ -400,7 +393,6 @@ describe('SessionWorkspace agent overlay', () => {
     store.activeLens = { [SESSION_ID]: 'review' };
     store.selectedAgentId = { [SESSION_ID]: standaloneResolver.id };
     store.sessionPhaseRuns = { [SESSION_ID]: [standaloneResolver] };
-    hooks.agentHome = 'review';
 
     render(<SessionWorkspace session={session} isActive />);
 
@@ -415,7 +407,6 @@ describe('SessionWorkspace agent overlay', () => {
       workflowRunId: undefined,
     });
     store.sessionPhaseRuns = { [SESSION_ID]: [standaloneAgent] };
-    hooks.agentHome = 'agents';
     render(<SessionWorkspace session={session} isActive />);
     expect(screen.queryByRole('separator', { name: 'resize agent list' })).toBeNull();
     expect(screen.getByTestId('agents-lane')).toBeDefined();

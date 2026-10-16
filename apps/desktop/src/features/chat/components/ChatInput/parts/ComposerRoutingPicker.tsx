@@ -6,7 +6,7 @@ import type { useTurnRouting } from '../hooks/useTurnRouting';
 
 type FullRouting = ReturnType<typeof useTurnRouting>;
 
-export type ComposerRouting = Pick<
+type ComposerRouting = Pick<
   FullRouting,
   | 'effectiveProvider'
   | 'effectiveModelId'

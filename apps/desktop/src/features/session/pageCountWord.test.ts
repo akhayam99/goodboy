@@ -1,11 +1,13 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import {
-  COUNTED_PAGE_IDS,
-  pageCountWordOf,
-  type CountedPageId,
-  type PageCountFacts,
-} from './pageCountWord';
+import { pageCountWordOf, type CountedPageId, type PageCountFacts } from './pageCountWord';
+
+const COUNTED_PAGE_IDS = [
+  'runs',
+  'agents',
+  'artifacts',
+  'questions',
+] as const satisfies ReadonlyArray<CountedPageId>;
 
 const QUIET: PageCountFacts = {
   runs: 0,

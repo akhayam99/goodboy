@@ -32,18 +32,18 @@ const FOLDER = '/mock/harborline';
 const PAYMENTS_ROOT = `${FOLDER}/payments-api`;
 const LEDGER_ROOT = `${FOLDER}/ledger-core`;
 const NOTIFY_ROOT = `${FOLDER}/notify-relay`;
-export const PAYMENTS_TREE = `${PAYMENTS_ROOT}/.goodboy/worktrees/gb-7k2q9x`;
+const PAYMENTS_TREE = `${PAYMENTS_ROOT}/.goodboy/worktrees/gb-7k2q9x`;
 const LEDGER_TREE = `${LEDGER_ROOT}/.goodboy/worktrees/gb-4m8d1c`;
 const NOTIFY_TREE = `${NOTIFY_ROOT}/.goodboy/worktrees/gb-2p6w0z`;
 
-export const DEV_PORT = 10350;
+const DEV_PORT = 10350;
 const DEV_SHELL_PID = 4100;
 const DEV_SERVER_PID = 4188;
 
 const terminalId = (value: string): TerminalTabId => brandedId<TerminalTabId>({ value });
 
 const WORKSPACE_TERMINAL = terminalId(`ws:${C13_WORKSPACE_ID}::t1`);
-export const ZSH_TERMINAL = terminalId(`${LEDGER_SESSION_ID}::t1`);
+const ZSH_TERMINAL = terminalId(`${LEDGER_SESSION_ID}::t1`);
 export const DEV_TERMINAL = terminalId(`${LEDGER_SESSION_ID}::t2`);
 const ZSH_TWO_TERMINAL = terminalId(`${LEDGER_SESSION_ID}::t3`);
 const LEDGER_TERMINAL = terminalId(`${LEDGER_SESSION_ID}::t4`);

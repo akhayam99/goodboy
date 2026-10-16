@@ -224,11 +224,6 @@ export const isMountRequestMerged = ({ state, mountId }: RequestParams): boolean
 export const isOpenRequest = ({ request }: CompletedParams): boolean =>
   request !== null && !isTerminal({ state: request.state });
 
-export const mountOpenRequestHead = ({ state, mountId }: RequestParams): string | null => {
-  const request = mountRequestOf({ state, mountId });
-  return isOpenRequest({ request }) ? (request?.headSha ?? '') : null;
-};
-
 const seriesPositionOf = ({
   series,
   mountId,

@@ -14,7 +14,7 @@ import {
 } from './terminalSceneSeed';
 import { C13_WORKSPACE_ID } from './workflowsSceneSeed';
 
-export type TerminalSceneState = 'list' | 'other' | 'menu' | 'workspace' | 'empty';
+type TerminalSceneState = 'list' | 'other' | 'menu' | 'workspace' | 'empty';
 
 type Props = {
   readonly state: TerminalSceneState;

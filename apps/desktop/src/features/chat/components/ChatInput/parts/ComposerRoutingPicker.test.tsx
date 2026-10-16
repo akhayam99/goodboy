@@ -11,8 +11,11 @@ vi.mock('@goodboy/db', async () =>
 );
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { ComponentProps } from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
-import { ComposerRoutingPicker, type ComposerRouting } from './ComposerRoutingPicker';
+import { ComposerRoutingPicker } from './ComposerRoutingPicker';
+
+type ComposerRouting = ComponentProps<typeof ComposerRoutingPicker>['routing'];
 
 const routingOn = ({
   modelId,

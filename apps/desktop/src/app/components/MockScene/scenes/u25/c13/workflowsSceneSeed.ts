@@ -90,7 +90,7 @@ const libraryWorkflow = ({ slug, renameFirstStep }: LibraryParams): Workflow | n
   });
 };
 
-export const FLAKY = workflowOf({
+const FLAKY = workflowOf({
   id: 'mock-c13-workflow-fix-flaky-tests',
   name: 'Fix flaky tests',
   origin: 'custom',

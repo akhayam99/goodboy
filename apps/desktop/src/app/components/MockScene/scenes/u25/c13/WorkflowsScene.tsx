@@ -12,7 +12,7 @@ import {
   FIX_A_BUG,
 } from './workflowsSceneSeed';
 
-export type WorkflowsSceneState =
+type WorkflowsSceneState =
   'list' | 'history' | 'history-empty' | 'history-failed' | 'history-filter';
 
 type Props = {
