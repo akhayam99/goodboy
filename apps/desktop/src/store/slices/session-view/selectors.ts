@@ -222,6 +222,8 @@ const useStageSources = ({
     infos: stages.infoMap,
     sessionGithub,
     mountGithub,
+    sessionGitlabMr,
+    mountGitlabMr,
     sessionPhaseRuns,
     sessionProjectMounts,
     projects,
@@ -273,6 +275,8 @@ export const useSessionListModel = (
     infos,
     sessionGithub,
     mountGithub,
+    sessionGitlabMr,
+    mountGitlabMr,
     sessionPhaseRuns,
     sessionProjectMounts,
     projects,
@@ -286,6 +290,8 @@ export const useSessionListModel = (
     sessionPhaseRuns,
     sessionGithub,
     mountGithub,
+    sessionGitlabMr,
+    mountGitlabMr,
     sessionProjectMounts,
   });
   return useMemo(() => {

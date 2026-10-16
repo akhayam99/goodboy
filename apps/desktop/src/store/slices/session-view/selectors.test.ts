@@ -109,6 +109,7 @@ beforeEach(() => {
     agentDraft: {},
     agentQueue: {},
     sessionGitlabMr: {},
+    mountGitlabMr: {},
     sessionOpenQuestions: {},
     sessionViewPrefs: {},
     sessionGroupExpanded: {},

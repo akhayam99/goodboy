@@ -40,6 +40,8 @@ export const useSessionInactivity = ({
   sessionPhaseRuns,
   sessionGithub,
   mountGithub,
+  sessionGitlabMr,
+  mountGitlabMr,
   sessionProjectMounts,
 }: Params): SessionInactivityMap => {
   const agentDraft = useAppStore((s) => s.agentDraft);
@@ -53,6 +55,8 @@ export const useSessionInactivity = ({
       agentQueue,
       sessionGithub,
       mountGithub,
+      sessionGitlabMr,
+      mountGitlabMr,
       sessionProjectMounts,
     };
     const since = new Map<SessionId, number>();
@@ -88,6 +92,8 @@ export const useSessionInactivity = ({
     agentQueue,
     sessionGithub,
     mountGithub,
+    sessionGitlabMr,
+    mountGitlabMr,
     sessionProjectMounts,
     now,
   ]);

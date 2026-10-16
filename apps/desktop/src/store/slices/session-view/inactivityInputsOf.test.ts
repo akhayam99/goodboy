@@ -12,6 +12,8 @@ import type {
 } from '@goodboy/types';
 import { brandId } from '@goodboy/types';
 import type { MountGithubState, SessionGithubState } from '../../types';
+import type { GitlabMergeRequest } from '../../../features/integrations/gitlab/client';
+import type { MountGitlabMrState, SessionGitlabMrState } from '../gitlab-mr/state';
 import { inactivityInputsOf, type InactivityInputsState } from './inactivityInputsOf';
 
 const SESSION_ID = brandId<SessionId>({ value: 'session-ledger' });
@@ -98,12 +100,50 @@ const mountGithubOf = ({ updatedAt }: PrParams): MountGithubState => ({
   links: [],
 });
 
+const mrOf = ({ updatedAt }: PrParams): GitlabMergeRequest => ({
+  id: 7,
+  iid: 42,
+  projectId: 9,
+  title: 'Reconcile the ledger export',
+  description: null,
+  state: 'opened',
+  webUrl: 'https://gitlab.com/acme/ledger-core/-/merge_requests/42',
+  sourceBranch: 'acme/ledger-export',
+  targetBranch: 'main',
+  draft: false,
+  hasConflicts: false,
+  mergeStatus: 'can_be_merged',
+  updatedAt,
+});
+
+const gitlabOf = ({ updatedAt }: PrParams): SessionGitlabMrState => ({
+  mr: mrOf({ updatedAt }),
+  fetchedAt: null,
+  loading: false,
+  error: null,
+});
+
+const mountGitlabOf = ({ updatedAt }: PrParams): MountGitlabMrState => ({
+  ...gitlabOf({ updatedAt: '2026-09-01T09:00:00.000Z' }),
+  mr: null,
+  mountId: MOUNT_ID,
+  projectId: MOUNT.projectId,
+  revision: 1,
+  host: null,
+  projectPath: null,
+  branch: MOUNT.branch,
+  mrs: [mrOf({ updatedAt })],
+  links: [],
+});
+
 const stateOf = ({ patch = {} }: StatePatch = {}): InactivityInputsState => ({
   sessionPhaseRuns: { [SESSION_ID]: [agentOf()] },
   agentDraft: {},
   agentQueue: {},
   sessionGithub: {},
   mountGithub: {},
+  sessionGitlabMr: {},
+  mountGitlabMr: {},
   sessionProjectMounts: {},
   ...patch,
 });
@@ -153,6 +193,26 @@ describe('inactivityInputsOf', () => {
       patch: {
         sessionProjectMounts: { [SESSION_ID]: [MOUNT] },
         mountGithub: { [MOUNT_ID]: mountGithubOf({ updatedAt: '2026-10-06T09:00:00.000Z' }) },
+      },
+    });
+    expect(inactivityInputsOf({ state, sessionId: SESSION_ID }).seenActivityAt).toBe(
+      Date.parse('2026-10-06T09:00:00.000Z'),
+    );
+  });
+
+  it('counts a merge request event on the session and on one of its mounts', () => {
+    const sessionGitlabMr = {
+      [SESSION_ID]: gitlabOf({ updatedAt: '2026-10-05T09:00:00.000Z' }),
+    };
+    expect(
+      inactivityInputsOf({ state: stateOf({ patch: { sessionGitlabMr } }), sessionId: SESSION_ID })
+        .seenActivityAt,
+    ).toBe(Date.parse('2026-10-05T09:00:00.000Z'));
+
+    const state = stateOf({
+      patch: {
+        sessionProjectMounts: { [SESSION_ID]: [MOUNT] },
+        mountGitlabMr: { [MOUNT_ID]: mountGitlabOf({ updatedAt: '2026-10-06T09:00:00.000Z' }) },
       },
     });
     expect(inactivityInputsOf({ state, sessionId: SESSION_ID }).seenActivityAt).toBe(

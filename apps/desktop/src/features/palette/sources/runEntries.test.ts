@@ -25,6 +25,7 @@ const facts = (
   readyStepName: null,
   hasChanges: false,
   canPause: false,
+  canResume: false,
   hasStepRouting: false,
   canSaveAsPreset: false,
   summary: '',

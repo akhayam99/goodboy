@@ -893,7 +893,9 @@ session exactly at the edge stays). The last activity is the latest of
 each hint sent to its orchestrator, and what `inactivityInputsOf` saw: each
 agent's start, finish, completion, stop, close and last view, and the
 `updatedAt` and `mergedAt` of the session's pull request and of every pull
-request on its mounts, which move on a push or a review. A message you send
+request on its mounts, and the same two fields of the session's GitLab merge
+request and of every merge request on its mounts (`sessionGitlabMr`,
+`mountGitlabMr`), which move on a push or a review. A message you send
 starts a turn, which keeps the session up while it runs and stamps the agent's
 finish when it ends. Three days lets a Friday session survive the weekend; the
 24 hour floor is stated on its own so a session you opened in the last day

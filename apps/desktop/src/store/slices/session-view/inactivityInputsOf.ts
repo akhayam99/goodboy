@@ -4,7 +4,13 @@ import { latestStampMs } from './latestStampMs';
 
 export type InactivityInputsState = Pick<
   AppState,
-  'sessionPhaseRuns' | 'agentDraft' | 'agentQueue' | 'sessionGithub' | 'mountGithub'
+  | 'sessionPhaseRuns'
+  | 'agentDraft'
+  | 'agentQueue'
+  | 'sessionGithub'
+  | 'mountGithub'
+  | 'sessionGitlabMr'
+  | 'mountGitlabMr'
 > & {
   readonly sessionProjectMounts: AppState['sessionProjectMounts'] | undefined;
 };
@@ -39,11 +45,15 @@ export const inactivityInputsOf = ({ state, sessionId }: Params): InactivityInpu
   const sessionPr = state.sessionGithub[sessionId]?.pr ?? null;
   const mountPrs = mounts.flatMap((mount) => state.mountGithub[mount.mountId]?.prs ?? []);
   const prs = sessionPr === null ? mountPrs : [sessionPr, ...mountPrs];
+  const sessionMr = state.sessionGitlabMr[sessionId]?.mr ?? null;
+  const mountMrs = mounts.flatMap((mount) => state.mountGitlabMr[mount.mountId]?.mrs ?? []);
+  const mrs = sessionMr === null ? mountMrs : [sessionMr, ...mountMrs];
   return {
     seenActivityAt: latestStampMs({
       stamps: [
         ...agents.flatMap((agent) => agentStampsOf({ agent })),
         ...prs.flatMap((pr) => [pr.updatedAt, pr.mergedAt]),
+        ...mrs.flatMap((mr) => [mr.updatedAt, mr.mergedAt]),
       ],
     }),
     isQueued: agents.some((agent) => (state.agentQueue[agent.id] ?? []).length > 0),
