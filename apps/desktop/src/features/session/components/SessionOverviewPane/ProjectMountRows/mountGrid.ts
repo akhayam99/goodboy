@@ -1,7 +1,0 @@
-export const MOUNT_ROW_HEIGHT = 36;
-
-export const MOUNT_ROW_PAD = 4;
-
-const MOUNT_CHILD_INDENT = 22;
-
-export const MOUNT_CHILD_PAD = MOUNT_ROW_PAD + MOUNT_CHILD_INDENT;
