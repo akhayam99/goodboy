@@ -7,9 +7,8 @@ type Props = {
   readonly icon: LucideIcon;
   readonly label: string;
   readonly tooltip: string;
-  readonly shortcut?: ShortcutId;
+  readonly shortcut: ShortcutId;
   readonly isOpen: boolean;
-  readonly isDisabled?: boolean;
   readonly testId: string;
   readonly onToggle: () => void;
 };
@@ -20,28 +19,17 @@ export const PaneToggle = ({
   tooltip,
   shortcut,
   isOpen,
-  isDisabled = false,
   testId,
   onToggle,
 }: Props) => (
-  <Tooltip content={tooltip} {...(shortcut !== undefined && { shortcut })}>
+  <Tooltip content={tooltip} shortcut={shortcut}>
     <Button
       variant="quiet"
       size="xs"
       data-testid={testId}
       aria-pressed={isOpen}
-      aria-disabled={isDisabled ? true : undefined}
-      onClick={() => {
-        if (isDisabled) {
-          return;
-        }
-        onToggle();
-      }}
-      className={cn(
-        isOpen && 'bg-selected text-foreground',
-        isDisabled &&
-          'text-disabled-foreground hover:bg-transparent hover:text-disabled-foreground',
-      )}
+      onClick={onToggle}
+      className={cn(isOpen && 'bg-selected text-foreground')}
     >
       <Icon size={ICON_SIZE.row} aria-hidden />
       {label}
