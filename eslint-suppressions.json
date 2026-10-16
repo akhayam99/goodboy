@@ -1329,11 +1329,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/app/components/MockScene/scenes/u23/pagesSeed.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 11
-    }
-  },
   "apps/desktop/src/app/components/MockScene/scenes/u23/policy-failures.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -5482,11 +5477,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/session/agentStateWord.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/session/ask/askButtons.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 3
@@ -5883,7 +5873,7 @@
   },
   "apps/desktop/src/features/session/components/SessionWorkspace/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 22
+      "count": 21
     },
     "@typescript-eslint/naming-convention": {
       "count": 2
@@ -6170,11 +6160,6 @@
       "count": 8
     }
   },
-  "apps/desktop/src/features/session/hooks/useSelectedAgentHome/index.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 6
-    }
-  },
   "apps/desktop/src/features/session/hooks/useSelectedWorkflowRun/index.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 3
@@ -6265,11 +6250,6 @@
     }
   },
   "apps/desktop/src/features/session/openLens.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/session/pageCountWord.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
     }
