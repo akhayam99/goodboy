@@ -76,9 +76,9 @@ export const LENS_ENTRY_ROWS: ReadonlyArray<Row> = [
         throw new Error('the seeded session has no standalone agent');
       }
       const [name] = await screen.findAllByText(agent.name, undefined, WAIT);
-      const card = name?.closest('[data-agent-card]');
+      const card = name?.closest('[data-agent-row]');
       if (card === null || card === undefined) {
-        throw new Error('the agents lens shows no agent card');
+        throw new Error('the agents lens shows no agent row');
       }
       await openObjectMenu(card);
       await runMenuItem(/^Open agent/);

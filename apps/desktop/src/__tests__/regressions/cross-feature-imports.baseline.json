@@ -76,7 +76,7 @@
     "session -> integrations": 14,
     "session -> providers": 5,
     "session -> reports": 1,
-    "session -> resolve": 6,
+    "session -> resolve": 5,
     "session -> suggestions": 1,
     "session -> wireframes": 1,
     "session -> workTreeModel": 6,

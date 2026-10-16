@@ -185,8 +185,8 @@ vi.mock('../AgentDetailPane', () => ({
 vi.mock('../../../artifacts/components/ArtifactStudio', () => ({ ArtifactStudio: () => null }));
 vi.mock('../../../scripts', () => ({ ScriptsPanel: () => null }));
 vi.mock('../../../worktree/worktree', () => ({ worktreeStatus: vi.fn() }));
-vi.mock('../StandaloneAgentsLane', () => ({
-  StandaloneAgentsLane: ({
+vi.mock('../AgentsGrid', () => ({
+  AgentsGrid: ({
     session,
     onInspectAgent,
   }: {
