@@ -485,7 +485,7 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
 
 The live state of an operation is said once, as the last line of the content
 the user reads: `TailLine` in `features/live-state/`. It knows no operation:
-it takes `TailFacts` (`state`, `phrase`, `startedAt`, `actions`) and draws the
+it takes `TailFacts` (`state`, `phrase`, `startedAt`, `stepAgentId`, `actions`) and draws the
 glyph, the phrase, the clock and the actions. Each operation has one adapter in
 `features/live-state/adapters/` that builds those facts from its owner of
 truth, and a header word or a rail row of the same host reads the same
@@ -509,10 +509,16 @@ Rules the adapters hold, each with a test in `adapters.test.ts`:
 - The working phrase comes from the last tool event, never from model text and
   never the command text: "Running pnpm in payments-api", "Reading export.ts",
   "Searching the code", "Writing the answer" (`workingPhraseOf`).
-- The clock counts from the real start of the state (`startedAt` of the turn
-  or the step) and reads like every other duration (`formatDuration`: "42s",
-  "2m 37s", "1h 12m"), nothing in the first second, and only `working`,
-  `waiting` and `queued` tick.
+- The clock shows execution time, never the time spent waiting on you. A run
+  step tail (`workflowRunLive`, `runTailOf`, `orchestratedTailOf`) names the
+  step in `stepAgentId`, and `TailLine` reads the step's active time from the
+  `WorkTimeContext` source through `agentActiveClock`, the function the step
+  row reads too, so the two always show one value; without that source it
+  draws no clock. A tail that waits for your answer (`blocked`, a run step
+  waiting on you) draws no clock. A running turn and an operation with no wait
+  in it count from their real start (`startedAt`). Every clock reads like every
+  other duration (`formatDuration`: "42s", "2m 37s", "1h 12m"), nothing in the
+  first second, and only `working`, `waiting` and `queued` tick.
 - A state that waits for the user (`needsYou`, `paused`, `failed`, `stopped`)
   puts its one forward move first as a small secondary button; other actions
   are quiet text actions. `needsYou` (an open question or an approval) draws the
@@ -714,7 +720,7 @@ the agent in `error` with a retryable error event.
 ## Measured time and estimates
 
 - `listSessionTurnSpans`, `listWorkspaceTurnSpans` and `listTurnSpans` (every workspace) (`@goodboy/db`) read spans with the agent's parent and status. The `durationEstimates` store slice keeps them: `sessionTurnSpans` per session for live rows, `workspaceDurationHistory` per workspace for the estimator (last 90 days). Each workspace history also carries `everyWorkspace`, the same samples built from the spans of every workspace.
-- An agent's active time is the union of its own spans, its subagents' spans and the turn running now (`agentTurnState` `running` since `startedAt`). Parallel subagents count once. A run's active time is the union over all its agents. `familyActiveTime` in `features/workTreeModel/workTimeSource.ts` computes it.
+- An agent's active time is the union of its own spans, its subagents' spans and the turn running now (`agentTurnState` `running` since `startedAt`). Parallel subagents count once. A run's active time is the union over all its agents. `familyActiveTime` in `features/workTreeModel/workTimeSource.ts` computes it, and `agentActiveTime` beside it picks it for one agent (only the turn running now for a running turn row): the row (`agentWorkTime`) and the run tail clock (`agentActiveClock`) both read `agentActiveTime`.
 - `buildDurationHistory` (`@goodboy/core`) turns spans into two units of sample. `steps`: one per root agent whose status is `completed`, keyed by the role, provider, model and effort of its last turn. `turns`: one per `succeeded` span of any agent, chat agents included, since a chat agent never completes but closes turns. It adds one sample per finished orchestrated run.
 - `estimateDuration` takes a `unit`: a workflow step row asks for `step`, any other agent row for `turn`, and a running turn row measures only the turn running now. It picks the first tier with enough samples: role, provider, model and effort (5), then without effort (5), then the same model and effort in every workspace (`modelAnyWorkspace`, 5, and the tooltip says `across your workspaces`), then role and provider (8), then role alone (8). These minimums are the only gate. It keeps the newest 50, caps them at the 95th percentile, and returns a band of time and cost (`lowMs`, `midMs`, `highMs`). An unsized step gets the 25th, 50th and 75th percentiles. A running row measures against the top of the band, so a typical run fills its arc without overflowing it; a queued row shows the band.
 - `workTime` (`features/workTreeModel/workTime.ts`) picks the label per phase: a queued row shows the band with `~`, a running row the time left against the band (`timeLeftLabel`), its elapsed time past the band with the note `Longer than usual`, and `isMuchLonger` at twice the top of the band. A waiting row freezes its elapsed time; a done row shows its active time and the same note when it ran past the band, though a step row (the timeline and the run tree) shows the note only while it runs, as a warm time with the note in its tooltip. `headline` joins elapsed time and time left for the agent header and the Brief's Now.

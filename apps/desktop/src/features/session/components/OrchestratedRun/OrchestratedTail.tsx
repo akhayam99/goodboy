@@ -53,7 +53,13 @@ export const OrchestratedTail = ({ session, view }: Props) => {
       className="flex min-w-0 flex-col"
     >
       <TailLine
-        facts={{ state: tail.state, phrase: tail.phrase, startedAt: tail.startedAt, actions: [] }}
+        facts={{
+          state: tail.state,
+          phrase: tail.phrase,
+          startedAt: null,
+          stepAgentId: tail.stepAgentId,
+          actions: [],
+        }}
         onAction={() => undefined}
         verbs={
           tail.verbs.length === 0

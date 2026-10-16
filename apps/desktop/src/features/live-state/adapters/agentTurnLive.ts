@@ -50,7 +50,7 @@ export const agentTurnLive = ({
     return {
       state: 'waiting',
       phrase: 'Waiting for your answer',
-      startedAt: turn.blockedAt,
+      startedAt: null,
       actions: [TAIL_ACTION.answer],
     };
   }

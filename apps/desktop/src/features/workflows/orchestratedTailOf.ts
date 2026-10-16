@@ -25,7 +25,7 @@ type OrchestratedQuiet = {
 export type OrchestratedTail = {
   readonly state: TailState;
   readonly phrase: string;
-  readonly startedAt: IsoDateTime | null;
+  readonly stepAgentId: AgentId | null;
   readonly verbs: ReadonlyArray<OrchestratedVerb>;
 };
 
@@ -96,7 +96,7 @@ export const orchestratedTailOf = ({
     return {
       state: 'waiting',
       phrase: `No output for ${quiet.minutes} min`,
-      startedAt: null,
+      stepAgentId: null,
       verbs: [{ kind: 'quiet', agentId: quiet.agentId }],
     };
   }
@@ -107,7 +107,7 @@ export const orchestratedTailOf = ({
         restartStoppedCount === 1
           ? '1 agent stopped when Goodboy closed'
           : `${restartStoppedCount} agents stopped when Goodboy closed`,
-      startedAt: null,
+      stepAgentId: null,
       verbs: [{ kind: 'resumeAll', count: restartStoppedCount }],
     };
   }
@@ -117,7 +117,7 @@ export const orchestratedTailOf = ({
   const base = {
     state: TAIL_STATE[orchestrator.phase],
     phrase: phraseOf({ orchestrator }),
-    startedAt: null,
+    stepAgentId: null,
   };
   if (phase === 'waiting') {
     const runningIndex = roots.findIndex((agent) => agent.status === 'running');
@@ -125,7 +125,7 @@ export const orchestratedTailOf = ({
     if (running !== undefined && orchestrator.waitingOnAgentId === running.id) {
       return {
         ...base,
-        startedAt: running.startedAt ?? null,
+        stepAgentId: running.id,
         verbs: [{ kind: 'stopStep', agent: running, number: runningIndex + 1 }],
       };
     }

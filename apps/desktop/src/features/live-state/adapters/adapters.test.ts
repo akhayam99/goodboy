@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { brandId, type IsoDateTime, type ProviderRunId, type TurnState } from '@goodboy/types';
+import {
+  brandId,
+  type AgentId,
+  type IsoDateTime,
+  type ProviderRunId,
+  type TurnState,
+} from '@goodboy/types';
 import { aDelegation, aPlanRow, aView } from '../../auto/testing/autoViewFixtures';
 import { agentTurnLive } from './agentTurnLive';
 import { autoChildLive } from './autoChildLive';
@@ -200,17 +206,45 @@ describe('autoChildLive', () => {
 });
 
 describe('operation adapters', () => {
-  it('names the run step and its role', () => {
+  it('names the run step and its role, and clocks the step from its active time', () => {
+    const stepAgentId = brandId<AgentId>({ value: 'agent-tester' });
     const facts = workflowRunLive({
       status: 'running',
       stepNumber: 3,
       stepCount: 4,
       roleNoun: 'Tester',
-      stepStartedAt: STARTED,
+      stepAgentId,
       failure: null,
     });
     expect(facts?.phrase).toBe('Step 3 of 4 · Tester is working');
+    expect(facts?.startedAt).toBeNull();
+    expect(facts?.stepAgentId).toBe(stepAgentId);
     expect(idsOf(facts)).toEqual(['stopStep']);
+  });
+
+  it('runs no clock while a turn waits for your answer', () => {
+    const facts = agentTurnLive({
+      turn: { kind: 'blocked', runId: RUN, blockedAt: STARTED },
+      agent: IDLE_AGENT,
+      lastTool: null,
+      project: null,
+      hasQueuedMessage: false,
+    });
+    expect(facts?.phrase).toBe('Waiting for your answer');
+    expect(facts?.startedAt).toBeNull();
+  });
+
+  it('runs no clock while a run step waits for your answer', () => {
+    const facts = workflowRunLive({
+      status: 'waiting',
+      stepNumber: 3,
+      stepCount: 4,
+      roleNoun: 'Tester',
+      stepAgentId: brandId<AgentId>({ value: 'agent-tester' }),
+      failure: null,
+    });
+    expect(facts?.startedAt).toBeNull();
+    expect(facts?.stepAgentId ?? null).toBeNull();
   });
 
   it('names the check a CI fix works on', () => {

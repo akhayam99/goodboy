@@ -107,7 +107,7 @@ describe('orchestratedTailOf', () => {
       agents: [DONE, RUNNING, CHILD],
     });
     expect(tail.state).toBe('waiting');
-    expect(tail.startedAt).toBe(STARTED);
+    expect(tail.stepAgentId).toBe(RUNNING.id);
     expect(tail?.verbs).toEqual([{ kind: 'stopStep', agent: RUNNING, number: 2 }]);
   });
 

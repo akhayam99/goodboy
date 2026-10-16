@@ -12,6 +12,8 @@ type Props = {
 
 const TICKING: ReadonlySet<TailState> = new Set(['working', 'waiting', 'queued']);
 
+const RUNNING: ReadonlySet<TailState> = new Set(['working', 'queued']);
+
 const WAITS_FOR_YOU: ReadonlySet<TailState> = new Set(['needsYou', 'paused', 'failed', 'stopped']);
 
 const PHRASE_CLASS = {
@@ -31,7 +33,9 @@ const QUIET_ACTION =
 export const TailLine = ({ facts, onAction, verbs = null }: Props) => {
   const clock = useTailClock({
     startedAt: facts.startedAt,
+    stepAgentId: facts.stepAgentId ?? null,
     isTicking: TICKING.has(facts.state),
+    isRunning: RUNNING.has(facts.state),
   });
   const hasForward = WAITS_FOR_YOU.has(facts.state);
   return (

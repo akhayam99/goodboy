@@ -1,4 +1,4 @@
-import type { IsoDateTime } from '@goodboy/types';
+import type { AgentId, IsoDateTime } from '@goodboy/types';
 
 export type TailState =
   'working' | 'waiting' | 'queued' | 'needsYou' | 'paused' | 'failed' | 'stopped' | 'idle';
@@ -27,5 +27,6 @@ export type TailFacts = Readonly<{
   state: TailState;
   phrase: string;
   startedAt: IsoDateTime | null;
+  stepAgentId?: AgentId | null;
   actions: ReadonlyArray<TailAction>;
 }>;

@@ -12,6 +12,7 @@ import { processStopLive } from '../../../../../../features/live-state/adapters/
 import { workflowRunLive } from '../../../../../../features/live-state/adapters/workflowRunLive';
 import type { TailFacts } from '../../../../../../features/live-state/tailFacts';
 import { sceneClock } from '../../../sceneClock';
+import { TAIL_SCENE_STEP } from './tailSceneStep';
 
 const CLOCK = sceneClock({ anchor: '2026-10-16T09:01:12.000Z' });
 const STARTED = CLOCK.iso({ at: '2026-10-16T09:00:00.000Z' });
@@ -96,7 +97,7 @@ const FACTS: Record<TailSceneState, () => TailFacts | null> = {
       stepNumber: 3,
       stepCount: 4,
       roleNoun: 'Tester',
-      stepStartedAt: STARTED,
+      stepAgentId: TAIL_SCENE_STEP.agentId,
       failure: null,
     }),
   cleanup: () =>

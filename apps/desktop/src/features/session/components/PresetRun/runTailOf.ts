@@ -24,7 +24,7 @@ export type RunTailVerb =
 export type RunTail = {
   readonly state: TailState;
   readonly phrase: string;
-  readonly startedAt: IsoDateTime | null;
+  readonly stepAgentId: AgentId | null;
   readonly verb: RunTailVerb | null;
 };
 
@@ -96,7 +96,7 @@ const primaryTailOf = ({
       return {
         state: 'idle',
         phrase: last === null ? 'Ready to start' : `Step ${last} done · ready to continue`,
-        startedAt: null,
+        stepAgentId: null,
         verb,
       };
     }
@@ -105,23 +105,28 @@ const primaryTailOf = ({
         state: 'queued',
         phrase:
           run.triggerMode === 'after_run' ? `Starts after ${predecessorName}` : 'Waits to start',
-        startedAt: null,
+        stepAgentId: null,
         verb,
       };
     case 'resume':
-      return { state: 'stopped', phrase: 'Paused by you', startedAt: null, verb: null };
+      return { state: 'stopped', phrase: 'Paused by you', stepAgentId: null, verb: null };
     case 'raise-cap':
-      return { state: 'paused', phrase: 'Paused at the limit', startedAt: null, verb };
+      return { state: 'paused', phrase: 'Paused at the limit', stepAgentId: null, verb };
     case 'review-plan':
     case 'approve-plan':
-      return { state: 'waiting', phrase: 'The plan waits for your review', startedAt: null, verb };
+      return {
+        state: 'waiting',
+        phrase: 'The plan waits for your review',
+        stepAgentId: null,
+        verb,
+      };
     case 'answer':
-      return { state: 'waiting', phrase: 'Waiting for your answer', startedAt: null, verb };
+      return { state: 'waiting', phrase: 'Waiting for your answer', stepAgentId: null, verb };
     case 'continue':
     case 'retry':
     case 'decide-next':
     case 'restore':
-      return { state: 'idle', phrase: primary.label, startedAt: null, verb };
+      return { state: 'idle', phrase: primary.label, stepAgentId: null, verb };
     default: {
       const exhaustive: never = primary.kind;
       return exhaustive;
@@ -147,17 +152,17 @@ export const runTailOf = ({
     return null;
   }
   if (isWorkflowRunClosedByUser({ run })) {
-    return { state: 'stopped', phrase: 'Stopped by you', startedAt: null, verb: null };
+    return { state: 'stopped', phrase: 'Stopped by you', stepAgentId: null, verb: null };
   }
   if (isCompleted) {
-    return { state: 'idle', phrase: 'Run finished', startedAt: null, verb: null };
+    return { state: 'idle', phrase: 'Run finished', stepAgentId: null, verb: null };
   }
   const steps = agents.filter((agent) => agent.parentAgentId == null);
   if (quiet !== null) {
     return {
       state: 'waiting',
       phrase: `No output for ${quiet.minutes} min`,
-      startedAt: null,
+      stepAgentId: null,
       verb: { kind: 'quiet', agentId: quiet.agentId },
     };
   }
@@ -170,7 +175,7 @@ export const runTailOf = ({
     return {
       state: 'working',
       phrase: `${stepLabelOf({ workflow, agent: running, roleById })} is working`,
-      startedAt: running.startedAt ?? null,
+      stepAgentId: running.id,
       verb: {
         kind: 'openStep',
         agentId: running.id,
@@ -185,7 +190,7 @@ export const runTailOf = ({
         restartStoppedCount === 1
           ? '1 agent stopped when Goodboy closed'
           : `${restartStoppedCount} agents stopped when Goodboy closed`,
-      startedAt: null,
+      stepAgentId: null,
       verb: { kind: 'resumeAll', count: restartStoppedCount },
     };
   }
@@ -193,7 +198,7 @@ export const runTailOf = ({
     return {
       state: 'waiting',
       phrase: 'Waiting for your answer',
-      startedAt: null,
+      stepAgentId: null,
       verb: { kind: 'answer', question },
     };
   }
@@ -201,7 +206,7 @@ export const runTailOf = ({
     return {
       state: 'waiting',
       phrase: nextAction.sentence,
-      startedAt: null,
+      stepAgentId: null,
       verb: { kind: 'answer', question: nextAction.question },
     };
   }
@@ -209,18 +214,18 @@ export const runTailOf = ({
     return {
       state: 'failed',
       phrase: nextAction.sentence,
-      startedAt: null,
+      stepAgentId: null,
       verb: { kind: 'recover' },
     };
   }
   if (nextAction.kind === 'summarizing') {
-    return { state: 'working', phrase: 'Writing the next brief', startedAt: null, verb: null };
+    return { state: 'working', phrase: 'Writing the next brief', stepAgentId: null, verb: null };
   }
   if (run.orchestrationStop?.kind === 'budget') {
     return {
       state: 'paused',
       phrase: 'Paused at the limit',
-      startedAt: null,
+      stepAgentId: null,
       verb: { kind: 'raiseCap' },
     };
   }
@@ -232,7 +237,7 @@ export const runTailOf = ({
     return {
       state: 'stopped',
       phrase: `${stepLabelOf({ workflow, agent: stopped, roleById })} stopped`,
-      startedAt: null,
+      stepAgentId: null,
       verb: { kind: 'continueStep', agentId: stopped.id },
     };
   }

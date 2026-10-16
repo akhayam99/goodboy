@@ -216,8 +216,14 @@ and a duration read, so no surface writes its own rule.
 - `formatDuration({ durationMs })` (`time/formatDuration.ts`) is the one
   duration, live and done: "42s", "2m 37s", "1h 12m". It returns `null` under
   one second, so nothing shows before the first second and "ms" never shows. The
-  clock form "2:37" is gone: `useTailClock` in `features/live-state` ticks once
-  a second over the thing's own `startedAt` and formats through
+  clock form "2:37" is gone. A run step clock counts execution only, never the
+  time spent waiting on you: a tail that names `stepAgentId` reads the same
+  active time as the step row (`agentActiveClock` over `agentActiveTime` in
+  `features/workTreeModel`, from the `WorkTimeContext` source), so the row and
+  the tail always show one value, and it draws no clock without that source. A
+  tail that waits for your answer draws no clock. Only an operation with no
+  wait in it (a cleanup, a history rewrite, a fix run) keeps `useTailClock`
+  ticking once a second over its own `startedAt`. Both format through
   `formatDuration`, returning `null` in the first second.
 
 ## Type scale

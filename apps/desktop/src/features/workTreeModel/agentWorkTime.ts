@@ -10,8 +10,14 @@ import type { AgentId, AgentRole, EffortLevel, StepSize } from '@goodboy/types';
 import { providerIdOf } from '../../shared/utils/providerIdOf';
 import { estimateBasis, unknownEstimateBasis } from './estimateBasis';
 import type { RowPhase } from './rowState';
-import { workEstimateOf, workTime, type WorkEstimate, type WorkTime } from './workTime';
-import { familyActiveTime, type WorkTimeSource } from './workTimeSource';
+import {
+  formatActiveTime,
+  workEstimateOf,
+  workTime,
+  type WorkEstimate,
+  type WorkTime,
+} from './workTime';
+import { agentActiveTime, type WorkTimeSource } from './workTimeSource';
 
 type KeyParams = {
   readonly role: AgentRole;
@@ -82,23 +88,14 @@ const turnWorkTime = ({
   estimate,
   unknownBasis,
 }: TurnParams): WorkTime | null => {
-  const liveStartMs = source.liveStartMs.get(agentId);
-  if (phase === 'running' && liveStartMs !== undefined) {
-    return workTime({
-      phase,
-      activeMs: Math.max(0, source.nowMs - liveStartMs),
-      hasStarted: true,
-      estimate,
-      unknownBasis,
-    });
-  }
-  const active = familyActiveTime({ agentIds: [agentId], source });
+  const active = agentActiveTime({ agentId, unit: 'turn', isRunning: phase === 'running', source });
+  const isLiveTurn = phase === 'running' && source.liveStartMs.has(agentId);
   return workTime({
     phase,
     activeMs: active.activeMs,
     hasStarted: active.hasStarted,
-    estimate: active.hasStarted ? null : estimate,
-    unknownBasis: null,
+    estimate: isLiveTurn || !active.hasStarted ? estimate : null,
+    unknownBasis: isLiveTurn ? unknownBasis : null,
   });
 };
 
@@ -116,7 +113,7 @@ export const agentWorkTime = (params: Params): WorkTime | null => {
   if (unit === 'turn') {
     return turnWorkTime({ ...params, estimate, unknownBasis });
   }
-  const active = familyActiveTime({ agentIds: [agentId], source });
+  const active = agentActiveTime({ agentId, unit, isRunning: phase === 'running', source });
   return workTime({
     phase,
     activeMs: active.activeMs,
@@ -124,4 +121,25 @@ export const agentWorkTime = (params: Params): WorkTime | null => {
     estimate,
     unknownBasis,
   });
+};
+
+type ClockParams = {
+  readonly agentId: AgentId;
+  readonly unit: DurationUnit;
+  readonly isRunning: boolean;
+  readonly source: WorkTimeSource;
+};
+
+export const agentActiveClock = ({
+  agentId,
+  unit,
+  isRunning,
+  source,
+}: ClockParams): string | null => {
+  const active = agentActiveTime({ agentId, unit, isRunning, source });
+  if (!active.hasStarted) {
+    return null;
+  }
+  const label = formatActiveTime({ ms: active.activeMs });
+  return label === '' ? null : label;
 };

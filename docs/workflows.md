@@ -311,7 +311,7 @@ read top to bottom at the conversation measure:
   talk to the step from **Open full**.
 - **Tail** (`OrchestratedTail`, phrases and verbs in `orchestratedTailOf`).
   The thinking line speaks the phase of `resolveOrchestratorState` once, at the
-  end of the content, after the result: "Waiting on step 3 · Tester" with its clock and **Stop step
+  end of the content, after the result: "Waiting on step 3 · Tester" with its clock (the step's active time, the value of its row) and **Stop step
   3** (asks first, `stopWorkflowRunNow`), "Choosing the next step", "Waiting
   for your go" with **Decide next step**, "Waiting for your answer on step 4"
   with **Answer**, "Paused at the limit" with

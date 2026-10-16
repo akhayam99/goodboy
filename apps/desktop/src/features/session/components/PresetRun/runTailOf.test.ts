@@ -67,7 +67,7 @@ describe('runTailOf', () => {
         agents: agentsOf({ scout: 'completed', implementer: 'pending' }),
         primary: { kind: 'resume', label: 'Resume' },
       }),
-    ).toEqual({ state: 'stopped', phrase: 'Paused by you', startedAt: null, verb: null });
+    ).toEqual({ state: 'stopped', phrase: 'Paused by you', stepAgentId: null, verb: null });
   });
 
   it('stays silent while the step on screen runs, since its own line speaks', () => {

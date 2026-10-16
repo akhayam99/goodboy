@@ -87,7 +87,13 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
         </p>
       ) : null}
       <TailLine
-        facts={{ state: tail.state, phrase: tail.phrase, startedAt: tail.startedAt, actions: [] }}
+        facts={{
+          state: tail.state,
+          phrase: tail.phrase,
+          startedAt: null,
+          stepAgentId: tail.stepAgentId,
+          actions: [],
+        }}
         onAction={() => undefined}
         verbs={
           tail.verb === null ? null : <RunTailVerb session={session} view={view} verb={tail.verb} />
