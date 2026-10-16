@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { autoBudgetFacts, autoBudgetLabel, autoBudgetPromptLine } from '@goodboy/core';
+import { autoBudgetOf, autoBudgetLabel, autoBudgetPromptLine } from '@goodboy/core';
 import { listAutoReservations } from '@goodboy/db';
 import {
   brandId,
@@ -116,7 +116,7 @@ describe('treeSpend', () => {
     await settle({ world, key: 'a', costUsd: 2.4 });
     const spend = await requireSpend({ world });
     const budget = await world.scheduler.budget({ treeId: WORLD_TREE });
-    const facts = autoBudgetFacts({ spend });
+    const facts = autoBudgetOf({ spend });
     expect(budget?.facts).toEqual(facts);
     expect(budget?.label).toBe(autoBudgetLabel({ facts }));
     expect(budget?.promptLine).toBe(autoBudgetPromptLine({ facts }));

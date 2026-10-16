@@ -165,9 +165,11 @@ export {
   type AutoTreeLimitKey,
 } from './auto/limits';
 export {
-  autoBudgetFacts,
+  autoBudgetOf,
   autoBudgetLabel,
   autoBudgetPromptLine,
+  autoBudgetUsedUsd,
+  capTextOf,
   type AutoBudgetFacts,
 } from './auto/budget';
 export {

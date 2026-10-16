@@ -1,5 +1,11 @@
 import { brandId, type AgentId, type AutoTreeId, type SessionId } from '@goodboy/types';
 import type { Database, GuardedStatement } from '../client';
+import {
+  AUTO_USD_EPSILON,
+  autoReservedUsdSql,
+  autoSettledUsdSql,
+  readAutoTreeSpend,
+} from './auto-reservations';
 
 export const AUTO_PHASES = [
   'answering',
@@ -511,19 +517,36 @@ type SetAutoTreeCapParams = {
   readonly nowMs: number;
 };
 
+export type SetAutoTreeCapOutcome =
+  | Readonly<{ kind: 'applied' }>
+  | Readonly<{ kind: 'stale'; capUsd: number }>
+  | Readonly<{ kind: 'below_used'; usedUsd: number }>
+  | Readonly<{ kind: 'missing' }>;
+
 export const setAutoTreeCapIfUnchanged = async ({
   db,
   treeId,
   expectedCapUsd,
   capUsd,
   nowMs,
-}: SetAutoTreeCapParams): Promise<boolean> => {
+}: SetAutoTreeCapParams): Promise<SetAutoTreeCapOutcome> => {
+  const usedSql = `${autoSettledUsdSql({ treeRef: 'auto_trees.id' })} + ${autoReservedUsdSql({ treeRef: 'auto_trees.id' })}`;
   const result = await db.execute(
-    `UPDATE auto_trees SET cap_usd = ?, phase_rev = phase_rev + 1, updated_at = ?
-     WHERE id = ? AND cap_usd = ?`,
-    [capUsd, nowMs, treeId, expectedCapUsd],
+    `UPDATE auto_trees SET cap_usd = ?, updated_at = ?
+     WHERE id = ? AND cap_usd IS ? AND ? + ${AUTO_USD_EPSILON} >= ${usedSql}`,
+    [capUsd, nowMs, treeId, expectedCapUsd, capUsd],
   );
-  return result.rowsAffected === 1;
+  if (result.rowsAffected === 1) {
+    return { kind: 'applied' };
+  }
+  const spend = await readAutoTreeSpend({ db, treeId });
+  if (spend === null) {
+    return { kind: 'missing' };
+  }
+  if (spend.capUsd !== expectedCapUsd) {
+    return { kind: 'stale', capUsd: spend.capUsd };
+  }
+  return { kind: 'below_used', usedUsd: spend.settledUsd + spend.reservedUsd };
 };
 
 type GrantAutoTreeParams = {

@@ -123,6 +123,7 @@ const renderRail = ({
     <AutoWorkRail
       rows={railRowsOf({ view: WORKING, agents: [], rootRouting: ROOT_ROUTING })}
       budget={WORKING.budget}
+      limitControl={null}
       selectedAgentId={FIXTURE_ROOT}
       isCollapsed={isCollapsed}
       onToggleCollapsed={onToggle}

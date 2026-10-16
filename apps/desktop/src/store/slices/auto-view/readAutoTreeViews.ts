@@ -1,4 +1,4 @@
-import { autoBudgetFacts } from '@goodboy/core';
+import { autoBudgetOf } from '@goodboy/core';
 import {
   listAutoArtifactLedger,
   listAutoDelegations,
@@ -30,7 +30,7 @@ export const readAutoTreeViews = async ({
         tree,
         delegations,
         artifacts,
-        budget: spend === null ? null : autoBudgetFacts({ spend }),
+        budget: spend === null ? null : autoBudgetOf({ spend }),
       };
     }),
   );

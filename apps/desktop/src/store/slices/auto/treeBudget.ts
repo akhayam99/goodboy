@@ -1,5 +1,5 @@
 import {
-  autoBudgetFacts,
+  autoBudgetOf,
   autoBudgetLabel,
   autoBudgetPromptLine,
   type AutoBudgetFacts,
@@ -24,7 +24,7 @@ export const treeBudget = async ({ db, treeId }: TreeBudgetParams): Promise<Tree
   if (spend === null) {
     return null;
   }
-  const facts = autoBudgetFacts({ spend });
+  const facts = autoBudgetOf({ spend });
   return {
     facts,
     label: autoBudgetLabel({ facts }),

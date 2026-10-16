@@ -1,8 +1,10 @@
-import type { AutoBudgetFacts } from '@goodboy/core';
+import type { ReactNode } from 'react';
+import { capTextOf, type AutoBudgetFacts } from '@goodboy/core';
 import { formatUsd } from '@goodboy/ui';
 
 type Props = {
   readonly facts: AutoBudgetFacts;
+  readonly limitControl: ReactNode | null;
 };
 
 type ShareParams = {
@@ -13,16 +15,18 @@ type ShareParams = {
 const shareOf = ({ part, whole }: ShareParams): number =>
   whole <= 0 ? 0 : Math.min(100, Math.max(0, (part / whole) * 100));
 
-export const AutoTreeBudget = ({ facts }: Props) => {
+export const AutoTreeBudget = ({ facts, limitControl }: Props) => {
   const spent = shareOf({ part: facts.spentUsd, whole: facts.capUsd });
   const reserved = shareOf({ part: facts.reservedUsd, whole: facts.capUsd });
   return (
     <section aria-label="Tree budget" className="flex shrink-0 flex-col gap-2 px-4 pb-4 pt-3">
       <div className="flex items-center justify-between gap-2">
         <span className="text-eyebrow text-faint-foreground">Tree budget</span>
-        <span className="text-meta tabular-nums text-faint-foreground">
-          Limit {formatUsd(facts.capUsd)}
-        </span>
+        {limitControl ?? (
+          <span className="text-meta tabular-nums text-faint-foreground">
+            {capTextOf({ facts })}
+          </span>
+        )}
       </div>
       <div
         role="img"

@@ -130,22 +130,54 @@ describe('a restart keeps what the tree counted', () => {
 describe('the budget cap changes only from the value that was seen', () => {
   it('keeps the old cap when two windows change it from the same value', async () => {
     const world = await makeAutoWorld();
-    const hasFirstApplied = await setAutoTreeCapIfUnchanged({
+    const first = await setAutoTreeCapIfUnchanged({
       db: world.db,
       treeId: WORLD_TREE,
       expectedCapUsd: 5,
       capUsd: 8,
       nowMs: world.clock.now(),
     });
-    const hasSecondApplied = await setAutoTreeCapIfUnchanged({
+    const second = await setAutoTreeCapIfUnchanged({
       db: world.db,
       treeId: WORLD_TREE,
       expectedCapUsd: 5,
       capUsd: 2,
       nowMs: world.clock.now(),
     });
-    expect([hasFirstApplied, hasSecondApplied]).toEqual([true, false]);
+    expect([first, second]).toEqual([{ kind: 'applied' }, { kind: 'stale', capUsd: 8 }]);
     expect((await getAutoTree({ db: world.db, treeId: WORLD_TREE }))?.capUsd).toBe(8);
+  });
+
+  it('refuses a cap under what is spent and reserved, checked in the same write', async () => {
+    const world = await makeAutoWorld({ capUsd: 5 });
+    const seenCap = (await getAutoTree({ db: world.db, treeId: WORLD_TREE }))?.capUsd;
+    const admitted = await world.scheduler.admit(
+      batchInput({ children: [childInput({ key: 'a', role: 'implementer' })] }),
+    );
+    expect(admitted.kind).toBe('accepted');
+    const lowered = await setAutoTreeCapIfUnchanged({
+      db: world.db,
+      treeId: WORLD_TREE,
+      expectedCapUsd: seenCap ?? 5,
+      capUsd: 1,
+      nowMs: world.clock.now(),
+    });
+    expect(lowered).toEqual({ kind: 'below_used', usedUsd: 3 });
+    expect((await getAutoTree({ db: world.db, treeId: WORLD_TREE }))?.capUsd).toBe(5);
+  });
+
+  it('keeps the phase revision, so a running turn does not lose its next step', async () => {
+    const world = await makeAutoWorld();
+    const before = await getAutoTree({ db: world.db, treeId: WORLD_TREE });
+    await setAutoTreeCapIfUnchanged({
+      db: world.db,
+      treeId: WORLD_TREE,
+      expectedCapUsd: 5,
+      capUsd: 10,
+      nowMs: world.clock.now(),
+    });
+    const after = await getAutoTree({ db: world.db, treeId: WORLD_TREE });
+    expect(after?.phaseRev).toBe(before?.phaseRev);
   });
 
   it('admits a batch that was refused for budget once the cap is raised', async () => {

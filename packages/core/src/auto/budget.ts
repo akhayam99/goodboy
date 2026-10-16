@@ -14,11 +14,11 @@ type RoundUsdParams = {
 
 const roundUsd = ({ usd }: RoundUsdParams): number => Math.round(usd * 100) / 100;
 
-type BudgetFactsParams = {
+type BudgetOfParams = {
   readonly spend: AutoTreeSpend;
 };
 
-export const autoBudgetFacts = ({ spend }: BudgetFactsParams): AutoBudgetFacts => ({
+export const autoBudgetOf = ({ spend }: BudgetOfParams): AutoBudgetFacts => ({
   capUsd: roundUsd({ usd: spend.capUsd }),
   spentUsd: roundUsd({ usd: spend.settledUsd }),
   reservedUsd: roundUsd({ usd: spend.reservedUsd }),
@@ -31,6 +31,14 @@ type FactsParams = {
 };
 
 const usdText = ({ usd }: RoundUsdParams): string => `${usd.toFixed(2)} USD`;
+
+const dollarText = ({ usd }: RoundUsdParams): string => `$${usd.toFixed(2)}`;
+
+export const autoBudgetUsedUsd = ({ facts }: FactsParams): number =>
+  roundUsd({ usd: facts.spentUsd + facts.reservedUsd });
+
+export const capTextOf = ({ facts }: FactsParams): string =>
+  `Limit ${dollarText({ usd: facts.capUsd })}`;
 
 export const autoBudgetLabel = ({ facts }: FactsParams): string => {
   const spent = usdText({ usd: facts.spentUsd });

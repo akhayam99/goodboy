@@ -773,6 +773,7 @@ export {
   recordAutoRefusal,
   releaseAutoTree,
   setAutoTreeCapIfUnchanged,
+  type SetAutoTreeCapOutcome,
   type AutoPhase,
   type AutoStopState,
   type AutoTree,

@@ -159,8 +159,20 @@ Overview; they live in the Work rail of the chat.
   line, the model and time on the second. One spine runs from ring edge to ring
   edge in the tone of the ring it reaches: green when done, blue when working,
   dashed when queued. The foot is the tree budget, **Spent**, **Reserved** and
-  **Left** from `treeSpend`. The rail can fold to a strip of rings, and it is
-  not drawn for an Auto that only answers.
+  **Left** from `treeSpend`, read through `autoBudgetOf`. The rail can fold to a
+  strip of rings, and it is not drawn for an Auto that only answers.
+- **Changing the limit.** The **Limit** in the rail foot is a button. Its popover
+  offers $5, $10, $20 or a custom amount (at most 2 decimals) and applies it on
+  **Set limit**, also while the tree runs. An amount under spent plus reserved
+  shows "The limit must cover spent and reserved usage." and cannot be set.
+  `setAutoTreeCap` (`store/slices/auto/setAutoTreeCap.ts`) writes it in one
+  statement that compares the cap it read and checks spent plus reserved in the
+  same write, so a reservation cannot slip in between; a lost compare says "The
+  limit changed in another window." and a failed save keeps the popover open with
+  "Could not save the limit. Try again." It leaves `phase_rev` alone, so a running
+  turn keeps its next step, then drives the tree, so a tree paused at the limit
+  resumes after a raise. The cap changes only this conversation; the workspace
+  cap stays the start value of the next one.
 - **Delegation cards.** Each delegation is a card in the transcript: role, model
   and effort, a live time, one state, Auto's reason, a note when the app changed
   the model it asked for, **Reserved up to** while it works, and when it
