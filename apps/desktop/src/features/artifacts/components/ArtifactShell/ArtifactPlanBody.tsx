@@ -21,20 +21,6 @@ type Props = {
   readonly measure?: 'reading' | 'full';
 };
 
-type EchoParams = {
-  readonly text: string;
-  readonly title: string;
-};
-
-type PlainParams = {
-  readonly value: string;
-};
-
-const plainLine = ({ value }: PlainParams): string => value.trim().replace(/\.$/, '').toLowerCase();
-
-const echoesTitle = ({ text, title }: EchoParams): boolean =>
-  plainLine({ value: text }) === plainLine({ value: title });
-
 export const ArtifactPlanBody = ({
   plan,
   rows,
@@ -52,7 +38,7 @@ export const ArtifactPlanBody = ({
     });
     return hasRows ? { ...split, rest: dropPartsSection({ text: split.rest }) } : split;
   }, [plan.bodyMd, plan.title, hasRows]);
-  const hasLead = body.lead.length > 0 && !echoesTitle({ text: body.lead, title: plan.title });
+  const hasLead = body.lead.length > 0;
 
   return (
     <PlanCommentsProvider
