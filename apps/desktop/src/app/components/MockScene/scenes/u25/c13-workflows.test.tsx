@@ -95,7 +95,7 @@ describe('c13 workflows scenes', () => {
       'Open the run in Nightly reconciliation before cutoff',
       'Open the run in Acme refund idempotency',
     ]);
-    expect(rows[0]?.textContent).toContain('Step 3 of 3');
+    expect(rows[0]?.textContent).toContain('Running');
     expect(rows[0]?.textContent).toContain('$0.71');
     expect(within(rows[0] ?? pane()).getByRole('img', { name: 'Running' })).toBeDefined();
     expect(within(rows[2] ?? pane()).getByRole('img', { name: 'Failed' })).toBeDefined();

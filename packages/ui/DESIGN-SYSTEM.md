@@ -154,7 +154,7 @@ state is a `StateDot` or a glyph in a 16px column.
   `data-selected` and `aria-current`. Up and Down move focus between rows.
 - `rowHeight` is 32 by default and 28 in the sidebar.
 - `ListGridGroup` names a group in sentence case with its count in the last
-  column; an `action` (one visible word, such as `Open session` on a Terminal
+  column; an `action` (one visible control, such as the `Open session` arrow on a Terminal
   page group) sits right after the name and never takes the count's column; a
   grouped grid (`isGrouped`) spaces its groups 16px apart, never with a divider.
 

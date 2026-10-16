@@ -4,7 +4,6 @@ import { ListGrid, ListGridRow, SegmentedTabs, StateDot, formatUsd } from '@good
 import { sessionTitle } from '../../../session/sessionTitle';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
-import { runHistoryProgress } from '../../runHistoryProgress';
 import { runHistoryState, type RunHistoryStateKey } from '../../runHistoryState';
 import { HISTORY_COLUMNS } from './historyColumns';
 
@@ -60,9 +59,11 @@ export const WorkflowHistoryList = ({ workflowName, runs, onOpenRun }: Props) =>
               tooltip={`${title} · ${state.label}`}
               onSelect={() => onOpenRun(run)}
               cells={[
-                <StateDot state={state.dot} label={state.label} />,
                 title,
-                runHistoryProgress({ run }),
+                <span className="flex items-center gap-2">
+                  <StateDot state={state.dot} label={state.label} />
+                  {state.label}
+                </span>,
                 formatAge({ from: run.createdAt, now }),
                 formatUsd(run.costUsd),
               ]}
