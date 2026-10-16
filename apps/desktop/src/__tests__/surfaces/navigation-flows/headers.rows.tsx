@@ -125,7 +125,7 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'agent page: opens on the Brief from a door when it has content, and the tab picked by hand is remembered for that agent only',
+    name: 'agent page: one conversation with no Brief or Transcript tabs, View transcript opens the transcript pane',
     covers: ['navigate'],
     open: async (ctx) => {
       const agents = (useAppStore.getState().sessionPhaseRuns[ctx.sessionId] ?? []).filter(
@@ -163,31 +163,21 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
       if (first == null) {
         throw new Error('no agent opened');
       }
-      const tab = (name: string) => screen.findByRole('tab', { name }, WAIT);
-      expect((await tab('Brief')).getAttribute('aria-selected')).toBe('true');
+      const viewTranscript = await screen.findByRole('button', { name: 'View transcript' }, WAIT);
+      expect(screen.queryByRole('tab', { name: 'Brief' })).toBeNull();
+      expect(screen.queryByRole('tab', { name: 'Transcript' })).toBeNull();
 
-      await click(await tab('Transcript'));
-      expect(state().agentTab[first]).toBe('transcript');
-
-      state().navigate({
-        to: {
-          at: 'session',
-          sessionId: ctx.sessionId,
-          view: { lens: null, agentId: null, target: null },
-        },
-      });
-      await settle();
-      state().navigate({ to: agentPlace({ sessionId: ctx.sessionId, agentId: first }) });
-      await settle();
-      await waitFor(
-        async () => expect((await tab('Transcript')).getAttribute('aria-selected')).toBe('true'),
-        WAIT,
-      );
+      await click(viewTranscript);
+      await waitFor(() => {
+        const drawer = state().drawer;
+        expect(drawer?.kind).toBe('transcript');
+        expect(drawer?.kind === 'transcript' ? drawer.payload.agentId : null).toBe(first);
+      }, WAIT);
 
       state().navigate({ to: agentPlace({ sessionId: ctx.sessionId, agentId: OTHER_AGENT }) });
       await settle();
       await waitFor(
-        async () => expect((await tab('Brief')).getAttribute('aria-selected')).toBe('true'),
+        () => expect(screen.getByRole('heading', { name: /Review the retry cap/ })).toBeDefined(),
         WAIT,
       );
     },

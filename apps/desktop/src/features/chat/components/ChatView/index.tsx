@@ -550,7 +550,8 @@ export const ChatView = ({
               </div>
             ) : deferredItems.length === 0 &&
               oqByTurnOrdinal.size === 0 &&
-              slackDrafts.length === 0 ? (
+              slackDrafts.length === 0 &&
+              (insertions ?? []).length === 0 ? (
               <div className="flex h-full items-center justify-center">
                 <ChatEmptyState
                   sessionId={session.id}

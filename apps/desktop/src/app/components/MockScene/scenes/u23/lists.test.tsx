@@ -73,13 +73,13 @@ describe('the u23 list scenes', () => {
     expect(Object.keys(U23_LISTS_SCENES).sort()).toEqual([...SCENE_IDS].sort());
   });
 
-  it('names the model of the last turn in the header of a finished agent', async () => {
+  it('shows the provider and no model in the header of a finished agent', async () => {
     renderScene('agent-finished-model');
 
-    const meta = await screen.findByTestId('agent-header-meta');
-    expect(within(meta).getByText('Opus 5')).toBeDefined();
-    expect(within(meta).queryByText('Model unknown')).toBeNull();
-    expect(within(meta).queryByText('Next turn:')).toBeNull();
+    const row = await screen.findByTestId('agent-header-title-row');
+    expect(within(row).getByTestId('agent-header-provider')).toBeDefined();
+    expect(within(row).queryByText('Opus 5')).toBeNull();
+    expect(screen.queryByTestId('agent-header-meta')).toBeNull();
   });
 
   it('keeps the composer model chip quiet while it matches the header', async () => {
@@ -90,14 +90,15 @@ describe('the u23 list scenes', () => {
     expect(trigger.textContent).not.toContain('Opus 5');
   });
 
-  it('labels Stop with a word and the model as the next turn on a running agent', async () => {
+  it('puts Stop as a word on the tail of a running agent, never in the header', async () => {
     renderScene('agent-running-stop');
 
     const stop = await screen.findByRole('button', { name: 'Stop' });
     expect(stop.textContent).toBe('Stop');
-    const meta = screen.getByTestId('agent-header-meta');
-    expect(within(meta).getByText('Next turn:')).toBeDefined();
-    expect(within(meta).getByText('Sonnet 5')).toBeDefined();
+    expect(stop.closest('[data-conversation-tail]')).not.toBeNull();
+    const row = screen.getByTestId('agent-header-title-row');
+    expect(within(row).queryByRole('button', { name: 'Stop' })).toBeNull();
+    expect(within(row).queryByText('Next turn:')).toBeNull();
   });
 
   it('shows artifact rows with a kind column and one action, Delete only in the overflow', async () => {
