@@ -99,14 +99,16 @@ describe('the Auto chat scenes', () => {
     expect(within(tail).getByRole('button', { name: /^Stop/ })).toBeDefined();
   });
 
-  it('auto-chat-plan asks for approval in the drawer and keeps the rail whole', async () => {
+  it('auto-chat-plan asks for approval in the reader pane and folds the rail beside it', async () => {
     mount({ id: 'auto-chat-plan' });
 
     const toolbar = await screen.findByTestId('auto-plan-toolbar', undefined, WAIT);
     expect(within(toolbar).getByText('Needs approval')).toBeDefined();
     expect(within(toolbar).getByRole('button', { name: /Approve plan/ })).toBeDefined();
     expect(within(toolbar).getByRole('button', { name: /Ask for changes/ })).toBeDefined();
-    expect(within(rail()).getByText('Needs you')).toBeDefined();
+    const sidebar = screen.getByRole('navigation', { name: 'Sidebar' });
+    expect(sidebar.querySelector('[data-rail-level="auto"]')).not.toBeNull();
+    expect(within(sidebar).getByRole('button', { name: /, Needs you$/ })).toBeDefined();
     expect(
       screen.getByRole('button', { name: 'Open plan Retry-safe credit retries' }),
     ).toBeDefined();

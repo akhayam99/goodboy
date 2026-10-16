@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { DrawerColumn } from '@goodboy/ui';
+import { COLLAPSED_RAIL_WIDTH, DrawerColumn } from '@goodboy/ui';
 import type { AgentId } from '@goodboy/types';
 import { AutoLevel } from '../../../SessionRail/AutoLevel';
+import { RailAutoLevel } from '../../../SessionRail/RailAutoLevel';
+import { shellFoldsOf } from '../../../../shellArrangement/shellFoldsOf';
 import { AutoReleaseContext } from '../../../../../features/auto/autoReleaseContext';
 import { AgentDetailPane } from '../../../../../features/session/components/AgentDetailPane';
 import { useAppStore } from '../../../../../store';
@@ -34,6 +36,7 @@ export const AutoChatScene = ({ state, isPlanOpen = false, selected = 'root' }: 
   const selectedId: AgentId = selected === 'root' ? AUTO_ROOT_ID : PLANNER_ID;
   const data = autoSceneOf({ state });
   const agent = data.agents.find((candidate) => candidate.id === selectedId) ?? null;
+  const folds = shellFoldsOf({ paneSizing: isDrawerOpen ? sizing : null });
 
   useEffect(() => {
     seedActivityRunScene();
@@ -80,12 +83,22 @@ export const AutoChatScene = ({ state, isPlanOpen = false, selected = 'root' }: 
   return (
     <AutoReleaseContext.Provider value>
       <main className="flex h-screen bg-background text-foreground">
-        <nav
-          aria-label="Sidebar"
-          className="flex h-full w-60 shrink-0 flex-col border-r border-border-soft pt-1"
-        >
-          <AutoLevel session={AUTO_SESSION} />
-        </nav>
+        {folds.isRailNarrow ? (
+          <nav
+            aria-label="Sidebar"
+            className="flex h-full shrink-0 flex-col border-r border-border-soft pt-1"
+            style={{ width: COLLAPSED_RAIL_WIDTH }}
+          >
+            <RailAutoLevel session={AUTO_SESSION} />
+          </nav>
+        ) : (
+          <nav
+            aria-label="Sidebar"
+            className="flex h-full w-60 shrink-0 flex-col border-r border-border-soft pt-1"
+          >
+            <AutoLevel session={AUTO_SESSION} />
+          </nav>
+        )}
         <DrawerColumn
           main={
             <AgentDetailPane
