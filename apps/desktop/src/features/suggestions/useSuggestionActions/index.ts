@@ -606,6 +606,7 @@ export const useSuggestionActions = ({
       return {
         primary: {
           label: isMany ? NAMES.removeWorktrees : NAMES.removeWorktree,
+          shortLabel: 'Remove',
           isDisabled: false,
           requiresConfirm: true,
           failureTitle: isMany ? "Couldn't remove the worktrees" : "Couldn't remove the worktree",

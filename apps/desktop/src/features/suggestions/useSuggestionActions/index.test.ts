@@ -898,6 +898,7 @@ describe('useSuggestionActions', () => {
     });
 
     expect(actions.primary?.label).toBe('Remove worktrees');
+    expect(actions.primary?.shortLabel).toBe('Remove');
     expect(actions.primary?.requiresConfirm).toBe(true);
     expect(actions.onDismiss).toBeNull();
     await actions.primary?.run();

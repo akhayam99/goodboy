@@ -132,9 +132,10 @@ describe('the c05 overview scenes', () => {
     );
     expect(row).toBeDefined();
     expect(row?.textContent).toContain('#418 merged · 412 MB');
-    within(present({ value: row, what: 'the cleanup row' })).getByRole('button', {
+    const remove = within(present({ value: row, what: 'the cleanup row' })).getByRole('button', {
       name: 'Remove worktree',
     });
+    expect(remove.textContent).toBe('Remove');
     within(present({ value: row, what: 'the cleanup row' })).getByRole('button', {
       name: 'Not now',
     });
