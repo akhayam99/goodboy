@@ -97,7 +97,7 @@ describe('workspace tile and collapsed rail axis', () => {
 
   it('draws a folded session tool as its open row without the word', () => {
     expect(TOOLS_GROUP).toContain('className="flex shrink-0 flex-col px-2"');
-    expect(TOOL_ROW).toContain('className="h-7 items-center gap-2 px-2 text-label"');
+    expect(TOOL_ROW).toContain('className="h-7 items-center gap-2 px-2 text-ui"');
     expect(TOOL_ICON).toContain('className="relative h-7 items-center px-2"');
     expect(TOOL_ROW).toContain('size={ICON_SIZE.row}');
     expect(TOOL_ICON).toContain('size={ICON_SIZE.row}');

@@ -88,7 +88,7 @@ describe('the c02 sidebar and session rail scenes', () => {
     expect(document.querySelector('[data-level-layer="session"]')).toBeNull();
   });
 
-  it('c02-level-session keeps the workspace sidebar and shows identity, pages, projects and linked work in the rail', async () => {
+  it('c02-level-session keeps the workspace sidebar and shows pages, projects and linked work in the rail, no identity row', async () => {
     await mount('c02-level-session');
 
     expect(levelOf()).toBe('session');
@@ -96,7 +96,10 @@ describe('the c02 sidebar and session rail scenes', () => {
     expect(mainSidebar().querySelector('[data-level-layer]')).toBeNull();
     const level = within(sessionLayer());
     expect(level.queryByRole('button', { name: 'Back to Sessions' })).toBeNull();
-    expect(level.getByText('Retry failed webhook deliveries')).toBeDefined();
+    expect(level.queryByText('Retry failed webhook deliveries')).toBeNull();
+    expect(
+      within(mainSidebar()).getByRole('button', { name: /^Retry failed webhook deliveries/ }),
+    ).toBeDefined();
     const pages = within(level.getByRole('list', { name: 'Pages' }));
     expect(pages.getAllByRole('button').map((row) => row.textContent)).toEqual([
       'Overview',
@@ -109,7 +112,7 @@ describe('the c02 sidebar and session rail scenes', () => {
     ]);
     expect(
       sessionLayer().querySelector('[data-page-value="runs"]')?.getAttribute('data-tone'),
-    ).toBe('running');
+    ).toBe('info');
     const projects = within(level.getByRole('group', { name: 'Projects' }));
     expect(projects.getByText('#331')).toBeDefined();
     expect(within(level.getByRole('group', { name: 'Linked' })).getByText('NW-142')).toBeDefined();

@@ -13,7 +13,7 @@ import { sessionRowTitle } from '../../../session/sessionTitle';
 import { SessionRowTitle } from '../SessionRowTitle';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { useRenameRequest } from '../../../actions/useRenameRequest';
-import { sessionObjectKey } from '../../../actions/kinds/session';
+import { SESSION_HEADER_ANCHOR, sessionObjectKey } from '../../../actions/kinds/session';
 import { sessionSelectionTarget } from '../../../actions/sessionSelectionTarget';
 import { useSessionTitleRename } from '../../../session/hooks/useSessionTitleRename';
 import { sessionNodeOf } from '../../../session/sessionNode';
@@ -71,7 +71,7 @@ const SessionActivityItemView = ({
   const rename = useSessionTitleRename({ sessionId, currentTitle: session.goal });
   useRenameRequest({
     objectKey: sessionObjectKey({ sessionId }),
-    anchorKeys: [anchorKey],
+    anchorKeys: isActive ? [anchorKey, null, SESSION_HEADER_ANCHOR] : [anchorKey],
     onRename: rename.start,
   });
   const menu = useObjectMenuTrigger({

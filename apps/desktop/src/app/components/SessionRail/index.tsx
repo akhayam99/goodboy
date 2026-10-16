@@ -17,6 +17,7 @@ import { SessionTools } from '../../../features/session/components/SessionTools'
 import { leaveRunLevel } from '../../../features/workflows/leaveRunLevel';
 import { useColumnPlace } from '../../hooks/useColumnPlace';
 import { useShellFolds } from '../../hooks/useShellFolds';
+import { SessionLevelMenu } from './SessionLevel/SessionLevelMenu';
 import { SessionRailIcons } from './SessionRailIcons';
 import { SessionRailLevels } from './SessionRailLevels';
 import { SessionRailToggle } from './SessionRailToggle';
@@ -83,8 +84,11 @@ export const SessionRail = ({ session }: Props) => {
         'motion-safe:transition-[width] motion-safe:duration-220 motion-safe:ease-out',
       )}
     >
-      <div className="flex w-11 shrink-0 items-center justify-center">
-        <SessionRailToggle isFolded={fold.isFolded} onToggle={fold.toggle} />
+      <div data-rail-top="" className="flex min-w-0 shrink-0 items-center justify-between pr-2">
+        <div className="flex w-11 shrink-0 items-center justify-center">
+          <SessionRailToggle isFolded={fold.isFolded} onToggle={fold.toggle} />
+        </div>
+        {fold.isFolded || level !== 'session' ? null : <SessionLevelMenu session={session} />}
       </div>
       <FoldLayers
         isFolded={fold.isFolded}

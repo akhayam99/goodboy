@@ -77,10 +77,8 @@ const goalOf = (ctx: Ctx): string => {
 
 const sidebarTones = async (ctx: Ctx): Promise<ReadonlyArray<string | null>> => {
   await screen.findAllByRole('button', { name: goalOf(ctx) }, WAIT);
-  const identity = document.querySelector(
-    '[data-level-layer="session"]:not([inert]) [data-level-identity]',
-  );
-  return [identity?.querySelector('[data-node-tone]')?.getAttribute('data-node-tone') ?? null];
+  const row = document.querySelector(`[data-select-id="${ctx.sessionId}"]`);
+  return [row?.querySelector('[data-node-tone]')?.getAttribute('data-node-tone') ?? null];
 };
 
 export const BITBUCKET_PAGE_ROWS: ReadonlyArray<Row> = [

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { SelectableRow } from '@goodboy/ui';
 import type { Session, SessionExternalTaskProvider } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, type LensKind } from '../../../../store';
@@ -6,7 +7,10 @@ import { distinctTasks } from '../../../../shared/utils/distinctTasks';
 import { IntegrationGlyph } from '../../../../features/integrations/components/IntegrationGlyph';
 import { LinkIssueAction } from '../../../../features/session/components/SessionOverviewPane/LinkIssueAction';
 import { openLens } from '../../../../features/session/openLens';
+import { useMountRows } from '../../../../features/session/components/SessionOverviewPane/ProjectMountRows/useMountRows';
+import { githubRefOf } from './githubRefOf';
 import { LevelLabel } from './LevelLabel';
+import { LinkedKey } from './LinkedKey';
 import { LinkedTaskRow } from './LinkedTaskRow';
 
 type Props = {
@@ -35,8 +39,32 @@ const PROVIDER_ORDER: Record<SessionExternalTaskProvider, number> = {
 
 export const LevelLinked = ({ session, isActive }: Props) => {
   const sessionId = session.id;
-  const linkedIssues = useAppStore((s) => s.sessionGithub[sessionId]?.linkedIssues ?? EMPTY_ARRAY);
-  const externalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
+  const allLinkedIssues = useAppStore(
+    (s) => s.sessionGithub[sessionId]?.linkedIssues ?? EMPTY_ARRAY,
+  );
+  const allExternalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
+  const groups = useMountRows({ sessionId });
+  const ownedRefs = useMemo(
+    () =>
+      new Set(
+        groups.flatMap((group) =>
+          [...group.rows, ...group.finishedRows].flatMap((row) => {
+            const ref =
+              row.request?.provider === 'github' ? githubRefOf({ url: row.request.url }) : null;
+            return ref === null ? [] : [ref];
+          }),
+        ),
+      ),
+    [groups],
+  );
+  const isOwned = (url: string): boolean => {
+    const ref = githubRefOf({ url });
+    return ref !== null && ownedRefs.has(ref);
+  };
+  const linkedIssues = allLinkedIssues.filter((issue) => !isOwned(issue.url));
+  const externalTasks = allExternalTasks.filter(
+    (task) => task.provider !== 'github' || !isOwned(task.url),
+  );
   const shownTask = useAppStore((s) =>
     TASK_LENSES.has(s.activeLens[sessionId] ?? null)
       ? (s.focusedExternalTask[sessionId] ?? null)
@@ -79,10 +107,10 @@ export const LevelLinked = ({ session, isActive }: Props) => {
                   setFocusedGithubIssueNumber(sessionId, issue.number);
                   openLens({ sessionId, lens: 'github_issue' });
                 }}
-                className="h-7 items-center gap-2 px-2 text-label"
+                className="h-7 items-center gap-2 px-2 text-ui"
               >
                 <IntegrationGlyph provider="github" size="xs" className="shrink-0" />
-                <span className="shrink-0 text-code text-muted-foreground">#{issue.number}</span>
+                <LinkedKey identifier={`#${issue.number}`} />
                 <span className="min-w-0 flex-1 truncate">{issue.title ?? ''}</span>
               </SelectableRow>
             </li>

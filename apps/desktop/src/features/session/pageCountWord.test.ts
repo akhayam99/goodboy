@@ -14,8 +14,10 @@ const COUNTED_PAGE_IDS = [
 const QUIET: PageCountFacts = {
   runs: 0,
   runningRuns: 0,
+  waitingRuns: 0,
   orchestratedRuns: 0,
   runningOrchestratedRuns: 0,
+  waitingOrchestratedRuns: 0,
   agents: 0,
   runningAgents: 0,
   autoAgents: 0,
@@ -73,6 +75,13 @@ describe('pageCountWordOf', () => {
     expect(wordOf('artifacts', facts)).toBe(expected);
   });
 
+  it('names a run that waits on you before a running one', () => {
+    expect(wordOf('runs', { runs: 3, runningRuns: 1, waitingRuns: 2 })).toBe('2 need you');
+    expect(wordOf('orchestrated', { orchestratedRuns: 1, waitingOrchestratedRuns: 1 })).toBe(
+      '1 needs you',
+    );
+  });
+
   it('reads Questions as the number open', () => {
     expect(wordOf('questions', { openQuestions: 2 })).toBe('2 open');
   });
@@ -81,8 +90,10 @@ describe('pageCountWordOf', () => {
     const everything: PageCountFacts = {
       runs: 4,
       runningRuns: 0,
+      waitingRuns: 0,
       orchestratedRuns: 1,
       runningOrchestratedRuns: 0,
+      waitingOrchestratedRuns: 0,
       agents: 3,
       runningAgents: 0,
       autoAgents: 2,

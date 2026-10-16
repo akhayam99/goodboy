@@ -30,10 +30,10 @@ export const FinishedWorktrees = ({ sessionId, projectName, rows, statuses, show
         isExpanded={isOpen}
         ariaLabel={`${rows.length} finished in ${projectName}`}
         onClick={() => setIsOpen((wasOpen) => !wasOpen)}
-        className="h-7 items-center gap-2 px-2 text-label text-muted-foreground"
+        className="h-7 items-center gap-1 px-2 text-ui text-muted-foreground"
       >
+        <span className="min-w-0 truncate">{`${rows.length} finished`}</span>
         <Chevron size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-        <span className="min-w-0 flex-1 truncate">{`${rows.length} finished`}</span>
       </SelectableRow>
       {isOpen ? (
         <ul aria-label={`${projectName} finished worktrees`} className="flex flex-col">

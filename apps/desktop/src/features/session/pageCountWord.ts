@@ -3,8 +3,10 @@ export type CountedPageId = 'runs' | 'orchestrated' | 'agents' | 'auto' | 'artif
 export type PageCountFacts = {
   readonly runs: number;
   readonly runningRuns: number;
+  readonly waitingRuns: number;
   readonly orchestratedRuns: number;
   readonly runningOrchestratedRuns: number;
+  readonly waitingOrchestratedRuns: number;
   readonly agents: number;
   readonly runningAgents: number;
   readonly autoAgents: number;
@@ -26,9 +28,13 @@ type RunningParams = {
   readonly running: number;
   readonly total: number;
   readonly noun: string;
+  readonly waiting?: number;
 };
 
-const runningOr = ({ running, total, noun }: RunningParams): string | null => {
+const runningOr = ({ running, total, noun, waiting = 0 }: RunningParams): string | null => {
+  if (waiting > 0) {
+    return `${waiting} ${waiting === 1 ? 'needs' : 'need'} you`;
+  }
   if (running > 0) {
     return `${running}${RUNNING_SUFFIX}`;
   }
@@ -36,12 +42,19 @@ const runningOr = ({ running, total, noun }: RunningParams): string | null => {
 };
 
 const COUNT_WORD: Readonly<Record<CountedPageId, (facts: PageCountFacts) => string | null>> = {
-  runs: (facts) => runningOr({ running: facts.runningRuns, total: facts.runs, noun: 'run' }),
+  runs: (facts) =>
+    runningOr({
+      running: facts.runningRuns,
+      total: facts.runs,
+      noun: 'run',
+      waiting: facts.waitingRuns,
+    }),
   orchestrated: (facts) =>
     runningOr({
       running: facts.runningOrchestratedRuns,
       total: facts.orchestratedRuns,
       noun: 'run',
+      waiting: facts.waitingOrchestratedRuns,
     }),
   agents: (facts) =>
     runningOr({ running: facts.runningAgents, total: facts.agents, noun: 'agent' }),

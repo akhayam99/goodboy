@@ -28,7 +28,8 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { brandedId } from '../../../../features/history/testing/brandedId';
-import { IdentityRow } from './IdentityRow';
+import { SessionLevelMenu } from './SessionLevelMenu';
+import { RENAME_REQUEST_EVENT } from '../../../../features/actions/renameRequest';
 
 const render = (ui: ReactNode) => renderPlain(<ToastProvider>{ui}</ToastProvider>);
 
@@ -58,9 +59,9 @@ afterEach(cleanup);
 const openMenu = () =>
   fireEvent.click(screen.getByRole('button', { name: 'More session actions' }));
 
-describe('the identity row of the session level', () => {
+describe('the session menu on the session rail top row', () => {
   it('holds rename, pin, refresh, archive and delete in its menu, delete last', () => {
-    render(<IdentityRow session={session} />);
+    render(<SessionLevelMenu session={session} />);
 
     openMenu();
 
@@ -77,7 +78,7 @@ describe('the identity row of the session level', () => {
   });
 
   it('drops rename, pin and refresh from an archived session and offers Unarchive', () => {
-    render(<IdentityRow session={{ ...session, archivedAt: NOW }} />);
+    render(<SessionLevelMenu session={{ ...session, archivedAt: NOW }} />);
 
     openMenu();
 
@@ -86,12 +87,16 @@ describe('the identity row of the session level', () => {
     screen.getByRole('menuitem', { name: /Unarchive session/ });
   });
 
-  it('starts the inline rename from the title and from the menu', () => {
-    render(<IdentityRow session={session} />);
+  it('hands Rename to the main sidebar row when it is there, else renames in place', () => {
+    const onRequest = vi.fn((event: Event) => event.preventDefault());
+    window.addEventListener(RENAME_REQUEST_EVENT, onRequest);
+    render(<SessionLevelMenu session={session} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Refactor auth' }));
-    expect(screen.getByRole('textbox', { name: 'Session title' })).toBeDefined();
-    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Session title' }), { key: 'Escape' });
+    openMenu();
+    fireEvent.click(screen.getByRole('menuitem', { name: /^Rename/ }));
+    expect(onRequest).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('textbox', { name: 'Session title' })).toBeNull();
+    window.removeEventListener(RENAME_REQUEST_EVENT, onRequest);
 
     openMenu();
     fireEvent.click(screen.getByRole('menuitem', { name: /^Rename/ }));
@@ -101,7 +106,7 @@ describe('the identity row of the session level', () => {
   it('deletes the session once through the store after the confirm', async () => {
     const deleteTask = vi.fn(async () => undefined);
     useAppStore.setState({ deleteTask });
-    render(<IdentityRow session={session} />);
+    render(<SessionLevelMenu session={session} />);
 
     openMenu();
     fireEvent.click(screen.getByRole('menuitem', { name: /Delete session…/ }));
@@ -121,7 +126,7 @@ describe('the identity row of the session level', () => {
     const pinSession = vi.fn(async () => undefined);
     const unpinSession = vi.fn(async () => undefined);
     useAppStore.setState({ pinSession, unpinSession });
-    render(<IdentityRow session={session} />);
+    render(<SessionLevelMenu session={session} />);
 
     openMenu();
     fireEvent.click(screen.getByRole('menuitem', { name: /^Pin session/ }));
@@ -131,23 +136,9 @@ describe('the identity row of the session level', () => {
     useAppStore.setState({
       sessionPins: { [WORKSPACE_ID]: [{ id: SESSION_ID, at: 1 }] },
     });
-    render(<IdentityRow session={session} />);
+    render(<SessionLevelMenu session={session} />);
     openMenu();
     fireEvent.click(screen.getByRole('menuitem', { name: /Unpin session/ }));
     expect(unpinSession).toHaveBeenCalledWith(SESSION_ID);
-  });
-
-  it('renders a backticked title as inline code without the backticks', () => {
-    render(<IdentityRow session={{ ...session, goal: 'run `/explore` first' }} />);
-
-    const title = screen.getByRole('button', { name: /run/ });
-    expect(title.querySelector('code')?.textContent).toBe('/explore');
-    expect(title.textContent).not.toContain('`');
-  });
-
-  it('falls back to one untitled label when the session carries no title', () => {
-    render(<IdentityRow session={{ ...session, goal: '   ' }} />);
-
-    screen.getByRole('button', { name: 'Untitled session' });
   });
 });

@@ -217,14 +217,14 @@ export const SIDEBAR_NAV_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'pins: pin from the identity menu, Move down from the row menu, and the order survives a reload',
+    name: 'pins: pin from the session menu, Move down from the row menu, and the order survives a reload',
     covers: ['pin:header-toggle', 'row menu: Move down'],
     open: async (ctx) => {
       otherId = otherSessionId(ctx.sessionId);
-      const identity = sessionLevel().querySelector<HTMLElement>('[data-level-identity]');
-      expect(identity).not.toBeNull();
+      const menu = document.querySelector<HTMLElement>('[data-rail-top] [data-session-menu]');
+      expect(menu).not.toBeNull();
       await click(
-        within(identity as HTMLElement).getByRole('button', { name: 'More session actions' }),
+        within(menu as HTMLElement).getByRole('button', { name: 'More session actions' }),
       );
       await click(await screen.findByRole('menuitem', { name: 'Pin session' }, WAIT));
       await waitFor(() => expect(pinnedIds()).toEqual([ctx.sessionId]), WAIT);

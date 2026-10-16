@@ -1,11 +1,12 @@
 import { useMemo } from 'react';
 import type { Session } from '@goodboy/types';
-import { useAppStore, type LensKind } from '../../../../store';
+import { useAppStore } from '../../../../store';
 import { useBranchIdentity } from '../../../../features/branch/hooks/useBranchIdentity';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useMountRows } from '../../../../features/session/components/SessionOverviewPane/ProjectMountRows/useMountRows';
 import { useWorktreeStatusSnapshot } from '../../../../features/session/hooks/useWorktreeStatuses';
 import { worktreeStatusTargetsOf } from '../../../../features/session/hooks/useWorktreeStatuses/targets';
+import { BRANCH_LENSES } from '../branchLenses';
 import { FinishedWorktrees } from './FinishedWorktrees';
 import { LevelAddMenu, type BranchableProject } from './LevelAddMenu';
 import { LevelLabel } from './LevelLabel';
@@ -17,13 +18,6 @@ type Props = {
 };
 
 const LABEL_ID = 'level-projects-label';
-
-const BRANCH_LENSES: ReadonlySet<LensKind | null> = new Set<LensKind | null>([
-  'branch',
-  'review',
-  'pr',
-  'files',
-]);
 
 export const LevelProjects = ({ session, isActive }: Props) => {
   const sessionId = session.id;
@@ -67,11 +61,11 @@ export const LevelProjects = ({ session, isActive }: Props) => {
       />
       {groups.map((group) => (
         <div key={group.projectId} className="flex flex-col">
-          <div className="flex h-7 min-w-0 items-center gap-2 px-2 text-label text-muted-foreground">
+          <div className="flex h-7 min-w-0 items-center gap-2 px-2 text-ui text-muted-foreground">
             <CONCEPT_ICONS.projectFolder size={ICON_SIZE.row} aria-hidden className="shrink-0" />
             <span className="truncate">{group.projectName}</span>
           </div>
-          <ul aria-label={`${group.projectName} worktrees`} className="flex flex-col pl-4">
+          <ul aria-label={`${group.projectName} worktrees`} className="flex flex-col">
             {group.rows.map((row) => (
               <li key={row.mountId}>
                 <WorktreeRow

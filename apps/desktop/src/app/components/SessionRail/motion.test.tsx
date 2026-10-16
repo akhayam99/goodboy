@@ -157,13 +157,12 @@ describe('the session rail fold', () => {
     expect(foldedLayer()).toBeNull();
   });
 
-  it('starts the folded icons with the session node on the identity line, then the pages', () => {
+  it('starts the folded icons with the pages, no session node, since the main sidebar row names it', () => {
     localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
     render(<Shell />);
 
     const level = elementOf('[data-rail-level="session"]');
-    expect(level.firstElementChild?.getAttribute('data-rail-identity')).toBe('');
-    expect(level.firstElementChild?.getAttribute('aria-label')).toMatch(/^Stop retried webhooks, /);
+    expect(level.querySelector('[data-rail-identity]')).toBeNull();
     expect(
       within(level)
         .getAllByRole('button')
@@ -194,7 +193,7 @@ describe('the session rail drill', () => {
     expect(ghost()?.getAttribute('data-level-ghost')).toBe('forward');
     expect(ghost()?.hasAttribute('inert')).toBe(true);
     expect(ghost()?.getAttribute('aria-hidden')).toBe('true');
-    expect(ghost()?.textContent).toContain('Stop retried webhooks');
+    expect(ghost()?.textContent).toContain('Overview');
     expect(ghost()?.querySelector('[data-level-layer]')).toBeNull();
 
     advance(LEVEL_MS);

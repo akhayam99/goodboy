@@ -15,7 +15,7 @@ export const LevelBackRow = ({ label, spokenLabel = label, onBack }: Props) => (
       ariaLabel={`Back to ${spokenLabel}`}
       title={`Back to ${label}`}
       onClick={onBack}
-      className="h-7 items-center gap-1 px-2 text-label"
+      className="h-7 items-center gap-1 px-2 text-ui"
     >
       <ChevronLeft size={ICON_SIZE.row} aria-hidden className="shrink-0" />
       <span className="truncate">{label}</span>

@@ -23,6 +23,8 @@ import {
   type Session,
   type SessionId,
   type StepId,
+  type Workflow,
+  type WorkflowId,
   type WorkflowRunId,
 } from '@goodboy/types';
 import {
@@ -68,6 +70,29 @@ const planOf = (index: number): PlanArtifact => ({
   openedAt: null,
 });
 
+const WORKFLOW_ID = brandId<WorkflowId>({ value: 'workflow-fix-flaky' });
+
+const workflow: Workflow = {
+  id: WORKFLOW_ID,
+  workspaceId: base.workspaceId,
+  name: 'Fix flaky tests',
+  description: '',
+  steps: [1, 2].map((ordinal) => ({
+    id: brandId<StepId>({ value: `step-${ordinal}` }),
+    workflowId: WORKFLOW_ID,
+    ordinal: ordinal - 1,
+    name: `Step ${ordinal}`,
+    promptPrefix: '',
+  })),
+  createdAt: brandId<IsoDateTime>({ value: '2026-10-05T09:00:00.000Z' }),
+  updatedAt: brandId<IsoDateTime>({ value: '2026-10-05T09:00:00.000Z' }),
+};
+
+const seedRuns = (session: Session): void => {
+  seedColumn({ store: useAppStore, sessions: [session], currentSessionId: sessionId });
+  useAppStore.setState({ sessionWorkflows: { [sessionId]: [workflow] } });
+};
+
 const factsOf = (session: Session) =>
   renderHook(() => usePageCountFacts({ session })).result.current;
 
@@ -78,8 +103,10 @@ describe('usePageCountFacts', () => {
     expect(factsOf(base)).toEqual({
       runs: 0,
       runningRuns: 0,
+      waitingRuns: 0,
       orchestratedRuns: 0,
       runningOrchestratedRuns: 0,
+      waitingOrchestratedRuns: 0,
       agents: 0,
       runningAgents: 0,
       autoAgents: 0,
@@ -136,14 +163,15 @@ describe('usePageCountFacts', () => {
   });
 
   it('counts every kept run, and the ones running', () => {
-    const first = aWorkflowRun({ ordinal: 0 });
-    const second = aWorkflowRun({ ordinal: 1 });
+    const first = aWorkflowRun({ ordinal: 0, workflowId: WORKFLOW_ID });
+    const second = aWorkflowRun({ ordinal: 1, workflowId: WORKFLOW_ID });
     const dropped = aWorkflowRun({
       ordinal: 2,
+      workflowId: WORKFLOW_ID,
       discardedAt: '2026-10-05T09:00:00.000Z' as IsoDateTime,
     });
     const withRuns: Session = { ...base, workflowRuns: [first, second, dropped] };
-    seedColumn({ store: useAppStore, sessions: [withRuns], currentSessionId: sessionId });
+    seedRuns(withRuns);
     expect(factsOf(withRuns)).toMatchObject({ runs: 2, runningRuns: 0 });
 
     useAppStore.setState({
@@ -162,10 +190,14 @@ describe('usePageCountFacts', () => {
   });
 
   it('counts orchestrated runs apart from preset runs', () => {
-    const preset = aWorkflowRun({ ordinal: 0 });
-    const orchestrated = aWorkflowRun({ ordinal: 1, executionMode: 'dynamic' });
+    const preset = aWorkflowRun({ ordinal: 0, workflowId: WORKFLOW_ID });
+    const orchestrated = aWorkflowRun({
+      ordinal: 1,
+      workflowId: WORKFLOW_ID,
+      executionMode: 'dynamic',
+    });
     const withRuns: Session = { ...base, workflowRuns: [preset, orchestrated] };
-    seedColumn({ store: useAppStore, sessions: [withRuns], currentSessionId: sessionId });
+    seedRuns(withRuns);
     useAppStore.setState({
       sessionPhaseRuns: {
         [sessionId]: [
@@ -185,6 +217,33 @@ describe('usePageCountFacts', () => {
       orchestratedRuns: 1,
       runningOrchestratedRuns: 1,
     });
+  });
+
+  it('counts a run that waits on you or failed apart from a running one, the same dot the Runs row draws', () => {
+    const waiting = aWorkflowRun({ ordinal: 0, workflowId: WORKFLOW_ID });
+    const running = aWorkflowRun({ ordinal: 1, workflowId: WORKFLOW_ID });
+    const withRuns: Session = { ...base, workflowRuns: [waiting, running] };
+    seedRuns(withRuns);
+    useAppStore.setState({
+      sessionPhaseRuns: {
+        [sessionId]: [
+          anAgent({
+            sessionId,
+            status: 'failed',
+            workflowRunId: waiting.id,
+            stepId: brandId<StepId>({ value: 'step-1' }),
+          }),
+          anAgent({
+            sessionId,
+            status: 'running',
+            workflowRunId: running.id,
+            stepId: brandId<StepId>({ value: 'step-1' }),
+          }),
+        ],
+      },
+    });
+
+    expect(factsOf(withRuns)).toMatchObject({ runs: 2, runningRuns: 1, waitingRuns: 1 });
   });
 
   it('counts the standalone agents, and the ones running', () => {
