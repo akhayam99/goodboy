@@ -703,7 +703,12 @@ reads.
 
 - `auto_trees` is one row per Auto agent: phase, `phase_rev`, generation, stop
   state, the budget cap, the lifetime counters and the scheduler lease
-  (`scheduler_owner`, `owner_lease_expires_at`). `auto_delegations`,
+  (`scheduler_owner`, `owner_lease_expires_at`). m231 rebuilds it (foreign keys
+  off, copy, drop, rename, both indexes again, `foreign_key_check`) so the phase
+  list gains `finished`, set only by the user, and `cap_usd` may be NULL for No
+  cap. A plain `DROP TABLE auto_trees` would cascade through every child table;
+  the rebuild keeps their rows. `listAutoTreesToRecover` and
+  `idx_auto_trees_live` leave a finished tree out. `auto_delegations`,
   `auto_attempts`, `auto_reservations`, `auto_outbox`, `auto_artifacts` and
   `auto_artifact_versions` hang off it and go with it.
 - `store/slices/auto/scheduler.ts` is the one writer of tree state. A window

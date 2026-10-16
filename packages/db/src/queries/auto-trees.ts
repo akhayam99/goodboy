@@ -14,6 +14,7 @@ export const AUTO_PHASES = [
   'waiting',
   'merging',
   'done',
+  'finished',
   'blocked',
   'stopping',
   'stopped',
@@ -193,7 +194,7 @@ export const listAutoTreesToRecover = async ({
 }: ListAutoTreesToRecoverParams): Promise<ReadonlyArray<AutoTree>> => {
   const rows = await db.select<TreeRow>(
     `${TREE_SELECT}
-     WHERE phase NOT IN ('answering', 'done', 'stopped') OR stop_state IN ('requested', 'confirming')
+     WHERE phase NOT IN ('answering', 'done', 'finished', 'stopped') OR stop_state IN ('requested', 'confirming')
      ORDER BY created_at`,
   );
   return rows.map((row) => toTree({ row }));

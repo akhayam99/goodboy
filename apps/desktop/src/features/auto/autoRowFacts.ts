@@ -42,6 +42,8 @@ export const autoRowFacts = ({ view }: ViewParams): AutoRowFacts | null => {
       return { phase: 'running', word: 'Stopping', short: 'Stopping' };
     case 'stopped':
       return { phase: 'closed', word: 'Stopped by you', short: 'Stopped' };
+    case 'finished':
+      return { phase: 'closed', word: 'Finished by you', short: 'Finished' };
     default: {
       const exhaustive: never = view.tree.phase;
       return exhaustive;

@@ -68,6 +68,7 @@ const ROOT_NODE_BY_PHASE: Readonly<Record<AutoTreeView['tree']['phase'], WorkNod
   waiting: 'running',
   merging: 'running',
   done: 'done',
+  finished: 'finished',
   blocked: 'alert',
   stopping: 'running',
   stopped: 'stopped',
