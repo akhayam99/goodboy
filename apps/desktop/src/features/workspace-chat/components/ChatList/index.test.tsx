@@ -160,9 +160,10 @@ describe('ChatList', () => {
     );
 
     expect(within(rowOf('consent')).getByRole('img', { name: 'Answering' })).toBeDefined();
-    expect(within(rowOf('consent')).queryByRole('img', { name: 'New reply' })).toBeNull();
-    expect(within(rowOf('changes')).getByRole('img', { name: 'New reply' })).toBeDefined();
+    expect(within(rowOf('consent')).queryByRole('img', { name: 'New reply, unseen' })).toBeNull();
+    expect(within(rowOf('changes')).getByRole('img', { name: 'New reply, unseen' })).toBeDefined();
     expect(within(rowOf('lunch')).queryByRole('img', { name: /Answering|New reply/ })).toBeNull();
+    expect(within(rowOf('lunch')).getByRole('img', { name: 'No new reply' })).toBeDefined();
   });
 
   it('dims idle chats and leaves their age to the Idle group', async () => {
@@ -270,7 +271,7 @@ describe('ChatList', () => {
       fireEvent.click(screen.getByRole('menuitem', { name: 'Mark as unread' }));
 
       expect(useAppStore.getState().unreadChatIds).toEqual([chatIdOf({ key: 'lunch' })]);
-      expect(within(rowOf('lunch')).getByRole('img', { name: 'New reply' })).toBeDefined();
+      expect(within(rowOf('lunch')).getByRole('img', { name: 'New reply, unseen' })).toBeDefined();
     });
 
     it('asks before deleting and leaves the sessions alone', async () => {

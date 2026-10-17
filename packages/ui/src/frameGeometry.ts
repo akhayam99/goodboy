@@ -6,9 +6,11 @@ export const FRAME_TITLE_ROW_PX = 32;
 
 export const FRAME_TITLE_CENTRE_PX = FRAME_BAND_PX + FRAME_TITLE_ROW_PX / 2;
 
-export const FRAME_DRAWER_ROW_PX = 28;
+export const FRAME_PAGE_HEADER_INSET_PX = 12;
 
-export const FRAME_DRAWER_INSET_PX = (FRAME_BAND_PX - FRAME_DRAWER_ROW_PX) / 2;
+export const FRAME_DRAWER_ROW_PX = FRAME_TITLE_ROW_PX;
+
+export const FRAME_DRAWER_INSET_PX = FRAME_PAGE_HEADER_INSET_PX;
 
 export const FRAME_PAGES = [
   'board',
@@ -116,8 +118,6 @@ export type FrameGeometry = {
 type FramePageParams = {
   readonly page: FramePage;
 };
-
-export const FRAME_PAGE_HEADER_INSET_PX = 12;
 
 export const PAGE_MEASURE: Readonly<Record<FramePage, PageColumnWidth>> = {
   overview: 'column',

@@ -163,7 +163,11 @@ column slides left to re-centre in what is left of it (see The content
 column). The drawer pushes only while the page container keeps 560px plus its
 48px of gutters and the room covers the drawer's saved width; below that it
 lies over the page, full height, with a scrim and an `inert` page, never
-squeezed. `sizing` on `DrawerColumn` is `side` (400, drag 384 to 560), `reader`
+squeezed. While it lies over the page, `DrawerColumn` draws an edge host
+(`data-drawer-edge`) at the right edge above the scrim and hands it to the page
+through `DrawerEdgeContext`; the session tools column portals a live copy there
+(`SessionFrame`), and the card sits left of it, so a tool can still switch or
+close the drawer. `sizing` on `DrawerColumn` is `side` (400, drag 384 to 560), `reader`
 (720, drag 480 to 1000) or `full` (the whole column, always over the page); each
 tier has its own saved width and a handle. `placement="overlay"` skips the push
 rule for a drawer that always lies over the page; the thresholds (1024 for
@@ -240,6 +244,13 @@ row (`PaneTitleRow`), the gap under the header, the title's left edge (its
 page with its own frame (the Sessions board, the Terminal, the chat room header)
 mounts it directly. No page sets its own header padding: the Settings column, the
 board frame and the terminal drop their own top rows.
+
+The columns beside the page share that header line: the session rail top row
+(`data-rail-top`, `data-header-line`), the first icon of the session tools column
+and every drawer header row (`DrawerFrame`) take `PANE_RHYTHM.headerInset` and
+`PANE_RHYTHM.headerRow` (`h-8`), so their tops and centres match the page title
+row. `validate-scenes --only header-line` measures all four on
+`r4-rail-tools-open` at 1100, 1440 and 1920 and fails a drift over 1px.
 
 A page root names its kind (`page="overview"`, `page="terminal"`) and
 `PAGE_MEASURE` in `packages/ui/src/frameGeometry.ts` gives the column it sits on:

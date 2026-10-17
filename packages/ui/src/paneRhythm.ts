@@ -5,6 +5,7 @@ export const BOARD_LANE_GAP_REM = 0.75;
 export const PANE_RHYTHM = {
   inset: 'px-6',
   headerInset: 'pt-3',
+  headerRow: 'h-8',
   header: 'px-6 py-5',
   body: 'px-6 py-5',
   dock: 'px-6 py-4',

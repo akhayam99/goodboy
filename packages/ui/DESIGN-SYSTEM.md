@@ -167,15 +167,15 @@ state is a `StateDot` or a glyph in a 16px column.
   buttons of its own and nothing appears on hover. `isSelected` sets
   `data-selected` and `aria-current`. Up and Down move focus between rows.
 - `rowHeight` is 32 by default and 28 in the sidebar.
-- `track` draws one mark inside the row, outside every cell: a `ToneBar` of
-  `row` density at the row's left edge, in the zero edge track before the first
-  cell (the Sessions List row carries its stage there, the same tone as its
-  Board card). The row turns `relative` only when it has a track.
 - `shouldHideWhenEmpty` on a column drops it from the template, its cells and its
   gap, while no mounted row fills it (a cell of `null`, `undefined`, `false` or
   `''` is empty). As soon as one row fills it, every row keeps the cell, empty
   where it has nothing, so the column stays on one x. Unknown is an empty cell,
   never "0 B", "-" or "no port".
+- `ListGridGroup` takes an optional `mark` drawn right before its name, over
+  the rows' leading glyph column: the Sessions List puts one
+  6px `StatusDot` in the stage tone there (`stageTrackOf`), so rows keep only
+  their state node and no row carries a track.
 - `ListGridGroup` names a group in sentence case with its count right after
   the name, like a Board lane and a sidebar group (a count alone in the last
   column read as a value of the row below). The count shows from 2 rows (a
@@ -977,7 +977,7 @@ A session in the left column is one 28px line: a 14px `WorkNode` (`size="sm"`)
 and the title, with a `gap-2` between them and `px-2` inside the pill. It has
 no second line, no `ToneBar`, no marks, no age and no cost. A `WorkNode`
 fills its disc with `bg-background` to mask a rail line behind it; on a
-selected or current row it takes `isTransparent` (`SessionStateNode`
+selected or current row it takes `isTransparent` (`StateNode`
 `isOnSelectedRow`), so an idle node stays a ring on `bg-selected` and never
 reads as a solid dot. `sessionNodeOf`
 picks the node from the stage and, under needs you, from the winning reason,
@@ -1088,7 +1088,7 @@ sessions`; the first `Tab` still selects the previous session wherever it sits.
 
 The 44px rail (`ColumnRail`) keeps its 32px door buttons and adds 28px node
 buttons (`RAIL_NODE_BUTTON` in `RailButton.tsx`) under the doors, in the
-workspace scope only: the open session (the row's `SessionStateNode`, current
+workspace scope only: the open session (the row's `StateNode`, current
 fill on its page, no fill and `text-foreground` while a studio sits over it),
 then up to seven pinned sessions with the title and the stage words in a
 tooltip, then `+N` in `text-meta`. The open session and `+N` open a flyout

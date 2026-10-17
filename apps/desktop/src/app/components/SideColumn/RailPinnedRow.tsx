@@ -1,7 +1,7 @@
 import { ROW_INTERACTIVE, cn, inlineMarkdownText } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { sessionNodeOf } from '../../../features/session/sessionNode';
-import { SessionStateNode } from '../../../features/workspace/components/SessionActivityBar/SessionStateNode';
+import { StateNode } from '../../../shared/components/StateNode';
 import { useSessionSummary } from '../../../features/workspace/hooks/useSessionSummary';
 import { sessionRowTitle } from '../../../features/session/sessionTitle';
 
@@ -27,7 +27,7 @@ export const RailPinnedRow = ({ session, isOpen, onSelect }: Props) => {
       onClick={onSelect}
       className={cn(PINNED_ROW, ROW_INTERACTIVE, isCurrent && 'text-foreground')}
     >
-      <SessionStateNode node={node} />
+      <StateNode node={node} />
       <span className="min-w-0 flex-1 truncate">{inlineMarkdownText({ text: title })}</span>
     </button>
   );

@@ -1633,11 +1633,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/actions/useSessionPin/index.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/artifacts/artifactActionRuns.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -5705,11 +5700,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/session/components/SessionOverviewPane/SessionHeaderMenu.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/session/components/SessionOverviewPane/UnassignedNote.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 1
@@ -8527,11 +8517,6 @@
   "apps/desktop/src/shared/lib/highlight/worker.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
-    }
-  },
-  "apps/desktop/src/shared/lib/projectGitPresentation.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
     }
   },
   "apps/desktop/src/shared/lib/remoteHost.ts": {

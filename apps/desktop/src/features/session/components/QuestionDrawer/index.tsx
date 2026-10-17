@@ -1,15 +1,14 @@
 import { useCallback, useMemo } from 'react';
 import { DrawerFrame, EmptyLine, SkeletonText } from '@goodboy/ui';
-import type { OpenQuestion, OpenQuestionId, SessionId } from '@goodboy/types';
+import type { AgentId, OpenQuestion, OpenQuestionId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { LiveQuestionCard } from '../../../context/components/QuestionsTab/LiveQuestionCard';
 import { useQuestionsLens } from '../../hooks/useQuestionsLens';
-import {
-  nextWaitingQuestion,
-  questionRowTitle,
-  questionRowsOf,
-} from '../SessionWorkspace/parts/questionsLensModel';
+import { useNow } from '../../../../shared/hooks/useNow';
+import { AGENT_KIND_META, type AgentKind } from '../../agent-kind';
+import { questionMetaOf } from '../SessionWorkspace/parts/questionMetaOf';
+import { nextWaitingQuestion, questionRowsOf } from '../SessionWorkspace/parts/questionsLensModel';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -20,6 +19,8 @@ type Props = {
 
 const FALLBACK_TITLE = 'Question';
 
+const NO_KIND_OVERRIDES: Readonly<Record<AgentId, AgentKind>> = {};
+
 type NextParams = {
   readonly next: OpenQuestionId | null;
 };
@@ -29,11 +30,13 @@ type QuestionParams = {
 };
 
 export const QuestionDrawer = ({ sessionId, questionId, from, onClose }: Props) => {
-  const { model, isLoaded, beginUndo, clearUndo } = useQuestionsLens({
+  const { model, agents, isLoaded, beginUndo, clearUndo } = useQuestionsLens({
     sessionId,
     load: 'when-missing',
   });
   const openDrawer = useAppStore((state) => state.openDrawer);
+  const kindOverrides = useAppStore((state) => state.agentKindOverride ?? NO_KIND_OVERRIDES);
+  const now = useNow(30_000);
   const dismissOpenQuestion = useAppStore((state) => state.dismissOpenQuestion);
   const restoreDismissedOpenQuestion = useAppStore((state) => state.restoreDismissedOpenQuestion);
   const row = useMemo(
@@ -65,7 +68,12 @@ export const QuestionDrawer = ({ sessionId, questionId, from, onClose }: Props) 
     clearUndo();
   };
 
-  const title = row === undefined ? FALLBACK_TITLE : questionRowTitle({ row });
+  const meta = row === undefined ? null : questionMetaOf({ row, agents, kindOverrides, now });
+  const asker =
+    meta === null || meta.askerKind === null
+      ? FALLBACK_TITLE
+      : AGENT_KIND_META[meta.askerKind].noun;
+  const title = meta === null ? FALLBACK_TITLE : `${asker} · ${meta.age}`;
 
   return (
     <DrawerFrame

@@ -241,7 +241,8 @@ describe('LinkIssueAction', () => {
 
   it('opens under the chip with its right edges aligned', () => {
     const rectOf = (element: Element): DOMRect => {
-      const isTrigger = element.querySelector('button[aria-label="Link work"]') !== null;
+      const selector = 'button[aria-label="Link work"]';
+      const isTrigger = element.matches(selector) || element.querySelector(selector) !== null;
       const left = isTrigger ? 900 : 0;
       const width = isTrigger ? 120 : 480;
       return {

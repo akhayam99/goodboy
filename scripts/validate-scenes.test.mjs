@@ -14,6 +14,7 @@ import {
   readDevToolsPort,
   summaryLine,
 } from './validateScenesBrowser.mjs';
+import { headerLineFailures } from './validateScenesHeaderLine.mjs';
 import {
   COLUMN_ROW_SELECTOR,
   columnDriftFailures,
@@ -728,5 +729,38 @@ describe('chatMeasureFailures', () => {
       chatMeasureFailures({ scene: 'fixture', width: 1100, probe })[0]?.check,
       'chat room is missing remove',
     );
+  });
+});
+
+describe('headerLineFailures', () => {
+  const line = ({ top }) => ({ top, centre: top + 16 });
+  const measured = {
+    rail: line({ top: 49 }),
+    title: line({ top: 49 }),
+    tool: line({ top: 49.5 }),
+    drawer: line({ top: 49 }),
+  };
+
+  it('passes four header rows on one line within a pixel', () => {
+    assert.deepEqual(headerLineFailures({ scene: 'fixture', width: 1440, measured }), []);
+  });
+
+  it('fails a drawer header that sits on its own line', () => {
+    const drawer = { top: 42, centre: 56 };
+    const checks = headerLineFailures({
+      scene: 'fixture',
+      width: 1100,
+      measured: { ...measured, drawer },
+    }).map((failure) => failure.check);
+    assert.equal(checks.length, 2);
+  });
+
+  it('fails a scene that does not show all four rows', () => {
+    const failures = headerLineFailures({
+      scene: 'fixture',
+      width: 1100,
+      measured: { ...measured, tool: null },
+    });
+    assert.deepEqual(failures[0]?.missing, ['tool']);
   });
 });

@@ -4,7 +4,7 @@ import { useSessionSummary } from '../../hooks/useSessionSummary';
 import { sessionRowTitle } from '../../../session/sessionTitle';
 import { SessionRowTitle } from '../SessionRowTitle';
 import { sessionNodeOf } from '../../../session/sessionNode';
-import { SessionStateNode } from '../SessionActivityBar/SessionStateNode';
+import { StateNode } from '../../../../shared/components/StateNode';
 
 type Props = {
   readonly session: Session;
@@ -25,7 +25,7 @@ export const SwitcherRow = ({ session, isSelected, onChoose }: Props) => {
       onClick={onChoose}
       className="h-9 items-center gap-3 px-3 text-label"
     >
-      <SessionStateNode node={node} />
+      <StateNode node={node} />
       <SessionRowTitle keys={keys} title={title} className="flex-1" titleClassName="truncate" />
       <span className="shrink-0 text-meta text-faint-foreground">{summary.age}</span>
     </SelectableRow>
