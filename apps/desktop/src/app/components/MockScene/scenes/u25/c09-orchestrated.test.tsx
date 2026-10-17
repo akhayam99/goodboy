@@ -9,6 +9,7 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { nextWorkflowRunId } from '@goodboy/types/testing';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import { useAppStore } from '../../../../../store';
 import {
@@ -273,6 +274,43 @@ describe('the c09 orchestrated scenes', () => {
     expect(within(alert).getByRole('button', { name: 'Retry' })).toBeDefined();
     expect(field).toHaveProperty('value', 'Also cover the ledger-core refund path');
     expect(within(tail()).getByText('Run complete')).toBeDefined();
+  });
+
+  it('c09-orch-done starts an empty hint box when another complete run takes the page', async () => {
+    await mount('c09-orch-done');
+    const state = useAppStore.getState();
+    const [sessionId, runId] = Object.entries(state.focusedWorkflowRunId).find(
+      ([, id]) => id !== null,
+    ) ?? ['', null];
+    const session = state.sessions.find((candidate) => candidate.id === sessionId);
+    const run = session?.workflowRuns.find((candidate) => candidate.id === runId);
+    if (session === undefined || run === undefined) {
+      throw new Error('no focused run');
+    }
+    const otherRunId = nextWorkflowRunId();
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Continue with a hint' }), {
+      target: { value: 'Also cover the ledger-core refund path' },
+    });
+    await act(async () => {
+      useAppStore.setState((current) => ({
+        sessions: current.sessions.map((candidate) =>
+          candidate.id === session.id
+            ? {
+                ...candidate,
+                workflowRuns: [...candidate.workflowRuns, { ...run, id: otherRunId }],
+              }
+            : candidate,
+        ),
+        focusedWorkflowRunId: { ...current.focusedWorkflowRunId, [session.id]: otherRunId },
+      }));
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+
+    expect(screen.getByRole('textbox', { name: 'Continue with a hint' })).toHaveProperty(
+      'value',
+      '',
+    );
   });
 
   it('c09-orch-running offers no Add step: the orchestrator picks the steps', async () => {

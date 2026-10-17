@@ -32,7 +32,7 @@ export const OrchestratedRunPage = ({ session, run, workflow }: Props) => {
     viewing: { kind: 'workflowRun', id: run.id },
   });
   const composer = view.isDiscarded ? null : isDone ? (
-    <OrchestratedContinue sessionId={sessionId} runId={run.id} />
+    <OrchestratedContinue key={run.id} sessionId={sessionId} runId={run.id} />
   ) : (
     <OrchestratedComposer sessionId={sessionId} run={run} agents={view.agents} />
   );
