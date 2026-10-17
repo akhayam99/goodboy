@@ -1,4 +1,4 @@
-import { Button, StatusDot, Tooltip, TruncatedText } from '@goodboy/ui';
+import { Button, StatusDot, Tooltip } from '@goodboy/ui';
 import type { WorktreeStatus } from '@goodboy/types';
 import { distanceBehind, unmergedCount } from '../../../../shared/lib/gitStatus';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -64,11 +64,11 @@ export const WorktreeStatusLine = ({ status, baseBranch, job, controls }: Props)
     <div
       data-worktree-status=""
       role="status"
-      className="relative flex h-7 min-w-0 items-center gap-2 px-2 text-ui"
+      className="relative flex min-h-7 min-w-0 items-center gap-2 px-2 py-1 text-ui"
     >
       {isJobRunning ? <StatusDot tone="info" size="sm" pulsing /> : null}
       {!isJobRunning && isNeedingYou ? <StatusDot tone="warning" size="sm" /> : null}
-      <TruncatedText className="min-w-0 flex-1 text-muted-foreground">{text}</TruncatedText>
+      <span className="min-w-0 flex-1 text-muted-foreground">{text}</span>
       {button === null || verb === null ? null : verb.blockedReason === null ? (
         button
       ) : (

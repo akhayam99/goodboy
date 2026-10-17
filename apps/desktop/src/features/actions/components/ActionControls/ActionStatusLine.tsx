@@ -62,7 +62,13 @@ export const ActionStatusLine = ({
             tone="danger"
             placement="inline"
             role="alert"
-            title={failed === null ? "Couldn't finish" : `${failed.label} failed`}
+            title={
+              failed !== null
+                ? `${failed.label} failed`
+                : controls.failure.actionId.endsWith('push')
+                  ? 'Push failed'
+                  : "Couldn't finish"
+            }
             body={controls.failure.message}
             actions={
               <>

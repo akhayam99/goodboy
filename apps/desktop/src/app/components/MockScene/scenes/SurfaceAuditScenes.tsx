@@ -922,17 +922,28 @@ export const ResolveQueueShellScene = () => {
   );
 };
 
+const PUBLISH_DRILL_MS = 200;
+
 export const ResolvePublishBlockedScene = () => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     seedReviewScene({ preview: BLOCKED_PREVIEW });
-    useAppStore.getState().navigate({
-      to: branchPlace({ sessionId: RESOLVE_SESSION.id, tab: 'comments' }),
-      mode: 'replace',
-    });
     setIsReady(true);
   }, []);
+
+  useEffect(() => {
+    if (!isReady) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      useAppStore.getState().navigate({
+        to: branchPlace({ sessionId: RESOLVE_SESSION.id, tab: 'comments' }),
+        mode: 'replace',
+      });
+    }, PUBLISH_DRILL_MS);
+    return () => window.clearTimeout(timer);
+  }, [isReady]);
 
   if (!isReady) {
     return null;

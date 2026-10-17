@@ -8,6 +8,8 @@ import { WORKSPACE_SIBLINGS, seedWorkspaceChrome } from '../audit/workspaceChrom
 import { WorkspaceFrame } from '../audit/WorkspaceFrame';
 import { seedCommentsScene, type CommentsVariant } from './commentsSeed';
 
+const DRILL_MS = 200;
+
 type Props = {
   readonly variant: CommentsVariant;
 };
@@ -19,13 +21,22 @@ export const CommentsScene = ({ variant }: Props) => {
     seedCommentsScene({ variant });
     if (variant === 'push-failed') {
       seedWorkspaceChrome({ session: SESSION, siblings: WORKSPACE_SIBLINGS });
+    }
+    setIsReady(true);
+  }, [variant]);
+
+  useEffect(() => {
+    if (!isReady || variant !== 'push-failed') {
+      return;
+    }
+    const timer = window.setTimeout(() => {
       useAppStore.getState().navigate({
         to: branchPlace({ sessionId: SESSION.id, tab: 'comments' }),
         mode: 'replace',
       });
-    }
-    setIsReady(true);
-  }, [variant]);
+    }, DRILL_MS);
+    return () => window.clearTimeout(timer);
+  }, [isReady, variant]);
 
   if (!isReady) {
     return null;

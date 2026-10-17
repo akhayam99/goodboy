@@ -25,17 +25,19 @@ export const ProposalDiff = ({ text }: Props) => {
       </div>
       <ScrollFade className="max-h-64" viewportClassName="min-w-0">
         <pre className="text-code">
-          {lines.map((line, index) => (
-            <div
-              key={index}
-              className={cn(
-                line.startsWith('+') && LINE_FILL.add + ' text-success',
-                line.startsWith('-') && LINE_FILL.del + ' text-danger',
-              )}
-            >
-              {line === '' ? ' ' : line}
-            </div>
-          ))}
+          {lines
+            .filter((line) => !line.startsWith('+++ ') && !line.startsWith('--- '))
+            .map((line, index) => (
+              <div
+                key={index}
+                className={cn(
+                  line.startsWith('+') && LINE_FILL.add + ' text-success',
+                  line.startsWith('-') && LINE_FILL.del + ' text-danger',
+                )}
+              >
+                {line === '' ? ' ' : line}
+              </div>
+            ))}
         </pre>
       </ScrollFade>
     </div>
