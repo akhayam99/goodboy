@@ -34,7 +34,6 @@ export const ComposerRoutingPicker = ({ routing }: Props) => {
   return (
     <RoutingPicker
       variant="pill"
-      align="end"
       ariaLabel="Model routing"
       openEvent="goodboy:open-model-picker"
       shortcut="session.model"

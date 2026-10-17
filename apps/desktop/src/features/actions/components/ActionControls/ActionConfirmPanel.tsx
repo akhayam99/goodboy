@@ -22,7 +22,6 @@ export const ActionConfirmPanel = ({ controls }: Props) => {
   return (
     <ConfirmPopover
       isOpen={action !== null && confirm !== null}
-      align="end"
       anchorClassName="absolute right-0 top-0 size-0"
       trigger={() => <span aria-hidden className="size-0" />}
       role={confirm?.role ?? 'primary'}

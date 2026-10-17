@@ -28,7 +28,6 @@ export const StepModelChip = ({
 }: Props) => {
   const dropdown = useDropdown({
     disabled: isDisabled,
-    align: 'end',
     width: 'w-96',
     expectedHeight: 560,
   });

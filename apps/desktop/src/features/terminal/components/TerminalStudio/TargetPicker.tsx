@@ -25,7 +25,6 @@ export const TargetPicker = ({ targets, label, valueLabel, disabledReason, onPic
       size="sm"
       ariaLabel={label}
       valueLabel={valueLabel}
-      align="end"
       popupWidth="content"
       {...(disabledReason === undefined ? {} : { disabled: true, disabledReason })}
       onChange={(key) => {

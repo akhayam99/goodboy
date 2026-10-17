@@ -40,11 +40,6 @@ const TRIGGER_SHAPE: Record<GoodboyChipVariant, string> = {
   rail: 'size-8 shrink-0 justify-center',
 };
 
-const DROPDOWN_ALIGN: Record<GoodboyChipVariant, 'start' | 'center'> = {
-  column: 'start',
-  rail: 'start',
-};
-
 export const GoodboyChip = ({
   onOpenChangelog,
   onOpenGuide,
@@ -57,7 +52,6 @@ export const GoodboyChip = ({
   const version = useInstalledVersion();
   const hasDraft = useHasBugReportDraft();
   const dropdown = useDropdown({
-    align: DROPDOWN_ALIGN[variant],
     width: 'w-80',
     expectedWidth: PANEL_WIDTH,
     expectedHeight: PANEL_MAX_HEIGHT,

@@ -74,6 +74,8 @@ import { PresetLane, type PresetLaneRow } from './parts/PresetLane';
 import { PlanEstimateChip } from './parts/PlanEstimateChip';
 import { usePlanEstimates } from './usePlanEstimates';
 import { offeredSessionGoal } from './offeredSessionGoal';
+import { presetStepMarksOf } from '../../presetStepMarksOf';
+import { useRoutingScope } from '../../../../shared/hooks/useRoutingScope';
 
 export type BuilderKickoff = {
   readonly workspaceId: WorkspaceId;
@@ -261,6 +263,27 @@ export const WorkflowBuilderView = (props: Props) => {
   const connectedProviders = useMemo<ReadonlyArray<ProviderId>>(
     () => providers.filter((p) => p.connection === 'connected').map((p) => p.id),
     [providers],
+  );
+
+  const routingScope = useRoutingScope({ sessionId: session?.id ?? null });
+  const presetMarks = useMemo(
+    () =>
+      new Map(
+        phaseTemplates.filter(isPresetWorkflow).map(
+          (preset) =>
+            [
+              preset.id,
+              presetStepMarksOf({
+                steps: preset.steps,
+                roleModels,
+                sessionProvider: providerId,
+                connectedProviders,
+                scope: routingScope,
+              }),
+            ] as const,
+        ),
+      ),
+    [phaseTemplates, roleModels, providerId, connectedProviders, routingScope],
   );
 
   const resolutionScope = session === null ? { workspaceId } : { sessionId: session.id };
@@ -723,6 +746,7 @@ export const WorkflowBuilderView = (props: Props) => {
         <PresetPicker
           presets={presets}
           selectedId={selectedPresetId}
+          marks={presetMarks}
           isEdited={isPresetEdited}
           disabled={busy}
           onSelect={onSelectPreset}

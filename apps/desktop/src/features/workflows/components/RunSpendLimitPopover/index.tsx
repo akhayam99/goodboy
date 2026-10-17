@@ -31,7 +31,6 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
   const spentUsd = useRunSpendUsd(sessionId, run.id);
   const limitUsd = run.spendLimitUsd ?? null;
   const dropdown = useDropdown({
-    align: 'end',
     expectedHeight: 220,
     expectedWidth: 264,
     width: 'w-80',

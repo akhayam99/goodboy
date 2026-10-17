@@ -51,7 +51,6 @@ export const LinkToSessionPicker = ({ workspaceId, task }: Props) => {
       trigger="field"
       size="sm"
       searchable
-      align="end"
       ariaLabel="Link to a session"
       searchLabel="Search sessions"
       searchPlaceholder="Search sessions"

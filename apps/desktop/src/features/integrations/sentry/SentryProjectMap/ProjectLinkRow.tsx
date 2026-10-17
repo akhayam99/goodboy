@@ -30,7 +30,6 @@ export const ProjectLinkRow = ({ project, links, sentryProjects, isBusy, onChang
       <Listbox
         multiple
         size="sm"
-        align="end"
         ariaLabel={`Sentry projects for ${project.name}`}
         placeholder="Link"
         searchable

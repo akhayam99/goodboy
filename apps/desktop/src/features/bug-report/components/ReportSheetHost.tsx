@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { cn, useDropdownDirection } from '@goodboy/ui';
 import { useToast } from '../../../shared/components/Toast';
 import { openUrl } from '../../../shared/lib/editor';
 import { useShortcut } from '../../../shared/keyboard/useShortcut';
@@ -23,7 +24,21 @@ import { ReportComposer, type ReportDraft, type ReportLinkOpened } from './Repor
 type Opened = {
   readonly key: number;
   readonly heading: string;
+  readonly isAnchored: boolean;
 };
+
+const REPORT_TRIGGER = '[data-report-bug]';
+
+const SHEET_WIDTH_PX = 560;
+
+const SHEET_EXPECTED_HEIGHT_PX = 260;
+
+const WINDOW_MARGIN_PX = 12;
+
+const visibleTrigger = (): HTMLElement | null =>
+  [...document.querySelectorAll<HTMLElement>(REPORT_TRIGGER)].find(
+    (element) => element.getClientRects().length > 0,
+  ) ?? null;
 
 type LeadPartsParams = {
   readonly state: AppState;
@@ -79,6 +94,20 @@ export const ReportSheetHost = () => {
   const [opened, setOpened] = useState<Opened | null>(null);
   const [parts, setParts] = useState<ReadonlyArray<ReportPart>>(NO_PARTS);
   const openCount = useRef(0);
+  const triggerRef = useRef<HTMLElement | null>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
+  const placement = useDropdownDirection({
+    triggerRef,
+    popupRef,
+    open: opened?.isAnchored === true,
+    expectedHeight: SHEET_EXPECTED_HEIGHT_PX,
+    expectedWidth: SHEET_WIDTH_PX,
+    side: 'right',
+    align: 'end',
+    shouldMatchTriggerWidth: false,
+    viewportMargin: WINDOW_MARGIN_PX,
+    maxWidth: SHEET_WIDTH_PX,
+  });
 
   const open = useCallback((detail: OpenReportSheetDetail) => {
     const state = useAppStore.getState();
@@ -87,7 +116,13 @@ export const ReportSheetHost = () => {
       state.setBugReportDraft({ title: LAST_CRASH_TITLE[detail.crash.kind] });
     }
     setParts(lead);
-    setOpened((current) => ({ key: (current?.key ?? 0) + 1, heading: headingFor({ detail }) }));
+    triggerRef.current = visibleTrigger();
+    const isAnchored = triggerRef.current !== null;
+    setOpened((current) => ({
+      key: (current?.key ?? 0) + 1,
+      heading: headingFor({ detail }),
+      isAnchored,
+    }));
     openCount.current += 1;
     const openedAs = openCount.current;
     void collectReportContext({ state }).then((context) => {
@@ -174,8 +209,21 @@ export const ReportSheetHost = () => {
   }
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-11 z-popover flex justify-center px-4">
-      <div className="pointer-events-auto w-full max-w-140 animate-popover-in">
+    <div
+      className={cn(
+        'pointer-events-none fixed z-popover flex',
+        opened.isAnchored ? 'inset-0' : 'inset-x-0 bottom-11 justify-center px-4',
+      )}
+    >
+      <div
+        ref={popupRef}
+        data-report-placement={opened.isAnchored ? 'beside-trigger' : 'centered'}
+        style={opened.isAnchored ? placement : undefined}
+        className={cn(
+          'pointer-events-auto flex w-full max-w-140 min-h-0 flex-col animate-popover-in',
+          opened.isAnchored && 'fixed',
+        )}
+      >
         <ReportComposer
           key={opened.key}
           heading={opened.heading}

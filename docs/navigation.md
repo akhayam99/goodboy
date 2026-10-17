@@ -1956,7 +1956,7 @@ opens `StudioPlace` `{ kind: 'terminal'; terminalId; sessionId; worktree }`in`Te
 `StudioShell`plus`StudioRailLayout surface="terminal"`. The rail does not fold, and its first
 child is `New terminal`, a split secondary control: the button opens a tab in the selected
 worktree, the chevron opens the picker. The picker (`NewTerminalMenu`, `terminalPickerClusters`)
-opens to the right of the chevron (`useDropdown`align`after`) in clusters: `Workspace folder`first, then one cluster per session with attached worktrees, headed by the session title alone
+opens to the right of the chevron (`useDropdown` `side: 'right'`) in clusters: `Workspace folder`first, then one cluster per session with attached worktrees, headed by the session title alone
 (issue chips and diff stat stay off this page, cut C3); a row is the project, the branch, the short
 worktree chip and the path on one line, and`Open project`opens the project settings. The
 `Workspace folder` row is named by the folder (`harborline`), since the cluster title says the

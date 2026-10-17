@@ -5,6 +5,7 @@ import { useAppStore } from '../../../../../store';
 import { EMPTY_SESSION_DRAFT } from '../../../../../store/slices/sessionDraft/state';
 import type { StartChoice } from '../../../../../store/slices/sessionDraft/state';
 import { sceneClock } from '../../sceneClock';
+import { SETTINGS_PROVIDERS } from '../audit/settingsSeed';
 import { WORKSPACE_ID } from '../BoardScene';
 import { NewSessionPageScene } from '../u24/NewSessionPageScene';
 
@@ -22,6 +23,8 @@ export type C10SceneState = {
   readonly isPickerOpen?: boolean;
   readonly startFailure?: string;
   readonly clickLabel?: string;
+  readonly openPrefix?: string;
+  readonly hasConnectedProviders?: boolean;
 };
 
 type Props = {
@@ -87,6 +90,9 @@ const seedProjects = ({ state }: Props): void => {
       projects: [...current.projects, ...extraProjects({ template })],
     }));
   }
+  if (state.hasConnectedProviders === true) {
+    useAppStore.setState({ providers: SETTINGS_PROVIDERS });
+  }
   const draft = useAppStore.getState().sessionDrafts[WORKSPACE_ID] ?? EMPTY_SESSION_DRAFT;
   useAppStore.setState((current) => ({
     sessionDrafts: {
@@ -111,10 +117,28 @@ export const C10NewSessionScene = ({ state }: Props) => {
   }, [state]);
 
   useEffect(() => {
-    if (state.isPickerOpen !== true && state.clickLabel === undefined) {
+    if (
+      state.isPickerOpen !== true &&
+      state.clickLabel === undefined &&
+      state.openPrefix === undefined
+    ) {
       return;
     }
     const timer = window.setInterval(() => {
+      if (state.openPrefix !== undefined) {
+        const prefix = state.openPrefix;
+        const chip = [...document.querySelectorAll('button')].find(
+          (button) => button.getAttribute('aria-label')?.startsWith(prefix) === true,
+        );
+        if (chip === undefined) {
+          return;
+        }
+        if (chip.getAttribute('aria-expanded') !== 'true') {
+          chip.click();
+        }
+        window.clearInterval(timer);
+        return;
+      }
       if (state.clickLabel !== undefined) {
         const target = [...document.querySelectorAll('button')].find(
           (button) => button.textContent?.trim() === state.clickLabel && !button.disabled,

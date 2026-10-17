@@ -1349,7 +1349,14 @@ native `<select>`: the WebKit menu ignores theme, density and keyboard.
 - **Popover**: level 4 (`floating`, `shadow-lg`, `border`, `rounded-lg`),
   padding 4, at least the trigger's width and at most 360 by 320, scrolling in
   a `ScrollFade`. It opens below and flips above with `useDropdown`, entering
-  in 120ms (opacity and a 0.98 scale, `animate-popover-in`). It keeps 12px from
+  in 120ms (opacity and a 0.98 scale, `animate-popover-in`). Every select,
+  picker and filter opens under its trigger, start aligned (`side` `bottom`,
+  `align` `start`, the hook's defaults), and clamps inside the window. The hook
+  measures the trigger itself when the anchor wrapper holds one element, so a
+  wrapper stretched by a column never pushes the popover to the far edge.
+  `side: 'right'` opens beside the trigger (the terminal picker, the bug report)
+  and flips left when the right is short. An override of either needs a reason
+  in `regressions/popover-anchoring.baseline.json`, which only falls. It keeps 12px from
   the viewport edge. `popupWidth="trigger"` fixes the width to the trigger's
   (160px at least) so a long title truncates instead of widening the popover;
   use it with an `isBlock` trigger in a drawer or a form. The 360 cap is a
@@ -1515,9 +1522,12 @@ detail.
 props and reads no store, so it also renders inside `ErrorBoundary` after the
 app below it has crashed.
 
-- **Variants**: `floating` is level 4 (`floating`, `shadow-lg`, `border`,
-  `rounded-lg`), placed by the host at the bottom of the window with no overlay.
-  `inline` drops the shadow onto `subtle`, for the crash and startup screens.
+- **Variants**: `floating` is level 4 (`FLOATING_SURFACE`), placed by the host
+  to the right of the sidebar bug icon (`side: 'right'`, `align: 'end'`, inside
+  the window) with no overlay, or at the bottom centre when the icon is not on
+  screen. `inline` drops the shadow onto `subtle`, for the crash and startup
+  screens. The body scrolls in a `ScrollFade` between the head and the action
+  row, so a short window never pushes the sheet off screen.
 - **Head**: the bug glyph, a `text-heading` title, an optional type control (a
   `chip` Listbox) and an Esc `KbdPill` when the sheet can close.
 - **Line**: one borderless `text-body` input that takes focus on mount, and
@@ -1532,8 +1542,10 @@ app below it has crashed.
   summary in `faint-foreground`) that opens the exact text in a `muted`
   `ScrollFade` of `text-code`, a copy button, and the line that says what never
   leaves.
-- **Action row**: `FormActions`, with the destination or the error in
-  `text-meta` on the left, Add detail while the detail is closed, and the
+- **Error**: a danger `Notice` (`inline`) at the end of the body, above the
+  action row.
+- **Action row**: `FormActions`, with the destination in `text-meta` on the
+  left, Add detail while the detail is closed, and the
   primary button whose label names the destination, with its shortcut in an
   on-tone pill.
 

@@ -60,7 +60,6 @@ export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
           title={`Stop ${verb.agent.name}?`}
           description="The step is cancelled and marked Skipped. What it wrote is kept."
           confirmLabel={`Stop step ${verb.number}`}
-          align="end"
           onConfirm={() =>
             void press({
               task: () => stopWorkflowRunNow(sessionId, runId),

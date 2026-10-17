@@ -33,7 +33,7 @@ export const NewTerminalMenu = ({ clusters, onNew, onOpenAt }: Props) => {
   const [isFilterFocused, setIsFilterFocused] = useState(false);
   const filterRef = useRef<HTMLInputElement>(null);
   const dropdown = useDropdown({
-    align: 'after',
+    side: 'right',
     width: PICKER_WIDTH_CLASS,
     expectedWidth: PICKER_EXPECTED_WIDTH,
     expectedHeight: PICKER_EXPECTED_HEIGHT,
