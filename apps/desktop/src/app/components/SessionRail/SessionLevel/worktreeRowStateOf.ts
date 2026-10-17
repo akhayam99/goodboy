@@ -1,5 +1,7 @@
 import type { PullRequestChecks } from '@goodboy/types';
 
+export type EntryShownFact = 'checks' | 'comments';
+
 type Params = {
   readonly checks: PullRequestChecks;
   readonly behind: number | null;
@@ -8,6 +10,7 @@ type Params = {
   readonly isDecisionWaiting: boolean;
   readonly commentsWaiting: number;
   readonly baseBranch: string | null;
+  readonly shownByEntries?: ReadonlySet<EntryShownFact>;
 };
 
 export type WorktreeRowState = {
@@ -16,6 +19,8 @@ export type WorktreeRowState = {
 };
 
 const FINE: WorktreeRowState = { tone: null, reason: null };
+
+const NONE_SHOWN: ReadonlySet<EntryShownFact> = new Set<EntryShownFact>();
 
 type PluralParams = {
   readonly count: number;
@@ -34,8 +39,9 @@ export const worktreeRowStateOf = ({
   isDecisionWaiting,
   commentsWaiting,
   baseBranch,
+  shownByEntries = NONE_SHOWN,
 }: Params): WorktreeRowState => {
-  if (checks === 'failure') {
+  if (checks === 'failure' && !shownByEntries.has('checks')) {
     return { tone: 'danger', reason: 'A check failed' };
   }
   if (conflicts !== null && conflicts > 0) {
@@ -53,7 +59,7 @@ export const worktreeRowStateOf = ({
   if (isDecisionWaiting) {
     return { tone: 'warning', reason: 'Needs a decision' };
   }
-  if (commentsWaiting > 0) {
+  if (commentsWaiting > 0 && !shownByEntries.has('comments')) {
     return {
       tone: 'warning',
       reason: plural({

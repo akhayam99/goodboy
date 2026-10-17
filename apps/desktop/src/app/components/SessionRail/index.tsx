@@ -1,4 +1,4 @@
-import type { KeyboardEvent } from 'react';
+import { useMemo, type KeyboardEvent } from 'react';
 import {
   COLLAPSED_RAIL_WIDTH,
   FoldLayers,
@@ -13,11 +13,14 @@ import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { STORAGE_KEYS } from '../../../shared/lib/storage-keys';
 import { openLens } from '../../../features/session/openLens';
-import { SessionTools } from '../../../features/session/components/SessionTools';
+import { ActionStatusLine } from '../../../features/actions/components/ActionControls/ActionStatusLine';
+import type { ObjectTarget } from '../../../features/actions/types';
+import { useActionControls } from '../../../features/actions/useActionControls';
 import { leaveRunLevel } from '../../../features/workflows/leaveRunLevel';
 import { useColumnPlace } from '../../hooks/useColumnPlace';
 import { useShellFolds } from '../../hooks/useShellFolds';
-import { SessionLevelMenu } from './SessionLevel/SessionLevelMenu';
+import { SessionLevelActions } from './SessionLevel/SessionLevelActions';
+import { SessionLevelFoot } from './SessionLevel/SessionLevelFoot';
 import { SessionRailIcons } from './SessionRailIcons';
 import { SessionRailLevels } from './SessionRailLevels';
 import { SessionRailToggle } from './SessionRailToggle';
@@ -29,6 +32,8 @@ type Props = {
 };
 
 const WIDTH_VAR = '--goodboy-session-rail-width';
+
+const FOOT_ACTION_IDS: ReadonlySet<string> = new Set(['session.archive', 'session.restore']);
 
 const isBackKey = (event: KeyboardEvent): boolean =>
   event.key === '[' && event.metaKey && !event.shiftKey && !event.altKey && !event.ctrlKey;
@@ -48,6 +53,10 @@ export const SessionRail = ({ session }: Props) => {
     cssVar: WIDTH_VAR,
   });
   const isStudioOver = place !== null;
+  const target = useMemo<ObjectTarget>(() => ({ kind: 'session', sessionId }), [sessionId]);
+  const controls = useActionControls({ target, scopeKey: sessionId });
+  const isSessionChrome = level === 'session' && !fold.isFolded;
+  const isTopFailure = controls.failure !== null && !FOOT_ACTION_IDS.has(controls.failure.actionId);
   const goBack = () => {
     if (level === 'run') {
       leaveRunLevel({ sessionId });
@@ -88,21 +97,27 @@ export const SessionRail = ({ session }: Props) => {
         <div className="flex w-11 shrink-0 items-center justify-center">
           <SessionRailToggle isFolded={fold.isFolded} onToggle={fold.toggle} />
         </div>
-        {fold.isFolded || level !== 'session' ? null : <SessionLevelMenu session={session} />}
+        {isSessionChrome ? <SessionLevelActions session={session} controls={controls} /> : null}
       </div>
+      {isSessionChrome && isTopFailure ? (
+        <div className="shrink-0 px-2">
+          <ActionStatusLine controls={controls} showReasons={false} />
+        </div>
+      ) : null}
       <FoldLayers
         isFolded={fold.isFolded}
         openWidth={`var(${WIDTH_VAR})`}
         open={
           <div className="flex min-h-0 flex-1 flex-col gap-1">
             <SessionRailLevels session={session} level={level} isStudioOver={isStudioOver} />
-            <SessionTools sessionId={sessionId} isFolded={false} />
+            {level === 'session' ? (
+              <SessionLevelFoot session={session} controls={controls} />
+            ) : null}
           </div>
         }
         folded={
           <div className="flex min-h-0 flex-1 flex-col gap-1">
             <SessionRailIcons session={session} level={level} />
-            <SessionTools sessionId={sessionId} isFolded />
           </div>
         }
       />

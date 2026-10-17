@@ -26,17 +26,16 @@ export const useCardPages = ({ session }: Params): CardPages => {
   const facts = usePageCountFacts({ session });
   const isAutoOn = useIsAutoOn();
   const hasAutoAgents = isAutoOn || facts.autoAgents > 0;
-  const hasOpenQuestions = facts.openQuestions > 0;
   const pages = useMemo(
     () => [
       ...columnPagesOf({ isBranchless, hasAutoAgents }),
       ...pagesOf({
         isBranchless,
         destinations: QUESTION_DESTINATION,
-        hasOpenQuestions,
+        hasOpenQuestions: true,
       }).filter((page) => page.id === 'questions'),
     ],
-    [hasAutoAgents, hasOpenQuestions, isBranchless],
+    [hasAutoAgents, isBranchless],
   );
   return { pages, facts };
 };

@@ -13,6 +13,7 @@ const BASE: Parameters<typeof worktreeEntryFactsOf>[0] = {
   pullRequestState: 'draft',
   commentsNeedYou: 0,
   files: 12,
+  diff: null,
   notPushed: 0,
   checks: [run('success')],
   checksUnreadReason: null,
@@ -33,6 +34,7 @@ describe('the facts of the worktree entries', () => {
       text: '2',
       tone: 'warning',
       tooltip: '2 need you',
+      diff: null,
     });
   });
 
@@ -43,22 +45,40 @@ describe('the facts of the worktree entries', () => {
     expect(worktreeEntryFactsOf(BASE).commits.text).toBeNull();
   });
 
+  it('puts the diff stat beside the file count and says both in the tooltip', () => {
+    const facts = worktreeEntryFactsOf({ ...BASE, diff: { additions: 652, deletions: 99 } });
+    expect(facts.files).toEqual({
+      text: '12',
+      tone: null,
+      tooltip: '12 files · +652 -99',
+      diff: { additions: 652, deletions: 99 },
+    });
+    expect(
+      worktreeEntryFactsOf({ ...BASE, files: null, diff: { additions: 4, deletions: 0 } }).files,
+    ).toEqual({ text: null, tone: null, tooltip: '+4 -0', diff: { additions: 4, deletions: 0 } });
+    expect(worktreeEntryFactsOf({ ...BASE, diff: { additions: 0, deletions: 0 } }).files.diff).toBe(
+      null,
+    );
+  });
+
   it('marks the commits not pushed with an arrow and says it in the tooltip', () => {
     expect(worktreeEntryFactsOf({ ...BASE, notPushed: 2 }).commits).toEqual({
       text: '↑2',
       tone: null,
       tooltip: '2 not pushed',
+      diff: null,
     });
   });
 
   it('counts failing checks in danger, running ones in info, and nothing when all passed', () => {
     expect(
       worktreeEntryFactsOf({ ...BASE, checks: [run('failure'), run('success')] }).checks,
-    ).toEqual({ text: '1', tone: 'danger', tooltip: '1 failing' });
+    ).toEqual({ text: '1', tone: 'danger', tooltip: '1 failing', diff: null });
     expect(worktreeEntryFactsOf({ ...BASE, checks: [run('pending')] }).checks).toEqual({
       text: '1',
       tone: 'info',
       tooltip: '1 running',
+      diff: null,
     });
     expect(worktreeEntryFactsOf(BASE).checks.text).toBeNull();
   });
@@ -66,6 +86,6 @@ describe('the facts of the worktree entries', () => {
   it('says nothing for checks it could not read, the reason in the tooltip, never a zero', () => {
     expect(
       worktreeEntryFactsOf({ ...BASE, checks: null, checksUnreadReason: 'Checks unknown' }).checks,
-    ).toEqual({ text: null, tone: null, tooltip: 'Checks unknown' });
+    ).toEqual({ text: null, tone: null, tooltip: 'Checks unknown', diff: null });
   });
 });

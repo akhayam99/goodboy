@@ -31,10 +31,6 @@ const RAIL_SESSION_LEVEL = readFileSync(
   join(SOURCE_ROOT, 'app', 'components', 'SessionRail', 'RailSessionLevel.tsx'),
   'utf8',
 );
-const TOOLS_DIR = join(SOURCE_ROOT, 'features', 'session', 'components', 'SessionTools');
-const TOOLS_GROUP = readFileSync(join(TOOLS_DIR, 'index.tsx'), 'utf8');
-const TOOL_ROW = readFileSync(join(TOOLS_DIR, 'SessionToolRow.tsx'), 'utf8');
-const TOOL_ICON = readFileSync(join(TOOLS_DIR, 'SessionToolIcon.tsx'), 'utf8');
 afterEach(cleanup);
 
 const classNameContaining = ({ source, marker }: { source: string; marker: string }): string => {
@@ -91,14 +87,6 @@ describe('workspace tile and collapsed rail axis', () => {
     expect(RAIL_SESSION_LEVEL).toContain('className="flex flex-col gap-1 px-2"');
     expect(RAIL_SESSION_LEVEL).toContain('iconSize={ICON_SIZE.row}');
     expect(RAIL_SESSION_LEVEL).not.toContain('<RailIdentityNode');
-  });
-
-  it('draws a folded session tool as its open row without the word', () => {
-    expect(TOOLS_GROUP).toContain('className="flex shrink-0 flex-col px-2"');
-    expect(TOOL_ROW).toContain('className="h-7 items-center gap-2 px-2 text-ui"');
-    expect(TOOL_ICON).toContain('className="relative h-7 items-center px-2"');
-    expect(TOOL_ROW).toContain('size={ICON_SIZE.row}');
-    expect(TOOL_ICON).toContain('size={ICON_SIZE.row}');
   });
 });
 

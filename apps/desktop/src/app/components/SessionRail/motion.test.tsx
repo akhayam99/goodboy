@@ -167,7 +167,15 @@ describe('the session rail fold', () => {
       within(level)
         .getAllByRole('button')
         .map((button) => button.getAttribute('aria-label')),
-    ).toEqual(['Overview', 'Runs', 'Orchestrated', 'Agents', 'Auto agents', 'Artifacts']);
+    ).toEqual([
+      'Overview',
+      'Runs',
+      'Orchestrated',
+      'Agents',
+      'Auto agents',
+      'Artifacts',
+      'Questions',
+    ]);
   });
 
   it('swaps at once under reduced motion', () => {
@@ -242,46 +250,38 @@ describe('the session rail drill', () => {
   });
 });
 
-describe('the session tools on the rail foot', () => {
-  const toolsIn = (layer: HTMLElement | null): HTMLElement | null =>
-    layer?.querySelector<HTMLElement>('[data-testid="session-tools"]') ?? null;
+describe('the session tools column at the right of the content', () => {
+  const tools = (): HTMLElement | null =>
+    document.querySelector<HTMLElement>('[data-testid="session-tools"]');
 
-  it('fold with the rail: each layer carries its own tools while the words fade', () => {
+  it('sits outside the rail and keeps its icons while the rail folds', () => {
     render(<Shell />);
-    expect(toolsIn(openLayer())?.hasAttribute('data-folded')).toBe(false);
+    const before = tools();
+    expect(before?.closest('[aria-label="Session"]')).toBeNull();
 
     fireEvent.click(elementOf('[data-session-rail-toggle]'));
-
-    expect(foldOf()).toBe('folding');
-    expect(toolsIn(openLayer())?.hasAttribute('data-folded')).toBe(false);
-    expect(toolsIn(foldedLayer())?.hasAttribute('data-folded')).toBe(true);
-
     advance(FOLD_MS);
 
-    expect(openLayer()).toBeNull();
-    const folded = toolsIn(foldedLayer());
-    if (folded === null) {
-      throw new Error('no folded tools');
-    }
+    expect(foldOf()).toBe('folded');
+    expect(tools()).toBe(before);
+    expect(rail().querySelector('[data-testid="session-tools"]')).toBeNull();
     expect(
-      within(folded)
+      within(elementOf('[data-testid="session-tools"]'))
         .getAllByRole('button')
-        .map((button) => button.getAttribute('aria-label')),
+        .map((button) => button.getAttribute('aria-label')?.split(',')[0]),
     ).toEqual(['Ask', 'Terminal', 'Explore', 'Context', 'Scripts']);
   });
 
-  it('stay outside the drilled levels, so a drill never moves them', () => {
+  it('stays put while the rail drills into a level', () => {
     render(<Shell />);
-    const before = toolsIn(openLayer());
+    const before = tools();
 
     goTo('branch');
 
     expect(elementOf('[data-level-layer="worktree"]').getAttribute('data-level-entry')).toBe(
       'forward',
     );
-    const tools = toolsIn(openLayer());
-    expect(tools).toBe(before);
-    expect(tools?.closest('[data-level-stack]')).toBeNull();
+    expect(tools()).toBe(before);
     expect(ghost()?.querySelector('[data-testid="session-tools"]')).toBeNull();
   });
 });

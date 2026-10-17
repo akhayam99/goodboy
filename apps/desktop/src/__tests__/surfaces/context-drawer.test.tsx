@@ -49,7 +49,7 @@ afterEach(() => {
 const renderSurface = () =>
   render(
     <>
-      <SessionTools sessionId={SESSION_ID} isFolded={false} />
+      <SessionTools sessionId={SESSION_ID} />
       <DrawerHost />
     </>,
   );

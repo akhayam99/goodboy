@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
+import { StatusDot, Tooltip } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { useAppStore, useMountDiffStats } from '../../../../store';
 import { useBranchIdentity } from '../../../../features/branch/hooks/useBranchIdentity';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useMountRows } from '../../../../features/session/components/SessionOverviewPane/ProjectMountRows/useMountRows';
@@ -10,7 +11,9 @@ import { BRANCH_LENSES } from '../branchLenses';
 import { useLapProject } from '../../../../features/bootstrap/useLapProject';
 import { FinishedWorktrees } from './FinishedWorktrees';
 import { LevelAddMenu, type BranchableProject } from './LevelAddMenu';
-import { LevelLabel } from './LevelLabel';
+import { LevelCard } from './LevelCard';
+import { useLevelCardFold } from './useLevelCardFold';
+import { useProjectsSignal } from './useProjectsSignal';
 import { WorktreeRow } from './WorktreeRow';
 
 type Props = {
@@ -27,6 +30,8 @@ export const LevelProjects = ({ session, isActive }: Props) => {
   const branch = useBranchIdentity({ sessionId });
   const isBranchShown = useAppStore((s) => BRANCH_LENSES.has(s.activeLens[sessionId] ?? null));
   const shownPath = isActive && isBranchShown ? branch.mountPath : null;
+  const fold = useLevelCardFold({ card: 'projects' });
+  const liveRows = useMemo(() => groups.flatMap((group) => group.rows), [groups]);
   const targets = useMemo(
     () =>
       worktreeStatusTargetsOf({
@@ -36,6 +41,8 @@ export const LevelProjects = ({ session, isActive }: Props) => {
     [groups, projects],
   );
   const snapshot = useWorktreeStatusSnapshot({ targets });
+  const diffStats = useMountDiffStats(sessionId);
+  const signal = useProjectsSignal({ sessionId, rows: liveRows, statuses: snapshot.statuses });
   const branchable = useMemo<ReadonlyArray<BranchableProject>>(
     () =>
       groups
@@ -48,20 +55,30 @@ export const LevelProjects = ({ session, isActive }: Props) => {
   const lapName = groups.length === 0 && lap.stage !== null ? (lap.project?.name ?? null) : null;
 
   return (
-    <div role="group" aria-labelledby={LABEL_ID} className="flex flex-col">
-      <LevelLabel
-        id={LABEL_ID}
-        label="Projects"
-        {...(!isArchived && {
-          action: (
-            <LevelAddMenu
-              sessionId={sessionId}
-              workspaceId={session.workspaceId}
-              projects={branchable}
-            />
-          ),
-        })}
-      />
+    <LevelCard
+      id={LABEL_ID}
+      label="Projects"
+      isOpen={fold.isOpen}
+      onToggle={fold.toggle}
+      {...(signal.tone !== null && {
+        meta: (
+          <Tooltip content={signal.reason}>
+            <span data-card-signal="" className="flex">
+              <StatusDot tone={signal.tone} size="sm" />
+            </span>
+          </Tooltip>
+        ),
+      })}
+      {...(!isArchived && {
+        action: (
+          <LevelAddMenu
+            sessionId={sessionId}
+            workspaceId={session.workspaceId}
+            projects={branchable}
+          />
+        ),
+      })}
+    >
       {lapName === null ? null : (
         <div
           data-lap-project=""
@@ -72,7 +89,7 @@ export const LevelProjects = ({ session, isActive }: Props) => {
         </div>
       )}
       {groups.map((group) => (
-        <div key={group.projectId} className="flex flex-col">
+        <div key={group.projectId} data-card-project={group.projectName} className="flex flex-col">
           <div className="flex h-7 min-w-0 items-center gap-2 px-2 text-ui text-muted-foreground">
             <CONCEPT_ICONS.projectFolder size={ICON_SIZE.row} aria-hidden className="shrink-0" />
             <span className="truncate">{group.projectName}</span>
@@ -89,6 +106,9 @@ export const LevelProjects = ({ session, isActive }: Props) => {
                       : (snapshot.statuses.get(row.worktreePath) ?? null)
                   }
                   isShown={row.worktreePath !== null && row.worktreePath === shownPath}
+                  diff={
+                    row.worktreePath === null ? null : (diffStats.get(row.worktreePath) ?? null)
+                  }
                 />
               </li>
             ))}
@@ -102,6 +122,6 @@ export const LevelProjects = ({ session, isActive }: Props) => {
           </ul>
         </div>
       ))}
-    </div>
+    </LevelCard>
   );
 };

@@ -677,11 +677,11 @@ hide animation or overlay can move it.
 **The pane** is the work. It is the only surface that scrolls its own body,
 mounts editors and takes a title.
 
-**The Projects group of the session level shows which projects a session has
+**The Projects card of the session level shows which projects a session has
 materialized.** It lives in the session rail, not on the Overview, and always has
 the Add action, even before the first mount. Each mounted project is a label
-row with its worktrees as one line rows under it; merged and closed ones fold
-into `N finished`. Sessions are created lazily on the workspace
+row with its worktrees one indent in and their main pages one more indent in;
+merged and closed ones fold into `N finished`. Sessions are created lazily on the workspace
 ([concepts.md](concepts.md) → Lazy sessions), and this group is where a
 session's footprint grows. What a worktree asks the user to decide shows in the
 Overview notices slot ([mounts.md](mounts.md#worktree-rows-and-the-overview-notices)).
@@ -705,21 +705,33 @@ deeper level shows, and the hidden ones are `inert`. The rail is 240px by
 default and resizes from 200 to 400 (`goodboy:session-rail-width:v1`); its
 rows are the column's rows (28px, `SelectableRow`, the same type roles).
 
-- **Level 1 reads top to bottom:** the pages, then Projects and Linked. The
-  session level has no identity row: the selected main sidebar row is the
-  session's identity (its title and state node) and the page h1 names the
-  entry. The rail's top row holds the rail toggle at the left and the session
-  `⋯` at the right (`SessionLevel/SessionLevelMenu`: Rename, Pin, Refresh,
-  Archive, Delete). Rename edits the main sidebar row in place (the active row
-  answers the `session-header` rename request); with the sidebar folded it
-  edits in the rail top row. A title Goodboy wrote reads "Named by Goodboy" on
-  the session hover card. It has no back row: the column beside it is the way
-  to another place. Only one level shows, so a session
-  never carries a nested card in the workspace list.
+- **Level 1 reads top to bottom:** the pages, then the Projects card and the
+  Linked card, then the foot. The session level has no identity row: the
+  selected main sidebar row is the session's identity (its title and state
+  node) and the page h1 names the entry. The rail's top row holds the rail
+  toggle at the left and three icon buttons at the right, no `⋯`
+  (`SessionLevel/SessionLevelActions`): **Autopilot** and **Pin session**,
+  toggles that show pressed while on and run their registry actions
+  (`session.autopilotOn` / `Off`, `session.pin` / `unpin`; a failure keeps the
+  old state and shows under the row with Retry, `ActionStatusLine`), and
+  **Refresh session** (⌘⇧R, `useSessionRefresh`, the same call as the key and
+  the palette). An archived session shows none of them. The foot
+  (`SessionLevel/SessionLevelFoot`) holds **Archive** (⌘⇧A, the registry
+  `session.archive`; **Restore** on an archived session) and **Delete…**
+  (⌘⇧⌫) as quiet `xs` buttons; Delete opens `DeleteSessionConfirm` anchored to
+  the button (`align="start"`, flipped above it and kept inside the window by
+  `useDropdownDirection`). Rename has no rail control: the main sidebar row
+  renames in place (double click, its right click menu or the palette answer
+  the `session-header` rename request). Every one of these verbs is also in
+  the sidebar row's right click menu and the palette. A title Goodboy wrote
+  reads "Named by Goodboy" on the session hover card. It has no back row: the
+  column beside it is the way to another place. Only one level shows, so a
+  session never carries a nested card in the workspace list.
 - **The pages** come from one registry (`features/session/pageRegistry.ts`):
   Overview, File versions in a branchless session only, Runs, Agents, Auto
   agents (with a neutral Experimental chip; Auto is always on, so it always
-  shows), Artifacts, and Questions last while one is open.
+  shows), Artifacts, and Questions last, always there like Artifacts: its slot
+  is the open count with the warning dot while a question waits on you.
   Agents lists standalone agents only; an Auto agent lives under Auto agents
   (`isAgentsPageKind`, `agentHomeLens` sends it to the `auto` lens). A page row ends in one
   right-aligned slot as wide as its content, so a label never truncates for an
@@ -735,25 +747,49 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
   one function, `pageSlotOf` over `usePageCountFacts`, and the folded rail and
   its flyout read the same function; the Artifacts count is
   `liveArtifactCountOf`, pinned equal to the page's All tab.
-- **Projects** lists each mounted project as a label row and its worktrees
-  under it at the same left edge, no indent (`SessionLevel/WorktreeRow`):
-  branch icon, mono branch cut in the middle so the distinguishing tail stays
-  (`BranchName`), pull request number right aligned at its content width (a
-  row with no pull request gives its branch the room), then the worst
-  state as one 6px dot in the last column (`worktreeRowStateOf`: danger for a
-  failed check; warning for conflicts, a running rebase, behind its base, a
-  branch decision waiting, comments waiting on you; none when fine), named in
-  its tooltip and in the row's accessible name. Merged and closed worktrees
-  fold into one row `2 finished ›` under their project (`FinishedWorktrees`,
-  the chevron right after the text), which opens them in place. Folded, the
+- **Projects and Linked are cards** (`SessionLevel/LevelCard`): a rounded
+  `bg-subtle` surface (`rounded-lg`, 4px inset, set 4px wider than the page
+  rows so its rows keep their left edge) with a header row inside it: the
+  title and a fold chevron as one button, then the quiet meta and a `+` icon
+  button (`LevelAddTrigger`) at the right. A card folds from its header and
+  remembers it (`useLevelCardFold`, `goodboy:session-rail-folded-cards:v1`);
+  folded, Projects keeps the worst state of its worktrees as one dot in the
+  header (`useProjectsSignal`) and Linked its item count from 2, so a state
+  that needs you never hides in a fold. Cards sit 8px apart, 16px under the
+  pages.
+- **Projects** lists each mounted project as a label row, its worktrees one
+  16px indent in (`SessionLevel/WorktreeRow`): branch icon, mono branch cut in
+  the middle so the distinguishing tail stays (`BranchName`), pull request
+  number right aligned at its content width (a row with no pull request gives
+  its branch the room), then the worst state as one 6px dot in the last column
+  (`worktreeRowStateOf`: danger for a failed check; warning for conflicts, a
+  running rebase, behind its base, a branch decision waiting, comments waiting
+  on you; none when fine), named in its tooltip and in the row's accessible
+  name. Under each live worktree, one more indent in, its main pages as 24px
+  rows (`SessionLevel/WorktreeEntries`, `worktreeCardEntriesOf`): **Pull
+  request** (Merge request on GitLab), **Comments** and **Checks** while it
+  has a pull request, and **Files** always; Commits stays on the worktree
+  level, since its not pushed count reads the history the level loads. Each
+  slot is the worktree level's own (`worktreeEntryFactsOf`, drawn by
+  `WorktreeEntrySlot`): Draft, Merged or Closed; the comments that need you
+  (`commentsCountOf` over the worktree's queue threads) with a warning dot;
+  the diff stat `+652 -99` in green and red (`useMountDiffStats`, the source
+  of the Overview project rows); failing checks with a danger dot or running
+  ones with an info dot (`checksWordOf` in the tooltip). A row opens that
+  worktree directly on its tab (`switchBranchMount` with `tab`); the drill
+  keeps the full set. The worktree row drops a reason its own Comments entry
+  or toned Checks entry already shows (`shownByEntries`), one mark per fact.
+  Merged and closed worktrees fold into one row `2 finished ›` under their
+  project (`FinishedWorktrees`, at the worktree indent, the chevron right
+  after the text), which opens them in place. Folded, the
   rail draws one branch icon per worktree under the page icons
   (`RailWorktrees`), its tooltip "project, branch, worst state" and the worst
   state dot on its corner (`useWorktreeRowState`, shared with the open row); the
   folded rail never draws the session node. A worktree row drills into the worktree level
-  (level 2) on its landing entry. The label carries one quiet text item,
-  `+ Add` (`LevelAddTrigger`, the quiet `xs` button: no border, no fill at
-  rest, so the rail stays light), opening `LevelAddMenu`: Add project, Add
-  workspace project, and `New branch in`
+  (level 2) on its landing entry. The card header carries one `+`
+  (`LevelAddTrigger`, a ghost `xs` icon button named Add to this session: no
+  border, no fill at rest, so the rail stays light), opening `LevelAddMenu`:
+  Add project, Add workspace project, and `New branch in`
   each repo project of the session; each opens today's popover
   (`MountProjectAction`, `NewBranchMountAction`) anchored under the label.
 - **Level 2, the worktree.** Showing the Branch lens is being on level 2
@@ -772,8 +808,10 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
 request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   fixed right-aligned slot from `worktreeEntryFactsOf`: `#418 Draft` or
   `None`, the comment count with a warning dot while one waits on you, the
-  file count, `2 not pushed` or the commit count, `1 failed` with a danger dot
-  or the check count; a known zero leaves the slot empty. Files is a plain entry like the others: picking it opens
+  diff stat `+652 -99` in green and red beside the file count (the
+  `useMountDiffStats` source of the Overview rows, "12 files · +652 -99" in
+  the tooltip), `2 not pushed` or the commit count, `1 failed` with a danger
+  dot or the check count; a known zero leaves the slot empty. Files is a plain entry like the others: picking it opens
   the diff page in the center, whose changed file list sits in its own rail on
   the right of that page (see Branch page, Files), never in the session rail. The entries are
   the Branch page's own rail, portalled into the level (`worktreeLevelSlot`),
@@ -784,9 +822,9 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   key in the tooltip) so every title starts on one edge, title. A GitHub pull
   request a worktree row of the session already owns is not listed again
   (`githubRefOf`, same owner/repo and number). The row opens the item; its right-click menu holds
-  Unlink and Move. The label carries the same quiet `+ Add` item
-  (`LevelAddTrigger`, named Link work), opening Link work (L). Every label row
-  of the session level uses this one item, never a bordered chip.
+  Unlink and Move. It is a card like Projects, and its header carries the same
+  `+` (`LevelAddTrigger`, named Link work), opening Link work (L). Every card
+  header of the session level uses this one control, never a bordered chip.
 - **Back.** On level 2 the back row goes up to level 1, and so does ⌘[ while
   focus is in the rail; on level 1 ⌘[ in the rail does nothing, and anywhere
   else ⌘[ is the top bar Back. Leaving the Auto level is part of the history
@@ -796,16 +834,10 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   studio over the session (Tasks, Chat, Workflows, Terminal, Monitoring,
   Impact) covers the page and its rail; the column selects that studio's door
   and leaves the session row unselected.
-- **The tools sit at the foot and never drill.** Below the levels, outside
-  `LevelStack`, the rail holds one fixed group (`SessionTools`, a group named
-  `Session tools`): **Ask** (⌘L), **Terminal** (⌘⌥T), **Explore** (⌘⌥X),
-  **Context** (⌘⌥C) and **Scripts** (⌘⌥S), one 28px row each with its icon,
-  its word and the 40px right slot, the chord in the tooltip; Ask uses the chat
-  bubble glyph. The slot's dot is static: info while the summary runs, danger
-  when it failed, primary when the context changed since you looked. The open one is
-  `bg-selected` and `aria-pressed` (`openPaneOf`), and a row toggles its pane
-  (see The session tools). The group is the same on level 1, on a worktree,
-  on a run and on Auto: only the part above it drills.
+- **The tools sit in their own column and never drill.** They are not in the
+  rail: a thin icon toolbar at the right edge of the session content, between
+  the page and the open drawer (see The session tools), the same on level 1,
+  on a worktree, on a run and on Auto, folded rail or not.
 - **Folded (44px).** The rail's own toggle (`SessionRailToggle`, Fold session
   rail) folds it to the current level as icons with right tooltips
   (`SessionRailIcons`): on level 2 the back icon, then one icon per worktree
@@ -814,10 +846,8 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   column like the run steps, holding its role glyph with its state node as a
   small badge on the lower right corner (the node of the Auto word map the open
   rail draws), with the role and state word in the tooltip (`RailAutoLevel`); on level 1 one icon per page with its dot,
-  then one branch icon per worktree. On
-  every level the tools follow at the bottom as five icons
-  (`SessionToolIcon`), each named by its word in its tooltip and accessible
-  name, the Context dot on its corner.
+  then one branch icon per worktree. The folded rail has no foot and no top
+  row buttons; the tools column beside the content stays as it is.
   ⌘B folds the column only, which shows New, the doors and the pinned session
   nodes on every screen. Folding the session rail leaves the diff page's file
   rail as it is.
@@ -865,8 +895,8 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   back to the Overview.
 
 The tools (Ask, Terminal, Explore, Context, Scripts) are panes, not pages:
-they open from the foot of the session rail (see The session tools), never
-from a page header.
+they open from the session tools column at the right of the content (see The
+session tools), never from a page header.
 The linked records keep their lenses for now and stay in the palette.
 
 **A sidebar row says the name and the state, and the hover card and the board
@@ -1276,16 +1306,17 @@ activity yet show the plain overview with its actions.
   session rail, from Esc (Up) or from the top bar Back. The crumb menus are gone
   (cut C1).
 - **The header holds only its page.** `SessionWorkspace` hands no actions
-  to the page headers: the session tools live at the foot of the session rail
-  (see The session tools), so no header carries a second `⋯` (pinned by
+  to the page headers: the session tools live in their column at the right of
+  the content (see The session tools), so no header carries a second `⋯` (pinned by
   `scene-primaries.test.tsx`). `PaneActionsContext` stays for a page that
   lends its own action to a nested header (the issue detail's back word).
   ⌘L (`ask.open`, app plane) opens Ask or, when it is open, focuses its box;
   the key is bound once per visible session (`useAskOpenShortcut` in
   `SessionWorkspace`), not by the row, so two mounted pages never bind it
   twice.
-- **The Overview header** reads `Overview`. The session title, its rename and
-  its lifecycle menu live on the session rail identity row. The header holds
+- **The Overview header** reads `Overview`. The session title and its rename
+  live on the main sidebar row; Pin, Autopilot and Refresh on the session rail
+  top row, Archive and Delete at its foot. The header holds
   **New**
   (`OverviewActions`, ⌘N on the Overview, a menu from the `newForm` kind of
   the action registry whose pick opens its form in the New drawer; filled only
@@ -1294,18 +1325,27 @@ activity yet show the plain overview with its actions.
 
 ## The session tools
 
-One fixed group at the foot of the session rail, the same on every level and
-in this order: **Ask** (⌘L), **Terminal** (⌘⌥T), **Explore** (⌘⌥X),
-**Context** (⌘⌥C) and **Scripts** (⌘⌥S) (`SESSION_TOOLS`). Each is one row
-with an icon and a word (`SessionToolRow`), or an icon with its word in the
-tooltip on the folded rail (`SessionToolIcon`); the open one is `bg-selected`
-and `aria-pressed`. The chord lives in the tooltip only. There is no menu: the
-old `More panes` `⋯` is gone, so a page header never shows a second `⋯`.
-`SessionTools` lives in `features/session/components/`, mounted by
-`SessionRail` in both `FoldLayers` layers, below the `LevelStack`: the group
-folds and unfolds with the rest of the rail (its folded icon is its open row
-without the word, so a fold moves no icon), and a drill slides only the levels
-above it, never the tools.
+One thin icon column at the right edge of the session content, between the
+page and the open drawer, the same on every rail level and in this order:
+**Ask** (⌘L), **Terminal** (⌘⌥T), **Explore** (⌘⌥X), **Context** (⌘⌥C) and
+**Scripts** (⌘⌥S) (`SESSION_TOOLS`). `SessionTools`
+(`features/session/components/SessionTools`) is mounted by `SessionFrame`
+after the page, 44px wide on the sheet background, its buttons starting on the
+rail top row's line. Each tool is a 32px `IconButton`
+(`SessionToolButton`): icon only, its word and chord in a left tooltip and in
+its accessible name ("Context, Decisions changed since you last looked" while
+a dot shows), `aria-pressed` with the `bg-selected` fill while its drawer is
+open (`openPaneOf`). The Context dot stays on the icon's corner: info while the
+summary runs, danger when it failed, primary when the context changed since
+you looked. The column is a `toolbar` (`aria-orientation="vertical"`, named
+Session tools) with one tab stop; Up, Down, Home and End move it
+(`toolbarIndexAfter`). There is no menu, so a page header never shows a second
+`⋯`. With a side pane in push mode the column sits right before the drawer;
+when the window is too narrow for the pane to push (about 1100px with the
+sidebar open), the pane floats over the page with the scrim and covers the
+column, as it covers the rest of the page, until Esc or its close returns it;
+the tool chords keep working. Folding the rail leaves the column in place, and
+a drill never moves it.
 
 - **Outside a session there is no tools group.** The workspace pages (the
   board, the studios) already hold the two tools that make sense there as

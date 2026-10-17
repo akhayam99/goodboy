@@ -590,6 +590,13 @@ r4-layout-settings
 r4-layout-tasks
 r4-layout-terminal
 r4-layout-workflows
+r4-rail-cards-folded
+r4-rail-delete
+r4-rail-folded
+r4-rail-narrow
+r4-rail-session
+r4-rail-tools-open
+r4-rail-worktree
 r4-repos-behind
 r4-repos-closed
 r4-repos-dirty

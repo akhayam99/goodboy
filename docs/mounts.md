@@ -491,8 +491,10 @@ action the user can see, or allows one on a mount the user sees as gone.
 ## Worktree rows and the Overview notices
 
 The Overview has no Projects section. A worktree is a one line row of the
-session level in the session rail (`WorktreeRow`: branch, pull request number, the
-worst state as one dot) and drills into its worktree level, whose identity row
+session level in the session rail (`WorktreeRow` in the Projects card: branch,
+pull request number, the worst state as one dot, then its main pages one indent
+in: Pull request, Comments, Files with the diff stat, Checks) and drills into
+its worktree level, whose identity row
 menu holds the `mount` kind of the action registry
 (`features/actions/kinds/mount.ts`) and whose status line holds Rebase. The
 navigation rules live in [navigation.md](navigation.md#session-rail).

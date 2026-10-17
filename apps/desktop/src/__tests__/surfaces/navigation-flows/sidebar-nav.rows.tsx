@@ -217,16 +217,13 @@ export const SIDEBAR_NAV_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'pins: pin from the session menu, Move down from the row menu, and the order survives a reload',
+    name: 'pins: pin from the session rail top row, Move down from the row menu, and the order survives a reload',
     covers: ['pin:header-toggle', 'row menu: Move down'],
     open: async (ctx) => {
       otherId = otherSessionId(ctx.sessionId);
-      const menu = document.querySelector<HTMLElement>('[data-rail-top] [data-session-menu]');
-      expect(menu).not.toBeNull();
-      await click(
-        within(menu as HTMLElement).getByRole('button', { name: 'More session actions' }),
-      );
-      await click(await screen.findByRole('menuitem', { name: 'Pin session' }, WAIT));
+      const top = document.querySelector<HTMLElement>('[data-rail-top] [data-session-actions]');
+      expect(top).not.toBeNull();
+      await click(within(top as HTMLElement).getByRole('button', { name: 'Pin session' }));
       await waitFor(() => expect(pinnedIds()).toEqual([ctx.sessionId]), WAIT);
       await useAppStore.getState().pinSession(otherId as SessionId);
       await waitFor(() => expect(pinnedIds()).toEqual([ctx.sessionId, otherId]), WAIT);

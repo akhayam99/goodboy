@@ -12,6 +12,7 @@ export const STORAGE_KEYS = {
   leftSidebarWidth: `${PREFIX}left-sidebar-width:v3`,
   sessionRailCollapsed: `${PREFIX}session-rail-collapsed:v1`,
   sessionRailWidth: `${PREFIX}session-rail-width:v1`,
+  sessionRailFoldedCards: `${PREFIX}session-rail-folded-cards:v1`,
   changelogCache: `${PREFIX}changelog-cache:v1`,
   paletteFrecency: `${PREFIX}palette-frecency:v1`,
   chatUnread: `${PREFIX}chat-unread:v1`,

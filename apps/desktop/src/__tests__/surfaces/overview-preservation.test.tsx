@@ -114,7 +114,7 @@ describe('SPEC3 9.3 Overview capabilities from the c05 Overview', () => {
       header().queryByRole('button', { name: 'Write title and goal from linked work' }),
     ).toBeNull();
     fireEvent.click(
-      within(screen.getByRole('group', { name: 'Session tools' })).getByRole('button', {
+      within(screen.getByRole('toolbar', { name: 'Session tools' })).getByRole('button', {
         name: /^Context/,
       }),
     );

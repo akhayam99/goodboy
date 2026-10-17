@@ -282,7 +282,7 @@ describe('main flows on the real store', () => {
 
     await mountFlow(
       <>
-        <SessionTools sessionId={sessionId} isFolded={false} />
+        <SessionTools sessionId={sessionId} />
         <KeepAliveWorkSurface sessionId={sessionId} isActive />
         <DrawerHost />
       </>,

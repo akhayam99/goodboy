@@ -9,7 +9,9 @@ import { LinkIssueAction } from '../../../../features/session/components/Session
 import { openLens } from '../../../../features/session/openLens';
 import { useMountRows } from '../../../../features/session/components/SessionOverviewPane/ProjectMountRows/useMountRows';
 import { githubRefOf } from './githubRefOf';
-import { LevelLabel } from './LevelLabel';
+import { countSlotText } from '../../../../shared/utils/countSlotText';
+import { LevelCard } from './LevelCard';
+import { useLevelCardFold } from './useLevelCardFold';
 import { LinkedKey } from './LinkedKey';
 import { LinkedTaskRow } from './LinkedTaskRow';
 
@@ -81,18 +83,24 @@ export const LevelLinked = ({ session, isActive }: Props) => {
     (left, right) => PROVIDER_ORDER[left.task.provider] - PROVIDER_ORDER[right.task.provider],
   );
   const isArchived = session.archivedAt != null;
+  const fold = useLevelCardFold({ card: 'linked' });
+  const count = countSlotText({ count: linkedIssues.length + tasks.length, isBesideGlyph: true });
 
   return (
-    <div role="group" aria-labelledby={LABEL_ID} className="flex flex-col">
-      <LevelLabel
-        id={LABEL_ID}
-        label="Linked"
-        {...(!isArchived && {
-          action: (
-            <LinkIssueAction session={session} isShortcutOn={isActive && isOverview} look="level" />
-          ),
-        })}
-      />
+    <LevelCard
+      id={LABEL_ID}
+      label="Linked"
+      isOpen={fold.isOpen}
+      onToggle={fold.toggle}
+      {...(count !== null && {
+        meta: <span className="text-meta tabular-nums text-faint-foreground">{count}</span>,
+      })}
+      {...(!isArchived && {
+        action: (
+          <LinkIssueAction session={session} isShortcutOn={isActive && isOverview} look="level" />
+        ),
+      })}
+    >
       <ul aria-label="Linked work" className="flex flex-col">
         {linkedIssues.map((issue) => {
           const isShown = isActive && shownIssue === issue.number;
@@ -132,6 +140,6 @@ export const LevelLinked = ({ session, isActive }: Props) => {
           </li>
         ))}
       </ul>
-    </div>
+    </LevelCard>
   );
 };

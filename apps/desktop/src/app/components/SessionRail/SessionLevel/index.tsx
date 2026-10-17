@@ -30,10 +30,14 @@ export const SessionLevel = ({ session, isActive }: Props) => {
   return (
     <div data-session-level="" className="flex min-h-0 flex-1 flex-col gap-1">
       <ScrollFade className="min-h-0 flex-1">
-        <div className="flex flex-col gap-4 px-2 pb-2">
-          <SessionPages session={session} pages={pages} facts={facts} sign={sign} />
-          {isBranchless ? null : <LevelProjects session={session} isActive={isActive} />}
-          <LevelLinked session={session} isActive={isActive} />
+        <div className="flex flex-col gap-4 px-1 pb-2">
+          <div className="flex flex-col px-1">
+            <SessionPages session={session} pages={pages} facts={facts} sign={sign} />
+          </div>
+          <div data-level-cards="" className="flex flex-col gap-2">
+            {isBranchless ? null : <LevelProjects session={session} isActive={isActive} />}
+            <LevelLinked session={session} isActive={isActive} />
+          </div>
         </div>
       </ScrollFade>
     </div>

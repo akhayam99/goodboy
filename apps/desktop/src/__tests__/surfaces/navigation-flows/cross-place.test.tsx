@@ -246,9 +246,13 @@ const expectCentredColumns = (): void => {
   }
 };
 
-const expectAskInRail = (): void => {
+const expectAskInToolColumn = (): void => {
   const ask = shown('[data-testid="pane-toggle-ask"]');
-  expect(ask?.closest('nav[aria-label="Session"]'), 'Ask sits in the session rail').not.toBeNull();
+  expect(
+    ask?.closest('[role="toolbar"][aria-label="Session tools"]'),
+    'Ask sits in the session tools column',
+  ).not.toBeNull();
+  expect(ask?.closest('nav[aria-label="Session"]') ?? null).toBeNull();
   expect(ask?.closest('[data-slot="pane-header"]') ?? null).toBeNull();
   expect(document.querySelector('main [data-slot="trail-bar"]')).toBeNull();
 };
@@ -751,7 +755,7 @@ describe('moving across every place keeps one frame', () => {
             expect(openDrawerKind(), `${page} opens the drawer`).toBe('context');
           }
           expectCentredColumns();
-          expectAskInRail();
+          expectAskInToolColumn();
           for (const shape of columnTiers()) {
             expect(['column', 'measure'], `${page} centres its column`).toContain(shape);
           }
@@ -881,7 +885,7 @@ describe('moving across every place keeps one frame', () => {
         expectPlace({ session: sessionId, lens, studio: null, doors: [] });
         expect(currentPage()).toBe(page);
         expectCentredColumns();
-        expectAskInRail();
+        expectAskInToolColumn();
         if (lens === 'branch') {
           expect(leftEdge().columns).not.toContain('full');
         }

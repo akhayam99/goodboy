@@ -92,7 +92,9 @@ describe('the c04 worktree level scenes', () => {
 
     expect(screen.getByRole('list', { name: 'payments-api worktrees' })).toBeDefined();
     const ledger = within(screen.getByRole('list', { name: 'ledger-core worktrees' }));
-    expect(ledger.getByRole('button').getAttribute('aria-label')).toContain('A check failed');
+    expect(
+      ledger.getByRole('button', { name: /^ledger-core, / }).getAttribute('aria-label'),
+    ).toContain('A check failed');
     const notify = within(screen.getByRole('list', { name: 'notify-relay worktrees' }));
     expect(notify.getByRole('button', { name: '1 finished in notify-relay' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Add to this session' })).toBeDefined();

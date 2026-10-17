@@ -50,14 +50,14 @@ const headerPush = (): HTMLElement => {
 
 export const HEADERS_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'headers: Delete session lives in the overflow and confirms in a popover beside it',
+    name: 'headers: Delete session lives at the session rail foot and confirms in a popover above it',
     covers: [],
     open: async () => {
       await settle();
       expect(screen.queryByRole('button', { name: 'Delete session' })).toBeNull();
       expect(screen.queryByRole('button', { name: 'Archive session' })).toBeNull();
-      await click(await screen.findByRole('button', { name: 'More session actions' }, WAIT));
-      await click(await screen.findByRole('menuitem', { name: /Delete session…/ }, WAIT));
+      expect(screen.queryByRole('button', { name: 'More session actions' })).toBeNull();
+      await click(await screen.findByRole('button', { name: 'Delete…' }, WAIT));
     },
     lands: async (ctx) => {
       const deleteTask = vi.fn(async () => {
@@ -74,12 +74,9 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
       within(confirm).getByRole('button', { name: 'Cancel' }).focus();
       await userEvent.keyboard('{Escape}');
       expect(screen.queryByRole('dialog')).toBeNull();
-      expect(document.activeElement).toBe(
-        screen.getByRole('button', { name: 'More session actions' }),
-      );
+      expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Delete…' }));
 
-      await click(screen.getByRole('button', { name: 'More session actions' }));
-      await click(await screen.findByRole('menuitem', { name: /Delete session…/ }, WAIT));
+      await click(screen.getByRole('button', { name: 'Delete…' }));
       const again = await screen.findByRole('dialog', { name: /^Delete .+\?$/ }, WAIT);
       await click(within(again).getByRole('button', { name: 'Delete session' }));
 

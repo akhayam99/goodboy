@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
 import { PageColumn, PaneShell, ScrollFade } from '@goodboy/ui';
 import type { PullRequestHost, Session, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore, useMountDiffStats } from '../../../../store';
 import { branchPlace } from '../../../../store/slices/navigation/place';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
 import { refreshActiveRequest } from '../../../../store/slices/review-source/refreshActiveRequest';
@@ -104,6 +104,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   });
 
   const { pr } = identity;
+  const mountDiffStats = useMountDiffStats(sessionId);
   const remoteKind = useMountRemoteHostKind({
     sessionId,
     repoRoot: identity.mount?.repoRoot ?? null,
@@ -363,6 +364,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     commentsNeedYou: commentsCountOf({ threads: entries.map((entry) => entry.row.thread) })
       .needsYou,
     files: filesCount,
+    diff: identity.mountPath === null ? null : (mountDiffStats.get(identity.mountPath) ?? null),
     notPushed: notPushedCountOf({
       commits: historyCommits,
       hasUpstream: (diff.status !== null && diff.status.upstream !== null) || hasRemoteHead,

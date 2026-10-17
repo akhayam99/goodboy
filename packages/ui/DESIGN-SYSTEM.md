@@ -1592,7 +1592,8 @@ page's does under its trail.
 session a flat row and never changes level; the open one is set in medium
 weight and takes `bg-selected` while its page is on screen. Its pages, projects
 and linked work live on the session level of the session rail
-(`SessionRail/SessionLevel`), at the left of the page on the page background
+(`SessionRail/SessionLevel`; Projects and Linked as `LevelCard`s, a level 2
+`bg-subtle` panel with its header row inside), at the left of the page on the page background
 with the column's row recipe, and its deeper levels slide in there over 180ms,
 so no card nests inside the list. A page
 entry ends in one fixed 40px right-aligned slot: the count in tabular gray and

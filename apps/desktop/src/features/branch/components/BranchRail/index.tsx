@@ -1,11 +1,13 @@
 import { useRef, type KeyboardEvent } from 'react';
-import type { LucideIcon } from 'lucide-react';
-import { SelectableRow, StatusDot, Tooltip } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { SelectableRow, Tooltip } from '@goodboy/ui';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
 import type { BranchTabEntry } from '../../branchTabs';
 import type { WorktreeEntryFacts } from '../../worktreeEntryFacts';
+import { WORKTREE_ENTRY_ICONS } from '../../worktreeEntryIcons';
+import { entryAriaLabel } from '../../entryAriaLabel';
+import { WorktreeEntrySlot } from '../WorktreeEntrySlot';
 
 type Props = {
   readonly tabs: ReadonlyArray<BranchTabEntry>;
@@ -15,14 +17,6 @@ type Props = {
 };
 
 const ENTRY_ID_PREFIX = 'worktree-entry-';
-
-const SECTION_ICON: Readonly<Record<BranchTab, LucideIcon>> = {
-  pr: CONCEPT_ICONS.pr,
-  comments: CONCEPT_ICONS.comments,
-  files: CONCEPT_ICONS.diff,
-  commits: CONCEPT_ICONS.commits,
-  checks: CONCEPT_ICONS.checks,
-};
 
 export const BranchRail = ({ tabs, current, facts, onSelect }: Props) => {
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -52,20 +46,14 @@ export const BranchRail = ({ tabs, current, facts, onSelect }: Props) => {
     <nav aria-label="Worktree" className="flex min-h-0 flex-col px-2">
       <div ref={listRef} role="presentation" onKeyDown={onKeyDown} className="flex flex-col">
         {tabs.map((entry) => {
-          const Icon = SECTION_ICON[entry.id];
+          const Icon = WORKTREE_ENTRY_ICONS[entry.id];
           const isCurrent = entry.id === current;
           const fact = facts[entry.id];
           const row = (
             <SelectableRow
               selected={isCurrent}
               ariaCurrent={isCurrent ? 'page' : undefined}
-              ariaLabel={
-                fact.tooltip !== null
-                  ? `${entry.label}, ${fact.tooltip}`
-                  : fact.text === null
-                    ? entry.label
-                    : `${entry.label}, ${fact.text}`
-              }
+              ariaLabel={entryAriaLabel({ label: entry.label, fact })}
               id={`${ENTRY_ID_PREFIX}${entry.id}`}
               onClick={() => onSelect(entry.id)}
               className="h-7 items-center gap-2 px-2 text-ui"
@@ -74,15 +62,7 @@ export const BranchRail = ({ tabs, current, facts, onSelect }: Props) => {
               <span data-entry-label="" className="min-w-0 flex-1 truncate">
                 {entry.label}
               </span>
-              {fact.text === null ? null : (
-                <span
-                  data-entry-slot=""
-                  className="flex shrink-0 items-center justify-end gap-1 text-meta tabular-nums text-faint-foreground"
-                >
-                  {fact.tone === null ? null : <StatusDot tone={fact.tone} size="sm" />}
-                  {fact.text}
-                </span>
-              )}
+              <WorktreeEntrySlot fact={fact} />
             </SelectableRow>
           );
           const hasTip = entry.shortcut !== null || fact.tooltip !== null;
