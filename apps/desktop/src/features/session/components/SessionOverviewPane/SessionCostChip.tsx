@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Pause } from 'lucide-react';
 import {
   AnchoredPopover,
-  chipClasses,
+  ROW_INTERACTIVE,
   cn,
   formatUsdPrecise,
   tintClasses,
@@ -27,7 +27,7 @@ type Props = {
 
 const MIN_SHOWN_USD = 0.005;
 
-const UNSPENT_LABEL = 'Limit';
+const UNSPENT_LABEL = 'Set a limit';
 
 type EditRequestParams = {
   readonly event: Event;
@@ -61,7 +61,7 @@ export const SessionCostChip = ({ sessionId }: Props) => {
   const loadSessionTelemetry = useAppStore((state) => state.loadSessionTelemetry);
   const loadSessionBudget = useAppStore((state) => state.loadSessionBudget);
   const dropdown = useDropdown({
-    align: 'end',
+    align: 'start',
     expectedHeight: 480,
     expectedWidth: 400,
     width: 'w-96 max-w-[calc(100vw-2rem)]',
@@ -79,7 +79,14 @@ export const SessionCostChip = ({ sessionId }: Props) => {
   const presentation = sessionSpendPresentation({ totalUsd: spend.totalUsd, limit });
   const fill = Math.min(presentation.ratio ?? 0, 1) * 100;
   const isUnspent = limit === null && spend.totalUsd < MIN_SHOWN_USD;
-  const shownLabel = isUnspent ? UNSPENT_LABEL : presentation.label;
+  const shownLabel = isUnspent
+    ? UNSPENT_LABEL
+    : `${presentation.label}${presentation.ratio === null ? '' : ' limit'}`;
+  const textClass = isUnspent
+    ? 'text-faint-foreground'
+    : presentation.tone === 'neutral'
+      ? 'text-muted-foreground'
+      : tintClasses(presentation.tone).text;
 
   useEffect(() => {
     const previous = previousTotalRef.current;
@@ -144,6 +151,7 @@ export const SessionCostChip = ({ sessionId }: Props) => {
       ariaLabel="Session spend"
       tabIndex={-1}
       className="flex max-h-[32rem] flex-col bg-subtle"
+      anchorClassName="flex min-w-0"
       trigger={
         <Tooltip
           content={
@@ -159,20 +167,20 @@ export const SessionCostChip = ({ sessionId }: Props) => {
             onClick={toggle}
             aria-haspopup="dialog"
             aria-expanded={open}
-            aria-label={`Spend ${shownLabel}`}
+            aria-label={isUnspent ? 'Set a spend limit' : `Spend ${shownLabel}`}
             data-level={presentation.level}
+            data-session-spend=""
             className={cn(
-              chipClasses({
-                tone: presentation.tone,
-                shape: 'badge',
-                size: 'control',
-                isInteractive: true,
-              }),
-              'overflow-hidden tabular-nums',
+              'flex h-7 w-full min-w-0 items-center gap-2 rounded-md px-2 text-label tabular-nums',
+              ROW_INTERACTIVE,
+              textClass,
             )}
           >
             {glyph}
-            <span key={tick} className={tick > 0 ? 'cost-tick' : undefined}>
+            <span
+              key={tick}
+              className={cn('min-w-0 flex-1 truncate text-left', tick > 0 && 'cost-tick')}
+            >
               {shownLabel}
             </span>
             {presentation.ratio === null ? null : (

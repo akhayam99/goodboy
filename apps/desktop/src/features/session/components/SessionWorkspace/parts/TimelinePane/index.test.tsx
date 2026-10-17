@@ -117,9 +117,6 @@ vi.mock('../../../../../../store', async () => {
 vi.mock('../../../../../../shared/hooks/useSessionRoleModels', () => ({
   useSessionRoleModels: () => null,
 }));
-vi.mock('../../../SessionOverviewPane/SessionCostChip', () => ({
-  SessionCostChip: () => <span>$3.47</span>,
-}));
 vi.mock('../../../CreateAgentPopover', () => ({
   CreateAgentPopover: () => <button type="button">Start agent</button>,
 }));
@@ -527,14 +524,11 @@ describe('TimelinePane unread affordance', () => {
     startedAt: '2026-08-20T10:00:00.000Z',
   };
 
-  it('keeps the session cost in the Activity header, at the right of the tabs', () => {
+  it('leaves the session spend to the rail foot, none in the Activity header', () => {
     render(<TimelinePane session={SESSION} />);
 
     const activity = screen.getByRole('region', { name: 'Activity' });
-    const views = within(activity).getByRole('tablist', { name: 'Activity view' });
-    const cost = within(activity).getByText('$3.47');
-    expect(views.parentElement?.contains(cost)).toBe(false);
-    expect(views.parentElement?.parentElement?.contains(cost)).toBe(true);
+    expect(within(activity).queryByRole('button', { name: /^Spend |spend limit/ })).toBeNull();
   });
 
   it('shows Mark all seen as a button while an agent is unseen', () => {

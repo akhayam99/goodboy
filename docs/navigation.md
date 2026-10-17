@@ -695,7 +695,15 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
   old state and shows under the row with Retry, `ActionStatusLine`), and
   **Refresh session** (⌘⇧R, `useSessionRefresh`, the same call as the key and
   the palette). An archived session shows none of them. The foot
-  (`SessionLevel/SessionLevelFoot`) holds **Archive** (⌘⇧A, the registry
+  (`SessionLevel/SessionLevelFoot`) starts with one quiet line, the session
+  spend (`SessionCostChip`, over `sessionSpendByAgent` and
+  `sessionSpendPresentation`, the one source of the number): `$3.47`, or
+  `$3.47 of $10.00 limit` once a limit is set, the warning tone from 80
+  percent and danger past it, `Paused · …` when a pausing limit stopped the
+  session, and `Set a limit` in faint gray while nothing is spent and no limit
+  is set. A click opens the session spend popover (the limit editor, the
+  agents and the context cost, Open in Impact); **Raise limit** on a paused
+  run opens it on the editor. Under it sit **Archive** (⌘⇧A, the registry
   `session.archive`; **Restore** on an archived session) in gray text and
   **Delete…** (⌘⇧⌫) in red text (`ghost-danger`: no fill, no border), side by
   side, half the rail width each, text only, no `⋯`; Delete opens
@@ -2468,8 +2476,8 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   no cost (it is in the duration tooltip and the spend popover), the model line
   holds the effort (`Sonnet 5.5 · Medium`), the day label has no rule and an
   empty Activity reads `Nothing ran yet`. A Next button carries its label only
-  and the menu column leaves when no row has a menu. The cost chip sits at
-  the right of the Activity header and reads `Limit` before anything is spent.
+  and the menu column leaves when no row has a menu. The Activity header holds
+  no spend: the session spend lives once, at the session rail foot.
   `Mark all seen` is a ghost button in the Activity header and shows only
   while an agent is unseen; a waiting question is answered from its Needs you row, never from a
   second `Answer` on the timeline row.

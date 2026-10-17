@@ -539,6 +539,21 @@ describe('the session rail top row and foot', () => {
     expect(deleteTask).toHaveBeenCalledWith(openId);
   });
 
+  it('puts the session spend one line above Archive and Delete, opening the spend popover', async () => {
+    seed();
+    useAppStore.setState({
+      sessionBudgets: { [openId]: { sessionId: openId, softCapUsd: 10, onExceed: 'pause' } },
+    });
+    mountColumn();
+    const footRow = elementOf('[data-session-foot]', rail());
+    const spend = elementOf('[data-session-spend]', rail());
+
+    expect(spend.textContent).toBe('$0 of $10.00 limit');
+    expect(spend.compareDocumentPosition(footRow) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    fireEvent.click(spend);
+    expect(screen.getByRole('dialog', { name: 'Session spend' })).toBeDefined();
+  });
+
   it('says why Archive failed at the foot, keeps the session live and retries', async () => {
     seed();
     const bulkArchiveTask = vi

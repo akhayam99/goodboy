@@ -4,6 +4,7 @@ import type { Session } from '@goodboy/types';
 import { ActionStatusLine } from '../../../../features/actions/components/ActionControls/ActionStatusLine';
 import type { ActionControls } from '../../../../features/actions/useActionControls';
 import { DeleteSessionConfirm } from '../../../../features/session/components/DeleteSessionConfirm';
+import { SessionCostChip } from '../../../../features/session/components/SessionOverviewPane/SessionCostChip';
 
 type Props = {
   readonly session: Session;
@@ -19,6 +20,7 @@ export const SessionLevelFoot = ({ session, controls }: Props) => {
   return (
     <div className="flex shrink-0 flex-col gap-1 px-2">
       {isFailed ? <ActionStatusLine controls={controls} showReasons={false} /> : null}
+      <SessionCostChip sessionId={session.id} />
       <div
         role="group"
         aria-label="Session"

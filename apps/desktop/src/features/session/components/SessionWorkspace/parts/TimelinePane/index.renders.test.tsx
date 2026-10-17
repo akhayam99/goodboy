@@ -68,9 +68,6 @@ vi.mock('../../../../../../store', async () => {
 vi.mock('../../../../../../shared/hooks/useSessionRoleModels', () => ({
   useSessionRoleModels: () => null,
 }));
-vi.mock('../../../SessionOverviewPane/SessionCostChip', () => ({
-  SessionCostChip: () => <span>$3.47</span>,
-}));
 vi.mock('../../../CreateAgentPopover', () => ({
   CreateAgentPopover: () => <button type="button">Start agent</button>,
 }));

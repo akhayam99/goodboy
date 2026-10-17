@@ -13,7 +13,6 @@ import {
 import { countRowIdOf } from '../../../../timeline/buildTimelineStream';
 import { useExplodeGroups, type ExplodeGroups } from '../../../../hooks/useExplodeGroups';
 import { useScrollAnchor } from '../../../../hooks/useScrollAnchor';
-import { SessionCostChip } from '../../../SessionOverviewPane/SessionCostChip';
 import { WorkTimeProvider } from '../../../../../workTreeModel/components/WorkTimeProvider';
 import { NeedsYouBlock } from './NeedsYouBlock';
 import { TimelineEmpty } from './TimelineEmpty';
@@ -107,7 +106,6 @@ export const TimelinePane = ({ session, lead = null, onShownQuestionsChange }: P
               </Button>
             ) : null}
           </div>
-          <SessionCostChip sessionId={sessionId} />
         </div>
         {view === 'log' ? (
           <Input
