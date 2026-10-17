@@ -7,7 +7,7 @@ import { pullRequestStateWordOf } from './pullRequestStateWordOf';
 
 type WorktreeEntryTone = 'danger' | 'warning' | 'info' | null;
 
-export type WorktreeEntryFact = {
+type WorktreeEntryFact = {
   readonly text: string | null;
   readonly tone: WorktreeEntryTone;
   readonly tooltip: string | null;

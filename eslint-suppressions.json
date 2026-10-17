@@ -2016,7 +2016,7 @@
   },
   "apps/desktop/src/features/branch/components/BranchPage/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 7
+      "count": 4
     }
   },
   "apps/desktop/src/features/branch/components/BranchPage/index.tsx": {
@@ -5002,7 +5002,7 @@
   },
   "apps/desktop/src/features/resolve/components/ReviewFlow/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 7
+      "count": 6
     },
     "@typescript-eslint/naming-convention": {
       "count": 2
