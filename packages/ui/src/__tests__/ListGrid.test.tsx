@@ -188,7 +188,7 @@ describe('ListGrid', () => {
     expect(onToggle).toHaveBeenCalledOnce();
   });
 
-  it('puts the group mark in the first column, before the name, and none without one', () => {
+  it('puts the group mark right before the name, and none without one', () => {
     const { container } = render(
       <ListGrid label="Sessions" columns={COLUMNS} isGrouped>
         <ListGridGroup
@@ -207,8 +207,9 @@ describe('ListGrid', () => {
     const marks = Array.from(container.querySelectorAll('[data-list-grid-group-mark]'));
     expect(marks).toHaveLength(1);
     const label = container.querySelector('[data-list-grid-group-label]');
-    expect(marks[0]?.parentElement).toBe(label);
-    expect(label?.firstElementChild).toBe(marks[0]);
+    const heading = screen.getByRole('heading', { name: 'Running' });
+    expect(label?.contains(marks[0] ?? null)).toBe(true);
+    expect(marks[0]?.nextElementSibling).toBe(heading);
     expect(
       screen.getByRole('img', { name: 'Running' }).closest('[data-list-grid-group-mark]'),
     ).toBe(marks[0]);

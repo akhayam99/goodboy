@@ -172,8 +172,8 @@ state is a `StateDot` or a glyph in a 16px column.
   `''` is empty). As soon as one row fills it, every row keeps the cell, empty
   where it has nothing, so the column stays on one x. Unknown is an empty cell,
   never "0 B", "-" or "no port".
-- `ListGridGroup` takes an optional `mark` drawn in the first column of its
-  label row, over the rows' leading glyph column: the Sessions List puts one
+- `ListGridGroup` takes an optional `mark` drawn right before its name, over
+  the rows' leading glyph column: the Sessions List puts one
   6px `StatusDot` in the stage tone there (`stageTrackOf`), so rows keep only
   their state node and no row carries a track.
 - `ListGridGroup` names a group in sentence case with its count right after
