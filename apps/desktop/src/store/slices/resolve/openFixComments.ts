@@ -7,6 +7,7 @@ type Params = {
   readonly mountId: MountId | null;
   readonly focusThreadId?: string | null;
   readonly threadIds?: ReadonlyArray<string>;
+  readonly fromThreadId?: string | null;
 };
 
 export const openFixComments = ({
@@ -15,6 +16,7 @@ export const openFixComments = ({
   mountId,
   focusThreadId = null,
   threadIds,
+  fromThreadId = null,
 }: Params): void =>
   openDrawer({
     kind: 'fix-comments',
@@ -23,5 +25,6 @@ export const openFixComments = ({
       mountId,
       focusThreadId,
       ...(threadIds !== undefined && { threadIds }),
+      ...(fromThreadId !== null && { fromThreadId }),
     },
   });

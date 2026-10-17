@@ -111,6 +111,7 @@ export type DrawerContent =
         readonly mountId: MountId | null;
         readonly focusThreadId?: string | null;
         readonly threadIds?: ReadonlyArray<string>;
+        readonly fromThreadId?: string;
       };
     }
   | {

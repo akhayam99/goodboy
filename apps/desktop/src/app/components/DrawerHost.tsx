@@ -211,6 +211,7 @@ export const DrawerHost = () => {
           sessionId={drawer.sessionId}
           focusThreadId={drawer.payload.focusThreadId ?? null}
           threadIds={drawer.payload.threadIds ?? null}
+          fromThreadId={drawer.payload.fromThreadId ?? null}
           onClose={closeDrawer}
         />
       );

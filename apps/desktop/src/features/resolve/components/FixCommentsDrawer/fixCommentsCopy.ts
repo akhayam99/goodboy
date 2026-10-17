@@ -3,6 +3,7 @@ import type { CommentFilter } from './commentFilter';
 
 export const FIX_COMMENTS_LABEL = {
   title: 'Fix comments',
+  backToComment: 'Back to the comment',
   activity: 'Activity',
   comments: 'Comments',
   analyze: 'Analyze only',

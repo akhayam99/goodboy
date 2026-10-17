@@ -87,6 +87,7 @@ const COMMENT_KEYS: ReadonlyArray<readonly [ShortcutId, ReadonlyArray<string>]> 
 
 type FixLaunchParams = {
   readonly threadIds: ReadonlyArray<string>;
+  readonly fromThreadId?: string | null;
 };
 
 type StepParams = {
@@ -351,9 +352,15 @@ export const ReviewFlow = ({ session, push }: Props) => {
   );
 
   const openLaunch = useCallback(
-    ({ threadIds }: FixLaunchParams): void => {
+    ({ threadIds, fromThreadId = openThreadRef.current }: FixLaunchParams): void => {
       setIsAnswering(false);
-      openFixComments({ openDrawer, sessionId, mountId: null, threadIds });
+      openFixComments({
+        openDrawer,
+        sessionId,
+        mountId: null,
+        threadIds,
+        fromThreadId,
+      });
     },
     [openDrawer, sessionId],
   );
@@ -419,7 +426,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
     consumeReviewLaunch({ sessionId, requestId: launchRequest.requestId });
     const threadIds = launchRequest.threadIds.filter((threadId) => presentIds.has(threadId));
     if (threadIds.length > 0) {
-      openLaunch({ threadIds });
+      openLaunch({ threadIds, fromThreadId: launchRequest.fromThreadId });
     }
   }, [consumeReviewLaunch, hasComments, launchRequest, openLaunch, presentIds, sessionId]);
 

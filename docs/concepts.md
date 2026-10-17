@@ -967,7 +967,8 @@ Each comment has four verbs, with single keys while its drawer is open:
 `Apply fix` (A), `Edit` (E, `Answer` when the agent asked, `Redraft with the new
 comment` when the reviewer changed it, `Add a hint` when the run failed), `Reply only` (R, drops the change and sends a reply; `Reply`, which opens the text box, where there is no change to drop) and `Skip` (S), plus `Undo` (U, `Undo skip` on a skipped
 comment) until the push and `Fix` (F) on a comment nobody started, which opens
-the Fix comments drawer. They sit at the end of the comment drawer (`CommentDrawerActions` in `FormActions`), the primary last on the right, each with its key; a verb that fails says why there and its button reads Retry. `Retry push` shows on a comment whose push failed. J and K, or the arrow keys while the drawer is open, move; Escape closes the drawer. A checkbox appears on hover on the comments you
+the Fix comments drawer in its place, with **Back to the comment** at its top
+(the launch request carries `fromThreadId`). They sit at the end of the comment drawer (`CommentDrawerActions` in `FormActions`), the primary last on the right, each with its key; a verb that fails says why there and its button reads Retry. `Retry push` shows on a comment whose push failed. J and K, or the arrow keys while the drawer is open, move; Escape closes the drawer. A checkbox appears on hover on the comments you
 can fix (open, or couldn't fix) and on comments to review (X toggles the focused
 row, Cmd+A picks every fixable one, Esc clears): the bar `3 selected · Fix 3`
 opens the panel for the fixable pick and `Apply 3 fixes` applies the pick to review, and

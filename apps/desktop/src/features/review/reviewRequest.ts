@@ -40,7 +40,10 @@ type FixParams = {
 
 const requestFix = ({ getState, sessionId, threadIds }: FixParams): void => {
   const state = getState();
-  state.requestReviewLaunch({ sessionId, threadIds });
+  const open = state.drawer;
+  const fromThreadId =
+    open?.kind === 'conversation' && open.sessionId === sessionId ? open.payload.threadId : null;
+  state.requestReviewLaunch({ sessionId, threadIds, fromThreadId });
   const isOnComments =
     state.currentSessionId === sessionId &&
     (state.activeLens[sessionId] ?? null) === 'branch' &&

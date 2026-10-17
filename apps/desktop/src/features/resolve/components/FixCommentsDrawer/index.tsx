@@ -14,6 +14,7 @@ import { outcomeSummaryLine } from '../../commentOutcomeCopy';
 import { useDraftRouting } from '../ReviewFlow/useDraftRouting';
 import { useReviewEntries } from '../ReviewFlow/useReviewEntries';
 import { groupConversationsByFile } from '../../groupConversationsByFile';
+import { openReviewComment } from '../../openReviewComment';
 import { COMMENT_FILTERS, filteredEntries, isNoteEntry, type CommentFilter } from './commentFilter';
 import { FIX_COMMENTS_LABEL, filterLabelOf } from './fixCommentsCopy';
 import { BatchActions, type BatchReply } from './BatchActions';
@@ -28,13 +29,21 @@ type Props = {
   readonly sessionId: SessionId;
   readonly focusThreadId: string | null;
   readonly threadIds: ReadonlyArray<string> | null;
+  readonly fromThreadId?: string | null;
   readonly onClose: () => void;
 };
 
 const NO_QUESTIONS: ReadonlyArray<OpenQuestion> = [];
 const NO_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
 
-export const FixCommentsDrawer = ({ sessionId, focusThreadId, threadIds, onClose }: Props) => {
+export const FixCommentsDrawer = ({
+  sessionId,
+  focusThreadId,
+  threadIds,
+  fromThreadId = null,
+  onClose,
+}: Props) => {
+  const navigate = useAppStore((state) => state.navigate);
   const { all } = useReviewEntries({ sessionId, scope: 'all' });
   const draft = useDraftRouting({ sessionId });
   const steps = useFixChain({ sessionId });
@@ -160,6 +169,12 @@ export const FixCommentsDrawer = ({ sessionId, focusThreadId, threadIds, onClose
     <DrawerFrame
       title={FIX_COMMENTS_LABEL.title}
       icon={Wrench}
+      {...(fromThreadId !== null && {
+        back: {
+          label: FIX_COMMENTS_LABEL.backToComment,
+          onBack: () => openReviewComment({ navigate, sessionId, threadId: fromThreadId }),
+        },
+      })}
       count={
         <ModelChipPicker
           suggested={draft.suggested}

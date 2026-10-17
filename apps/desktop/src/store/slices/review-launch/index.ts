@@ -8,11 +8,15 @@ import type { SliceDeps } from '../../slice-types';
 
 export const createReviewLaunchSlice = ({ set }: SliceDeps): ReviewLaunchSlice => ({
   ...reviewLaunchInitialState,
-  requestReviewLaunch: ({ sessionId, threadIds }: RequestReviewLaunchParams) =>
+  requestReviewLaunch: ({ sessionId, threadIds, fromThreadId = null }: RequestReviewLaunchParams) =>
     set((state) => ({
       reviewLaunchRequests: {
         ...state.reviewLaunchRequests,
-        [sessionId]: { requestId: crypto.randomUUID(), threadIds: [...new Set(threadIds)] },
+        [sessionId]: {
+          requestId: crypto.randomUUID(),
+          threadIds: [...new Set(threadIds)],
+          fromThreadId,
+        },
       },
     })),
   consumeReviewLaunch: ({ sessionId, requestId }: ConsumeReviewLaunchParams) =>

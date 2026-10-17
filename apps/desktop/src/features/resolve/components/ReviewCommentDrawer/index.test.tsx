@@ -183,6 +183,23 @@ describe('the comment drawer', () => {
     ]);
   });
 
+  it('goes back from the Fix comments drawer to the comment it came from', async () => {
+    await mount({ threadId: THREAD_IDS.retryConstant });
+
+    fireEvent.click(within(actions()).getByRole('button', { name: /^Fix/ }));
+    await settle();
+    const fixing = useAppStore.getState().drawer;
+    expect(fixing?.kind === 'fix-comments' ? fixing.payload.fromThreadId : null).toBe(
+      THREAD_IDS.retryConstant,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back to the comment' }));
+    await settle();
+
+    expect(openThread()).toBe(THREAD_IDS.retryConstant);
+    expect(useAppStore.getState().branchThreadId[SESSION.id]).toBe(THREAD_IDS.retryConstant);
+  });
+
   it('opens the reply field in the drawer from Reply and from R', async () => {
     await mount({ threadId: THREAD_IDS.retryConstant });
 
