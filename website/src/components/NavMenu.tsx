@@ -65,7 +65,7 @@ export const NavMenu = ({ links }: Props) => {
         className="btn ghost navMenuButton"
         aria-expanded={isOpen}
         aria-controls={SHEET_ID}
-        onClick={() => setIsOpen((current) => !current)}
+        onClick={() => setIsOpen((wasOpen) => !wasOpen)}
       >
         Menu
       </button>
