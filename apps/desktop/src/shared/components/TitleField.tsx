@@ -38,6 +38,7 @@ export const TitleField = ({
 }: Props) => {
   const ringId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
+  const caretRef = useRef(initialCaret);
   const hasError = error !== null;
   const isTitle = density === 'title';
   useEffect(() => {
@@ -46,8 +47,9 @@ export const TitleField = ({
       return;
     }
     input.focus();
-    if (initialCaret !== null) {
-      const at = Math.min(initialCaret, input.value.length);
+    const caret = caretRef.current;
+    if (caret !== null) {
+      const at = Math.min(caret, input.value.length);
       input.setSelectionRange(at, at);
       return;
     }
