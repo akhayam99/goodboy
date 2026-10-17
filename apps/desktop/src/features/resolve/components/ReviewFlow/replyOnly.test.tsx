@@ -22,6 +22,7 @@ import {
   type ReplyOnlyVariant,
 } from '../../../../app/components/MockScene/scenes/resolveSeed';
 import { BranchPage } from '../../../branch/components/BranchPage';
+import { DrawerHost } from '../../../../app/components/DrawerHost';
 
 type StoreState = ReturnType<StoryStore['getState']>;
 
@@ -71,6 +72,7 @@ const mountReply = async ({
   render(
     <ToastProvider>
       <BranchPage session={SESSION} workingDir={null} />
+      <DrawerHost />
     </ToastProvider>,
   );
   await settle();
@@ -80,8 +82,14 @@ const comment = (): HTMLElement => screen.getByRole('article', { name: 'Comment'
 
 const bar = (): HTMLElement => screen.getByRole('toolbar', { name: 'Comment actions' });
 
+const drawerHeader = (): HTMLElement =>
+  document.querySelector<HTMLElement>('[data-drawer-header]') ??
+  (() => {
+    throw new Error('no drawer header');
+  })();
+
 const openMenuItem = async (name: RegExp): Promise<void> => {
-  fireEvent.click(within(bar()).getByRole('button', { name: 'More actions' }));
+  fireEvent.click(within(drawerHeader()).getByRole('button', { name: 'More actions' }));
   fireEvent.click(await screen.findByRole('menuitem', { name }));
 };
 
@@ -130,8 +138,9 @@ describe('a reply-only answer in the thread', () => {
 
     fireEvent.click(within(comment()).getByRole('button', { name: 'Publish reply' }));
 
-    const alert = await within(comment()).findByRole('alert');
+    const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain('GitHub did not answer');
+    expect(screen.getAllByRole('button', { name: 'Retry' })).toHaveLength(1);
     expect(within(comment()).getByRole('button', { name: 'Retry' })).toBeDefined();
     expect(within(comment()).queryByRole('button', { name: 'Publish reply' })).toBeNull();
   });
@@ -162,7 +171,7 @@ describe('steering the answer in place', () => {
     expect(
       within(comment()).queryByRole('textbox', { name: 'How the reply should change' }),
     ).toBeNull();
-    expect(within(bar()).getByRole('button', { name: 'More actions' })).toBeDefined();
+    expect(within(drawerHeader()).getByRole('button', { name: 'More actions' })).toBeDefined();
   });
 
   it('opens a hint field for Fix it anyway on a no-change answer', async () => {
@@ -195,7 +204,7 @@ describe('steering the answer in place', () => {
   it('lets the owner edit an accepted reply by hand before it goes out', async () => {
     await mountReply({ variant: 'bundled' });
 
-    fireEvent.click(within(bar()).getByRole('button', { name: 'More actions' }));
+    fireEvent.click(within(drawerHeader()).getByRole('button', { name: 'More actions' }));
     expect(await screen.findByRole('menuitem', { name: /^Edit reply/ })).toBeDefined();
   });
 });

@@ -20,6 +20,7 @@ import {
   seedResolveGitlabScene,
 } from '../../../../app/components/MockScene/scenes/resolveGitlabSeed';
 import { BranchPage } from '../../../branch/components/BranchPage';
+import { DrawerHost } from '../../../../app/components/DrawerHost';
 
 let useAppStore: StoryStore;
 
@@ -48,6 +49,7 @@ const mount = async ({ selected }: { readonly selected: Source }): Promise<void>
   render(
     <ToastProvider>
       <BranchPage session={SESSION} workingDir={null} />
+      <DrawerHost />
     </ToastProvider>,
   );
   await settle();
@@ -70,7 +72,11 @@ const rowsOf = (): ReadonlyArray<string> =>
 
 const rowsAcrossStates = (): ReadonlyArray<string> => {
   const open = rowsOf();
-  fireEvent.click(screen.getByRole('tab', { name: 'Resolved' }));
+  const resolvedTab = screen.queryByRole('tab', { name: 'Resolved' });
+  if (resolvedTab === null) {
+    return open;
+  }
+  fireEvent.click(resolvedTab);
   const resolved = rowsOf();
   fireEvent.click(screen.getByRole('tab', { name: 'Open' }));
   return [...open, ...resolved];

@@ -22,6 +22,7 @@ import {
 } from '../../../../app/components/MockScene/scenes/resolveSeed';
 import type { AgentId, ResolveBatch } from '@goodboy/types';
 import { BranchPage } from '../../../branch/components/BranchPage';
+import { DrawerHost } from '../../../../app/components/DrawerHost';
 import { requestReview } from '../../../review/reviewRequest';
 
 type StoreState = ReturnType<StoryStore['getState']>;
@@ -83,6 +84,7 @@ const mount = async ({
   render(
     <ToastProvider>
       <BranchPage session={SESSION} workingDir={null} />
+      <DrawerHost />
     </ToastProvider>,
   );
   await settle();
@@ -103,6 +105,7 @@ const mountFailed = async ({
   render(
     <ToastProvider>
       <BranchPage session={SESSION} workingDir={null} />
+      <DrawerHost />
     </ToastProvider>,
   );
   await settle();
@@ -147,6 +150,12 @@ const headerPush = (name: RegExp): HTMLElement =>
   })();
 
 const comment = (): HTMLElement => screen.getByRole('article', { name: 'Comment' });
+
+const drawerOf = (): HTMLElement =>
+  document.querySelector<HTMLElement>('[data-slot="review-comment-drawer"]') ??
+  (() => {
+    throw new Error('no comment drawer');
+  })();
 
 const showResolved = (): void => {
   fireEvent.click(screen.getByRole('tab', { name: 'Resolved' }));
@@ -235,6 +244,10 @@ describe('Review as one flow', () => {
     expect(words).not.toContain('Accepted');
     const labels = screen.getAllByRole('button').map((button) => button.textContent ?? '');
     expect(labels.filter((label) => /^Resolve\b/.test(label) && label !== 'Resolve')).toEqual([]);
+    fireEvent.click(
+      firstOf({ items: Array.from(list().querySelectorAll('button[data-thread-id]')) }),
+    );
+    await settle();
     expect(within(comment()).queryByRole('button', { name: 'Resolve' })).toBeNull();
   });
 
@@ -355,6 +368,7 @@ describe('Review as one flow', () => {
       render(
         <ToastProvider>
           <BranchPage session={SESSION} workingDir={null} />
+          <DrawerHost />
         </ToastProvider>,
       );
 
@@ -375,6 +389,7 @@ describe('Review as one flow', () => {
       render(
         <ToastProvider>
           <BranchPage session={SESSION} workingDir={null} />
+          <DrawerHost />
         </ToastProvider>,
       );
       await settle();
@@ -401,6 +416,7 @@ describe('Review as one flow', () => {
     render(
       <ToastProvider>
         <BranchPage session={SESSION} workingDir={null} />
+        <DrawerHost />
       </ToastProvider>,
     );
     await settle();
@@ -475,10 +491,12 @@ describe('Review as one flow', () => {
     expect(within(bar()).getByRole('button', { name: /^Apply fix/ })).toBeDefined();
   });
 
-  it('shows the moved line as a fact on the comment without changing its state', async () => {
+  it('shows the moved line as a fact in the drawer meta without changing its state', async () => {
     await mount({ threadId: 'PRRT_thread_flaky_test' });
 
-    expect(within(comment()).getByText('The line moved')).toBeDefined();
+    expect(document.querySelector('[data-drawer-meta]')?.textContent ?? '').toContain(
+      'The line moved',
+    );
     expect(row(/This test sleeps/).getAttribute('aria-description') ?? '').not.toContain(
       'Comment changed',
     );
@@ -575,22 +593,23 @@ describe('Review as one flow', () => {
     fireEvent.click(firstOf({ items: within(working).getAllByRole('button') }));
     await settle();
 
-    expect(within(bar()).queryAllByRole('button', { name: /^Apply fix|^Edit|^Reply/ })).toEqual([]);
-    expect(within(bar()).queryByRole('button', { name: 'Open transcript' })).toBeNull();
+    const drawer = within(drawerOf());
+    expect(drawer.queryAllByRole('button', { name: /^Apply fix|^Edit|^Reply/ })).toEqual([]);
+    expect(drawer.queryByRole('button', { name: 'Open transcript' })).toBeNull();
     const line = within(screen.getByTestId('resolve-run-status'));
     expect(line.getByRole('button', { name: 'View transcript' })).toBeDefined();
     fireEvent.click(line.getByRole('button', { name: 'Stop' }));
     expect(await screen.findByText('Stop this fix run?')).toBeDefined();
   });
 
-  it('opens the not started comment with Fix as its one primary', async () => {
+  it('opens the not started comment with Fix as its one primary, last at the right', async () => {
     await mount({ threadId: 'PRRT_thread_retry_constant' });
 
     const verbs = within(bar())
       .getAllByRole('button')
       .filter((button) => button.hasAttribute('data-review-verb'))
       .map((button) => button.getAttribute('data-review-verb'));
-    expect(verbs).toEqual(['reviewComment.draft', 'reviewComment.reply', 'reviewComment.skip']);
+    expect(verbs).toEqual(['reviewComment.skip', 'reviewComment.reply', 'reviewComment.draft']);
   });
 
   it('keeps the thread free of push and sync controls: only the header pushes', async () => {

@@ -330,11 +330,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
         </ScrollFade>
       );
     }
-    return (
-      <>
-        <ReviewFlow session={session} push={push} />
-      </>
-    );
+    return <ReviewFlow session={session} push={push} />;
   };
 
   const baseRow =
@@ -387,6 +383,14 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   const railNode = <BranchRail tabs={tabs} current={tab} facts={entryFacts} onSelect={selectTab} />;
   const railSlot = useMemo<DiffRailHost>(() => ({ slot: fileSlot, page }), [fileSlot, page]);
 
+  const tabActionsSlotNode = (
+    <div
+      ref={setTabActionsSlot}
+      data-slot="branch-tab-actions"
+      className="flex min-w-0 shrink-0 items-center justify-end gap-2 empty:hidden"
+    />
+  );
+
   const detail = (
     <BranchDetail>
       <PaneShell
@@ -409,16 +413,13 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
               tab={tab}
               isActive={isActive}
               canEditTitle={canEditTitle}
+              pageAction={tab === 'comments' ? tabActionsSlotNode : null}
               onMutated={onMutated}
             />
             <PushBanner sessionId={sessionId} push={push} />
             {baseRow}
             <JobBanner sessionId={sessionId} worktreePath={identity.mountPath} />
-            <div
-              ref={setTabActionsSlot}
-              data-slot="branch-tab-actions"
-              className="flex min-w-0 shrink-0 items-center justify-end gap-2 empty:hidden"
-            />
+            {tab === 'comments' ? null : tabActionsSlotNode}
           </div>
         }
       >

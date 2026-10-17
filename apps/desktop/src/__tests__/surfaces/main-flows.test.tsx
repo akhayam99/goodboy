@@ -236,7 +236,12 @@ describe('main flows on the real store', () => {
       publishConversations: publishConversations as unknown as StoreState['publishConversations'],
     });
 
-    await mountFlow(<BranchPage session={RESOLVE_SESSION} workingDir={null} />);
+    await mountFlow(
+      <>
+        <BranchPage session={RESOLVE_SESSION} workingDir={null} />
+        <DrawerHost />
+      </>,
+    );
     const bar = screen.getByRole('toolbar', { name: 'Comment actions' });
     fireEvent.click(within(bar).getByRole('button', { name: /^Apply fix/ }));
 

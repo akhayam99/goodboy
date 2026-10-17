@@ -38,6 +38,12 @@ import type { TerminalTabId } from '../../shared/types/terminal';
 import type { DrawerRequest } from '../../store/slices/drawer/state';
 import { ToastProvider } from '../../shared/components/Toast';
 import { CTX_SESSION_ID } from './MockScene/scenes/brand/contextBase';
+import { BranchPage } from '../../features/branch/components/BranchPage';
+import {
+  EXPANDED_THREAD_ID,
+  SESSION as RESOLVE_SESSION,
+  seedResolveScene,
+} from './MockScene/scenes/resolveSeed';
 import { SESSION_ID as RESOLVE_SESSION_ID } from './MockScene/scenes/resolveSeed';
 import { seedBulkScene } from './MockScene/scenes/bulkSeed';
 import {
@@ -326,6 +332,8 @@ const ENTRIES: ReadonlyArray<Entry> = [
   },
 ];
 
+const PAGE_OWNED_KINDS: ReadonlyArray<DrawerRequest['kind']> = ['conversation'];
+
 const renderHost = () =>
   render(
     <ToastProvider>
@@ -367,10 +375,34 @@ describe('every drawer names its close control Close', () => {
       ),
       (match) => match[1],
     );
-    const covered = new Set(ENTRIES.map((entry) => entry.kind));
+    const covered = new Set([...ENTRIES.map((entry) => entry.kind), ...PAGE_OWNED_KINDS]);
 
     expect(hosted.length).toBeGreaterThan(0);
     expect(hosted.filter((kind) => !covered.has(kind as DrawerRequest['kind']))).toEqual([]);
+  });
+});
+
+describe('the comment drawer the Comments page portals into the host', () => {
+  it('names its close control Close and closes back to the list', async () => {
+    seedResolveScene({ expandedThreadId: EXPANDED_THREAD_ID });
+    render(
+      <ToastProvider>
+        <BranchPage session={RESOLVE_SESSION} workingDir={null} />
+        <DrawerHost />
+      </ToastProvider>,
+    );
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+
+    const region = screen.getByRole('region', { name: /retryPolicy\.ts:42/ });
+    expect(region.closest('[data-slot="review-comment-drawer"]')).not.toBeNull();
+    const close = within(region).getByRole('button', { name: 'Close' });
+    expect(within(region).queryAllByRole('button', { name: /^Close .+/ })).toHaveLength(0);
+
+    fireEvent.click(close);
+
+    expect(useAppStore.getState().drawer).toBeNull();
   });
 });
 

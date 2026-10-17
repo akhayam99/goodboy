@@ -23,6 +23,7 @@ import {
 import { seedCommentsScene } from '../../../../app/components/MockScene/scenes/u23/commentsSeed';
 import { PUSH_MISSING } from '../../../resolve/reviewPushCopy';
 import { BranchPage } from '.';
+import { DrawerHost } from '../../../../app/components/DrawerHost';
 
 type StoreState = ReturnType<StoryStore['getState']>;
 type Outcome = Awaited<ReturnType<StoreState['publishConversations']>>;
@@ -55,6 +56,7 @@ const mount = async ({ threadId }: { readonly threadId: string | null }): Promis
   render(
     <ToastProvider>
       <BranchPage session={SESSION} workingDir={null} />
+      <DrawerHost />
     </ToastProvider>,
   );
   await settle();
@@ -75,6 +77,7 @@ const mountReady = async (): Promise<void> => {
   render(
     <ToastProvider>
       <BranchPage session={SESSION} workingDir={null} />
+      <DrawerHost />
     </ToastProvider>,
   );
   await settle();

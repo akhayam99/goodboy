@@ -23,6 +23,7 @@ import {
 } from '../../../../app/components/MockScene/scenes/resolveGitlabSeed';
 import type { AddReviewDraftInput } from '../../../../store/slices/review-drafts/addReviewDraft';
 import { BranchPage } from '../../../branch/components/BranchPage';
+import { DrawerHost } from '../../../../app/components/DrawerHost';
 
 type StoreState = ReturnType<StoryStore['getState']>;
 
@@ -66,6 +67,7 @@ const mount = async (): Promise<void> => {
   render(
     <ToastProvider>
       <BranchPage session={SESSION} workingDir={null} />
+      <DrawerHost />
     </ToastProvider>,
   );
   await settle();

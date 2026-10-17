@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { ScrollFade } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { WorktreeLevel } from '../../SessionRail/WorktreeLevel';
+import { CommentDrawerColumn } from './CommentDrawerColumn';
 import { WorktreeEntriesSlot } from './WorktreeEntriesSlot';
 
 type Props = {
@@ -24,5 +25,6 @@ export const WorktreeSceneColumn = ({ session, children }: Props) => (
       )}
     </aside>
     <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">{children}</div>
+    <CommentDrawerColumn />
   </div>
 );

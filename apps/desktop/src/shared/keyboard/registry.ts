@@ -531,6 +531,20 @@ export const SHORTCUTS = {
     group: 'review',
     scope: 'review',
   },
+  'review.down': {
+    combo: 'ArrowDown',
+    label: 'Next comment in the drawer',
+    plane: 'app',
+    group: 'review',
+    scope: 'review',
+  },
+  'review.up': {
+    combo: 'ArrowUp',
+    label: 'Previous comment in the drawer',
+    plane: 'app',
+    group: 'review',
+    scope: 'review',
+  },
   'review.accept': {
     combo: 'KeyA',
     label: 'Apply fix',

@@ -1187,7 +1187,10 @@ export const seedResolveScene = ({
     resolveQueueView: {
       [SESSION_ID]: EMPTY_RESOLVE_QUEUE_VIEW,
     },
-    drawer: null,
+    drawer:
+      expandedThreadId === null
+        ? null
+        : { kind: 'conversation', sessionId: SESSION_ID, payload: { threadId: expandedThreadId } },
     branchTab: { [SESSION_ID]: 'comments' },
     branchThreadId: { [SESSION_ID]: expandedThreadId },
     sessionGithub: {

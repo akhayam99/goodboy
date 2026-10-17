@@ -17,6 +17,7 @@ import { WritePanel } from '../../features/artifacts/components/WritePanel';
 import { NewDrawer } from '../../features/session/components/NewDrawer';
 import { HistoryVersionsDrawer } from '../../features/history/components/HistoryVersionsDrawer';
 import { FixCommentsDrawer } from '../../features/resolve/components/FixCommentsDrawer';
+import { ReviewCommentDrawerHost } from '../../features/resolve/components/ReviewCommentDrawer/ReviewCommentDrawerHost';
 import { AutoChildPane } from './AutoChildPane';
 import { FixRunTranscriptDrawer } from './FixRunTranscriptDrawer';
 import { RunStepDrawer } from '../../features/session/components/RunStepDrawer';
@@ -202,6 +203,8 @@ export const DrawerHost = () => {
           onClose={closeDrawer}
         />
       );
+    case 'conversation':
+      return <ReviewCommentDrawerHost />;
     case 'history-versions':
       return (
         <HistoryVersionsDrawer

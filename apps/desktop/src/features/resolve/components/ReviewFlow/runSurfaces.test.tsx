@@ -23,6 +23,7 @@ import {
   seedResolveScene,
 } from '../../../../app/components/MockScene/scenes/resolveSeed';
 import { BranchPage } from '../../../branch/components/BranchPage';
+import { DrawerHost } from '../../../../app/components/DrawerHost';
 
 type StoreState = ReturnType<StoryStore['getState']>;
 
@@ -68,6 +69,7 @@ const mount = async ({ threadId }: { readonly threadId: string | null }): Promis
   render(
     <ToastProvider>
       <BranchPage session={SESSION} workingDir={null} />
+      <DrawerHost />
     </ToastProvider>,
   );
   await settle();
@@ -206,6 +208,7 @@ describe('Question from the fix run', () => {
     render(
       <ToastProvider>
         <BranchPage session={SESSION} workingDir={null} />
+        <DrawerHost />
       </ToastProvider>,
     );
     await settle();

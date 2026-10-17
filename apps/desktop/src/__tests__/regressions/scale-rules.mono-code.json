@@ -40,7 +40,6 @@
   "apps/desktop/src/features/resolve/components/FixCommentsDrawer/FixCommentRow.tsx": "path",
   "apps/desktop/src/features/resolve/components/ReviewFlow/ProposedChange.tsx": "code",
   "apps/desktop/src/features/resolve/components/ReviewFlow/PushBanner.tsx": "sha",
-  "apps/desktop/src/features/resolve/components/ReviewFlow/ReviewComment.tsx": "path",
   "apps/desktop/src/features/resolve/components/ReviewFlow/ReviewListRow.tsx": "path",
   "apps/desktop/src/features/resolve/components/ReviewFlow/ThreadGitEvidence.tsx": "sha",
   "apps/desktop/src/features/resolve/components/ReviewFlow/ThreadGitMiniDiff.tsx": "code",
