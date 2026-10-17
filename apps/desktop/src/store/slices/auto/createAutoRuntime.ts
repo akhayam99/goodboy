@@ -1,15 +1,18 @@
-import { listAutoTreesToRecover, type AutoTree } from '@goodboy/db';
+import { isAutoGateBlock } from '@goodboy/core';
+import { getAutoTree, listAutoTreesToRecover, type AutoTree } from '@goodboy/db';
 import type { AutoDelegationId } from '@goodboy/types';
 import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
 import { advancePhase } from './advancePhase';
 import { confirmDelegation, type ConfirmDelegationOutcome } from './confirmDelegation';
 import { deliverNext } from './deliver';
 import { enforceDeadlines } from './enforceDeadlines';
+import { expireStaleDecide } from './expireStaleDecide';
 import { finishAttempt } from './finishAttempt';
 import { joinReady } from './join';
 import { launchChildren } from './launchChildren';
 import type { AutoTurnEnded, ChildTurnEnded } from './ports';
 import { recoverTree } from './recover';
+import { retryBlockedTree, type RetryBlockedTreeOutcome } from './retryBlockedTree';
 import { settleAutoTurn } from './settleAutoTurn';
 import type { SleepParams } from './startDeliveredTurn';
 import { stopTree, type StopTreeOutcome } from './stopTree';
@@ -41,6 +44,7 @@ export type AutoRuntime = Readonly<{
   onAutoTurnEnded: (ended: AutoTurnEnded) => void;
   onChildEnded: (ended: ChildTurnEnded) => void;
   stop: (treeId: AutoTree['id']) => Promise<StopTreeOutcome>;
+  retry: (treeId: AutoTree['id']) => Promise<RetryBlockedTreeOutcome>;
   confirm: (params: ConfirmRuntimeParams) => Promise<ConfirmDelegationOutcome>;
   say: (params: Omit<SubmitUserMessageParams, 'ctx'>) => Promise<SubmitUserMessageOutcome>;
   recover: (treeId: AutoTree['id']) => Promise<boolean>;
@@ -69,6 +73,7 @@ export const createAutoRuntime = ({
   };
   const driveOnce = async (treeId: AutoTree['id']): Promise<boolean> => {
     const hasExpired = await enforceDeadlines({ ctx, treeId });
+    const hasStaleDecide = await expireStaleDecide({ ctx, treeId });
     const joined = await joinReady({ ctx, treeId });
     const hasAdvanced = await advancePhase({ ctx, treeId });
     const launched = await launchChildren({ ctx, treeId, onChildEnded: runtime.onChildEnded });
@@ -78,6 +83,7 @@ export const createAutoRuntime = ({
     const delivered = await deliverNext({ ctx, treeId, onEnded: runtime.onAutoTurnEnded });
     return (
       hasExpired ||
+      hasStaleDecide ||
       joined.kind === 'joined' ||
       hasAdvanced ||
       launched.delegationIds.length > 0 ||
@@ -99,6 +105,10 @@ export const createAutoRuntime = ({
     });
   const recover = async (treeId: AutoTree['id']): Promise<boolean> => {
     const outcome = await recoverTree({ ctx, treeId, sleep, maxPolls: watchPolls });
+    const tree = await getAutoTree({ db: ctx.db, treeId });
+    if (tree?.phase === 'blocked' && !isAutoGateBlock({ reason: tree.blockedReason })) {
+      await retryBlockedTree({ ctx, treeId });
+    }
     if (outcome.kind === 'recovered') {
       for (const watcher of outcome.watchers) {
         track(watcher.then(() => runtime.drive(treeId)));
@@ -121,6 +131,13 @@ export const createAutoRuntime = ({
       await drive(treeId);
       return outcome;
     },
+    retry: async (treeId) => {
+      const outcome = await retryBlockedTree({ ctx, treeId });
+      if (outcome.kind === 'retried') {
+        await drive(treeId);
+      }
+      return outcome;
+    },
     confirm: async ({ delegationId, decision }) => {
       const outcome = await confirmDelegation({ ctx, delegationId, decision });
       return outcome;
@@ -128,6 +145,7 @@ export const createAutoRuntime = ({
     say: async (params) => {
       const outcome = await submitUserMessage({ ctx, ...params });
       if (outcome.kind === 'queued') {
+        await retryBlockedTree({ ctx, treeId: params.treeId });
         await drive(params.treeId);
       }
       return outcome;

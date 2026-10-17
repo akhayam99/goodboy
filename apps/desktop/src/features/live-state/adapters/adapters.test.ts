@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { AUTO_BLOCK_TEXT, AUTO_STALE_DECIDE_TEXT } from '@goodboy/core';
 import {
   brandId,
   type AgentId,
@@ -106,6 +107,41 @@ describe('autoTreeLive', () => {
     const facts = autoTreeLive({ ...base, view: aView({ phase: 'deciding' }), rootTurn: null });
     expect(facts?.phrase).toBe('Deciding what to do next');
     expect(idsOf(facts)).toEqual(['stopAuto']);
+  });
+
+  it('draws no tail and no Stop for a resting tree whose answer has ended', () => {
+    const idle = { kind: 'idle', lastActivityAt: STARTED } as const;
+    for (const phase of ['answering', 'done', 'finished'] as const) {
+      const facts = autoTreeLive({ ...base, view: aView({ phase }), rootTurn: idle });
+      expect(facts?.state).toBe('idle');
+      expect(facts?.phrase).not.toBe('Deciding what to do next');
+      expect(idsOf(facts)).toEqual([]);
+    }
+  });
+
+  it('never pauses a resting tree at the limit', () => {
+    const view = aView({ phase: 'answering', spentUsd: 5, capUsd: 5 });
+    expect(autoTreeLive({ ...base, view, rootTurn: null })?.state).toBe('idle');
+  });
+
+  it('says why a blocked tree stopped and offers Retry first', () => {
+    const view = aView({ phase: 'blocked' });
+    const blocked = {
+      ...view,
+      tree: { ...view.tree, blockedReason: AUTO_STALE_DECIDE_TEXT },
+    };
+    const facts = autoTreeLive({ ...base, view: blocked, rootTurn: null });
+    expect(facts).toMatchObject({ state: 'failed', phrase: `Blocked: ${AUTO_STALE_DECIDE_TEXT}` });
+    expect(idsOf(facts)).toEqual(['retry', 'viewTranscript']);
+  });
+
+  it('offers the limit, not Retry, for a tree blocked at the budget', () => {
+    const view = aView({ phase: 'blocked' });
+    const blocked = { ...view, tree: { ...view.tree, blockedReason: AUTO_BLOCK_TEXT.budget } };
+    expect(idsOf(autoTreeLive({ ...base, view: blocked, rootTurn: null }))).toEqual([
+      'raiseLimit',
+      'changeLimit',
+    ]);
   });
 
   it('names the roles Auto waits for', () => {
