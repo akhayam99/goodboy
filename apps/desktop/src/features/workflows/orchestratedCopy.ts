@@ -24,4 +24,7 @@ export const ORCHESTRATED_COPY = {
   stepGone: 'This step is no longer in the run.',
   stepPane: 'Step',
   nextStep: 'Next step, not decided yet',
+  continueLabel: 'Continue with a hint',
+  continueAction: 'Continue',
+  continueFailed: "Couldn't continue the run",
 } as const;

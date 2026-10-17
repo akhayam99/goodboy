@@ -17,6 +17,7 @@ const AGENT_COMPOSERS: Readonly<Record<string, ReadonlyArray<Kind>>> = {
   'features/workspace-chat/components/ChatComposer/index.tsx': ['message'],
   'features/session/ask/components/AskDrawer/AskComposer.tsx': ['message'],
   'features/workflows/components/OrchestratorStrip/OrchestratorHintComposer.tsx': ['message'],
+  'features/session/components/OrchestratedRun/OrchestratedContinue.tsx': ['message'],
   'features/session/components/SessionKickoff/AgentStart.tsx': ['document'],
   'features/session/components/SessionKickoff/HowToWorkOnIt.tsx': ['document'],
   'features/context/components/QuestionsTab/CustomAnswerField/index.tsx': ['message'],
