@@ -38,7 +38,7 @@ export const NewSessionRow = ({ workspaceId, onNavigate }: Props) => {
           isCurrent && 'bg-selected text-foreground',
         )}
       >
-        <span className="flex size-4 shrink-0 items-center justify-center">
+        <span data-nav-icon="" className={PANE_RHYTHM.navRail.icon}>
           <Plus size={ICON_SIZE.row} aria-hidden />
         </span>
         <span className="min-w-0 flex-1 truncate">New session</span>

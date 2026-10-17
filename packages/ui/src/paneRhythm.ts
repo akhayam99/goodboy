@@ -35,6 +35,7 @@ export const PANE_RHYTHM = {
     nest: 'pl-6',
     door: 'h-7 px-2',
     doorGap: 'gap-1',
+    icon: 'flex w-3 shrink-0 items-center justify-center',
   },
   property: {
     group: 'flex flex-col gap-1',

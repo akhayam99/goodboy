@@ -1,6 +1,13 @@
 import { memo, useId } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
-import { Input, ROW_INTERACTIVE, SelectionCheckbox, cn, inlineMarkdownText } from '@goodboy/ui';
+import {
+  Input,
+  PANE_RHYTHM,
+  ROW_INTERACTIVE,
+  SelectionCheckbox,
+  cn,
+  inlineMarkdownText,
+} from '@goodboy/ui';
 import { useSessionSummary } from '../../hooks/useSessionSummary';
 import { sessionRowTitle } from '../../../session/sessionTitle';
 import { SessionRowTitle } from '../SessionRowTitle';
@@ -146,11 +153,13 @@ const SessionActivityItemView = ({
           isCurrent && 'bg-selected',
         )}
       >
-        <SessionStateNode
-          node={node}
-          isOnSelectedRow={isSelected || isCurrent}
-          className="group-focus-within/select-row:invisible group-hover/select-row:invisible group-data-[selecting=true]/select-list:invisible"
-        />
+        <span data-nav-icon="" className={PANE_RHYTHM.navRail.icon}>
+          <SessionStateNode
+            node={node}
+            isOnSelectedRow={isSelected || isCurrent}
+            className="group-focus-within/select-row:invisible group-hover/select-row:invisible group-data-[selecting=true]/select-list:invisible"
+          />
+        </span>
         <SessionRowTitle keys={keys} title={title} className="flex-1" titleClassName="truncate" />
       </button>
       <span id={descriptionId} className="sr-only">

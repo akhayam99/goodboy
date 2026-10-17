@@ -58,7 +58,9 @@ export const ColumnDoorRow = ({
           : 'text-muted-foreground hover:bg-hover hover:text-foreground',
       )}
     >
-      <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+      <span data-nav-icon="" className={PANE_RHYTHM.navRail.icon}>
+        <Icon size={ICON_SIZE.row} aria-hidden />
+      </span>
       <span className="flex min-w-0 flex-1 items-center gap-2">
         <span className="truncate text-left">{label}</span>
       </span>

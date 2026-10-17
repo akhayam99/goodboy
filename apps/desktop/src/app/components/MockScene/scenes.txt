@@ -576,6 +576,8 @@ r1-motion-shell-folded
 r1-motion-shell-open
 r4-brand-dark
 r4-brand-light
+r4-column-dark
+r4-column-light
 r4-comments-drawer
 r4-comments-drawer-failed
 r4-comments-drawer-ready
