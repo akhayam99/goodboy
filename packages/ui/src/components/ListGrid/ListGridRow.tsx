@@ -27,7 +27,6 @@ export type ListGridRowProps = {
   readonly rowKey?: string;
   readonly onContextMenu?: (event: MouseEvent<HTMLElement>) => void;
   readonly onKeyDown?: (event: KeyboardEvent<HTMLElement>) => void;
-  readonly track?: ReactNode;
 };
 
 type ToneParams = {
@@ -90,7 +89,6 @@ export const ListGridRow = ({
   rowKey,
   onContextMenu,
   onKeyDown,
-  track,
 }: ListGridRowProps) => {
   const { columns, hiddenKeys, hasHideable, reportFilled } = useContext(ListGridColumnsContext);
   const rowId = useId();
@@ -115,20 +113,15 @@ export const ListGridRow = ({
       {cell}
     </span>
   ));
-  const hasTrack = track !== undefined && track !== null;
   const rowClass = cn(
     'col-span-full grid grid-cols-subgrid items-center rounded-md text-left',
     HEIGHT_CLASS[rowHeight],
-    hasTrack && 'relative',
   );
   const itemRole = isOption ? 'presentation' : undefined;
   if (onSelect === undefined) {
     return (
       <li role={itemRole} className="col-span-full grid grid-cols-subgrid">
-        <div className={rowClass}>
-          {track}
-          {body}
-        </div>
+        <div className={rowClass}>{body}</div>
       </li>
     );
   }
@@ -158,7 +151,6 @@ export const ListGridRow = ({
             isCursor && !isSelected && 'bg-hover',
           )}
         >
-          {track}
           {body}
         </button>
       </OptionalTooltip>

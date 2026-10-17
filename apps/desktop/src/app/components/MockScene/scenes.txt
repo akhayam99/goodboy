@@ -574,6 +574,8 @@ r1-inactive-sidebar
 r1-inactive-sidebar-grouped
 r1-motion-shell-folded
 r1-motion-shell-open
+r4-chatlist-selecting
+r4-chatlist-states
 r4-comments-drawer
 r4-comments-drawer-failed
 r4-comments-drawer-ready

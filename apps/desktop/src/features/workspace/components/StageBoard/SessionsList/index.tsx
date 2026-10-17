@@ -1,4 +1,4 @@
-import { ListGrid, ListGridGroup, type ListGridColumn } from '@goodboy/ui';
+import { ListGrid, ListGridGroup, StatusDot, type ListGridColumn } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import type { ListStageGroup } from './listStageGroupsOf';
 import { SessionListRow } from './SessionListRow';
@@ -26,6 +26,7 @@ export const SessionsList = ({ groups, inactiveLabels, onOpen }: Props) => (
           headingLevel={2}
           key={group.key}
           label={group.label}
+          mark={<StatusDot tone={group.tone} size="sm" />}
           count={group.sessions.length}
         >
           {group.sessions.map((session) => (

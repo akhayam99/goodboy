@@ -53,9 +53,14 @@ const initialChatId = ({ key }: ChatKeyParams): ChatId | null => {
   return key === null ? CONSENT_CHAT_ID : chatIdOf(key);
 };
 
-const seedChatActivity = (): void => {
-  const activity = sceneParam({ key: 'activity' });
-  if (activity === 'running') {
+type ChatSceneActivity = 'running' | 'unread' | 'mixed';
+
+type ActivityParams = {
+  readonly activity: string | null;
+};
+
+const seedChatActivity = ({ activity }: ActivityParams): void => {
+  if (activity === 'running' || activity === 'mixed') {
     useAppStore.setState({
       chatStreams: {
         [chatIdOf('release')]: {
@@ -66,16 +71,17 @@ const seedChatActivity = (): void => {
       },
     });
   }
-  if (activity === 'unread') {
+  if (activity === 'unread' || activity === 'mixed') {
     useAppStore.setState({ unreadChatIds: [chatIdOf('changes'), chatIdOf('rounding')] });
   }
 };
 
 type Props = {
   readonly chat?: string;
+  readonly activity?: ChatSceneActivity;
 };
 
-export const ChatRoomScene = ({ chat }: Props) => {
+export const ChatRoomScene = ({ chat, activity }: Props) => {
   const [isReady, setIsReady] = useState(false);
   const [paletteQuery, setPaletteQuery] = useState<string | null>(() => sceneParam({ key: 'ask' }));
   const chatId = useAppStore((state) =>
@@ -102,7 +108,7 @@ export const ChatRoomScene = ({ chat }: Props) => {
         rootPath: project.rootPath.replace(/^~/, '/mock'),
       })),
     }));
-    seedChatActivity();
+    seedChatActivity({ activity: activity ?? sceneParam({ key: 'activity' }) });
     useAppStore.getState().openStudio({
       studio: {
         kind: 'chat',
@@ -110,7 +116,7 @@ export const ChatRoomScene = ({ chat }: Props) => {
       },
     });
     setIsReady(true);
-  }, [chat]);
+  }, [chat, activity]);
 
   useEffect(() => {
     const stage = sceneParam({ key: 'work' });

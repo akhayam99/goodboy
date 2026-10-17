@@ -43,7 +43,11 @@ const requestFix = ({ getState, sessionId, threadIds }: FixParams): void => {
   const open = state.drawer;
   const fromThreadId =
     open?.kind === 'conversation' && open.sessionId === sessionId ? open.payload.threadId : null;
-  state.requestReviewLaunch({ sessionId, threadIds, fromThreadId });
+  state.requestReviewLaunch({
+    sessionId,
+    threadIds,
+    ...(fromThreadId !== null && { fromThreadId }),
+  });
   const isOnComments =
     state.currentSessionId === sessionId &&
     (state.activeLens[sessionId] ?? null) === 'branch' &&

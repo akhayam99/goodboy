@@ -1130,8 +1130,13 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   pill) and "1 chat running" while any reply streams, otherwise a still
   warning dot (the tone of the bell badge) and "New reply" while any chat is
   unread. The dot is positioned absolutely on the icon corner, so it never
-  shifts the label. Every chat row mirrors it with the same tones, on the
-  row's left edge.
+  shifts the label. Every chat row leads with the session row's state node
+  (`StateNode` in `shared/components`, read from `chatNodeOf`): the running
+  node while its answer streams ("Answering"), a ring with the unread corner
+  dot after a reply the user has not seen ("New reply"), a plain ring at rest.
+  On row hover, focus and while any chat is selected the node gives its slot
+  to the selection checkbox (`isCheckboxSlot`), and Space on a focused row
+  toggles it (Shift extends the range).
   A chat becomes unread when its reply ends, done or failed, while the chat
   studio is not showing that chat; a reply the user stopped never does.
   Opening the chat, or archiving it, clears the mark. `unreadChatIds` lives in
@@ -1169,7 +1174,9 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   brief for the consent and retry chats, so scenes can send, stop and turn a
   chat into work. `?scene=chat-room` takes `work=drawer|project|add|session`
   (opens the panel, then the popover or mode), `chat=<key>` (`retry` drafts two
-  projects) and `activity=running|unread` for the top bar and the list.
+  projects) and `activity=running|unread|mixed` for the top bar and the list
+  (`r4-chatlist-states` and `r4-chatlist-selecting` show the row nodes and
+  the checkbox swap).
 
 ## Session Ask turns
 

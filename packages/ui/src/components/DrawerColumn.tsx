@@ -266,7 +266,7 @@ export const DrawerColumn = ({
         className={cn(
           'flex min-h-0 shrink-0 justify-end',
           isFloating
-            ? 'pointer-events-none absolute inset-y-0 right-0 z-20'
+            ? cn('pointer-events-none absolute bottom-0 right-0 z-20', isSheet ? 'top-px' : 'top-0')
             : 'relative overflow-clip motion-safe:transition-[width]',
           'duration-220 ease-out',
         )}
@@ -303,7 +303,7 @@ export const DrawerColumn = ({
               className={cn(
                 'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-drawer',
                 isFloating
-                  ? 'rounded-l-frame border-l border-t border-frame-edge border-t-transparent shadow-xl focus-visible:outline-none'
+                  ? 'rounded-l-frame border-l border-frame-edge shadow-xl focus-visible:outline-none'
                   : 'items-end rounded-frame border border-frame-edge',
                 isOverlay && 'pointer-events-auto',
                 isOverlay && !exit.isResumed && 'motion-safe:animate-drawer-overlay-in',

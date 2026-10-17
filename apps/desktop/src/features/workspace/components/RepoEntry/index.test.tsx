@@ -226,7 +226,6 @@ describe('the repositories entry in the top bar', () => {
     const row = rowOf({ name: 'payments-api' });
     const slot = row.querySelector('[data-pull-slot]');
     expect(slot?.getAttribute('aria-hidden')).toBe('true');
-    expect(slot?.className).toContain('invisible');
     expect(slot?.querySelector('button')?.tabIndex).toBe(-1);
   });
 

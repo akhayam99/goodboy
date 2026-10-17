@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Session } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
+import { stageTrackOf } from '../../../../session/stageTrackOf';
 import { listStageGroupsOf } from './listStageGroupsOf';
 
 type SessionParams = {
@@ -28,6 +29,16 @@ describe('listStageGroupsOf', () => {
       ['Needs you', 1],
       ['Done', 1],
       ['Archived', 1],
+    ]);
+  });
+
+  it('gives each group the tone of its board lane, Archived the archived lane tone', () => {
+    const groups = listStageGroupsOf({ byStage, statusFilter: [], archived: [payments] });
+    expect(groups.map((group) => [group.key, group.tone])).toEqual([
+      ['building', stageTrackOf({ stage: 'building', isArchived: false }).tone],
+      ['attention', 'warning'],
+      ['done', stageTrackOf({ stage: 'done', isArchived: false }).tone],
+      ['archived', stageTrackOf({ stage: 'done', isArchived: true }).tone],
     ]);
   });
 

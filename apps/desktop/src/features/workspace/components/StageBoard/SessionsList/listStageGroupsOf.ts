@@ -1,4 +1,6 @@
+import type { Tone } from '@goodboy/ui';
 import type { Session, SessionStage } from '@goodboy/types';
+import { stageTrackOf } from '../../../../session/stageTrackOf';
 import { stageWord } from '../../SessionHoverCard/stageWord';
 import { BOARD_STAGES } from '../boardStages';
 
@@ -7,6 +9,7 @@ const ARCHIVED_LIST_GROUP = 'Archived';
 export type ListStageGroup = {
   readonly key: SessionStage | 'archived';
   readonly label: string;
+  readonly tone: Tone;
   readonly sessions: ReadonlyArray<Session>;
 };
 
@@ -30,10 +33,25 @@ export const listStageGroupsOf = ({
     if (sessions.length === 0) {
       return [];
     }
-    return [{ key: stage, label: stageWord({ stage }), sessions }];
+    return [
+      {
+        key: stage,
+        label: stageWord({ stage }),
+        tone: stageTrackOf({ stage, isArchived: false }).tone,
+        sessions,
+      },
+    ];
   });
   if (archived.length === 0) {
     return live;
   }
-  return [...live, { key: 'archived', label: ARCHIVED_LIST_GROUP, sessions: archived }];
+  return [
+    ...live,
+    {
+      key: 'archived',
+      label: ARCHIVED_LIST_GROUP,
+      tone: stageTrackOf({ stage: 'done', isArchived: true }).tone,
+      sessions: archived,
+    },
+  ];
 };
