@@ -277,9 +277,13 @@ export const ReviewFlow = ({ session, push }: Props) => {
   }, [gitKey, hasComments, refreshThreadGitState, sessionId]);
 
   useEffect(() => {
-    if (openThreadId !== null) {
-      setLastThreadId(openThreadId);
+    if (openThreadId === null) {
+      return;
     }
+    setLastThreadId(openThreadId);
+    listRef.current
+      ?.querySelector<HTMLElement>(`[data-thread-id="${CSS.escape(openThreadId)}"]`)
+      ?.scrollIntoView?.({ block: 'nearest' });
   }, [openThreadId]);
 
   const opened =
