@@ -417,7 +417,9 @@ never exists on one surface only.
   whose confirm still asks first. The palette lists the same verbs. The row is
   `select-none`: on macOS WebKit selects the word under the pointer before the
   contextmenu event, and a selection inside the row keeps the native menu
-  (`keepsNativeMenu`), so the row never offers text to select.
+  (`keepsNativeMenu`), so the row never offers text to select. The Board card
+  (`StageBoardCard`) and every clickable `ListGridRow` (the Sessions list
+  rows among them) are `select-none` for the same reason.
 - **One order.** The registry and right click list Open, Act, Copy, then
   lifecycle and destructive verbs, with a rule between groups. Menus and
   visible controls use the same definitions and availability rules.

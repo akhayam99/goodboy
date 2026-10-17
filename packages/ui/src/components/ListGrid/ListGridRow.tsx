@@ -152,6 +152,7 @@ export const ListGridRow = ({
           onKeyDown={onKeyDown}
           className={cn(
             rowClass,
+            'select-none',
             ROW_INTERACTIVE,
             SELECTED_ROW_CLASSES,
             isCursor && !isSelected && 'bg-hover',

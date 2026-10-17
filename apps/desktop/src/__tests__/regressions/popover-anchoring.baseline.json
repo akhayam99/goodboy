@@ -12,7 +12,7 @@
     "top bar right cluster: the end edge stays on the trigger": 1
   },
   "apps/desktop/src/app/components/SessionRail/SessionLevel/LevelAddMenu.tsx": {
-    "+ Add at the end of a rail label row (session rail, round 4 package G)": 1
+    "+ at the end of a rail card header row: the end edge stays on the trigger": 1
   },
   "apps/desktop/src/features/actions/components/ObjectOverflowMenu/ObjectOverflowTrigger.tsx": {
     "a more menu sits at the end of its row: align right maps to end": 1,
@@ -94,11 +94,8 @@
   "apps/desktop/src/features/workflows/components/WorkflowStudio/ImportPopover/index.tsx": {
     "header action at the end of the Workflows header": 1
   },
-  "apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitSummaryPill.tsx": {
-    "status pill at the end of its row": 1
-  },
   "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionFilterPopover/index.tsx": {
-    "sidebar filter, moved by round 4 package B (f61); start it there": 1
+    "filter at the end of the Sessions door row: the end edge stays on the trigger": 1
   },
   "apps/desktop/src/shared/components/ProjectLinkList/ProjectAddPopover.tsx": {
     "+ Add at the end of a label row": 1

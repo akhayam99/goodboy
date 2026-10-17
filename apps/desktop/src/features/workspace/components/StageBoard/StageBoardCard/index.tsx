@@ -128,7 +128,7 @@ export const StageBoardCard = memo(function StageBoardCard({
         nav.selectCard(session);
       }}
       className={cn(
-        'group/session-card group/select-row grid h-24 shrink-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_1.25rem] gap-x-2 gap-y-1 p-3 text-left',
+        'group/session-card group/select-row grid h-24 shrink-0 cursor-pointer select-none grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_1.25rem] gap-x-2 gap-y-1 p-3 text-left',
         onToggleSelect === undefined ? 'pl-5' : 'pl-7',
         sessionCardShell({ selected }),
       )}

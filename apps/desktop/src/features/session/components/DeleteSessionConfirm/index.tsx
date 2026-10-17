@@ -16,13 +16,7 @@ type Props = {
   readonly align?: 'start' | 'end';
 };
 
-export const DeleteSessionConfirm = ({
-  session,
-  onClose,
-  trigger,
-  isOpen,
-  align = 'end',
-}: Props) => {
+export const DeleteSessionConfirm = ({ session, onClose, trigger, isOpen, align }: Props) => {
   const { archive } = useSessionArchive();
   const deleteTask = useAppStore((s) => s.deleteTask);
   const sessionBranch = useAppStore((s) => s.sessionBranches[session.id]);
@@ -42,7 +36,7 @@ export const DeleteSessionConfirm = ({
       onCancel={onClose}
       trigger={trigger}
       isOpen={isOpen}
-      align={align}
+      {...(align !== undefined && { align })}
       {...(session.archivedAt === null || session.archivedAt === undefined
         ? {
             altAction: {
