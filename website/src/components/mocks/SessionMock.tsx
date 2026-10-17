@@ -1,6 +1,15 @@
 import './SessionMock.css';
 import { MockStage } from './MockStage';
-import { Inbox, MessageCircle, Plus, SquareKanban, Waypoints } from './icons';
+import {
+  Database,
+  FileText,
+  FolderTree,
+  Inbox,
+  MessageCircle,
+  Plus,
+  SquareKanban,
+  Waypoints,
+} from './icons';
 import {
   AppButton,
   AppRow,
@@ -18,6 +27,8 @@ import {
 
 const HEADING = 'Now';
 
+const TOOLS = [MessageCircle, FileText, FolderTree, Database] as const;
+
 const ROWS: ReadonlyArray<RunTreeRowData> = [
   {
     id: 'step-5',
@@ -25,7 +36,7 @@ const ROWS: ReadonlyArray<RunTreeRowData> = [
     kind: 'tester',
     title: 'Replay one event three times',
     phase: 'queued',
-    routing: { provider: 'anthropic', name: 'Haiku 4.5', isPlanned: true },
+    routing: { provider: 'anthropic', name: 'Sonnet 5', isPlanned: true },
   },
   {
     id: 'step-4-2',
@@ -120,7 +131,7 @@ const ROWS: ReadonlyArray<RunTreeRowData> = [
     groupId: 'fan-1',
     isNested: true,
     gap: 'sibling',
-    routing: { provider: 'anthropic', name: 'Haiku 4.5' },
+    routing: { provider: 'anthropic', name: 'Sonnet 5' },
     cost: '$0.02',
   },
   {
@@ -212,8 +223,7 @@ export const SessionMock = () => {
   return (
     <MockStage
       className="sessionMock"
-      label="The session Duplicate credit fix open beside the left column of places and sessions, with a run of five steps. Steps one to three are done, step four is running, one of its subagents failed and another waits on your answer, and step five is queued."
-      isHero
+      label="The session Duplicate credit fix open beside the left column of places and sessions and the column of session tools, with a run of five steps. Steps one to three are done, step four is running, one of its subagents failed and another waits on your answer, and step five is queued."
     >
       <div className="smApp">
         <AppTopBar
@@ -287,6 +297,13 @@ export const SessionMock = () => {
               heading={HEADING}
               label="Steps"
             />
+          </div>
+          <div className="smTools" aria-hidden="true">
+            {TOOLS.map((Tool, index) => (
+              <span key={index} className="smTool">
+                <Tool size={14} />
+              </span>
+            ))}
           </div>
         </div>
       </div>

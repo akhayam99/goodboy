@@ -2,10 +2,10 @@ import './Hero.css';
 import type { CSSProperties } from 'react';
 import { BrandMark } from '../components/BrandIcons';
 import { Eyebrow } from '../components/Eyebrow';
+import { HeroShot } from '../components/HeroShot';
 import { ProviderLine } from '../components/ProviderLine';
 import { StarButton } from '../components/StarButton';
 import { StarCount } from '../components/StarCount';
-import { SessionMock } from '../components/mocks/SessionMock';
 import { useDownloads } from '../hooks/useDownloads';
 import { SITE } from '../site';
 
@@ -62,7 +62,7 @@ export const Hero = () => {
           <ProviderLine />
         </div>
         <div className="heroFrame rise" style={rise(5)}>
-          <SessionMock />
+          <HeroShot />
         </div>
       </div>
     </section>

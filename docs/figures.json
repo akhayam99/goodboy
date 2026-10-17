@@ -285,7 +285,7 @@
     "recipe": "--scene 'mounts&brand=1' --selector section --pad 24 --window 1100x900 --wait 8000"
   },
   "readme/readme-hero": {
-    "version": "0.23.0",
+    "version": "0.27.0",
     "recipe": "pnpm readme:hero"
   }
 }
