@@ -3,9 +3,11 @@ import {
   Button,
   DrawerFrame,
   EmptyState,
+  PANE_RHYTHM,
   RefreshIconButton,
   SegmentedTabs,
   Skeleton,
+  cn,
 } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
@@ -298,7 +300,12 @@ export const ExplorePane = ({ sessionId, onClose }: Props) => {
       }
       onClose={onClose}
     >
-      <div className="flex min-h-0 w-full max-w-[960px] flex-1 flex-col px-2 py-2">
+      <div
+        className={cn(
+          'flex min-h-0 w-full flex-1 flex-col px-2 py-2',
+          PANE_RHYTHM.board.listMaxWidth,
+        )}
+      >
         {renderBody()}
       </div>
     </DrawerFrame>
