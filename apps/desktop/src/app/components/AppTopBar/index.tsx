@@ -28,7 +28,7 @@ export const AppTopBar = ({ onOpenSpend, onOpenScript, openProviderId = null, si
     <div
       data-tauri-drag-region="deep"
       data-top-bar=""
-      className="@container/topbar grid h-9 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(max-content,1fr)] items-center gap-2 bg-chrome px-2"
+      className="@container/topbar grid h-9 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(max-content,1fr)] items-center gap-2 px-2"
     >
       <div className="col-start-1 flex min-w-0 items-center gap-1">
         <div className="flex min-w-0 max-w-50 items-center">

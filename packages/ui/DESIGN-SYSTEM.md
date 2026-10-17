@@ -53,6 +53,14 @@ in front) chrome < content < raised = floating: nothing is brighter than white,
 so above raised the lift is `shadow-lg` plus `border`. On the nesting axis
 (what sits inside) content > panel > inset: the deeper, the darker.
 
+The window backdrop is step 0 plus one glow: `bg-backdrop` paints `chrome`
+under `--app-backdrop`, a radial of `primary` from the top-left corner (the
+website accent hue). `--app-backdrop-strength` is its alpha in percent, 0 by
+default, so the frame reads as plain chrome; light mode halves it
+(`--app-backdrop-scale: 0.5`). Only `AppShell` paints it, under the top bar and
+the left column; the sheet, the session rail and every drawer stay opaque and
+flat. Mock scenes preview a strength with `?backdrop=<n>`.
+
 `drawer` sits beside the page surface, not on the ladder: a right drawer is its
 own container next to the sheet and is painted one step quieter than
 `background`, between `chrome` and `background` in both themes (dark

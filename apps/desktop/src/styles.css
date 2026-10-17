@@ -651,6 +651,21 @@ html[data-theme='light'] {
 :root {
   --titlebar-inset: 0px;
   --dropdown-bottom-inset: 36px;
+  --app-backdrop-strength: 0;
+  --app-backdrop-scale: 1;
+  --app-backdrop: radial-gradient(
+    ellipse 70% 90% at 0% 0%,
+    color-mix(
+      in oklab,
+      var(--color-primary) calc(var(--app-backdrop-strength) * var(--app-backdrop-scale) * 1%),
+      transparent
+    ),
+    transparent
+  );
+}
+
+html[data-theme='light'] {
+  --app-backdrop-scale: 0.5;
 }
 
 html {
@@ -718,6 +733,11 @@ body {
 ::highlight(find-current) {
   background-color: var(--color-find-current);
   color: var(--color-foreground);
+}
+
+@utility bg-backdrop {
+  background-color: var(--color-chrome);
+  background-image: var(--app-backdrop);
 }
 
 @utility bg-selected {

@@ -84,13 +84,17 @@ const RULES = [
     pattern: /(?<![\w-])(?:bg|from|via|to)-chrome(?![\w-])/,
     allow: [
       'packages/ui/src/components/AppShell.tsx',
-      'apps/desktop/src/app/components/AppTopBar/index.tsx',
       'apps/desktop/src/app/components/MockScene/scenes/DesignScaleScene.tsx',
       'packages/ui/src/components/StudioRailLayout.tsx',
       'apps/desktop/src/shared/components/StudioShell/DetachedStudio.tsx',
       'apps/desktop/src/app/components/StudioFrame/index.tsx',
     ],
-    why: 'the chrome surface frames the app: the shell, its sidebar column, the top bar, the footer, a studio and its rail, and the scale scene that draws the frame',
+    why: 'the chrome surface frames the app: the shell under its top bar and sidebar column, the footer, a studio and its rail, and the scale scene that draws the frame',
+  },
+  {
+    pattern: /(?<![\w-])bg-backdrop(?![\w-])/,
+    allow: ['packages/ui/src/components/AppShell.tsx'],
+    why: 'the window backdrop is painted once, on the app shell, behind the top bar and the sidebar column',
   },
   {
     pattern: /\bduration-\[/,

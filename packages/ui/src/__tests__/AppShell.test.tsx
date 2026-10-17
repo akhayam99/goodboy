@@ -30,16 +30,19 @@ describe('AppShell', () => {
     expect(aside?.hasAttribute('inert')).toBe(true);
   });
 
-  it('frames the window and the sidebar column on chrome, one step behind the main pane', () => {
+  it('paints the backdrop once on the window, so the sidebar column shows it and the main pane stays flat', () => {
     const { container } = render(
       <AppShell leftSidebar={<div>sessions</div>} main={<div>main</div>} />,
     );
 
-    expect((container.firstElementChild as HTMLElement).className).toContain('bg-chrome');
-    expect(screen.getByText('sessions').closest('aside')?.className).toContain('bg-chrome');
+    const backdrop = container.firstElementChild as HTMLElement;
+    expect(backdrop.className).toContain('bg-backdrop');
+    expect(backdrop.hasAttribute('data-app-backdrop')).toBe(true);
+    expect(container.querySelectorAll('.bg-backdrop')).toHaveLength(1);
+    expect(screen.getByText('sessions').closest('aside')?.className).not.toMatch(/\bbg-/);
     const page = screen.getByText('main').closest('[data-container="page"]');
     expect(page?.className).toContain('bg-background');
-    expect(page?.className).not.toContain('bg-chrome');
+    expect(page?.className).not.toContain('bg-backdrop');
   });
 
   it('renders the left overlay over the first grid row', () => {
