@@ -234,7 +234,8 @@ describe('DrawerColumn over the page', () => {
 
     expect(panel().getAttribute('data-drawer-mode')).toBe('overlay');
     expect(panel().className).toContain('absolute');
-    expect(panel().className).toContain('inset-y-0');
+    expect(panel().className).toContain('top-0');
+    expect(panel().className).toContain('bottom-0');
     expect(panel().className).toContain('right-0');
     expect(panel().style.width).toBe(`${RIGHT_DRAWER_DEFAULT + DRAWER_INSET}px`);
   });
@@ -251,8 +252,7 @@ describe('DrawerColumn over the page', () => {
     expect(className).not.toMatch(/(^|\s)rounded-frame(\s|$)/);
     expect(className).toContain('border-l');
     expect(className).not.toMatch(/(^|\s)border(\s|$)/);
-    expect(className).not.toMatch(/border-[rb](\s|$)/);
-    expect(className).toContain('border-t-transparent');
+    expect(className).not.toMatch(/border-[trb](\s|$)/);
     expect(className).toContain('shadow-xl');
   });
 

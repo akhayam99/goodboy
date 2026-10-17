@@ -145,7 +145,11 @@ describe('the r4 content scenes', () => {
     });
     expect(title()).not.toBeNull();
     expect(screen.getAllByRole('textbox', { name: 'Session title' })).toHaveLength(1);
-    fireEvent.keyDown(title() as HTMLElement, { key: 'Escape' });
+    const editing = title();
+    if (editing === null) {
+      throw new Error('the Overview title is not editing');
+    }
+    fireEvent.keyDown(editing, { key: 'Escape' });
     expect(title()).toBeNull();
 
     act(() => {
@@ -171,9 +175,7 @@ describe('the r4 content scenes', () => {
 
     const field = screen.getByRole('textbox', { name: 'Session title' });
     expect(field.closest('h1')).toBeNull();
-    expect((field as HTMLInputElement).value).toBe(
-      'Retry failed card payments on a dunning schedule',
-    );
+    expect(field).toHaveProperty('value', 'Retry failed card payments on a dunning schedule');
   });
 
   it('r4-overview-title shows a sidebar rename pending, then its error with Retry', async () => {
@@ -196,7 +198,10 @@ describe('the r4 content scenes', () => {
     const field = screen.getByRole('textbox', { name: 'Session title' });
     fireEvent.change(field, { target: { value: 'Retry card payments on a schedule' } });
 
-    const row = field.parentElement as HTMLElement;
+    const row = field.parentElement;
+    if (row === null) {
+      throw new Error('the rename field has no row');
+    }
     fireEvent.keyDown(field, { key: 'Enter' });
     expect(within(row).getByRole('status').textContent).toBe('Saving');
     expect(field.getAttribute('aria-busy')).toBe('true');
