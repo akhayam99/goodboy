@@ -167,13 +167,14 @@ describe('controls fields', () => {
 });
 
 describe('controls hints', () => {
-  it('reads the session tools as words and keeps the chord bare on Search', () => {
+  it('shows the session tools as icons named by their tool and keeps the chord bare on Search', () => {
     renderScene('controls-hints');
 
     const row = rowOf('Session tools and Search side by side');
     const ask = within(row).getByTestId('pane-toggle-ask');
     const search = within(row).getByRole('button', { name: /^Search \(/ });
-    expect(ask.textContent).toBe('Ask');
+    expect(ask.textContent).toBe('');
+    expect(ask.getAttribute('aria-label')).toBe('Ask');
     expect(ask.querySelector('kbd')).toBeNull();
     expect(search.querySelector('kbd')?.getAttribute('data-look')).toBe('inline');
     expect(search.querySelector('kbd')?.textContent).toBe(shortcutGlyphs('palette.open'));

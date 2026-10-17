@@ -54,7 +54,7 @@ const mount = async (name: SceneName): Promise<void> => {
   expect(screen.queryByText('Something went wrong')).toBeNull();
 };
 
-const cluster = (): HTMLElement => screen.getByRole('group', { name: 'Session tools' });
+const cluster = (): HTMLElement => screen.getByRole('toolbar', { name: 'Session tools' });
 
 const pressed = (): ReadonlyArray<string> =>
   within(cluster())
@@ -119,10 +119,12 @@ describe('c03 session tools scenes', () => {
     expect(pressed()).toEqual(['Context']);
   });
 
-  it('keeps the tools at the foot of the rail, and no page header holds a pane toggle', async () => {
+  it('keeps the tools in a column right of the content, not in the rail, and no page header holds a pane toggle', async () => {
     await mount('c03-panes-closed');
     const rail = screen.getByRole('navigation', { name: 'Session' });
-    expect(within(rail).getByRole('group', { name: 'Session tools' })).toBeDefined();
+    expect(within(rail).queryByRole('toolbar', { name: 'Session tools' })).toBeNull();
+    const frame = rail.closest('[data-session-frame]');
+    expect(frame?.lastElementChild?.getAttribute('aria-label')).toBe('Session tools');
     const headers = [...document.querySelectorAll('[data-slot="pane-title-row"]')];
     expect(headers.length).toBeGreaterThan(0);
     expect(
@@ -130,7 +132,7 @@ describe('c03 session tools scenes', () => {
     ).toEqual([]);
   });
 
-  it('folds the tools to icons with the open one pressed', async () => {
+  it('keeps the tool icons with the open one pressed while the rail is folded', async () => {
     await mount('c03-panes-folded');
     const icons = within(cluster()).getAllByRole('button');
     expect(icons.map((icon) => icon.getAttribute('aria-label')?.split(',')[0])).toEqual([

@@ -65,7 +65,7 @@ const mountSession = async ({ sessionId }: MountParams): Promise<void> => {
   await settle();
 };
 
-const tools = (): HTMLElement => screen.getByRole('group', { name: 'Session tools' });
+const tools = (): HTMLElement => screen.getByRole('toolbar', { name: 'Session tools' });
 
 const press = async (name: RegExp | string): Promise<void> => {
   fireEvent.click(within(tools()).getByRole('button', { name }));

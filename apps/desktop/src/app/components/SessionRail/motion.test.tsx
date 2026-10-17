@@ -266,7 +266,7 @@ describe('the session tools column at the right of the content', () => {
     expect(tools()).toBe(before);
     expect(rail().querySelector('[data-testid="session-tools"]')).toBeNull();
     expect(
-      within(tools() as HTMLElement)
+      within(elementOf('[data-testid="session-tools"]'))
         .getAllByRole('button')
         .map((button) => button.getAttribute('aria-label')?.split(',')[0]),
     ).toEqual(['Ask', 'Terminal', 'Explore', 'Context', 'Scripts']);

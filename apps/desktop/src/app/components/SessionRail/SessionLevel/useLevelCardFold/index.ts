@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { STORAGE_KEYS, persistedPref } from '../../../../../shared/lib/storage-keys';
 
-export type LevelCardId = 'projects' | 'linked';
+type LevelCardId = 'projects' | 'linked';
 
 type Params = {
   readonly card: LevelCardId;

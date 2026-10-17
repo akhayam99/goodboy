@@ -467,9 +467,10 @@ describe('the worktree pages inside the Projects card', () => {
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     expect(localStorage.getItem(STORAGE_KEYS.sessionRailFoldedCards)).toBe('["projects"]');
     const card = toggle.closest<HTMLElement>('[data-level-card]');
-    await waitFor(() => expect(card?.querySelector('[data-card-signal]')).not.toBeNull());
-    expect(
-      within(card as HTMLElement).getByRole('button', { name: 'Add to this session' }),
-    ).toBeDefined();
+    if (card === null) {
+      throw new Error('the Projects toggle sits in no card');
+    }
+    await waitFor(() => expect(card.querySelector('[data-card-signal]')).not.toBeNull());
+    expect(within(card).getByRole('button', { name: 'Add to this session' })).toBeDefined();
   });
 });

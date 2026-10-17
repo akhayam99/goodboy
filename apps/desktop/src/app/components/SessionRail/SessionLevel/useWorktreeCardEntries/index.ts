@@ -20,9 +20,15 @@ export const useWorktreeCardEntries = ({
   const github = useAppStore((state) =>
     mountReviewGithub({ state, sessionId, mountId: row.mountId }),
   );
-  const threads = useAppStore((state) => state.sessionResolveThreads[sessionId] ?? EMPTY_ARRAY);
+  const items = useAppStore((state) => state.sessionResolveQueueItems[sessionId] ?? EMPTY_ARRAY);
   return useMemo(
-    () => worktreeCardEntriesOf({ row, github, threads, diff }),
-    [row, github, threads, diff],
+    () =>
+      worktreeCardEntriesOf({
+        row,
+        github,
+        threads: items.map((entry) => entry.thread),
+        diff,
+      }),
+    [row, github, items, diff],
   );
 };
