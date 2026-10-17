@@ -34,6 +34,7 @@ import { useBoardNavigation } from './useBoardNavigation';
 import { useBoardSelection } from './useBoardSelection';
 import { SessionsHeader } from './SessionsHeader';
 import { SessionsList } from './SessionsList';
+import { SessionsListSkeleton } from './SessionsListSkeleton';
 import { SessionHoverCard } from '../SessionHoverCard';
 import { useHoverCardTarget } from '../SessionHoverCard/useHoverCardTarget';
 import { useClearSessionFilters } from '../SessionActivityBar/useClearSessionFilters';
@@ -220,7 +221,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
       <div
         ref={frame.ref}
         className={cn(
-          'mx-auto flex h-full min-h-0 w-full flex-col gap-6',
+          'mx-auto flex h-full min-h-0 w-full flex-col',
           view === 'list' ? PANE_RHYTHM.board.listMaxWidth : PANE_RHYTHM.board.maxWidth,
         )}
       >
@@ -238,7 +239,9 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
           />
         ) : null}
 
-        {pending && <BoardSkeleton lanes={layout.lanes} />}
+        {pending && view === 'board' && <BoardSkeleton lanes={layout.lanes} />}
+
+        {pending && view === 'list' && <SessionsListSkeleton />}
 
         {!pending && empty && !hasProjects && workspace !== null && (
           <ScrollFade
@@ -252,7 +255,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
         )}
 
         {!pending && hasProjects && empty && hasUsableProject && (
-          <div className="flex flex-1 items-center justify-center">
+          <div data-slot="board-empty" className="flex min-w-0 flex-col">
             <EmptyState
               icon={CONCEPT_ICONS.sessions}
               title="No sessions yet"
@@ -268,13 +271,12 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
               }
               size="page"
               headingLevel={2}
-              className="max-w-md"
             />
           </div>
         )}
 
         {!pending && hasProjects && empty && !hasUsableProject && !statusesPending && (
-          <div className="flex flex-1 items-center justify-center">
+          <div data-slot="board-empty" className="flex min-w-0 flex-col">
             <EmptyState
               icon={CONCEPT_ICONS.projectRepo}
               title={blockedReason}
@@ -294,7 +296,6 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
               }
               size="page"
               headingLevel={2}
-              className="max-w-md"
             />
           </div>
         )}

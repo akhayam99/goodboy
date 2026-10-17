@@ -232,6 +232,7 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
 
   return (
     <PaneShell
+      page={artifact.kind}
       header={
         <ArtifactShellHeader
           kind={artifact.kind}

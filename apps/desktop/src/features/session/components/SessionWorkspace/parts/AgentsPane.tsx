@@ -13,6 +13,7 @@ export const AgentsPane = ({ session }: Props) => {
 
   return (
     <PaneShell
+      page="agents"
       title="Agents"
       actions={
         <CreateAgentPopover sessionId={sessionId} openEvent={createAgentEventName(sessionId)} />

@@ -32,6 +32,7 @@ export const ArtifactGenerationShell = ({ sessionId, generation }: Props) => {
 
   return (
     <PaneShell
+      page={generation.kind}
       header={
         <ArtifactShellHeader
           kind={generation.kind}

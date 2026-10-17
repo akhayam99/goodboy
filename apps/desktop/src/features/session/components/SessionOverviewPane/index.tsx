@@ -30,8 +30,8 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
 
   return (
     <PaneShell
+      page="overview"
       title={NAMES.overview}
-      width="measure"
       actions={<OverviewHeaderActions session={session} hasNextLead={hasNextLead} />}
       headerRhythm="section"
       animationClassName="animate-fade-in"

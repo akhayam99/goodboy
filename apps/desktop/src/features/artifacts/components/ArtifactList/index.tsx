@@ -79,6 +79,7 @@ export const ArtifactList = ({
 
   return (
     <PaneShell
+      page="artifacts"
       header={
         <div className="flex min-h-8 min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
           <h1 className="min-w-0 truncate text-title text-foreground">Artifacts</h1>

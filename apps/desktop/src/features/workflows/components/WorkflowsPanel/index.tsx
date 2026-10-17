@@ -187,7 +187,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
 
   const main =
     editor.editing === null ? (
-      <PaneShell scroll="body" title="Workflows">
+      <PaneShell page="workflows" scroll="body" title="Workflows">
         {list}
       </PaneShell>
     ) : (

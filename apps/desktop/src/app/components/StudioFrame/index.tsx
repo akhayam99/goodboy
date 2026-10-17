@@ -111,6 +111,7 @@ export const StudioFrame = ({
   const isBandDrawn = hasBand && (isBandClose || trailClaims > 0 || accessory !== null);
 
   const isSplit = meta.page !== null && PAGE_FRAME[meta.page] === 'split';
+  const isSkeletonUnderBand = hasBand && isClosable && meta.close === 'band';
   const bandNode = isBandDrawn ? (
     <StudioBand
       label={title}
@@ -135,15 +136,18 @@ export const StudioFrame = ({
       >
         <Suspense
           fallback={
-            <StudioSkeleton
-              layout={hasBand ? meta.skeleton : 'list'}
-              isBandInDetail={isSplit}
-              title={meta.title}
-              railWidthPx={readStudioRailWidth({
-                surface: kind,
-                railWidth: 'railWidth' in meta ? meta.railWidth : 'standard',
-              })}
-            />
+            <UnderTrailContext.Provider value={isSkeletonUnderBand}>
+              <StudioSkeleton
+                skeleton={hasBand ? meta.skeleton : { shape: meta.skeleton.shape, hasRail: false }}
+                page={meta.page}
+                isBandInDetail={isSplit && isSkeletonUnderBand}
+                title={meta.title}
+                railWidthPx={readStudioRailWidth({
+                  surface: kind,
+                  railWidth: 'railWidth' in meta ? meta.railWidth : 'standard',
+                })}
+              />
+            </UnderTrailContext.Provider>
           }
         >
           <StudioBandContext.Provider value={isSplit ? bandNode : null}>

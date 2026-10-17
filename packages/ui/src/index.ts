@@ -239,6 +239,9 @@ export type { RevealProps } from './components/Reveal';
 export type { ResizeHandleProps } from './components/ResizeHandle';
 export { PaneShell } from './components/PaneShell';
 export { PaneTitleRow } from './components/PaneShell/PaneTitleRow';
+export { PageHeader } from './components/PaneShell/PageHeader';
+export type { PageHeaderProps } from './components/PaneShell/PageHeader';
+export { PageSkeleton } from './components/PaneShell/PageSkeleton';
 export {
   PaneActionsContext,
   useInheritedPaneActions,
@@ -353,10 +356,12 @@ export {
   FRAME_DRAWER_INSET_PX,
   FRAME_DRAWER_ROW_PX,
   FRAME_PAGES,
+  FRAME_PAGE_HEADER_INSET_PX,
   FRAME_TITLE_CENTRE_PX,
   FRAME_TITLE_ROW_PX,
   FRAME_TYPES,
   PAGE_FRAME,
+  PAGE_MEASURE,
   frameGeometryOf,
   frameTierOf,
 } from './frameGeometry';

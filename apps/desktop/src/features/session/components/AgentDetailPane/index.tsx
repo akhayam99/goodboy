@@ -200,6 +200,7 @@ export const AgentDetailPane = ({
 
   return (
     <PaneShell
+      page="agent"
       scroll="self"
       lead={lead}
       header={

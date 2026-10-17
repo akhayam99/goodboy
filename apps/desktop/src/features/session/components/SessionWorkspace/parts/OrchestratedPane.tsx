@@ -21,6 +21,7 @@ export const OrchestratedPane = ({ session }: Props) => {
 
   return (
     <PaneShell
+      page="orchestrated"
       title={NAMES.orchestrated}
       actions={
         hasRuns ? (

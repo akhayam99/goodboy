@@ -39,6 +39,7 @@ export const WorkflowsPane = ({ session, isActive = true }: Props) => {
 
   return (
     <PaneShell
+      page="runs"
       title={NAMES.runs}
       actions={hasRuns ? <WorkflowAttachButton sessionId={sessionId} placement="header" /> : null}
     >

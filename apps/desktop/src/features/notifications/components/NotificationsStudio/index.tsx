@@ -167,6 +167,7 @@ export const NotificationsStudio = ({ onClose }: Props) => {
             detail={
               <StudioDetail>
                 <PaneShell
+                  page="notifications"
                   scroll="body"
                   title="Notifications"
                   actions={

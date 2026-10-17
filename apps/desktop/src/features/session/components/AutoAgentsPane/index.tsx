@@ -63,7 +63,7 @@ export const AutoAgentsPane = ({ session }: Props) => {
 
   return (
     <RunWorkTime sessionId={sessionId} workspaceId={session.workspaceId}>
-      <PaneShell title="Auto agents">
+      <PaneShell page="auto" title="Auto agents">
         <div className="flex min-w-0 flex-col gap-6">
           {rows.length === 0 ? null : (
             <ul aria-label="Auto agents" className="flex flex-col">

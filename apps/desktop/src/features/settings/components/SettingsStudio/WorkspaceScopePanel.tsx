@@ -82,6 +82,7 @@ export const WorkspaceScopePanel = ({ workspaceId, section, initialFlow, request
 
   return (
     <PaneShell
+      page="settings"
       key={page}
       animationClassName={SETTINGS_PANE_ENTRY}
       title={entry.label}

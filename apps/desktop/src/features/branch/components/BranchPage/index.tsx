@@ -390,7 +390,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   const detail = (
     <BranchDetail>
       <PaneShell
-        width="column"
+        page="branch"
         scroll="self"
         header={
           <div className="flex min-w-0 flex-col gap-3">

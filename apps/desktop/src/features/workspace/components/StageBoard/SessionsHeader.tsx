@@ -1,4 +1,4 @@
-import { SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
+import { PageHeader, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import type { Session, SessionPageView, WorkspaceId } from '@goodboy/types';
 import type { ProjectGitStatusEntry } from '../../hooks/useProjectGitStatuses';
 import { SessionFilterPopover } from '../SessionActivityBar/SessionFilterPopover';
@@ -34,13 +34,13 @@ export const SessionsHeader = ({
   hiddenCount,
   onClearFilters,
 }: Props) => (
-  <div data-slot="board-header" className="flex shrink-0 flex-col">
-    <div
-      data-slot="pane-title-row"
-      className="flex h-8 shrink-0 items-center justify-between gap-4"
-    >
-      <h1 className="min-w-0 truncate text-title text-foreground">Sessions</h1>
-      <span className="flex shrink-0 items-center gap-2">
+  <PageHeader
+    page="board"
+    isOnColumn
+    rhythm="section"
+    title="Sessions"
+    actions={
+      <>
         <HiddenByFilters count={hiddenCount} onClear={onClearFilters} />
         <SegmentedTabs
           size="xs"
@@ -60,7 +60,7 @@ export const SessionsHeader = ({
             footer={<RepoStatusSection workspaceId={workspaceId} entries={gitEntries} />}
           />
         </span>
-      </span>
-    </div>
-  </div>
+      </>
+    }
+  />
 );

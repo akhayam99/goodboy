@@ -35,7 +35,7 @@ export const AgentOverlay = ({
     <div className="absolute inset-0 z-20 flex flex-col bg-background motion-safe:animate-layer-in">
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {selectedAgent === null && runsLoaded ? (
-          <PaneShell header={<AgentHeader title="Agent" actions={null} />}>
+          <PaneShell page="agent" header={<AgentHeader title="Agent" actions={null} />}>
             <EmptyState
               size="section"
               icon={CONCEPT_ICONS.agents}
@@ -51,6 +51,7 @@ export const AgentOverlay = ({
           </PaneShell>
         ) : selectedAgent === null ? (
           <PaneShell
+            page="agent"
             header={
               <AgentHeader title="Agent" meta={<Skeleton className="h-4 w-48" />} actions={null} />
             }
