@@ -6,8 +6,7 @@ import { describe, expect, it } from 'vitest';
 const SRC = join(__dirname, '..', '..');
 const SKIP_SEGMENTS = new Set(['__tests__', 'node_modules']);
 const ALLOWED = new Set([
-  'app/components/GoodboyChip/GoodboyChipLabel.tsx',
-  'app/components/GoodboyChip/GoodboyMenu.tsx',
+  'app/components/GoodboyChip/BrandLockup.tsx',
   'app/components/BootSplash/BootBrand.tsx',
 ]);
 
@@ -27,7 +26,7 @@ const listSourceFiles = ({ dir }: { readonly dir: string }): ReadonlyArray<strin
   });
 
 describe('DogMascot', () => {
-  it('marks the brand only: the Goodboy chip, its menu and the boot splash', () => {
+  it('marks the brand only: the brand lockup and the boot splash', () => {
     const users = listSourceFiles({ dir: SRC })
       .filter((file) => readFileSync(file, 'utf8').includes('DogMascot'))
       .map((file) => relative(SRC, file).split(sep).join('/'))

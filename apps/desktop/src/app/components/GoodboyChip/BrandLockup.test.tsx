@@ -9,6 +9,10 @@ afterEach(() => {
   applyDocumentTheme({ theme: 'dark' });
 });
 
+type ThemeParams = {
+  readonly theme: 'dark' | 'light';
+};
+
 type ChipParams = {
   readonly container: HTMLElement;
 };
@@ -22,18 +26,20 @@ const chipOf = ({ container }: ChipParams): HTMLElement => {
 };
 
 describe('BrandLockup', () => {
-  it.each(['dark', 'light'] as const)(
-    'draws the same dark chip around the mark and the name in %s mode',
-    (theme) => {
+  it('draws the same chip around the mark and the name in light and dark', () => {
+    const markupIn = ({ theme }: ThemeParams): string => {
       applyDocumentTheme({ theme });
-      const { container } = render(<BrandLockup version="0.27.0" />);
-
+      const { container, unmount } = render(<BrandLockup version="0.27.0" />);
       const chip = chipOf({ container });
-      expect(chip.className).toContain('goodboy-brand-chip');
       expect(chip.textContent).toBe('Goodboy');
       expect(chip.children).toHaveLength(2);
-    },
-  );
+      const markup = container.innerHTML;
+      unmount();
+      return markup;
+    };
+
+    expect(markupIn({ theme: 'light' })).toBe(markupIn({ theme: 'dark' }));
+  });
 
   it('keeps Beta and the version outside the chip, in theme text', () => {
     const { container } = render(<BrandLockup version="0.27.0" />);
@@ -53,8 +59,7 @@ describe('BrandLockup', () => {
   it('draws only the mark in the chip on the rail', () => {
     const { container } = render(<BrandLockup version="0.27.0" isMarkOnly />);
 
-    const chip = chipOf({ container });
-    expect(chip.className).toContain('goodboy-brand-chip');
+    expect(chipOf({ container }).querySelector('span')).not.toBeNull();
     expect(container.textContent).toBe('');
   });
 });
