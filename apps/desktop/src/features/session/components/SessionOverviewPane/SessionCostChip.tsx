@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Pause } from 'lucide-react';
 import {
   AnchoredPopover,
-  ROW_INTERACTIVE,
+  Button,
   cn,
   formatUsdPrecise,
   tintClasses,
@@ -161,20 +161,18 @@ export const SessionCostChip = ({ sessionId }: Props) => {
           }
           isSuppressed={open}
         >
-          <button
+          <Button
             ref={triggerRef}
-            type="button"
+            variant="quiet"
+            size="sm"
             onClick={toggle}
             aria-haspopup="dialog"
             aria-expanded={open}
-            aria-label={isUnspent ? 'Set a spend limit' : `Spend ${shownLabel}`}
+            aria-label={isUnspent ? UNSPENT_LABEL : `Spend ${shownLabel}`}
             data-level={presentation.level}
+            data-tone={isUnspent ? 'faint' : presentation.tone}
             data-session-spend=""
-            className={cn(
-              'flex h-7 w-full min-w-0 items-center gap-2 rounded-md px-2 text-label tabular-nums',
-              ROW_INTERACTIVE,
-              textClass,
-            )}
+            className={cn('w-full min-w-0 justify-start font-normal tabular-nums', textClass)}
           >
             {glyph}
             <span
@@ -200,7 +198,7 @@ export const SessionCostChip = ({ sessionId }: Props) => {
                 />
               </span>
             )}
-          </button>
+          </Button>
         </Tooltip>
       }
     >

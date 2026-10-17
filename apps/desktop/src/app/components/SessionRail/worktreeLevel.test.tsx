@@ -611,9 +611,9 @@ describe('the Projects tree', () => {
     await mountRail();
 
     expect(prMarkOf('payments-api')?.getAttribute('data-pr-state')).toBe('queued');
-    expect(prMarkOf('payments-api')?.getAttribute('class')).toContain('text-warning');
+    expect(prMarkOf('payments-api')?.getAttribute('data-pr-tone')).toBe('warning');
     expect(prMarkOf('ledger-core')?.getAttribute('data-pr-state')).toBe('closed');
-    expect(prMarkOf('ledger-core')?.getAttribute('class')).toContain('text-danger');
+    expect(prMarkOf('ledger-core')?.getAttribute('data-pr-tone')).toBe('danger');
   });
 
   it('draws a draft pull request gray and a branch with none as a neutral branch glyph', async () => {
@@ -628,8 +628,8 @@ describe('the Projects tree', () => {
     await mountRail();
 
     expect(prMarkOf('payments-api')?.getAttribute('data-pr-state')).toBe('draft');
-    expect(prMarkOf('payments-api')?.getAttribute('class')).toContain('text-muted-foreground');
+    expect(prMarkOf('payments-api')?.getAttribute('data-pr-tone')).toBe('neutral');
     expect(prMarkOf('ledger-core')?.getAttribute('data-pr-state')).toBe('none');
-    expect(prMarkOf('ledger-core')?.getAttribute('class')).toContain('lucide-git-branch');
+    expect(prMarkOf('ledger-core')?.getAttribute('data-pr-tone')).toBe('neutral');
   });
 });

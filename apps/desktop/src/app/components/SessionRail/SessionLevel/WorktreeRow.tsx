@@ -1,7 +1,7 @@
 import { useId, useMemo, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { PULL_REQUEST_NOUNS } from '@goodboy/core';
-import { FOCUS_RING, Reveal, SelectableRow, StatusDot, Tooltip, cn } from '@goodboy/ui';
+import { IconButton, Reveal, SelectableRow, StatusDot, Tooltip, cn } from '@goodboy/ui';
 import type { SessionId, WorktreeStatus } from '@goodboy/types';
 import type { MountRowView } from '../../../../store/slices/project-mounts/mountRowModel';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -131,6 +131,7 @@ export const WorktreeRow = ({
             size={ICON_SIZE.row}
             aria-hidden
             data-pr-state={requestState}
+            data-pr-tone={mark.tone}
             className={cn('shrink-0', mark.iconClass)}
           />
           <span data-worktree-branch="" className="flex min-w-0 flex-1">
@@ -152,24 +153,22 @@ export const WorktreeRow = ({
           </span>
         </SelectableRow>
         {hasEntries ? (
-          <button
-            type="button"
-            aria-expanded={isOpen}
-            aria-controls={entriesId}
-            aria-label={`${branch} pages`}
-            data-worktree-toggle=""
-            onClick={() => tree.toggle(node)}
-            className={cn(
-              'absolute inset-y-0 left-0 flex w-5 items-center justify-end rounded-md pr-1 text-faint-foreground hover:text-foreground',
-              FOCUS_RING,
-            )}
-          >
-            <ChevronRight
-              size={ICON_SIZE.row}
-              aria-hidden
-              className={cn('motion-safe:transition-transform', isOpen && 'rotate-90')}
+          <span className="absolute inset-y-0 -left-1 flex items-center">
+            <IconButton
+              icon={ChevronRight}
+              size="xs"
+              label={`${branch} pages`}
+              tooltipSide="right"
+              aria-expanded={isOpen}
+              aria-controls={entriesId}
+              data-worktree-toggle=""
+              onClick={() => tree.toggle(node)}
+              className={cn(
+                'text-faint-foreground [&>svg]:motion-safe:transition-transform',
+                isOpen && '[&>svg]:rotate-90',
+              )}
             />
-          </button>
+          </span>
         ) : null}
       </div>
       {livePath === null ? null : (

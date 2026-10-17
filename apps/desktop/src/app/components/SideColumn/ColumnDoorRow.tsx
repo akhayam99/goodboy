@@ -60,6 +60,7 @@ export const ColumnDoorRow = ({
         size={ICON_SIZE.row}
         aria-hidden
         data-nav-icon=""
+        data-icon-tone={isCurrent ? navEntryToneOf({ icon: Icon }) : undefined}
         className={cn('shrink-0', isCurrent && tintClasses(navEntryToneOf({ icon: Icon })).icon)}
       />
       <span className="flex min-w-0 flex-1 items-center gap-2">

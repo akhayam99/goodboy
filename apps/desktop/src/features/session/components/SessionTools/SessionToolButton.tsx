@@ -28,6 +28,7 @@ export const SessionToolButton = ({ tool, isOpen, signal, tabIndex, onFocus, onT
         aria-pressed={isOpen}
         tabIndex={tabIndex}
         data-testid={`pane-toggle-${tool.pane}`}
+        data-icon-tone={isOpen ? navEntryToneOf({ icon: tool.icon }) : undefined}
         className={cn(
           PRESSED_TOGGLE,
           isOpen && selectedIconClass({ tone: navEntryToneOf({ icon: tool.icon }) }),

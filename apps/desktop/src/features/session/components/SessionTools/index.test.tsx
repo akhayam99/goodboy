@@ -107,9 +107,9 @@ describe('SessionTools', () => {
     await settle();
     expect(drawerKind()).toBe('scripts');
     expect(toggle('scripts').getAttribute('aria-pressed')).toBe('true');
-    expect(toggle('scripts').className).toContain('[&>svg:first-child]:text-info');
+    expect(toggle('scripts').getAttribute('data-icon-tone')).toBe('info');
     expect(toggle('ask').getAttribute('aria-pressed')).toBe('false');
-    expect(toggle('ask').className).not.toContain('[&>svg:first-child]:text-');
+    expect(toggle('ask').hasAttribute('data-icon-tone')).toBe(false);
   });
 
   it('marks Context with a pulsing dot while the summary runs and a danger dot when it failed', async () => {

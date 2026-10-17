@@ -65,6 +65,7 @@ export const SelectableRow = ({
         role={role}
         aria-selected={ariaSelected}
         aria-expanded={isExpanded}
+        data-icon-tone={selected && selectedIconTone !== undefined ? selectedIconTone : undefined}
         tabIndex={tabIndex}
         onClick={onClick}
         className={cn(

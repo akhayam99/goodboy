@@ -79,7 +79,7 @@ const limit = (softCapUsd: number, onExceed: 'pause' | 'warn' = 'pause'): Sessio
   onExceed,
 });
 
-const spendChip = () => screen.getByRole('button', { name: /^(Spend |Set a spend limit$)/ });
+const spendChip = () => screen.getByRole('button', { name: /^(Spend |Set a limit$)/ });
 
 beforeEach(() => {
   store.sessionTelemetry = {};
@@ -107,7 +107,7 @@ describe('SessionCostChip', () => {
 
     expect(spendChip().textContent).toBe('$2.77 of $10.00 limit');
     expect(spendChip().getAttribute('data-level')).toBe('clear');
-    expect(spendChip().className).toContain('text-muted-foreground');
+    expect(spendChip().getAttribute('data-tone')).toBe('neutral');
     expect(document.querySelector('[data-slot="spend-bar"]')).not.toBeNull();
   });
 
@@ -126,7 +126,7 @@ describe('SessionCostChip', () => {
     render(<SessionCostChip sessionId={SID} />);
 
     expect(spendChip().getAttribute('data-level')).toBe('near');
-    expect(spendChip().className).toContain('text-warning');
+    expect(spendChip().getAttribute('data-tone')).toBe('warning');
   });
 
   it('says paused once a pausing limit is passed, and not when it only warns', () => {
@@ -140,7 +140,7 @@ describe('SessionCostChip', () => {
     render(<SessionCostChip sessionId={SID} />);
     expect(spendChip().textContent).toBe('$10.20 of $10.00 limit');
     expect(spendChip().getAttribute('data-level')).toBe('over');
-    expect(spendChip().className).toContain('text-danger');
+    expect(spendChip().getAttribute('data-tone')).toBe('danger');
   });
 
   it('opens a spend popover with the limit, the agents and the context cost', () => {

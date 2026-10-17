@@ -262,16 +262,18 @@ describe('the session level pages', () => {
     seed();
     mountColumn();
     const overview = pages().getByRole('button', { name: /^Overview/ });
-    expect(overview.className).toContain('[&>svg:first-child]:text-primary');
+    expect(overview.getAttribute('data-icon-tone')).toBe('primary');
 
     fireEvent.click(pages().getByRole('button', { name: /^Questions/ }));
 
     const questions = pages().getByRole('button', { name: /^Questions/ });
-    expect(questions.className).toContain('[&>svg:first-child]:text-warning');
-    expect(questions.className).toContain('data-[selected=true]:bg-selected');
-    expect(pages().getByRole('button', { name: /^Overview/ }).className).not.toContain(
-      '[&>svg:first-child]:text-',
-    );
+    expect(questions.getAttribute('data-icon-tone')).toBe('warning');
+    expect(questions.getAttribute('data-selected')).toBe('true');
+    expect(
+      pages()
+        .getByRole('button', { name: /^Overview/ })
+        .hasAttribute('data-icon-tone'),
+    ).toBe(false);
   });
 
   it('shows the running count beside the info dot while one of two runs runs, the total at rest', () => {
@@ -525,7 +527,6 @@ describe('the session rail top row and foot', () => {
       'Archive',
       'Delete…',
     ]);
-    expect(footRow.className).toContain('grid-cols-2');
     expect(
       foot.getAllByRole('button').map((button) => button.getAttribute('data-variant')),
     ).toEqual(['quiet', 'ghost-danger']);

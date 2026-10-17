@@ -180,9 +180,6 @@ describe('r4 session rail scenes', () => {
         isOwnPaddingCounted: false,
       }),
     ).toBe(navRight);
-    expect(elementIn(projects, '[data-card-actions]').getAttribute('class')).toContain(
-      '[&_[data-level-add]]:size-5',
-    );
   });
 
   it('r4-rail-cards-folded folds both cards and keeps the failing check as one header dot', async () => {

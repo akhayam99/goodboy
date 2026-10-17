@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { STORAGE_KEYS, persistedPref } from '../../../../../shared/lib/storage-keys';
 
-export type RailTreeNodeKind = 'project' | 'branch';
+type RailTreeNodeKind = 'project' | 'branch';
 
 type Params = {
   readonly sessionId: SessionId;
