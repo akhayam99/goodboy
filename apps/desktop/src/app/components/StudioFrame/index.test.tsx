@@ -4,7 +4,9 @@ import { lazy } from 'react';
 import { Workflow } from 'lucide-react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { PaneShell } from '@goodboy/ui';
+import { PAGE_MEASURE, PaneShell } from '@goodboy/ui';
+import type { StudioKind } from '../../../store';
+import { STUDIO_META } from './studioMeta';
 import { StudioShell } from '../../../shared/components/StudioShell';
 import { StudioDetail } from '../../../shared/components/StudioShell/StudioDetail';
 import { StudioTrail } from '../../../shared/components/StudioShell/StudioTrail';
@@ -37,6 +39,21 @@ const Body = ({ subtitle, isEscapeEnabled = true }: BodyProps) => (
   </StudioShell>
 );
 
+const STUDIO_KINDS: ReadonlyArray<StudioKind> = [
+  'settings',
+  'guide',
+  'companion',
+  'addWorkspace',
+  'workflow',
+  'inbox',
+  'impact',
+  'changelog',
+  'notifications',
+  'chat',
+  'terminal',
+  'monitoring',
+];
+
 const pressEscape = () => fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
 
 describe('StudioFrame', () => {
@@ -51,7 +68,8 @@ describe('StudioFrame', () => {
     const frame = container.querySelector('[data-studio-frame]');
     expect(frame?.className).toContain('bg-chrome');
     expect(screen.getByRole('status', { name: 'Loading Workflows' })).toBeDefined();
-    expect(container.querySelector('[data-studio-skeleton="grid"]')).not.toBeNull();
+    expect(container.querySelector('[data-studio-skeleton="rows"]')).not.toBeNull();
+    expect(container.querySelector('[data-studio-skeleton="cards"]')).toBeNull();
     expect(container.querySelector('[data-studio-band]')).toBeNull();
   });
 
@@ -64,8 +82,8 @@ describe('StudioFrame', () => {
     );
 
     expect(screen.getByRole('status', { name: 'Loading Settings' })).toBeDefined();
-    expect(container.querySelector('[data-studio-skeleton="rail"]')).not.toBeNull();
-    expect(container.querySelector('[data-studio-skeleton="grid"]')).toBeNull();
+    expect(container.querySelector('[data-studio-skeleton-rail]')).not.toBeNull();
+    expect(container.querySelector('[data-studio-skeleton="rows"]')).not.toBeNull();
   });
 
   it('draws no band for a frame that is only a page, and its skeleton has no rail', () => {
@@ -78,9 +96,43 @@ describe('StudioFrame', () => {
 
     expect(screen.queryByRole('banner')).toBeNull();
     expect(container.querySelector('[data-studio-band]')).toBeNull();
-    expect(container.querySelector('[data-studio-skeleton="rail"]')).toBeNull();
-    expect(container.querySelector('[data-studio-skeleton="list"]')).not.toBeNull();
+    expect(container.querySelector('[data-studio-skeleton-rail]')).toBeNull();
+    expect(container.querySelector('[data-studio-skeleton="rows"]')).not.toBeNull();
   });
+
+  it('lists every studio kind once for the skeleton walk', () => {
+    expect([...STUDIO_KINDS].sort()).toEqual(Object.keys(STUDIO_META).sort());
+  });
+
+  it.each(STUDIO_KINDS)(
+    'loads %s on the skeleton of its own page, at the page header inset and measure',
+    (kind) => {
+      const Pending = lazy(() => new Promise<never>(() => undefined));
+      const { container } = render(
+        <StudioFrame kind={kind} placement="content" onClose={() => undefined}>
+          <Pending />
+        </StudioFrame>,
+      );
+
+      const meta = STUDIO_META[kind];
+      const skeleton = container.querySelector<HTMLElement>('[data-page-skeleton]');
+      expect(
+        container.querySelector(`[data-studio-skeleton="${meta.skeleton.shape}"]`),
+      ).not.toBeNull();
+      expect(skeleton?.getAttribute('data-page-skeleton')).toBe(meta.page ?? '');
+      const column = skeleton?.querySelector('[data-page-column]');
+      expect(column?.getAttribute('data-width')).toBe(
+        meta.page === null ? 'column' : PAGE_MEASURE[meta.page],
+      );
+      if (meta.page === null) {
+        return;
+      }
+      const header = skeleton?.querySelector<HTMLElement>('[data-page-header]');
+      expect(header?.getAttribute('data-page')).toBe(meta.page);
+      const isUnderBand = meta.close === 'band';
+      expect(header?.className.split(' ').includes('pt-3')).toBe(!isUnderBand);
+    },
+  );
 
   it('still closes a bandless frame on Escape', () => {
     vi.useFakeTimers();

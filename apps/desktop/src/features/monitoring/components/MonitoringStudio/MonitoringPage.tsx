@@ -30,6 +30,7 @@ export const MonitoringPage = () => {
 
   return (
     <PaneShell
+      page="monitoring"
       scroll="body"
       title="Monitoring"
       meta={

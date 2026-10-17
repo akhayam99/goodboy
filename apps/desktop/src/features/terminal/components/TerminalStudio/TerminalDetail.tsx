@@ -1,4 +1,4 @@
-import { EmptyState, Button } from '@goodboy/ui';
+import { Button, EmptyState, PAGE_MEASURE, PageColumn } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import type { TerminalStudioModel } from '../../hooks/useTerminalStudioModel';
 import { displayCwd } from '../../terminalTargets';
@@ -17,18 +17,20 @@ export const TerminalDetail = ({ model, isActive }: Props) => {
   const { selected, worktree } = model;
   if (selected === null || worktree === null) {
     return (
-      <EmptyState
-        size="page"
-        tone={CONCEPT_TONE.terminal}
-        icon={CONCEPT_ICONS.terminal}
-        title="No terminal yet"
-        description="Open a terminal in your workspace folder."
-        action={
-          <Button size="sm" onClick={model.openDefault}>
-            New terminal
-          </Button>
-        }
-      />
+      <PageColumn width={PAGE_MEASURE.terminal}>
+        <EmptyState
+          size="page"
+          tone={CONCEPT_TONE.terminal}
+          icon={CONCEPT_ICONS.terminal}
+          title="No terminal yet"
+          description="Open a terminal in your workspace folder."
+          action={
+            <Button size="sm" onClick={model.openDefault}>
+              New terminal
+            </Button>
+          }
+        />
+      </PageColumn>
     );
   }
   const isIdle = selected.status !== 'exited' && !model.busyIds.has(selected.id);

@@ -40,6 +40,15 @@ export const triggerFrameView = ({ view, openers }: TriggerParams): void => {
     case 'inbox':
       openers.openInbox();
       return;
+    case 'chat':
+      openers.openChat();
+      return;
+    case 'terminal':
+      openers.openTerminalStudio();
+      return;
+    case 'monitoring':
+      openers.openMonitoring();
+      return;
     case 'spend':
       openers.openSpend();
       return;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, EmptyState, StudioRailLayout } from '@goodboy/ui';
+import { Button, EmptyState, PAGE_MEASURE, PageColumn, StudioRailLayout } from '@goodboy/ui';
 import type { ChatId, ChatSummary, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../shared/components/StudioShell';
@@ -108,17 +108,19 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
           }
           detail={
             isFirstRun ? (
-              <EmptyState
-                size="page"
-                icon={CONCEPT_ICONS.chat}
-                title="No chats yet"
-                description="Start a chat to explore an idea with an agent."
-                action={
-                  <Button size="sm" onClick={() => setHasStarted(true)}>
-                    Start a chat
-                  </Button>
-                }
-              />
+              <PageColumn width={PAGE_MEASURE.chat}>
+                <EmptyState
+                  size="page"
+                  icon={CONCEPT_ICONS.chat}
+                  title="No chats yet"
+                  description="Start a chat to explore an idea with an agent."
+                  action={
+                    <Button size="sm" onClick={() => setHasStarted(true)}>
+                      Start a chat
+                    </Button>
+                  }
+                />
+              </PageColumn>
             ) : (
               <StudioDetail>
                 <ChatRoom

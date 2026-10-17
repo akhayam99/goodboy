@@ -191,7 +191,7 @@ const FORM_AND_DETAIL_ROOTS: PlaceRoots = {
   'Add workspace': ['features/workspace/components/WorkspaceLinkStudio/index.tsx'],
 };
 
-const COLUMN_ROOT = /<(PaneShell|PageColumn|FormPage)\b/;
+const COLUMN_ROOT = /<(PaneShell|PageColumn|PageSkeleton|FormPage)\b/;
 
 const PAGELESS_STUDIOS: ReadonlySet<string> = new Set(['companion', 'addWorkspace']);
 
@@ -214,7 +214,7 @@ const H1_ALLOWLIST: ReadonlySet<string> = new Set([
 
 const TITLE_ROW_PAGES: ReadonlyArray<string> = [
   'features/session/components/AgentDetailPane/AgentHeader.tsx',
-  'features/workspace/components/StageBoard/SessionsHeader.tsx',
+  'features/workspace-chat/components/ChatRoom/ChatHeader.tsx',
 ];
 
 const UI_COMPONENTS = join(SRC, '..', '..', '..', 'packages/ui/src/components');
@@ -310,7 +310,7 @@ describe('content column contract', () => {
       'features/workspace-chat/components/ChatRoom/index.tsx',
     ];
 
-    expect(files.filter((file) => !/<PageColumn\b/.test(read(file)))).toEqual([]);
+    expect(files.filter((file) => !/<(PageColumn|PageHeader)\b/.test(read(file)))).toEqual([]);
     expect(read('features/workspace-chat/components/ChatComposer/index.tsx')).not.toMatch(/max-w-/);
   });
 
@@ -347,7 +347,7 @@ describe('content column contract', () => {
 
     expect(formPage).toMatch(/<PageColumn>/);
     expect(formPage).not.toMatch(/PANE_RHYTHM|max-w-/);
-    expect(read('app/components/StudioFrame/StudioSkeleton.tsx')).toMatch(/<PageColumn\b/);
+    expect(read('app/components/StudioFrame/StudioSkeleton.tsx')).toMatch(/<PageSkeleton\b/);
   });
 
   it('agrees every studio tier with the frame type of its page', () => {

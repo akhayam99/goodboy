@@ -4,7 +4,12 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptI
 import { NAMES } from '../../../shared/names';
 import type { StudioKind } from '../../../store';
 
-export type StudioSkeletonLayout = 'list' | 'rail' | 'grid';
+export type StudioSkeletonShape = 'rows' | 'prose' | 'room' | 'terminal' | 'cards';
+
+export type StudioSkeletonSpec = {
+  readonly shape: StudioSkeletonShape;
+  readonly hasRail: boolean;
+};
 
 type StudioCloseHome = 'none' | 'header' | 'band';
 
@@ -16,7 +21,7 @@ type StudioMeta = {
   readonly close: StudioCloseHome;
   readonly tier: 'column' | 'full';
   readonly page: FramePage | null;
-  readonly skeleton: StudioSkeletonLayout;
+  readonly skeleton: StudioSkeletonSpec;
   readonly railWidth?: 'narrow' | 'standard';
   readonly canHostDrawer?: boolean;
 };
@@ -30,7 +35,7 @@ export const STUDIO_META = {
     close: 'band',
     tier: 'column',
     page: 'settings',
-    skeleton: 'rail',
+    skeleton: { shape: 'rows', hasRail: true },
     railWidth: 'narrow',
   },
   guide: {
@@ -41,7 +46,7 @@ export const STUDIO_META = {
     close: 'header',
     tier: 'column',
     page: 'guide',
-    skeleton: 'rail',
+    skeleton: { shape: 'prose', hasRail: true },
     railWidth: 'standard',
   },
   companion: {
@@ -51,7 +56,7 @@ export const STUDIO_META = {
     close: 'band',
     tier: 'full',
     page: null,
-    skeleton: 'grid',
+    skeleton: { shape: 'cards', hasRail: false },
   },
   addWorkspace: {
     icon: CONCEPT_ICONS.workspace,
@@ -61,7 +66,7 @@ export const STUDIO_META = {
     close: 'band',
     tier: 'column',
     page: null,
-    skeleton: 'list',
+    skeleton: { shape: 'rows', hasRail: false },
   },
   workflow: {
     icon: CONCEPT_ICONS.workflows,
@@ -71,7 +76,7 @@ export const STUDIO_META = {
     close: 'none',
     tier: 'column',
     page: 'workflows',
-    skeleton: 'grid',
+    skeleton: { shape: 'rows', hasRail: false },
     canHostDrawer: true,
   },
   inbox: {
@@ -82,7 +87,7 @@ export const STUDIO_META = {
     close: 'none',
     tier: 'column',
     page: 'inbox',
-    skeleton: 'rail',
+    skeleton: { shape: 'rows', hasRail: false },
     railWidth: 'standard',
     canHostDrawer: true,
   },
@@ -94,7 +99,7 @@ export const STUDIO_META = {
     close: 'band',
     tier: 'column',
     page: 'impact',
-    skeleton: 'list',
+    skeleton: { shape: 'cards', hasRail: false },
   },
   changelog: {
     icon: CONCEPT_ICONS.changelog,
@@ -104,7 +109,7 @@ export const STUDIO_META = {
     close: 'band',
     tier: 'column',
     page: 'whatsNew',
-    skeleton: 'grid',
+    skeleton: { shape: 'prose', hasRail: true },
   },
   notifications: {
     icon: CONCEPT_ICONS.notifications,
@@ -114,7 +119,7 @@ export const STUDIO_META = {
     close: 'header',
     tier: 'column',
     page: 'notifications',
-    skeleton: 'rail',
+    skeleton: { shape: 'rows', hasRail: true },
     railWidth: 'standard',
   },
   chat: {
@@ -125,7 +130,7 @@ export const STUDIO_META = {
     close: 'none',
     tier: 'column',
     page: 'chat',
-    skeleton: 'rail',
+    skeleton: { shape: 'room', hasRail: true },
     railWidth: 'standard',
     canHostDrawer: true,
   },
@@ -137,7 +142,7 @@ export const STUDIO_META = {
     close: 'none',
     tier: 'full',
     page: 'terminal',
-    skeleton: 'rail',
+    skeleton: { shape: 'terminal', hasRail: true },
     railWidth: 'standard',
   },
   monitoring: {
@@ -148,6 +153,6 @@ export const STUDIO_META = {
     close: 'header',
     tier: 'column',
     page: 'monitoring',
-    skeleton: 'list',
+    skeleton: { shape: 'rows', hasRail: false },
   },
 } as const satisfies Record<StudioKind, StudioMeta>;

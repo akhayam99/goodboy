@@ -1,5 +1,5 @@
 import { RotateCcw, TriangleAlert } from 'lucide-react';
-import { Button, EmptyState } from '@goodboy/ui';
+import { Button, EmptyState, PAGE_MEASURE, PANE_RHYTHM, PageColumn } from '@goodboy/ui';
 import { useSettleElapsed } from '../../../hooks/useSettleElapsed';
 import { SessionOverviewSkeleton } from './SessionOverviewSkeleton';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
@@ -26,7 +26,7 @@ export const SessionOverviewLoading = ({ isFreshLayout, onRetry }: Props) => {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex min-h-0 flex-1 items-center justify-center">
+      <PageColumn width={PAGE_MEASURE.overview} className={PANE_RHYTHM.headerInset}>
         <EmptyState
           icon={TriangleAlert}
           tone="warning"
@@ -38,8 +38,9 @@ export const SessionOverviewLoading = ({ isFreshLayout, onRetry }: Props) => {
               Retry
             </Button>
           }
+          size="page"
         />
-      </div>
+      </PageColumn>
     </div>
   );
 };

@@ -39,6 +39,7 @@ export const OrchestratedRunPage = ({ session, run, workflow }: Props) => {
   return (
     <RunWorkTime sessionId={sessionId} workspaceId={session.workspaceId}>
       <PaneShell
+        page="run"
         header={
           <AgentHeader
             title={

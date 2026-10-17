@@ -142,7 +142,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
 
   if ((!openLoaded || !answeredLoaded) && loadError !== undefined) {
     return (
-      <PaneShell title="Questions">
+      <PaneShell page="questions" title="Questions">
         <ContextLoadFailure title="Questions" onRetry={loadQuestions} />
       </PaneShell>
     );
@@ -150,7 +150,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
 
   if (!openLoaded || !answeredLoaded) {
     return (
-      <PaneShell title="Questions">
+      <PaneShell page="questions" title="Questions">
         <div className="flex flex-col gap-2" role="status" aria-label="Loading questions">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="flex flex-col gap-2 rounded-md border border-border-soft p-3">
@@ -166,7 +166,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
 
   if (allRows.length === 0) {
     return (
-      <PaneShell title="Questions">
+      <PaneShell page="questions" title="Questions">
         <EmptyState
           size="page"
           icon={CONCEPT_ICONS.questions}
@@ -179,7 +179,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
 
   const question = selectedRow?.question ?? null;
   return (
-    <PaneShell title="Questions" scroll="self">
+    <PaneShell page="questions" title="Questions" scroll="self">
       <PageColumn className="flex min-h-0 flex-1 flex-col pb-5">
         <div
           onKeyDown={handleKeyDown}

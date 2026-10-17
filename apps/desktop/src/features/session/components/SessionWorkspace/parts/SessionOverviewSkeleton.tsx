@@ -1,4 +1,4 @@
-import { PageColumn, ScrollFade, Skeleton, SkeletonText } from '@goodboy/ui';
+import { PageSkeleton, ScrollFade, Skeleton, SkeletonText } from '@goodboy/ui';
 import { PANE_RHYTHM } from '@goodboy/ui';
 
 const PROJECT_ROWS = [0, 1];
@@ -11,14 +11,10 @@ type Props = {
 export const SessionOverviewSkeleton = ({ isFreshLayout }: Props) => {
   return (
     <ScrollFade className="h-full" fadeSize={24}>
-      <PageColumn className="py-5">
-        <div className={PANE_RHYTHM.stack} role="status" aria-label="Loading session overview">
+      <PageSkeleton page="overview" label="Loading session overview">
+        <div className={PANE_RHYTHM.stack}>
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between gap-2">
-                <Skeleton className="h-7 w-3/5" />
-                <Skeleton className="h-6 w-16 rounded-md" />
-              </div>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <Skeleton className="h-6 w-24 rounded-md" />
@@ -63,7 +59,7 @@ export const SessionOverviewSkeleton = ({ isFreshLayout }: Props) => {
             </div>
           )}
         </div>
-      </PageColumn>
+      </PageSkeleton>
     </ScrollFade>
   );
 };

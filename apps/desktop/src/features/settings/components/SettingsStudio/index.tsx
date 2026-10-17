@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { ScrollFade, StudioRailLayout, UnderTrailContext } from '@goodboy/ui';
+import { ScrollFade, StudioRailLayout } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { ToolSettingsScope } from '../../../integrations/components/ToolSettingsScope';
 import { ProviderSettingsScope } from '../../../providers/components/ProviderStudio';
@@ -220,7 +220,7 @@ export const SettingsStudio = ({
         onClose={onClose}
       >
         {(requestClose) => (
-          <UnderTrailContext.Provider value>
+          <>
             {columnSlot === null
               ? null
               : createPortal(
@@ -232,11 +232,11 @@ export const SettingsStudio = ({
                   />,
                   columnSlot,
                 )}
-            <div data-settings-detail="" className="flex min-h-0 min-w-0 flex-1 flex-col pt-10">
+            <div data-settings-detail="" className="flex min-h-0 min-w-0 flex-1 flex-col">
               {renderDetail(requestClose)}
             </div>
             {nested}
-          </UnderTrailContext.Provider>
+          </>
         )}
       </StudioShell>
     );

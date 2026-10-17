@@ -19,6 +19,7 @@ export const RunOverviewPage = ({ session, view }: Props) => {
 
   return (
     <PaneShell
+      page="run"
       title={view.name}
       actions={<RunPageActions session={session} view={view} stepAgentId={null} />}
       headerRhythm="section"
