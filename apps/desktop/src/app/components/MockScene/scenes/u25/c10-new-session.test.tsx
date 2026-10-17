@@ -16,12 +16,15 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../../store/storyHarness';
+import { runA11yCheck } from '../../../../../__tests__/a11y/utils';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { MOCK_SCENES } from '../..';
 import { WORKSPACE_ID } from '../BoardScene';
 import { U25_C10_NEW_SESSION_SCENES } from './c10-new-session';
 
 const SETTLE_MS = 2_000;
+
+const PresetsScene = U25_C10_NEW_SESSION_SCENES['c10-start-presets'];
 
 let useAppStore: StoryStore;
 
@@ -130,6 +133,20 @@ describe('the c10 New session scenes', () => {
       expect(option.textContent).toContain('Step 1 ');
       expect(option.textContent).not.toMatch(/\d steps?\b/);
     }
+  });
+
+  it('c10-start-presets has no accessibility violation', async () => {
+    const { container } = render(
+      <ToastProvider>
+        <PresetsScene />
+      </ToastProvider>,
+    );
+    await settle();
+    vi.useRealTimers();
+
+    const { violations } = await runA11yCheck(container);
+
+    expect(violations.map((violation) => violation.id)).toEqual([]);
   });
 
   it('c10-start-orchestrate draws the goal, two project chips and one Start orchestration', async () => {
