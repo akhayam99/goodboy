@@ -369,6 +369,7 @@ describe('GoalTeaser on the real store', () => {
         historyCount={0}
         isLoading={false}
         isLocked={false}
+        visibility={null}
         onOpenVersions={vi.fn()}
       />,
     );

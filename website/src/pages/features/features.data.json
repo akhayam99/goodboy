@@ -371,10 +371,10 @@
           "also": "who receives what"
         },
         {
-          "title": "Learned",
+          "title": "Explanations",
           "text": "List the topics you want explained, and read back what agents explained about them, grouped by topic.",
           "group": "Shared context",
-          "also": "learned",
+          "also": "explanations",
           "shown": true
         },
         {

@@ -316,7 +316,7 @@ describe('primary surfaces mount on real store selectors', () => {
 
     expect(screen.queryByRole('status', { name: 'Loading session overview' })).toBeNull();
     expect(screen.getByRole('button', { name: 'New' })).toBeDefined();
-    expect(screen.getByRole('heading', { level: 1, name: 'Overview' })).toBeDefined();
+    expect(screen.getByTestId('overview-title').closest('h1')).not.toBeNull();
     expectNoRenderLoop();
   });
 

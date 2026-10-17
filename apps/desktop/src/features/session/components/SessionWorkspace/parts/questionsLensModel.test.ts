@@ -1,7 +1,12 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { Agent, AgentId, OpenQuestion, OpenQuestionId } from '@goodboy/types';
-import { buildQuestionsLens, nextWaitingQuestion, visibleQuestionRows } from './questionsLensModel';
+import {
+  buildQuestionsLens,
+  nextWaitingQuestion,
+  questionGroupsOf,
+  questionRowsOf,
+} from './questionsLensModel';
 
 type QuestionPatch = {
   readonly id: string;
@@ -60,9 +65,11 @@ describe('buildQuestionsLens', () => {
     expect(ids(model.answered)).toEqual(['a2', 'a1']);
   });
 
-  it('shows the sent answers in the list only once Answered is open', () => {
-    expect(ids(visibleQuestionRows({ model, isAnsweredOpen: false }))).toEqual(['q1', 'q3', 'q2']);
-    expect(visibleQuestionRows({ model, isAnsweredOpen: true })).toHaveLength(5);
+  it('groups the page into Needs you (yours, then an agent answering) and Answered', () => {
+    const groups = questionGroupsOf({ model });
+    expect(ids(groups.waiting)).toEqual(['q1', 'q3']);
+    expect(ids(groups.answered)).toEqual(['q2', 'a2', 'a1']);
+    expect(ids(questionRowsOf({ model }))).toEqual(['q1', 'q3', 'q2', 'a2', 'a1']);
   });
 
   it('holds a dismissed question aside while its Undo is live', () => {

@@ -30,7 +30,7 @@ Hand the next agent where things stand. After a turn the summary is updated with
 
 ### Context drawer
 
-Open goal, decisions and summary from any session page with the **Context** button, and copy them all with **Copy context**. **Context updates** shows the last update and its model and cost, and **Update now** runs one on demand. The Goal section can write a title and goal from linked work, and nothing changes until you apply it.
+Open goal, decisions, summary and explanations from any session page with the **Context** button, and copy them all with **Copy context**. They read as one scroll of cards: each card has its title, a count from two, and its quiet controls (**Versions**, **Edit source**, the eye for who receives it) on its header row, with the content and its folds inside. **Context updates** shows the last update and its model and cost, and **Update now** runs one on demand. The Goal section can write a title and goal from linked work, and nothing changes until you apply it.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-drawer-dark.webp">
@@ -41,11 +41,11 @@ Open goal, decisions and summary from any session page with the **Context** butt
 
 ### Who receives what
 
-See which agents read each part of the context. **Visible to** under the tabs lists the roles that receive the open tab. Planners, implementers, reviewers, debuggers and resolvers get the decisions, scouts and docs agents do not, and you always see everything.
+See which agents read each part of the context. The eye on a card's header, **Visible to**, lists the roles that receive that part. Planners, implementers, reviewers, debuggers and resolvers get the decisions, scouts and docs agents do not, and you always see everything.
 
-### Learned
+### Explanations
 
-Read back what agents explained about the topics you follow. List topics under **Explain more when it touches** in About you, and a short learning appears in the **Learned** tab when an agent explains one. **Dismiss** hides it, with **Undo**.
+Read back what agents explained about the topics you follow. List topics under **Explain more when it touches** in About you, and a short explanation appears on the **Explanations** card when an agent explains one. **Dismiss** hides it, with **Undo**. It is not the summary's **Learned** block, which is what the work found out, written for the next agent.
 
 ### Context budgets
 

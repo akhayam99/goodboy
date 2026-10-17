@@ -53,7 +53,7 @@ describe('the session column scenes render the open session', () => {
         return node;
       });
       await waitFor(() => expect(document.body.textContent).toContain('Fix webhook retries'));
-      expect(main.querySelector('h1')?.textContent).toBe('Overview');
+      expect(main.querySelector('h1 [data-testid="overview-title"]')).not.toBeNull();
       expect(screen.queryByLabelText('Loading session overview')).toBeNull();
     },
   );

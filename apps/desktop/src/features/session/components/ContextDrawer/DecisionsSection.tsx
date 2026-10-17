@@ -7,11 +7,10 @@ import {
   SkeletonText,
   type SegmentedTabOption,
 } from '@goodboy/ui';
-import { activeDecisionsNewestFirst, type DecisionOp } from '@goodboy/core';
+import type { DecisionOp } from '@goodboy/core';
 import type { AgentId, SessionDecision, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { ContextBlock } from './ContextBlock';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import {
   hasDecisionChanges,
   type DecisionChangesSince,
@@ -147,7 +146,6 @@ export const DecisionsSection = ({
     () => new Map<AgentId, string>((agents ?? []).map((agent) => [agent.id, agent.name])),
     [agents],
   );
-  const active = useMemo(() => activeDecisionsNewestFirst({ ledger: decisions }), [decisions]);
   const activeRows = useMemo(
     () =>
       decisions
@@ -277,7 +275,7 @@ export const DecisionsSection = ({
           No decisions yet. Agents record one when they settle a choice; you can add your own.
         </EmptyLine>
       ) : (
-        <ContextBlock title="Active" icon={CONCEPT_ICONS.decisions} count={active.length}>
+        <div className="flex flex-col gap-2">
           {pendingRemovals.size === 0 ? null : (
             <div className="flex items-center gap-1 px-2 text-meta text-muted-foreground">
               <span>{`${pendingRemovals.size} change${pendingRemovals.size > 1 ? 's' : ''} on this visit`}</span>
@@ -333,7 +331,7 @@ export const DecisionsSection = ({
               </EnteringRow>
             ))}
           </div>
-        </ContextBlock>
+        </div>
       )}
       {closed.length === 0 ? null : (
         <div className="flex flex-col gap-1">

@@ -70,7 +70,7 @@ Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack from one page,
 
 ### About you
 
-Tell agents once who you are and how you like to work, in four short fields. **See who reads what** shows which agent role reads each part, and **Learned** collects what agents explained to you about your topics.
+Tell agents once who you are and how you like to work, in four short fields. **See who reads what** shows which agent role reads each part, and **Explanations** collects what agents explained to you about your topics.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-about-you-dark.webp">

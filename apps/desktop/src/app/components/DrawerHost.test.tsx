@@ -29,6 +29,7 @@ import type {
   ArtifactId,
   IsoDateTime,
   MountId,
+  OpenQuestionId,
   ReportArtifact,
   SessionId,
 } from '@goodboy/types';
@@ -62,6 +63,7 @@ const SESSION = 'session-harborline' as SessionId;
 const REPORT = 'artifact-report' as ArtifactId;
 const AGENT = 'agent-resolver' as AgentId;
 const TERMINAL = brandedId<TerminalTabId>({ value: `${SESSION}::t1` });
+const QUESTION = brandedId<OpenQuestionId>({ value: 'question-retry-queue' });
 const AT = '2026-10-05T10:00:00.000Z' as IsoDateTime;
 
 const REPORT_ARTIFACT: ReportArtifact = {
@@ -121,6 +123,18 @@ const ENTRIES: ReadonlyArray<Entry> = [
     region: 'Ask',
     seed: seedSession,
     drawer: { kind: 'ask', sessionId: SESSION, payload: null },
+  },
+  {
+    kind: 'question',
+    region: 'Question',
+    seed: () => {
+      seedSession();
+      useAppStore.setState({
+        sessionOpenQuestions: { [SESSION]: [] },
+        sessionAnsweredQuestions: { [SESSION]: [] },
+      });
+    },
+    drawer: { kind: 'question', sessionId: SESSION, payload: { questionId: QUESTION } },
   },
   {
     kind: 'new',

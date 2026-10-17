@@ -3,6 +3,7 @@ import type {
   ArtifactId,
   FileDiff,
   MountId,
+  OpenQuestionId,
   SessionId,
   WorkflowRunId,
 } from '@goodboy/types';
@@ -83,6 +84,10 @@ export type DrawerContent =
   | {
       readonly kind: 'ask';
       readonly payload: null;
+    }
+  | {
+      readonly kind: 'question';
+      readonly payload: { readonly questionId: OpenQuestionId; readonly from?: 'ask' };
     }
   | {
       readonly kind: 'new';

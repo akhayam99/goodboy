@@ -28,6 +28,8 @@ export const openPaneOf = ({ state, sessionId }: Params): ClusterPane | null => 
       return drawer.payload.from === 'explore' ? 'explore' : null;
     case 'scriptRun':
       return drawer.payload.from === 'scripts' ? 'scripts' : null;
+    case 'question':
+      return drawer.payload.from === 'ask' ? 'ask' : null;
     case 'artifact':
     case 'artifact-document':
     case 'auto-child':

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CopyButton, DrawerFrame, ScrollFade } from '@goodboy/ui';
-import type { SessionContextItem, SessionId } from '@goodboy/types';
+import { BandStack, CopyButton, DrawerFrame, ScrollFade } from '@goodboy/ui';
+import { activeDecisionsNewestFirst } from '@goodboy/core';
+import type { SessionContextItem, SessionDecision, SessionId } from '@goodboy/types';
 import {
   useAppStore,
   useSessionLoading,
@@ -24,7 +25,6 @@ import { ContextUpdates } from './ContextUpdates';
 import { ContextLoadFailure } from './ContextLoadFailure';
 import { ContextSection } from './ContextSection';
 import { SlotSourceActions } from './SlotSourceActions';
-import { ContextVisibility } from './ContextVisibility';
 import { slotVisibility, youOnlyVisibility } from './roleVisibility';
 import { LearnedTab } from './LearnedTab';
 import { useLearningList } from '../../../../shared/hooks/useLearningList';
@@ -38,6 +38,7 @@ type SlotValueParams = {
 const NO_HIGHLIGHT: ReadonlyArray<number> = [];
 const NO_PENDING_REMOVALS: ReadonlySet<number> = new Set();
 const NO_ITEMS: ReadonlyArray<SessionContextItem> = [];
+const NO_DECISIONS: ReadonlyArray<SessionDecision> = [];
 
 const slotValue = ({ slots, key }: SlotValueParams): string =>
   slots.find((slot) => slot.key === key)?.value ?? '';
@@ -98,6 +99,10 @@ export const ContextDrawer = ({
   const changes = useMemo(
     () => decisionChangesSince({ ledger, since: baseline }),
     [baseline, ledger],
+  );
+  const activeDecisionCount = useMemo(
+    () => activeDecisionsNewestFirst({ ledger: ledger ?? NO_DECISIONS }).length,
+    [ledger],
   );
   const hasSlots = slots.length > 0;
   const isLoading = !hasSlots && (loading.slots || slotsLoad === null);
@@ -173,9 +178,7 @@ export const ContextDrawer = ({
     setRawTab((current) => (current === section ? null : section));
 
   const visibilityOf = ({ section }: SectionParams) =>
-    showsVisibility ? (
-      <ContextVisibility visibility={slotVisibility({ slot: CONTEXT_TAB_SLOT[section] })} />
-    ) : null;
+    showsVisibility ? slotVisibility({ slot: CONTEXT_TAB_SLOT[section] }) : null;
 
   const sections = (() => {
     if (view === 'versions') {
@@ -204,11 +207,13 @@ export const ContextDrawer = ({
           historyCount={goalHistory}
           isLoading={isLoading}
           isLocked={isLocked}
+          visibility={visibilityOf({ section: 'goal' })}
           onOpenVersions={() => openVersions({ section: 'goal' })}
         />
-        {visibilityOf({ section: 'goal' })}
         <ContextSection
           section="decisions"
+          count={activeDecisionCount}
+          visibility={visibilityOf({ section: 'decisions' })}
           action={
             <SlotSourceActions
               isLocked={isLocked}
@@ -219,7 +224,6 @@ export const ContextDrawer = ({
             />
           }
         >
-          {visibilityOf({ section: 'decisions' })}
           <DecisionsSection
             sessionId={sessionId}
             changes={changes}
@@ -245,6 +249,7 @@ export const ContextDrawer = ({
         </ContextSection>
         <ContextSection
           section="summary"
+          visibility={visibilityOf({ section: 'summary' })}
           action={
             <SlotSourceActions
               isLocked={isLocked}
@@ -255,7 +260,6 @@ export const ContextDrawer = ({
             />
           }
         >
-          {visibilityOf({ section: 'summary' })}
           {summary.trim() === '' && !isLoading && rawTab !== 'summary' ? (
             <p className="text-body text-muted-foreground">
               A summary appears after the first agent turn.
@@ -272,8 +276,11 @@ export const ContextDrawer = ({
             />
           )}
         </ContextSection>
-        <ContextSection section="learned">
-          <ContextVisibility visibility={youOnlyVisibility()} />
+        <ContextSection
+          section="learned"
+          count={learningList.visible.length}
+          visibility={youOnlyVisibility()}
+        >
           <LearnedTab list={learningList} />
         </ContextSection>
       </>
@@ -313,7 +320,7 @@ export const ContextDrawer = ({
         viewportRef={scrollRef}
         fadeSize={24}
       >
-        <div className="flex flex-col gap-6">{sections}</div>
+        <BandStack>{sections}</BandStack>
       </ScrollFade>
     </DrawerFrame>
   );

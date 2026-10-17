@@ -708,25 +708,32 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
 - **Level 1 reads top to bottom:** the pages, then the Projects card and the
   Linked card, then the foot. The session level has no identity row: the
   selected main sidebar row is the session's identity (its title and state
-  node) and the page h1 names the entry. The rail's top row holds the rail
-  toggle at the left and three icon buttons at the right, no `⋯`
-  (`SessionLevel/SessionLevelActions`): **Autopilot** and **Pin session**,
-  toggles that show pressed while on and run their registry actions
-  (`session.autopilotOn` / `Off`, `session.pin` / `unpin`; a failure keeps the
-  old state and shows under the row with Retry, `ActionStatusLine`), and
-  **Refresh session** (⌘⇧R, `useSessionRefresh`, the same call as the key and
-  the palette). An archived session shows none of them. The foot
-  (`SessionLevel/SessionLevelFoot`) holds **Archive** (⌘⇧A, the registry
-  `session.archive`; **Restore** on an archived session) and **Delete…**
-  (⌘⇧⌫) as quiet `xs` buttons; Delete opens `DeleteSessionConfirm` anchored to
-  the button (`align="start"`, flipped above it and kept inside the window by
-  `useDropdownDirection`). Rename has no rail control: the main sidebar row
-  renames in place (double click, its right click menu or the palette answer
-  the `session-header` rename request). Every one of these verbs is also in
-  the sidebar row's right click menu and the palette. A title Goodboy wrote
-  reads "Named by Goodboy" on the session hover card. It has no back row: the
-  column beside it is the way to another place. Only one level shows, so a
-  session never carries a nested card in the workspace list.
+  node). The Overview h1 is the session title, the linked key in gray mono
+  before it (`SessionOverviewPane/OverviewTitle`); double click renames it in
+  place with the same rename as the sidebar row, and "Overview" is only the
+  rail entry's label. The rail's top row holds the rail toggle at the left and
+  three icon buttons at the right, no `⋯` (`SessionLevel/SessionLevelActions`):
+  **Autopilot** and **Pin session**, toggles that show pressed while on and run
+  their registry actions (`session.autopilotOn` / `Off`, `session.pin` /
+  `unpin`; a failure keeps the old state and shows under the row with Retry,
+  `ActionStatusLine`), and **Refresh session** (⌘⇧R, `useSessionRefresh`, the
+  same call as the key and the palette). An archived session shows none of
+  them. The foot (`SessionLevel/SessionLevelFoot`) holds **Archive** (⌘⇧A, the
+  registry `session.archive`; **Restore** on an archived session) and
+  **Delete…** (⌘⇧⌫) as quiet `xs` buttons; Delete opens `DeleteSessionConfirm`
+  anchored to the button (`align="start"`, flipped above it and kept inside the
+  window by `useDropdownDirection`). Rename has no rail control: a rename
+  request (`session-header`, from the palette, the sidebar row's right click
+  menu or the shortcut) edits the Overview title in place while that session's
+  Overview is open, else the main sidebar row (double click on either renames
+  too). A rename writes the database first and changes the title only once the
+  write lands (`renameTask`); the field shows pending while it writes, and a
+  failure keeps the old title and shows the error with Retry beside the field,
+  which stays open. Every one of these verbs is also in the sidebar row's right
+  click menu and the palette. A title Goodboy wrote reads "Named by Goodboy" on
+  the session hover card. It has no back row: the column beside it is the way
+  to another place. Only one level shows, so a session never carries a nested
+  card in the workspace list.
 - **The pages** come from one registry (`features/session/pageRegistry.ts`):
   Overview, File versions in a branchless session only, Runs, Agents, Auto
   agents (with a neutral Experimental chip; Auto is always on, so it always
@@ -2442,14 +2449,17 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   (`LapPublishNotice`; Retry when the remote did not answer, `Checking the remote`
   while it is read). `FirstLapBanner` keeps only the move card, the move in progress
   and the move report, as a `Notice` in the page banner slot (`PaneBannerContext`).
-- **Questions is one tier.** The 288px queue and the question beside it sit inside the
-  same 1008px column under the title, apart by a gap (no divider); the detail no longer
-  narrows to a measure column of its own beside a full-bleed rail. The title carries no
-  meta line. A queue row wraps the question to two lines over its role glyph and age,
-  with a blocking ask as one warning dot in a fixed cell; the asker shows only in the
-  detail, which has no pager (the queue is the pager). Answered is always open and last;
-  group labels show only with two groups. Inside the asker's own conversation a question
-  card shows only the question (and Blocking as a dot and a word).
+- **Questions is a list, like Artifacts.** One `ListGrid` (`parts/QuestionsGrid`) with two
+  groups, **Needs you** then **Answered**, each counted from two; the grouping is
+  `questionGroupsOf` in `questionsLensModel` (a question an agent is answering stays under
+  Needs you and says so in gray). A row reads the question, the answer in gray, the
+  asker's role and the age; a blocking ask is one warning dot in the leading cell. The row
+  opens the question in the drawer (`question` drawer kind, `QuestionDrawer`), where the
+  card answers, skips, dismisses and undoes; answering moves the drawer to the next
+  waiting question. Opened from Ask (a question chip, **Answer question N**), the drawer
+  carries **Back to Ask**. The shared `EmptyState` shows only when the session has no
+  question at all. Inside the asker's own conversation a question card shows only the question
+  (and Blocking as a dot and a word).
 - **A lens shows one level. A studio is a rail plus a detail.** Inside a lens,
   selecting a card swaps the list for the detail, and the trail or Back is the
   way back. No lens keeps a rail beside its detail. Review is the one
@@ -2977,7 +2987,9 @@ suggested questions; each line's mark is a `LineMark` (one text line tall), so
 it centres on the first line of text even when the line wraps; once a thread has
 turns it folds to one row. Then
 **Earlier** threads on a fresh thread, then the turns. An answer chip that
-targets a page navigates (the drawer stays, see above); a chip that targets a
+targets a page navigates (the drawer stays, see above), except a question: it
+opens the Questions page and the question in the drawer under **Back to Ask**
+(`question` drawer, `from: 'ask'`); a chip that targets a
 plan or another artifact opens it inside the drawer under **Back to answer**,
 and Escape goes back before it closes. Buttons come only from verbs the action
 registry offers right now (`askVerb`, `useAskActions`): **Answer question N**

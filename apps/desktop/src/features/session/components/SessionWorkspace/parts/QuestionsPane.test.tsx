@@ -46,6 +46,8 @@ vi.mock('@goodboy/ui', async (importOriginal) => ({
 }));
 
 import { useOpenQuestions } from '../../../../context/components/QuestionsTab/useOpenQuestions';
+import { formatAge } from '../../../../../shared/utils/time/formatAge';
+import { QuestionDrawer } from '../../QuestionDrawer';
 import { QuestionsPane } from './QuestionsPane';
 
 const NOW = '2026-09-28T10:00:00.000Z' as IsoDateTime;
@@ -101,24 +103,34 @@ const actions = {
   takeQuestionBack: vi.fn(),
   navigate: vi.fn(),
   setAnswerIntent: vi.fn(),
+  openDrawer: vi.fn(),
 };
 
-const setup = ({
-  open = [Q1, Q2, Q3],
-  answered = [],
-  agents = [PLANNER, REVIEWER],
-  loaded = true,
-}: {
+type SeedParams = {
   readonly open?: ReadonlyArray<OpenQuestion>;
   readonly answered?: ReadonlyArray<OpenQuestion>;
   readonly agents?: ReadonlyArray<Agent>;
   readonly loaded?: boolean;
-} = {}) => {
+  readonly openedId?: OpenQuestionId | null;
+};
+
+const seed = ({
+  open = [Q1, Q2, Q3],
+  answered = [],
+  agents = [PLANNER, REVIEWER],
+  loaded = true,
+  openedId = null,
+}: SeedParams = {}) => {
   store.open = open;
   store.answered = answered;
   store.state = {
     ...actions,
     sessions: [SESSION],
+    currentSessionId: SESSION_ID,
+    drawer:
+      openedId === null
+        ? null
+        : { kind: 'question', sessionId: SESSION_ID, payload: { questionId: openedId } },
     providers: [],
     cliRequirements: [],
     agentKindOverride: {},
@@ -127,11 +139,36 @@ const setup = ({
     sessionAnsweredQuestions: loaded ? { [SESSION_ID]: answered } : {},
     sessionQuestionsLoadError: {},
   };
+};
+
+const setup = (params: SeedParams = {}) => {
+  seed(params);
   render(<QuestionsPane session={SESSION} />);
 };
 
-const detailHeading = () => screen.getByRole('heading', { level: 2 });
+type DrawerParams = SeedParams & {
+  readonly questionId: OpenQuestionId;
+};
+
+const setupDrawer = ({ questionId, ...params }: DrawerParams) => {
+  seed(params);
+  return render(
+    <QuestionDrawer sessionId={SESSION_ID} questionId={questionId} from={null} onClose={vi.fn()} />,
+  );
+};
+
 const row = (name: string) => screen.getByRole('button', { name });
+const group = (name: string) => screen.getByRole('list', { name });
+const ANSWERED_A1 = question('a1', 'Which branch should the fix land on?', 'reviewer', {
+  status: 'answered',
+  userAnswer: 'main',
+  answeredAt: NOW,
+});
+const ANSWERED_A2 = question('a2', 'Squash the commits before merge?', 'planner', {
+  status: 'answered',
+  userAnswer: 'Yes, one commit',
+  answeredAt: NOW,
+});
 
 beforeEach(() => {
   useOpenQuestions.setState({
@@ -153,63 +190,144 @@ describe('QuestionsPane', () => {
     screen.getByRole('status', { name: 'Loading questions' });
   });
 
-  it('shows the empty state when nothing was ever asked', () => {
+  it('shows the shared empty state only when nothing was ever asked', () => {
     setup({ open: [] });
     screen.getByRole('heading', { level: 2, name: 'No questions yet' });
     screen.getByText('Agents ask you here when they need a decision.');
   });
 
-  it('lists what waits on you and opens the first question', () => {
-    setup();
-    expect(screen.getByTestId('pane-shell').getAttribute('data-meta')).toBeNull();
-    expect(screen.queryByText('Needs you')).toBeNull();
-    row('Which events should be retried?');
-    expect(detailHeading().textContent).toBe('Which queue should retries run on?');
+  it('lists Needs you then Answered on one grid, each counted from two', () => {
+    setup({ answered: [ANSWERED_A1] });
+    const headings = screen.getAllByRole('heading', { level: 2 }).map((node) => node.textContent);
+    expect(headings).toEqual(['Needs you', 'Answered']);
+    expect(
+      Array.from(document.querySelectorAll('[data-list-grid-count]')).map(
+        (node) => node.textContent,
+      ),
+    ).toEqual(['3']);
+    expect(document.querySelectorAll('[data-list-grid]')).toHaveLength(1);
+    expect(within(group('Needs you')).getAllByRole('button')).toHaveLength(3);
+    expect(within(group('Answered')).getAllByRole('button')).toHaveLength(1);
+    expect(screen.queryByRole('article')).toBeNull();
+    expect(screen.queryByText('No questions')).toBeNull();
   });
 
-  it('marks a blocking ask with one dot in its own cell and names the asker in the detail only', () => {
-    setup();
-    const rowBox = (name: string) => row(name).parentElement!;
-    const blocking = rowBox('Which queue should retries run on?');
-    const quiet = rowBox('Which events should be retried?');
+  it('keeps answered rows with no centered empty state beside them', () => {
+    setup({ open: [], answered: [ANSWERED_A1, ANSWERED_A2] });
+    expect(screen.queryByText('No questions yet')).toBeNull();
+    expect(screen.queryByText('No questions')).toBeNull();
+    expect(within(group('Answered')).getAllByRole('button')).toHaveLength(2);
+    expect(screen.getAllByRole('heading', { level: 2 })[0]?.textContent).toBe('Answered');
+    expect(document.querySelector('[data-list-grid-count]')?.textContent).toBe('2');
+  });
 
+  it('reads a row as the question, the answer in gray, the asker role and the age', () => {
+    setup({ answered: [ANSWERED_A1] });
+    const answered = row('Which branch should the fix land on?, You: main');
+    const cells = Array.from(answered.querySelectorAll<HTMLElement>('[data-list-grid-cell]'));
+    expect(cells.map((cell) => cell.getAttribute('data-list-grid-cell'))).toEqual([
+      'state',
+      'question',
+      'answer',
+      'asker',
+      'age',
+    ]);
+    expect(cells.map((cell) => cell.textContent)).toEqual([
+      '',
+      'Which branch should the fix land on?',
+      'You: main',
+      'Reviewer',
+      formatAge({ from: NOW, now: Date.now() }),
+    ]);
+  });
+
+  it('marks a blocking ask with one dot in its own cell', () => {
+    setup();
+    const blocking = row('Which queue should retries run on?');
+    const quiet = row('Which events should be retried?');
     expect(within(blocking).getByRole('img', { name: 'Blocking' })).toBeDefined();
     expect(within(quiet).queryByRole('img', { name: 'Blocking' })).toBeNull();
-    expect(quiet.querySelector('[data-question-blocking-cell]')).not.toBeNull();
-    expect(within(blocking).queryByText(/Planner/)).toBeNull();
-    expect(within(screen.getByRole('article')).getAllByText('Planner').length).toBeGreaterThan(0);
-    expect(screen.queryByText(/1 of 2/)).toBeNull();
   });
 
-  it('opens the question picked in the list', () => {
+  it('opens the question in the drawer from its row, naming the question', () => {
     setup();
     fireEvent.click(row('Keep the old dispatch path?'));
-    expect(detailHeading().textContent).toBe('Keep the old dispatch path?');
+    expect(actions.openDrawer).toHaveBeenCalledWith({
+      kind: 'question',
+      sessionId: SESSION_ID,
+      payload: { questionId: Q3.id },
+    });
   });
 
-  it('moves through the list with j and k', () => {
+  it('marks the row whose question the drawer shows', () => {
+    setup({ openedId: Q2.id });
+    expect(row('Which events should be retried?').getAttribute('aria-current')).toBe('true');
+    expect(row('Keep the old dispatch path?').getAttribute('aria-current')).toBeNull();
+  });
+
+  it('opens the question another surface asked to focus in the drawer', () => {
+    useOpenQuestions.setState({ focusedQuestionId: Q3.id });
     setup();
+    expect(actions.openDrawer).toHaveBeenCalledWith({
+      kind: 'question',
+      sessionId: SESSION_ID,
+      payload: { questionId: Q3.id },
+    });
+    expect(useOpenQuestions.getState().focusedQuestionId).toBeNull();
+  });
+
+  it('keeps a question an agent is answering under Needs you, saying so in gray', () => {
+    const delegate = agent('delegate-1', 'answer: Keep the old dispatch path?', {
+      sourceKind: 'open_question',
+      sourceThreadId: 'q3',
+      ordinal: 4,
+    } as Partial<Agent>);
+    setup({ agents: [PLANNER, REVIEWER, delegate] });
+    expect(
+      within(group('Needs you')).getByRole('button', {
+        name: 'Keep the old dispatch path?, An agent is answering',
+      }),
+    ).toBeDefined();
+    expect(screen.getByTestId('pane-shell').getAttribute('data-meta')).toBeNull();
+  });
+});
+
+describe('QuestionDrawer', () => {
+  it('shows the question card, with the asker in the card and the question as the title', () => {
+    setupDrawer({ questionId: Q1.id });
     const card = screen.getByRole('article');
-    fireEvent.keyDown(card, { key: 'j' });
-    expect(detailHeading().textContent).toBe('Which events should be retried?');
-    fireEvent.keyDown(screen.getByRole('article'), { key: 'k' });
-    expect(detailHeading().textContent).toBe('Which queue should retries run on?');
+    expect(within(card).getAllByText('Planner').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Which queue should retries run on?').length).toBeGreaterThanOrEqual(
+      1,
+    );
   });
 
-  it('stages an answer, moves on, and keeps Undo on the answered row', () => {
-    setup();
+  it('stages an answer and moves the drawer to the next waiting question', () => {
+    setupDrawer({ questionId: Q1.id });
     fireEvent.click(screen.getByRole('radio', { name: 'Yes' }));
     fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
-    expect(detailHeading().textContent).toBe('Which events should be retried?');
+    expect(useOpenQuestions.getState().staged).toEqual([Q1.id]);
     expect(actions.answerOpenQuestions).not.toHaveBeenCalled();
+    expect(actions.openDrawer).toHaveBeenCalledWith({
+      kind: 'question',
+      sessionId: SESSION_ID,
+      payload: { questionId: Q2.id },
+    });
+  });
+
+  it('keeps Undo on a staged answer when its question is opened again', () => {
+    useOpenQuestions.setState({ staged: [Q1.id] });
+    setupDrawer({ questionId: Q1.id });
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
     expect(useOpenQuestions.getState().staged).toEqual([]);
   });
 
   it('sends the answers of one agent together once its last question is answered', async () => {
-    setup();
+    const view = setupDrawer({ questionId: Q1.id });
     fireEvent.click(screen.getByRole('radio', { name: 'Yes' }));
     fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
+    view.unmount();
+    setupDrawer({ questionId: Q2.id });
     fireEvent.click(screen.getByRole('radio', { name: 'No' }));
     fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
     await waitFor(() =>
@@ -224,47 +342,25 @@ describe('QuestionsPane', () => {
     );
   });
 
-  it('keeps answered questions open and last, then shows what was sent', () => {
-    const answered = question('a1', 'Which branch should the fix land on?', 'reviewer', {
-      status: 'answered',
-      userAnswer: 'main',
-      answeredAt: NOW,
-    });
-    setup({ answered: [answered] });
-    expect(screen.queryByRole('button', { name: /^Answered/ })).toBeNull();
-    fireEvent.click(row('Which branch should the fix land on?'));
+  it('shows what was sent on an answered question', () => {
+    setupDrawer({ questionId: ANSWERED_A1.id, answered: [ANSWERED_A1] });
     screen.getByText('Answered · sent to Reviewer');
   });
 
-  it('opens the question another surface asked to focus', () => {
-    useOpenQuestions.setState({ focusedQuestionId: Q3.id });
-    setup();
-    expect(detailHeading().textContent).toBe('Keep the old dispatch path?');
-  });
-
-  it('dismisses a question and offers Undo on its row', async () => {
-    setup();
-    fireEvent.click(row('Keep the old dispatch path?'));
+  it('dismisses a question and offers Undo in the drawer', async () => {
+    const view = setupDrawer({ questionId: Q3.id });
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss question' }));
     await waitFor(() => expect(actions.dismissOpenQuestion).toHaveBeenCalledWith(SESSION_ID, Q3));
-    store.open = [Q1, Q2];
-    cleanup();
-    render(<QuestionsPane session={SESSION} />);
-    screen.getByText('Dismissed');
+    view.unmount();
+    setupDrawer({ questionId: Q3.id, open: [Q1, Q2] });
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
     await waitFor(() =>
       expect(actions.restoreDismissedOpenQuestion).toHaveBeenCalledWith(SESSION_ID, Q3),
     );
   });
 
-  it('sets a question an agent is answering apart', () => {
-    const delegate = agent('delegate-1', 'answer: Keep the old dispatch path?', {
-      sourceKind: 'open_question',
-      sourceThreadId: 'q3',
-      ordinal: 4,
-    } as Partial<Agent>);
-    setup({ agents: [PLANNER, REVIEWER, delegate] });
-    screen.getByText('With an agent');
-    expect(screen.getByTestId('pane-shell').getAttribute('data-meta')).toBeNull();
+  it('says so when the question is no longer in the session', () => {
+    setupDrawer({ questionId: ANSWERED_A2.id });
+    screen.getByText('This question is no longer in this session.');
   });
 });

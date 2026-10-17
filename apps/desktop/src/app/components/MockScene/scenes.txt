@@ -577,6 +577,8 @@ r4-comments-drawer
 r4-comments-drawer-failed
 r4-comments-drawer-ready
 r4-comments-list
+r4-context-cards
+r4-context-summary
 r4-layout-chat
 r4-layout-guide
 r4-layout-loading-chat
@@ -590,6 +592,9 @@ r4-layout-settings
 r4-layout-tasks
 r4-layout-terminal
 r4-layout-workflows
+r4-overview-title
+r4-questions
+r4-questions-drawer
 r4-rail-cards-folded
 r4-rail-delete
 r4-rail-folded

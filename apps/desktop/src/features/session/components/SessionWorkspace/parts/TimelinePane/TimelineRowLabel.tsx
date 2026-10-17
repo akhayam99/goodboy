@@ -130,7 +130,7 @@ const segmentsOf = ({ entry }: EntryParams): ReadonlyArray<TimelineLabelSegment>
     });
   }
   if (entry.kind === 'learning') {
-    return [{ kind: 'text', text: 'Learned' }];
+    return [{ kind: 'text', text: 'Explained' }];
   }
   const isOpen = entry.questions.every((question) => question.status === 'open');
   const count = entry.questions.length;

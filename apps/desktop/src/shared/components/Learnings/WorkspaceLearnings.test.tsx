@@ -169,7 +169,7 @@ describe('WorkspaceLearnings', () => {
     renderLearnings();
 
     const open = await screen.findByRole('button', { name: 'Open' });
-    expect(open.closest('div')?.textContent).toBe('Learned·3·Open');
+    expect(open.closest('div')?.textContent).toBe('Explanations·3·Open');
     fireEvent.click(open);
 
     const groups = screen.getAllByRole('region').map((group) => group.getAttribute('aria-label'));
@@ -203,7 +203,7 @@ describe('WorkspaceLearnings', () => {
     expect(screen.getByText('Dismissed').tagName).toBe('SPAN');
     expect(screen.queryByRole('button', { name: /^Backfill in batches/ })).toBeNull();
     expect(screen.getByRole('button', { name: 'Hide' }).closest('div')?.textContent).toBe(
-      'Learned·2·Hide',
+      'Explanations·2·Hide',
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Undo dismiss: Backfill in batches' }));

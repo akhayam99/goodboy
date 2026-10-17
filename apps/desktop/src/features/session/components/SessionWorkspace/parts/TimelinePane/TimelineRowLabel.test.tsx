@@ -408,8 +408,8 @@ describe('TimelineRowLabel', () => {
   });
 });
 
-describe('TimelineRowLabel, a learned row', () => {
-  it('reads Learned, then the topic and the title, as a compact fact', () => {
+describe('TimelineRowLabel, an explanation row', () => {
+  it('reads Explained, then the topic and the title, as a compact fact', () => {
     const at = '2026-08-17T09:04:00Z' as IsoDateTime;
     const entry: TimelineLearningEntry = {
       kind: 'learning',
@@ -435,11 +435,11 @@ describe('TimelineRowLabel, a learned row', () => {
 
     const { container } = render(<TimelineRowLabel item={itemOf({ entry, grade: 'fact' })} />);
 
-    expect(container.textContent).toBe('Learned · Rust · Why the borrow checker rejects this');
+    expect(container.textContent).toBe('Explained · Rust · Why the borrow checker rejects this');
     const label = container.firstElementChild;
     expect(label?.tagName).toBe('SPAN');
     expect(label instanceof HTMLElement ? tooltipTextOf({ element: label }) : null).toBe(
-      'Learned · Rust · Why the borrow checker rejects this',
+      'Explained · Rust · Why the borrow checker rejects this',
     );
   });
 });

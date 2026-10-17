@@ -207,7 +207,8 @@ type MountsVariant =
   | 'branch-split'
   | 'unassigned-notes'
   | 'blank'
-  | 'archived';
+  | 'archived'
+  | 'linked-title';
 
 const UNASSIGNED_NOTES: ReadonlyArray<DiffComment> = [
   {
@@ -679,6 +680,9 @@ const sessionOf = ({ variant }: SessionParams): Session => {
   }
   if (variant === 'archived') {
     return { ...SESSION, archivedAt: later(-30) };
+  }
+  if (variant === 'linked-title') {
+    return { ...SESSION, goal: `[HBL-391] ${SESSION.goal}` };
   }
   return SESSION;
 };
