@@ -13,7 +13,8 @@ vi.mock('../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { MountId, PullRequestState, WorktreeStatus } from '@goodboy/types';
+import { brandId } from '@goodboy/types';
+import type { IsoDateTime, MountId, PullRequestState, WorktreeStatus } from '@goodboy/types';
 import type { GitlabMergeRequest } from '../../../features/integrations/gitlab/client';
 import type { MountGitlabMrState } from '../../../store/slices/gitlab-mr/state';
 import {
@@ -212,7 +213,7 @@ describe('the worktree level', () => {
       mrs: [mr],
       links: [],
       mr,
-      fetchedAt: '2026-10-06T09:00:00.000Z',
+      fetchedAt: brandId<IsoDateTime>({ value: '2026-10-06T09:00:00.000Z' }),
       loading: false,
       error: null,
     };
