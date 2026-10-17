@@ -1,3 +1,5 @@
+import type { PageColumnWidth } from './components/PageColumn';
+
 export const FRAME_BAND_PX = 40;
 
 export const FRAME_TITLE_ROW_PX = 32;
@@ -15,8 +17,10 @@ export const FRAME_PAGES = [
   'branch',
   'runs',
   'run',
+  'orchestrated',
   'agents',
   'agent',
+  'auto',
   'questions',
   'inbox',
   'workflows',
@@ -48,8 +52,10 @@ export const PAGE_FRAME: Readonly<Record<FramePage, FrameType>> = {
   overview: 'column',
   runs: 'column',
   run: 'column',
+  orchestrated: 'column',
   agents: 'column',
   agent: 'column',
+  auto: 'column',
   questions: 'column',
   workflows: 'column',
   impact: 'column',
@@ -113,32 +119,43 @@ type FramePageParams = {
 
 export const FRAME_PAGE_HEADER_INSET_PX = 12;
 
-const HEADER_INSET_PAGES: ReadonlySet<FramePage> = new Set<FramePage>([
-  'inbox',
-  'chat',
-  'workflows',
-  'terminal',
-  'monitoring',
-  'notifications',
-  'guide',
-  'overview',
-  'branch',
-  'runs',
-  'run',
-  'agents',
-  'agent',
-  'questions',
-  'scripts',
-  'artifacts',
-  'explore',
-  'plan',
-  'report',
-  'wireframe',
-]);
+export const PAGE_MEASURE: Readonly<Record<FramePage, PageColumnWidth>> = {
+  overview: 'column',
+  runs: 'column',
+  run: 'column',
+  orchestrated: 'column',
+  agents: 'column',
+  agent: 'column',
+  auto: 'column',
+  questions: 'column',
+  artifacts: 'column',
+  branch: 'column',
+  inbox: 'column',
+  workflows: 'column',
+  impact: 'column',
+  guide: 'column',
+  whatsNew: 'column',
+  notifications: 'column',
+  settings: 'column',
+  scripts: 'column',
+  explore: 'column',
+  storage: 'column',
+  monitoring: 'column',
+  plan: 'column',
+  report: 'column',
+  wireframe: 'column',
+  release: 'column',
+  guideChapter: 'column',
+  chat: 'measure',
+  board: 'full',
+  terminal: 'full',
+};
+
+const BAND_PAGES: ReadonlySet<FramePage> = new Set<FramePage>(['impact', 'whatsNew', 'release']);
 
 export const frameGeometryOf = ({ page }: FramePageParams): FrameGeometry => {
   const type = PAGE_FRAME[page];
-  const bandHeight = HEADER_INSET_PAGES.has(page) ? FRAME_PAGE_HEADER_INSET_PX : FRAME_BAND_PX;
+  const bandHeight = BAND_PAGES.has(page) ? FRAME_BAND_PX : FRAME_PAGE_HEADER_INSET_PX;
   return {
     type,
     bandHeight,

@@ -9,11 +9,13 @@ import {
   FRAME_TITLE_ROW_PX,
   FRAME_TYPES,
   PAGE_FRAME,
+  PAGE_MEASURE,
   frameGeometryOf,
   frameTierOf,
   type FramePage,
   type FrameType,
 } from '../frameGeometry';
+import type { PageColumnWidth } from '../components/PageColumn';
 
 const pagesOf = ({ type }: { readonly type: FrameType }): ReadonlyArray<FramePage> =>
   FRAME_PAGES.filter((page) => PAGE_FRAME[page] === type);
@@ -29,10 +31,15 @@ describe('frameGeometryOf', () => {
     }
   });
 
-  it('opens a session page, a sidebar door page and a closable overlay on its 44px header row', () => {
+  it('opens every session page, sidebar door page and closable overlay on its 44px header row', () => {
     expect(FRAME_PAGE_HEADER_INSET_PX + FRAME_TITLE_ROW_PX).toBe(44);
     for (const page of [
+      'board',
+      'settings',
       'overview',
+      'orchestrated',
+      'auto',
+      'artifacts',
       'branch',
       'runs',
       'agents',
@@ -49,8 +56,11 @@ describe('frameGeometryOf', () => {
     }
   });
 
-  it('keeps the 40px band where the band still holds Close or a trail', () => {
-    for (const page of ['board', 'settings', 'impact', 'whatsNew'] as const) {
+  it('keeps the 40px band only where the band still holds Close', () => {
+    expect(
+      FRAME_PAGES.filter((page) => frameGeometryOf({ page }).bandHeight === FRAME_BAND_PX),
+    ).toEqual(['impact', 'whatsNew', 'release']);
+    for (const page of ['impact', 'whatsNew'] as const) {
       expect(frameGeometryOf({ page }).bandHeight, page).toBe(FRAME_BAND_PX);
     }
     expect(FRAME_PAGES.every((page) => frameGeometryOf({ page }).titleRowHeight === 32)).toBe(true);
@@ -59,6 +69,18 @@ describe('frameGeometryOf', () => {
   it('centres the drawer header row on the band centre line', () => {
     expect(FRAME_DRAWER_ROW_PX).toBe(28);
     expect(FRAME_DRAWER_INSET_PX + FRAME_DRAWER_ROW_PX / 2).toBe(FRAME_BAND_PX / 2);
+  });
+});
+
+describe('PAGE_MEASURE', () => {
+  it('reads the 720 measure only on the chat room, and the full width only on the work surfaces', () => {
+    const measureOf = (width: PageColumnWidth) =>
+      FRAME_PAGES.filter((page) => PAGE_MEASURE[page] === width);
+
+    expect(measureOf('measure')).toEqual(['chat']);
+    expect(measureOf('full')).toEqual(['board', 'terminal']);
+    expect(PAGE_MEASURE.overview).toBe(PAGE_MEASURE.runs);
+    expect(Object.keys(PAGE_MEASURE).sort()).toEqual([...FRAME_PAGES].sort());
   });
 });
 
