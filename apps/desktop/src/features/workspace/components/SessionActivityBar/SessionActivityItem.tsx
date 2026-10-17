@@ -10,7 +10,7 @@ import { SESSION_HEADER_ANCHOR, sessionObjectKey } from '../../../actions/kinds/
 import { sessionSelectionTarget } from '../../../actions/sessionSelectionTarget';
 import { useSessionTitleRename } from '../../../session/hooks/useSessionTitleRename';
 import { sessionNodeOf } from '../../../session/sessionNode';
-import { SessionStateNode } from './SessionStateNode';
+import { StateNode } from '../../../../shared/components/StateNode';
 
 type SelectionClickEvent = {
   readonly shiftKey: boolean;
@@ -146,11 +146,7 @@ const SessionActivityItemView = ({
           isCurrent && 'bg-selected',
         )}
       >
-        <SessionStateNode
-          node={node}
-          isOnSelectedRow={isSelected || isCurrent}
-          className="group-focus-within/select-row:invisible group-hover/select-row:invisible group-data-[selecting=true]/select-list:invisible"
-        />
+        <StateNode node={node} isOnSelectedRow={isSelected || isCurrent} isCheckboxSlot />
         <SessionRowTitle keys={keys} title={title} className="flex-1" titleClassName="truncate" />
       </button>
       <span id={descriptionId} className="sr-only">

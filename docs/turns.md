@@ -1130,8 +1130,13 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   pill) and "1 chat running" while any reply streams, otherwise a still
   warning dot (the tone of the bell badge) and "New reply" while any chat is
   unread. The dot is positioned absolutely on the icon corner, so it never
-  shifts the label. Every chat row mirrors it with the same tones, on the
-  row's left edge.
+  shifts the label. Every chat row leads with the session row's state node
+  (`StateNode` in `shared/components`, read from `chatNodeOf`): the running
+  node while its answer streams ("Answering"), a ring with the unread corner
+  dot after a reply the user has not seen ("New reply"), a plain ring at rest.
+  On row hover, focus and while any chat is selected the node gives its slot
+  to the selection checkbox (`isCheckboxSlot`), and Space on a focused row
+  toggles it (Shift extends the range).
   A chat becomes unread when its reply ends, done or failed, while the chat
   studio is not showing that chat; a reply the user stopped never does.
   Opening the chat, or archiving it, clears the mark. `unreadChatIds` lives in

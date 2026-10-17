@@ -969,7 +969,7 @@ A session in the left column is one 28px line: a 14px `WorkNode` (`size="sm"`)
 and the title, with a `gap-2` between them and `px-2` inside the pill. It has
 no second line, no `ToneBar`, no marks, no age and no cost. A `WorkNode`
 fills its disc with `bg-background` to mask a rail line behind it; on a
-selected or current row it takes `isTransparent` (`SessionStateNode`
+selected or current row it takes `isTransparent` (`StateNode`
 `isOnSelectedRow`), so an idle node stays a ring on `bg-selected` and never
 reads as a solid dot. `sessionNodeOf`
 picks the node from the stage and, under needs you, from the winning reason,
@@ -1080,7 +1080,7 @@ sessions`; the first `Tab` still selects the previous session wherever it sits.
 
 The 44px rail (`ColumnRail`) keeps its 32px door buttons and adds 28px node
 buttons (`RAIL_NODE_BUTTON` in `RailButton.tsx`) under the doors, in the
-workspace scope only: the open session (the row's `SessionStateNode`, current
+workspace scope only: the open session (the row's `StateNode`, current
 fill on its page, no fill and `text-foreground` while a studio sits over it),
 then up to seven pinned sessions with the title and the stage words in a
 tooltip, then `+N` in `text-meta`. The open session and `+N` open a flyout

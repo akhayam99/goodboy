@@ -506,8 +506,10 @@ never exists on one surface only.
   selection and acts on that row alone.
 - **One selection bar.** The Board, the session list, the chat list, Review,
   Branches and the Storage lists share `SelectionBar` (`packages/ui`). A checkbox shows on the
-  row under the pointer and on every row once one is picked; modifier-click and
-  the lasso stay. The bar floats at the bottom of the surface that owns the
+  row under the pointer and on every row once one is picked; on the sidebar
+  session rows and the chat rows it takes the place of the state node
+  (`StateNode` `isCheckboxSlot`), so no row keeps an empty indent for it.
+  Modifier-click and the lasso stay. The bar floats at the bottom of the surface that owns the
   selection with Clear, the count, Select all and the verbs. The sessions bar
   takes its verbs from the `sessions` kind through `ObjectSelectionBar`, so
   its words are the menu's words (`shortLabel` on the bar, `label` for the
@@ -1061,7 +1063,7 @@ tab, thread or diff focus of the branch it leaves.
 
 **The rail holds the pinned sessions and, when needed, the open one.** Under the
 doors, in the workspace scope only, the pinned sessions are 28px node buttons
-(the same `SessionStateNode` as their rows) in pin order, up to seven
+(the same `StateNode` as their rows) in pin order, up to seven
 (`RAIL_PINNED_LIMIT`), whatever is open: opening another session never moves a
 node, only the marker. The open session, when it is one of those pins, keeps its
 slot and takes the current sign (`bg-selected`, a 1px inset hairline, the glyph

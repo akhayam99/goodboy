@@ -2,7 +2,7 @@ import type { FocusEvent, KeyboardEvent, MouseEvent } from 'react';
 import { Tooltip, cn, inlineMarkdownText } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { sessionNodeOf } from '../../../features/session/sessionNode';
-import { SessionStateNode } from '../../../features/workspace/components/SessionActivityBar/SessionStateNode';
+import { StateNode } from '../../../shared/components/StateNode';
 import { useSessionSummary } from '../../../features/workspace/hooks/useSessionSummary';
 import { sessionRowTitle } from '../../../features/session/sessionTitle';
 import { RAIL_BUTTON_IDLE, RAIL_NODE_BUTTON, RAIL_NODE_CURRENT } from './RailButton';
@@ -59,7 +59,7 @@ export const RailSessionButton = ({
         sign === 'remembered' && 'text-foreground',
       )}
     >
-      <SessionStateNode node={node} isOnSelectedRow={isCurrent} />
+      <StateNode node={node} isOnSelectedRow={isCurrent} />
     </button>
   );
   return hasFlyout ? (

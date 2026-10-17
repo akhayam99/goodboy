@@ -7,7 +7,7 @@ import { NAMES } from '../../../../shared/names';
 import { useReviewDraftCount } from './useReviewDraftCount';
 import { useSessionSummary } from '../../hooks/useSessionSummary';
 import { SessionProgress } from '../SessionProgress';
-import { SessionStateNode } from '../SessionActivityBar/SessionStateNode';
+import { StateNode } from '../../../../shared/components/StateNode';
 import { sessionNodeOf } from '../../../session/sessionNode';
 import { getLinkedRequest } from '../StageBoard/StageBoardCard/getLinkedRequest';
 import { ExternalTaskChip } from '../../../integrations/components/ExternalTaskChip';
@@ -83,7 +83,7 @@ export const SessionHoverCardBody = ({
     <div className="flex flex-col gap-3">
       <SessionRowTitle keys={keys} title={title} titleClassName="text-heading text-foreground" />
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1 text-meta text-muted-foreground">
-        <SessionStateNode node={node} />
+        <StateNode node={node} />
         <span className="min-w-0">{stateText}</span>
         {isWorking ? (
           <>
