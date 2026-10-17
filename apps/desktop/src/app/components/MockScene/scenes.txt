@@ -568,6 +568,13 @@ r1-inactive-sidebar
 r1-inactive-sidebar-grouped
 r1-motion-shell-folded
 r1-motion-shell-open
+r4-rail-cards-folded
+r4-rail-delete
+r4-rail-folded
+r4-rail-narrow
+r4-rail-session
+r4-rail-tools-open
+r4-rail-worktree
 rail-draft-dot
 rail-flyout
 rail-pinned
