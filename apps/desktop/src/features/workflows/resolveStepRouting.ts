@@ -7,8 +7,19 @@ import {
 import type { EffortLevel, ProviderId, RoleModelPreferences, Step } from '@goodboy/types';
 import { KIND_TO_ROLE, type AgentKind } from '../session/agent-kind';
 
+export type RoutedStep = Pick<
+  Step,
+  | 'role'
+  | 'size'
+  | 'providerOverride'
+  | 'modelOverride'
+  | 'effort'
+  | 'routingLock'
+  | 'routingDecision'
+>;
+
 type Params = {
-  readonly step: Step | null;
+  readonly step: RoutedStep | null;
   readonly kind: AgentKind;
   readonly roleModels: RoleModelPreferences | null;
   readonly agentModel?: string | null;

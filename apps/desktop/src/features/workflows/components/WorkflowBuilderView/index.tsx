@@ -10,7 +10,7 @@ import {
 import { ORCHESTRATED_WORKFLOW_NAME, uniqueWorkflowName } from '../../uniqueWorkflowName';
 import { useResolution } from '../../../providers/hooks/useResolution';
 import { autoModelOn } from '../../../providers/autoModelOn';
-import { modelOnProvider, roleResolutionOf } from '../../../providers/roleResolution';
+import { roleResolutionOf } from '../../../providers/roleResolution';
 import { resolutionAsTask } from '../../../providers/resolutionAsTask';
 import type {
   EffortLevel,
@@ -75,6 +75,7 @@ import { PlanEstimateChip } from './parts/PlanEstimateChip';
 import { usePlanEstimates } from './usePlanEstimates';
 import { offeredSessionGoal } from './offeredSessionGoal';
 import { presetStepMarksOf } from '../../presetStepMarksOf';
+import { draftStepRoutingOf } from '../../draftStepRoutingOf';
 import { useRoutingScope } from '../../../../shared/hooks/useRoutingScope';
 
 export type BuilderKickoff = {
@@ -503,15 +504,27 @@ export const WorkflowBuilderView = (props: Props) => {
     setSteps((previous) => updateDraftStep({ steps: previous, key, patch }));
 
   const resolvedProvider = (step: StepDraft): ProviderId =>
-    step.provider !== '' ? step.provider : providerId;
-  const recommendedModel = (step: StepDraft): string =>
-    modelOnProvider({
-      role: step.role ?? 'custom',
-      provider: resolvedProvider(step),
+    draftStepRoutingOf({
+      draft: step,
       roleModels,
-    });
+      sessionProvider: providerId,
+      scope: routingScope,
+    }).provider;
   const resolvedModel = (step: StepDraft): string =>
-    step.model !== '' ? step.model : recommendedModel(step);
+    draftStepRoutingOf({
+      draft: step,
+      roleModels,
+      sessionProvider: providerId,
+      scope: routingScope,
+    }).model;
+  const recommendedRoutingOf = (step: StepDraft) =>
+    draftStepRoutingOf({
+      draft: step,
+      roleModels,
+      sessionProvider: providerId,
+      scope: routingScope,
+      isPinKept: false,
+    });
 
   const sessionGoal = offeredSessionGoal({ slots: sessionSlots, isKickoff: kickoff !== null });
   const selectedPreset = presets.find((t) => t.id === selectedPresetId) ?? null;
@@ -788,8 +801,8 @@ export const WorkflowBuilderView = (props: Props) => {
     provider: resolvedProvider(step),
     model: resolvedModel(step),
     effort: step.effort ?? roleEffort(step.role),
-    recommendedProvider: providerId,
-    recommendedModel: recommendedModel(step),
+    recommendedProvider: recommendedRoutingOf(step).provider,
+    recommendedModel: recommendedRoutingOf(step).model,
     isPinned: step.provider !== '' || step.model !== '',
     isEdited: editedKeys.has(step.key),
     estimate: estimates?.steps.get(step.key) ?? null,
