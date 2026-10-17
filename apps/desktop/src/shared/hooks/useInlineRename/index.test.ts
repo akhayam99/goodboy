@@ -40,4 +40,29 @@ describe('useInlineRename', () => {
 
     expect(result.current.draft).toBe('agent one (typing…)');
   });
+
+  it('blocks a draft over the limit without committing, and saves one at the limit', async () => {
+    const onCommit = vi.fn();
+    const { result } = renderHook(() =>
+      useInlineRename({ value: 'agent one', isEditing: true, maxLength: 12, onCommit }),
+    );
+
+    act(() => {
+      result.current.setDraft('x'.repeat(13));
+    });
+    await act(async () => {
+      await result.current.commit();
+    });
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(result.current.error).toBe('name is too long');
+
+    act(() => {
+      result.current.setDraft('x'.repeat(12));
+    });
+    await act(async () => {
+      await result.current.commit();
+    });
+    expect(onCommit).toHaveBeenCalledWith('x'.repeat(12));
+    expect(result.current.error).toBeNull();
+  });
 });

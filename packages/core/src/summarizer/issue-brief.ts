@@ -1,4 +1,4 @@
-import type { TaskModelPreference } from '@goodboy/types';
+import { SESSION_TITLE_MAX_LENGTH, type TaskModelPreference } from '@goodboy/types';
 import { extractAuxOutput } from '../providers/aux-output';
 import { runAuxOneShot } from '../providers/aux-spawn';
 import { getDefaultBinary } from '../providers/cli-defaults';
@@ -12,7 +12,7 @@ You receive the item's identifier, its title and its full text.
 Answer with ONE JSON object and nothing else, with exactly these keys:
 {"title": string, "goal": string, "acceptance": string[]}
 
-- "title": what the session will do, as a short imperative phrase. At most 60 characters. No identifier, no brackets, no trailing period.
+- "title": what the session will do, as a short imperative phrase. At most ${SESSION_TITLE_MAX_LENGTH} characters. No identifier, no brackets, no trailing period.
 - "goal": the desired end result in one to three plain sentences. Keep the concrete objective, domain names, constraints and identifiers from the item. Drop template noise, images, greetings and reproduction steps that only describe the bug.
 - "acceptance": up to 5 short, checkable criteria that tell when the work is done. Use an empty array when the item gives none and none can be derived.
 
@@ -87,7 +87,7 @@ export const buildIssueBriefUserPrompt = ({ items }: PromptParams): string => {
     '',
     ...(items.length > 1
       ? [
-          'Write one title of at most 60 characters and one goal of one to three sentences covering all items.',
+          `Write one title of at most ${SESSION_TITLE_MAX_LENGTH} characters and one goal of one to three sentences covering all items.`,
         ]
       : []),
     'Write the brief following your instructions. Output only the JSON object.',

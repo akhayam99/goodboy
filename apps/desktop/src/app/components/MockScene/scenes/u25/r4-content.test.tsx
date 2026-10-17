@@ -198,9 +198,9 @@ describe('the r4 content scenes', () => {
     const field = screen.getByRole('textbox', { name: 'Session title' });
     fireEvent.change(field, { target: { value: 'Retry card payments on a schedule' } });
 
-    const row = field.parentElement;
-    if (row === null) {
-      throw new Error('the rename field has no row');
+    const row = field.closest('[data-title-field]')?.parentElement;
+    if (!(row instanceof HTMLElement)) {
+      throw new Error('no title field host');
     }
     fireEvent.keyDown(field, { key: 'Enter' });
     expect(within(row).getByRole('status').textContent).toBe('Saving');

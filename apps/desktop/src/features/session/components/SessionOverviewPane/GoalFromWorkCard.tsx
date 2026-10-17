@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button, FormActions, Input, Notice, Textarea, formatError } from '@goodboy/ui';
-import type { Session } from '@goodboy/types';
+import { SESSION_TITLE_MAX_LENGTH, type Session } from '@goodboy/types';
 import { useSessionSlots } from '../../../../store/slices/slots/selectors';
 import type {
   IssueBriefEntry,
@@ -48,7 +48,7 @@ export const GoalFromWorkCard = ({
   const shouldReplace = hasTitle || currentGoal.trim() !== '';
   useEffect(() => {
     if (entry?.status === 'ready') {
-      setTitle(entry.brief.title.slice(0, 60));
+      setTitle(entry.brief.title.slice(0, SESSION_TITLE_MAX_LENGTH));
       setGoal(entry.brief.goal);
     }
   }, [entry]);
@@ -114,7 +114,7 @@ export const GoalFromWorkCard = ({
             <Input
               aria-label="Proposed title"
               value={title}
-              maxLength={60}
+              maxLength={SESSION_TITLE_MAX_LENGTH}
               onChange={(event) => setTitle(event.target.value)}
               disabled={isSaving}
             />

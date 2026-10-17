@@ -16,6 +16,8 @@ export const SessionRowTitle = ({ keys, title, className, titleClassName }: Prop
         {keys.join(' ')}
       </span>
     )}
-    <InlineMarkdown text={title} className={cn('min-w-0 flex-1', titleClassName)} />
+    {title === '' ? null : (
+      <InlineMarkdown text={title} className={cn('min-w-0 flex-1', titleClassName)} />
+    )}
   </span>
 );

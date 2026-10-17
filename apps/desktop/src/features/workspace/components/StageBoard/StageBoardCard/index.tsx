@@ -14,7 +14,7 @@ import { useSessionSummary } from '../../../hooks/useSessionSummary';
 import { CardAction, CardActionSlot } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { sessionCardShell } from '../../../../session/components/sessionCardShell';
-import { sessionDisplayTitle } from '../../../../session/sessionTitle';
+import { sessionRowTitle } from '../../../../session/sessionTitle';
 import { stageTrackOf } from '../../../../session/stageTrackOf';
 import type { BoardNavigation } from '../useBoardNavigation';
 import { useDynamicActions } from './useDynamicActions';
@@ -75,7 +75,8 @@ export const StageBoardCard = memo(function StageBoardCard({
   const id = session.id as SessionId;
   const summary = useSessionSummary({ session });
   const { stage } = summary;
-  const title = sessionDisplayTitle({ session, tasks: summary.tasks });
+  const rowTitle = sessionRowTitle({ session, tasks: summary.tasks });
+  const { title } = rowTitle;
   const isArchived = archived === true;
   const signal = useSessionSignal({ session, isArchived });
   const track = stageTrackOf({ stage, isArchived });
@@ -85,7 +86,7 @@ export const StageBoardCard = memo(function StageBoardCard({
 
   const [visibleAction] = dynamicActions;
   const anchorKey = `board:${id}`;
-  const rename = useSessionTitleRename({ sessionId: id, currentTitle: session.goal });
+  const rename = useSessionTitleRename({ sessionId: id, goal: session.goal, ...rowTitle });
   useRenameRequest({
     objectKey: sessionObjectKey({ sessionId: id }),
     anchorKeys: [anchorKey],

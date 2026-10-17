@@ -715,8 +715,9 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
   Linked card, then the foot. The session level has no identity row: the
   selected main sidebar row is the session's identity (its title and state
   node). The Overview h1 is the session title, the linked key in gray mono
-  before it (`SessionOverviewPane/OverviewTitle`); double click renames it in
-  place with the same rename as the sidebar row, and "Overview" is only the
+  before it (`SessionOverviewPane/OverviewTitle`); a single click, or Enter or
+  F2 on the focused title, renames it in place with the same rename as the
+  sidebar row (an archived session's title stays read only), and "Overview" is only the
   rail entry's label. The rail's top row holds the rail toggle at the left and
   three icon buttons at the right, no `⋯` (`SessionLevel/SessionLevelActions`):
   **Autopilot** and **Pin session**, toggles that show pressed while on and run
@@ -731,8 +732,19 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
   window by `useDropdownDirection`). Rename has no rail control: a rename
   request (`session-header`, from the palette, the sidebar row's right click
   menu or the shortcut) edits the Overview title in place while that session's
-  Overview is open, else the main sidebar row (double click on either renames
-  too). A rename writes the database first and changes the title only once the
+  Overview is open, else the main sidebar row. Both edit in one primitive,
+  `shared/components/TitleField`: on the Overview it spans the title row up to
+  the header actions in the h1 type role with a quiet underline, the linked key
+  stays outside the field and is written back before the name, and a click puts
+  the caret where you clicked (Enter, F2 and a rename request select the name),
+  so the text does not move; on the sidebar row it is the compact density, the
+  row's state node and key before it. At the far right of the field a
+  `LimitRing` fills toward the 120 character limit (`SESSION_TITLE_MAX_LENGTH`
+  in `@goodboy/types`, the one number the store clamp, the field, the goal card
+  and the issue brief prompt read), with no number, its label `84 of 120
+characters`, in the warning tone from 90%. A longer draft is blocked before
+  any write (`useInlineRename`). Enter saves, Escape cancels and focus goes back
+  to the title. A rename writes the database first and changes the title only once the
   write lands (`renameTask`); the field shows pending while it writes, and a
   failure keeps the old title and shows the error with Retry beside the field,
   which stays open. Every one of these verbs is also in the sidebar row's right

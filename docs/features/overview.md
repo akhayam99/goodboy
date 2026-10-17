@@ -4,7 +4,7 @@ Open a session to see what it is for, what needs you and what happened so far.
 
 ### Session overview
 
-The Overview is titled with the session's name, its linked issue key in gray before it, and a double click renames it in place (Enter saves, Escape cancels). It reads top to bottom: the goal, then anything a branch needs you to decide (a closed worktree with **Reopen**, a failed action with **Retry**, a stopped rebase, a branch that moved), then **Needs you**, **Next** and **Activity**. **New** in the header starts an agent, a workflow or a write-up. The projects, branches and linked work of the session sit in the sidebar: click a branch to open its pull request, comments, files, commits and checks.
+The Overview is titled with the session's name, its linked issue key in gray before it, and a single click renames it in place across the whole title row (Enter saves, Escape cancels). A small ring at the end of the field fills toward the 120 character limit and turns amber near it. It reads top to bottom: the goal, then anything a branch needs you to decide (a closed worktree with **Reopen**, a failed action with **Retry**, a stopped rebase, a branch that moved), then **Needs you**, **Next** and **Activity**. **New** in the header starts an agent, a workflow or a write-up. The projects, branches and linked work of the session sit in the sidebar: click a branch to open its pull request, comments, files, commits and checks.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-session-dark.webp">
