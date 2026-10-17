@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { Tooltip, cn } from '@goodboy/ui';
+import { Tooltip, cn, tintClasses } from '@goodboy/ui';
 import type { ShortcutId } from '../../../shared/keyboard/registry';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { navEntryToneOf } from '../../../shared/components/navEntryToneOf';
 
 type Props = {
   readonly id: string;
@@ -45,30 +46,39 @@ export const RailButton = ({
   iconClassName,
   isIconSlotted = false,
   onSelect,
-}: Props) => (
-  <Tooltip content={label} shortcut={shortcut} side="right">
-    <button
-      type="button"
-      data-column-door={isPage ? undefined : id}
-      data-rail-page={isPage ? id : undefined}
-      aria-label={label}
-      aria-current={isCurrent ? 'page' : undefined}
-      onClick={() => {
-        if (isCurrent) {
-          return;
-        }
-        onSelect();
-      }}
-      className={cn(RAIL_BUTTON, isCurrent ? RAIL_BUTTON_CURRENT : RAIL_BUTTON_IDLE, className)}
-    >
-      {isIconSlotted ? (
-        <span className="flex size-4 shrink-0 items-center justify-center">
-          <Icon size={iconSize} aria-hidden className={iconClassName} />
-        </span>
-      ) : (
-        <Icon size={iconSize} aria-hidden className={cn('shrink-0', iconClassName)} />
-      )}
-      {badge}
-    </button>
-  </Tooltip>
-);
+}: Props) => {
+  const iconClass =
+    iconClassName ?? (isCurrent ? tintClasses(navEntryToneOf({ icon: Icon })).icon : undefined);
+  return (
+    <Tooltip content={label} shortcut={shortcut} side="right">
+      <button
+        type="button"
+        data-column-door={isPage ? undefined : id}
+        data-rail-page={isPage ? id : undefined}
+        aria-label={label}
+        aria-current={isCurrent ? 'page' : undefined}
+        onClick={() => {
+          if (isCurrent) {
+            return;
+          }
+          onSelect();
+        }}
+        className={cn(RAIL_BUTTON, isCurrent ? RAIL_BUTTON_CURRENT : RAIL_BUTTON_IDLE, className)}
+      >
+        {isIconSlotted ? (
+          <span className="flex size-4 shrink-0 items-center justify-center">
+            <Icon size={iconSize} aria-hidden data-nav-icon="" className={iconClass} />
+          </span>
+        ) : (
+          <Icon
+            size={iconSize}
+            aria-hidden
+            data-nav-icon=""
+            className={cn('shrink-0', iconClass)}
+          />
+        )}
+        {badge}
+      </button>
+    </Tooltip>
+  );
+};

@@ -321,6 +321,7 @@ export { registerShortcutGlyphs } from './shortcutGlyphs';
 export type { ShortcutGlyphLookup } from './shortcutGlyphs';
 export type { TooltipProps, TooltipSide, TooltipVariant } from './components/Tooltip';
 export { tintClasses } from './tint';
+export { selectedIconClass } from './selectedIcon';
 export type { TintClasses, Tone } from './tint';
 export { ModelBlock } from './components/WorkTree/ModelBlock';
 export { WorkMeta } from './components/WorkTree/WorkMeta';

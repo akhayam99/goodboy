@@ -1,9 +1,10 @@
 import { Plus } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
-import { ScrollFade, SelectableRow, cn } from '@goodboy/ui';
+import { ScrollFade, SelectableRow, cn, tintClasses } from '@goodboy/ui';
 import type { AgentId, Session, Workflow, WorkflowRun } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { navEntryToneOf } from '../../../../shared/components/navEntryToneOf';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import { NAMES } from '../../../../shared/names';
 import type { AgentKind } from '../../../../features/session/agent-kind';
@@ -26,6 +27,8 @@ type Props = {
 const ENTRY_CLASS = 'h-7 min-w-0 flex-1 items-center gap-2 px-2 text-ui';
 
 const RAIL_ROW_HEIGHT = 28;
+
+const OVERVIEW_TONE = navEntryToneOf({ icon: CONCEPT_ICONS.timeline });
 
 export const RunLevelBody = ({ session, run, workflow, selectedAgentId }: Props) => {
   const sessionId = session.id;
@@ -74,7 +77,11 @@ export const RunLevelBody = ({ session, run, workflow, selectedAgentId }: Props)
             >
               <span aria-hidden className="w-6 shrink-0" />
               <span className="inline-flex size-4.5 shrink-0 items-center justify-center">
-                <CONCEPT_ICONS.timeline size={ICON_SIZE.row} aria-hidden />
+                <CONCEPT_ICONS.timeline
+                  size={ICON_SIZE.row}
+                  aria-hidden
+                  className={cn(isOverview && tintClasses(OVERVIEW_TONE).icon)}
+                />
               </span>
               <span className="min-w-0 flex-1 truncate">{NAMES.overview}</span>
             </SelectableRow>

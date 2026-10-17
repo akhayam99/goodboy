@@ -1,6 +1,7 @@
 import { Chip, SelectableRow, StatusDot } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { navEntryToneOf } from '../../../../shared/components/navEntryToneOf';
 import { openSessionPage } from '../../../session/openSessionPage';
 import type { PageCountFacts } from '../../../session/pageCountWord';
 import type { Page } from '../../../session/pageRegistry';
@@ -33,6 +34,7 @@ export const SessionPages = ({ session, pages, facts, sign, onOpened }: Props) =
           <li key={page.id}>
             <SelectableRow
               selected={isCurrent}
+              selectedIconTone={navEntryToneOf({ icon: Icon })}
               ariaCurrent={isCurrent ? 'page' : undefined}
               {...(slot.fact !== null && { title: slot.fact })}
               onClick={() => openPage(page)}

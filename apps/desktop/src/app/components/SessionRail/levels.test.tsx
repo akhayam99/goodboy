@@ -257,6 +257,22 @@ describe('the session level pages', () => {
     ).toBe(null);
   });
 
+  it('lights the selected page icon in its kind color, the label and fill unchanged', () => {
+    seed();
+    mountColumn();
+    const overview = pages().getByRole('button', { name: /^Overview/ });
+    expect(overview.className).toContain('[&>svg:first-child]:text-primary');
+
+    fireEvent.click(pages().getByRole('button', { name: /^Questions/ }));
+
+    const questions = pages().getByRole('button', { name: /^Questions/ });
+    expect(questions.className).toContain('[&>svg:first-child]:text-warning');
+    expect(questions.className).toContain('data-[selected=true]:bg-selected');
+    expect(pages().getByRole('button', { name: /^Overview/ }).className).not.toContain(
+      '[&>svg:first-child]:text-',
+    );
+  });
+
   it('shows the running count beside the info dot while one of two runs runs, the total at rest', () => {
     const workflow = workflowOf();
     const first = aWorkflowRun({ ordinal: 0, workflowId: workflow.id });

@@ -1,7 +1,8 @@
 import type { LucideIcon } from 'lucide-react';
-import { PANE_RHYTHM, Tooltip, cn } from '@goodboy/ui';
+import { PANE_RHYTHM, Tooltip, cn, tintClasses } from '@goodboy/ui';
 import type { ShortcutId } from '../../../shared/keyboard/registry';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { navEntryToneOf } from '../../../shared/components/navEntryToneOf';
 import { DoorCreateButton } from './DoorCreateButton';
 import { DoorSignalMark } from './DoorSignalMark';
 import type { DoorSignal } from './doorSignal';
@@ -55,7 +56,12 @@ export const ColumnDoorRow = ({
           : 'text-muted-foreground hover:bg-hover hover:text-foreground',
       )}
     >
-      <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+      <Icon
+        size={ICON_SIZE.row}
+        aria-hidden
+        data-nav-icon=""
+        className={cn('shrink-0', isCurrent && tintClasses(navEntryToneOf({ icon: Icon })).icon)}
+      />
       <span className="flex min-w-0 flex-1 items-center gap-2">
         <span className="truncate text-left">{label}</span>
       </span>

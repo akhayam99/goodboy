@@ -100,7 +100,13 @@ selected is 13% and 12%, so a selected row always reads above a hovered one.
 A selected row has one treatment everywhere: `bg-selected`, foreground text and
 medium weight, driven by `data-selected` (`selectedRow.ts`, used by
 `SelectableRow` and `RailCard isSelected`). `SegmentedTabs` follows it too: a
-hairline track, `bg-selected` on the active segment, no raised pill.
+hairline track, `bg-selected` on the active segment, no raised pill. A
+selected nav entry also lights its icon in its own kind color, never the
+label: `selectedIconClass` (`SelectableRow selectedIconTone`, the column
+doors, `RailButton` and the pressed session tool) over one function,
+`navEntryToneOf`, which reads the icon's `CONCEPT_TONE` (questions warning,
+artifacts draft, files and comments info, checks success) and falls back to
+`primary` for an entry with no kind color (Overview, Terminal, Settings).
 
 A selected row adds no hover wash on top of `bg-selected`
 (`data-[selected=true]:hover:bg-selected`), and faint text inside it reads as
@@ -288,7 +294,8 @@ outside `ArtifactDocument`.
 A surface rebuilt for 0.27.0 reads in two sizes and two weights. The sidebar
 is 13 throughout: a door, a session row and a rail entry are one 28px row in
 `text-ui` (13, 400) whatever the glyph, with `ICON_SIZE.row` icons in hint gray
-(no colored nav icons), `bg-selected` plus foreground for the selected row, and
+at rest (only the selected entry's icon takes its kind color), `bg-selected`
+plus foreground for the selected row, and
 a trailing slot drawn by `countSlotText`. Nothing appears on hover; a shortcut
 lives in the tooltip. The page is 15 for its title (`text-lead`) and its prose
 (`text-read`) and 13 for everything else: list cells, labels, times, counts,
