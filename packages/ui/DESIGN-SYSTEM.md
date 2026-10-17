@@ -113,8 +113,10 @@ hairline track, `bg-selected` on the active segment, no raised pill. A
 selected nav entry also lights its icon in its own kind color, never the
 label: `selectedIconClass` (`SelectableRow selectedIconTone`, the column
 doors, `RailButton` and the pressed session tool) over one function,
-`navEntryToneOf`, which reads the icon's `CONCEPT_TONE` (questions warning,
-artifacts draft, files and comments info, checks success) and falls back to
+`navEntryToneOf`, which takes the nav kind colors first (Agents and Auto
+agents info blue, Artifacts merged violet, the owner's call for the nav only),
+then the icon's `CONCEPT_TONE` (questions warning, files and comments info,
+checks success) and falls back to
 `primary` for an entry with no kind color (Overview, Terminal, Settings).
 
 A selected row adds no hover wash on top of `bg-selected`

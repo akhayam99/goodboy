@@ -6,8 +6,10 @@ import { navEntryToneOf } from './navEntryToneOf';
 describe('navEntryToneOf', () => {
   it.each([
     ['questions', CONCEPT_ICONS.questions, 'warning'],
-    ['artifacts', CONCEPT_ICONS.plans, 'draft'],
-    ['agents', CONCEPT_ICONS.agents, 'primary'],
+    ['artifacts', CONCEPT_ICONS.plans, 'merged'],
+    ['artifacts', CONCEPT_ICONS.artifacts, 'merged'],
+    ['agents', CONCEPT_ICONS.agents, 'info'],
+    ['auto agents', CONCEPT_ICONS.auto, 'info'],
     ['tasks', CONCEPT_ICONS.inbox, 'info'],
     ['files', CONCEPT_ICONS.diff, 'info'],
     ['checks', CONCEPT_ICONS.checks, 'success'],
