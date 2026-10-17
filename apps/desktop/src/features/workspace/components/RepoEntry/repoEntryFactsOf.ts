@@ -77,7 +77,7 @@ export const repoEntryFactsOf = ({ entries }: Params): RepoEntryFacts => {
     label: isFailed ? 'Check failed' : parts.length === 0 ? null : parts.join(' · '),
     dot: diverged.length > 0 ? 'warning' : behind.length > 0 ? 'info' : null,
     isFailed,
-    tooltip: lines.length === 0 ? summary : lines.join('\n'),
+    tooltip: lines.length === 0 ? summary : lines.join(' · '),
     failedCount,
   };
 };

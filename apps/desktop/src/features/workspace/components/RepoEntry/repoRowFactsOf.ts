@@ -128,11 +128,14 @@ const reportFacts = ({ report }: ReportParams): RepoRowFacts => {
         tone: 'muted',
       });
     case 'fetch-failed':
-      return quiet({
-        word: "Couldn't reach origin",
-        tooltip: report.message ?? 'The fetch failed.',
-        tone: 'danger',
-      });
+      return {
+        ...quiet({
+          word: "Couldn't reach origin",
+          tooltip: report.message ?? 'The fetch failed.',
+          tone: 'muted',
+        }),
+        glyph: 'failed',
+      };
     case 'missing':
       return quiet({
         word: 'Folder missing',

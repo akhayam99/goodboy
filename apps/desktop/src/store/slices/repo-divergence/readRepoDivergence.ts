@@ -60,7 +60,12 @@ export const readRepoDivergence = async ({
     apply(failedReport({ project, error }));
     isApplied = true;
   }
-  if (isApplied) {
-    await get().loadProjectGitStatus({ projectId: project.id });
+  if (!isApplied) {
+    return;
   }
+  await get()
+    .loadProjectGitStatus({ projectId: project.id })
+    .catch((error: unknown) =>
+      get().reportError({ title: `Couldn't read the git status of ${project.name}`, error }),
+    );
 };
