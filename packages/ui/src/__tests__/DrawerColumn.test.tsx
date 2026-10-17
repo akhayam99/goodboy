@@ -299,6 +299,37 @@ describe('DrawerColumn over the page', () => {
     expect(order.indexOf(scrim() as HTMLElement)).toBeLessThan(order.indexOf(panel()));
   });
 
+  it('rounds the scrim with the corners of the sheet it dims', () => {
+    stubColumnWidth(678);
+    const { container, unmount } = render(
+      <DrawerColumn
+        main={<div>main</div>}
+        drawer={<div>drafts</div>}
+        frame="sheet"
+        sheetEdge="wrapped"
+        ariaLabel="Side panel"
+        resizeLabel="Resize side panel"
+      />,
+    );
+
+    expect(pageOf(container).className).toContain('rounded-l-frame');
+    expect(scrim()?.className).toContain('rounded-l-frame');
+    unmount();
+
+    render(
+      <DrawerColumn
+        main={<div>main</div>}
+        drawer={<div>drafts</div>}
+        frame="sheet"
+        sheetEdge="flush"
+        ariaLabel="Side panel"
+        resizeLabel="Resize side panel"
+      />,
+    );
+
+    expect(scrim()?.className).not.toMatch(/rounded/);
+  });
+
   it('answers a scrim click with the layer on top of the escape stack, once', () => {
     stubColumnWidth(678);
     const under = vi.fn();

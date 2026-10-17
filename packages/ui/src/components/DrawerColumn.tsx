@@ -89,6 +89,12 @@ const TRACK_VAR = '--goodboy-drawer-track';
 
 const PUSH_CONTENT = 'w-[calc(var(--goodboy-drawer-track)-18px)]';
 
+const SCRIM_RADIUS: Readonly<Record<SheetEdge, string>> = {
+  wrapped: 'rounded-l-frame',
+  flush: '',
+  pushed: 'rounded-frame',
+};
+
 export type DrawerColumnProps = {
   readonly main: ReactNode;
   readonly drawer?: ReactNode | null;
@@ -240,6 +246,7 @@ export const DrawerColumn = ({
           onClick={isExiting ? undefined : () => dismissTopEscapeLayer()}
           className={cn(
             'absolute inset-0 z-10 bg-scrim',
+            isSheet && SCRIM_RADIUS[sheetState],
             isOverlayExit && 'pointer-events-none animate-drawer-fade-out',
             !isOverlayExit && !exit.isResumed && 'motion-safe:animate-fade-in',
           )}
