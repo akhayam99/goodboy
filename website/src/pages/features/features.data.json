@@ -186,7 +186,7 @@
       "items": [
         {
           "title": "Session overview",
-          "text": "The Overview is titled with the session name, renamed in one click, and reads the goal, what needs you, Next and Activity. Projects, branches and their pull request state sit in the session rail beside it.",
+          "text": "The Overview shows the session name, renamed in one click, then the goal, what needs you, Next and Activity. Projects, branches and their pull request state sit in the session rail beside it.",
           "group": "Overview and activity",
           "main": true
         },
