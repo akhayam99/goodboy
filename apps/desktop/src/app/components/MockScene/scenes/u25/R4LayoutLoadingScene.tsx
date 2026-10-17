@@ -12,7 +12,7 @@ type Props = {
 };
 
 export const R4LayoutLoadingScene = ({ kind }: Props) => (
-  <div className="flex h-screen w-full bg-chrome p-2">
+  <div className="flex h-screen w-full bg-background">
     <p className="sr-only">{`${STUDIO_META[kind].title} while its page loads`}</p>
     <StudioFrame kind={kind} placement="content" onClose={noop}>
       <Pending />
