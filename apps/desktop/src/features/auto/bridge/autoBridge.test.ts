@@ -148,6 +148,69 @@ describe('Auto in a window without the runtime', () => {
     expect(main.stop).not.toHaveBeenCalled();
   });
 
+  it('sends a message main queued after the wait ran out only once', async () => {
+    vi.useFakeTimers();
+    const main = mainPorts();
+    const answered: { queue: (() => void) | null } = { queue: null };
+    main.userTurn.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          answered.queue = () => resolve('queued');
+        }),
+    );
+    const client = await windows({ bus: memoryBus(), ports: main.ports, timeoutMs: 1_000 });
+
+    const first = client.ports.userTurn(TURN);
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(await first).toBe('lost');
+    answered.queue?.();
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(await client.ports.userTurn(TURN)).toBe('queued');
+    expect(main.userTurn).toHaveBeenCalledTimes(1);
+  });
+
+  it('waits on the same message while main still takes it, without a second send', async () => {
+    vi.useFakeTimers();
+    const main = mainPorts();
+    const answered: { queue: (() => void) | null } = { queue: null };
+    main.userTurn.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          answered.queue = () => resolve('queued');
+        }),
+    );
+    const client = await windows({ bus: memoryBus(), ports: main.ports, timeoutMs: 1_000 });
+
+    const first = client.ports.userTurn(TURN);
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(await first).toBe('lost');
+    const resent = client.ports.userTurn(TURN);
+    answered.queue?.();
+
+    expect(await resent).toBe('queued');
+    expect(main.userTurn).toHaveBeenCalledTimes(1);
+  });
+
+  it('sends a message main lost again on a resend', async () => {
+    const main = mainPorts();
+    main.userTurn.mockResolvedValueOnce('lost');
+    const client = await windows({ bus: memoryBus(), ports: main.ports });
+
+    expect(await client.ports.userTurn(TURN)).toBe('lost');
+    expect(await client.ports.userTurn(TURN)).toBe('queued');
+    expect(main.userTurn).toHaveBeenCalledTimes(2);
+  });
+
+  it('sends the same words again as a new message once the first was queued', async () => {
+    const main = mainPorts();
+    const client = await windows({ bus: memoryBus(), ports: main.ports });
+
+    expect(await client.ports.userTurn(TURN)).toBe('queued');
+    expect(await client.ports.userTurn(TURN)).toBe('queued');
+    expect(main.userTurn).toHaveBeenCalledTimes(2);
+  });
+
   it('ignores an answer to a request it never sent', async () => {
     const main = mainPorts();
     const bus = memoryBus();

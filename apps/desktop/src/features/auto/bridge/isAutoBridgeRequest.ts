@@ -24,7 +24,7 @@ const isCall = (value: unknown): value is AutoBridgeCall => {
     return isText(value['treeId']);
   }
   if (kind === 'userTurn') {
-    return isTurn(value['turn']);
+    return isText(value['messageId']) && isTurn(value['turn']);
   }
   if (kind === 'decision') {
     return (

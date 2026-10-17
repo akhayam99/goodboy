@@ -23,7 +23,11 @@ confirm answer to the main window over a Tauri event
 (`features/auto/bridge/`: `createAutoBridgeClient` in the other window,
 `serveAutoBridge` in the main one) and waits up to 30 seconds for the answer. No
 answer reads "The main window did not answer. Do it from the main window." on the
-tail, and a message counts as not taken. An old
+tail, and a message counts as not taken. Each forwarded message carries a
+message id that stays the same while it is not taken, so sending the same
+words again reuses it; the main window remembers each id for 10 minutes and
+answers a repeat with the first answer instead of queuing the message twice
+(a message main itself lost is sent again). An old
 `agents.autoExperiment` row left in the database is never read, so a stored `false` hides nothing:
 `useIsAutoOn`, the agent menu facts, `isAutoAgentsShown` and `moveToAuto` read only the gate.
 

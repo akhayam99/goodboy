@@ -11,7 +11,7 @@ export const AUTO_BRIDGE_EVENT = {
 export type AutoBridgeCall =
   | Readonly<{ kind: 'stop'; treeId: string }>
   | Readonly<{ kind: 'retry'; treeId: string }>
-  | Readonly<{ kind: 'userTurn'; turn: AutoUserTurnParams }>
+  | Readonly<{ kind: 'userTurn'; messageId: string; turn: AutoUserTurnParams }>
   | Readonly<{ kind: 'decision'; delegationId: string; decision: DelegationDecision }>;
 
 export type AutoBridgeRequest = Readonly<{

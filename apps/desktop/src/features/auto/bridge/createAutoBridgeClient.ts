@@ -1,4 +1,4 @@
-import type { AutoUserTurnResult } from '../autoUserTurnPort';
+import type { AutoUserTurnParams, AutoUserTurnResult } from '../autoUserTurnPort';
 import type { DelegationDecisionResult } from '../delegationDecisionPort';
 import type { TreeRetryResult } from '../treeRetryPort';
 import type { TreeStopResult } from '../treeStopPort';
@@ -56,6 +56,18 @@ export type AutoBridgeClient = Readonly<{
   close: () => void;
 }>;
 
+type TurnKeyParams = {
+  readonly turn: AutoUserTurnParams;
+};
+
+const turnKeyOf = ({ turn }: TurnKeyParams): string =>
+  JSON.stringify([
+    turn.agentId,
+    turn.sessionId,
+    turn.text,
+    (turn.images ?? []).map((image) => image.fileName),
+  ]);
+
 type SendParams = {
   readonly call: AutoBridgeCall;
 };
@@ -71,6 +83,7 @@ export const createAutoBridgeClient = async ({
   timeoutMs = AUTO_BRIDGE_TIMEOUT_MS,
 }: AutoBridgeClientParams): Promise<AutoBridgeClient> => {
   const pending = new Map<string, Pending>();
+  const unsettledTurns = new Map<string, string>();
   const unlisten = await bus.listen({
     event: AUTO_BRIDGE_EVENT.response,
     onPayload: (payload) => {
@@ -118,10 +131,20 @@ export const createAutoBridgeClient = async ({
     retry: ({ treeId }) => ask({ call: { kind: 'retry', treeId }, isResult: isRetryResult }),
     decision: ({ delegationId, decision }) =>
       ask({ call: { kind: 'decision', delegationId, decision }, isResult: isDecisionResult }),
-    userTurn: (turn) =>
-      ask({ call: { kind: 'userTurn', turn }, isResult: isTurnResult }).catch(
-        (): AutoUserTurnResult => 'lost',
-      ),
+    userTurn: async (turn) => {
+      const key = turnKeyOf({ turn });
+      const messageId = unsettledTurns.get(key) ?? newId();
+      const result = await ask({
+        call: { kind: 'userTurn', messageId, turn },
+        isResult: isTurnResult,
+      }).catch((): AutoUserTurnResult => 'lost');
+      if (result === 'queued') {
+        unsettledTurns.delete(key);
+        return result;
+      }
+      unsettledTurns.set(key, messageId);
+      return result;
+    },
   };
   const close = (): void => {
     unlisten();
