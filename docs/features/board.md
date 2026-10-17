@@ -17,10 +17,6 @@ See where each task stands without moving cards around. Six lanes, **building**,
 
 Scan every session in one table. Each row holds the state node, the issue key, the title, the project, the same one signal as the card and the time of the last update, in columns that line up from row to row. The list is split by the same stages as the board, in the same order: **Building**, **Running**, **Needs you**, **In review**, **Done**, then **Archived** when you show archived sessions. Each group says how many sessions it holds from two on, an empty stage is left out, and every row carries the color of its stage at its left edge, the same color as its card. The list follows the filter's sort and status, says how many sessions the filters hide, and a click opens the session. A session with no activity for three days stays in its stage, and its last column reads its age like every other row, such as "4d ago".
 
-### Repository status
-
-See when a repository needs you. One pill in the page header, such as **2 repos need attention**, shows only when a repository is behind, has uncommitted files, has diverged or cannot be read, and opens the repository list with **Update** and each repository's detail. When every repository is fine, the filter holds a **Repositories** line with **Check origin**.
-
 ### Done and Archived lanes
 
 Finished work stays in view. **Done** and **archived** are lanes like the others, and **Restore** on an archived card puts the session back where it belongs. On a narrow window the two share the last lane.

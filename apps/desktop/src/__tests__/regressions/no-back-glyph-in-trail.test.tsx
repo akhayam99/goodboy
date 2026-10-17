@@ -25,7 +25,7 @@ const SESSION_RAIL = '[data-session-rail]';
 
 const KEPT = [
   'SettingsColumnNav.tsx',
-  'ProjectGitSummaryPill.tsx',
+  'RepoEntryPanel.tsx',
   'QuestionPager.tsx',
   'HandoffPanel.tsx',
 ];

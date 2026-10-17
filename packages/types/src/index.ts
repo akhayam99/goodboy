@@ -376,6 +376,8 @@ export type {
   BranchCommit,
   BranchIntegration,
   DiffView,
+  BaseDivergence,
+  BaseDivergenceState,
   BaseUpdateResult,
   FastForwardResult,
   GitDistance,

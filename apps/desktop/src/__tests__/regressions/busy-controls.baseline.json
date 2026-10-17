@@ -13,6 +13,5 @@
   "apps/desktop/src/features/workspace-chat/components/TurnIntoWorkPanel/index.tsx": 1,
   "apps/desktop/src/features/workspace/components/LocateMovedProjects/index.tsx": 1,
   "apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitDetail.tsx": 1,
-  "apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitSummaryPill.tsx": 1,
   "apps/desktop/src/features/workspace/components/StageBoard/OngoingTasksRow.tsx": 1
 }

@@ -61,6 +61,8 @@ import { savedProjectModelsInitialState } from './slices/saved-project-models/st
 import { createAutoViewSlice } from './slices/auto-view';
 import { autoViewInitialState } from './slices/auto-view/state';
 import { createSessionPinsSlice } from './slices/session-pins';
+import { createRepoDivergenceSlice } from './slices/repo-divergence';
+import { repoDivergenceInitialState } from './slices/repo-divergence/state';
 import { sessionPinsInitialState } from './slices/session-pins/state';
 import { createSessionFiltersSlice } from './slices/sessionFilters';
 import { createInitialSessionViewState } from './slices/session-view/createInitialSessionViewState';
@@ -264,6 +266,7 @@ export type AppStore = AppState &
   ReturnType<typeof createSessionViewSlice> &
   ReturnType<typeof createSavedProjectModelsSlice> &
   ReturnType<typeof createSessionPinsSlice> &
+  ReturnType<typeof createRepoDivergenceSlice> &
   ReturnType<typeof createAutoViewSlice> &
   ReturnType<typeof createSessionsSlice> &
   ReturnType<typeof createTranscriptsSlice> &
@@ -399,6 +402,7 @@ export const initialState: AppState = {
   ...openQuestionsInitialState,
   ...slackDraftsInitialState,
   ...terminalInitialState,
+  ...repoDivergenceInitialState,
 };
 
 export const useAppStore = create<AppStore>((set, get) => ({
@@ -433,6 +437,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createSessionViewSlice({ set, get }),
   ...createSavedProjectModelsSlice({ set, get }),
   ...createSessionPinsSlice({ set, get }),
+  ...createRepoDivergenceSlice({ set, get }),
   ...createAutoViewSlice({ set, get }),
   ...createSessionFiltersSlice({ set, get }),
   ...createTerminalSlice({ set, get }),

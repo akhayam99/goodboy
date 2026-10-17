@@ -1,4 +1,5 @@
 mod base;
+mod base_divergence;
 mod branch_name;
 mod branches;
 mod candidates;
@@ -27,6 +28,7 @@ mod types;
 mod update_base;
 
 pub(crate) use base::*;
+pub(crate) use base_divergence::*;
 pub(crate) use branch_name::branch_name_problem;
 pub(crate) use branches::*;
 pub(crate) use candidates::*;

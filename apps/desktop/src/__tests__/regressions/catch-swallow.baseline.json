@@ -138,7 +138,6 @@
   "apps/desktop/src/store/slices/project-mounts/unmountMount.ts": 2,
   "apps/desktop/src/store/slices/project-mounts/verifyAvailableWorktrees.ts": 3,
   "apps/desktop/src/store/slices/projects/addProject.ts": 1,
-  "apps/desktop/src/store/slices/projects/fetchProjectCheckouts.ts": 1,
   "apps/desktop/src/store/slices/projects/loadProjectGitStatus.ts": 1,
   "apps/desktop/src/store/slices/providerLimits/consumeCodexResetCredit.ts": 1,
   "apps/desktop/src/store/slices/providerLimits/refreshClaudeUsage.ts": 1,

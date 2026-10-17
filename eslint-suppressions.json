@@ -1032,11 +1032,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/app/components/MockScene/scenes/features/RepoStatusScene.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    }
-  },
   "apps/desktop/src/app/components/MockScene/scenes/features/ScriptDrawerScene.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
@@ -7566,11 +7561,6 @@
   "apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitDetail.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 2
-    }
-  },
-  "apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitPill.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 8
     }
   },
   "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionActivityItem.tsx": {

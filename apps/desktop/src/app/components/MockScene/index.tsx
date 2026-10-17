@@ -10,8 +10,11 @@ import { ReportSheetHost } from '../../../features/bug-report/components/ReportS
 import { useReportSheetParam } from './scenes/audit/ReportScenes';
 import { MOCK_SCENES } from './registry';
 import { UnknownScene } from './UnknownScene';
+import { quietSceneRepoCheck } from './scenes/quietSceneRepoCheck';
 
 export { MOCK_SCENES } from './registry';
+
+quietSceneRepoCheck();
 
 export const MockScene = () => {
   useReportSheetParam();

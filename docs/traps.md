@@ -279,6 +279,12 @@ status` directly. A branch cut from a remote-tracking ref (`worktree add -b
   payload; a multibyte sequence cut at the 8 KB edge still counts as text. Do
   not bring back an extension list, and do not widen the data URL list: a
   `.mts`, a `.jsonc` or a file with no extension must stay readable.
+- The background repo check (`worktree/base_divergence.rs`) passes
+  `--no-prune` to its fetch on purpose. A user's `fetch.prune=true` makes a
+  plain `git fetch` prune, and a check that runs every few minutes must not
+  delete remote-tracking branches behind the user's back. Its scenes stay
+  quiet because `quietSceneRepoCheck` replaces `checkRepoDivergence` in the
+  scene host, where there is no Tauri to answer.
 
 ## Hand-maintained lists the compiler does not check
 

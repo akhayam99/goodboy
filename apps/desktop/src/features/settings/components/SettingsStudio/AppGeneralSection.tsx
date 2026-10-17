@@ -4,6 +4,7 @@ import { UpdatesSection } from './UpdatesSection';
 import { ThemePreferenceField } from './ThemePreferenceField';
 import { OpenWithBand } from './OpenWithBand';
 import { SearchIndexBand } from './SearchIndexBand';
+import { RepoCheckBand } from './RepoCheckBand';
 
 export const AppGeneralSection = () => (
   <div className="flex flex-col gap-4">
@@ -22,6 +23,8 @@ export const AppGeneralSection = () => (
     </Band>
 
     <OpenWithBand />
+
+    <RepoCheckBand />
 
     <SearchIndexBand />
   </div>

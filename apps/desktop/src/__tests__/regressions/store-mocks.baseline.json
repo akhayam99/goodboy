@@ -197,7 +197,6 @@
   "apps/desktop/src/features/workspace-chat/hooks/useChatActivity/index.test.ts": 1,
   "apps/desktop/src/features/workspace/components/GoodboyIgnoreCard/index.test.tsx": 1,
   "apps/desktop/src/features/workspace/components/LocateMovedProjects/index.test.tsx": 1,
-  "apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitPill.test.tsx": 1,
   "apps/desktop/src/features/workspace/components/StageBoard/index.test.tsx": 1,
   "apps/desktop/src/features/workspace/components/StageBoard/StageBoardCard/index.test.tsx": 1,
   "apps/desktop/src/features/workspace/components/StageBoard/StageBoardCard/useDynamicActions/index.test.ts": 1,

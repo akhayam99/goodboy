@@ -380,7 +380,7 @@ describe('StageBoard header', () => {
     inProgress: null,
   });
 
-  it('moves repo attention into the filter: a warning dot on its icon, the pill in its footer', () => {
+  it('keeps repo state out of the filter: no dot on its icon, no repositories footer', () => {
     const building = sessionOf('Add idempotency keys to the refund endpoint');
     const repos = ['payments-api', 'notify-relay', 'ledger-core'].map((name) =>
       aProject({ workspaceId: workspace.id, name, kind: 'repo', rootPath: `/tmp/${name}` }),
@@ -397,13 +397,10 @@ describe('StageBoard header', () => {
     });
     mountBoard([building]);
 
-    expect(screen.queryByRole('button', { name: '3 repository git statuses' })).toBeNull();
-    expect(document.querySelector('[data-filter-dot]')?.getAttribute('data-filter-dot')).toBe(
-      'warning',
-    );
+    expect(document.querySelector('[data-filter-dot]')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Filter sessions' }));
-    const chip = screen.getByRole('button', { name: '3 repository git statuses' });
-    expect(within(chip).getByText('2 repos need attention')).toBeDefined();
+    const dialog = screen.getByRole('dialog', { name: 'Filter sessions' });
+    expect(within(dialog).queryByRole('group', { name: 'Repositories' })).toBeNull();
   });
 
   it('shows no repo pill while every repo is fine', () => {
@@ -423,7 +420,7 @@ describe('StageBoard header', () => {
     mountBoard([building]);
 
     expect(screen.getByRole('heading', { level: 1, name: 'Sessions' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: /repository git statuses/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Repositories/ })).toBeNull();
   });
 });
 

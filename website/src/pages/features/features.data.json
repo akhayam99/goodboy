@@ -444,7 +444,7 @@
         },
         {
           "title": "Repo status across projects",
-          "text": "See which repos are behind, uncommitted or diverged. Update the safe ones together, fast-forward only, and leave the rest to you.",
+          "text": "See which repos are behind or diverged from origin, checked every few minutes, next to the workspace switcher. Pull the safe ones together, fast-forward only, and leave the rest to you.",
           "group": "Workspace and projects",
           "also": "repo status",
           "shown": true

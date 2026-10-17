@@ -156,6 +156,16 @@ const storyInvokeHandlers = {
   other_tools_scan: { status: 'ready', tools: [] },
   other_tools_cancel: null,
   summarize_session: storySummarizeSession('The step finished.'),
+  repo_base_divergence: {
+    state: 'no-upstream',
+    base: null,
+    upstream: null,
+    ahead: 0,
+    behind: 0,
+    checkoutBranch: null,
+    uncommitted: 0,
+    message: null,
+  },
 };
 
 export const storySpies = {

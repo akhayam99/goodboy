@@ -586,6 +586,11 @@ r4-layout-settings
 r4-layout-tasks
 r4-layout-terminal
 r4-layout-workflows
+r4-repos-behind
+r4-repos-closed
+r4-repos-dirty
+r4-repos-failed
+r4-repos-quiet
 r4-sidebar-filter
 r4-sidebar-row-menu
 rail-draft-dot

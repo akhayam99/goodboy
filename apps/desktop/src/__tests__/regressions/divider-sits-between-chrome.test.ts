@@ -77,10 +77,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 2,
     reason: 'debt',
   },
-  'apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitSummaryPill.tsx': {
-    count: 2,
-    reason: 'chrome',
-  },
   'apps/desktop/src/features/workspace/components/WorkspaceSwitcher/index.tsx': {
     count: 2,
     reason: 'debt',

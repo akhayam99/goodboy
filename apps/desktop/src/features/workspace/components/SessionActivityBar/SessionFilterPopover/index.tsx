@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect } from 'react';
 import { ListFilter } from 'lucide-react';
 import { AnchoredPopover, IconButton, StatusDot, useDropdown } from '@goodboy/ui';
 import type {
@@ -67,8 +67,6 @@ type Props = {
   readonly archivedCount: number;
   readonly onArchivedShownChange: (isShown: boolean) => void;
   readonly isBoard?: boolean;
-  readonly footer?: ReactNode;
-  readonly hasAttention?: boolean;
   readonly canGroup?: boolean;
 };
 
@@ -78,8 +76,6 @@ export const SessionFilterPopover = ({
   archivedCount,
   onArchivedShownChange,
   isBoard = false,
-  footer,
-  hasAttention = false,
   canGroup = true,
 }: Props) => {
   const prefs = useSessionViewPrefs(workspaceId);
@@ -149,12 +145,12 @@ export const SessionFilterPopover = ({
             onClick={toggle}
             className={isOpen ? 'bg-selected text-foreground' : undefined}
           />
-          {activeCount > 0 || hasAttention ? (
+          {activeCount > 0 ? (
             <span
-              data-filter-dot={hasAttention ? 'warning' : 'active'}
+              data-filter-dot="active"
               className="pointer-events-none absolute right-0.5 top-0.5 flex"
             >
-              <StatusDot tone={hasAttention ? 'warning' : 'neutral'} size="sm" />
+              <StatusDot tone="neutral" size="sm" />
             </span>
           ) : null}
         </>
@@ -223,7 +219,6 @@ export const SessionFilterPopover = ({
           ))}
         </FilterSection>
       )}
-      {footer}
       {activeCount > 0 ? (
         <div className="flex px-1 py-1">
           <button
