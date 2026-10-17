@@ -23,7 +23,7 @@
 .mockStage .dfrBody {
   display: grid;
   min-width: 0;
-  grid-template-columns: 148px minmax(0, 1fr);
+  grid-template-columns: 176px minmax(0, 1fr);
 }
 
 .mockStage .dfrMain {
@@ -370,9 +370,50 @@
   margin: 0;
 }
 
+.mockStage .dfrRailCard {
+  padding: 2px 8px 4px;
+  color: var(--g-muted-foreground);
+}
+
 .mockStage .dfrRailRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
   padding: 4px 8px;
   border-radius: 6px;
+  color: var(--t2);
+}
+
+.mockStage .dfrRailEntry {
+  padding-left: 22px;
+}
+
+.mockStage .dfrRailLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mockStage .dfrRailPr {
+  display: inline-flex;
+  color: var(--mk-ok);
+}
+
+.mockStage .dfrRailNum,
+.mockStage .dfrRailStat,
+.mockStage .dfrRailCount {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.mockStage .dfrRailNum {
+  color: var(--g-muted-foreground);
+}
+
+.mockStage .dfrRailCount {
+  color: var(--mk-warn);
 }
 
 .mockStage .dfrRailRow[data-active='true'] {

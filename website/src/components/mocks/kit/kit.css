@@ -843,6 +843,17 @@
   background: color-mix(in oklab, var(--g-identity-3) 22%, transparent);
 }
 
+.gkTopRepos {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  color: var(--g-muted-foreground);
+}
+
 .gkTopName {
   min-width: 0;
   overflow: hidden;

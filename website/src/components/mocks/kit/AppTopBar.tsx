@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import './kit.css';
-import { ChevronDown } from '../icons';
+import { ChevronDown, GitGraph } from '../icons';
 import { cx } from './cx';
 
 type Props = {
@@ -28,6 +28,9 @@ export const AppTopBar = ({
       <span className="gkTopName">{workspace}</span>
       {nav === undefined ? null : <ChevronDown size={12} className="gkTopChevron" />}
       {nav === undefined ? null : <div className="gkTopNav">{nav}</div>}
+      <span className="gkTopRepos" aria-label="Repositories">
+        <GitGraph size={13} />
+      </span>
     </div>
     <div className="gkTopCenter">
       <span className="gkTopSearch">
