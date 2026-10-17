@@ -515,12 +515,20 @@ describe('the session rail top row and foot', () => {
     const deleteTask = vi.fn(async () => undefined);
     useAppStore.setState({ deleteTask });
     mountColumn();
-    const foot = within(elementOf('[data-session-foot]', rail()));
+    const footRow = elementOf('[data-session-foot]', rail());
+    const foot = within(footRow);
 
     expect(foot.getAllByRole('button').map((button) => button.textContent)).toEqual([
       'Archive',
       'Delete…',
     ]);
+    expect(footRow.className).toContain('grid-cols-2');
+    expect(
+      foot.getAllByRole('button').map((button) => button.getAttribute('data-variant')),
+    ).toEqual(['quiet', 'ghost-danger']);
+    expect(
+      foot.getAllByRole('button').every((button) => button.querySelector('svg') === null),
+    ).toBe(true);
     fireEvent.click(foot.getByRole('button', { name: 'Delete…' }));
     const dialog = within(screen.getByRole('dialog', { name: /^Delete .+\?$/ }));
     expect(deleteTask).not.toHaveBeenCalled();

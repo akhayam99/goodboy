@@ -696,10 +696,11 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
   **Refresh session** (⌘⇧R, `useSessionRefresh`, the same call as the key and
   the palette). An archived session shows none of them. The foot
   (`SessionLevel/SessionLevelFoot`) holds **Archive** (⌘⇧A, the registry
-  `session.archive`; **Restore** on an archived session) and **Delete…**
-  (⌘⇧⌫) as quiet `xs` buttons; Delete opens `DeleteSessionConfirm` anchored to
-  the button (`align="start"`, flipped above it and kept inside the window by
-  `useDropdownDirection`). Rename has no rail control: the main sidebar row
+  `session.archive`; **Restore** on an archived session) in gray text and
+  **Delete…** (⌘⇧⌫) in red text (`ghost-danger`: no fill, no border), side by
+  side, half the rail width each, text only, no `⋯`; Delete opens
+  `DeleteSessionConfirm` anchored to the button (`align="end"`, flipped above
+  it and kept inside the window by `useDropdownDirection`). Rename has no rail control: the main sidebar row
   renames in place (double click, its right click menu or the palette answer
   the `session-header` rename request). Every one of these verbs is also in
   the sidebar row's right click menu and the palette. A title Goodboy wrote

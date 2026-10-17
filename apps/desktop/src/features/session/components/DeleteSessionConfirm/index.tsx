@@ -14,6 +14,7 @@ type Props = {
   readonly trigger: (params: ConfirmPopoverTriggerParams) => ReactNode;
   readonly isOpen?: boolean;
   readonly align?: 'start' | 'end';
+  readonly anchorClassName?: string;
 };
 
 export const DeleteSessionConfirm = ({
@@ -22,6 +23,7 @@ export const DeleteSessionConfirm = ({
   trigger,
   isOpen,
   align = 'end',
+  anchorClassName,
 }: Props) => {
   const { archive } = useSessionArchive();
   const deleteTask = useAppStore((s) => s.deleteTask);
@@ -43,6 +45,7 @@ export const DeleteSessionConfirm = ({
       trigger={trigger}
       isOpen={isOpen}
       align={align}
+      {...(anchorClassName !== undefined && { anchorClassName })}
       {...(session.archivedAt === null || session.archivedAt === undefined
         ? {
             altAction: {
