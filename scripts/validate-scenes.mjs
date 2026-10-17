@@ -29,6 +29,13 @@ import {
   missingFrameScenes,
 } from './validateScenesFrame.mjs';
 import { menuRowsFailures, menuRowsProbe } from './validateScenesMenus.mjs';
+import {
+  CHAT_MEASURE_READY,
+  CHAT_MEASURE_SCENE,
+  CHAT_MEASURE_WIDTHS,
+  chatMeasureFailures,
+  chatMeasureProbe,
+} from './validateScenesChatMeasure.mjs';
 
 const CHROME =
   process.env.VALIDATE_CHROME ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
@@ -584,6 +591,18 @@ const measureColumns = async ({ send, scene }) => {
   return { failures, wraps: 0 };
 };
 
+const measureChatRoom = async ({ send }) => {
+  const scene = CHAT_MEASURE_SCENE;
+  const failures = [];
+  for (const width of CHAT_MEASURE_WIDTHS) {
+    await open({ send, scene, width, zoom: 1, readySelector: CHAT_MEASURE_READY });
+    const probe = await run(send, chatMeasureProbe, null);
+    failures.push(...chatMeasureFailures({ scene, width, probe }));
+  }
+  console.log(`${scene}: ${CHAT_MEASURE_WIDTHS.length} widths, ${failures.length} edge drifts`);
+  return { failures, wraps: 0 };
+};
+
 const measureInbox = async ({ send, width }) => {
   const failures = [];
   await open({ send, scene: 'inbox', width, zoom: 1, readySelector: '[data-inbox-key]' });
@@ -808,6 +827,9 @@ const main = async () => {
     }
     for (const scene of only === undefined || only === 'columns' ? COLUMN_SCENES : []) {
       await measure({ scene, task: () => measureColumns({ send, scene }) });
+    }
+    if (only === undefined || only === 'chat') {
+      await measure({ scene: CHAT_MEASURE_SCENE, task: () => measureChatRoom({ send }) });
     }
     for (const width of only === undefined ? WIDTHS : []) {
       const inbox = await measure({
