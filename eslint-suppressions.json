@@ -510,7 +510,7 @@
   },
   "apps/desktop/src/app/components/AppTopBar/LimitsStrip/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 19
+      "count": 17
     }
   },
   "apps/desktop/src/app/components/AppTopBar/NavCluster/HistoryArrow.tsx": {
