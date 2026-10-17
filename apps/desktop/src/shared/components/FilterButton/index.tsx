@@ -11,7 +11,7 @@ type Props = {
 };
 
 export const FilterButton = ({ popoverLabel, activeCount, facets, onDock }: Props) => {
-  const dropdown = useDropdown({ align: 'end', width: 'w-80', expectedHeight: 420 });
+  const dropdown = useDropdown({ width: 'w-80', expectedHeight: 420 });
   const hasActive = activeCount > 0;
   const label = hasActive ? `Filters, ${activeCount} active` : 'Filters';
 

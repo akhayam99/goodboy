@@ -43,7 +43,6 @@ export const PinnedOffLine = ({ count, total, onProviderIds, isDisabled, onConfi
         title={`Put ${pluralize(count, 'agent')} back to Auto?`}
         description="Auto picks the model for each."
         confirmLabel="Back to Auto"
-        align="end"
         onConfirm={onConfirm}
         trigger={({ arm }) => (
           <Button variant="ghost" size="sm" disabled={isDisabled} onClick={arm}>

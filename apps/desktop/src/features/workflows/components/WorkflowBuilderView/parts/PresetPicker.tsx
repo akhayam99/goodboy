@@ -34,7 +34,7 @@ export const PresetPicker = ({
   onDelete,
 }: Props) => {
   const listId = useId();
-  const dropdown = useDropdown({ disabled, align: 'end', width: 'w-96', expectedHeight: 320 });
+  const dropdown = useDropdown({ disabled, width: 'w-96', expectedHeight: 320 });
   const { open, close, toggle } = dropdown;
   const searchRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);

@@ -1346,7 +1346,14 @@ native `<select>`: the WebKit menu ignores theme, density and keyboard.
 - **Popover**: level 4 (`floating`, `shadow-lg`, `border`, `rounded-lg`),
   padding 4, at least the trigger's width and at most 360 by 320, scrolling in
   a `ScrollFade`. It opens below and flips above with `useDropdown`, entering
-  in 120ms (opacity and a 0.98 scale, `animate-popover-in`). It keeps 12px from
+  in 120ms (opacity and a 0.98 scale, `animate-popover-in`). Every select,
+  picker and filter opens under its trigger, start aligned (`side` `bottom`,
+  `align` `start`, the hook's defaults), and clamps inside the window. The hook
+  measures the trigger itself when the anchor wrapper holds one element, so a
+  wrapper stretched by a column never pushes the popover to the far edge.
+  `side: 'right'` opens beside the trigger (the terminal picker, the bug report)
+  and flips left when the right is short. An override of either needs a reason
+  in `regressions/popover-anchoring.baseline.json`, which only falls. It keeps 12px from
   the viewport edge. `popupWidth="trigger"` fixes the width to the trigger's
   (160px at least) so a long title truncates instead of widening the popover;
   use it with an `isBlock` trigger in a drawer or a form. The 360 cap is a

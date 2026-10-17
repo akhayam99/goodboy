@@ -65,7 +65,6 @@ export const QuietStepStrip = ({ sessionId, run, agents, quiet }: Props) => {
               description={skipStepDescription({ run, agent: quiet.agent, agents })}
               confirmLabel="Skip step"
               cancelLabel="Cancel"
-              align="end"
               isBusy={isBusy}
               onConfirm={() =>
                 guard(() =>

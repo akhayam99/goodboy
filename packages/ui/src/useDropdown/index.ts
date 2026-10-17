@@ -4,15 +4,15 @@ import { cn } from '../cn';
 import { usePopoverPortalTarget } from '../PopoverPortalContext';
 import { useEscapeLayer } from '../useEscapeLayer';
 import { useDropdownDirection } from '../useDropdownDirection';
+import type { DropdownAlign, DropdownSide } from '../useDropdownDirection';
 
 const FOCUSABLE_TRIGGER =
   'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-type Align = 'start' | 'end' | 'center' | 'after';
-
 type Params = {
   readonly disabled?: boolean;
-  readonly align?: Align;
+  readonly side?: DropdownSide;
+  readonly align?: DropdownAlign;
   readonly width?: string;
   readonly expectedHeight?: number;
   readonly expectedWidth?: number;
@@ -37,6 +37,7 @@ export type DropdownController = {
 
 export const useDropdown = ({
   disabled = false,
+  side = 'bottom',
   align = 'start',
   width,
   expectedHeight = 200,
@@ -61,6 +62,7 @@ export const useDropdown = ({
     open,
     expectedHeight,
     expectedWidth,
+    side,
     align,
     shouldMatchTriggerWidth: width == null,
     isAtLeastTriggerWidth,

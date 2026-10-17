@@ -194,6 +194,82 @@ describe('useDropdown', () => {
     trigger.remove();
   });
 
+  it('opens under the trigger itself, start aligned, when its wrapper stretches', () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
+    const wrapper = document.createElement('div');
+    const trigger = document.createElement('button');
+    wrapper.append(trigger);
+    document.body.append(wrapper);
+    wrapper.getBoundingClientRect = () =>
+      DOMRect.fromRect({ x: 40, y: 100, width: 900, height: 28 });
+    trigger.getBoundingClientRect = () =>
+      DOMRect.fromRect({ x: 40, y: 100, width: 180, height: 28 });
+    const { result } = renderHook(() =>
+      useDropdown({ expectedHeight: 320, expectedWidth: 384, width: 'w-96' }),
+    );
+
+    act(() => {
+      result.current.containerRef.current = wrapper;
+      result.current.toggle();
+    });
+
+    expect(result.current.popupStyle).toMatchObject({ left: 40, top: 132 });
+    wrapper.remove();
+  });
+
+  it('opens to the right of the trigger with its end on the trigger end', () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
+    const trigger = document.createElement('div');
+    document.body.append(trigger);
+    trigger.getBoundingClientRect = () =>
+      DOMRect.fromRect({ x: 200, y: 700, width: 28, height: 28 });
+    const { result } = renderHook(() =>
+      useDropdown({
+        side: 'right',
+        align: 'end',
+        expectedHeight: 300,
+        expectedWidth: 384,
+        width: 'w-96',
+      }),
+    );
+
+    act(() => {
+      result.current.containerRef.current = trigger as HTMLDivElement;
+      result.current.toggle();
+    });
+
+    expect(result.current.popupStyle).toMatchObject({ left: 236, top: 428, maxHeight: 752 });
+    trigger.remove();
+  });
+
+  it('keeps a right side popover inside the window, flipping left when the right is short', () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
+    const trigger = document.createElement('div');
+    document.body.append(trigger);
+    trigger.getBoundingClientRect = () =>
+      DOMRect.fromRect({ x: 900, y: 20, width: 28, height: 28 });
+    const { result } = renderHook(() =>
+      useDropdown({
+        side: 'right',
+        align: 'end',
+        expectedHeight: 300,
+        expectedWidth: 384,
+        width: 'w-96',
+      }),
+    );
+
+    act(() => {
+      result.current.containerRef.current = trigger as HTMLDivElement;
+      result.current.toggle();
+    });
+
+    expect(result.current.popupStyle).toMatchObject({ left: 508, top: 8 });
+    trigger.remove();
+  });
+
   it('stops the popup above the bottom inset instead of covering the status bar', () => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });

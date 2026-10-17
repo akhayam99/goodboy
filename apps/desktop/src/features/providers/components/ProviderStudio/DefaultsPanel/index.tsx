@@ -123,7 +123,6 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
             description="New chats, every agent role and background task go back to Auto."
             confirmLabel="Reset all"
             isBusy={busy}
-            align="end"
             onConfirm={onResetAll}
             trigger={({ arm }) => (
               <Button size="sm" variant="ghost" disabled={busy} onClick={arm}>

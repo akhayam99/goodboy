@@ -280,7 +280,6 @@ export const BranchesSection = ({ scope }: Props) => {
             ariaLabel="Made by"
             trigger="quiet"
             size="sm"
-            align="end"
             value={filter}
             options={OWNER_OPTIONS}
             onChange={(next) => {

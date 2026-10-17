@@ -18,7 +18,6 @@ const PANEL_HEIGHT = 430;
 export const ProvidersInOrder = ({ workspaceId }: Props) => {
   const { summary } = useProviderPolicy({ workspaceId });
   const dropdown = useDropdown({
-    align: 'end',
     width: 'w-[500px]',
     expectedWidth: PANEL_WIDTH,
     expectedHeight: PANEL_HEIGHT,

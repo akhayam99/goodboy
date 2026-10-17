@@ -59,7 +59,6 @@ export const TransitionMenu = ({ issueKey, workspaceId, onTransition, state }: P
   const isBlocked = reason != null;
   const dropdown = useDropdown({
     disabled: isBlocked,
-    align: 'end',
     width: 'w-60',
     expectedHeight: 280,
   });

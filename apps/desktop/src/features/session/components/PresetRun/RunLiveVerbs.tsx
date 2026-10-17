@@ -84,7 +84,6 @@ export const RunLiveVerbs = ({ target }: Props) => {
             title={confirm.title}
             description={confirm.description}
             confirmLabel={confirm.confirmLabel}
-            align="end"
             isBusy={isBusy}
             onConfirm={() => void press({ action })}
             trigger={({ arm }) => (

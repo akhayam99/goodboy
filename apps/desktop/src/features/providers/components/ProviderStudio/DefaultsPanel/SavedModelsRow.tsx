@@ -22,7 +22,6 @@ export const SavedModelsRow = ({ entry, onApply, onDiscard }: Props) => (
         title={`Apply the saved settings of ${entry.name} to this page?`}
         description="They replace the pins this page has for the same roles and tasks."
         confirmLabel="Apply"
-        align="end"
         onConfirm={onApply}
         trigger={({ arm }) => (
           <Button
@@ -41,7 +40,6 @@ export const SavedModelsRow = ({ entry, onApply, onDiscard }: Props) => (
         title={`Discard the saved settings of ${entry.name}?`}
         description="They are deleted and cannot be brought back."
         confirmLabel="Discard"
-        align="end"
         onConfirm={onDiscard}
         trigger={({ arm }) => (
           <Button

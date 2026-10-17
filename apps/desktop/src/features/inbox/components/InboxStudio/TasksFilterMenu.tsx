@@ -7,7 +7,7 @@ type Props = {
 };
 
 export const TasksFilterMenu = ({ activeCount, facets }: Props) => {
-  const dropdown = useDropdown({ align: 'end', width: 'w-80', expectedHeight: 520 });
+  const dropdown = useDropdown({ width: 'w-80', expectedHeight: 520 });
   const hasActive = activeCount > 0;
   return (
     <AnchoredPopover

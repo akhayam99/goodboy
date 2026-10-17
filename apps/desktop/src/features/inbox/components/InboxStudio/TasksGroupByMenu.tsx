@@ -9,7 +9,7 @@ type Props = {
 };
 
 export const TasksGroupByMenu = ({ groupBy, onGroupBy }: Props) => {
-  const dropdown = useDropdown({ align: 'end', width: 'min-w-50', expectedHeight: 140 });
+  const dropdown = useDropdown({ width: 'min-w-50', expectedHeight: 140 });
   return (
     <AnchoredPopover
       dropdown={dropdown}

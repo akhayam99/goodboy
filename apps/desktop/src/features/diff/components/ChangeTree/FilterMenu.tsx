@@ -23,7 +23,7 @@ const GROUP_LABEL: Record<TreeGroup, string> = { folders: 'Folders', kind: 'Kind
 const GROUPS: ReadonlyArray<TreeGroup> = ['folders', 'kind'];
 
 export const FilterMenu = ({ show, onShow, unviewed, commented, group, onGroup }: Props) => {
-  const dropdown = useDropdown({ align: 'end', width: 'min-w-50', expectedHeight: 220 });
+  const dropdown = useDropdown({ width: 'min-w-50', expectedHeight: 220 });
   const choose =
     ({ apply }: ChooseParams) =>
     () => {
