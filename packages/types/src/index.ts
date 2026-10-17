@@ -177,6 +177,7 @@ export {
   isSessionExternalTaskProvider,
   INTEGRATION_BINDING_PROVIDERS,
   SESSION_EXTERNAL_TASK_PROVIDERS,
+  SESSION_TITLE_MAX_LENGTH,
 } from './workspace';
 export type {
   AttachmentInput,

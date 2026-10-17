@@ -1,6 +1,6 @@
 import { memo, useId } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
-import { Input, ROW_INTERACTIVE, SelectionCheckbox, cn, inlineMarkdownText } from '@goodboy/ui';
+import { ROW_INTERACTIVE, SelectionCheckbox, cn, inlineMarkdownText } from '@goodboy/ui';
 import { useSessionSummary } from '../../hooks/useSessionSummary';
 import { sessionRowTitle } from '../../../session/sessionTitle';
 import { SessionRowTitle } from '../SessionRowTitle';
@@ -11,6 +11,7 @@ import { sessionSelectionTarget } from '../../../actions/sessionSelectionTarget'
 import { useSessionTitleRename } from '../../../session/hooks/useSessionTitleRename';
 import { sessionNodeOf } from '../../../session/sessionNode';
 import { SessionStateNode } from './SessionStateNode';
+import { TitleField } from '../../../../shared/components/TitleField';
 
 type SelectionClickEvent = {
   readonly shiftKey: boolean;
@@ -55,11 +56,12 @@ const SessionActivityItemView = ({
 }: Props) => {
   const summary = useSessionSummary({ session });
   const node = sessionNodeOf({ info: summary.info, isArchived });
-  const { keys, title } = sessionRowTitle({ session, tasks: summary.tasks });
+  const rowTitle = sessionRowTitle({ session, tasks: summary.tasks });
+  const { keys, title } = rowTitle;
   const sessionId = session.id as SessionId;
   const descriptionId = useId();
   const anchorKey = `sidebar:${sessionId}`;
-  const rename = useSessionTitleRename({ sessionId, currentTitle: session.goal });
+  const rename = useSessionTitleRename({ sessionId, goal: session.goal, ...rowTitle });
   useRenameRequest({
     objectKey: sessionObjectKey({ sessionId }),
     anchorKeys: isActive ? [anchorKey, null, SESSION_HEADER_ANCHOR] : [anchorKey],
@@ -78,20 +80,26 @@ const SessionActivityItemView = ({
 
   if (rename.editing) {
     return (
-      <div className="flex w-full flex-col gap-1 rounded-md px-2 py-1">
-        <Input
-          autoFocus
-          value={rename.draft}
-          maxLength={rename.maxLength}
-          onChange={(event) => rename.setDraft(event.target.value)}
-          onBlur={() => void rename.commit()}
-          onKeyDown={rename.onKeyDown}
-          aria-label="Session title"
-        />
-        {rename.error === null ? null : (
-          <span className="truncate text-meta text-danger">{rename.error}</span>
-        )}
-      </div>
+      <TitleField
+        density="row"
+        ariaLabel="Session title"
+        draft={rename.draft}
+        maxLength={rename.maxLength}
+        used={rename.used}
+        limit={rename.limit}
+        error={rename.error}
+        lead={
+          <>
+            <SessionStateNode node={node} />
+            {keys.length === 0 ? null : (
+              <SessionRowTitle keys={keys} title="" className="shrink-0" />
+            )}
+          </>
+        }
+        onDraftChange={rename.setDraft}
+        onKeyDown={rename.onKeyDown}
+        onBlur={rename.onBlur}
+      />
     );
   }
 

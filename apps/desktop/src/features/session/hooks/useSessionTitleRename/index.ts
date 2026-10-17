@@ -1,21 +1,29 @@
-import type { SessionId } from '@goodboy/types';
+import { SESSION_TITLE_MAX_LENGTH, type SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useInlineRename } from '../../../../shared/hooks/useInlineRename';
-import { MAX_SESSION_TITLE_LENGTH } from '../../../../store/slices/sessions/titleLimit';
+import type { SessionRowTitle } from '../../sessionTitle';
 
-type Params = {
+type Params = SessionRowTitle & {
   readonly sessionId: SessionId;
-  readonly currentTitle: string;
+  readonly goal: string;
 };
 
-export const useSessionTitleRename = ({ sessionId, currentTitle }: Params) => {
+export const useSessionTitleRename = ({ sessionId, goal, keys, title }: Params) => {
   const renameTask = useAppStore((s) => s.renameTask);
+  const hasKeys = keys.length > 0;
+  const prefix = hasKeys ? goal.slice(0, goal.length - title.length) : '';
+  const maxLength = SESSION_TITLE_MAX_LENGTH - prefix.length;
 
   const rename = useInlineRename({
-    value: currentTitle,
-    maxLength: MAX_SESSION_TITLE_LENGTH,
-    onCommit: (next) => renameTask(sessionId, next),
+    value: hasKeys ? title : goal,
+    maxLength,
+    onCommit: (next) => renameTask(sessionId, `${prefix}${next}`),
   });
 
-  return { ...rename, maxLength: MAX_SESSION_TITLE_LENGTH };
+  return {
+    ...rename,
+    maxLength,
+    limit: SESSION_TITLE_MAX_LENGTH,
+    used: prefix.length + rename.draft.length,
+  };
 };

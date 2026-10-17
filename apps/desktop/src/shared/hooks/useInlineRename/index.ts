@@ -40,6 +40,10 @@ export const useInlineRename = ({ value, onCommit, isEditing, onCancel, maxLengt
       setError('name cannot be empty');
       return;
     }
+    if (maxLength !== undefined && next.length > maxLength) {
+      setError('name is too long');
+      return;
+    }
     try {
       await onCommit(next);
       setSelfEditing(false);

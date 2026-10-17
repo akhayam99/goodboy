@@ -149,9 +149,9 @@ describe('SessionOverviewPane', () => {
     expect(screen.queryByRole('heading', { name: 'Overview' })).toBeNull();
   });
 
-  it('renames the session in place on double click, writing only after the save lands', async () => {
+  it('renames the session in place on a single click, writing only after the save lands', async () => {
     const { rerender } = renderPane();
-    fireEvent.doubleClick(screen.getByTestId('overview-title'));
+    fireEvent.click(screen.getByTestId('overview-title'));
     const field = screen.getByRole('textbox', { name: 'Session title' });
     fireEvent.change(field, { target: { value: 'Key redeliveries by event id' } });
     fireEvent.keyDown(field, { key: 'Enter' });
@@ -174,7 +174,117 @@ describe('SessionOverviewPane', () => {
     );
   });
 
-  it('keeps the old title and shows the error when the rename fails', async () => {
+  it('enters edit from the focused title with Enter or F2', () => {
+    renderPane();
+    const title = screen.getByRole('button', { name: SESSION.goal });
+    expect(title.closest('h1')).not.toBeNull();
+    fireEvent.keyDown(title, { key: 'F2' });
+    const field = screen.getByRole('textbox', { name: 'Session title' });
+    expect(document.activeElement).toBe(field);
+    fireEvent.keyDown(field, { key: 'Escape' });
+
+    const again = screen.getByRole('button', { name: SESSION.goal });
+    expect(document.activeElement).toBe(again);
+    fireEvent.click(again, { detail: 0 });
+    expect(screen.getByRole('textbox', { name: 'Session title' })).toBeDefined();
+  });
+
+  it('keeps the linked key outside the field and saves it back before the edited name', async () => {
+    const linked: SessionExternalTask = {
+      sessionId: SESSION_ID,
+      provider: 'linear',
+      externalId: 'issue-204',
+      identifier: 'HL-204',
+      title: 'Stop retried webhooks posting a second credit',
+      url: 'https://linear.app/harborline/issue/HL-204',
+      createdAt: SESSION.createdAt,
+    };
+    const session = { ...SESSION, goal: '[HL-204] Stop retried webhooks posting a second credit' };
+    useAppStore.setState({
+      sessions: [session],
+      sessionExternalTasks: { [SESSION_ID]: [linked] },
+    });
+    renderPane({ session });
+    fireEvent.click(screen.getByTestId('overview-title'));
+    const field = screen.getByRole<HTMLInputElement>('textbox', { name: 'Session title' });
+    expect(field.value).toBe('Stop retried webhooks posting a second credit');
+    expect(screen.getByText('HL-204').hasAttribute('data-session-key')).toBe(true);
+    expect(field.maxLength).toBe(120 - '[HL-204] '.length);
+    fireEvent.change(field, { target: { value: 'Key redeliveries by event id' } });
+    fireEvent.keyDown(field, { key: 'Enter' });
+
+    await waitFor(() =>
+      expect(renameSession).toHaveBeenCalledWith(
+        expect.anything(),
+        SESSION_ID,
+        '[HL-204] Key redeliveries by event id',
+        expect.any(String),
+        true,
+      ),
+    );
+  });
+
+  it('fills the limit ring as the title grows and turns it to warning near 120', () => {
+    renderPane();
+    fireEvent.click(screen.getByTestId('overview-title'));
+    const field = screen.getByRole('textbox', { name: 'Session title' });
+    const ring = () => screen.getByRole('img', { name: /of 120 characters/ });
+
+    expect(ring().getAttribute('aria-label')).toBe(`${SESSION.goal.length} of 120 characters`);
+    expect(field.getAttribute('aria-describedby')).toBe(ring().id);
+    expect(ring().hasAttribute('data-near-limit')).toBe(false);
+    const fillOf = () =>
+      Number.parseFloat(
+        ring().querySelector('[data-limit-ring-fill]')?.getAttribute('stroke-dasharray') ?? '0',
+      );
+    const before = fillOf();
+
+    fireEvent.change(field, { target: { value: 'x'.repeat(84) } });
+    expect(ring().getAttribute('aria-label')).toBe('84 of 120 characters');
+    expect(fillOf()).toBeGreaterThan(before);
+    expect(ring().hasAttribute('data-near-limit')).toBe(false);
+
+    fireEvent.change(field, { target: { value: 'x'.repeat(108) } });
+    expect(ring().getAttribute('aria-label')).toBe('108 of 120 characters');
+    expect(ring().hasAttribute('data-near-limit')).toBe(true);
+  });
+
+  it('saves a 120 character title whole', async () => {
+    const long = 'x'.repeat(120);
+    renderPane();
+    fireEvent.click(screen.getByTestId('overview-title'));
+    const field = screen.getByRole<HTMLInputElement>('textbox', { name: 'Session title' });
+    expect(field.maxLength).toBe(120);
+    fireEvent.change(field, { target: { value: long } });
+    fireEvent.keyDown(field, { key: 'Enter' });
+
+    await waitFor(() =>
+      expect(screen.queryByRole('textbox', { name: 'Session title' })).toBeNull(),
+    );
+    expect(renameSession).toHaveBeenCalledWith(
+      expect.anything(),
+      SESSION_ID,
+      long,
+      expect.any(String),
+      true,
+    );
+    expect(useAppStore.getState().sessions[0]?.goal).toBe(long);
+  });
+
+  it('blocks a 121 character title without writing', async () => {
+    renderPane();
+    fireEvent.click(screen.getByTestId('overview-title'));
+    const field = screen.getByRole('textbox', { name: 'Session title' });
+    fireEvent.change(field, { target: { value: 'x'.repeat(121) } });
+    fireEvent.keyDown(field, { key: 'Enter' });
+
+    expect((await screen.findByRole('alert')).textContent).toBe('name is too long');
+    expect(renameSession).not.toHaveBeenCalled();
+    expect(useAppStore.getState().sessions[0]?.goal).toBe(SESSION.goal);
+    expect(screen.getByRole('textbox', { name: 'Session title' })).toBeDefined();
+  });
+
+  it('keeps the old title and shows the error when the rename fails, and Enter retries', async () => {
     let fail: (error: Error) => void = () => undefined;
     renameSession.mockImplementationOnce(
       () =>
@@ -183,7 +293,7 @@ describe('SessionOverviewPane', () => {
         }),
     );
     renderPane();
-    fireEvent.doubleClick(screen.getByTestId('overview-title'));
+    fireEvent.click(screen.getByTestId('overview-title'));
     const field = screen.getByRole('textbox', { name: 'Session title' });
     fireEvent.change(field, { target: { value: 'Key redeliveries by event id' } });
     fireEvent.keyDown(field, { key: 'Enter' });
@@ -194,11 +304,17 @@ describe('SessionOverviewPane', () => {
     expect((await screen.findByRole('alert')).textContent).toContain('database is locked');
     expect(useAppStore.getState().sessions[0]?.goal).toBe(SESSION.goal);
     expect(screen.getByRole('textbox', { name: 'Session title' })).toBeDefined();
+
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Session title' }), { key: 'Enter' });
+    await waitFor(() =>
+      expect(useAppStore.getState().sessions[0]?.goal).toBe('Key redeliveries by event id'),
+    );
+    expect(screen.queryByRole('textbox', { name: 'Session title' })).toBeNull();
   });
 
   it('cancels the rename on Escape without writing', () => {
     renderPane();
-    fireEvent.doubleClick(screen.getByTestId('overview-title'));
+    fireEvent.click(screen.getByTestId('overview-title'));
     const field = screen.getByRole('textbox', { name: 'Session title' });
     fireEvent.change(field, { target: { value: 'Something else' } });
     fireEvent.keyDown(field, { key: 'Escape' });
@@ -211,8 +327,12 @@ describe('SessionOverviewPane', () => {
 
   it('keeps the title read only on an archived session', () => {
     renderPane({ session: { ...SESSION, archivedAt: SESSION.createdAt } });
-    fireEvent.doubleClick(screen.getByTestId('overview-title'));
+    const title = screen.getByTestId('overview-title');
+    fireEvent.click(title);
+    fireEvent.keyDown(title, { key: 'F2' });
 
+    expect(title.tagName).toBe('SPAN');
+    expect(screen.queryByRole('button', { name: SESSION.goal })).toBeNull();
     expect(screen.queryByRole('textbox', { name: 'Session title' })).toBeNull();
   });
 

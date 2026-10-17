@@ -109,7 +109,7 @@ describe('buildIssueBriefUserPrompt', () => {
     const prompt = buildIssueBriefUserPrompt({ items: [ITEM, { ...ITEM, identifier: 'HL-211' }] });
     expect(prompt).toContain('IDENTIFIER: ACME-412');
     expect(prompt).toContain('IDENTIFIER: HL-211');
-    expect(prompt).toContain('one title of at most 60 characters');
+    expect(prompt).toContain('one title of at most 120 characters');
     expect(prompt).toContain('one goal of one to three sentences covering all items');
   });
 
