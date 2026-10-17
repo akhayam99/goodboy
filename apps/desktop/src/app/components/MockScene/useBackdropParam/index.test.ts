@@ -1,5 +1,7 @@
 // @vitest-environment happy-dom
 
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, renderHook } from '@testing-library/react';
 import { useBackdropParam } from './index';
@@ -19,6 +21,15 @@ afterEach(() => {
   cleanup();
   visit({ search: '' });
   document.documentElement.style.removeProperty('--app-backdrop-strength');
+});
+
+const STYLES = readFileSync(join(__dirname, '..', '..', '..', '..', 'styles.css'), 'utf8');
+
+describe('backdrop default', () => {
+  it('ships the faint glow at 3, halved in light mode', () => {
+    expect(STYLES).toMatch(/:root \{[^}]*--app-backdrop-strength: 3;/);
+    expect(STYLES).toMatch(/html\[data-theme='light'\] \{\s*--app-backdrop-scale: 0\.5;\s*\}/);
+  });
 });
 
 describe('useBackdropParam', () => {

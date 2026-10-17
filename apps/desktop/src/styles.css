@@ -651,7 +651,7 @@ html[data-theme='light'] {
 :root {
   --titlebar-inset: 0px;
   --dropdown-bottom-inset: 36px;
-  --app-backdrop-strength: 0;
+  --app-backdrop-strength: 3;
   --app-backdrop-scale: 1;
   --app-backdrop: radial-gradient(
     ellipse 70% 90% at 0% 0%,

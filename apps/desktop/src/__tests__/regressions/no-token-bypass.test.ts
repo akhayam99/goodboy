@@ -93,8 +93,11 @@ const RULES = [
   },
   {
     pattern: /(?<![\w-])bg-backdrop(?![\w-])/,
-    allow: ['packages/ui/src/components/AppShell.tsx'],
-    why: 'the window backdrop is painted once, on the app shell, behind the top bar and the sidebar column',
+    allow: [
+      'packages/ui/src/components/AppShell.tsx',
+      'apps/desktop/src/app/components/MockScene/scenes/u25/c02LevelsScene.tsx',
+    ],
+    why: 'the window backdrop is painted once, on the app shell (or the levels scene that stands in for it), behind the top bar and the sidebar column',
   },
   {
     pattern: /\bduration-\[/,

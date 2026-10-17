@@ -55,9 +55,10 @@ so above raised the lift is `shadow-lg` plus `border`. On the nesting axis
 
 The window backdrop is step 0 plus one glow: `bg-backdrop` paints `chrome`
 under `--app-backdrop`, a radial of `primary` from the top-left corner (the
-website accent hue). `--app-backdrop-strength` is its alpha in percent, 0 by
-default, so the frame reads as plain chrome; light mode halves it
-(`--app-backdrop-scale: 0.5`). Only `AppShell` paints it, under the top bar and
+website accent hue). `--app-backdrop-strength` is its alpha in percent, 3 by
+default, a faint glow over chrome (0 turns it off); light mode halves it
+(`--app-backdrop-scale: 0.5`). Only `AppShell` (and the c02 levels scene that stands in for it) paints it,
+under the top bar and
 the left column; the sheet, the session rail and every drawer stay opaque and
 flat. Mock scenes preview a strength with `?backdrop=<n>`.
 
