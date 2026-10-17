@@ -19,10 +19,10 @@ export const FRAME_SCENES = [
   { scene: 'frame-studio-workflows', rail: null },
   { scene: 'frame-studio-impact', rail: null },
   { scene: 'frame&view=settings', rail: FRAME_CTX_RAIL_QUERY, isBare: true },
-  { scene: 'scripts-empty', rail: FRAME_RAIL_QUERY },
+  { scene: 'scripts-empty', rail: FRAME_RAIL_QUERY, isBare: true },
   { scene: 'artifact-states', rail: FRAME_RAIL_QUERY },
-  { scene: 'explore', rail: FRAME_RAIL_QUERY },
-  { scene: 'explore-changes', rail: FRAME_RAIL_QUERY },
+  { scene: 'explore', rail: FRAME_RAIL_QUERY, isBare: true },
+  { scene: 'explore-changes', rail: FRAME_RAIL_QUERY, isBare: true },
   { scene: 'storage-other-tools', rail: FRAME_RAIL_QUERY, isBare: true },
   { scene: 'board-shell', rail: FRAME_RAIL_QUERY, isBare: true },
   { scene: 'chat-room', rail: FRAME_RAIL_QUERY },
@@ -84,15 +84,20 @@ export const frameProbe = async () => {
     const rect = element.getBoundingClientRect();
     return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom };
   };
-  const isScrollClipped = (element, sheet) => {
+  const isScrollClipped = (element, sheet, axis) => {
     for (
       let node = element.parentElement;
       node !== null && node !== sheet;
       node = node.parentElement
     ) {
-      const overflow = getComputedStyle(node).overflowY;
+      const style = getComputedStyle(node);
+      const overflow = axis === 'x' ? style.overflowX : style.overflowY;
       const isScroller = overflow === 'auto' || overflow === 'scroll';
-      if (isScroller && node.scrollHeight > node.clientHeight) {
+      const isOverflowing =
+        axis === 'x'
+          ? node.scrollWidth > node.clientWidth
+          : node.scrollHeight > node.clientHeight;
+      if (isScroller && isOverflowing) {
         return true;
       }
     }
@@ -111,7 +116,11 @@ export const frameProbe = async () => {
   const firstShown = (selector, scope, isTopRequired = true) =>
     [...document.querySelectorAll(selector)].find(
       (element) =>
-        element.closest('.invisible, [inert], [hidden], [aria-hidden="true"]') === null &&
+        element.closest(
+          isTopRequired
+            ? '.invisible, [inert], [hidden], [aria-hidden="true"]'
+            : '.invisible, [hidden], [aria-hidden="true"]',
+        ) === null &&
         element.getBoundingClientRect().width > 0 &&
         (scope === null || scope.contains(element)) &&
         (!isTopRequired || isOnTop(element)),
@@ -130,16 +139,13 @@ export const frameProbe = async () => {
   };
   const locateDeadline = performance.now() + 1500;
   let located = locate(true);
-  while (
-    (located.titleElement === null || located.crumbElement === null) &&
-    performance.now() < locateDeadline
-  ) {
+  while (located.titleElement === null && performance.now() < locateDeadline) {
     await new Promise((resolve) => setTimeout(resolve, 50));
     located = locate(true);
   }
   await settle();
   located = locate(true);
-  if (located.titleElement === null || located.crumbElement === null) {
+  if (located.titleElement === null) {
     located = locate(false);
   }
   const { titleElement, trailElement, crumbElement } = located;
@@ -158,7 +164,8 @@ export const frameProbe = async () => {
     .filter((element) => element.closest('[data-dropdown-portal]') === null)
     .map((element) => ({
       name: element.dataset.slot,
-      isClipped: isScrollClipped(element, sheetElement),
+      isClipped: isScrollClipped(element, sheetElement, 'y'),
+      isClippedX: isScrollClipped(element, sheetElement, 'x'),
       ...box(element),
     }))
     .filter((slot) => slot.right - slot.left > 0 && slot.bottom - slot.top > 0);
@@ -227,16 +234,19 @@ export const frameFailures = ({
 }) => {
   const failures = [];
   const fail = (rule, detail) => failures.push({ scene, width, sidebar, rule, ...detail });
-  if (!isBare && (measured.crumb === null || measured.title === null)) {
+  if (!isBare && measured.title === null) {
     fail('rule 1', {
-      check: 'the scene shows a crumb and an h1 to align',
+      check: 'the scene shows an h1 to align',
       crumb: measured.crumb === null ? null : round(measured.crumb.left),
       title: measured.title === null ? null : round(measured.title.left),
       body: measured.bodyChild === null ? null : round(measured.bodyChild.left),
     });
   }
-  if (measured.crumb !== null && measured.title !== null) {
-    const lefts = [measured.crumb.left, measured.title.left];
+  if (measured.title !== null) {
+    const lefts = [measured.title.left];
+    if (measured.crumb !== null) {
+      lefts.push(measured.crumb.left);
+    }
     if (measured.bodyChild !== null) {
       lefts.push(measured.bodyChild.left);
     }
@@ -244,7 +254,7 @@ export const frameFailures = ({
     if (spread > tolerance) {
       fail('rule 1', {
         check: 'crumb, h1 and first body child share one left edge',
-        crumb: round(measured.crumb.left),
+        crumb: measured.crumb === null ? null : round(measured.crumb.left),
         title: round(measured.title.left),
         body: measured.bodyChild === null ? null : round(measured.bodyChild.left),
       });
@@ -256,7 +266,9 @@ export const frameFailures = ({
   }
   const { sheet } = measured;
   const outside = measured.slots.filter((slot) => {
-    const isOutsideX = slot.left < sheet.left - tolerance || slot.right > sheet.right + tolerance;
+    const isOutsideX =
+      !slot.isClippedX &&
+      (slot.left < sheet.left - tolerance || slot.right > sheet.right + tolerance);
     const isOutsideY =
       !slot.isClipped &&
       (slot.top < sheet.top - tolerance || slot.bottom > sheet.bottom + tolerance);

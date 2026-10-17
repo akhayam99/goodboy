@@ -260,8 +260,8 @@ the existing measures. It uploads no artifacts.
 
 A layout claim is proved by geometry, here, and by no class or attribute in a unit test. `scripts/validateScenesFrame.mjs` exports `FRAME_SCENES`, the one list of about thirty scenes, and the scene job measures each at 1100, 1440 and 1920 wide with the sidebar pinned and on the rail (one viewport change and one reload per pair). A failure names the scene, the width, the sidebar and the rule. The rules, with a tolerance of 1px:
 
-- the trail's first crumb, the h1 and the first body column share one left edge, and a scene with no crumb or no h1 fails this rule instead of skipping it (an entry marked `isBare: true` is a pane mounted without its studio frame, so it is held to the sheet rules only);
-- every `[data-slot]` inside the page container lies inside it (a slot under a scroller may sit below the fold);
+- the h1, the trail's first crumb when the page draws one (only studio pages under a trail still do) and the first body column share one left edge, and a scene with no h1 fails this rule instead of skipping it; an h1 under an overlay drawer's scrim (an `inert` page) is still measured (an entry marked `isBare: true` is a pane mounted without its studio frame or a drawer with no page title, so it is held to the sheet rules only);
+- every `[data-slot]` inside the page container lies inside it (a slot under a scroller may sit below the fold, and one a horizontal scroller moved out sideways, like a Board lane, is not counted);
 - no left rail rect overlaps the trail;
 - the crumb row centre equals the drawer header centre when a drawer is open;
 - a composer's bottom is at or above the sheet bottom;

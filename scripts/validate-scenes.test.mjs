@@ -14,7 +14,11 @@ import {
   readDevToolsPort,
   summaryLine,
 } from './validateScenesBrowser.mjs';
-import { columnDriftFailures, columnEdgesProbe } from './validateScenesColumns.mjs';
+import {
+  COLUMN_ROW_SELECTOR,
+  columnDriftFailures,
+  columnEdgesProbe,
+} from './validateScenesColumns.mjs';
 import {
   FRAME_SCENES,
   frameFailures,
@@ -404,9 +408,24 @@ describe('columnEdgesProbe', () => {
     const rows = await runInWindow({
       window,
       probe: columnEdgesProbe,
-      params: { names: ['model', 'action'] },
+      params: { names: ['model', 'action'], selector: COLUMN_ROW_SELECTOR },
     });
     assert.deepEqual(rows, [{ row: 'a', edges: { model: 321, action: null } }]);
+    await window.happyDOM.close();
+  });
+
+  it('reads a run tree row by its test id', async () => {
+    const window = new Window();
+    window.document.body.innerHTML =
+      '<div data-testid="run-tree-row-agent-1"><span data-meta-column="action"></span></div>';
+    const column = window.document.querySelector('[data-meta-column="action"]');
+    column.getBoundingClientRect = () => ({ right: 640 });
+    const rows = await runInWindow({
+      window,
+      probe: columnEdgesProbe,
+      params: { names: ['action'], selector: COLUMN_ROW_SELECTOR },
+    });
+    assert.deepEqual(rows, [{ row: 'run-tree-row-agent-1', edges: { action: 640 } }]);
     await window.happyDOM.close();
   });
 });
@@ -493,8 +512,12 @@ describe('frameFailures', () => {
     );
   });
 
-  it('names rule 1 when the crumb is missing, and skips the spread check', () => {
-    assert.deepEqual(rulesOf(framed({ crumb: null })), ['rule 1']);
+  it('aligns the h1 and the body alone on a page without a crumb', () => {
+    assert.deepEqual(rulesOf(framed({ crumb: null })), []);
+    assert.deepEqual(
+      rulesOf(framed({ crumb: null, title: rect({ left: 344, top: 40, right: 500, bottom: 72 }) })),
+      ['rule 1'],
+    );
   });
 
   it('names rule 1 when the h1 is missing, and skips the spread check', () => {
@@ -552,6 +575,16 @@ describe('frameFailures', () => {
     assert.deepEqual(rulesOf(framed({ slots: [wide] })), ['slots inside the sheet']);
     assert.deepEqual(rulesOf(framed({ slots: [below] })), []);
     assert.deepEqual(rulesOf(framed({ slots: [fallen] })), ['slots inside the sheet']);
+  });
+
+  it('spares a slot scrolled out sideways by a horizontal scroller', () => {
+    const scrolled = {
+      name: 'scrolled',
+      isClipped: false,
+      isClippedX: true,
+      ...rect({ left: 80, top: 200, right: 230, bottom: 224 }),
+    };
+    assert.deepEqual(rulesOf(framed({ slots: [scrolled] })), []);
   });
 
   it('fails a rail that overlaps the crumb band and spares one that only touches it', () => {
