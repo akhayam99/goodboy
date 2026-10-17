@@ -4,7 +4,7 @@ Watch how much of each plan is left, keep work moving when a provider runs out, 
 
 ### Usage limits chip
 
-See how much of your Claude and Codex plans is left before a run stops. Each provider gets a chip in the top bar with one bar, the tighter of the 5-hour window and the week, and its percent once it passes 70%. Hover it for the plan and reset time, or click it to open the providers menu.
+See how much of your Claude and Codex plans is left before a run stops. Each provider gets a chip in the top bar with one bar, the tighter of the 5-hour window and the week, and its percent once it passes 70%. Hover it for the plan and reset time, or click it to open the providers menu. When the bar has no room for every chip, the rest sit behind a count such as **+2** with each hidden provider's mark beside it.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-limits-chip-dark.webp">
