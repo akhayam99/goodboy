@@ -1,12 +1,11 @@
 import { memo } from 'react';
-import { ListGridRow, TEXT_ROLE, ToneBar, cn, inlineMarkdownText } from '@goodboy/ui';
+import { ListGridRow, TEXT_ROLE, cn, inlineMarkdownText } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { useSessionSummary } from '../../../hooks/useSessionSummary';
 import { sessionRowTitle } from '../../../../session/sessionTitle';
 import { StateNode } from '../../../../../shared/components/StateNode';
 import { sessionNodeOf } from '../../../../session/sessionNode';
-import { stageTrackOf } from '../../../../session/stageTrackOf';
 import { SessionSignal } from '../SessionSignal';
 import { useSessionSignal } from '../useSessionSignal';
 import { projectLineOf } from '../projectLineOf';
@@ -31,13 +30,11 @@ export const SessionListRow = memo(function SessionListRow({
   const { keys, title } = sessionRowTitle({ session, tasks: summary.tasks });
   const plainTitle = inlineMarkdownText({ text: title });
   const node = sessionNodeOf({ info: summary.info, isArchived });
-  const track = stageTrackOf({ stage: summary.stage, isArchived });
   return (
     <ListGridRow
       ariaLabel={plainTitle}
       tooltip={plainTitle}
       onSelect={() => onOpen(session)}
-      track={<ToneBar tone={track.tone} density="row" />}
       cells={[
         <StateNode key="node" node={node} />,
         <span key="title" className="flex min-w-0 items-baseline gap-2">

@@ -17,6 +17,8 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../../store/storyHarness';
+import { tintClasses, type Tone } from '@goodboy/ui';
+import { carriesSpec } from '../../../../../test/classTokens';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { MOCK_SCENES } from '../..';
 import { U25_C11_SESSIONS_SCENES } from './c11-sessions';
@@ -109,28 +111,34 @@ describe('the c11 Sessions scenes', () => {
     ).toBe('true');
   });
 
-  it('c11-sessions-list splits the rows by the board stages, each row on its stage track', async () => {
+  it('c11-sessions-list splits the rows by the board stages, one stage dot per group and none on a row', async () => {
     await mount('c11-sessions-list');
     const headings = screen
       .getAllByRole('heading', { level: 2 })
       .map((heading) => heading.textContent ?? '');
     expect(headings).toEqual(['Building', 'Running', 'Needs you', 'In review', 'Done']);
-    const TONE_OF_STAGE: Readonly<Record<string, string>> = {
+    const TONE_OF_STAGE: Readonly<Record<string, Tone>> = {
       Building: 'neutral',
       Running: 'info',
       'Needs you': 'warning',
       'In review': 'success',
       Done: 'merged',
     };
+    const list = screen.getByRole('list', { name: 'Sessions' });
+    expect(within(list).queryAllByTestId('tone-bar')).toEqual([]);
     for (const heading of screen.getAllByRole('heading', { level: 2 })) {
-      const group = heading.closest('li');
-      if (group === null) {
-        throw new Error(`no group for ${heading.textContent ?? ''}`);
+      const label = heading.closest('[data-list-grid-group-label]');
+      const tone = TONE_OF_STAGE[heading.textContent ?? ''];
+      if (label === null || tone === undefined) {
+        throw new Error(`no group label for ${heading.textContent ?? ''}`);
       }
-      const tones = within(group)
-        .getAllByTestId('tone-bar')
-        .map((track) => track.getAttribute('data-tone'));
-      expect(new Set(tones)).toEqual(new Set([TONE_OF_STAGE[heading.textContent ?? '']]));
+      const marks = label.querySelectorAll('[data-list-grid-group-mark] > span');
+      expect(marks).toHaveLength(1);
+      expect(carriesSpec({ element: marks[0] ?? null, spec: tintClasses(tone).dot })).toBe(true);
+      const rows = heading.closest('li')?.querySelectorAll('[data-list-grid-row]') ?? [];
+      for (const row of Array.from(rows)) {
+        expect(row.querySelectorAll('[data-node-kind]')).toHaveLength(1);
+      }
     }
   });
 

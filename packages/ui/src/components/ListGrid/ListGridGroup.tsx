@@ -10,6 +10,7 @@ export type ListGridGroupFold = {
 
 export type ListGridGroupProps = {
   readonly label?: string;
+  readonly mark?: ReactNode;
   readonly count?: number;
   readonly fold?: ListGridGroupFold;
   readonly action?: ReactNode;
@@ -30,6 +31,7 @@ const COUNT_FLOOR = 2;
 
 export const ListGridGroup = ({
   label,
+  mark,
   count,
   fold,
   action,
@@ -50,6 +52,14 @@ export const ListGridGroup = ({
           data-list-grid-group-label=""
           className={cn(SUBGRID, 'h-7 items-center', isSticky && 'sticky top-0 z-10 bg-background')}
         >
+          {mark === undefined || mark === null ? null : (
+            <span
+              data-list-grid-group-mark=""
+              className="col-start-1 flex items-center justify-center"
+            >
+              {mark}
+            </span>
+          )}
           <div className="col-start-2 col-end-[-1] flex min-w-0 items-center gap-3">
             <div className="flex min-w-0 flex-1 items-center gap-2">
               <Heading

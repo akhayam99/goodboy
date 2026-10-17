@@ -31,9 +31,11 @@
   order (`listStageGroupsOf`: Building, Running, Needs you, In review, Done,
   then Archived under Show archived), each group labelled by `stageWord` with
   its count from two, an empty group not drawn, and no Inactive group: an
-  inactive session sits in its stage with its age in the last column. Every row
-  carries the 2px stage track of its card at the row edge (`ToneBar` row
-  density through the `ListGridRow` track slot, static); it follows the filter's
+  inactive session sits in its stage with its age in the last column. Each
+  group label carries one 6px dot in its stage tone, the tone of the Board lane
+  (`stageTrackOf` through `ListStageGroup.tone`, drawn by `ListGridGroup`
+  `mark` above the node column, static); a row keeps only its state node and no
+  track (the Board cards keep theirs). The list follows the filter's
   sort and Status, and a row opens its session. Header and lanes share one frame centred in the pane, so the
   title's left edge is the first lane's left edge and the actions' right edge is
   the last lane's right edge.
