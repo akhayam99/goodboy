@@ -10,6 +10,8 @@ import { SESSION_HEADER_ANCHOR, sessionObjectKey } from '../../../actions/kinds/
 import { sessionSelectionTarget } from '../../../actions/sessionSelectionTarget';
 import { useSessionTitleRename } from '../../../session/hooks/useSessionTitleRename';
 import { sessionNodeOf } from '../../../session/sessionNode';
+import { overviewTitleHost } from '../../../session/overviewTitleHost';
+import { RenameStatus } from '../../../../shared/components/RenameStatus';
 import { StateNode } from '../../../../shared/components/StateNode';
 
 type SelectionClickEvent = {
@@ -63,7 +65,12 @@ const SessionActivityItemView = ({
   useRenameRequest({
     objectKey: sessionObjectKey({ sessionId }),
     anchorKeys: isActive ? [anchorKey, null, SESSION_HEADER_ANCHOR] : [anchorKey],
-    onRename: rename.start,
+    onRename: () => {
+      if (overviewTitleHost.start({ sessionId })) {
+        return;
+      }
+      rename.start();
+    },
   });
   const menu = useObjectMenuTrigger({
     target: { kind: 'session', sessionId },
@@ -87,10 +94,15 @@ const SessionActivityItemView = ({
           onBlur={() => void rename.commit()}
           onKeyDown={rename.onKeyDown}
           aria-label="Session title"
+          aria-busy={rename.isPending}
+          aria-invalid={rename.error !== null}
+          readOnly={rename.isPending}
         />
-        {rename.error === null ? null : (
-          <span className="truncate text-meta text-danger">{rename.error}</span>
-        )}
+        <RenameStatus
+          isPending={rename.isPending}
+          error={rename.error}
+          onRetry={() => void rename.commit()}
+        />
       </div>
     );
   }
