@@ -2,6 +2,7 @@ import { Plus } from 'lucide-react';
 import { ROW_INTERACTIVE, cn, AnchoredPopover, IconButton, useDropdown } from '@goodboy/ui';
 import type { QuickActionGroup } from '../../../../quick-actions/grammar';
 import { CHAT_PREFIXES } from '../lib';
+import { NAMES } from '../../../../../shared/names';
 
 type Props = {
   readonly onAttachFiles: () => void;
@@ -11,7 +12,7 @@ type Props = {
 
 const GROUP_LABEL: Partial<Record<QuickActionGroup, string>> = {
   script: 'Run a script',
-  workflow: 'Start a run',
+  workflow: NAMES.startRun,
   agent: 'Ask another agent',
   skill: 'Run a skill',
 };

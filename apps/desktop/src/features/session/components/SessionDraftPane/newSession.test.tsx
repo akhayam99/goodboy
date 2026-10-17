@@ -155,7 +155,7 @@ const textBox = (name: string): HTMLTextAreaElement => {
 };
 
 const startButton = (): HTMLButtonElement => {
-  const element = screen.getByRole('button', { name: /start (run|orchestration)/i });
+  const element = screen.getByRole('button', { name: /^(run a workflow|run an orchestrator)$/i });
   if (!(element instanceof HTMLButtonElement)) {
     throw new Error('Expected a button');
   }
@@ -175,13 +175,13 @@ describe('New session page, selector', () => {
     expect(tabs.getAllByRole('tab').map((node) => node.textContent)).toEqual([
       'Pick up a task',
       'Run a workflow',
-      'Orchestrate',
-      'Ask an agent',
+      'Run an orchestrator',
+      'Start an agent',
     ]);
     expect(screen.getByText('Several agents work through your goal, step by step.')).toBeDefined();
     expect(screen.queryByText('An issue from your tracker.')).toBeNull();
 
-    fireEvent.click(kickoffTab('Ask an agent'));
+    fireEvent.click(kickoffTab('Start an agent'));
     expect(screen.getByText('One agent in the role you pick.')).toBeDefined();
     expect(screen.queryByText('Several agents work through your goal, step by step.')).toBeNull();
 
@@ -267,7 +267,7 @@ describe('New session page, Run lane', () => {
   });
 });
 
-describe('New session page, Ask an agent', () => {
+describe('New session page, Start an agent', () => {
   it('opens the role start with Auto always available, with the role and no Auto', async () => {
     await openPage({ choice: 'scout' });
 
@@ -289,7 +289,7 @@ describe('New session page, Ask an agent', () => {
   });
 });
 
-describe('New session page, Ask an agent drawn as the Auto composer', () => {
+describe('New session page, Start an agent drawn as the Auto composer', () => {
   beforeEach(() => {
     useAppStore.setState({
       providers: [
@@ -334,20 +334,20 @@ describe('New session page, Ask an agent drawn as the Auto composer', () => {
     expect(screen.queryByText(/guidance/i)).toBeNull();
   });
 
-  it('keeps Start Auto disabled until the work is described', async () => {
+  it('keeps Start an auto disabled until the work is described', async () => {
     await openPage({ choice: 'scout', isAuto: true });
 
-    const start = screen.getByRole('button', { name: 'Start Auto' });
+    const start = screen.getByRole('button', { name: 'Start an auto' });
     expect(start).toHaveProperty('disabled', true);
     fireEvent.change(textBox('Describe the work'), { target: { value: GOAL } });
-    expect(screen.getByRole('button', { name: 'Start Auto' })).toHaveProperty('disabled', false);
+    expect(screen.getByRole('button', { name: 'Start an auto' })).toHaveProperty('disabled', false);
   });
 
   it('creates the session and starts Auto with the goal on the auto agent', async () => {
     await openPage({ choice: 'scout', isAuto: true });
     fireEvent.change(textBox('Describe the work'), { target: { value: GOAL } });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start Auto' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start an auto' }));
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
     expect(createSession).toHaveBeenCalledOnce();
@@ -366,7 +366,7 @@ describe('New session page, Ask an agent drawn as the Auto composer', () => {
     await openPage({ choice: 'scout', isAuto: true });
     fireEvent.change(textBox('Describe the work'), { target: { value: GOAL } });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start Auto' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start an auto' }));
 
     await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('disk full'));
     expect(spawnAgent).not.toHaveBeenCalled();

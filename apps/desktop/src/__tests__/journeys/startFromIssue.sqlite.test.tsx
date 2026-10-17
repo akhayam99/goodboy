@@ -172,7 +172,7 @@ describe('journey: start a session from an issue', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: /^Runs as:/ }));
-    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Ask an agent' }));
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Start an agent' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Agent instructions' }), {
       target: { value: INSTRUCTIONS },
     });
@@ -244,7 +244,7 @@ describe('journey: start a session from an issue', () => {
     pickIssue();
     renderPicked();
     fireEvent.click(screen.getByRole('button', { name: /^Runs as:/ }));
-    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Ask an agent' }));
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Start an agent' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Agent instructions' }), {
       target: { value: INSTRUCTIONS },
     });

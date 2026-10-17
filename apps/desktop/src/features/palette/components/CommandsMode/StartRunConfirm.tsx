@@ -2,6 +2,7 @@ import { InlineConfirm } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { PaletteEntry } from '../../types';
 import type { RunConfirmFact } from '../../sources/workflowEntries';
+import { NAMES } from '../../../../shared/names';
 
 type Props = {
   readonly entry: PaletteEntry;
@@ -17,9 +18,9 @@ export const StartRunConfirm = ({ entry, workflowName, facts, onConfirm, onCance
     <InlineConfirm
       role="primary"
       icon={<Icon size={ICON_SIZE.row} aria-hidden />}
-      title={`Start a run: ${workflowName}`}
+      title={`${NAMES.startRun}: ${workflowName}`}
       description="Runs inside this session, on its worktree. Nothing starts until you confirm."
-      confirmLabel="Start run"
+      confirmLabel="Run"
       onConfirm={onConfirm}
       onCancel={onCancel}
     >

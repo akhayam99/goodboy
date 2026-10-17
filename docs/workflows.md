@@ -402,15 +402,15 @@ Waits to start are the dot alone, named in its tooltip (`isWordRead`). Groups:
 **In progress**, **Finished** (the first 30, then **Show all**), **Archived** folded behind **Show**. A row is the button
 and carries no action; an archived run is restored from its page. The state
 word and the dot come from `runRowFactsOf`, the same function the run level's
-identity row reads. The header holds **Start run**; a session with no run shows
+identity row reads. The header holds **Run a workflow**; a session with no run shows
 today's start card. Opening a preset run drills into its run level.
 
 The Orchestrated page (`OrchestratedPane`, lens `orchestrated`, ⌘⌥W pressed
 again) lists the orchestrated runs on the same `RunsGrid`, its counts on the
 group rows (In progress, Finished, Archived) and none under the title. With
-rows, the header holds **Orchestrate**. With none it says
+rows, the header holds **Run an orchestrator**. With none it says
 "No orchestrated runs yet. The orchestrator picks each next step from your
-goal." with **Orchestrate**, which opens the launch form on its orchestrated
+goal." with **Run an orchestrator**, which opens the launch form on its orchestrated
 mode (`OrchestrateStart`). Opening a row shows
 [the orchestrated document](#the-orchestrated-document); Esc or Back returns
 to the list (`parentPlace`).

@@ -57,7 +57,7 @@ afterEach(cleanup);
 const openedKind = () => useAppStore.getState().drawer?.kind ?? null;
 
 describe('OverviewActions', () => {
-  it('is a menu with one item per form, Start Auto always in it', () => {
+  it('is a menu with one item per form, Start an auto always in it', () => {
     useAppStore.setState({ settings: { 'agents.autoExperiment': 'false' } });
     render(<OverviewActions session={SESSION} />);
 
@@ -66,9 +66,9 @@ describe('OverviewActions', () => {
 
     expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
       'Run a workflow',
-      'Orchestrate',
-      'Ask an agent',
-      'Start Auto',
+      'Run an orchestrator',
+      'Start an agent',
+      'Start an auto',
       'Write a report',
       'Draw a wireframe',
     ]);
@@ -78,7 +78,7 @@ describe('OverviewActions', () => {
     render(<OverviewActions session={SESSION} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'New' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Orchestrate' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Run an orchestrator' }));
 
     expect(useAppStore.getState().drawer).toEqual({
       kind: 'new',
@@ -89,8 +89,8 @@ describe('OverviewActions', () => {
   });
 
   it.each([
-    ['Ask an agent', 'agent'],
-    ['Start Auto', 'auto'],
+    ['Start an agent', 'agent'],
+    ['Start an auto', 'auto'],
   ] as const)('opens %s as its own form, the roles and Auto apart', (item, form) => {
     render(<OverviewActions session={SESSION} />);
 

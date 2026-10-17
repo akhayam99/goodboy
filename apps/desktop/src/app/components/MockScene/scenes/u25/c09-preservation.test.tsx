@@ -150,7 +150,7 @@ const mountOf = ({ index }: MountParams): SessionProjectMount => {
 describe('SPEC3 9.4 orchestrated rows stay reachable from the orchestrated document', () => {
   it('Orchestrated entry: its own list, the empty state starts an orchestration', async () => {
     await mount('c09-orchestrated-empty');
-    expect(screen.getByRole('button', { name: 'Orchestrate' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Run an orchestrator' })).toBeDefined();
     expect(screen.getByRole('button', { name: /^Orchestrated/ })).toBeDefined();
   });
 

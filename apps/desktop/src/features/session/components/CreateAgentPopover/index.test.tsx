@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { IsoDateTime, ProviderId, Session, SessionId, WorkspaceId } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 
@@ -95,11 +95,11 @@ const renderControl = ({ onSpawned = vi.fn() }: RenderControlParams = {}) => {
 };
 
 const openPopover = () => {
-  fireEvent.click(screen.getByRole('button', { name: 'Start agent' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Start an agent' }));
 };
 
 const confirm = () => {
-  fireEvent.click(screen.getByRole('button', { name: /^Start (?!agent$)/ }));
+  fireEvent.click(screen.getByRole('button', { name: /^Start (?!an agent$)/ }));
 };
 
 const expandRouting = () => {
@@ -141,13 +141,28 @@ describe('CreateAgentPopover', () => {
   it('opens a single popover from one trigger', () => {
     renderControl();
 
-    expect(screen.queryByRole('dialog', { name: 'Start agent' })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Start an agent' })).toBeNull();
 
     openPopover();
-    const dialog = screen.getByRole('dialog', { name: 'Start agent' });
+    const dialog = screen.getByRole('dialog', { name: 'Start an agent' });
     expect(dialog).toBeTruthy();
     expect(dialog.closest('[data-dropdown-portal]')?.parentElement).toBe(document.body);
     expect(dialog.className).toContain('fixed');
+  });
+
+  it('sizes the Role list to its content, never to the width of its chip', () => {
+    renderControl();
+    openPopover();
+    openRoles();
+
+    const roles = screen.getByRole('dialog', { name: 'Role' });
+    expect(roles.style.width).toBe('');
+    expect(roles.closest('[data-dropdown-portal]')).not.toBeNull();
+    const names = within(roles)
+      .getAllByRole('button')
+      .map((option) => option.getAttribute('aria-label'));
+    expect(names).toContain('Implementer');
+    expect(names.every((name) => name !== null && name.length > 1)).toBe(true);
   });
 
   it('shows only the selected kind description and spawns the picked one', async () => {
@@ -156,19 +171,22 @@ describe('CreateAgentPopover', () => {
     openRoles();
 
     const scout = screen.getByRole('button', { name: 'Scout' });
-    expect(
-      screen.getByText('Plans, investigates, edits, and verifies without a narrow role'),
-    ).toBeTruthy();
-    expect(screen.queryByText('Reads and searches codebase. Never edits files')).toBeNull();
-    expect(scout.parentElement?.className).toContain('grid-cols-3');
+    expect(scout.textContent).toContain('Reads and searches codebase. Never edits files');
+    expect(scout.getAttribute('aria-description')).toBe(
+      'Reads and searches codebase. Never edits files',
+    );
+    expect(scout.parentElement?.childElementCount).toBeGreaterThan(1);
+    expect(screen.getByRole('button', { name: 'Generalist' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Docs' }));
     screen.getByRole('button', { name: 'Role: Docs' });
     openRoles();
-    expect(screen.getByText('Writes documentation. No production logic')).toBeTruthy();
-    expect(
-      screen.queryByText('Plans, investigates, edits, and verifies without a narrow role'),
-    ).toBeNull();
+    expect(screen.getByRole('button', { name: 'Docs' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Generalist' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
     fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
     confirm();
 
@@ -347,7 +365,7 @@ describe('CreateAgentPopover', () => {
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Retry' }).hasAttribute('disabled')).toBe(false),
     );
-    expect(screen.getByRole('dialog', { name: 'Start agent' })).toBeDefined();
+    expect(screen.getByRole('dialog', { name: 'Start an agent' })).toBeDefined();
   });
 
   it('renders codex checkpoints as chips without a native select', async () => {
@@ -448,7 +466,7 @@ describe('CreateAgentPopover', () => {
 
   it('renders a compact header control without its own edge inset', () => {
     renderControl();
-    const trigger = screen.getByRole('button', { name: 'Start agent' });
+    const trigger = screen.getByRole('button', { name: 'Start an agent' });
 
     expect(trigger.className).toContain('h-7');
     expect(trigger.parentElement?.className).not.toContain('pl-2');
@@ -462,7 +480,7 @@ describe('CreateAgentPopover', () => {
     expect(action.closest('[data-slot="form-actions"]')).not.toBeNull();
     expect(action.closest('footer')).toBeNull();
     expect(
-      screen.getByRole('dialog', { name: 'Start agent' }).querySelector('[role="separator"]'),
+      screen.getByRole('dialog', { name: 'Start an agent' }).querySelector('[role="separator"]'),
     ).toBeNull();
   });
   it('keeps routing collapsed until the user asks for it', () => {

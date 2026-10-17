@@ -5,6 +5,7 @@ import { navEntryToneOf } from '../../../../shared/components/navEntryToneOf';
 import { openSessionPage } from '../../../session/openSessionPage';
 import type { PageCountFacts } from '../../../session/pageCountWord';
 import type { Page } from '../../../session/pageRegistry';
+import { pageMarkerOf } from '../../../session/pageMarkerOf';
 import { pageSlotOf } from '../../../session/pageSlot';
 import type { CurrentSign } from './currentSign';
 
@@ -24,29 +25,41 @@ export const SessionPages = ({ session, pages, facts, sign, onOpened }: Props) =
     onOpened?.();
   };
 
+  const isAutoShown = pages.some((page) => page.id === 'auto');
+
   return (
     <ul aria-label="Pages" className="flex flex-col" data-testid="session-pages">
       {pages.map((page) => {
         const Icon = page.icon;
         const isCurrent = sign === page.id;
         const slot = pageSlotOf({ page: page.count, facts });
+        const marker = pageMarkerOf({ pageId: page.id, isAutoShown });
+        const title = [slot.fact, marker?.why ?? null]
+          .filter((part): part is string => part !== null)
+          .join('. ');
         return (
           <li key={page.id}>
             <SelectableRow
               selected={isCurrent}
               selectedIconTone={navEntryToneOf({ icon: Icon })}
               ariaCurrent={isCurrent ? 'page' : undefined}
-              {...(slot.fact !== null && { title: slot.fact })}
+              {...(title !== '' && { title })}
               onClick={() => openPage(page)}
               className="h-7 items-center gap-2 px-2 text-ui"
             >
               <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-              <span className="flex min-w-0 flex-1 items-center gap-2">
-                <span className="min-w-0 truncate">{page.label}</span>
-                {page.id === 'auto' ? (
-                  <Chip tone="neutral" kind="state" shape="badge" label="Experimental" />
-                ) : null}
-              </span>
+              <span className="min-w-0 flex-1 truncate">{page.label}</span>
+              {marker === null ? null : (
+                <Chip
+                  tone="neutral"
+                  kind="state"
+                  emphasis="subtle"
+                  bordered={false}
+                  label={marker.label}
+                  testId={`page-marker-${page.id}`}
+                  className="text-faint-foreground"
+                />
+              )}
               <span
                 data-page-value={page.id}
                 data-tone={slot.tone ?? 'count'}

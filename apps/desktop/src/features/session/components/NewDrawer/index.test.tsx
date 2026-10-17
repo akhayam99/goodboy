@@ -148,7 +148,7 @@ describe('NewDrawer (shell)', () => {
   it('opens one form, titled by it, with no tab bar and one line that says what it does', () => {
     openDrawer();
 
-    expect(screen.getByRole('region', { name: 'Orchestrate' })).toBeDefined();
+    expect(screen.getByRole('region', { name: 'Run an orchestrator' })).toBeDefined();
     expect(screen.queryByRole('tablist', { name: 'What to start' })).toBeNull();
     expect(
       screen.getByText('The orchestrator picks each next step until the goal is done.'),
@@ -213,7 +213,7 @@ describe('NewDrawer (shell)', () => {
 });
 
 describe('NewDrawer (Run)', () => {
-  it('shows the goal first, then the lane, then the three pills and Start run in the footer', () => {
+  it('shows the goal first, then the lane, then the three pills and Run a workflow in the footer', () => {
     openDrawer();
 
     expect(goalBox()).toBeDefined();
@@ -223,7 +223,7 @@ describe('NewDrawer (Run)', () => {
     expect(within(footer).getByRole('button', { name: /^Starts:/ })).toBeDefined();
     expect(within(footer).getByRole('button', { name: /^Limit:/ })).toBeDefined();
     expect(
-      buttonOf(within(footer).getByRole('button', { name: 'Start orchestration' })).disabled,
+      buttonOf(within(footer).getByRole('button', { name: 'Run an orchestrator' })).disabled,
     ).toBe(true);
     expect(within(footer).getByText('Set a goal to start')).toBeDefined();
   });
@@ -254,7 +254,7 @@ describe('NewDrawer (Run)', () => {
     openDrawer({ onClose });
     fireEvent.change(goalBox(), { target: { value: 'Stop retried webhooks' } });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start orchestration' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Run an orchestrator' }));
 
     await waitFor(() => expect(attach).toHaveBeenCalledOnce());
     expect(attach.mock.calls[0]?.[0]).toBe(SESSION_ID);
@@ -270,7 +270,7 @@ describe('NewDrawer (Agent)', () => {
   it('is the one agent form: a goal, Role and Model, with Generalist picked', () => {
     openDrawer({ payload: { form: 'agent' } });
 
-    expect(screen.getByRole('region', { name: 'Ask an agent' })).toBeDefined();
+    expect(screen.getByRole('region', { name: 'Start an agent' })).toBeDefined();
     expect(screen.getByText('One agent in the role you pick.')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Role: Generalist' })).toBeDefined();
     expect(screen.getByRole('button', { name: /^Model:/ })).toBeDefined();
@@ -278,7 +278,7 @@ describe('NewDrawer (Agent)', () => {
     expect(screen.getByText('With no goal you write the first message in its chat.')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Start Generalist' })).toBeDefined();
     expect(screen.getByRole('textbox', { name: 'Agent instructions' })).toBeDefined();
-    expect(screen.queryByText('Start Auto')).toBeNull();
+    expect(screen.queryByText('Start an auto')).toBeNull();
     expect(screen.queryByRole('button', { name: /^add guidance/i })).toBeNull();
   });
 
@@ -336,8 +336,8 @@ describe('NewDrawer (Agent)', () => {
   });
 });
 
-describe('NewDrawer (Start Auto)', () => {
-  it('is the Auto composer: a goal, one model chip and Start Auto, with no roles or guidance', () => {
+describe('NewDrawer (Start an auto)', () => {
+  it('is the Auto composer: a goal, one model chip and Start an auto, with no roles or guidance', () => {
     openDrawer({ payload: { form: 'auto' } });
 
     expect(
@@ -353,14 +353,14 @@ describe('NewDrawer (Start Auto)', () => {
     expect(screen.queryByText(/project/i)).toBeNull();
   });
 
-  it('keeps Start Auto disabled and says why when no provider is connected', () => {
+  it('keeps Start an auto disabled and says why when no provider is connected', () => {
     useAppStore.setState({ providers: [{ ...connected('anthropic'), connection: 'missing' }] });
     openDrawer({ payload: { form: 'auto' } });
     fireEvent.change(screen.getByRole('textbox', { name: 'Describe the work' }), {
       target: { value: 'Find why webhooks retry' },
     });
 
-    expect(buttonOf(screen.getByRole('button', { name: 'Start Auto' })).disabled).toBe(true);
+    expect(buttonOf(screen.getByRole('button', { name: 'Start an auto' })).disabled).toBe(true);
     expect(screen.getByText(/Auto needs a connected provider/)).toBeDefined();
     expect(screen.getByRole('button', { name: 'Connect one in Providers' })).toBeDefined();
   });
@@ -379,7 +379,7 @@ describe('NewDrawer (Start Auto)', () => {
       target: { value: 'Find why webhooks retry' },
     });
 
-    expect(buttonOf(screen.getByRole('button', { name: 'Start Auto' })).disabled).toBe(true);
+    expect(buttonOf(screen.getByRole('button', { name: 'Start an auto' })).disabled).toBe(true);
     expect(screen.getByText(/Auto needs a connected provider/)).toBeDefined();
     expect(screen.getByRole('button', { name: 'Connect one in Providers' })).toBeDefined();
   });
@@ -399,15 +399,15 @@ describe('NewDrawer (Start Auto)', () => {
       target: { value: 'Find why webhooks retry' },
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start Auto' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start an auto' }));
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
     expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({ provider: 'codex' });
   });
 
-  it('keeps Start Auto disabled until a goal is written', () => {
+  it('keeps Start an auto disabled until a goal is written', () => {
     openDrawer({ payload: { form: 'auto' } });
-    const start = () => buttonOf(screen.getByRole('button', { name: 'Start Auto' }));
+    const start = () => buttonOf(screen.getByRole('button', { name: 'Start an auto' }));
 
     expect(start().disabled).toBe(true);
     expect(screen.getByText('Set a goal to start')).toBeDefined();
@@ -446,7 +446,7 @@ describe('NewDrawer (Start Auto)', () => {
       target: { value: 'Find why webhooks retry' },
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start Auto' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start an auto' }));
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
     expect(spawnAgent).toHaveBeenCalledWith(
@@ -474,7 +474,7 @@ describe('NewDrawer (Start Auto)', () => {
     expect(useAppStore.getState().newDrawerDrafts[SESSION_ID]).toBeUndefined();
   });
 
-  it('keeps a separate draft for Orchestrate and for Start Auto', () => {
+  it('keeps a separate draft for Run an orchestrator and for Start an auto', () => {
     const view = openDrawer();
     fireEvent.change(goalBox(), { target: { value: 'the run goal' } });
     view.rerender(drawerWith({ payload: { form: 'auto' } }));

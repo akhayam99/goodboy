@@ -98,11 +98,11 @@ describe('runSection', () => {
     action: { id } as PaletteEntry['action'],
   });
 
-  it('lists the run, its verbs in state order, Start a run and Open Runs', () => {
+  it('lists the run, its verbs in state order, Run a workflow and Open Runs', () => {
     const rows = runSection({
       row: entry('run:a', 'Ship a fix'),
       verbs: [verb('workflowRun.close', 'Stop run'), verb('workflowRun.continue', 'Continue step')],
-      startRun: entry('level:start-run', 'Start a run'),
+      startRun: entry('level:start-run', 'Run a workflow'),
       openRuns: entry('lens:workflows', 'Open Runs'),
     });
 
@@ -110,7 +110,7 @@ describe('runSection', () => {
       'Ship a fix',
       'Continue step',
       'Stop run',
-      'Start a run',
+      'Run a workflow',
       'Open Runs',
     ]);
   });
@@ -120,9 +120,9 @@ describe('runSection', () => {
       runSection({
         row: null,
         verbs: [],
-        startRun: entry('level:start-run', 'Start a run'),
+        startRun: entry('level:start-run', 'Run a workflow'),
         openRuns: null,
       }).map((row) => row.label),
-    ).toEqual(['Start a run']);
+    ).toEqual(['Run a workflow']);
   });
 });

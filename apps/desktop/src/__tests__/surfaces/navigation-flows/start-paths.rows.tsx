@@ -249,7 +249,7 @@ export const START_PATHS_ROWS: ReadonlyArray<Row> = [
         'value',
         'Retried webhooks post a second credit',
       );
-      expect(screen.getByRole('button', { name: 'Runs as: Orchestrate' })).toBeDefined();
+      expect(screen.getByRole('button', { name: 'Runs as: Run an orchestrator' })).toBeDefined();
       expect(screen.getAllByRole('button', { name: 'Start from HBL-415' })).toHaveLength(1);
       expect(screen.queryByRole('button', { name: 'Use brief' })).toBeNull();
       expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();

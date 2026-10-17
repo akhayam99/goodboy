@@ -244,7 +244,9 @@ const goalField = () =>
   screen.getByPlaceholderText(/What should this run get done/i) as HTMLTextAreaElement;
 
 const startBtn = () =>
-  screen.getByRole('button', { name: /^(start (run|orchestration)|retry)$/i }) as HTMLButtonElement;
+  screen.getByRole('button', {
+    name: /^(run a workflow|run an orchestrator|retry)$/i,
+  }) as HTMLButtonElement;
 
 const setGoal = () => {
   if (goalField().value.trim().length === 0) {
@@ -800,7 +802,7 @@ describe('WorkflowBuilderView (preset)', () => {
     expect(screen.getByRole('button', { name: 'Preset: Pick a preset' })).toBeDefined();
   });
 
-  it('says there are no presets yet and offers Orchestrate instead', () => {
+  it('says there are no presets yet and offers Run an orchestrator instead', () => {
     const onOrchestrateInstead = vi.fn();
     render(
       <WorkflowBuilderView
@@ -1104,7 +1106,7 @@ describe('WorkflowBuilderView (docked in a drawer)', () => {
       />,
     );
 
-    expect(within(dock).getByRole('button', { name: 'Start orchestration' })).toBeDefined();
+    expect(within(dock).getByRole('button', { name: 'Run an orchestrator' })).toBeDefined();
     expect(within(dock).getByRole('button', { name: /^autonomy:/i })).toBeDefined();
     expect(within(dock).getByRole('button', { name: /^starts:/i })).toBeDefined();
     expect(within(dock).getByRole('button', { name: /^limit:/i })).toBeDefined();

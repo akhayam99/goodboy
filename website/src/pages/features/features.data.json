@@ -89,14 +89,14 @@
           "main": true
         },
         {
-          "title": "Ask an agent",
+          "title": "Start an agent",
           "text": "Map an unfamiliar repo before you plan. The scout only reads, so it changes nothing.",
           "group": "Start a task",
           "also": "ask an agent"
         },
         {
           "title": "Start more work in a session",
-          "text": "New in a session lists Run a workflow, Orchestrate, Ask an agent, Start Auto, Write a report and Draw a wireframe. Each opens its form beside the page.",
+          "text": "New in a session lists Run a workflow, Run an orchestrator, Start an agent, Start an auto, Write a report and Draw a wireframe. Each opens its form beside the page.",
           "group": "Start a task",
           "also": "new in a session"
         },

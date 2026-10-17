@@ -1,8 +1,8 @@
 import { SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import {
-  ASK_AGENT_CHOICE,
-  ORCHESTRATE_CHOICE,
+  START_AGENT_CHOICE,
+  RUN_ORCHESTRATOR_CHOICE,
   RUN_WORKFLOW_CHOICE,
   TASK_CHOICE,
 } from '../../../../shared/lib/startCopy';
@@ -16,8 +16,8 @@ type ChoiceOption = {
 const START_OPTIONS: Readonly<Record<StartChoice, ChoiceOption>> = {
   task: { title: TASK_CHOICE, icon: CONCEPT_ICONS.issues },
   workflow: { title: RUN_WORKFLOW_CHOICE, icon: CONCEPT_ICONS.workflows },
-  orchestrate: { title: ORCHESTRATE_CHOICE, icon: CONCEPT_ICONS.orchestrator },
-  scout: { title: ASK_AGENT_CHOICE, icon: CONCEPT_ICONS.agents },
+  orchestrate: { title: RUN_ORCHESTRATOR_CHOICE, icon: CONCEPT_ICONS.orchestrator },
+  scout: { title: START_AGENT_CHOICE, icon: CONCEPT_ICONS.agents },
 };
 
 type Props = {

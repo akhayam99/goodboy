@@ -59,7 +59,7 @@ describe('the start scenes', () => {
       'value',
       'Stop retried webhooks posting a second credit',
     );
-    expect(screen.getByRole('button', { name: 'Runs as: Orchestrate' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Runs as: Run an orchestrator' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Use the issue text' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Use brief' })).toBeNull();
     expect(screen.queryByRole('textbox', { name: 'Search issues' })).toBeNull();

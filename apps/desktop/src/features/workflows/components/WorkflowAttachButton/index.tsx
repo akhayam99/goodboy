@@ -2,13 +2,14 @@ import { Plus } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
 import { ROW_INTERACTIVE, cn, Button } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/names';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly placement: 'header' | 'inline';
 };
 
-const LABEL = 'Start another run';
+const LABEL = NAMES.startRun;
 
 export const WorkflowAttachButton = ({ sessionId, placement }: Props) => {
   const onClick = () => {

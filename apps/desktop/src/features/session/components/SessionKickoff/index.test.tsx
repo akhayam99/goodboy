@@ -65,7 +65,7 @@ vi.mock('../../../workflows/components/WorkflowBuilderView', () => ({
         type="button"
         onClick={() => void kickoff.start(spies.runBuilder).catch(() => undefined)}
       >
-        {kickoff.primaryLabel ?? 'Start run'}
+        {kickoff.primaryLabel ?? 'Run a workflow'}
       </button>
     </div>
   ),
@@ -259,7 +259,7 @@ describe('SessionKickoff', () => {
       within(kinds)
         .getAllByRole('tab')
         .map((node) => node.textContent),
-    ).toEqual(['Pick up a task', 'Run a workflow', 'Orchestrate', 'Ask an agent']);
+    ).toEqual(['Pick up a task', 'Run a workflow', 'Run an orchestrator', 'Start an agent']);
     expect(screen.queryByRole('button', { name: 'More ways to start' })).toBeNull();
   });
 
@@ -268,7 +268,7 @@ describe('SessionKickoff', () => {
 
     expect(tab('Run a workflow').getAttribute('aria-selected')).toBe('true');
     expect(screen.getByTestId('workflow-builder')).toBeDefined();
-    expect(screen.getAllByRole('button', { name: 'Start run' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Run a workflow' })).toHaveLength(1);
   });
 
   it('preselects Pick up a task when the tracker has candidates', async () => {
@@ -289,14 +289,14 @@ describe('SessionKickoff', () => {
 
   it('keeps the choice and the text in the draft, and preselects again once it is gone', () => {
     const first = renderKickoff();
-    fireEvent.click(tab('Ask an agent'));
+    fireEvent.click(tab('Start an agent'));
     fireEvent.change(screen.getByRole('textbox', { name: 'Scout focus' }), {
       target: { value: 'the importer' },
     });
     first.unmount();
 
     const second = renderKickoff();
-    expect(tab('Ask an agent').getAttribute('aria-selected')).toBe('true');
+    expect(tab('Start an agent').getAttribute('aria-selected')).toBe('true');
     expect(screen.getByRole('textbox', { name: 'Scout focus' })).toHaveProperty(
       'value',
       'the importer',
@@ -310,10 +310,10 @@ describe('SessionKickoff', () => {
 
   it('shows only the selected option primary', () => {
     renderKickoff();
-    fireEvent.click(tab('Ask an agent'));
+    fireEvent.click(tab('Start an agent'));
 
     expect(screen.getByRole('button', { name: 'Start Scout on the whole project' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Start run' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Run a workflow' })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Pick / })).toBeNull();
   });
 
@@ -329,17 +329,17 @@ describe('SessionKickoff', () => {
     workflow.focus();
 
     fireEvent.keyDown(workflow, { key: 'ArrowRight' });
-    expect(tab('Orchestrate').getAttribute('aria-selected')).toBe('true');
-    fireEvent.keyDown(tab('Orchestrate'), { key: 'ArrowRight' });
-    expect(tab('Ask an agent').getAttribute('aria-selected')).toBe('true');
-    expect(document.activeElement).toBe(tab('Ask an agent'));
+    expect(tab('Run an orchestrator').getAttribute('aria-selected')).toBe('true');
+    fireEvent.keyDown(tab('Run an orchestrator'), { key: 'ArrowRight' });
+    expect(tab('Start an agent').getAttribute('aria-selected')).toBe('true');
+    expect(document.activeElement).toBe(tab('Start an agent'));
 
     await waitFor(() =>
       expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Scout focus' })),
     );
 
-    fireEvent.keyDown(tab('Ask an agent'), { key: 'ArrowLeft' });
-    expect(tab('Orchestrate').getAttribute('aria-selected')).toBe('true');
+    fireEvent.keyDown(tab('Start an agent'), { key: 'ArrowLeft' });
+    expect(tab('Run an orchestrator').getAttribute('aria-selected')).toBe('true');
   });
 
   it('feeds one goal field into the builder and starts the session with the run', async () => {
@@ -353,7 +353,7 @@ describe('SessionKickoff', () => {
       (store().getState().sessionDrafts as Record<string, { workflowGoal: string }>)['ws-1']
         ?.workflowGoal,
     ).toBe('  Round once per batch  ');
-    fireEvent.click(screen.getByRole('button', { name: 'Start run' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Run a workflow' }));
 
     await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
     expect(spies.startSessionFromDraft).toHaveBeenCalledWith({
@@ -368,7 +368,7 @@ describe('SessionKickoff', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'Goal' }), {
       target: { value: 'Round once per batch' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Start run' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Run a workflow' }));
 
     await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
     expect(screen.getByRole('textbox', { name: 'Goal' })).toHaveProperty(
@@ -381,7 +381,7 @@ describe('SessionKickoff', () => {
     const onReveal = vi.fn();
     window.addEventListener('goodboy:reveal-chat', onReveal);
     renderKickoff();
-    fireEvent.click(tab('Ask an agent'));
+    fireEvent.click(tab('Start an agent'));
     fireEvent.change(screen.getByRole('textbox', { name: 'Scout focus' }), {
       target: { value: 'the ledger-core importer' },
     });
@@ -404,7 +404,7 @@ describe('SessionKickoff', () => {
 
   it('requires a prompt for every role other than Scout', () => {
     renderKickoff();
-    fireEvent.click(tab('Ask an agent'));
+    fireEvent.click(tab('Start an agent'));
     fireEvent.click(screen.getByRole('button', { name: 'Role: Scout' }));
     fireEvent.click(screen.getByRole('button', { name: 'Implementer' }));
 
@@ -422,7 +422,7 @@ describe('SessionKickoff', () => {
 
   it('starts any role with the model auto until pinned', async () => {
     renderKickoff();
-    fireEvent.click(tab('Ask an agent'));
+    fireEvent.click(tab('Start an agent'));
     fireEvent.click(screen.getByRole('button', { name: 'Role: Scout' }));
     fireEvent.click(screen.getByRole('button', { name: 'Implementer' }));
 
@@ -447,20 +447,20 @@ describe('SessionKickoff', () => {
 
   it('shows no project chip with zero or one project in the workspace', () => {
     const first = renderKickoff();
-    fireEvent.click(tab('Ask an agent'));
+    fireEvent.click(tab('Start an agent'));
     expect(screen.queryByRole('button', { name: /^Project:/ })).toBeNull();
     first.unmount();
 
     store().setState({ projects: [project({})] });
     renderKickoff();
-    fireEvent.click(tab('Ask an agent'));
+    fireEvent.click(tab('Start an agent'));
     expect(screen.queryByRole('button', { name: /^Project:/ })).toBeNull();
   });
 
   it('preselects the sole project without a chip', async () => {
     store().setState({ projects: [project({})] });
     renderKickoff();
-    fireEvent.click(tab('Ask an agent'));
+    fireEvent.click(tab('Start an agent'));
     fireEvent.change(screen.getByRole('textbox', { name: 'Scout focus' }), {
       target: { value: 'the ledger-core importer' },
     });
@@ -477,7 +477,7 @@ describe('SessionKickoff', () => {
       projects: [project({}), project({ id: 'project-northwind' as ProjectId, name: 'northwind' })],
     });
     renderKickoff();
-    fireEvent.click(tab('Ask an agent'));
+    fireEvent.click(tab('Start an agent'));
 
     expect(await screen.findByRole('button', { name: 'Remove ledger-core' })).toBeDefined();
     fireEvent.click(screen.getByRole('combobox', { name: 'Project' }));
@@ -518,7 +518,7 @@ describe('SessionKickoff', () => {
       'value',
       'Fix the login redirect',
     );
-    expect(howChip().getAttribute('aria-label')).toBe('Runs as: Orchestrate');
+    expect(howChip().getAttribute('aria-label')).toBe('Runs as: Run an orchestrator');
     const builder = screen.getByTestId('workflow-builder');
     const goalField = within(builder).getByRole('textbox', { name: 'Goal' });
     expect((goalField as HTMLTextAreaElement).value).toBe(
@@ -778,7 +778,7 @@ describe('SessionKickoff', () => {
 
     fireEvent.click(screen.getByRole('checkbox', { name: /ENG-1/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Pick ENG-1' }));
-    chooseHow('Ask an agent');
+    chooseHow('Start an agent');
     fireEvent.click(screen.getByRole('button', { name: 'Start from ENG-1' }));
 
     await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());

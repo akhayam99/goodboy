@@ -196,11 +196,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Four ways to start',
-        desc: 'One selector at the top of the page holds Pick up a task, Run a workflow, Orchestrate and Ask an agent, and a line under it says what the choice does. Discard, in the actions row, throws the draft away.',
+        desc: 'One selector at the top of the page holds Pick up a task, Run a workflow, Run an orchestrator and Start an agent, and a line under it says what the choice does. Discard, in the actions row, throws the draft away.',
       },
       {
         term: 'Pick up a task',
-        desc: 'Choose an issue from your tools or Tasks. Goodboy drafts a short title and goal linked back to it, and you edit them in the same block. Then choose how to work on it: Run a workflow, Orchestrate or Ask an agent, and press Start from the issue. A Sentry error or a GitHub or GitLab item opens in its project and says why. A GitHub pull request link gives Review pull request.',
+        desc: 'Choose an issue from your tools or Tasks. Goodboy drafts a short title and goal linked back to it, and you edit them in the same block. Then choose how to work on it: Run a workflow, Run an orchestrator or Start an agent, and press Start from the issue. A Sentry error or a GitHub or GitLab item opens in its project and says why. A GitHub pull request link gives Review pull request.',
       },
       {
         term: 'Several issues',
@@ -208,19 +208,19 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Run a workflow',
-        desc: 'Several agents work through your goal, step by step. Describe the steps or pick a saved workflow, see and edit the plan, set Autonomy, Starts and Limit, then Start run creates the session and starts the run.',
+        desc: 'Several agents work through your goal, step by step. Describe the steps or pick a saved workflow, see and edit the plan, set Autonomy, Starts and Limit, then Run a workflow creates the session and starts the run.',
       },
       {
-        term: 'Orchestrate',
-        desc: 'Give a goal and the orchestrator picks each next step until the goal is done. Start orchestration creates the session and starts the run. See Agents, roles and workflows for how it differs from Auto.',
+        term: 'Run an orchestrator',
+        desc: 'Give a goal and the orchestrator picks each next step until the goal is done. Run an orchestrator creates the session and starts the run. See Agents, roles and workflows for how it differs from Auto.',
       },
       {
-        term: 'Ask an agent',
-        desc: 'One agent in the role you pick. Scout is the default and maps an unfamiliar repo before you plan. To let Auto pick the roles, use Start Auto in the session New menu, with a limit.',
+        term: 'Start an agent',
+        desc: 'One agent in the role you pick. Scout is the default and maps an unfamiliar repo before you plan. To let Auto pick the roles, use Start an auto in the session New menu, with a limit.',
       },
       {
         term: 'Projects',
-        desc: 'Projects is optional. The picker lists Suggested projects first, then All projects, and you can pick several or none: with none, Goodboy adds a project when an agent needs it. When you pick more than one, Ask an agent shows a chip naming the project the agent works in.',
+        desc: 'Projects is optional. The picker lists Suggested projects first, then All projects, and you can pick several or none: with none, Goodboy adds a project when an agent needs it. When you pick more than one, Start an agent shows a chip naming the project the agent works in.',
       },
       {
         term: 'Chat',
@@ -301,7 +301,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session rail',
-        desc: "Click a session and the session rail opens at the left of the page, beside the sidebar. Its top row holds the fold button, then Pin, pressed while it is on, and Refresh. Then come its pages with their counts: Overview, Runs, Orchestrated, Agents, Auto agents with an Experimental chip, Artifacts and Questions. A dot beside a count says something runs, and a warning dot says a question waits. The Projects card is a tree: click a project to fold its branches, and the arrow before a branch to fold its Pull request, Comments, Files with the lines added and removed, and Checks, one click from the session. Each branch starts with its pull request icon in its color, gray for a draft, green when open, amber in the merge queue, violet when merged and red when closed, then its number and one dot for its worst state. A branch that needs you starts open, and the rail remembers what you open. The Linked card lists the work linked to the session. Each card folds from its title and has a + to add. The foot shows what the session spent, against its limit when it has one, and opens the spend and limit; Archive and Delete sit under it; rename the session from its Overview title or its row in the sidebar. Drag the rail's edge to resize it.",
+        desc: "Click a session and the session rail opens at the left of the page, beside the sidebar. Its top row holds the fold button, then Pin, pressed while it is on, and Refresh. Then come its pages with their counts: Overview, Runs, Orchestrated, Agents, Auto agents, Artifacts and Questions. Auto agents carries an Experimental marker beside its count and Agents a Deprecated one; rest on the row to read why. A dot beside a count says something runs, and a warning dot says a question waits. The Projects card is a tree: click a project to fold its branches, and the arrow before a branch to fold its Pull request, Comments, Files with the lines added and removed, and Checks, one click from the session. Each branch starts with its pull request icon in its color, gray for a draft, green when open, amber in the merge queue, violet when merged and red when closed, then its number and one dot for its worst state. A branch that needs you starts open, and the rail remembers what you open. The Linked card lists the work linked to the session. Each card folds from its title and has a + to add. The foot shows what the session spent, against its limit when it has one, and opens the spend and limit; Archive and Delete sit under it; rename the session from its Overview title or its row in the sidebar. Drag the rail's edge to resize it.",
       },
       {
         term: 'Levels',
@@ -347,7 +347,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'New menu',
-        desc: 'New in the Overview header opens a menu: Run a workflow, Orchestrate, Ask an agent, Start Auto, Write a report and Draw a wireframe. Each opens its form in a pane beside the page. Run a workflow and Orchestrate take a goal with Autonomy, Starts and Limit. Ask an agent starts one role with a goal, a role and a model. Write a report and Draw a wireframe draft a document. The button is filled when nothing is running, blocked or waiting on a question and Next has nothing to offer.',
+        desc: 'New in the Overview header opens a menu: Run a workflow, Run an orchestrator, Start an agent, Start an auto, Write a report and Draw a wireframe. Each opens its form in a pane beside the page. Run a workflow and Run an orchestrator take a goal with Autonomy, Starts and Limit. Start an agent starts one role with a goal, a role and a model. Write a report and Draw a wireframe draft a document. The button is filled when nothing is running, blocked or waiting on a question and Next has nothing to offer.',
       },
       {
         term: 'Overview',
@@ -379,11 +379,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Auto',
-        desc: 'Auto is an experimental agent that is always available. Start Auto in the session New menu starts it: it answers what it can, hands the rest to child agents of the roles it picks, waits for their results and goes on, all under a limit. Its agents live under Auto agents in the session rail, where each shows its state and the foot says Limit and what is left. You can write to Auto at any time, and Move to Auto hands it an agent you started yourself. When Auto cannot decide its next step it reads Blocked with the reason and Retry, and Stop and Retry work from every window.',
+        desc: 'Auto is an experimental agent that is always available. Start an auto, in the session New menu or on the Auto agents page, opens its form. Auto answers what it can, hands the rest to child agents of the roles it picks, waits for their results and goes on, all under a limit. Its agents live under Auto agents in the session rail, where each shows its state and the foot says Limit and what is left. You can write to Auto at any time, and Move to Auto hands it an agent you started yourself. When Auto cannot decide its next step it reads Blocked with the reason and Retry, and Stop and Retry work from every window.',
       },
       {
         term: 'Orchestrated or Auto',
-        desc: 'Orchestrated is not Auto. Orchestrated runs a workflow: the orchestrator only decides the next step, each step gets its own agent, and you steer with hints. Auto is one agent you talk to, which delegates work to children on its own under a limit. Each has its own entry in the session rail, and only Auto carries the Experimental chip.',
+        desc: 'Orchestrated is not Auto. Orchestrated runs a workflow: the orchestrator only decides the next step, each step gets its own agent, and you steer with hints. Auto is one agent you talk to, which delegates work to children on its own under a limit. Each has its own entry in the session rail, and only Auto carries the Experimental marker.',
       },
       {
         term: 'Pause and resume',
@@ -758,7 +758,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Command palette',
-        desc: 'Opens on what you are looking at. In a session it lists Next steps first, then its actions in the order its state calls for, then Runs and recent places; on the Board, the sessions that need you come first. Start a run confirms before it starts. Type a few letters to find sessions of every workspace, agents, plans, pages, scripts and actions. The right arrow shows every action of a row. Any search starts with Ask in Chat. Copy worktree path copies where a session works.',
+        desc: 'Opens on what you are looking at. In a session it lists Next steps first, then its actions in the order its state calls for, then Runs and recent places; on the Board, the sessions that need you come first. Run a workflow confirms before it starts. Type a few letters to find sessions of every workspace, agents, plans, pages, scripts and actions. The right arrow shows every action of a row. Any search starts with Ask in Chat. Copy worktree path copies where a session works.',
       },
       {
         term: 'Terminal',
@@ -778,7 +778,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Composer keys',
-        desc: 'In a message, Enter sends and ⇧Enter adds a line. In a document, Enter adds a line and ⌘Enter saves. Start agent and the issue kickoff start on Enter, and Keys from before 0.15.5, in Shortcuts, brings back the old ones.',
+        desc: 'In a message, Enter sends and ⇧Enter adds a line. In a document, Enter adds a line and ⌘Enter saves. Start an agent and the issue kickoff start on Enter, and Keys from before 0.15.5, in Shortcuts, brings back the old ones.',
       },
       {
         term: 'Esc',

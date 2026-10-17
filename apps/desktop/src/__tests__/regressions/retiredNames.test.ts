@@ -26,6 +26,27 @@ describe('retired names match whatever the casing', () => {
     expect(retiredIdsIn({ text: 'spend_cap' })).toEqual([]);
   });
 
+  it.each([
+    ['Ask an agent', 'ask-an-agent'],
+    ['Start agent', 'start-agent'],
+    ['Start Auto', 'start-auto'],
+    ['Orchestrate', 'orchestrate-verb'],
+    ['Start another run', 'start-a-run'],
+    ['Start a run', 'start-a-run'],
+  ])('flags the old start label %s', (text, id) => {
+    expect(retiredIdsIn({ text })).toContain(id);
+  });
+
+  it.each([
+    'Run a workflow',
+    'Run an orchestrator',
+    'Start an agent',
+    'Start an auto',
+    'Orchestrated',
+  ])('leaves the start verb %s alone', (text) => {
+    expect(retiredIdsIn({ text })).toEqual([]);
+  });
+
   it('leaves a data attribute alone', () => {
     expect(retiredIdsIn({ text: '[data-inbox-key="a"]' })).toEqual([]);
   });

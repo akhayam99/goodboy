@@ -207,6 +207,9 @@ export const U24_NEW_DRAWER_SCENES = {
     />
   ),
   'new-drawer-agent': () => <NewDrawerScene state={{ form: 'agent', width: 1440 }} />,
+  'new-drawer-agent-roles': () => (
+    <NewDrawerScene state={{ form: 'agent', clicks: ['Role'], width: 1440 }} />
+  ),
   'new-drawer-agent-auto': () => (
     <NewDrawerScene
       state={{

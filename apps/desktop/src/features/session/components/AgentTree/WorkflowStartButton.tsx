@@ -2,6 +2,7 @@ import { Plus } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { Button, EmptyState } from '@goodboy/ui';
+import { NAMES } from '../../../../shared/names';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -29,7 +30,7 @@ export const WorkflowStartButton = ({ sessionId, layout = 'page' }: Props) => {
           onClick={onClick}
         >
           <Plus size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-          Start a run
+          {NAMES.startRun}
         </Button>
       }
     />

@@ -10,10 +10,10 @@ export const startFromLabel = ({ identifier }: IdentifierParams): string =>
 const pickLabel = ({ identifier }: IdentifierParams): string => `Pick ${identifier}`;
 
 export const TASK_CHOICE = 'Pick up a task';
-export const RUN_WORKFLOW_CHOICE = 'Run a workflow';
-export const ORCHESTRATE_CHOICE = 'Orchestrate';
-export const ASK_AGENT_CHOICE = 'Ask an agent';
-export const START_AUTO_CHOICE = 'Start Auto';
+export const RUN_WORKFLOW_CHOICE = NAMES.startRun;
+export const RUN_ORCHESTRATOR_CHOICE = NAMES.startOrchestrator;
+export const START_AGENT_CHOICE = NAMES.startAgent;
+export const START_AUTO_CHOICE = NAMES.startAuto;
 export const WRITE_REPORT_CHOICE = 'Write a report';
 export const DRAW_WIREFRAME_CHOICE = 'Draw a wireframe';
 

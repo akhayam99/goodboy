@@ -110,6 +110,6 @@ describe('HowToWorkOnIt, where the work happens', () => {
 
     expect(screen.queryByText('Then:')).toBeNull();
     expect(screen.queryByRole('tablist', { name: 'How to work on it' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Runs as: Orchestrate' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Runs as: Run an orchestrator' })).toBeDefined();
   });
 });

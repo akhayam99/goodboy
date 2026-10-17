@@ -422,6 +422,10 @@ describe('c07 Auto scenes', () => {
     mount({ id: 'c07-auto-list' });
 
     const list = await screen.findByRole('list', { name: 'Auto agents' }, WAIT);
+    expect(screen.queryByRole('textbox', { name: 'Describe the work' })).toBeNull();
+    expect(screen.queryByText('No Auto agents yet')).toBeNull();
+    const header = screen.getByRole('button', { name: 'Start an auto' });
+    expect(header.dataset['variant']).toBe('secondary');
     const rows = within(list).getAllByRole('button');
     expect(rows).toHaveLength(2);
     expect(within(list).getByText('Idle')).toBeDefined();
@@ -433,15 +437,26 @@ describe('c07 Auto scenes', () => {
     await waitFor(() => expect(levelStack().dataset.levelStack).toBe('auto'), WAIT);
   });
 
-  it('c07-auto-start offers Start Auto with a goal field when the session has none', async () => {
+  it('c07-auto-start-open shows the Auto form of the New drawer with its files, model and limit', async () => {
+    mount({ id: 'c07-auto-start-open' });
+
+    const form = await screen.findByRole('region', { name: 'Start an auto' }, WAIT);
+    expect(within(form).getByRole('textbox', { name: 'Describe the work' })).toBeDefined();
+    expect(screen.getByText(/^Limit \$/)).toBeDefined();
+  });
+
+  it('c07-auto-start offers Start an auto in the empty state, which opens the Auto form', async () => {
     mount({ id: 'c07-auto-start' });
 
-    const start = await screen.findByRole('region', { name: 'Start Auto' }, WAIT);
-    expect(
-      within(start).getByText(
-        'Ask Auto a question or give it a task. It answers itself, or starts the right agent.',
-      ),
-    ).toBeDefined();
-    expect(within(start).getByRole('button', { name: /Start Auto/ })).toBeDefined();
+    expect(await screen.findByText('No Auto agents yet', undefined, WAIT)).toBeDefined();
+    expect(screen.queryByRole('textbox', { name: 'Describe the work' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Start an auto' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start an auto' }));
+
+    const form = await screen.findByRole('region', { name: 'Start an auto' }, WAIT);
+    expect(within(form).getByRole('textbox', { name: 'Describe the work' })).toBeDefined();
+    expect(screen.getByText(/^Limit \$/)).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'Start an auto' }).length).toBeGreaterThan(0);
   });
 });

@@ -1,6 +1,7 @@
 import { Copy, ExternalLink, FolderOpen } from 'lucide-react';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import type { ExploreFileActionTarget, ObjectKindDefinition } from '../types';
+import { NAMES } from '../../../shared/names';
 
 export type ExploreFileFacts = {
   readonly name: string;
@@ -49,8 +50,8 @@ export const EXPLORE_FILE_KIND: ObjectKindDefinition<ExploreFileActionTarget, Ex
     },
     {
       id: 'exploreFile.ask',
-      label: 'Ask an agent about this file',
-      shortLabel: () => 'Ask an agent',
+      label: `${NAMES.startAgent} on this file`,
+      shortLabel: () => NAMES.startAgent,
       icon: CONCEPT_ICONS.agents,
       group: 'act',
       slot: () => 'hover',

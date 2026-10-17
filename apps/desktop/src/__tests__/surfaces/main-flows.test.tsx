@@ -169,7 +169,7 @@ describe('main flows on the real store', () => {
     stubActions({ startSessionFromDraft });
 
     await mountFlow(<SessionDraftPane workspaceId={WORKSPACE_ID} isAuto={false} />);
-    fireEvent.click(screen.getByRole('tab', { name: /Ask an agent/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /Start an agent/ }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Scout focus' }), {
       target: { value: 'the ledger-core importer' },
     });

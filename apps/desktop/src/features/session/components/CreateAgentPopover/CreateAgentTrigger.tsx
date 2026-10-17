@@ -1,6 +1,7 @@
 import { Plus } from 'lucide-react';
 import { Button, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/names';
 
 type Props = {
   readonly isOpen: boolean;
@@ -18,6 +19,6 @@ export const CreateAgentTrigger = ({ isOpen, className, onClick }: Props) => (
     className={cn('min-w-0', className)}
   >
     <Plus size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-    <span className="truncate">Start agent</span>
+    <span className="truncate">{NAMES.startAgent}</span>
   </Button>
 );

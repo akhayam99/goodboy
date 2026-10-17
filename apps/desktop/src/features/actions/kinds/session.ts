@@ -361,7 +361,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
   },
   {
     id: 'session.startAgent',
-    label: 'Start agent',
+    label: NAMES.startAgent,
     icon: CONCEPT_ICONS.agents,
     group: 'act',
     when: isLive,

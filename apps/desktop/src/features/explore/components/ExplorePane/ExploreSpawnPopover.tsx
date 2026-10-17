@@ -15,6 +15,7 @@ import { buildExploreSpawnPrompt } from '../../buildExploreSpawnPrompt';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
+import { NAMES } from '../../../../shared/names';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -129,14 +130,14 @@ export const ExploreSpawnPopover = ({
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
-      ariaLabel={`Ask an agent about ${name}`}
+      ariaLabel={`${NAMES.startAgent} on ${name}`}
       className="flex flex-col gap-3 p-3"
       trigger={
         <IconButton
           icon={CONCEPT_ICONS.agents}
           size="xs"
-          label={`Ask an agent about ${name}`}
-          tooltip="Ask an agent"
+          label={`${NAMES.startAgent} on ${name}`}
+          tooltip={NAMES.startAgent}
           isTooltipSuppressed={open}
           aria-haspopup="dialog"
           aria-expanded={open}
@@ -145,7 +146,7 @@ export const ExploreSpawnPopover = ({
       }
     >
       <div className="flex flex-col gap-1">
-        <p className="text-row text-foreground">Ask an agent about this file</p>
+        <p className="text-row text-foreground">{NAMES.startAgent} on this file</p>
         <p className="truncate font-mono text-meta text-muted-foreground">{relPath}</p>
       </div>
       <div className="flex flex-col gap-2">
@@ -171,7 +172,7 @@ export const ExploreSpawnPopover = ({
         error={spawnError == null ? null : <span className="text-label">{spawnError}</span>}
       >
         <Button size="sm" onClick={() => void spawnFromFile()} disabled={!canSpawn}>
-          {isSpawning ? 'Starting…' : 'Start agent'}
+          {isSpawning ? NAMES.starting : NAMES.startAgent}
         </Button>
       </FormActions>
     </AnchoredPopover>

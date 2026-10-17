@@ -16,7 +16,7 @@ Get from install to a first agent. Connect a provider, check what it can do, lin
 
 [More on set up](docs/features/setup.md)
 
-<a id="how-do-you-want-to-start"></a><a id="pick-up-a-task-with-a-drafted-brief"></a><a id="review-a-pull-request"></a><a id="run-a-workflow"></a><a id="ask-an-agent"></a><a id="start-more-work-in-a-session"></a><a id="start-blank"></a><a id="named-by-goodboy"></a><a id="undo-an-unlink"></a><a id="move-an-issue-between-the-session-and-a-branch"></a><a id="start-one-session-from-several-issues"></a><a id="star-an-issue-from-link-work"></a>
+<a id="how-do-you-want-to-start"></a><a id="pick-up-a-task-with-a-drafted-brief"></a><a id="review-a-pull-request"></a><a id="run-a-workflow"></a><a id="ask-an-agent"></a><a id="start-an-agent"></a><a id="start-more-work-in-a-session"></a><a id="start-blank"></a><a id="named-by-goodboy"></a><a id="undo-an-unlink"></a><a id="move-an-issue-between-the-session-and-a-branch"></a><a id="start-one-session-from-several-issues"></a><a id="star-an-issue-from-link-work"></a>
 
 ## Start a task
 
@@ -25,7 +25,7 @@ Begin from an issue, a workflow or a question. Everything starts as one draft, a
 - Pick up a task, with a drafted brief
 - Review a pull request
 - Run a workflow
-- Ask an agent
+- Start an agent
 - Start one session from several issues
 
 [More on starting a task](docs/features/start.md)

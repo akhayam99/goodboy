@@ -60,14 +60,14 @@ describe('the u21 page-state scenes', () => {
     renderScene('runs-list-empty');
 
     expect(await screen.findByRole('heading', { level: 2, name: 'No runs yet' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Start a run' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Run a workflow' })).toBeDefined();
   });
 
-  it('shows the Agents first-time state as one line and the header Start agent', async () => {
+  it('shows the Agents first-time state as one line and the header Start an agent', async () => {
     renderScene('agents-list-empty');
 
     expect(await screen.findByText('No agents in this session yet.')).toBeDefined();
-    expect(screen.getAllByRole('button', { name: 'Start agent' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Start an agent' })).toHaveLength(1);
   });
 
   it('shows the Artifacts first-time state', async () => {

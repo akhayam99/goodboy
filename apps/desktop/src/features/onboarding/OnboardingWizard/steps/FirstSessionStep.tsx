@@ -2,7 +2,11 @@ import { useId, useState, type KeyboardEvent } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { Button, cn, KeyHint } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { WORKFLOW_CHOICE_LINE } from '../../../../shared/lib/startCopy';
+import {
+  RUN_WORKFLOW_CHOICE,
+  START_AGENT_CHOICE,
+  WORKFLOW_CHOICE_LINE,
+} from '../../../../shared/lib/startCopy';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { StepHeading } from './StepHeading';
 import { NoIssueSource } from './NoIssueSource';
@@ -25,11 +29,15 @@ const CHOICE_META: Readonly<
     icon: CONCEPT_ICONS.issues,
   },
   workflow: {
-    title: 'Run a workflow',
+    title: RUN_WORKFLOW_CHOICE,
     line: WORKFLOW_CHOICE_LINE,
     icon: CONCEPT_ICONS.workflows,
   },
-  agent: { title: 'Ask an agent', line: 'Scout or any other role.', icon: CONCEPT_ICONS.explore },
+  agent: {
+    title: START_AGENT_CHOICE,
+    line: 'Scout or any other role.',
+    icon: CONCEPT_ICONS.explore,
+  },
 };
 
 type Starter = {

@@ -48,7 +48,7 @@ const FAILED: C10SceneState = {
   page: { choice: 'orchestrate', goal: RUN_GOAL },
   projectNames: TWO_PROJECTS,
   startFailure: 'The branch hl/retry-guard already exists in payments-api.',
-  clickLabel: 'Start orchestration',
+  clickLabel: 'Run an orchestrator',
 };
 
 export const U25_C10_NEW_SESSION_SCENES = {

@@ -28,7 +28,7 @@ describe('tooltip shortcut scenes', () => {
     render(<Scene />);
 
     const tip = screen.getByRole('tooltip');
-    expect(within(tip).getByText('Ask an agent')).toBeDefined();
+    expect(within(tip).getByText('Start an agent')).toBeDefined();
     expect(tip.querySelector('kbd')?.textContent).toBe(shortcutGlyphs('ask.open'));
     expect(tip.textContent).not.toContain('(');
   });

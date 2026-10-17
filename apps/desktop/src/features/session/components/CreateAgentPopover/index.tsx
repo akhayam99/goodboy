@@ -3,6 +3,7 @@ import { AnchoredPopover, PopoverBody, useDropdown } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { AgentStartBlock } from '../AgentStartBlock';
 import { CreateAgentTrigger } from './CreateAgentTrigger';
+import { NAMES } from '../../../../shared/names';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -32,7 +33,7 @@ export const CreateAgentPopover = ({
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
-      ariaLabel="Start agent"
+      ariaLabel={NAMES.startAgent}
       className="flex max-h-[calc(100vh-1rem)] flex-col bg-subtle"
       anchorClassName="min-w-0"
       trigger={

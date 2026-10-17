@@ -141,7 +141,10 @@ export const C10NewSessionScene = ({ state }: Props) => {
       }
       if (state.clickLabel !== undefined) {
         const target = [...document.querySelectorAll('button')].find(
-          (button) => button.textContent?.trim() === state.clickLabel && !button.disabled,
+          (button) =>
+            button.textContent?.trim() === state.clickLabel &&
+            !button.disabled &&
+            button.getAttribute('role') !== 'tab',
         );
         if (target === undefined) {
           return;

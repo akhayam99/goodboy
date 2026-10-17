@@ -87,12 +87,12 @@ describe('the c09 orchestrated scenes', () => {
     expect(within(grid).queryByText('Fix flaky tests in the ledger export')).toBeNull();
   });
 
-  it('c09-orchestrated-empty offers Orchestrate with the one line', async () => {
+  it('c09-orchestrated-empty offers Run an orchestrator with the one line', async () => {
     await mount('c09-orchestrated-empty');
 
     expect(screen.getByText('No orchestrated runs yet')).toBeDefined();
     expect(screen.getByText('The orchestrator picks each next step from your goal.')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Orchestrate' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Run an orchestrator' })).toBeDefined();
   });
 
   it('c09-orch-running reads as one document with the sidebar on Orchestrated', async () => {
