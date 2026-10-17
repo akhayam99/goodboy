@@ -137,7 +137,7 @@ const switcherRowOf = (id: ShortcutId): HTMLElement | null => {
   const pill = Array.from(document.querySelectorAll('kbd')).find(
     (candidate) => candidate.textContent === glyph,
   );
-  return pill?.closest<HTMLElement>('div[class*="group"]') ?? null;
+  return pill?.closest<HTMLElement>('[data-workspace-row]') ?? null;
 };
 
 const DIGIT_IDS = [

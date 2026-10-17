@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { ScrollFade, StudioRailLayout, UnderTrailContext, useStudioRailFold } from '@goodboy/ui';
+import { ScrollFade, StudioRailLayout, useStudioRailFold } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { ToolSettingsScope } from '../../../integrations/components/ToolSettingsScope';
 import { ProviderSettingsScope } from '../../../providers/components/ProviderStudio';
