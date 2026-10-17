@@ -1,6 +1,7 @@
 import { useId, type KeyboardEvent, type ReactNode } from 'react';
 import { ICON_SIZE, cn } from '@goodboy/ui';
 import { LimitRing } from './LimitRing';
+import { RenameStatus } from './RenameStatus';
 
 type Props = {
   readonly density: 'title' | 'row';
@@ -10,6 +11,8 @@ type Props = {
   readonly used: number;
   readonly limit: number;
   readonly error: string | null;
+  readonly isPending: boolean;
+  readonly onRetry: () => void;
   readonly lead?: ReactNode;
   readonly onDraftChange: (draft: string) => void;
   readonly onKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void;
@@ -24,24 +27,24 @@ export const TitleField = ({
   used,
   limit,
   error,
+  isPending,
+  onRetry,
   lead,
   onDraftChange,
   onKeyDown,
   onBlur,
 }: Props) => {
   const ringId = useId();
-  const errorId = useId();
   const hasError = error !== null;
   const isTitle = density === 'title';
-  const alert = hasError ? (
-    <span
-      id={errorId}
-      role="alert"
-      className={cn('truncate text-meta text-danger', isTitle && 'max-w-[40%] shrink-0')}
-    >
-      {error}
-    </span>
-  ) : null;
+  const status = (
+    <RenameStatus
+      isPending={isPending}
+      error={error}
+      onRetry={onRetry}
+      {...(isTitle ? { className: 'max-w-[40%] shrink-0' } : {})}
+    />
+  );
   const field = (
     <span
       data-title-field={density}
@@ -67,7 +70,9 @@ export const TitleField = ({
         maxLength={maxLength}
         aria-label={ariaLabel}
         aria-invalid={hasError}
-        aria-describedby={hasError ? `${ringId} ${errorId}` : ringId}
+        aria-busy={isPending}
+        readOnly={isPending}
+        aria-describedby={ringId}
         spellCheck={false}
         onChange={(event) => onDraftChange(event.target.value)}
         onKeyDown={onKeyDown}
@@ -77,7 +82,7 @@ export const TitleField = ({
           isTitle ? 'text-title' : 'text-ui',
         )}
       />
-      {isTitle ? alert : null}
+      {isTitle ? status : null}
       <LimitRing
         id={ringId}
         used={used}
@@ -92,7 +97,7 @@ export const TitleField = ({
   return (
     <span className="flex w-full min-w-0 flex-col gap-1">
       {field}
-      {alert}
+      {status}
     </span>
   );
 };

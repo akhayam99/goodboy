@@ -7,7 +7,7 @@ import { lastFocusedElement } from '../useLastFocused';
 import { Button } from './Button';
 import { IconButton } from './IconButton';
 import { ScrollFade } from './ScrollFade';
-import { FRAME_DRAWER_INSET_PX, FRAME_DRAWER_ROW_PX } from '../frameGeometry';
+import { PANE_RHYTHM } from '../paneRhythm';
 import { ICON_SIZE } from '../iconSize';
 
 export type DrawerBack = {
@@ -165,14 +165,17 @@ export const DrawerFrame = ({
     >
       <header
         data-drawer-header=""
-        style={{ paddingTop: FRAME_DRAWER_INSET_PX, paddingBottom: FRAME_DRAWER_INSET_PX }}
-        className={hasToolbar ? 'flex shrink-0 flex-col gap-2' : 'flex shrink-0 flex-col'}
+        className={cn(
+          'flex shrink-0 flex-col pb-2',
+          PANE_RHYTHM.headerInset,
+          hasToolbar && 'gap-2',
+        )}
       >
         <div
           data-drawer-header-row=""
-          style={{ minHeight: FRAME_DRAWER_ROW_PX }}
           className={cn(
             'flex min-w-0 gap-2 pl-4 pr-2',
+            hasToolbar ? 'min-h-8' : PANE_RHYTHM.headerRow,
             hasToolbar ? 'items-start' : 'items-center',
           )}
         >

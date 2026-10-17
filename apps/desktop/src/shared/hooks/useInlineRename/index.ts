@@ -1,4 +1,4 @@
-import { useEffect, useState, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { formatError } from '@goodboy/ui';
 
 type Params = {
@@ -13,6 +13,8 @@ export const useInlineRename = ({ value, onCommit, isEditing, onCancel, maxLengt
   const [selfEditing, setSelfEditing] = useState(false);
   const [draft, setDraft] = useState(value);
   const [error, setError] = useState<string | null>(null);
+  const [isPending, setIsPending] = useState(false);
+  const pendingRef = useRef(false);
   const editing = isEditing === undefined ? selfEditing : isEditing;
 
   useEffect(() => {
@@ -35,6 +37,9 @@ export const useInlineRename = ({ value, onCommit, isEditing, onCancel, maxLengt
   };
 
   const commit = async () => {
+    if (pendingRef.current) {
+      return;
+    }
     const next = draft.trim();
     if (next === '') {
       setError('name cannot be empty');
@@ -44,12 +49,17 @@ export const useInlineRename = ({ value, onCommit, isEditing, onCancel, maxLengt
       setError('name is too long');
       return;
     }
+    pendingRef.current = true;
+    setIsPending(true);
     try {
       await onCommit(next);
       setSelfEditing(false);
       setError(null);
     } catch (err) {
       setError(formatError(err));
+    } finally {
+      pendingRef.current = false;
+      setIsPending(false);
     }
   };
 
@@ -78,6 +88,7 @@ export const useInlineRename = ({ value, onCommit, isEditing, onCancel, maxLengt
     editing,
     draft,
     error,
+    isPending,
     maxLength,
     setDraft,
     start,

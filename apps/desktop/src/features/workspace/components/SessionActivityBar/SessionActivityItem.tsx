@@ -10,6 +10,7 @@ import { SESSION_HEADER_ANCHOR, sessionObjectKey } from '../../../actions/kinds/
 import { sessionSelectionTarget } from '../../../actions/sessionSelectionTarget';
 import { useSessionTitleRename } from '../../../session/hooks/useSessionTitleRename';
 import { sessionNodeOf } from '../../../session/sessionNode';
+import { overviewTitleHost } from '../../../session/overviewTitleHost';
 import { SessionStateNode } from './SessionStateNode';
 import { TitleField } from '../../../../shared/components/TitleField';
 
@@ -65,7 +66,12 @@ const SessionActivityItemView = ({
   useRenameRequest({
     objectKey: sessionObjectKey({ sessionId }),
     anchorKeys: isActive ? [anchorKey, null, SESSION_HEADER_ANCHOR] : [anchorKey],
-    onRename: rename.start,
+    onRename: () => {
+      if (overviewTitleHost.start({ sessionId })) {
+        return;
+      }
+      rename.start();
+    },
   });
   const menu = useObjectMenuTrigger({
     target: { kind: 'session', sessionId },
@@ -88,6 +94,8 @@ const SessionActivityItemView = ({
         used={rename.used}
         limit={rename.limit}
         error={rename.error}
+        isPending={rename.isPending}
+        onRetry={() => void rename.commit()}
         lead={
           <>
             <SessionStateNode node={node} />

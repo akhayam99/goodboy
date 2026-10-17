@@ -5,6 +5,7 @@ import {
   LEFT_SIDEBAR_DEFAULT,
   LEFT_SIDEBAR_MAX,
   LEFT_SIDEBAR_MIN,
+  PANE_RHYTHM,
   ResizeHandle,
   cn,
   useResizableWidth,
@@ -89,15 +90,20 @@ export const SessionRail = ({ session }: Props) => {
         width: fold.isFolded ? COLLAPSED_RAIL_WIDTH : `var(${WIDTH_VAR})`,
       }}
       className={cn(
-        'relative flex h-full min-h-0 shrink-0 flex-col gap-1 bg-background pb-2 pt-1',
+        'relative flex h-full min-h-0 shrink-0 flex-col gap-1 bg-background pb-2',
         'motion-safe:transition-[width] motion-safe:duration-220 motion-safe:ease-out',
       )}
     >
-      <div data-rail-top="" className="flex min-w-0 shrink-0 items-center justify-between pr-2">
-        <div className="flex w-11 shrink-0 items-center justify-center">
-          <SessionRailToggle isFolded={fold.isFolded} onToggle={fold.toggle} />
+      <div data-rail-top="" className={cn('flex min-w-0 shrink-0 pr-2', PANE_RHYTHM.headerInset)}>
+        <div
+          data-header-line=""
+          className={cn('flex min-w-0 flex-1 items-center justify-between', PANE_RHYTHM.headerRow)}
+        >
+          <div className="flex w-11 shrink-0 items-center justify-center">
+            <SessionRailToggle isFolded={fold.isFolded} onToggle={fold.toggle} />
+          </div>
+          {isSessionChrome ? <SessionLevelActions session={session} controls={controls} /> : null}
         </div>
-        {isSessionChrome ? <SessionLevelActions session={session} controls={controls} /> : null}
       </div>
       {isSessionChrome && isTopFailure ? (
         <div className="shrink-0 px-2">

@@ -31,6 +31,13 @@ import {
 } from './validateScenesFrame.mjs';
 import { menuRowsFailures, menuRowsProbe } from './validateScenesMenus.mjs';
 import {
+  HEADER_LINE_READY,
+  HEADER_LINE_SCENES,
+  HEADER_LINE_WIDTHS,
+  headerLineFailures,
+  headerLineProbe,
+} from './validateScenesHeaderLine.mjs';
+import {
   CHAT_MEASURE_READY,
   CHAT_MEASURE_SCENE,
   CHAT_MEASURE_WIDTHS,
@@ -607,6 +614,17 @@ const measureChatRoom = async ({ send }) => {
   return { failures, wraps: 0 };
 };
 
+const measureHeaderLine = async ({ send, scene }) => {
+  const failures = [];
+  for (const width of HEADER_LINE_WIDTHS) {
+    await open({ send, scene, width, zoom: 1, readySelector: HEADER_LINE_READY });
+    const measured = await run(send, headerLineProbe, null);
+    failures.push(...headerLineFailures({ scene, width, measured }));
+  }
+  console.log(`${scene}: ${HEADER_LINE_WIDTHS.length} widths, ${failures.length} header drifts`);
+  return { failures, wraps: 0 };
+};
+
 const measureInbox = async ({ send, width }) => {
   const failures = [];
   await open({ send, scene: 'inbox', width, zoom: 1, readySelector: '[data-inbox-key]' });
@@ -831,6 +849,9 @@ const main = async () => {
     }
     for (const scene of only === undefined || only === 'columns' ? COLUMN_SCENES : []) {
       await measure({ scene, task: () => measureColumns({ send, scene }) });
+    }
+    for (const scene of only === undefined || only === 'header-line' ? HEADER_LINE_SCENES : []) {
+      await measure({ scene, task: () => measureHeaderLine({ send, scene }) });
     }
     if (only === undefined || only === 'chat') {
       await measure({ scene: CHAT_MEASURE_SCENE, task: () => measureChatRoom({ send }) });

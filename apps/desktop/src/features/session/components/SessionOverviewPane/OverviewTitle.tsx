@@ -5,6 +5,9 @@ import { useAppStore } from '../../../../store';
 import { TitleField } from '../../../../shared/components/TitleField';
 import { sessionRowTitle } from '../../sessionTitle';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
+import { overviewTitleHost } from '../../overviewTitleHost';
+import { useRenameRequest } from '../../../actions/useRenameRequest';
+import { SESSION_HEADER_ANCHOR, sessionObjectKey } from '../../../actions/kinds/session';
 
 const NO_TASKS: ReadonlyArray<SessionExternalTask> = [];
 
@@ -23,12 +26,27 @@ export const OverviewTitle = ({ session }: Props) => {
   const canRename = session.archivedAt == null;
   const titleRef = useRef<HTMLButtonElement>(null);
   const shouldRefocus = useRef(false);
+  const startRef = useRef(rename.start);
+  startRef.current = rename.start;
   const keyLead =
     keys.length === 0 ? null : (
       <span data-session-key="" className="shrink-0 font-mono text-muted-foreground">
         {keys.join(' ')}
       </span>
     );
+
+  useEffect(() => {
+    if (!canRename) {
+      return;
+    }
+    return overviewTitleHost.attach({ sessionId, start: () => startRef.current() });
+  }, [canRename, sessionId]);
+
+  useRenameRequest({
+    objectKey: sessionObjectKey({ sessionId }),
+    anchorKeys: canRename ? [SESSION_HEADER_ANCHOR, null, `sidebar:${sessionId}`] : [],
+    onRename: rename.start,
+  });
 
   useEffect(() => {
     if (rename.editing || !shouldRefocus.current) {
@@ -48,6 +66,8 @@ export const OverviewTitle = ({ session }: Props) => {
         used={rename.used}
         limit={rename.limit}
         error={rename.error}
+        isPending={rename.isPending}
+        onRetry={() => void rename.commit()}
         lead={keyLead}
         onDraftChange={rename.setDraft}
         onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {

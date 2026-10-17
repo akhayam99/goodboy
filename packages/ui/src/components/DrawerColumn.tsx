@@ -303,7 +303,7 @@ export const DrawerColumn = ({
               className={cn(
                 'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-drawer',
                 isFloating
-                  ? 'rounded-l-frame border-l border-frame-edge shadow-xl focus-visible:outline-none'
+                  ? 'rounded-l-frame border-l border-t border-frame-edge border-t-transparent shadow-xl focus-visible:outline-none'
                   : 'items-end rounded-frame border border-frame-edge',
                 isOverlay && 'pointer-events-auto',
                 isOverlay && !exit.isResumed && 'motion-safe:animate-drawer-overlay-in',

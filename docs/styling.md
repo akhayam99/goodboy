@@ -245,6 +245,13 @@ page with its own frame (the Sessions board, the Terminal, the chat room header)
 mounts it directly. No page sets its own header padding: the Settings column, the
 board frame and the terminal drop their own top rows.
 
+The columns beside the page share that header line: the session rail top row
+(`data-rail-top`, `data-header-line`), the first icon of the session tools column
+and every drawer header row (`DrawerFrame`) take `PANE_RHYTHM.headerInset` and
+`PANE_RHYTHM.headerRow` (`h-8`), so their tops and centres match the page title
+row. `validate-scenes --only header-line` measures all four on
+`r4-rail-tools-open` at 1100, 1440 and 1920 and fails a drift over 1px.
+
 A page root names its kind (`page="overview"`, `page="terminal"`) and
 `PAGE_MEASURE` in `packages/ui/src/frameGeometry.ts` gives the column it sits on:
 

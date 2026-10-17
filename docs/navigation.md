@@ -2456,8 +2456,9 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   `questionGroupsOf` in `questionsLensModel` (a question an agent is answering stays under
   Needs you and says so in gray). A row reads the question, the answer in gray, the
   asker's role and the age; a blocking ask is one warning dot in the leading cell. The row
-  opens the question in the drawer (`question` drawer kind, `QuestionDrawer`), where the
-  card answers, skips, dismisses and undoes; answering moves the drawer to the next
+  opens the question in the drawer (`question` drawer kind, `QuestionDrawer`), titled with
+  the asker's role and the age (`questionMetaOf`, the same function as the row) while the
+  card carries the question itself; the card answers, skips, dismisses and undoes; answering moves the drawer to the next
   waiting question. Opened from Ask (a question chip, **Answer question N**), the drawer
   carries **Back to Ask**. The shared `EmptyState` shows only when the session has no
   question at all. Inside the asker's own conversation a question card shows only the question

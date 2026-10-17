@@ -66,9 +66,10 @@ describe('frameGeometryOf', () => {
     expect(FRAME_PAGES.every((page) => frameGeometryOf({ page }).titleRowHeight === 32)).toBe(true);
   });
 
-  it('centres the drawer header row on the band centre line', () => {
-    expect(FRAME_DRAWER_ROW_PX).toBe(28);
-    expect(FRAME_DRAWER_INSET_PX + FRAME_DRAWER_ROW_PX / 2).toBe(FRAME_BAND_PX / 2);
+  it('puts the drawer header row on the page title line', () => {
+    expect(FRAME_DRAWER_ROW_PX).toBe(FRAME_TITLE_ROW_PX);
+    expect(FRAME_DRAWER_INSET_PX).toBe(FRAME_PAGE_HEADER_INSET_PX);
+    expect(FRAME_DRAWER_INSET_PX + FRAME_DRAWER_ROW_PX / 2).toBe(28);
   });
 });
 

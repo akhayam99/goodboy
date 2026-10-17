@@ -2,8 +2,8 @@ import type { Agent, AgentId, OpenQuestionId } from '@goodboy/types';
 import { ListGrid, ListGridGroup } from '@goodboy/ui';
 import { useNow } from '../../../../../../shared/hooks/useNow';
 import { NAMES } from '../../../../../../shared/names';
-import { formatAge } from '../../../../../../shared/utils/time/formatAge';
-import { classifyAgent, type AgentKind } from '../../../../agent-kind';
+import type { AgentKind } from '../../../../agent-kind';
+import { questionMetaOf } from '../questionMetaOf';
 import type { QuestionGroups, QuestionRow } from '../questionsLensModel';
 import { QuestionsGridRow } from './QuestionsGridRow';
 import { QUESTIONS_GRID_COLUMNS } from './questionsGridColumns';
@@ -29,20 +29,13 @@ export const QuestionsGrid = ({ groups, agents, kindOverrides, selectedId, onOpe
 
   const renderRow = ({ row }: RowParams) => {
     const { question } = row;
-    const askerId = question.createdByAgentId ?? null;
-    const asker = askerId === null ? null : (agents.find((agent) => agent.id === askerId) ?? null);
-    const askedOrAnsweredAt =
-      row.kind === 'answered' ? (question.answeredAt ?? question.createdAt) : question.createdAt;
+    const meta = questionMetaOf({ row, agents, kindOverrides, now });
     return (
       <QuestionsGridRow
         key={question.id}
         row={row}
-        askerKind={
-          asker === null
-            ? null
-            : classifyAgent({ agent: asker, override: kindOverrides[asker.id] ?? null })
-        }
-        age={formatAge({ from: askedOrAnsweredAt, now })}
+        askerKind={meta.askerKind}
+        age={meta.age}
         isSelected={question.id === selectedId}
         onOpen={() => onOpen({ questionId: question.id })}
       />
