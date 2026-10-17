@@ -75,6 +75,7 @@ import { PlanEstimateChip } from './parts/PlanEstimateChip';
 import { usePlanEstimates } from './usePlanEstimates';
 import { offeredSessionGoal } from './offeredSessionGoal';
 import { presetStepMarksOf } from '../../presetStepMarksOf';
+import { useRoutingScope } from '../../../../shared/hooks/useRoutingScope';
 
 export type BuilderKickoff = {
   readonly workspaceId: WorkspaceId;
@@ -264,6 +265,7 @@ export const WorkflowBuilderView = (props: Props) => {
     [providers],
   );
 
+  const routingScope = useRoutingScope({ sessionId: session?.id ?? null });
   const presetMarks = useMemo(
     () =>
       new Map(
@@ -276,11 +278,12 @@ export const WorkflowBuilderView = (props: Props) => {
                 roleModels,
                 sessionProvider: providerId,
                 connectedProviders,
+                scope: routingScope,
               }),
             ] as const,
         ),
       ),
-    [phaseTemplates, roleModels, providerId, connectedProviders],
+    [phaseTemplates, roleModels, providerId, connectedProviders, routingScope],
   );
 
   const resolutionScope = session === null ? { workspaceId } : { sessionId: session.id };

@@ -1,3 +1,4 @@
+import type { AutoContext } from '@goodboy/core';
 import type { ProviderId, RoleModelPreferences, Step } from '@goodboy/types';
 import { modelLabel } from '../chat/utils/chat-constants';
 import { AGENT_KIND_META, classifyStep } from '../session/agent-kind';
@@ -14,6 +15,7 @@ type Params = {
   readonly roleModels: RoleModelPreferences | null;
   readonly sessionProvider: ProviderId | null;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
+  readonly scope: AutoContext | null;
 };
 
 type StepParams = {
@@ -32,12 +34,13 @@ export const presetStepMarksOf = ({
   roleModels,
   sessionProvider,
   connectedProviders,
+  scope,
 }: Params): ReadonlyArray<PresetStepMark> =>
   [...steps]
     .sort((left, right) => left.ordinal - right.ordinal)
     .map((step, index) => {
       const kind = classifyStep({ step });
-      const routing = resolveStepRouting({ step, kind, roleModels, sessionProvider });
+      const routing = resolveStepRouting({ step, kind, roleModels, sessionProvider, scope });
       const isResolved =
         namesItsProvider({ step }) || connectedProviders.includes(routing.provider);
       const model = isResolved ? modelLabel(routing.model, routing.provider) : AUTO_WORD;
