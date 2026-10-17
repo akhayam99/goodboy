@@ -163,7 +163,11 @@ column slides left to re-centre in what is left of it (see The content
 column). The drawer pushes only while the page container keeps 560px plus its
 48px of gutters and the room covers the drawer's saved width; below that it
 lies over the page, full height, with a scrim and an `inert` page, never
-squeezed. `sizing` on `DrawerColumn` is `side` (400, drag 384 to 560), `reader`
+squeezed. While it lies over the page, `DrawerColumn` draws an edge host
+(`data-drawer-edge`) at the right edge above the scrim and hands it to the page
+through `DrawerEdgeContext`; the session tools column portals a live copy there
+(`SessionFrame`), and the card sits left of it, so a tool can still switch or
+close the drawer. `sizing` on `DrawerColumn` is `side` (400, drag 384 to 560), `reader`
 (720, drag 480 to 1000) or `full` (the whole column, always over the page); each
 tier has its own saved width and a handle. `placement="overlay"` skips the push
 rule for a drawer that always lies over the page; the thresholds (1024 for

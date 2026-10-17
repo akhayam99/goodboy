@@ -8,6 +8,7 @@ import {
   type Ref,
 } from 'react';
 import { cn } from '../cn';
+import { DrawerEdgeContext } from '../drawerEdgeContext';
 import { dismissTopEscapeLayer } from '../escape';
 import { SHEET_CLASSES, type ResizeActivity, type SheetEdge } from '../sheet';
 import { ResizeHandle } from './ResizeHandle';
@@ -29,6 +30,26 @@ export const READER_DRAWER_STORAGE_KEY = 'goodboy:reader-drawer-width:v1';
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [contenteditable="true"], [tabindex]:not([tabindex="-1"])';
+
+const useEdgeHost = () => {
+  const [host, setHost] = useState<HTMLDivElement | null>(null);
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    if (host === null || typeof ResizeObserver === 'undefined') {
+      setWidth(0);
+      return;
+    }
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry !== undefined) {
+        setWidth(entry.contentRect.width);
+      }
+    });
+    observer.observe(host);
+    return () => observer.disconnect();
+  }, [host]);
+  return { host, setHost, width };
+};
 
 const useMeasuredWidth = () => {
   const ref = useRef<HTMLDivElement | null>(null);
@@ -98,6 +119,7 @@ export const DrawerColumn = ({
   className,
 }: DrawerColumnProps) => {
   const column = useMeasuredWidth();
+  const edge = useEdgeHost();
   const asideRef = useRef<HTMLElement | null>(null);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const cardRef = useRef<HTMLDivElement | null>(null);
@@ -146,9 +168,11 @@ export const DrawerColumn = ({
     width: layout.width,
     mode: isOverlayExit ? 'overlay' : mode,
   });
+  const isEdgeShown = isOverlayOpen || isOverlayExit;
   const asideStyle: CSSProperties & Readonly<Record<typeof TRACK_VAR, string>> = {
     width: asideWidth,
     [TRACK_VAR]: `${drawerAsideWidthOf({ width: layout.width, mode: 'push' })}px`,
+    ...(isFloating && isEdgeShown && { right: edge.width }),
   };
   const mountSnapshot = useCallback(
     (node: HTMLDivElement | null) => {
@@ -204,7 +228,9 @@ export const DrawerColumn = ({
           isSheet && SHEET_CLASSES[sheetState],
         )}
       >
-        {main}
+        <DrawerEdgeContext.Provider value={isEdgeShown ? edge.host : null}>
+          {main}
+        </DrawerEdgeContext.Provider>
       </div>
       {isOverlayOpen || isOverlayExit ? (
         <div
@@ -216,6 +242,16 @@ export const DrawerColumn = ({
             'absolute inset-0 z-10 bg-scrim',
             isOverlayExit && 'pointer-events-none animate-drawer-fade-out',
             !isOverlayExit && !exit.isResumed && 'motion-safe:animate-fade-in',
+          )}
+        />
+      ) : null}
+      {isEdgeShown ? (
+        <div
+          ref={edge.setHost}
+          data-drawer-edge=""
+          className={cn(
+            'absolute right-0 z-30 flex empty:hidden',
+            isSheet ? 'inset-y-px' : 'inset-y-0',
           )}
         />
       ) : null}
