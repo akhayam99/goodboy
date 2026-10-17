@@ -80,7 +80,7 @@ describe('the resolve fix scenes', () => {
 
     expect(statusText()).toContain('Fix run · 8 comments');
     expect(statusText()).not.toContain('Fixing');
-    expect(statusText()).toContain('8 need you');
+    expect(statusText()).not.toContain('need you');
   });
 
   it('resolve-fix-question is not live and continues only when the run is idle', async () => {
@@ -117,7 +117,7 @@ describe('the resolve fix scenes', () => {
   it('resolve-fix-failed shows Failed with a Retry in the same run', async () => {
     await mount({ name: 'resolve-fix-failed' });
 
-    expect(statusText()).toContain("1 couldn't fix");
+    expect(statusText()).toContain('Fix run · 8 comments');
     expect(screen.getAllByRole('button', { name: /Retry/ }).length).toBeGreaterThan(0);
   });
 });

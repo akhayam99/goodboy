@@ -47,10 +47,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 2,
     reason: 'chrome',
   },
-  'apps/desktop/src/features/resolve/components/ReviewFlow/ReviewActionBar.tsx': {
-    count: 1,
-    reason: 'chrome',
-  },
   'apps/desktop/src/features/session/components/SessionOverviewPane/LinkWorkPicker.tsx': {
     count: 2,
     reason: 'chrome',

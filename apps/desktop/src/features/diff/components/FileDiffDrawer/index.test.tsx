@@ -95,7 +95,7 @@ describe('FileDiffDrawer base branch', () => {
       worktree_file_sides: { old: TEXT, new: TEXT, too_large: false },
     });
     await mount({ baseBranch: 'develop' });
-    fireEvent.click(await screen.findByRole('button', { name: 'Show all 29 hidden lines' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Show 29 lines' }));
     expect(await screen.findByText('ledger1')).toBeDefined();
     expect(storySpies.tauriInvoke).toHaveBeenCalledWith('worktree_file_sides', {
       worktreePath: WORKTREE,

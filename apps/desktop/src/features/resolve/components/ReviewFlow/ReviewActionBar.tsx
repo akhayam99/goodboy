@@ -1,10 +1,9 @@
 import { useMemo, type ReactNode } from 'react';
 import { ArrowUp, ExternalLink } from 'lucide-react';
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
-import { Button, Kbd, Tooltip } from '@goodboy/ui';
+import { Button, Tooltip } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { useActionEnv } from '../../../actions/useActionEnv';
 import { useObjectActions } from '../../../actions/useObjectActions';
 import type { ResolvedAction } from '../../../actions/types';
@@ -21,6 +20,8 @@ type Props = {
   readonly sessionId: SessionId;
   readonly entry: ReviewEntry;
   readonly push: ReviewPush;
+  readonly hasRunLine: boolean;
+  readonly extra?: ReactNode;
   readonly binding: Pick<
     ReviewCommentBinding,
     'compose' | 'isEditingReply' | 'pendingActionId' | 'isSubmitting' | 'onRun'
@@ -60,7 +61,14 @@ const idOf = (item: BarItem): string => {
   }
 };
 
-export const ReviewActionBar = ({ sessionId, entry, push: reviewPush, binding }: Props) => {
+export const ReviewActionBar = ({
+  sessionId,
+  entry,
+  push: reviewPush,
+  hasRunLine,
+  extra = null,
+  binding,
+}: Props) => {
   const { threadId, row, state } = entry;
   const target = useMemo(
     () => ({ kind: 'reviewComment' as const, sessionId, threadId }),
@@ -109,14 +117,14 @@ export const ReviewActionBar = ({ sessionId, entry, push: reviewPush, binding }:
       return byId(OPEN_HOST_ACTION) !== undefined;
     }
     if (item.kind === 'transcript') {
-      return byId(TRANSCRIPT_ACTION) !== undefined;
+      return !hasRunLine && byId(TRANSCRIPT_ACTION) !== undefined;
     }
     if (item.kind === 'stop') {
-      return byId(STOP_ACTION) !== undefined;
+      return !hasRunLine && byId(STOP_ACTION) !== undefined;
     }
     return true;
   });
-  if (!isIdle || (items.length === 0 && actions.length === 0)) {
+  if (!isIdle || (items.length === 0 && actions.length === 0 && extra === null)) {
     return null;
   }
   const shown = items.map((item) => idOf(item));
@@ -149,17 +157,24 @@ export const ReviewActionBar = ({ sessionId, entry, push: reviewPush, binding }:
       >
         {icon}
         {label}
-        {action.shortcut !== null && (
-          <Kbd look="inline" isOnTone={variant === 'primary'} aria-hidden>
-            {shortcutGlyphs(action.shortcut)}
-          </Kbd>
-        )}
       </Button>
     );
-    return action.blockedReason === null ? (
+    if (action.blockedReason !== null) {
+      return (
+        <Tooltip key={action.id} content={action.blockedReason} anchorClassName="inline-flex">
+          {button}
+        </Tooltip>
+      );
+    }
+    return action.shortcut === null ? (
       button
     ) : (
-      <Tooltip key={action.id} content={action.blockedReason} anchorClassName="inline-flex">
+      <Tooltip
+        key={action.id}
+        content={label}
+        shortcut={action.shortcut}
+        anchorClassName="inline-flex"
+      >
         {button}
       </Tooltip>
     );
@@ -244,9 +259,10 @@ export const ReviewActionBar = ({ sessionId, entry, push: reviewPush, binding }:
       role="toolbar"
       aria-label={BAR_COPY.label}
       data-review-action-bar
-      className="flex h-12 min-w-0 shrink-0 items-center gap-2 border-t border-border-soft bg-background"
+      className="flex h-12 min-w-0 shrink-0 items-center gap-2 bg-background"
     >
       {items.map((item) => render(item))}
+      {extra}
       <span className="ml-auto flex shrink-0 items-center">
         <ThreadOverflowMenu target={target} label={BAR_COPY.more} omit={shown} />
       </span>

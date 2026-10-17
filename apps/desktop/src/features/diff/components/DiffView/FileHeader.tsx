@@ -1,7 +1,7 @@
-import { ChevronRight, ExternalLink, FileText, MessageSquare } from 'lucide-react';
-import { Checkbox, CopyButton, IconButton, Tooltip, cn, tintClasses } from '@goodboy/ui';
+import { ChevronRight } from 'lucide-react';
+import { Button, Checkbox, IconButton, Tooltip, cn, tintClasses } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { STATUS_LETTER, STATUS_TONE, STATUS_WORD, splitPath } from '../../lib/fileStatus';
 import type { ViewedState } from '../../lib/reviewedFiles';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
@@ -123,27 +123,21 @@ export const FileHeader = ({
         </Tooltip>
       )}
       {onCommentOnFile === null ? null : (
-        <IconButton
-          icon={MessageSquare}
-          label="Comment"
-          tooltip={commentCount > 0 ? `Comment, ${commentCount} open` : 'Comment'}
-          data-file-comment-trigger=""
-          onClick={onCommentOnFile}
-        />
+        <Tooltip
+          content={commentCount > 0 ? `Comment, ${commentCount} open` : 'Comment'}
+          anchorClassName="shrink-0"
+        >
+          <Button size="sm" variant="ghost" data-file-comment-trigger="" onClick={onCommentOnFile}>
+            Comment
+          </Button>
+        </Tooltip>
       )}
-      {onOpenInEditor === null ? null : (
-        <IconButton icon={ExternalLink} label="Open in editor" onClick={onOpenInEditor} />
-      )}
-      <CopyButton
-        presentation="icon"
-        label="Copy path"
-        size={ICON_SIZE.control}
-        className="size-7 justify-center"
-        value={file.path}
+      <IconButton
+        icon={CONCEPT_ICONS.more}
+        label={`More for ${name}`}
+        aria-haspopup="menu"
+        onClick={menu.onContextMenu}
       />
-      {onShowWhole === null ? null : (
-        <IconButton icon={FileText} label="Show whole file" onClick={onShowWhole} />
-      )}
     </div>
   );
 };

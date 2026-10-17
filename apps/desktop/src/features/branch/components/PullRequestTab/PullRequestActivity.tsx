@@ -108,7 +108,7 @@ const rowOf = ({
           </>
         ),
         body: null,
-        open: { label: 'Open Comments', run: onOpenComments },
+        open: { label: 'Open comments', run: onOpenComments },
       };
     case 'checks':
       return {
@@ -121,7 +121,7 @@ const rowOf = ({
         ),
         line: <>{item.text}</>,
         body: null,
-        open: { label: 'View checks', run: onOpenChecks },
+        open: { label: 'Open checks', run: onOpenChecks },
       };
     case 'edit':
       return {
@@ -170,11 +170,7 @@ export const PullRequestActivity = ({
   const now = useNow(60_000);
   return (
     <section aria-label="Activity" className="flex min-w-0 flex-col gap-3">
-      <SectionHeader
-        label="Activity"
-        headingLevel={2}
-        meta={<span className="text-meta tabular-nums text-faint-foreground">{items.length}</span>}
-      />
+      <SectionHeader label="Activity" headingLevel={2} />
       <ol className="flex min-w-0 flex-col">
         {items.map((item) => {
           const row = rowOf({ item, nouns, baseBranch, onOpenComments, onOpenChecks });

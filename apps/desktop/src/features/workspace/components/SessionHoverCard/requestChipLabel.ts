@@ -1,6 +1,6 @@
 import type { PullRequestState } from '@goodboy/types';
-import { PULL_REQUEST_PRESENTATION } from '../../../../shared/pullRequestPresentation';
 import { joinFacts } from '../../../../shared/utils/joinFacts';
+import { pullRequestStateWordOf } from '../../../branch/pullRequestStateWordOf';
 import type { LinkedRequest } from '../StageBoard/StageBoardCard/getLinkedRequest';
 
 type Params = {
@@ -28,7 +28,7 @@ export const requestChipLabel = ({ linked, pullRequest }: Params): string => {
   const number = linked.number === undefined ? null : `${mark}${linked.number}`;
   const isSettled = linked.state === 'merged' || linked.state === 'closed';
   const stateLabel = WORDED_STATES.has(linked.state)
-    ? PULL_REQUEST_PRESENTATION[linked.state].label
+    ? pullRequestStateWordOf({ state: linked.state })
     : null;
   const checks = pullRequest === null || isSettled ? null : pullRequest.checks;
   const head = [number, stateLabel].filter((part) => part !== null).join(' ');

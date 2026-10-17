@@ -5,7 +5,7 @@ import { fixOutcomeText } from './fixOutcomeText';
 export type CiFixOutcome = {
   readonly headline: string | null;
   readonly detail: string;
-  readonly tone: 'success' | 'warning' | 'danger' | 'neutral';
+  readonly tone: 'success' | 'warning' | 'danger' | 'neutral' | 'info';
   readonly isPulsing: boolean;
 };
 
@@ -33,14 +33,14 @@ export const ciFixOutcomeOf = ({
       return {
         headline: `Fixing ${subject}`,
         detail: detail ?? '',
-        tone: 'warning',
+        tone: 'info',
         isPulsing: true,
       };
     case 'fixed-local':
       return {
         headline: `${subject} is fixed on your branch`,
         detail: detail ?? '',
-        tone: 'success',
+        tone: 'warning',
         isPulsing: false,
       };
     case 'fixed-pushed': {
@@ -64,7 +64,7 @@ export const ciFixOutcomeOf = ({
       return {
         headline: `${subject} is running again`,
         detail: detail ?? '',
-        tone: 'warning',
+        tone: 'info',
         isPulsing: true,
       };
     }

@@ -1,81 +1,84 @@
+import type { PrCheckRun } from '@goodboy/types';
 import type { PullRequestPresentationState } from '../../shared/pullRequestPresentation';
 import type { BranchTab } from '../../store/slices/navigation/types';
 import { countSlotText } from '../../shared/utils/countSlotText';
+import { checksCountsOf, checksWordOf } from '../integrations/github/checksRollup';
+import { pullRequestStateWordOf } from './pullRequestStateWordOf';
 
-type WorktreeEntryTone = 'danger' | 'warning' | null;
+type WorktreeEntryTone = 'danger' | 'warning' | 'info' | null;
 
-export type WorktreeEntryFact = {
+type WorktreeEntryFact = {
   readonly text: string | null;
   readonly tone: WorktreeEntryTone;
+  readonly tooltip: string | null;
 };
 
 export type WorktreeEntryFacts = Readonly<Record<BranchTab, WorktreeEntryFact>>;
 
-type WorktreePullRequestFact = {
-  readonly label: string;
-  readonly state: PullRequestPresentationState;
-};
-
 type Params = {
-  readonly pullRequest: WorktreePullRequestFact | null;
-  readonly comments: number | null;
-  readonly commentsWaiting: number;
+  readonly pullRequestState: PullRequestPresentationState;
+  readonly commentsNeedYou: number;
   readonly files: number | null;
-  readonly commits: number | null;
   readonly notPushed: number | null;
-  readonly checks: number | null;
-  readonly checksFailed: number;
+  readonly checks: ReadonlyArray<PrCheckRun> | null;
+  readonly checksUnreadReason: string | null;
 };
 
-type CountParams = {
-  readonly count: number | null;
-};
+const EMPTY: WorktreeEntryFact = { text: null, tone: null, tooltip: null };
 
-const STATE_WORD: Readonly<Record<PullRequestPresentationState, string | null>> = {
-  none: null,
-  draft: 'Draft',
-  open: null,
-  approved: 'Approved',
-  queued: 'Queued',
-  merged: 'Merged',
-  closed: 'Closed',
-};
+const SLOT_STATES: ReadonlySet<PullRequestPresentationState> =
+  new Set<PullRequestPresentationState>(['draft', 'merged', 'closed']);
 
-const countFactOf = ({ count }: CountParams): WorktreeEntryFact => ({
-  text: count === null ? null : (countSlotText({ count }) ?? ''),
-  tone: null,
-});
+type PullRequestParams = Pick<Params, 'pullRequestState'>;
 
-const pullRequestFactOf = ({ pullRequest }: Pick<Params, 'pullRequest'>): WorktreeEntryFact => {
-  if (pullRequest === null) {
-    return { text: 'None', tone: null };
+const pullRequestFactOf = ({ pullRequestState }: PullRequestParams): WorktreeEntryFact =>
+  SLOT_STATES.has(pullRequestState)
+    ? { ...EMPTY, text: pullRequestStateWordOf({ state: pullRequestState }) }
+    : EMPTY;
+
+type ChecksParams = Pick<Params, 'checks' | 'checksUnreadReason'>;
+
+const checksFactOf = ({ checks, checksUnreadReason }: ChecksParams): WorktreeEntryFact => {
+  if (checks === null) {
+    return { ...EMPTY, tooltip: checksUnreadReason };
   }
-  const word = STATE_WORD[pullRequest.state];
-  return { text: word === null ? pullRequest.label : `${pullRequest.label} ${word}`, tone: null };
+  const counts = checksCountsOf({ checks });
+  const word = checksWordOf({ runs: checks });
+  if (counts.failing > 0) {
+    return { text: countSlotText({ count: counts.failing }), tone: 'danger', tooltip: word };
+  }
+  if (counts.running > 0) {
+    return { text: countSlotText({ count: counts.running }), tone: 'info', tooltip: word };
+  }
+  return { ...EMPTY, tooltip: word };
+};
+
+type NotPushedParams = Pick<Params, 'notPushed'>;
+
+const commitsFactOf = ({ notPushed }: NotPushedParams): WorktreeEntryFact => {
+  if (notPushed === null || notPushed <= 0) {
+    return EMPTY;
+  }
+  const countWord = `${notPushed} not pushed`;
+  return { text: `↑${notPushed}`, tone: null, tooltip: countWord };
 };
 
 export const worktreeEntryFactsOf = ({
-  pullRequest,
-  comments,
-  commentsWaiting,
+  pullRequestState,
+  commentsNeedYou,
   files,
-  commits,
   notPushed,
   checks,
-  checksFailed,
-}: Params): WorktreeEntryFacts => ({
-  pr: pullRequestFactOf({ pullRequest }),
-  comments: {
-    ...countFactOf({ count: comments }),
-    tone: commentsWaiting > 0 ? 'warning' : null,
-  },
-  files: countFactOf({ count: files }),
-  commits:
-    notPushed !== null && notPushed > 0
-      ? { text: `${notPushed} not pushed`, tone: null }
-      : countFactOf({ count: commits }),
-  checks:
-    checksFailed > 0
-      ? { text: `${checksFailed} failed`, tone: 'danger' }
-      : { text: checks === null || checks === 0 ? '' : String(checks), tone: null },
-});
+  checksUnreadReason,
+}: Params): WorktreeEntryFacts => {
+  const needsYou = countSlotText({ count: commentsNeedYou });
+  const needsYouWord = `${commentsNeedYou} need you`;
+  return {
+    pr: pullRequestFactOf({ pullRequestState }),
+    comments:
+      needsYou === null ? EMPTY : { text: needsYou, tone: 'warning', tooltip: needsYouWord },
+    files: files === null ? EMPTY : { ...EMPTY, text: countSlotText({ count: files }) },
+    commits: commitsFactOf({ notPushed }),
+    checks: checksFactOf({ checks, checksUnreadReason }),
+  };
+};

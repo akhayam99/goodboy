@@ -11,6 +11,7 @@ import { LEFT_SIDEBAR_MAX } from '@goodboy/ui';
 import type {
   BranchCommit,
   DiffComment,
+  HistoryGraph,
   MountId,
   ProjectId,
   PullRequestState,
@@ -142,7 +143,17 @@ const seedWorktree = ({ isDiffLoaded }: { readonly isDiffLoaded: boolean }): voi
   }));
 };
 
-const withCommits = (): void => {
+const graphWithRemote = ({ remoteSha }: { readonly remoteSha: string }): HistoryGraph => ({
+  baseRef: 'origin/main',
+  mergeBase: { sha: 'b'.repeat(40), subject: 'Base', author: 'dana-r', timestamp: 1 },
+  mainHead: 'b'.repeat(40),
+  mainCommits: [],
+  behind: 0,
+  remoteSha,
+  files: [],
+});
+
+const withCommits = ({ remoteSha = null }: { readonly remoteSha?: string | null } = {}): void => {
   useAppStore.setState((state) => ({
     historyDrafts: {
       ...state.historyDrafts,
@@ -156,7 +167,7 @@ const withCommits = (): void => {
         commits: COMMITS,
         items: [],
         onto: null,
-        graph: null,
+        graph: remoteSha === null ? null : graphWithRemote({ remoteSha }),
         undo: [],
         prediction: null,
         isPredicting: false,
@@ -308,7 +319,7 @@ describe('Branch page sections by state', () => {
     await settle();
 
     expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Files', 'Commits']);
-    expect(railRow(/^Comments/).textContent).toBe('Comments1');
+    expect(railRow(/^Comments/).textContent).toBe('Comments');
   });
 
   it.each(['draft', 'open', 'merged', 'closed', 'queued'] as const)(
@@ -477,7 +488,7 @@ describe('Branch page counts', () => {
   const countOf = (name: RegExp): string =>
     railRow(name).textContent?.replace(/^[A-Za-z]+/, '') ?? '';
 
-  it('shows a muted dash named Not loaded while a count is unknown, never 0', async () => {
+  it('shows nothing while a count is unknown, never a dash or a 0', async () => {
     seedResolveScene({ expandedThreadId: null });
     seedWorktree({ isDiffLoaded: false });
     act(() => {
@@ -496,18 +507,17 @@ describe('Branch page counts', () => {
     );
     await settle();
 
-    for (const name of [/^Comments/, /^Files/, /^Commits/]) {
+    for (const name of [/^Files/, /^Commits/, /^Checks/]) {
       const row = railRow(name);
-      expect(within(row).getByRole('img', { name: 'Not loaded' })).toBeDefined();
-      expect(row.textContent).not.toMatch(/0/);
+      expect(row.querySelector('[data-entry-slot]')).toBeNull();
+      expect(row.textContent).not.toMatch(/[0-]/);
     }
-    expect(within(railRow(/^Checks/)).queryByRole('img', { name: 'Not loaded' })).toBeNull();
   });
 
-  it('turns each dash into its number as the data arrives', async () => {
+  it('fills each slot as the data arrives, the commits not pushed as an arrow', async () => {
     seedResolveScene({ expandedThreadId: null });
     seedWorktree({ isDiffLoaded: true });
-    withCommits();
+    withCommits({ remoteSha: 'c'.repeat(40) });
     render(
       <ToastProvider>
         <WorktreeEntriesSlot />
@@ -516,9 +526,8 @@ describe('Branch page counts', () => {
     );
     await settle();
 
-    expect(screen.queryAllByRole('img', { name: 'Not loaded' })).toHaveLength(0);
     expect(countOf(/^Files/)).toBe('2');
-    expect(countOf(/^Commits/)).toBe('3');
+    expect(countOf(/^Commits/)).toBe('↑3');
     expect(Number(countOf(/^Comments/))).toBeGreaterThan(0);
   });
 });
@@ -531,7 +540,7 @@ describe('Branch page counts before any visit', () => {
     seedResolveScene({ expandedThreadId: null });
     seedWorktree({ isDiffLoaded: true });
     const loadHistoryDraft = vi.fn(async () => {
-      withCommits();
+      withCommits({ remoteSha: 'c'.repeat(40) });
     });
     useAppStore.setState({ loadHistoryDraft });
     render(
@@ -545,16 +554,15 @@ describe('Branch page counts before any visit', () => {
     expect(loadHistoryDraft).toHaveBeenCalledTimes(1);
     expect(loadHistoryDraft).toHaveBeenCalledWith({ sessionId: SESSION.id, mountId: MOUNT_ID });
     expect(railRow(/^Comments/).getAttribute('aria-current')).toBe('page');
-    expect(screen.queryAllByRole('img', { name: 'Not loaded' })).toHaveLength(0);
     expect(countOf(/^Files/)).toBe('2');
-    expect(countOf(/^Commits/)).toBe('3');
+    expect(countOf(/^Commits/)).toBe('↑3');
     expect(Number(countOf(/^Comments/))).toBeGreaterThan(0);
   });
 
   it('does not load the history again when the draft is already there', async () => {
     seedResolveScene({ expandedThreadId: null });
     seedWorktree({ isDiffLoaded: true });
-    withCommits();
+    withCommits({ remoteSha: 'c'.repeat(40) });
     const loadHistoryDraft = vi.fn(async () => undefined);
     useAppStore.setState({ loadHistoryDraft });
     render(
@@ -566,7 +574,7 @@ describe('Branch page counts before any visit', () => {
     await settle();
 
     expect(loadHistoryDraft).not.toHaveBeenCalled();
-    expect(countOf(/^Commits/)).toBe('3');
+    expect(countOf(/^Commits/)).toBe('↑3');
   });
 });
 
@@ -621,19 +629,15 @@ describe('Branch page Comments', () => {
 
     expect(screen.queryByRole('navigation', { name: 'Comments' })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Comments$/ })).toBeNull();
-    expect(screen.getAllByRole('group', { name: 'Comment properties' })).toHaveLength(1);
     expect(screen.queryByRole('complementary', { name: 'Thread details' })).toBeNull();
   });
 
-  it('shows the list and the thread on a base pane, with the properties inside the thread', async () => {
+  it('shows the list and the thread on a base pane, with no property that only repeats the host', async () => {
     await mountAt({ width: 950, threadId: EXPANDED_THREAD_ID });
 
     screen.getByRole('navigation', { name: 'Comments' });
     expect(screen.queryByRole('button', { name: /^Comments$/ })).toBeNull();
-    const groups = screen.getAllByRole('group', { name: 'Comment properties' });
-    expect(groups).toHaveLength(1);
-    expect(within(groups[0] as HTMLElement).queryByText('State')).toBeNull();
-    within(groups[0] as HTMLElement).getByText('Origin');
+    expect(screen.queryByRole('group', { name: 'Comment properties' })).toBeNull();
     expect(screen.queryByRole('complementary', { name: 'Thread details' })).toBeNull();
   });
 
@@ -641,7 +645,6 @@ describe('Branch page Comments', () => {
     await mountAt({ width: 1279, threadId: EXPANDED_THREAD_ID });
 
     expect(screen.queryByRole('complementary', { name: 'Thread details' })).toBeNull();
-    expect(screen.getAllByRole('group', { name: 'Comment properties' })).toHaveLength(1);
   });
 
   it('keeps the properties inline under the thread on the widest panes, with no margin rail', async () => {
@@ -650,9 +653,7 @@ describe('Branch page Comments', () => {
 
       screen.getByRole('navigation', { name: 'Comments' });
       expect(screen.queryByRole('complementary', { name: 'Thread details' })).toBeNull();
-      const groups = screen.getAllByRole('group', { name: 'Comment properties' });
-      expect(groups).toHaveLength(1);
-      within(groups[0] as HTMLElement).getByText('Origin');
+      expect(screen.queryByText('Origin')).toBeNull();
       cleanup();
       vi.restoreAllMocks();
     }
@@ -687,7 +688,7 @@ describe('Branch page Checks and Files', () => {
     dropRequest();
     await visit(/^Pull request/);
     expect(screen.queryByRole('heading', { name: 'No pull request yet' })).toBeNull();
-    expect(railRow(/^Pull request/).textContent).toContain('None');
+    expect(railRow(/^Pull request/).textContent).toBe('Pull request');
     expect(screen.getByRole('textbox', { name: 'Pull request title' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Create pull request' })).toBeDefined();
 

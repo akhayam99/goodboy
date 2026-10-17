@@ -6,6 +6,7 @@ vi.mock('@tauri-apps/api/core', async () => {
 });
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
+import { ObjectMenuProvider } from '../../../../../features/actions/components/ObjectMenuProvider';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
@@ -41,9 +42,11 @@ type Name = keyof typeof U24_PRPAGE_FILES_SCENES;
 const renderScene = ({ name }: { readonly name: Name }) => {
   const Scene = U24_PRPAGE_FILES_SCENES[name];
   return render(
-    <ToastProvider>
-      <Scene />
-    </ToastProvider>,
+    <ObjectMenuProvider>
+      <ToastProvider>
+        <Scene />
+      </ToastProvider>
+    </ObjectMenuProvider>,
   );
 };
 
@@ -79,7 +82,7 @@ describe('the u24 prpage files scenes', () => {
     for (const host of hosts) {
       expect(within(host).getByText('On GitHub')).toBeDefined();
     }
-    expect(screen.getByRole('button', { name: /^Fix comments \d/ })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /^Fix \d+ comments?$/ })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Write review' })).toBeNull();
   });
 
@@ -109,24 +112,20 @@ describe('the u24 prpage files scenes', () => {
     }
   });
 
-  it('shows the file actions as icons on every file header and no overflow menu', async () => {
+  it('shows Viewed, Comment and one menu on every file header, the rest inside the menu', async () => {
     renderScene({ name: 'branch-files-both' });
     await screen.findAllByRole('article', { name: /^Note from You/ }, WAIT);
 
     const [header] = Array.from(
       document.querySelectorAll<HTMLElement>('[data-slot="diff-file-header"]'),
     );
-    expect(within(header ?? document.body).getByRole('button', { name: 'Comment' })).toBeDefined();
-    expect(
-      within(header ?? document.body).getByRole('button', { name: 'Open in editor' }),
-    ).toBeDefined();
-    expect(
-      within(header ?? document.body).getByRole('button', { name: 'Copy path' }),
-    ).toBeDefined();
-    expect(
-      within(header ?? document.body).getByRole('button', { name: 'Show whole file' }),
-    ).toBeDefined();
-    expect(screen.queryByRole('button', { name: /^More actions for/ })).toBeNull();
+    const scope = within(header ?? document.body);
+    expect(scope.getByRole('button', { name: 'Comment' })).toBeDefined();
+    expect(scope.queryByRole('button', { name: 'Open in editor' })).toBeNull();
+    fireEvent.click(scope.getByRole('button', { name: /^More for / }));
+    for (const name of ['Open in editor', 'Copy path', 'Show whole file']) {
+      expect(screen.getByRole('menuitem', { name })).toBeDefined();
+    }
   });
 
   it('shows Comments with notes only and no host before a pull request, and no Checks', async () => {
@@ -136,7 +135,7 @@ describe('the u24 prpage files scenes', () => {
 
     expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Files', 'Commits']);
     expect(screen.queryAllByRole('article', { name: /^On GitHub/ })).toHaveLength(0);
-    expect(screen.getByRole('button', { name: /^Fix comments \d/ })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /^Fix \d+ comments?$/ })).toBeNull();
   });
 
   it('draws Files at 1920 in the split layout', async () => {
@@ -151,11 +150,11 @@ describe('the u24 prpage files scenes', () => {
 
     const list = await screen.findByRole('navigation', { name: 'Comments' }, WAIT);
     expect(within(list).getAllByText('Note').length).toBeGreaterThanOrEqual(1);
-    expect(within(list).getAllByText('On GitHub').length).toBeGreaterThanOrEqual(1);
+    expect(within(list).queryAllByText('On GitHub')).toHaveLength(0);
     expect(screen.getByRole('tab', { name: /^All/ })).toBeDefined();
     expect(screen.getByRole('tab', { name: /^Notes/ })).toBeDefined();
     expect(screen.getByRole('tab', { name: /^On GitHub/ })).toBeDefined();
     expect(screen.getByRole('tab', { name: 'Resolved' })).toBeDefined();
-    expect(screen.getByRole('button', { name: /^Fix comments \d/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^Fix \d+ comments?$/ })).toBeDefined();
   });
 });

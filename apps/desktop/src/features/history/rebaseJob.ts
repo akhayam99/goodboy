@@ -3,7 +3,7 @@ import type { HistoryRun } from '../../store/slices/history/types';
 import { historyStopCause } from './historyStopCause';
 import { pushErrorLine } from './pushErrorLine';
 
-type RebaseJobState =
+export type RebaseJobState =
   | 'choosing'
   | 'restore-conflict'
   | 'set-aside'
@@ -37,6 +37,7 @@ export type RebaseJob = {
   readonly line: string;
   readonly detail: string | null;
   readonly word: string;
+  readonly progress: string | null;
 };
 
 type Params = {
@@ -152,6 +153,11 @@ const replayLineOf = ({ run }: ReplayLineOfParams): string => {
 type RunningStateOfParams = {
   readonly run: HistoryRun;
 };
+
+const progressOf = ({ run }: ReplayLineOfParams): string | null =>
+  run.progress?.stage === 'step' && run.progress.index > 0
+    ? `${run.progress.index} of ${run.progress.total}`
+    : null;
 
 const runningStateOf = ({ run }: RunningStateOfParams): RebaseJobState => {
   if (run.phase === 'waiting') {
@@ -425,5 +431,6 @@ export const rebaseJobOf = (params: Params): RebaseJob | null => {
     line: copy.line,
     detail: copy.detail ?? null,
     word: wordOf({ state, run }),
+    progress: isRunning ? progressOf({ run }) : null,
   };
 };

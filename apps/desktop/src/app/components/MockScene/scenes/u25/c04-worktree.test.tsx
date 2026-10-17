@@ -114,17 +114,15 @@ describe('the c04 worktree level scenes', () => {
     await mount('c04-worktree-pr-draft');
 
     expect(
-      within(worktreeLayer()).getByRole('button', { name: /^Pull request, #\d+ Draft$/ }),
+      within(worktreeLayer()).getByRole('button', { name: 'Pull request, Draft' }),
     ).toBeDefined();
     expect(document.querySelector('[data-slot="branch-state"]')?.textContent).toBe('Draft');
   });
 
-  it('c04-worktree-no-pr reads None and offers the create form', async () => {
+  it('c04-worktree-no-pr leaves the entry slot empty and offers the create form', async () => {
     await mount('c04-worktree-no-pr');
 
-    expect(
-      within(worktreeLayer()).getByRole('button', { name: 'Pull request, None' }),
-    ).toBeDefined();
+    expect(within(worktreeLayer()).getByRole('button', { name: 'Pull request' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Create pull request' })).toBeDefined();
   });
 
@@ -140,7 +138,7 @@ describe('the c04 worktree level scenes', () => {
     expect(within(rail).getByRole('navigation', { name: 'Changed files' })).toBeDefined();
   });
 
-  it('c04-worktree-files-folded folds the file list and offers Files N in the diff toolbar', async () => {
+  it('c04-worktree-files-folded folds the file list and offers Files in the diff toolbar', async () => {
     await mount('c04-worktree-files-folded');
 
     expect(screen.queryByRole('complementary', { name: 'Files' })).toBeNull();
@@ -148,7 +146,7 @@ describe('the c04 worktree level scenes', () => {
     if (toolbar === null) {
       throw new Error('the folded scene draws no diff toolbar');
     }
-    expect(within(toolbar).getByRole('button', { name: /^Files\s?\d+$/ })).toBeDefined();
+    expect(within(toolbar).getByRole('button', { name: /^Files$/ })).toBeDefined();
   });
 
   it('c04-worktree-files-narrow opens the file list over the diff of a narrow page', async () => {
@@ -166,12 +164,7 @@ describe('the c04 worktree level scenes', () => {
     const comments = within(worktreeLayer()).getByRole('button', { name: /^Comments/ });
     expect(comments.getAttribute('aria-current')).toBe('page');
     expect(comments.textContent).toBe('Comments');
-    const sources = within(screen.getByRole('tablist', { name: 'Comment source' }));
-    expect(sources.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
-      'All',
-      'Notes',
-      'On GitHub',
-    ]);
+    expect(screen.queryByRole('tablist', { name: 'Comment source' })).toBeNull();
     cleanup();
 
     await mount('c04-worktree-checks');
@@ -186,7 +179,7 @@ describe('the c04 worktree level scenes', () => {
     await mount('c04-worktree-rebasing');
 
     const line = within(worktreeLayer()).getByRole('status');
-    expect(line.textContent).toContain('Rebasing on main');
+    expect(line.textContent).toContain('Rebasing · 1 conflict');
     expect(within(worktreeLayer()).getByRole('button', { name: 'Abort rebase' })).toBeDefined();
   });
 

@@ -1,7 +1,7 @@
-import { StatusDot, cn, tintClasses, type Tone } from '@goodboy/ui';
+import { StatusDot, cn, type Tone } from '@goodboy/ui';
 import { useState } from 'react';
 import type { SessionId } from '@goodboy/types';
-import type { RebaseJobTone } from '../rebaseJob';
+import type { RebaseJobState, RebaseJobTone } from '../rebaseJob';
 import { useJobBannerActions } from '../hooks/useJobBannerActions';
 import { useRebaseJob } from '../useRebaseJob';
 import { StartHint } from '../../../shared/components/StartHint';
@@ -24,6 +24,15 @@ const TONE_OF: Readonly<Record<RebaseJobTone, Tone>> = {
   danger: 'danger',
 };
 
+const RAIL_ONLY: ReadonlySet<RebaseJobState> = new Set<RebaseJobState>([
+  'checking',
+  'replaying',
+  'checking-result',
+  'waiting',
+  'moving',
+  'updating-online',
+]);
+
 export const JobBanner = ({ sessionId, worktreePath }: Props) => {
   const controls = useRebaseJob({ sessionId, worktreePath });
   const actions = useJobBannerActions({
@@ -32,7 +41,7 @@ export const JobBanner = ({ sessionId, worktreePath }: Props) => {
     agentId: controls?.agentId ?? null,
   });
   const [isNoteOpen, setIsNoteOpen] = useState(false);
-  if (controls === null) {
+  if (controls === null || RAIL_ONLY.has(controls.job.state)) {
     return null;
   }
   const { job } = controls;
@@ -44,14 +53,12 @@ export const JobBanner = ({ sessionId, worktreePath }: Props) => {
       aria-label="Rebase job"
       role={isAlert ? 'alert' : 'region'}
       data-state={job.state}
-      className="relative flex min-w-0 flex-col rounded-lg bg-subtle py-3 pl-6 pr-4"
+      className="flex min-w-0 flex-col gap-1"
     >
-      <span
-        aria-hidden
-        className={cn('absolute bottom-3 left-2.5 top-3 w-0.5 rounded-full', tintClasses(tone).dot)}
-      />
       <div className="flex min-h-7 min-w-0 items-center gap-2">
-        {job.isRunning ? <StatusDot tone={tone} size="md" pulsing /> : null}
+        {job.tone === 'ok' && !job.isRunning ? null : (
+          <StatusDot tone={tone} size="sm" pulsing={job.isRunning} />
+        )}
         <span
           className={cn(
             'min-w-0 flex-1 truncate text-row text-foreground',

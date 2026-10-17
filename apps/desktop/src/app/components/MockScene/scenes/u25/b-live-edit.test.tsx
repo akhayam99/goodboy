@@ -69,9 +69,8 @@ describe.each([false, true])('live edit scenes in dark theme %s', (isDark) => {
   it('mounts the busy row', async () => {
     show({ name: 'live-edit-busy', isDark });
     await screen.findByText('Editing commit');
-    expect(screen.getByRole('button', { name: 'Undo commit edit' }).hasAttribute('disabled')).toBe(
-      true,
-    );
+    const undo = screen.queryByRole('button', { name: 'Undo commit edit' });
+    expect(undo === null || undo.hasAttribute('disabled')).toBe(true);
   });
   it('dismisses the conflicting edit through Undo', async () => {
     show({ name: 'live-edit-conflict', isDark });

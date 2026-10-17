@@ -61,16 +61,12 @@ const renderStatus = ({
   ...rest
 }: {
   readonly words?: ReadonlyArray<ResolveWord>;
-  readonly filter?: Parameters<typeof ResolveRunStatus>[0]['filter'];
-  readonly onFilter?: () => void;
   readonly actions?: Parameters<typeof ResolveRunStatus>[0]['actions'];
   readonly onOpenTranscript?: Parameters<typeof ResolveRunStatus>[0]['onOpenTranscript'];
 }) =>
   render(
     <ResolveRunStatus
       run={runOf(words)}
-      filter={rest.filter ?? null}
-      onFilter={rest.onFilter ?? vi.fn()}
       onOpenTranscript={rest.onOpenTranscript === undefined ? vi.fn() : rest.onOpenTranscript}
       onStop={vi.fn()}
       actions={rest.actions}
@@ -78,60 +74,17 @@ const renderStatus = ({
   );
 
 describe('ResolveRunStatus', () => {
-  it('reads the run as one line: title, delivery tally, model', () => {
+  it('reads the run as one tail line, no counts and no model: the groups carry them', () => {
     renderStatus({});
 
     const line = within(screen.getByTestId('resolve-run-status'));
     expect(line.getByText('Fixing 8 comments')).toBeDefined();
-    expect(line.getByRole('button', { name: '4 need you' })).toBeDefined();
-    expect(line.getByRole('button', { name: '2 working' })).toBeDefined();
-    expect(line.getByRole('button', { name: '2 ready to push' })).toBeDefined();
-    expect(line.getByRole('button', { name: '1 push failed' })).toBeDefined();
-    expect(line.queryByRole('button', { name: /couldn't fix/ })).toBeNull();
-    expect(line.getByText('Sonnet 5.5 · Medium')).toBeDefined();
+    expect(line.queryByRole('button', { name: /need you|working|ready to push/ })).toBeNull();
+    expect(line.queryByText('Sonnet 5.5 · Medium')).toBeNull();
+    expect(document.querySelector('[data-tail]')).not.toBeNull();
   });
 
-  it.each([
-    ['push_failed', '1 push failed', 'text-danger'],
-    ['couldnt_fix', "1 couldn't fix", 'text-warning'],
-    ['needs_you', '3 need you', 'text-warning'],
-    ['ready_to_push', '1 ready to push', 'text-success'],
-    ['working', '1 working', 'text-info'],
-  ] as const)('draws the %s chip in its tone when it is the filter', (key, name, tone) => {
-    renderStatus({
-      words: ['push_failed', 'couldnt_fix', 'question', 'ready', 'working'],
-      filter: key,
-    });
-
-    expect(screen.getByRole('button', { name }).className).toContain(tone);
-  });
-
-  it("offers a Couldn't fix chip when a fix run failed", () => {
-    renderStatus({ words: ['couldnt_fix', 'ready'] });
-
-    expect(screen.getByRole('button', { name: "1 couldn't fix" })).toBeDefined();
-    expect(screen.getByRole('button', { name: '1 need you' })).toBeDefined();
-  });
-
-  it('marks the active filter and clears it on a second press', () => {
-    const onFilter = vi.fn();
-    renderStatus({ words: ['ready', 'question'], filter: 'ready_to_push', onFilter });
-
-    expect(
-      screen.getByRole('button', { name: '1 ready to push' }).getAttribute('aria-pressed'),
-    ).toBe('true');
-    expect(screen.getByRole('button', { name: '1 need you' }).getAttribute('aria-pressed')).toBe(
-      'false',
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: '1 ready to push' }));
-    fireEvent.click(screen.getByRole('button', { name: '1 need you' }));
-
-    expect(onFilter).toHaveBeenNthCalledWith(1, null);
-    expect(onFilter).toHaveBeenNthCalledWith(2, 'needs_you');
-  });
-
-  it('keeps the actions slot between the model and Open transcript', () => {
+  it('keeps the actions slot before View transcript', () => {
     renderStatus({
       words: ['ready'],
       actions: <button type="button">Accept 1</button>,
@@ -140,15 +93,13 @@ describe('ResolveRunStatus', () => {
     const names = within(screen.getByTestId('resolve-run-status'))
       .getAllByRole('button')
       .map((button) => button.textContent);
-    expect(names.indexOf('Accept 1')).toBeGreaterThan(names.indexOf('1 ready to push'));
-    expect(names.indexOf('Accept 1')).toBeLessThan(names.indexOf('Open transcript'));
+    expect(names.indexOf('Accept 1')).toBeLessThan(names.indexOf('View transcript'));
   });
 
-  it('drops Open transcript while the transcript of the run is already open', () => {
+  it('drops View transcript while the transcript of the run is already open', () => {
     renderStatus({ words: ['ready'], onOpenTranscript: null });
 
-    expect(screen.queryByRole('button', { name: 'Open transcript' })).toBeNull();
-    expect(screen.getByRole('button', { name: '1 ready to push' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'View transcript' })).toBeNull();
   });
 
   it('offers Stop only while the run works, and asks before stopping', () => {

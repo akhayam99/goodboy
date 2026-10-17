@@ -134,8 +134,10 @@ const mergeOptions = ({
 const defaultMergeMethod = ({ facts }: { readonly facts: PullRequestFacts }): PrMergeMethod =>
   facts.mergeMethods[0] ?? 'squash';
 
-const mergeLabel = ({ facts }: FactsOnly): string =>
-  facts.commentsNeedYou > 0 ? `Merge · ${facts.commentsNeedYou} open` : 'Merge';
+const mergeLabel = ({ facts }: FactsOnly): string => {
+  const blocker = readinessOf({ facts }).labelBlocker;
+  return blocker === null ? 'Merge' : `Merge · ${blocker}`;
+};
 
 const isMergeMethod = (value: string | null): value is PrMergeMethod =>
   value === 'squash' || value === 'merge' || value === 'rebase';

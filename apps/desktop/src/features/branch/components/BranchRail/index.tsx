@@ -60,43 +60,47 @@ export const BranchRail = ({ tabs, current, facts, onSelect }: Props) => {
               selected={isCurrent}
               ariaCurrent={isCurrent ? 'page' : undefined}
               ariaLabel={
-                fact.text === null || fact.text === ''
-                  ? entry.label
-                  : `${entry.label}, ${fact.text}`
+                fact.tooltip !== null
+                  ? `${entry.label}, ${fact.tooltip}`
+                  : fact.text === null
+                    ? entry.label
+                    : `${entry.label}, ${fact.text}`
               }
               id={`${ENTRY_ID_PREFIX}${entry.id}`}
               onClick={() => onSelect(entry.id)}
-              className="h-7 items-center gap-2 px-2 text-label"
+              className="h-7 items-center gap-2 px-2 text-ui"
             >
               <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0" />
               <span data-entry-label="" className="min-w-0 flex-1 truncate">
                 {entry.label}
               </span>
-              <span className="flex w-20 shrink-0 items-center justify-end gap-1 text-meta tabular-nums text-faint-foreground">
-                {fact.tone === null ? null : <StatusDot tone={fact.tone} size="sm" />}
-                {fact.text === null ? (
-                  <span role="img" aria-label="Not loaded">
-                    -
-                  </span>
-                ) : (
-                  <span className="truncate">{fact.text}</span>
-                )}
-              </span>
+              {fact.text === null ? null : (
+                <span
+                  data-entry-slot=""
+                  className="flex shrink-0 items-center justify-end gap-1 text-meta tabular-nums text-faint-foreground"
+                >
+                  {fact.tone === null ? null : <StatusDot tone={fact.tone} size="sm" />}
+                  {fact.text}
+                </span>
+              )}
             </SelectableRow>
           );
+          const hasTip = entry.shortcut !== null || fact.tooltip !== null;
           return (
             <div key={entry.id} className="flex flex-col">
-              {entry.shortcut === null ? (
+              {!hasTip ? (
                 row
               ) : (
                 <Tooltip
                   side="right"
                   content={
                     <span className="inline-flex items-center gap-2">
-                      {entry.label}
-                      <kbd className="font-sans text-faint-foreground">
-                        {shortcutGlyphs(entry.shortcut)}
-                      </kbd>
+                      {fact.tooltip === null ? entry.label : `${entry.label}, ${fact.tooltip}`}
+                      {entry.shortcut === null ? null : (
+                        <kbd className="font-sans text-faint-foreground">
+                          {shortcutGlyphs(entry.shortcut)}
+                        </kbd>
+                      )}
                     </span>
                   }
                 >

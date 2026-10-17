@@ -46,6 +46,7 @@ export const ActionConfirmPanel = ({ controls }: Props) => {
       {choice !== null && selected !== null && (
         <ChoiceCards
           ariaLabel={choice.label}
+          className="sm:grid-cols-1"
           value={selected}
           onChange={setPicked}
           options={choice.options.map((option) => ({

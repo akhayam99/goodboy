@@ -249,8 +249,7 @@ describe('the worktree level', () => {
     await openWorktree();
 
     const line = await waitFor(statusLine);
-    expect(line.textContent).toContain('Rebasing on main');
-    expect(line.textContent).toContain('1 conflict');
+    expect(line.textContent).toContain('Rebasing · 1 conflict');
     fireEvent.click(within(line).getByRole('button', { name: 'Abort rebase' }));
     await settle();
 

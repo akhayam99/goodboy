@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
 import { PageColumn, PaneShell, ScrollFade } from '@goodboy/ui';
@@ -17,11 +17,10 @@ import { useMountRemoteHostKind } from '../../../worktree/useMountRemoteHostKind
 import { PushBanner } from '../../../resolve/components/ReviewFlow/PushBanner';
 import { ReviewFlow } from '../../../resolve/components/ReviewFlow';
 import { useReviewEntries } from '../../../resolve/components/ReviewFlow/useReviewEntries';
-import { useBranchNotes } from '../../../resolve/notes/useBranchNotes';
 import { useReviewPush } from '../../../resolve/components/ReviewFlow/useReviewPush';
 import { pushFixCount } from '../../../resolve/reviewPushCopy';
 import { useActiveReviewSource } from '../../../resolve/hooks/useActiveReviewSource';
-import { isPushFailure, type ReviewCommentState } from '../../../resolve/reviewCommentState';
+import { isPushFailure } from '../../../resolve/reviewCommentState';
 import { REVIEW_REQUEST_EVENT, isReviewRequest } from '../../../review/reviewRequest';
 import { BranchDiffContext } from '../../branchDiffContext';
 import { useBranchControls } from '../../hooks/useBranchControls';
@@ -30,17 +29,18 @@ import { useBranchIdentity } from '../../hooks/useBranchIdentity';
 import { useBranchTab } from '../../hooks/useBranchTab';
 import { usePullRequestView } from '../../hooks/usePullRequestView';
 import { capabilityReasonOf } from '../../pullRequestCapabilityReason';
-import { distanceAhead } from '../../../../shared/lib/gitStatus';
 import type { BranchPushState, BranchReviewCounts } from '../../branchPrimary';
 import { branchTabsOf, isBranchReadOnly, resolveBranchTab } from '../../branchTabs';
 import { branchScopeOf } from '../../../../store/slices/session-view/branchScopeOf';
 import { pullRequestKindOf } from '../../../../shared/pullRequestKind';
 import { useWorktreeLevelSlot } from '../../hooks/useWorktreeLevelSlot';
 import { BranchRail } from '../BranchRail';
-import { checksFailingOf } from '../../checksFailingOf';
-import { pullRequestNumberLabel } from '../../pullRequestNumberLabel';
+import { pullRequestRunsOf } from '../../pullRequestRunsOf';
+import { notPushedCountOf } from '../../../history/notPushedCountOf';
+import { commentsCountOf } from '../../../resolve/commentsCountOf';
 import { requestNounLabel } from '../../requestNounLabel';
 import { worktreeEntryFactsOf } from '../../worktreeEntryFacts';
+import { worktreeEntryFactsBus } from '../../worktreeEntryFactsBus';
 import { BranchChecks } from '../BranchChecks';
 import { BranchCommits } from '../BranchCommits';
 import { BranchFiles } from '../BranchFiles';
@@ -50,12 +50,6 @@ import { PullRequestTab } from '../PullRequestTab';
 import type { ReviewerRequest } from '../PullRequestTab/ReviewersProperty';
 import { BranchDetail } from './BranchDetail';
 import { TabActionsSlotContext } from '../../../../shared/components/TabActions/tabActionsSlotContext';
-
-const WAITING_STATES: ReadonlySet<ReviewCommentState> = new Set<ReviewCommentState>([
-  'needs',
-  'ready',
-  'failed',
-]);
 
 type Props = {
   readonly session: Session;
@@ -77,8 +71,11 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   const [fileSlot, setFileSlot] = useState<HTMLElement | null>(null);
   const levelHost = useWorktreeLevelSlot();
   const historyMountId = identity.mount?.mountId ?? null;
-  const commitCount = useAppStore((s) =>
-    historyMountId === null ? null : (s.historyDrafts[historyMountId]?.commits.length ?? null),
+  const historyCommits = useAppStore((s) =>
+    historyMountId === null ? null : (s.historyDrafts[historyMountId]?.commits ?? null),
+  );
+  const hasRemoteHead = useAppStore(
+    (s) => historyMountId !== null && s.historyDrafts[historyMountId]?.graph?.remoteSha != null,
   );
   const hasHistoryDraft = useAppStore(
     (s) => historyMountId !== null && s.historyDrafts[historyMountId] !== undefined,
@@ -98,7 +95,6 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   const githubConnection = useGithubConnection({ workspaceId: session.workspaceId });
   const { entries: sources, source: activeSource } = useActiveReviewSource({ sessionId });
   const { entries } = useReviewEntries({ sessionId });
-  const { all: notes } = useBranchNotes({ sessionId });
   const push = useReviewPush({ sessionId });
   const diff = useSessionDiff({
     sessionId,
@@ -262,8 +258,6 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     githubConnection.isResolved === false || githubConnection.isAuthenticated;
   const hasRemote = sources.length > 0;
   const filesCount = diff.loading || diff.error !== null ? null : diff.files.length;
-  const commentsCount =
-    activeSource === null ? notes.length : activeSource.hasDetail ? entries.length : null;
 
   const body = () => {
     if ((tab === 'pr' || tab === 'comments') && !hasRemote && repo === null) {
@@ -355,23 +349,41 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
 
   const matchedDetail =
     pr !== null && github?.detail?.prNumber === pr.number ? github.detail : null;
-  const checksCount = matchedDetail === null ? null : matchedDetail.checks.length;
-  const checksFailing =
-    pr === null ? 0 : checksFailingOf({ rollup: pr.checks, checks: matchedDetail?.checks ?? [] });
-  const entryFacts = worktreeEntryFactsOf({
-    pullRequest:
-      pr === null
-        ? null
-        : { label: pullRequestNumberLabel({ host, number: pr.number }), state: scope.state },
-    comments: commentsCount,
-    commentsWaiting: entries.filter((entry) => WAITING_STATES.has(entry.state)).length,
-    files: filesCount,
-    commits: commitCount,
-    notPushed:
-      diff.status === null ? null : distanceAhead({ distance: diff.status.upstreamDistance }),
-    checks: checksCount,
-    checksFailed: checksFailing,
+  const checksRuns = pullRequestRunsOf({
+    pr,
+    detail: github?.detail ?? null,
+    view: pullRequestView.view,
   });
+  const checksUnreadReason =
+    pr === null
+      ? null
+      : pr.checksUnknown === true || matchedDetail?.checksRead === 'denied'
+        ? 'Checks unknown: this token cannot read them'
+        : matchedDetail?.checksRead === 'failed'
+          ? "Checks unknown: couldn't read them"
+          : null;
+  const entryFacts = worktreeEntryFactsOf({
+    pullRequestState: scope.state,
+    commentsNeedYou: commentsCountOf({ threads: entries.map((entry) => entry.row.thread) })
+      .needsYou,
+    files: filesCount,
+    notPushed: notPushedCountOf({
+      commits: historyCommits,
+      hasUpstream: (diff.status !== null && diff.status.upstream !== null) || hasRemoteHead,
+    }),
+    checks: checksRuns,
+    checksUnreadReason,
+  });
+  const factsKey = JSON.stringify(entryFacts);
+  const latestFacts = useRef(entryFacts);
+  latestFacts.current = entryFacts;
+  useEffect(() => {
+    if (!isActive) {
+      return;
+    }
+    worktreeEntryFactsBus.publish({ sessionId, facts: latestFacts.current });
+  }, [factsKey, isActive, sessionId]);
+  useEffect(() => () => worktreeEntryFactsBus.clear({ sessionId }), [sessionId]);
   const railNode = <BranchRail tabs={tabs} current={tab} facts={entryFacts} onSelect={selectTab} />;
   const railSlot = useMemo<DiffRailHost>(() => ({ slot: fileSlot, page }), [fileSlot, page]);
 
@@ -386,7 +398,11 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
               sessionId={sessionId}
               host={host}
               pr={pr}
-              fallbackTitle={identity.label}
+              fallbackTitle={
+                tab === 'pr'
+                  ? `New ${requestLabel.toLowerCase()}`
+                  : (tabs.find((entry) => entry.id === tab)?.label ?? identity.label)
+              }
               controls={controls}
               isPushBusy={isPushBusy}
               isPrimaryYielding={isPrimaryYielding}

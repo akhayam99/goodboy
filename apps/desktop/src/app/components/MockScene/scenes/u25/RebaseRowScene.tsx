@@ -47,7 +47,7 @@ export const RebaseRowScene = ({ variant }: Props) => {
 
   useSceneClicks({
     isReady,
-    labels: variant === 'picker' ? ['hl/fix-duplicate-credit'] : [],
+    labels: variant === 'picker' ? ['Other base'] : [],
     selector: '[role="combobox"]',
     match: 'prefix',
     intervalMs: CLICK_MS,

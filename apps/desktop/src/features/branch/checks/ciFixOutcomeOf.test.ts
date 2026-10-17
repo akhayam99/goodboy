@@ -13,7 +13,7 @@ describe('ciFixOutcomeOf', () => {
     expect(ciFixOutcomeOf({ ...base, state: 'fixed-local' })).toEqual({
       headline: 'payments-api / test is fixed on your branch',
       detail: 'Committed 9e4c1a7 on the branch, not pushed yet. Push it so the check runs again.',
-      tone: 'success',
+      tone: 'warning',
       isPulsing: false,
     });
   });
@@ -21,12 +21,12 @@ describe('ciFixOutcomeOf', () => {
     expect(ciFixOutcomeOf({ ...base, state: 'fixing' })).toEqual({
       headline: 'Fixing payments-api / test',
       detail: 'Implementer is applying it on the branch.',
-      tone: 'warning',
+      tone: 'info',
       isPulsing: true,
     });
   });
   it.each([
-    ['running', 'payments-api / test is running again', 'warning'],
+    ['running', 'payments-api / test is running again', 'info'],
     ['passed', 'payments-api / test passed', 'success'],
     ['failed', 'payments-api / test still fails', 'danger'],
   ] as const)('reads the check as %s after the push', (checkOutcome, headline, tone) => {

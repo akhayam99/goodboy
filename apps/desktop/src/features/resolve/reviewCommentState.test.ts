@@ -42,22 +42,24 @@ describe('review comment words', () => {
 });
 
 describe('review state tones', () => {
+  it('draws every state word muted, the tone living only on the glyph', () => {
+    for (const tone of Object.values(STATE_WORD_TONE)) {
+      expect(tone).not.toMatch(/warning|danger|success|info/);
+    }
+  });
+
   it("draws Couldn't fix as a warning everywhere and a failed push as the only red", () => {
     expect(REVIEW_COMMENT_TONE.failed).toBe('warning');
     expect(REVIEW_COMMENT_TONE.push_failed).toBe('danger');
     expect(STATE_CHIP_TONE.failed).toBe('warning');
     expect(STATE_CHIP_TONE.push_failed).toBe('danger');
-    expect(STATE_WORD_TONE.failed).toContain('warning');
-    expect(STATE_WORD_TONE.push_failed).toContain('danger');
     expect(REVIEW_COMMENT_NODE.failed).not.toBe(REVIEW_COMMENT_NODE.push_failed);
   });
 
   it('reads every proposal that waits for your Accept as a warning, and a sent one as neutral', () => {
     for (const state of ['ready', 'edited', 'outdated'] as const) {
-      expect(STATE_WORD_TONE[state]).toContain('warning');
       expect(REVIEW_COMMENT_TONE[state]).toBe('warning');
     }
-    expect(STATE_WORD_TONE.needs).toContain('warning');
     expect(REVIEW_COMMENT_TONE.pushed).toBe('neutral');
     expect(REVIEW_COMMENT_TONE.accepted).toBe('success');
   });

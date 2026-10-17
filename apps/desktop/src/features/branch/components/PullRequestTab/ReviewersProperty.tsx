@@ -99,7 +99,7 @@ export const ReviewersProperty = ({
     ) : null;
 
   return (
-    <PropertyField label="Reviewers" action={action}>
+    <PropertyField label="Reviewers" labelAction={action}>
       {reviewers.length === 0 ? (
         <EmptyLine>None requested</EmptyLine>
       ) : (
@@ -113,9 +113,11 @@ export const ReviewersProperty = ({
               <span className="min-w-0 flex-1 truncate text-foreground">
                 {reviewer.person.login}
               </span>
-              <ReviewStateIcon state={reviewer.state} size={ICON_SIZE.row} />
-              <span className="shrink-0 text-meta text-muted-foreground">
-                {STATE_WORD[reviewer.state]}
+              <span className="flex w-36 shrink-0 items-center gap-2">
+                <ReviewStateIcon state={reviewer.state} size={ICON_SIZE.row} />
+                <span className="truncate text-meta text-muted-foreground">
+                  {STATE_WORD[reviewer.state]}
+                </span>
               </span>
             </li>
           ))}

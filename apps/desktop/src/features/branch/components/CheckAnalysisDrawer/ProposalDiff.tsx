@@ -20,22 +20,24 @@ export const ProposalDiff = ({ text }: Props) => {
     >
       <div className="flex items-center gap-2 text-label">
         <span className="min-w-0 flex-1 truncate">{file}</span>
-        <span className="text-success tabular-nums">+{additions}</span>
-        <span className="text-danger tabular-nums">−{deletions}</span>
+        {additions === 0 ? null : <span className="text-success tabular-nums">+{additions}</span>}
+        {deletions === 0 ? null : <span className="text-danger tabular-nums">−{deletions}</span>}
       </div>
       <ScrollFade className="max-h-64" viewportClassName="min-w-0">
         <pre className="text-code">
-          {lines.map((line, index) => (
-            <div
-              key={index}
-              className={cn(
-                line.startsWith('+') && LINE_FILL.add + ' text-success',
-                line.startsWith('-') && LINE_FILL.del + ' text-danger',
-              )}
-            >
-              {line === '' ? ' ' : line}
-            </div>
-          ))}
+          {lines
+            .filter((line) => !line.startsWith('+++ ') && !line.startsWith('--- '))
+            .map((line, index) => (
+              <div
+                key={index}
+                className={cn(
+                  line.startsWith('+') && LINE_FILL.add + ' text-success',
+                  line.startsWith('-') && LINE_FILL.del + ' text-danger',
+                )}
+              >
+                {line === '' ? ' ' : line}
+              </div>
+            ))}
         </pre>
       </ScrollFade>
     </div>

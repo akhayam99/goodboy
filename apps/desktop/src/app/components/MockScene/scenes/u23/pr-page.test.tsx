@@ -88,7 +88,7 @@ describe('the pull request page scenes', () => {
     expect(side.getByText('Approved')).toBeDefined();
     expect(side.getByText('Changes requested')).toBeDefined();
     expect(side.getByText('Pending')).toBeDefined();
-    expect(side.getByText('5 passed · 1 failing · 1 running')).toBeDefined();
+    expect(side.getByText('1 failing')).toBeDefined();
     expect(side.getByRole('region', { name: 'Base' }).textContent).toContain('main');
     expect(side.queryByRole('button', { name: /Rebase/ })).toBeNull();
     expect(side.queryByRole('region', { name: 'Status' })).toBeNull();
@@ -111,7 +111,7 @@ describe('the pull request page scenes', () => {
     expect(rows[0]?.textContent).toMatch(/nadia-p opened this pull request/);
     expect(within(activity).getByText(/omar-t/)).toBeDefined();
     expect(within(activity).getByText(/requested changes/)).toBeDefined();
-    expect(within(activity).getByRole('button', { name: /View checks/ })).toBeDefined();
+    expect(within(activity).getByRole('button', { name: /Open checks/ })).toBeDefined();
   });
 
   it('branch-pr-draft says the draft is not open for review yet', async () => {

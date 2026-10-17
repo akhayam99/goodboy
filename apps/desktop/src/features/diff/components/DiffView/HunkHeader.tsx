@@ -3,13 +3,35 @@ type Props = {
   readonly rowIndex: number;
 };
 
-export const HunkHeader = ({ label, rowIndex }: Props) => (
-  <div role="row" aria-rowindex={rowIndex} data-slot="diff-hunk" className="flex h-7 bg-subtle">
-    <div
-      role="gridcell"
-      className="flex min-w-0 flex-1 items-center truncate px-3 font-sans text-meta tabular-nums text-faint-foreground"
-    >
-      {label}
+const RANGE_MARK = '@@';
+
+const CONTEXT_MARK = ' · in ';
+
+type ContextParams = Pick<Props, 'label'>;
+
+const contextOf = ({ label }: ContextParams): string => {
+  const named = label.indexOf(CONTEXT_MARK);
+  if (named !== -1) {
+    return label.slice(named + CONTEXT_MARK.length).trim();
+  }
+  if (!label.startsWith(RANGE_MARK)) {
+    return '';
+  }
+  const end = label.indexOf(RANGE_MARK, RANGE_MARK.length);
+  return end === -1 ? '' : label.slice(end + RANGE_MARK.length).trim();
+};
+
+export const HunkHeader = ({ label, rowIndex }: Props) => {
+  const context = contextOf({ label });
+  return (
+    <div role="row" aria-rowindex={rowIndex} data-slot="diff-hunk" className="flex h-7 bg-subtle">
+      <div
+        role="gridcell"
+        aria-label={label}
+        className="flex min-w-0 flex-1 items-center truncate px-3 text-code text-faint-foreground"
+      >
+        {context}
+      </div>
     </div>
-  </div>
-);
+  );
+};

@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
+import { ObjectMenuProvider } from '../../../../../features/actions/components/ObjectMenuProvider';
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import {
   importStore,
   resetStoryStore,
@@ -30,15 +31,22 @@ describe('the diff file actions scenes', () => {
     }
   });
 
-  it('puts the four file actions on the header as icons with no overflow', () => {
+  it('puts Comment on the header and the other file actions in its one menu', () => {
     const Scene = U25_B_DIFF_FILE_ACTIONS_SCENES['file-actions-header'];
-    render(<Scene />);
+    render(
+      <ObjectMenuProvider>
+        <Scene />
+      </ObjectMenuProvider>,
+    );
 
-    const header = document.querySelector<HTMLElement>('[data-slot="diff-file-header"]');
-    for (const name of ['Comment', 'Open in editor', 'Copy path', 'Show whole file']) {
-      within(header ?? document.body).getByRole('button', { name });
+    const header = within(
+      document.querySelector<HTMLElement>('[data-slot="diff-file-header"]') ?? document.body,
+    );
+    header.getByRole('button', { name: 'Comment' });
+    fireEvent.click(header.getByRole('button', { name: /^More for / }));
+    for (const name of ['Open in editor', 'Copy path', 'Show whole file']) {
+      screen.getByRole('menuitem', { name });
     }
-    expect(screen.queryByRole('button', { name: /^More actions for/ })).toBeNull();
   });
 
   it('opens the drawer unified while the page is unified', async () => {

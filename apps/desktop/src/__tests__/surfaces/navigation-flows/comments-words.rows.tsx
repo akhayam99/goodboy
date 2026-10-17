@@ -304,6 +304,22 @@ export const group = (name: string): HTMLElement => within(list()).getByRole('re
 
 const nodeText = (node: HTMLElement): string => node.textContent ?? '';
 
+const rowCount = (node: HTMLElement): number => within(node).getAllByRole('listitem').length;
+
+type ApplyParams = {
+  readonly count: number;
+};
+
+export const applyNeedsYou = async ({ count }: ApplyParams): Promise<void> => {
+  for (const box of within(group('Needs you')).getAllByRole('checkbox')) {
+    await click(box);
+  }
+  const bar = await screen.findByRole('toolbar', { name: 'Selected comments' }, WAIT);
+  await click(
+    within(bar).getByRole('button', { name: count === 1 ? 'Apply fix' : `Apply ${count} fixes` }),
+  );
+};
+
 export const openComments = async (ctx: Ctx): Promise<void> => {
   await openCrumb(/^Branch/);
   await branchTab('pr')(ctx);
@@ -327,18 +343,18 @@ export const COMMENTS_WORDS_ROWS: ReadonlyArray<Row> = [
     open: async (ctx) => {
       installComments({ sessionId: ctx.sessionId, seeds: SEEDS });
       await openComments(ctx);
-      expect(nodeText(group('Needs you'))).toContain('Needs you 3');
+      expect(rowCount(group('Needs you'))).toBe(3);
       sidebarNamesTheBranches();
 
-      await click(within(group('Needs you')).getByRole('button', { name: 'Apply 2 fixes' }));
+      await applyNeedsYou({ count: 2 });
     },
     lands: async () => {
       await waitFor(
         () => expect(nodeText(group('Ready to push'))).toContain('Ready to push 2'),
         WAIT,
       );
-      expect(nodeText(group('Needs you'))).toContain('Needs you 1');
-      expect(screen.getAllByRole('button', { name: /^Push 2/ })).toHaveLength(2);
+      expect(rowCount(group('Needs you'))).toBe(1);
+      expect(screen.getAllByRole('button', { name: /^Push 2/ })).toHaveLength(1);
       sidebarNamesTheBranches();
     },
   },
@@ -348,7 +364,7 @@ export const COMMENTS_WORDS_ROWS: ReadonlyArray<Row> = [
     open: async (ctx) => {
       installComments({ sessionId: ctx.sessionId, seeds: SEEDS });
       await openComments(ctx);
-      await click(within(group('Needs you')).getByRole('button', { name: 'Apply 2 fixes' }));
+      await applyNeedsYou({ count: 2 });
       const headerPush = screen
         .getAllByRole('button', { name: /^Push 2/ })
         .find((button) => !list().contains(button));
@@ -382,7 +398,7 @@ export const COMMENTS_WORDS_ROWS: ReadonlyArray<Row> = [
       });
       await openComments(ctx);
 
-      await click(await screen.findByRole('button', { name: 'Fix comments 3' }));
+      await click(await screen.findByRole('button', { name: 'Fix 3 comments' }));
       const drawer = await screen.findByRole('region', { name: 'Fix comments' }, WAIT);
       await click(within(drawer).getByRole('button', { name: 'Start fix for 3' }));
       await settle();

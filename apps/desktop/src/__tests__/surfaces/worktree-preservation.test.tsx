@@ -121,21 +121,27 @@ describe('SPEC3 9.6 Branch page capabilities from the worktree level', () => {
     expect(screen.getByTestId('pr-readiness').textContent).toMatch(/[A-Za-z]/);
   });
 
-  it('the Branch actions menu keeps Close pull request and the branch actions', async () => {
+  it('the Branch actions menu keeps Close pull request, the worktree menu the branch actions', async () => {
     await mount('c04-worktree-pr-draft');
 
     const labels = await branchMenu();
-
     expect(labels.some((label) => /Close pull request/.test(label))).toBe(true);
-    expect(labels.some((label) => /Copy branch name/.test(label))).toBe(true);
+    expect(labels.some((label) => /Copy branch name/.test(label))).toBe(false);
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+    await advance();
+
+    fireEvent.click(level().getByRole('button', { name: / actions$/ }));
+    await advance();
+    const worktree = screen.getAllByRole('menuitem').map((item) => item.textContent ?? '');
+    expect(worktree.some((label) => /Copy branch name/.test(label))).toBe(true);
   });
 
-  it('a stopped rebase keeps Abort on the status line and in Branch actions', async () => {
+  it('a stopped rebase keeps Abort on the status line, its one home', async () => {
     await mount('c04-worktree-rebasing');
 
     expect(level().getByRole('button', { name: 'Abort rebase' })).toBeDefined();
     const labels = await branchMenu();
-    expect(labels.some((label) => /Abort rebase/.test(label))).toBe(true);
+    expect(labels.some((label) => /Abort rebase/.test(label))).toBe(false);
   });
 
   it('Rebase has one home, the status line, while the branch is behind', async () => {

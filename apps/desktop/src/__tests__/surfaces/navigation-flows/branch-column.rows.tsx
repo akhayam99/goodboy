@@ -150,7 +150,10 @@ export const BRANCH_COLUMN_ROWS: ReadonlyArray<Row> = [
           ),
         WAIT,
       );
-      await waitFor(() => expect(paneHeading()).toBe(SECOND_BRANCH), WAIT);
+      await waitFor(
+        () => expect(paneHeading()).toMatch(/^(Files|Commits|New pull request)$/),
+        WAIT,
+      );
       await screen.findByRole('button', { name: `Branch ${SECOND_BRANCH}` }, WAIT);
       await waitFor(() => expect(currentWorktree()).toContain(SECOND_BRANCH), WAIT);
       expect(trailBands()).toBe(0);

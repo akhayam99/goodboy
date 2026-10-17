@@ -1,69 +1,29 @@
-import { ChevronDown, ChevronRight } from 'lucide-react';
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
-import { Button, Eyebrow, ROW_INTERACTIVE, cn } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { TEXT_ROLE, cn } from '@goodboy/ui';
+import { countSlotText } from '../../../../shared/utils/countSlotText';
 import {
   RESOLVE_GROUP_LABEL,
   leftOpenGroupLabel,
   type ResolveGroup,
 } from '../../commentProjection';
 import { REVIEW_FLOW_LABEL } from '../../reviewFlowCopy';
-import { acceptCountLabel } from '../../reviewBulkCopy';
-import type { ReviewTally } from '../../reviewTally';
 import { ReviewListRow } from './ReviewListRow';
 import type { ReviewEntry, ReviewGroup } from './useReviewEntries';
 
 type Props = {
   readonly groups: ReadonlyArray<ReviewGroup>;
-  readonly tally: ReviewTally;
   readonly focusedThreadId: string | null;
-  readonly openGroups: ReadonlySet<ResolveGroup>;
-  readonly onToggleGroup: (group: ResolveGroup) => void;
   readonly onSelect: (threadId: string) => void;
-  readonly onFix: (threadId: string) => void;
-  readonly onAccept: (threadIds: ReadonlyArray<string>) => void;
-  readonly onPush: (() => void) | null;
-  readonly isAccepting: boolean;
   readonly checked: ReadonlySet<string>;
   readonly onToggle: (threadId: string) => void;
 };
 
-const COLLAPSIBLE: ReadonlySet<ResolveGroup> = new Set(['done', 'left_open']);
-
-const countOf = ({
-  group,
-  tally,
-}: {
-  readonly group: ResolveGroup;
-  readonly tally: ReviewTally;
-}): number => {
-  switch (group) {
-    case 'needs_you':
-      return tally.needsYou;
-    case 'working':
-      return tally.working;
-    case 'ready_to_push':
-      return tally.readyToPush;
-    case 'open':
-      return tally.open;
-    case 'done':
-      return tally.done;
-    case 'left_open':
-      return tally.leftOpen;
-    default: {
-      const exhaustive: never = group;
-      return exhaustive;
-    }
-  }
-};
-
-const labelOf = ({
-  group,
-  entries,
-}: {
+type LabelParams = {
   readonly group: ResolveGroup;
   readonly entries: ReadonlyArray<ReviewEntry>;
-}): string => {
+};
+
+const labelOf = ({ group, entries }: LabelParams): string => {
   if (group !== 'left_open') {
     return RESOLVE_GROUP_LABEL[group];
   }
@@ -71,84 +31,52 @@ const labelOf = ({
   return leftOpenGroupLabel({ sourceLabel: REVIEW_SOURCE_LABEL[kind] });
 };
 
-export const ReviewList = ({
-  groups,
-  tally,
-  focusedThreadId,
-  openGroups,
-  onToggleGroup,
-  onSelect,
-  onFix,
-  onAccept,
-  onPush,
-  isAccepting,
-  checked,
-  onToggle,
-}: Props) => (
-  <nav
-    aria-label={REVIEW_FLOW_LABEL.list}
-    data-selecting={checked.size > 0}
-    className="group/select-list flex min-w-0 flex-col gap-4"
-  >
-    {groups.map(({ group, entries }) => {
-      const name = labelOf({ group, entries });
-      const label = `${name} ${countOf({ group, tally })}`;
-      const acceptable = group === 'needs_you' ? entries.filter((entry) => entry.isAcceptable) : [];
-      const isCollapsible = COLLAPSIBLE.has(group);
-      const isOpen = openGroups.has(group);
-      const isShown = !isCollapsible || isOpen;
-      const Chevron = isOpen ? ChevronDown : ChevronRight;
-      return (
-        <section
-          key={group}
-          aria-label={name}
-          className={cn('flex min-w-0 flex-col gap-1', group === 'left_open' && 'opacity-80')}
-        >
-          {isCollapsible ? (
-            <button
-              type="button"
-              aria-expanded={isOpen}
-              onClick={() => onToggleGroup(group)}
-              className={cn('flex items-center gap-1 rounded-sm px-3 text-left', ROW_INTERACTIVE)}
-            >
-              <Chevron
-                size={ICON_SIZE.row}
-                aria-hidden
-                className="shrink-0 text-faint-foreground"
-              />
-              <Eyebrow label={label} />
-            </button>
-          ) : (
-            <div className="flex min-w-0 items-center justify-between gap-2 px-3">
-              <Eyebrow label={label} />
-              {acceptable.length > 0 && (
-                <Button
-                  size="xs"
-                  variant="secondary"
-                  isBusy={isAccepting}
-                  onClick={() => onAccept(acceptable.map((entry) => entry.threadId))}
-                >
-                  {acceptCountLabel({ count: acceptable.length })}
-                </Button>
-              )}
-              {group === 'ready_to_push' && onPush !== null && (
-                <Button size="xs" variant="ghost" onClick={onPush}>
-                  {`Push ${tally.readyToPush} ${tally.readyToPush === 1 ? 'fix' : 'fixes'}`}
-                </Button>
-              )}
-            </div>
-          )}
-          {isShown && (
+type MixedParams = {
+  readonly groups: ReadonlyArray<ReviewGroup>;
+};
+
+const isMixedOf = ({ groups }: MixedParams): boolean => {
+  const entries = groups.flatMap((group) => group.entries);
+  const notes = entries.filter((entry) => entry.row.thread.originKind === 'diff_comment').length;
+  return notes > 0 && notes < entries.length;
+};
+
+export const ReviewList = ({ groups, focusedThreadId, onSelect, checked, onToggle }: Props) => {
+  const isSourceShown = isMixedOf({ groups });
+  return (
+    <nav
+      aria-label={REVIEW_FLOW_LABEL.list}
+      data-selecting={checked.size > 0}
+      className="group/select-list flex min-w-0 flex-col gap-4"
+    >
+      {groups.map(({ group, entries }) => {
+        const name = labelOf({ group, entries });
+        const count = countSlotText({ count: entries.length, isBesideGlyph: true });
+        return (
+          <section
+            key={group}
+            aria-label={name}
+            className={cn('flex min-w-0 flex-col gap-1', group === 'left_open' && 'opacity-80')}
+          >
+            {groups.length < 2 ? null : (
+              <h2 className="flex h-7 min-w-0 items-center gap-2 px-3 text-row">
+                <span className={cn('truncate', TEXT_ROLE.secondary)}>{name}</span>
+                {count === null ? null : (
+                  <span data-group-count="" className={cn('tabular-nums', TEXT_ROLE.hint)}>
+                    <span className="sr-only"> </span>
+                    {count}
+                  </span>
+                )}
+              </h2>
+            )}
             <ul className="flex min-w-0 flex-col gap-0.5">
               {entries.map((entry) => (
                 <li key={entry.threadId} className="min-w-0 list-none">
                   <ReviewListRow
                     entry={entry}
                     isSelected={entry.threadId === focusedThreadId}
+                    isSourceShown={isSourceShown}
                     onSelect={() => onSelect(entry.threadId)}
-                    onFix={
-                      entry.isFixable && checked.size === 0 ? () => onFix(entry.threadId) : null
-                    }
                     selection={
                       entry.isFixable || entry.isAcceptable
                         ? {
@@ -162,9 +90,9 @@ export const ReviewList = ({
                 </li>
               ))}
             </ul>
-          )}
-        </section>
-      );
-    })}
-  </nav>
-);
+          </section>
+        );
+      })}
+    </nav>
+  );
+};

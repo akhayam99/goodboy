@@ -268,7 +268,7 @@ describe('CommitsHistory toolbar', () => {
     const actions = seed({});
     render(<CommitsHistory sessionId={SESSION_ID} worktreePath="/w/payments" />);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Show previous versions (1)' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Previous versions 1' }));
 
     expect(actions.openDrawer).toHaveBeenCalledWith({
       kind: 'history-versions',
@@ -279,32 +279,12 @@ describe('CommitsHistory toolbar', () => {
 });
 
 describe('the base row', () => {
-  it('reads how many commits main gained and offers Rebase onto latest', () => {
+  it('reads the base as text with its sha and leaves Rebase to the status line', () => {
     setup();
 
-    expect(screen.getByText('3 new commits on main')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Rebase onto latest' })).toBeDefined();
-  });
-
-  it('rebases only after the anchored confirm', () => {
-    const actions = setup();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Rebase onto latest' }));
-    const dialog = screen.getByRole('dialog', { name: 'Rebase onto main?' });
-    expect(actions.rebaseBranch).not.toHaveBeenCalled();
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Rebase' }));
-
-    expect(actions.rebaseBranch).toHaveBeenCalledWith({
-      sessionId: SESSION_ID,
-      mountId: MOUNT_ID,
-    });
-  });
-
-  it('offers no rebase when main has nothing new', () => {
-    setup({ graph: { ...LEDGER_GRAPH, behind: 0, mainCommits: [] } });
-
+    expect(screen.getByText('Based on main')).toBeDefined();
+    expect(screen.queryByText('3 new commits on main')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Rebase onto latest' })).toBeNull();
-    expect(screen.getByText("Your branch starts on today's main")).toBeDefined();
   });
 
   it('rebases onto another base picked from the chip', async () => {
@@ -323,8 +303,11 @@ describe('the base row', () => {
     });
   });
 
-  it('scrolls to the base row and focuses its rebase button when asked', () => {
+  it('scrolls to the base row and focuses the Rebase of the status line when asked', () => {
     setup();
+    const railRebase = document.createElement('button');
+    railRebase.setAttribute('data-worktree-verb', 'mount.rebase');
+    document.body.append(railRebase);
     const scroll = vi.fn();
     Element.prototype.scrollIntoView = scroll;
 
@@ -335,7 +318,8 @@ describe('the base row', () => {
     });
 
     expect(scroll).toHaveBeenCalled();
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Rebase onto latest' }));
+    expect(document.activeElement).toBe(railRebase);
+    railRebase.remove();
   });
 });
 
@@ -347,7 +331,7 @@ describe('CommitsHistory', () => {
       .getAllByRole('listitem')
       .map((item) => item.getAttribute('aria-label'));
     expect(labels).toEqual(LEDGER_COMMITS.map((entry) => entry.subject));
-    expect(screen.getByText('3 new commits on main')).toBeDefined();
+    expect(screen.getByText('Based on main')).toBeDefined();
     expect(screen.queryByText('online')).toBeNull();
     expect(screen.queryByText(/already online/)).toBeNull();
     expect(screen.queryByText(/of your own/)).toBeNull();
@@ -374,21 +358,21 @@ describe('CommitsHistory', () => {
     expect(lastItems(actions)).toEqual(moveAbove({ items: BASE, sha: d, anchor: b }));
   });
 
-  it('builds the row buttons and the row menu from the commit actions', () => {
+  it('builds the row menu from the commit actions, no icon buttons on the row', () => {
     const actions = setup();
     const taking = within(row(d));
-    expect(taking.getByRole('button', { name: 'Rename' })).toBeDefined();
-    expect(taking.getByRole('button', { name: 'Fold down' })).toBeDefined();
-    expect(taking.getByRole('button', { name: /More for/ })).toBeDefined();
-    fireEvent.click(within(row(b)).getByRole('button', { name: 'Remove' }));
+    expect(taking.queryByRole('button', { name: 'Rename' })).toBeNull();
+    expect(taking.queryByRole('button', { name: 'Fold down' })).toBeNull();
+    fireEvent.click(within(row(b)).getByRole('button', { name: /More for/ }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /^Remove/ }));
     expect(lastItems(actions)).toEqual(setVerb({ items: BASE, sha: b, verb: 'drop' }));
   });
 
-  it('keeps the only rebase on the base row, never as a planned change', () => {
+  it('keeps rebase off the list, never as a planned change', () => {
     const actions = setup();
     expect(screen.queryByText(/is here now/)).toBeNull();
     expect(screen.queryByRole('button', { name: /Rebase on main/ })).toBeNull();
-    expect(screen.getAllByRole('button', { name: 'Rebase onto latest' })).toHaveLength(1);
+    expect(screen.queryAllByRole('button', { name: 'Rebase onto latest' })).toHaveLength(0);
     expect(actions.changeLiveHistory).not.toHaveBeenCalled();
   });
 
@@ -526,7 +510,7 @@ describe('CommitsHistory initial read states', () => {
 
   it('shows the branch empty state after a successful empty read', () => {
     setup({ commits: [] });
-    screen.getByText('No commits yet on this branch');
+    screen.getByText('No commits yet');
     expect(screen.queryByRole('status', { name: 'Loading commits' })).toBeNull();
   });
 

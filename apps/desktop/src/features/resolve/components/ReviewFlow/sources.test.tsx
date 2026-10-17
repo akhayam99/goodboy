@@ -115,7 +115,7 @@ describe.each(CASES)('Comments on the $source source', ({ source, first, rows })
 
     const listed = rowsAcrossStates();
     expect(listed).toHaveLength(NOTES.length);
-    expect(listed.every((text) => text.includes('Note'))).toBe(true);
+    expect(listed.some((text) => text.includes('Note'))).toBe(false);
   });
 
   it('has no source picker and no pull request link of its own', async () => {

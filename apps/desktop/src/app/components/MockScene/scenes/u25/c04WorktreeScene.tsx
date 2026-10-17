@@ -159,14 +159,31 @@ const addProjects = (): void => {
   });
 };
 
+const MENU_SELECTOR =
+  '[data-level-layer="worktree"] [data-worktree-identity] button[aria-haspopup="menu"][aria-label$="actions"]';
+
+const MENU_POLL_MS = 100;
+
+const MENU_TRIES = 40;
+
+type OpenMenuParams = {
+  readonly triesLeft: number;
+};
+
+const openMenuWhenReady = ({ triesLeft }: OpenMenuParams): void => {
+  const trigger = document.querySelector<HTMLElement>(MENU_SELECTOR);
+  if (trigger !== null) {
+    trigger.click();
+    return;
+  }
+  if (triesLeft <= 0) {
+    return;
+  }
+  window.setTimeout(() => openMenuWhenReady({ triesLeft: triesLeft - 1 }), MENU_POLL_MS);
+};
+
 const openMenu = (): void => {
-  window.setTimeout(() => {
-    document
-      .querySelector<HTMLElement>(
-        '[data-level-layer="worktree"] [data-worktree-identity] button[aria-haspopup="menu"][aria-label$="actions"]',
-      )
-      ?.click();
-  }, 600);
+  window.setTimeout(() => openMenuWhenReady({ triesLeft: MENU_TRIES }), MENU_POLL_MS);
 };
 
 const openFiles = (): void => {

@@ -177,7 +177,8 @@ export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: 
     setEditingSha,
     callbacksFor,
   });
-  const actions = (
+  const hasHistory = (live?.undo.length ?? 0) > 0 || (live?.redo.length ?? 0) > 0;
+  const actions = !hasHistory ? null : (
     <HistoryActions
       canUndo={(live?.undo.length ?? 0) > 0}
       canRedo={(live?.redo.length ?? 0) > 0}
@@ -216,11 +217,14 @@ export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: 
       />
     ) : commits.length === 0 ? (
       <EmptyState
-        size="section"
-        tone={CONCEPT_TONE.history}
+        size="page"
         icon={CONCEPT_ICONS.history}
-        title="No commits yet on this branch"
-        description="This branch has no commits of its own yet."
+        title="No commits yet"
+        description={
+          draft?.baseSha === undefined || draft.baseSha === ''
+            ? undefined
+            : `Based on ${chosenBase ?? 'main'} at ${draft.baseSha.slice(0, 7)}.`
+        }
       />
     ) : (
       <div className="flex flex-col gap-6" onKeyDown={keys.onPageKey}>

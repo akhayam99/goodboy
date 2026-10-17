@@ -213,7 +213,7 @@ export const PullRequestDescription = ({
             <Button size="sm" variant="ghost" onClick={cancel} disabled={isBusy}>
               Cancel
             </Button>
-            <span className="text-meta text-faint-foreground">Markdown. Esc cancels.</span>
+            <span className="text-meta text-faint-foreground">Esc cancels</span>
           </div>
         </div>
       ) : hasBody ? (

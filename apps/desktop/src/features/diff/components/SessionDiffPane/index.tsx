@@ -226,7 +226,6 @@ export const SessionDiffPane = ({
       <Button size="sm" variant="quiet" onClick={panel.focus}>
         <PanelRightOpen size={ICON_SIZE.row} aria-hidden />
         Files
-        <span className="tabular-nums text-faint-foreground">{review.allFiles.length}</span>
       </Button>
     );
 

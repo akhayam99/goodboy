@@ -118,7 +118,7 @@ describe('Checks tab without a pull request', () => {
   it('says the checks run once the pull request exists, and offers to create it', async () => {
     await show();
 
-    expect(screen.getByText('Checks run once the pull request exists')).toBeDefined();
+    expect(screen.getByText('Checks run once the pull request exists.')).toBeDefined();
     expect(screen.queryByText(/No checks have reported/)).toBeNull();
     expect(screen.getByRole('button', { name: 'Create pull request' })).toBeDefined();
   });
@@ -174,12 +174,10 @@ describe('Checks tab with runs', () => {
     });
   });
 
-  it('reads one rollup line and the runs grouped by outcome', async () => {
+  it('groups the runs by outcome, the labels carrying no summary line', async () => {
     await show();
 
-    expect(screen.getByTestId('checks-rollup').textContent).toBe(
-      '1 failing · 1 running · 1 passed',
-    );
+    expect(screen.queryByTestId('checks-rollup')).toBeNull();
     expect(screen.getByRole('list', { name: 'Failing checks' })).toBeDefined();
     expect(
       within(screen.getByRole('list', { name: 'Failing checks' })).getByText('unit tests'),
@@ -201,7 +199,7 @@ describe('Checks tab when nothing has reported', () => {
 
     await show();
 
-    expect(screen.getByText('No checks have reported on this pull request yet')).toBeDefined();
+    expect(screen.getByText('No checks have reported on this pull request.')).toBeDefined();
     expect(screen.queryByText(/runs no checks/i)).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /View on GitHub/ }));
     expect(openUrl).toHaveBeenCalledWith(expect.stringContaining('/pull/318'));
@@ -570,7 +568,7 @@ describe('Checks tab on a host that reads its own checks', () => {
 
     await show();
 
-    expect(screen.getByText("Goodboy doesn't show GitLab pipelines yet")).toBeDefined();
+    expect(screen.getByText("Goodboy doesn't read GitLab pipelines yet.")).toBeDefined();
     expect(screen.queryByText('rspec')).toBeNull();
   });
 });

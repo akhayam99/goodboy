@@ -4,7 +4,13 @@ import userEvent from '@testing-library/user-event';
 import type { AgentId } from '@goodboy/types';
 import { agentPlace } from '../../../store';
 import { type Row, WAIT, click, settle, useAppStore } from './harness';
-import { PREVIEW, SEEDS, group, installComments, openComments } from './comments-words.rows';
+import {
+  PREVIEW,
+  SEEDS,
+  applyNeedsYou,
+  installComments,
+  openComments,
+} from './comments-words.rows';
 
 const OTHER_AGENT: AgentId = JSON.parse(JSON.stringify('headers-journey-other-agent'));
 
@@ -99,7 +105,7 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
         preparePublication: async () => ({ ...PREVIEW, earlierCommits: [EARLIER_COMMIT] }),
       });
       await openComments(ctx);
-      await click(within(group('Needs you')).getByRole('button', { name: 'Apply 2 fixes' }));
+      await applyNeedsYou({ count: 2 });
       expect(headerPush().getAttribute('data-variant')).toBe('secondary');
       await click(headerPush());
     },

@@ -28,10 +28,14 @@ type Props = {
 };
 
 const strokeOf = ({ color }: { readonly color: LaneColor }): string =>
-  color === 'lane' ? 'stroke-muted-foreground' : HISTORY_ACTION_CLASSES[color].stroke;
+  color === 'lane' || color === 'pick'
+    ? 'stroke-muted-foreground'
+    : HISTORY_ACTION_CLASSES[color].stroke;
 
 const fillOf = ({ color }: { readonly color: LaneColor }): string =>
-  color === 'lane' ? 'fill-muted-foreground' : HISTORY_ACTION_CLASSES[color].fill;
+  color === 'lane' || color === 'pick'
+    ? 'fill-muted-foreground'
+    : HISTORY_ACTION_CLASSES[color].fill;
 
 export const HistoryLaneSvg = ({
   width,

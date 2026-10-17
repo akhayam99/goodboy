@@ -13,9 +13,9 @@ export const ReviewEmptyState = ({ sessionId, provider }: Props) =>
     <NoPullRequestState sessionId={sessionId} />
   ) : (
     <EmptyState
-      size="section"
+      size="page"
       icon={CheckCheck}
-      tone="neutral"
-      title={`No open comments on ${provider}`}
+      title="No open comments"
+      description={`Nothing on ${provider} waits for an answer.`}
     />
   );

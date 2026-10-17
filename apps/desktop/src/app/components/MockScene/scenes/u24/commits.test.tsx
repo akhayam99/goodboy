@@ -53,7 +53,7 @@ describe('the u24 commits scenes', () => {
     await screen.findByRole('list', { name: 'Commits' }, { timeout: 4_000 });
     await settle();
 
-    expect(screen.getByText('15 new commits on main')).toBeDefined();
+    expect(screen.getByText('Based on main')).toBeDefined();
     expect(screen.queryByText(/is here now/)).toBeNull();
     expect(
       screen.getByText('Drag a commit to move it, drop it on another to fold it in.'),
@@ -74,7 +74,7 @@ describe('the u24 commits scenes', () => {
 
     expect(screen.queryByRole('heading', { name: 'Planned changes' })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Apply/ })).toBeNull();
-    screen.getByRole('button', { name: 'Undo commit edit' });
+    expect(screen.queryByRole('button', { name: 'Undo commit edit' })).toBeNull();
   });
 
   it('keeps the single column on a 1920 stage', async () => {

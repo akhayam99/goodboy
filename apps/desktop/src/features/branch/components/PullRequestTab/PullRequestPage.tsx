@@ -15,6 +15,7 @@ import type {
 import type { PullRequestEdit } from '../../../../store/slices/pull-request-view/state';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
 import { usePullRequestPort } from '../../hooks/usePullRequestPort';
+import { pullRequestRunsOf } from '../../pullRequestRunsOf';
 import { usePullRequestReadiness } from '../../hooks/usePullRequestReadiness';
 import { pullRequestActivityOf } from './activityOf';
 import { PullRequestActivity } from './PullRequestActivity';
@@ -61,8 +62,16 @@ export const PullRequestPage = ({
   const { readiness, commentsNeedYou } = usePullRequestReadiness({ sessionId });
   const items = useMemo(
     () =>
-      view === null ? [] : pullRequestActivityOf({ view, detail, needYou: commentsNeedYou, edits }),
-    [commentsNeedYou, detail, edits, view],
+      view === null
+        ? []
+        : pullRequestActivityOf({
+            view,
+            detail,
+            runs: pullRequestRunsOf({ pr, detail, view }),
+            needYou: commentsNeedYou,
+            edits,
+          }),
+    [commentsNeedYou, detail, edits, pr, view],
   );
   const nouns = port?.nouns ?? PULL_REQUEST_NOUNS[host];
 

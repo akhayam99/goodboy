@@ -2446,11 +2446,11 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   Push failed, Failed, Working, Applied, Replied, Done, Left open, Open), all from `RESOLVE_WORD_LABEL`
   in `commentProjection.ts` (Applied is a fix on the branch whose reply is not sent, Replied is a
   thread delivered and resolved on the host), and `reviewTally` is the one count behind every number of them.
-  The action that takes a fix is `Apply fix` (`Apply N fixes`) in the list, the bar and the
-  drawer. A fix run is one agent and one transcript for all its comments: answers, retries and
+  The action that takes a fix is `Apply fix` in the detail bar and `Apply N fixes` in the
+  selection bar and the drawer; group labels carry their count and no verbs. A fix run is one agent and one transcript for all its comments: answers, retries and
   hints continue that run, only a model the owner picks starts a new one, and a finished turn
   without a result for a comment reads Failed with Retry, never a question. A thread in the address is
-  `s/{session}/branch/comments/t/{thread}`. A comment nobody started shows `Fix` at rest at the row's right edge (and `F`), which opens the **Fix comments** drawer
+  `s/{session}/branch/comments/t/{thread}`. A comment nobody started has `Fix` in its detail bar (and `F`), which opens the **Fix comments** drawer
   (kind `fix-comments`, side tier) with that comment checked; a checkbox on hover picks comments (`X` on the focused row,
   Cmd+A for every fixable comment, open or couldn't fix, Esc clears) and the bar `N selected ·
 Fix N` opens the same panel, or `Apply N fixes` for comments with a fix ready. With no fix run
@@ -3110,10 +3110,10 @@ without a pull request, where the create form owns `Create pull request`. A stop
 shows `Continue rebase` as the primary, with `Abort rebase` in `⋯`, in the rebase banner and on
 the worktree status line; `Rebase` lives on the worktree status line only, never in the header
 or a property. `Merge` is a filled primary only when the pull request is
-ready; while comments need you or a fix run is live it turns secondary and counts
-(`Merge · 3 open`), never disabled, and while a check fails, a review is
-missing or the branch conflicts it is disabled with the reason in its tooltip and in the
-Readiness property.
+ready; while comments need you or a fix run is live it turns secondary, never disabled,
+and while a check fails, a review is missing or the branch conflicts it is disabled. The
+label names its blocker (`Merge · 2 failing`, `Merge · needs review`, `Merge · 4 unresolved`,
+`readiness.labelBlocker`) and the Readiness property says it once (`Blocked by lint`).
 One rule decides all three (`evaluatePrMergeReadiness`, `features/review`): its
 blockers are a merged, closed, queued or draft pull request, conflicts, checks
 unknown, failing or running, changes requested, a review required and a write
@@ -3178,7 +3178,7 @@ Closed show all five, `Pull request`, `Comments`, `Files`, `Commits`, `Checks`. 
 labelled with the host's noun (`Pull request`, `Merge request` on GitLab; its key is ⌥⌘1,
 Comments ⌥⌘R, Files ⌥⌘F, shown in the row's tooltip) and Checks never appears without a pull
 request. A row is 28px with an icon, the label and one fixed right-aligned slot
-(`worktreeEntryFactsOf`; a muted `-` named `Not loaded` until a count is known), then a chevron
+(`worktreeEntryFactsOf`; empty until a count is known, the fact in the tooltip), then a chevron
 column that only Files fills. The current row carries `aria-current="page"`,
 Up and Down move between rows while the list has focus, and a pick replaces the address. Merged and
 Closed make the page read only (`isBranchReadOnly`): Commits shows its list without editing or Rebase. Every door that means "go to the
@@ -3254,12 +3254,12 @@ reopen controls are left out. `E` edits the title in scope
 `pullRequest`, live only on this section.
 
 **Comments.** The section header holds a segmented control `All 9 · Notes 3 · On GitHub 6`
-(the host's name; the host tab only while a pull request exists) and `Open · Resolved`,
-with `Fix comments N` at its right, the one fix action. The list (`Needs you`,
+(only while both notes and host threads exist) and `Open · Resolved` (only while there are
+comments), with `Fix N comments` at its right, the one fix action. The list (`Needs you`,
 `Working`, `Ready to push`, `Open`, `Left open on GitHub`; `Done` shows under
 `Resolved`) lists your notes and the pull request threads together, each row with
-its file and line, the first line of the body, a kind chip (`Note`, `On GitHub`),
-the author and its age. A note keeps `Post to GitHub` (it moves the note into
+the author and its age, its `path:line`, the first line of the body and a `Note` chip only
+while the list mixes sources. A note keeps `Post to GitHub` (it moves the note into
 the pull request's review draft and closes it) and `Delete` under its thread, and a
 note shows even while the host is still loading or failed to load. The open thread has the code
 around the commented line above it (`hunkAround`, linking to Files). Comments exists when a pull
@@ -3275,12 +3275,13 @@ on the right and the column re-centres in what is left. The Comments section rea
 300px list beside a wide thread; under 900px the list, then the thread, with no back link: the
 `Branch` crumb, with the thread's own crumb after it, is the way back to the list. The selected row stays selected on the way back.
 `branchLayout.test.ts` pins the widths a 1024px window gets with a wide sidebar
-and an open drawer. The entry counts (Comments, Files, Commits) read a muted `-`
-named `Not loaded` until the data arrives, then the number, never 0 for an
-unknown, and nothing for a known zero (`worktreeEntryFactsOf`; the comment
+and an open drawer. The entry slots read nothing until the data arrives and nothing at zero:
+Pull request `Draft`, `Merged` or `Closed`; Comments the count that needs you; Files the
+count; Commits `↑2` (tooltip `2 not pushed`, `notPushedCountOf`); Checks the failing or
+running count (`worktreeEntryFactsOf`; the comment
 source tabs drop a zero badge the same way). All three arrive without a visit: `BranchPage` loads
 the mount's history draft (`loadHistoryDraft`) once when the page opens and the
-draft is not there yet, so the Commits count is a number on the Comments section too. `Fix comments N`, in the section header and in the Files toolbar, is the one fix launch.
+draft is not there yet, so the Commits count is a number on the Comments section too. `Fix N comments`, in the Comments section header, is the one fix launch.
 
 **Files.** The branch against its base, with the changed file list in a rail on the
 right of the Branch page, dedicated to the diff (`FileRail` in `features/diff/components`).
@@ -3307,8 +3308,7 @@ overlay (the page crossing 880px) remounts the rail in place, with no move. The 
 filter field (`/`) with the filter menu beside it (scope and grouping), then the tree;
 each file row keeps its viewed mark.
 The toolbar on the column (36 high, the diff scrolls under it) reads `Compared with main · All 5 commits ⌄`,
-then `Display ⌄` and `Fix comments N` (every open note and host thread, in every
-state; hidden at 0). Folders first, then files, alphabetical,
+then `Display ⌄`. Folders first, then files, alphabetical,
 and the diff follows the same order. A chain of folders with one child is one
 row (`src/ledger/export`). A folder row holds a progress ring (empty, partial,
 or filled with a check once every file in it is viewed, tooltip `3 of 5
@@ -3394,7 +3394,7 @@ consent and recovery flow. Undo and Redo restore a backup with an expected
 head check; failures retain the stack and the captured retry target. None
 of these operations pushes to GitHub, GitLab or Bitbucket.
 
-Previous versions (`Show previous versions (n)` under the graph, the `Previous versions` drawer, `Reset branch to this version`) live here. There is no
+Previous versions (`Previous versions n` under the graph, the `Previous versions` drawer, `Reset branch to this version`) live here. There is no
 Rewrite history page: the old history address, the palette verb and Activity
 history rows land on `branch/commits`. **Checks.** The checks of the pull request. A GitLab or Bitbucket
 session reads them through the same five states once its host's
@@ -3424,8 +3424,8 @@ per commit (title, then sha, author and age in
 online copy, the grip a faint mark of a row that drags), then the base row.
 
 **The base row** (`HistoryBaseRow`) is the action point for the base. Behind the
-base it reads `78 new commits on main` with `Rebase onto latest`; level with it
-the `Your branch starts on today's main` line. The base chip (`branch → main`, a
+base it reads `Based on main 9d4b1f7`; how far behind and `Rebase` live on the worktree
+status line. The base chip (`branch → main`, a
 searchable listbox of the repository's branches) picks another base; the button
 then reads `Rebase onto <branch>`. The button asks in a `ConfirmPopover` anchored
 to it and runs the rebase command (`rebaseBranch`, with `ontoBranch` for another
@@ -3457,7 +3457,7 @@ uses the retained policy: the newest 20 per branch are kept, and an older one
 is dropped only while another retained ref contains its commit. The newest backup is
 never pruned. Older backups from the former naming remain read-only.
 
-`Show previous versions (n)` under the graph (and `Previous versions…` in the page menu) opens the `Previous versions` drawer (kind `history-versions`, side tier). Each version shows when, why (`Before a rebase`, `Before a fold or drop`, `Before a reword or edit`, worked out by `history_backup_facts`), the commit count, the difference with now and an expandable commit list. `Reset branch to this version` (danger, anchored confirm) moves the branch back and the drawer offers `Undo` right after.
+`Previous versions n` under the graph (and `Previous versions…` in the page menu) opens the `Previous versions` drawer (kind `history-versions`, side tier). Each version shows when, why (`Before a rebase`, `Before a fold or drop`, `Before a reword or edit`, worked out by `history_backup_facts`), the commit count, the difference with now and an expandable commit list. `Reset branch to this version` (danger, anchored confirm) moves the branch back and the drawer offers `Undo` right after.
 
 History rewriter's writable directories
 are its copy, that copy's own git admin folder, the object store and the
@@ -3476,7 +3476,7 @@ Codex rewriter turns also lose write access to the temp folders. One line sits
 above the code and replaces the old toolbar and its counts: `Compared with <base> ·
 All N commits ⌄` on the left (the base is the mount's own base branch,
 never a fixed `main`; a commit view reads `Commit abc1234`, the working tree
-`Working tree`, `Staged only` or `Unstaged only`), and `Display ⌄` and `Fix comments N`
+`Working tree`, `Staged only` or `Unstaged only`), and `Display ⌄`
 on the right, because the view decides which files you see,
 not what you do to the branch. `Display` holds `Unified | Split` and `Wrap long
 lines` (on by default, saved as `goodboy:diff-wrap`; split always wraps). The

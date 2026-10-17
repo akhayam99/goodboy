@@ -2,9 +2,9 @@ import { useCallback, useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { REVIEW_SOURCE_CAPABILITIES, REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import { Button, EmptyState, PageColumn } from '@goodboy/ui';
-import type { SessionId } from '@goodboy/types';
+import type { PrCheckRun, SessionId } from '@goodboy/types';
 import { ExternalLink } from 'lucide-react';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
 import { openUrl } from '../../../shared/lib/editor';
 import { useAppStore } from '../../../store';
 import { selectedReviewEntryOf } from '../../../store/slices/review-source/activeReviewSource';
@@ -17,8 +17,7 @@ import { ChecksMode } from '../../review/components/ReviewPane/modes/ChecksMode'
 import { checksViewOf, type ChecksHost, type ChecksHostKind } from '../checksViewOf';
 import { usePullRequestView } from '../hooks/usePullRequestView';
 import { repoNameOf } from '../repoNameOf';
-import { CheckAnalysisActions } from './CheckAnalysisActions';
-import { CheckAnalysisHint } from './CheckAnalysisHint';
+import { AnalyzedCheckRow } from './AnalyzedCheckRow';
 import { ChecksDeniedNotice } from './ChecksDeniedNotice';
 import { ChecksFailedNotice } from './ChecksFailedNotice';
 
@@ -32,6 +31,10 @@ const HOST_NOUN: Readonly<Record<ChecksHost, string>> = {
 };
 
 const CREATE_ACTION_ID = 'pullRequest.create';
+
+const FAILED_CONCLUSIONS: ReadonlySet<PrCheckRun['conclusion']> = new Set<PrCheckRun['conclusion']>(
+  ['failure', 'timed_out', 'cancelled'],
+);
 
 export const BranchChecks = ({ sessionId }: Props) => {
   const github = useAppStore((s) => s.sessionGithub[sessionId] ?? null);
@@ -107,6 +110,7 @@ export const BranchChecks = ({ sessionId }: Props) => {
         : { kind: portView.errorKind === 'denied' ? 'denied' : 'failed', error: portView.error },
   });
 
+  const fallbackUrl = pr?.url ?? host.url ?? '';
   const createAction = create.actions.find((action) => action.id === CREATE_ACTION_ID);
 
   const stateNotice = () => {
@@ -115,10 +119,10 @@ export const BranchChecks = ({ sessionId }: Props) => {
       const url = view.url;
       return (
         <EmptyState
-          bordered
+          size="page"
           icon={CONCEPT_ICONS.checks}
-          tone={CONCEPT_TONE.checks}
-          title={`Goodboy doesn't show ${label} ${HOST_NOUN[view.host]} yet`}
+          title={`No ${label} ${HOST_NOUN[view.host]} here yet`}
+          description={`Goodboy doesn't read ${label} ${HOST_NOUN[view.host]} yet.`}
           action={
             url === null ? undefined : (
               <Button variant="ghost" size="sm" onClick={() => void openUrl(url)}>
@@ -133,10 +137,10 @@ export const BranchChecks = ({ sessionId }: Props) => {
     if (view.kind === 'no-pr' || (pr === null && !isPortHost)) {
       return (
         <EmptyState
-          bordered
+          size="page"
           icon={CONCEPT_ICONS.checks}
-          tone={CONCEPT_TONE.checks}
-          title="Checks run once the pull request exists"
+          title="No pull request yet"
+          description="Checks run once the pull request exists."
           action={
             <Button
               variant="secondary"
@@ -175,36 +179,29 @@ export const BranchChecks = ({ sessionId }: Props) => {
     <PageColumn width="column">
       {notice === null ? (
         <ChecksMode
-          renderCheckActions={(check) =>
-            analysisRequest !== null &&
-            repo !== null &&
-            ['failure', 'timed_out', 'cancelled'].includes(check.conclusion) ? (
-              <CheckAnalysisActions
-                sessionId={sessionId}
-                mountId={repo.mountId}
-                pullRequest={analysisRequest}
-                check={check}
-              />
-            ) : null
-          }
-          renderCheckHint={(check) =>
-            analysisRequest !== null &&
-            repo !== null &&
-            ['failure', 'timed_out', 'cancelled'].includes(check.conclusion) ? (
-              <CheckAnalysisHint
-                sessionId={sessionId}
-                mountId={repo.mountId}
-                pullRequestUrl={analysisRequest.url}
-                check={check}
-              />
-            ) : null
+          renderCheckRow={
+            analysisRequest === null || repo === null
+              ? undefined
+              : ({ check, renderRow }) =>
+                  FAILED_CONCLUSIONS.has(check.conclusion) ? (
+                    <AnalyzedCheckRow
+                      sessionId={sessionId}
+                      mountId={repo.mountId}
+                      pullRequest={analysisRequest}
+                      check={check}
+                      renderRow={renderRow}
+                    />
+                  ) : (
+                    renderRow({
+                      tooltip: check.detailsUrl ?? check.name,
+                      onOpen: () => void openUrl(check.detailsUrl ?? fallbackUrl),
+                    })
+                  )
           }
           checks={view.kind === 'ready' ? view.checks : []}
-          fallbackUrl={pr?.url ?? host.url ?? ''}
+          fallbackUrl={fallbackUrl}
           hostLabel={REVIEW_SOURCE_LABEL[isPortHost ? host.kind : 'github']}
           isLoading={view.kind === 'loading'}
-          pr={pr ?? undefined}
-          detail={detail}
           onOpenUrl={(url) => void openUrl(url)}
         />
       ) : (

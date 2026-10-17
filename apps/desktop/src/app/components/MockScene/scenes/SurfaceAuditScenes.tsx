@@ -24,6 +24,7 @@ import { ArtifactStudio } from '../../../../features/artifacts/components/Artifa
 import type { ScriptGroup, ScriptRunRecord } from '../../../../features/scripts/scripts';
 import { discoveredScriptId } from '../../../../features/scripts/scripts';
 import { useAppStore } from '../../../../store';
+import { branchPlace } from '../../../../store/slices/navigation/place';
 import type { DiscoveredScriptScan } from '../../../../store/slices/scripts/state';
 import { ShellFrame, seedShellChrome } from './shellChrome';
 import {
@@ -921,6 +922,8 @@ export const ResolveQueueShellScene = () => {
   );
 };
 
+const PUBLISH_DRILL_MS = 200;
+
 export const ResolvePublishBlockedScene = () => {
   const [isReady, setIsReady] = useState(false);
 
@@ -928,6 +931,19 @@ export const ResolvePublishBlockedScene = () => {
     seedReviewScene({ preview: BLOCKED_PREVIEW });
     setIsReady(true);
   }, []);
+
+  useEffect(() => {
+    if (!isReady) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      useAppStore.getState().navigate({
+        to: branchPlace({ sessionId: RESOLVE_SESSION.id, tab: 'comments' }),
+        mode: 'replace',
+      });
+    }, PUBLISH_DRILL_MS);
+    return () => window.clearTimeout(timer);
+  }, [isReady]);
 
   if (!isReady) {
     return null;

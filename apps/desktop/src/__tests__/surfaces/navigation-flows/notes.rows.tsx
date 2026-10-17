@@ -219,7 +219,12 @@ const addNoteOnFile = async ({ file, body }: NoteTarget): Promise<void> => {
 
 const hasFixComments = async (count: number): Promise<void> => {
   await waitFor(
-    () => expect(screen.getByRole('button', { name: `Fix comments ${count}` })).toBeDefined(),
+    () =>
+      expect(
+        screen.getByRole('button', {
+          name: `Fix ${count} ${count === 1 ? 'comment' : 'comments'}`,
+        }),
+      ).toBeDefined(),
     WAIT,
   );
 };
@@ -229,7 +234,7 @@ const SECOND_FILE = 'applyWebhook.ts';
 
 export const NOTES_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'notes: Files counts the notes in Fix comments, and Comments lists them with no pull request',
+    name: 'notes: notes added on Files count in Fix comments on Comments, with no pull request',
     covers: ['navigate', 'openDrawer'],
     seed: 'issue',
     open: async (ctx) => {
@@ -239,24 +244,23 @@ export const NOTES_ROWS: ReadonlyArray<Row> = [
       await branchTab('files')(ctx);
       await addNoteOnFile({ file: FIRST_FILE, body: 'Cap the retries at three' });
       await addNoteOnFile({ file: SECOND_FILE, body: 'Log the duplicate once' });
-      await hasFixComments(2);
       expect(useAppStore.getState().drawer).toBeNull();
-
-      await clickButton('Fix comments 2');
-      await waitFor(() => expect(useAppStore.getState().drawer?.kind).toBe('fix-comments'), WAIT);
-      useAppStore.getState().closeDrawer();
 
       await click(await findSection(/^Comments/));
     },
     lands: async (ctx) => {
       await branchTab('comments')(ctx);
+      await hasFixComments(2);
+      await clickButton('Fix 2 comments');
+      await waitFor(() => expect(useAppStore.getState().drawer?.kind).toBe('fix-comments'), WAIT);
+      useAppStore.getState().closeDrawer();
       expect(
         (await screen.findAllByText(/Cap the retries at three/, undefined, WAIT)).length,
       ).toBeGreaterThan(0);
       expect(screen.getAllByText(/Log the duplicate once/).length).toBeGreaterThan(0);
       expect(screen.queryByText('No pull request yet')).toBeNull();
       expect(screen.queryByRole('tab', { name: /^On GitHub/ })).toBeNull();
-      expect(screen.getByRole('button', { name: /^Fix comments/ })).toBeDefined();
+      expect(screen.getByRole('button', { name: /^Fix \d+ comments?$/ })).toBeDefined();
     },
   },
   {

@@ -1,6 +1,6 @@
 import { checksBridge, type GhBridgeArgs } from './checks.runner';
 
-const AUTHOR = { login: 'nadia-p', name: 'Nadia Petrova' };
+const AUTHOR = { login: 'nadia-p', name: 'Harborline Dev' };
 
 const PR_VIEW = {
   number: 318,

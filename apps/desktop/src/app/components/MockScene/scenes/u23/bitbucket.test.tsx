@@ -37,14 +37,14 @@ const MEMBERS = [
     uuid: '{kenji-w-uuid}',
     accountId: null,
     nickname: 'kenji-w',
-    displayName: 'Kenji Watanabe',
+    displayName: 'Acme Lead',
     avatarUrl: null,
   },
   {
     uuid: '{omar-t-uuid}',
     accountId: null,
     nickname: 'omar-t',
-    displayName: 'Omar Tran',
+    displayName: 'Northwind QA',
     avatarUrl: null,
   },
   {

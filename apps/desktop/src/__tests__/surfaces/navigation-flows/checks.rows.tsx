@@ -48,10 +48,7 @@ const deniedNotice = async (): Promise<void> => {
 
 const rowsAppear = async (): Promise<void> => {
   await waitFor(
-    () =>
-      expect(screen.getByTestId('checks-rollup').textContent).toBe(
-        '1 failing · 1 running · 1 passed',
-      ),
+    () => expect(screen.getByRole('list', { name: 'Running checks' })).toBeDefined(),
     WAIT,
   );
   expect(screen.getByRole('list', { name: 'Failing checks' })).toBeDefined();

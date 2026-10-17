@@ -171,14 +171,20 @@ describe('ChangeTree', () => {
     expect(within(itemOf(/page\.tsx/)).queryByText('+3')).toBeNull();
   });
 
-  it('shows a collapsed folder count and +/- in one muted tone', () => {
+  it('shows a collapsed folder +/- in one muted tone, its file count only in the tooltip', () => {
+    const observers = installFakeResizeObserver();
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(0, 0, 360, 600),
+    );
     renderTree({ collapsed: new Set(['dir:src/ledger/export']) });
+    act(() => observers.resizeAll());
 
     const folder = itemOf(/\bexport\b/);
-    const tones = ['2', '+6', '−2'].map((text) =>
+    expect(within(folder).queryByText('2')).toBeNull();
+    const tones = ['+6', '−2'].map((text) =>
       within(folder).getByText(text).closest('[data-tone]')?.getAttribute('data-tone'),
     );
-    expect(tones).toEqual(['muted', 'muted', 'muted']);
+    expect(tones).toEqual(['muted', 'muted']);
   });
 
   it('puts +N and -M as two cells next to the right edge of files and closed folders', () => {

@@ -88,11 +88,11 @@ describe('the u24 prpage frame scenes', () => {
     await settle();
 
     expect(sectionNames()).toEqual(['Pull request', 'Files', 'Commits']);
-    expect(sectionRow(/^Pull request/).textContent).toContain('None');
+    expect(sectionRow(/^Pull request/).textContent).toBe('Pull request');
     expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(0);
   });
 
-  it('adds Comments with its count when a local note exists and still no Checks', async () => {
+  it('adds Comments when a local note exists, no count since no note needs you', async () => {
     renderScene({ name: 'branch-nopr-notes' });
     await screen.findByRole('navigation', { name: 'Worktree' }, WAIT);
     await settle();
@@ -102,7 +102,7 @@ describe('the u24 prpage frame scenes', () => {
       within(screen.getByRole('navigation', { name: 'Worktree' })).getByRole('button', {
         name: /^Comments/,
       }).textContent,
-    ).toBe('Comments1');
+    ).toBe('Comments');
   });
 
   it('draws all five sections with Mark ready for review as the one primary of a draft', async () => {

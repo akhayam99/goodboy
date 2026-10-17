@@ -136,7 +136,7 @@ export const FileRow = ({
           aria-label={STATUS_WORD[row.file.status]}
           className={cn('w-3 shrink-0 text-center text-chip', tone.text)}
         >
-          {STATUS_LETTER[row.file.status]}
+          {row.file.status === 'modified' ? '' : STATUS_LETTER[row.file.status]}
         </span>
       </button>
       {canToggleViewed ? (

@@ -12,7 +12,8 @@ import type {
 } from '@goodboy/types';
 import { openReviewThreadIds } from '../../../store/slices/resolve/openReviewThreadIds';
 import type { SessionGithubState } from '../../../store/types';
-import { reviewNeedsYouOfThreads } from '../../resolve/reviewTally';
+import { commentsCountOf } from '../../resolve/commentsCountOf';
+import { checksCountsOf, checksGroupsOf } from '../../integrations/github/checksRollup';
 
 type PullRequestPhase = 'none' | 'draft' | 'open' | 'queued' | 'merged' | 'closed';
 
@@ -36,6 +37,7 @@ export type PullRequestFacts = {
   readonly writeInFlight: string | null;
   readonly isScribeWriting: boolean;
   readonly commentsNeedYou: number;
+  readonly commentsUnresolved: number;
   readonly isFixRunLive: boolean;
   readonly mergeMethods: ReadonlyArray<PrMergeMethod>;
   readonly mergeMethodReasons: Readonly<Partial<Record<PrMergeMethod, string>>>;
@@ -44,6 +46,7 @@ export type PullRequestFacts = {
 
 type FixSignals = {
   readonly commentsNeedYou: number;
+  readonly commentsUnresolved: number;
   readonly isFixRunLive: boolean;
 };
 
@@ -51,12 +54,18 @@ export const fixSignalsOf = ({
   threads,
 }: {
   readonly threads: ReadonlyArray<ResolveThread>;
-}): FixSignals => ({
-  commentsNeedYou: reviewNeedsYouOfThreads({ threads }),
-  isFixRunLive: threads.some(
-    (thread) => thread.originKind !== 'diff_comment' && thread.state === 'working',
-  ),
-});
+}): FixSignals => {
+  const count = commentsCountOf({
+    threads: threads.filter((thread) => thread.originKind !== 'diff_comment'),
+  });
+  return {
+    commentsNeedYou: count.needsYou,
+    commentsUnresolved: count.unresolved,
+    isFixRunLive: threads.some(
+      (thread) => thread.originKind !== 'diff_comment' && thread.state === 'working',
+    ),
+  };
+};
 
 export const ALL_MERGE_METHODS: ReadonlyArray<PrMergeMethod> = ['squash', 'merge', 'rebase'];
 
@@ -72,13 +81,12 @@ type Params = {
   readonly writeInFlight: string | null;
   readonly isScribeWriting: boolean;
   readonly commentsNeedYou?: number;
+  readonly commentsUnresolved?: number;
   readonly isFixRunLive?: boolean;
   readonly mergeMethods?: ReadonlyArray<PrMergeMethod>;
   readonly mergeMethodReasons?: Readonly<Partial<Record<PrMergeMethod, string>>>;
   readonly commitCount?: number | null;
 };
-
-const FAILED = new Set<PrCheckRun['conclusion']>(['failure', 'timed_out']);
 
 const phaseOf = ({ pr }: { readonly pr: PullRequestState | null }): PullRequestPhase => {
   if (pr === null) {
@@ -102,11 +110,15 @@ const checksOf = ({
   if (pr?.checksUnknown === true || (checksRead !== null && checksRead !== 'ok')) {
     return 'unknown';
   }
-  if (checks !== null && checks.length > 0) {
-    if (checks.some((check) => FAILED.has(check.conclusion))) {
+  if (checks !== null) {
+    const counts = checksCountsOf({ checks });
+    if (counts.failing > 0) {
       return 'failing';
     }
-    return checks.some((check) => check.conclusion === 'pending') ? 'pending' : 'green';
+    if (counts.running > 0) {
+      return 'pending';
+    }
+    return counts.passed > 0 ? 'green' : 'none';
   }
   if (pr?.checks === 'failure') {
     return 'failing';
@@ -149,13 +161,15 @@ export const pullRequestFacts = ({
   writeInFlight,
   isScribeWriting,
   commentsNeedYou = 0,
+  commentsUnresolved = 0,
   isFixRunLive = false,
   mergeMethods = ALL_MERGE_METHODS,
   mergeMethodReasons = {},
   commitCount = null,
 }: Params): PullRequestFacts => {
   const runs = checks ?? [];
-  const failing = runs.filter((check) => FAILED.has(check.conclusion));
+  const groups = checksGroupsOf({ checks: runs });
+  const failing = groups.find((entry) => entry.group === 'failing')?.runs ?? [];
   const author = pr?.author ?? null;
   return {
     sessionId,
@@ -165,7 +179,7 @@ export const pullRequestFacts = ({
     phase: phaseOf({ pr }),
     checks: checksOf({ pr, checks, checksRead }),
     failingChecks: failing.map((check) => check.name),
-    runningChecks: runs.filter((check) => check.conclusion === 'pending').length,
+    runningChecks: checksCountsOf({ checks: runs }).running,
     failingLogUrl: failing.find((check) => check.detailsUrl !== null)?.detailsUrl ?? null,
     review: pr?.reviewDecision ?? null,
     changesRequestedBy: changesRequestedByOf({ reviews }),
@@ -175,6 +189,7 @@ export const pullRequestFacts = ({
     writeInFlight,
     isScribeWriting,
     commentsNeedYou,
+    commentsUnresolved,
     isFixRunLive,
     mergeMethods,
     mergeMethodReasons,

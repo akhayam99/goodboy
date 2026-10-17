@@ -59,10 +59,10 @@ const userOf = ({
   avatarUrl: null,
 });
 
-const NADIA = userOf({ nickname: 'nadia-p', displayName: 'Nadia Petrova' });
-const OMAR = userOf({ nickname: 'omar-t', displayName: 'Omar Tran' });
-const KENJI = userOf({ nickname: 'kenji-w', displayName: 'Kenji Watanabe' });
-const PRIYA = userOf({ nickname: 'priya-n', displayName: 'Priya Nair' });
+const NADIA = userOf({ nickname: 'nadia-p', displayName: 'Harborline Dev' });
+const OMAR = userOf({ nickname: 'omar-t', displayName: 'Northwind QA' });
+const KENJI = userOf({ nickname: 'kenji-w', displayName: 'Acme Lead' });
+const PRIYA = userOf({ nickname: 'priya-n', displayName: 'Cascadia Ops' });
 
 const participantOf = ({
   user,
@@ -201,7 +201,7 @@ const viewOf = ({
   url: PR_URL,
   state: pr.state === 'OPEN' ? 'open' : 'closed',
   isDraft: false,
-  author: { login: 'nadia-p', name: 'Nadia Petrova', avatarUrl: null },
+  author: { login: 'nadia-p', name: 'Harborline Dev', avatarUrl: null },
   baseBranch: pr.destinationBranch,
   headBranch: pr.sourceBranch,
   headSha: pr.sourceCommit,

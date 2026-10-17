@@ -3,6 +3,7 @@ import { ScrollFade } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useActionControls } from '../../../../features/actions/useActionControls';
 import { worktreeLevelSlot } from '../../../../features/branch/worktreeLevelSlot';
+import { useRebaseJob } from '../../../../features/history/useRebaseJob';
 import { WorktreeIdentityRow } from './WorktreeIdentityRow';
 import { WorktreeStatusLine } from './WorktreeStatusLine';
 import { useWorktreeTarget } from './useWorktreeTarget';
@@ -14,6 +15,7 @@ type Props = {
 export const WorktreeLevel = ({ session }: Props) => {
   const worktree = useWorktreeTarget({ sessionId: session.id });
   const controls = useActionControls({ target: worktree.target });
+  const rebase = useRebaseJob({ sessionId: session.id, worktreePath: worktree.mountPath });
   const hostRef = useRef<HTMLElement | null>(null);
   const attachHost = useCallback((node: HTMLDivElement | null) => {
     if (node === null) {
@@ -41,6 +43,7 @@ export const WorktreeLevel = ({ session }: Props) => {
           <WorktreeStatusLine
             status={worktree.status}
             baseBranch={worktree.baseBranch}
+            job={rebase?.job ?? null}
             controls={controls}
           />
         </div>

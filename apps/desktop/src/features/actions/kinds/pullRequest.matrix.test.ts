@@ -39,6 +39,7 @@ const facts = (overrides: Partial<PullRequestFacts>): PullRequestFacts => ({
   writeInFlight: null,
   isScribeWriting: false,
   commentsNeedYou: 0,
+  commentsUnresolved: 0,
   isFixRunLive: false,
   mergeMethods: ['squash', 'merge', 'rebase'],
   mergeMethodReasons: {},
@@ -92,7 +93,7 @@ const STATES: ReadonlyArray<{
     expected: [
       'pullRequest.openOnGithub secondary',
       'pullRequest.checkLog hover',
-      'pullRequest.merge secondary (1 check failing: unit tests.)',
+      'pullRequest.merge secondary (Blocked by unit tests.)',
       ...OWN_LIVE_TAIL,
       'pullRequest.convertToDraft menu',
       ...COPIES,
